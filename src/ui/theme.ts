@@ -32,13 +32,7 @@ export const COLORS = {
   weak: '#ffd84a',
 };
 
-export const ELEMENT_LABEL: Record<DamageType, string> = {
-  physical: '物理',
-  fire: '火',
-  ice: '氷',
-  thunder: '雷',
-  magic: '魔法',
-};
+export { ELEMENT_LABEL } from './labels';
 
 export const ELEMENT_COLOR: Record<DamageType, number> = {
   physical: 0x9aa5b1,

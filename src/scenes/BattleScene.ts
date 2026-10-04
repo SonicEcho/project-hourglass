@@ -8,17 +8,20 @@ import {
   currentAlly,
   findUnit,
   getActionError,
+  getBattleResult,
   getTurnForecast,
   previewAction,
   runEnemyTurn,
   startNextTurn,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BASIC_ATTACK, createEncounterSetup, GUARD } from '../data';
+import { BASIC_ATTACK, createEncounterSetup, type EncounterId, GUARD } from '../data';
 import { drawBattle, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
+import type { ResultSceneData } from './ResultScene';
+import { battleSeed, setActiveBattle } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -36,7 +39,7 @@ interface Selection {
 }
 
 export interface BattleSceneData {
-  seed?: number;
+  encounter?: EncounterId;
 }
 
 /** 演出の待ち時間（ミリ秒） */
@@ -44,6 +47,7 @@ const FX = { banner: 550, popup: 260, settle: 380, turnStart: 300 };
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState;
+  private encounter: EncounterId = 'battle1';
   private selection: Selection | null = null;
   private panel: Panel = 'none';
   private message = '';
@@ -60,15 +64,37 @@ export class BattleScene extends Phaser.Scene {
 
   create(data: BattleSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    const seed = data.seed ?? seedFromUrl() ?? Math.floor(Math.random() * 2 ** 31);
-    console.log(`[battle] seed=${seed}`);
-    this.state = createBattle(createEncounterSetup('battle1', seed));
+    this.encounter = data.encounter ?? 'battle1';
+    const seed = battleSeed(this.encounter);
+    console.log(`[battle] ${this.encounter} seed=${seed}`);
+    // 毎戦闘、HPとMPは全回復した状態で始まる
+    this.state = createBattle(createEncounterSetup(this.encounter, seed));
     this.selection = null;
     this.panel = 'none';
     this.busy = false;
+    this.skipping = false;
+    this.waits = [];
+    this.overlay = undefined;
+    this.message = '';
+    setActiveBattle({
+      encounter: this.encounter,
+      getState: () => this.state,
+      replaceState: (s) => this.replaceState(s),
+    });
+    this.events.once('shutdown', () => setActiveBattle(null));
     this.root = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0).setDepth(100);
     void this.proceed();
+  }
+
+  /** デバッグメニューから状態を差し替える。演出中は受け付けない */
+  private replaceState(s: BattleState): boolean {
+    if (this.busy || this.state.outcome !== 'ongoing') return false;
+    this.state = s;
+    this.clearSelection();
+    this.message = this.idleMessage();
+    this.render();
+    return true;
   }
 
   // ---- 手番の進行 ----
@@ -170,6 +196,10 @@ export class BattleScene extends Phaser.Scene {
         const p = unitPosition(s, e.targetId);
         const isAlly = s.allies.some((a) => a.uid === e.targetId);
         this.popup(p.x, p.y, String(e.amount), isAlly ? COLORS.allyDamage : COLORS.damage, 26);
+        if (e.partId !== undefined && e.partAmount !== undefined) {
+          const pp = unitPosition(s, e.targetId, e.partId);
+          this.popup(pp.x, pp.y, String(e.partAmount), '#ffc070', 22);
+        }
         if (e.affinity === 'weak') this.popup(p.x, p.y - 34, 'WEAK!', COLORS.weak, 18);
         if (e.affinity === 'resist') this.popup(p.x, p.y - 34, '耐性', COLORS.subText, 14);
         return true;
@@ -182,6 +212,20 @@ export class BattleScene extends Phaser.Scene {
       case 'oneMore':
         this.bigText('ONE MORE!');
         return true;
+      case 'partBreak': {
+        const p = unitPosition(s, e.enemyId, e.partId);
+        this.popup(p.x, p.y - 10, '部位破壊！', COLORS.weak, 18);
+        return true;
+      }
+      case 'weaknessFound': {
+        // 弱点を突いて判明した時は WEAK! が出るので、部位破壊で露出した時だけ見せる
+        const enemy = s.enemies.find((x) => x.uid === e.enemyId);
+        const viaBreak = !!enemy?.parts.some((p) => p.broken && p.revealsWeakness.includes(e.element));
+        if (!viaBreak) return false;
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y - 40, `弱点露出：${ELEMENT_LABEL[e.element]}`, COLORS.weak, 16);
+        return true;
+      }
       case 'baton':
         this.bigText('BATON TOUCH!');
         return true;
@@ -358,9 +402,13 @@ export class BattleScene extends Phaser.Scene {
   private previewText(p: ActionPreview): string {
     const parts = p.targets.slice(0, 3).map((t) => {
       const unit = findUnit(this.state, t.unitId);
-      const amount = t.min === t.max ? `${t.min}` : `${t.min}〜${t.max}`;
+      const range = (a: number, b: number) => (a === b ? `${a}` : `${a}〜${b}`);
       const tag = t.affinity === 'weak' ? ' WEAK' : t.affinity === 'resist' ? ' 耐性' : '';
-      return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : ''}${amount}${tag}`;
+      if (t.partId !== undefined && unit?.side === 'enemy') {
+        const part = unit.parts.find((x) => x.id === t.partId);
+        return `${part?.name ?? ''} ${range(t.partMin!, t.partMax!)}／本体 ${range(t.min, t.max)}${tag}`;
+      }
+      return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : ''}${range(t.min, t.max)}${tag}`;
     });
     if (p.targets.length > 3) parts.push('…');
     if (this.selection?.pending.source === 'baton') return '';
@@ -383,7 +431,12 @@ export class BattleScene extends Phaser.Scene {
       this.cancel();
       return;
     }
-    if (sel.target && sel.target.kind === target.kind && sel.target.id === target.id) {
+    const same =
+      sel.target &&
+      sel.target.kind === target.kind &&
+      sel.target.id === target.id &&
+      (sel.target.kind === 'enemy' ? sel.target.partId : undefined) === (target.kind === 'enemy' ? target.partId : undefined);
+    if (same) {
       const action = this.buildAction(sel);
       if (action) void this.execute(action);
       return;
@@ -401,9 +454,9 @@ export class BattleScene extends Phaser.Scene {
   private handlers(): ViewHandlers {
     return {
       tapBackground: () => this.cancel(),
-      tapEnemy: (id) => {
+      tapEnemy: (id, partId) => {
         if (!this.selection) return;
-        this.tapTarget({ kind: 'enemy', id });
+        this.tapTarget({ kind: 'enemy', id, partId });
       },
       tapAlly: (id) => {
         if (!this.selection) return;
@@ -523,27 +576,40 @@ export class BattleScene extends Phaser.Scene {
     this.overlay = c;
   }
 
+  /** 勝敗がついた時。戦闘1の勝利ならボス戦へ、それ以外は結果画面へ */
   private showEnd(): void {
     this.closeOverlay();
     const c = this.add.container(0, 0).setDepth(300);
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive();
     const win = this.state.outcome === 'victory';
-    const title = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80, win ? '勝利！' : '敗北…', {
+    const title = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 90, win ? '勝利！' : '敗北…', {
       size: 44,
       bold: true,
       color: win ? COLORS.accentText : COLORS.allyDamage,
     }).setOrigin(0.5);
-    const note = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, `seed ${this.state.seed}`, { size: 12, color: COLORS.subText }).setOrigin(0.5);
-    c.add([shade, title, note]);
-    addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, 220, 56, 'もう一度', { onTap: () => this.scene.restart({}) }, { size: 18, bold: true });
+    c.add([shade, title]);
+    if (win && this.encounter === 'battle1') {
+      c.add(
+        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25, '次はボス戦\n（HPとMPは全回復する）', {
+          size: 15,
+          align: 'center',
+          color: COLORS.subText,
+        }).setOrigin(0.5),
+      );
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, 240, 60, 'ボス戦へ', { onTap: () => this.scene.start('Battle', { encounter: 'battle2' }) }, {
+        size: 18,
+        bold: true,
+        fill: 0x5a4a10,
+        stroke: COLORS.accent,
+        strokeWidth: 2,
+      });
+    } else {
+      const result = getBattleResult(this.state);
+      const data: ResultSceneData = { outcome: result.outcome === 'victory' ? 'victory' : 'defeat', encounter: this.encounter, brokenParts: result.brokenParts, seed: this.state.seed };
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 240, 60, '結果へ', { onTap: () => this.scene.start('Result', data) }, { size: 18, bold: true });
+    }
     this.overlay = c;
   }
-}
-
-function seedFromUrl(): number | undefined {
-  const v = new URLSearchParams(window.location.search).get('seed');
-  if (v === null || v === '' || Number.isNaN(Number(v))) return undefined;
-  return Number(v) >>> 0;
 }
 
 /** デバッグ用に、出来事をコンソールへ出す（?debug=1 なら eruda で見られる） */

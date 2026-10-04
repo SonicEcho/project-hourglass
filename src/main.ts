@@ -2,8 +2,12 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from './config';
 import { formatBuildInfo } from './debug/buildInfo';
 import { isDebugEnabled } from './debug/debugFlag';
+import { installDebugMenu } from './debug/debugMenu';
 import { loadEruda } from './debug/eruda';
 import { BattleScene } from './scenes/BattleScene';
+import { ResultScene } from './scenes/ResultScene';
+import { initRunFromUrl } from './scenes/run';
+import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
 
 const debug = isDebugEnabled(window.location.search);
@@ -19,7 +23,9 @@ if (debug) {
     .catch((e) => console.error('[debug] failed to load eruda', e));
 }
 
-new Phaser.Game({
+initRunFromUrl();
+
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   backgroundColor: '#101820',
@@ -31,5 +37,18 @@ new Phaser.Game({
     height: GAME_HEIGHT * RENDER_SCALE,
   },
   input: { activePointers: 1 },
-  scene: [BattleScene],
+  scene: [TitleScene, BattleScene, ResultScene],
 });
+
+if (debug) {
+  /** 今動いている画面から、別の画面に切り替える */
+  const goTo = (key: string, data: object) => {
+    const current = game.scene.getScenes(true)[0];
+    if (current) current.scene.start(key, data);
+    else game.scene.start(key, data);
+  };
+  installDebugMenu({
+    startBoss: () => goTo('Battle', { encounter: 'battle2' }),
+    restartRun: () => goTo('Battle', { encounter: 'battle1' }),
+  });
+}

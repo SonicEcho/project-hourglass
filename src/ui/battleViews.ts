@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { ActionDef, AllyUnit, BattleState, CardInstance, EnemyUnit, ForecastEntry, TargetScope } from '../core';
+import type { ActionDef, AllyUnit, BattleState, CardInstance, EnemyUnit, ForecastEntry, PartState, TargetScope } from '../core';
 import { batonTargets, canUseLink, currentAlly, findUnit } from '../core';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
@@ -18,7 +18,7 @@ export interface ViewModel {
   scope: TargetScope | null;
   selectedCardUid?: number;
   selectedSkillId?: string;
-  selectedTarget?: { kind: 'enemy' | 'ally'; id: string };
+  selectedTarget?: { kind: 'enemy' | 'ally'; id: string; partId?: string };
   batonMode: boolean;
   panel: Panel;
   message: string;
@@ -31,7 +31,7 @@ export interface ViewModel {
 
 export interface ViewHandlers {
   tapBackground(): void;
-  tapEnemy(id: string): void;
+  tapEnemy(id: string, partId?: string): void;
   tapAlly(id: string): void;
   tapCard(uid: number): void;
   tapSkill(id: string): void;
@@ -42,16 +42,6 @@ export interface ViewHandlers {
   cancel(): void;
   detail(title: string, body: string): void;
 }
-
-/** 画面上の各キャラの位置（演出の文字を出す場所） */
-export function unitPosition(s: BattleState, id: string): { x: number; y: number } {
-  const ei = s.enemies.findIndex((e) => e.uid === id);
-  if (ei >= 0) return { x: columnX(ei, s.enemies.length), y: ENEMY_BODY_Y };
-  const ai = s.allies.findIndex((a) => a.uid === id);
-  return { x: columnX(Math.max(0, ai), s.allies.length), y: LAYOUT.allies.y + LAYOUT.allies.h / 2 };
-}
-
-const ENEMY_BODY_Y = LAYOUT.enemies.y + 120;
 
 export function drawBattle(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   // 何もない所をタップしたら選び直し
@@ -107,50 +97,116 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
 }
 
 // ② 敵
+/** 敵1体ごとの配置。部位を持つ敵が1体だけ（ボス）の時は、本体を大きく、部位を下に並べる */
+function enemyGeometry(s: BattleState, i: number) {
+  const n = s.enemies.length;
+  const withParts = n === 1 && s.enemies[0].parts.length > 0;
+  return {
+    cx: columnX(i, n),
+    colW: GAME_WIDTH / n,
+    bodyY: withParts ? LAYOUT.enemies.y + 98 : LAYOUT.enemies.y + 120,
+    radius: withParts ? 52 : 42,
+    withParts,
+  };
+}
+
+const PART_ROW_Y = LAYOUT.enemies.y + LAYOUT.enemies.h - 30;
+const PART_H = 50;
+
+function partX(index: number, count: number): number {
+  const w = (GAME_WIDTH - SIDE_PADDING * 2) / count;
+  return SIDE_PADDING + w * index + w / 2;
+}
+
+/** 画面上の各キャラ（と部位）の位置（演出の文字を出す場所） */
+export function unitPosition(s: BattleState, id: string, partId?: string): { x: number; y: number } {
+  const ei = s.enemies.findIndex((e) => e.uid === id);
+  if (ei >= 0) {
+    const g = enemyGeometry(s, ei);
+    const parts = s.enemies[ei].parts;
+    const pi = partId === undefined ? -1 : parts.findIndex((p) => p.id === partId);
+    if (g.withParts && pi >= 0) return { x: partX(pi, parts.length), y: PART_ROW_Y };
+    return { x: g.cx, y: g.bodyY };
+  }
+  const ai = s.allies.findIndex((a) => a.uid === id);
+  return { x: columnX(Math.max(0, ai), s.allies.length), y: LAYOUT.allies.y + LAYOUT.allies.h / 2 };
+}
+
 function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const s = vm.state;
-  const n = s.enemies.length;
-  const colW = GAME_WIDTH / n;
   s.enemies.forEach((enemy, i) => {
-    const cx = columnX(i, n);
+    const g = enemyGeometry(s, i);
+    const { cx, colW, bodyY, radius } = g;
     const alive = enemy.hp > 0;
     const targetable = alive && vm.interactive && vm.scope === 'enemy';
-    const selected = vm.selectedTarget?.kind === 'enemy' && vm.selectedTarget.id === enemy.uid;
+    const sel = vm.selectedTarget;
+    const selected = sel?.kind === 'enemy' && sel.id === enemy.uid && sel.partId === undefined;
     const color = ENEMY_COLOR[enemy.defId] ?? COLORS.enemy;
 
     // 判明した弱点
     const known = enemy.knownWeaknesses;
     known.forEach((el, k) => {
       const ix = cx + (k - (known.length - 1) / 2) * 30;
-      const iy = LAYOUT.enemies.y + 30;
+      const iy = LAYOUT.enemies.y + 22;
       const icon = scene.add.rectangle(ix, iy, 26, 20, ELEMENT_COLOR[el]).setStrokeStyle(1, 0xffffff);
       const t = addText(scene, ix, iy, ELEMENT_LABEL[el], { size: 11, bold: true, color: '#101820', align: 'center' }).setOrigin(0.5);
       root.add([icon, t]);
     });
     if (known.length > 0) {
-      root.add(addText(scene, cx, LAYOUT.enemies.y + 48, '弱点', { size: 9, color: COLORS.subText }).setOrigin(0.5));
+      root.add(addText(scene, cx, LAYOUT.enemies.y + 40, '弱点', { size: 9, color: COLORS.subText }).setOrigin(0.5));
     }
 
-    const body = scene.add.circle(cx, ENEMY_BODY_Y, 42, color, alive ? 1 : 0.15);
-    body.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
-    root.add(body);
-    if (enemy.down && alive) {
-      root.add(addText(scene, cx, ENEMY_BODY_Y, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
-    }
-    if (!alive) root.add(addText(scene, cx, ENEMY_BODY_Y, '撃破', { size: 14, color: COLORS.dimText }).setOrigin(0.5));
-
-    const nameY = ENEMY_BODY_Y + 58;
-    root.add(addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5));
-    const barW = Math.min(110, colW - 16);
-    addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp);
-    root.add(addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
-
-    // 列全体をタップ領域にする
-    const hit = scene.add.rectangle(cx, LAYOUT.enemies.y + LAYOUT.enemies.h / 2, colW - 4, LAYOUT.enemies.h - 8, 0xffffff, 0.001);
+    // 本体をタップする領域（ボスは部位の列を除く）
+    const hitTop = LAYOUT.enemies.y + 4;
+    const hitBottom = g.withParts ? PART_ROW_Y - PART_H / 2 - 4 : LAYOUT.enemies.y + LAYOUT.enemies.h - 4;
+    const hit = scene.add.rectangle(cx, (hitTop + hitBottom) / 2, colW - 4, hitBottom - hitTop, 0xffffff, 0.001);
     root.add(hit);
     makePressable(hit, {
       onTap: vm.interactive ? () => h.tapEnemy(enemy.uid) : undefined,
       onLongPress: () => h.detail(enemy.name, enemyDetail(enemy)),
+    });
+
+    const body = scene.add.circle(cx, bodyY, radius, color, alive ? 1 : 0.15);
+    body.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
+    root.add(body);
+    if (enemy.down && alive) {
+      root.add(addText(scene, cx, bodyY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
+    }
+    if (!alive) root.add(addText(scene, cx, bodyY, '撃破', { size: 14, color: COLORS.dimText }).setOrigin(0.5));
+
+    const nameY = bodyY + radius + 16;
+    root.add(addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5));
+    const barW = g.withParts ? 220 : Math.min(110, colW - 16);
+    addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp);
+    root.add(addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
+
+    if (g.withParts) drawParts(scene, root, vm, h, enemy);
+  });
+}
+
+function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers, enemy: EnemyUnit): void {
+  const count = enemy.parts.length;
+  const w = (GAME_WIDTH - SIDE_PADDING * 2) / count - 6;
+  enemy.parts.forEach((part, i) => {
+    const x = partX(i, count);
+    const usable = !part.broken && enemy.hp > 0;
+    const targetable = usable && vm.interactive && vm.scope === 'enemy';
+    const sel = vm.selectedTarget;
+    const selected = sel?.kind === 'enemy' && sel.id === enemy.uid && sel.partId === part.id;
+    const rect = scene.add.rectangle(x, PART_ROW_Y, w, PART_H, usable ? COLORS.panel : 0x161d25);
+    rect.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
+    root.add(rect);
+    const left = x - w / 2 + 8;
+    root.add(addText(scene, left, PART_ROW_Y - 19, `部位：${part.name}`, { size: 12, bold: true, color: usable ? COLORS.text : COLORS.dimText }));
+    if (part.broken) {
+      root.add(addText(scene, x + w / 2 - 8, PART_ROW_Y - 18, '破壊', { size: 12, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    } else {
+      root.add(addText(scene, x + w / 2 - 8, PART_ROW_Y - 18, `${part.hp}/${part.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(1, 0));
+    }
+    addBar(scene, root, left, PART_ROW_Y + 12, w - 16, 7, part.hp / part.maxHp, 0xe0a040);
+    makePressable(rect, {
+      onTap: vm.interactive ? () => h.tapEnemy(enemy.uid, part.id) : undefined,
+      onLongPress: () => h.detail(`${enemy.name}の${part.name}`, partDetail(enemy, part)),
     });
   });
 }
@@ -407,7 +463,19 @@ function enemyDetail(e: EnemyUnit): string {
     `弱点 ${weak}`,
     `行動 ${e.actions.map((a) => a.name).join('、')}`,
   ];
+  for (const p of e.parts) lines.push(`部位 ${p.name}：${p.broken ? '破壊' : `${p.hp}/${p.maxHp}`}`);
   if (e.down) lines.push('ダウン中（次の手番は立ち上がりに使う）');
+  return lines.join('\n');
+}
+
+function partDetail(e: EnemyUnit, p: PartState): string {
+  const sealed = e.actions.filter((a) => a.requiresPart === p.id).map((a) => `「${a.name}」`);
+  const lines = [
+    p.broken ? '破壊済み' : `HP ${p.hp}/${p.maxHp}`,
+    'タップして攻撃すると、部位HPに全額、本体HPに半分のダメージ',
+  ];
+  if (sealed.length > 0) lines.push(`破壊すると${sealed.join('、')}が使えなくなる`);
+  lines.push(`破壊すると素材「${p.material}」が手に入る（表示のみ）`);
   return lines.join('\n');
 }
 
