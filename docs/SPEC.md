@@ -4,7 +4,7 @@ Oct 4, 2026 · @Satoru
 
 ## 目的と完成の基準
 
-ゲーム全体の構想は「ゲーム構想 整理ノート」にある。この試作では戦闘だけを作り、\*\*「この戦闘を何度も遊びたくなるか」\*\*を確かめる。物語、日常パート、育成は作らない。
+ゲーム全体の構想は「ゲーム構想 整理ノート」（`docs/CONCEPT.md`）にある。この試作では戦闘だけを作り、\*\*「この戦闘を何度も遊びたくなるか」\*\*を確かめる。物語、日常パート、育成は作らない。
 
 ### 確かめたいこと
 
@@ -292,3 +292,18 @@ GitHub Actions では、テストが1つでも失敗したら公開しない。
 3. Claude Code には「`docs/SPEC.md` の段階1を実装して」のように、段階を指定して依頼する
 
 仕様と違う判断をした時や、仕様に書かれていないことを決めた時は、Claude Code に `docs/SPEC.md` へ追記してもらい、仕様書を常に最新に保つ。
+
+## 実装時の決定事項
+
+仕様に書かれていなかったことや、実装で決めたことを記録する。
+
+### 段階1（土台）
+
+- 公開URLは `https://sonicecho.github.io/project-hourglass/`。Vite の `base` は `/project-hourglass/`
+- GitHub Actions（`.github/workflows/deploy.yml`）は、すべてのブランチへの push と PR でテストとビルドを行う。GitHub Pages への公開は `main` ブランチへの push の時だけ。テストかビルドが失敗したら公開しない
+- リポジトリの Settings → Pages の Source を「GitHub Actions」にしておく必要がある
+- ビルド情報は画面右下に HTML の要素として重ねて表示する（Phaser の画面切り替えに影響されないように）。形式は `YYYY-MM-DD HH:mm JST (コミットの短いID)`。日時は日本時間。`?debug=1` の時は先頭に `[debug]` を付ける
+- eruda は `?debug=1` の時だけ動的 import で読み込み、通常時はダウンロードもしない
+- `tests/` には `src/core` のテストに加え、Phaser に依存しない補助関数（デバッグ判定、ビルド情報の整形）のテストも置く
+- Node.js は 22 を使う
+
