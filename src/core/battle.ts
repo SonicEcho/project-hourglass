@@ -19,6 +19,8 @@ import { random, randomPick, shuffleInPlace } from './rng';
 import type {
   ActionDef,
   Affinity,
+  ComboDef,
+  DamageType,
   AllyUnit,
   BattleSetup,
   BattleState,
@@ -97,6 +99,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     allies,
     enemies,
     links: clone(setup.links ?? []),
+    combos: clone(setup.combos ?? []),
     deck: setup.deck.map((card, uid) => ({ uid, card: clone(card) })),
     hand: [],
     discard: [],
@@ -288,6 +291,8 @@ function updateOutcome(s: BattleState): void {
 interface Resolved {
   def: ActionDef;
   card?: CardInstance;
+  /** コンボで使うカード */
+  comboCards?: CardInstance[];
   skill?: SkillDef;
   link?: LinkDef;
 }
@@ -314,9 +319,50 @@ function resolveAction(s: BattleState, actor: AllyUnit, action: PlayerAction): R
       if (!link) return 'unknown link';
       return { def: link, link };
     }
+    case 'combo': {
+      const combo = s.combos.find((c) => c.id === action.comboId);
+      if (!combo) return 'unknown combo';
+      const cards = comboCards(s, combo);
+      if (!cards) return 'combo cards are not in hand';
+      return { def: combo, comboCards: cards };
+    }
     case 'baton':
       return 'baton is not a regular action';
   }
+}
+
+// ---- コンボ ----
+
+/** 手札からコンボに使うカードを選ぶ。そろっていなければ null */
+export function comboCards(s: BattleState, combo: ComboDef): CardInstance[] | null {
+  const rest = [...s.hand];
+  const picked: CardInstance[] = [];
+  for (const id of combo.cards) {
+    const i = rest.findIndex((c) => c.card.id === id);
+    if (i < 0) return null;
+    picked.push(rest[i]);
+    rest.splice(i, 1);
+  }
+  return picked;
+}
+
+/** 手札で使えるコンボ */
+export function availableCombos(s: BattleState): ComboDef[] {
+  return s.combos.filter((c) => comboCards(s, c) !== null);
+}
+
+/** コンボに必要なカードのうち、手札にそろっている枚数 */
+export function comboProgress(s: BattleState, combo: ComboDef): { have: number; need: number } {
+  const rest = [...s.hand];
+  let have = 0;
+  for (const id of combo.cards) {
+    const i = rest.findIndex((c) => c.card.id === id);
+    if (i >= 0) {
+      have++;
+      rest.splice(i, 1);
+    }
+  }
+  return { have, need: combo.cards.length };
 }
 
 function targetError(s: BattleState, def: ActionDef, target: TargetRef | undefined): string | null {
@@ -401,9 +447,11 @@ export function applyAction(state: BattleState, action: PlayerAction): BattleSta
   }
 
   const r = resolveAction(s, actor, action) as Resolved;
-  if (r.card) {
-    s.hand = s.hand.filter((c) => c.uid !== r.card!.uid);
-    s.discard.push(r.card);
+  const used = r.card ? [r.card] : (r.comboCards ?? []);
+  if (used.length > 0) {
+    const ids = new Set(used.map((c) => c.uid));
+    s.hand = s.hand.filter((c) => !ids.has(c.uid));
+    s.discard.push(...used);
   }
   if (r.skill) actor.mp -= r.skill.mp;
 
@@ -527,24 +575,47 @@ function revealWeakness(s: BattleState, enemy: EnemyUnit, element: Element): voi
   s.log.push({ type: 'weaknessFound', enemyId: enemy.uid, element });
 }
 
-function damageEnemy(
-  ctx: EffectContext,
+type DamageEffect = Extract<Effect, { kind: 'damage' }>;
+
+/**
+ * 対象に当てる属性と相性を決める。bestOf があれば弱点 → 耐性でない属性の順に選ぶ。
+ * weaknesses を渡すと、その弱点だけを知っているものとして決める（プレビュー用）
+ */
+export function effectiveHit(
   enemy: EnemyUnit,
-  effect: Extract<Effect, { kind: 'damage' }>,
-  partId: string | undefined,
-): void {
+  effect: DamageEffect,
+  weaknesses: readonly Element[] = enemy.weaknesses,
+): { type: DamageType; affinity: Affinity } {
+  let type: DamageType = effect.type;
+  if (effect.bestOf && effect.bestOf.length > 0) {
+    type =
+      effect.bestOf.find((el) => weaknesses.includes(el)) ??
+      effect.bestOf.find((el) => !enemy.resistances.includes(el)) ??
+      effect.bestOf[0];
+  }
+  let affinity: Affinity = affinityOf(enemy, type);
+  if (affinity === 'weak' && type !== 'magic' && !weaknesses.includes(type)) affinity = 'normal';
+  if (affinity === 'resist' && effect.ignoreResist) affinity = 'normal';
+  return { type, affinity };
+}
+
+function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect, partId: string | undefined): void {
   const { s } = ctx;
-  const affinity = affinityOf(enemy, effect.type);
+  // 連続攻撃の途中で倒れた敵には当てない
+  if (!isAlive(enemy)) return;
+  const { type, affinity } = effectiveHit(enemy, effect);
   const amount = calcDamage({
     power: effect.power,
-    attack: attackStatOf(ctx.attacker, effect.type),
+    attack: attackStatOf(ctx.attacker, type),
     defense: enemy.def,
     random: randomFactor(random(s)),
     affinity,
     multiplier: ctx.multiplier * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
   });
 
-  const part = partId !== undefined ? enemy.parts.find((p) => p.id === partId) : undefined;
+  const found = partId !== undefined ? enemy.parts.find((p) => p.id === partId) : undefined;
+  // 連続攻撃の途中で部位が壊れたら、残りは本体に当てる
+  const part = found && !found.broken ? found : undefined;
   let body = amount;
   let partAmount: number | undefined;
   if (part) {
@@ -565,8 +636,8 @@ function damageEnemy(
     hpAfter: enemy.hp,
   });
 
-  if (affinity === 'weak' && effect.type !== 'magic') {
-    revealWeakness(s, enemy, effect.type);
+  if (affinity === 'weak' && type !== 'magic') {
+    revealWeakness(s, enemy, type);
     if (isAlive(enemy) && !enemy.down) {
       enemy.down = true;
       ctx.downed = true;
@@ -642,12 +713,11 @@ export function previewAction(s: BattleState, action: PlayerAction): ActionPrevi
       const enemies =
         r.def.target === 'enemy' && target?.kind === 'enemy' ? [findEnemy(s, target.id)!] : livingEnemies(s);
       for (const enemy of enemies) {
-        let affinity = affinityOf(enemy, effect.type);
-        if (affinity === 'weak' && !enemy.knownWeaknesses.includes(effect.type as Element)) affinity = 'normal';
+        const { type, affinity } = effectiveHit(enemy, effect, enemy.knownWeaknesses);
         const calc = (rand: number) =>
           calcDamage({
             power: effect.power,
-            attack: attackStatOf(attacker, effect.type),
+            attack: attackStatOf(attacker, type),
             defense: enemy.def,
             random: rand,
             affinity,

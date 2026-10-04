@@ -8,7 +8,8 @@ export const CROSS_DRIVE: LinkDef = {
   weight: 1.5,
   target: 'enemies',
   effects: [
-    { kind: 'damage', type: 'physical', power: 50 },
+    // 連携技は耐性を無視する
+    { kind: 'damage', type: 'physical', power: 50, ignoreResist: true },
     { kind: 'draw', count: 2 },
   ],
 };

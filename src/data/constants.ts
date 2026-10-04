@@ -47,3 +47,14 @@ export const GUARD: ActionDef = {
   target: 'self',
   effects: [{ kind: 'guard' }],
 };
+
+/**
+ * 重さの見せ方。重さが上限以下なら、その名前で表示する（上から順に判定）。
+ * 重さ = 行動のあと、次の手番が来るまでの長さ。大きいほど次の手番が遅い
+ */
+export const WEIGHT_LABELS: { max: number; label: string }[] = [
+  { max: 0.6, label: '軽い' },
+  { max: 1.0, label: '普通' },
+  { max: 1.3, label: '重い' },
+  { max: Infinity, label: '超重い' },
+];

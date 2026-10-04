@@ -3,5 +3,6 @@ export * from './skills';
 export * from './characters';
 export * from './cards';
 export * from './links';
+export * from './combos';
 export * from './enemies';
 export * from './encounters';

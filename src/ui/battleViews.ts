@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
-import type { ActionDef, AllyUnit, BattleState, CardInstance, EnemyUnit, ForecastEntry, PartState, TargetScope } from '../core';
-import { batonTargets, canUseLink, currentAlly, findUnit } from '../core';
+import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, ForecastEntry, LinkDef, PartState, TargetScope } from '../core';
+import { BASIC_ATTACK, CARDS, GUARD, WEIGHT_LABELS } from '../data';
+import { weightLabel } from './labels';
+import { availableCombos, batonTargets, canUseLink, comboCards, comboProgress, ctDelay, currentAlly, findUnit } from '../core';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { columnX, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
@@ -18,6 +20,9 @@ export interface ViewModel {
   scope: TargetScope | null;
   selectedCardUid?: number;
   selectedSkillId?: string;
+  selectedComboId?: string;
+  /** 選んだコンボの材料のカード */
+  comboCardUids: number[];
   selectedTarget?: { kind: 'enemy' | 'ally'; id: string; partId?: string };
   batonMode: boolean;
   panel: Panel;
@@ -34,6 +39,7 @@ export interface ViewHandlers {
   tapEnemy(id: string, partId?: string): void;
   tapAlly(id: string): void;
   tapCard(uid: number): void;
+  tapCombo(id: string): void;
   tapSkill(id: string): void;
   tapBasic(kind: 'attack' | 'guard'): void;
   tapDiscard(uid: number): void;
@@ -94,6 +100,20 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
       onLongPress: () => h.detail(unit.name, `${i === 0 && isCurrent ? '今の行動者' : `${i + 1}番目の手番`}\n${unitSummary(unit)}`),
     });
   });
+
+  // 連携技が使える時は、2人の手番を金色の線でつなぐ
+  const s = vm.state;
+  const link = vm.interactive ? s.links.find((l) => canUseLink(s, l.id)) : undefined;
+  if (link && s.turn) {
+    const partner = link.members.find((id) => id !== s.turn!.actorId)!;
+    const j = vm.forecast.findIndex((e, k) => k > 0 && e.id === partner);
+    if (j > 0 && j < n) {
+      const x0 = SIDE_PADDING + slot / 2;
+      const x1 = SIDE_PADDING + slot * j + slot / 2;
+      const ly = y + height - 3;
+      root.add(scene.add.rectangle((x0 + x1) / 2, ly, x1 - x0, 3, COLORS.accent));
+    }
+  }
 }
 
 // ② 敵
@@ -257,20 +277,67 @@ function drawAllies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
 }
 
 // ④ 手札
+const COMBO_STRIP_H = 26;
+
 function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const { y, h: height } = LAYOUT.hand;
   const s = vm.state;
   const hand = s.hand;
   root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 10, color: COLORS.subText }));
+  drawComboStrip(scene, root, vm, h, y + 16);
+
+  // 使えるコンボの材料になっているカード
+  const comboUids = new Set(availableCombos(s).flatMap((c) => (comboCards(s, c) ?? []).map((x) => x.uid)));
   const n = Math.max(5, hand.length);
   const gap = 4;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-  const cardH = height - 26;
+  const top = y + 18 + COMBO_STRIP_H;
+  const cardH = height - (top - y) - 2;
+  const actor = currentAlly(s);
   hand.forEach((card, i) => {
-    const selected = vm.selectedCardUid === card.uid;
     const x = SIDE_PADDING + i * (w + gap) + w / 2;
-    const cy = y + 18 + cardH / 2;
-    drawCard(scene, root, card, x, cy, w, cardH, selected, vm.interactive, h);
+    drawCard(scene, root, card, x, top + cardH / 2, w, cardH, {
+      selected: vm.selectedCardUid === card.uid || vm.comboCardUids.includes(card.uid),
+      inCombo: comboUids.has(card.uid),
+      interactive: vm.interactive,
+      actor,
+      h,
+    });
+  });
+}
+
+/** 手札の上の帯：使えるコンボと、あと1枚でそろうコンボ */
+function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers, y: number): void {
+  const s = vm.state;
+  const entries = s.combos
+    .map((c) => ({ combo: c, ...comboProgress(s, c) }))
+    .filter((e) => e.have === e.need || (e.have > 0 && e.need - e.have === 1))
+    .sort((a, b) => b.have / b.need - a.have / a.need)
+    .slice(0, 3);
+  const cy = y + COMBO_STRIP_H / 2;
+  // 帯全体の長押しでコンボの一覧
+  const strip = scene.add.rectangle(GAME_WIDTH / 2, cy, GAME_WIDTH - SIDE_PADDING * 2, COMBO_STRIP_H, 0x0b1118).setStrokeStyle(1, 0x2a3b4e);
+  root.add(strip);
+  makePressable(strip, { onLongPress: () => h.detail('コンボ一覧', comboListText(s)) });
+  if (entries.length === 0) {
+    root.add(addText(scene, GAME_WIDTH / 2, cy, 'コンボ：カードの組み合わせで大技（ここを長押しで一覧）', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
+    return;
+  }
+  const gap = 4;
+  const w = (GAME_WIDTH - SIDE_PADDING * 2 - 4 - gap * 2) / 3;
+  entries.forEach((e, i) => {
+    const ready = e.have === e.need;
+    const x = SIDE_PADDING + 2 + i * (w + gap) + w / 2;
+    const selected = vm.selectedComboId === e.combo.id;
+    const chip = scene.add.rectangle(x, cy, w, COMBO_STRIP_H - 4, ready ? 0x5a4a10 : COLORS.panel);
+    chip.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : ready ? COLORS.accent : COLORS.border);
+    const label = ready ? `★${e.combo.name}` : `${e.combo.name} あと1枚`;
+    root.add(chip);
+    root.add(addText(scene, x, cy, label, { size: 10, bold: ready, color: ready ? COLORS.accentText : COLORS.subText, align: 'center', wrap: w - 4 }).setOrigin(0.5));
+    makePressable(chip, {
+      onTap: ready && vm.interactive ? () => h.tapCombo(e.combo.id) : undefined,
+      onLongPress: () => h.detail(e.combo.name, comboDetail(e.combo, currentAlly(s))),
+    });
   });
 }
 
@@ -281,6 +348,25 @@ function cardColor(def: ActionDef): number {
   return 0xa98be0;
 }
 
+/** 重さの目盛り（4段階） */
+function drawWeightGauge(scene: Phaser.Scene, root: Phaser.GameObjects.Container, x: number, y: number, weight: number): void {
+  const level = WEIGHT_LABELS.findIndex((w) => weight <= w.max + 1e-9);
+  const n = WEIGHT_LABELS.length;
+  const pip = 6;
+  for (let i = 0; i < n; i++) {
+    const px = x + (i - (n - 1) / 2) * (pip + 2);
+    root.add(scene.add.rectangle(px, y, pip, 4, i <= level ? 0xffb347 : 0x2a3b4e));
+  }
+}
+
+interface CardOptions {
+  selected: boolean;
+  inCombo: boolean;
+  interactive: boolean;
+  actor?: AllyUnit;
+  h: ViewHandlers;
+}
+
 function drawCard(
   scene: Phaser.Scene,
   root: Phaser.GameObjects.Container,
@@ -289,25 +375,59 @@ function drawCard(
   cy: number,
   w: number,
   hgt: number,
-  selected: boolean,
-  interactive: boolean,
-  h: ViewHandlers,
+  o: CardOptions,
 ): void {
   const def = card.card;
   const color = cardColor(def);
-  const rect = scene.add.rectangle(x, cy, w, hgt, COLORS.panel).setStrokeStyle(selected ? 4 : 2, selected ? COLORS.select : color);
+  const rect = scene.add.rectangle(x, cy, w, hgt, COLORS.panel).setStrokeStyle(o.selected ? 4 : 2, o.selected ? COLORS.select : color);
   const band = scene.add.rectangle(x, cy - hgt / 2 + 12, w - 4, 20, color, 0.9);
   const type = mainDamageType(def);
   const typeLabel = type ? ELEMENT_LABEL[type] : def.effects.some((e) => e.kind === 'heal') ? '回復' : '補助';
   root.add([rect, band]);
   root.add(addText(scene, x, cy - hgt / 2 + 12, typeLabel, { size: 11, bold: true, color: '#101820' }).setOrigin(0.5));
-  root.add(addText(scene, x, cy - 8, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4 }).setOrigin(0.5));
-  root.add(addText(scene, x, cy + hgt / 2 - 14, `重さ ${formatWeight(def.weight)}`, { size: 10, color: COLORS.subText }).setOrigin(0.5));
+  if (o.inCombo) {
+    const bx = x + w / 2 - 8;
+    const by = cy - hgt / 2 + 32;
+    root.add(scene.add.circle(bx, by, 7, COLORS.accent));
+    root.add(addText(scene, bx, by, 'C', { size: 9, bold: true, color: '#101820' }).setOrigin(0.5));
+  }
+  root.add(addText(scene, x, cy - 6, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4 }).setOrigin(0.5));
+  root.add(addText(scene, x, cy + hgt / 2 - 24, weightLabel(def.weight), { size: 11, color: COLORS.subText }).setOrigin(0.5));
+  drawWeightGauge(scene, root, x, cy + hgt / 2 - 10, def.weight);
   makePressable(rect, {
-    onTap: interactive ? () => h.tapCard(card.uid) : undefined,
-    onLongPress: () => h.detail(def.name, `カード（MP不要）\n${describeAction(def)}\n重さ ${formatWeight(def.weight)}`),
+    onTap: o.interactive ? () => o.h.tapCard(card.uid) : undefined,
+    onLongPress: () => o.h.detail(def.name, `カード（MP不要）\n${describeAction(def)}\n\n${weightHelp(def.weight, o.actor)}`),
   });
 }
+
+/** 重さの説明（長押しの詳細に出す） */
+export function weightHelp(weight: number, actor?: AllyUnit): string {
+  const lines = [
+    `重さ：${weightLabel(weight)}（${formatWeight(weight)}）`,
+    '重さは、行動してから次の手番が来るまでの長さ。重いほど次の手番が遅くなる。',
+  ];
+  if (actor) lines.push(`${actor.name}が使うと、待ち時間 +${ctDelay(actor.spd, weight)}（速いキャラほど短い）`);
+  lines.push('対象を選ぶと、行動順に自分の次の位置が「次」で出る。');
+  return lines.join('\n');
+}
+
+function comboDetail(combo: ComboDef, actor?: AllyUnit): string {
+  const names = combo.cards.map((id) => CARD_NAME[id] ?? id).join(' ＋ ');
+  return [`材料：${names}`, describeAction(combo), '材料のカードはすべて捨て札へ', '', weightHelp(combo.weight, actor)].join('\n');
+}
+
+function comboListText(s: BattleState): string {
+  return [
+    '手札に材料のカードがそろうと、まとめて使える大技。ドロー・すりかえ・シャッフルで材料を集めよう。',
+    '',
+    ...s.combos.map((c) => {
+      const p = comboProgress(s, c);
+      return `${c.name}（${p.have}/${p.need}）\n　${c.cards.map((id) => CARD_NAME[id] ?? id).join(' ＋ ')}\n　${describeAction(c)}`;
+    }),
+  ].join('\n');
+}
+
+const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS).map((c) => [c.id, c.name]));
 
 function panelBackground(scene: Phaser.Scene, root: Phaser.GameObjects.Container, title: string): void {
   const { y, h: height } = LAYOUT.hand;
@@ -325,7 +445,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
     const enough = actor.mp >= skill.mp;
     const selected = vm.selectedSkillId === skill.id;
     const type = mainDamageType(skill);
-    const label = `${skill.name}　MP${skill.mp}　${type ? ELEMENT_LABEL[type] : ''}　重さ${formatWeight(skill.weight)}`;
+    const label = `${skill.name}　MP${skill.mp}　${type ? ELEMENT_LABEL[type] : ''}　${weightLabel(skill.weight)}`;
     addButton(
       scene,
       root,
@@ -336,7 +456,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
       label,
       {
         onTap: () => h.tapSkill(skill.id),
-        onLongPress: () => h.detail(skill.name, `MP ${skill.mp}\n${describeAction(skill)}\n重さ ${formatWeight(skill.weight)}`),
+        onLongPress: () => h.detail(skill.name, `MP ${skill.mp}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
       },
       { enabled: enough && vm.interactive, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: 13 },
     );
@@ -347,10 +467,12 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   panelBackground(scene, root, 'その他');
   const { y } = LAYOUT.hand;
   const rowH = 50;
-  const items: { kind: 'attack' | 'guard'; label: string; detail: string }[] = [
-    { kind: 'attack', label: '通常攻撃　物理・威力20　重さ1.0', detail: '敵単体に物理・威力20\n重さ 1.0' },
-    { kind: 'guard', label: '防御　重さ0.6', detail: '次の自分の手番まで受けるダメージ半減\n重さ 0.6' },
-  ];
+  const actor = currentAlly(vm.state);
+  const items: { kind: 'attack' | 'guard'; label: string; detail: string }[] = [BASIC_ATTACK, GUARD].map((def) => ({
+    kind: def.id === 'guard' ? 'guard' : 'attack',
+    label: `${def.name}　${describeAction(def)}　${weightLabel(def.weight)}`,
+    detail: `${describeAction(def)}\n\n${weightHelp(def.weight, actor)}`,
+  }));
   items.forEach((item, i) => {
     addButton(
       scene,
@@ -361,7 +483,7 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
       rowH,
       item.label,
       { onTap: () => h.tapBasic(item.kind), onLongPress: () => h.detail(item.label.split('　')[0], item.detail) },
-      { enabled: vm.interactive, size: 13 },
+      { enabled: vm.interactive, size: 12 },
     );
   });
 }
@@ -398,6 +520,7 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
   const s = vm.state;
   const isAllyTurn = !!currentAlly(s) && vm.interactive;
   const batonOk = isAllyTurn && batonTargets(s).length > 0;
+  const link = s.links[0];
   const linkOk = isAllyTurn && s.links.some((l) => canUseLink(s, l.id));
   const n = 4;
   const gap = 6;
@@ -405,7 +528,7 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
   const items: { kind: 'skills' | 'baton' | 'link' | 'other'; label: string; enabled: boolean; lit?: boolean; active: boolean }[] = [
     { kind: 'skills', label: '魔法・\nスキル', enabled: isAllyTurn, active: vm.panel === 'skills' },
     { kind: 'baton', label: 'バトン\nタッチ', enabled: batonOk, lit: batonOk, active: vm.batonMode },
-    { kind: 'link', label: '連携技', enabled: linkOk, lit: linkOk, active: false },
+    { kind: 'link', label: linkOk && link ? `連携技\n${link.name}` : '連携技', enabled: linkOk, lit: linkOk, active: false },
     { kind: 'other', label: 'その他', enabled: isAllyTurn, active: vm.panel === 'other' },
   ];
   items.forEach((item, i) => {
@@ -418,18 +541,34 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
       w,
       height - 20,
       item.label,
-      { onTap: () => h.tapCommand(item.kind) },
+      {
+        onTap: () => h.tapCommand(item.kind),
+        // 連携技は光っていなくても長押しで説明が見られる
+        onLongPress: item.kind === 'link' && link ? () => h.detail(`連携技：${link.name}`, linkDetail(s, link)) : undefined,
+      },
       {
         enabled: item.enabled,
         fill: item.lit ? 0x5a4a10 : COLORS.panelLight,
         stroke: item.active ? COLORS.select : item.lit ? COLORS.accent : COLORS.border,
         strokeWidth: item.active || item.lit ? 3 : 1,
         textColor: item.lit ? COLORS.accentText : COLORS.text,
-        size: 14,
+        size: item.kind === 'link' && item.lit ? 12 : 14,
         bold: true,
       },
     );
   });
+}
+
+function linkDetail(s: BattleState, link: LinkDef): string {
+  const [a, b] = link.members.map((id) => findUnit(s, id)?.name ?? id);
+  return [
+    `${a}と${b}の2人技`,
+    describeAction(link),
+    '',
+    `使える条件：${a}か${b}の手番で、行動順の表示でもう一人の手番が敵を挟まずに続いていること（仲間が間に入るのはよい）。`,
+    '条件を満たすとボタンが光り、行動順の2人が金色の線でつながる。',
+    `使うと2人の手番をまとめて使い、2人とも重さ「${weightLabel(link.weight)}」の待ち時間が入る。ワンモア中は使えない。`,
+  ].join('\n');
 }
 
 function drawFooter(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {

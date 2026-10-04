@@ -12,8 +12,13 @@ const SCOPE_LABEL: Record<TargetScope, string> = {
 export function describeEffect(effect: Effect, scope: TargetScope): string {
   switch (effect.kind) {
     case 'damage': {
-      const base = `${SCOPE_LABEL[scope]}に${ELEMENT_LABEL[effect.type]}・威力${effect.power}`;
-      return effect.partMultiplier && effect.partMultiplier !== 1 ? `${base}。部位へのダメージ${effect.partMultiplier}倍` : base;
+      const element = effect.bestOf
+        ? `一番効く属性（${effect.bestOf.map((e) => ELEMENT_LABEL[e]).join('・')}から自動で選ぶ）`
+        : ELEMENT_LABEL[effect.type];
+      let text = `${SCOPE_LABEL[scope]}に${element}・威力${effect.power}`;
+      if (effect.partMultiplier && effect.partMultiplier !== 1) text += `。部位へのダメージ${effect.partMultiplier}倍`;
+      if (effect.ignoreResist) text += '（耐性を無視）';
+      return text;
     }
     case 'heal':
       return `${scope === 'self' ? '自分' : SCOPE_LABEL[scope]}を回復・威力${effect.power}`;
@@ -30,7 +35,16 @@ export function describeEffect(effect: Effect, scope: TargetScope): string {
 
 export function describeAction(def: ActionDef): string {
   if (def.effects.length === 0) return '何もしない代わりに、次の手番が早く来る';
-  return def.effects.map((e) => describeEffect(e, def.target)).join('。その後、');
+  // 同じ効果が続く時（連続攻撃）は「×回数」でまとめる
+  const parts: string[] = [];
+  for (const e of def.effects) {
+    const text = describeEffect(e, def.target);
+    const last = parts[parts.length - 1];
+    const m = last?.match(/^(.*?)(?: ×(\d+)回)?$/);
+    if (m && m[1] === text) parts[parts.length - 1] = `${text} ×${Number(m[2] ?? 1) + 1}回`;
+    else parts.push(text);
+  }
+  return parts.join('。その後、');
 }
 
 /** カードやスキルの主な属性（色分け用） */
