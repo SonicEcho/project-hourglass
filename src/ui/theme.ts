@@ -1,0 +1,65 @@
+import type { DamageType } from '../core';
+
+/**
+ * 描画の倍率。高解像度のスマホで文字がにじまないよう、キャンバスを端末の画素密度に合わせて大きく作り、
+ * カメラのズームで 390×844 の座標系のまま描く。
+ */
+export const RENDER_SCALE = Math.min(3, Math.max(1, Math.round(window.devicePixelRatio || 1)));
+
+export const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif';
+
+export const COLORS = {
+  bg: 0x101820,
+  panel: 0x1d2a38,
+  panelLight: 0x2a3b4e,
+  border: 0x3e5670,
+  text: '#ffffff',
+  subText: '#9fb3c8',
+  dimText: '#5d7186',
+  accent: 0xffd84a,
+  accentText: '#ffd84a',
+  select: 0xff5a5a,
+  hp: 0x4cd07d,
+  hpLow: 0xff6b4a,
+  mp: 0x5aa8ff,
+  barBg: 0x0b1118,
+  disabled: 0x26323f,
+  ally: 0x3f7fbf,
+  enemy: 0xbf4f4f,
+  heal: '#6dff9e',
+  damage: '#ffffff',
+  allyDamage: '#ff8a7a',
+  weak: '#ffd84a',
+};
+
+export const ELEMENT_LABEL: Record<DamageType, string> = {
+  physical: '物理',
+  fire: '火',
+  ice: '氷',
+  thunder: '雷',
+  magic: '魔法',
+};
+
+export const ELEMENT_COLOR: Record<DamageType, number> = {
+  physical: 0x9aa5b1,
+  fire: 0xff6b4a,
+  ice: 0x6bc8ff,
+  thunder: 0xffc83a,
+  magic: 0xc58bff,
+};
+
+/** 仮素材の敵の色 */
+export const ENEMY_COLOR: Record<string, number> = {
+  slime: 0x5ccf6a,
+  frostBat: 0x7fa8ff,
+  armorDog: 0xa08060,
+  distortedBeast: 0x9a5cd0,
+};
+
+export const ALLY_COLOR: Record<string, number> = {
+  hero: 0x4a90e2,
+  akari: 0xe27a9a,
+  mio: 0xf0b040,
+};
+
+export const toCss = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
