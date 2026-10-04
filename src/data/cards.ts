@@ -16,7 +16,8 @@ export const CARDS = {
     target: 'enemy',
     effects: [{ kind: 'damage', type: 'physical', power: 30, partMultiplier: 2 }],
   },
-  draw: { id: 'draw', name: 'ドロー', weight: 0.5, target: 'self', effects: [{ kind: 'draw', count: 2 }] },
+  // ドローは使っても手札を入れ替えない（引いたカードを次の手番に持ち越せる）
+  draw: { id: 'draw', name: 'ドロー', weight: 0.5, target: 'self', keepsHand: true, effects: [{ kind: 'draw', count: 2 }] },
 } satisfies Record<string, CardDef>;
 
 /** フォルダ（パーティ共通の山札）20枚の構成 */

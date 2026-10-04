@@ -116,7 +116,11 @@ export class BattleScene extends Phaser.Scene {
         logEvents(next.log.slice(s.log.length));
         const actor = findUnit(next, next.turn!.actorId)!;
         if (actor.side === 'ally') {
-          this.message = `${actor.name}の番`;
+          const events = next.log.slice(s.log.length);
+          const swapped = events.some((e) => e.type === 'discardHand');
+          const drew = events.find((e) => e.type === 'draw');
+          const handNote = swapped ? '（手札を入れ替えた）' : drew && drew.type === 'draw' && s.hand.length > 0 ? `（手札を残して+${drew.cardUids.length}枚）` : '';
+          this.message = `${actor.name}の番${handNote}`;
           this.render();
           await this.wait(FX.turnStart);
         }

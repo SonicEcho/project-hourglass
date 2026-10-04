@@ -61,7 +61,10 @@ export interface SkillDef extends ActionDef {
   mp: number;
 }
 
-export type CardDef = ActionDef;
+export interface CardDef extends ActionDef {
+  /** 使っても次の手番で手札を入れ替えない（ドローなど手札を増やすカード） */
+  keepsHand?: boolean;
+}
 
 /** 2人の連携技 */
 /**
@@ -250,6 +253,8 @@ export interface BattleState {
   /** 今の手番。手番と手番の間は null */
   turn: TurnState | null;
   outcome: Outcome;
+  /** この手番の流れでカード（コンボ含む）を使った。次の味方の手番の始めに手札を入れ替える */
+  handRefreshPending: boolean;
   log: LogEvent[];
 }
 

@@ -13,8 +13,12 @@ export const STAND_UP_WEIGHT = 1.0;
 /** 行動順に表示する手番の数 */
 export const FORECAST_LENGTH = 8;
 
-/** 手番の開始時に補充する手札の枚数 */
+/** 手札を入れ替える時に引く枚数（手札が少ない時もこの枚数まで補充する） */
 export const HAND_SIZE = 5;
+/** カードを使わずに手札を残した時、手番の始めに引く枚数 */
+export const HOLD_DRAW = 1;
+/** 手札を残して引き足す時の上限 */
+export const HAND_MAX = 7;
 
 /** ダメージの乱数幅 */
 export const RANDOM_MIN = 0.9;

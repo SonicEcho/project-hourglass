@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, ForecastEntry, LinkDef, PartState, TargetScope } from '../core';
-import { BASIC_ATTACK, CARDS, GUARD, WEIGHT_LABELS } from '../data';
+import { BASIC_ATTACK, CARDS, GUARD, HAND_MAX, HOLD_DRAW, WEIGHT_LABELS } from '../data';
 import { weightLabel } from './labels';
 import { availableCombos, batonTargets, canUseLink, comboCards, comboProgress, ctDelay, currentAlly, findUnit } from '../core';
 import { GAME_WIDTH } from '../config';
@@ -284,6 +284,15 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   const s = vm.state;
   const hand = s.hand;
   root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 10, color: COLORS.subText }));
+  // 次の手番で手札がどうなるか
+  const next = s.handRefreshPending ? '次の手番：手札を入れ替え' : `次の手番：手札を残して+${HOLD_DRAW}枚（最大${HAND_MAX}）`;
+  const nextText = addText(scene, GAME_WIDTH - SIDE_PADDING, y + 2, next, {
+    size: 10,
+    bold: s.handRefreshPending,
+    color: s.handRefreshPending ? COLORS.accentText : COLORS.subText,
+  }).setOrigin(1, 0);
+  root.add(nextText);
+  makePressable(nextText, { onLongPress: () => h.detail('手札のルール', HAND_RULE_TEXT) });
   drawComboStrip(scene, root, vm, h, y + 16);
 
   // 使えるコンボの材料になっているカード
@@ -396,7 +405,13 @@ function drawCard(
   drawWeightGauge(scene, root, x, cy + hgt / 2 - 10, def.weight);
   makePressable(rect, {
     onTap: o.interactive ? () => o.h.tapCard(card.uid) : undefined,
-    onLongPress: () => o.h.detail(def.name, `カード（MP不要）\n${describeAction(def)}\n\n${weightHelp(def.weight, o.actor)}`),
+    onLongPress: () =>
+      o.h.detail(
+        def.name,
+        `カード（MP不要）\n${describeAction(def)}\n${
+          def.keepsHand ? '使っても手札は入れ替わらない' : '使うと、次の手番で手札がすべて入れ替わる'
+        }\n\n${weightHelp(def.weight, o.actor)}`,
+      ),
   });
 }
 
@@ -418,7 +433,7 @@ function comboDetail(combo: ComboDef, actor?: AllyUnit): string {
 
 function comboListText(s: BattleState): string {
   return [
-    '手札に材料のカードがそろうと、まとめて使える大技。ドロー・すりかえ・シャッフルで材料を集めよう。',
+    '手札に材料のカードがそろうと、まとめて使える大技。カードを使わずに手札を残すと1枚ずつ増えるので、材料がそろうのを待つこともできる。ドロー・すりかえ・シャッフルでも集められる。',
     '',
     ...s.combos.map((c) => {
       const p = comboProgress(s, c);
@@ -426,6 +441,15 @@ function comboListText(s: BattleState): string {
     }),
   ].join('\n');
 }
+
+const HAND_RULE_TEXT = [
+  'カード（コンボ含む）を使うと、次の味方の手番の始めに手札をすべて捨てて、新しく5枚引く。',
+  `カードを使わずに魔法・スキルや通常攻撃だけで済ませると、手札を残したまま${HOLD_DRAW}枚引く（最大${HAND_MAX}枚）。`,
+  'ワンモアやバトンタッチで手番が続く間は、同じ手札を使い続けられる。',
+  'ドローは使っても手札が入れ替わらない。',
+  '',
+  '今のカードを使うか、残してコンボを待つかを選ぼう。',
+].join('\n');
 
 const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS).map((c) => [c.id, c.name]));
 

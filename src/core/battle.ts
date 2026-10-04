@@ -3,6 +3,9 @@ import {
   BATON_MULTIPLIER,
   FORECAST_ACTION_WEIGHT,
   FORECAST_LENGTH,
+  HAND_MAX,
+  HAND_SIZE,
+  HOLD_DRAW,
   GUARD,
   GUARD_DAMAGE_MULTIPLIER,
   INITIAL_ACTION_WEIGHT,
@@ -105,6 +108,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     discard: [],
     turn: null,
     outcome: 'ongoing',
+    handRefreshPending: false,
     log: [{ type: 'battleStart', seed: setup.seed }],
   };
   shuffleInPlace(s, s.deck);
@@ -205,6 +209,7 @@ export function startNextTurn(state: BattleState): BattleState {
   const next = pickNext(units.map((u) => ({ id: u.uid, side: u.side, spd: u.spd, ct: u.ct })));
   if (!next) throw new Error('no one can act');
   beginTurn(s, next.id, []);
+  if (next.side === 'ally') startHand(s);
   return s;
 }
 
@@ -213,7 +218,25 @@ function beginTurn(s: BattleState, actorId: string, batonChain: string[]): void 
   s.turn = { actorId, oneMoreActive: false, oneMoreUsed: false, batonChain };
   unit.guarding = false;
   s.log.push({ type: 'turnStart', actorId, ct: unit.ct });
-  if (unit.side === 'ally') refillHand(s);
+}
+
+/**
+ * 味方の手番の流れの始めに手札を整える（ワンモアやバトンで続く間はそのまま）。
+ * - 前の流れでカードを使った：手札をすべて捨て、5枚引き直す
+ * - 使わなかった：手札を残し、1枚引く（上限 HAND_MAX 枚）
+ */
+function startHand(s: BattleState): void {
+  if (s.handRefreshPending) {
+    discardHand(s);
+    s.handRefreshPending = false;
+    refillHand(s);
+    return;
+  }
+  if (s.hand.length >= HAND_SIZE) {
+    if (s.hand.length < HAND_MAX) drawCards(s, HOLD_DRAW);
+    return;
+  }
+  refillHand(s);
 }
 
 /** 敵の手番を実行する。ダウン中なら立ち上がりに使い、行動しない */
@@ -452,6 +475,7 @@ export function applyAction(state: BattleState, action: PlayerAction): BattleSta
     const ids = new Set(used.map((c) => c.uid));
     s.hand = s.hand.filter((c) => !ids.has(c.uid));
     s.discard.push(...used);
+    if (r.comboCards || !r.card?.card.keepsHand) s.handRefreshPending = true;
   }
   if (r.skill) actor.mp -= r.skill.mp;
 
