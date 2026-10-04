@@ -3,7 +3,8 @@ import { GAME_HEIGHT, GAME_WIDTH } from './config';
 import { formatBuildInfo } from './debug/buildInfo';
 import { isDebugEnabled } from './debug/debugFlag';
 import { loadEruda } from './debug/eruda';
-import { HelloScene } from './scenes/HelloScene';
+import { BattleScene } from './scenes/BattleScene';
+import { RENDER_SCALE } from './ui/theme';
 
 const debug = isDebugEnabled(window.location.search);
 
@@ -25,8 +26,10 @@ new Phaser.Game({
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
+    // 高解像度の画面でにじまないよう、内部は RENDER_SCALE 倍で描く（座標は 390×844 のまま）
+    width: GAME_WIDTH * RENDER_SCALE,
+    height: GAME_HEIGHT * RENDER_SCALE,
   },
-  scene: [HelloScene],
+  input: { activePointers: 1 },
+  scene: [BattleScene],
 });
