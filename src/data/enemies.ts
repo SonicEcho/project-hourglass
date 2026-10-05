@@ -8,6 +8,8 @@ export const SLIME: EnemyDef = {
   resistances: ['physical'],
   actions: [{ id: 'tackle', name: '体当たり', target: 'ally', type: 'physical', power: 30, weight: 1.0 }],
   ai: { type: 'random' },
+  // 倒すと落とす断片（段階9）：弱点の属性の断片
+  drops: ['red'],
 };
 
 export const FROST_BAT: EnemyDef = {
@@ -21,6 +23,8 @@ export const FROST_BAT: EnemyDef = {
     { id: 'chill', name: '冷気', target: 'ally', type: 'ice', power: 30, weight: 1.0 },
   ],
   ai: { type: 'random' },
+  // 倒すと落とす断片（段階9）：弱点の属性の断片
+  drops: ['yellow'],
 };
 
 export const ARMOR_DOG: EnemyDef = {
@@ -31,6 +35,8 @@ export const ARMOR_DOG: EnemyDef = {
   resistances: ['physical'],
   actions: [{ id: 'crunch', name: 'かみくだく', target: 'ally', type: 'physical', power: 35, weight: 1.0 }],
   ai: { type: 'random' },
+  // 倒すと落とす断片（段階9）：弱点の属性の断片
+  drops: ['blue'],
 };
 
 /** ボス「歪みの獣」 */
@@ -39,12 +45,13 @@ export const DISTORTED_BEAST: EnemyDef = {
   name: '歪みの獣',
   // 段階7：成長マップで育てたパーティに合わせて上げた（段階5では HP 750、攻撃 18、魔力 15）
   // 段階8：ナビカス盤の分だけさらに上げた（段階7では HP 1000、攻撃 21、魔力 18）
-  stats: { hp: 1200, atk: 24, mag: 21, def: 12, spd: 11 },
+  // 段階9：武器の分だけさらに上げた（段階8では HP 1200、攻撃 24、魔力 21）
+  stats: { hp: 1400, atk: 26, mag: 23, def: 12, spd: 11 },
   weaknesses: [],
   resistances: [],
   parts: [
-    { id: 'rightArm', name: '右腕', hp: 220, material: '歪んだ腕殻' },
-    { id: 'horn', name: '角', hp: 180, material: '歪みの角片', revealsWeakness: ['thunder'] },
+    { id: 'rightArm', name: '右腕', hp: 220, material: '鋼の断片' },
+    { id: 'horn', name: '角', hp: 180, material: '黄の断片', revealsWeakness: ['thunder'] },
   ],
   actions: [
     // 全体攻撃は大技：1回力をためてから放つ（ためている間に予告が出る）

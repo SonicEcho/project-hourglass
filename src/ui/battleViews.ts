@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
-import { actionSpeed, availableCombos, batonTargets, chargingAction, comboCards, comboProgress, findUnit, skillMpCost } from '../core';
+import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, skillMpCost } from '../core';
 import { BASIC_ATTACK, CARDS, GUARD, HAND_SIZE, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
@@ -545,7 +545,7 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   panelBackground(scene, root, 'その他');
   const { y } = LAYOUT.hand;
   const rowH = 44;
-  const items: { kind: 'attack' | 'guard' | 'decline'; label: string; detail: string }[] = [BASIC_ATTACK, GUARD].map((def) => ({
+  const items: { kind: 'attack' | 'guard' | 'decline'; label: string; detail: string }[] = [vm.actor ? basicAttackFor(vm.actor) : BASIC_ATTACK, GUARD].map((def) => ({
     kind: def.id === 'guard' ? ('guard' as const) : ('attack' as const),
     label: def.id === 'guard' ? '防御　このラウンドの間、受けるダメージ半減（最初に効く）' : `${def.name}　${describeAction(def)}　${weightLabel(def.weight)}`,
     detail: def.id === 'guard' ? '行動の速さに関係なく、ラウンドの最初に効く。ラウンドの終わりに解ける。' : `${describeAction(def)}\n\n${weightHelp(def.weight, vm.actor)}`,

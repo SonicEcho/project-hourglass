@@ -193,3 +193,22 @@ export function claimRewardParts(navi: NaviState, candidates: string[], chosen: 
   if (chosen.some((i) => i < 0 || i >= candidates.length)) throw new Error('unknown candidate');
   return addParts(navi, chosen.map((i) => candidates[i]));
 }
+
+/** 盤を拡張する：コマンドラインの行の右端に count マス足す（武器の進化で増える） */
+export function extendBoard(board: NaviBoardDef, count: number): NaviBoardDef {
+  if (count <= 0) return board;
+  const rowCells = board.cells.filter(([, r]) => r === board.commandRow).map(([c]) => c);
+  const start = Math.max(-1, ...rowCells) + 1;
+  const added: Cell[] = Array.from({ length: count }, (_, i) => [start + i, board.commandRow]);
+  return { ...board, cols: Math.max(board.cols, start + count), cells: [...board.cells, ...added] };
+}
+
+/** そのキャラの盤にはまっているパーツの、色ごとのマス数 */
+export function boardColorCells(data: NaviData, navi: NaviState, charId: string): Record<PartColor, number> {
+  const out: Record<PartColor, number> = { red: 0, blue: 0, green: 0, yellow: 0 };
+  for (const p of boardParts(navi, charId)) {
+    const def = data.parts[p.partId];
+    out[def.color] += def.cells.length;
+  }
+  return out;
+}

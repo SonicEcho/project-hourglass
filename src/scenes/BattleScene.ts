@@ -26,15 +26,20 @@ import {
   step,
   unplannedAllies,
   useSupport,
+  basicAttackFor,
+  boardColorCells,
+  recordVictory,
+  weaponLevel,
+  weaponName,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BASIC_ATTACK, CAMPAIGN, createCampaignSetup, GUARD, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PART_BREAK_POINTS } from '../data';
+import { BASIC_ATTACK, CAMPAIGN, createCampaignSetup, GUARD, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, WEAPON_DATA } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
-import { battleSeed, currentParty, run, setActiveBattle } from './run';
+import { battleSeed, currentNaviData, currentParty, run, setActiveBattle } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -499,8 +504,10 @@ export class BattleScene extends Phaser.Scene {
         return s.hand.find((c) => c.uid === p.cardUid)?.card;
       case 'skill':
         return this.actor(s)?.skills.find((k) => k.id === p.skillId);
-      case 'attack':
-        return BASIC_ATTACK;
+      case 'attack': {
+        const actor = this.actor(s);
+        return actor ? basicAttackFor(actor) : BASIC_ATTACK;
+      }
       case 'guard':
         return GUARD;
       case 'link':
@@ -961,15 +968,27 @@ export class BattleScene extends Phaser.Scene {
       // パーツの報酬は成長マップの画面で選ぶ
       const hasReward = !!NAVI_REWARD_CANDIDATES[this.stage];
       if (hasReward) run.pendingReward = this.stage;
+      // 武器：断片を受け取り、経験値とパーツの傾向を貯める
+      const naviData = currentNaviData();
+      const levelsBefore = Object.fromEntries(PARTY.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
+      run.armory = recordVictory(run.armory, {
+        actions: result.actionCounts,
+        colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
+        drops: result.drops,
+      });
+      const levelUps = PARTY.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
+        (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
+      );
+      const dropText = result.drops.length > 0 ? `断片：${summarizeDrops(result.drops)}` : '断片：なし';
       const next = CAMPAIGN[run.stage];
       c.add(
-        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25, `記憶ポイント +${gained}（合計 ${run.growth.points}）${hasReward ? `\nパーツを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
+        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `記憶ポイント +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nパーツを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
           size: 15,
           align: 'center',
           color: COLORS.subText,
-        }).setOrigin(0.5),
+        }).setOrigin(0.5, 0),
       );
-      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, 240, 60, '成長マップへ', { onTap: () => this.scene.start('Growth') }, {
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100, 240, 60, '成長マップへ', { onTap: () => this.scene.start('Growth') }, {
         size: 18,
         bold: true,
         fill: 0x5a4a10,
@@ -982,6 +1001,13 @@ export class BattleScene extends Phaser.Scene {
     }
     this.overlay = c;
   }
+}
+
+/** 断片の一覧を「赤の断片×2、青の断片」のようにまとめる */
+function summarizeDrops(ids: string[]): string {
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, n]) => `${WEAPON_DATA.fragments[id]?.name ?? id}${n > 1 ? `×${n}` : ''}`).join('、');
 }
 
 /** デバッグ用に、出来事をコンソールへ出す（?debug=1 なら eruda で見られる） */

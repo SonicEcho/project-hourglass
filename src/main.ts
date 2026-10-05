@@ -7,6 +7,7 @@ import { loadEruda } from './debug/eruda';
 import { BattleScene } from './scenes/BattleScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
+import { WeaponScene } from './scenes/WeaponScene';
 import { ResultScene } from './scenes/ResultScene';
 import { initRunFromUrl, run, startNewRun } from './scenes/run';
 import { TitleScene } from './scenes/TitleScene';
@@ -39,7 +40,7 @@ const game = new Phaser.Game({
     height: GAME_HEIGHT * RENDER_SCALE,
   },
   input: { activePointers: 1 },
-  scene: [TitleScene, GrowthScene, NaviScene, BattleScene, ResultScene],
+  scene: [TitleScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene],
 });
 
 if (debug) {
@@ -63,6 +64,8 @@ if (debug) {
       growth?.refresh();
       const navi = game.scene.getScene('Navi') as NaviScene | null;
       navi?.refresh();
+      const weapon = game.scene.getScene('Weapon') as WeaponScene | null;
+      weapon?.refresh();
     },
   });
 }

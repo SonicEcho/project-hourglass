@@ -69,6 +69,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     guarding: false,
     skills: clone(def.skills),
     passives: clone(def.passives ?? []),
+    attackElement: def.attackElement ?? 'physical',
   }));
   const enemies: EnemyUnit[] = setup.enemies.map((def, i) => ({
     uid: `enemy${i}`,
@@ -100,6 +101,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     })),
     ai: clone(def.ai),
     aiCounter: 0,
+    drops: [...(def.drops ?? [])],
   }));
   const s: BattleState = {
     seed: setup.seed,
@@ -168,6 +170,16 @@ export function passiveRate(
   return passivesOf(ally, kind)
     .filter((p) => p.kind !== 'elementBoost' || p.element === element)
     .reduce((sum, p) => sum + p.rate, 0);
+}
+
+/** その仲間の通常攻撃（武器の進化で属性が乗ると、魔力で計算する属性の攻撃になる） */
+export function basicAttackFor(ally: { attackElement?: Element }): ActionDef {
+  const el = ally.attackElement ?? 'physical';
+  if (el === 'physical') return BASIC_ATTACK;
+  return {
+    ...BASIC_ATTACK,
+    effects: BASIC_ATTACK.effects.map((e) => (e.kind === 'damage' ? { ...e, type: el } : e)),
+  };
 }
 
 /** 魔法・スキルのMP消費（MPセーブで減る。最低1） */
@@ -292,7 +304,7 @@ interface Resolved {
 function resolveAction(s: BattleState, actor: AllyUnit, action: PlayerAction, pool: CardInstance[]): Resolved | string {
   switch (action.type) {
     case 'attack':
-      return { def: BASIC_ATTACK, cards: [] };
+      return { def: basicAttackFor(actor), cards: [] };
     case 'guard':
       return { def: GUARD, cards: [] };
     case 'card': {
@@ -1100,6 +1112,10 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
 export interface BattleResult {
   outcome: BattleState['outcome'];
   brokenParts: { enemyId: string; enemyName: string; partId: string; partName: string; material: string }[];
+  /** 倒した敵が落とした記憶の断片の id */
+  drops: string[];
+  /** 仲間ごとの行動の回数（防御は数えない。連携技は参加した2人とも数える） */
+  actionCounts: Record<string, number>;
 }
 
 export function getBattleResult(s: BattleState): BattleResult {
@@ -1110,5 +1126,16 @@ export function getBattleResult(s: BattleState): BattleResult {
         .filter((p) => p.broken)
         .map((p) => ({ enemyId: e.uid, enemyName: e.name, partId: p.id, partName: p.name, material: p.material })),
     ),
+    drops: s.enemies.filter((e) => !isAlive(e)).flatMap((e) => e.drops),
+    actionCounts: countActions(s),
   };
+}
+
+function countActions(s: BattleState): Record<string, number> {
+  const out: Record<string, number> = Object.fromEntries(s.allies.map((a) => [a.uid, 0]));
+  for (const e of s.log) {
+    if (e.type !== 'action' || e.actionId === GUARD.id) continue;
+    for (const id of e.actorIds) if (id in out) out[id]++;
+  }
+  return out;
 }

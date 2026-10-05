@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { claimRewardParts, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
+import { canEvolveAny, claimRewardParts, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CAMPAIGN, GROWTH_MAP, NAVI_DATA, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PARTY, SKILLS } from '../data';
+import { CAMPAIGN, GROWTH_MAP, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PARTY, SKILLS, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -10,7 +10,7 @@ import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentParty, run } from './run';
+import { currentNaviData, currentParty, run } from './run';
 
 // 成長マップの画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -157,19 +157,35 @@ export class GrowthScene extends Phaser.Scene {
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
 
-    // ナビカス盤へ
-    const naviBugs = PARTY.reduce((sum, c) => sum + findBugs(NAVI_DATA, run.navi, c.id).length, 0);
+    // ナビカス盤と武器へ（2つ並べる）
+    const naviBugs = PARTY.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
     const loose = run.navi.parts.filter((p) => !p.placement).length;
+    const halfW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
     addButton(
       this,
       this.root,
-      GAME_WIDTH / 2,
+      SIDE_PADDING + halfW / 2,
       733,
-      GAME_WIDTH - SIDE_PADDING * 2,
+      halfW,
       44,
-      `ナビカス盤（はめていないパーツ ${loose}${naviBugs > 0 ? `・バグ ${naviBugs}` : ''}）`,
+      `ナビカス盤\nはめていない ${loose}${naviBugs > 0 ? `・バグ ${naviBugs}` : ''}`,
       { onTap: () => this.scene.start('Navi') },
-      { fill: 0x1e3a5a, stroke: 0x5aa8ff, strokeWidth: 2, size: 14, bold: true },
+      { fill: 0x1e3a5a, stroke: 0x5aa8ff, strokeWidth: 2, size: 12, bold: true },
+    );
+    const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
+    const evolvable = PARTY.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+    addButton(
+      this,
+      this.root,
+      GAME_WIDTH - SIDE_PADDING - halfW / 2,
+      733,
+      halfW,
+      44,
+      `武器\n${evolvable ? '進化できる！' : `断片 ${fragments}`}`,
+      { onTap: () => this.scene.start('Weapon') },
+      evolvable
+        ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }
+        : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: 12, bold: true },
     );
 
     // 下：次の戦闘へ
@@ -322,7 +338,7 @@ export class GrowthScene extends Phaser.Scene {
       }).setOrigin(0.5, 0),
     );
     candidates.forEach((id, i) => {
-      const def = NAVI_DATA.parts[id];
+      const def = currentNaviData().parts[id];
       const y = top + 104 + i * (itemH + 8);
       const chosen = this.rewardChosen.includes(i);
       const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setOrigin(0);
