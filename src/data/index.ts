@@ -6,3 +6,5 @@ export * from './links';
 export * from './combos';
 export * from './enemies';
 export * from './encounters';
+export * from './growthMap';
+export * from './campaign';

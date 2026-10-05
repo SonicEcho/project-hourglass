@@ -6,6 +6,8 @@ import { getActiveBattle, run } from '../scenes/run';
 export interface DebugNavigator {
   startBoss(): void;
   restartRun(): void;
+  /** 成長マップの画面を開き直す（記憶ポイントの表示を更新するため） */
+  refreshGrowth(): void;
 }
 
 const Z = 9000;
@@ -76,9 +78,18 @@ export function installDebugMenu(nav: DebugNavigator): void {
       );
     }
 
+    // 成長
+    panel.append(
+      button(`記憶ポイントを+10する（今 ${run.growth.points}）`, () => {
+        run.growth = { ...run.growth, points: run.growth.points + 10 };
+        nav.refreshGrowth();
+        notify(`記憶ポイントを+10しました（${run.growth.points}）`);
+      }),
+    );
+
     // 画面の切り替え
     panel.append(
-      button('戦闘1を飛ばしてボス戦から始める', () => {
+      button('ボス戦（戦闘5）から始める（育成はそのまま）', () => {
         close();
         nav.startBoss();
       }),
