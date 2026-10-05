@@ -8,8 +8,8 @@ export const SLIME: EnemyDef = {
   resistances: ['physical'],
   actions: [{ id: 'tackle', name: '体当たり', target: 'ally', type: 'physical', power: 30, weight: 1.0 }],
   ai: { type: 'random' },
-  // 倒すと落とす断片（段階9）：弱点の属性の断片
-  drops: ['red'],
+  // 倒すと落とす素材（段階9）
+  drops: ['slimeJelly'],
 };
 
 export const FROST_BAT: EnemyDef = {
@@ -23,8 +23,8 @@ export const FROST_BAT: EnemyDef = {
     { id: 'chill', name: '冷気', target: 'ally', type: 'ice', power: 30, weight: 1.0 },
   ],
   ai: { type: 'random' },
-  // 倒すと落とす断片（段階9）：弱点の属性の断片
-  drops: ['yellow'],
+  // 倒すと落とす素材（段階9）
+  drops: ['frostFeather'],
 };
 
 export const ARMOR_DOG: EnemyDef = {
@@ -35,8 +35,8 @@ export const ARMOR_DOG: EnemyDef = {
   resistances: ['physical'],
   actions: [{ id: 'crunch', name: 'かみくだく', target: 'ally', type: 'physical', power: 35, weight: 1.0 }],
   ai: { type: 'random' },
-  // 倒すと落とす断片（段階9）：弱点の属性の断片
-  drops: ['blue'],
+  // 倒すと落とす素材（段階9）
+  drops: ['hardFur'],
 };
 
 /** ボス「歪みの獣」 */
@@ -50,8 +50,8 @@ export const DISTORTED_BEAST: EnemyDef = {
   weaknesses: [],
   resistances: [],
   parts: [
-    { id: 'rightArm', name: '右腕', hp: 220, material: '鋼の断片' },
-    { id: 'horn', name: '角', hp: 180, material: '黄の断片', revealsWeakness: ['thunder'] },
+    { id: 'rightArm', name: '右腕', hp: 220, material: '歪んだ腕殻' },
+    { id: 'horn', name: '角', hp: 180, material: '歪みの角片', revealsWeakness: ['thunder'] },
   ],
   actions: [
     // 全体攻撃は大技：1回力をためてから放つ（ためている間に予告が出る）

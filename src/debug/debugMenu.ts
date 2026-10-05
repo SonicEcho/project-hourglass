@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
-import { addFragments, addParts } from '../core';
-import { FRAGMENTS, NAVI_PARTS, WEAPON_DATA } from '../data';
+import { addItems, addParts } from '../core';
+import { ITEMS, NAVI_PARTS, WEAPON_DATA } from '../data';
 import { getActiveBattle, run } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
@@ -98,11 +98,11 @@ export function installDebugMenu(nav: DebugNavigator): void {
     );
 
     panel.append(
-      button('記憶の断片を全種類2つずつもらう', () => {
-        const ids = Object.keys(FRAGMENTS);
-        run.armory = addFragments(run.armory, [...ids, ...ids]);
+      button('素材とアイテムを全種類2つずつもらう', () => {
+        const ids = Object.keys(ITEMS);
+        run.armory = addItems(run.armory, [...ids, ...ids]);
         nav.refreshGrowth();
-        notify('記憶の断片を全種類2つずつもらいました');
+        notify('素材とアイテムを全種類2つずつもらいました');
       }),
     );
     panel.append(

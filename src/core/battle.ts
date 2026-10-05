@@ -1112,7 +1112,7 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
 export interface BattleResult {
   outcome: BattleState['outcome'];
   brokenParts: { enemyId: string; enemyName: string; partId: string; partName: string; material: string }[];
-  /** 倒した敵が落とした記憶の断片の id */
+  /** 倒した敵が落とした素材の id */
   drops: string[];
   /** 仲間ごとの行動の回数（防御は数えない。連携技は参加した2人とも数える） */
   actionCounts: Record<string, number>;

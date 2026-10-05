@@ -22,6 +22,18 @@ export interface FragmentDef {
   gains: Partial<WeaponParams>;
 }
 
+/**
+ * 素材（敵が落とす）と通常アイテム（勝利の報酬）。断片化すると、決まった断片が count 個になる
+ */
+export interface ItemDef {
+  id: string;
+  name: string;
+  kind: 'material' | 'item';
+  /** 断片化した時の断片の id */
+  fragment: string;
+  count: number;
+}
+
 /** 進化の条件（全部満たすと進化できる） */
 export type EvolutionCondition =
   /** パラメータが min 以上 */
@@ -52,6 +64,8 @@ export interface WeaponDef {
 export interface WeaponData {
   weapons: Record<string, WeaponDef>;
   fragments: Record<string, FragmentDef>;
+  /** 素材と通常アイテム */
+  items: Record<string, ItemDef>;
   /** Lv2、Lv3…になる経験値（累計） */
   levelExp: number[];
   /** 進化できるレベル */
@@ -75,6 +89,8 @@ export interface WeaponState {
 export interface ArmoryState {
   /** キャラの id → そのキャラの武器 */
   weapons: Record<string, WeaponState>;
+  /** 持っている素材・通常アイテムの数（パーティ共通） */
+  items: Record<string, number>;
   /** 持っている断片の数（パーティ共通） */
   fragments: Record<string, number>;
 }
@@ -93,13 +109,35 @@ export function createArmory(data: WeaponData): ArmoryState {
       evolvedTo: null,
     };
   }
-  return { weapons, fragments: {} };
+  return { weapons, items: {}, fragments: {} };
 }
 
 export function addFragments(armory: ArmoryState, ids: string[]): ArmoryState {
   const fragments = { ...armory.fragments };
   for (const id of ids) fragments[id] = (fragments[id] ?? 0) + 1;
   return { ...armory, fragments };
+}
+
+export function addItems(armory: ArmoryState, ids: string[]): ArmoryState {
+  const items = { ...armory.items };
+  for (const id of ids) items[id] = (items[id] ?? 0) + 1;
+  return { ...armory, items };
+}
+
+/** 断片化できない理由。できるなら null */
+export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: string): string | null {
+  if (!data.items[itemId]) return 'unknown item';
+  if ((armory.items[itemId] ?? 0) <= 0) return 'no item left';
+  return null;
+}
+
+/** 素材・アイテムを1つ断片化する（素材・アイテムはなくなり、決まった断片が増える） */
+export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: string): ArmoryState {
+  const err = getFragmentError(data, armory, itemId);
+  if (err) throw new Error(err);
+  const item = data.items[itemId];
+  const fragments = { ...armory.fragments, [item.fragment]: (armory.fragments[item.fragment] ?? 0) + item.count };
+  return { ...armory, items: { ...armory.items, [itemId]: armory.items[itemId] - 1 }, fragments };
 }
 
 /** 断片を吸わせられない理由。吸わせられるなら null */
@@ -119,6 +157,7 @@ export function feedFragment(data: WeaponData, armory: ArmoryState, charId: stri
   for (const k of PARAM_KEYS) params[k] += data.fragments[fragmentId].gains[k] ?? 0;
   return {
     weapons: { ...armory.weapons, [charId]: { ...w, params } },
+    items: armory.items,
     fragments: { ...armory.fragments, [fragmentId]: armory.fragments[fragmentId] - 1 },
   };
 }
@@ -142,11 +181,11 @@ export interface BattleRecord {
   actions: Record<string, number>;
   /** 仲間ごとの、盤にはまっていたパーツの色ごとのマス数 */
   colorCells: Record<string, Record<PartColor, number>>;
-  /** 手に入れた断片 */
-  drops: string[];
+  /** 手に入れた素材・通常アイテム */
+  items: string[];
 }
 
-/** 戦闘に勝った時：断片を受け取り、経験値とパーツの傾向を貯める */
+/** 戦闘に勝った時：素材・アイテムを受け取り、経験値とパーツの傾向を貯める */
 export function recordVictory(armory: ArmoryState, record: BattleRecord): ArmoryState {
   const weapons: Record<string, WeaponState> = {};
   for (const [charId, w] of Object.entries(armory.weapons)) {
@@ -155,7 +194,7 @@ export function recordVictory(armory: ArmoryState, record: BattleRecord): Armory
     if (cells) for (const c of Object.keys(tendency) as PartColor[]) tendency[c] += cells[c] ?? 0;
     weapons[charId] = { ...w, exp: w.exp + (record.actions[charId] ?? 0), tendency };
   }
-  return addFragments({ ...armory, weapons }, record.drops);
+  return addItems({ ...armory, weapons }, record.items);
 }
 
 export function findEvolution(data: WeaponData, w: WeaponState, evolutionId: string): EvolutionDef | undefined {

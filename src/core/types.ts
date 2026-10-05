@@ -156,7 +156,7 @@ export interface EnemyDef {
   actions: EnemyActionDef[];
   parts?: PartDef[];
   ai: EnemyAi;
-  /** 倒すと落とす記憶の断片（段階9）の id */
+  /** 倒すと落とす素材（段階9）の id */
   drops?: string[];
 }
 
@@ -222,7 +222,7 @@ export interface EnemyUnit extends UnitBase {
   ai: EnemyAi;
   /** ボスの「n回に1回は全体攻撃」の数え上げ */
   aiCounter: number;
-  /** 倒すと落とす記憶の断片の id */
+  /** 倒すと落とす素材の id */
   drops: string[];
 }
 

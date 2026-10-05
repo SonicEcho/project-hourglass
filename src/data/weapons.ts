@@ -1,14 +1,30 @@
-import type { FragmentDef, WeaponData, WeaponDef } from '../core/weapon';
+import type { FragmentDef, ItemDef, WeaponData, WeaponDef } from '../core/weapon';
 
 // 武器ビルドアップ（段階9）。数値・名前はすべて仮
 
-/** 記憶の断片（素材）。倒した敵が落とす。どの断片かは、その敵の弱点の属性 */
+/** 記憶の断片。素材・通常アイテムを断片化すると手に入る。元の素材・アイテムごとに特徴が違う */
 export const FRAGMENTS = {
-  red: { id: 'red', name: '赤の断片', gains: { fire: 3, atk: 1 } },
-  yellow: { id: 'yellow', name: '黄の断片', gains: { thunder: 3, atk: 1 } },
-  blue: { id: 'blue', name: '青の断片', gains: { ice: 3, atk: 1 } },
-  steel: { id: 'steel', name: '鋼の断片', gains: { atk: 3 } },
+  slimeJelly: { id: 'slimeJelly', name: 'スライムゼリーの断片', gains: { fire: 3, atk: 1 } },
+  frostFeather: { id: 'frostFeather', name: '霜の羽の断片', gains: { thunder: 3, ice: 1 } },
+  hardFur: { id: 'hardFur', name: '硬い毛皮の断片', gains: { ice: 3, atk: 2 } },
+  steelClaw: { id: 'steelClaw', name: '鋼の爪の断片', gains: { atk: 3 } },
+  potion: { id: 'potion', name: 'ポーションの断片', gains: { atk: 1 } },
+  ether: { id: 'ether', name: 'エーテルの断片', gains: { fire: 1, ice: 1, thunder: 1 } },
+  hiPotion: { id: 'hiPotion', name: 'ハイポーションの断片', gains: { atk: 2 } },
 } satisfies Record<string, FragmentDef>;
+
+/** 素材（敵が落とす）と通常アイテム（勝利の報酬）。この試作では、通常アイテムは戦闘で使えない */
+export const ITEMS = {
+  slimeJelly: { id: 'slimeJelly', name: 'スライムゼリー', kind: 'material', fragment: 'slimeJelly', count: 1 },
+  frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', fragment: 'frostFeather', count: 1 },
+  hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', fragment: 'hardFur', count: 1 },
+  steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', fragment: 'steelClaw', count: 1 },
+  potion: { id: 'potion', name: 'ポーション', kind: 'item', fragment: 'potion', count: 2 },
+  ether: { id: 'ether', name: 'エーテル', kind: 'item', fragment: 'ether', count: 2 },
+  hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', fragment: 'hiPotion', count: 2 },
+} satisfies Record<string, ItemDef>;
+
+export type ItemId = keyof typeof ITEMS;
 
 export type FragmentId = keyof typeof FRAGMENTS;
 
@@ -69,6 +85,7 @@ const cards: WeaponDef = {
 export const WEAPON_DATA: WeaponData = {
   weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards },
   fragments: FRAGMENTS,
+  items: ITEMS,
   // 経験値 4 で Lv2、8 で Lv3（1人が戦闘1回で行動するのは3回前後なので、だいたい戦闘3つで Lv3）
   levelExp: [4, 8],
   evolveLevel: 3,
