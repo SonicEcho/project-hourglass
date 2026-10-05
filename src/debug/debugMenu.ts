@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
-import { addParts } from '../core';
-import { NAVI_PARTS } from '../data';
+import { addFragments, addParts } from '../core';
+import { FRAGMENTS, NAVI_PARTS, WEAPON_DATA } from '../data';
 import { getActiveBattle, run } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
@@ -94,6 +94,25 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.navi = addParts(run.navi, Object.keys(NAVI_PARTS));
         nav.refreshGrowth();
         notify(`パーツを${Object.keys(NAVI_PARTS).length}個もらいました（${run.navi.parts.length}個）`);
+      }),
+    );
+
+    panel.append(
+      button('記憶の断片を全種類2つずつもらう', () => {
+        const ids = Object.keys(FRAGMENTS);
+        run.armory = addFragments(run.armory, [...ids, ...ids]);
+        nav.refreshGrowth();
+        notify('記憶の断片を全種類2つずつもらいました');
+      }),
+    );
+    panel.append(
+      button(`3人の武器を Lv${WEAPON_DATA.evolveLevel} にする`, () => {
+        const need = WEAPON_DATA.levelExp[WEAPON_DATA.evolveLevel - 2] ?? 0;
+        const weapons = { ...run.armory.weapons };
+        for (const [id, w] of Object.entries(weapons)) weapons[id] = { ...w, exp: Math.max(w.exp, need) };
+        run.armory = { ...run.armory, weapons };
+        nav.refreshGrowth();
+        notify(`3人の武器を Lv${WEAPON_DATA.evolveLevel} にしました`);
       }),
     );
 

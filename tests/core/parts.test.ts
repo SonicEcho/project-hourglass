@@ -107,7 +107,7 @@ describe('部位破壊', () => {
     s0.enemies[0].parts[1].hp = 1;
     const s = heroActs(s0, attackOn('enemy0', 'horn'));
     expect(getBattleResult(s).brokenParts).toEqual([
-      { enemyId: 'enemy0', enemyName: '歪みの獣', partId: 'horn', partName: '角', material: '歪みの角片' },
+      { enemyId: 'enemy0', enemyName: '歪みの獣', partId: 'horn', partName: '角', material: '黄の断片' },
     ]);
   });
 });

@@ -2,22 +2,23 @@ import Phaser from 'phaser';
 import type { Cell, CharacterDef, OwnedPart, Placement, Rotation } from '../core';
 import { boardParts, boardPassives, boardStats, findBugs, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BUG_HP_RATE, NAVI_DATA, PARTY } from '../data';
+import { BUG_HP_RATE, PARTY } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePassives } from '../ui/naviText';
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { run } from './run';
+import { currentNaviData, run } from './run';
 
 // ナビカス盤の画面（段階8）。縦持ち 390×844 に、盤・説明・パーツの一覧・操作を1画面で収める
 //
 // 操作：一覧のパーツをタップ → 盤のマスをタップで影（仮置き）→「回転」→「はめる」（影をもう一度タップでも決定）
 // 盤にはまっているパーツをタップすると選ばれ、「外す」で一覧に戻る
 
-const CELL = 56;
+/** 盤の1マスの大きさ（盤が広い時は画面に収まるよう縮める） */
+const MAX_CELL = 56;
 const BOARD_TOP = 92;
-const BOARD_H = CELL * 4;
+const BOARD_H = MAX_CELL * 4;
 const LIST_TOP = 520;
 const LIST_COLS = 4;
 /** 一覧の下の端（「戻る」ボタンの上） */
@@ -36,6 +37,7 @@ export class NaviScene extends Phaser.Scene {
   private message = '';
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
+  private cell = MAX_CELL;
 
   constructor() {
     super('Navi');
@@ -55,7 +57,7 @@ export class NaviScene extends Phaser.Scene {
   }
 
   private board() {
-    return NAVI_DATA.boards[this.charId];
+    return currentNaviData().boards[this.charId];
   }
 
   private selectedPart(): OwnedPart | undefined {
@@ -91,8 +93,8 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     const ghost = this.ghostPlacement();
     // 影をもう一度タップしたら、はめる
-    if (sel && ghost && placedCells(NAVI_DATA.parts[sel.partId], ghost).some((c) => key(c) === key([col, row]))) {
-      if (!getPlaceError(NAVI_DATA, run.navi, sel.uid, ghost)) {
+    if (sel && ghost && placedCells(currentNaviData().parts[sel.partId], ghost).some((c) => key(c) === key([col, row]))) {
+      if (!getPlaceError(currentNaviData(), run.navi, sel.uid, ghost)) {
         this.place();
         return;
       }
@@ -117,7 +119,7 @@ export class NaviScene extends Phaser.Scene {
   /** 影の左上を、なるべく盤の中に収まるように決める */
   private clampGhost(col: number, row: number): { col: number; row: number } {
     const sel = this.selectedPart()!;
-    const cells = rotateCells(NAVI_DATA.parts[sel.partId].cells, this.rotation);
+    const cells = rotateCells(currentNaviData().parts[sel.partId].cells, this.rotation);
     const w = Math.max(...cells.map(([c]) => c)) + 1;
     const h = Math.max(...cells.map(([, r]) => r)) + 1;
     const b = this.board();
@@ -137,11 +139,11 @@ export class NaviScene extends Phaser.Scene {
   private place(): void {
     const sel = this.selectedPart();
     const ghost = this.ghostPlacement();
-    if (!sel || !ghost || getPlaceError(NAVI_DATA, run.navi, sel.uid, ghost)) return;
-    run.navi = placePart(NAVI_DATA, run.navi, sel.uid, ghost);
-    const def = NAVI_DATA.parts[sel.partId];
+    if (!sel || !ghost || getPlaceError(currentNaviData(), run.navi, sel.uid, ghost)) return;
+    run.navi = placePart(currentNaviData(), run.navi, sel.uid, ghost);
+    const def = currentNaviData().parts[sel.partId];
     const placed = run.navi.parts.find((p) => p.uid === sel.uid)!;
-    this.message = `${def.name}をはめた${def.kind === 'effect' && !isPartActive(NAVI_DATA, placed) ? '（コマンドラインに乗っていないので効かない）' : ''}`;
+    this.message = `${def.name}をはめた${def.kind === 'effect' && !isPartActive(currentNaviData(), placed) ? '（コマンドラインに乗っていないので効かない）' : ''}`;
     console.log('[navi] place', this.charId, sel.partId, JSON.stringify(ghost));
     this.clearSelection();
     this.render();
@@ -151,7 +153,7 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     if (!sel?.placement) return;
     run.navi = removePart(run.navi, sel.uid);
-    this.message = `${NAVI_DATA.parts[sel.partId].name}を外した`;
+    this.message = `${currentNaviData().parts[sel.partId].name}を外した`;
     console.log('[navi] remove', sel.partId);
     this.clearSelection();
     this.render();
@@ -159,7 +161,7 @@ export class NaviScene extends Phaser.Scene {
 
   private partAt(col: number, row: number): OwnedPart | undefined {
     return boardParts(run.navi, this.charId).find((p) =>
-      placedCells(NAVI_DATA.parts[p.partId], p.placement!).some((c) => key(c) === key([col, row])),
+      placedCells(currentNaviData().parts[p.partId], p.placement!).some((c) => key(c) === key([col, row])),
     );
   }
 
@@ -167,6 +169,7 @@ export class NaviScene extends Phaser.Scene {
 
   private render(): void {
     this.root.removeAll(true);
+    this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / this.board().cols));
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
     this.root.add(addText(this, SIDE_PADDING, 8, 'ナビカス盤', { size: 17, bold: true }));
     this.root.add(
@@ -201,7 +204,7 @@ export class NaviScene extends Phaser.Scene {
       const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setOrigin(0);
       rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
       this.root.add(rect);
-      const bugs = findBugs(NAVI_DATA, run.navi, c.id).length;
+      const bugs = findBugs(currentNaviData(), run.navi, c.id).length;
       const count = boardParts(run.navi, c.id).length;
       this.root.add(addText(this, x + 8, top + 5, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
       this.root.add(
@@ -221,7 +224,7 @@ export class NaviScene extends Phaser.Scene {
 
   private boardOrigin(): { x: number; y: number } {
     const b = this.board();
-    return { x: (GAME_WIDTH - CELL * b.cols) / 2, y: BOARD_TOP + (BOARD_H - CELL * b.rows) / 2 };
+    return { x: (GAME_WIDTH - this.cell * b.cols) / 2, y: BOARD_TOP + (BOARD_H - this.cell * b.rows) / 2 };
   }
 
   private drawBoard(): void {
@@ -231,16 +234,16 @@ export class NaviScene extends Phaser.Scene {
 
     // コマンドライン（光る帯）
     this.root.add(
-      this.add.rectangle(o.x - 6, o.y + b.commandRow * CELL - 3, CELL * b.cols + 12, CELL + 6, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
+      this.add.rectangle(o.x - 6, o.y + b.commandRow * this.cell - 3, this.cell * b.cols + 12, this.cell + 6, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
     );
 
     // マス
     for (let row = 0; row < b.rows; row++) {
       for (let col = 0; col < b.cols; col++) {
         if (!cellSet.has(key([col, row]))) continue;
-        const x = o.x + col * CELL;
-        const y = o.y + row * CELL;
-        const rect = this.add.rectangle(x + 1, y + 1, CELL - 2, CELL - 2, row === b.commandRow ? 0x3a3a1e : COLORS.panel).setOrigin(0);
+        const x = o.x + col * this.cell;
+        const y = o.y + row * this.cell;
+        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, row === b.commandRow ? 0x3a3a1e : COLORS.panel).setOrigin(0);
         rect.setStrokeStyle(1, COLORS.border);
         this.root.add(rect);
         makePressable(rect, {
@@ -255,45 +258,45 @@ export class NaviScene extends Phaser.Scene {
 
     // はまっているパーツ
     for (const p of boardParts(run.navi, this.charId)) {
-      const def = NAVI_DATA.parts[p.partId];
-      const active = isPartActive(NAVI_DATA, p);
+      const def = currentNaviData().parts[p.partId];
+      const active = isPartActive(currentNaviData(), p);
       const selected = p.uid === this.selectedUid;
       const cells = placedCells(def, p.placement!);
       cells.forEach(([c, r], i) => {
-        const x = o.x + c * CELL;
-        const y = o.y + r * CELL;
-        const rect = this.add.rectangle(x + 3, y + 3, CELL - 6, CELL - 6, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0);
+        const x = o.x + c * this.cell;
+        const y = o.y + r * this.cell;
+        const rect = this.add.rectangle(x + 3, y + 3, this.cell - 6, this.cell - 6, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0);
         rect.setStrokeStyle(selected ? 4 : def.kind === 'effect' ? 2 : 0, selected ? COLORS.select : 0xffffff, 1);
         this.root.add(rect);
         // マスのタップは下のマスで受ける
         if (i === 0) {
           this.root.add(
-            addText(this, x + CELL / 2, y + CELL / 2, PART_SHORT[def.id] ?? '', { size: 16, bold: true, color: active ? '#101820' : '#dddddd' }).setOrigin(0.5),
+            addText(this, x + this.cell / 2, y + this.cell / 2, PART_SHORT[def.id] ?? '', { size: 16, bold: true, color: active ? '#101820' : '#dddddd' }).setOrigin(0.5),
           );
         }
       });
       // 同じパーツのマスどうしをつなぐ（1つのパーツだと分かるように）
       const set = new Set(cells.map(key));
       for (const [c, r] of cells) {
-        if (set.has(key([c + 1, r]))) this.root.add(this.add.rectangle(o.x + (c + 1) * CELL - 4, o.y + r * CELL + 14, 8, CELL - 28, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
-        if (set.has(key([c, r + 1]))) this.root.add(this.add.rectangle(o.x + c * CELL + 14, o.y + (r + 1) * CELL - 4, CELL - 28, 8, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
+        if (set.has(key([c + 1, r]))) this.root.add(this.add.rectangle(o.x + (c + 1) * this.cell - 4, o.y + r * this.cell + 14, 8, this.cell - 28, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
+        if (set.has(key([c, r + 1]))) this.root.add(this.add.rectangle(o.x + c * this.cell + 14, o.y + (r + 1) * this.cell - 4, this.cell - 28, 8, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
       }
     }
 
     // バグ：接している辺を赤く光らせる
     const g = this.add.graphics();
     g.lineStyle(5, 0xff3030, 1);
-    for (const [ua, ub] of findBugs(NAVI_DATA, run.navi, this.charId)) {
+    for (const [ua, ub] of findBugs(currentNaviData(), run.navi, this.charId)) {
       const pa = run.navi.parts.find((p) => p.uid === ua)!;
       const pb = run.navi.parts.find((p) => p.uid === ub)!;
-      const bCells = new Set(placedCells(NAVI_DATA.parts[pb.partId], pb.placement!).map(key));
-      for (const [c, r] of placedCells(NAVI_DATA.parts[pa.partId], pa.placement!)) {
-        const x = o.x + c * CELL;
-        const y = o.y + r * CELL;
-        if (bCells.has(key([c + 1, r]))) g.lineBetween(x + CELL, y + 4, x + CELL, y + CELL - 4);
-        if (bCells.has(key([c - 1, r]))) g.lineBetween(x, y + 4, x, y + CELL - 4);
-        if (bCells.has(key([c, r + 1]))) g.lineBetween(x + 4, y + CELL, x + CELL - 4, y + CELL);
-        if (bCells.has(key([c, r - 1]))) g.lineBetween(x + 4, y, x + CELL - 4, y);
+      const bCells = new Set(placedCells(currentNaviData().parts[pb.partId], pb.placement!).map(key));
+      for (const [c, r] of placedCells(currentNaviData().parts[pa.partId], pa.placement!)) {
+        const x = o.x + c * this.cell;
+        const y = o.y + r * this.cell;
+        if (bCells.has(key([c + 1, r]))) g.lineBetween(x + this.cell, y + 4, x + this.cell, y + this.cell - 4);
+        if (bCells.has(key([c - 1, r]))) g.lineBetween(x, y + 4, x, y + this.cell - 4);
+        if (bCells.has(key([c, r + 1]))) g.lineBetween(x + 4, y + this.cell, x + this.cell - 4, y + this.cell);
+        if (bCells.has(key([c, r - 1]))) g.lineBetween(x + 4, y, x + this.cell - 4, y);
       }
     }
     this.root.add(g);
@@ -302,9 +305,9 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     const ghost = this.ghostPlacement();
     if (sel && ghost) {
-      const ok = !getPlaceError(NAVI_DATA, run.navi, sel.uid, ghost);
-      for (const [c, r] of placedCells(NAVI_DATA.parts[sel.partId], ghost)) {
-        const shadow = this.add.rectangle(o.x + c * CELL + 4, o.y + r * CELL + 4, CELL - 8, CELL - 8, ok ? PART_COLOR[NAVI_DATA.parts[sel.partId].color] : 0xff3030, 0.5).setOrigin(0);
+      const ok = !getPlaceError(currentNaviData(), run.navi, sel.uid, ghost);
+      for (const [c, r] of placedCells(currentNaviData().parts[sel.partId], ghost)) {
+        const shadow = this.add.rectangle(o.x + c * this.cell + 4, o.y + r * this.cell + 4, this.cell - 8, this.cell - 8, ok ? PART_COLOR[currentNaviData().parts[sel.partId].color] : 0xff3030, 0.5).setOrigin(0);
         shadow.setStrokeStyle(3, ok ? 0x6dff9e : 0xff3030);
         this.root.add(shadow);
         // 影のマスのタップは下のマスで受ける（影がはみ出している所は受けない）
@@ -317,10 +320,10 @@ export class NaviScene extends Phaser.Scene {
   /** 盤の下：今の盤で効いている効果、能力値、バグ */
   private drawStatus(): void {
     const top = BOARD_TOP + BOARD_H + 8;
-    const passives = boardPassives(NAVI_DATA, run.navi, this.charId);
+    const passives = boardPassives(currentNaviData(), run.navi, this.charId);
     const effects = summarizePassives(passives.filter((p) => p.kind !== 'bug'));
     const bugs = passives.filter((p) => p.kind === 'bug').length;
-    const stats = Object.entries(boardStats(NAVI_DATA, run.navi, this.charId)).map(([k, v]) => `${STAT_LABEL[k as keyof typeof STAT_LABEL]}+${v}`);
+    const stats = Object.entries(boardStats(currentNaviData(), run.navi, this.charId)).map(([k, v]) => `${STAT_LABEL[k as keyof typeof STAT_LABEL]}+${v}`);
     const lines = [
       `能力値：${stats.length > 0 ? stats.join('　') : 'なし'}`,
       `効果：${effects.length > 0 ? effects.join('／') : 'なし'}`,
@@ -349,9 +352,9 @@ export class NaviScene extends Phaser.Scene {
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, text, { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
       return;
     }
-    const def = NAVI_DATA.parts[sel.partId];
+    const def = currentNaviData().parts[sel.partId];
     const ghost = this.ghostPlacement();
-    const err = ghost ? getPlaceError(NAVI_DATA, run.navi, sel.uid, ghost) : null;
+    const err = ghost ? getPlaceError(currentNaviData(), run.navi, sel.uid, ghost) : null;
     const owner = sel.placement ? PARTY.find((c) => c.id === sel.placement!.charId)?.name : undefined;
     const status = ghost
       ? err
@@ -399,7 +402,7 @@ export class NaviScene extends Phaser.Scene {
     const chipH = Math.min(CHIP_H, (LIST_BOTTOM - LIST_TOP - 18 - CHIP_GAP * (rows - 1)) / rows);
     const compact = chipH < 40;
     parts.forEach((p, i) => {
-      const def = NAVI_DATA.parts[p.partId];
+      const def = currentNaviData().parts[p.partId];
       const x = SIDE_PADDING + (i % LIST_COLS) * (w + CHIP_GAP);
       const y = LIST_TOP + 18 + Math.floor(i / LIST_COLS) * (chipH + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
@@ -420,12 +423,12 @@ export class NaviScene extends Phaser.Scene {
   }
 
   private showPartDetail(p: OwnedPart): void {
-    const def = NAVI_DATA.parts[p.partId];
+    const def = currentNaviData().parts[p.partId];
     const owner: CharacterDef | undefined = p.placement ? PARTY.find((c) => c.id === p.placement!.charId) : undefined;
     const lines = [describePart(def), partKindText(def), `色：${PART_COLOR_LABEL[def.color]}（同じ色を隣に置くとバグ）`, `大きさ：${def.cells.length}マス`];
     if (owner) {
       lines.push('', `${owner.name}の盤にはまっている`);
-      if (def.kind === 'effect' && !isPartActive(NAVI_DATA, p)) lines.push('コマンドラインに乗っていないので、今は効かない');
+      if (def.kind === 'effect' && !isPartActive(currentNaviData(), p)) lines.push('コマンドラインに乗っていないので、今は効かない');
     }
     this.showDetail(def.name, lines.join('\n'));
   }

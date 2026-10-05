@@ -9,3 +9,4 @@ export * from './encounters';
 export * from './growthMap';
 export * from './campaign';
 export * from './navi';
+export * from './weapons';

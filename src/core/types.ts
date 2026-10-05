@@ -112,8 +112,10 @@ export interface CharacterDef {
   name: string;
   stats: Stats;
   skills: SkillDef[];
-  /** 特性（ナビカス盤で付く） */
+  /** 特性（ナビカス盤・武器で付く） */
   passives?: PassiveEffect[];
+  /** 通常攻撃の属性（武器の進化で変わる。なければ物理） */
+  attackElement?: Element;
 }
 
 export interface EnemyActionDef {
@@ -154,6 +156,8 @@ export interface EnemyDef {
   actions: EnemyActionDef[];
   parts?: PartDef[];
   ai: EnemyAi;
+  /** 倒すと落とす記憶の断片（段階9）の id */
+  drops?: string[];
 }
 
 export interface BattleSetup {
@@ -188,6 +192,8 @@ export interface AllyUnit extends UnitBase {
   mp: number;
   skills: SkillDef[];
   passives: PassiveEffect[];
+  /** 通常攻撃の属性 */
+  attackElement: Element;
 }
 
 export interface PartState {
@@ -216,6 +222,8 @@ export interface EnemyUnit extends UnitBase {
   ai: EnemyAi;
   /** ボスの「n回に1回は全体攻撃」の数え上げ */
   aiCounter: number;
+  /** 倒すと落とす記憶の断片の id */
+  drops: string[];
 }
 
 export type Unit = AllyUnit | EnemyUnit;
