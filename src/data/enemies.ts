@@ -37,8 +37,8 @@ export const ARMOR_DOG: EnemyDef = {
 export const DISTORTED_BEAST: EnemyDef = {
   id: 'distortedBeast',
   name: '歪みの獣',
-  // 段階5（調整3回目）：ラウンド制で強すぎたため下げた（元は HP 900、攻撃 22、魔力 18）
-  stats: { hp: 750, atk: 18, mag: 15, def: 12, spd: 11 },
+  // 段階7：成長マップで育てたパーティに合わせて上げた（段階5では HP 750、攻撃 18、魔力 15）
+  stats: { hp: 1000, atk: 21, mag: 18, def: 12, spd: 11 },
   weaknesses: [],
   resistances: [],
   parts: [

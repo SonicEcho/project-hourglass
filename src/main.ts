@@ -5,8 +5,9 @@ import { isDebugEnabled } from './debug/debugFlag';
 import { installDebugMenu } from './debug/debugMenu';
 import { loadEruda } from './debug/eruda';
 import { BattleScene } from './scenes/BattleScene';
+import { GrowthScene } from './scenes/GrowthScene';
 import { ResultScene } from './scenes/ResultScene';
-import { initRunFromUrl } from './scenes/run';
+import { initRunFromUrl, run, startNewRun } from './scenes/run';
 import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
 
@@ -37,7 +38,7 @@ const game = new Phaser.Game({
     height: GAME_HEIGHT * RENDER_SCALE,
   },
   input: { activePointers: 1 },
-  scene: [TitleScene, BattleScene, ResultScene],
+  scene: [TitleScene, GrowthScene, BattleScene, ResultScene],
 });
 
 if (debug) {
@@ -48,7 +49,17 @@ if (debug) {
     else game.scene.start(key, data);
   };
   installDebugMenu({
-    startBoss: () => goTo('Battle', { encounter: 'battle2' }),
-    restartRun: () => goTo('Battle', { encounter: 'battle1' }),
+    startBoss: () => {
+      run.stage = 4;
+      goTo('Battle', { stage: 4 });
+    },
+    restartRun: () => {
+      startNewRun();
+      goTo('Growth', {});
+    },
+    refreshGrowth: () => {
+      const growth = game.scene.getScene('Growth') as GrowthScene | null;
+      growth?.refresh();
+    },
   });
 }

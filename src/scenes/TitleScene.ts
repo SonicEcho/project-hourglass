@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
-import { rerollSeed } from './run';
+import { startNewRun } from './run';
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -23,7 +23,7 @@ export class TitleScene extends Phaser.Scene {
     root.add(addText(this, cx, 360, 'Project Hourglass', { size: 30, bold: true }).setOrigin(0.5));
     root.add(addText(this, cx, 402, 'バトルプロトタイプ', { size: 16, color: COLORS.subText }).setOrigin(0.5));
     root.add(
-      addText(this, cx, 470, '雑魚戦 → ボス戦「歪みの獣」', { size: 14, color: COLORS.subText }).setOrigin(0.5),
+      addText(this, cx, 470, '成長マップで育てながら5戦。最後はボス「歪みの獣」', { size: 13, color: COLORS.subText }).setOrigin(0.5),
     );
     addButton(
       this,
@@ -35,8 +35,8 @@ export class TitleScene extends Phaser.Scene {
       'はじめる',
       {
         onTap: () => {
-          rerollSeed();
-          this.scene.start('Battle', { encounter: 'battle1' });
+          startNewRun();
+          this.scene.start('Growth');
         },
       },
       { size: 20, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 },

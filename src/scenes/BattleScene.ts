@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, TargetRef, TargetScope } from '../core';
 import {
   applyExtra,
+  battleReward,
   batonTargets,
   chargingAction,
   comboCards,
@@ -27,13 +28,13 @@ import {
   useSupport,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BASIC_ATTACK, createEncounterSetup, type EncounterId, GUARD } from '../data';
+import { BASIC_ATTACK, CAMPAIGN, createCampaignSetup, GUARD, PART_BREAK_POINTS } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
-import { battleSeed, setActiveBattle } from './run';
+import { battleSeed, currentParty, run, setActiveBattle } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -53,7 +54,8 @@ interface Selection {
 }
 
 export interface BattleSceneData {
-  encounter?: EncounterId;
+  /** 周回の何戦目か（0から） */
+  stage?: number;
 }
 
 /** 演出の待ち時間（ミリ秒） */
@@ -61,7 +63,7 @@ const FX = { banner: 550, popup: 260, settle: 380, round: 600 };
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState;
-  private encounter: EncounterId = 'battle1';
+  private stage = 0;
   /** 計画中に行動を選んでいる仲間 */
   private planner: string | null = null;
   private selection: Selection | null = null;
@@ -82,11 +84,11 @@ export class BattleScene extends Phaser.Scene {
 
   create(data: BattleSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    this.encounter = data.encounter ?? 'battle1';
-    const seed = battleSeed(this.encounter);
-    console.log(`[battle] ${this.encounter} seed=${seed}`);
-    // 毎戦闘、HPとMPは全回復した状態で始まる
-    this.state = createBattle(createEncounterSetup(this.encounter, seed));
+    this.stage = Math.min(data.stage ?? run.stage, CAMPAIGN.length - 1);
+    const seed = battleSeed(this.stage);
+    console.log(`[battle] stage${this.stage + 1} seed=${seed}`);
+    // 毎戦闘、HPとMPは全回復した状態で始まる。成長マップの成長を反映した仲間で戦う
+    this.state = createBattle(createCampaignSetup(this.stage, seed, currentParty()));
     logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
@@ -99,7 +101,7 @@ export class BattleScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0).setDepth(100);
     setActiveBattle({
-      encounter: this.encounter,
+      stage: this.stage,
       getState: () => this.state,
       replaceState: (s) => this.replaceState(s),
     });
@@ -940,15 +942,21 @@ export class BattleScene extends Phaser.Scene {
       color: win ? COLORS.accentText : COLORS.allyDamage,
     }).setOrigin(0.5);
     c.add([shade, title]);
-    if (win && this.encounter === 'battle1') {
+    const result = getBattleResult(this.state);
+    if (win && !CAMPAIGN[this.stage].boss) {
+      // 記憶ポイントを受け取って成長マップへ
+      const gained = battleReward(CAMPAIGN[this.stage].reward, result.brokenParts.length, PART_BREAK_POINTS);
+      run.growth = { ...run.growth, points: run.growth.points + gained };
+      run.stage = this.stage + 1;
+      const next = CAMPAIGN[run.stage];
       c.add(
-        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25, '次はボス戦\n（HPとMPは全回復する）', {
+        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25, `記憶ポイント +${gained}（合計 ${run.growth.points}）\n次は${next.name}`, {
           size: 15,
           align: 'center',
           color: COLORS.subText,
         }).setOrigin(0.5),
       );
-      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, 240, 60, 'ボス戦へ', { onTap: () => this.scene.start('Battle', { encounter: 'battle2' }) }, {
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, 240, 60, '成長マップへ', { onTap: () => this.scene.start('Growth') }, {
         size: 18,
         bold: true,
         fill: 0x5a4a10,
@@ -956,8 +964,7 @@ export class BattleScene extends Phaser.Scene {
         strokeWidth: 2,
       });
     } else {
-      const result = getBattleResult(this.state);
-      const data: ResultSceneData = { outcome: result.outcome === 'victory' ? 'victory' : 'defeat', encounter: this.encounter, brokenParts: result.brokenParts, seed: this.state.seed };
+      const data: ResultSceneData = { outcome: result.outcome === 'victory' ? 'victory' : 'defeat', stage: this.stage, brokenParts: result.brokenParts, seed: this.state.seed };
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 240, 60, '結果へ', { onTap: () => this.scene.start('Result', data) }, { size: 18, bold: true });
     }
     this.overlay = c;

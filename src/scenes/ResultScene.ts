@@ -1,14 +1,15 @@
 import Phaser from 'phaser';
 import type { BattleResult } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import type { EncounterId } from '../data';
+import { CAMPAIGN } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
-import { rerollSeed } from './run';
+import { rerollSeed, startNewRun } from './run';
 
 export interface ResultSceneData {
   outcome: 'victory' | 'defeat';
-  encounter: EncounterId;
+  /** 周回の何戦目か（0から） */
+  stage: number;
   brokenParts: BattleResult['brokenParts'];
   seed: number;
 }
@@ -30,7 +31,7 @@ export class ResultScene extends Phaser.Scene {
       addText(this, cx, 130, win ? 'クリア！' : '敗北…', { size: 46, bold: true, color: win ? COLORS.accentText : COLORS.allyDamage }).setOrigin(0.5),
     );
     root.add(
-      addText(this, cx, 190, win ? '歪みの獣を倒した' : `${data.encounter === 'battle2' ? 'ボス戦' : '戦闘1'}で全滅した`, {
+      addText(this, cx, 190, win ? '歪みの獣を倒した' : `${CAMPAIGN[data.stage]?.name ?? ''}で全滅した`, {
         size: 16,
         color: COLORS.subText,
       }).setOrigin(0.5),
@@ -53,13 +54,13 @@ export class ResultScene extends Phaser.Scene {
 
     // 親指の届く下の方にボタンを置く
     const restart = () => {
-      rerollSeed();
-      this.scene.start('Battle', { encounter: 'battle1' });
+      startNewRun();
+      this.scene.start('Growth');
     };
     if (win) {
       addButton(this, root, cx, 640, 260, 60, 'タイトルへ', { onTap: () => this.scene.start('Title') }, { size: 18, bold: true });
     } else {
-      if (data.encounter === 'battle2') {
+      {
         addButton(
           this,
           root,
@@ -67,11 +68,12 @@ export class ResultScene extends Phaser.Scene {
           600,
           260,
           60,
-          'ボス戦からやり直す',
+          'この戦闘からやり直す',
           {
             onTap: () => {
+              // 育成はそのまま、同じ戦闘を新しいシードで
               rerollSeed();
-              this.scene.start('Battle', { encounter: 'battle2' });
+              this.scene.start('Battle', { stage: data.stage });
             },
           },
           { size: 18, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 },
