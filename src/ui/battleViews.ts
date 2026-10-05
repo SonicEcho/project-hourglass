@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
-import { actionSpeed, availableCombos, batonTargets, comboCards, comboProgress, findUnit } from '../core';
+import { actionSpeed, availableCombos, batonTargets, chargingAction, comboCards, comboProgress, findUnit } from '../core';
 import { BASIC_ATTACK, CARDS, GUARD, HAND_SIZE, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
@@ -117,7 +117,8 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const label = units.map((u) => u.name.slice(0, 1)).join('');
     root.add([circle, addText(scene, cx, cy, label, { size: label.length > 1 ? 11 : 13, bold: true, align: 'center' }).setOrigin(0.5)]);
     if (unit.side === 'enemy') root.add(addText(scene, cx + r - 4, cy - r + 2, '敵', { size: 9, color: '#ffb0b0' }).setOrigin(0.5));
-    const tag = entry.guard ? '防' : entry.precede ? '先' : entry.tentative ? '?' : '';
+    const charging = unit.side === 'enemy' && !!unit.charging;
+    const tag = entry.guard ? '防' : entry.precede ? '先' : entry.tentative ? '?' : charging ? '大技' : '';
     if (tag) root.add(addText(scene, cx, y + height - 7, tag, { size: 9, bold: true, color: COLORS.accentText }).setOrigin(0.5));
     if (isPredicted && !tag) root.add(addText(scene, cx, y + height - 7, 'ここ', { size: 9, bold: true, color: COLORS.accentText }).setOrigin(0.5));
     const hit = scene.add.rectangle(cx, cy, Math.max(slot, MIN_TAP), MIN_TAP, 0xffffff, 0.001);
@@ -209,6 +210,14 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       root.add(addText(scene, cx, bodyY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
     }
     if (!alive) root.add(addText(scene, cx, bodyY, '撃破', { size: 14, color: COLORS.dimText }).setOrigin(0.5));
+    // 大技の予告：力をためている
+    const charged = alive ? chargingAction(enemy) : undefined;
+    if (charged) {
+      const label = `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
+      const ty = bodyY - radius - 12;
+      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setStrokeStyle(1, 0xff9a5a);
+      root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
+    }
 
     const nameY = bodyY + radius + 16;
     root.add(addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5));
@@ -697,6 +706,8 @@ function enemyDetail(e: EnemyUnit): string {
     `行動 ${e.actions.map((a) => a.name).join('、')}`,
   ];
   for (const p of e.parts) lines.push(`部位 ${p.name}：${p.broken ? '破壊' : `${p.hp}/${p.maxHp}`}`);
+  const charged = chargingAction(e);
+  if (charged) lines.push(`力をためている：次の行動で「${charged.name}」（ダウンさせるか、使う部位を壊すと解ける）`);
   if (e.down) lines.push('ダウン中（次の手番は立ち上がりに使う）');
   return lines.join('\n');
 }

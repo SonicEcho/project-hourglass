@@ -37,7 +37,8 @@ export const ARMOR_DOG: EnemyDef = {
 export const DISTORTED_BEAST: EnemyDef = {
   id: 'distortedBeast',
   name: '歪みの獣',
-  stats: { hp: 900, atk: 22, mag: 18, def: 12, spd: 11 },
+  // 段階5（調整3回目）：ラウンド制で強すぎたため下げた（元は HP 900、攻撃 22、魔力 18）
+  stats: { hp: 750, atk: 18, mag: 15, def: 12, spd: 11 },
   weaknesses: [],
   resistances: [],
   parts: [
@@ -45,9 +46,10 @@ export const DISTORTED_BEAST: EnemyDef = {
     { id: 'horn', name: '角', hp: 180, material: '歪みの角片', revealsWeakness: ['thunder'] },
   ],
   actions: [
-    { id: 'sweep', name: '薙ぎ払い', target: 'allies', type: 'physical', power: 25, weight: 1.0 },
-    { id: 'slam', name: '叩きつけ', target: 'ally', type: 'physical', power: 45, weight: 1.0, requiresPart: 'rightArm' },
-    { id: 'roar', name: '歪みの咆哮', target: 'allies', type: 'magic', power: 30, weight: 1.0, requiresPart: 'horn' },
+    // 全体攻撃は大技：1回力をためてから放つ（ためている間に予告が出る）
+    { id: 'sweep', name: '薙ぎ払い', target: 'allies', type: 'physical', power: 28, weight: 1.0, charge: true },
+    { id: 'slam', name: '叩きつけ', target: 'ally', type: 'physical', power: 40, weight: 1.0, requiresPart: 'rightArm' },
+    { id: 'roar', name: '歪みの咆哮', target: 'allies', type: 'magic', power: 32, weight: 1.0, requiresPart: 'horn', charge: true },
   ],
   ai: { type: 'boss', lowHpRatio: 0.5, allTargetInterval: 2 },
 };

@@ -47,7 +47,7 @@ describe('部位破壊', () => {
     const raw = expectedRaw(s0, 20);
     const s = heroActs(s0, attackOn('enemy0', 'rightArm'));
     expect(s.enemies[0].parts[0].hp).toBe(220 - raw);
-    expect(s.enemies[0].hp).toBe(900 - Math.floor(raw / 2));
+    expect(s.enemies[0].hp).toBe(s0.enemies[0].maxHp - Math.floor(raw / 2));
     expect(eventsOf(s, 'damage')[0]).toMatchObject({ partId: 'rightArm', partAmount: raw, amount: Math.floor(raw / 2) });
   });
 
@@ -62,7 +62,7 @@ describe('部位破壊', () => {
     const s0 = bossBattle();
     const raw = expectedRaw(s0, 20);
     const s = heroActs(s0, attackOn('enemy0'));
-    expect(s.enemies[0].hp).toBe(900 - raw);
+    expect(s.enemies[0].hp).toBe(s0.enemies[0].maxHp - raw);
     expect(s.enemies[0].parts.map((p) => p.hp)).toEqual([220, 180]);
   });
 

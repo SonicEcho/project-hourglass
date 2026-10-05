@@ -51,6 +51,10 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `  ${name(s, e.enemyId)}がダウン`;
     case 'standUp':
       return `${name(s, e.enemyId)}は立ち上がった（行動できない）`;
+    case 'charge':
+      return `${name(s, e.enemyId)}は力をためている（次の行動で${e.name}）`;
+    case 'chargeBroken':
+      return `  ${name(s, e.enemyId)}のためが解けた（${e.reason === 'down' ? 'ダウン' : '部位破壊で封じた'}）`;
     case 'oneMore':
       return `  ONE MORE（${name(s, e.actorId)}）`;
     case 'baton':
