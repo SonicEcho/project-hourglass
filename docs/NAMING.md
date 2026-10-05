@@ -253,7 +253,7 @@
 - MNEMOPOLIS ―記憶でできた街―
 - UTSUSHIYO ―写し世の街―
 - TOMORROW, UNSAVED ―未保存の明日―
-- LETHE ―忘却の街で、きみの名前を―
+- LETHE ―忘却の川のほとりの街―
 
 ### 4-2. 裏側の街と組織の呼び名
 
