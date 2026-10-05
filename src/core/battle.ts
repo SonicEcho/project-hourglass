@@ -85,6 +85,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     knownWeaknesses: [],
     down: false,
     standUpGuard: false,
+    charging: null,
     actions: clone(def.actions),
     parts: (def.parts ?? []).map((p) => ({
       id: p.id,
@@ -563,11 +564,39 @@ function runEnemy(s: BattleState, enemyId: string): void {
     s.log.push({ type: 'standUp', enemyId: e.uid });
     return;
   }
-  const action = chooseEnemyAction(s, e);
   e.standUpGuard = false;
+  if (e.charging) {
+    // ためていた大技を放つ（封じられていたら不発）
+    const charged = usableEnemyActions(e).find((a) => a.id === e.charging);
+    e.charging = null;
+    if (!charged) {
+      s.log.push({ type: 'chargeBroken', enemyId: e.uid, reason: 'sealed' });
+      return;
+    }
+    enemyAttack(s, e, charged);
+    return;
+  }
+  // 使える行動が残っていなければ何もしない
+  if (usableEnemyActions(e).length === 0) return;
+  const action = chooseEnemyAction(s, e);
+  if (action.charge) {
+    // 大技は、まず力をためる（このラウンドは攻撃しない）
+    e.charging = action.id;
+    s.log.push({ type: 'charge', enemyId: e.uid, actionId: action.id, name: action.name });
+    return;
+  }
+  enemyAttack(s, e, action);
+}
+
+function enemyAttack(s: BattleState, e: EnemyUnit, action: EnemyActionDef): void {
   s.log.push({ type: 'action', actorIds: [e.uid], actionId: action.id, name: action.name, extra: false });
   const targets = action.target === 'ally' ? [randomPick(s, livingAllies(s))] : livingAllies(s);
   for (const t of targets) damageAlly(s, e, action, t);
+}
+
+/** 力をためている大技 */
+export function chargingAction(enemy: EnemyUnit): EnemyActionDef | undefined {
+  return enemy.charging ? enemy.actions.find((a) => a.id === enemy.charging) : undefined;
 }
 
 /** 敵の行動を選ぶ（s の乱数と aiCounter を進める） */
@@ -870,11 +899,21 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
       enemy.down = true;
       ctx.downed = true;
       s.log.push({ type: 'down', enemyId: enemy.uid });
+      if (enemy.charging) {
+        // ダウンさせると、ためが解ける
+        enemy.charging = null;
+        s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'down' });
+      }
     }
   }
   if (part && part.hp === 0 && !part.broken) {
     part.broken = true;
     s.log.push({ type: 'partBreak', enemyId: enemy.uid, partId: part.id });
+    if (enemy.charging && enemy.actions.find((a) => a.id === enemy.charging)?.requiresPart === part.id) {
+      // ためていた大技を使う部位が壊れた
+      enemy.charging = null;
+      s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'sealed' });
+    }
     for (const el of part.revealsWeakness) revealWeakness(s, enemy, el);
   }
   if (!isAlive(enemy)) {

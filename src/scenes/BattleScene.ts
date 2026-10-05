@@ -3,6 +3,7 @@ import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, Com
 import {
   applyExtra,
   batonTargets,
+  chargingAction,
   comboCards,
   createBattle,
   declineExtra,
@@ -251,7 +252,9 @@ export class BattleScene extends Phaser.Scene {
   private async play(prev: BattleState, next: BattleState): Promise<void> {
     const events = next.log.slice(prev.log.length);
     logEvents(events);
-    const act = events.find((e) => e.type === 'action' || e.type === 'standUp' || e.type === 'baton' || e.type === 'cancel');
+    const act = events.find(
+      (e) => e.type === 'action' || e.type === 'standUp' || e.type === 'baton' || e.type === 'cancel' || e.type === 'charge' || e.type === 'chargeBroken',
+    );
     const link = act?.type === 'action' ? prev.links.find((l) => l.id === act.actionId) : undefined;
     const combo = act?.type === 'action' ? prev.combos.find((c) => c.id === act.actionId) : undefined;
     this.special = !!(link || combo);
@@ -337,6 +340,8 @@ export class BattleScene extends Phaser.Scene {
     if (e.type === 'standUp') return `${findUnit(s, e.enemyId)?.name ?? ''}は立ち上がった（行動できない）`;
     if (e.type === 'baton') return `${findUnit(s, e.fromId)?.name}から${findUnit(s, e.toId)?.name}へバトンタッチ！`;
     if (e.type === 'cancel') return `${names(e.actorIds)}は行動できなかった`;
+    if (e.type === 'charge') return `${findUnit(s, e.enemyId)?.name ?? ''}は力をためている…（次の行動で${e.name}！）`;
+    if (e.type === 'chargeBroken') return `${findUnit(s, e.enemyId)?.name ?? ''}のためが解けた！`;
     return '';
   }
 
@@ -389,6 +394,16 @@ export class BattleScene extends Phaser.Scene {
       case 'cancel': {
         const p = unitPosition(s, e.actorIds[0]);
         this.popup(p.x, p.y, e.reason === 'dead' ? '行動できない' : 'MPが足りない', COLORS.subText, 14);
+        return true;
+      }
+      case 'charge': {
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y, '力をためている…', '#ffb070', 18);
+        return true;
+      }
+      case 'chargeBroken': {
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y - 20, 'ためが解けた！', COLORS.weak, 18);
         return true;
       }
       case 'standUp': {
@@ -629,6 +644,22 @@ export class BattleScene extends Phaser.Scene {
         : `ONE MORE! ${actor.name}の追加行動（1枚引いた。バトンタッチ・見送りも可）`;
     }
     if (s.phase !== 'plan') return '';
+    const warn = this.chargeWarning();
+    const base = this.planMessage();
+    return warn ? `${warn}\n${base}` : base;
+  }
+
+  /** 力をためている敵がいれば、大技の予告を返す */
+  private chargeWarning(): string {
+    const e = this.state.enemies.find((x) => x.hp > 0 && chargingAction(x));
+    if (!e) return '';
+    const a = chargingAction(e)!;
+    return `⚠ ${e.name}が「${a.name}」${a.target === 'allies' ? '（全体）' : ''}の構え！ 防御か、ダウン・部位破壊で止めよう`;
+  }
+
+  private planMessage(): string {
+    const s = this.state;
+    const actor = this.actor();
     if (s.searchChoice) return 'サーチ：手札に加えるカードを1枚選ぶ';
     if (isPlanComplete(s)) return `ラウンド${s.round}：全員の行動が決まった。「実行」で開始（仲間をタップで選び直し）`;
     const left = unplannedAllies(s).length;

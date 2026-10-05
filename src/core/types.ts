@@ -99,6 +99,8 @@ export interface EnemyActionDef {
   weight: number;
   /** この部位が壊れると使えなくなる */
   requiresPart?: string;
+  /** 大技。使う前に1回「力をためる」（その間は攻撃しない）。次の自分の行動で放つ */
+  charge?: boolean;
 }
 
 export interface PartDef {
@@ -180,6 +182,8 @@ export interface EnemyUnit extends UnitBase {
   down: boolean;
   /** 立ち上がった後、まだ行動していない（この間はダウンしない） */
   standUpGuard: boolean;
+  /** 力をためている大技の id（次の自分の行動で放つ）。ダウンや部位破壊で解ける */
+  charging: string | null;
   actions: EnemyActionDef[];
   parts: PartState[];
   ai: EnemyAi;
@@ -251,6 +255,10 @@ export type LogEvent =
   | { type: 'weaknessFound'; enemyId: string; element: Element }
   | { type: 'down'; enemyId: string }
   | { type: 'standUp'; enemyId: string }
+  /** 敵が大技の力をためた（次の自分の行動で放つ） */
+  | { type: 'charge'; enemyId: string; actionId: string; name: string }
+  /** ためが解けた（ダウンした、または部位が壊れて大技が封じられた） */
+  | { type: 'chargeBroken'; enemyId: string; reason: 'down' | 'sealed' }
   | { type: 'oneMore'; actorId: string }
   | { type: 'baton'; fromId: string; toId: string }
   | { type: 'guard'; actorId: string }
