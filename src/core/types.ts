@@ -83,11 +83,37 @@ export interface LinkDef extends ActionDef {
   members: [string, string];
 }
 
+/**
+ * キャラの特性（段階8：ナビカス盤の効果パーツやバグ）。戦闘中ずっと効く。
+ * 同じ種類が複数あれば足し合わせる
+ */
+export type PassiveEffect =
+  /** その属性のダメージを rate 割増し（0.25 で +25%） */
+  | { kind: 'elementBoost'; element: Element; rate: number }
+  /** 部位へのダメージを rate 割増し */
+  | { kind: 'partBoost'; rate: number }
+  /** ワンモアの時に引く枚数を増やす */
+  | { kind: 'oneMoreDraw'; count: number }
+  /** バトンを受けた時の倍率に足す */
+  | { kind: 'batonBoost'; rate: number }
+  /** このキャラが使うコンボのダメージ・回復量を rate 割増し */
+  | { kind: 'comboBoost'; rate: number }
+  /** ラウンドの始めに最大HPの rate を回復 */
+  | { kind: 'regen'; rate: number }
+  /** 魔法・スキルのMP消費を減らす（最低1） */
+  | { kind: 'mpSave'; amount: number }
+  /** 戦闘の最初のラウンド、行動が先制になる */
+  | { kind: 'startDash' }
+  /** バグ：ラウンドの始めに最大HPの rate を失う（HPは1未満にならない） */
+  | { kind: 'bug'; rate: number };
+
 export interface CharacterDef {
   id: string;
   name: string;
   stats: Stats;
   skills: SkillDef[];
+  /** 特性（ナビカス盤で付く） */
+  passives?: PassiveEffect[];
 }
 
 export interface EnemyActionDef {
@@ -161,6 +187,7 @@ export interface AllyUnit extends UnitBase {
   maxMp: number;
   mp: number;
   skills: SkillDef[];
+  passives: PassiveEffect[];
 }
 
 export interface PartState {
@@ -262,6 +289,8 @@ export type LogEvent =
   | { type: 'oneMore'; actorId: string }
   | { type: 'baton'; fromId: string; toId: string }
   | { type: 'guard'; actorId: string }
+  /** ラウンドの始めの、特性によるHPの増減（バグで減る・ファーストエイドで回復） */
+  | { type: 'passiveHp'; allyId: string; source: 'bug' | 'regen'; amount: number; hpAfter: number }
   | { type: 'partBreak'; enemyId: string; partId: string }
   | { type: 'defeated'; unitId: string }
   | { type: 'draw'; cardUids: number[] }

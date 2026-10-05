@@ -29,6 +29,7 @@ import type {
   EnemyActionDef,
   EnemyUnit,
   LinkDef,
+  PassiveEffect,
   Plan,
   PlayerAction,
   QueueEntry,
@@ -67,6 +68,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     spd: def.stats.spd,
     guarding: false,
     skills: clone(def.skills),
+    passives: clone(def.passives ?? []),
   }));
   const enemies: EnemyUnit[] = setup.enemies.map((def, i) => ({
     uid: `enemy${i}`,
@@ -149,6 +151,69 @@ function findEnemy(s: BattleState, id: string): EnemyUnit | undefined {
   return s.enemies.find((u) => u.uid === id);
 }
 
+// ---- 特性（ナビカス盤） ----
+
+type PassiveOf<K extends PassiveEffect['kind']> = Extract<PassiveEffect, { kind: K }>;
+
+function passivesOf<K extends PassiveEffect['kind']>(ally: { passives?: PassiveEffect[] }, kind: K): PassiveOf<K>[] {
+  return (ally.passives ?? []).filter((p): p is PassiveOf<K> => p.kind === kind);
+}
+
+/** 割合の特性の合計（elementBoost は element を指定する） */
+export function passiveRate(
+  ally: { passives?: PassiveEffect[] },
+  kind: 'partBoost' | 'batonBoost' | 'comboBoost' | 'regen' | 'bug' | 'elementBoost',
+  element?: DamageType,
+): number {
+  return passivesOf(ally, kind)
+    .filter((p) => p.kind !== 'elementBoost' || p.element === element)
+    .reduce((sum, p) => sum + p.rate, 0);
+}
+
+/** 魔法・スキルのMP消費（MPセーブで減る。最低1） */
+export function skillMpCost(ally: { passives?: PassiveEffect[] }, skill: SkillDef): number {
+  const save = passivesOf(ally, 'mpSave').reduce((sum, p) => sum + p.amount, 0);
+  return save > 0 ? Math.max(1, skill.mp - save) : skill.mp;
+}
+
+/** ワンモアの時に引く枚数 */
+export function oneMoreDrawCount(ally: { passives?: PassiveEffect[] }): number {
+  return ONE_MORE_DRAW + passivesOf(ally, 'oneMoreDraw').reduce((sum, p) => sum + p.count, 0);
+}
+
+/** バトンを受けた時の倍率 */
+export function batonMultiplier(ally: { passives?: PassiveEffect[] }): number {
+  return BATON_MULTIPLIER + passiveRate(ally, 'batonBoost');
+}
+
+/** 特性による、与えるダメージの倍率（属性の割増しとコンボの割増し） */
+function passiveDamageMultiplier(user: AllyUnit, type: DamageType, combo: boolean): number {
+  return 1 + passiveRate(user, 'elementBoost', type) + (combo ? passiveRate(user, 'comboBoost') : 0);
+}
+
+/** 特性による、部位へのダメージ倍率 */
+function passivePartMultiplier(user: AllyUnit, partMultiplier: number | undefined): number {
+  return (partMultiplier ?? 1) * (1 + passiveRate(user, 'partBoost'));
+}
+
+/** ラウンドの始めの、特性によるHPの増減（バグで減り、ファーストエイドで回復する） */
+function applyRoundStartPassives(s: BattleState): void {
+  for (const a of livingAllies(s)) {
+    const loss = Math.floor(a.maxHp * passiveRate(a, 'bug'));
+    if (loss > 0) {
+      const amount = Math.min(loss, a.hp - 1);
+      a.hp -= amount;
+      if (amount > 0) s.log.push({ type: 'passiveHp', allyId: a.uid, source: 'bug', amount: -amount, hpAfter: a.hp });
+    }
+    const heal = Math.floor(a.maxHp * passiveRate(a, 'regen'));
+    if (heal > 0) {
+      const amount = Math.min(heal, a.maxHp - a.hp);
+      a.hp += amount;
+      if (amount > 0) s.log.push({ type: 'passiveHp', allyId: a.uid, source: 'regen', amount, hpAfter: a.hp });
+    }
+  }
+}
+
 /** その仲間の（まだ実行していない）計画 */
 export function planOf(s: BattleState, allyId: string): Plan | undefined {
   return s.plans.find((p) => !p.done && p.actorIds.includes(allyId));
@@ -187,6 +252,9 @@ function startRound(s: BattleState): void {
   s.queue = [];
   s.extra = null;
   s.log.push({ type: 'roundStart', round: s.round });
+  applyRoundStartPassives(s);
+  // スタートダッシュ：戦闘の最初のラウンドは先制
+  if (s.round === 1) s.precedeIds = livingAllies(s).filter((a) => passivesOf(a, 'startDash').length > 0).map((a) => a.uid);
   refillHand(s);
 }
 
@@ -236,7 +304,7 @@ function resolveAction(s: BattleState, actor: AllyUnit, action: PlayerAction, po
     case 'skill': {
       const skill = actor.skills.find((k) => k.id === action.skillId);
       if (!skill) return 'unknown skill';
-      if (actor.mp < skill.mp) return 'not enough MP';
+      if (actor.mp < skillMpCost(actor, skill)) return 'not enough MP';
       return { def: skill, cards: [], skill };
     }
     case 'link': {
@@ -644,7 +712,7 @@ function perform(
     throw new Error(r);
   }
   discardCards(s, r.cards.map((c) => c.uid));
-  if (r.skill) actor.mp -= r.skill.mp;
+  if (r.skill) actor.mp -= skillMpCost(actor, r.skill);
   const members = r.link ? r.link.members.map((id) => findAlly(s, id)!) : [actor];
   s.log.push({ type: 'action', actorIds: members.map((m) => m.uid), actionId: r.def.id, name: r.def.name, extra: opts.extra });
 
@@ -652,7 +720,8 @@ function perform(
     s,
     user: actor,
     attacker: averageStats(members),
-    multiplier: opts.boost ? BATON_MULTIPLIER : 1,
+    multiplier: opts.boost ? batonMultiplier(actor) : 1,
+    combo: action.type === 'combo',
     downed: false,
   };
   const target = retarget(s, r.def, 'target' in action ? action.target : undefined);
@@ -667,7 +736,7 @@ function triggerOneMore(s: BattleState, actorId: string, chain: string[]): void 
   updateOutcome(s);
   if (s.outcome !== 'ongoing') return;
   s.log.push({ type: 'oneMore', actorId });
-  drawCards(s, ONE_MORE_DRAW);
+  drawCards(s, oneMoreDrawCount(findAlly(s, actorId)!));
   s.extra = { actorId, chain, boost: false };
   s.phase = 'extra';
 }
@@ -744,6 +813,8 @@ interface EffectContext {
   user: AllyUnit;
   attacker: { atk: number; mag: number };
   multiplier: number;
+  /** コンボ（コンボブーストが効く） */
+  combo: boolean;
   /** この行動で、まだダウンしていなかった敵をダウンさせた */
   downed: boolean;
 }
@@ -775,7 +846,7 @@ function applyEffect(
       for (const t of targets) {
         // 自分の番が来るまでに倒れた仲間は回復できない
         if (!t || !isAlive(t)) continue;
-        const amount = calcHeal(effect.power, ctx.attacker.mag, ctx.multiplier);
+        const amount = calcHeal(effect.power, ctx.attacker.mag, ctx.multiplier * (ctx.combo ? 1 + passiveRate(ctx.user, 'comboBoost') : 1));
         t.hp = Math.min(t.maxHp, t.hp + amount);
         s.log.push({ type: 'heal', sourceId: ctx.user.uid, targetId: t.uid, amount, hpAfter: t.hp });
       }
@@ -867,7 +938,7 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
     defense: enemy.def,
     random: randomFactor(random(s)),
     affinity,
-    multiplier: ctx.multiplier * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
+    multiplier: ctx.multiplier * passiveDamageMultiplier(ctx.user, type, ctx.combo) * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
   });
 
   const found = partId !== undefined ? enemy.parts.find((p) => p.id === partId) : undefined;
@@ -876,7 +947,7 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
   let body = amount;
   let partAmount: number | undefined;
   if (part) {
-    const split = splitPartDamage(amount, effect.partMultiplier ?? 1);
+    const split = splitPartDamage(amount, passivePartMultiplier(ctx.user, effect.partMultiplier));
     body = split.body;
     partAmount = split.part;
     part.hp = Math.max(0, part.hp - partAmount);
@@ -974,7 +1045,8 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
   const r = resolveAction(s, actor, action, pool) as Resolved;
   const members = r.link ? r.link.members.map((id) => findAlly(s, id)!) : [actor];
   const attacker = averageStats(members);
-  const multiplier = isExtra && s.extra!.boost ? BATON_MULTIPLIER : 1;
+  const multiplier = isExtra && s.extra!.boost ? batonMultiplier(actor) : 1;
+  const combo = action.type === 'combo';
   const target = 'target' in action ? action.target : undefined;
   const targets: TargetPreview[] = [];
 
@@ -990,13 +1062,13 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
             defense: enemy.def,
             random: rand,
             affinity,
-            multiplier: multiplier * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
+            multiplier: multiplier * passiveDamageMultiplier(actor, type, combo) * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
           });
         const lo = calc(RANDOM_MIN);
         const hi = calc(RANDOM_MAX);
         const partId = r.def.target === 'enemy' && target?.kind === 'enemy' ? target.partId : undefined;
         if (partId !== undefined) {
-          const pm = effect.partMultiplier ?? 1;
+          const pm = passivePartMultiplier(actor, effect.partMultiplier);
           const a = splitPartDamage(lo, pm);
           const b = splitPartDamage(hi, pm);
           targets.push({ unitId: enemy.uid, partId, kind: 'damage', min: a.body, max: b.body, partMin: a.part, partMax: b.part, affinity });
@@ -1013,7 +1085,7 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
             ? livingAllies(s)
             : [actor];
       for (const ally of allies) {
-        const amount = calcHeal(effect.power, attacker.mag, multiplier);
+        const amount = calcHeal(effect.power, attacker.mag, multiplier * (combo ? 1 + passiveRate(actor, 'comboBoost') : 1));
         targets.push({ unitId: ally.uid, kind: 'heal', min: amount, max: amount, affinity: 'normal' });
       }
     }

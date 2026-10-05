@@ -6,6 +6,7 @@ import { installDebugMenu } from './debug/debugMenu';
 import { loadEruda } from './debug/eruda';
 import { BattleScene } from './scenes/BattleScene';
 import { GrowthScene } from './scenes/GrowthScene';
+import { NaviScene } from './scenes/NaviScene';
 import { ResultScene } from './scenes/ResultScene';
 import { initRunFromUrl, run, startNewRun } from './scenes/run';
 import { TitleScene } from './scenes/TitleScene';
@@ -38,7 +39,7 @@ const game = new Phaser.Game({
     height: GAME_HEIGHT * RENDER_SCALE,
   },
   input: { activePointers: 1 },
-  scene: [TitleScene, GrowthScene, BattleScene, ResultScene],
+  scene: [TitleScene, GrowthScene, NaviScene, BattleScene, ResultScene],
 });
 
 if (debug) {
@@ -60,6 +61,8 @@ if (debug) {
     refreshGrowth: () => {
       const growth = game.scene.getScene('Growth') as GrowthScene | null;
       growth?.refresh();
+      const navi = game.scene.getScene('Navi') as NaviScene | null;
+      navi?.refresh();
     },
   });
 }

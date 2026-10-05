@@ -32,7 +32,7 @@ export const CAMPAIGN: CampaignBattle[] = [
   { name: '戦闘1', enemies: [SLIME, SLIME], reward: 4 },
   { name: '戦闘2', enemies: [SLIME, FROST_BAT], reward: 5 },
   { name: '戦闘3', enemies: [SLIME, FROST_BAT, ARMOR_DOG], reward: 6 },
-  { name: '戦闘4', enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => strengthen(e, 1.2)), reward: 7 },
+  { name: '戦闘4', enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => strengthen(e, 1.3)), reward: 7 },
   { name: '戦闘5（ボス）', enemies: [DISTORTED_BEAST], reward: 0, boss: true },
 ];
 

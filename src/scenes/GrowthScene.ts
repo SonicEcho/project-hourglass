@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
+import { claimRewardParts, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CAMPAIGN, GROWTH_MAP, PARTY, SKILLS } from '../data';
+import { CAMPAIGN, GROWTH_MAP, NAVI_DATA, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PARTY, SKILLS } from '../data';
 import { describeAction } from '../ui/describe';
+import { describePart, partKindText } from '../ui/naviText';
+import { drawPartShape } from '../ui/naviViews';
 import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
@@ -49,6 +51,8 @@ export class GrowthScene extends Phaser.Scene {
   private message = '';
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
+  /** 勝利の報酬で選んでいるパーツの候補の番号 */
+  private rewardChosen: number[] = [];
 
   constructor() {
     super('Growth');
@@ -60,7 +64,9 @@ export class GrowthScene extends Phaser.Scene {
     this.overlay = undefined;
     this.selected = null;
     this.message = '';
+    this.rewardChosen = [];
     this.render();
+    if (run.pendingReward !== null) this.showReward();
   }
 
   /** デバッグメニューから記憶ポイントが変わった時に描き直す */
@@ -150,6 +156,21 @@ export class GrowthScene extends Phaser.Scene {
 
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
+
+    // ナビカス盤へ
+    const naviBugs = PARTY.reduce((sum, c) => sum + findBugs(NAVI_DATA, run.navi, c.id).length, 0);
+    const loose = run.navi.parts.filter((p) => !p.placement).length;
+    addButton(
+      this,
+      this.root,
+      GAME_WIDTH / 2,
+      733,
+      GAME_WIDTH - SIDE_PADDING * 2,
+      44,
+      `ナビカス盤（はめていないパーツ ${loose}${naviBugs > 0 ? `・バグ ${naviBugs}` : ''}）`,
+      { onTap: () => this.scene.start('Navi') },
+      { fill: 0x1e3a5a, stroke: 0x5aa8ff, strokeWidth: 2, size: 14, bold: true },
+    );
 
     // 下：次の戦闘へ
     addButton(
@@ -276,6 +297,71 @@ export class GrowthScene extends Phaser.Scene {
         onLongPress: () => this.showDetail(c.name, characterDetail(c, this.base(c.id))),
       });
     });
+  }
+
+  /** 勝利の報酬：パーツの候補から決まった数を選ぶ（選ぶまで閉じない） */
+  private showReward(): void {
+    this.closeOverlay();
+    const stage = run.pendingReward;
+    if (stage === null) return;
+    const candidates = NAVI_REWARD_CANDIDATES[stage] ?? [];
+    const picks = Math.min(NAVI_REWARD_PICKS, candidates.length);
+    const c = this.add.container(0, 0).setDepth(200);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75).setOrigin(0).setInteractive());
+    const top = 150;
+    const itemH = 104;
+    const h = 120 + candidates.length * (itemH + 8) + 70;
+    c.add(this.add.rectangle(14, top, GAME_WIDTH - 28, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent));
+    c.add(addText(this, GAME_WIDTH / 2, top + 16, 'パーツを手に入れた！', { size: 20, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
+    c.add(
+      addText(this, GAME_WIDTH / 2, top + 50, `${candidates.length}つの中から${picks}つ選ぶ（${this.rewardChosen.length}/${picks}）
+ナビカス盤ではめると効く`, {
+        size: 13,
+        align: 'center',
+        color: COLORS.subText,
+      }).setOrigin(0.5, 0),
+    );
+    candidates.forEach((id, i) => {
+      const def = NAVI_DATA.parts[id];
+      const y = top + 104 + i * (itemH + 8);
+      const chosen = this.rewardChosen.includes(i);
+      const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setOrigin(0);
+      rect.setStrokeStyle(chosen ? 3 : 1, chosen ? 0x6dff9e : COLORS.border);
+      c.add(rect);
+      drawPartShape(this, c, def, 0, 38, y + 14, 16);
+      c.add(addText(this, 110, y + 10, `${chosen ? '✔ ' : ''}${def.name}`, { size: 16, bold: true, color: chosen ? '#6dff9e' : COLORS.text }));
+      c.add(addText(this, 110, y + 36, `${describePart(def)}
+${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
+      makePressable(rect, {
+        onTap: () => {
+          if (chosen) this.rewardChosen = this.rewardChosen.filter((x) => x !== i);
+          else if (this.rewardChosen.length < picks) this.rewardChosen = [...this.rewardChosen, i];
+          this.showReward();
+        },
+      });
+    });
+    addButton(
+      this,
+      c,
+      GAME_WIDTH / 2,
+      top + h - 40,
+      240,
+      52,
+      '受け取る',
+      {
+        onTap: () => {
+          run.navi = claimRewardParts(run.navi, candidates, this.rewardChosen, picks);
+          console.log('[navi] reward', this.rewardChosen.map((x) => candidates[x]).join(','));
+          run.pendingReward = null;
+          this.rewardChosen = [];
+          this.closeOverlay();
+          this.message = 'パーツを受け取った。「ナビカス盤」ではめよう';
+          this.render();
+        },
+      },
+      { enabled: this.rewardChosen.length === picks, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
+    );
+    this.overlay = c;
   }
 
   private closeOverlay(): void {

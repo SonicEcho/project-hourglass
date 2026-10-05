@@ -38,7 +38,8 @@ export const DISTORTED_BEAST: EnemyDef = {
   id: 'distortedBeast',
   name: '歪みの獣',
   // 段階7：成長マップで育てたパーティに合わせて上げた（段階5では HP 750、攻撃 18、魔力 15）
-  stats: { hp: 1000, atk: 21, mag: 18, def: 12, spd: 11 },
+  // 段階8：ナビカス盤の分だけさらに上げた（段階7では HP 1000、攻撃 21、魔力 18）
+  stats: { hp: 1200, atk: 24, mag: 21, def: 12, spd: 11 },
   weaknesses: [],
   resistances: [],
   parts: [

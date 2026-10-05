@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
-import { actionSpeed, availableCombos, batonTargets, chargingAction, comboCards, comboProgress, findUnit } from '../core';
+import { actionSpeed, availableCombos, batonTargets, chargingAction, comboCards, comboProgress, findUnit, skillMpCost } from '../core';
 import { BASIC_ATTACK, CARDS, GUARD, HAND_SIZE, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
+import { summarizePassives } from './naviText';
 import { columnX, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, toCss } from './theme';
 import { addBar, addButton, addText, makePressable } from './widgets';
@@ -518,10 +519,11 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   const { y } = LAYOUT.hand;
   const rowH = 46;
   actor.skills.forEach((skill, i) => {
-    const enough = actor.mp >= skill.mp;
+    const cost = skillMpCost(actor, skill);
+    const enough = actor.mp >= cost;
     const selected = vm.selectedSkillId === skill.id;
     const type = mainDamageType(skill);
-    const label = `${skill.name}　MP${skill.mp}　${type ? ELEMENT_LABEL[type] : ''}　${weightLabel(skill.weight)}`;
+    const label = `${skill.name}　MP${cost}　${type ? ELEMENT_LABEL[type] : ''}　${weightLabel(skill.weight)}`;
     addButton(
       scene,
       root,
@@ -532,7 +534,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
       label,
       {
         onTap: () => h.tapSkill(skill.id),
-        onLongPress: () => h.detail(skill.name, `MP ${skill.mp}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
+        onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
       },
       { enabled: enough && vm.interactive, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: 13 },
     );
@@ -744,6 +746,7 @@ function allyDetail(a: AllyUnit): string {
     `攻撃 ${a.atk}　魔力 ${a.mag}　防御 ${a.def}　速さ ${a.spd}`,
     `魔法・スキル：${a.skills.map((k) => k.name).join('、')}`,
   ];
+  if (a.passives.length > 0) lines.push('', 'ナビカス盤の効果：', ...summarizePassives(a.passives).map((t) => `・${t}`));
   if (a.guarding) lines.push('防御中（このラウンドの間、受けるダメージ半減）');
   return lines.join('\n');
 }

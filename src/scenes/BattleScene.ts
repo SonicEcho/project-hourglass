@@ -28,7 +28,7 @@ import {
   useSupport,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BASIC_ATTACK, CAMPAIGN, createCampaignSetup, GUARD, PART_BREAK_POINTS } from '../data';
+import { BASIC_ATTACK, CAMPAIGN, createCampaignSetup, GUARD, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PART_BREAK_POINTS } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
@@ -108,6 +108,10 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => setActiveBattle(null));
     this.message = this.idleMessage();
     this.render();
+    // 1ラウンド目の始めの、バグ・ファーストエイドによるHPの増減を見せる
+    this.time.delayedCall(300, () => {
+      for (const e of this.state.log) if (e.type === 'passiveHp') this.showEvent(this.state, e);
+    });
   }
 
   /** デバッグメニューから状態を差し替える。演出中は受け付けない */
@@ -366,6 +370,12 @@ export class BattleScene extends Phaser.Scene {
       case 'heal': {
         const p = unitPosition(s, e.targetId);
         this.popup(p.x, p.y, `+${e.amount}`, COLORS.heal, 24);
+        return true;
+      }
+      case 'passiveHp': {
+        const p = unitPosition(s, e.allyId);
+        if (e.source === 'bug') this.popup(p.x, p.y, `バグ ${e.amount}`, COLORS.allyDamage, 18);
+        else this.popup(p.x, p.y, `+${e.amount}`, COLORS.heal, 20);
         return true;
       }
       case 'oneMore':
@@ -948,9 +958,12 @@ export class BattleScene extends Phaser.Scene {
       const gained = battleReward(CAMPAIGN[this.stage].reward, result.brokenParts.length, PART_BREAK_POINTS);
       run.growth = { ...run.growth, points: run.growth.points + gained };
       run.stage = this.stage + 1;
+      // パーツの報酬は成長マップの画面で選ぶ
+      const hasReward = !!NAVI_REWARD_CANDIDATES[this.stage];
+      if (hasReward) run.pendingReward = this.stage;
       const next = CAMPAIGN[run.stage];
       c.add(
-        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25, `記憶ポイント +${gained}（合計 ${run.growth.points}）\n次は${next.name}`, {
+        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 25, `記憶ポイント +${gained}（合計 ${run.growth.points}）${hasReward ? `\nパーツを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
           size: 15,
           align: 'center',
           color: COLORS.subText,
