@@ -13,8 +13,12 @@ export const STAND_UP_WEIGHT = 1.0;
 /** 行動順に表示する手番の数 */
 export const FORECAST_LENGTH = 8;
 
-/** 手番の開始時に補充する手札の枚数 */
+/** 手札を入れ替える時に引く枚数（手札が少ない時もこの枚数まで補充する） */
 export const HAND_SIZE = 5;
+/** カードを使わずに手札を残した時、手番の始めに引く枚数 */
+export const HOLD_DRAW = 1;
+/** 手札を残して引き足す時の上限 */
+export const HAND_MAX = 7;
 
 /** ダメージの乱数幅 */
 export const RANDOM_MIN = 0.9;
@@ -47,3 +51,14 @@ export const GUARD: ActionDef = {
   target: 'self',
   effects: [{ kind: 'guard' }],
 };
+
+/**
+ * 重さの見せ方。重さが上限以下なら、その名前で表示する（上から順に判定）。
+ * 重さ = 行動のあと、次の手番が来るまでの長さ。大きいほど次の手番が遅い
+ */
+export const WEIGHT_LABELS: { max: number; label: string }[] = [
+  { max: 0.6, label: '軽い' },
+  { max: 1.0, label: '普通' },
+  { max: 1.3, label: '重い' },
+  { max: Infinity, label: '超重い' },
+];

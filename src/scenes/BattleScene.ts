@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import type { ActionDef, ActionPreview, BattleState, LogEvent, PlayerAction, TargetRef, TargetScope } from '../core';
+import type { ActionDef, ActionPreview, BattleState, ComboDef, LinkDef, LogEvent, PlayerAction, TargetRef, TargetScope } from '../core';
 import {
   applyAction,
   batonTargets,
   canUseLink,
+  comboCards,
   createBattle,
   currentAlly,
   findUnit,
@@ -18,7 +19,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { BASIC_ATTACK, createEncounterSetup, type EncounterId, GUARD } from '../data';
 import { drawBattle, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
-import { COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
+import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
 import { battleSeed, setActiveBattle } from './run';
@@ -30,6 +31,7 @@ type Pending =
   | { source: 'attack' }
   | { source: 'guard' }
   | { source: 'link'; linkId: string }
+  | { source: 'combo'; comboId: string }
   | { source: 'baton' };
 
 interface Selection {
@@ -56,6 +58,8 @@ export class BattleScene extends Phaser.Scene {
   private fxLayer!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
   private skipping = false;
+  /** 連携技・コンボの演出中（数値を大きく、画面を揺らす） */
+  private special = false;
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
 
   constructor() {
@@ -112,7 +116,11 @@ export class BattleScene extends Phaser.Scene {
         logEvents(next.log.slice(s.log.length));
         const actor = findUnit(next, next.turn!.actorId)!;
         if (actor.side === 'ally') {
-          this.message = `${actor.name}の番`;
+          const events = next.log.slice(s.log.length);
+          const swapped = events.some((e) => e.type === 'discardHand');
+          const drew = events.find((e) => e.type === 'draw');
+          const handNote = swapped ? '（手札を入れ替えた）' : drew && drew.type === 'draw' && s.hand.length > 0 ? `（手札を残して+${drew.cardUids.length}枚）` : '';
+          this.message = `${actor.name}の番${handNote}`;
           this.render();
           await this.wait(FX.turnStart);
         }
@@ -164,11 +172,18 @@ export class BattleScene extends Phaser.Scene {
     const events = next.log.slice(prev.log.length);
     logEvents(events);
     const act = events.find((e) => e.type === 'action' || e.type === 'standUp' || e.type === 'baton');
+    const link = act?.type === 'action' ? prev.links.find((l) => l.id === act.actionId) : undefined;
+    const combo = act?.type === 'action' ? prev.combos.find((c) => c.id === act.actionId) : undefined;
+    this.special = !!(link || combo);
     if (act) {
       this.message = this.describeHeadline(prev, act);
       this.render(prev);
-      this.banner(this.message);
-      await this.wait(FX.banner);
+      if (link) await this.linkCutIn(prev, link);
+      else if (combo) await this.comboCutIn(combo);
+      else {
+        this.banner(this.message);
+        await this.wait(FX.banner);
+      }
     }
     this.state = next;
     this.render(next);
@@ -177,6 +192,63 @@ export class BattleScene extends Phaser.Scene {
     }
     await this.wait(FX.settle);
     this.fxLayer.removeAll(true);
+    this.special = false;
+  }
+
+  /** 連携技のカットイン：2人の帯が左右から入り、技名を大きく出す */
+  private async linkCutIn(s: BattleState, link: LinkDef): Promise<void> {
+    if (this.skipping) return;
+    const c = this.add.container(0, 0);
+    this.fxLayer.add(c);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75).setOrigin(0));
+    link.members.forEach((id, i) => {
+      const unit = findUnit(s, id);
+      const y = 250 + i * 90;
+      const band = this.add.container(i === 0 ? -GAME_WIDTH : GAME_WIDTH, y);
+      band.add(this.add.rectangle(0, 0, GAME_WIDTH, 72, ALLY_COLOR[id] ?? COLORS.ally).setOrigin(0, 0.5));
+      const name = addText(this, GAME_WIDTH / 2, 0, unit?.name ?? id, { size: 30, bold: true, align: 'center' }).setOrigin(0.5);
+      name.setStroke('#000000', 5);
+      band.add(name);
+      c.add(band);
+      this.tweens.add({ targets: band, x: 0, duration: 260, delay: i * 120, ease: 'Cubic.easeOut' });
+    });
+    const cross = addText(this, GAME_WIDTH / 2, 295, '×', { size: 28, bold: true, color: COLORS.accentText }).setOrigin(0.5);
+    cross.setAlpha(0);
+    c.add(cross);
+    this.tweens.add({ targets: cross, alpha: 1, delay: 380, duration: 120 });
+    const label = addText(this, GAME_WIDTH / 2, 410, '連携技', { size: 16, bold: true, color: COLORS.accentText }).setOrigin(0.5).setAlpha(0);
+    const title = addText(this, GAME_WIDTH / 2, 455, `${link.name}！`, { size: 40, bold: true, color: '#ffffff', align: 'center' }).setOrigin(0.5);
+    title.setStroke('#c08000', 8).setScale(2.4).setAlpha(0);
+    c.add([label, title]);
+    this.tweens.add({ targets: label, alpha: 1, delay: 450, duration: 150 });
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 450, duration: 280, ease: 'Back.easeOut' });
+    await this.wait(1150);
+    if (!this.skipping) {
+      const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0);
+      this.fxLayer.add(flash);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 300 });
+      this.cameras.main.shake(260, 0.012);
+    }
+    c.destroy(true);
+  }
+
+  /** コンボのカットイン：金色の帯に技名 */
+  private async comboCutIn(combo: ComboDef): Promise<void> {
+    if (this.skipping) return;
+    const c = this.add.container(0, 0);
+    this.fxLayer.add(c);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.55).setOrigin(0));
+    const band = this.add.rectangle(GAME_WIDTH / 2, 330, GAME_WIDTH, 96, 0x5a4a10, 0.95).setStrokeStyle(2, COLORS.accent);
+    band.setScale(1, 0);
+    c.add(band);
+    this.tweens.add({ targets: band, scaleY: 1, duration: 160, ease: 'Cubic.easeOut' });
+    const tag = addText(this, GAME_WIDTH / 2, 305, 'COMBO!', { size: 16, bold: true, color: COLORS.accentText }).setOrigin(0.5);
+    const title = addText(this, GAME_WIDTH / 2, 342, combo.name, { size: 32, bold: true }).setOrigin(0.5);
+    title.setStroke('#000000', 6).setScale(1.8).setAlpha(0);
+    c.add([tag, title]);
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 120, duration: 220, ease: 'Back.easeOut' });
+    await this.wait(850);
+    c.destroy(true);
   }
 
   private describeHeadline(s: BattleState, e: LogEvent): string {
@@ -195,7 +267,8 @@ export class BattleScene extends Phaser.Scene {
       case 'damage': {
         const p = unitPosition(s, e.targetId);
         const isAlly = s.allies.some((a) => a.uid === e.targetId);
-        this.popup(p.x, p.y, String(e.amount), isAlly ? COLORS.allyDamage : COLORS.damage, 26);
+        this.popup(p.x, p.y, String(e.amount), isAlly ? COLORS.allyDamage : COLORS.damage, this.special ? 34 : 26);
+        if (this.special && !this.skipping) this.cameras.main.shake(120, 0.006);
         if (e.partId !== undefined && e.partAmount !== undefined) {
           const pp = unitPosition(s, e.targetId, e.partId);
           this.popup(pp.x, pp.y, String(e.partAmount), '#ffc070', 22);
@@ -316,6 +389,8 @@ export class BattleScene extends Phaser.Scene {
         return GUARD;
       case 'link':
         return s.links.find((l) => l.id === p.linkId);
+      case 'combo':
+        return s.combos.find((c) => c.id === p.comboId);
       case 'baton':
         return undefined;
     }
@@ -348,6 +423,8 @@ export class BattleScene extends Phaser.Scene {
         return { type: 'guard' };
       case 'link':
         return { type: 'link', linkId: p.linkId };
+      case 'combo':
+        return { type: 'combo', comboId: p.comboId, target: sel.target };
       case 'baton':
         return { type: 'baton', toAllyId: sel.target!.id };
     }
@@ -400,7 +477,19 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private previewText(p: ActionPreview): string {
-    const parts = p.targets.slice(0, 3).map((t) => {
+    // 連続攻撃は同じ対象への予想を足し合わせる
+    const merged: ActionPreview['targets'] = [];
+    for (const t of p.targets) {
+      const m = merged.find((x) => x.unitId === t.unitId && x.partId === t.partId && x.kind === t.kind);
+      if (!m) merged.push({ ...t });
+      else {
+        m.min += t.min;
+        m.max += t.max;
+        if (t.partMin !== undefined) m.partMin = (m.partMin ?? 0) + t.partMin;
+        if (t.partMax !== undefined) m.partMax = (m.partMax ?? 0) + t.partMax;
+      }
+    }
+    const parts = merged.slice(0, 3).map((t) => {
       const unit = findUnit(this.state, t.unitId);
       const range = (a: number, b: number) => (a === b ? `${a}` : `${a}〜${b}`);
       const tag = t.affinity === 'weak' ? ' WEAK' : t.affinity === 'resist' ? ' 耐性' : '';
@@ -410,7 +499,7 @@ export class BattleScene extends Phaser.Scene {
       }
       return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : ''}${range(t.min, t.max)}${tag}`;
     });
-    if (p.targets.length > 3) parts.push('…');
+    if (merged.length > 3) parts.push('…');
     if (this.selection?.pending.source === 'baton') return '';
     const next = p.nextTurnIndex > 0 ? `次の手番 ${p.nextTurnIndex + 1}番目` : p.nextTurnIndex === 0 ? '' : '次の手番 9番目以降';
     return [parts.join(' / '), next].filter(Boolean).join('　');
@@ -471,6 +560,11 @@ export class BattleScene extends Phaser.Scene {
         this.select({ source: 'card', cardUid: uid });
       },
       tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
+      tapCombo: (id) => {
+        const cur = this.selection?.pending;
+        if (cur?.source === 'combo' && cur.comboId === id) this.cancel();
+        else this.select({ source: 'combo', comboId: id });
+      },
       tapBasic: (kind) => this.select({ source: kind }, true),
       tapDiscard: (uid) => {
         if (!this.selection) return;
@@ -533,6 +627,8 @@ export class BattleScene extends Phaser.Scene {
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
+      selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
+      comboCardUids: this.selectedComboCards(s),
       selectedTarget: sel?.target,
       batonMode: interactive && sel?.pending.source === 'baton',
       panel: interactive ? this.panel : 'none',
@@ -550,6 +646,13 @@ export class BattleScene extends Phaser.Scene {
       blocker.setInteractive();
       blocker.on('pointerdown', () => this.skip());
     }
+  }
+
+  private selectedComboCards(s: BattleState): number[] {
+    const p = this.selection?.pending;
+    if (p?.source !== 'combo') return [];
+    const combo = s.combos.find((c) => c.id === p.comboId);
+    return combo ? (comboCards(s, combo) ?? []).map((c) => c.uid) : [];
   }
 
   private closeOverlay(): void {

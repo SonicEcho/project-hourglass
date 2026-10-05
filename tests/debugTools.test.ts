@@ -3,6 +3,7 @@ import { advanceToPlayerTurn, applyAction, createBattle } from '../src/core';
 import { createEncounterSetup } from '../src/data';
 import { formatBattleLog, formatLogEvent } from '../src/debug/battleLog';
 import { healAllAllies, setEnemyHpToOne } from '../src/debug/cheats';
+import { weightLabel } from '../src/ui/labels';
 
 describe('デバッグ：チート', () => {
   it('味方を全回復する', () => {
@@ -42,5 +43,21 @@ describe('デバッグ：戦闘ログ', () => {
     expect(formatLogEvent(s, { type: 'standUp', enemyId: 'enemy1', ct: [{ unitId: 'enemy1', before: 6, after: 12 }] })).toBe(
       'フロストバットは立ち上がった　CT 6→12',
     );
+  });
+});
+
+describe('重さの表示', () => {
+  it('重さを軽い・普通・重い・超重いで表す', () => {
+    expect([0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.3, 1.5, 1.6].map(weightLabel)).toEqual([
+      '軽い',
+      '軽い',
+      '軽い',
+      '普通',
+      '普通',
+      '重い',
+      '重い',
+      '超重い',
+      '超重い',
+    ]);
   });
 });

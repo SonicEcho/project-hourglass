@@ -2,6 +2,7 @@ import type { BattleSetup, EnemyDef } from '../core/types';
 import { buildFolder } from './cards';
 import { PARTY } from './characters';
 import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
+import { COMBOS } from './combos';
 import { LINKS } from './links';
 
 export type EncounterId = 'battle1' | 'battle2';
@@ -19,6 +20,7 @@ export function createEncounterSetup(id: EncounterId, seed: number): BattleSetup
     enemies: ENCOUNTERS[id].enemies,
     deck: buildFolder(),
     links: LINKS,
+    combos: COMBOS,
     seed,
   };
 }

@@ -27,7 +27,16 @@ export type TargetScope = 'enemy' | 'enemies' | 'ally' | 'allies' | 'self';
 
 export type Effect =
   /** ダメージ。partMultiplier は部位を狙った時の部位ダメージ倍率 */
-  | { kind: 'damage'; type: DamageType; power: number; partMultiplier?: number }
+  | {
+      kind: 'damage';
+      type: DamageType;
+      power: number;
+      partMultiplier?: number;
+      /** 耐性を無視する（連携技など） */
+      ignoreResist?: boolean;
+      /** 対象ごとに、この中から一番効く属性を選ぶ（弱点があれば弱点を突く） */
+      bestOf?: Element[];
+    }
   | { kind: 'heal'; power: number }
   /** 手札を count 枚引く */
   | { kind: 'draw'; count: number }
@@ -52,9 +61,20 @@ export interface SkillDef extends ActionDef {
   mp: number;
 }
 
-export type CardDef = ActionDef;
+export interface CardDef extends ActionDef {
+  /** 使っても次の手番で手札を入れ替えない（ドローなど手札を増やすカード） */
+  keepsHand?: boolean;
+}
 
 /** 2人の連携技 */
+/**
+ * コンボ。手札に決まった組み合わせのカードがそろうと、まとめて使える大技。
+ * cards はカードの id（同じカードを複数枚求める時は同じ id を並べる）
+ */
+export interface ComboDef extends ActionDef {
+  cards: string[];
+}
+
 export interface LinkDef extends ActionDef {
   members: [string, string];
 }
@@ -110,6 +130,7 @@ export interface BattleSetup {
   /** フォルダ（山札）。枚数分を並べたもの */
   deck: CardDef[];
   links?: LinkDef[];
+  combos?: ComboDef[];
   seed: number;
 }
 
@@ -225,12 +246,15 @@ export interface BattleState {
   allies: AllyUnit[];
   enemies: EnemyUnit[];
   links: LinkDef[];
+  combos: ComboDef[];
   deck: CardInstance[];
   hand: CardInstance[];
   discard: CardInstance[];
   /** 今の手番。手番と手番の間は null */
   turn: TurnState | null;
   outcome: Outcome;
+  /** この手番の流れでカード（コンボ含む）を使った。次の味方の手番の始めに手札を入れ替える */
+  handRefreshPending: boolean;
   log: LogEvent[];
 }
 
@@ -244,4 +268,5 @@ export type PlayerAction =
   | { type: 'card'; cardUid: number; target?: TargetRef; pickCardUid?: number }
   | { type: 'skill'; skillId: string; target?: TargetRef; pickCardUid?: number }
   | { type: 'baton'; toAllyId: string }
-  | { type: 'link'; linkId: string };
+  | { type: 'link'; linkId: string }
+  | { type: 'combo'; comboId: string; target?: TargetRef };
