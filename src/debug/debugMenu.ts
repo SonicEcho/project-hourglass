@@ -1,12 +1,14 @@
 import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
+import { addParts } from '../core';
+import { NAVI_PARTS } from '../data';
 import { getActiveBattle, run } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
 export interface DebugNavigator {
   startBoss(): void;
   restartRun(): void;
-  /** 成長マップの画面を開き直す（記憶ポイントの表示を更新するため） */
+  /** 成長マップ・ナビカス盤の画面を描き直す（記憶ポイントやパーツの表示を更新するため） */
   refreshGrowth(): void;
 }
 
@@ -84,6 +86,14 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.growth = { ...run.growth, points: run.growth.points + 10 };
         nav.refreshGrowth();
         notify(`記憶ポイントを+10しました（${run.growth.points}）`);
+      }),
+    );
+
+    panel.append(
+      button(`パーツを全種類1つずつもらう（今 ${run.navi.parts.length}個）`, () => {
+        run.navi = addParts(run.navi, Object.keys(NAVI_PARTS));
+        nav.refreshGrowth();
+        notify(`パーツを${Object.keys(NAVI_PARTS).length}個もらいました（${run.navi.parts.length}個）`);
       }),
     );
 

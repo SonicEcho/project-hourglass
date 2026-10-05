@@ -61,6 +61,10 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `${name(s, e.fromId)}→${name(s, e.toId)} バトンタッチ`;
     case 'guard':
       return `  ${name(s, e.actorId)}は防御`;
+    case 'passiveHp':
+      return e.source === 'bug'
+        ? `  ${name(s, e.allyId)}はバグで${-e.amount}ダメージ（HP ${e.hpAfter}）`
+        : `  ${name(s, e.allyId)}はファーストエイドで${e.amount}回復（HP ${e.hpAfter}）`;
     case 'partBreak':
       return `  ${name(s, e.enemyId)}の${partName(s, e.enemyId, e.partId)}を破壊`;
     case 'defeated':

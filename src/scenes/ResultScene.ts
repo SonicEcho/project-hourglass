@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { BattleResult } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CAMPAIGN } from '../data';
+import { BOSS_PART_REWARDS, CAMPAIGN, NAVI_PARTS } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { rerollSeed, startNewRun } from './run';
@@ -47,7 +47,9 @@ export class ResultScene extends Phaser.Scene {
       data.brokenParts.forEach((p, i) => {
         const y = top + 50 + i * 54;
         root.add(addText(this, 36, y, `${p.enemyName}の${p.partName}`, { size: 15, bold: true }));
-        root.add(addText(this, 52, y + 24, `素材：${p.material}（表示のみ）`, { size: 13, color: COLORS.subText }));
+        const part = BOSS_PART_REWARDS[p.partId];
+        const reward = part ? `　パーツ：${NAVI_PARTS[part].name}` : '';
+        root.add(addText(this, 52, y + 24, `素材：${p.material}${reward}（表示のみ）`, { size: 13, color: COLORS.subText }));
       });
     }
     root.add(addText(this, cx, top + 250, `seed ${data.seed}`, { size: 11, color: COLORS.dimText }).setOrigin(0.5));
