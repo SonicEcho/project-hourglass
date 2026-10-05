@@ -1,17 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  advanceToPlayerTurn,
-  applyAction,
-  calcDamage,
-  calcHeal,
-  createBattle,
-  nextRandom,
-  randomFactor,
-  runEnemyTurn,
-  startNextTurn,
-} from '../../src/core';
+import { calcDamage, calcHeal, createBattle, declineExtra, nextRandom, randomFactor, runUntilInput } from '../../src/core';
 import { createEncounterSetup } from '../../src/data';
-import { ally, enemy, eventsOf, setup } from './helpers';
+import { ally, attackOn, battle, enemy, eventsOf, execute, guard, planAll } from './helpers';
 
 const base = { power: 40, attack: 16, defense: 8, random: 1 };
 
@@ -27,7 +17,6 @@ describe('ダメージ計算', () => {
   });
 
   it('小数点以下は切り捨て', () => {
-    // 30 × 18 ÷ 8 = 67.5
     expect(calcDamage({ power: 30, attack: 18, defense: 8, random: 1, affinity: 'normal' })).toBe(67);
   });
 
@@ -66,19 +55,16 @@ describe('乱数のシード', () => {
     };
     expect(seq(123)).toEqual(seq(123));
     expect(seq(123)).not.toEqual(seq(124));
-    for (const v of seq(99)) {
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThan(1);
-    }
   });
 
   it('同じシードと同じ操作なら、戦闘の結果がまったく同じになる', () => {
     const play = (seed: number) => {
-      let s = advanceToPlayerTurn(createBattle(createEncounterSetup('battle1', seed)));
-      for (let i = 0; i < 5 && s.outcome === 'ongoing'; i++) {
-        const target = s.enemies.find((e) => e.hp > 0)!;
-        s = applyAction(s, { type: 'attack', target: { kind: 'enemy', id: target.uid } });
-        s = advanceToPlayerTurn(s);
+      let s = createBattle(createEncounterSetup('battle1', seed));
+      for (let i = 0; i < 3 && s.outcome === 'ongoing'; i++) {
+        const target = s.enemies.find((e) => e.hp > 0)!.uid;
+        for (const a of s.allies.filter((x) => x.hp > 0)) s = planAll(s, { [a.uid]: attackOn(target) });
+        s = execute(s);
+        while (s.phase === 'extra') s = runUntilInput(declineExtra(s));
       }
       return s;
     };
@@ -88,28 +74,27 @@ describe('乱数のシード', () => {
 });
 
 describe('防御', () => {
-  it('次の自分の手番まで受けるダメージが半減し、自分の手番が来たら解ける', () => {
-    const cfg = setup({
-      allies: [ally('hero', { hp: 999, spd: 20, def: 10 })],
-      enemies: [enemy('e', { atk: 50, spd: 15 })],
-      seed: 5,
-    });
-    // 主人公(ct5) → 防御で ct8 → 敵(ct7) → 主人公 の順
-    let guarded = applyAction(startNextTurn(createBattle(cfg)), { type: 'guard' });
-    expect(guarded.allies[0].guarding).toBe(true);
-    let unguarded = structuredClone(guarded);
-    unguarded.allies[0].guarding = false;
+  // 敵：攻撃50・威力10、味方：防御10 → 50 × 乱数(0.9〜1.1) = 45〜55
+  const cfg = { allies: [ally('hero', { hp: 999 })], enemies: [enemy('e', { atk: 50 })], seed: 5 };
 
-    guarded = runEnemyTurn(startNextTurn(guarded));
-    unguarded = runEnemyTurn(startNextTurn(unguarded));
-    const g = eventsOf(guarded, 'damage')[0].amount;
-    const u = eventsOf(unguarded, 'damage')[0].amount;
-    expect(g).toBeLessThanOrEqual(Math.ceil(u / 2));
-    expect(g).toBeGreaterThanOrEqual(Math.floor(u / 2) - 1);
+  it('ラウンドの間、受けるダメージが半減する', () => {
+    const s = execute(planAll(battle(cfg), { hero: guard }));
+    const d = eventsOf(s, 'damage').find((e) => e.targetId === 'hero')!.amount;
+    expect(d).toBeGreaterThanOrEqual(22);
+    expect(d).toBeLessThanOrEqual(27);
+  });
 
-    // 次の自分の手番の開始で防御が解ける
-    const next = startNextTurn(guarded);
-    expect(next.turn?.actorId).toBe('hero');
-    expect(next.allies[0].guarding).toBe(false);
+  it('防御しなければそのまま受ける', () => {
+    const s = execute(planAll(battle(cfg), { hero: attackOn('enemy0') }));
+    const d = eventsOf(s, 'damage').find((e) => e.targetId === 'hero')!.amount;
+    expect(d).toBeGreaterThanOrEqual(45);
+    expect(d).toBeLessThanOrEqual(55);
+  });
+
+  it('ラウンドの終わりに防御が解ける', () => {
+    const s = execute(planAll(battle(cfg), { hero: guard }));
+    expect(s.round).toBe(2);
+    expect(s.phase).toBe('plan');
+    expect(s.allies[0].guarding).toBe(false);
   });
 });

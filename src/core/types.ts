@@ -44,14 +44,18 @@ export type Effect =
   | { kind: 'redraw'; count: number }
   /** 捨て札から好きなカードを1枚手札に加える */
   | { kind: 'retrieve' }
-  /** 次の自分の手番まで受けるダメージを減らす */
-  | { kind: 'guard' };
+  /** このラウンドの間、受けるダメージを減らす */
+  | { kind: 'guard' }
+  /** 山札の上から count 枚を見て、1枚を手札に加える（残りは山札の下へ） */
+  | { kind: 'search'; count: number }
+  /** 選んだ仲間のこのラウンドの行動を、最初に実行する */
+  | { kind: 'precede' };
 
 /** 味方の行動（カード、魔法・スキル、基本行動、連携技）の共通定義 */
 export interface ActionDef {
   id: string;
   name: string;
-  /** 行動の重さ。待ち時間 = ceil(100 ÷ 速さ × 重さ) */
+  /** 行動の重さ。行動の速さ = 速さ ÷ 重さ。重いほど後回しになる */
   weight: number;
   target: TargetScope;
   effects: Effect[];
@@ -62,11 +66,10 @@ export interface SkillDef extends ActionDef {
 }
 
 export interface CardDef extends ActionDef {
-  /** 使っても次の手番で手札を入れ替えない（ドローなど手札を増やすカード） */
-  keepsHand?: boolean;
+  /** サポートカード。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で1枚まで） */
+  support?: boolean;
 }
 
-/** 2人の連携技 */
 /**
  * コンボ。手札に決まった組み合わせのカードがそろうと、まとめて使える大技。
  * cards はカードの id（同じカードを複数枚求める時は同じ id を並べる）
@@ -75,6 +78,7 @@ export interface ComboDef extends ActionDef {
   cards: string[];
 }
 
+/** 2人の連携技 */
 export interface LinkDef extends ActionDef {
   members: [string, string];
 }
@@ -146,8 +150,7 @@ interface UnitBase {
   mag: number;
   def: number;
   spd: number;
-  /** 次に行動する時刻（待ち時間の累計）。小さい者から行動する */
-  ct: number;
+  /** このラウンドの間、受けるダメージが減る */
   guarding: boolean;
 }
 
@@ -156,8 +159,6 @@ export interface AllyUnit extends UnitBase {
   maxMp: number;
   mp: number;
   skills: SkillDef[];
-  /** バトンタッチを受けた。次の行動のダメージ・回復量が上がる */
-  batonBoost: boolean;
 }
 
 export interface PartState {
@@ -177,6 +178,8 @@ export interface EnemyUnit extends UnitBase {
   /** 判明した弱点（一度突くか、部位破壊で露出すると判明） */
   knownWeaknesses: Element[];
   down: boolean;
+  /** 立ち上がった後、まだ行動していない（この間はダウンしない） */
+  standUpGuard: boolean;
   actions: EnemyActionDef[];
   parts: PartState[];
   ai: EnemyAi;
@@ -191,29 +194,49 @@ export interface CardInstance {
   card: CardDef;
 }
 
-export interface TurnState {
-  actorId: string;
-  /** ワンモアの行動中（待ち時間を加算しない。バトンタッチを選べる） */
-  oneMoreActive: boolean;
-  /** この手番でワンモアを使った */
-  oneMoreUsed: boolean;
-  /** この手番に至るまでにバトンを渡した仲間（渡し返しはできない） */
-  batonChain: string[];
+/** 計画した行動。連携技は2人で1つ */
+export interface Plan {
+  actorIds: string[];
+  action: PlayerAction;
+  /** この行動のために確保したカード（カード・コンボの材料）。他の仲間には割り当てられない */
+  cardUids: number[];
+  /** 実行済み（または取り消し済み） */
+  done: boolean;
 }
+
+/** 実行の順番待ち */
+export type QueueEntry = { kind: 'ally'; planIndex: number } | { kind: 'enemy'; enemyId: string };
+
+/** ワンモア・バトンの追加行動を選んでいる最中 */
+export interface ExtraTurn {
+  actorId: string;
+  /** この連鎖でバトンを受け渡した仲間（渡し返しはできない） */
+  chain: string[];
+  /** バトンを受けた（ダメージ・回復量が上がる） */
+  boost: boolean;
+}
+
+/**
+ * 戦闘の局面
+ * - plan: 3人の行動を選ぶ
+ * - execute: 行動を速さ順に実行している
+ * - extra: ワンモア・バトンの追加行動を選んでいる
+ * - ended: 勝敗がついた
+ */
+export type Phase = 'plan' | 'execute' | 'extra' | 'ended';
 
 export type Outcome = 'ongoing' | 'victory' | 'defeat';
 
-export interface CtChange {
-  unitId: string;
-  before: number;
-  after: number;
-}
-
 export type LogEvent =
   | { type: 'battleStart'; seed: number }
-  | { type: 'turnStart'; actorId: string; ct: number }
-  /** ct: 待ち時間が変わった者（連携技では2人）。ワンモアの行動では変化なし */
-  | { type: 'action'; actorId: string; actionId: string; name: string; ct: CtChange[] }
+  | { type: 'roundStart'; round: number }
+  | { type: 'roundEnd'; round: number }
+  /** actorIds: 行動した者（連携技は2人）。extra: ワンモア・バトンの追加行動 */
+  | { type: 'action'; actorIds: string[]; actionId: string; name: string; extra: boolean }
+  /** 自分の番が来る前に倒れた、MPが足りないなどで行動できなかった */
+  | { type: 'cancel'; actorIds: string[]; reason: 'dead' | 'mp' }
+  | { type: 'support'; cardUid: number; name: string; targetId?: string }
+  | { type: 'search'; shownUids: number[]; pickedUid: number }
   | {
       type: 'damage';
       sourceId: string;
@@ -227,7 +250,7 @@ export type LogEvent =
   | { type: 'heal'; sourceId: string; targetId: string; amount: number; hpAfter: number }
   | { type: 'weaknessFound'; enemyId: string; element: Element }
   | { type: 'down'; enemyId: string }
-  | { type: 'standUp'; enemyId: string; ct: CtChange[] }
+  | { type: 'standUp'; enemyId: string }
   | { type: 'oneMore'; actorId: string }
   | { type: 'baton'; fromId: string; toId: string }
   | { type: 'guard'; actorId: string }
@@ -250,11 +273,20 @@ export interface BattleState {
   deck: CardInstance[];
   hand: CardInstance[];
   discard: CardInstance[];
-  /** 今の手番。手番と手番の間は null */
-  turn: TurnState | null;
+  round: number;
+  phase: Phase;
+  /** このラウンドの計画 */
+  plans: Plan[];
+  /** クイックステップで先制する仲間 */
+  precedeIds: string[];
+  /** このラウンドにサポートカードを使った */
+  supportUsed: boolean;
+  /** サーチで見ているカード（1枚選ぶまで計画を進められない） */
+  searchChoice: CardInstance[] | null;
+  /** 実行の順番待ち（先頭から実行する） */
+  queue: QueueEntry[];
+  extra: ExtraTurn | null;
   outcome: Outcome;
-  /** この手番の流れでカード（コンボ含む）を使った。次の味方の手番の始めに手札を入れ替える */
-  handRefreshPending: boolean;
   log: LogEvent[];
 }
 
@@ -267,6 +299,5 @@ export type PlayerAction =
   | { type: 'guard' }
   | { type: 'card'; cardUid: number; target?: TargetRef; pickCardUid?: number }
   | { type: 'skill'; skillId: string; target?: TargetRef; pickCardUid?: number }
-  | { type: 'baton'; toAllyId: string }
   | { type: 'link'; linkId: string }
   | { type: 'combo'; comboId: string; target?: TargetRef };

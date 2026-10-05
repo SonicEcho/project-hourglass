@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceToPlayerTurn, applyAction, createBattle } from '../src/core';
+import { createBattle, runUntilInput, setPlan, startExecution } from '../src/core';
 import { createEncounterSetup } from '../src/data';
 import { formatBattleLog, formatLogEvent } from '../src/debug/battleLog';
 import { healAllAllies, setEnemyHpToOne } from '../src/debug/cheats';
@@ -24,25 +24,31 @@ describe('デバッグ：チート', () => {
 });
 
 describe('デバッグ：戦闘ログ', () => {
-  it('誰が何をして、何ダメージ、CTがどう動いたかを文字にする', () => {
-    let s = advanceToPlayerTurn(createBattle(createEncounterSetup('battle2', 3)));
-    const actor = s.turn!.actorId;
-    s = applyAction(s, { type: 'attack', target: { kind: 'enemy', id: 'enemy0', partId: 'horn' } });
+  it('ラウンドごとに、誰が何をして、何ダメージかを文字にする', () => {
+    let s = createBattle(createEncounterSetup('battle2', 3));
+    s = setPlan(s, 'hero', { type: 'attack', target: { kind: 'enemy', id: 'enemy0', partId: 'horn' } });
+    s = setPlan(s, 'akari', { type: 'guard' });
+    s = setPlan(s, 'mio', { type: 'guard' });
+    s = runUntilInput(startExecution(s));
     const lines = formatBattleLog(s);
     expect(lines[0]).toBe('戦闘開始（シード 3）');
-    expect(lines.some((l) => l.startsWith(`── ${s.allies.find((a) => a.uid === actor)!.name}の手番`))).toBe(true);
-    expect(lines.some((l) => /：通常攻撃　CT \d+→\d+/.test(l))).toBe(true);
-    expect(lines.some((l) => /歪みの獣（角）に 部位に\d+・本体に\d+ダメージ/.test(l))).toBe(true);
+    expect(lines).toContain('══ ラウンド 1');
     expect(lines.some((l) => /^  5枚引いた（.+）$/.test(l))).toBe(true);
+    expect(lines).toContain('主人公：通常攻撃');
+    expect(lines.some((l) => /歪みの獣（角）に 部位に\d+・本体に\d+ダメージ/.test(l))).toBe(true);
+    expect(lines).toContain('── ラウンド 1 終わり');
   });
 
   it('すべての出来事を文字にできる', () => {
     const s = createBattle(createEncounterSetup('battle1', 1));
     expect(formatLogEvent(s, { type: 'weaknessFound', enemyId: 'enemy0', element: 'fire' })).toBe('  スライムの弱点「火」が判明');
     expect(formatLogEvent(s, { type: 'battleEnd', outcome: 'defeat' })).toBe('戦闘終了：敗北');
-    expect(formatLogEvent(s, { type: 'standUp', enemyId: 'enemy1', ct: [{ unitId: 'enemy1', before: 6, after: 12 }] })).toBe(
-      'フロストバットは立ち上がった　CT 6→12',
+    expect(formatLogEvent(s, { type: 'standUp', enemyId: 'enemy1' })).toBe('フロストバットは立ち上がった（行動できない）');
+    expect(formatLogEvent(s, { type: 'action', actorIds: ['hero', 'mio'], actionId: 'crossDrive', name: 'クロスドライブ', extra: false })).toBe(
+      '主人公とみお：クロスドライブ',
     );
+    expect(formatLogEvent(s, { type: 'action', actorIds: ['akari'], actionId: 'care', name: 'ケア', extra: true })).toBe('★追加行動 あかり：ケア');
+    expect(formatLogEvent(s, { type: 'cancel', actorIds: ['mio'], reason: 'dead' })).toBe('みおの行動は取り消し（先に倒れた）');
   });
 });
 

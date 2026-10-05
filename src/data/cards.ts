@@ -8,7 +8,9 @@ export const CARDS = {
   thunderChip: { id: 'thunderChip', name: 'サンダーチップ', weight: 1.0, target: 'enemy', effects: [{ kind: 'damage', type: 'thunder', power: 40 }] },
   wideShot: { id: 'wideShot', name: 'ワイドショット', weight: 1.2, target: 'enemies', effects: [{ kind: 'damage', type: 'physical', power: 20 }] },
   recover: { id: 'recover', name: 'リカバー', weight: 0.8, target: 'ally', effects: [{ kind: 'heal', power: 40 }] },
-  quickStep: { id: 'quickStep', name: 'クイックステップ', weight: 0.4, target: 'self', effects: [] },
+  // サポートカード：計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で1枚まで）
+  quickStep: { id: 'quickStep', name: 'クイックステップ', weight: 0, target: 'ally', support: true, effects: [{ kind: 'precede' }] },
+  search: { id: 'search', name: 'サーチ', weight: 0, target: 'self', support: true, effects: [{ kind: 'search', count: 3 }] },
   breakArm: {
     id: 'breakArm',
     name: 'ブレイクアーム',
@@ -16,8 +18,7 @@ export const CARDS = {
     target: 'enemy',
     effects: [{ kind: 'damage', type: 'physical', power: 30, partMultiplier: 2 }],
   },
-  // ドローは使っても手札を入れ替えない（引いたカードを次の手番に持ち越せる）
-  draw: { id: 'draw', name: 'ドロー', weight: 0.5, target: 'self', keepsHand: true, effects: [{ kind: 'draw', count: 2 }] },
+  draw: { id: 'draw', name: 'ドロー', weight: 0, target: 'self', support: true, effects: [{ kind: 'draw', count: 2 }] },
 } satisfies Record<string, CardDef>;
 
 /** フォルダ（パーティ共通の山札）20枚の構成 */
@@ -29,7 +30,8 @@ export const FOLDER: { card: CardDef; count: number }[] = [
   { card: CARDS.thunderChip, count: 2 },
   { card: CARDS.wideShot, count: 2 },
   { card: CARDS.recover, count: 2 },
-  { card: CARDS.quickStep, count: 2 },
+  { card: CARDS.quickStep, count: 1 },
+  { card: CARDS.search, count: 1 },
   { card: CARDS.breakArm, count: 2 },
   { card: CARDS.draw, count: 1 },
 ];

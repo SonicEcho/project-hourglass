@@ -2,23 +2,15 @@ import type { ActionDef } from '../core/types';
 
 // 戦闘ルールの数値。すべて仮。遊んで調整する
 
-/** 待ち時間 = ceil(CT_BASE ÷ 速さ × 重さ) */
-export const CT_BASE = 100;
-/** 戦闘開始時の待ち時間を決める重さ */
-export const INITIAL_ACTION_WEIGHT = 1.0;
-/** 行動順の予測で、まだ決まっていない行動に使う重さ */
-export const FORECAST_ACTION_WEIGHT = 1.0;
-/** ダウンした敵が立ち上がりに使う重さ */
-export const STAND_UP_WEIGHT = 1.0;
-/** 行動順に表示する手番の数 */
-export const FORECAST_LENGTH = 8;
+/** 行動順の予告で、まだ決まっていない行動（敵の行動など）に使う重さ */
+export const DEFAULT_ACTION_WEIGHT = 1.0;
 
-/** 手札を入れ替える時に引く枚数（手札が少ない時もこの枚数まで補充する） */
+/** ラウンドの始めに手札をこの枚数まで補充する */
 export const HAND_SIZE = 5;
-/** カードを使わずに手札を残した時、手番の始めに引く枚数 */
-export const HOLD_DRAW = 1;
-/** 手札を残して引き足す時の上限 */
-export const HAND_MAX = 7;
+/** ワンモアになった時に引く枚数 */
+export const ONE_MORE_DRAW = 1;
+/** 1ラウンドにチーム全体で使えるサポートカードの枚数 */
+export const SUPPORT_PER_ROUND = 1;
 
 /** ダメージの乱数幅 */
 export const RANDOM_MIN = 0.9;
@@ -30,7 +22,7 @@ export const MIN_DAMAGE = 1;
 export const HEAL_DIVISOR = 20;
 /** 防御中に受けるダメージの倍率 */
 export const GUARD_DAMAGE_MULTIPLIER = 0.5;
-/** バトンを受けた仲間の次の行動のダメージ・回復量の倍率 */
+/** バトンを受けた仲間の追加行動のダメージ・回復量の倍率 */
 export const BATON_MULTIPLIER = 1.25;
 /** 部位を狙った時に本体に入るダメージの割合 */
 export const PART_BODY_RATIO = 0.5;
@@ -47,6 +39,7 @@ export const BASIC_ATTACK: ActionDef = {
 export const GUARD: ActionDef = {
   id: 'guard',
   name: '防御',
+  // 防御はラウンドの最初に効くので、重さは並び順に影響しない
   weight: 0.6,
   target: 'self',
   effects: [{ kind: 'guard' }],
@@ -54,7 +47,7 @@ export const GUARD: ActionDef = {
 
 /**
  * 重さの見せ方。重さが上限以下なら、その名前で表示する（上から順に判定）。
- * 重さ = 行動のあと、次の手番が来るまでの長さ。大きいほど次の手番が遅い
+ * 行動の速さ = 速さ ÷ 重さ。重いほどラウンドの中で後回しになる
  */
 export const WEIGHT_LABELS: { max: number; label: string }[] = [
   { max: 0.6, label: '軽い' },

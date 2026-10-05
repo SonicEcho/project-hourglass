@@ -1,8 +1,8 @@
-import type { BattleState, CtChange, LogEvent } from '../core';
+import type { BattleState, LogEvent } from '../core';
 import { findUnit } from '../core';
 import { ELEMENT_LABEL } from '../ui/labels';
 
-// 戦闘ログ（誰が何をして、何ダメージ、CTがどう動いたか）を文字にする
+// 戦闘ログ（ラウンドごとに、誰が何をして、何ダメージか）を文字にする
 
 function name(s: BattleState, id: string): string {
   return findUnit(s, id)?.name ?? id;
@@ -17,19 +17,26 @@ function partName(s: BattleState, enemyId: string, partId: string): string {
   return s.enemies.find((e) => e.uid === enemyId)?.parts.find((p) => p.id === partId)?.name ?? partId;
 }
 
-function ctText(s: BattleState, changes: CtChange[], single: boolean): string {
-  if (changes.length === 0) return '（CT変化なし）';
-  return changes.map((c) => `${single ? '' : name(s, c.unitId)}CT ${c.before}→${c.after}`).join('、');
+function names(s: BattleState, ids: string[]): string {
+  return ids.map((id) => name(s, id)).join('と');
 }
 
 export function formatLogEvent(s: BattleState, e: LogEvent): string {
   switch (e.type) {
     case 'battleStart':
       return `戦闘開始（シード ${e.seed}）`;
-    case 'turnStart':
-      return `── ${name(s, e.actorId)}の手番（CT ${e.ct}）`;
+    case 'roundStart':
+      return `══ ラウンド ${e.round}`;
+    case 'roundEnd':
+      return `── ラウンド ${e.round} 終わり`;
     case 'action':
-      return `${name(s, e.actorId)}：${e.name}　${ctText(s, e.ct, e.ct.length === 1)}`;
+      return `${e.extra ? '★追加行動 ' : ''}${names(s, e.actorIds)}：${e.name}`;
+    case 'cancel':
+      return `${names(s, e.actorIds)}の行動は取り消し（${e.reason === 'dead' ? '先に倒れた' : 'MPが足りない'}）`;
+    case 'support':
+      return `サポート：${e.name}${e.targetId ? `（${name(s, e.targetId)}）` : ''}`;
+    case 'search':
+      return `  サーチ：${e.shownUids.map((u) => cardName(s, u)).join('、')}から${cardName(s, e.pickedUid)}を手札へ`;
     case 'damage': {
       const target = e.partId ? `${name(s, e.targetId)}（${partName(s, e.targetId, e.partId)}）` : name(s, e.targetId);
       const part = e.partAmount !== undefined ? ` 部位に${e.partAmount}・本体に${e.amount}` : ` ${e.amount}`;
@@ -43,7 +50,7 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
     case 'down':
       return `  ${name(s, e.enemyId)}がダウン`;
     case 'standUp':
-      return `${name(s, e.enemyId)}は立ち上がった　${ctText(s, e.ct, true)}`;
+      return `${name(s, e.enemyId)}は立ち上がった（行動できない）`;
     case 'oneMore':
       return `  ONE MORE（${name(s, e.actorId)}）`;
     case 'baton':
