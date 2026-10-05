@@ -173,6 +173,7 @@ export class GrowthScene extends Phaser.Scene {
       { fill: 0x1e3a5a, stroke: 0x5aa8ff, strokeWidth: 2, size: 12, bold: true },
     );
     const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
+    const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
     const evolvable = PARTY.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
     addButton(
       this,
@@ -181,7 +182,7 @@ export class GrowthScene extends Phaser.Scene {
       733,
       halfW,
       44,
-      `武器\n${evolvable ? '進化できる！' : `断片 ${fragments}`}`,
+      `武器\n${evolvable ? '進化できる！' : `素材 ${items}・断片 ${fragments}`}`,
       { onTap: () => this.scene.start('Weapon') },
       evolvable
         ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }

@@ -968,18 +968,19 @@ export class BattleScene extends Phaser.Scene {
       // パーツの報酬は成長マップの画面で選ぶ
       const hasReward = !!NAVI_REWARD_CANDIDATES[this.stage];
       if (hasReward) run.pendingReward = this.stage;
-      // 武器：断片を受け取り、経験値とパーツの傾向を貯める
+      // 武器：素材とアイテムを受け取り、経験値とパーツの傾向を貯める
       const naviData = currentNaviData();
       const levelsBefore = Object.fromEntries(PARTY.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
       run.armory = recordVictory(run.armory, {
         actions: result.actionCounts,
         colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
-        drops: result.drops,
+        items: [...result.drops, ...(CAMPAIGN[this.stage].item ? [CAMPAIGN[this.stage].item!] : [])],
       });
       const levelUps = PARTY.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
         (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
       );
-      const dropText = result.drops.length > 0 ? `断片：${summarizeDrops(result.drops)}` : '断片：なし';
+      const reward = CAMPAIGN[this.stage].item;
+      const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${reward ? `　アイテム：${summarizeItems([reward])}` : ''}`;
       const next = CAMPAIGN[run.stage];
       c.add(
         addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `記憶ポイント +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nパーツを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
@@ -1003,11 +1004,11 @@ export class BattleScene extends Phaser.Scene {
   }
 }
 
-/** 断片の一覧を「赤の断片×2、青の断片」のようにまとめる */
-function summarizeDrops(ids: string[]): string {
+/** 素材・アイテムの一覧を「スライムゼリー×2、硬い毛皮」のようにまとめる */
+function summarizeItems(ids: string[]): string {
   const counts = new Map<string, number>();
   for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
-  return [...counts].map(([id, n]) => `${WEAPON_DATA.fragments[id]?.name ?? id}${n > 1 ? `×${n}` : ''}`).join('、');
+  return [...counts].map(([id, n]) => `${WEAPON_DATA.items[id]?.name ?? id}${n > 1 ? `×${n}` : ''}`).join('、');
 }
 
 /** デバッグ用に、出来事をコンソールへ出す（?debug=1 なら eruda で見られる） */

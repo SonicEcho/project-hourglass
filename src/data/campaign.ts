@@ -3,11 +3,11 @@ import { buildFolder } from './cards';
 import { COMBOS } from './combos';
 import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
 import { LINKS } from './links';
-import { FRAGMENTS } from './weapons';
+import { ITEMS } from './weapons';
 
 // 周回の構成（段階7）：戦闘 → 成長マップ → 戦闘…の5戦。数値はすべて仮
 
-/** 敵を強くした版（HP・攻撃・魔力を rate 倍）。extraDrops の断片も落とす */
+/** 敵を強くした版（HP・攻撃・魔力を rate 倍）。extraDrops の素材も落とす */
 export function strengthen(enemy: EnemyDef, rate: number, extraDrops: string[] = []): EnemyDef {
   return {
     ...enemy,
@@ -27,14 +27,16 @@ export interface CampaignBattle {
   enemies: EnemyDef[];
   /** 勝った時の記憶ポイント */
   reward: number;
+  /** 勝った時にもらえる通常アイテム（段階9） */
+  item?: string;
   boss?: boolean;
 }
 
 export const CAMPAIGN: CampaignBattle[] = [
-  { name: '戦闘1', enemies: [SLIME, SLIME], reward: 4 },
-  { name: '戦闘2', enemies: [SLIME, FROST_BAT], reward: 5 },
-  { name: '戦闘3', enemies: [SLIME, FROST_BAT, ARMOR_DOG], reward: 6 },
-  { name: '戦闘4', enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => strengthen(e, 1.3, [FRAGMENTS.steel.id])), reward: 7 },
+  { name: '戦闘1', enemies: [SLIME, SLIME], reward: 4, item: ITEMS.potion.id },
+  { name: '戦闘2', enemies: [SLIME, FROST_BAT], reward: 5, item: ITEMS.ether.id },
+  { name: '戦闘3', enemies: [SLIME, FROST_BAT, ARMOR_DOG], reward: 6, item: ITEMS.potion.id },
+  { name: '戦闘4', enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => strengthen(e, 1.3, [ITEMS.steelClaw.id])), reward: 7, item: ITEMS.hiPotion.id },
   { name: '戦闘5（ボス）', enemies: [DISTORTED_BEAST], reward: 0, boss: true },
 ];
 

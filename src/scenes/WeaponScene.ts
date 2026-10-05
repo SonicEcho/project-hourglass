@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { EvolutionDef, PartColor, WeaponParamKey, WeaponState } from '../core';
-import { canEvolveAny, evolutionChecks, evolveWeapon, feedFragment, getEvolveError, getFeedError, tendencyOf, weaponLevel, weaponName } from '../core';
+import { canEvolveAny, evolutionChecks, evolveWeapon, feedFragment, fragmentItem, getEvolveError, getFeedError, getFragmentError, tendencyOf, weaponLevel, weaponName } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ARMOR_DOG, FROST_BAT, FRAGMENTS, PARTY, SLIME, WEAPON_DATA } from '../data';
+import { ARMOR_DOG, CAMPAIGN, FROST_BAT, FRAGMENTS, ITEMS, PARTY, SLIME, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
@@ -18,7 +18,6 @@ import { run } from './run';
 const D = WEAPON_DATA;
 const PARAM_KEYS: WeaponParamKey[] = ['atk', 'fire', 'ice', 'thunder'];
 const PARAM_COLOR: Record<WeaponParamKey, number> = { atk: ELEMENT_COLOR.physical, fire: ELEMENT_COLOR.fire, ice: ELEMENT_COLOR.ice, thunder: ELEMENT_COLOR.thunder };
-const FRAGMENT_COLOR: Record<string, number> = { red: ELEMENT_COLOR.fire, yellow: ELEMENT_COLOR.thunder, blue: ELEMENT_COLOR.ice, steel: 0xb0b8c0 };
 
 const CARD_TOP = 92;
 const EVO_TOP = 234;
@@ -27,7 +26,10 @@ const FRAG_TOP = 518;
 
 export class WeaponScene extends Phaser.Scene {
   private charId = 'hero';
-  private selectedFragment: string | null = null;
+  /** 下の段のタブ */
+  private tab: 'items' | 'fragments' = 'items';
+  /** 選んでいる素材・アイテム、または断片 */
+  private selected: string | null = null;
   private message = '';
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
@@ -40,7 +42,7 @@ export class WeaponScene extends Phaser.Scene {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
-    this.selectedFragment = null;
+    this.selected = null;
     this.message = '';
     this.render();
   }
@@ -56,14 +58,25 @@ export class WeaponScene extends Phaser.Scene {
 
   // ---- 操作 ----
 
+  private fragment(): void {
+    const id = this.selected;
+    if (!id || getFragmentError(D, run.armory, id)) return;
+    const it = D.items[id];
+    run.armory = fragmentItem(D, run.armory, id);
+    this.message = `${it.name}を断片化した → ${D.fragments[it.fragment].name}×${it.count}（「断片」のタブで吸わせる）`;
+    console.log('[weapon] fragment', id, JSON.stringify(run.armory.fragments));
+    if ((run.armory.items[id] ?? 0) <= 0) this.selected = null;
+    this.render();
+  }
+
   private feed(): void {
-    const id = this.selectedFragment;
+    const id = this.selected;
     if (!id || getFeedError(D, run.armory, this.charId, id)) return;
     const before = weaponName(D, this.weapon());
     run.armory = feedFragment(D, run.armory, this.charId, id);
     this.message = `${before}に${D.fragments[id].name}を吸わせた（${describeFragment(D.fragments[id])}）`;
     console.log('[weapon] feed', this.charId, id, JSON.stringify(this.weapon().params));
-    if ((run.armory.fragments[id] ?? 0) <= 0) this.selectedFragment = null;
+    if ((run.armory.fragments[id] ?? 0) <= 0) this.selected = null;
     this.render();
   }
 
@@ -132,7 +145,7 @@ export class WeaponScene extends Phaser.Scene {
     this.drawTabs();
     this.drawWeapon();
     this.drawEvolutions();
-    this.drawFragments();
+    this.drawInventory();
     addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, '成長マップへ戻る', { onTap: () => this.scene.start('Growth') }, {
       size: 16,
       bold: true,
@@ -271,50 +284,87 @@ export class WeaponScene extends Phaser.Scene {
     });
   }
 
-  /** 持っている断片と「吸わせる」 */
-  private drawFragments(): void {
-    const ids = Object.keys(FRAGMENTS);
-    this.root.add(addText(this, SIDE_PADDING, FRAG_TOP, '記憶の断片（3人共通）　タップで選ぶ', { size: 11, color: COLORS.subText }));
+  /** 下の段：「素材・アイテム」（断片化）と「断片」（吸わせる）の2つのタブ */
+  private drawInventory(): void {
+    const itemTotal = Object.values(run.armory.items).reduce((a, n) => a + n, 0);
+    const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
+    const tabW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
+    (['items', 'fragments'] as const).forEach((tab, i) => {
+      const active = this.tab === tab;
+      const label = tab === 'items' ? `素材・アイテム（${itemTotal}）` : `断片（${fragTotal}）`;
+      addButton(
+        this,
+        this.root,
+        SIDE_PADDING + tabW / 2 + i * (tabW + 6),
+        FRAG_TOP + 15,
+        tabW,
+        30,
+        label,
+        {
+          onTap: () => {
+            this.tab = tab;
+            this.selected = null;
+            this.message = '';
+            this.render();
+          },
+        },
+        { fill: active ? COLORS.panelLight : COLORS.panel, stroke: active ? 0xffffff : COLORS.border, strokeWidth: active ? 2 : 1, size: 12, bold: active },
+      );
+    });
+
+    const isItems = this.tab === 'items';
+    const ids = isItems ? Object.keys(ITEMS) : Object.keys(FRAGMENTS);
+    const cols = 4;
     const gap = 6;
-    const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (ids.length - 1)) / ids.length;
+    const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (cols - 1)) / cols;
+    const h = 56;
     ids.forEach((id, i) => {
-      const f = D.fragments[id];
-      const n = run.armory.fragments[id] ?? 0;
-      const x = SIDE_PADDING + i * (w + gap);
-      const y = FRAG_TOP + 18;
-      const selected = this.selectedFragment === id;
-      const rect = this.add.rectangle(x, y, w, 70, n > 0 ? COLORS.panelLight : COLORS.panel).setOrigin(0);
-      rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : FRAGMENT_COLOR[id] ?? COLORS.border);
+      const n = (isItems ? run.armory.items[id] : run.armory.fragments[id]) ?? 0;
+      const gains = isItems ? D.fragments[D.items[id].fragment].gains : D.fragments[id].gains;
+      const color = gainColor(gains);
+      const name = isItems ? D.items[id].name : D.items[id]?.name ?? D.fragments[id].name;
+      const x = SIDE_PADDING + (i % cols) * (w + gap);
+      const y = FRAG_TOP + 38 + Math.floor(i / cols) * (h + gap);
+      const selected = this.selected === id;
+      const rect = this.add.rectangle(x, y, w, h, n > 0 ? COLORS.panelLight : COLORS.panel).setOrigin(0);
+      rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : n > 0 ? color : COLORS.border);
       this.root.add(rect);
-      this.root.add(this.add.star(x + 14, y + 16, 4, 4, 9, FRAGMENT_COLOR[id] ?? 0xffffff, n > 0 ? 1 : 0.3));
-      this.root.add(addText(this, x + w - 8, y + 6, `×${n}`, { size: 16, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
-      this.root.add(addText(this, x + 6, y + 32, f.name, { size: 11, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
-      this.root.add(addText(this, x + 6, y + 50, describeFragment(f), { size: 9, color: COLORS.subText, wrap: w - 8 }));
+      const alpha = n > 0 ? 1 : 0.3;
+      if (!isItems) this.root.add(this.add.star(x + 12, y + 13, 4, 3.5, 8, color, alpha));
+      else if (D.items[id].kind === 'material') this.root.add(this.add.circle(x + 12, y + 13, 7, color, alpha));
+      else this.root.add(this.add.rectangle(x + 6, y + 7, 12, 12, color, alpha).setOrigin(0).setStrokeStyle(1, 0xffffff, alpha));
+      this.root.add(addText(this, x + w - 6, y + 4, `×${n}`, { size: 14, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
+      this.root.add(addText(this, x + 5, y + 24, name, { size: 10, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
+      const sub = isItems ? `→断片×${D.items[id].count}` : describeFragment(D.fragments[id]);
+      this.root.add(addText(this, x + 5, y + 39, sub, { size: 8, color: COLORS.subText, wrap: w - 6 }));
       makePressable(rect, {
         onTap: () => {
-          this.selectedFragment = selected ? null : id;
+          this.selected = selected ? null : id;
           this.message = '';
           this.render();
         },
-        onLongPress: () => this.showDetail(f.name, `${describeFragment(f)}\n\n落とす敵：${dropSource(id)}`),
+        onLongPress: () => (isItems ? this.showDetail(D.items[id].name, itemDetail(id)) : this.showDetail(D.fragments[id].name, fragmentDetail(id))),
       });
     });
 
-    const sel = this.selectedFragment;
-    const err = sel ? getFeedError(D, run.armory, this.charId, sel) : 'none';
-    const name = weaponName(D, this.weapon());
-    const text =
-      this.message ||
-      (sel
-        ? err
-          ? `${D.fragments[sel].name}を持っていない`
-          : `${name}に${D.fragments[sel].name}を吸わせる（${describeFragment(D.fragments[sel])}）。戻せない`
-        : '断片を選んで「吸わせる」。どの武器に使うかは3人で取り合い');
-    this.root.add(addText(this, SIDE_PADDING + 2, FRAG_TOP + 96, text, { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 130 }));
-    addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 60, FRAG_TOP + 118, 116, 52, '吸わせる', { onTap: () => this.feed() }, {
+    const sel = this.selected;
+    const err = sel ? (isItems ? getFragmentError(D, run.armory, sel) : getFeedError(D, run.armory, this.charId, sel)) : 'none';
+    const weapon = weaponName(D, this.weapon());
+    let text = this.message;
+    if (!text) {
+      if (!sel) text = isItems ? '素材・アイテムを選んで「断片化」。断片は「断片」のタブで武器に吸わせる' : '断片を選んで「吸わせる」。どの武器に使うかは3人で取り合い';
+      else if (err) text = `${isItems ? D.items[sel].name : D.fragments[sel].name}を持っていない`;
+      else if (isItems) {
+        const it = D.items[sel];
+        text = `${it.name}を断片化する → ${D.fragments[it.fragment].name}×${it.count}（1つにつき ${describeFragment(D.fragments[it.fragment])}）。戻せない`;
+      } else text = `${weapon}に${D.fragments[sel].name}を吸わせる（${describeFragment(D.fragments[sel])}）。戻せない`;
+    }
+    const top = FRAG_TOP + 38 + 2 * (h + gap) + 2;
+    this.root.add(addText(this, SIDE_PADDING + 2, top, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 128 }));
+    addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 58, top + 26, 112, 50, isItems ? '断片化' : '吸わせる', { onTap: () => (isItems ? this.fragment() : this.feed()) }, {
       enabled: !err,
-      fill: 0x2f6b3f,
-      stroke: 0x6dff9e,
+      fill: isItems ? 0x3a2a5a : 0x2f6b3f,
+      stroke: isItems ? 0xc58bff : 0x6dff9e,
       size: 15,
       bold: true,
     });
@@ -344,9 +394,36 @@ export class WeaponScene extends Phaser.Scene {
   }
 }
 
-/** その断片を落とす敵の名前 */
-function dropSource(fragmentId: string): string {
-  const names = [SLIME, FROST_BAT, ARMOR_DOG].filter((e) => e.drops?.includes(fragmentId)).map((e) => e.name);
-  if (fragmentId === FRAGMENTS.steel.id) names.push('戦闘4の強化版の敵');
-  return names.length > 0 ? names.join('、') : '―';
+/** 断片の効果の中で一番大きい属性の色（属性がなければ灰色） */
+function gainColor(gains: Partial<Record<WeaponParamKey, number>>): number {
+  const els = (['fire', 'ice', 'thunder'] as const).filter((k) => (gains[k] ?? 0) > 0).sort((a, b) => (gains[b] ?? 0) - (gains[a] ?? 0));
+  if (els.length === 0) return 0xb0b8c0;
+  if (els.length === 3 && gains.fire === gains.ice && gains.ice === gains.thunder) return 0xc58bff;
+  return PARAM_COLOR[els[0]];
+}
+
+/** その素材・アイテムの手に入れ方 */
+function itemSource(itemId: string): string {
+  const enemies = [SLIME, FROST_BAT, ARMOR_DOG].filter((e) => e.drops?.includes(itemId)).map((e) => `${e.name}が落とす`);
+  if (itemId === ITEMS.steelClaw.id) enemies.push('戦闘4の強化版の敵が落とす');
+  const battles = CAMPAIGN.filter((b) => b.item === itemId).map((b) => b.name);
+  if (battles.length > 0) enemies.push(`${battles.join('・')}の勝利でもらえる`);
+  return enemies.length > 0 ? enemies.join('\n') : '―';
+}
+
+function itemDetail(itemId: string): string {
+  const it = D.items[itemId];
+  const f = D.fragments[it.fragment];
+  return [
+    it.kind === 'material' ? '素材' : '通常アイテム（この試作では戦闘で使えない）',
+    `断片化すると：${f.name}×${it.count}`,
+    `断片1つにつき：${describeFragment(f)}`,
+    '',
+    `手に入れ方：\n${itemSource(itemId)}`,
+  ].join('\n');
+}
+
+function fragmentDetail(fragmentId: string): string {
+  const sources = Object.values(D.items).filter((it) => it.fragment === fragmentId).map((it) => it.name);
+  return [describeFragment(D.fragments[fragmentId]), '', `元の素材・アイテム：${sources.join('、') || '―'}`].join('\n');
 }
