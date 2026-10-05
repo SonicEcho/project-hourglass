@@ -693,6 +693,21 @@ function drawFooter(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
 
 // ---- 詳細の文字 ----
 
+/**
+ * ためている大技の止め方（その時に本当に使える手だけ）。
+ * 部位破壊で解けるのは、その部位を使う大技だけ。ダウンは弱点が分かっている時だけ書く
+ */
+export function chargeCounterText(e: EnemyUnit): string {
+  const a = chargingAction(e);
+  if (!a) return '';
+  const ways: string[] = [];
+  if (e.knownWeaknesses.length > 0) ways.push(`弱点（${e.knownWeaknesses.map((w) => ELEMENT_LABEL[w]).join('・')}）でダウンさせる`);
+  const part = a.requiresPart ? e.parts.find((p) => p.id === a.requiresPart && !p.broken) : undefined;
+  if (part) ways.push(`${part.name}を壊す`);
+  ways.push('防御でしのぐ');
+  return `止め方：${ways.join('／')}`;
+}
+
 function unitSummary(u: AllyUnit | EnemyUnit): string {
   return `${u.name}　HP ${u.hp}/${u.maxHp}　速さ ${u.spd}`;
 }
@@ -707,7 +722,7 @@ function enemyDetail(e: EnemyUnit): string {
   ];
   for (const p of e.parts) lines.push(`部位 ${p.name}：${p.broken ? '破壊' : `${p.hp}/${p.maxHp}`}`);
   const charged = chargingAction(e);
-  if (charged) lines.push(`力をためている：次の行動で「${charged.name}」（ダウンさせるか、使う部位を壊すと解ける）`);
+  if (charged) lines.push(`力をためている：次の行動で「${charged.name}」`, chargeCounterText(e));
   if (e.down) lines.push('ダウン中（次の手番は立ち上がりに使う）');
   return lines.join('\n');
 }

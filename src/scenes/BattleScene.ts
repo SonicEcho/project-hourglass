@@ -28,7 +28,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { BASIC_ATTACK, createEncounterSetup, type EncounterId, GUARD } from '../data';
-import { drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -654,7 +654,7 @@ export class BattleScene extends Phaser.Scene {
     const e = this.state.enemies.find((x) => x.hp > 0 && chargingAction(x));
     if (!e) return '';
     const a = chargingAction(e)!;
-    return `⚠ ${e.name}が「${a.name}」${a.target === 'allies' ? '（全体）' : ''}の構え！ 防御か、ダウン・部位破壊で止めよう`;
+    return `⚠ ${e.name}が「${a.name}」${a.target === 'allies' ? '（全体）' : ''}の構え！ ${chargeCounterText(e)}`;
   }
 
   private planMessage(): string {
