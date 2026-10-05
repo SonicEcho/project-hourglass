@@ -1,5 +1,6 @@
-import type { BattleSetup, BattleState, CharacterDef, EnemyDef, LogEvent, SkillDef, Stats } from '../../src/core';
-import { buildFolder, LINKS } from '../../src/data';
+import type { BattleSetup, BattleState, CardDef, CharacterDef, EnemyDef, LogEvent, PlayerAction, SkillDef, Stats } from '../../src/core';
+import { createBattle, runUntilInput, setPlan, startExecution } from '../../src/core';
+import { buildFolder, COMBOS, LINKS } from '../../src/data';
 
 /** テスト用の味方。能力値は上書きできる */
 export function ally(id: string, stats: Partial<Stats> = {}, skills: SkillDef[] = []): CharacterDef {
@@ -31,11 +32,40 @@ export function setup(partial: Partial<BattleSetup>): BattleSetup {
     enemies: [enemy('dummy')],
     deck: buildFolder(),
     links: LINKS,
+    combos: COMBOS,
     seed: 1,
     ...partial,
   };
 }
 
+/** 戦闘を作る（1ラウンド目の計画の状態） */
+export function battle(partial: Partial<BattleSetup> = {}): BattleState {
+  return createBattle(setup(partial));
+}
+
+/** 手札を指定したカードに入れ替える（テスト用に状態を書き換える） */
+export function withHand(state: BattleState, cards: CardDef[]): BattleState {
+  const s = structuredClone(state);
+  s.discard.push(...s.hand);
+  s.hand = cards.map((card, i) => ({ uid: 1000 + i, card: structuredClone(card) }));
+  return s;
+}
+
+/** 何人分かの計画をまとめて決める */
+export function planAll(s: BattleState, plans: Record<string, PlayerAction>): BattleState {
+  let out = s;
+  for (const [id, action] of Object.entries(plans)) out = setPlan(out, id, action);
+  return out;
+}
+
+/** 計画を確定して、入力が必要になるまで実行する */
+export function execute(s: BattleState): BattleState {
+  return runUntilInput(startExecution(s));
+}
+
 export function eventsOf<T extends LogEvent['type']>(s: BattleState, type: T, from = 0): Extract<LogEvent, { type: T }>[] {
   return s.log.slice(from).filter((e): e is Extract<LogEvent, { type: T }> => e.type === type);
 }
+
+export const attackOn = (id: string, partId?: string): PlayerAction => ({ type: 'attack', target: { kind: 'enemy', id, partId } });
+export const guard: PlayerAction = { type: 'guard' };

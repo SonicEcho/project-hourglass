@@ -29,12 +29,16 @@ export function describeEffect(effect: Effect, scope: TargetScope): string {
     case 'retrieve':
       return '捨て札から好きなカードを1枚手札に加える';
     case 'guard':
-      return '次の自分の手番まで受けるダメージ半減';
+      return 'このラウンドの間、受けるダメージ半減';
+    case 'search':
+      return `山札の上から${effect.count}枚を見て、1枚を手札に加える`;
+    case 'precede':
+      return '選んだ仲間のこのラウンドの行動が最初に来る';
   }
 }
 
 export function describeAction(def: ActionDef): string {
-  if (def.effects.length === 0) return '何もしない代わりに、次の手番が早く来る';
+  if (def.effects.length === 0) return '何もしない';
   // 同じ効果が続く時（連続攻撃）は「×回数」でまとめる
   const parts: string[] = [];
   for (const e of def.effects) {

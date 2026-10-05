@@ -1,23 +1,33 @@
 import Phaser from 'phaser';
-import type { ActionDef, ActionPreview, BattleState, ComboDef, LinkDef, LogEvent, PlayerAction, TargetRef, TargetScope } from '../core';
+import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, TargetRef, TargetScope } from '../core';
 import {
-  applyAction,
+  applyExtra,
   batonTargets,
-  canUseLink,
   comboCards,
   createBattle,
-  currentAlly,
+  declineExtra,
+  extraPool,
   findUnit,
-  getActionError,
   getBattleResult,
-  getTurnForecast,
+  getExtraError,
+  getPlanError,
+  getRoundOrder,
+  getSupportError,
+  isPlanComplete,
+  passBaton,
+  planOf,
+  planPool,
   previewAction,
-  runEnemyTurn,
-  startNextTurn,
+  resolveSearch,
+  setPlan,
+  startExecution,
+  step,
+  unplannedAllies,
+  useSupport,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { BASIC_ATTACK, createEncounterSetup, type EncounterId, GUARD } from '../data';
-import { drawBattle, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -32,6 +42,7 @@ type Pending =
   | { source: 'guard' }
   | { source: 'link'; linkId: string }
   | { source: 'combo'; comboId: string }
+  | { source: 'support'; cardUid: number }
   | { source: 'baton' };
 
 interface Selection {
@@ -45,11 +56,13 @@ export interface BattleSceneData {
 }
 
 /** 演出の待ち時間（ミリ秒） */
-const FX = { banner: 550, popup: 260, settle: 380, turnStart: 300 };
+const FX = { banner: 550, popup: 260, settle: 380, round: 600 };
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState;
   private encounter: EncounterId = 'battle1';
+  /** 計画中に行動を選んでいる仲間 */
+  private planner: string | null = null;
   private selection: Selection | null = null;
   private panel: Panel = 'none';
   private message = '';
@@ -73,96 +86,163 @@ export class BattleScene extends Phaser.Scene {
     console.log(`[battle] ${this.encounter} seed=${seed}`);
     // 毎戦闘、HPとMPは全回復した状態で始まる
     this.state = createBattle(createEncounterSetup(this.encounter, seed));
+    logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
     this.busy = false;
     this.skipping = false;
+    this.special = false;
     this.waits = [];
     this.overlay = undefined;
-    this.message = '';
+    this.planner = this.nextPlanner(null);
+    this.root = this.add.container(0, 0);
+    this.fxLayer = this.add.container(0, 0).setDepth(100);
     setActiveBattle({
       encounter: this.encounter,
       getState: () => this.state,
       replaceState: (s) => this.replaceState(s),
     });
     this.events.once('shutdown', () => setActiveBattle(null));
-    this.root = this.add.container(0, 0);
-    this.fxLayer = this.add.container(0, 0).setDepth(100);
-    void this.proceed();
+    this.message = this.idleMessage();
+    this.render();
   }
 
   /** デバッグメニューから状態を差し替える。演出中は受け付けない */
   private replaceState(s: BattleState): boolean {
-    if (this.busy || this.state.outcome !== 'ongoing') return false;
+    if (this.busy || (s.phase !== 'plan' && s.phase !== 'extra')) return false;
     this.state = s;
     this.clearSelection();
+    if (this.planner && (findUnit(s, this.planner)?.hp ?? 0) <= 0) this.planner = this.nextPlanner(null);
     this.message = this.idleMessage();
     this.render();
     return true;
   }
 
-  // ---- 手番の進行 ----
+  // ---- 局面ごとの進行 ----
 
-  /** 味方の手番が来るまで（敵の手番は演出しながら）進める */
-  private async proceed(): Promise<void> {
+  /** 次に行動を選ぶ仲間（まだ決めていない仲間。after の後ろから探す） */
+  private nextPlanner(after: string | null): string | null {
+    const s = this.state;
+    const allies = s.allies;
+    const start = after ? allies.findIndex((a) => a.uid === after) + 1 : 0;
+    const order = [...allies.slice(start), ...allies.slice(0, start)];
+    const next = order.find((a) => a.hp > 0 && !planOf(s, a.uid));
+    return next ? next.uid : null;
+  }
+
+  /** 行動を選んでいる仲間 */
+  private actor(s: BattleState = this.state): AllyUnit | undefined {
+    if (s.phase === 'extra' && s.extra) return s.allies.find((a) => a.uid === s.extra!.actorId);
+    if (s.phase === 'plan' && this.planner) return s.allies.find((a) => a.uid === this.planner);
+    return undefined;
+  }
+
+  /** 今の仲間が使ってよい手札 */
+  private pool(s: BattleState = this.state): CardInstance[] {
+    if (s.phase === 'extra') return extraPool(s);
+    const actor = this.actor(s);
+    if (s.phase === 'plan' && actor) return planPool(s, actor.uid);
+    return [];
+  }
+
+  /** 計画を確定し、ラウンドの行動を速さ順に演出しながら実行する */
+  private async runExecution(): Promise<void> {
     this.busy = true;
     this.clearSelection();
-    for (let guard = 0; guard < 1000; guard++) {
-      const s = this.state;
-      if (s.outcome !== 'ongoing') break;
-      if (!s.turn) {
-        const next = startNextTurn(s);
-        this.state = next;
-        logEvents(next.log.slice(s.log.length));
-        const actor = findUnit(next, next.turn!.actorId)!;
-        if (actor.side === 'ally') {
-          const events = next.log.slice(s.log.length);
-          const swapped = events.some((e) => e.type === 'discardHand');
-          const drew = events.find((e) => e.type === 'draw');
-          const handNote = swapped ? '（手札を入れ替えた）' : drew && drew.type === 'draw' && s.hand.length > 0 ? `（手札を残して+${drew.cardUids.length}枚）` : '';
-          this.message = `${actor.name}の番${handNote}`;
-          this.render();
-          await this.wait(FX.turnStart);
-        }
-        continue;
+    for (let guard = 0; guard < 200 && this.state.phase === 'execute'; guard++) {
+      const before = this.state;
+      const after = step(before);
+      await this.play(before, after);
+      if (after.round !== before.round) {
+        this.banner(`ラウンド ${after.round}`);
+        await this.wait(FX.round);
+        this.fxLayer.removeAll(true);
       }
-      if (currentAlly(s)) break;
-      const next = runEnemyTurn(s);
-      await this.play(s, next);
     }
     this.busy = false;
     this.skipping = false;
-    if (this.state.outcome !== 'ongoing') {
+    if (this.state.phase === 'ended') {
       this.render();
       this.showEnd();
       return;
     }
+    if (this.state.phase === 'plan') this.planner = this.nextPlanner(null);
     this.message = this.idleMessage();
     this.render();
   }
 
-  private async execute(action: PlayerAction): Promise<void> {
-    if (this.busy) return;
-    const err = getActionError(this.state, action);
+  private startRound(): void {
+    if (this.busy || !isPlanComplete(this.state)) return;
+    this.state = startExecution(this.state);
+    void this.runExecution();
+  }
+
+  /** 選んだ行動を決める */
+  private async confirmSelection(): Promise<void> {
+    const sel = this.selection;
+    if (!sel || this.busy) return;
+    const s = this.state;
+    const err = this.validate(sel);
     if (err) {
       this.message = `この行動はできません（${err}）`;
       this.render();
       return;
     }
-    this.busy = true;
-    const before = this.state;
-    this.clearSelection();
-    const after = applyAction(before, action);
-    await this.play(before, after);
-    if (after.turn && after.outcome === 'ongoing') {
-      // ワンモア、またはバトンを受けた仲間の手番
+    const p = sel.pending;
+    if (p.source === 'support') {
+      const before = s;
+      this.state = useSupport(s, p.cardUid, sel.target?.id);
+      logEvents(this.state.log.slice(before.log.length));
+      this.clearSelection();
+      if (this.state.searchChoice) this.panel = 'search';
+      this.message = this.state.searchChoice ? 'サーチ：手札に加えるカードを1枚選ぶ' : `${this.supportName(p.cardUid, before)}を使った。${this.idleMessage()}`;
+      this.render();
+      return;
+    }
+    if (p.source === 'baton') {
+      const before = s;
+      this.state = passBaton(s, sel.target!.id);
+      this.clearSelection();
+      this.busy = true;
+      await this.play(before, this.state);
       this.busy = false;
       this.skipping = false;
       this.message = this.idleMessage();
       this.render();
       return;
     }
-    await this.proceed();
+    const action = this.buildAction(sel)!;
+    if (s.phase === 'plan') {
+      const actorId = this.actor()!.uid;
+      this.state = setPlan(s, actorId, action);
+      this.clearSelection();
+      this.planner = this.nextPlanner(actorId);
+      this.message = this.idleMessage();
+      this.render();
+      return;
+    }
+    // 追加行動：すぐに実行して、ラウンドの残りを続ける
+    this.busy = true;
+    this.clearSelection();
+    const before = this.state;
+    const after = applyExtra(before, action);
+    await this.play(before, after);
+    if (this.state.phase === 'execute') await this.runExecution();
+    else {
+      this.busy = false;
+      this.skipping = false;
+      if (this.state.phase === 'ended') {
+        this.render();
+        this.showEnd();
+        return;
+      }
+      this.message = this.idleMessage();
+      this.render();
+    }
+  }
+
+  private supportName(uid: number, s: BattleState): string {
+    return s.hand.find((c) => c.uid === uid)?.card.name ?? 'サポートカード';
   }
 
   // ---- 演出 ----
@@ -171,7 +251,7 @@ export class BattleScene extends Phaser.Scene {
   private async play(prev: BattleState, next: BattleState): Promise<void> {
     const events = next.log.slice(prev.log.length);
     logEvents(events);
-    const act = events.find((e) => e.type === 'action' || e.type === 'standUp' || e.type === 'baton');
+    const act = events.find((e) => e.type === 'action' || e.type === 'standUp' || e.type === 'baton' || e.type === 'cancel');
     const link = act?.type === 'action' ? prev.links.find((l) => l.id === act.actionId) : undefined;
     const combo = act?.type === 'action' ? prev.combos.find((c) => c.id === act.actionId) : undefined;
     this.special = !!(link || combo);
@@ -252,12 +332,11 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private describeHeadline(s: BattleState, e: LogEvent): string {
-    if (e.type === 'action') {
-      const actor = findUnit(s, e.actorId);
-      return `${actor?.name ?? ''}の ${e.name}`;
-    }
-    if (e.type === 'standUp') return `${findUnit(s, e.enemyId)?.name ?? ''}は立ち上がった`;
+    const names = (ids: string[]) => ids.map((id) => findUnit(s, id)?.name ?? '').join('と');
+    if (e.type === 'action') return `${e.extra ? '追加行動：' : ''}${names(e.actorIds)}の ${e.name}`;
+    if (e.type === 'standUp') return `${findUnit(s, e.enemyId)?.name ?? ''}は立ち上がった（行動できない）`;
     if (e.type === 'baton') return `${findUnit(s, e.fromId)?.name}から${findUnit(s, e.toId)?.name}へバトンタッチ！`;
+    if (e.type === 'cancel') return `${names(e.actorIds)}は行動できなかった`;
     return '';
   }
 
@@ -305,6 +384,16 @@ export class BattleScene extends Phaser.Scene {
       case 'guard': {
         const p = unitPosition(s, e.actorId);
         this.popup(p.x, p.y, '防御', COLORS.subText, 16);
+        return true;
+      }
+      case 'cancel': {
+        const p = unitPosition(s, e.actorIds[0]);
+        this.popup(p.x, p.y, e.reason === 'dead' ? '行動できない' : 'MPが足りない', COLORS.subText, 14);
+        return true;
+      }
+      case 'standUp': {
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
         return true;
       }
       case 'defeated': {
@@ -376,13 +465,13 @@ export class BattleScene extends Phaser.Scene {
     this.panel = 'none';
   }
 
-  private actionDef(p: Pending): ActionDef | undefined {
-    const s = this.state;
+  private actionDef(p: Pending, s: BattleState = this.state): ActionDef | undefined {
     switch (p.source) {
       case 'card':
+      case 'support':
         return s.hand.find((c) => c.uid === p.cardUid)?.card;
       case 'skill':
-        return currentAlly(s)?.skills.find((k) => k.id === p.skillId);
+        return this.actor(s)?.skills.find((k) => k.id === p.skillId);
       case 'attack':
         return BASIC_ATTACK;
       case 'guard':
@@ -405,29 +494,49 @@ export class BattleScene extends Phaser.Scene {
     return !!this.actionDef(p)?.effects.some((e) => e.kind === 'retrieve');
   }
 
-  /** 選択から行動を組み立てる。まだ足りなければ null */
-  private buildAction(sel: Selection | null): PlayerAction | null {
+  /** 選択から行動を組み立てる。incomplete なら対象がまだなくても組み立てる（行動順の予告用） */
+  private buildAction(sel: Selection | null, incomplete = false): PlayerAction | null {
     if (!sel) return null;
     const p = sel.pending;
+    if (p.source === 'support' || p.source === 'baton') return null;
     const scope = this.scopeOf(p);
-    if ((scope === 'enemy' || scope === 'ally') && !sel.target) return null;
-    if (this.needsPick(p) && sel.pickCardUid === undefined) return null;
+    if (!incomplete) {
+      if ((scope === 'enemy' || scope === 'ally') && !sel.target) return null;
+      if (this.needsPick(p) && sel.pickCardUid === undefined) return null;
+    }
     switch (p.source) {
       case 'card':
         return { type: 'card', cardUid: p.cardUid, target: sel.target, pickCardUid: sel.pickCardUid };
       case 'skill':
         return { type: 'skill', skillId: p.skillId, target: sel.target, pickCardUid: sel.pickCardUid };
       case 'attack':
-        return { type: 'attack', target: sel.target! };
+        return { type: 'attack', target: sel.target as TargetRef };
       case 'guard':
         return { type: 'guard' };
       case 'link':
         return { type: 'link', linkId: p.linkId };
       case 'combo':
         return { type: 'combo', comboId: p.comboId, target: sel.target };
-      case 'baton':
-        return { type: 'baton', toAllyId: sel.target!.id };
     }
+  }
+
+  /** 選択が決められない理由。決められるなら null。まだ足りなければ 'incomplete' */
+  private validate(sel: Selection): string | null {
+    const s = this.state;
+    const p = sel.pending;
+    if (p.source === 'support') {
+      if (this.scopeOf(p) === 'ally' && !sel.target) return 'incomplete';
+      return getSupportError(s, p.cardUid, sel.target?.id);
+    }
+    if (p.source === 'baton') {
+      if (!sel.target) return 'incomplete';
+      return batonTargets(s).some((a) => a.uid === sel.target!.id) ? null : 'その仲間には渡せない';
+    }
+    const action = this.buildAction(sel);
+    if (!action) return 'incomplete';
+    const actor = this.actor();
+    if (!actor) return 'no actor';
+    return s.phase === 'extra' ? getExtraError(s, action) : getPlanError(s, actor.uid, action);
   }
 
   private select(pending: Pending, keepPanel = false): void {
@@ -453,26 +562,33 @@ export class BattleScene extends Phaser.Scene {
       this.render();
       return;
     }
-    const scope = this.scopeOf(sel.pending);
-    const name = sel.pending.source === 'baton' ? 'バトンタッチ' : (this.actionDef(sel.pending)?.name ?? '');
-    const action = this.buildAction(sel);
-    if (!action) {
-      if (sel.pending.source === 'baton') this.message = 'バトンタッチ：渡す仲間をタップ';
-      else if (this.needsPick(sel.pending) && sel.pickCardUid === undefined) this.message = `${name}：手札に加えるカードをタップ`;
+    const p = sel.pending;
+    const scope = this.scopeOf(p);
+    const name = p.source === 'baton' ? 'バトンタッチ' : (this.actionDef(p)?.name ?? '');
+    const err = this.validate(sel);
+    if (err === 'incomplete') {
+      if (p.source === 'baton') this.message = 'バトンタッチ：渡す仲間をタップ';
+      else if (p.source === 'support' && scope === 'ally') this.message = `${name}：先に動かす仲間をタップ`;
+      else if (this.needsPick(p) && sel.pickCardUid === undefined) this.message = `${name}：手札に加えるカードをタップ`;
       else this.message = `${name}：${scope === 'ally' ? '味方' : '敵'}をタップ`;
       this.render();
       return;
     }
-    const err = getActionError(this.state, action);
     if (err) {
-      this.message = `${name}：この対象は選べません`;
+      this.message = `${name}：選べません（${err}）`;
       sel.target = undefined;
       this.render();
       return;
     }
-    const preview = previewAction(this.state, action);
-    const confirmHint = scope === 'enemy' || scope === 'ally' ? 'もう一度タップか「実行」で決定' : '「実行」で決定';
-    this.message = [`${name}　${this.previewText(preview)}`.trim(), confirmHint].join('\n');
+    const hint = scope === 'enemy' || scope === 'ally' ? 'もう一度タップか「決定」で決める' : '「決定」で決める';
+    if (p.source === 'support' || p.source === 'baton') {
+      this.message = `${name}\n${hint}`;
+      this.render();
+      return;
+    }
+    const action = this.buildAction(sel)!;
+    const preview = previewAction(this.state, this.actor()!.uid, action);
+    this.message = [`${name}　${this.previewText(preview)}`.trim(), hint].join('\n');
     this.render();
   }
 
@@ -500,16 +616,23 @@ export class BattleScene extends Phaser.Scene {
       return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : ''}${range(t.min, t.max)}${tag}`;
     });
     if (merged.length > 3) parts.push('…');
-    if (this.selection?.pending.source === 'baton') return '';
-    const next = p.nextTurnIndex > 0 ? `次の手番 ${p.nextTurnIndex + 1}番目` : p.nextTurnIndex === 0 ? '' : '次の手番 9番目以降';
-    return [parts.join(' / '), next].filter(Boolean).join('　');
+    const order = p.orderIndex >= 0 ? `行動順 ${p.orderIndex + 1}番目` : '';
+    return [parts.join(' / '), order].filter(Boolean).join('　');
   }
 
   private idleMessage(): string {
-    const actor = currentAlly(this.state);
-    if (!actor) return '';
-    if (this.state.turn?.oneMoreActive) return `ONE MORE! ${actor.name}はもう1回行動できる（バトンタッチも可）`;
-    return `${actor.name}の番：カードかコマンドを選ぶ（長押しで詳細）`;
+    const s = this.state;
+    const actor = this.actor();
+    if (s.phase === 'extra' && actor) {
+      return s.extra?.boost
+        ? `バトンを受けた${actor.name}の追加行動（ダメージ・回復1.25倍）`
+        : `ONE MORE! ${actor.name}の追加行動（1枚引いた。バトンタッチ・見送りも可）`;
+    }
+    if (s.phase !== 'plan') return '';
+    if (s.searchChoice) return 'サーチ：手札に加えるカードを1枚選ぶ';
+    if (isPlanComplete(s)) return `ラウンド${s.round}：全員の行動が決まった。「実行」で開始（仲間をタップで選び直し）`;
+    const left = unplannedAllies(s).length;
+    return actor ? `ラウンド${s.round}：${actor.name}の行動を選ぶ（あと${left}人・長押しで詳細）` : `ラウンド${s.round}：行動を選ぶ仲間をタップ`;
   }
 
   private tapTarget(target: TargetRef): void {
@@ -526,8 +649,7 @@ export class BattleScene extends Phaser.Scene {
       sel.target.id === target.id &&
       (sel.target.kind === 'enemy' ? sel.target.partId : undefined) === (target.kind === 'enemy' ? target.partId : undefined);
     if (same) {
-      const action = this.buildAction(sel);
-      if (action) void this.execute(action);
+      void this.confirmSelection();
       return;
     }
     sel.target = target;
@@ -548,29 +670,84 @@ export class BattleScene extends Phaser.Scene {
         this.tapTarget({ kind: 'enemy', id, partId });
       },
       tapAlly: (id) => {
-        if (!this.selection) return;
-        this.tapTarget({ kind: 'ally', id });
+        const sel = this.selection;
+        if (sel && (this.scopeOf(sel.pending) === 'ally' || sel.pending.source === 'baton')) {
+          this.tapTarget({ kind: 'ally', id });
+          return;
+        }
+        // 計画中は、仲間をタップするとその仲間の行動を選び直せる
+        const ally = this.state.allies.find((a) => a.uid === id);
+        if (this.state.phase === 'plan' && !this.state.searchChoice && ally && ally.hp > 0) {
+          this.planner = id;
+          this.clearSelection();
+          const plan = planOf(this.state, id);
+          this.message = plan ? `${ally.name}の行動を選び直す（今は「${this.planLabel(plan.action, id)}」）` : this.idleMessage();
+          this.render();
+        }
       },
       tapCard: (uid) => {
+        const s = this.state;
+        const card = s.hand.find((c) => c.uid === uid);
+        if (!card) return;
         const cur = this.selection?.pending;
-        if (cur?.source === 'card' && cur.cardUid === uid) {
+        if ((cur?.source === 'card' || cur?.source === 'support') && cur.cardUid === uid) {
           this.cancel();
+          return;
+        }
+        if (card.card.support) {
+          if (s.phase !== 'plan') {
+            this.message = 'サポートカードは計画の時に使う';
+            this.render();
+            return;
+          }
+          if (s.supportUsed) {
+            this.message = 'サポートカードはこのラウンドもう使った（1ラウンドに1枚まで）';
+            this.render();
+            return;
+          }
+          this.select({ source: 'support', cardUid: uid });
+          return;
+        }
+        if (!this.pool().some((c) => c.uid === uid)) {
+          const owner = s.plans.find((p) => !p.done && p.cardUids.includes(uid));
+          const name = owner ? owner.actorIds.map((id) => findUnit(s, id)?.name).join('と') : '仲間';
+          this.message = `${card.card.name}は${name}が使う予定（${s.phase === 'plan' ? 'その仲間をタップすると選び直せる' : '追加行動には使えない'}）`;
+          this.render();
           return;
         }
         this.select({ source: 'card', cardUid: uid });
       },
-      tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
       tapCombo: (id) => {
         const cur = this.selection?.pending;
         if (cur?.source === 'combo' && cur.comboId === id) this.cancel();
         else this.select({ source: 'combo', comboId: id });
       },
-      tapBasic: (kind) => this.select({ source: kind }, true),
+      tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
+      tapBasic: (kind) => {
+        if (kind === 'decline') {
+          if (this.state.phase !== 'extra' || this.busy) return;
+          this.state = declineExtra(this.state);
+          this.clearSelection();
+          void this.runExecution();
+          return;
+        }
+        this.select({ source: kind }, true);
+      },
       tapDiscard: (uid) => {
         if (!this.selection) return;
         this.selection.pickCardUid = uid;
         this.panel = 'none';
         this.updatePreview();
+      },
+      tapSearch: (uid) => {
+        if (!this.state.searchChoice) return;
+        const before = this.state;
+        this.state = resolveSearch(before, uid);
+        logEvents(this.state.log.slice(before.log.length));
+        this.panel = 'none';
+        const picked = this.state.hand.find((c) => c.uid === uid);
+        this.message = `サーチ：${picked?.card.name ?? ''}を手札に加えた。${this.idleMessage()}`;
+        this.render();
       },
       tapCommand: (kind) => {
         if (kind === 'skills' || kind === 'other') {
@@ -586,16 +763,42 @@ export class BattleScene extends Phaser.Scene {
           else if (batonTargets(this.state).length > 0) this.select({ source: 'baton' });
           return;
         }
-        const link = this.state.links.find((l) => canUseLink(this.state, l.id));
+        const link = this.state.links[0];
         if (link) this.select({ source: 'link', linkId: link.id });
       },
-      confirm: () => {
-        const action = this.buildAction(this.selection);
-        if (action) void this.execute(action);
-      },
+      confirm: () => void this.confirmSelection(),
       cancel: () => this.cancel(),
+      execute: () => this.startRound(),
       detail: (title, body) => this.showDetail(title, body),
     };
+  }
+
+  /** 仲間の枠に出す、決めた行動の短い説明 */
+  private planLabel(action: PlayerAction, allyId: string): string {
+    const s = this.state;
+    const target = 'target' in action ? action.target : undefined;
+    let to = '';
+    if (target?.kind === 'enemy') {
+      const e = s.enemies.find((x) => x.uid === target.id);
+      const part = target.partId ? e?.parts.find((p) => p.id === target.partId)?.name : undefined;
+      to = e ? `→${e.name}${part ? `の${part}` : ''}` : '';
+    } else if (target?.kind === 'ally') {
+      to = `→${findUnit(s, target.id)?.name ?? ''}`;
+    }
+    switch (action.type) {
+      case 'attack':
+        return `通常攻撃${to}`;
+      case 'guard':
+        return '防御';
+      case 'card':
+        return `${s.hand.find((c) => c.uid === action.cardUid)?.card.name ?? 'カード'}${to}`;
+      case 'skill':
+        return `${s.allies.find((a) => a.uid === allyId)?.skills.find((k) => k.id === action.skillId)?.name ?? ''}${to}`;
+      case 'link':
+        return `連携：${s.links.find((l) => l.id === action.linkId)?.name ?? ''}`;
+      case 'combo':
+        return `${s.combos.find((c) => c.id === action.comboId)?.name ?? ''}${to}`;
+    }
   }
 
   // ---- 描画 ----
@@ -603,38 +806,53 @@ export class BattleScene extends Phaser.Scene {
   private render(s: BattleState = this.state): void {
     this.root.removeAll(true);
     const sel = this.selection;
-    const interactive = !this.busy && s === this.state && s.outcome === 'ongoing' && !!currentAlly(s);
-    const action = this.buildAction(sel);
-    const valid = !!action && getActionError(s, action) === null;
+    const interactive = !this.busy && s === this.state && (s.phase === 'plan' || s.phase === 'extra');
+    const actor = interactive ? this.actor(s) : undefined;
+    const valid = !!sel && this.validate(sel) === null;
 
-    // 行動を選んでいれば、その重さで行動順を予告する
-    let forecast = getTurnForecast(s);
+    // 計画中に行動を選んでいれば、その重さで行動順を予告する
+    let order = getRoundOrder(s);
     let predictedIndex = -1;
-    if (interactive && sel && sel.pending.source !== 'baton') {
-      const def = this.actionDef(sel.pending);
-      const actor = currentAlly(s)!;
-      if (def) {
-        const members = 'members' in def ? (def.members as string[]) : [actor.uid];
-        forecast = getTurnForecast(s, { pending: members.map((id) => ({ id, weight: def.weight })) });
-        predictedIndex = forecast.findIndex((e, i) => i > 0 && e.id === actor.uid);
+    const previewAct = this.buildAction(sel, true);
+    if (interactive && s.phase === 'plan' && actor && previewAct) {
+      try {
+        order = getRoundOrder(s, { allyId: actor.uid, action: previewAct });
+        predictedIndex = order.findIndex((e) => e.kind === 'ally' && e.ids.includes(actor.uid));
+      } catch {
+        // 予告できない行動はそのままの順番を出す
       }
     }
 
+    const reservedBy = new Map<number, string>();
+    const planLabels: Record<string, string> = {};
+    for (const p of s.plans) {
+      if (p.done) continue;
+      const names = p.actorIds.map((id) => findUnit(s, id)?.name ?? '').join('と');
+      for (const uid of p.cardUids) reservedBy.set(uid, names);
+      for (const id of p.actorIds) planLabels[id] = this.planLabel(p.action, p.actorIds[0]);
+    }
+
+    const footer: FooterMode = !interactive ? 'none' : sel ? 'select' : s.phase === 'plan' && !s.searchChoice ? 'execute' : 'none';
     const vm: ViewModel = {
       state: s,
-      forecast,
+      order,
       predictedIndex,
+      actor,
+      pool: interactive ? this.pool(s) : [],
+      reservedBy,
+      planLabels,
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
-      selectedCardUid: sel?.pending.source === 'card' ? sel.pending.cardUid : undefined,
+      selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
       selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
       comboCardUids: this.selectedComboCards(s),
       selectedTarget: sel?.target,
       batonMode: interactive && sel?.pending.source === 'baton',
-      panel: interactive ? this.panel : 'none',
+      panel: interactive ? (s.searchChoice ? 'search' : this.panel) : 'none',
       message: this.message,
-      showFooter: interactive && !!sel,
+      footer,
       canConfirm: valid,
+      planComplete: isPlanComplete(s),
       interactive,
     };
     drawBattle(this, this.root, vm, this.handlers());
@@ -652,7 +870,7 @@ export class BattleScene extends Phaser.Scene {
     const p = this.selection?.pending;
     if (p?.source !== 'combo') return [];
     const combo = s.combos.find((c) => c.id === p.comboId);
-    return combo ? (comboCards(s, combo) ?? []).map((c) => c.uid) : [];
+    return combo ? (comboCards(combo, this.pool(s)) ?? []).map((c) => c.uid) : [];
   }
 
   private closeOverlay(): void {
