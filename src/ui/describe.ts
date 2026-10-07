@@ -27,7 +27,7 @@ export function describeEffect(effect: Effect, scope: TargetScope): string {
     case 'redraw':
       return `手札をすべて捨て、${effect.count}枚引き直す`;
     case 'retrieve':
-      return '捨て札から好きなカードを1枚手札に加える';
+      return '捨て札から好きなスナップを1枚手札に加える';
     case 'guard':
       return 'このラウンドの間、受けるダメージ半減';
     case 'search':
@@ -51,7 +51,7 @@ export function describeAction(def: ActionDef): string {
   return parts.join('。その後、');
 }
 
-/** カードやスキルの主な属性（色分け用） */
+/** スナップやスキルの主な属性（色分け用） */
 export function mainDamageType(def: ActionDef) {
   const dmg = def.effects.find((e) => e.kind === 'damage');
   return dmg && dmg.kind === 'damage' ? dmg.type : undefined;

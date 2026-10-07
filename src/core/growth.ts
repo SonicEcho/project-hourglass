@@ -1,6 +1,6 @@
 import type { CharacterDef, SkillDef, Stats } from './types';
 
-// 成長マップ（段階7）。Phaser に依存しない。
+// 星図（段階7）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
 
 export type StatKey = keyof Stats;
@@ -18,7 +18,7 @@ export interface GrowthMap {
 }
 
 export interface GrowthState {
-  /** 記憶ポイント（パーティ共通の財布） */
+  /** 星の砂（パーティ共通の財布） */
   points: number;
   /** キャラごとに開けたマス（開けた順） */
   opened: Record<string, string[]>;
@@ -67,7 +67,7 @@ export function knownSkillIds(map: GrowthMap, growth: GrowthState, base: Charact
 }
 
 /**
- * マスを開けるのに必要な記憶ポイント。
+ * マスを開けるのに必要な星の砂。
  * もう覚えている魔法・スキルのマスと、他のキャラの出発点は「通るだけ」の値段
  */
 export function nodeCost(map: GrowthMap, growth: GrowthState, base: CharacterDef, nodeId: string): number {
@@ -105,7 +105,7 @@ export function getOpenError(map: GrowthMap, growth: GrowthState, base: Characte
   return null;
 }
 
-/** マスを開ける（記憶ポイントを払い、駒がそこへ進む） */
+/** マスを開ける（星の砂を払い、駒がそこへ進む） */
 export function openNode(map: GrowthMap, growth: GrowthState, base: CharacterDef, nodeId: string): GrowthState {
   const err = getOpenError(map, growth, base, nodeId);
   if (err) throw new Error(err);
@@ -141,7 +141,7 @@ export function applyGrowth(map: GrowthMap, growth: GrowthState, bases: Characte
   });
 }
 
-/** 戦闘に勝った時の記憶ポイント（基本 ＋ 壊した部位の数 × partPoints） */
+/** 戦闘に勝った時の星の砂（基本 ＋ 壊した部位の数 × partPoints） */
 export function battleReward(base: number, brokenParts: number, partPoints: number): number {
   return base + brokenParts * partPoints;
 }

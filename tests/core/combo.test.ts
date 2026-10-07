@@ -4,14 +4,14 @@ import type { BattleState, CardDef, EnemyDef } from '../../src/core';
 import { CARDS, COMBOS, CROSS_DRIVE, DISTORTED_BEAST } from '../../src/data';
 import { ally, battle, enemy, eventsOf, execute, guard, planAll, withHand } from './helpers';
 
-/** 主人公1人（速い）と、指定した手札で計画を始める */
+/** ハルト1人（速い）と、指定した手札で計画を始める */
 function withCards(hand: CardDef[], enemies: EnemyDef[] = [enemy('a'), enemy('b')]): BattleState {
   return withHand(battle({ allies: [ally('hero', { spd: 50 }), ally('akari')], enemies }), hand);
 }
 const combo = (comboId: string, target?: { kind: 'enemy'; id: string; partId?: string }) => ({ type: 'combo' as const, comboId, target });
 
 describe('コンボ', () => {
-  it('必要なカードが手札にそろうと使える', () => {
+  it('必要なスナップが手札にそろうと使える', () => {
     const s = withCards([CARDS.sword, CARDS.sword, CARDS.sword]);
     expect(availableCombos(s, availableHand(s)).map((c) => c.id)).toEqual(['tripleSword']);
     expect(getPlanError(s, 'hero', combo('tripleSword', { kind: 'enemy', id: 'enemy0' }))).toBeNull();
@@ -24,14 +24,14 @@ describe('コンボ', () => {
     expect(getPlanError(s, 'hero', combo('tripleSword', { kind: 'enemy', id: 'enemy0' }))).not.toBeNull();
   });
 
-  it('計画で割り当てると、材料のカードはすべてその仲間が確保する', () => {
+  it('計画で割り当てると、材料のスナップはすべてその仲間が確保する', () => {
     let s = withCards([CARDS.sword, CARDS.sword, CARDS.sword]);
     s = setPlan(s, 'hero', combo('tripleSword', { kind: 'enemy', id: 'enemy0' }));
     expect(availableHand(s)).toHaveLength(0);
     expect(getPlanError(s, 'akari', { type: 'card', cardUid: s.hand[0].uid, target: { kind: 'enemy', id: 'enemy0' } })).not.toBeNull();
   });
 
-  it('使うと材料のカードをすべて捨て札へ送る（1人の1回の行動）', () => {
+  it('使うと材料のスナップをすべて捨て札へ送る（1人の1回の行動）', () => {
     let s = withCards([CARDS.sword, CARDS.sword, CARDS.sword]);
     s = execute(planAll(s, { hero: combo('tripleSword', { kind: 'enemy', id: 'enemy0' }), akari: guard }));
     expect(s.discard.filter((c) => c.card.id === 'sword')).toHaveLength(3);
@@ -52,7 +52,7 @@ describe('コンボ', () => {
     expect(eventsOf(s, 'damage').filter((d) => d.sourceId === 'hero')).toHaveLength(1);
   });
 
-  it('エレメントバースト：敵ごとに弱点の属性を突き、まとめてダウンさせてワンモア（1回）', () => {
+  it('エレメントバースト：敵ごとに弱点の属性を突き、まとめてダウンさせて延長（1回）', () => {
     let s = withCards(
       [CARDS.fireChip, CARDS.iceChip, CARDS.thunderChip],
       [enemy('a', {}, { weaknesses: ['ice'] }), enemy('b', {}, { weaknesses: ['thunder'], resistances: ['fire'] }), enemy('c')],

@@ -8,7 +8,7 @@ const sweep = DISTORTED_BEAST.actions.find((a) => a.id === 'sweep')!;
 const slam = DISTORTED_BEAST.actions.find((a) => a.id === 'slam')!;
 const roar = DISTORTED_BEAST.actions.find((a) => a.id === 'roar')!;
 
-/** ボスの行動を限定した戦闘。主人公（雷が使える）は速く、ボスより先に動く */
+/** ボスの行動を限定した戦闘。ハルト（雷が使える）は速く、ボスより先に動く */
 function bossWith(actions: EnemyActionDef[]): BattleState {
   return battle({
     allies: [ally('hero', { spd: 50, hp: 999, mag: 16 }, [SKILLS.thunder])],

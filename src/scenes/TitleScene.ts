@@ -20,10 +20,11 @@ export class TitleScene extends Phaser.Scene {
     g.strokeTriangle(cx - 40, 160, cx + 40, 160, cx, 230);
     g.strokeTriangle(cx - 40, 300, cx + 40, 300, cx, 230);
     root.add(g);
-    root.add(addText(this, cx, 360, 'Project Hourglass', { size: 30, bold: true }).setOrigin(0.5));
-    root.add(addText(this, cx, 402, 'バトルプロトタイプ', { size: 16, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(this, cx, 360, 'RESTOPIA', { size: 34, bold: true }).setOrigin(0.5));
+    root.add(addText(this, cx, 400, '思い出だけの理想郷', { size: 15, color: COLORS.accentText }).setOrigin(0.5));
+    root.add(addText(this, cx, 432, 'バトルプロトタイプ', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     root.add(
-      addText(this, cx, 470, '成長マップで育てながら5戦。最後はボス「歪みの獣」', { size: 13, color: COLORS.subText }).setOrigin(0.5),
+      addText(this, cx, 470, '星図で育てながら5戦。最後はボス「歪みの獣」', { size: 13, color: COLORS.subText }).setOrigin(0.5),
     );
     addButton(
       this,

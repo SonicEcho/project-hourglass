@@ -8,7 +8,7 @@ import { getActiveBattle, run } from '../scenes/run';
 export interface DebugNavigator {
   startBoss(): void;
   restartRun(): void;
-  /** 成長マップ・ナビカス盤の画面を描き直す（記憶ポイントやパーツの表示を更新するため） */
+  /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
 }
 
@@ -82,18 +82,18 @@ export function installDebugMenu(nav: DebugNavigator): void {
 
     // 成長
     panel.append(
-      button(`記憶ポイントを+10する（今 ${run.growth.points}）`, () => {
+      button(`星の砂を+10する（今 ${run.growth.points}）`, () => {
         run.growth = { ...run.growth, points: run.growth.points + 10 };
         nav.refreshGrowth();
-        notify(`記憶ポイントを+10しました（${run.growth.points}）`);
+        notify(`星の砂を+10しました（${run.growth.points}）`);
       }),
     );
 
     panel.append(
-      button(`パーツを全種類1つずつもらう（今 ${run.navi.parts.length}個）`, () => {
+      button(`ギアを全種類1つずつもらう（今 ${run.navi.parts.length}個）`, () => {
         run.navi = addParts(run.navi, Object.keys(NAVI_PARTS));
         nav.refreshGrowth();
-        notify(`パーツを${Object.keys(NAVI_PARTS).length}個もらいました（${run.navi.parts.length}個）`);
+        notify(`ギアを${Object.keys(NAVI_PARTS).length}個もらいました（${run.navi.parts.length}個）`);
       }),
     );
 

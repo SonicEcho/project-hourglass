@@ -26,10 +26,10 @@ import {
 
 const at = (charId: string, col: number, row: number, rotation: Placement['rotation'] = 0): Placement => ({ charId, col, row, rotation });
 
-/** 指定したパーツを持った状態（uid は並べた順に 0, 1, 2…） */
+/** 指定したギアを持った状態（uid は並べた順に 0, 1, 2…） */
 const owning = (...ids: string[]): NaviState => createNavi(ids);
 
-describe('ナビカス盤：形と回転', () => {
+describe('ムーブメント：形と回転', () => {
   it('時計回りに90度ずつ回し、左上を [0, 0] にそろえる', () => {
     expect(rotateCells([[0, 0], [1, 0], [2, 0]], 1)).toEqual([[0, 0], [0, 1], [0, 2]]);
     // L字：[0,0],[0,1],[1,1] を90度回すと ┌ の形
@@ -48,7 +48,7 @@ describe('ナビカス盤：形と回転', () => {
   });
 });
 
-describe('ナビカス盤：置く・外す', () => {
+describe('ムーブメント：置く・外す', () => {
   it('盤の外や欠けたマスにははみ出せない', () => {
     const n = owning('powerMemory');
     expect(getPlaceError(NAVI_DATA, n, 0, at('hero', 3, 0))).toBe('out of the board');
@@ -57,7 +57,7 @@ describe('ナビカス盤：置く・外す', () => {
     expect(getPlaceError(NAVI_DATA, n, 0, at('mio', 1, 0))).toBeNull();
   });
 
-  it('他のパーツと重ねられない', () => {
+  it('他のギアと重ねられない', () => {
     let n = owning('powerMemory', 'magicMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     expect(getPlaceError(NAVI_DATA, n, 1, at('hero', 1, 0))).toBe('overlaps another part');
@@ -66,13 +66,13 @@ describe('ナビカス盤：置く・外す', () => {
     expect(getPlaceError(NAVI_DATA, n, 1, at('akari', 0, 0))).toBeNull();
   });
 
-  it('はまっているパーツを動かす時は、自分の今の位置は空いているものとして扱う', () => {
+  it('はまっているギアを動かす時は、自分の今の位置は空いているものとして扱う', () => {
     let n = owning('powerMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     expect(getPlaceError(NAVI_DATA, n, 0, at('hero', 1, 0))).toBeNull();
   });
 
-  it('1つのパーツは1人の盤にしかはまらない（はめ直すと移る）', () => {
+  it('1つのギアは1人の盤にしかはまらない（はめ直すと移る）', () => {
     let n = owning('hpMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     n = placePart(NAVI_DATA, n, 0, at('akari', 2, 1));
@@ -93,17 +93,17 @@ describe('ナビカス盤：置く・外す', () => {
   });
 });
 
-describe('ナビカス盤：コマンドライン', () => {
-  it('効果パーツは、コマンドラインに1マス以上乗っている時だけ効く', () => {
+describe('ムーブメント：ブリッジ', () => {
+  it('効果ギアは、ブリッジに1マス以上乗っている時だけ効く', () => {
     let n = owning('breaker', 'firstAid');
-    n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0, 1)); // 縦に置いて、2行目（コマンドライン）を通る
+    n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0, 1)); // 縦に置いて、2行目（ブリッジ）を通る
     n = placePart(NAVI_DATA, n, 1, at('hero', 2, 3)); // 一番下の行
     expect(isPartActive(NAVI_DATA, n.parts[0])).toBe(true);
     expect(isPartActive(NAVI_DATA, n.parts[1])).toBe(false);
     expect(boardPassives(NAVI_DATA, n, 'hero')).toEqual([NAVI_PARTS.breaker.effect]);
   });
 
-  it('能力値パーツは、どこに置いても効く', () => {
+  it('能力値ギアは、どこに置いても効く', () => {
     let n = owning('powerMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 3));
     expect(isPartActive(NAVI_DATA, n.parts[0])).toBe(true);
@@ -111,7 +111,7 @@ describe('ナビカス盤：コマンドライン', () => {
     expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 3);
   });
 
-  it('はまっていないパーツは効かない', () => {
+  it('はまっていないギアは効かない', () => {
     const n = owning('powerMemory', 'breaker');
     const [hero] = applyNavi(NAVI_DATA, n, [PARTY[0]]);
     expect(hero.stats).toEqual(PARTY[0].stats);
@@ -119,8 +119,8 @@ describe('ナビカス盤：コマンドライン', () => {
   });
 });
 
-describe('ナビカス盤：バグ', () => {
-  it('同じ色の別々のパーツが辺で接すると、バグになる', () => {
+describe('ムーブメント：狂い', () => {
+  it('同じ色の別々のギアが辺で接すると、狂いになる', () => {
     let n = owning('hpMemory', 'powerMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     n = placePart(NAVI_DATA, n, 1, at('hero', 1, 0));
@@ -128,14 +128,14 @@ describe('ナビカス盤：バグ', () => {
     expect(boardPassives(NAVI_DATA, n, 'hero')).toEqual([{ kind: 'bug', rate: BUG_HP_RATE }]);
   });
 
-  it('斜めに接しているだけならバグにならない', () => {
+  it('斜めに接しているだけなら狂いにならない', () => {
     let n = owning('hpMemory', 'powerMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     n = placePart(NAVI_DATA, n, 1, at('hero', 1, 1));
     expect(findBugs(NAVI_DATA, n, 'hero')).toEqual([]);
   });
 
-  it('違う色なら接していてもバグにならない', () => {
+  it('違う色なら接していても狂いにならない', () => {
     let n = owning('hpMemory', 'magicMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     n = placePart(NAVI_DATA, n, 1, at('hero', 1, 0));
@@ -152,7 +152,7 @@ describe('ナビカス盤：バグ', () => {
     expect(hero.passives?.filter((p) => p.kind === 'bug')).toHaveLength(2);
   });
 
-  it('別のキャラの盤のパーツとはバグにならない', () => {
+  it('別のキャラの盤のギアとは狂いにならない', () => {
     let n = owning('hpMemory', 'powerMemory');
     n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0));
     n = placePart(NAVI_DATA, n, 1, at('akari', 1, 0));
@@ -161,8 +161,8 @@ describe('ナビカス盤：バグ', () => {
   });
 });
 
-describe('ナビカス盤：パーツの入手', () => {
-  it('周回の始めのパーツと、勝利の報酬の候補は、すべて定義がある', () => {
+describe('ムーブメント：ギアの入手', () => {
+  it('周回の始めのギアと、勝利の報酬の候補は、すべて定義がある', () => {
     for (const id of [...START_NAVI_PARTS, ...NAVI_REWARD_CANDIDATES.flat()]) expect(NAVI_PARTS[id]).toBeDefined();
     expect(NAVI_REWARD_CANDIDATES).toHaveLength(4);
   });
@@ -181,7 +181,7 @@ describe('ナビカス盤：パーツの入手', () => {
     expect(() => claimRewardParts(n, c, [0, 5], 2)).toThrow();
   });
 
-  it('各キャラの盤のコマンドラインには、置けるマスがある', () => {
+  it('各キャラの盤のブリッジには、置けるマスがある', () => {
     for (const board of Object.values(NAVI_BOARDS)) {
       expect(board.cells.some(([, r]) => r === board.commandRow)).toBe(true);
     }

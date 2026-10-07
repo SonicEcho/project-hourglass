@@ -48,7 +48,7 @@ export class ResultScene extends Phaser.Scene {
         const y = top + 50 + i * 54;
         root.add(addText(this, 36, y, `${p.enemyName}の${p.partName}`, { size: 15, bold: true }));
         const part = BOSS_PART_REWARDS[p.partId];
-        const reward = part ? `　パーツ：${NAVI_PARTS[part].name}` : '';
+        const reward = part ? `　ギア：${NAVI_PARTS[part].name}` : '';
         root.add(addText(this, 52, y + 24, `素材：${p.material}${reward}（表示のみ）`, { size: 13, color: COLORS.subText }));
       });
     }

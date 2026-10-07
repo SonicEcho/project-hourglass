@@ -1,9 +1,9 @@
 import type { CharacterDef, PassiveEffect, Stats } from './types';
 
-// ナビカス盤（段階8）。Phaser に依存しない。
+// ムーブメント（段階8）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
 //
-// 座標は [列, 行]（左上が [0, 0]）。パーツの形も同じ向きで書き、回転は時計回りに90度ずつ。
+// 座標は [列, 行]（左上が [0, 0]）。ギアの形も同じ向きで書き、回転は時計回りに90度ずつ。
 
 export type Cell = [number, number];
 
@@ -13,19 +13,19 @@ export type PartColor = 'red' | 'blue' | 'green' | 'yellow';
 export type Rotation = 0 | 1 | 2 | 3;
 
 export type NaviPartDef =
-  /** 能力値パーツ：盤のどこに置いても効く */
+  /** 能力値ギア：盤のどこに置いても効く */
   | { id: string; name: string; color: PartColor; cells: Cell[]; kind: 'stat'; stats: Partial<Stats> }
-  /** 効果パーツ：コマンドラインに1マス以上乗っている時だけ効く */
+  /** 効果ギア：ブリッジに1マス以上乗っている時だけ効く */
   | { id: string; name: string; color: PartColor; cells: Cell[]; kind: 'effect'; effect: PassiveEffect };
 
 export interface NaviBoardDef {
   cols: number;
   rows: number;
-  /** パーツを置けるマス */
+  /** ギアを置けるマス */
   cells: Cell[];
-  /** コマンドラインの行 */
+  /** ブリッジの行 */
   commandRow: number;
-  /** バグ1つにつき付く特性（キャラごとに差し替えられるようにしておく） */
+  /** 狂い1つにつき付く特性（キャラごとに差し替えられるようにしておく） */
   bugEffect: PassiveEffect;
 }
 
@@ -36,7 +36,7 @@ export interface Placement {
   rotation: Rotation;
 }
 
-/** 持っているパーツ1つ。placement が null なら、どの盤にもはめていない */
+/** 持っているギア1つ。placement が null なら、どの盤にもはめていない */
 export interface OwnedPart {
   uid: number;
   partId: string;
@@ -64,7 +64,7 @@ export function createNavi(partIds: string[]): NaviState {
   return addParts({ parts: [], nextUid: 0 }, partIds);
 }
 
-/** パーツを手に入れる（どの盤にもはめていない状態で加わる） */
+/** ギアを手に入れる（どの盤にもはめていない状態で加わる） */
 export function addParts(navi: NaviState, partIds: string[]): NaviState {
   const added = partIds.map((partId, i) => ({ uid: navi.nextUid + i, partId, placement: null }));
   return { parts: [...navi.parts, ...added], nextUid: navi.nextUid + partIds.length };
@@ -79,19 +79,19 @@ export function rotateCells(cells: Cell[], rotation: Rotation): Cell[] {
   return out.map(([c, r]) => [c - minC + 0, r - minR + 0] as Cell);
 }
 
-/** 盤の上で、そのパーツが占めるマス */
+/** 盤の上で、そのギアが占めるマス */
 export function placedCells(def: NaviPartDef, p: Pick<Placement, 'col' | 'row' | 'rotation'>): Cell[] {
   return rotateCells(def.cells, p.rotation).map(([c, r]) => [c + p.col, r + p.row] as Cell);
 }
 
 const key = ([c, r]: Cell) => `${c},${r}`;
 
-/** そのキャラの盤にはまっているパーツ */
+/** そのキャラの盤にはまっているギア */
 export function boardParts(navi: NaviState, charId: string): OwnedPart[] {
   return navi.parts.filter((p) => p.placement?.charId === charId);
 }
 
-/** パーツをそこに置けない理由。置けるなら null（同じパーツの今の位置は空いているものとして扱う） */
+/** ギアをそこに置けない理由。置けるなら null（同じギアの今の位置は空いているものとして扱う） */
 export function getPlaceError(data: NaviData, navi: NaviState, uid: number, placement: Placement): string | null {
   const owned = navi.parts.find((p) => p.uid === uid);
   if (!owned) return 'unknown part';
@@ -111,19 +111,19 @@ export function getPlaceError(data: NaviData, navi: NaviState, uid: number, plac
   return null;
 }
 
-/** パーツを盤にはめる（他の盤や別の位置にはまっていたら、そこから移す） */
+/** ギアを盤にはめる（他の盤や別の位置にはまっていたら、そこから移す） */
 export function placePart(data: NaviData, navi: NaviState, uid: number, placement: Placement): NaviState {
   const err = getPlaceError(data, navi, uid, placement);
   if (err) throw new Error(err);
   return { ...navi, parts: navi.parts.map((p) => (p.uid === uid ? { ...p, placement: { ...placement } } : p)) };
 }
 
-/** パーツを盤から外す */
+/** ギアを盤から外す */
 export function removePart(navi: NaviState, uid: number): NaviState {
   return { ...navi, parts: navi.parts.map((p) => (p.uid === uid ? { ...p, placement: null } : p)) };
 }
 
-/** はまっているパーツが効いているか（能力値パーツはいつも。効果パーツはコマンドラインに乗っている時だけ） */
+/** はまっているギアが効いているか（能力値ギアはいつも。効果ギアはブリッジに乗っている時だけ） */
 export function isPartActive(data: NaviData, part: OwnedPart): boolean {
   if (!part.placement) return false;
   const def = data.parts[part.partId];
@@ -132,7 +132,7 @@ export function isPartActive(data: NaviData, part: OwnedPart): boolean {
   return placedCells(def, part.placement).some(([, r]) => r === board.commandRow);
 }
 
-/** バグ：同じ色の別々のパーツが辺で接している組。uid の組で返す */
+/** 狂い：同じ色の別々のギアが辺で接している組。uid の組で返す */
 export function findBugs(data: NaviData, navi: NaviState, charId: string): [number, number][] {
   const parts = boardParts(navi, charId);
   const bugs: [number, number][] = [];
@@ -153,7 +153,7 @@ export function findBugs(data: NaviData, navi: NaviState, charId: string): [numb
   return bugs;
 }
 
-/** そのキャラの盤で効いている特性（効いている効果パーツと、バグの数だけのバグの効果） */
+/** そのキャラの盤で効いている特性（効いている効果ギアと、狂いの数だけの狂いの効果） */
 export function boardPassives(data: NaviData, navi: NaviState, charId: string): PassiveEffect[] {
   const out: PassiveEffect[] = [];
   for (const p of boardParts(navi, charId)) {
@@ -176,7 +176,7 @@ export function boardStats(data: NaviData, navi: NaviState, charId: string): Par
   return out;
 }
 
-/** ナビカス盤を反映したキャラ（能力値を足し、特性を加える） */
+/** ムーブメントを反映したキャラ（能力値を足し、特性を加える） */
 export function applyNavi(data: NaviData, navi: NaviState, chars: CharacterDef[]): CharacterDef[] {
   return chars.map((c) => {
     const stats = { ...c.stats };
@@ -194,7 +194,7 @@ export function claimRewardParts(navi: NaviState, candidates: string[], chosen: 
   return addParts(navi, chosen.map((i) => candidates[i]));
 }
 
-/** 盤を拡張する：コマンドラインの行の右端に count マス足す（武器の進化で増える） */
+/** 盤を拡張する：ブリッジの行の右端に count マス足す（武器の進化で増える） */
 export function extendBoard(board: NaviBoardDef, count: number): NaviBoardDef {
   if (count <= 0) return board;
   const rowCells = board.cells.filter(([, r]) => r === board.commandRow).map(([c]) => c);
@@ -203,7 +203,7 @@ export function extendBoard(board: NaviBoardDef, count: number): NaviBoardDef {
   return { ...board, cols: Math.max(board.cols, start + count), cells: [...board.cells, ...added] };
 }
 
-/** そのキャラの盤にはまっているパーツの、色ごとのマス数 */
+/** そのキャラの盤にはまっているギアの、色ごとのマス数 */
 export function boardColorCells(data: NaviData, navi: NaviState, charId: string): Record<PartColor, number> {
   const out: Record<PartColor, number> = { red: 0, blue: 0, green: 0, yellow: 0 };
   for (const p of boardParts(navi, charId)) {

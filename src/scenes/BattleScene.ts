@@ -73,6 +73,8 @@ export class BattleScene extends Phaser.Scene {
   private planner: string | null = null;
   private selection: Selection | null = null;
   private panel: Panel = 'none';
+  /** 魔法・スキルの一覧のページ（誰の一覧か、何ページ目か） */
+  private skillPage = { actorId: '', page: 0 };
   private message = '';
   private busy = false;
   private root!: Phaser.GameObjects.Container;
@@ -92,7 +94,7 @@ export class BattleScene extends Phaser.Scene {
     this.stage = Math.min(data.stage ?? run.stage, CAMPAIGN.length - 1);
     const seed = battleSeed(this.stage);
     console.log(`[battle] stage${this.stage + 1} seed=${seed}`);
-    // 毎戦闘、HPとMPは全回復した状態で始まる。成長マップの成長を反映した仲間で戦う
+    // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
     this.state = createBattle(createCampaignSetup(this.stage, seed, currentParty()));
     logEvents(this.state.log);
     this.selection = null;
@@ -113,7 +115,7 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => setActiveBattle(null));
     this.message = this.idleMessage();
     this.render();
-    // 1ラウンド目の始めの、バグ・ファーストエイドによるHPの増減を見せる
+    // 1ラウンド目の始めの、狂い・ファーストエイドによるHPの増減を見せる
     this.time.delayedCall(300, () => {
       for (const e of this.state.log) if (e.type === 'passiveHp') this.showEvent(this.state, e);
     });
@@ -207,7 +209,7 @@ export class BattleScene extends Phaser.Scene {
       logEvents(this.state.log.slice(before.log.length));
       this.clearSelection();
       if (this.state.searchChoice) this.panel = 'search';
-      this.message = this.state.searchChoice ? 'サーチ：手札に加えるカードを1枚選ぶ' : `${this.supportName(p.cardUid, before)}を使った。${this.idleMessage()}`;
+      this.message = this.state.searchChoice ? 'サーチ：手札に加えるスナップを1枚選ぶ' : `${this.supportName(p.cardUid, before)}を使った。${this.idleMessage()}`;
       this.render();
       return;
     }
@@ -254,7 +256,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private supportName(uid: number, s: BattleState): string {
-    return s.hand.find((c) => c.uid === uid)?.card.name ?? 'サポートカード';
+    return s.hand.find((c) => c.uid === uid)?.card.name ?? 'サポートスナップ';
   }
 
   // ---- 演出 ----
@@ -379,12 +381,12 @@ export class BattleScene extends Phaser.Scene {
       }
       case 'passiveHp': {
         const p = unitPosition(s, e.allyId);
-        if (e.source === 'bug') this.popup(p.x, p.y, `バグ ${e.amount}`, COLORS.allyDamage, 18);
+        if (e.source === 'bug') this.popup(p.x, p.y, `狂い ${e.amount}`, COLORS.allyDamage, 18);
         else this.popup(p.x, p.y, `+${e.amount}`, COLORS.heal, 20);
         return true;
       }
       case 'oneMore':
-        this.bigText('ONE MORE!');
+        this.bigText('Extend!');
         return true;
       case 'partBreak': {
         const p = unitPosition(s, e.enemyId, e.partId);
@@ -603,7 +605,7 @@ export class BattleScene extends Phaser.Scene {
     if (err === 'incomplete') {
       if (p.source === 'baton') this.message = 'バトンタッチ：渡す仲間をタップ';
       else if (p.source === 'support' && scope === 'ally') this.message = `${name}：先に動かす仲間をタップ`;
-      else if (this.needsPick(p) && sel.pickCardUid === undefined) this.message = `${name}：手札に加えるカードをタップ`;
+      else if (this.needsPick(p) && sel.pickCardUid === undefined) this.message = `${name}：手札に加えるスナップをタップ`;
       else this.message = `${name}：${scope === 'ally' ? '味方' : '敵'}をタップ`;
       this.render();
       return;
@@ -660,7 +662,7 @@ export class BattleScene extends Phaser.Scene {
     if (s.phase === 'extra' && actor) {
       return s.extra?.boost
         ? `バトンを受けた${actor.name}の追加行動（ダメージ・回復1.25倍）`
-        : `ONE MORE! ${actor.name}の追加行動（1枚引いた。バトンタッチ・見送りも可）`;
+        : `Extend! ${actor.name}の追加行動（1枚引いた。バトンタッチ・見送りも可）`;
     }
     if (s.phase !== 'plan') return '';
     const warn = this.chargeWarning();
@@ -679,7 +681,7 @@ export class BattleScene extends Phaser.Scene {
   private planMessage(): string {
     const s = this.state;
     const actor = this.actor();
-    if (s.searchChoice) return 'サーチ：手札に加えるカードを1枚選ぶ';
+    if (s.searchChoice) return 'サーチ：手札に加えるスナップを1枚選ぶ';
     if (isPlanComplete(s)) return `ラウンド${s.round}：全員の行動が決まった。「実行」で開始（仲間をタップで選び直し）`;
     const left = unplannedAllies(s).length;
     return actor ? `ラウンド${s.round}：${actor.name}の行動を選ぶ（あと${left}人・長押しで詳細）` : `ラウンド${s.round}：行動を選ぶ仲間をタップ`;
@@ -746,12 +748,12 @@ export class BattleScene extends Phaser.Scene {
         }
         if (card.card.support) {
           if (s.phase !== 'plan') {
-            this.message = 'サポートカードは計画の時に使う';
+            this.message = 'サポートスナップは計画の時に使う';
             this.render();
             return;
           }
           if (s.supportUsed) {
-            this.message = 'サポートカードはこのラウンドもう使った（1ラウンドに1枚まで）';
+            this.message = 'サポートスナップはこのラウンドもう使った（1ラウンドに1枚まで）';
             this.render();
             return;
           }
@@ -773,6 +775,12 @@ export class BattleScene extends Phaser.Scene {
         else this.select({ source: 'combo', comboId: id });
       },
       tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
+      nextSkillPage: () => {
+        const actorId = this.actor(this.state)?.uid ?? '';
+        const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
+        this.skillPage = { actorId, page: page + 1 };
+        this.render();
+      },
       tapBasic: (kind) => {
         if (kind === 'decline') {
           if (this.state.phase !== 'extra' || this.busy) return;
@@ -841,7 +849,7 @@ export class BattleScene extends Phaser.Scene {
       case 'guard':
         return '防御';
       case 'card':
-        return `${s.hand.find((c) => c.uid === action.cardUid)?.card.name ?? 'カード'}${to}`;
+        return `${s.hand.find((c) => c.uid === action.cardUid)?.card.name ?? 'スナップ'}${to}`;
       case 'skill':
         return `${s.allies.find((a) => a.uid === allyId)?.skills.find((k) => k.id === action.skillId)?.name ?? ''}${to}`;
       case 'link':
@@ -894,6 +902,7 @@ export class BattleScene extends Phaser.Scene {
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
+      skillPage: actor && this.skillPage.actorId === actor.uid ? this.skillPage.page : 0,
       selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
       comboCardUids: this.selectedComboCards(s),
       selectedTarget: sel?.target,
@@ -961,14 +970,14 @@ export class BattleScene extends Phaser.Scene {
     c.add([shade, title]);
     const result = getBattleResult(this.state);
     if (win && !CAMPAIGN[this.stage].boss) {
-      // 記憶ポイントを受け取って成長マップへ
+      // 星の砂を受け取って星図へ
       const gained = battleReward(CAMPAIGN[this.stage].reward, result.brokenParts.length, PART_BREAK_POINTS);
       run.growth = { ...run.growth, points: run.growth.points + gained };
       run.stage = this.stage + 1;
-      // パーツの報酬は成長マップの画面で選ぶ
+      // ギアの報酬は星図の画面で選ぶ
       const hasReward = !!NAVI_REWARD_CANDIDATES[this.stage];
       if (hasReward) run.pendingReward = this.stage;
-      // 武器：素材とアイテムを受け取り、経験値とパーツの傾向を貯める
+      // 武器：素材とアイテムを受け取り、経験値とギアの傾向を貯める
       const naviData = currentNaviData();
       const levelsBefore = Object.fromEntries(PARTY.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
       run.armory = recordVictory(run.armory, {
@@ -983,13 +992,13 @@ export class BattleScene extends Phaser.Scene {
       const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${reward ? `　アイテム：${summarizeItems([reward])}` : ''}`;
       const next = CAMPAIGN[run.stage];
       c.add(
-        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `記憶ポイント +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nパーツを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
+        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nギアを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
           size: 15,
           align: 'center',
           color: COLORS.subText,
         }).setOrigin(0.5, 0),
       );
-      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100, 240, 60, '成長マップへ', { onTap: () => this.scene.start('Growth') }, {
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 100, 240, 60, '星図へ', { onTap: () => this.scene.start('Growth') }, {
         size: 18,
         bold: true,
         fill: 0x5a4a10,

@@ -45,7 +45,7 @@ describe('勝敗', () => {
     expect(mioHit.targetId).toBe('enemy1');
   });
 
-  it('自分の番の前にHPが0になった味方の行動は取り消し、カードは手札に残る', () => {
+  it('自分の番の前にHPが0になった味方の行動は取り消し、スナップは手札に残る', () => {
     let s = withHand(
       battle({
         allies: [ally('hero', { hp: 1, spd: 1 }), ally('mio', { hp: 999, spd: 1 })],

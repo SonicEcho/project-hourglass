@@ -1,6 +1,6 @@
 import type { LinkDef } from '../core/types';
 
-/** 主人公とみおの2人技 */
+/** ハルトとみおの2人技 */
 export const CROSS_DRIVE: LinkDef = {
   id: 'crossDrive',
   name: 'クロスドライブ',

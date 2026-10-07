@@ -19,7 +19,7 @@ const ids = PARTY.map((c) => c.id);
 const fresh = (points = 99): GrowthState => createGrowth(GROWTH_MAP, ids, points);
 const at = (row: number, col: number) => `n${row}_${col}`;
 
-describe('成長マップのデータ', () => {
+describe('星図のデータ', () => {
   it('7×9の格子に約40マス。3人の出発点がある', () => {
     expect(GROWTH_MAP.nodes.length).toBeGreaterThanOrEqual(40);
     for (const n of GROWTH_MAP.nodes) {
@@ -57,8 +57,8 @@ describe('成長マップのデータ', () => {
   });
 });
 
-describe('成長マップ', () => {
-  it('始めは各キャラが自分の出発点だけ開いていて、記憶ポイントを持っている', () => {
+describe('星図', () => {
+  it('始めは各キャラが自分の出発点だけ開いていて、星の砂を持っている', () => {
     const g = createGrowth(GROWTH_MAP, ids, START_MEMORY_POINTS);
     expect(g.points).toBe(START_MEMORY_POINTS);
     expect(piecePosition(g, 'hero')).toBe(at(8, 3));
@@ -72,14 +72,14 @@ describe('成長マップ', () => {
     expect(getOpenError(GROWTH_MAP, fresh(), HERO, at(4, 3))).not.toBeNull();
   });
 
-  it('開けると記憶ポイントを払い、駒がそこへ進む。その隣も開けられるようになる', () => {
+  it('開けると星の砂を払い、駒がそこへ進む。その隣も開けられるようになる', () => {
     const g = openNode(GROWTH_MAP, fresh(10), HERO, at(8, 2)); // ダブルスラッシュ
     expect(g.points).toBe(10 - GROWTH_COST.skill);
     expect(piecePosition(g, 'hero')).toBe(at(8, 2));
     expect(openableNodes(GROWTH_MAP, g, 'hero').map((n) => n.id)).toContain(at(7, 2));
   });
 
-  it('記憶ポイントが足りないと開けられない', () => {
+  it('星の砂が足りないと開けられない', () => {
     expect(getOpenError(GROWTH_MAP, fresh(2), HERO, at(8, 2))).toBe('not enough memory points');
   });
 
@@ -89,7 +89,7 @@ describe('成長マップ', () => {
   });
 
   it('もう覚えている魔法・スキルのマスと、他のキャラの出発点は「通るだけ」の値段', () => {
-    // 主人公はファイアを元から覚えている
+    // ハルトはファイアを元から覚えている
     expect(nodeCost(GROWTH_MAP, fresh(), HERO, at(8, 4))).toBe(GROWTH_COST.passThrough);
     expect(nodeCost(GROWTH_MAP, fresh(), MIO, at(8, 4))).toBe(GROWTH_COST.skill);
     expect(nodeCost(GROWTH_MAP, fresh(), HERO, at(5, 0))).toBe(GROWTH_COST.passThrough);
@@ -134,7 +134,7 @@ describe('成長の反映', () => {
     expect(PARTY).toEqual(before);
   });
 
-  it('戦闘の記憶ポイント：基本 ＋ 壊した部位 × 2', () => {
+  it('戦闘の星の砂：基本 ＋ 壊した部位 × 2', () => {
     expect(battleReward(6, 0, 2)).toBe(6);
     expect(battleReward(0, 2, 2)).toBe(4);
   });

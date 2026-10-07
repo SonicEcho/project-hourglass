@@ -3,7 +3,7 @@ import { applyGrowth, applyNavi, applyWeapons, createArmory, createGrowth, creat
 import { GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 
 /**
- * 1回の通しプレイ（成長マップと5戦の周回）の状態。
+ * 1回の通しプレイ（星図と5戦の周回）の状態。
  * シードを固定していない時は、最初から始めるたび・戦闘をやり直すたびに新しいシードにする。
  * セーブはしない（ページを閉じると最初から）
  */
@@ -12,11 +12,11 @@ export const run: {
   fixed: boolean;
   stage: number;
   growth: GrowthState;
-  /** ナビカス盤のパーツ（持ち物と、どの盤のどこにはめたか） */
+  /** ムーブメントのギア（持ち物と、どの盤のどこにはめたか） */
   navi: NaviState;
-  /** まだ受け取っていない勝利の報酬（パーツの候補）。戦闘の番号（0から） */
+  /** まだ受け取っていない勝利の報酬（ギアの候補）。戦闘の番号（0から） */
   pendingReward: number | null;
-  /** 武器と記憶の断片 */
+  /** 武器と記憶の欠片 */
   armory: ArmoryState;
 } = {
   seed: 0,
@@ -63,12 +63,12 @@ export function battleSeed(stage: number): number {
   return (run.seed + stage) >>> 0;
 }
 
-/** 今のナビカス盤のデータ（武器の進化で広がった盤） */
+/** 今のムーブメントのデータ（武器の進化で広がった盤） */
 export function currentNaviData(): NaviData {
   return naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, run.armory);
 }
 
-/** 成長を反映した仲間（成長マップ → ナビカス盤 → 武器の順に反映する） */
+/** 成長を反映した仲間（星図 → ムーブメント → 武器の順に反映する） */
 export function currentParty(): CharacterDef[] {
   const grown = applyGrowth(GROWTH_MAP, run.growth, PARTY, SKILLS);
   return applyWeapons(WEAPON_DATA, run.armory, applyNavi(currentNaviData(), run.navi, grown));

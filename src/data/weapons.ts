@@ -2,26 +2,29 @@ import type { FragmentDef, ItemDef, WeaponData, WeaponDef } from '../core/weapon
 
 // 武器ビルドアップ（段階9）。数値・名前はすべて仮
 
-/** 記憶の断片。素材・通常アイテムを断片化すると手に入る。元の素材・アイテムごとに特徴が違う */
+/**
+ * 記憶の欠片（段階10）。記憶に宿る感情ごとの種類。盗まれるのは楽しい時間だけなので、前向きな感情だけ。
+ * 1つで、その感情に対応するパラメータが1上がる
+ */
 export const FRAGMENTS = {
-  slimeJelly: { id: 'slimeJelly', name: 'スライムゼリーの断片', gains: { fire: 3, atk: 1 } },
-  frostFeather: { id: 'frostFeather', name: '霜の羽の断片', gains: { thunder: 3, ice: 1 } },
-  hardFur: { id: 'hardFur', name: '硬い毛皮の断片', gains: { ice: 3, atk: 2 } },
-  steelClaw: { id: 'steelClaw', name: '鋼の爪の断片', gains: { atk: 3 } },
-  potion: { id: 'potion', name: 'ポーションの断片', gains: { atk: 1 } },
-  ether: { id: 'ether', name: 'エーテルの断片', gains: { fire: 1, ice: 1, thunder: 1 } },
-  hiPotion: { id: 'hiPotion', name: 'ハイポーションの断片', gains: { atk: 2 } },
+  courage: { id: 'courage', name: '勇気', gains: { atk: 1 } },
+  elation: { id: 'elation', name: '高揚', gains: { fire: 1 } },
+  relief: { id: 'relief', name: '安堵', gains: { ice: 1 } },
+  wonder: { id: 'wonder', name: '驚嘆', gains: { thunder: 1 } },
 } satisfies Record<string, FragmentDef>;
 
-/** 素材（敵が落とす）と通常アイテム（勝利の報酬）。この試作では、通常アイテムは戦闘で使えない */
+/**
+ * 素材（敵が落とす）と通常アイテム（勝利の報酬）。この試作では、通常アイテムは戦闘で使えない。
+ * 時分解した時の記憶の欠片の合計は、段階9（調整1回目）の記憶の欠片と同じ上がり幅にしてある
+ */
 export const ITEMS = {
-  slimeJelly: { id: 'slimeJelly', name: 'スライムゼリー', kind: 'material', fragment: 'slimeJelly', count: 1 },
-  frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', fragment: 'frostFeather', count: 1 },
-  hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', fragment: 'hardFur', count: 1 },
-  steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', fragment: 'steelClaw', count: 1 },
-  potion: { id: 'potion', name: 'ポーション', kind: 'item', fragment: 'potion', count: 2 },
-  ether: { id: 'ether', name: 'エーテル', kind: 'item', fragment: 'ether', count: 2 },
-  hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', fragment: 'hiPotion', count: 2 },
+  slimeJelly: { id: 'slimeJelly', name: 'スライムゼリー', kind: 'material', fragments: { elation: 3, courage: 1 } },
+  frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', fragments: { wonder: 3, relief: 1 } },
+  hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', fragments: { relief: 3, courage: 2 } },
+  steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', fragments: { courage: 3 } },
+  potion: { id: 'potion', name: 'ポーション', kind: 'item', fragments: { courage: 2 } },
+  ether: { id: 'ether', name: 'エーテル', kind: 'item', fragments: { elation: 2, relief: 2, wonder: 2 } },
+  hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', fragments: { courage: 4 } },
 } satisfies Record<string, ItemDef>;
 
 export type ItemId = keyof typeof ITEMS;

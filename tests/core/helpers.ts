@@ -43,7 +43,7 @@ export function battle(partial: Partial<BattleSetup> = {}): BattleState {
   return createBattle(setup(partial));
 }
 
-/** 手札を指定したカードに入れ替える（テスト用に状態を書き換える） */
+/** 手札を指定したスナップに入れ替える（テスト用に状態を書き換える） */
 export function withHand(state: BattleState, cards: CardDef[]): BattleState {
   const s = structuredClone(state);
   s.discard.push(...s.hand);

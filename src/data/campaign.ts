@@ -5,7 +5,7 @@ import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
 import { LINKS } from './links';
 import { ITEMS } from './weapons';
 
-// 周回の構成（段階7）：戦闘 → 成長マップ → 戦闘…の5戦。数値はすべて仮
+// 周回の構成（段階7）：戦闘 → 星図 → 戦闘…の5戦。数値はすべて仮
 
 /** 敵を強くした版（HP・攻撃・魔力を rate 倍）。extraDrops の素材も落とす */
 export function strengthen(enemy: EnemyDef, rate: number, extraDrops: string[] = []): EnemyDef {
@@ -25,7 +25,7 @@ export function strengthen(enemy: EnemyDef, rate: number, extraDrops: string[] =
 export interface CampaignBattle {
   name: string;
   enemies: EnemyDef[];
-  /** 勝った時の記憶ポイント */
+  /** 勝った時の星の砂 */
   reward: number;
   /** 勝った時にもらえる通常アイテム（段階9） */
   item?: string;

@@ -61,7 +61,7 @@ function autoPlay(s0: BattleState, seed: number): BattleState {
   let s = s0;
   for (let guard = 0; guard < 3000 && s.phase !== 'ended'; guard++) {
     if (s.phase === 'plan') {
-      // サポートカードがあれば使う
+      // サポートスナップがあれば使う
       const support = s.hand.find((c) => c.card.support && getSupportError(s, c.uid, livingAllies(s)[0].uid) === null);
       if (support && pick(2) === 0) {
         s = useSupport(s, support.uid, livingAllies(s)[0].uid);

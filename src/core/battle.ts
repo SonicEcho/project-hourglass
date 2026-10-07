@@ -42,9 +42,9 @@ import type {
 // 内部では複製した状態 s を書き換えて組み立てる。
 //
 // 1ラウンドの流れ：
-//   plan（3人の行動を選ぶ。サポートカードはその場で使う）
+//   plan（3人の行動を選ぶ。サポートスナップはその場で使う）
 //   → startExecution → execute（step で1つずつ実行）
-//     ↳ 敵をダウンさせたら extra（ワンモア・バトンの追加行動を選ぶ）→ execute に戻る
+//     ↳ 敵をダウンさせたら extra（延長・バトンの追加行動を選ぶ）→ execute に戻る
 //   → 全員実行したら次のラウンドの plan へ（勝敗がついたら ended）
 
 const clone = <T>(v: T): T => structuredClone(v);
@@ -153,7 +153,7 @@ function findEnemy(s: BattleState, id: string): EnemyUnit | undefined {
   return s.enemies.find((u) => u.uid === id);
 }
 
-// ---- 特性（ナビカス盤） ----
+// ---- 特性（ムーブメント） ----
 
 type PassiveOf<K extends PassiveEffect['kind']> = Extract<PassiveEffect, { kind: K }>;
 
@@ -188,7 +188,7 @@ export function skillMpCost(ally: { passives?: PassiveEffect[] }, skill: SkillDe
   return save > 0 ? Math.max(1, skill.mp - save) : skill.mp;
 }
 
-/** ワンモアの時に引く枚数 */
+/** 延長の時に引く枚数 */
 export function oneMoreDrawCount(ally: { passives?: PassiveEffect[] }): number {
   return ONE_MORE_DRAW + passivesOf(ally, 'oneMoreDraw').reduce((sum, p) => sum + p.count, 0);
 }
@@ -208,7 +208,7 @@ function passivePartMultiplier(user: AllyUnit, partMultiplier: number | undefine
   return (partMultiplier ?? 1) * (1 + passiveRate(user, 'partBoost'));
 }
 
-/** ラウンドの始めの、特性によるHPの増減（バグで減り、ファーストエイドで回復する） */
+/** ラウンドの始めの、特性によるHPの増減（狂いで減り、ファーストエイドで回復する） */
 function applyRoundStartPassives(s: BattleState): void {
   for (const a of livingAllies(s)) {
     const loss = Math.floor(a.maxHp * passiveRate(a, 'bug'));
@@ -231,7 +231,7 @@ export function planOf(s: BattleState, allyId: string): Plan | undefined {
   return s.plans.find((p) => !p.done && p.actorIds.includes(allyId));
 }
 
-/** 計画で確保されているカード。exceptAllyIds の仲間の分は除く */
+/** 計画で確保されているスナップ。exceptAllyIds の仲間の分は除く */
 export function reservedCardUids(s: BattleState, exceptAllyIds: string[] = []): Set<number> {
   const out = new Set<number>();
   for (const p of s.plans) {
@@ -241,7 +241,7 @@ export function reservedCardUids(s: BattleState, exceptAllyIds: string[] = []): 
   return out;
 }
 
-/** まだ誰にも割り当てていない手札。exceptAllyIds の仲間が確保しているカードは使えるものとして数える */
+/** まだ誰にも割り当てていない手札。exceptAllyIds の仲間が確保しているスナップは使えるものとして数える */
 export function availableHand(s: BattleState, exceptAllyIds: string[] = []): CardInstance[] {
   const reserved = reservedCardUids(s, exceptAllyIds);
   return s.hand.filter((c) => !reserved.has(c.uid));
@@ -291,7 +291,7 @@ function updateOutcome(s: BattleState): void {
 
 interface Resolved {
   def: ActionDef;
-  /** この行動で使うカード */
+  /** この行動で使うスナップ */
   cards: CardInstance[];
   skill?: SkillDef;
   link?: LinkDef;
@@ -369,7 +369,7 @@ function validate(s: BattleState, actor: AllyUnit, action: PlayerAction, pool: C
 
 // ---- コンボ ----
 
-/** 手札（pool）からコンボに使うカードを選ぶ。そろっていなければ null */
+/** 手札（pool）からコンボに使うスナップを選ぶ。そろっていなければ null */
 export function comboCards(combo: ComboDef, pool: CardInstance[]): CardInstance[] | null {
   const rest = [...pool];
   const picked: CardInstance[] = [];
@@ -387,7 +387,7 @@ export function availableCombos(s: BattleState, pool: CardInstance[]): ComboDef[
   return s.combos.filter((c) => comboCards(c, pool) !== null);
 }
 
-/** コンボに必要なカードのうち、手札にそろっている枚数 */
+/** コンボに必要なスナップのうち、手札にそろっている枚数 */
 export function comboProgress(combo: ComboDef, pool: CardInstance[]): { have: number; need: number } {
   const rest = [...pool];
   let have = 0;
@@ -403,7 +403,7 @@ export function comboProgress(combo: ComboDef, pool: CardInstance[]): { have: nu
 
 // ---- 計画 ----
 
-/** 計画で使ってよい手札（自分（連携技なら2人）が確保しているカードは使える） */
+/** 計画で使ってよい手札（自分（連携技なら2人）が確保しているスナップは使える） */
 export function planPool(s: BattleState, allyId: string, action?: PlayerAction): CardInstance[] {
   const ids = [allyId];
   if (action?.type === 'link') {
@@ -451,9 +451,9 @@ export function isPlanComplete(s: BattleState): boolean {
   return s.phase === 'plan' && !s.searchChoice && unplannedAllies(s).length === 0;
 }
 
-// ---- サポートカード ----
+// ---- サポートスナップ ----
 
-/** サポートカードを使えない理由。使えるなら null。クイックステップは targetAllyId が必要 */
+/** サポートスナップを使えない理由。使えるなら null。クイックステップは targetAllyId が必要 */
 export function getSupportError(s: BattleState, cardUid: number, targetAllyId?: string): string | null {
   if (s.phase !== 'plan') return 'support cards are used during planning';
   if (s.searchChoice) return 'pick a card from the search first';
@@ -469,7 +469,7 @@ export function getSupportError(s: BattleState, cardUid: number, targetAllyId?: 
   return null;
 }
 
-/** サポートカードをその場で使う（行動枠を使わない） */
+/** サポートスナップをその場で使う（行動枠を使わない） */
 export function useSupport(state: BattleState, cardUid: number, targetAllyId?: string): BattleState {
   const err = getSupportError(state, cardUid, targetAllyId);
   if (err) throw new Error(err);
@@ -487,7 +487,7 @@ export function useSupport(state: BattleState, cardUid: number, targetAllyId?: s
   return s;
 }
 
-/** サーチで見ているカードから1枚を手札に加える。残りは山札の一番下へ */
+/** サーチで見ているスナップから1枚を手札に加える。残りは山札の一番下へ */
 export function resolveSearch(state: BattleState, pickedUid: number): BattleState {
   if (!state.searchChoice) throw new Error('no search in progress');
   if (!state.searchChoice.some((c) => c.uid === pickedUid)) throw new Error('pick one of the shown cards');
@@ -621,7 +621,7 @@ function runPlan(s: BattleState, planIndex: number): void {
   plan.done = true;
   const actors = plan.actorIds.map((id) => findAlly(s, id)!);
   if (actors.some((a) => !a || !isAlive(a))) {
-    // 自分の番の前に倒れた。確保していたカードは手札に残る
+    // 自分の番の前に倒れた。確保していたスナップは手札に残る
     s.log.push({ type: 'cancel', actorIds: plan.actorIds, reason: 'dead' });
     return;
   }
@@ -742,7 +742,7 @@ function perform(
   return { downed: ctx.downed };
 }
 
-// ---- ワンモア・バトン ----
+// ---- 延長・バトン ----
 
 function triggerOneMore(s: BattleState, actorId: string, chain: string[]): void {
   updateOutcome(s);
@@ -753,7 +753,7 @@ function triggerOneMore(s: BattleState, actorId: string, chain: string[]): void 
   s.phase = 'extra';
 }
 
-/** 追加行動で使ってよい手札（これから実行する仲間が確保しているカードは使えない） */
+/** 追加行動で使ってよい手札（これから実行する仲間が確保しているスナップは使えない） */
 export function extraPool(s: BattleState): CardInstance[] {
   return availableHand(s);
 }
@@ -767,7 +767,7 @@ export function getExtraError(s: BattleState, action: PlayerAction): string | nu
   return typeof r === 'string' ? r : null;
 }
 
-/** ワンモア（またはバトンを受けた）追加行動をすぐに実行する */
+/** 延長（またはバトンを受けた）追加行動をすぐに実行する */
 export function applyExtra(state: BattleState, action: PlayerAction): BattleState {
   const err = getExtraError(state, action);
   if (err) throw new Error(err);
@@ -778,7 +778,7 @@ export function applyExtra(state: BattleState, action: PlayerAction): BattleStat
   s.extra = null;
   s.phase = 'execute';
   updateOutcome(s);
-  // 連鎖ワンモア：追加行動で、まだダウンしていない別の敵をダウンさせたら、さらにワンモア
+  // 連鎖延長：追加行動で、まだダウンしていない別の敵をダウンさせたら、さらに延長
   if (result !== 'mp' && result.downed) triggerOneMore(s, actor.uid, extra.chain);
   return s;
 }
@@ -868,7 +868,7 @@ function applyEffect(
       drawCards(s, effect.count);
       return;
     case 'redraw': {
-      // まだ実行していない仲間が確保しているカードは残す
+      // まだ実行していない仲間が確保しているスナップは残す
       const discard = availableHand(s).map((c) => c.uid);
       if (discard.length > 0) s.log.push({ type: 'discardHand', cardUids: discard });
       discardCards(s, discard);
@@ -890,7 +890,7 @@ function applyEffect(
       return;
     case 'search':
     case 'precede':
-      // サポートカードの効果は useSupport で処理する
+      // サポートスナップの効果は useSupport で処理する
       return;
   }
 }

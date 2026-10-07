@@ -42,7 +42,7 @@ export type Effect =
   | { kind: 'draw'; count: number }
   /** 手札をすべて捨て、count 枚引き直す */
   | { kind: 'redraw'; count: number }
-  /** 捨て札から好きなカードを1枚手札に加える */
+  /** 捨て札から好きなスナップを1枚手札に加える */
   | { kind: 'retrieve' }
   /** このラウンドの間、受けるダメージを減らす */
   | { kind: 'guard' }
@@ -51,7 +51,7 @@ export type Effect =
   /** 選んだ仲間のこのラウンドの行動を、最初に実行する */
   | { kind: 'precede' };
 
-/** 味方の行動（カード、魔法・スキル、基本行動、連携技）の共通定義 */
+/** 味方の行動（スナップ、魔法・スキル、基本行動、連携技）の共通定義 */
 export interface ActionDef {
   id: string;
   name: string;
@@ -66,13 +66,13 @@ export interface SkillDef extends ActionDef {
 }
 
 export interface CardDef extends ActionDef {
-  /** サポートカード。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で1枚まで） */
+  /** サポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で1枚まで） */
   support?: boolean;
 }
 
 /**
- * コンボ。手札に決まった組み合わせのカードがそろうと、まとめて使える大技。
- * cards はカードの id（同じカードを複数枚求める時は同じ id を並べる）
+ * コンボ。手札に決まった組み合わせのスナップがそろうと、まとめて使える大技。
+ * cards はスナップの id（同じスナップを複数枚求める時は同じ id を並べる）
  */
 export interface ComboDef extends ActionDef {
   cards: string[];
@@ -84,7 +84,7 @@ export interface LinkDef extends ActionDef {
 }
 
 /**
- * キャラの特性（段階8：ナビカス盤の効果パーツやバグ）。戦闘中ずっと効く。
+ * キャラの特性（段階8：ムーブメントの効果ギアや狂い）。戦闘中ずっと効く。
  * 同じ種類が複数あれば足し合わせる
  */
 export type PassiveEffect =
@@ -92,7 +92,7 @@ export type PassiveEffect =
   | { kind: 'elementBoost'; element: Element; rate: number }
   /** 部位へのダメージを rate 割増し */
   | { kind: 'partBoost'; rate: number }
-  /** ワンモアの時に引く枚数を増やす */
+  /** 延長の時に引く枚数を増やす */
   | { kind: 'oneMoreDraw'; count: number }
   /** バトンを受けた時の倍率に足す */
   | { kind: 'batonBoost'; rate: number }
@@ -104,7 +104,7 @@ export type PassiveEffect =
   | { kind: 'mpSave'; amount: number }
   /** 戦闘の最初のラウンド、行動が先制になる */
   | { kind: 'startDash' }
-  /** バグ：ラウンドの始めに最大HPの rate を失う（HPは1未満にならない） */
+  /** 狂い：ラウンドの始めに最大HPの rate を失う（HPは1未満にならない） */
   | { kind: 'bug'; rate: number };
 
 export interface CharacterDef {
@@ -112,7 +112,7 @@ export interface CharacterDef {
   name: string;
   stats: Stats;
   skills: SkillDef[];
-  /** 特性（ナビカス盤・武器で付く） */
+  /** 特性（ムーブメント・武器で付く） */
   passives?: PassiveEffect[];
   /** 通常攻撃の属性（武器の進化で変わる。なければ物理） */
   attackElement?: Element;
@@ -163,7 +163,7 @@ export interface EnemyDef {
 export interface BattleSetup {
   allies: CharacterDef[];
   enemies: EnemyDef[];
-  /** フォルダ（山札）。枚数分を並べたもの */
+  /** アルバム（山札）。枚数分を並べたもの */
   deck: CardDef[];
   links?: LinkDef[];
   combos?: ComboDef[];
@@ -237,7 +237,7 @@ export interface CardInstance {
 export interface Plan {
   actorIds: string[];
   action: PlayerAction;
-  /** この行動のために確保したカード（カード・コンボの材料）。他の仲間には割り当てられない */
+  /** この行動のために確保したスナップ（スナップ・コンボの材料）。他の仲間には割り当てられない */
   cardUids: number[];
   /** 実行済み（または取り消し済み） */
   done: boolean;
@@ -246,7 +246,7 @@ export interface Plan {
 /** 実行の順番待ち */
 export type QueueEntry = { kind: 'ally'; planIndex: number } | { kind: 'enemy'; enemyId: string };
 
-/** ワンモア・バトンの追加行動を選んでいる最中 */
+/** 延長・バトンの追加行動を選んでいる最中 */
 export interface ExtraTurn {
   actorId: string;
   /** この連鎖でバトンを受け渡した仲間（渡し返しはできない） */
@@ -259,7 +259,7 @@ export interface ExtraTurn {
  * 戦闘の局面
  * - plan: 3人の行動を選ぶ
  * - execute: 行動を速さ順に実行している
- * - extra: ワンモア・バトンの追加行動を選んでいる
+ * - extra: 延長・バトンの追加行動を選んでいる
  * - ended: 勝敗がついた
  */
 export type Phase = 'plan' | 'execute' | 'extra' | 'ended';
@@ -270,7 +270,7 @@ export type LogEvent =
   | { type: 'battleStart'; seed: number }
   | { type: 'roundStart'; round: number }
   | { type: 'roundEnd'; round: number }
-  /** actorIds: 行動した者（連携技は2人）。extra: ワンモア・バトンの追加行動 */
+  /** actorIds: 行動した者（連携技は2人）。extra: 延長・バトンの追加行動 */
   | { type: 'action'; actorIds: string[]; actionId: string; name: string; extra: boolean }
   /** 自分の番が来る前に倒れた、MPが足りないなどで行動できなかった */
   | { type: 'cancel'; actorIds: string[]; reason: 'dead' | 'mp' }
@@ -297,7 +297,7 @@ export type LogEvent =
   | { type: 'oneMore'; actorId: string }
   | { type: 'baton'; fromId: string; toId: string }
   | { type: 'guard'; actorId: string }
-  /** ラウンドの始めの、特性によるHPの増減（バグで減る・ファーストエイドで回復） */
+  /** ラウンドの始めの、特性によるHPの増減（狂いで減る・ファーストエイドで回復） */
   | { type: 'passiveHp'; allyId: string; source: 'bug' | 'regen'; amount: number; hpAfter: number }
   | { type: 'partBreak'; enemyId: string; partId: string }
   | { type: 'defeated'; unitId: string }
@@ -324,9 +324,9 @@ export interface BattleState {
   plans: Plan[];
   /** クイックステップで先制する仲間 */
   precedeIds: string[];
-  /** このラウンドにサポートカードを使った */
+  /** このラウンドにサポートスナップを使った */
   supportUsed: boolean;
-  /** サーチで見ているカード（1枚選ぶまで計画を進められない） */
+  /** サーチで見ているスナップ（1枚選ぶまで計画を進められない） */
   searchChoice: CardInstance[] | null;
   /** 実行の順番待ち（先頭から実行する） */
   queue: QueueEntry[];

@@ -4,7 +4,7 @@ import { getRoundOrder, passBaton, previewAction, skillMpCost } from '../../src/
 import { CARDS, SKILLS } from '../../src/data';
 import { ally, battle, enemy, eventsOf, execute, guard, planAll, withHand } from './helpers';
 
-// 特性（ナビカス盤の効果パーツとバグ）が戦闘で効くこと
+// 特性（ムーブメントの効果ギアと狂い）が戦闘で効くこと
 
 const withPassives = (c: CharacterDef, passives: PassiveEffect[]): CharacterDef => ({ ...c, passives });
 
@@ -64,10 +64,10 @@ describe('特性：ダメージの割増し', () => {
   });
 });
 
-describe('特性：ワンモアとバトン', () => {
+describe('特性：延長とバトン', () => {
   const weakEnemies = () => [enemy('a', {}, { weaknesses: ['fire'] }), enemy('b', {}, { weaknesses: ['fire'] })];
 
-  it('ワンモアドローがあると、ワンモアの時に引く枚数が増える', () => {
+  it('延長ドローがあると、延長の時に引く枚数が増える', () => {
     const s0 = heroBattle([{ kind: 'oneMoreDraw', count: 1 }], weakEnemies());
     const s = execute(planAll(s0, { hero: fireOn('enemy0'), akari: guard }));
     expect(s.phase).toBe('extra');
@@ -113,14 +113,14 @@ describe('特性：MP・先制', () => {
 });
 
 describe('特性：ラウンドの始めのHP', () => {
-  it('バグ1つにつき、ラウンドの始めに最大HPの5%を失う', () => {
+  it('狂い1つにつき、ラウンドの始めに最大HPの5%を失う', () => {
     const bug: PassiveEffect = { kind: 'bug', rate: 0.05 };
     const s = battle({ allies: [withPassives(ally('hero', { hp: 200 }), [bug, bug])], enemies: [enemy('a')] });
     expect(s.allies[0].hp).toBe(200 - 20);
     expect(eventsOf(s, 'passiveHp')).toEqual([{ type: 'passiveHp', allyId: 'hero', source: 'bug', amount: -20, hpAfter: 180 }]);
   });
 
-  it('バグではHPが1未満にならない', () => {
+  it('狂いではHPが1未満にならない', () => {
     let s = battle({ allies: [withPassives(ally('hero', { hp: 200 }), [{ kind: 'bug', rate: 0.5 }])], enemies: [enemy('a', { atk: 0 })] });
     s.allies[0].hp = 3;
     s = execute(planAll(s, { hero: guard }));
