@@ -1,0 +1,34 @@
+name: Measure
+
+# 自動対戦の測定（段階12）。結果の表は、実行結果のページ（Summary）に出る。
+# スマホからは GitHub の Actions →「Measure」→「Run workflow」で回数を指定して実行する。
+# 公開（Test and Deploy）とは別なので、測定が遅くても公開は待たない
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: '周回の回数'
+        default: '200'
+      seed:
+        description: '最初のシード'
+        default: '1'
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run measure -- --runs "${RUNS}" --seed "${SEED}"
+        env:
+          RUNS: ${{ github.event.inputs.runs || '200' }}
+          SEED: ${{ github.event.inputs.seed || '1' }}
