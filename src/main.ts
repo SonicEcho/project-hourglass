@@ -7,6 +7,8 @@ import { loadEruda } from './debug/eruda';
 import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
 import { CreditsScene } from './scenes/CreditsScene';
+import { ProtoDialogueScene } from './scenes/ProtoDialogueScene';
+import { ProtoExploreScene } from './scenes/ProtoExploreScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
 import { WeaponScene } from './scenes/WeaponScene';
@@ -51,7 +53,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene],
+  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, ProtoDialogueScene],
 });
 
 if (debug) {
@@ -79,5 +81,6 @@ if (debug) {
       const weapon = game.scene.getScene('Weapon') as WeaponScene | null;
       weapon?.refresh();
     },
+    openPrototype: (key) => goTo(key, {}),
   });
 }

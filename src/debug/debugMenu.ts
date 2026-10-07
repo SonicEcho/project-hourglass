@@ -10,6 +10,8 @@ export interface DebugNavigator {
   restartRun(): void;
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
+  /** 試作の画面を開く（段階16。エンジンを決めるための探索・会話の試作） */
+  openPrototype(key: 'ProtoExplore' | 'ProtoDialogue'): void;
 }
 
 const Z = 9000;
@@ -121,6 +123,21 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('ボス戦（戦闘5）から始める（育成はそのまま）', () => {
         close();
         nav.startBoss();
+      }),
+    );
+
+    // エンジンを決めるための試作（段階16。本編では使わない）
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '試作（エンジンを決めるため。本編では使わない）'));
+    panel.append(
+      button('試作：探索の画面を開く', () => {
+        close();
+        nav.openPrototype('ProtoExplore');
+      }),
+    );
+    panel.append(
+      button('試作：会話の画面を開く', () => {
+        close();
+        nav.openPrototype('ProtoDialogue');
       }),
     );
 
