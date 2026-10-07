@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "measure": "node scripts/measure.mjs"
+    "measure": "node scripts/measure.mjs",
+    "data:tables": "node scripts/data-tables.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"
