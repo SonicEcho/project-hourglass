@@ -7,6 +7,7 @@ import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
 import { summarizePassives } from './naviText';
 import { columnX, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
+import { skillPanelLayout } from './skillLayout';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, toCss } from './theme';
 import { addBar, addButton, addText, makePressable } from './widgets';
 
@@ -38,6 +39,8 @@ export interface ViewModel {
   scope: TargetScope | null;
   selectedCardUid?: number;
   selectedSkillId?: string;
+  /** 魔法・スキルの一覧のページ（技が多い時） */
+  skillPage: number;
   selectedComboId?: string;
   /** 選んだコンボの材料のスナップ */
   comboCardUids: number[];
@@ -60,6 +63,8 @@ export interface ViewHandlers {
   tapCard(uid: number): void;
   tapCombo(id: string): void;
   tapSkill(id: string): void;
+  /** 魔法・スキルの一覧の次のページ */
+  nextSkillPage(): void;
   tapBasic(kind: 'attack' | 'guard' | 'decline'): void;
   tapDiscard(uid: number): void;
   tapSearch(uid: number): void;
@@ -514,31 +519,42 @@ function panelBackground(scene: Phaser.Scene, root: Phaser.GameObjects.Container
 
 function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const actor = vm.actor;
-  panelBackground(scene, root, `魔法・スキル（${actor?.name ?? ''}　MP ${actor?.mp ?? 0}）`);
+  const left = SIDE_PADDING + 8;
+  const width = GAME_WIDTH - SIDE_PADDING * 2 - 16;
+  const layout = skillPanelLayout(actor?.skills.length ?? 0, width, vm.skillPage);
+  const pageText = layout.pages > 1 ? `　${layout.page + 1}/${layout.pages}ページ` : '';
+  panelBackground(scene, root, `魔法・スキル（${actor?.name ?? ''}　MP ${actor?.mp ?? 0}）${pageText}`);
   if (!actor) return;
   const { y } = LAYOUT.hand;
-  const rowH = 46;
-  actor.skills.forEach((skill, i) => {
+  for (const slot of layout.slots) {
+    const cx = left + slot.x + slot.w / 2;
+    const cy = y + slot.y + slot.h / 2;
+    if (slot.index < 0) {
+      addButton(scene, root, cx, cy, slot.w, slot.h, `次のページ ▶\n（${layout.page + 1}/${layout.pages}）`, { onTap: () => h.nextSkillPage() }, { enabled: vm.interactive, size: 12 });
+      continue;
+    }
+    const skill = actor.skills[slot.index];
     const cost = skillMpCost(actor, skill);
     const enough = actor.mp >= cost;
     const selected = vm.selectedSkillId === skill.id;
     const type = mainDamageType(skill);
-    const label = `${skill.name}　MP${cost}　${type ? ELEMENT_LABEL[type] : ''}　${weightLabel(skill.weight)}`;
+    const info = `MP${cost}　${type ? `${ELEMENT_LABEL[type]}　` : ''}${weightLabel(skill.weight)}`;
+    const label = layout.cols === 1 ? `${skill.name}　${info}` : `${skill.name}\n${info}`;
     addButton(
       scene,
       root,
-      GAME_WIDTH / 2,
-      y + 24 + rowH / 2 + i * (rowH + 4),
-      GAME_WIDTH - SIDE_PADDING * 2 - 16,
-      rowH,
+      cx,
+      cy,
+      slot.w,
+      slot.h,
       label,
       {
         onTap: () => h.tapSkill(skill.id),
         onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
       },
-      { enabled: enough && vm.interactive, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: 13 },
+      { enabled: enough && vm.interactive, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: layout.cols === 1 ? 13 : 12 },
     );
-  });
+  }
 }
 
 function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {

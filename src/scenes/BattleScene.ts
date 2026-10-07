@@ -73,6 +73,8 @@ export class BattleScene extends Phaser.Scene {
   private planner: string | null = null;
   private selection: Selection | null = null;
   private panel: Panel = 'none';
+  /** 魔法・スキルの一覧のページ（誰の一覧か、何ページ目か） */
+  private skillPage = { actorId: '', page: 0 };
   private message = '';
   private busy = false;
   private root!: Phaser.GameObjects.Container;
@@ -773,6 +775,12 @@ export class BattleScene extends Phaser.Scene {
         else this.select({ source: 'combo', comboId: id });
       },
       tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
+      nextSkillPage: () => {
+        const actorId = this.actor(this.state)?.uid ?? '';
+        const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
+        this.skillPage = { actorId, page: page + 1 };
+        this.render();
+      },
       tapBasic: (kind) => {
         if (kind === 'decline') {
           if (this.state.phase !== 'extra' || this.busy) return;
@@ -894,6 +902,7 @@ export class BattleScene extends Phaser.Scene {
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
+      skillPage: actor && this.skillPage.actorId === actor.uid ? this.skillPage.page : 0,
       selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
       comboCardUids: this.selectedComboCards(s),
       selectedTarget: sel?.target,
