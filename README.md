@@ -1,6 +1,6 @@
 # project-hourglass
 
-スマホ向けターン制RPGのバトルプロトタイプ。仕様は [docs/SPEC.md](docs/SPEC.md)。
+スマホ向けターン制RPG「RESTOPIA」。今の仕組みは [docs/design/](docs/design/README.md)、作業の一覧は [docs/milestones/](docs/milestones/M0.md)、試作の記録は [docs/SPEC.md](docs/SPEC.md)。
 
 - 公開URL: https://sonicecho.github.io/project-hourglass/ （`?debug=1` でデバッグ有効）
 
