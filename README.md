@@ -9,4 +9,5 @@ npm install
 npm run dev     # 開発サーバ
 npm test        # テスト
 npm run build   # 本番ビルド（dist/）
+npm run measure # 自動対戦で戦闘ごとの勝率を測る（-- --runs 200 --seed 1）
 ```
