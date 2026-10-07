@@ -10,7 +10,7 @@ import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, currentParty, run } from './run';
+import { currentNaviData, currentParty, run, saveRun } from './run';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -101,6 +101,8 @@ export class GrowthScene extends Phaser.Scene {
   // ---- 描画 ----
 
   private render(): void {
+    // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
+    saveRun();
     this.root.removeAll(true);
     const g = run.growth;
     const base = this.base();

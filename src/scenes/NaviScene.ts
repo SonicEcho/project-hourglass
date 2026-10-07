@@ -8,7 +8,7 @@ import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePass
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, run } from './run';
+import { currentNaviData, run, saveRun } from './run';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -168,6 +168,8 @@ export class NaviScene extends Phaser.Scene {
   // ---- 描画 ----
 
   private render(): void {
+    // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
+    saveRun();
     this.root.removeAll(true);
     this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / this.board().cols));
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));

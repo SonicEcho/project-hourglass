@@ -1,8 +1,16 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { CAMPAIGN } from '../data';
 import { addButton, addText } from '../ui/widgets';
-import { startNewRun } from './run';
+import { continueRun, moveBrokenSave, readSave, startNewRun } from './run';
+
+/** 保存した日時を「10/7 21:05」の形にする */
+function formatSavedAt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -26,21 +34,50 @@ export class TitleScene extends Phaser.Scene {
     root.add(
       addText(this, cx, 470, '星図で育てながら5戦。最後はボス「歪みの獣」', { size: 13, color: COLORS.subText }).setOrigin(0.5),
     );
-    addButton(
-      this,
-      root,
-      cx,
-      640,
-      260,
-      64,
-      'はじめる',
-      {
+    // セーブがあれば「つづきから」（段階11）
+    const save = readSave();
+    if (save && !save.ok) {
+      console.error('[save] セーブを読めませんでした', save.error);
+      moveBrokenSave();
+    }
+    const strong = { size: 20, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 };
+    const startNew = () => {
+      startNewRun();
+      this.scene.start('Growth');
+    };
+    if (save?.ok) {
+      const s = save.save;
+      const next = CAMPAIGN[s.run.stage];
+      addButton(this, root, cx, 600, 260, 64, 'つづきから', {
         onTap: () => {
-          startNewRun();
-          this.scene.start('Growth');
+          if (continueRun()) this.scene.start('Growth');
+          else this.scene.restart();
         },
-      },
-      { size: 20, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 },
-    );
+      }, strong);
+      root.add(
+        addText(this, cx, 645, `${next?.name ?? ''}の前（${s.run.stage + 1}/${CAMPAIGN.length}）　${formatSavedAt(s.savedAt)}`, {
+          size: 12,
+          color: COLORS.subText,
+        }).setOrigin(0.5),
+      );
+      // 誤タップでセーブを消さないよう、2回押して始める
+      let armed = false;
+      const warn = addText(this, cx, 770, '', { size: 12, color: COLORS.allyDamage, align: 'center' }).setOrigin(0.5);
+      root.add(warn);
+      addButton(this, root, cx, 720, 220, 52, 'はじめから', {
+        onTap: () => {
+          if (armed) startNew();
+          else {
+            armed = true;
+            warn.setText('セーブを消して最初から始めます。\nもう一度押してください');
+          }
+        },
+      }, { size: 16 });
+    } else {
+      if (save && !save.ok) {
+        root.add(addText(this, cx, 560, 'セーブを読めませんでした', { size: 13, color: COLORS.allyDamage }).setOrigin(0.5));
+      }
+      addButton(this, root, cx, 640, 260, 64, 'はじめる', { onTap: startNew }, strong);
+    }
   }
 }
