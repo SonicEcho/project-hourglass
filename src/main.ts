@@ -9,7 +9,7 @@ import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
 import { WeaponScene } from './scenes/WeaponScene';
 import { ResultScene } from './scenes/ResultScene';
-import { initRunFromUrl, run, startNewRun } from './scenes/run';
+import { initRunFromUrl, run, saveRun, startNewRun } from './scenes/run';
 import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
 
@@ -27,6 +27,12 @@ if (debug) {
 }
 
 initRunFromUrl();
+
+// ブラウザが裏に回った時（アプリの切り替え、タブを閉じる）も保存する。戦闘中なら、その戦闘の前の状態が保存される
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveRun();
+});
+window.addEventListener('pagehide', () => saveRun());
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

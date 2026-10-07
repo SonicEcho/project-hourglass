@@ -8,3 +8,4 @@ export * from './battle';
 export * from './growth';
 export * from './navi';
 export * from './weapon';
+export * from './save';

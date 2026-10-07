@@ -9,7 +9,7 @@ import { PART_COLOR } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeEvolution, describeFragment, describeItemFragments, itemGains, PARAM_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
-import { run } from './run';
+import { run, saveRun } from './run';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
 //
@@ -136,6 +136,8 @@ export class WeaponScene extends Phaser.Scene {
   // ---- 描画 ----
 
   private render(): void {
+    // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
+    saveRun();
     this.root.removeAll(true);
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
     this.root.add(addText(this, SIDE_PADDING, 8, '武器', { size: 17, bold: true }));

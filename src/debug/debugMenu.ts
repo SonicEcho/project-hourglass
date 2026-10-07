@@ -2,7 +2,7 @@ import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
 import { addItems, addParts } from '../core';
 import { ITEMS, NAVI_PARTS, WEAPON_DATA } from '../data';
-import { getActiveBattle, run } from '../scenes/run';
+import { deleteSave, getActiveBattle, readSave, readSaveText, run } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
 export interface DebugNavigator {
@@ -121,6 +121,35 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('ボス戦（戦闘5）から始める（育成はそのまま）', () => {
         close();
         nav.startBoss();
+      }),
+    );
+
+    // セーブ（段階11）
+    panel.append(
+      button('セーブの中身を見る', () => {
+        const text = readSaveText();
+        if (text === null) {
+          notify('セーブはありません');
+          return;
+        }
+        const r = readSave();
+        const head = r?.ok ? `版${r.save.version}　${r.save.savedAt}　${text.length}文字` : `読めない：${r && !r.ok ? r.error : ''}（${text.length}文字）`;
+        render(head);
+        let pretty = text;
+        try {
+          pretty = JSON.stringify(JSON.parse(text), null, 1);
+        } catch {
+          // 壊れている時はそのまま出す
+        }
+        panel.append(el('pre', 'white-space:pre-wrap;word-break:break-all;font:11px monospace;color:#cfe;background:#0b1218;padding:8px;border-radius:6px;', pretty));
+      }),
+    );
+    panel.append(
+      button('セーブを消す（次に「はじめる」まで自動のセーブも止める）', () => {
+        if (!window.confirm('セーブを消しますか？')) return;
+        deleteSave();
+        run.active = false;
+        notify('セーブを消しました');
       }),
     );
 

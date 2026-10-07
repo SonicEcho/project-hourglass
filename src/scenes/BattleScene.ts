@@ -39,7 +39,7 @@ import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
-import { battleSeed, currentNaviData, currentParty, run, setActiveBattle } from './run';
+import { battleSeed, currentNaviData, currentParty, finishRun, run, saveRun, setActiveBattle } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -988,6 +988,8 @@ export class BattleScene extends Phaser.Scene {
       const levelUps = PARTY.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
         (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
       );
+      // 「星図へ」を押す前に閉じても消えないように
+      saveRun();
       const reward = CAMPAIGN[this.stage].item;
       const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${reward ? `　アイテム：${summarizeItems([reward])}` : ''}`;
       const next = CAMPAIGN[run.stage];
@@ -1007,6 +1009,8 @@ export class BattleScene extends Phaser.Scene {
       });
     } else {
       const data: ResultSceneData = { outcome: result.outcome === 'victory' ? 'victory' : 'defeat', stage: this.stage, brokenParts: result.brokenParts, seed: this.state.seed };
+      // ボスに勝ったら周回はおしまい。セーブを消す（負けた時は、この戦闘の前のセーブが残る）
+      if (data.outcome === 'victory') finishRun();
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 240, 60, '結果へ', { onTap: () => this.scene.start('Result', data) }, { size: 18, bold: true });
     }
     this.overlay = c;
