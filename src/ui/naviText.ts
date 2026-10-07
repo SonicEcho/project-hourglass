@@ -1,7 +1,7 @@
 import type { NaviPartDef, PartColor, PassiveEffect, Stats } from '../core';
 import { ELEMENT_LABEL } from './labels';
 
-// ナビカス盤の表示用の文字（画面に依存しない。テストからも使う）
+// ムーブメントの表示用の文字（画面に依存しない。テストからも使う）
 
 export const STAT_LABEL: Record<keyof Stats, string> = { hp: 'HP', mp: 'MP', atk: '攻撃', mag: '魔力', def: '防御', spd: '速さ' };
 
@@ -17,7 +17,7 @@ export function describePassive(p: PassiveEffect): string {
     case 'partBoost':
       return `部位へのダメージ +${pct(p.rate)}`;
     case 'oneMoreDraw':
-      return `ワンモアの時に引く枚数 +${p.count}`;
+      return `延長の時に引く枚数 +${p.count}`;
     case 'batonBoost':
       return `バトンを受けた時の倍率 +${p.rate}（1.25 → ${1.25 + p.rate}）`;
     case 'comboBoost':
@@ -29,11 +29,11 @@ export function describePassive(p: PassiveEffect): string {
     case 'startDash':
       return '戦闘の最初のラウンド、行動が先制になる';
     case 'bug':
-      return `バグ：ラウンドの始めに最大HPの${pct(p.rate)}を失う`;
+      return `狂い：ラウンドの始めに最大HPの${pct(p.rate)}を失う`;
   }
 }
 
-/** パーツの効果の説明 */
+/** ギアの効果の説明 */
 export function describePart(def: NaviPartDef): string {
   if (def.kind === 'stat') {
     return (Object.entries(def.stats) as [keyof Stats, number][]).map(([k, v]) => `${STAT_LABEL[k]} +${v}`).join('、');
@@ -41,9 +41,9 @@ export function describePart(def: NaviPartDef): string {
   return describePassive(def.effect);
 }
 
-/** パーツの種類と、効く条件 */
+/** ギアの種類と、効く条件 */
 export function partKindText(def: NaviPartDef): string {
-  return def.kind === 'stat' ? '能力値パーツ（盤のどこに置いても効く）' : '効果パーツ（コマンドラインに乗っている時だけ効く）';
+  return def.kind === 'stat' ? '能力値ギア（ムーブメントのどこに置いても効く）' : '効果ギア（ブリッジに乗っている時だけ効く）';
 }
 
 /** 同じ特性をまとめて「×2」のように書く */

@@ -27,7 +27,7 @@ import { ally, attackOn, battle, enemy, execute, guard, planAll } from './helper
 
 const D = WEAPON_DATA;
 
-/** 主人公の武器の経験値を exp にした状態 */
+/** ハルトの武器の経験値を exp にした状態 */
 function withExp(a: ArmoryState, charId: string, exp: number): ArmoryState {
   return { ...a, weapons: { ...a.weapons, [charId]: { ...a.weapons[charId], exp } } };
 }
@@ -122,7 +122,7 @@ describe('武器：時分解', () => {
     }
   });
 
-  it('時分解して全部吸わせた時の上がり幅は、段階9（調整1回目）の断片と同じ', () => {
+  it('時分解して全部吸わせた時の上がり幅は、段階9（調整1回目）の記憶の欠片と同じ', () => {
     const total = (id: keyof typeof ITEMS) => feedMany(createArmory(D), 'hero', fragsOf(id)).weapons.hero.params;
     expect(total('slimeJelly')).toEqual({ atk: 1, fire: 3, ice: 0, thunder: 0 });
     expect(total('frostFeather')).toEqual({ atk: 0, fire: 0, ice: 1, thunder: 3 });
@@ -144,7 +144,7 @@ describe('武器：経験値とレベル', () => {
     expect(D.evolveLevel).toBe(3);
   });
 
-  it('勝利で、行動の回数が経験値に、盤のパーツの色が傾向に貯まり、断片を受け取る', () => {
+  it('勝利で、行動の回数が経験値に、盤のギアの色が傾向に貯まり、記憶の欠片を受け取る', () => {
     const a = recordVictory(createArmory(D), {
       actions: { hero: 5, akari: 3 },
       colorCells: { hero: { red: 3, blue: 1, green: 0, yellow: 0 } },
@@ -217,7 +217,7 @@ describe('武器：キャラへの反映', () => {
     expect(hero.attackElement).toBeUndefined();
   });
 
-  it('進化すると、ナビカス盤のコマンドラインの行が右に2マス伸びる', () => {
+  it('進化すると、ムーブメントのブリッジの行が右に2マス伸びる', () => {
     let a = withExp(feedMany(createArmory(D), 'hero', fragsOf('slimeJelly', 'slimeJelly')), 'hero', 20);
     a = evolveWeapon(D, a, 'hero', 'flameBlade');
     const data = naviDataWithWeapons(NAVI_DATA, D, a);
@@ -229,7 +229,7 @@ describe('武器：キャラへの反映', () => {
     expect(data.boards.akari).toBe(NAVI_DATA.boards.akari);
   });
 
-  it('盤の拡張は、コマンドラインの行の一番右の続きに足す', () => {
+  it('盤の拡張は、ブリッジの行の一番右の続きに足す', () => {
     const b = extendBoard(NAVI_DATA.boards.mio, 2);
     expect(b.cells.slice(-2)).toEqual([[4, 1], [5, 1]]);
   });
@@ -250,7 +250,7 @@ describe('武器：戦闘', () => {
     expect(basicAttackFor({}).effects[0]).toMatchObject({ type: 'physical' });
   });
 
-  it('結果に、倒した敵が落とした断片と、仲間ごとの行動の回数が出る（防御は数えない）', () => {
+  it('結果に、倒した敵が落とした記憶の欠片と、仲間ごとの行動の回数が出る（防御は数えない）', () => {
     let s = battle({
       allies: [ally('hero', { atk: 999, spd: 50 }), ally('akari')],
       enemies: [enemy('a', { hp: 1 }, { drops: ['slimeJelly'] }), enemy('b', {}, { drops: ['hardFur'] })],
@@ -278,6 +278,6 @@ describe('武器：表示の文字', () => {
     expect(describeCondition({ kind: 'level', min: 3 })).toBe('Lv3');
     expect(describeFragment(FRAGMENTS.elation)).toBe('火 +1');
     const flame = D.weapons.recordSword.evolutions[0];
-    expect(describeEvolution(flame, 2)).toBe('通常攻撃が火になる。攻撃 +3。盤のコマンドラインが2マス伸びる');
+    expect(describeEvolution(flame, 2)).toBe('通常攻撃が火になる。攻撃 +3。ブリッジが2マス伸びる');
   });
 });

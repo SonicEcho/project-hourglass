@@ -1,15 +1,15 @@
 import type { GrowthMap, GrowthNodeDef, StatKey } from '../core/growth';
 import { SKILLS } from './skills';
 
-// 成長マップ（段階7）。数値はすべて仮。
+// 星図（段階7）。数値はすべて仮。
 //
 // 7列×9行の格子。上下左右に隣り合うマスが道でつながる。
 //   . 空き
-//   @ 主人公の出発点　& あかりの出発点　% みおの出発点
+//   @ ハルトの出発点　& あかりの出発点　% みおの出発点
 //   h HP　p MP　a 攻撃　m 魔力　d 防御　s 速さ（小文字は小、大文字は大）
 //   数字 魔法・スキル（下の SKILL_SLOTS）
 //
-// 出発点のまわりは、そのキャラの得意分野（主人公：下の中央・攻撃とHP、あかり：左・魔力とMP、みお：右・速さ）。
+// 出発点のまわりは、そのキャラの得意分野（ハルト：下の中央・攻撃とHP、あかり：左・魔力とMP、みお：右・速さ）。
 // 上の段は大きな能力値と強い魔法。
 const LAYOUT = [
   'P7M8A9S',
@@ -43,7 +43,7 @@ export const STAT_STEP: Record<StatKey, number> = { hp: 12, mp: 6, atk: 2, mag: 
 
 const STAT_CHARS: Record<string, StatKey> = { h: 'hp', p: 'mp', a: 'atk', m: 'mag', d: 'def', s: 'spd' };
 
-/** マスを開けるのに必要な記憶ポイント */
+/** マスを開けるのに必要な星の砂 */
 export const GROWTH_COST = {
   stat: 1,
   statBig: 2,
@@ -80,7 +80,7 @@ export const GROWTH_MAP: GrowthMap = {
   costs: GROWTH_COST,
 };
 
-/** 周回の始めに持っている記憶ポイント */
+/** 周回の始めに持っている星の砂 */
 export const START_MEMORY_POINTS = 3;
-/** 部位を1つ壊すごとにもらえる記憶ポイント */
+/** 部位を1つ壊すごとにもらえる星の砂 */
 export const PART_BREAK_POINTS = 2;

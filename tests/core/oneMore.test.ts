@@ -7,7 +7,7 @@ import { ally, attackOn, battle, enemy, eventsOf, execute, guard, planAll, withH
 const fire = (id: string) => ({ type: 'skill' as const, skillId: 'fire', target: { kind: 'enemy' as const, id } });
 const ice = (id: string) => ({ type: 'skill' as const, skillId: 'ice', target: { kind: 'enemy' as const, id } });
 
-/** 主人公（速い）が火を使う。あかり・みおは防御。敵2体は火が弱点で遅い */
+/** ハルト（速い）が火を使う。あかり・みおは防御。敵2体は火が弱点で遅い */
 function setupBattle(enemies = [enemy('a', {}, { weaknesses: ['fire'] }), enemy('b', {}, { weaknesses: ['fire'] })]): BattleState {
   return battle({
     allies: [ally('hero', { spd: 50 }, [SKILLS.fire, SKILLS.ice]), ally('akari', { mag: 20 }, [SKILLS.care]), ally('mio')],
@@ -19,7 +19,7 @@ function toOneMore(s0 = setupBattle()): BattleState {
   return execute(planAll(s0, { hero: fire('enemy0'), akari: guard, mio: guard }));
 }
 
-describe('ワンモア', () => {
+describe('延長', () => {
   it('弱点を突いて敵をダウンさせると、その場で追加行動を選ぶ', () => {
     const s = toOneMore();
     expect(s.phase).toBe('extra');
@@ -28,7 +28,7 @@ describe('ワンモア', () => {
     expect(eventsOf(s, 'oneMore')).toEqual([{ type: 'oneMore', actorId: 'hero' }]);
   });
 
-  it('ワンモアになると手札を1枚引く', () => {
+  it('延長になると手札を1枚引く', () => {
     const s0 = setupBattle();
     const s = toOneMore(s0);
     expect(s.hand).toHaveLength(s0.hand.length + 1);
@@ -52,7 +52,7 @@ describe('ワンモア', () => {
     expect(actions.map((a) => a.actionId)).toEqual(['attack']);
   });
 
-  it('1回の行動で何体ダウンさせても、ワンモアは1回', () => {
+  it('1回の行動で何体ダウンさせても、延長は1回', () => {
     let s = withHand(setupBattle(), [CARDS.wideShot]);
     s.enemies.forEach((e) => (e.weaknesses = ['physical']));
     s = execute(planAll(s, { hero: { type: 'card', cardUid: s.hand[0].uid }, akari: guard, mio: guard }));
@@ -60,21 +60,21 @@ describe('ワンモア', () => {
     expect(eventsOf(s, 'oneMore')).toHaveLength(1);
   });
 
-  it('連鎖：追加行動で別の敵をダウンさせると、さらにワンモア', () => {
+  it('連鎖：追加行動で別の敵をダウンさせると、さらに延長', () => {
     let s = toOneMore();
     s = applyExtra(s, fire('enemy1'));
     expect(s.phase).toBe('extra');
     expect(eventsOf(s, 'oneMore')).toHaveLength(2);
   });
 
-  it('ダウン中の敵の弱点を突いてもワンモアにならない（連鎖は敵の数まで）', () => {
+  it('ダウン中の敵の弱点を突いても延長にならない（連鎖は敵の数まで）', () => {
     let s = toOneMore();
     s = applyExtra(s, fire('enemy0'));
     expect(s.phase).toBe('execute');
     expect(eventsOf(s, 'oneMore')).toHaveLength(1);
   });
 
-  it('弱点で倒した敵はダウンせず、ワンモアにならない', () => {
+  it('弱点で倒した敵はダウンせず、延長にならない', () => {
     const s0 = setupBattle();
     s0.enemies[0].hp = 1;
     const s = toOneMore(s0);
@@ -93,7 +93,7 @@ describe('ワンモア', () => {
     expect(s.extra).toBeNull();
   });
 
-  it('これから行動する仲間が確保しているカードは、追加行動に使えない', () => {
+  it('これから行動する仲間が確保しているスナップは、追加行動に使えない', () => {
     let s = withHand(setupBattle(), [CARDS.sword, CARDS.fireChip]);
     const [swordCard, chip] = s.hand;
     s = execute(
@@ -129,7 +129,7 @@ describe('割り込み', () => {
   });
 
   it('すでに動いた敵をダウンさせると、次のラウンドの行動を立ち上がりに使う', () => {
-    // 主人公を遅くして、敵の後に火を当てる
+    // ハルトを遅くして、敵の後に火を当てる
     const s0 = battle({
       allies: [ally('hero', { spd: 1 }, [SKILLS.fire])],
       enemies: [enemy('a', { spd: 50 }, { weaknesses: ['fire'] })],
@@ -144,7 +144,7 @@ describe('割り込み', () => {
 });
 
 describe('バトンタッチ', () => {
-  it('ワンモア中だけ選べる', () => {
+  it('延長中だけ選べる', () => {
     expect(batonTargets(setupBattle())).toEqual([]);
     expect(batonTargets(toOneMore()).map((a) => a.uid)).toEqual(['akari', 'mio']);
   });
@@ -172,7 +172,7 @@ describe('バトンタッチ', () => {
     expect(() => passBaton(s, 'mio')).toThrow();
   });
 
-  it('バトンでは手札を引かない（引くのはワンモアになった時だけ）', () => {
+  it('バトンでは手札を引かない（引くのは延長になった時だけ）', () => {
     const s = toOneMore();
     expect(passBaton(s, 'akari').hand).toHaveLength(s.hand.length);
   });

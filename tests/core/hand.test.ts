@@ -3,7 +3,7 @@ import { drawCards, refillHand, setPlan } from '../../src/core';
 import { buildFolder, CARDS, HAND_SIZE } from '../../src/data';
 import { ally, battle, eventsOf, execute, guard, planAll, withHand } from './helpers';
 
-describe('手札とフォルダ', () => {
+describe('手札とアルバム', () => {
   it('戦闘開始時に20枚の山札をシャッフルし、5枚配る', () => {
     const a = battle({ seed: 1 });
     const b = battle({ seed: 2 });
@@ -12,7 +12,7 @@ describe('手札とフォルダ', () => {
     expect(a.hand.map((c) => c.uid)).not.toEqual(b.hand.map((c) => c.uid));
   });
 
-  it('使ったカードは捨て札へ。使わなかったカードは残り、次のラウンドで5枚まで補充する', () => {
+  it('使ったスナップは捨て札へ。使わなかったスナップは残り、次のラウンドで5枚まで補充する', () => {
     let s = withHand(battle({ allies: [ally('hero')] }), [CARDS.sword, CARDS.fireChip, CARDS.iceChip, CARDS.recover, CARDS.wideShot]);
     const used = s.hand[0].uid;
     const kept = s.hand.slice(1).map((c) => c.uid);
@@ -46,7 +46,7 @@ describe('手札とフォルダ', () => {
     expect(s.hand).toHaveLength(3);
   });
 
-  it('カードはMPを使わない', () => {
+  it('スナップはMPを使わない', () => {
     let s = withHand(battle({ allies: [ally('hero')] }), [CARDS.sword]);
     s = execute(planAll(s, { hero: { type: 'card', cardUid: s.hand[0].uid, target: { kind: 'enemy', id: 'enemy0' } } }));
     expect(s.allies[0].mp).toBe(50);

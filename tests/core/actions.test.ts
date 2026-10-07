@@ -22,7 +22,7 @@ describe('魔法・スキル', () => {
     expect(getPlanError(s, 'hero', { type: 'skill', skillId: 'fire' })).not.toBeNull();
   });
 
-  it('シャッフル：手札を捨てて5枚引き直す。後で行動する仲間が確保したカードは残る', () => {
+  it('シャッフル：手札を捨てて5枚引き直す。後で行動する仲間が確保したスナップは残る', () => {
     let s = withHand(heroBattle(), [CARDS.sword, CARDS.fireChip, CARDS.iceChip]);
     const reserved = s.hand[0].uid;
     const others = s.hand.slice(1).map((c) => c.uid);
@@ -33,7 +33,7 @@ describe('魔法・スキル', () => {
     expect(eventsOf(s, 'action').some((e) => e.actorIds[0] === 'akari' && e.actionId === 'sword')).toBe(true);
   });
 
-  it('すりかえ：捨て札から選んだカードを1枚手札に加える', () => {
+  it('すりかえ：捨て札から選んだスナップを1枚手札に加える', () => {
     let s = heroBattle();
     s.discard.push(s.deck.shift()!);
     const picked = s.discard[0].uid;
@@ -55,14 +55,14 @@ describe('魔法・スキル', () => {
   });
 });
 
-describe('カード', () => {
+describe('スナップ', () => {
   it('ワイドショット：敵全体にダメージ', () => {
     let s = withHand(heroBattle(), [CARDS.wideShot]);
     s = execute(planAll(s, { hero: { type: 'card', cardUid: s.hand[0].uid }, akari: guard }));
     expect(eventsOf(s, 'damage').filter((d) => d.sourceId === 'hero').map((e) => e.targetId)).toEqual(['enemy0', 'enemy1']);
   });
 
-  it('カードは使用者の能力値で計算する', () => {
+  it('スナップは使用者の能力値で計算する', () => {
     let s = withHand(heroBattle(), [CARDS.recover]);
     s.allies[0].mag = 40;
     s.allies[1].hp = 10;

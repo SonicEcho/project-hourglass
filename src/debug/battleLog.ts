@@ -56,14 +56,14 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
     case 'chargeBroken':
       return `  ${name(s, e.enemyId)}のためが解けた（${e.reason === 'down' ? 'ダウン' : '部位破壊で封じた'}）`;
     case 'oneMore':
-      return `  ONE MORE（${name(s, e.actorId)}）`;
+      return `  Extend（${name(s, e.actorId)}）`;
     case 'baton':
       return `${name(s, e.fromId)}→${name(s, e.toId)} バトンタッチ`;
     case 'guard':
       return `  ${name(s, e.actorId)}は防御`;
     case 'passiveHp':
       return e.source === 'bug'
-        ? `  ${name(s, e.allyId)}はバグで${-e.amount}ダメージ（HP ${e.hpAfter}）`
+        ? `  ${name(s, e.allyId)}は狂いで${-e.amount}ダメージ（HP ${e.hpAfter}）`
         : `  ${name(s, e.allyId)}はファーストエイドで${e.amount}回復（HP ${e.hpAfter}）`;
     case 'partBreak':
       return `  ${name(s, e.enemyId)}の${partName(s, e.enemyId, e.partId)}を破壊`;

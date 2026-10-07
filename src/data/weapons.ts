@@ -15,7 +15,7 @@ export const FRAGMENTS = {
 
 /**
  * 素材（敵が落とす）と通常アイテム（勝利の報酬）。この試作では、通常アイテムは戦闘で使えない。
- * 時分解した時の記憶の欠片の合計は、段階9（調整1回目）の断片と同じ上がり幅にしてある
+ * 時分解した時の記憶の欠片の合計は、段階9（調整1回目）の記憶の欠片と同じ上がり幅にしてある
  */
 export const ITEMS = {
   slimeJelly: { id: 'slimeJelly', name: 'スライムゼリー', kind: 'material', fragments: { elation: 3, courage: 1 } },

@@ -17,7 +17,7 @@ import type { BattleState, PlayerAction } from '../../src/core';
 import { DISTORTED_BEAST, SKILLS } from '../../src/data';
 import { ally, attackOn, battle, eventsOf, execute, planAll } from './helpers';
 
-/** 主人公1人とボス（遅い）。主人公が先に動く */
+/** ハルト1人とボス（遅い）。ハルトが先に動く */
 function bossBattle(): BattleState {
   return battle({
     allies: [ally('hero', { spd: 50, atk: 18, mag: 16, hp: 9999 }, [SKILLS.breakSlash, SKILLS.thunder])],
@@ -25,7 +25,7 @@ function bossBattle(): BattleState {
   });
 }
 
-/** 主人公の行動だけを実行する（ボスはまだ動かない） */
+/** ハルトの行動だけを実行する（ボスはまだ動かない） */
 function heroActs(s0: BattleState, action: PlayerAction): BattleState {
   return step(startExecution(planAll(s0, { hero: action })));
 }
@@ -82,7 +82,7 @@ describe('部位破壊', () => {
     let s = heroActs(s0, attackOn('enemy0', 'horn'));
     expect(usableEnemyActions(s.enemies[0]).map((a) => a.id)).toEqual(['sweep', 'slam']);
     expect(s.enemies[0].knownWeaknesses).toEqual(['thunder']);
-    // 次のラウンド、露出した弱点を突くとダウンしてワンモア
+    // 次のラウンド、露出した弱点を突くとダウンして延長
     s = runUntilInput(s);
     s = execute(planAll(s, { hero: { type: 'skill', skillId: 'thunder', target: { kind: 'enemy', id: 'enemy0' } } }));
     expect(s.phase).toBe('extra');

@@ -10,10 +10,10 @@ import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, run } from './run';
 
-// ナビカス盤の画面（段階8）。縦持ち 390×844 に、盤・説明・パーツの一覧・操作を1画面で収める
+// ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
-// 操作：一覧のパーツをタップ → 盤のマスをタップで影（仮置き）→「回転」→「はめる」（影をもう一度タップでも決定）
-// 盤にはまっているパーツをタップすると選ばれ、「外す」で一覧に戻る
+// 操作：一覧のギアをタップ → 盤のマスをタップで影（仮置き）→「回転」→「はめる」（影をもう一度タップでも決定）
+// 盤にはまっているギアをタップすると選ばれ、「外す」で一覧に戻る
 
 /** 盤の1マスの大きさ（盤が広い時は画面に収まるよう縮める） */
 const MAX_CELL = 56;
@@ -51,7 +51,7 @@ export class NaviScene extends Phaser.Scene {
     this.render();
   }
 
-  /** デバッグメニューからパーツが増えた時に描き直す */
+  /** デバッグメニューからギアが増えた時に描き直す */
   refresh(): void {
     if (this.scene.isActive()) this.render();
   }
@@ -99,7 +99,7 @@ export class NaviScene extends Phaser.Scene {
         return;
       }
     }
-    // 他のパーツがはまっているマスなら、そのパーツを選ぶ（影がない時）
+    // 他のギアがはまっているマスなら、そのギアを選ぶ（影がない時）
     const occupant = this.partAt(col, row);
     if (occupant && occupant.uid !== this.selectedUid && !ghost) {
       this.select(occupant);
@@ -107,7 +107,7 @@ export class NaviScene extends Phaser.Scene {
       return;
     }
     if (!sel) {
-      this.message = '先に下の一覧からパーツを選ぶ';
+      this.message = '先に下の一覧からギアを選ぶ';
       this.render();
       return;
     }
@@ -130,7 +130,7 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     if (!sel) return;
     this.rotation = ((this.rotation + 1) % 4) as Rotation;
-    // 今の盤にはまっているパーツは、その位置で回した影を出す
+    // 今の盤にはまっているギアは、その位置で回した影を出す
     if (!this.ghost && sel.placement?.charId === this.charId) this.ghost = { col: sel.placement.col, row: sel.placement.row };
     if (this.ghost) this.ghost = this.clampGhost(this.ghost.col, this.ghost.row);
     this.render();
@@ -143,7 +143,7 @@ export class NaviScene extends Phaser.Scene {
     run.navi = placePart(currentNaviData(), run.navi, sel.uid, ghost);
     const def = currentNaviData().parts[sel.partId];
     const placed = run.navi.parts.find((p) => p.uid === sel.uid)!;
-    this.message = `${def.name}をはめた${def.kind === 'effect' && !isPartActive(currentNaviData(), placed) ? '（コマンドラインに乗っていないので効かない）' : ''}`;
+    this.message = `${def.name}をはめた${def.kind === 'effect' && !isPartActive(currentNaviData(), placed) ? '（ブリッジに乗っていないので効かない）' : ''}`;
     console.log('[navi] place', this.charId, sel.partId, JSON.stringify(ghost));
     this.clearSelection();
     this.render();
@@ -171,9 +171,9 @@ export class NaviScene extends Phaser.Scene {
     this.root.removeAll(true);
     this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / this.board().cols));
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
-    this.root.add(addText(this, SIDE_PADDING, 8, 'ナビカス盤', { size: 17, bold: true }));
+    this.root.add(addText(this, SIDE_PADDING, 8, 'ムーブメント', { size: 17, bold: true }));
     this.root.add(
-      addText(this, GAME_WIDTH - SIDE_PADDING, 12, '光る帯＝コマンドライン', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
+      addText(this, GAME_WIDTH - SIDE_PADDING, 12, '光る帯＝ブリッジ', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
     );
     this.drawTabs();
     this.drawBoard();
@@ -187,7 +187,7 @@ export class NaviScene extends Phaser.Scene {
       800,
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
-      '成長マップへ戻る',
+      '星図へ戻る',
       { onTap: () => this.scene.start('Growth') },
       { size: 16, bold: true },
     );
@@ -208,12 +208,12 @@ export class NaviScene extends Phaser.Scene {
       const count = boardParts(run.navi, c.id).length;
       this.root.add(addText(this, x + 8, top + 5, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
       this.root.add(
-        addText(this, x + 8, top + 26, `パーツ${count}${bugs > 0 ? `　バグ${bugs}` : ''}`, { size: 10, color: bugs > 0 ? '#ff8a7a' : COLORS.subText }),
+        addText(this, x + 8, top + 26, `ギア${count}${bugs > 0 ? `　狂い${bugs}` : ''}`, { size: 10, color: bugs > 0 ? '#ff8a7a' : COLORS.subText }),
       );
       makePressable(rect, {
         onTap: () => {
           this.charId = c.id;
-          // 選んでいるパーツはそのまま（別の盤へ移せる）。影だけ消す
+          // 選んでいるギアはそのまま（別の盤へ移せる）。影だけ消す
           this.ghost = null;
           this.message = '';
           this.render();
@@ -232,7 +232,7 @@ export class NaviScene extends Phaser.Scene {
     const o = this.boardOrigin();
     const cellSet = new Set(b.cells.map(key));
 
-    // コマンドライン（光る帯）
+    // ブリッジ（光る帯）
     this.root.add(
       this.add.rectangle(o.x - 6, o.y + b.commandRow * this.cell - 3, this.cell * b.cols + 12, this.cell + 6, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
     );
@@ -256,7 +256,7 @@ export class NaviScene extends Phaser.Scene {
       }
     }
 
-    // はまっているパーツ
+    // はまっているギア
     for (const p of boardParts(run.navi, this.charId)) {
       const def = currentNaviData().parts[p.partId];
       const active = isPartActive(currentNaviData(), p);
@@ -275,7 +275,7 @@ export class NaviScene extends Phaser.Scene {
           );
         }
       });
-      // 同じパーツのマスどうしをつなぐ（1つのパーツだと分かるように）
+      // 同じギアのマスどうしをつなぐ（1つのギアだと分かるように）
       const set = new Set(cells.map(key));
       for (const [c, r] of cells) {
         if (set.has(key([c + 1, r]))) this.root.add(this.add.rectangle(o.x + (c + 1) * this.cell - 4, o.y + r * this.cell + 14, 8, this.cell - 28, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
@@ -283,7 +283,7 @@ export class NaviScene extends Phaser.Scene {
       }
     }
 
-    // バグ：接している辺を赤く光らせる
+    // 狂い：接している辺を赤く光らせる
     const g = this.add.graphics();
     g.lineStyle(5, 0xff3030, 1);
     for (const [ua, ub] of findBugs(currentNaviData(), run.navi, this.charId)) {
@@ -317,7 +317,7 @@ export class NaviScene extends Phaser.Scene {
     }
   }
 
-  /** 盤の下：今の盤で効いている効果、能力値、バグ */
+  /** 盤の下：今の盤で効いている効果、能力値、狂い */
   private drawStatus(): void {
     const top = BOARD_TOP + BOARD_H + 8;
     const passives = boardPassives(currentNaviData(), run.navi, this.charId);
@@ -331,7 +331,7 @@ export class NaviScene extends Phaser.Scene {
     this.root.add(addText(this, SIDE_PADDING + 4, top, lines.join('\n'), { size: 11, color: COLORS.subText, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 8 }));
     if (bugs > 0) {
       this.root.add(
-        addText(this, SIDE_PADDING + 4, top + 36, `バグ×${bugs}：毎ラウンドの始めに最大HPの${Math.round(bugs * BUG_HP_RATE * 100)}%を失う`, {
+        addText(this, SIDE_PADDING + 4, top + 36, `狂い×${bugs}：毎ラウンドの始めに最大HPの${Math.round(bugs * BUG_HP_RATE * 100)}%を失う`, {
           size: 11,
           color: '#ff8a7a',
           wrap: GAME_WIDTH - SIDE_PADDING * 2 - 8,
@@ -340,7 +340,7 @@ export class NaviScene extends Phaser.Scene {
     }
   }
 
-  /** 選んだパーツの説明と、回転・はめる・外す */
+  /** 選んだギアの説明と、回転・はめる・外す */
   private drawInfo(): void {
     const top = 392;
     const h = 120;
@@ -348,7 +348,7 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
-      const text = this.message || '下の一覧からパーツを選び、盤のマスをタップして置き場所を決める。同じ色を隣に置くとバグになる';
+      const text = this.message || '下の一覧からギアを選び、ムーブメントのマスをタップして置き場所を決める。同じ色を隣に置くと狂いになる';
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, text, { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
       return;
     }
@@ -359,16 +359,16 @@ export class NaviScene extends Phaser.Scene {
     const status = ghost
       ? err
         ? err === 'overlaps another part'
-          ? '他のパーツと重なっている'
-          : '盤からはみ出している'
+          ? '他のギアと重なっている'
+          : 'ムーブメントからはみ出している'
         : '「はめる」か、影をもう一度タップで決定'
       : owner
-        ? `${owner}の盤にはまっている`
-        : '盤のマスをタップして置き場所を決める';
+        ? `${owner}のムーブメントにはまっている`
+        : 'ムーブメントのマスをタップして置き場所を決める';
     drawPartShape(this, this.root, def, this.rotation, SIDE_PADDING + 10, top + 12, 12);
     this.root.add(addText(this, SIDE_PADDING + 62, top + 8, def.name, { size: 15, bold: true, color: COLORS.accentText }));
     this.root.add(
-      addText(this, SIDE_PADDING + 62, top + 30, `${describePart(def)}\n${def.kind === 'stat' ? '能力値（どこでも効く）' : '効果（コマンドラインで効く）'}　${PART_COLOR_LABEL[def.color]}`, {
+      addText(this, SIDE_PADDING + 62, top + 30, `${describePart(def)}\n${def.kind === 'stat' ? '能力値（どこでも効く）' : '効果（ブリッジで効く）'}　${PART_COLOR_LABEL[def.color]}`, {
         size: 11,
         wrap: textW - 54,
       }),
@@ -392,11 +392,11 @@ export class NaviScene extends Phaser.Scene {
     addButton(this, this.root, bx, top + 100, 108, 34, '外す', { onTap: () => this.remove() }, { enabled: !!sel.placement, size: 13 });
   }
 
-  /** 持っているパーツの一覧 */
+  /** 持っているギアの一覧 */
   private drawList(): void {
     const parts = run.navi.parts;
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - CHIP_GAP * (LIST_COLS - 1)) / LIST_COLS;
-    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているパーツ（${parts.length}）　長押しで詳細`, { size: 11, color: COLORS.subText }));
+    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで詳細`, { size: 11, color: COLORS.subText }));
     // 多い時は1つの高さを詰めて収める
     const rows = Math.max(1, Math.ceil(parts.length / LIST_COLS));
     const chipH = Math.min(CHIP_H, (LIST_BOTTOM - LIST_TOP - 18 - CHIP_GAP * (rows - 1)) / rows);
@@ -425,10 +425,10 @@ export class NaviScene extends Phaser.Scene {
   private showPartDetail(p: OwnedPart): void {
     const def = currentNaviData().parts[p.partId];
     const owner: CharacterDef | undefined = p.placement ? PARTY.find((c) => c.id === p.placement!.charId) : undefined;
-    const lines = [describePart(def), partKindText(def), `色：${PART_COLOR_LABEL[def.color]}（同じ色を隣に置くとバグ）`, `大きさ：${def.cells.length}マス`];
+    const lines = [describePart(def), partKindText(def), `色：${PART_COLOR_LABEL[def.color]}（同じ色を隣に置くと狂い）`, `大きさ：${def.cells.length}マス`];
     if (owner) {
-      lines.push('', `${owner.name}の盤にはまっている`);
-      if (def.kind === 'effect' && !isPartActive(currentNaviData(), p)) lines.push('コマンドラインに乗っていないので、今は効かない');
+      lines.push('', `${owner.name}のムーブメントにはまっている`);
+      if (def.kind === 'effect' && !isPartActive(currentNaviData(), p)) lines.push('ブリッジに乗っていないので、今は効かない');
     }
     this.showDetail(def.name, lines.join('\n'));
   }

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { NaviPartDef, PartColor, Rotation } from '../core';
 import { rotateCells } from '../core';
 
-// ナビカス盤のパーツの見た目（段階8）
+// ムーブメントのギアの見た目（段階8）
 
 export const PART_COLOR: Record<PartColor, number> = {
   red: 0xe0524a,
@@ -31,7 +31,7 @@ export const PART_SHORT: Record<string, string> = {
   startDash: '先',
 };
 
-/** パーツの形を小さく描く（左上を x, y に合わせる） */
+/** ギアの形を小さく描く（左上を x, y に合わせる） */
 export function drawPartShape(
   scene: Phaser.Scene,
   parent: Phaser.GameObjects.Container,

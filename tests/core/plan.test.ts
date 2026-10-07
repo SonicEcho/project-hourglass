@@ -37,7 +37,7 @@ describe('計画', () => {
     expect(planOf(s, 'hero')?.action).toEqual(attackOn('enemy1'));
   });
 
-  it('同じカードを2人に割り当てられない。選び直せばカードが空く', () => {
+  it('同じスナップを2人に割り当てられない。選び直せばスナップが空く', () => {
     let s = withHand(three(), [CARDS.sword]);
     const uid = s.hand[0].uid;
     s = setPlan(s, 'hero', sword(uid));
@@ -83,7 +83,7 @@ describe('計画', () => {
 describe('連携技の計画', () => {
   const link = { type: 'link' as const, linkId: 'crossDrive' };
 
-  it('主人公とみおの2人分の行動を使う', () => {
+  it('ハルトとみおの2人分の行動を使う', () => {
     const s = setPlan(three(), 'hero', link);
     expect(planOf(s, 'hero')).toBe(planOf(s, 'mio'));
     expect(planOf(s, 'hero')?.actorIds).toEqual(['hero', 'mio']);
@@ -116,7 +116,7 @@ describe('連携技の計画', () => {
   });
 });
 
-describe('サポートカード', () => {
+describe('サポートスナップ', () => {
   it('計画の途中でその場で使い、行動枠を使わない', () => {
     let s = withHand(three(), [CARDS.draw, CARDS.sword]);
     s = useSupport(s, s.hand[0].uid);

@@ -30,7 +30,7 @@ export interface ViewModel {
   actor?: AllyUnit;
   /** 今の仲間が使ってよい手札 */
   pool: CardInstance[];
-  /** カードを確保している仲間の名前（uid → 名前） */
+  /** スナップを確保している仲間の名前（uid → 名前） */
   reservedBy: Map<number, string>;
   /** 仲間ごとの、決めた行動の短い説明 */
   planLabels: Record<string, string>;
@@ -39,7 +39,7 @@ export interface ViewModel {
   selectedCardUid?: number;
   selectedSkillId?: string;
   selectedComboId?: string;
-  /** 選んだコンボの材料のカード */
+  /** 選んだコンボの材料のスナップ */
   comboCardUids: number[];
   selectedTarget?: { kind: 'enemy' | 'ally'; id: string; partId?: string };
   batonMode: boolean;
@@ -332,7 +332,7 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   makePressable(rule, { onLongPress: () => h.detail('手札のルール', HAND_RULE_TEXT) });
   drawComboStrip(scene, root, vm, h, y + 16);
 
-  // 使えるコンボの材料になっているカード
+  // 使えるコンボの材料になっているスナップ
   const comboUids = new Set(availableCombos(s, vm.pool).flatMap((c) => (comboCards(c, vm.pool) ?? []).map((x) => x.uid)));
   const poolUids = new Set(vm.pool.map((c) => c.uid));
   const n = Math.max(5, hand.length);
@@ -366,7 +366,7 @@ function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   root.add(strip);
   makePressable(strip, { onLongPress: () => h.detail('コンボ一覧', comboListText(s, vm.pool)) });
   if (entries.length === 0) {
-    root.add(addText(scene, GAME_WIDTH / 2, cy, 'コンボ：カードの組み合わせで大技（ここを長押しで一覧）', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
+    root.add(addText(scene, GAME_WIDTH / 2, cy, 'コンボ：スナップの組み合わせで大技（ここを長押しで一覧）', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
     return;
   }
   const gap = 4;
@@ -457,8 +457,8 @@ function drawCard(
       o.h.detail(
         def.name,
         def.support
-          ? `サポートカード（MP不要・行動枠を使わない）\n${supportText(def)}\n\n計画の途中でその場で使う。1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで。`
-          : `カード（MP不要）\n${describeAction(def)}\n\n${weightHelp(def.weight, o.actor)}`,
+          ? `サポートスナップ（MP不要・行動枠を使わない）\n${supportText(def)}\n\n計画の途中でその場で使う。1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで。`
+          : `スナップ（MP不要）\n${describeAction(def)}\n\n${weightHelp(def.weight, o.actor)}`,
       ),
   });
 }
@@ -483,12 +483,12 @@ export function weightHelp(weight: number, actor?: AllyUnit): string {
 
 function comboDetail(combo: ComboDef, actor?: AllyUnit): string {
   const names = combo.cards.map((id) => CARD_NAME[id] ?? id).join(' ＋ ');
-  return [`材料：${names}`, describeAction(combo), '材料のカードはすべて、使う仲間が確保する', '', weightHelp(combo.weight, actor)].join('\n');
+  return [`材料：${names}`, describeAction(combo), '材料のスナップはすべて、使う仲間が確保する', '', weightHelp(combo.weight, actor)].join('\n');
 }
 
 function comboListText(s: BattleState, pool: CardInstance[]): string {
   return [
-    '手札に材料のカードがそろうと、1人の行動としてまとめて使える大技。使わなかったカードは次のラウンドに残るので、材料を集めて狙える。',
+    '手札に材料のスナップがそろうと、1人の行動としてまとめて使える大技。使わなかったスナップは次のラウンドに残るので、材料を集めて狙える。',
     '',
     ...s.combos.map((c) => {
       const p = comboProgress(c, pool);
@@ -498,10 +498,10 @@ function comboListText(s: BattleState, pool: CardInstance[]): string {
 }
 
 const HAND_RULE_TEXT = [
-  `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったカードは次のラウンドに残る。`,
-  '計画でカードを仲間に割り当てると、そのカードは他の仲間には使えない（カードに「○○が使う」と出る）。',
-  `ワンモアになると、手札を${ONE_MORE_DRAW}枚引いてから追加行動を選べる。`,
-  `ドロー・サーチ・クイックステップはサポートカード。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで）。`,
+  `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったスナップは次のラウンドに残る。`,
+  '計画でスナップを仲間に割り当てると、そのスナップは他の仲間には使えない（スナップに「○○が使う」と出る）。',
+  `延長になると、手札を${ONE_MORE_DRAW}枚引いてから追加行動を選べる。`,
+  `ドロー・サーチ・クイックステップはサポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで）。`,
 ].join('\n');
 
 const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS).map((c) => [c.id, c.name]));
@@ -598,12 +598,12 @@ function cardGrid(
 }
 
 function drawDiscardPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
-  panelBackground(scene, root, 'すりかえ：手札に加えるカードを選ぶ');
+  panelBackground(scene, root, 'すりかえ：手札に加えるスナップを選ぶ');
   cardGrid(scene, root, vm.state.discard, (uid) => h.tapDiscard(uid), h);
 }
 
 function drawSearchPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
-  panelBackground(scene, root, 'サーチ：手札に加えるカードを1枚選ぶ（残りは山札の下へ）');
+  panelBackground(scene, root, 'サーチ：手札に加えるスナップを1枚選ぶ（残りは山札の下へ）');
   cardGrid(scene, root, vm.state.searchChoice ?? [], (uid) => h.tapSearch(uid), h);
 }
 
@@ -661,7 +661,7 @@ function linkDetail(s: BattleState, link: LinkDef): string {
     '',
     `使い方：計画で${a}か${b}の行動を選ぶ時に「連携技」を押す。2人分の行動をまとめて使う（2人とも生きていれば、いつでも選べる）。`,
     `行動の速さは、2人のうち遅い方の速さ ÷ 重さ${formatWeight(link.weight)}（${weightLabel(link.weight)}）。`,
-    'ワンモアやバトンの追加行動では使えない。',
+    '延長やバトンの追加行動では使えない。',
   ].join('\n');
 }
 
@@ -746,7 +746,7 @@ function allyDetail(a: AllyUnit): string {
     `攻撃 ${a.atk}　魔力 ${a.mag}　防御 ${a.def}　速さ ${a.spd}`,
     `魔法・スキル：${a.skills.map((k) => k.name).join('、')}`,
   ];
-  if (a.passives.length > 0) lines.push('', 'ナビカス盤の効果：', ...summarizePassives(a.passives).map((t) => `・${t}`));
+  if (a.passives.length > 0) lines.push('', 'ムーブメントの効果：', ...summarizePassives(a.passives).map((t) => `・${t}`));
   if (a.guarding) lines.push('防御中（このラウンドの間、受けるダメージ半減）');
   return lines.join('\n');
 }

@@ -34,7 +34,7 @@ describe('デバッグ：戦闘ログ', () => {
     expect(lines[0]).toBe('戦闘開始（シード 3）');
     expect(lines).toContain('══ ラウンド 1');
     expect(lines.some((l) => /^  5枚引いた（.+）$/.test(l))).toBe(true);
-    expect(lines).toContain('主人公：通常攻撃');
+    expect(lines).toContain('ハルト：通常攻撃');
     expect(lines.some((l) => /歪みの獣（角）に 部位に\d+・本体に\d+ダメージ/.test(l))).toBe(true);
     expect(lines).toContain('── ラウンド 1 終わり');
   });
@@ -45,7 +45,7 @@ describe('デバッグ：戦闘ログ', () => {
     expect(formatLogEvent(s, { type: 'battleEnd', outcome: 'defeat' })).toBe('戦闘終了：敗北');
     expect(formatLogEvent(s, { type: 'standUp', enemyId: 'enemy1' })).toBe('フロストバットは立ち上がった（行動できない）');
     expect(formatLogEvent(s, { type: 'action', actorIds: ['hero', 'mio'], actionId: 'crossDrive', name: 'クロスドライブ', extra: false })).toBe(
-      '主人公とみお：クロスドライブ',
+      'ハルトとみお：クロスドライブ',
     );
     expect(formatLogEvent(s, { type: 'action', actorIds: ['akari'], actionId: 'care', name: 'ケア', extra: true })).toBe('★追加行動 あかり：ケア');
     expect(formatLogEvent(s, { type: 'cancel', actorIds: ['mio'], reason: 'dead' })).toBe('みおの行動は取り消し（先に倒れた）');

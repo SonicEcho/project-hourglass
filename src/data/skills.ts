@@ -16,7 +16,7 @@ export const SKILLS = {
   thunder: { id: 'thunder', name: 'サンダー', mp: 6, weight: 1.0, target: 'enemy', effects: [{ kind: 'damage', type: 'thunder', power: 40 }] },
   shuffle: { id: 'shuffle', name: 'シャッフル', mp: 3, weight: 0.5, target: 'self', effects: [{ kind: 'redraw', count: 5 }] },
   swap: { id: 'swap', name: 'すりかえ', mp: 4, weight: 0.5, target: 'self', effects: [{ kind: 'retrieve' }] },
-  // ---- 成長マップで覚える魔法・スキル（段階7） ----
+  // ---- 星図で覚える魔法・スキル（段階7） ----
   fira: { id: 'fira', name: 'ファイラ', mp: 12, weight: 1.3, target: 'enemy', effects: [{ kind: 'damage', type: 'fire', power: 70 }] },
   blizzara: { id: 'blizzara', name: 'ブリザラ', mp: 12, weight: 1.3, target: 'enemy', effects: [{ kind: 'damage', type: 'ice', power: 70 }] },
   thundara: { id: 'thundara', name: 'サンダラ', mp: 12, weight: 1.3, target: 'enemy', effects: [{ kind: 'damage', type: 'thunder', power: 70 }] },

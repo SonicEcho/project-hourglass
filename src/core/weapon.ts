@@ -37,7 +37,7 @@ export interface ItemDef {
 export type EvolutionCondition =
   /** パラメータが min 以上 */
   | { kind: 'param'; param: WeaponParamKey; min: number }
-  /** パーツの傾向（貯まった色のうち一番多い色）が color */
+  /** ギアの傾向（貯まった色のうち一番多い色）が color */
   | { kind: 'tendency'; color: PartColor };
 
 export interface EvolutionDef {
@@ -79,7 +79,7 @@ export interface WeaponState {
   defId: string;
   params: WeaponParams;
   exp: number;
-  /** パーツの傾向：勝った戦闘で盤にはまっていたパーツの、色ごとのマス数の合計 */
+  /** ギアの傾向：勝った戦闘で盤にはまっていたギアの、色ごとのマス数の合計 */
   tendency: Record<PartColor, number>;
   /** 進化先の id（まだなら null） */
   evolvedTo: string | null;
@@ -90,7 +90,7 @@ export interface ArmoryState {
   weapons: Record<string, WeaponState>;
   /** 持っている素材・通常アイテムの数（パーティ共通） */
   items: Record<string, number>;
-  /** 持っている断片の数（パーティ共通） */
+  /** 持っている記憶の欠片の数（パーティ共通） */
   fragments: Record<string, number>;
 }
 
@@ -123,7 +123,7 @@ export function addItems(armory: ArmoryState, ids: string[]): ArmoryState {
   return { ...armory, items };
 }
 
-/** 断片化できない理由。できるなら null */
+/** 時分解できない理由。できるなら null */
 export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: string): string | null {
   if (!data.items[itemId]) return 'unknown item';
   if ((armory.items[itemId] ?? 0) <= 0) return 'no item left';
@@ -139,7 +139,7 @@ export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: stri
   return { ...armory, items: { ...armory.items, [itemId]: armory.items[itemId] - 1 }, fragments };
 }
 
-/** 断片を吸わせられない理由。吸わせられるなら null */
+/** 記憶の欠片を吸わせられない理由。吸わせられるなら null */
 export function getFeedError(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): string | null {
   if (!armory.weapons[charId]) return 'no weapon';
   if (!data.fragments[fragmentId]) return 'unknown fragment';
@@ -147,7 +147,7 @@ export function getFeedError(data: WeaponData, armory: ArmoryState, charId: stri
   return null;
 }
 
-/** 断片を武器に吸わせる（断片はなくなり、パラメータが上がる） */
+/** 記憶の欠片を武器に吸わせる（記憶の欠片はなくなり、パラメータが上がる） */
 export function feedFragment(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): ArmoryState {
   const err = getFeedError(data, armory, charId, fragmentId);
   if (err) throw new Error(err);
@@ -166,7 +166,7 @@ export function weaponLevel(data: WeaponData, exp: number): number {
   return 1 + data.levelExp.filter((need) => exp >= need).length;
 }
 
-/** パーツの傾向：一番多い色（同じ数で並んだら、または何もなければ null） */
+/** ギアの傾向：一番多い色（同じ数で並んだら、または何もなければ null） */
 export function tendencyOf(w: WeaponState): PartColor | null {
   const entries = Object.entries(w.tendency) as [PartColor, number][];
   const max = Math.max(...entries.map(([, n]) => n));
@@ -178,13 +178,13 @@ export function tendencyOf(w: WeaponState): PartColor | null {
 export interface BattleRecord {
   /** 仲間ごとの行動の回数 */
   actions: Record<string, number>;
-  /** 仲間ごとの、盤にはまっていたパーツの色ごとのマス数 */
+  /** 仲間ごとの、盤にはまっていたギアの色ごとのマス数 */
   colorCells: Record<string, Record<PartColor, number>>;
   /** 手に入れた素材・通常アイテム */
   items: string[];
 }
 
-/** 戦闘に勝った時：素材・アイテムを受け取り、経験値とパーツの傾向を貯める */
+/** 戦闘に勝った時：素材・アイテムを受け取り、経験値とギアの傾向を貯める */
 export function recordVictory(armory: ArmoryState, record: BattleRecord): ArmoryState {
   const weapons: Record<string, WeaponState> = {};
   for (const [charId, w] of Object.entries(armory.weapons)) {
@@ -257,7 +257,7 @@ export function applyWeapons(data: WeaponData, armory: ArmoryState, chars: Chara
   });
 }
 
-/** 進化した武器の分だけ盤を広げたナビカス盤のデータ */
+/** 進化した武器の分だけ盤を広げたムーブメントのデータ */
 export function naviDataWithWeapons(navi: NaviData, data: WeaponData, armory: ArmoryState): NaviData {
   const boards = { ...navi.boards };
   for (const [charId, w] of Object.entries(armory.weapons)) {

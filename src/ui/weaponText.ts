@@ -40,6 +40,6 @@ export function describeEvolution(evo: EvolutionDef, boardExtension: number): st
   if (evo.attackElement) parts.push(`通常攻撃が${ELEMENT_LABEL[evo.attackElement]}になる`);
   parts.push(...summarizePassives(evo.passives ?? []));
   for (const [k, v] of Object.entries(evo.stats ?? {})) parts.push(`${STAT_LABEL[k as keyof typeof STAT_LABEL]} +${v}`);
-  if (boardExtension > 0) parts.push(`盤のコマンドラインが${boardExtension}マス伸びる`);
+  if (boardExtension > 0) parts.push(`ブリッジが${boardExtension}マス伸びる`);
   return parts.join('。');
 }

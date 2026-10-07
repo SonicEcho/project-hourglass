@@ -7,9 +7,9 @@ export const DEFAULT_ACTION_WEIGHT = 1.0;
 
 /** ラウンドの始めに手札をこの枚数まで補充する */
 export const HAND_SIZE = 5;
-/** ワンモアになった時に引く枚数 */
+/** 延長になった時に引く枚数 */
 export const ONE_MORE_DRAW = 1;
-/** 1ラウンドにチーム全体で使えるサポートカードの枚数 */
+/** 1ラウンドにチーム全体で使えるサポートスナップの枚数 */
 export const SUPPORT_PER_ROUND = 1;
 
 /** ダメージの乱数幅 */

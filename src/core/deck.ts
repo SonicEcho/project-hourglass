@@ -41,7 +41,7 @@ export function refillHand(s: BattleState): void {
   if (need > 0) drawCards(s, need);
 }
 
-/** 手札から指定したカードを捨て札へ */
+/** 手札から指定したスナップを捨て札へ */
 export function discardCards(s: BattleState, uids: number[]): void {
   if (uids.length === 0) return;
   const set = new Set(uids);
