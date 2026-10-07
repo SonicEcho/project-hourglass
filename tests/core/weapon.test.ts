@@ -32,71 +32,105 @@ function withExp(a: ArmoryState, charId: string, exp: number): ArmoryState {
   return { ...a, weapons: { ...a.weapons, [charId]: { ...a.weapons[charId], exp } } };
 }
 
+/** 素材・アイテムを時分解した時に手に入る記憶の欠片を、1つずつの id の並びにする */
+function fragsOf(...itemIds: (keyof typeof ITEMS)[]): string[] {
+  return itemIds.flatMap((id) => Object.entries(ITEMS[id].fragments).flatMap(([f, n]) => Array<string>(n).fill(f)));
+}
+
 function feedMany(a: ArmoryState, charId: string, ids: string[]): ArmoryState {
   let out = addFragments(a, ids);
   for (const id of ids) out = feedFragment(D, out, charId, id);
   return out;
 }
 
-describe('武器：断片を吸わせる', () => {
+describe('武器：記憶の欠片を吸わせる', () => {
   it('3人それぞれに武器が1本ある', () => {
     const a = createArmory(D);
     expect(Object.keys(a.weapons).sort()).toEqual(PARTY.map((c) => c.id).sort());
   });
 
-  it('吸わせるとパラメータが上がり、断片はなくなる', () => {
-    let a = addFragments(createArmory(D), ['slimeJelly', 'slimeJelly']);
-    a = feedFragment(D, a, 'hero', 'slimeJelly');
-    expect(a.weapons.hero.params).toEqual({ atk: 1, fire: 3, ice: 0, thunder: 0 });
-    expect(a.fragments.slimeJelly).toBe(1);
+  it('吸わせると、その感情のパラメータが1上がり、記憶の欠片はなくなる', () => {
+    let a = addFragments(createArmory(D), ['elation', 'elation']);
+    a = feedFragment(D, a, 'hero', 'elation');
+    expect(a.weapons.hero.params).toEqual({ atk: 0, fire: 1, ice: 0, thunder: 0 });
+    expect(a.fragments.elation).toBe(1);
   });
 
-  it('持っていない断片は吸わせられない', () => {
+  it('感情ごとに上がるパラメータが決まっている（勇気＝攻撃、高揚＝火、安堵＝氷、驚嘆＝雷）', () => {
+    expect(FRAGMENTS.courage.gains).toEqual({ atk: 1 });
+    expect(FRAGMENTS.elation.gains).toEqual({ fire: 1 });
+    expect(FRAGMENTS.relief.gains).toEqual({ ice: 1 });
+    expect(FRAGMENTS.wonder.gains).toEqual({ thunder: 1 });
+  });
+
+  it('持っていない記憶の欠片は吸わせられない', () => {
     const a = createArmory(D);
-    expect(getFeedError(D, a, 'hero', 'slimeJelly')).toBe('no fragment left');
-    expect(() => feedFragment(D, a, 'hero', 'slimeJelly')).toThrow();
+    expect(getFeedError(D, a, 'hero', 'elation')).toBe('no fragment left');
+    expect(() => feedFragment(D, a, 'hero', 'elation')).toThrow();
   });
 
   it('元の状態は書き換えない', () => {
-    const a = addFragments(createArmory(D), ['slimeJelly']);
-    feedFragment(D, a, 'hero', 'slimeJelly');
-    expect(a.fragments.slimeJelly).toBe(1);
+    const a = addFragments(createArmory(D), ['elation']);
+    feedFragment(D, a, 'hero', 'elation');
+    expect(a.fragments.elation).toBe(1);
     expect(a.weapons.hero.params.fire).toBe(0);
   });
 });
 
-describe('武器：断片化', () => {
-  it('素材を断片化すると、素材がなくなり、その素材の断片が増える', () => {
+describe('武器：時分解', () => {
+  it('素材を時分解すると、素材がなくなり、決まった感情の記憶の欠片が増える', () => {
     let a = addItems(createArmory(D), ['slimeJelly']);
     a = fragmentItem(D, a, 'slimeJelly');
     expect(a.items.slimeJelly).toBe(0);
-    expect(a.fragments.slimeJelly).toBe(1);
+    expect(a.fragments).toEqual({ elation: 3, courage: 1 });
   });
 
-  it('通常アイテムは断片が2つ出て、別々の武器に吸わせられる', () => {
+  it('時分解で出た記憶の欠片は、別々の武器に分けて吸わせられる', () => {
     let a = fragmentItem(D, addItems(createArmory(D), ['ether']), 'ether');
-    expect(a.fragments.ether).toBe(2);
-    a = feedFragment(D, a, 'hero', 'ether');
-    a = feedFragment(D, a, 'mio', 'ether');
-    expect(a.weapons.hero.params).toEqual({ atk: 0, fire: 1, ice: 1, thunder: 1 });
-    expect(a.weapons.mio.params).toEqual({ atk: 0, fire: 1, ice: 1, thunder: 1 });
-    expect(a.fragments.ether).toBe(0);
+    expect(a.fragments).toEqual({ elation: 2, relief: 2, wonder: 2 });
+    a = feedFragment(D, a, 'hero', 'elation');
+    a = feedFragment(D, a, 'mio', 'wonder');
+    expect(a.weapons.hero.params).toEqual({ atk: 0, fire: 1, ice: 0, thunder: 0 });
+    expect(a.weapons.mio.params).toEqual({ atk: 0, fire: 0, ice: 0, thunder: 1 });
+    expect(a.fragments).toEqual({ elation: 1, relief: 2, wonder: 1 });
   });
 
-  it('持っていない素材・アイテムは断片化できない。元の状態は書き換えない', () => {
+  it('すでに持っている記憶の欠片に足される', () => {
+    let a = addItems(createArmory(D), ['slimeJelly', 'hardFur']);
+    a = fragmentItem(D, a, 'slimeJelly');
+    a = fragmentItem(D, a, 'hardFur');
+    expect(a.fragments).toEqual({ elation: 3, courage: 3, relief: 3 });
+  });
+
+  it('持っていない素材・アイテムは時分解できない。元の状態は書き換えない', () => {
     const a = addItems(createArmory(D), ['potion']);
     expect(getFragmentError(D, createArmory(D), 'potion')).toBe('no item left');
     expect(getFragmentError(D, a, 'unknown')).toBe('unknown item');
     fragmentItem(D, a, 'potion');
     expect(a.items.potion).toBe(1);
-    expect(a.fragments.potion).toBeUndefined();
+    expect(a.fragments.courage).toBeUndefined();
   });
 
-  it('素材・アイテムは、すべて定義のある断片になる', () => {
+  it('素材・アイテムは、すべて定義のある記憶の欠片になる', () => {
     for (const it of Object.values(ITEMS)) {
-      expect(D.fragments[it.fragment]).toBeDefined();
-      expect(it.count).toBeGreaterThan(0);
+      const entries = Object.entries(it.fragments);
+      expect(entries.length).toBeGreaterThan(0);
+      for (const [id, n] of entries) {
+        expect(D.fragments[id]).toBeDefined();
+        expect(n).toBeGreaterThan(0);
+      }
     }
+  });
+
+  it('時分解して全部吸わせた時の上がり幅は、段階9（調整1回目）の断片と同じ', () => {
+    const total = (id: keyof typeof ITEMS) => feedMany(createArmory(D), 'hero', fragsOf(id)).weapons.hero.params;
+    expect(total('slimeJelly')).toEqual({ atk: 1, fire: 3, ice: 0, thunder: 0 });
+    expect(total('frostFeather')).toEqual({ atk: 0, fire: 0, ice: 1, thunder: 3 });
+    expect(total('hardFur')).toEqual({ atk: 2, fire: 0, ice: 3, thunder: 0 });
+    expect(total('steelClaw')).toEqual({ atk: 3, fire: 0, ice: 0, thunder: 0 });
+    expect(total('potion')).toEqual({ atk: 2, fire: 0, ice: 0, thunder: 0 });
+    expect(total('ether')).toEqual({ atk: 0, fire: 2, ice: 2, thunder: 2 });
+    expect(total('hiPotion')).toEqual({ atk: 4, fire: 0, ice: 0, thunder: 0 });
   });
 });
 
@@ -134,7 +168,7 @@ describe('武器：経験値とレベル', () => {
 
 describe('武器：進化', () => {
   it('Lv3 と条件を満たすと進化できる', () => {
-    let a = feedMany(createArmory(D), 'hero', ['slimeJelly', 'slimeJelly']);
+    let a = feedMany(createArmory(D), 'hero', fragsOf('slimeJelly', 'slimeJelly'));
     expect(getEvolveError(D, a, 'hero', 'flameBlade')).toBe('conditions are not met');
     a = withExp(a, 'hero', 20);
     expect(getEvolveError(D, a, 'hero', 'flameBlade')).toBeNull();
@@ -143,7 +177,7 @@ describe('武器：進化', () => {
   });
 
   it('条件を1つずつ確かめられる（レベル、パラメータ、傾向）', () => {
-    const a = withExp(feedMany(createArmory(D), 'hero', ['steelClaw', 'steelClaw']), 'hero', 20);
+    const a = withExp(feedMany(createArmory(D), 'hero', fragsOf('steelClaw', 'steelClaw')), 'hero', 20);
     const evo = D.weapons.recordSword.evolutions.find((e) => e.id === 'breakEdge')!;
     expect(evolutionChecks(D, a.weapons.hero, evo).map((c) => c.ok)).toEqual([true, true, false]);
     const red = { ...a, weapons: { ...a.weapons, hero: { ...a.weapons.hero, tendency: { red: 5, blue: 0, green: 0, yellow: 0 } } } };
@@ -151,27 +185,27 @@ describe('武器：進化', () => {
   });
 
   it('進化は1回だけ', () => {
-    let a = withExp(feedMany(createArmory(D), 'hero', ['slimeJelly', 'slimeJelly', 'hardFur', 'hardFur']), 'hero', 20);
+    let a = withExp(feedMany(createArmory(D), 'hero', fragsOf('slimeJelly', 'slimeJelly', 'hardFur', 'hardFur')), 'hero', 20);
     a = evolveWeapon(D, a, 'hero', 'flameBlade');
     expect(getEvolveError(D, a, 'hero', 'frostBlade')).toBe('already evolved');
   });
 
   it('レベルが足りなければ進化できない', () => {
-    const a = withExp(feedMany(createArmory(D), 'hero', ['slimeJelly', 'slimeJelly']), 'hero', D.levelExp[1] - 1);
+    const a = withExp(feedMany(createArmory(D), 'hero', fragsOf('slimeJelly', 'slimeJelly')), 'hero', D.levelExp[1] - 1);
     expect(() => evolveWeapon(D, a, 'hero', 'flameBlade')).toThrow();
   });
 });
 
 describe('武器：キャラへの反映', () => {
   it('攻撃値はキャラの攻撃に足し、属性値は属性のダメージの割増しになる', () => {
-    const a = feedMany(createArmory(D), 'hero', ['slimeJelly', 'slimeJelly']);
+    const a = feedMany(createArmory(D), 'hero', fragsOf('slimeJelly', 'slimeJelly'));
     const [hero] = applyWeapons(D, a, [PARTY[0]]);
     expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 2);
     expect(hero.passives).toEqual([{ kind: 'elementBoost', element: 'fire', rate: 6 * D.elementRate }]);
   });
 
   it('進化先の能力値・特性・通常攻撃の属性が付く', () => {
-    let a = withExp(feedMany(createArmory(D), 'akari', ['slimeJelly', 'slimeJelly']), 'akari', 20);
+    let a = withExp(feedMany(createArmory(D), 'akari', fragsOf('slimeJelly', 'slimeJelly')), 'akari', 20);
     a = evolveWeapon(D, a, 'akari', 'flameRod');
     const akari = applyWeapons(D, a, PARTY).find((c) => c.id === 'akari')!;
     expect(akari.attackElement).toBe('fire');
@@ -184,7 +218,7 @@ describe('武器：キャラへの反映', () => {
   });
 
   it('進化すると、ナビカス盤のコマンドラインの行が右に2マス伸びる', () => {
-    let a = withExp(feedMany(createArmory(D), 'hero', ['slimeJelly', 'slimeJelly']), 'hero', 20);
+    let a = withExp(feedMany(createArmory(D), 'hero', fragsOf('slimeJelly', 'slimeJelly')), 'hero', 20);
     a = evolveWeapon(D, a, 'hero', 'flameBlade');
     const data = naviDataWithWeapons(NAVI_DATA, D, a);
     const board = data.boards.hero;
@@ -242,7 +276,7 @@ describe('武器：表示の文字', () => {
     expect(describeCondition({ kind: 'param', param: 'fire', min: 6 })).toBe('火 6以上');
     expect(describeCondition({ kind: 'tendency', color: 'red' })).toBe('傾向が赤');
     expect(describeCondition({ kind: 'level', min: 3 })).toBe('Lv3');
-    expect(describeFragment(FRAGMENTS.slimeJelly)).toBe('火 +3、攻撃値 +1');
+    expect(describeFragment(FRAGMENTS.elation)).toBe('火 +1');
     const flame = D.weapons.recordSword.evolutions[0];
     expect(describeEvolution(flame, 2)).toBe('通常攻撃が火になる。攻撃 +3。盤のコマンドラインが2マス伸びる');
   });

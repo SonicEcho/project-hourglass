@@ -15,7 +15,7 @@ export interface WeaponParams {
 
 export type WeaponParamKey = keyof WeaponParams;
 
-/** 記憶の断片（素材） */
+/** 記憶の欠片（段階10から、記憶に宿る感情ごとの種類） */
 export interface FragmentDef {
   id: string;
   name: string;
@@ -23,15 +23,14 @@ export interface FragmentDef {
 }
 
 /**
- * 素材（敵が落とす）と通常アイテム（勝利の報酬）。断片化すると、決まった断片が count 個になる
+ * 素材（敵が落とす）と通常アイテム（勝利の報酬）。時分解すると、決まった記憶の欠片が決まった数だけ手に入る
  */
 export interface ItemDef {
   id: string;
   name: string;
   kind: 'material' | 'item';
-  /** 断片化した時の断片の id */
-  fragment: string;
-  count: number;
+  /** 時分解した時に手に入る記憶の欠片（欠片の id → 数） */
+  fragments: Record<string, number>;
 }
 
 /** 進化の条件（全部満たすと進化できる） */
@@ -131,12 +130,12 @@ export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: 
   return null;
 }
 
-/** 素材・アイテムを1つ断片化する（素材・アイテムはなくなり、決まった断片が増える） */
+/** 素材・アイテムを1つ時分解する（素材・アイテムはなくなり、決まった記憶の欠片が増える） */
 export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: string): ArmoryState {
   const err = getFragmentError(data, armory, itemId);
   if (err) throw new Error(err);
-  const item = data.items[itemId];
-  const fragments = { ...armory.fragments, [item.fragment]: (armory.fragments[item.fragment] ?? 0) + item.count };
+  const fragments = { ...armory.fragments };
+  for (const [id, n] of Object.entries(data.items[itemId].fragments)) fragments[id] = (fragments[id] ?? 0) + n;
   return { ...armory, items: { ...armory.items, [itemId]: armory.items[itemId] - 1 }, fragments };
 }
 
