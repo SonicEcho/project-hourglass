@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="86" height="146" viewBox="0 0 86 146">
+  <!-- タイトルの砂時計（自作・仮の素材）。台帳：src/data/assets.ts の title.hourglass -->
+  <g fill="none" stroke="#ffd84a" stroke-width="3" stroke-linejoin="round">
+    <polygon points="3,3 83,3 43,73" />
+    <polygon points="3,143 83,143 43,73" />
+  </g>
+</svg>

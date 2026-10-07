@@ -5,6 +5,8 @@ import { isDebugEnabled } from './debug/debugFlag';
 import { installDebugMenu } from './debug/debugMenu';
 import { loadEruda } from './debug/eruda';
 import { BattleScene } from './scenes/BattleScene';
+import { BootScene } from './scenes/BootScene';
+import { CreditsScene } from './scenes/CreditsScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
 import { WeaponScene } from './scenes/WeaponScene';
@@ -48,7 +50,8 @@ const game = new Phaser.Game({
     height: GAME_HEIGHT * RENDER_SCALE,
   },
   input: { activePointers: 1 },
-  scene: [TitleScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene],
+  // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
+  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene],
 });
 
 if (debug) {
