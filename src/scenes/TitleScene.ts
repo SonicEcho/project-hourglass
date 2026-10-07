@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
 import { battleAt, battleCount, continueRun, moveBrokenSave, readSave, startNewRun } from './run';
 
@@ -21,18 +22,25 @@ export class TitleScene extends Phaser.Scene {
     const root = this.add.container(0, 0);
     const cx = GAME_WIDTH / 2;
     root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
-    // 仮の砂時計
-    const g = this.add.graphics();
-    g.lineStyle(3, COLORS.accent, 1);
-    g.strokeTriangle(cx - 40, 160, cx + 40, 160, cx, 230);
-    g.strokeTriangle(cx - 40, 300, cx + 40, 300, cx, 230);
-    root.add(g);
+    // 砂時計（台帳の title.hourglass。読み込めない時は同じ形を図形で描く）
+    root.add(
+      addImageOr(this, 'title.hourglass', cx, 230, () => {
+        const g = this.add.graphics();
+        g.lineStyle(3, COLORS.accent, 1);
+        g.strokeTriangle(cx - 40, 160, cx + 40, 160, cx, 230);
+        g.strokeTriangle(cx - 40, 300, cx + 40, 300, cx, 230);
+        return g;
+      }),
+    );
     root.add(addText(this, cx, 360, 'RESTOPIA', { size: 34, bold: true }).setOrigin(0.5));
     root.add(addText(this, cx, 400, '思い出だけの理想郷', { size: 15, color: COLORS.accentText }).setOrigin(0.5));
     root.add(addText(this, cx, 432, 'バトルプロトタイプ', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     root.add(
       addText(this, cx, 470, '星図で育てながら5戦。最後はボス「歪みの獣」', { size: 13, color: COLORS.subText }).setOrigin(0.5),
     );
+    // クレジット（段階15）。親指の邪魔にならない右上に小さく
+    addButton(this, root, GAME_WIDTH - 62, 36, 104, 44, 'クレジット', { onTap: () => this.scene.start('Credits') }, { size: 13 });
+
     // セーブがあれば「つづきから」（段階11）
     const save = readSave();
     if (save && !save.ok) {

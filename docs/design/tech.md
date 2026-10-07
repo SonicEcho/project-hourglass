@@ -25,11 +25,13 @@
 | `src/scenes/` | Phaser の画面と、周回の状態（`run.ts`） |
 | `src/ui/` | 画面の部品、文字、配置、色 |
 | `src/save/` | 保存の窓口（今は localStorage） |
+| `src/assets/` | 素材を読み込む部品（`loader.ts`）と、クレジットの一覧を作る処理（`credits.ts`） |
+| `public/assets/` | 絵・音などの素材のファイル（台帳は `src/data/assets.ts`、決まりは `docs/ASSETS.md`） |
 | `src/sim/` | 自動対戦（決まった方針で自動で遊ぶ）と測定の集計 |
 | `src/debug/` | デバッグメニュー、戦闘ログ、チート、eruda、ビルド情報 |
 | `tests/` | Vitest のテスト（`tests/core/` がロジック） |
 | `scripts/` | 開発用の命令（`measure.mjs`） |
-| `docs/` | 文書（`docs/design/README.md` の一覧） |
+| `docs/` | 文書（`docs/design/README.md` の一覧）。`docs/licenses/` は利用規約・ライセンス文の控え |
 
 ## 3. 設計の原則
 
@@ -38,10 +40,12 @@
 - **乱数はシードで再現できる**：乱数は mulberry32。戦闘の状態に乱数の内部状態も持つ。URL の `?seed=数字` で固定できる
 - **戦闘の出来事は記録に残す**：すべて `state.log` に構造化して残し、演出・戦闘ログ・行動の回数に使う
 - **保存の場所・素材の読み込みは1か所にまとめる**：Web とアプリで差し替えられるように
+- **素材がなくても止まらない**：ゲームの始めの「起動」の画面（`BootScene`）で台帳の素材を読み込む。画面は台帳の id で素材を使い（`addImageOr`）、読み込めない時は図形で代わりに描く。読めなかった素材はコンソールに `[assets]` 付きで出す
 
 ## 4. テスト
 
 - `npm test` で全部。`src/core` を変えたら、必ず `tests/` のテストを足す・直す
+- 素材台帳の書き漏れ（`tests/assets.test.ts`。ファイルがない、クレジットの文がない、規約の控えがない、本番なのに売り物に使えない、ライブラリが `package.json` と合わない）
 - ロジック（戦闘・星図・ムーブメント・武器・進み具合・セーブ）、データの整合（`tests/data.test.ts` など）、Phaser に依存しない補助関数（デバッグ判定、ビルド情報、スキルの並べ方）、自動対戦（`tests/sim.test.ts`）
 - コミットの前に `npm test`、`npx tsc --noEmit`、`npm run build` がすべて通ること
 
@@ -85,4 +89,5 @@
 
 試作の経緯は `docs/SPEC.md` の「実装時の決定事項」。段階14以降で技術の決まりを変えたら、ここに日付・段階・理由を1〜2行で足す。
 
+- 段階15：素材台帳の正は `src/data/assets.ts`（クレジットの画面とテストが同じものを読む）。配布物に入るライブラリ（Phaser、eruda）も台帳に載せる（MIT は売り物でも使えるが、著作権表示が要る）
 - 段階12：`npm run measure` は、TypeScript のまま読み込むため Vite の `runnerImport` を使う（道具を増やさない）

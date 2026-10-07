@@ -11,3 +11,4 @@ export * from './campaign';
 export * from './navi';
 export * from './weapons';
 export * from './story';
+export * from './assets';
