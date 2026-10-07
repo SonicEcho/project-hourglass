@@ -2,6 +2,8 @@ import type { GrowthMap, GrowthState } from './growth';
 import { createGrowth } from './growth';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
 import { getPlaceError, placePart } from './navi';
+import type { Progress, Story } from './progress';
+import { findBattle, normalizeProgress } from './progress';
 import type { ArmoryState, WeaponData, WeaponParams, WeaponState } from './weapon';
 import { createArmory, naviDataWithWeapons } from './weapon';
 
@@ -9,17 +11,23 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+
+/** 版1のセーブは、試作の1章・1区画（5戦）だけだった。版2に直す時に、この章・区画と戦闘の名前に置き換える */
+export const V1_CHAPTER_ID = 'prototype';
+export const V1_AREA_ID = 'trial';
+export const v1BattleId = (stage: number): string => `battle${stage + 1}`;
 
 /** 周回の状態のうち、セーブするもの */
 export interface RunSnapshot {
   seed: number;
   fixed: boolean;
-  /** 次に戦う戦闘の番号（0から） */
-  stage: number;
+  /** 次に戦う場所と何日目か（段階13。版1では stage：次に戦う戦闘の番号） */
+  progress: Progress;
   growth: GrowthState;
   navi: NaviState;
-  pendingReward: number | null;
+  /** まだ受け取っていないギアの報酬（勝った戦闘の名前。版1では戦闘の番号） */
+  pendingReward: string | null;
   armory: ArmoryState;
 }
 
@@ -37,15 +45,23 @@ export interface SaveContext {
   startPoints: number;
   naviData: NaviData;
   weaponData: WeaponData;
-  /** 周回の戦闘の数 */
-  stageCount: number;
+  /** 章 → 区画 → 戦闘 */
+  story: Story;
 }
 
 /** ある版のセーブを、次の版の形に直す手順（キーは直す前の版の番号） */
 export type SaveMigrations = Record<number, (raw: Record<string, unknown>) => Record<string, unknown>>;
 
-/** 古い版から直す手順。今は版1だけなので空 */
-export const MIGRATIONS: SaveMigrations = {};
+/** 古い版から直す手順 */
+export const MIGRATIONS: SaveMigrations = {
+  // 版1 → 版2（段階13）：何戦目か（stage）を、章・区画・何戦目・何日目に。報酬は戦闘の番号から名前に
+  1: (raw) => {
+    if (!isObject(raw.run)) return raw;
+    const { stage, pendingReward, ...rest } = raw.run;
+    const progress = { chapterId: V1_CHAPTER_ID, areaId: V1_AREA_ID, battle: stage, day: 1 };
+    return { ...raw, run: { ...rest, progress, pendingReward: isInt(pendingReward) ? v1BattleId(pendingReward) : null } };
+  },
+};
 
 export type LoadResult = { ok: true; save: SaveData } | { ok: false; error: string };
 
@@ -83,23 +99,23 @@ export function parseSave(text: string, ctx: SaveContext, migrations: SaveMigrat
  * 形がまったく違う（数のはずが文字など）時は null
  */
 export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): RunSnapshot | null {
-  const { seed, fixed, stage, pendingReward } = raw;
-  if (!isInt(seed) || typeof fixed !== 'boolean' || !isInt(stage)) return null;
-  if (pendingReward !== null && !isInt(pendingReward)) return null;
+  const { seed, fixed, pendingReward } = raw;
+  if (!isInt(seed) || typeof fixed !== 'boolean' || !isObject(raw.progress)) return null;
+  if (pendingReward !== null && typeof pendingReward !== 'string') return null;
   if (!isObject(raw.growth) || !isObject(raw.navi) || !isObject(raw.armory)) return null;
   const growth = sanitizeGrowth(raw.growth, ctx);
   const armory = sanitizeArmory(raw.armory, ctx.weaponData);
   if (!growth || !armory) return null;
   const navi = sanitizeNavi(raw.navi, naviDataWithWeapons(ctx.naviData, ctx.weaponData, armory));
   if (!navi) return null;
-  const last = Math.max(0, ctx.stageCount - 1);
   return {
     seed: seed >>> 0,
     fixed,
-    stage: clamp(stage, 0, last),
+    progress: normalizeProgress(ctx.story, raw.progress as Partial<Progress>),
     growth,
     navi,
-    pendingReward: pendingReward === null ? null : clamp(pendingReward, 0, last),
+    // 今のデータにない戦闘の報酬は捨てる
+    pendingReward: pendingReward !== null && findBattle(ctx.story, pendingReward) ? pendingReward : null,
     armory,
   };
 }
@@ -180,8 +196,4 @@ function isObject(v: unknown): v is Record<string, unknown> {
 
 function isInt(v: unknown): v is number {
   return typeof v === 'number' && Number.isInteger(v);
-}
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
 }

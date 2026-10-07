@@ -1,8 +1,10 @@
 import type { ArmoryState, CharacterDef, GrowthState, NaviData, NaviState, Placement, Rotation } from '../core';
 import {
+  advance,
   applyGrowth,
   applyNavi,
   applyWeapons,
+  battleNumber,
   battleReward,
   boardColorCells,
   claimRewardParts,
@@ -22,24 +24,26 @@ import {
   naviDataWithWeapons,
   openableNodes,
   openNode,
+  placeOf,
   placePart,
   recordVictory,
   removePart,
+  startProgress,
 } from '../core';
 import {
-  CAMPAIGN,
   createCampaignSetup,
   GROWTH_MAP,
   NAVI_DATA,
-  NAVI_REWARD_CANDIDATES,
   NAVI_REWARD_PICKS,
   PART_BREAK_POINTS,
   PARTY,
   SKILLS,
   START_MEMORY_POINTS,
   START_NAVI_PARTS,
+  STORY,
   WEAPON_DATA,
 } from '../data';
+import type { CampaignBattle } from '../data';
 import { autoPlay, lcg } from './autoBattle';
 
 // 周回の自動対戦（段階12）。タイトルから5戦目のボスまでを、決まった方針で自動で遊ぶ。
@@ -79,7 +83,11 @@ export function autoRun(seed: number): RunRecord {
     armory: createArmory(WEAPON_DATA),
   };
   const stages: StageRecord[] = [];
-  for (let i = 0; i < CAMPAIGN.length; i++) {
+  // 章 → 区画 → 戦闘の順に進む（段階13）。最後の戦闘に勝ったら終わり
+  let progress = startProgress(STORY);
+  for (;;) {
+    const i = battleNumber(STORY, progress);
+    const def = placeOf(STORY, progress)!.battle;
     spendPoints(st, pick);
     useArmory(st, pick);
     st.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, st.armory), st.navi);
@@ -88,16 +96,18 @@ export function autoRun(seed: number): RunRecord {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       // 1回目は画面と同じ「周回のシード＋戦闘の番号」。やり直すたびに別のシード
       const battleSeed = (seed + i + attempt * 100) >>> 0;
-      const s = autoPlay(createBattle(createCampaignSetup(i, battleSeed, allies)), battleSeed);
+      const s = autoPlay(createBattle(createCampaignSetup(def, battleSeed, allies)), battleSeed);
       if (s.outcome !== 'victory') continue;
       record = { attempts: attempt + 1, won: true, rounds: s.round };
-      receiveVictory(st, i, getBattleResult(s));
+      receiveVictory(st, def, getBattleResult(s));
       break;
     }
     stages.push(record);
     if (!record.won) return { seed, stages, cleared: false };
+    const next = advance(STORY, progress);
+    if (next.event === 'storyClear') return { seed, stages, cleared: true };
+    progress = next.progress;
   }
-  return { seed, stages, cleared: true };
 }
 
 function party(st: AutoRunState): CharacterDef[] {
@@ -177,8 +187,7 @@ function bestSpot(data: NaviData, navi: NaviState, uid: number, charId: string, 
 }
 
 /** 勝った時の受け取り（画面の BattleScene と同じ順番） */
-function receiveVictory(st: AutoRunState, stage: number, result: ReturnType<typeof getBattleResult>): void {
-  const def = CAMPAIGN[stage];
+function receiveVictory(st: AutoRunState, def: CampaignBattle, result: ReturnType<typeof getBattleResult>): void {
   if (def.boss) return;
   st.growth = { ...st.growth, points: st.growth.points + battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS) };
   const naviData = naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, st.armory);
@@ -187,7 +196,7 @@ function receiveVictory(st: AutoRunState, stage: number, result: ReturnType<type
     colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, st.navi, p.id)])),
     items: [...result.drops, ...(def.item ? [def.item] : [])],
   });
-  const candidates = NAVI_REWARD_CANDIDATES[stage];
+  const candidates = def.naviReward;
   if (candidates) {
     const n = Math.min(NAVI_REWARD_PICKS, candidates.length);
     st.navi = claimRewardParts(st.navi, candidates, Array.from({ length: n }, (_, k) => k), NAVI_REWARD_PICKS);

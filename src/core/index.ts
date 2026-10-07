@@ -9,3 +9,4 @@ export * from './growth';
 export * from './navi';
 export * from './weapon';
 export * from './save';
+export * from './progress';

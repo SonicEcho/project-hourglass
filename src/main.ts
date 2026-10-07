@@ -9,6 +9,8 @@ import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
 import { WeaponScene } from './scenes/WeaponScene';
 import { ResultScene } from './scenes/ResultScene';
+import { allBattles, progressAt } from './core';
+import { STORY } from './data';
 import { initRunFromUrl, run, saveRun, startNewRun } from './scenes/run';
 import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
@@ -58,8 +60,9 @@ if (debug) {
   };
   installDebugMenu({
     startBoss: () => {
-      run.stage = 4;
-      goTo('Battle', { stage: 4 });
+      // 最後の戦闘（ボス）。日はそのまま
+      run.progress = progressAt(STORY, allBattles(STORY).length - 1, run.progress.day);
+      goTo('Battle', { progress: run.progress });
     },
     restartRun: () => {
       startNewRun();

@@ -7,14 +7,17 @@ import {
   createNavi,
   feedFragment,
   fragmentItem,
+  MIGRATIONS,
   openableNodes,
   openNode,
   parseSave,
   placePart,
+  progressAt,
   SAVE_VERSION,
   serializeSave,
+  startProgress,
 } from '../../src/core';
-import { CAMPAIGN, GROWTH_MAP, NAVI_DATA, PARTY, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../../src/data';
+import { GROWTH_MAP, NAVI_DATA, PARTY, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -22,7 +25,7 @@ const ctx: SaveContext = {
   startPoints: START_MEMORY_POINTS,
   naviData: NAVI_DATA,
   weaponData: WEAPON_DATA,
-  stageCount: CAMPAIGN.length,
+  story: STORY,
 };
 
 const AT = new Date('2026-10-07T12:34:56Z');
@@ -31,7 +34,7 @@ function freshRun(): RunSnapshot {
   return {
     seed: 7,
     fixed: false,
-    stage: 0,
+    progress: startProgress(STORY),
     growth: createGrowth(GROWTH_MAP, ctx.characterIds, 20),
     navi: createNavi(START_NAVI_PARTS),
     pendingReward: null,
@@ -50,8 +53,8 @@ function playedRun(): RunSnapshot {
   r.armory = addItems(r.armory, ['slimeJelly', 'slimeJelly', 'steelClaw']);
   r.armory = fragmentItem(WEAPON_DATA, r.armory, 'slimeJelly');
   r.armory = feedFragment(WEAPON_DATA, r.armory, 'hero', 'elation');
-  r.stage = 2;
-  r.pendingReward = 1;
+  r.progress = progressAt(STORY, 2);
+  r.pendingReward = 'battle2';
   return r;
 }
 
@@ -115,12 +118,29 @@ describe('セーブ：古い版から直す', () => {
     v0.version = 0;
     v0.run.memoryPoints = v0.run.growth.points + 5;
     const res = parseSave(JSON.stringify(v0), ctx, {
+      ...MIGRATIONS,
       0: (raw: any) => ({ ...raw, run: { ...raw.run, growth: { ...raw.run.growth, points: raw.run.memoryPoints } } }),
     });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.save.version).toBe(SAVE_VERSION);
     expect(res.save.run.growth.points).toBe(playedRun().growth.points + 5);
+  });
+
+  it('版1のセーブ（何戦目かと報酬の番号）を、版2の章・区画・何戦目に直して読む', () => {
+    const v2 = JSON.parse(serializeSave(playedRun(), AT));
+    const { progress: _p, ...rest } = v2.run;
+    const v1 = { version: 1, savedAt: v2.savedAt, run: { ...rest, stage: 2, pendingReward: 1 } };
+    const res = parseSave(JSON.stringify(v1), ctx);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.save.version).toBe(2);
+    expect(res.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 2, day: 1 });
+    expect(res.save.run.pendingReward).toBe('battle2');
+    expect(res.save.run.growth).toEqual(playedRun().growth);
+    // 報酬がない版1のセーブ
+    const res2 = parseSave(JSON.stringify({ ...v1, run: { ...v1.run, pendingReward: null } }), ctx);
+    expect(res2.ok && res2.save.run.pendingReward).toBeNull();
   });
 
   it('直す手順がない古い版は読まない', () => {
@@ -193,13 +213,20 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res.ok && res.save.run.armory.weapons.hero).toEqual(fresh.weapons.hero);
   });
 
-  it('次の戦闘の番号と報酬は、周回の範囲に収める', () => {
+  it('次に戦う場所は、今の物語に収める。知らない戦闘の報酬は捨てる', () => {
     const res = parseEdited((raw) => {
-      raw.run.stage = 99;
-      raw.run.pendingReward = -3;
+      raw.run.progress.battle = 99;
+      raw.run.progress.day = 0;
+      raw.run.pendingReward = 'removedBattle';
     });
-    expect(res.ok && res.save.run.stage).toBe(CAMPAIGN.length - 1);
-    expect(res.ok && res.save.run.pendingReward).toBe(0);
+    expect(res.ok && res.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 4, day: 1 });
+    expect(res.ok && res.save.run.pendingReward).toBeNull();
+    const res2 = parseEdited((raw) => (raw.run.progress = { chapterId: 'removedChapter', areaId: 'x', battle: 2, day: 3 }));
+    expect(res2.ok && res2.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 2, day: 3 });
+  });
+
+  it('進み具合がないものは読まない', () => {
+    expect(parseEdited((raw) => delete raw.run.progress).ok).toBe(false);
   });
 
   it('同じ番号のギアが2つあれば、後のものを捨てる。次の番号は持っているギアより大きくする', () => {

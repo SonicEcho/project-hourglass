@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
-import { CAMPAIGN } from '../data';
 import { addButton, addText } from '../ui/widgets';
-import { continueRun, moveBrokenSave, readSave, startNewRun } from './run';
+import { battleAt, battleCount, continueRun, moveBrokenSave, readSave, startNewRun } from './run';
 
 /** 保存した日時を「10/7 21:05」の形にする */
 function formatSavedAt(iso: string): string {
@@ -47,7 +46,8 @@ export class TitleScene extends Phaser.Scene {
     };
     if (save?.ok) {
       const s = save.save;
-      const next = CAMPAIGN[s.run.stage];
+      const next = battleAt(s.run.progress);
+      const count = battleCount(s.run.progress);
       addButton(this, root, cx, 600, 260, 64, 'つづきから', {
         onTap: () => {
           if (continueRun()) this.scene.start('Growth');
@@ -55,7 +55,7 @@ export class TitleScene extends Phaser.Scene {
         },
       }, strong);
       root.add(
-        addText(this, cx, 645, `${next?.name ?? ''}の前（${s.run.stage + 1}/${CAMPAIGN.length}）　${formatSavedAt(s.savedAt)}`, {
+        addText(this, cx, 645, `${next.name}の前（${count.n}/${count.total}）　${formatSavedAt(s.savedAt)}`, {
           size: 12,
           color: COLORS.subText,
         }).setOrigin(0.5),

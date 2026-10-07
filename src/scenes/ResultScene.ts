@@ -1,15 +1,15 @@
 import Phaser from 'phaser';
-import type { BattleResult } from '../core';
+import type { BattleResult, Progress } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BOSS_PART_REWARDS, CAMPAIGN, NAVI_PARTS } from '../data';
+import { BOSS_PART_REWARDS, NAVI_PARTS } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
-import { rerollSeed, startNewRun } from './run';
+import { battleAt, rerollSeed, startNewRun } from './run';
 
 export interface ResultSceneData {
   outcome: 'victory' | 'defeat';
-  /** 周回の何戦目か（0から） */
-  stage: number;
+  /** 戦った場所 */
+  progress: Progress;
   brokenParts: BattleResult['brokenParts'];
   seed: number;
 }
@@ -31,7 +31,7 @@ export class ResultScene extends Phaser.Scene {
       addText(this, cx, 130, win ? 'クリア！' : '敗北…', { size: 46, bold: true, color: win ? COLORS.accentText : COLORS.allyDamage }).setOrigin(0.5),
     );
     root.add(
-      addText(this, cx, 190, win ? '歪みの獣を倒した' : `${CAMPAIGN[data.stage]?.name ?? ''}で全滅した`, {
+      addText(this, cx, 190, win ? '歪みの獣を倒した' : `${battleAt(data.progress).name}で全滅した`, {
         size: 16,
         color: COLORS.subText,
       }).setOrigin(0.5),
@@ -75,7 +75,7 @@ export class ResultScene extends Phaser.Scene {
             onTap: () => {
               // 育成はそのまま、同じ戦闘を新しいシードで
               rerollSeed();
-              this.scene.start('Battle', { stage: data.stage });
+              this.scene.start('Battle', { progress: data.progress });
             },
           },
           { size: 18, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 },

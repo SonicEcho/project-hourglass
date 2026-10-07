@@ -1,6 +1,21 @@
-import type { ArmoryState, BattleState, CharacterDef, GrowthState, LoadResult, NaviData, NaviState, RunSnapshot, SaveContext } from '../core';
-import { applyGrowth, applyNavi, applyWeapons, createArmory, createGrowth, createNavi, naviDataWithWeapons, parseSave, serializeSave } from '../core';
-import { CAMPAIGN, GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
+import type { ArmoryState, BattleState, CharacterDef, GrowthState, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import {
+  allBattles,
+  applyGrowth,
+  applyNavi,
+  applyWeapons,
+  battleNumber,
+  createArmory,
+  createGrowth,
+  createNavi,
+  naviDataWithWeapons,
+  parseSave,
+  placeOf,
+  serializeSave,
+  startProgress,
+} from '../core';
+import type { CampaignBattle } from '../data';
+import { GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 
@@ -14,20 +29,20 @@ export const run: {
   active: boolean;
   seed: number;
   fixed: boolean;
-  stage: number;
+  /** 次に戦う場所（章・区画・何戦目）と何日目か（段階13） */
+  progress: Progress;
   growth: GrowthState;
   /** ムーブメントのギア（持ち物と、どの盤のどこにはめたか） */
   navi: NaviState;
-  /** まだ受け取っていない勝利の報酬（ギアの候補）。戦闘の番号（0から） */
-  pendingReward: number | null;
+  /** まだ受け取っていない勝利の報酬（ギアの候補）。勝った戦闘の名前（id） */
+  pendingReward: string | null;
   /** 武器と記憶の欠片 */
   armory: ArmoryState;
 } = {
   active: false,
   seed: 0,
   fixed: false,
-  /** 次に戦う戦闘の番号（0から） */
-  stage: 0,
+  progress: startProgress(STORY),
   growth: createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS),
   navi: createNavi(START_NAVI_PARTS),
   pendingReward: null,
@@ -61,7 +76,7 @@ export function rerollSeed(): void {
 export function startNewRun(): void {
   run.active = true;
   rerollSeed();
-  run.stage = 0;
+  run.progress = startProgress(STORY);
   run.growth = createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS);
   run.navi = createNavi(START_NAVI_PARTS);
   run.pendingReward = null;
@@ -92,12 +107,12 @@ export function saveContext(): SaveContext {
     startPoints: START_MEMORY_POINTS,
     naviData: NAVI_DATA,
     weaponData: WEAPON_DATA,
-    stageCount: CAMPAIGN.length,
+    story: STORY,
   };
 }
 
 function snapshot(): RunSnapshot {
-  return { seed: run.seed, fixed: run.fixed, stage: run.stage, growth: run.growth, navi: run.navi, pendingReward: run.pendingReward, armory: run.armory };
+  return { seed: run.seed, fixed: run.fixed, progress: run.progress, growth: run.growth, navi: run.navi, pendingReward: run.pendingReward, armory: run.armory };
 }
 
 /** 今の周回の状態を保存する。周回の外（タイトル、クリア後）では何もしない。中身が前と同じなら書き込まない */
@@ -142,7 +157,7 @@ export function continueRun(): boolean {
   const s = r.save.run;
   run.seed = urlSeed ?? s.seed;
   run.fixed = urlSeed !== null || s.fixed;
-  run.stage = s.stage;
+  run.progress = s.progress;
   run.growth = s.growth;
   run.navi = s.navi;
   run.pendingReward = s.pendingReward;
@@ -159,9 +174,21 @@ export function finishRun(): void {
   deleteSave();
 }
 
-/** 戦闘ごとのシード。戦闘ごとに別の並びになるよう、番号の分ずらす */
-export function battleSeed(stage: number): number {
-  return (run.seed + stage) >>> 0;
+/** 戦闘ごとのシード。戦闘ごとに別の並びになるよう、最初から数えて何戦目かの分ずらす */
+export function battleSeed(p: Progress): number {
+  return (run.seed + battleNumber(STORY, p)) >>> 0;
+}
+
+/** その場所の戦闘（なければ例外） */
+export function battleAt(p: Progress): CampaignBattle {
+  const place = placeOf(STORY, p);
+  if (!place) throw new Error(`unknown place ${JSON.stringify(p)}`);
+  return place.battle;
+}
+
+/** 「戦闘1の前（1/5）」のような表示に使う、何戦目か（1から）と全部の戦闘の数 */
+export function battleCount(p: Progress): { n: number; total: number } {
+  return { n: battleNumber(STORY, p) + 1, total: allBattles(STORY).length };
 }
 
 /** 今のムーブメントのデータ（武器の進化で広がった盤） */
@@ -177,7 +204,7 @@ export function currentParty(): CharacterDef[] {
 
 /** デバッグメニューから今の戦闘を操作するための窓口 */
 export interface ActiveBattle {
-  stage: number;
+  progress: Progress;
   getState(): BattleState;
   /** 演出中なら false を返して何もしない */
   replaceState(s: BattleState): boolean;
