@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, TargetRef, TargetScope } from '../core';
+import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
 import {
+  advance,
   applyExtra,
   battleReward,
   batonTargets,
@@ -33,13 +34,14 @@ import {
   weaponName,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BASIC_ATTACK, CAMPAIGN, createCampaignSetup, GUARD, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, WEAPON_DATA } from '../data';
+import type { CampaignBattle } from '../data';
+import { BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, STORY, WEAPON_DATA } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
-import { battleSeed, currentNaviData, currentParty, finishRun, run, saveRun, setActiveBattle } from './run';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, run, saveRun, setActiveBattle } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -59,8 +61,8 @@ interface Selection {
 }
 
 export interface BattleSceneData {
-  /** 周回の何戦目か（0から） */
-  stage?: number;
+  /** 戦う場所（なければ周回の次の場所） */
+  progress?: Progress;
 }
 
 /** 演出の待ち時間（ミリ秒） */
@@ -68,7 +70,9 @@ const FX = { banner: 550, popup: 260, settle: 380, round: 600 };
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState;
-  private stage = 0;
+  /** 戦っている場所と、その戦闘 */
+  private progress!: Progress;
+  private battle!: CampaignBattle;
   /** 計画中に行動を選んでいる仲間 */
   private planner: string | null = null;
   private selection: Selection | null = null;
@@ -91,11 +95,12 @@ export class BattleScene extends Phaser.Scene {
 
   create(data: BattleSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    this.stage = Math.min(data.stage ?? run.stage, CAMPAIGN.length - 1);
-    const seed = battleSeed(this.stage);
-    console.log(`[battle] stage${this.stage + 1} seed=${seed}`);
+    this.progress = data.progress ?? run.progress;
+    this.battle = battleAt(this.progress);
+    const seed = battleSeed(this.progress);
+    console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
     // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
-    this.state = createBattle(createCampaignSetup(this.stage, seed, currentParty()));
+    this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty()));
     logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
@@ -108,7 +113,7 @@ export class BattleScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0).setDepth(100);
     setActiveBattle({
-      stage: this.stage,
+      progress: this.progress,
       getState: () => this.state,
       replaceState: (s) => this.replaceState(s),
     });
@@ -969,32 +974,35 @@ export class BattleScene extends Phaser.Scene {
     }).setOrigin(0.5);
     c.add([shade, title]);
     const result = getBattleResult(this.state);
-    if (win && !CAMPAIGN[this.stage].boss) {
-      // 星の砂を受け取って星図へ
-      const gained = battleReward(CAMPAIGN[this.stage].reward, result.brokenParts.length, PART_BREAK_POINTS);
+    const def = this.battle;
+    // 勝った後に進む場所。最後まで終わった時（今はボス）は結果画面へ。次の区画・章へ進む時の画面は、今は星図に戻るだけ（段階13）
+    const next = advance(STORY, this.progress);
+    if (win && next.event !== 'storyClear') {
+      // 星の砂を受け取って星図へ（ボスは報酬なし）
+      const gained = def.boss ? 0 : battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
       run.growth = { ...run.growth, points: run.growth.points + gained };
-      run.stage = this.stage + 1;
+      run.progress = next.progress;
       // ギアの報酬は星図の画面で選ぶ
-      const hasReward = !!NAVI_REWARD_CANDIDATES[this.stage];
-      if (hasReward) run.pendingReward = this.stage;
+      const hasReward = !def.boss && !!def.naviReward;
+      if (hasReward) run.pendingReward = def.id;
       // 武器：素材とアイテムを受け取り、経験値とギアの傾向を貯める
       const naviData = currentNaviData();
       const levelsBefore = Object.fromEntries(PARTY.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
       run.armory = recordVictory(run.armory, {
         actions: result.actionCounts,
         colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
-        items: [...result.drops, ...(CAMPAIGN[this.stage].item ? [CAMPAIGN[this.stage].item!] : [])],
+        items: [...result.drops, ...(def.item ? [def.item] : [])],
       });
       const levelUps = PARTY.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
         (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
       );
       // 「星図へ」を押す前に閉じても消えないように
       saveRun();
-      const reward = CAMPAIGN[this.stage].item;
+      const reward = def.item;
       const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${reward ? `　アイテム：${summarizeItems([reward])}` : ''}`;
-      const next = CAMPAIGN[run.stage];
+      const nextBattle = battleAt(run.progress);
       c.add(
-        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nギアを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${next.name}`, {
+        addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nギアを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${nextBattle.name}`, {
           size: 15,
           align: 'center',
           color: COLORS.subText,
@@ -1008,7 +1016,7 @@ export class BattleScene extends Phaser.Scene {
         strokeWidth: 2,
       });
     } else {
-      const data: ResultSceneData = { outcome: result.outcome === 'victory' ? 'victory' : 'defeat', stage: this.stage, brokenParts: result.brokenParts, seed: this.state.seed };
+      const data: ResultSceneData = { outcome: result.outcome === 'victory' ? 'victory' : 'defeat', progress: this.progress, brokenParts: result.brokenParts, seed: this.state.seed };
       // ボスに勝ったら周回はおしまい。セーブを消す（負けた時は、この戦闘の前のセーブが残る）
       if (data.outcome === 'victory') finishRun();
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 240, 60, '結果へ', { onTap: () => this.scene.start('Result', data) }, { size: 18, bold: true });

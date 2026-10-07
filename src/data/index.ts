@@ -10,3 +10,4 @@ export * from './growthMap';
 export * from './campaign';
 export * from './navi';
 export * from './weapons';
+export * from './story';

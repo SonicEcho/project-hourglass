@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { canEvolveAny, claimRewardParts, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
+import { canEvolveAny, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CAMPAIGN, GROWTH_MAP, NAVI_REWARD_CANDIDATES, NAVI_REWARD_PICKS, PARTY, SKILLS, WEAPON_DATA } from '../data';
+import { GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -10,7 +10,7 @@ import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, currentParty, run, saveRun } from './run';
+import { battleAt, currentNaviData, currentParty, run, saveRun } from './run';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -112,7 +112,7 @@ export class GrowthScene extends Phaser.Scene {
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
 
     // 上：見出しと星の砂
-    const next = CAMPAIGN[run.stage];
+    const next = battleAt(run.progress);
     this.root.add(addText(this, SIDE_PADDING, 8, '星図', { size: 17, bold: true }));
     this.root.add(
       addText(this, SIDE_PADDING, 32, `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
@@ -200,7 +200,7 @@ export class GrowthScene extends Phaser.Scene {
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
       next ? `${next.name}へ` : '結果へ',
-      { onTap: () => this.scene.start('Battle', { stage: run.stage }) },
+      { onTap: () => this.scene.start('Battle', { progress: run.progress }) },
       { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
   }
@@ -321,9 +321,9 @@ export class GrowthScene extends Phaser.Scene {
   /** 勝利の報酬：ギアの候補から決まった数を選ぶ（選ぶまで閉じない） */
   private showReward(): void {
     this.closeOverlay();
-    const stage = run.pendingReward;
-    if (stage === null) return;
-    const candidates = NAVI_REWARD_CANDIDATES[stage] ?? [];
+    const battleId = run.pendingReward;
+    if (battleId === null) return;
+    const candidates = findBattle(STORY, battleId)?.naviReward ?? [];
     const picks = Math.min(NAVI_REWARD_PICKS, candidates.length);
     const c = this.add.container(0, 0).setDepth(200);
     c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75).setOrigin(0).setInteractive());
