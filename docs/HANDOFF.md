@@ -1,6 +1,6 @@
 # 引き継ぎメモ（これまでの作業のまとめ）
 
-最終更新：2026-10-07（本格開発の M0 に入り、段階11（セーブ）・12（自動対戦の測定）・13（章・日・区画を持てる周回）を実装し、PR #17〜#19 で main にマージ済み、どれも開発者が確認済み。段階14（設計書の分割）は未マージ。段階10までは main にマージ済みで、スマホで確認済み。物語は `docs/STORY.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`）
+最終更新：2026-10-07（本格開発の M0 に入り、段階11（セーブ）・12（自動対戦の測定）・13（章・日・区画を持てる周回）を実装し、PR #17〜#19 で main にマージ済み、どれも開発者が確認済み。段階14（設計書の分割）は PR #20 でマージ済み。段階10までは main にマージ済みで、スマホで確認済み。物語は `docs/STORY.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`）
 
 新しいセッションでは、まずこのファイルを読む。今の仕組みは `docs/design/`（一覧は `docs/design/README.md`）、今の作業の一覧は `docs/milestones/M0.md`、背景は `docs/CONCEPT.md`。`docs/SPEC.md` は試作（段階1〜14）の記録（段階14から書き足さない）。
 
@@ -37,7 +37,7 @@
 | 11（M0） | セーブと中断・再開（版の番号と移行、今のデータに合わせて整える読み込み、保存の窓口を1か所に） | #17 |
 | 12（M0） | 自動対戦の測定をスクリプトに（`src/sim/`、`npm run measure`、Actions の「Measure」） | #18 |
 | 13（M0） | 章・日・区画を持てる周回の状態（`src/core/progress.ts`、`src/data/story.ts`、セーブの版2と移行） | #19 |
-| 14（M0） | 設計書の分割（`docs/design/`、`docs/milestones/M0.md`。`docs/SPEC.md` は試作の記録に） | 未マージ |
+| 14（M0） | 設計書の分割（`docs/design/`、`docs/milestones/M0.md`。`docs/SPEC.md` は試作の記録に） | #20 |
 
 ## いまのルールの要点
 
