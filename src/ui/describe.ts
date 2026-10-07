@@ -1,5 +1,5 @@
 import type { ActionDef, Effect, TargetScope } from '../core';
-import { ELEMENT_LABEL } from './theme';
+import { ELEMENT_LABEL } from './labels';
 
 const SCOPE_LABEL: Record<TargetScope, string> = {
   enemy: '敵単体',
