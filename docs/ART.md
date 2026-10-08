@@ -13,7 +13,7 @@ M0 の「絵と音の方向性」の決まり（2026-10-08、開発者と相談�
 | 背景の枚数を減らす工夫 | 同じ背景を、夕暮れ・夜・砂嵐のノイズなど、ゲームの中の色の加工で使い回す |
 | 立ち絵 | 1人につき基本の1枚を決め、そこから表情だけ作り変える。表情は1人6種類くらい |
 | 山場の1枚絵 | 山場だけに絞る（全体で20〜30枚くらい） |
-| AI の画像サービス | **無料枠を使い倒す**。キャラ（立ち絵・表情・1枚絵・敵）は Gemini系、背景とマップは OpenAI系（ChatGPT）。量産で無料枠が足りない月だけ有料版を使う（キャラは NovelAI が第一候補）。有料版は、絵を見て「この方向で行ける」と思えてから決める |
+| AI の画像サービス | **無料枠を使い倒す**。キャラの基本の1枚は ChatGPT、表情違いは Gemini（基本の1枚を見本に渡して顔だけ変える）、背景とマップは ChatGPT（2026-10-08、開発者が作り比べて決めた）。量産で無料枠が足りない月だけ有料版を使う（キャラは NovelAI が第一候補）。有料版は、絵を見て「この方向で行ける」と思えてから決める |
 | 使わないサービス | Bing Image Creator（以前の規約が「個人の非商用に限る」）、Midjourney（作った画像が公開される設定が基本で、発売前の物語の場面が見えてしまう） |
 
 ## 2. 色の決まり（たたき台）
@@ -128,6 +128,7 @@ ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲ
 | 4 | 背景：時計屋の店内（夕暮れ） | ChatGPT | なし | 未 |
 | 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 未 |
 | 6 | 子どものころの3人の基本の1枚（7歳。1人ずつ） | ChatGPT | 高校生の3人の絵 | 未 |
+| 7 | 地図：1-1「金魚の名前」の縁日（見下ろし。段階18b の仮の絵を作り直す） | ChatGPT | 段階18b の仮の地図の絵（配置の見本。あれば） | 未 |
 | ― | 表情違い（あかり・ハルトの足した5つずつ、りくなど） | Gemini | 基本の1枚 | 未 |
 
 **立ち絵の共通の決まり**（全員同じ構図にする。段階18a で、構図が違うと背の高さがちぐはぐに見えたため）
@@ -188,6 +189,32 @@ Expression: <下の表の英語>
 | 7 | 悲しい | sad and quiet, eyes looking down, mouth closed, brows slightly lowered |
 
 （1〜5 は M1 の台本で使う。6・7 は後の章でも使える）
+
+**7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
+
+探索の地図は、絵の上に見えないマス目（1マス32、24×43マス）を重ねて、歩ける場所を文字の地図で決める（段階18b）。そのため、次のことを守ってもらう。
+
+- 縦長（9:16）。真上に近い、少しだけ斜めの見下ろし。遠近で奥が小さくならない（マス目がずれるため）
+- 歩ける所（参道・広場・石畳）と、歩けない所（屋台・木・灯籠・長椅子・柱）の境目がはっきり分かる
+- 道は、仲間の小さな絵が通れる太さ（絵の横幅の8分の1くらい以上）
+- 人は描かない（写しの人々や仲間は、ゲームの側で重ねる）。看板・のぼり・提灯に文字を入れない
+- ゲームで使う場所：下の真ん中に入口の鳥居（出発点）、まっすぐ上へ参道、真ん中あたりに広場と大きな提灯（チェックポイント）、参道の左に金魚すくいの屋台（宝箱の場所）、右にラムネの屋台、広場から右へ抜ける石畳の小道、いちばん上に小さな社と、その前の開けた場所（区画の奥のボス）
+
+```
+Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters.
+Scene: a small Japanese shrine festival (ennichi) at summer dusk, about ten years ago, in a neighboring town's shrine.
+Layout from bottom to top:
+- Bottom center: a red torii gate at the entrance, with a short stone path leading in.
+- A wide stone-paved approach path (sando) running straight up the middle of the image.
+- Both sides of the path lined with festival stalls with striped cloth awnings: on the left side a goldfish-scooping stall with a shallow blue water tank full of small red goldfish; on the right side a ramune soda stall with a tub of ice and glass bottles; other stalls such as cotton candy, masks, shaved ice.
+- Around the middle: an open round plaza with one large paper lantern on a wooden stand at its center and a few wooden benches at the edges.
+- From the right edge of the plaza, a narrow stone path branches off to the right and leads out of the image.
+- Top: a small wooden shrine building, with an open sandy space in front of it.
+- Trees, stone lanterns and low fences around the outer edges.
+Walkable areas (paths, plaza, sandy space) must be clearly distinguishable from non-walkable objects (stalls, trees, stone lanterns, benches, pillars). Paths are wide, at least one eighth of the image width.
+Lighting: warm orange paper lanterns strung above the path, indigo and amber dusk sky tones reflected on the ground.
+Absolutely no letters or text anywhere: signs, banners, lanterns and awnings are blank or have simple patterns only.
+```
 
 **3. 背景：夕暮れの神社の参道**（共通部分の後に付ける）
 
