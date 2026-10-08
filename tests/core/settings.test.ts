@@ -33,7 +33,7 @@ describe('設定（段階19）', () => {
     expect(parseSettings(null).typeSound).toBe(true);
   });
 
-  it('音の出口は wireless 以外ならスピーカー', () => {
+  it('出力先は wireless 以外ならスピーカー', () => {
     expect(parseSettings('{"audioOut": "wireless"}').audioOut).toBe('wireless');
     expect(parseSettings('{"audioOut": "headphone"}').audioOut).toBe('speaker');
     expect(parseSettings(null).audioOut).toBe('speaker');

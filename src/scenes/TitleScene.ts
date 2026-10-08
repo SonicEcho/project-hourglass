@@ -124,15 +124,15 @@ export class TitleScene extends Phaser.Scene {
           draw();
         },
       }, { size: 16 });
-      // 音の出口（会話の文字の音のタイミングを合わせる。段階22）
-      rows.add(addText(this, cx - 120, 480, '音の出口', { size: 15 }).setOrigin(0, 0.5));
-      addButton(this, rows, cx + 70, 480, 120, 48, st.audioOut === 'wireless' ? 'イヤホン(BT)' : 'スピーカー', {
+      // 出力先（会話の文字の音のタイミングを合わせる。段階22）
+      rows.add(addText(this, cx - 120, 480, '出力先', { size: 15 }).setOrigin(0, 0.5));
+      addButton(this, rows, cx + 70, 480, 120, 48, st.audioOut === 'wireless' ? 'Bluetooth' : 'スピーカー', {
         onTap: () => {
           setSettings({ ...getSettings(), audioOut: getSettings().audioOut === 'wireless' ? 'speaker' : 'wireless' });
           draw();
         },
       }, { size: 14 });
-      rows.add(addText(this, cx, 520, 'ワイヤレスイヤホンの時は、会話の文字の音を早めに鳴らす', { size: 11, color: COLORS.subText, align: 'center', wrap: 270 }).setOrigin(0.5));
+      rows.add(addText(this, cx, 520, 'Bluetooth（無線）のイヤホンの時は、会話の文字の音を早めに鳴らす', { size: 11, color: COLORS.subText, align: 'center', wrap: 270 }).setOrigin(0.5));
     };
     const rows = this.add.container(0, 0);
     panel.add(rows);
