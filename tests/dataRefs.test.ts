@@ -146,3 +146,27 @@ describe('会話の試作の台本（段階18a）', () => {
     }
   });
 });
+
+describe('探索の試作の地図（段階16・18b）', () => {
+  it('どの地図も、出発点から宝箱・チェックポイント・ボスの印・敵の道へ歩いて行ける', async () => {
+    const { PROTO_MAPS, ASSETS } = await import('../src/data');
+    const { findPath, isWalkable, parseGrid } = await import('../src/core');
+    for (const [key, def] of Object.entries(PROTO_MAPS)) {
+      const map = parseGrid(def.layout);
+      expect(new Set(def.layout.map((l) => l.length)).size, key).toBe(1);
+      const cells = def.layout.flatMap((line, r) => [...line].map((ch, c) => ({ ch, cell: [c, r] as [number, number] })));
+      const start = cells.filter((x) => x.ch === 'S');
+      expect(start.length, key).toBe(1);
+      for (const x of cells.filter((x) => 'CPB'.includes(x.ch))) {
+        expect(findPath(map, start[0].cell, x.cell), `${key} ${x.ch} ${x.cell}`).not.toBeNull();
+      }
+      for (const points of def.patrols) {
+        for (const p of points) {
+          expect(isWalkable(map, p), `${key} ${p}`).toBe(true);
+          expect(findPath(map, start[0].cell, p), `${key} ${p}`).not.toBeNull();
+        }
+      }
+      if ('image' in def) expect(ASSETS.some((a) => a.id === def.image), key).toBe(true);
+    }
+  });
+});

@@ -10,8 +10,8 @@ export interface DebugNavigator {
   restartRun(): void;
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
-  /** 試作の画面を開く（段階16。エンジンを決めるための探索・会話の試作） */
-  openPrototype(key: 'ProtoExplore' | 'ProtoDialogue'): void;
+  /** 試作の画面を開く（段階16。エンジンを決めるための探索・会話の試作。段階18b：data で地図を選ぶ） */
+  openPrototype(key: 'ProtoExplore' | 'ProtoDialogue', data?: object): void;
 }
 
 const Z = 9000;
@@ -132,6 +132,12 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('試作：探索の画面を開く', () => {
         close();
         nav.openPrototype('ProtoExplore');
+      }),
+    );
+    panel.append(
+      button('試作：縁日のマップを歩く（絵の見本）', () => {
+        close();
+        nav.openPrototype('ProtoExplore', { map: 'festival' });
       }),
     );
     panel.append(

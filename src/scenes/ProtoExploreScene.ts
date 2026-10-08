@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import type { GridCell, GridMap } from '../core';
 import { findPath, nearestWalkable, parseGrid } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { PROTO_AREA_LAYOUT, PROTO_ENEMY_STEP_MS, PROTO_PATROLS, PROTO_STEP_MS, PROTO_TILE } from '../data';
+import { hasImage } from '../assets/loader';
+import type { ProtoMapDef, ProtoMapKey } from '../data';
+import { PROTO_ENEMY_STEP_MS, PROTO_MAPS, PROTO_STEP_MS, PROTO_TILE } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 
@@ -20,9 +22,12 @@ interface Enemy {
 /**
  * 探索の試作（段階16）。エンジンを決めるために、区画の移動を小さく試す。本編では使わない。
  * 画面をタップすると、その場所まで最短の道を歩く。宝箱・チェックポイント・敵の印は、触れると文字を出すだけ
+ * 段階18b：縁日の見下ろしの絵の上を歩く地図も選べる（見えないマス目は「マス目」のボタンで見える）
  */
 export class ProtoExploreScene extends Phaser.Scene {
   private map!: GridMap;
+  /** 今の地図（図形の地図か、縁日の絵の地図か） */
+  private def: ProtoMapDef = PROTO_MAPS.shapes;
   private player!: Phaser.GameObjects.Container;
   private playerCell: GridCell = [0, 0];
   /** これから歩くマス */
@@ -41,8 +46,13 @@ export class ProtoExploreScene extends Phaser.Scene {
     super('ProtoExplore');
   }
 
+  init(data: { map?: ProtoMapKey }): void {
+    this.def = PROTO_MAPS[data.map ?? 'shapes'];
+  }
+
   create(): void {
-    this.map = parseGrid(PROTO_AREA_LAYOUT);
+    const layout = this.def.layout;
+    this.map = parseGrid(layout);
     this.route = [];
     this.walking = false;
     this.nextCell = null;
@@ -51,19 +61,33 @@ export class ProtoExploreScene extends Phaser.Scene {
     const world = this.add.container(0, 0);
     const ui = this.add.container(0, 0);
 
-    // 地図（壁と通路を1枚の図形に描く）
-    const g = this.add.graphics();
-    g.fillStyle(0x0b1118, 1).fillRect(0, 0, this.map.cols * T, this.map.rows * T);
-    PROTO_AREA_LAYOUT.forEach((line, r) => {
+    // 地図：絵があれば絵を敷く（歩ける場所は見えないマス目）。なければ壁と通路を1枚の図形に描く
+    if (this.def.image && hasImage(this, this.def.image)) {
+      world.add(this.add.image(0, 0, this.def.image).setOrigin(0).setDisplaySize(this.map.cols * T, this.map.rows * T));
+    } else {
+      const g = this.add.graphics();
+      g.fillStyle(0x0b1118, 1).fillRect(0, 0, this.map.cols * T, this.map.rows * T);
+      layout.forEach((line, r) => {
+        [...line].forEach((ch, c) => {
+          if (ch === '#') return;
+          g.fillStyle((c + r) % 2 === 0 ? 0x22303f : 0x1f2c3a, 1).fillRect(c * T, r * T, T, T);
+        });
+      });
+      world.add(g);
+    }
+
+    // 見えないマス目（「マス目」のボタンで、通れないマスを赤く見せる）
+    const gridView = this.add.graphics().setVisible(false);
+    layout.forEach((line, r) => {
       [...line].forEach((ch, c) => {
-        if (ch === '#') return;
-        g.fillStyle((c + r) % 2 === 0 ? 0x22303f : 0x1f2c3a, 1).fillRect(c * T, r * T, T, T);
+        gridView.lineStyle(1, 0xffffff, 0.15).strokeRect(c * T, r * T, T, T);
+        if (ch === '#') gridView.fillStyle(0xff3030, 0.3).fillRect(c * T, r * T, T, T);
       });
     });
-    world.add(g);
+    world.add(gridView);
 
     // 宝箱・チェックポイント・ボスの印
-    PROTO_AREA_LAYOUT.forEach((line, r) => {
+    layout.forEach((line, r) => {
       [...line].forEach((ch, c) => {
         const x = c * T + T / 2;
         const y = r * T + T / 2;
@@ -87,7 +111,7 @@ export class ProtoExploreScene extends Phaser.Scene {
     world.add(this.marker);
 
     // 敵の印（決まった道を行き来する）
-    for (const points of PROTO_PATROLS) {
+    for (const points of this.def.patrols) {
       const route: GridCell[] = [points[0]];
       for (let i = 0; i < points.length; i++) {
         const from = points[i];
@@ -103,10 +127,17 @@ export class ProtoExploreScene extends Phaser.Scene {
       this.stepEnemy(enemy);
     }
 
-    // 仲間（ハルト）
+    // 仲間（ハルト）：立ち絵があれば、小さくした顔を足元の影の上に置く（歩くアニメーションは作らない。docs/ART.md）
     this.player = this.add.container(this.playerCell[0] * T + T / 2, this.playerCell[1] * T + T / 2);
-    this.player.add(this.add.circle(0, 0, T * 0.42, COLORS.ally).setStrokeStyle(2, 0xffffff));
-    this.player.add(addText(this, 0, 0, 'ハ', { size: 14, bold: true }).setOrigin(0.5));
+    if (hasImage(this, 'portrait.hero.normal')) {
+      this.player.add(this.add.ellipse(0, T * 0.35, T * 0.8, T * 0.3, 0x000000, 0.35));
+      const face = this.add.image(0, T * 0.4, 'portrait.hero.normal').setOrigin(0.5, 1);
+      face.setScale((T * 1.4) / face.height);
+      this.player.add(face);
+    } else {
+      this.player.add(this.add.circle(0, 0, T * 0.42, COLORS.ally).setStrokeStyle(2, 0xffffff));
+      this.player.add(addText(this, 0, 0, 'ハ', { size: 14, bold: true }).setOrigin(0.5));
+    }
     world.add(this.player);
 
     // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない
@@ -118,10 +149,11 @@ export class ProtoExploreScene extends Phaser.Scene {
 
     // 画面の文字とボタン
     ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 64, 0x000000, 0.55).setOrigin(0));
-    ui.add(addText(this, GAME_WIDTH / 2, 20, '探索の試作', { size: 15, bold: true }).setOrigin(0.5, 0));
+    ui.add(addText(this, GAME_WIDTH / 2, 20, this.def.title, { size: 15, bold: true }).setOrigin(0.5, 0));
     this.fpsText = addText(this, GAME_WIDTH - 10, 22, 'FPS --', { size: 13, color: COLORS.accentText }).setOrigin(1, 0);
     ui.add(this.fpsText);
     addButton(this, ui, 46, 32, 76, 44, '戻る', { onTap: () => this.scene.start('Title') }, { size: 14 });
+    addButton(this, ui, 46, 84, 76, 36, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
     this.message = addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 120, 'タップした場所まで歩きます', {
       size: 15,
       align: 'center',
@@ -193,7 +225,7 @@ export class ProtoExploreScene extends Phaser.Scene {
 
   /** マスに着いた時の出来事 */
   private arrive([c, r]: GridCell): void {
-    const ch = PROTO_AREA_LAYOUT[r][c];
+    const ch = this.def.layout[r][c];
     const chest = this.chests.get(`${c},${r}`);
     if (chest && chest.fillColor !== 0x4a3a28) {
       chest.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);

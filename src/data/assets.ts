@@ -171,6 +171,31 @@ export const ASSETS: AssetEntry[] = [
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
   akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  {
+    id: 'map.festival',
+    kind: 'image',
+    title: '縁日の見下ろしの地図（1-1「金魚の名前」）',
+    file: 'assets/maps/festival.webp',
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt:
+        'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
+        'Top-down game map, seen from directly above (90-degree overhead view), vertical 9:16 composition. ' +
+        'A small Japanese shrine summer festival at dusk, early 1990s. A red torii gate at the bottom center, a stone path running straight up the middle to a small shrine at the top. Rows of festival stalls along both sides of the path (goldfish scooping, cotton candy, masks, yakisoba), paper lanterns glowing, a small open plaza in the middle, trees around the edges. No people, no characters.',
+      settings: '768×1376。WebP に変えただけで、ほかの加工はしていない',
+    },
+    author: 'RESTOPIA 開発（Google Gemini で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: '段階18bの試作の仮の地図。開発者の好みのデザインではないので、本番は ChatGPT で作り直す（看板の文字が崩れるので、本番は看板に文字を書かない）',
+  },
   heroPortrait('normal', '通常'),
   heroPortrait('smile', 'やさしい笑顔'),
   heroPortrait('surprised', '驚き'),
