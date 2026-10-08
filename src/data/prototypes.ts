@@ -70,11 +70,17 @@ export const PROTO_PATROLS: [number, number][][] = [
 export const PROTO_ENEMY_STEP_MS = 420;
 
 /** 会話の試作の台本の1つ分 */
+/** あかりの表情（段階18a。立ち絵は台帳の portrait.akari.<表情>） */
+export type AkariFace = 'smile' | 'laugh' | 'worried' | 'pout' | 'dejavu';
+export const AKARI_FACES: AkariFace[] = ['smile', 'laugh', 'worried', 'pout', 'dejavu'];
+
 export interface ProtoLine {
   id: string;
   /** 話す人（キャラの id）。null なら地の文 */
   speaker: 'hero' | 'akari' | null;
   text: string;
+  /** あかりの表情（この行から変わる。書かなければ前の行のまま） */
+  face?: AkariFace;
   /** 次の行（なければ台本の順で次） */
   next?: string;
   /** 選択肢（あれば、選んだ先へ進む） */
@@ -85,10 +91,15 @@ export interface ProtoLine {
 
 /** 会話の試作の台本（仮の文。画面の機能を確かめるため） */
 export const PROTO_SCRIPT: ProtoLine[] = [
-  { id: 'l1', speaker: null, text: '――これは会話の画面の試作です。絵は仮の図形で、台詞も物語の正式なものではありません。' },
-  { id: 'l2', speaker: 'akari', text: '文字は1文字ずつ出るよ。途中でタップすると、全部まとめて出るの。' },
+  { id: 'l1', speaker: null, text: '――これは会話の画面の試作です。あかりの絵は AI で作った仮の絵で、台詞も物語の正式なものではありません。' },
+  { id: 'l2', speaker: 'akari', face: 'smile', text: '文字は1文字ずつ出るよ。途中でタップすると、全部まとめて出るの。' },
   { id: 'l3', speaker: 'hero', text: 'もう一度タップすると、次に進む。話している方の立ち絵が明るくなる。' },
-  { id: 'l4', speaker: 'akari', text: '長い文はこんなふうに折り返して表示されるよ。スマホの縦持ちで、3行くらいまでなら読みやすいかな？　読みにくかったら教えてね。' },
+  {
+    id: 'l4',
+    speaker: 'akari',
+    face: 'worried',
+    text: '長い文はこんなふうに折り返して表示されるよ。スマホの縦持ちで、3行くらいまでなら読みやすいかな？　読みにくかったら教えてね。',
+  },
   {
     id: 'l5',
     speaker: 'hero',
@@ -98,8 +109,11 @@ export const PROTO_SCRIPT: ProtoLine[] = [
       { label: '左の道へ行く', next: 'f1' },
     ],
   },
-  { id: 'r1', speaker: 'akari', text: '右だね。選んだ方によって、この後の会話が変わるよ。', next: 'm1' },
-  { id: 'f1', speaker: 'akari', text: '左だね。こっちの文は、右を選んだ時には出てこないの。', next: 'm1' },
+  { id: 'r1', speaker: 'akari', face: 'smile', text: '右だね。選んだ方によって、この後の会話が変わるよ。', next: 'm1' },
+  { id: 'f1', speaker: 'akari', face: 'pout', text: 'えー、左？　……まあいいけど。こっちの文は、右を選んだ時には出てこないの。', next: 'm1' },
   { id: 'm1', speaker: 'hero', text: '右上の「ログ」で、これまでの会話を読み返せる。「早送り」で、選択肢か終わりまで一気に進める。' },
-  { id: 'm2', speaker: null, text: '――会話の試作はここまでです。タップするとタイトルへ戻ります。', end: true },
+  { id: 'm2', speaker: 'akari', face: 'dejavu', text: '……あれ？　前にも、こんなふうに話したことがある気がする。' },
+  { id: 'm3', speaker: 'akari', face: 'smile', text: 'ううん、なんでもない。表情は、笑顔、心配、むっ、さっきの顔。それから……' },
+  { id: 'm3b', speaker: 'akari', face: 'laugh', text: 'あははっ、大笑い！　全部で5つだよ。' },
+  { id: 'm4', speaker: null, text: '――会話の試作はここまでです。タップするとタイトルへ戻ります。', end: true },
 ];

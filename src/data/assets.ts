@@ -43,6 +43,46 @@ export interface AssetEntry {
   notes?: string;
 }
 
+
+/** あかりの基本の1枚（全身）を作った ChatGPT の指示文（docs/ART.md）。表情違いはこの絵を見本にして Gemini で作った */
+const AKARI_BASE_PROMPT =
+  'Character design sheet of an original anime-style heroine for a mobile turn-based JRPG, full body front view, standing in a natural friendly pose with hands holding a staff in front of her, plain off-white background, clean lineart with soft cel shading, about 6 heads tall. ' +
+  "Character: Akari, a 17-year-old Japanese high school girl, the protagonist's childhood friend. Warm, kind, cheerful face with a hint of wistfulness, soft gentle smile, the kind of girl who is always nearby. " +
+  'Hair: shoulder-length soft chestnut-brown hair with light inward curls at the ends, side-swept bangs, a small half-up section tied at the back with a thin red ribbon. ' +
+  'Hair accessory: one small red goldfish-shaped hair clip on the left side, slightly old and worn, like something she has had since childhood. ' +
+  'Eyes: warm brown eyes, round and gentle, natural, not glowing. ' +
+  'Outfit: same school uniform style as the protagonist: white dress shirt, dusk-red neck ribbon, a soft cream-colored knit cardigan worn over the shirt with sleeves slightly long covering part of her hands, navy pleated school skirt above the knee, navy knee socks, brown loafers. ' +
+  'Weapon: a slender wooden prayer staff, about her height, with a small glowing glass lantern at the top shaped like a red goldfish (like a Japanese goldfish paper lantern), a short red-and-white tassel and a tiny bell hanging from it. The lantern emits a soft warm light with a few faint pale-blue frost sparkles around it (she uses healing and ice magic). ' +
+  'Color palette: chestnut hair #8A5A3C, goldfish red #D9483B, cream cardigan #F1E6D2, navy skirt #2B3552, warm lantern light #FFC979, frost blue #BFE3F2, skin #F6DCC8. ' +
+  'Additional views on the same sheet: back view, 4 facial expressions (bright smile, gentle worried look, lost-in-thought deja vu look gazing into the distance, determined while casting), close-up of the goldfish lantern staff.';
+
+/** あかりの胸から上の立ち絵（表情違い）。段階18a の仮の素材 */
+function akariPortrait(face: string, title: string, expression: string, base: string): AssetEntry {
+  return {
+    id: `portrait.akari.${face}`,
+    kind: 'image',
+    title: `あかりの立ち絵（${title}）`,
+    file: `assets/portraits/akari_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt:
+        `Use this image as the base. Keep everything exactly the same: framing, pose, hands hidden at the sides, hair, red goldfish hair clip, ribbon, cardigan, and art style. Change only the facial expression. No props, no text, no magic effects. Expression: ${expression}`,
+      settings: `見本の絵：${base}。白い背景は scripts/cutout.py で抜いた。元の全身の絵は ChatGPT（無料）で作った。その指示文：${AKARI_BASE_PROMPT}`,
+    },
+    author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: '絵柄を確かめるための仮の素材（docs/ART.md）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
+  };
+}
+
 export const ASSETS: AssetEntry[] = [
   {
     id: 'title.hourglass',
@@ -91,4 +131,19 @@ export const ASSETS: AssetEntry[] = [
     termsCopy: 'docs/licenses/eruda.txt',
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
+  akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
+  akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  akariPortrait(
+    'pout',
+    'むっ',
+    'determined and serious, eyes focused forward, lips pressed together',
+    'Gemini で作った笑顔の立ち絵',
+  ),
+  akariPortrait(
+    'dejavu',
+    'デジャヴ',
+    'lost in thought, eyes looking slightly off to the side into the distance, a faint wistful feeling of deja vu',
+    'Gemini で作った笑顔の立ち絵',
+  ),
 ];
