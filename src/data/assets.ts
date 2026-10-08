@@ -413,6 +413,7 @@ export const ASSETS: AssetEntry[] = [
       ['sad', '悲しい', 'sad and quiet, eyes looking down, brows slightly lowered, mouth closed, eyes a little moist'],
       ['serious', '真剣', 'serious and focused, mouth firmly closed, brows set, eyes steady and determined'],
       ['wry', '困り笑い', 'a troubled smile, eyebrows raised in a worried way, a small awkward smile'],
+      ['gentle', '微笑み', 'a gentle, soft smile with the mouth closed, eyes warm and slightly narrowed, calm and kind'],
     ] as const
   ).map(([face, title, expression]) => akariPortrait(face, title, expression, 'Gemini で作ったデジャヴの立ち絵（リボンが赤い物）。843×1264 で出てきた', AKARI_ADDED_HEAD)),
 ];

@@ -124,6 +124,35 @@ export function playBlip(scene: Phaser.Scene, voice: BlipVoice): void {
 }
 
 /**
+ * 時計の秒針の「チッ」という音（段階22 調整12）。音のファイルを使わず、短い雑音を高い音だけ通して作る。
+ * tock は少し低い音（チッ・タッと交互に鳴らす）。gain で大きさを下げられる（店じゅうの時計の、遠くの音など）
+ */
+export function playTick(scene: Phaser.Scene, tock: boolean, gain = 1): void {
+  const st = getSettings();
+  const mgr = scene.sound;
+  if (st.seVolume <= 0 || mgr.locked || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  const ctx = mgr.context;
+  const now = ctx.currentTime;
+  const len = Math.floor(ctx.sampleRate * 0.03);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 6);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const band = ctx.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = (tock ? 2600 : 3400) * (0.97 + Math.random() * 0.06);
+  band.Q.value = 6;
+  const g = ctx.createGain();
+  g.gain.value = 1.6 * gain * st.seVolume;
+  src.connect(band);
+  band.connect(g);
+  g.connect(mgr.destination);
+  src.start(now);
+  src.onended = () => g.disconnect();
+}
+
+/**
  * 音を出すように頼んでから、実際にスピーカーから聞こえるまでの遅れ（ミリ秒）。
  * ワイヤレスイヤホン（Bluetooth）は 0.1〜0.3 秒遅れるので、設定でワイヤレスイヤホンを選んだ時だけ、文字の音をこの分だけ文字より先に鳴らし始める。
  * ブラウザが教えてくれない時は、少しだけ（50ミリ秒）先に鳴らす

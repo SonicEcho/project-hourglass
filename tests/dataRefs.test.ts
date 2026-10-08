@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EnemyDef, NaviPartDef } from '../src/core';
-import { allBattles } from '../src/core';
+import { allBattles, CLOCK_ACTIONS, parseClockTime } from '../src/core';
 import {
   BOSS_PART_REWARDS,
   CARDS,
@@ -194,6 +194,11 @@ describe('M1 の台本（段階22）', () => {
         if (step.name === 'zoom') expect(Number(a) >= 1 && Number(a) <= 1.5, where).toBe(true);
         if (step.name === 'mono') expect(['on', 'off'], where).toContain(a);
         if (step.name === 'noise') expect(Number(a), where).toBeGreaterThan(0);
+        if (step.name === 'clock') {
+          expect(CLOCK_ACTIONS as readonly string[], where).toContain(a);
+          if (a === 'show') expect(parseClockTime(step.args[1] ?? ''), where).not.toBeNull();
+          if (a === 'tick' && step.args[1] !== undefined) expect(step.args[1], where).toBe('many');
+        }
       }
     }
   });

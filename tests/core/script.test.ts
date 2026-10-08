@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkScript, chooseOption, fillText, parseReadLog, parseScript, readKey, runScript, serializeReadLog } from '../../src/core';
+import { checkScript, chooseOption, fillText, parseClockTime, parseReadLog, parseScript, readKey, runScript, serializeReadLog } from '../../src/core';
 import type { ScriptLine } from '../../src/core';
 
 const SAMPLE = `
@@ -148,5 +148,25 @@ describe('読んだ台詞の印（段階22）', () => {
     expect(parseReadLog(null)).toEqual(new Set());
     expect(parseReadLog('{壊れた')).toEqual(new Set());
     expect(parseReadLog('[1, "a:1"]')).toEqual(new Set(['a:1']));
+  });
+});
+
+describe('時計の時刻を読む（段階22 調整12）', () => {
+  it('「時:分」を読む', () => {
+    expect(parseClockTime('4:30')).toEqual({ hour: 4, minute: 30 });
+    expect(parseClockTime('17:12')).toEqual({ hour: 17, minute: 12 });
+  });
+
+  it('読めない時刻は null', () => {
+    expect(parseClockTime('')).toBeNull();
+    expect(parseClockTime('4時30分')).toBeNull();
+    expect(parseClockTime('24:00')).toBeNull();
+    expect(parseClockTime('4:60')).toBeNull();
+  });
+
+  it('@clock は命令として読める', () => {
+    const [scene] = parseScript('# a 場面\n@clock show 5:12\n@clock tick many\n');
+    expect(scene.steps[0]).toMatchObject({ kind: 'command', name: 'clock', args: ['show', '5:12'] });
+    expect(scene.steps[1]).toMatchObject({ kind: 'command', name: 'clock', args: ['tick', 'many'] });
   });
 });
