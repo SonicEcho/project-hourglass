@@ -2,6 +2,14 @@
 // 絵がまだない物は、色と名前で仮に描く（段階15の決まり：素材がなくても止まらない）
 import { BGM, SE } from './sounds';
 
+/** 会話の文字の音の声色（段階22の試し。高さは Hz） */
+export interface BlipVoice {
+  pitch: number;
+  wave: OscillatorType;
+  /** 電話の声：高い音と低い音を削って、こもった音にする */
+  phone?: boolean;
+}
+
 /** 会話に出る人 */
 export interface CastMember {
   /** 立ち絵の台帳の id の頭（portrait.akari なら portrait.akari.smile）。絵がなければ図形で描く */
@@ -14,6 +22,8 @@ export interface CastMember {
   color: number;
   /** 立ち絵の高さ（画面の座標）。構図の違う絵をそろえるため */
   height?: number;
+  /** 文字の音の声色（段階22の試し） */
+  voice: BlipVoice;
 }
 
 const AKARI_FACES = { 笑顔: 'smile', 大笑い: 'laugh', 心配: 'worried', むっ: 'pout', デジャヴ: 'dejavu' };
@@ -22,16 +32,31 @@ const HERO_FACES = { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 決
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
 export const CAST: Record<string, CastMember> = {
-  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300 },
-  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450 },
-  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a },
-  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5 },
-  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a },
-  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a },
-  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0 },
-  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8 },
+  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 210, wave: 'triangle' } },
+  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 470, wave: 'triangle' } },
+  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 260, wave: 'square' } },
+  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 400, wave: 'triangle' } },
+  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 620, wave: 'triangle' } },
+  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 440, wave: 'square' } },
+  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 180, wave: 'sawtooth' } },
+  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 480, wave: 'square' } },
+  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 680, wave: 'square' } },
 };
+
+/** 立ち絵を出さない人（声だけ・電話）の文字の音の声色。ここにない人は VOICE_DEFAULT */
+export const VOICE_ONLY: Record<string, BlipVoice> = {
+  担任: { pitch: 150, wave: 'sawtooth' },
+  施設の子ども: { pitch: 720, wave: 'triangle' },
+  屋台のおじさん: { pitch: 130, wave: 'sawtooth' },
+  金魚すくいのおじさん: { pitch: 130, wave: 'sawtooth' },
+  わたあめ屋: { pitch: 160, wave: 'sawtooth' },
+  浴衣の女の人: { pitch: 420, wave: 'sine' },
+  ひなの: { pitch: 430, wave: 'triangle' },
+  '？？？': { pitch: 560, wave: 'sine' },
+};
+export const VOICE_DEFAULT: BlipVoice = { pitch: 300, wave: 'triangle' };
+/** 文字の音を鳴らす間隔（何文字ごとか）。句読点や記号では鳴らさない */
+export const BLIP_EVERY = 2;
 
 /** 背景。image は台帳の id（なければ上から下への色の帯と名前で仮に描く） */
 export interface Backdrop {

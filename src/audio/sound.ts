@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
+import type { BlipVoice } from '../data';
 import { BGM_LOOPS } from '../data';
 import { browserStorage } from '../save/storage';
 
@@ -85,6 +86,40 @@ export function playBgm(scene: Phaser.Scene, id: string): void {
   source.connect(gain);
   source.start();
   bgm = { id, source, gain };
+}
+
+/**
+ * 会話の文字の音（段階22の試し）。音のファイルを使わず、短い「ポッ」という音をその場で作る。
+ * 毎回わずかに高さを揺らして、機械的に聞こえないようにする。設定で切っている・効果音の音量が0・音を出せない時は鳴らさない
+ */
+export function playBlip(scene: Phaser.Scene, voice: BlipVoice): void {
+  const st = getSettings();
+  const mgr = scene.sound;
+  if (!st.typeSound || st.seVolume <= 0 || mgr.locked || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  const ctx = mgr.context;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = voice.wave;
+  osc.frequency.value = voice.pitch * (0.94 + Math.random() * 0.12);
+  const gain = ctx.createGain();
+  const peak = 0.09 * st.seVolume;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(peak, now + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+  let out: AudioNode = osc;
+  if (voice.phone) {
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 1200;
+    band.Q.value = 1.5;
+    osc.connect(band);
+    out = band;
+  }
+  out.connect(gain);
+  gain.connect(mgr.destination);
+  osc.start(now);
+  osc.stop(now + 0.06);
+  osc.onended = () => gain.disconnect();
 }
 
 /** BGM を小さくしながら止める */

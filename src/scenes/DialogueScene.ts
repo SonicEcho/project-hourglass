@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { playBgm, playSe, stopBgm } from '../audio/sound';
+import { getSettings, playBgm, playBlip, playSe, setSettings, stopBgm } from '../audio/sound';
 import type { ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseReadLog, runScript, serializeReadLog } from '../core';
-import type { Backdrop } from '../data';
-import { BACKDROPS, CAST, CGS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE } from '../data';
+import type { Backdrop, BlipVoice } from '../data';
+import { BACKDROPS, BLIP_EVERY, CAST, CGS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -23,6 +23,11 @@ const AUTO_PER_CHAR_MS = 45;
 const DIM_TINT = 0x707070;
 /** 立ち絵の下の端（本文の枠の上の辺） */
 const STAGE_BOTTOM = 560;
+/** 背景・1枚絵を前の絵に重ねて替える時間、人が出入りする時間（ミリ秒） */
+const PICTURE_FADE_MS = 350;
+const ACTOR_FADE_MS = 250;
+/** 文字の音を鳴らさない文字（句読点・記号・空白） */
+const SILENT_CHARS = new Set([...'、。，．…‥！？!?「」『』（）()—―ー〜・　 \n']);
 /** 読んだ台詞の印の保存先（セーブとは別。はじめからやり直しても、読んだ所は早送りできる） */
 const READ_KEY = 'restopia.read';
 
@@ -80,6 +85,9 @@ export class DialogueScene extends Phaser.Scene {
 
   private line?: ScriptLine;
   private text = '';
+  /** 全文で折り返した後の文（文字送りの途中で折り返しが変わって、はみ出して見えないように） */
+  private wrapped = '';
+  private voice?: BlipVoice;
   private shown = 0;
   private typing?: Phaser.Time.TimerEvent;
   /** 演出の途中（タップを受け付けない） */
@@ -107,6 +115,8 @@ export class DialogueScene extends Phaser.Scene {
   private logLayer?: Phaser.GameObjects.Container;
   private skipButton!: Phaser.GameObjects.Rectangle;
   private autoButton!: Phaser.GameObjects.Rectangle;
+  private blipButton!: Phaser.GameObjects.Rectangle;
+  private blipLabel!: Phaser.GameObjects.Text;
   private toast?: Phaser.GameObjects.Text;
 
   constructor() {
@@ -175,6 +185,9 @@ export class DialogueScene extends Phaser.Scene {
     // 上のボタン
     const ui = this.add.container(0, 0).setDepth(50);
     addButton(this, ui, 42, 30, 70, 40, '戻る', { onTap: () => this.leave() }, { size: 13 });
+    this.blipButton = addButton(this, ui, 121, 30, 74, 40, '', { onTap: () => this.toggleBlip() }, { size: 12 });
+    this.blipLabel = ui.list[ui.list.length - 1] as Phaser.GameObjects.Text;
+    this.refreshBlipButton();
     this.autoButton = addButton(this, ui, 200, 30, 70, 40, 'オート', { onTap: () => this.toggleAuto() }, { size: 13 });
     this.skipButton = addButton(this, ui, 276, 30, 70, 40, '早送り', { onTap: () => this.toggleSkip() }, { size: 13 });
     addButton(this, ui, 350, 30, 68, 40, 'ログ', { onTap: () => this.toggleLog() }, { size: 13 });
@@ -277,26 +290,47 @@ export class DialogueScene extends Phaser.Scene {
 
   /** 背景。絵があれば画面を覆うように置き、なければ色の帯と名前（仮） */
   private setBackdrop(id: string): void {
-    this.bgLayer.removeAll(true);
     const def = id === 'none' ? BACKDROPS.black : BACKDROPS[id];
     if (!def) {
       console.warn('[dialogue] 背景がない', id);
       return;
     }
-    this.drawPicture(this.bgLayer, def, 0, GAME_HEIGHT, id !== 'black' && id !== 'white' && id !== 'none');
+    const holder = this.add.container(0, 0);
+    this.drawPicture(holder, def, 0, GAME_HEIGHT, id !== 'black' && id !== 'white' && id !== 'none');
+    this.crossfade(this.bgLayer, holder);
+  }
+
+  /** 前の絵の上に新しい絵を重ね、少しずつ濃くしてから前の絵を消す（急に切り替わらないように） */
+  private crossfade(layer: Phaser.GameObjects.Container, holder: Phaser.GameObjects.Container): void {
+    const prev = [...layer.list];
+    layer.add(holder);
+    if (this.skip || prev.length === 0) {
+      prev.forEach((o) => o.destroy());
+      return;
+    }
+    holder.setAlpha(0);
+    this.tweens.add({ targets: holder, alpha: 1, duration: PICTURE_FADE_MS, onComplete: () => prev.forEach((o) => o.destroy()) });
   }
 
   /** 1枚絵（絵がなければ色と名前で仮に描く）。出している間は立ち絵を隠す */
   private setCg(id: string | null): void {
-    this.cgLayer.removeAll(true);
-    this.stage.setVisible(id === null);
-    if (id === null) return;
+    const ms = this.skip ? 0 : PICTURE_FADE_MS;
+    this.tweens.killTweensOf(this.stage);
+    if (id === null) {
+      const prev = [...this.cgLayer.list];
+      this.tweens.add({ targets: prev, alpha: 0, duration: ms, onComplete: () => prev.forEach((o) => o.destroy()) });
+      this.tweens.add({ targets: this.stage, alpha: 1, duration: ms });
+      return;
+    }
     const def = CGS[id];
     if (!def) {
       console.warn('[dialogue] 1枚絵がない', id);
       return;
     }
-    this.drawPicture(this.cgLayer, def, 0, STAGE_BOTTOM, true);
+    const holder = this.add.container(0, 0);
+    this.drawPicture(holder, def, 0, STAGE_BOTTOM, true);
+    this.crossfade(this.cgLayer, holder);
+    this.tweens.add({ targets: this.stage, alpha: 0, duration: ms });
   }
 
   private drawPicture(layer: Phaser.GameObjects.Container, def: Backdrop, top: number, bottom: number, label: boolean): void {
@@ -319,10 +353,12 @@ export class DialogueScene extends Phaser.Scene {
 
   /** 画面に出す人を替える。前からいる人は表情をそのままにする */
   private setCast(names: string[]): void {
+    const ms = this.skip ? 0 : ACTOR_FADE_MS;
     for (const [name, actor] of this.actors) {
       if (!names.includes(name)) {
-        actor.obj.destroy();
         this.actors.delete(name);
+        this.tweens.killTweensOf(actor.obj);
+        this.tweens.add({ targets: actor.obj, alpha: 0, duration: ms, onComplete: () => actor.obj.destroy() });
       }
     }
     this.cast = names.slice(0, 3);
@@ -330,12 +366,18 @@ export class DialogueScene extends Phaser.Scene {
     const small = this.cast.length >= 3;
     this.cast.forEach((name, i) => {
       let actor = this.actors.get(name);
+      actor?.setSmall(small);
       if (!actor) {
+        // 新しく出る人は、少し下からふわっと出す
         actor = this.makeActor(name);
         this.actors.set(name, actor);
+        actor.setSmall(small);
+        actor.obj.setPosition(xs[i], STAGE_BOTTOM + 12).setAlpha(0);
+        this.tweens.add({ targets: actor.obj, alpha: 1, y: STAGE_BOTTOM, duration: ms, ease: 'Sine.easeOut' });
+        return;
       }
-      actor.setSmall(small);
-      actor.obj.setX(xs[i]);
+      // 前からいる人は、並びが変わったら横に歩いて移る
+      if (actor.obj.x !== xs[i]) this.tweens.add({ targets: actor.obj, x: xs[i], duration: ms, ease: 'Sine.easeInOut' });
     });
   }
 
@@ -376,7 +418,7 @@ export class DialogueScene extends Phaser.Scene {
     return {
       setSmall: (small) => c.setScale(small ? 0.82 : 1),
       obj: c,
-      setActive: (active) => c.setAlpha(active ? 1 : 0.45),
+      setActive: (active) => [head, torso, label].forEach((o) => o.setAlpha(active ? 1 : 0.45)),
       setFace: (face) => faceText.setText(`〔${face}〕`),
     };
   }
@@ -389,8 +431,11 @@ export class DialogueScene extends Phaser.Scene {
     this.typing?.remove();
     const style = line.style;
     const isCaption = style === 'caption';
-    this.captionBg.setVisible(isCaption);
-    this.caption.setVisible(isCaption);
+    this.setCaptionVisible(isCaption);
+    this.voice =
+      style === 'talk' ? (CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT)
+      : style === 'voice' ? { ...(VOICE_ONLY[line.speaker ?? ''] ?? CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT), phone: line.tag === '電話' }
+      : undefined;
     for (const o of [this.box, this.body]) o.setVisible(!isCaption);
 
     // 立ち絵：話している人だけ明るく。声だけ・地の文などは全員を暗く（語りの文は誰も暗くしない）
@@ -424,18 +469,24 @@ export class DialogueScene extends Phaser.Scene {
       this.finishTyping();
       return;
     }
+    // 全文で先に折り返しを決めてから1文字ずつ出す（途中の文で折り返すと、行の終わりの文字が一瞬はみ出して見えるため）
+    this.wrapped = this.body.getWrappedText(text).join('\n');
     if (this.skip) {
       this.finishTyping();
       return;
     }
     this.body.setText('');
+    const all = this.wrapped;
+    let sounded = 0;
     this.typing = this.time.addEvent({
       delay: style === 'narration' ? NARRATION_CHAR_MS : CHAR_MS,
-      repeat: text.length - 1,
+      repeat: all.length - 1,
       callback: () => {
         this.shown++;
-        this.body.setText(text.slice(0, this.shown));
-        if (this.shown >= text.length) this.finishTyping();
+        this.body.setText(all.slice(0, this.shown));
+        const ch = all[this.shown - 1];
+        if (this.voice && !SILENT_CHARS.has(ch) && sounded++ % BLIP_EVERY === 0) playBlip(this, this.voice);
+        if (this.shown >= all.length) this.finishTyping();
       },
     });
   }
@@ -443,8 +494,8 @@ export class DialogueScene extends Phaser.Scene {
   private finishTyping(): void {
     this.typing?.remove();
     this.typing = undefined;
-    this.shown = this.text.length;
-    if (this.line?.style !== 'caption') this.body.setText(this.text);
+    this.shown = this.wrapped.length;
+    if (this.line?.style !== 'caption') this.body.setText(this.wrapped);
     this.cursor.setVisible(this.line?.style !== 'caption');
     this.waitTimer?.remove();
     if (this.skip) this.waitTimer = this.time.delayedCall(SKIP_MS, () => this.advance());
@@ -538,6 +589,31 @@ export class DialogueScene extends Phaser.Scene {
     this.setSkip(false);
     this.setAuto(on);
     if (on && !this.typing && !this.busy && !this.choosing) this.finishTyping();
+  }
+
+  /** 章の扉の黒い幕と大きな文字を、ふわっと出し入れする */
+  private setCaptionVisible(on: boolean): void {
+    const targets = [this.captionBg, this.caption];
+    if (this.captionBg.visible === on) return;
+    this.tweens.killTweensOf(targets);
+    if (on) {
+      targets.forEach((o) => o.setVisible(true));
+      this.captionBg.setAlpha(this.skip ? 1 : 0);
+      this.tweens.add({ targets: this.captionBg, alpha: 1, duration: this.skip ? 0 : PICTURE_FADE_MS });
+      return;
+    }
+    this.tweens.add({ targets, alpha: 0, duration: this.skip ? 0 : PICTURE_FADE_MS, onComplete: () => targets.forEach((o) => o.setVisible(false)) });
+  }
+
+  private toggleBlip(): void {
+    setSettings({ ...getSettings(), typeSound: !getSettings().typeSound });
+    this.refreshBlipButton();
+  }
+
+  private refreshBlipButton(): void {
+    const on = getSettings().typeSound;
+    this.blipLabel.setText(on ? '文字音 入' : '文字音 切');
+    this.blipButton.setFillStyle(on ? 0x2a4a5a : COLORS.panelLight).setStrokeStyle(on ? 2 : 1, on ? 0x7ac8e0 : COLORS.border);
   }
 
   private showToast(msg: string): void {
