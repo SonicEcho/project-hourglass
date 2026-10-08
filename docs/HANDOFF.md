@@ -1,6 +1,6 @@
 # 引き継ぎメモ（これまでの作業のまとめ）
 
-最終更新：2026-10-08（M0 の段階10〜19を実装し、すべて main にマージ済み、開発者のスマホで確認済み。残りは M0 の磨きの段階。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の作業の一覧は `docs/milestones/M0.md`）
+最終更新：2026-10-08（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。次は M1 で、最初の作業は `docs/milestones/M1.md` を作って段階に分けること。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
 
 新しいセッションでは、まずこのファイルを読む。今の仕組みは `docs/design/`（一覧は `docs/design/README.md`）、今の作業の一覧は `docs/milestones/M0.md`、背景は `docs/CONCEPT.md`。`docs/SPEC.md` は試作（段階1〜14）の記録（段階14から書き足さない）。
 
@@ -45,7 +45,7 @@
 | 18a（M0） | 絵の見本：会話の試作に立ち絵（AI で作り、`scripts/cutout.py` で背景を抜く） | #24〜#26 |
 | 18b（M0） | 絵の見本：縁日の見下ろしの絵の地図＋見えないマス目 → 絵の方向性を決定（`docs/ART.md`） | #27 |
 | 19（M0） | 音の仕組み（`src/audio/sound.ts`、効果音、BGM のループと切り替え、音量の設定） | #28 |
-| 20（M0） | 磨き：読み込みのバー、BGM を mp3 に（区間ループ）、通しの自動確認（`npm run e2e`、Actions） | |
+| 20（M0） | 磨き：読み込みのバー、BGM を mp3 に（区間ループ）、通しの自動確認（`npm run e2e`、Actions） | #29 |
 
 ## いまのルールの要点
 
@@ -101,6 +101,13 @@
 - `?seed=7` は最初の手札にエレメントバーストがそろう（戦闘1・雑魚3体の時の値。周回の戦闘ではシードが戦闘の番号の分ずれる）
 - 音の確認：Playwright で `AudioBufferSourceNode.prototype.start` を見張ると、どの長さの音が鳴ったかがわかる（画面では聞けないため）
 - 注意：`pkill -f "vite preview"` を、起動の命令と同じコマンドの中に書くと、自分自身のシェルまで止めてしまう。止める時は別のコマンドで、`pkill -f "[v]ite preview --port 4173"` のように書く
+
+## 次にやること（M1 の入口）
+
+- M1 は「垂直スライス（プロローグと1章の最初）」（`docs/ROADMAP.md` の M1、物語は `docs/STORY.md` の 2-8〜2-12）。まず `docs/milestones/M1.md` を M0.md と同じ形で作り、段階に分けて開発者に確かめてもらう
+- M1 と一緒に決めること：敵・ボス・技などの固有の名前（`docs/NAMING.md`）、新しいボスでの勝率の目安（段階12の測定を使う）
+- M1 の頃に行う素材の作業：本番の BGM を Suno の有料の版（Pro を1か月、5〜6曲）で作る（つなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く）。縁日の地図を ChatGPT で作り直す（看板に文字を入れない）。あかりのリボンの色（後回し）
+- 絵は `docs/ART.md` の指示文と決まり（同じ構図、白い背景で作り `scripts/cutout.py` で抜く）に従う
 
 ## 次の候補（未着手。開発者が選ぶ）
 
