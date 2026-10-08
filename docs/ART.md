@@ -285,6 +285,7 @@ Expression: <下の表の英語>
 | 3 | 悲しい | sad and quiet, eyes looking down, brows slightly lowered, mouth closed, eyes a little moist |
 | 4 | 真剣 | serious and focused, mouth firmly closed, brows set, eyes steady and determined |
 | 5 | 困り笑い | a troubled smile, eyebrows raised in a worried way, a small awkward smile |
+| 6 | 微笑み（静かな場面用。2026-10-08 に足した） | a gentle, soft smile with the mouth closed, eyes warm and slightly narrowed, calm and kind |
 
 **7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
 
