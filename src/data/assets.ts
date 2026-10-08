@@ -95,8 +95,12 @@ const HERO_BASE_PROMPT =
   'Color palette: black hair #23222E, sand-gold #D9AE62, amber eyes #C98A3A, navy jacket #2B3552, dusk orange #E07A4F, skin #F3D6C1. ' +
   'Additional views on the same sheet: back view, 4 facial expressions (neutral, gentle smile, surprised, determined), close-up of the sword.';
 
-/** ハルトの胸から上の立ち絵（表情違い）。段階18a の仮の素材 */
-function heroPortrait(face: string, title: string): AssetEntry {
+/** ハルトの胸から上の基本の1枚を Gemini で描き直した指示文（docs/ART.md の 5-2。見本：M0 のハルトの絵とあかりの胸から上の絵） */
+const HERO_REDRAW_PROMPT =
+  'Redraw the boy from image 1 as a chest-up portrait with exactly the same framing, size and camera distance as image 2. Vertical 2:3 image. Keep his face, hair (black with ONE sand-gold strand in the front bangs), amber eyes, white shirt, loose sand-gold necktie and open navy hoodie with dusk-orange lining exactly as in image 1. Front view, calm neutral expression with a hint of gentleness. Both arms relaxed down at the sides, hands outside the frame. Plain pure white background. Same anime art style as image 2. No props, no text.';
+
+/** ハルトの胸から上の立ち絵（2026-10-08 に Gemini で作り直した。expression がない物は基本の1枚） */
+function heroPortrait(face: string, title: string, expression?: string): AssetEntry {
   return {
     id: `portrait.hero.${face}`,
     kind: 'image',
@@ -105,20 +109,24 @@ function heroPortrait(face: string, title: string): AssetEntry {
     status: 'placeholder',
     source: {
       type: 'ai',
-      service: 'ChatGPT',
+      service: 'Google Gemini（Gemini アプリ）',
       plan: '無料',
-      prompt: HERO_BASE_PROMPT,
-      settings:
-        '同じ指示文の設定画の表情4つを、ChatGPT が透明な背景の一覧にした絵から切り出した。白い背景に重ねて、scripts/cutout.py（rembg の isnet-anime）で背景を抜いた',
+      prompt: expression
+        ? 'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair with the single sand-gold strand, amber eyes, white shirt, loose sand-gold necktie, open navy hoodie with dusk-orange lining, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects. ' +
+          `Expression: ${expression}`
+        : HERO_REDRAW_PROMPT,
+      settings: expression
+        ? `見本の絵：ハルトの通常の立ち絵（Gemini で描き直した基本の1枚）。848×1264 で出てきた。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた。基本の1枚の指示文：${HERO_REDRAW_PROMPT}`
+        : `見本の絵：M0 のハルトの絵（ChatGPT。元の指示文：${HERO_BASE_PROMPT}）と、あかりの胸から上の絵。848×1264 で出てきた。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
     },
-    author: 'RESTOPIA 開発（ChatGPT で作成）',
-    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
     acquiredAt: '2026-10-08',
-    termsCopy: 'docs/licenses/ai-openai.md',
-    notes: '絵柄を確かめるための仮の素材（docs/ART.md のハルトの見た目）',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: 'ChatGPT の規約の控えは docs/licenses/ai-openai.md。見た目は docs/ART.md のハルトの見た目',
   };
 }
 
@@ -341,9 +349,14 @@ export const ASSETS: AssetEntry[] = [
     notes: '1-1「金魚の名前」の地図（docs/ART.md の 5-2 の 7）。段階18b の Gemini の仮の地図を、ChatGPT で作り直した絵に差し替えた。歩ける場所は src/data/prototypes.ts の PROTO_FESTIVAL_LAYOUT',
   },
   heroPortrait('normal', '通常'),
-  heroPortrait('smile', 'やさしい笑顔'),
-  heroPortrait('surprised', '驚き'),
-  heroPortrait('determined', '決意'),
+  heroPortrait('smile', '笑顔', 'a gentle, slightly shy smile with the mouth closed, eyes soft'),
+  heroPortrait('surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'),
+  heroPortrait('determined', '決意', 'determined, mouth firmly closed, brows set, eyes sharp and steady'),
+  heroPortrait('exasperated', 'あきれ', 'exasperated, half-closed eyes, mouth flat, one eyebrow slightly lowered'),
+  heroPortrait('troubled', '困り', 'troubled, eyebrows raised in a worried way, mouth slightly open, eyes looking aside'),
+  heroPortrait('sad', '悲しい', 'sad and quiet, eyes looking down, mouth closed, brows slightly lowered'),
+  heroPortrait('shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking away, a small awkward closed-mouth smile'),
+  heroPortrait('wry', '苦笑い', 'a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled'),
   rikuPortrait('smile', '笑顔'),
   rikuFace('normal', '通常', 'relaxed and friendly, a small natural smile with the mouth closed'),
   rikuFace('proud', '得意げ', 'smug and proud, a confident closed-mouth grin, chin slightly raised, one eyebrow up'),
