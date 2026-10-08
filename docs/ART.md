@@ -134,9 +134,16 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
 
 **決まったこと（2026-10-08、開発者と相談）**
 
-- **まずはフリー素材を使う**。BGM は OpenTracks と魔王魂、効果音は効果音ラボを第一候補にする
-- 合う曲が見つからない場面があれば、**Suno の有料の版**で自作することを考える
+- **BGM は Suno で自作する**（2026-10-08、開発者が試しに聴いて決めた）。理由：完成度が高い、探す手間がない、サイトごとの規約に縛られない、他のゲームと曲が重ならない、曲に一番こだわりたいので自分で細かく調整できる方がよい
+  - 曲調の試しは無料の版で行い、本番の曲は有料の版の期間に作ってダウンロードする（下の注意）
+  - 合う曲がどうしても作れない場面だけ、OpenTracks や魔王魂で補う
+- **効果音は効果音ラボ**（クレジット不要、アプリへの組み込みが明記されている）
   - Suno の無料の版で作った曲は、売り物に使えない（後から有料にしても、さかのぼって使えるようにはならない）。商用に使える権利は、有料の期間にダウンロードした曲だけに付く（2026-09-03 から。Pro は月20曲、Premier は月60曲まで）。解約しても、ダウンロード済みの曲は使い続けられる
   - 使うなら、無料の版で曲調を試してから、有料の版を必要な月だけ契約して本番の曲を作る。ダウンロードした日の規約の控えを取る
-  - Suno の曲はループ前提ではないので、つなぎ目を探して切る作業が要る
+  - Suno の曲はループ前提ではないので、つなぎ目を探して切る作業が要る（Claude が曲を解析して、つなぎ目を探す）
+- 曲調の指示文の例（Instrumental をオンにして、Style of Music に書く）：
+  - タイトル・夕暮れの街：`nostalgic emotional JRPG title theme, solo piano and soft strings, music box accents, gentle warm melody with a hint of sadness, summer evening sunset atmosphere, slow tempo 76 bpm, cinematic, instrumental, no vocals, no fade out`
+  - 縁日・祭り：`cheerful Japanese summer festival music, shinobue bamboo flute, taiko drums, shamisen, light percussion, playful and nostalgic, dusk atmosphere with paper lanterns, medium tempo 110 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - ふだんの戦闘：`energetic JRPG battle theme, driving rock drums and bass, fast strings, bright synth lead, ticking clock percussion motif, heroic and tense, fast tempo 150 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - 泣きの場面：`heartbreaking emotional piano ballad, solo piano with soft cello, slow and fragile, memories of a lost summer, quiet and tender, tempo 64 bpm, cinematic JRPG sad scene, instrumental, no vocals`
 
