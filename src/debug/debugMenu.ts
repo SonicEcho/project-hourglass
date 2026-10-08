@@ -1,7 +1,8 @@
 import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
 import { addItems, addParts } from '../core';
-import { ITEMS, NAVI_PARTS, WEAPON_DATA } from '../data';
+import { ITEMS, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, WEAPON_DATA } from '../data';
+import { clearReadLog } from '../scenes/DialogueScene';
 import { deleteSave, getActiveBattle, readSave, readSaveText, run } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
@@ -10,8 +11,10 @@ export interface DebugNavigator {
   restartRun(): void;
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
-  /** 試作の画面を開く（段階16。エンジンを決めるための探索・会話の試作。段階18b：data で地図を選ぶ） */
-  openPrototype(key: 'ProtoExplore' | 'ProtoDialogue', data?: object): void;
+  /** 試作の画面を開く（段階16。エンジンを決めるための探索の試作。段階18b：data で地図を選ぶ） */
+  openPrototype(key: 'ProtoExplore', data?: object): void;
+  /** 会話の画面を開く（段階22。DialogueScene の DialogueData） */
+  openDialogue(data: { scene: string; queue?: string[] }): void;
 }
 
 const Z = 9000;
@@ -147,10 +150,31 @@ export function installDebugMenu(nav: DebugNavigator): void {
         nav.openPrototype('ProtoExplore', { map: 'festival' });
       }),
     );
+
+    // 会話（段階22）：脚本の場面を開く
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '会話（段階22。M1 の台本）'));
     panel.append(
-      button('試作：会話の画面を開く', () => {
+      button('M1 を通しで読む（プロローグから、ノアとのすれ違いまで）', () => {
         close();
-        nav.openPrototype('ProtoDialogue');
+        const [first, ...rest] = M1_SCENE_ORDER;
+        nav.openDialogue({ scene: first, queue: rest });
+      }),
+    );
+    const select = el('select', 'display:block;width:100%;min-height:44px;margin:6px 0;font:14px sans-serif;');
+    for (const sc of M1_SCENES) {
+      const o = el('option', '', `${sc.title}（${sc.id}）`);
+      o.value = sc.id;
+      select.append(o);
+    }
+    panel.append(
+      select,
+      button('↑ の場面を開く', () => {
+        close();
+        nav.openDialogue({ scene: select.value });
+      }),
+      button('読んだ印を消す（早送りが止まるか確かめる時に）', () => {
+        clearReadLog();
+        notify('読んだ印を消しました');
       }),
     );
 

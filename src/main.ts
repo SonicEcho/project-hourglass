@@ -8,7 +8,7 @@ import { installTestHook } from './debug/testHook';
 import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
 import { CreditsScene } from './scenes/CreditsScene';
-import { ProtoDialogueScene } from './scenes/ProtoDialogueScene';
+import { DialogueScene } from './scenes/DialogueScene';
 import { ProtoExploreScene } from './scenes/ProtoExploreScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
@@ -54,7 +54,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, ProtoDialogueScene],
+  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene],
 });
 
 if (debug) {
@@ -83,6 +83,7 @@ if (debug) {
       weapon?.refresh();
     },
     openPrototype: (key, data = {}) => goTo(key, data),
+    openDialogue: (data) => goTo('Dialogue', data),
   });
   installTestHook(game);
 }
