@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { getSettings, playBgm, playBlip, playSe, setSettings, stopBgm } from '../audio/sound';
+import { audioLatencyMs, getSettings, playBgm, playBlip, playSe, setSettings, stopBgm } from '../audio/sound';
 import type { ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
@@ -105,6 +105,8 @@ export class DialogueScene extends Phaser.Scene {
   private voice?: BlipVoice;
   private shown = 0;
   private typing?: Phaser.Time.TimerEvent;
+  /** 文字の音を鳴らす時計（文字を出す時計より、音の遅れの分だけ先に動かす） */
+  private blipTimer?: Phaser.Time.TimerEvent;
   /** 演出の途中（タップを受け付けない） */
   private busy = false;
   private choosing = false;
@@ -693,23 +695,43 @@ export class DialogueScene extends Phaser.Scene {
     }
     this.body.setText('');
     const all = this.wrapped;
-    let sounded = 0;
-    this.typing = this.time.addEvent({
-      delay: style === 'narration' ? NARRATION_CHAR_MS : CHAR_MS,
-      repeat: all.length - 1,
-      callback: () => {
-        this.shown++;
-        this.body.setText(all.slice(0, this.shown));
-        const ch = all[this.shown - 1];
-        if (this.voice && !SILENT_CHARS.has(ch) && sounded++ % BLIP_EVERY === 0) playBlip(this, this.voice);
-        if (this.shown >= all.length) this.finishTyping();
-      },
-    });
+    const charMs = style === 'narration' ? NARRATION_CHAR_MS : CHAR_MS;
+    // 文字の音：どの文字で鳴らすかを先に決め、文字と同じ速さで、音の遅れの分だけ先に鳴らし始める（スマホで文字より遅れて聞こえないように）
+    const voice = this.voice;
+    let lead = 0;
+    if (voice && getSettings().typeSound) {
+      let count = 0;
+      const ring = [...all].map((ch) => !SILENT_CHARS.has(ch) && count++ % BLIP_EVERY === 0);
+      lead = audioLatencyMs(this);
+      let i = 0;
+      const tick = () => {
+        if (ring[i]) playBlip(this, voice);
+        i++;
+      };
+      tick();
+      if (all.length > 1) this.blipTimer = this.time.addEvent({ delay: charMs, repeat: all.length - 2, callback: tick });
+    }
+    const startTyping = () => {
+      this.typing = this.time.addEvent({
+        delay: charMs,
+        repeat: all.length - 1,
+        callback: () => {
+          this.shown++;
+          this.body.setText(all.slice(0, this.shown));
+          if (this.shown >= all.length) this.finishTyping();
+        },
+      });
+    };
+    // 遅らせている間も「文字送りの途中」として扱う（その間のタップで全文を出せるように）
+    if (lead > 0) this.typing = this.time.delayedCall(lead, startTyping);
+    else startTyping();
   }
 
   private finishTyping(): void {
     this.typing?.remove();
     this.typing = undefined;
+    this.blipTimer?.remove();
+    this.blipTimer = undefined;
     this.shown = this.wrapped.length;
     if (this.line?.style !== 'caption') this.body.setText(this.wrapped);
     this.cursor.setVisible(this.line?.style !== 'caption');
