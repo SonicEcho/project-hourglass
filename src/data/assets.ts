@@ -265,22 +265,29 @@ export const ASSETS: AssetEntry[] = [
     status: 'placeholder',
     source: {
       type: 'ai',
-      service: 'Google Gemini（Gemini アプリ）',
+      service: 'ChatGPT',
       plan: '無料',
       prompt:
         'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
-        'Top-down game map, seen from directly above (90-degree overhead view), vertical 9:16 composition. ' +
-        'A small Japanese shrine summer festival at dusk, early 1990s. A red torii gate at the bottom center, a stone path running straight up the middle to a small shrine at the top. Rows of festival stalls along both sides of the path (goldfish scooping, cotton candy, masks, yakisoba), paper lanterns glowing, a small open plaza in the middle, trees around the edges. No people, no characters.',
-      settings: '768×1376。WebP に変えただけで、ほかの加工はしていない',
+        'Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. ' +
+        "Scene: a small Japanese shrine festival (ennichi) at summer dusk, about ten years ago, in a neighboring town's shrine. " +
+        'Layout from bottom to top: Bottom center: a red torii gate at the entrance, with a short stone path leading in. A wide stone-paved approach path (sando) running straight up the middle of the image. ' +
+        'Both sides of the path lined with festival stalls with striped cloth awnings: on the left side a goldfish-scooping stall with a shallow blue water tank full of small red goldfish; on the right side a ramune soda stall with a tub of ice and glass bottles; other stalls such as cotton candy, masks, shaved ice. ' +
+        'Around the middle: an open round plaza with one large paper lantern on a wooden stand at its center and a few wooden benches at the edges. From the right edge of the plaza, a narrow stone path branches off to the right and leads out of the image. ' +
+        'Top: a small wooden shrine building, with an open sandy space in front of it. Trees, stone lanterns and low fences around the outer edges. ' +
+        'Walkable areas (paths, plaza, sandy space) must be clearly distinguishable from non-walkable objects (stalls, trees, stone lanterns, benches, pillars). Paths are wide, at least one eighth of the image width. ' +
+        'Lighting: warm orange paper lanterns strung above the path, indigo and amber dusk sky tones reflected on the ground. ' +
+        'Absolutely no letters or text anywhere: signs, banners, lanterns and awnings are blank or have simple patterns only.',
+      settings: '元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）。ほかの加工はしていない',
     },
-    author: 'RESTOPIA 開発（Google Gemini で作成）',
-    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
     acquiredAt: '2026-10-08',
-    termsCopy: 'docs/licenses/ai-gemini.md',
-    notes: '段階18bの試作の仮の地図。開発者の好みのデザインではないので、本番は ChatGPT で作り直す（看板の文字が崩れるので、本番は看板に文字を書かない）',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: '1-1「金魚の名前」の地図（docs/ART.md の 5-2 の 7）。段階18b の Gemini の仮の地図を、ChatGPT で作り直した絵に差し替えた。歩ける場所は src/data/prototypes.ts の PROTO_FESTIVAL_LAYOUT',
   },
   heroPortrait('normal', '通常'),
   heroPortrait('smile', 'やさしい笑顔'),
