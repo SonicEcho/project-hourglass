@@ -269,6 +269,23 @@ Expression: <下の表の英語>
 | 7 | 照れ | embarrassed, light blush on the cheeks, eyes looking away, a small awkward closed-mouth smile |
 | 8 | 苦笑い | a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled |
 
+**あかりの足した表情**（Gemini。M1 の台本で足した5つ。見本は、リボンが赤いデジャヴの立ち絵 `akari_dejavu` を渡す。笑顔と心配の絵はリボンが橙なので見本にしない）
+
+毎回、次の頭の文に、表情の1行だけを替えて付ける。
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair, the small red goldfish hair clip, the thin red ribbon in the half-up hair (#D9483B), white shirt with red bow, cream knit cardigan, and art style. Plain pure white background. Change only the facial expression. No props, no staff, no sweat drops, no tears unless stated, no text, no effects.
+Expression: <下の表の英語>
+```
+
+| 順 | 表情 | Expression の行 |
+| --- | --- | --- |
+| 1 | 驚き | surprised, eyes wide open, mouth slightly open, eyebrows raised |
+| 2 | 照れ | embarrassed, light blush on the cheeks, eyes looking aside, a small shy smile with the mouth closed |
+| 3 | 悲しい | sad and quiet, eyes looking down, brows slightly lowered, mouth closed, eyes a little moist |
+| 4 | 真剣 | serious and focused, mouth firmly closed, brows set, eyes steady and determined |
+| 5 | 困り笑い | a troubled smile, eyebrows raised in a worried way, a small awkward smile |
+
 **7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
 
 探索の地図は、絵の上に見えないマス目（1マス32、24×43マス）を重ねて、歩ける場所を文字の地図で決める（段階18b）。そのため、次のことを守ってもらう。
