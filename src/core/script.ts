@@ -50,8 +50,26 @@ export const SCRIPT_COMMANDS = [
   'mono',
   /** 画面をノイズで乱す（@noise ミリ秒） */
   'noise',
+  /**
+   * 時計（@clock show 時:分 / hide / tick / tick many / stop）。
+   * show は時計の寄りを出す（立ち絵は隠す）。tick は秒針の音を鳴らし始める（many は店じゅうの時計）。stop は秒針を止める
+   */
+  'clock',
 ] as const;
 export type ScriptCommandName = (typeof SCRIPT_COMMANDS)[number];
+
+/** @clock の使い方 */
+export const CLOCK_ACTIONS = ['show', 'hide', 'tick', 'stop'] as const;
+
+/** 「4:30」のような時刻を読む。読めない時は null */
+export function parseClockTime(text: string): { hour: number; minute: number } | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(text);
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (hour > 23 || minute > 59) return null;
+  return { hour, minute };
+}
 
 /** 文の見せ方 */
 export type LineStyle =

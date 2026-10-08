@@ -192,9 +192,10 @@ export const SCRIPT_M1 = `
 @bg white
 @cast
 @cg white_city
-@se tick
+@clock tick
 〈地の文〉白い街の夢を見た。
 〈地の文〉音がしない。人もいない。数えきれない時計が、同じ時刻を指している。
+@clock stop
 @cg off
 @se alarm
 @bg home_kitchen
@@ -282,15 +283,21 @@ export const SCRIPT_M1 = `
 @cast ハルト りく あかり
 りく〔得意げ〕「よし、計画その二——」
 @bgm stop
-@zoom 1.08
 りく〔真剣〕「……見ろ」
-@se tick_stop
+@clock show 4:30
+@wait 2600
+@clock stop
+@wait 600
 @mono on
+@zoom 1.08
 あかり〔心配〕「え……」
 りく「止まってるだろ。な？」
-@se tick
+@wait 1500
+@clock tick
 @mono off
 @zoom 1
+@wait 1400
+@clock hide
 @bgm daily
 ハルト〔驚き〕「……見間違いじゃ、ないな」
 りく〔真剣〕「計画、変更。俺、今日はこっちを調べる。おまえら、先に行ってろ」
@@ -349,7 +356,7 @@ export const SCRIPT_M1 = `
 # d1_clockshop 1日目：夕暮れの時計屋
 @bg clock_shop
 @bgm stop
-@se tick
+@clock tick many
 @cast ハルト
 〈地の文〉商店街の外れの、古い時計屋。俺のアルバイト先だ。
 〈地の文〉店長は奥の部屋か、どこかへ出かけていて、ほとんど顔を合わせない。店じまいの片付けは、俺の仕事だ。
@@ -358,9 +365,9 @@ export const SCRIPT_M1 = `
 あかり〔笑顔〕「おつかれー。手伝うよ」
 あかり〔心配〕「……ねえ。りくに送った写真、既読がつかないんだけど」
 ハルト〔通常〕「調べ物に夢中なんだろ」
-@se tick_stop
+@clock stop
+@wait 1400
 @mono on
-@wait 1200
 @zoom 1.08
 あかり〔心配〕「……ハルト」
 〈地の文〉秒針が、ひとつ残らず止まっていた。壁の時計も、棚の腕時計も、柱時計の振り子も。
@@ -373,7 +380,7 @@ export const SCRIPT_M1 = `
 @noise 700
 @se hang_up
 ハルト〔驚き〕「りく？ りく！」
-@se tick
+@clock tick many
 @mono off
 @zoom 1
 @shake
@@ -395,6 +402,7 @@ export const SCRIPT_M1 = `
 あかり〔真剣〕「……行くよね。りく、たぶんこの先だよ」
 ハルト〔決意〕「……ああ」
 あかり〔むっ〕「今、ひとりで行こうとしたでしょ。……だめだからね」
+@clock stop
 @fade white
 
 # d1_library 1日目：レストピアの蔵書の棚
@@ -527,15 +535,18 @@ export const SCRIPT_M1 = `
 @fade out
 @bg clock_shop_back
 @bgm stop
-@se tick
+@clock tick many
 @fade in
+@clock show 5:12
 あかり〔驚き〕「え……？ まだ、五時十二分？」
 〈地の文〉あれだけ歩いたのに、時計の針は、入った時から一分も進んでいなかった。
+@clock hide
 @bg clock_shop_night
 あかり〔悲しい〕「……りくのお母さんに、なんて言えばいいんだろ」
 ハルト〔悲しい〕「……正直に言っても、信じてもらえない」
 ハルト〔決意〕「明日も、ここから行こう」
 @fade out
+@clock stop
 @cast
 @bg black
 @fade in

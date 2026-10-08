@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { audioLatencyMs, getSettings, playBgm, playBlip, playSe, setSettings, stopBgm } from '../audio/sound';
+import { audioLatencyMs, getSettings, playBgm, playBlip, playSe, playTick, setSettings, stopBgm } from '../audio/sound';
 import type { ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
-import { chooseOption, parseReadLog, runScript, serializeReadLog } from '../core';
+import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
-import { BACKDROPS, BLIP_EVERY, CAST, CGS, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -128,6 +128,13 @@ export class DialogueScene extends Phaser.Scene {
   private bgLayer!: Phaser.GameObjects.Container;
   private stage!: Phaser.GameObjects.Container;
   private cgLayer!: Phaser.GameObjects.Container;
+  /** 時計の寄り（@clock show）と、秒針の音（@clock tick） */
+  private clockLayer!: Phaser.GameObjects.Container;
+  private clockHand?: Phaser.GameObjects.Graphics;
+  private clockSecond = 0;
+  private clockTimer?: Phaser.Time.TimerEvent;
+  /** 鳴っている時計の数（0 は止まっている。店じゅうの時計の時は CLOCK.manyLayers） */
+  private clockLayers = 0;
   private actors = new Map<string, Actor>();
   private cast: string[] = [];
   private box!: Phaser.GameObjects.Rectangle;
@@ -172,7 +179,11 @@ export class DialogueScene extends Phaser.Scene {
     this.bgLayer = this.add.container(0, 0);
     this.stage = this.add.container(0, 0);
     this.cgLayer = this.add.container(0, 0);
-    this.world = this.add.container(0, 0, [this.bgLayer, this.stage, this.cgLayer]).setDepth(0);
+    this.clockLayer = this.add.container(0, 0);
+    this.clockHand = undefined;
+    this.clockTimer = undefined;
+    this.clockLayers = 0;
+    this.world = this.add.container(0, 0, [this.bgLayer, this.stage, this.cgLayer, this.clockLayer]).setDepth(0);
     this.noiseLayer = this.add.graphics().setDepth(30);
     if (!this.textures.exists('dialogue-sand')) {
       const g = this.make.graphics({}, false);
@@ -308,6 +319,12 @@ export class DialogueScene extends Phaser.Scene {
       case 'noise':
         this.playNoise(Number(a) || 500);
         return;
+      case 'clock':
+        if (a === 'show') this.showClock(rest[0] ?? '');
+        else if (a === 'hide') this.hideClock();
+        else if (a === 'tick') this.startTicking(rest[0] === 'many');
+        else if (a === 'stop') this.stopTicking();
+        return;
       default:
         console.warn('[dialogue] 使えない命令', cmd.name, rest);
     }
@@ -400,6 +417,106 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   /** @mono：色を抜く（時計が止まった時など）。WebGL でない時は何もしない */
+  /** 時計の寄りを出す（立ち絵は隠す）。秒針が止まっていなければ、音と一緒に動かし始める */
+  private showClock(time: string): void {
+    const ms = this.skip ? 0 : PICTURE_FADE_MS;
+    const t = parseClockTime(time) ?? { hour: 4, minute: 30 };
+    const cx = GAME_WIDTH / 2;
+    const cy = CLOCK.centerY;
+    const r = CLOCK.radius;
+    this.clockLayer.removeAll(true);
+    const holder = this.add.container(0, 0).setAlpha(0);
+    // 後ろを暗くして、時計だけに目が行くようにする
+    holder.add(this.add.rectangle(0, 0, GAME_WIDTH, STAGE_BOTTOM, 0x0a0806, 0.72).setOrigin(0));
+    const g = this.add.graphics();
+    g.fillStyle(0x000000, 0.35).fillCircle(cx + 4, cy + 6, r + 14);
+    g.fillStyle(0x8a6a2a, 1).fillCircle(cx, cy, r + 12);
+    g.lineStyle(3, 0xd9ae62, 1).strokeCircle(cx, cy, r + 10);
+    g.fillStyle(0xf4ecd8, 1).fillCircle(cx, cy, r);
+    for (let i = 0; i < 60; i++) {
+      const ang = (i / 60) * Math.PI * 2;
+      const big = i % 5 === 0;
+      const r1 = r - (big ? 16 : 8);
+      g.lineStyle(big ? 4 : 1.5, 0x2a2420, 1);
+      g.lineBetween(cx + Math.sin(ang) * r1, cy - Math.cos(ang) * r1, cx + Math.sin(ang) * (r - 4), cy - Math.cos(ang) * (r - 4));
+    }
+    holder.add(g);
+    const hand = (len: number, width: number, color: number, deg: number, tail = 0): Phaser.GameObjects.Graphics => {
+      const h = this.add.graphics({ x: cx, y: cy });
+      h.fillStyle(color, 1).fillRect(-width / 2, -len, width, len + tail);
+      h.setAngle(deg);
+      holder.add(h);
+      return h;
+    };
+    hand(r * 0.5, 7, 0x2a2420, (t.hour % 12) * 30 + t.minute * 0.5, 10);
+    hand(r * 0.78, 5, 0x2a2420, t.minute * 6, 12);
+    this.clockSecond = CLOCK.startSecond;
+    this.clockHand = hand(r * 0.86, 2, 0xc8402f, this.clockSecond * 6, 22);
+    holder.add(this.add.circle(cx, cy, 6, 0xc8402f));
+    holder.add(this.add.circle(cx, cy, 2.5, 0xd9ae62));
+    this.clockLayer.add(holder);
+    this.drift(holder, cx, cy, CG_DRIFT_SCALE, CG_DRIFT_MS);
+    this.tweens.add({ targets: holder, alpha: 1, duration: ms });
+    this.tweens.killTweensOf(this.stage);
+    this.tweens.add({ targets: this.stage, alpha: 0, duration: ms });
+    if (this.clockLayers === 0) this.startTicking(false);
+  }
+
+  private hideClock(): void {
+    const ms = this.skip ? 0 : PICTURE_FADE_MS;
+    const prev = [...this.clockLayer.list];
+    this.clockHand = undefined;
+    this.tweens.add({ targets: prev, alpha: 0, duration: ms, onComplete: () => prev.forEach((o) => o.destroy()) });
+    this.tweens.killTweensOf(this.stage);
+    this.tweens.add({ targets: this.stage, alpha: 1, duration: ms });
+  }
+
+  /** 秒針を動かし、音を鳴らし始める。many は店じゅうの時計（ずれた音を重ねる） */
+  private startTicking(many: boolean): void {
+    this.clockLayers = many ? CLOCK.manyLayers : 1;
+    this.clockTimer?.remove();
+    this.clockTimer = this.time.addEvent({ delay: CLOCK.tickMs, loop: true, callback: () => this.tick() });
+    this.tick();
+  }
+
+  private tick(): void {
+    if (this.clockLayers <= 0) return;
+    this.clockSecond += 1;
+    const tock = this.clockSecond % 2 === 0;
+    if (!this.skip) {
+      playTick(this, tock);
+      // 店じゅうの時計：少しずつずれた、遠くの音を重ねる
+      for (let i = 1; i < this.clockLayers; i++) {
+        this.time.delayedCall((CLOCK.tickMs * i) / this.clockLayers + Math.random() * 60, () => {
+          if (this.clockLayers > i && !this.skip) playTick(this, (this.clockSecond + i) % 2 === 0, 0.55 - i * 0.08);
+        });
+      }
+    }
+    if (this.clockHand) {
+      this.tweens.killTweensOf(this.clockHand);
+      this.tweens.add({ targets: this.clockHand, angle: this.clockSecond * 6, duration: 90, ease: 'Back.easeOut' });
+    }
+  }
+
+  /** 秒針を止める。店じゅうの時計の時は、音が1つずつ消えていく */
+  private stopTicking(): void {
+    const stopAll = (): void => {
+      this.clockLayers = 0;
+      this.clockTimer?.remove();
+      this.clockTimer = undefined;
+    };
+    if (this.clockLayers <= 1 || this.skip) {
+      stopAll();
+      return;
+    }
+    const step = (): void => {
+      this.clockLayers -= 1;
+      if (this.clockLayers <= 0) stopAll();
+      else this.time.delayedCall(CLOCK.stopStepMs, step);
+    };
+    step();
+  }
+
   private setMono(on: boolean): void {
     const fx = this.world.postFX;
     if (!fx) return;

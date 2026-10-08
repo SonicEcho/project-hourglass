@@ -218,8 +218,6 @@ export const SCRIPT_SE: Record<string, string | null> = {
   firework: null,
   drum: null,
   footsteps: null,
-  tick: null,
-  tick_stop: null,
   alarm: null,
   pan: null,
   chime: null,
@@ -235,6 +233,24 @@ export const SCRIPT_SE: Record<string, string | null> = {
   hang_up: null,
   door_open: null,
 };
+
+/**
+ * 時計の演出（@clock。段階22 調整12）。秒針の音は音のファイルを使わず、その場で作る（audio/sound.ts の playTick）
+ * many は店じゅうの時計：本物の秒針の音に、ずれた音を重ねる。止まる時は、重ねた音が1つずつ消えていく
+ */
+export const CLOCK = {
+  /** 秒針が1つ進む間（ミリ秒） */
+  tickMs: 1000,
+  /** 店じゅうの時計の時に重ねる音の数（本物の1つを含む） */
+  manyLayers: 4,
+  /** 店じゅうの時計が1つずつ止まる間（ミリ秒） */
+  stopStepMs: 400,
+  /** 時計の寄りの大きさと位置 */
+  radius: 120,
+  centerY: 270,
+  /** 秒針の最初の位置（秒）。止まる前に少し動いて見えるよう、12時の手前から */
+  startSecond: 52,
+} as const;
 
 /** 語りの文に流れる砂の色（ヴィクトの鎖の砂時計と同じ暗い金。docs/STORY.md の 2-11） */
 export const NARRATION_SAND_COLOR = 0xb08a3a;
