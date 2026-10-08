@@ -493,8 +493,12 @@ export class DialogueScene extends Phaser.Scene {
       }
     }
     if (this.clockHand) {
-      this.tweens.killTweensOf(this.clockHand);
-      this.tweens.add({ targets: this.clockHand, angle: this.clockSecond * 6, duration: 90, ease: 'Back.easeOut' });
+      // 角度は 180度を超えると -180度側に折り返されるので、角度そのものを動かすと逆回りに一周してしまう。
+      // 進む前と後の角度（折り返さない値）の間を動かし、毎回それを針に写す
+      const hand = this.clockHand;
+      const from = { deg: (this.clockSecond - 1) * 6 };
+      this.tweens.killTweensOf(hand);
+      this.tweens.add({ targets: from, deg: this.clockSecond * 6, duration: 90, ease: 'Back.easeOut', onUpdate: () => hand.setAngle(from.deg) });
     }
   }
 
