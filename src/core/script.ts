@@ -40,6 +40,16 @@ export const SCRIPT_COMMANDS = [
   'caption',
   /** まだ作っていない遊びの所に出す仮の案内（@note 文。タップで次へ） */
   'note',
+  /** 立ち絵の芝居（@act 名前 動き。動きは data/dialogue.ts の ACTOR_MOTIONS） */
+  'act',
+  /** 頭の上の感情のふきだし（@emote 名前 印。印は EMOTES） */
+  'emote',
+  /** 画面に寄る（@zoom 倍率。戻すのは @zoom 1。場所が替わると戻る） */
+  'zoom',
+  /** 色を抜く（@mono on / off。時計が止まった時など） */
+  'mono',
+  /** 画面をノイズで乱す（@noise ミリ秒） */
+  'noise',
 ] as const;
 export type ScriptCommandName = (typeof SCRIPT_COMMANDS)[number];
 

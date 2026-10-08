@@ -152,7 +152,9 @@ describe('M1 の台本（段階22）', () => {
   });
 
   it('演出の命令は、ある背景・1枚絵・音・人だけを使う', async () => {
-    const { BACKDROPS, CAST, CGS, M1_SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
+    const { ACTOR_MOTIONS, BACKDROPS, CAST, CGS, EMOTES, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
+    for (const m of Object.values(FACE_MOTIONS)) expect(ACTOR_MOTIONS as readonly string[]).toContain(m);
+    for (const e of Object.values(FACE_EMOTES)) expect(EMOTES as readonly string[]).toContain(e);
     const assetIds = new Set(ASSETS.map((a) => a.id));
     for (const def of [...Object.values(BACKDROPS), ...Object.values(CGS)]) if (def.image) expect(assetIds.has(def.image), def.title).toBe(true);
     for (const id of [...Object.values(SCRIPT_BGM), ...Object.values(SCRIPT_SE)]) if (id) expect(assetIds.has(id), id).toBe(true);
@@ -172,6 +174,17 @@ describe('M1 の台本（段階22）', () => {
         if (step.name === 'fade') expect(['out', 'in', 'white'], where).toContain(a);
         if (step.name === 'wait') expect(Number(a), where).toBeGreaterThan(0);
         if (step.name === 'set') expect(step.args.length, where).toBeGreaterThanOrEqual(2);
+        if (step.name === 'act') {
+          expect(step.args[0] in CAST, `${where} ${step.args[0]}`).toBe(true);
+          expect(ACTOR_MOTIONS as readonly string[], where).toContain(step.args[1]);
+        }
+        if (step.name === 'emote') {
+          expect(step.args[0] in CAST, `${where} ${step.args[0]}`).toBe(true);
+          expect(EMOTES as readonly string[], where).toContain(step.args[1]);
+        }
+        if (step.name === 'zoom') expect(Number(a) >= 1 && Number(a) <= 1.5, where).toBe(true);
+        if (step.name === 'mono') expect(['on', 'off'], where).toContain(a);
+        if (step.name === 'noise') expect(Number(a), where).toBeGreaterThan(0);
       }
     }
   });

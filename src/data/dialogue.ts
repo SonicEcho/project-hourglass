@@ -2,6 +2,14 @@
 // 絵がまだない物は、色と名前で仮に描く（段階15の決まり：素材がなくても止まらない）
 import { BGM, SE } from './sounds';
 
+/** 会話の文字の音の声色（段階22の試し。高さは Hz） */
+export interface BlipVoice {
+  pitch: number;
+  wave: OscillatorType;
+  /** 電話の声：高い音と低い音を削って、こもった音にする */
+  phone?: boolean;
+}
+
 /** 会話に出る人 */
 export interface CastMember {
   /** 立ち絵の台帳の id の頭（portrait.akari なら portrait.akari.smile）。絵がなければ図形で描く */
@@ -14,6 +22,8 @@ export interface CastMember {
   color: number;
   /** 立ち絵の高さ（画面の座標）。構図の違う絵をそろえるため */
   height?: number;
+  /** 文字の音の声色（段階22の試し） */
+  voice: BlipVoice;
 }
 
 const AKARI_FACES = { 笑顔: 'smile', 大笑い: 'laugh', 心配: 'worried', むっ: 'pout', デジャヴ: 'dejavu' };
@@ -22,16 +32,34 @@ const HERO_FACES = { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 決
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
 export const CAST: Record<string, CastMember> = {
-  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300 },
-  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450 },
-  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a },
-  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5 },
-  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a },
-  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a },
-  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0 },
-  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8 },
+  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 210, wave: 'triangle' } },
+  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 470, wave: 'triangle' } },
+  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 260, wave: 'square' } },
+  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 400, wave: 'triangle' } },
+  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 620, wave: 'triangle' } },
+  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 440, wave: 'square' } },
+  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 180, wave: 'sawtooth' } },
+  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 480, wave: 'square' } },
+  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 680, wave: 'square' } },
 };
+
+/** 立ち絵を出さない人（声だけ・電話）の文字の音の声色。ここにない人は VOICE_DEFAULT */
+export const VOICE_ONLY: Record<string, BlipVoice> = {
+  担任: { pitch: 150, wave: 'sawtooth' },
+  施設の子ども: { pitch: 720, wave: 'triangle' },
+  屋台のおじさん: { pitch: 130, wave: 'sawtooth' },
+  金魚すくいのおじさん: { pitch: 130, wave: 'sawtooth' },
+  わたあめ屋: { pitch: 160, wave: 'sawtooth' },
+  浴衣の女の人: { pitch: 420, wave: 'sine' },
+  ひなの: { pitch: 430, wave: 'triangle' },
+  '？？？': { pitch: 560, wave: 'sine' },
+};
+export const VOICE_DEFAULT: BlipVoice = { pitch: 300, wave: 'triangle' };
+/** 文字の音を鳴らす間隔（何文字ごとか）。句読点や記号では鳴らさない */
+export const BLIP_EVERY = 2;
+
+/** 背景に流す空気（提灯の灯り、星、舞う砂） */
+export type Ambient = 'lanterns' | 'stars' | 'dust';
 
 /** 背景。image は台帳の id（なければ上から下への色の帯と名前で仮に描く） */
 export interface Backdrop {
@@ -39,28 +67,58 @@ export interface Backdrop {
   top: number;
   bottom: number;
   image?: string;
+  ambient?: Ambient;
 }
 
 export const BACKDROPS: Record<string, Backdrop> = {
   black: { title: '黒', top: 0x000000, bottom: 0x000000 },
   white: { title: '白', top: 0xf4f4f0, bottom: 0xdcdcd6 },
-  shrine_approach: { title: '夕暮れの神社の参道', top: 0x3a3060, bottom: 0xd07a4a },
-  shrine_stalls: { title: '参道（屋台の並び）', top: 0x2e2a58, bottom: 0xc0603a },
-  goldfish_stall: { title: '金魚すくいの屋台', top: 0x2a3a60, bottom: 0x3a8ab0 },
-  shooting_stall: { title: '射的の屋台', top: 0x3a2a50, bottom: 0xb05a3a },
-  shrine_steps: { title: '神社の石段の上', top: 0x1a1e40, bottom: 0x6a4a6a },
-  shrine_hill: { title: '神社の裏の高台（夜）', top: 0x0a0e24, bottom: 0x2a2a50 },
+  shrine_approach: { title: '夕暮れの神社の参道', top: 0x3a3060, bottom: 0xd07a4a, ambient: 'lanterns' },
+  shrine_stalls: { title: '参道（屋台の並び）', top: 0x2e2a58, bottom: 0xc0603a, ambient: 'lanterns' },
+  goldfish_stall: { title: '金魚すくいの屋台', top: 0x2a3a60, bottom: 0x3a8ab0, ambient: 'lanterns' },
+  shooting_stall: { title: '射的の屋台', top: 0x3a2a50, bottom: 0xb05a3a, ambient: 'lanterns' },
+  shrine_steps: { title: '神社の石段の上', top: 0x1a1e40, bottom: 0x6a4a6a, ambient: 'stars' },
+  shrine_hill: { title: '神社の裏の高台（夜）', top: 0x0a0e24, bottom: 0x2a2a50, ambient: 'stars' },
   home_kitchen: { title: '施設の台所（朝）', top: 0xf0e2c0, bottom: 0xb8a080 },
   home_kitchen_evening: { title: '施設の台所（夕方）', top: 0xe0a070, bottom: 0x8a6050 },
   classroom: { title: '教室', top: 0xd8e4ec, bottom: 0x9aa8a0 },
   rooftop: { title: '学校の屋上', top: 0x7ab0e0, bottom: 0xe0b080 },
   shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80 },
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
-  clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30 },
-  clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30 },
-  clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420 },
-  library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020 },
-  festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival' },
+  clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, ambient: 'dust' },
+  clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, ambient: 'dust' },
+  clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420, ambient: 'dust' },
+  library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020, ambient: 'dust' },
+  festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival', ambient: 'lanterns' },
+};
+
+/** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
+export const ACTOR_MOTIONS = ['hop', 'bounce', 'shake', 'sink', 'rise', 'step', 'sway', 'nod'] as const;
+export type ActorMotion = (typeof ACTOR_MOTIONS)[number];
+
+/** 表情が替わった時の動き（驚き → 跳ねる、大笑い → 弾む、むっ → ぷるっと震える、心配 → 少し沈む など） */
+export const FACE_MOTIONS: Record<string, ActorMotion> = {
+  驚き: 'hop',
+  大笑い: 'bounce',
+  得意げ: 'nod',
+  むっ: 'shake',
+  あせり: 'shake',
+  心配: 'sink',
+  泣き: 'sink',
+  泣き笑い: 'sink',
+  考える: 'sink',
+  決意: 'step',
+  デジャヴ: 'sway',
+};
+
+/** 頭の上の感情のふきだしの印（@emote で使う） */
+export const EMOTES = ['！', '？', '！？', '…', '♪', '汗'] as const;
+export type Emote = (typeof EMOTES)[number];
+
+/** 表情が替わった時に、自動で出すふきだし */
+export const FACE_EMOTES: Record<string, Emote> = {
+  驚き: '！',
+  あせり: '汗',
 };
 
 /** 1枚絵（なければ色と名前で仮に描く） */

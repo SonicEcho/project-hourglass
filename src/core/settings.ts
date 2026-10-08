@@ -1,15 +1,17 @@
-// 遊ぶ人の設定（段階19）。今は音量だけ。セーブとは別に保存する（はじめからやり直しても消えない）
+// 遊ぶ人の設定（段階19）。音量と、会話の文字の音（段階22）。セーブとは別に保存する（はじめからやり直しても消えない）
 
 /** 音量（0〜1） */
 export interface Settings {
   bgmVolume: number;
   seVolume: number;
+  /** 会話で、文字が出るたびに短い音を鳴らす（声の代わりに、しゃべっている感じを出す。段階22の試し） */
+  typeSound: boolean;
 }
 
 /** 選べる音量の段階 */
 export const VOLUME_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75 };
+export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true };
 
 /** 0〜1 の段階のうち、一番近いものにそろえる。数でなければ fallback */
 function toStep(v: unknown, fallback: number): number {
@@ -30,6 +32,7 @@ export function parseSettings(text: string | null): Settings {
   return {
     bgmVolume: toStep(o.bgmVolume, DEFAULT_SETTINGS.bgmVolume),
     seVolume: toStep(o.seVolume, DEFAULT_SETTINGS.seVolume),
+    typeSound: typeof o.typeSound === 'boolean' ? o.typeSound : DEFAULT_SETTINGS.typeSound,
   };
 }
 
