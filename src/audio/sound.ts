@@ -102,7 +102,7 @@ export function playBlip(scene: Phaser.Scene, voice: BlipVoice): void {
   osc.type = voice.wave;
   osc.frequency.value = voice.pitch * (0.94 + Math.random() * 0.12);
   const gain = ctx.createGain();
-  const peak = 0.09 * st.seVolume;
+  const peak = 0.2 * st.seVolume;
   gain.gain.setValueAtTime(0, now);
   gain.gain.linearRampToValueAtTime(peak, now + 0.005);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
@@ -120,6 +120,19 @@ export function playBlip(scene: Phaser.Scene, voice: BlipVoice): void {
   osc.start(now);
   osc.stop(now + 0.06);
   osc.onended = () => gain.disconnect();
+}
+
+/**
+ * 音を出すように頼んでから、実際にスピーカーから聞こえるまでの遅れ（ミリ秒）。
+ * スマホは 0.1 秒前後遅れることがあるので、文字の音はこの分だけ文字より先に鳴らし始める。
+ * ブラウザが教えてくれない時は、少しだけ（50ミリ秒）先に鳴らす
+ */
+export function audioLatencyMs(scene: Phaser.Scene): number {
+  const mgr = scene.sound;
+  if (!(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return 0;
+  const ctx = mgr.context as AudioContext;
+  const sec = (ctx.outputLatency || 0) + (ctx.baseLatency || 0) || 0.05;
+  return Math.min(300, Math.max(0, Math.round(sec * 1000)));
 }
 
 /** BGM を小さくしながら止める */
