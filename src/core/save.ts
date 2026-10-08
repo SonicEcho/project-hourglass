@@ -1,3 +1,5 @@
+import type { Flow } from './flow';
+import { dayAt, findEvent, firstEventId } from './flow';
 import type { GrowthMap, GrowthState } from './growth';
 import { createGrowth } from './growth';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
@@ -11,9 +13,9 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
-/** 版1のセーブは、試作の1章・1区画（5戦）だけだった。版2に直す時に、この章・区画と戦闘の名前に置き換える */
+/** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
 export const V1_AREA_ID = 'trial';
 export const v1BattleId = (stage: number): string => `battle${stage + 1}`;
@@ -29,6 +31,10 @@ export interface RunSnapshot {
   /** まだ受け取っていないギアの報酬（勝った戦闘の名前。版1では戦闘の番号） */
   pendingReward: string | null;
   armory: ArmoryState;
+  /** 物語の流れの、今の出来事（段階23。版3から） */
+  event: string;
+  /** 物語で覚えた値（プロローグで選んだ金魚の名前・景品など。段階23。版3から） */
+  vars: Record<string, string>;
 }
 
 export interface SaveData {
@@ -47,23 +53,21 @@ export interface SaveContext {
   weaponData: WeaponData;
   /** 章 → 区画 → 戦闘 */
   story: Story;
+  /** 物語の流れ（章 → 出来事。段階23） */
+  flow: Flow;
 }
 
 /** ある版のセーブを、次の版の形に直す手順（キーは直す前の版の番号） */
 export type SaveMigrations = Record<number, (raw: Record<string, unknown>) => Record<string, unknown>>;
 
-/** 古い版から直す手順 */
-export const MIGRATIONS: SaveMigrations = {
-  // 版1 → 版2（段階13）：何戦目か（stage）を、章・区画・何戦目・何日目に。報酬は戦闘の番号から名前に
-  1: (raw) => {
-    if (!isObject(raw.run)) return raw;
-    const { stage, pendingReward, ...rest } = raw.run;
-    const progress = { chapterId: V1_CHAPTER_ID, areaId: V1_AREA_ID, battle: stage, day: 1 };
-    return { ...raw, run: { ...rest, progress, pendingReward: isInt(pendingReward) ? v1BattleId(pendingReward) : null } };
-  },
-};
+/**
+ * 古い版から直す手順。
+ * 版1・2（試作の5戦だけのセーブ）は、スライスの流れ（段階23）には引き継がない（開発者と決めた）。手順を置かないので、読めない古いセーブとして扱う
+ */
+export const MIGRATIONS: SaveMigrations = {};
 
-export type LoadResult = { ok: true; save: SaveData } | { ok: false; error: string };
+/** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
+export type LoadResult = { ok: true; save: SaveData } | { ok: false; error: string; old?: true };
 
 export function serializeSave(run: RunSnapshot, savedAt: Date): string {
   const data: SaveData = { version: SAVE_VERSION, savedAt: savedAt.toISOString(), run };
@@ -84,7 +88,7 @@ export function parseSave(text: string, ctx: SaveContext, migrations: SaveMigrat
   while ((cur.version as number) < version) {
     const from = cur.version as number;
     const step = migrations[from];
-    if (!step) return { ok: false, error: `版${from}から直す手順がない` };
+    if (!step) return { ok: false, error: `版${from}から直す手順がない`, old: true };
     cur = { ...step(cur), version: from + 1 };
   }
   if (typeof cur.savedAt !== 'string' || !isObject(cur.run)) return { ok: false, error: '中身が足りない' };
@@ -103,6 +107,9 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
   if (!isInt(seed) || typeof fixed !== 'boolean' || !isObject(raw.progress)) return null;
   if (pendingReward !== null && typeof pendingReward !== 'string') return null;
   if (!isObject(raw.growth) || !isObject(raw.navi) || !isObject(raw.armory)) return null;
+  if (typeof raw.event !== 'string' || !isObject(raw.vars)) return null;
+  // 今の流れにない出来事なら、最初の出来事から
+  const event = findEvent(ctx.flow, raw.event) ? raw.event : firstEventId(ctx.flow);
   const growth = sanitizeGrowth(raw.growth, ctx);
   const armory = sanitizeArmory(raw.armory, ctx.weaponData);
   if (!growth || !armory) return null;
@@ -111,12 +118,15 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
   return {
     seed: seed >>> 0,
     fixed,
-    progress: normalizeProgress(ctx.story, raw.progress as Partial<Progress>),
+    // 何日目は、今の出来事に合わせる
+    progress: { ...normalizeProgress(ctx.story, raw.progress as Partial<Progress>), day: dayAt(ctx.flow, event) },
     growth,
     navi,
     // 今のデータにない戦闘の報酬は捨てる
     pendingReward: pendingReward !== null && findBattle(ctx.story, pendingReward) ? pendingReward : null,
     armory,
+    event,
+    vars: stringsOf(raw.vars),
   };
 }
 
@@ -187,6 +197,13 @@ function toPlacement(raw: unknown): Placement | null {
 function countsOf(raw: Record<string, unknown>, known: Record<string, unknown>): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [id, n] of Object.entries(raw)) if (known[id] && isInt(n) && n > 0) out[id] = n;
+  return out;
+}
+
+/** 文字の値だけを残す */
+function stringsOf(raw: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) if (typeof v === 'string') out[k] = v;
   return out;
 }
 

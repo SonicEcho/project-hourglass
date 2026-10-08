@@ -17,7 +17,7 @@ import {
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { GROWTH_MAP, NAVI_DATA, PARTY, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { GROWTH_MAP, NAVI_DATA, PARTY, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -26,6 +26,7 @@ const ctx: SaveContext = {
   naviData: NAVI_DATA,
   weaponData: WEAPON_DATA,
   story: STORY,
+  flow: SLICE_FLOW,
 };
 
 const AT = new Date('2026-10-07T12:34:56Z');
@@ -39,6 +40,8 @@ function freshRun(): RunSnapshot {
     navi: createNavi(START_NAVI_PARTS),
     pendingReward: null,
     armory: createArmory(WEAPON_DATA),
+    event: 'prologue_open',
+    vars: {},
   };
 }
 
@@ -55,6 +58,8 @@ function playedRun(): RunSnapshot {
   r.armory = feedFragment(WEAPON_DATA, r.armory, 'hero', 'elation');
   r.progress = progressAt(STORY, 2);
   r.pendingReward = 'battle2';
+  r.event = 'd1_clockshop';
+  r.vars = { goldfish: 'あかね', prize: 'robot' };
   return r;
 }
 
@@ -120,6 +125,9 @@ describe('セーブ：古い版から直す', () => {
     const res = parseSave(JSON.stringify(v0), ctx, {
       ...MIGRATIONS,
       0: (raw: any) => ({ ...raw, run: { ...raw.run, growth: { ...raw.run.growth, points: raw.run.memoryPoints } } }),
+      // 版1・2 → 次の版は、形が同じだった、という想定
+      1: (raw: any) => raw,
+      2: (raw: any) => raw,
     });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -127,25 +135,16 @@ describe('セーブ：古い版から直す', () => {
     expect(res.save.run.growth.points).toBe(playedRun().growth.points + 5);
   });
 
-  it('版1のセーブ（何戦目かと報酬の番号）を、版2の章・区画・何戦目に直して読む', () => {
-    const v2 = JSON.parse(serializeSave(playedRun(), AT));
-    const { progress: _p, ...rest } = v2.run;
-    const v1 = { version: 1, savedAt: v2.savedAt, run: { ...rest, stage: 2, pendingReward: 1 } };
-    const res = parseSave(JSON.stringify(v1), ctx);
-    expect(res.ok).toBe(true);
-    if (!res.ok) return;
-    expect(res.save.version).toBe(2);
-    expect(res.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 2, day: 1 });
-    expect(res.save.run.pendingReward).toBe('battle2');
-    expect(res.save.run.growth).toEqual(playedRun().growth);
-    // 報酬がない版1のセーブ
-    const res2 = parseSave(JSON.stringify({ ...v1, run: { ...v1.run, pendingReward: null } }), ctx);
-    expect(res2.ok && res2.save.run.pendingReward).toBeNull();
+  it('版1・2のセーブ（試作の5戦だけ）は、古い版として読まない（段階23で引き継がないと決めた）', () => {
+    for (const version of [1, 2]) {
+      const res = parseEdited((raw) => (raw.version = version));
+      expect(res).toEqual({ ok: false, error: `版${version}から直す手順がない`, old: true });
+    }
   });
 
   it('直す手順がない古い版は読まない', () => {
     const res = parseEdited((raw) => (raw.version = 0));
-    expect(res).toEqual({ ok: false, error: '版0から直す手順がない' });
+    expect(res).toEqual({ ok: false, error: '版0から直す手順がない', old: true });
   });
 });
 
@@ -222,7 +221,23 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res.ok && res.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 4, day: 1 });
     expect(res.ok && res.save.run.pendingReward).toBeNull();
     const res2 = parseEdited((raw) => (raw.run.progress = { chapterId: 'removedChapter', areaId: 'x', battle: 2, day: 3 }));
-    expect(res2.ok && res2.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 2, day: 3 });
+    expect(res2.ok && res2.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 2, day: 1 });
+  });
+
+  it('物語の出来事と覚えた値を読み戻す。今の流れにない出来事は最初から、何日目は出来事に合わせる', () => {
+    const res = parseEdited((raw) => {
+      raw.run.progress.day = 5;
+      raw.run.vars.broken = 3;
+    });
+    expect(res.ok && res.save.run.event).toBe('d1_clockshop');
+    expect(res.ok && res.save.run.progress.day).toBe(1);
+    expect(res.ok && res.save.run.vars).toEqual({ goldfish: 'あかね', prize: 'robot' });
+    const res2 = parseEdited((raw) => (raw.run.event = 'd2_noa'));
+    expect(res2.ok && res2.save.run.progress.day).toBe(2);
+    const res3 = parseEdited((raw) => (raw.run.event = 'removedEvent'));
+    expect(res3.ok && res3.save.run.event).toBe('prologue_open');
+    expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
+    expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
   });
 
   it('進み具合がないものは読まない', () => {

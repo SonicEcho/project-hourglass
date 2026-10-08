@@ -1,3 +1,4 @@
+import type { Flow, FlowEvent } from '../core/flow';
 import type { Story } from '../core/progress';
 import { V1_AREA_ID, V1_CHAPTER_ID } from '../core/save';
 import type { CampaignBattle } from './campaign';
@@ -15,5 +16,79 @@ export const STORY: Story<CampaignBattle> = [
     id: PROTOTYPE_CHAPTER_ID,
     name: '試作',
     areas: [{ id: PROTOTYPE_AREA_ID, name: '試作の5戦', battles: CAMPAIGN }],
+  },
+];
+
+// ---- 物語の流れ（段階23）：M1 のスライス（プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 → つづく） ----
+// 会話の出来事の id は、台本（scriptM1.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
+// まだ作っていない遊び（昼の日常・探索・時間を返す）は、仮の画面で案内して「次へ」で通す（段階24〜28で本物に置き換える）
+
+const talk = (id: string, title: string): FlowEvent => ({ id, kind: 'dialogue', title });
+
+export const SLICE_FLOW: Flow = [
+  {
+    id: 'prologue',
+    name: 'プロローグ「あの夏」',
+    events: [
+      talk('prologue_open', 'プロローグ：参道の入口'),
+      talk('prologue_mask', 'プロローグ：お面屋'),
+      talk('prologue_apple', 'プロローグ：りんご飴'),
+      talk('prologue_shooting', 'プロローグ：射的'),
+      talk('prologue_goldfish', 'プロローグ：金魚すくい'),
+      talk('prologue_end', 'プロローグ：石段の上と、花火'),
+    ],
+  },
+  {
+    id: 'ch1',
+    name: '第1章「あっという間の夏」',
+    events: [
+      talk('chapter1_title', '第1章'),
+      { id: 'day1', kind: 'day', title: '1日目', day: 1 },
+      talk('d1_morning', '1日目：朝'),
+      talk('d1_classroom', '1日目：朝の教室'),
+      talk('d1_street', '1日目：放課後の商店街'),
+      {
+        id: 'd1_free',
+        kind: 'daily',
+        title: '1日目：自由な時間',
+        note: 'ここで昼の日常（段階24で、学校の屋上・施設・時計屋から行く場所を選べるようにする）。今は、見たい場面を下から選んで読める。時計屋へ行くと夕暮れになる',
+        optional: [
+          { label: '学校の屋上（あかり）', scene: 'd1_rooftop' },
+          { label: '施設（小話）', scene: 'd1_home' },
+        ],
+      },
+      talk('d1_clockshop', '1日目：夕暮れの時計屋'),
+      talk('d1_library', '1日目：レストピアの蔵書の棚'),
+      talk('a11_enter', '1-1：縁日に入る'),
+      {
+        id: 'a11_explore',
+        kind: 'explore',
+        title: '1-1「金魚の名前」：縁日の探索',
+        note: 'ここで探索（段階25で作る）。縁日を歩き、砂嵐と戦い（段階27）、宝箱で素材を手に入れ、コマを集める（段階28）。今は「次へ」で、探索の途中の会話に進む',
+      },
+      talk('a11_first_koma', '1-1：最初のコマ'),
+      talk('a11_checkpoint', '1-1：チェックポイント'),
+      talk('a11_three_left', '1-1：あとコマが3つ'),
+      talk('a11_boss', '1-1：区画の奥のボス'),
+      talk('a11_last_koma', '1-1：最後のコマ'),
+      {
+        id: 'a11_return',
+        kind: 'return',
+        title: '1-1：時間を返す',
+        note: 'ここで時間を返す（段階28で作る）。そろったコマで、盗まれた夏の夜を持ち主へ返す。今は「次へ」で、返す場面の会話に進む',
+      },
+      talk('d1_return', '1日目：時間を返す'),
+      { id: 'day2', kind: 'day', title: '2日目', day: 2 },
+      talk('d2_classroom', '2日目：朝の教室'),
+      {
+        id: 'd2_free',
+        kind: 'daily',
+        title: '2日目：昼',
+        note: 'ここで昼の日常（段階24で、行く場所を選べるようにする）。今は「次へ」で、商店街のコンビニに進む',
+      },
+      talk('d2_store', '2日目：コンビニの前'),
+      talk('d2_noa', '2日目：すれ違い'),
+      { id: 'to_be_continued', kind: 'end', title: 'つづく' },
+    ],
   },
 ];

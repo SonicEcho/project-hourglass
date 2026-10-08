@@ -1,4 +1,4 @@
-import type { ArmoryState, BattleState, CharacterDef, GrowthState, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import type { ArmoryState, BattleState, CharacterDef, FlowEvent, GrowthState, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -8,6 +8,10 @@ import {
   createArmory,
   createGrowth,
   createNavi,
+  advanceFlow,
+  findEvent,
+  firstEventId,
+  moveToEvent,
   naviDataWithWeapons,
   parseSave,
   placeOf,
@@ -15,7 +19,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 
@@ -38,6 +42,10 @@ export const run: {
   pendingReward: string | null;
   /** 武器と記憶の欠片 */
   armory: ArmoryState;
+  /** 物語の流れの、今の出来事（段階23。SLICE_FLOW の id） */
+  event: string;
+  /** 物語で覚えた値（金魚の名前・景品など。会話の @set） */
+  vars: Record<string, string>;
 } = {
   active: false,
   seed: 0,
@@ -47,6 +55,8 @@ export const run: {
   navi: createNavi(START_NAVI_PARTS),
   pendingReward: null,
   armory: createArmory(WEAPON_DATA),
+  event: firstEventId(SLICE_FLOW),
+  vars: {},
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -81,6 +91,40 @@ export function startNewRun(): void {
   run.navi = createNavi(START_NAVI_PARTS);
   run.pendingReward = null;
   run.armory = createArmory(WEAPON_DATA);
+  run.event = firstEventId(SLICE_FLOW);
+  run.vars = {};
+  saveRun();
+}
+
+// ---- 物語の流れ（段階23） ----
+
+/** 今の出来事 */
+export function currentEvent(): FlowEvent {
+  const e = findEvent(SLICE_FLOW, run.event);
+  if (!e) throw new Error(`unknown event ${run.event}`);
+  return e;
+}
+
+/** 出来事 id へ移して保存する（会話の場面が進んだ時、デバッグで飛ぶ時）。何日目もその出来事に合わせる */
+export function setEvent(id: string): void {
+  const pos = moveToEvent(SLICE_FLOW, id);
+  run.event = pos.event;
+  run.progress = { ...run.progress, day: pos.day };
+  saveRun();
+}
+
+/** 今の出来事を終えて、次の出来事へ進めて保存する */
+export function advanceEvent(): FlowEvent {
+  const pos = advanceFlow(SLICE_FLOW, { event: run.event, day: run.progress.day });
+  run.event = pos.event;
+  run.progress = { ...run.progress, day: pos.day };
+  saveRun();
+  return currentEvent();
+}
+
+/** 物語で覚えた値を足して保存する（会話の @set） */
+export function setStoryVars(vars: Record<string, string>): void {
+  run.vars = { ...vars };
   saveRun();
 }
 
@@ -108,11 +152,22 @@ export function saveContext(): SaveContext {
     naviData: NAVI_DATA,
     weaponData: WEAPON_DATA,
     story: STORY,
+    flow: SLICE_FLOW,
   };
 }
 
 function snapshot(): RunSnapshot {
-  return { seed: run.seed, fixed: run.fixed, progress: run.progress, growth: run.growth, navi: run.navi, pendingReward: run.pendingReward, armory: run.armory };
+  return {
+    seed: run.seed,
+    fixed: run.fixed,
+    progress: run.progress,
+    growth: run.growth,
+    navi: run.navi,
+    pendingReward: run.pendingReward,
+    armory: run.armory,
+    event: run.event,
+    vars: run.vars,
+  };
 }
 
 /** 今の周回の状態を保存する。周回の外（タイトル、クリア後）では何もしない。中身が前と同じなら書き込まない */
@@ -162,6 +217,8 @@ export function continueRun(): boolean {
   run.navi = s.navi;
   run.pendingReward = s.pendingReward;
   run.armory = s.armory;
+  run.event = s.event;
+  run.vars = s.vars;
   run.active = true;
   lastWritten = null;
   saveRun();

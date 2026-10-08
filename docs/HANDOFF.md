@@ -1,19 +1,20 @@
 # 引き継ぎメモ（これまでの作業のまとめ）
 
-最終更新：2026-10-08（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。M1 の段階分け（段階21〜32）を `docs/milestones/M1.md` に書き、開発者と確認して決めた。段階21（脚本 `docs/script/M1.md`）は済。段階22（会話の画面）を作り、開発者のスマホでの確認待ち。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
+最終更新：2026-10-08（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。M1 の段階分け（段階21〜32）を `docs/milestones/M1.md` に書き、開発者と確認して決めた。段階21（脚本 `docs/script/M1.md`）・段階22（会話の画面）は済。段階23（物語の流れの骨組み）を作り、開発者のスマホでの確認待ち。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
 
 新しいセッションでは、まずこのファイルを読む。今の仕組みは `docs/design/`（一覧は `docs/design/README.md`）、今の作業の一覧は `docs/milestones/M1.md`（M0 の記録は `docs/milestones/M0.md`）、背景は `docs/CONCEPT.md`。`docs/SPEC.md` は試作（段階1〜14）の記録（段階14から書き足さない）。
 
 ## いまの状態
 
 - スマホ向けターン制RPGの「バトルプロトタイプ」。公開URL：https://sonicecho.github.io/project-hourglass/ （`?debug=1` でデバッグ、`?seed=数字` で乱数を固定）
-- タイトル → 成長マップ（＋ナビカス盤・武器）→ 戦闘1〜5（5戦目はボス「歪みの獣」）→ 結果画面、を通しで遊べる
-- 星図・ムーブメント・武器の画面で自動セーブし、タイトルの「つづきから」で星図から再開できる（段階11。戦闘中に閉じたら、その戦闘の前から）
+- タイトルの「はじめる」で、M1 の物語の流れ（プロローグ → 1日目 → 1-1 → 2日目 → つづく）を通せる。まだない遊び（昼の日常・探索・時間を返す）は仮の画面（段階23）
+- デバッグメニューの「試作の5戦を最初から」で、成長マップ（＋ナビカス盤・武器）→ 戦闘1〜5（5戦目はボス「歪みの獣」）→ 結果画面、を遊べる
+- 物語の流れ（今の出来事・覚えた値）と、星図・ムーブメント・武器の画面で自動セーブし、タイトルの「つづきから」で続けられる（段階11・23。セーブは版3）
 - 自動対戦の勝率の測定を `npm run measure` と GitHub Actions の「Measure」で回せる（段階12）
 - 周回の状態は「章・区画・何戦目・何日目」（`run.progress`）で持つ。今は試作の1章・1区画・5戦（段階13）
 - 音（段階19）：タイトルと縁日の試作で BGM（自作の仮の音）、ボタン・戦闘・探索で効果音（効果音ラボ）。タイトルの「音量」で大きさを変えられる
 - `?debug=1` のデバッグメニューから、探索の試作（図形の地図、縁日の絵の地図）と、M1 の会話の場面（段階22。「M1 を通しで読む」、場面を選んで開く）を開ける
-- テストは329件、すべて通る。`main` への push で GitHub Actions がテストし、通れば GitHub Pages に公開する
+- テストは366件、すべて通る。`main` への push で GitHub Actions がテストし、通れば GitHub Pages に公開する
 - 開発者の最新の感想：ボスの手応えは「ちょうどいい」。段階7（成長マップ）は確認済みで、気になる点は今のところなし
 - 段階8（ナビカス盤）は確認済み。感想は「いい感じのバランスで面白かった」
 
@@ -46,8 +47,9 @@
 | 18b（M0） | 絵の見本：縁日の見下ろしの絵の地図＋見えないマス目 → 絵の方向性を決定（`docs/ART.md`） | #27 |
 | 19（M0） | 音の仕組み（`src/audio/sound.ts`、効果音、BGM のループと切り替え、音量の設定） | #28 |
 | 20（M0） | 磨き：読み込みのバー、BGM を mp3 に（区間ループ）、通しの自動確認（`npm run e2e`、Actions） | #29 |
-| 21（M1） | M1 の脚本（`docs/script/M1.md`）、固有の名前、`docs/STORY.md` の 2-13 | （未マージ） |
-| 22（M1） | 会話の画面（`DialogueScene`）と台本（`src/core/script.ts`、`src/data/scriptM1.ts`）。段階16の会話の試作は消した | （未マージ） |
+| 21（M1） | M1 の脚本（`docs/script/M1.md`）、固有の名前、`docs/STORY.md` の 2-13 | #31 |
+| 22（M1） | 会話の画面（`DialogueScene`）と台本（`src/core/script.ts`、`src/data/scriptM1.ts`）。段階16の会話の試作は消した。調整1〜12 | #31〜#43 |
+| 23（M1） | 物語の流れの骨組み（`src/core/flow.ts`、`SLICE_FLOW`、`FlowScene`）、セーブの版3 | （未マージ） |
 
 ## いまのルールの要点
 
@@ -77,6 +79,7 @@
 | `src/save/storage.ts` | 保存の窓口（今は localStorage。アプリにする時はここを差し替える） |
 | `src/core/grid.ts` `settings.ts` | 探索のマス目と道探し、音量の設定の読み書き |
 | `src/core/script.ts` `src/data/scriptM1.ts` `src/data/dialogue.ts` | 台本の読み取りと進め方（段階22）、M1 の台本（脚本と同じ書き方の文字）、会話に出る人・背景・1枚絵・音の一覧 |
+| `src/core/flow.ts` `src/data/story.ts`（`SLICE_FLOW`） `src/scenes/FlowScene.ts` | 物語の流れ（段階23）：章 → 出来事の並びと進め方、M1 の流れ、出来事ごとの画面（会話へ渡す・仮の画面・日の扉・つづく）。書き方は `docs/design/run.md` の 0. |
 | `src/scenes/DialogueScene.ts` | 会話の画面（文字送り、選択肢、ログ、早送り、オート、語りの砂）。書き方は `docs/design/dialogue.md` |
 | `src/assets/` `src/data/assets.ts` | 素材を読み込む部品と、素材台帳（入手元・ライセンス。クレジットの画面もここから作る） |
 | `src/audio/sound.ts` `src/data/sounds.ts` | 音を鳴らす部品と、音の名前・BGM のくり返す区間 |

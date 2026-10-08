@@ -1,12 +1,15 @@
-// 通しの自動確認（段階20）。M0 の完成の基準「今の試作と同じ遊びが動く。途中で閉じても続きから遊べる」を、本物のブラウザで毎回確かめる。
+// 通しの自動確認（段階20・23）。本物のブラウザで毎回確かめる。
 // 使い方: npm run build の後に npm run e2e（dist/ を手元のサーバーで開き、Chromium で自動で遊ぶ）
-// 流れ: タイトル →「はじめる」→ 戦闘1〜5（敵のHPを1にして「自動で1ラウンド戦う」）→ 結果。
-// 戦闘2の後でページを開き直し、「つづきから」で同じ所から続くことを確かめる。最後に縁日の試作で BGM が切り替わるかを見る。
+// 流れ1（段階23）: タイトル →「はじめる」→ プロローグの会話 → ページを開き直して「つづきから」で同じ場面から続く →
+//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す）。途中の探索の仮の画面でも開き直して続くことを確かめる。
+// 流れ2（段階20）: デバッグメニューの「試作の5戦を最初から」→ 戦闘1〜5（敵のHPを1にして「自動で1ラウンド戦う」）→ 結果。最後に縁日の試作で BGM が切り替わるかを見る。
 // エラーが出る・途中で止まる・思った画面にならない時は失敗（終了コード1）にする。失敗した時の画面は e2e-failure.png に残す
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 
 const BATTLES = 5;
+/** 物語の流れの出来事の数の上限（無限に回らないように） */
+const MAX_EVENTS = 80;
 const step = (msg) => console.log(`- ${msg}`);
 
 const server = await preview({ preview: { port: 4173, strictPort: false }, logLevel: 'warn' });
@@ -96,9 +99,55 @@ try {
   await page.goto(`${base}?debug=1&seed=1`);
   await waitScene('Title');
   await tap('^はじめる$');
-  await waitScene('Growth');
+  await waitScene('Dialogue');
   const bgm = await page.evaluate(() => window.__restopia.bgm());
   if (bgm !== 'bgm.title') throw new Error(`タイトルの BGM が流れていない（${bgm}）`);
+  step('プロローグの会話が始まった');
+  for (let i = 0; i < 3; i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+
+  step('ページを開き直して「つづきから」で同じ場面から');
+  await page.reload();
+  await waitScene('Title');
+  await until('「つづきから」の下にプロローグの場面', () => findText('プロローグ：参道の入口'));
+  await tap('^つづきから$');
+  await waitScene('Dialogue');
+
+  step('物語の流れを最後（つづく）まで開く');
+  let reloaded = false;
+  for (let i = 0; ; i++) {
+    if (i > MAX_EVENTS) throw new Error('物語の流れが終わらない');
+    if (await findText('^つづく$')) break;
+    if (!reloaded && (await findText('^探索（仮）$'))) {
+      // 探索の仮の画面でも、開き直して続くか
+      await page.reload();
+      await waitScene('Title');
+      await until('「つづきから」の下に探索の出来事', () => findText('縁日の探索'));
+      await tap('^つづきから$');
+      await until('探索の仮の画面に戻る', () => findText('^探索（仮）$'));
+      reloaded = true;
+      await tap('^次へ$');
+    } else if (await findText('^2日目$')) {
+      await page.waitForTimeout(700);
+      await tapAt(195, 422);
+    } else {
+      await debugButton('次の出来事へ飛ばす');
+    }
+    await page.waitForTimeout(500);
+    await until('流れの画面か会話の画面', async () => {
+      const s = await scenes();
+      return s.includes('Flow') || s.includes('Dialogue');
+    });
+  }
+  if (!reloaded) throw new Error('探索の仮の画面が出なかった');
+  await tap('^タイトルへ$');
+  await waitScene('Title');
+
+  step('試作の5戦を最初から');
+  await debugButton('試作の5戦を最初から');
+  await waitScene('Growth');
 
   for (let n = 1; n <= BATTLES; n++) {
     const label = await tap(n === BATTLES ? '（ボス）へ$' : `^戦闘${n}へ$`);
@@ -112,14 +161,6 @@ try {
     await tap('^星図へ$');
     await waitScene('Growth');
     await claimReward();
-    if (n === 2) {
-      step('ページを開き直して「つづきから」');
-      await page.reload();
-      await waitScene('Title');
-      await tap('^つづきから$');
-      await waitScene('Growth');
-      await until('戦闘3から続く', () => findText('^戦闘3へ$'));
-    }
   }
   step('結果の画面まで進んだ');
 

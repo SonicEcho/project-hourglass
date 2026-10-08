@@ -1,9 +1,9 @@
 import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addParts } from '../core';
-import { ITEMS, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, WEAPON_DATA } from '../data';
+import { addItems, addParts, flowEvents } from '../core';
+import { ITEMS, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
-import { deleteSave, getActiveBattle, readSave, readSaveText, run } from '../scenes/run';
+import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
 export interface DebugNavigator {
@@ -15,6 +15,8 @@ export interface DebugNavigator {
   openPrototype(key: 'ProtoExplore', data?: object): void;
   /** 会話の画面を開く（段階22。DialogueScene の DialogueData） */
   openDialogue(data: { scene: string; queue?: string[] }): void;
+  /** 物語の流れの画面を開く（段階23。今の出来事から） */
+  openFlow(): void;
 }
 
 const Z = 9000;
@@ -133,6 +135,38 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('ボス戦（戦闘5）から始める（育成はそのまま）', () => {
         close();
         nav.startBoss();
+      }),
+    );
+
+    // 物語の流れ（段階23）：出来事を飛ばす・選んで飛ぶ
+    const now = currentEvent();
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', `物語の流れ（段階23）：今は「${now.title}」（${now.id}・${run.progress.day}日目）`));
+    panel.append(
+      button('次の出来事へ飛ばす', () => {
+        close();
+        run.active = true;
+        advanceEvent();
+        nav.openFlow();
+      }),
+    );
+    const eventSelect = el('select', 'display:block;width:100%;min-height:44px;margin:6px 0;font:14px sans-serif;');
+    for (const e of flowEvents(SLICE_FLOW)) {
+      const o = el('option', '', `${e.title}（${e.id}）`);
+      o.value = e.id;
+      if (e.id === now.id) o.selected = true;
+      eventSelect.append(o);
+    }
+    panel.append(
+      eventSelect,
+      button('↑ の出来事へ飛ぶ（育成はそのまま）', () => {
+        close();
+        run.active = true;
+        setEvent(eventSelect.value);
+        nav.openFlow();
+      }),
+      button('試作の5戦を最初から（星図から。育成と物語の進み具合もリセット）', () => {
+        close();
+        nav.restartRun();
       }),
     );
 
