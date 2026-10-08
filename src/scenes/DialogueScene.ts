@@ -844,13 +844,17 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   private toggleBlip(): void {
-    setSettings({ ...getSettings(), typeSound: !getSettings().typeSound });
+    // 入（スピーカー）→ BT用（ワイヤレスイヤホン。音を早めに鳴らす）→ 切 → 入 …
+    const st = getSettings();
+    const next = !st.typeSound ? { typeSound: true, audioOut: 'speaker' as const } : st.audioOut === 'speaker' ? { typeSound: true, audioOut: 'wireless' as const } : { typeSound: false };
+    setSettings({ ...st, ...next });
     this.refreshBlipButton();
   }
 
   private refreshBlipButton(): void {
-    const on = getSettings().typeSound;
-    this.blipLabel.setText(on ? '文字音 入' : '文字音 切');
+    const st = getSettings();
+    const on = st.typeSound;
+    this.blipLabel.setText(!on ? '文字音 切' : st.audioOut === 'wireless' ? '文字音 BT用' : '文字音 入');
     this.blipButton.setFillStyle(on ? 0x2a4a5a : COLORS.panelLight).setStrokeStyle(on ? 2 : 1, on ? 0x7ac8e0 : COLORS.border);
   }
 

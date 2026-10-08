@@ -102,7 +102,7 @@ export class TitleScene extends Phaser.Scene {
     const panel = this.add.container(0, 0);
     // 後ろのボタンを押せないよう、画面全体を覆う
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(this.add.rectangle(cx, 400, 300, 300, COLORS.panel).setStrokeStyle(1, COLORS.border));
+    panel.add(this.add.rectangle(cx, 430, 300, 360, COLORS.panel).setStrokeStyle(1, COLORS.border));
     panel.add(addText(this, cx, 280, '音量', { size: 18, bold: true }).setOrigin(0.5));
     const pct = (v: number) => `${Math.round(v * 100)}%`;
     const draw = () => {
@@ -124,10 +124,19 @@ export class TitleScene extends Phaser.Scene {
           draw();
         },
       }, { size: 16 });
+      // 音の出口（会話の文字の音のタイミングを合わせる。段階22）
+      rows.add(addText(this, cx - 120, 480, '音の出口', { size: 15 }).setOrigin(0, 0.5));
+      addButton(this, rows, cx + 70, 480, 120, 48, st.audioOut === 'wireless' ? 'イヤホン(BT)' : 'スピーカー', {
+        onTap: () => {
+          setSettings({ ...getSettings(), audioOut: getSettings().audioOut === 'wireless' ? 'speaker' : 'wireless' });
+          draw();
+        },
+      }, { size: 14 });
+      rows.add(addText(this, cx, 520, 'ワイヤレスイヤホンの時は、会話の文字の音を早めに鳴らす', { size: 11, color: COLORS.subText, align: 'center', wrap: 270 }).setOrigin(0.5));
     };
     const rows = this.add.container(0, 0);
     panel.add(rows);
     draw();
-    addButton(this, panel, cx, 500, 160, 48, '閉じる', { onTap: () => panel.destroy(true) }, { size: 15 });
+    addButton(this, panel, cx, 570, 160, 48, '閉じる', { onTap: () => panel.destroy(true) }, { size: 15 });
   }
 }

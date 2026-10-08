@@ -6,12 +6,19 @@ export interface Settings {
   seVolume: number;
   /** 会話で、文字が出るたびに短い音を鳴らす（声の代わりに、しゃべっている感じを出す。段階22の試し） */
   typeSound: boolean;
+  /**
+   * 音の出口。ワイヤレスイヤホン（Bluetooth）は音が遅れて届くので、会話の文字の音を、ブラウザが教えてくれる遅れの分だけ早めに鳴らす。
+   * スピーカーでは早めない（どちらを使っているかはブラウザから分からないので、遊ぶ人が選ぶ）
+   */
+  audioOut: AudioOut;
 }
+
+export type AudioOut = 'speaker' | 'wireless';
 
 /** 選べる音量の段階 */
 export const VOLUME_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true };
+export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker' };
 
 /** 0〜1 の段階のうち、一番近いものにそろえる。数でなければ fallback */
 function toStep(v: unknown, fallback: number): number {
@@ -33,6 +40,7 @@ export function parseSettings(text: string | null): Settings {
     bgmVolume: toStep(o.bgmVolume, DEFAULT_SETTINGS.bgmVolume),
     seVolume: toStep(o.seVolume, DEFAULT_SETTINGS.seVolume),
     typeSound: typeof o.typeSound === 'boolean' ? o.typeSound : DEFAULT_SETTINGS.typeSound,
+    audioOut: o.audioOut === 'wireless' ? 'wireless' : 'speaker',
   };
 }
 

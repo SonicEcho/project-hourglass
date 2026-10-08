@@ -124,10 +124,12 @@ export function playBlip(scene: Phaser.Scene, voice: BlipVoice): void {
 
 /**
  * 音を出すように頼んでから、実際にスピーカーから聞こえるまでの遅れ（ミリ秒）。
- * スマホは 0.1 秒前後遅れることがあるので、文字の音はこの分だけ文字より先に鳴らし始める。
+ * ワイヤレスイヤホン（Bluetooth）は 0.1〜0.3 秒遅れるので、設定でワイヤレスイヤホンを選んだ時だけ、文字の音をこの分だけ文字より先に鳴らし始める。
  * ブラウザが教えてくれない時は、少しだけ（50ミリ秒）先に鳴らす
  */
 export function audioLatencyMs(scene: Phaser.Scene): number {
+  // スピーカーでは早めない（ブラウザの値はワイヤレスイヤホンの遅れに近く、スピーカーだと音が早すぎた。2026-10-08 開発者のスマホで確認）
+  if (getSettings().audioOut !== 'wireless') return 0;
   const mgr = scene.sound;
   if (!(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return 0;
   const ctx = mgr.context as AudioContext;
