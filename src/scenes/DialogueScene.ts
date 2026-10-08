@@ -538,11 +538,13 @@ export class DialogueScene extends Phaser.Scene {
     const base = { obj, body, face: def?.firstFace ?? '', sunk: false };
     if (def?.portrait && imageFor(def.firstFace)) {
       const img = this.add.image(0, 0, imageFor(def.firstFace)).setOrigin(0.5, 1);
-      const scale = (def.height ?? 420) / img.height;
-      img.setScale(scale);
+      // 絵ごとに元の大きさが違っても、同じ高さで出す（表情を替えた時も測り直す）
+      const fit = () => img.setScale((def.height ?? 420) / img.height);
+      fit();
       // ゆっくり息をするように、わずかに伸び縮みさせる
-      this.tweens.add({ targets: img, scaleY: scale * 1.006, yoyo: true, repeat: -1, duration: 1800, ease: 'Sine.easeInOut' });
-      body.add(img);
+      const breath = this.add.container(0, 0, [img]);
+      this.tweens.add({ targets: breath, scaleY: 1.006, yoyo: true, repeat: -1, duration: 1800, ease: 'Sine.easeInOut' });
+      body.add(breath);
       return {
         ...base,
         top: -img.displayHeight,
@@ -550,7 +552,10 @@ export class DialogueScene extends Phaser.Scene {
         setFace: (face) => {
           // まだ絵のない表情は、代わりの表情の絵で出す
           const id = imageFor(face);
-          if (id) img.setTexture(id);
+          if (id) {
+            img.setTexture(id);
+            fit();
+          }
         },
       };
     }
