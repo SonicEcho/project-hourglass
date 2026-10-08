@@ -4,8 +4,8 @@ import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playBlip, playSe, setSettings, stopBgm } from '../audio/sound';
 import type { ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseReadLog, runScript, serializeReadLog } from '../core';
-import type { Backdrop, BlipVoice } from '../data';
-import { BACKDROPS, BLIP_EVERY, CAST, CGS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
+import { BACKDROPS, BLIP_EVERY, CAST, CGS, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -26,6 +26,14 @@ const STAGE_BOTTOM = 560;
 /** 背景・1枚絵を前の絵に重ねて替える時間、人が出入りする時間（ミリ秒） */
 const PICTURE_FADE_MS = 350;
 const ACTOR_FADE_MS = 250;
+/** 背景・1枚絵がゆっくり寄っていく大きさと時間（止まった絵に見えないように） */
+const DRIFT_SCALE = 1.04;
+const DRIFT_MS = 14000;
+const CG_DRIFT_SCALE = 1.06;
+const CG_DRIFT_MS = 10000;
+/** @zoom で寄る時の中心（立ち絵の顔のあたり）と時間 */
+const ZOOM_FOCUS = { x: GAME_WIDTH / 2, y: 330 };
+const ZOOM_MS = 700;
 /** 文字の音を鳴らさない文字（句読点・記号・空白） */
 const SILENT_CHARS = new Set([...'、。，．…‥！？!?「」『』（）()—―ー〜・　 \n']);
 /** 読んだ台詞の印の保存先（セーブとは別。はじめからやり直しても、読んだ所は早送りできる） */
@@ -45,12 +53,19 @@ export interface DialogueData {
   next?: { key: string; data?: object };
 }
 
+/**
+ * 画面に出ている人。外の入れ物（obj）は出入り・横の移動・大きさ、中身（body）は芝居の動きに使う（動きがぶつからないように分ける）
+ */
 interface Actor {
-  obj: Phaser.GameObjects.Image | Phaser.GameObjects.Container;
+  obj: Phaser.GameObjects.Container;
+  body: Phaser.GameObjects.Container;
+  /** 頭のてっぺん（obj の中の y。ふきだしを出す高さ） */
+  top: number;
+  face: string;
+  /** 沈んでいる（心配など）。別の表情になったら戻す */
+  sunk: boolean;
   setActive(active: boolean): void;
   setFace(face: string): void;
-  /** 3人並ぶ時は少し小さくする */
-  setSmall(small: boolean): void;
 }
 
 let readLog: Set<string> | null = null;
@@ -99,6 +114,12 @@ export class DialogueScene extends Phaser.Scene {
   private fadedOut = false;
   private history: string[] = [];
 
+  /** 背景・立ち絵・1枚絵をまとめた入れ物（寄る・色を抜く時に、本文の枠やボタンは動かさないため） */
+  private world!: Phaser.GameObjects.Container;
+  private zoom = 1;
+  private monoFx?: Phaser.FX.ColorMatrix;
+  private noiseLayer!: Phaser.GameObjects.Graphics;
+  private noiseTimer?: Phaser.Time.TimerEvent;
   private bgLayer!: Phaser.GameObjects.Container;
   private stage!: Phaser.GameObjects.Container;
   private cgLayer!: Phaser.GameObjects.Container;
@@ -141,9 +162,19 @@ export class DialogueScene extends Phaser.Scene {
     this.cast = [];
     this.logLayer = undefined;
 
-    this.bgLayer = this.add.container(0, 0).setDepth(0);
-    this.stage = this.add.container(0, 0).setDepth(10);
-    this.cgLayer = this.add.container(0, 0).setDepth(20);
+    this.zoom = 1;
+    this.monoFx = undefined;
+    this.bgLayer = this.add.container(0, 0);
+    this.stage = this.add.container(0, 0);
+    this.cgLayer = this.add.container(0, 0);
+    this.world = this.add.container(0, 0, [this.bgLayer, this.stage, this.cgLayer]).setDepth(0);
+    this.noiseLayer = this.add.graphics().setDepth(30);
+    if (!this.textures.exists('dialogue-sand')) {
+      const g = this.make.graphics({}, false);
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 2, 2);
+      g.generateTexture('dialogue-sand', 2, 2);
+      g.destroy();
+    }
     this.setBackdrop('black');
 
     // 本文の枠
@@ -163,12 +194,6 @@ export class DialogueScene extends Phaser.Scene {
       .setVisible(false);
 
     // 語りの文に流れる砂（ヴィクトの鎖の砂時計と同じ暗い金）
-    if (!this.textures.exists('dialogue-sand')) {
-      const g = this.make.graphics({}, false);
-      g.fillStyle(0xffffff, 1).fillRect(0, 0, 2, 2);
-      g.generateTexture('dialogue-sand', 2, 2);
-      g.destroy();
-    }
     this.sand = this.add.particles(0, 0, 'dialogue-sand', {
       emitZone: { type: 'random', source: new Phaser.Geom.Rectangle(30, 575, GAME_WIDTH - 60, 20) } as Phaser.Types.GameObjects.Particles.EmitZoneData,
       speedY: { min: 18, max: 45 },
@@ -259,6 +284,25 @@ export class DialogueScene extends Phaser.Scene {
       case 'wait':
         await this.delay(this.skip ? 0 : Number(a) || 0);
         return;
+      case 'act': {
+        const actor = this.actors.get(a);
+        if (actor) this.act(actor, rest[0] as ActorMotion);
+        return;
+      }
+      case 'emote': {
+        const actor = this.actors.get(a);
+        if (actor) this.emote(actor, rest[0] as Emote);
+        return;
+      }
+      case 'zoom':
+        this.setZoom(Number(a) || 1);
+        return;
+      case 'mono':
+        this.setMono(a === 'on');
+        return;
+      case 'noise':
+        this.playNoise(Number(a) || 500);
+        return;
       default:
         console.warn('[dialogue] 使えない命令', cmd.name, rest);
     }
@@ -297,7 +341,101 @@ export class DialogueScene extends Phaser.Scene {
     }
     const holder = this.add.container(0, 0);
     this.drawPicture(holder, def, 0, GAME_HEIGHT, id !== 'black' && id !== 'white' && id !== 'none');
+    if (def.ambient) this.addAmbient(holder, def.ambient);
+    this.drift(holder, GAME_WIDTH / 2, GAME_HEIGHT / 2, DRIFT_SCALE, DRIFT_MS);
     this.crossfade(this.bgLayer, holder);
+    // 場所が替わったら、寄っていたのを戻す
+    if (this.zoom !== 1) this.setZoom(1);
+  }
+
+  /** 止まった絵に見えないよう、絵をゆっくり寄せては戻す（中心を保ったまま大きくするので、端に隙間はできない） */
+  private drift(holder: Phaser.GameObjects.Container, cx: number, cy: number, scale: number, ms: number): void {
+    const t = { k: 1 };
+    const tween = this.tweens.add({
+      targets: t,
+      k: scale,
+      duration: ms,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+      onUpdate: () => {
+        if (!holder.active) return;
+        holder.setScale(t.k).setPosition(cx * (1 - t.k), cy * (1 - t.k));
+      },
+    });
+    holder.once(Phaser.GameObjects.Events.DESTROY, () => tween.remove());
+  }
+
+  /** 背景に流す空気：提灯の灯り（ゆっくり昇る暖かい光）、星（またたく）、舞う砂（ゆっくり落ちる金の粒） */
+  private addAmbient(holder: Phaser.GameObjects.Container, kind: Ambient): void {
+    const area = new Phaser.Geom.Rectangle(0, 60, GAME_WIDTH, STAGE_BOTTOM - 60);
+    const twinkle = (_p: Phaser.GameObjects.Particles.Particle, _k: string, t: number) => Math.sin(t * Math.PI);
+    const configs: Record<Ambient, Phaser.Types.GameObjects.Particles.ParticleEmitterConfig> = {
+      lanterns: { speedY: { min: -14, max: -5 }, speedX: { min: -4, max: 4 }, lifespan: 5000, scale: { min: 1.5, max: 3 }, tint: [0xffc979, 0xffa04a, 0xffe0a0], frequency: 260 },
+      stars: { speed: 0, lifespan: 3200, scale: { min: 0.6, max: 1.4 }, tint: [0xffffff, 0xcfe0ff], frequency: 180 },
+      dust: { speedY: { min: 4, max: 12 }, speedX: { min: -5, max: 5 }, lifespan: 6000, scale: { min: 0.6, max: 1.2 }, tint: [0xd9ae62, 0xb08a3a], frequency: 220 },
+    };
+    const emitter = this.add.particles(0, 0, 'dialogue-sand', {
+      ...configs[kind],
+      emitZone: { type: 'random', source: area } as Phaser.Types.GameObjects.Particles.EmitZoneData,
+      alpha: { onUpdate: twinkle },
+      // 最初から画面に散らばっているように、少し先まで進めておく
+      advance: 4000,
+    });
+    holder.add(emitter);
+  }
+
+  /** @zoom：背景・立ち絵・1枚絵だけを、顔のあたりを中心に寄せる（本文の枠とボタンは動かさない） */
+  private setZoom(k: number): void {
+    this.zoom = k;
+    this.tweens.killTweensOf(this.world);
+    const to = { scale: k, x: ZOOM_FOCUS.x * (1 - k), y: ZOOM_FOCUS.y * (1 - k) };
+    if (this.skip) this.world.setScale(to.scale).setPosition(to.x, to.y);
+    else this.tweens.add({ targets: this.world, ...to, duration: ZOOM_MS, ease: 'Sine.easeInOut' });
+  }
+
+  /** @mono：色を抜く（時計が止まった時など）。WebGL でない時は何もしない */
+  private setMono(on: boolean): void {
+    const fx = this.world.postFX;
+    if (!fx) return;
+    if (!this.monoFx) this.monoFx = fx.addColorMatrix();
+    const m = this.monoFx;
+    const from = on ? 0 : 1;
+    const to = on ? 1 : 0;
+    const t = { v: from };
+    this.tweens.add({
+      targets: t,
+      v: to,
+      duration: this.skip ? 0 : 500,
+      onUpdate: () => {
+        m.reset();
+        m.saturate(-t.v);
+      },
+    });
+  }
+
+  /** @noise：すり切れた時間のノイズで、画面を少しの間乱す */
+  private playNoise(ms: number): void {
+    if (this.skip) return;
+    this.noiseTimer?.remove();
+    const g = this.noiseLayer;
+    const until = this.time.now + ms;
+    this.noiseTimer = this.time.addEvent({
+      delay: 50,
+      loop: true,
+      callback: () => {
+        g.clear();
+        if (this.time.now >= until) {
+          this.noiseTimer?.remove();
+          return;
+        }
+        for (let i = 0; i < 14; i++) {
+          const y = Math.random() * STAGE_BOTTOM;
+          g.fillStyle(Math.random() < 0.5 ? 0xffffff : 0x000000, 0.12 + Math.random() * 0.25).fillRect(0, y, GAME_WIDTH, 1 + Math.random() * 6);
+        }
+        for (let i = 0; i < 80; i++) g.fillStyle(0xffffff, Math.random() * 0.5).fillRect(Math.random() * GAME_WIDTH, Math.random() * STAGE_BOTTOM, 2, 2);
+      },
+    });
   }
 
   /** 前の絵の上に新しい絵を重ね、少しずつ濃くしてから前の絵を消す（急に切り替わらないように） */
@@ -329,6 +467,8 @@ export class DialogueScene extends Phaser.Scene {
     }
     const holder = this.add.container(0, 0);
     this.drawPicture(holder, def, 0, STAGE_BOTTOM, true);
+    // 1枚絵は、ゆっくり寄っていく
+    this.drift(holder, GAME_WIDTH / 2, STAGE_BOTTOM / 2, CG_DRIFT_SCALE, CG_DRIFT_MS);
     this.crossfade(this.cgLayer, holder);
     this.tweens.add({ targets: this.stage, alpha: 0, duration: ms });
   }
@@ -364,15 +504,15 @@ export class DialogueScene extends Phaser.Scene {
     this.cast = names.slice(0, 3);
     const xs = STAGE_X[this.cast.length] ?? [];
     const small = this.cast.length >= 3;
+    const k = small ? 0.82 : 1;
     this.cast.forEach((name, i) => {
       let actor = this.actors.get(name);
-      actor?.setSmall(small);
+      if (actor && actor.obj.scale !== k) this.tweens.add({ targets: actor.obj, scale: k, duration: ms });
       if (!actor) {
         // 新しく出る人は、少し下からふわっと出す
         actor = this.makeActor(name);
         this.actors.set(name, actor);
-        actor.setSmall(small);
-        actor.obj.setPosition(xs[i], STAGE_BOTTOM + 12).setAlpha(0);
+        actor.obj.setScale(k).setPosition(xs[i], STAGE_BOTTOM + 12).setAlpha(0);
         this.tweens.add({ targets: actor.obj, alpha: 1, y: STAGE_BOTTOM, duration: ms, ease: 'Sine.easeOut' });
         return;
       }
@@ -384,43 +524,118 @@ export class DialogueScene extends Phaser.Scene {
   private makeActor(name: string): Actor {
     const def = CAST[name];
     const faceId = (face: string) => (def?.portrait ? `${def.portrait}.${def.faces[face] ?? face}` : '');
+    const obj = this.add.container(0, STAGE_BOTTOM);
+    const body = this.add.container(0, 0);
+    obj.add(body);
+    this.stage.add(obj);
+    const base = { obj, body, face: def?.firstFace ?? '', sunk: false };
     if (def?.portrait && hasImage(this, faceId(def.firstFace))) {
-      const img = this.add.image(0, STAGE_BOTTOM, faceId(def.firstFace)).setOrigin(0.5, 1);
-      const base = (def.height ?? 420) / img.height;
-      let breath: Phaser.Tweens.Tween | undefined;
-      // ゆっくり息をするように、わずかに伸び縮みさせる（大きさを変えたら、伸び縮みもやり直す）
-      const resize = (k: number) => {
-        breath?.remove();
-        img.setScale(base * k);
-        breath = this.tweens.add({ targets: img, scaleY: base * k * 1.006, yoyo: true, repeat: -1, duration: 1800, ease: 'Sine.easeInOut' });
-      };
-      resize(1);
-      this.stage.add(img);
+      const img = this.add.image(0, 0, faceId(def.firstFace)).setOrigin(0.5, 1);
+      const scale = (def.height ?? 420) / img.height;
+      img.setScale(scale);
+      // ゆっくり息をするように、わずかに伸び縮みさせる
+      this.tweens.add({ targets: img, scaleY: scale * 1.006, yoyo: true, repeat: -1, duration: 1800, ease: 'Sine.easeInOut' });
+      body.add(img);
       return {
-        setSmall: (small) => resize(small ? 0.82 : 1),
-        obj: img,
+        ...base,
+        top: -img.displayHeight,
         setActive: (active) => (active ? img.clearTint() : img.setTint(DIM_TINT)),
         setFace: (face) => {
           if (hasImage(this, faceId(face))) img.setTexture(faceId(face));
         },
       };
     }
-    // 絵がない人は図形と名前・表情で描く（仮）
+    // 絵がない人は図形と名前・表情で描く（仮）。足もと（本文の枠の上の辺）を基準に描く
     const color = def?.color ?? 0x808080;
-    // 足もと（本文の枠の上の辺）を基準に描き、小さくする時は足もとを中心に縮める
-    const c = this.add.container(0, STAGE_BOTTOM);
     const head = this.add.ellipse(0, -310, 80, 92, color);
     const torso = this.add.rectangle(0, -95, 120, 190, color);
     const label = addText(this, 0, -90, name, { size: 13, bold: true, align: 'center' }).setOrigin(0.5);
     const faceText = addText(this, 0, -64, def ? `〔${def.firstFace}〕` : '', { size: 11, color: '#ffffffcc', align: 'center' }).setOrigin(0.5);
-    c.add([head, torso, label, faceText]);
-    this.stage.add(c);
+    body.add([head, torso, label, faceText]);
     return {
-      setSmall: (small) => c.setScale(small ? 0.82 : 1),
-      obj: c,
+      ...base,
+      top: -356,
       setActive: (active) => [head, torso, label].forEach((o) => o.setAlpha(active ? 1 : 0.45)),
       setFace: (face) => faceText.setText(`〔${face}〕`),
     };
+  }
+
+  /** 表情を替える。替わった表情に合わせて、芝居の動きとふきだしを出す */
+  private changeFace(actor: Actor, face: string): void {
+    if (actor.face === face) return;
+    actor.face = face;
+    actor.setFace(face);
+    const motion = FACE_MOTIONS[face];
+    if (actor.sunk && motion !== 'sink') this.act(actor, 'rise');
+    if (motion) this.act(actor, motion);
+    const mark = FACE_EMOTES[face];
+    if (mark) this.emote(actor, mark);
+  }
+
+  /** 立ち絵の芝居。中身（body）だけを動かす */
+  private act(actor: Actor, motion: ActorMotion): void {
+    if (this.skip) {
+      if (motion === 'sink' || motion === 'rise') {
+        actor.sunk = motion === 'sink';
+        actor.body.setY(actor.sunk ? 10 : 0);
+      }
+      return;
+    }
+    const b = actor.body;
+    const restY = actor.sunk ? 10 : 0;
+    this.tweens.killTweensOf(b);
+    b.setPosition(0, restY).setScale(1).setAngle(0);
+    switch (motion) {
+      case 'hop':
+        this.tweens.add({ targets: b, y: restY - 18, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
+        return;
+      case 'bounce':
+        this.tweens.add({ targets: b, y: restY - 9, duration: 90, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
+        return;
+      case 'nod':
+        this.tweens.add({ targets: b, y: restY + 6, duration: 120, yoyo: true, ease: 'Sine.easeInOut' });
+        return;
+      case 'shake':
+        this.tweens.add({ targets: b, x: 5, duration: 35, yoyo: true, repeat: 3, ease: 'Sine.easeInOut', onComplete: () => b.setX(0) });
+        return;
+      case 'sink':
+        actor.sunk = true;
+        this.tweens.add({ targets: b, y: 10, duration: 350, ease: 'Sine.easeOut' });
+        return;
+      case 'rise':
+        actor.sunk = false;
+        this.tweens.add({ targets: b, y: 0, duration: 250, ease: 'Sine.easeOut' });
+        return;
+      case 'step':
+        this.tweens.add({ targets: b, scale: 1.05, duration: 160, yoyo: true, ease: 'Sine.easeOut' });
+        return;
+      case 'sway':
+        this.tweens.add({ targets: b, angle: 1.5, duration: 700, yoyo: true, ease: 'Sine.easeInOut' });
+        return;
+    }
+  }
+
+  /** 頭の上に感情のふきだしをぽんと出す */
+  private emote(actor: Actor, mark: Emote): void {
+    if (this.skip) return;
+    const bubble = this.add.container(actor.body.x + 46, actor.top - 6);
+    const g = this.add.graphics();
+    g.fillStyle(0xffffff, 0.95).fillRoundedRect(-24, -22, 48, 38, 12);
+    g.fillTriangle(-10, 14, 2, 14, -14, 26);
+    g.lineStyle(2, 0x3a2a20, 0.8).strokeRoundedRect(-24, -22, 48, 38, 12);
+    bubble.add(g);
+    if (mark === '汗') {
+      const drop = this.add.graphics();
+      drop.fillStyle(0x5aa8ff, 1).fillCircle(0, 2, 7).fillTriangle(-6, -1, 6, -1, 0, -14);
+      bubble.add(drop);
+    } else {
+      const color = mark === '♪' ? '#d9483b' : '#3a2a20';
+      bubble.add(addText(this, 0, -3, mark, { size: mark.length > 1 ? 17 : 22, bold: true, color, align: 'center' }).setOrigin(0.5));
+    }
+    actor.obj.add(bubble);
+    bubble.setScale(0);
+    this.tweens.add({ targets: bubble, scale: 1, duration: 180, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: bubble, alpha: 0, y: bubble.y - 8, delay: 1200, duration: 300, onComplete: () => bubble.destroy() });
   }
 
   /** 1行を出し始める */
@@ -440,7 +655,8 @@ export class DialogueScene extends Phaser.Scene {
 
     // 立ち絵：話している人だけ明るく。声だけ・地の文などは全員を暗く（語りの文は誰も暗くしない）
     const speaker = style === 'talk' ? line.speaker : null;
-    if (speaker && line.face) this.actors.get(speaker)?.setFace(line.face);
+    const speaking = speaker ? this.actors.get(speaker) : undefined;
+    if (speaking && line.face) this.changeFace(speaking, line.face);
     for (const [name, actor] of this.actors) actor.setActive(style === 'narration' || name === speaker);
 
     // 名前の札
