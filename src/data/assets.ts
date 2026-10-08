@@ -83,6 +83,32 @@ function akariPortrait(face: string, title: string, expression: string, base: st
   };
 }
 
+/** ハルトの胸から上の立ち絵（表情違い）。段階18a の仮の素材 */
+function heroPortrait(face: string, title: string): AssetEntry {
+  return {
+    id: `portrait.hero.${face}`,
+    kind: 'image',
+    title: `ハルトの立ち絵（${title}）`,
+    file: `assets/portraits/hero_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'ChatGPT',
+      plan: '無料',
+      prompt: '（開発者が ChatGPT で作った、表情4つを並べた一覧の絵。指示文はまだ記録していない。開発者に聞いて書き足す）',
+      settings: '一覧の絵（透明な背景）を白い背景に重ね、表情ごとに切り出して、scripts/cutout.py（rembg の isnet-anime）で背景を抜いた',
+    },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: '絵柄を確かめるための仮の素材（docs/ART.md のハルトの見た目）',
+  };
+}
+
 export const ASSETS: AssetEntry[] = [
   {
     id: 'title.hourglass',
@@ -132,6 +158,10 @@ export const ASSETS: AssetEntry[] = [
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
   akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  heroPortrait('normal', '通常'),
+  heroPortrait('smile', 'やさしい笑顔'),
+  heroPortrait('surprised', '驚き'),
+  heroPortrait('determined', '決意'),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
   akariPortrait(

@@ -124,11 +124,17 @@ describe('仲間ごとに1つずつ', () => {
 });
 
 describe('会話の試作の台本（段階18a）', () => {
-  it('あかりの表情はすべて台帳に立ち絵がある', async () => {
-    const { AKARI_FACES, ASSETS, PROTO_SCRIPT } = await import('../src/data');
+  it('表情はすべて台帳に立ち絵があり、台本の表情は話す人の表情の一覧にある', async () => {
+    const { ASSETS, PROTO_FACES, PROTO_SCRIPT } = await import('../src/data');
     const ids = new Set(ASSETS.map((a) => a.id));
-    for (const face of AKARI_FACES) expect(ids.has(`portrait.akari.${face}`), face).toBe(true);
-    for (const line of PROTO_SCRIPT) if (line.face) expect(AKARI_FACES, line.id).toContain(line.face);
+    for (const [who, faces] of Object.entries(PROTO_FACES)) {
+      for (const face of faces) expect(ids.has(`portrait.${who}.${face}`), `${who}.${face}`).toBe(true);
+    }
+    for (const line of PROTO_SCRIPT) {
+      if (!line.face) continue;
+      expect(line.speaker, line.id).not.toBeNull();
+      expect(PROTO_FACES[line.speaker!] as readonly string[], line.id).toContain(line.face);
+    }
   });
 
   it('次の行と選択肢の行き先が、台本の中にある', async () => {
