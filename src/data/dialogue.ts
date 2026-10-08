@@ -59,6 +59,18 @@ const HERO_FACES = {
   照れ: 'shy',
   苦笑い: 'wry',
 };
+const RIKU_FACES = {
+  通常: 'normal',
+  笑顔: 'smile',
+  得意げ: 'proud',
+  真剣: 'serious',
+  あせり: 'flustered',
+  驚き: 'surprised',
+  にやり: 'smirk',
+  悲しい: 'sad',
+};
+// りくは、まだ笑顔の絵しかない（表情違いは Gemini で作る）。それまでは全部の表情を笑顔の絵で出す
+const RIKU_FALLBACK = { 通常: '笑顔', 得意げ: '笑顔', 真剣: '笑顔', あせり: '笑顔', 驚き: '笑顔', にやり: '笑顔', 悲しい: '笑顔' };
 const HERO_FALLBACK = { あきれ: '通常', 困り: '通常', 悲しい: '通常', 照れ: '笑顔', 苦笑い: '笑顔' };
 /** 絵のない人の表情（名前だけ。絵ができたら台帳の id に替える） */
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
@@ -66,7 +78,7 @@ const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]
 export const CAST: Record<string, CastMember> = {
   ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, fallback: HERO_FALLBACK, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 300, wave: 'sawtooth' } },
   あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, fallback: AKARI_FALLBACK, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
-  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり', '驚き', 'にやり', '悲しい'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
+  りく: { portrait: 'portrait.riku', faces: RIKU_FACES, fallback: RIKU_FALLBACK, height: 450, firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
   子ハルト: { faces: names('通常', '笑顔', '驚き', '照れ', '困り'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
   子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 760, wave: 'triangle' } },
   子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 500, wave: 'square' } },

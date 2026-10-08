@@ -122,6 +122,45 @@ function heroPortrait(face: string, title: string): AssetEntry {
   };
 }
 
+/** りくの胸から上の基本の1枚を作った ChatGPT の指示文（docs/ART.md の 5-2。案2。共通部分の後に付けた） */
+const RIKU_BASE_PROMPT =
+  'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
+  'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer. ' +
+  "Keep the face exactly the same as the attached boy's portrait: same face shape, eyes, eyebrows, cheerful open-mouthed grin, skin tone and art style. Change only his hairstyle and outfit. " +
+  'Framing: from just above the top of the head down to mid-chest, the head in the upper third. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl. ' +
+  'Pose: both arms relaxed down at the sides, hands outside the frame. No props in hand. Background: plain pure white, no shadow, no gradient. ' +
+  'Hair: short, neat dark-brown hair with the sides trimmed short and the front bangs swept up and slightly to one side, showing his forehead. Clean and sporty, not spiky. ' +
+  'Outfit (same school as the protagonist): white dress shirt with sleeves rolled up to the elbows, a navy knit school vest over it, a dusk-red necktie worn loose with the top button undone. ' +
+  'Mood: boyish and a little mischievous, but refreshing and popular in class, the reliable friend who drags everyone into his plans. ' +
+  'Color palette: hair #4A3222, vest #2B3552, necktie #D9483B, shirt #F5F2EA, skin like the reference.';
+
+/** りくの胸から上の立ち絵（段階31a。表情違いは Gemini で作る予定） */
+function rikuPortrait(face: string, title: string): AssetEntry {
+  return {
+    id: `portrait.riku.${face}`,
+    kind: 'image',
+    title: `りくの立ち絵（${title}）`,
+    file: `assets/portraits/riku_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'ChatGPT',
+      plan: '無料',
+      prompt: RIKU_BASE_PROMPT,
+      settings:
+        '見本の絵：顔は1回目に作ったりくの絵（白シャツに紺のジャージを腰に巻いた絵）、構図はあかりの胸から上の絵。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた',
+    },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: 'りくの見た目を決めた基本の1枚（docs/ART.md の 5-2）。開発者が案を3つ試して、この形に決めた',
+  };
+}
+
 /** 効果音ラボの効果音（段階19）。page は効果音ラボのページ、file はそこの mp3 の名前 */
 function soundEffectLab(id: string, title: string, file: string, page: string, original: string): AssetEntry {
   return {
@@ -247,6 +286,7 @@ export const ASSETS: AssetEntry[] = [
   heroPortrait('smile', 'やさしい笑顔'),
   heroPortrait('surprised', '驚き'),
   heroPortrait('determined', '決意'),
+  rikuPortrait('smile', '笑顔'),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
   akariPortrait(

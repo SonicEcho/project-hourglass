@@ -526,13 +526,15 @@ export class DialogueScene extends Phaser.Scene {
   private makeActor(name: string): Actor {
     const def = CAST[name];
     const faceId = (face: string) => (def?.portrait ? `${def.portrait}.${def.faces[face] ?? face}` : '');
+    // その表情の絵、なければ代わりの表情の絵（どちらもなければ ''）
+    const imageFor = (face: string) => [face, def?.fallback?.[face]].map((f) => (f ? faceId(f) : '')).find((x) => x && hasImage(this, x)) ?? '';
     const obj = this.add.container(0, STAGE_BOTTOM);
     const body = this.add.container(0, 0);
     obj.add(body);
     this.stage.add(obj);
     const base = { obj, body, face: def?.firstFace ?? '', sunk: false };
-    if (def?.portrait && hasImage(this, faceId(def.firstFace))) {
-      const img = this.add.image(0, 0, faceId(def.firstFace)).setOrigin(0.5, 1);
+    if (def?.portrait && imageFor(def.firstFace)) {
+      const img = this.add.image(0, 0, imageFor(def.firstFace)).setOrigin(0.5, 1);
       const scale = (def.height ?? 420) / img.height;
       img.setScale(scale);
       // ゆっくり息をするように、わずかに伸び縮みさせる
@@ -544,7 +546,7 @@ export class DialogueScene extends Phaser.Scene {
         setActive: (active) => (active ? img.clearTint() : img.setTint(DIM_TINT)),
         setFace: (face) => {
           // まだ絵のない表情は、代わりの表情の絵で出す
-          const id = [face, def.fallback?.[face]].map((f) => (f ? faceId(f) : '')).find((x) => x && hasImage(this, x));
+          const id = imageFor(face);
           if (id) img.setTexture(id);
         },
       };

@@ -123,7 +123,7 @@ ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲ
 | 順 | 絵 | サービス | 一緒に渡す見本の絵 | 状態 |
 | --- | --- | --- | --- | --- |
 | 1 | ハルトの胸から上の基本の1枚（あかりと同じ構図に作り直す） | ChatGPT | ハルトの設定画、あかりの胸から上の絵（構図の見本） | 未 |
-| 2 | りくの胸から上の基本の1枚（新しい見た目） | ChatGPT | あかりの胸から上の絵（構図の見本） | 未 |
+| 2 | りくの胸から上の基本の1枚（新しい見た目） | ChatGPT | あかりの胸から上の絵（構図の見本） | 済（2026-10-08。`portrait.riku.smile`。下の「りくの見た目（決まった）」） |
 | 3 | 背景：夕暮れの神社の参道（プロローグの最初の場面） | ChatGPT | なし | 未 |
 | 4 | 背景：時計屋の店内（夕暮れ） | ChatGPT | なし | 未 |
 | 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 未 |
@@ -157,6 +157,37 @@ Background: plain pure white, no shadow, no gradient.
 Character: Riku, a 17-year-old Japanese high school boy, the protagonist's best friend. Cheerful, hot-blooded, a bit of a show-off. Short spiky dark-brown hair, slightly messy, a small black hair pin holding his bangs on one side, a pencil tucked behind his ear. Bright lively brown eyes. Same school uniform as the protagonist: white dress shirt with sleeves rolled up, no tie, collar open, a navy track jacket tied around his waist (may be cut off by the frame).
 Color palette: hair #3A2A20, shirt #F5F2EA, track jacket #2B3552, skin #F1D2B8.
 ```
+
+**りくの見た目（決まった。2026-10-08）**
+
+開発者が3回作り比べて決めた。1回目（白シャツに紺のジャージを腰に巻いた絵）は顔つきがよかったが、髪型と服装がハルトに近く、ありきたりだった。眼鏡やヘアバンドを足した案は、別のキャラに見えた。そこで、1回目の顔を見本に添えて「顔はそのまま、髪型と服装だけ変える」形にし、案2に決めた。
+
+- 顔つき：やんちゃで少年っぽいが、爽やか（1回目の顔のまま）。大きく口を開けた笑顔
+- 髪：短く整えたこげ茶。横は短く、前髪を上げて少し横に流し、おでこを見せる。さっぱりして、はねすぎない
+- 服：白いワイシャツの袖を肘までまくり、紺のニットのベスト、夕焼け色の赤いネクタイをゆるめて第一ボタンを外す
+- 色：髪 #4A3222、ベスト #2B3552、ネクタイ #D9483B、シャツ #F5F2EA
+- 使った指示文は台帳（`src/data/assets.ts` の `RIKU_BASE_PROMPT`）に全文を書いた
+
+**りくの表情違い**（Gemini。りくの笑顔の絵を見本として渡す。M1 で使う順に）
+
+あかりと同じ作り方（`docs/ART.md` の 4.「表情違いの作り方」）。毎回、次の頭の文に、表情の1行だけを替えて付ける。
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair, navy knit vest, loose red necktie, rolled-up white sleeves, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects.
+Expression: <下の表の英語>
+```
+
+| 順 | 表情 | Expression の行 |
+| --- | --- | --- |
+| 1 | 得意げ | smug and proud, a confident closed-mouth grin, chin slightly raised, one eyebrow up |
+| 2 | 真剣 | serious and focused, mouth closed, brows drawn together, eyes sharp and determined |
+| 3 | あせり | flustered, an awkward nervous smile, eyebrows raised in a troubled way, eyes looking aside |
+| 4 | 通常 | relaxed and friendly, a small natural smile with the mouth closed |
+| 5 | 驚き | surprised, eyes wide open, mouth slightly open |
+| 6 | にやり | a sly mischievous smirk, one corner of the mouth raised, eyes narrowed playfully |
+| 7 | 悲しい | sad and quiet, eyes looking down, mouth closed, brows slightly lowered |
+
+（1〜5 は M1 の台本で使う。6・7 は後の章でも使える）
 
 **3. 背景：夕暮れの神社の参道**（共通部分の後に付ける）
 
