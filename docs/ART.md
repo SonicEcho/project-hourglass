@@ -130,7 +130,7 @@ ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲ
 | 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 未 |
 | 6 | 子どものころの3人の基本の1枚（7歳。1人ずつ） | ChatGPT | 高校生の3人の絵 | 未 |
 | 7 | 地図：1-1「金魚の名前」の縁日（見下ろし。段階18b の仮の絵を作り直す） | ChatGPT | 段階18b の仮の地図の絵（配置の見本。あれば） | 済（2026-10-08。`map.festival` を差し替え、歩ける場所の文字の地図も書き直した。少し夜寄りの色なので、ゲームの側で明るさを寄せるか段階25で決める） |
-| ― | 表情違い（あかり・ハルトの足した5つずつ、りくなど） | Gemini | 基本の1枚 | りくの7つ、ハルトの8つは済（2026-10-08）。あかりの足した5つは未 |
+| ― | 表情違い（あかり・ハルトの足した5つずつ、りくなど） | Gemini | 基本の1枚 | りくの7つ、ハルトの8つ、あかりの足した5つは済（2026-10-08）。あかりの笑顔・心配のリボンの色の直しは未 |
 
 **立ち絵の共通の決まり**（全員同じ構図にする。段階18a で、構図が違うと背の高さがちぐはぐに見えたため）
 
@@ -268,6 +268,23 @@ Expression: <下の表の英語>
 | 6 | 悲しい | sad and quiet, eyes looking down, mouth closed, brows slightly lowered |
 | 7 | 照れ | embarrassed, light blush on the cheeks, eyes looking away, a small awkward closed-mouth smile |
 | 8 | 苦笑い | a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled |
+
+**あかりの足した表情**（Gemini。M1 の台本で足した5つ。見本は、リボンが赤いデジャヴの立ち絵 `akari_dejavu` を渡す。笑顔と心配の絵はリボンが橙なので見本にしない）
+
+毎回、次の頭の文に、表情の1行だけを替えて付ける。
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair, the small red goldfish hair clip, the thin red ribbon in the half-up hair (#D9483B), white shirt with red bow, cream knit cardigan, and art style. Plain pure white background. Change only the facial expression. No props, no staff, no sweat drops, no tears unless stated, no text, no effects.
+Expression: <下の表の英語>
+```
+
+| 順 | 表情 | Expression の行 |
+| --- | --- | --- |
+| 1 | 驚き | surprised, eyes wide open, mouth slightly open, eyebrows raised |
+| 2 | 照れ | embarrassed, light blush on the cheeks, eyes looking aside, a small shy smile with the mouth closed |
+| 3 | 悲しい | sad and quiet, eyes looking down, brows slightly lowered, mouth closed, eyes a little moist |
+| 4 | 真剣 | serious and focused, mouth firmly closed, brows set, eyes steady and determined |
+| 5 | 困り笑い | a troubled smile, eyebrows raised in a worried way, a small awkward smile |
 
 **7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
 

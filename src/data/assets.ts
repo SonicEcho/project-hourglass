@@ -57,7 +57,11 @@ const AKARI_BASE_PROMPT =
   'Additional views on the same sheet: back view, 4 facial expressions (bright smile, gentle worried look, lost-in-thought deja vu look gazing into the distance, determined while casting), close-up of the goldfish lantern staff.';
 
 /** あかりの胸から上の立ち絵（表情違い）。段階18a の仮の素材 */
-function akariPortrait(face: string, title: string, expression: string, base: string): AssetEntry {
+/** あかりの足した5つの表情の指示文の頭（2026-10-08。docs/ART.md の 5-2） */
+const AKARI_ADDED_HEAD =
+  'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair, the small red goldfish hair clip, the thin red ribbon in the half-up hair (#D9483B), white shirt with red bow, cream knit cardigan, and art style. Plain pure white background. Change only the facial expression. No props, no staff, no sweat drops, no tears unless stated, no text, no effects.';
+
+function akariPortrait(face: string, title: string, expression: string, base: string, head?: string): AssetEntry {
   return {
     id: `portrait.akari.${face}`,
     kind: 'image',
@@ -68,8 +72,9 @@ function akariPortrait(face: string, title: string, expression: string, base: st
       type: 'ai',
       service: 'Google Gemini（Gemini アプリ）',
       plan: '無料',
-      prompt:
-        `Use this image as the base. Keep everything exactly the same: framing, pose, hands hidden at the sides, hair, red goldfish hair clip, ribbon, cardigan, and art style. Change only the facial expression. No props, no text, no magic effects. Expression: ${expression}`,
+      prompt: head
+        ? `${head}\nExpression: ${expression}`
+        : `Use this image as the base. Keep everything exactly the same: framing, pose, hands hidden at the sides, hair, red goldfish hair clip, ribbon, cardigan, and art style. Change only the facial expression. No props, no text, no magic effects. Expression: ${expression}`,
       settings: `見本の絵：${base}。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた。元の全身の絵は ChatGPT（無料）で作った。その指示文：${AKARI_BASE_PROMPT}`,
     },
     author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
@@ -401,4 +406,13 @@ export const ASSETS: AssetEntry[] = [
     'lost in thought, eyes looking slightly off to the side into the distance, a faint wistful feeling of deja vu',
     'Gemini で作った笑顔の立ち絵',
   ),
+  ...(
+    [
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised'],
+      ['shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking aside, a small shy smile with the mouth closed'],
+      ['sad', '悲しい', 'sad and quiet, eyes looking down, brows slightly lowered, mouth closed, eyes a little moist'],
+      ['serious', '真剣', 'serious and focused, mouth firmly closed, brows set, eyes steady and determined'],
+      ['wry', '困り笑い', 'a troubled smile, eyebrows raised in a worried way, a small awkward smile'],
+    ] as const
+  ).map(([face, title, expression]) => akariPortrait(face, title, expression, 'Gemini で作ったデジャヴの立ち絵（リボンが赤い物）。843×1264 で出てきた', AKARI_ADDED_HEAD)),
 ];
