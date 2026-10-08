@@ -1,9 +1,9 @@
 import { formatBattleLog } from './battleLog';
 import { healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addParts, flowEvents } from '../core';
-import { ITEMS, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addItems, addParts, defeatEnemy, flowEvents } from '../core';
+import { AREAS, ITEMS, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
-import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent } from '../scenes/run';
+import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
 /** デバッグメニューから画面の切り替えを頼むための窓口（main.ts で用意する） */
 export interface DebugNavigator {
@@ -17,6 +17,8 @@ export interface DebugNavigator {
   openDialogue(data: { scene: string; queue?: string[] }): void;
   /** 物語の流れの画面を開く（段階23。今の出来事から） */
   openFlow(): void;
+  /** 探索の画面を開き直す（段階25。今の探索の状態から） */
+  openExplore(area: string): void;
 }
 
 const Z = 9000;
@@ -145,6 +147,8 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('次の出来事へ飛ばす', () => {
         close();
         run.active = true;
+        // 探索の途中なら、探索を終えたことにする
+        if (run.explore) setExplore(null);
         advanceEvent();
         nav.openFlow();
       }),
@@ -161,6 +165,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('↑ の出来事へ飛ぶ（育成はそのまま）', () => {
         close();
         run.active = true;
+        if (run.explore) setExplore(null);
         setEvent(eventSelect.value);
         nav.openFlow();
       }),
@@ -169,6 +174,26 @@ export function installDebugMenu(nav: DebugNavigator): void {
         nav.restartRun();
       }),
     );
+
+    // 探索（段階25）：探索の途中の時だけ
+    const ex = run.explore;
+    const exArea = ex ? AREAS[ex.area] : undefined;
+    if (ex && exArea) {
+      panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', `探索（段階25）：${exArea.name}　倒した敵 ${ex.defeated.length}/${exArea.enemies.length}`));
+      panel.append(
+        button('探索：敵の印を全部倒したことにする', () => {
+          close();
+          setExplore(exArea.enemies.reduce((st, e) => defeatEnemy(st, e.id), ex));
+          nav.openExplore(exArea.id);
+        }),
+        button('探索：ボスの手前へ移る', () => {
+          close();
+          const [c, r] = exArea.boss.cell;
+          setExplore({ ...ex, cell: [c, r + 2] });
+          nav.openExplore(exArea.id);
+        }),
+      );
+    }
 
     // エンジンを決めるための試作（段階16。本編では使わない）
     panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '試作（エンジンを決めるため。本編では使わない）'));

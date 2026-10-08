@@ -20,7 +20,6 @@ export interface FlowData {
 
 /** 仮の画面の見出し */
 const KIND_LABEL: Partial<Record<FlowEvent['kind'], string>> = {
-  explore: '探索（仮）',
   return: '時間を返す（仮）',
 };
 
@@ -44,6 +43,13 @@ export class FlowScene extends Phaser.Scene {
         return;
       case 'daily':
         this.scene.start('Daily', { event: event.id });
+        return;
+      case 'explore':
+        if (event.area) {
+          this.scene.start('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined });
+          return;
+        }
+        this.showPlaceholder(event);
         return;
       default:
         this.showPlaceholder(event);

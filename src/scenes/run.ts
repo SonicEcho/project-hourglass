@@ -1,4 +1,4 @@
-import type { ArmoryState, BattleState, CharacterDef, FlowEvent, GrowthState, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import type { ArmoryState, BattleState, CharacterDef, ExploreState, FlowEvent, GrowthState, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -19,7 +19,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 
@@ -46,6 +46,8 @@ export const run: {
   event: string;
   /** 物語で覚えた値（金魚の名前・景品など。会話の @set） */
   vars: Record<string, string>;
+  /** 探索の状態（探索の途中の時だけ。段階25） */
+  explore: ExploreState | null;
 } = {
   active: false,
   seed: 0,
@@ -57,6 +59,7 @@ export const run: {
   armory: createArmory(WEAPON_DATA),
   event: firstEventId(SLICE_FLOW),
   vars: {},
+  explore: null,
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -93,6 +96,7 @@ export function startNewRun(): void {
   run.armory = createArmory(WEAPON_DATA);
   run.event = firstEventId(SLICE_FLOW);
   run.vars = {};
+  run.explore = null;
   saveRun();
 }
 
@@ -120,6 +124,12 @@ export function advanceEvent(): FlowEvent {
   run.progress = { ...run.progress, day: pos.day };
   saveRun();
   return currentEvent();
+}
+
+/** 探索の状態を変えて保存する（段階25。null は探索を終えた） */
+export function setExplore(state: ExploreState | null): void {
+  run.explore = state;
+  saveRun();
 }
 
 /** 物語で覚えた値を足して保存する（会話の @set） */
@@ -153,6 +163,7 @@ export function saveContext(): SaveContext {
     weaponData: WEAPON_DATA,
     story: STORY,
     flow: SLICE_FLOW,
+    areas: AREAS,
   };
 }
 
@@ -167,6 +178,7 @@ function snapshot(): RunSnapshot {
     armory: run.armory,
     event: run.event,
     vars: run.vars,
+    explore: run.explore,
   };
 }
 
@@ -219,6 +231,7 @@ export function continueRun(): boolean {
   run.armory = s.armory;
   run.event = s.event;
   run.vars = s.vars;
+  run.explore = s.explore;
   run.active = true;
   lastWritten = null;
   saveRun();

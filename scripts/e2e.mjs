@@ -1,7 +1,7 @@
 // 通しの自動確認（段階20・23）。本物のブラウザで毎回確かめる。
 // 使い方: npm run build の後に npm run e2e（dist/ を手元のサーバーで開き、Chromium で自動で遊ぶ）
 // 流れ1（段階23・24）: タイトル →「はじめる」→ プロローグの会話 → ページを開き直して「つづきから」で同じ場面から続く →
-//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す。屋台めぐりの計画表と、昼の日常の地図が出るか）。途中の探索の仮の画面でも開き直して続くことを確かめる。
+//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す。屋台めぐりの計画表と、昼の日常の地図が出るか）。途中の探索の画面でも開き直して続き、縁日の BGM が流れることを確かめる。
 // 流れ2（段階20）: デバッグメニューの「試作の5戦を最初から」→ 戦闘1〜5（敵のHPを1にして「自動で1ラウンド戦う」）→ 結果。最後に縁日の試作で BGM が切り替わるかを見る。
 // エラーが出る・途中で止まる・思った画面にならない時は失敗（終了コード1）にする。失敗した時の画面は e2e-failure.png に残す
 import { chromium } from 'playwright';
@@ -124,15 +124,17 @@ try {
     if (await findText('^つづく$')) break;
     if (await findText('^けいかくひょう$')) sawPlan = true;
     if (await findText('^どこへ行く？$')) sawMap = true;
-    if (!reloaded && (await findText('^探索（仮）$'))) {
-      // 探索の仮の画面でも、開き直して続くか
+    if (!reloaded && (await scenes()).includes('Explore')) {
+      // 探索の途中でも、開き直して続くか（段階25）
+      await until('探索の地図の名前', () => findText('^1-1「金魚の名前」$'));
       await page.reload();
       await waitScene('Title');
       await until('「つづきから」の下に探索の出来事', () => findText('縁日の探索'));
       await tap('^つづきから$');
-      await until('探索の仮の画面に戻る', () => findText('^探索（仮）$'));
+      await waitScene('Explore');
+      await until('縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
       reloaded = true;
-      await tap('^次へ$');
+      await debugButton('次の出来事へ飛ばす');
     } else if (await findText('^2日目$')) {
       await page.waitForTimeout(700);
       await tapAt(195, 422);
@@ -142,10 +144,10 @@ try {
     await page.waitForTimeout(500);
     await until('流れの画面か会話の画面', async () => {
       const s = await scenes();
-      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily');
+      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily') || s.includes('Explore');
     });
   }
-  if (!reloaded) throw new Error('探索の仮の画面が出なかった');
+  if (!reloaded) throw new Error('探索の画面が出なかった');
   if (!sawPlan) throw new Error('屋台めぐりの「けいかくひょう」が出なかった');
   if (!sawMap) throw new Error('昼の日常の地図が出なかった');
   await tap('^タイトルへ$');

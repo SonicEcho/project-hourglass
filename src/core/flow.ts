@@ -9,7 +9,7 @@ export type FlowEventKind =
   | 'day'
   /** 昼の日常（段階24。場所と印は data の DAILY_HUBS。プロローグの屋台めぐりも） */
   | 'daily'
-  /** 探索の区画（段階25で作る。今は仮の画面） */
+  /** 探索の区画（段階25。区画は data の AREAS） */
   | 'explore'
   /** 時間を返す（段階28で作る。今は仮の画面） */
   | 'return'
@@ -26,6 +26,8 @@ export interface FlowEvent {
   day?: number;
   /** 仮の画面に出す案内（どの段階で何を作るか） */
   note?: string;
+  /** explore の時：探索する区画（data の AREAS の id） */
+  area?: string;
 }
 
 export interface FlowChapter {
