@@ -56,33 +56,43 @@ function candidates(s: BattleState, pool: ReturnType<typeof availableHand>, acto
   return list;
 }
 
+/** 計画の局面：サポートを使うか決め、まだ行動を決めていない仲間の行動を決める（段階20で autoPlay から切り出し、戦闘画面の「自動で1ラウンド戦う」でも使う） */
+export function autoPlan(s0: BattleState, pick: (n: number) => number): BattleState {
+  let s = s0;
+  // サポートスナップがあれば使う
+  const support = s.hand.find((c) => c.card.support && getSupportError(s, c.uid, livingAllies(s)[0].uid) === null);
+  if (support && pick(2) === 0) {
+    s = useSupport(s, support.uid, livingAllies(s)[0].uid);
+    if (s.searchChoice) s = resolveSearch(s, s.searchChoice[0].uid);
+  }
+  for (const a of livingAllies(s)) {
+    if (s.plans.some((p) => !p.done && p.actorIds.includes(a.uid))) continue;
+    const valid = candidates(s, availableHand(s, [a.uid]), a.uid).filter((x) => getPlanError(s, a.uid, x) === null);
+    s = setPlan(s, a.uid, valid[pick(Math.min(valid.length, 5))]);
+  }
+  return s;
+}
+
+/** 追加行動の局面：バトンタッチ・行動・見送りのどれかを選ぶ。返す状態は、選んだ直後（続きの実行はしない） */
+export function autoExtra(s: BattleState, pick: (n: number) => number): { kind: 'baton' | 'act' | 'decline'; state: BattleState } {
+  const targets = batonTargets(s);
+  if (targets.length > 0 && pick(3) === 0) return { kind: 'baton', state: passBaton(s, targets[0].uid) };
+  const valid = candidates(s, extraPool(s), s.extra!.actorId).filter((x) => getExtraError(s, x) === null);
+  return valid.length > 0
+    ? { kind: 'act', state: applyExtra(s, valid[pick(Math.min(valid.length, 5))]) }
+    : { kind: 'decline', state: declineExtra(s) };
+}
+
 /** 戦闘を最後まで自動で遊ぶ（手をほぼでたらめに選ぶ）。同じシードなら同じ展開になる */
 export function autoPlay(s0: BattleState, seed: number): BattleState {
   const pick = lcg(seed);
   let s = s0;
   for (let guard = 0; guard < 3000 && s.phase !== 'ended'; guard++) {
     if (s.phase === 'plan') {
-      // サポートスナップがあれば使う
-      const support = s.hand.find((c) => c.card.support && getSupportError(s, c.uid, livingAllies(s)[0].uid) === null);
-      if (support && pick(2) === 0) {
-        s = useSupport(s, support.uid, livingAllies(s)[0].uid);
-        if (s.searchChoice) s = resolveSearch(s, s.searchChoice[0].uid);
-      }
-      for (const a of livingAllies(s)) {
-        if (s.plans.some((p) => !p.done && p.actorIds.includes(a.uid))) continue;
-        const valid = candidates(s, availableHand(s, [a.uid]), a.uid).filter((x) => getPlanError(s, a.uid, x) === null);
-        s = setPlan(s, a.uid, valid[pick(Math.min(valid.length, 5))]);
-      }
-      s = runUntilInput(startExecution(s));
+      s = runUntilInput(startExecution(autoPlan(s, pick)));
     } else if (s.phase === 'extra') {
-      const targets = batonTargets(s);
-      if (targets.length > 0 && pick(3) === 0) {
-        s = passBaton(s, targets[0].uid);
-        continue;
-      }
-      const valid = candidates(s, extraPool(s), s.extra!.actorId).filter((x) => getExtraError(s, x) === null);
-      s = valid.length > 0 ? applyExtra(s, valid[pick(Math.min(valid.length, 5))]) : declineExtra(s);
-      s = runUntilInput(s);
+      const r = autoExtra(s, pick);
+      s = r.kind === 'baton' ? r.state : runUntilInput(r.state);
     }
   }
   return s;

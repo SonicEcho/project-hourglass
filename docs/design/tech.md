@@ -27,10 +27,10 @@
 | `src/save/` | 保存の窓口（今は localStorage） |
 | `src/audio/` | 音を鳴らす部品（`sound.ts`。効果音、BGM のくり返しと切り替え、音量）。音はすべてここを通して鳴らす |
 | `src/assets/` | 素材を読み込む部品（`loader.ts`）と、クレジットの一覧を作る処理（`credits.ts`） |
-| `public/assets/` | 絵・音などの素材のファイル（台帳は `src/data/assets.ts`、決まりは `docs/ASSETS.md`、絵の方向性は `docs/ART.md`）。立ち絵は `portraits/` に WebP で置く。効果音は `se/`（mp3）、BGM は `bgm/` |
+| `public/assets/` | 絵・音などの素材のファイル（台帳は `src/data/assets.ts`、決まりは `docs/ASSETS.md`、絵の方向性は `docs/ART.md`）。立ち絵は `portraits/` に WebP で置く。効果音は `se/`、BGM は `bgm/`（どちらも mp3） |
 | `src/sim/` | 自動対戦（決まった方針で自動で遊ぶ）と測定の集計 |
 | `src/tools/` | 開発用の道具の処理（データの一覧表を作る `dataTables.ts`） |
-| `src/debug/` | デバッグメニュー、戦闘ログ、チート、eruda、ビルド情報 |
+| `src/debug/` | デバッグメニュー、戦闘ログ、チート、eruda、ビルド情報、通しの自動確認が画面を調べる窓口（`testHook.ts`。`?debug=1` の時だけ `window.__restopia`） |
 | `tests/` | Vitest のテスト（`tests/core/` がロジック） |
 | `scripts/` | 開発用の命令（`measure.mjs`、`data-tables.mjs`）と、立ち絵の背景を抜く `cutout.py`（Python。`pip install "rembg[cpu]"` が要る。アニメ向けの背景を抜く AI を使う） |
 | `docs/` | 文書（`docs/design/README.md` の一覧）。`docs/licenses/` は利用規約・ライセンス文の控え。`docs/data/` はデータの一覧表（自動で作る） |
@@ -50,7 +50,9 @@
 - データのつながり（`tests/dataRefs.test.ts`。敵が落とす素材、戦闘の報酬、コンボの材料、星図のマスなどが、本当にある名前を指しているか）と、一覧表が今のデータと同じか（`tests/dataTables.test.ts`。データを変えて `npm run data:tables` を忘れると失敗する）
 - 素材台帳の書き漏れ（`tests/assets.test.ts`。ファイルがない、クレジットの文がない、規約の控えがない、本番なのに売り物に使えない、ライブラリが `package.json` と合わない）
 - ロジック（戦闘・星図・ムーブメント・武器・進み具合・セーブ）、データの整合（`tests/data.test.ts` など）、Phaser に依存しない補助関数（デバッグ判定、ビルド情報、スキルの並べ方）、自動対戦（`tests/sim.test.ts`）
-- コミットの前に `npm test`、`npx tsc --noEmit`、`npm run build` がすべて通ること
+- **通しの自動確認**（`npm run e2e`、`scripts/e2e.mjs`。段階20）：`npm run build` した公開物を手元のサーバーで開き、Playwright の Chromium で自動で遊ぶ。タイトル →「はじめる」→ 戦闘1〜5（デバッグの「敵のHPを1にする」と「自動で1ラウンド戦う」で進める）→ 結果。戦闘2の後にページを開き直して「つづきから」で続くか、BGM が流れて縁日の試作で切り替わるかも見る。エラーが出たり止まったりしたら失敗し、その時の画面を `e2e-failure.png` に残す。1回およそ1分
+  - 画面は canvas なので、ボタンは文字の位置を `window.__restopia.findText()` で調べてタップする。画面の文字を変えたら、`scripts/e2e.mjs` の探す文字も合わせる
+- コミットの前に `npm test`、`npx tsc --noEmit`、`npm run build`、`npm run e2e` がすべて通ること
 
 ## 5. 自動対戦の測定
 
@@ -85,7 +87,7 @@
 
 ## 7. 公開
 
-- `.github/workflows/deploy.yml`：すべてのブランチへの push と PR でテストとビルド。GitHub Pages への公開は `main` への push の時だけ。テストかビルドが1つでも失敗したら公開しない
+- `.github/workflows/deploy.yml`：すべてのブランチへの push と PR でテストとビルド。GitHub Pages への公開は `main` への push の時だけ。テスト・ビルド・通しの自動確認のどれか1つでも失敗したら公開しない（通しの自動確認が失敗した時の画面は、その実行の Artifacts の `e2e-failure` に残る）
 - リポジトリの Settings → Pages の Source は「GitHub Actions」
 - 公開URL：https://sonicecho.github.io/project-hourglass/
 
@@ -93,6 +95,7 @@
 
 試作の経緯は `docs/SPEC.md` の「実装時の決定事項」。段階14以降で技術の決まりを変えたら、ここに日付・段階・理由を1〜2行で足す。
 
+- 2026-10-08 段階20：通しの自動確認を Actions に入れ、M0 の完成の基準（同じ遊びが動く、途中で閉じても続きから遊べる）を公開のたびに確かめる。戦闘は自動対戦の方針（`src/sim/autoBattle.ts` の `autoPlan`・`autoExtra`）を戦闘画面から呼んで進める（測定の結果は切り出す前と同じ）。BGM は mp3 にし（約0.9MB → 約0.2MB）、くり返しは Phaser の音を使わず Web Audio の区間ループ（`loopStart`・`loopEnd`）に直接任せる（Phaser の区間（マーカー）は、区間の前から区間へ移る時に切れ目ができるため。曲の切り替えのフェードも画面に依存しなくなった）。mp3 は頭と終わりに無音が入るので、仮の BGM は1周の前後に0.5秒ずつ足して書き出し、区間だけをくり返す
 - 2026-10-08 段階19：音は `src/audio/sound.ts` だけで鳴らす。BGM はゲーム全体で1曲で、画面が替わっても止めず、別の曲を頼まれた時だけ前の曲を0.6秒で小さくして切り替える（戦闘や星図に入ってもタイトルの曲が続く）。くり返す区間は `src/data/sounds.ts` の `BGM_LOOPS` に曲ごとに書く（Suno の曲のつなぎ目用。書かなければ曲の全体をくり返す）。音量の設定はセーブとは別に保存する（`restopia.settings`。セーブを消しても音量は残る）。スマホのブラウザは最初に触れるまで音を出せないので、その前に頼まれた BGM は触れた後に始め、効果音は鳴らさない。戦闘を早送りしている間は効果音を鳴らさない
 - 2026-10-08 段階18a：AI で作った立ち絵は、背景を `scripts/cutout.py`（背景を抜く AI、rembg の isnet-anime。色の近さで抜く自前の処理は髪のまわりに白いふちが残ったのでやめた）で透明に抜き、WebP（透明あり、1枚約120KB）で置く。PNG より軽く、スマホのブラウザで読める。話していない人の立ち絵は、重なっても透けないよう、薄くするのではなく暗くする
 - 段階17：データは TypeScript のまま書き、表は自動で作ると決めた（開発者と相談。数値は Claude に頼んで変える形なので、型とテストで守れる方を取った）。表は画面と同じ説明の処理で作り、表が古いとテストが失敗する

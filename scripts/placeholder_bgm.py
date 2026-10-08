@@ -1,10 +1,12 @@
 """段階19の仮の BGM を合成する（自作。ループの仕組みを確かめるための音で、本番では Suno の曲に替える）。
 
-使い方: python3 scripts/placeholder_bgm.py public/assets/bgm/title.wav public/assets/bgm/festival.wav
-必要なもの: numpy
+使い方: python3 scripts/placeholder_bgm.py public/assets/bgm/title.mp3 public/assets/bgm/festival.mp3
+必要なもの: numpy、ffmpeg（mp3 に書き出す）
 音を鳴らし終わった余韻は曲の頭に回り込ませて足すので、最後から最初へ切れ目なくつながる。
+mp3 は始めと終わりに少し無音が入るので、くり返す1周の前後に PAD 秒ずつ余分に書き出す（段階20）。
+ゲームでは src/data/sounds.ts の BGM_LOOPS で、PAD 秒から1周の長さだけをくり返す（書き出した時に表示する値を写す）
 """
-import numpy as np, wave, sys
+import numpy as np, subprocess, sys
 SR = 22050
 def note_hz(n): return 440.0 * 2 ** ((n - 69) / 12)
 def render(length, events):
@@ -46,10 +48,14 @@ def drum(vol=0.5):
         s = np.sin(2*np.pi*(90 - 40*t)*t) * np.exp(-t*12)
         return vol * s
     return f
+PAD = 0.5
 def write(path, buf):
-    with wave.open(path, 'wb') as w:
-        w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
-        w.writeframes((buf * 32767).astype('<i2').tobytes())
+    p = int(PAD * SR)
+    ext = np.concatenate([buf[-p:], buf, buf[:p]])  # 1周の前後に、つながる続きを足す
+    pcm = (ext * 32767).astype('<i2').tobytes()
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 's16le', '-ar', str(SR), '-ac', '1', '-i', '-',
+                    '-c:a', 'libmp3lame', '-b:a', '64k', path], input=pcm, check=True)
+    print(f'{path}: BGM_LOOPS の start: {PAD}, end: {PAD + len(buf) / SR:.6f}')
 
 # タイトル：76 bpm、4小節。Cmaj7 - Am7 - Fmaj7 - G のアルペジオとパッド
 beat = 60 / 76; L = 16 * beat; ev = []

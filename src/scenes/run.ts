@@ -208,6 +208,8 @@ export interface ActiveBattle {
   getState(): BattleState;
   /** 演出中なら false を返して何もしない */
   replaceState(s: BattleState): boolean;
+  /** 自動対戦の方針で1ラウンド分（または追加行動1つ）を決めて進める（段階20）。演出中なら false */
+  autoRound(): boolean;
 }
 
 let active: ActiveBattle | null = null;

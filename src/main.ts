@@ -4,6 +4,7 @@ import { formatBuildInfo } from './debug/buildInfo';
 import { isDebugEnabled } from './debug/debugFlag';
 import { installDebugMenu } from './debug/debugMenu';
 import { loadEruda } from './debug/eruda';
+import { installTestHook } from './debug/testHook';
 import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
 import { CreditsScene } from './scenes/CreditsScene';
@@ -83,4 +84,5 @@ if (debug) {
     },
     openPrototype: (key, data = {}) => goTo(key, data),
   });
+  installTestHook(game);
 }

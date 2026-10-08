@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { playSe } from '../audio/sound';
+import { autoExtra, autoPlan, lcg } from '../sim/autoBattle';
 import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
 import {
   advance,
@@ -117,6 +118,7 @@ export class BattleScene extends Phaser.Scene {
       progress: this.progress,
       getState: () => this.state,
       replaceState: (s) => this.replaceState(s),
+      autoRound: () => this.autoRound(),
     });
     this.events.once('shutdown', () => setActiveBattle(null));
     this.message = this.idleMessage();
@@ -136,6 +138,46 @@ export class BattleScene extends Phaser.Scene {
     this.message = this.idleMessage();
     this.render();
     return true;
+  }
+
+  /** デバッグメニューから：自動対戦の方針で行動を決めて進める（段階20。通しの自動確認でも使う） */
+  private autoRound(): boolean {
+    if (this.busy) return false;
+    const pick = lcg(this.state.seed + this.state.log.length);
+    if (this.state.phase === 'plan') {
+      this.clearSelection();
+      this.state = autoPlan(this.state, pick);
+      this.startRound();
+      return true;
+    }
+    if (this.state.phase !== 'extra') return false;
+    const before = this.state;
+    const r = autoExtra(before, pick);
+    this.clearSelection();
+    if (r.kind === 'decline') {
+      this.state = r.state;
+      void this.runExecution();
+      return true;
+    }
+    this.busy = true;
+    void this.play(before, r.state).then(async () => {
+      if (this.state.phase === 'execute') await this.runExecution();
+      else this.finishPlayerStep();
+    });
+    return true;
+  }
+
+  /** 追加行動・バトンタッチを見せ終わった後、次の入力を待つ */
+  private finishPlayerStep(): void {
+    this.busy = false;
+    this.skipping = false;
+    if (this.state.phase === 'ended') {
+      this.render();
+      this.showEnd();
+      return;
+    }
+    this.message = this.idleMessage();
+    this.render();
   }
 
   // ---- 局面ごとの進行 ----
@@ -248,17 +290,7 @@ export class BattleScene extends Phaser.Scene {
     const after = applyExtra(before, action);
     await this.play(before, after);
     if (this.state.phase === 'execute') await this.runExecution();
-    else {
-      this.busy = false;
-      this.skipping = false;
-      if (this.state.phase === 'ended') {
-        this.render();
-        this.showEnd();
-        return;
-      }
-      this.message = this.idleMessage();
-      this.render();
-    }
+    else this.finishPlayerStep();
   }
 
   private supportName(uid: number, s: BattleState): string {

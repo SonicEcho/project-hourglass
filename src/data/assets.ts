@@ -216,8 +216,8 @@ export const ASSETS: AssetEntry[] = [
   soundEffectLab('se.heal', '回復', 'heal.mp3', 'battle', 'magic-cure1.mp3（回復魔法1）'),
   soundEffectLab('se.chest', '宝箱', 'chest.mp3', 'button', 'decision24.mp3（決定ボタンを押す24）'),
   soundEffectLab('se.encounter', '遭遇', 'encounter.mp3', 'button', 'decision20.mp3（決定ボタンを押す20）'),
-  placeholderBgm('bgm.title', 'タイトル', 'title.wav'),
-  placeholderBgm('bgm.festival', '縁日', 'festival.wav'),
+  placeholderBgm('bgm.title', 'タイトル', 'title.mp3'),
+  placeholderBgm('bgm.festival', '縁日', 'festival.mp3'),
   {
     id: 'map.festival',
     kind: 'image',
