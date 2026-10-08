@@ -23,7 +23,7 @@
 
 | 演出 | 意味 |
 | --- | --- |
-| `@bg id` | 背景（`src/data/dialogue.ts` の `BACKDROPS`） |
+| `@bg id` | 背景（`src/data/dialogue.ts` の `BACKDROPS`）。同じ絵を夜などに使い回す時は、`tint` で色をかける（時計屋の店内の夜など） |
 | `@bgm 名前` / `@bgm stop` | BGM（`SCRIPT_BGM`。本番の曲ができるまで、仮の2曲で代わりに流す） |
 | `@se 名前` | 効果音（`SCRIPT_SE`。まだ入れていない音は鳴らさない） |
 | `@cast 名前 …` | 画面に出す人（3人まで。`CAST`）。何も書かなければ全員下げる |
