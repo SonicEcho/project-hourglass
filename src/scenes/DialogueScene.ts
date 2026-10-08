@@ -265,11 +265,11 @@ export class DialogueScene extends Phaser.Scene {
     if (JSON.stringify(r.vars) !== JSON.stringify(this.vars)) this.onVars?.(r.vars);
     this.vars = r.vars;
     for (const cmd of r.commands) await this.apply(cmd);
-    this.busy = false;
     if (r.stop.type === 'end') {
-      this.endScene();
+      await this.endScene();
       return;
     }
+    this.busy = false;
     if (r.stop.type === 'choice') {
       this.pos = r.pos;
       if (r.stop.choice.game) this.playGame(r.stop.choice.game);
@@ -937,8 +937,11 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   /** 場面の終わり：続きの場面があれば始める。なければ次の画面へ */
-  private endScene(): void {
+  private async endScene(): Promise<void> {
     const next = this.queue.shift();
+    // 場面の切れ目は、暗転してから替える（いきなり切り替わらないように。台本で暗転している時はそのまま）。次の場面の最初の文で明転する
+    if (!this.fadedOut) await this.fade('out');
+    this.busy = false;
     if (next) {
       this.pos = { scene: next, index: 0 };
       this.onScene?.(next);
@@ -948,7 +951,7 @@ export class DialogueScene extends Phaser.Scene {
     this.sand.stop();
     this.setSkip(false);
     this.setAuto(false);
-    this.cameras.main.resetFX();
+    // 暗転したまま次の画面へ（カメラは画面を移る時に作り直されるので、ここで元に戻すと一瞬だけ明るく見える）
     if (this.nextScreen) this.scene.start(this.nextScreen.key, this.nextScreen.data);
     else this.scene.start('Title');
   }
