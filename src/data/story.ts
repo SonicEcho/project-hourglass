@@ -21,7 +21,7 @@ export const STORY: Story<CampaignBattle> = [
 
 // ---- 物語の流れ（段階23）：M1 のスライス（プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 → つづく） ----
 // 会話の出来事の id は、台本（scriptM1.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
-// 昼の日常は日常の画面（段階24）。まだ作っていない遊び（探索・時間を返す）は、仮の画面で案内して「次へ」で通す（段階25〜28で本物に置き換える）
+// 昼の日常は日常の画面（段階24）、探索は探索の画面（段階25）。まだ作っていない遊び（時間を返す）は、仮の画面で案内して「次へ」で通す（段階28で本物に置き換える）
 
 const talk = (id: string, title: string): FlowEvent => ({ id, kind: 'dialogue', title });
 
@@ -50,17 +50,8 @@ export const SLICE_FLOW: Flow = [
       talk('d1_clockshop', '1日目：夕暮れの時計屋'),
       talk('d1_library', '1日目：レストピアの蔵書の棚'),
       talk('a11_enter', '1-1：縁日に入る'),
-      {
-        id: 'a11_explore',
-        kind: 'explore',
-        title: '1-1「金魚の名前」：縁日の探索',
-        note: 'ここで探索（段階25で作る）。縁日を歩き、砂嵐と戦い（段階27）、宝箱で素材を手に入れ、コマを集める（段階28）。今は「次へ」で、探索の途中の会話に進む',
-      },
-      talk('a11_first_koma', '1-1：最初のコマ'),
-      talk('a11_checkpoint', '1-1：チェックポイント'),
-      talk('a11_three_left', '1-1：あとコマが3つ'),
-      talk('a11_boss', '1-1：区画の奥のボス'),
-      talk('a11_last_koma', '1-1：最後のコマ'),
+      // 縁日の探索（段階25。区画は areas.ts の AREAS。探索の途中の会話も、区画のきっかけから出す）
+      { id: 'a11_explore', kind: 'explore', title: '1-1「金魚の名前」：縁日の探索', area: 'a11' },
       {
         id: 'a11_return',
         kind: 'return',

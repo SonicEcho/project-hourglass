@@ -125,8 +125,8 @@ describe('仲間ごとに1つずつ', () => {
 
 describe('M1 の物語の流れ（段階23）', () => {
   it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
-    const { BACKDROPS, DAILY_HUBS, M1_SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
-    const { checkDailyHub, checkFlow, flowEvents } = await import('../src/core');
+    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, DAILY_HUBS, ITEMS, M1_SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
+    const { checkArea, checkDailyHub, checkFlow, flowEvents } = await import('../src/core');
     expect(checkFlow(SLICE_FLOW)).toEqual([]);
     const sceneIds = new Set(M1_SCENES.map((s) => s.id));
     const reachable = new Set<string>();
@@ -150,7 +150,19 @@ describe('M1 の物語の流れ（段階23）', () => {
           }
         }
       }
-      if (e.kind === 'explore' || e.kind === 'return') expect(e.note, e.id).toBeTruthy();
+      if (e.kind === 'explore') {
+        const area = AREAS[e.area ?? ''];
+        expect(area, e.id).toBeDefined();
+        expect(checkArea(area)).toEqual([]);
+        for (const x of [...area.enemies, area.boss]) expect(x.battle in AREA_BATTLES, `${area.id} ${x.battle}`).toBe(true);
+        for (const c of area.chests) for (const item of c.items) expect(item in ITEMS, `${c.id} ${item}`).toBe(true);
+        for (const scene of [...area.talkers.map((t) => t.scene), ...area.triggers.map((t) => t.scene)]) {
+          expect(sceneIds.has(scene), `${area.id} ${scene}`).toBe(true);
+          reachable.add(scene);
+        }
+        if (area.image) expect(ASSETS.some((a) => a.id === area.image), area.image).toBe(true);
+      }
+      if (e.kind === 'return') expect(e.note, e.id).toBeTruthy();
     }
     for (const id of M1_SCENE_ORDER) expect(reachable.has(id), id).toBe(true);
   });

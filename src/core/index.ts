@@ -16,3 +16,4 @@ export * from './script';
 export * from './flow';
 export * from './daily';
 export * from './minigame';
+export * from './explore';

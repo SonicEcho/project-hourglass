@@ -17,7 +17,7 @@ import {
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { GROWTH_MAP, NAVI_DATA, PARTY, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREAS, GROWTH_MAP, NAVI_DATA, PARTY, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -27,6 +27,7 @@ const ctx: SaveContext = {
   weaponData: WEAPON_DATA,
   story: STORY,
   flow: SLICE_FLOW,
+  areas: AREAS,
 };
 
 const AT = new Date('2026-10-07T12:34:56Z');
@@ -42,6 +43,7 @@ function freshRun(): RunSnapshot {
     armory: createArmory(WEAPON_DATA),
     event: 'prologue_open',
     vars: {},
+    explore: null,
   };
 }
 
@@ -142,6 +144,15 @@ describe('セーブ：古い版から直す', () => {
     }
   });
 
+  it('版3のセーブ（探索がなかった）は、探索の途中ではないものとして読む', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 3;
+      delete raw.run.explore;
+    });
+    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
+    expect(res.ok && res.save.run.explore).toBeNull();
+  });
+
   it('直す手順がない古い版は読まない', () => {
     const res = parseEdited((raw) => (raw.version = 0));
     expect(res).toEqual({ ok: false, error: '版0から直す手順がない', old: true });
@@ -238,6 +249,14 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res3.ok && res3.save.run.event).toBe('prologue_open');
     expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
     expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
+  });
+
+  it('探索の状態を読み戻す。知らない区画なら、探索の途中ではないことにする', () => {
+    const explore = { area: 'a11', cell: [11, 17], checkpoint: [11, 17], openedChests: ['a11_chest_goldfish'], defeated: ['a11_e_plaza'], seen: ['a11_first_koma'], cleared: false };
+    const res = parseEdited((raw) => (raw.run.explore = explore));
+    expect(res.ok && res.save.run.explore).toEqual(explore);
+    const res2 = parseEdited((raw) => (raw.run.explore = { ...explore, area: 'gone' }));
+    expect(res2.ok && res2.save.run.explore).toBeNull();
   });
 
   it('進み具合がないものは読まない', () => {

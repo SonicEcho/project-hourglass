@@ -1,3 +1,5 @@
+import type { AreaDef, ExploreState } from './explore';
+import { normalizeExplore } from './explore';
 import type { Flow } from './flow';
 import { dayAt, findEvent, firstEventId } from './flow';
 import type { GrowthMap, GrowthState } from './growth';
@@ -13,7 +15,7 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -35,6 +37,8 @@ export interface RunSnapshot {
   event: string;
   /** 物語で覚えた値（プロローグで選んだ金魚の名前・景品など。段階23。版3から） */
   vars: Record<string, string>;
+  /** 探索の状態（探索の途中の時だけ。段階25。版4から） */
+  explore: ExploreState | null;
 }
 
 export interface SaveData {
@@ -55,6 +59,8 @@ export interface SaveContext {
   story: Story;
   /** 物語の流れ（章 → 出来事。段階23） */
   flow: Flow;
+  /** 探索の区画（段階25） */
+  areas: Record<string, AreaDef>;
 }
 
 /** ある版のセーブを、次の版の形に直す手順（キーは直す前の版の番号） */
@@ -64,7 +70,10 @@ export type SaveMigrations = Record<number, (raw: Record<string, unknown>) => Re
  * 古い版から直す手順。
  * 版1・2（試作の5戦だけのセーブ）は、スライスの流れ（段階23）には引き継がない（開発者と決めた）。手順を置かないので、読めない古いセーブとして扱う
  */
-export const MIGRATIONS: SaveMigrations = {};
+export const MIGRATIONS: SaveMigrations = {
+  // 版3 → 版4（段階25）：探索の状態を足す（版3の時は、まだ探索がなかった）
+  3: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, explore: null } } : raw),
+};
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
 export type LoadResult = { ok: true; save: SaveData } | { ok: false; error: string; old?: true };
@@ -127,6 +136,7 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     armory,
     event,
     vars: stringsOf(raw.vars),
+    explore: sanitizeExplore(raw.explore, ctx),
   };
 }
 
@@ -198,6 +208,13 @@ function countsOf(raw: Record<string, unknown>, known: Record<string, unknown>):
   const out: Record<string, number> = {};
   for (const [id, n] of Object.entries(raw)) if (known[id] && isInt(n) && n > 0) out[id] = n;
   return out;
+}
+
+/** 探索の状態を、今の区画に合わせて整える。知らない区画・壊れた形なら、探索の途中ではないことにする */
+function sanitizeExplore(raw: unknown, ctx: SaveContext): ExploreState | null {
+  if (!isObject(raw) || typeof raw.area !== 'string') return null;
+  const area = ctx.areas[raw.area];
+  return area ? normalizeExplore(area, raw) : null;
 }
 
 /** 文字の値だけを残す */

@@ -11,6 +11,7 @@ import { CreditsScene } from './scenes/CreditsScene';
 import { DialogueScene } from './scenes/DialogueScene';
 import { FlowScene } from './scenes/FlowScene';
 import { DailyScene } from './scenes/DailyScene';
+import { ExploreScene } from './scenes/ExploreScene';
 import { ProtoExploreScene } from './scenes/ProtoExploreScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
@@ -56,7 +57,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene],
+  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene],
 });
 
 if (debug) {
@@ -87,6 +88,7 @@ if (debug) {
     openPrototype: (key, data = {}) => goTo(key, data),
     openDialogue: (data) => goTo('Dialogue', data),
     openFlow: () => goTo('Flow', { done: false }),
+    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined }),
   });
   installTestHook(game);
 }

@@ -37,7 +37,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, SE, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, SE, STORY, WEAPON_DATA } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
@@ -65,6 +65,18 @@ interface Selection {
 export interface BattleSceneData {
   /** 戦う場所（なければ周回の次の場所） */
   progress?: Progress;
+  /**
+   * 探索から来た戦闘（段階25）。battle は区画の戦闘（AREA_BATTLES）の id。
+   * 勝ったら報酬を受け取って win の画面へ、負けたら lose の画面へ（試作の5戦の進み具合は変えない）
+   */
+  encounter?: { battle: string; win: { key: string; data: object }; lose: { key: string; data: object } };
+}
+
+/** 文字から作る、ずらしの数（探索の戦闘のシードを、戦闘ごとに変えるため） */
+function textHash(text: string): number {
+  let h = 0;
+  for (const ch of text) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
+  return h;
 }
 
 /** 演出の待ち時間（ミリ秒） */
@@ -74,6 +86,7 @@ export class BattleScene extends Phaser.Scene {
   private state!: BattleState;
   /** 戦っている場所と、その戦闘 */
   private progress!: Progress;
+  private encounter?: BattleSceneData['encounter'];
   private battle!: CampaignBattle;
   /** 計画中に行動を選んでいる仲間 */
   private planner: string | null = null;
@@ -98,8 +111,11 @@ export class BattleScene extends Phaser.Scene {
   create(data: BattleSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.progress = data.progress ?? run.progress;
-    this.battle = battleAt(this.progress);
-    const seed = battleSeed(this.progress);
+    this.encounter = data.encounter;
+    const areaBattle = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
+    if (data.encounter && !areaBattle) throw new Error(`unknown area battle ${data.encounter.battle}`);
+    this.battle = areaBattle ?? battleAt(this.progress);
+    const seed = areaBattle ? (run.seed + textHash(areaBattle.id)) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
     // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
     this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty()));
@@ -1010,6 +1026,11 @@ export class BattleScene extends Phaser.Scene {
     c.add([shade, title]);
     const result = getBattleResult(this.state);
     const def = this.battle;
+    if (this.encounter) {
+      this.showEncounterEnd(c, win, result);
+      this.overlay = c;
+      return;
+    }
     // 勝った後に進む場所。最後まで終わった時（今はボス）は結果画面へ。次の区画・章へ進む時の画面は、今は星図に戻るだけ（段階13）
     const next = advance(STORY, this.progress);
     if (win && next.event !== 'storyClear') {
@@ -1057,6 +1078,35 @@ export class BattleScene extends Phaser.Scene {
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 240, 60, '結果へ', { onTap: () => this.scene.start('Result', data) }, { size: 18, bold: true });
     }
     this.overlay = c;
+  }
+
+  /** 探索から来た戦闘の終わり（段階25）。勝てば報酬を受け取って探索へ、負ければチェックポイントへ */
+  private showEncounterEnd(c: Phaser.GameObjects.Container, win: boolean, result: ReturnType<typeof getBattleResult>): void {
+    const enc = this.encounter!;
+    const def = this.battle;
+    if (!win) {
+      c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, '最後に記録したチェックポイントから、やり直す', { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });
+      return;
+    }
+    const gained = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
+    run.growth = { ...run.growth, points: run.growth.points + gained };
+    const naviData = currentNaviData();
+    run.armory = recordVictory(run.armory, {
+      actions: result.actionCounts,
+      colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
+      items: [...result.drops, ...(def.item ? [def.item] : [])],
+    });
+    saveRun();
+    const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}`;
+    c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5, 0));
+    addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80, 240, 60, '探索へ戻る', { onTap: () => this.scene.start(enc.win.key, enc.win.data) }, {
+      size: 18,
+      bold: true,
+      fill: 0x5a4a10,
+      stroke: COLORS.accent,
+      strokeWidth: 2,
+    });
   }
 }
 

@@ -12,6 +12,7 @@ export * from './navi';
 export * from './weapons';
 export * from './story';
 export * from './daily';
+export * from './areas';
 export * from './minigames';
 export * from './assets';
 export * from './prototypes';
