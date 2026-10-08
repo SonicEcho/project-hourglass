@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { BlipVoice } from '../data';
-import { BGM_LOOPS } from '../data';
+import { BGM_LOOPS, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
@@ -102,7 +102,8 @@ export function playBlip(scene: Phaser.Scene, voice: BlipVoice): void {
   osc.type = voice.wave;
   osc.frequency.value = voice.pitch * (0.94 + Math.random() * 0.12);
   const gain = ctx.createGain();
-  const peak = 0.2 * st.seVolume;
+  // 音色ごとの聞こえ方の差をそろえる（大きくなりすぎないよう上限をかける）
+  const peak = Math.min(0.4, 0.2 * (WAVE_GAIN[voice.wave] ?? 1)) * st.seVolume;
   gain.gain.setValueAtTime(0, now);
   gain.gain.linearRampToValueAtTime(peak, now + 0.005);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);

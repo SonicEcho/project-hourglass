@@ -189,6 +189,15 @@ describe('M1 の台本（段階22）', () => {
     }
   });
 
+  it('文字の音の高さは、スマホのスピーカーで聞こえる範囲にある', async () => {
+    const { CAST, VOICE_DEFAULT, VOICE_ONLY, VOICE_PITCH_RANGE } = await import('../src/data');
+    const voices = [...Object.entries(CAST).map(([n, c]) => [n, c.voice] as const), ...Object.entries(VOICE_ONLY), ['（ほかの人）', VOICE_DEFAULT] as const];
+    for (const [name, v] of voices) {
+      expect(v.pitch, name).toBeGreaterThanOrEqual(VOICE_PITCH_RANGE.min);
+      expect(v.pitch, name).toBeLessThanOrEqual(VOICE_PITCH_RANGE.max);
+    }
+  });
+
   it('本文はスマホの会話の枠に収まる長さ（60文字まで）', async () => {
     const { M1_SCENES } = await import('../src/data');
     for (const scene of M1_SCENES) {
