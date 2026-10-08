@@ -122,6 +122,96 @@ function heroPortrait(face: string, title: string): AssetEntry {
   };
 }
 
+/** りくの胸から上の基本の1枚を作った ChatGPT の指示文（docs/ART.md の 5-2。案2。共通部分の後に付けた） */
+const RIKU_BASE_PROMPT =
+  'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
+  'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer. ' +
+  "Keep the face exactly the same as the attached boy's portrait: same face shape, eyes, eyebrows, cheerful open-mouthed grin, skin tone and art style. Change only his hairstyle and outfit. " +
+  'Framing: from just above the top of the head down to mid-chest, the head in the upper third. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl. ' +
+  'Pose: both arms relaxed down at the sides, hands outside the frame. No props in hand. Background: plain pure white, no shadow, no gradient. ' +
+  'Hair: short, neat dark-brown hair with the sides trimmed short and the front bangs swept up and slightly to one side, showing his forehead. Clean and sporty, not spiky. ' +
+  'Outfit (same school as the protagonist): white dress shirt with sleeves rolled up to the elbows, a navy knit school vest over it, a dusk-red necktie worn loose with the top button undone. ' +
+  'Mood: boyish and a little mischievous, but refreshing and popular in class, the reliable friend who drags everyone into his plans. ' +
+  'Color palette: hair #4A3222, vest #2B3552, necktie #D9483B, shirt #F5F2EA, skin like the reference.';
+
+/** りくの胸から上の立ち絵（段階31a。表情違いは Gemini で作る予定） */
+function rikuPortrait(face: string, title: string): AssetEntry {
+  return {
+    id: `portrait.riku.${face}`,
+    kind: 'image',
+    title: `りくの立ち絵（${title}）`,
+    file: `assets/portraits/riku_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'ChatGPT',
+      plan: '無料',
+      prompt: RIKU_BASE_PROMPT,
+      settings:
+        '見本の絵：顔は1回目に作ったりくの絵（白シャツに紺のジャージを腰に巻いた絵）、構図はあかりの胸から上の絵。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた',
+    },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: 'りくの見た目を決めた基本の1枚（docs/ART.md の 5-2）。開発者が案を3つ試して、この形に決めた',
+  };
+}
+
+/** りくの表情違い（Gemini で、笑顔の絵を見本にして顔だけ変えた。docs/ART.md の 5-2「りくの表情違い」） */
+function rikuFace(face: string, title: string, expression: string): AssetEntry {
+  return {
+    id: `portrait.riku.${face}`,
+    kind: 'image',
+    title: `りくの立ち絵（${title}）`,
+    file: `assets/portraits/riku_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt:
+        'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair, navy knit vest, loose red necktie, rolled-up white sleeves, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects. ' +
+        `Expression: ${expression}`,
+      settings: `見本の絵：りくの笑顔の立ち絵（ChatGPT で作った基本の1枚）。843×1264 で出てきた。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた。基本の1枚の指示文：${RIKU_BASE_PROMPT}`,
+    },
+    author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: 'ChatGPT の規約の控えは docs/licenses/ai-openai.md',
+  };
+}
+
+/** 会話の背景（段階31a）。ChatGPT で作った1枚絵 */
+function backdrop(id: string, title: string, file: string, prompt: string, settings: string): AssetEntry {
+  return {
+    id: `bg.${id}`,
+    kind: 'image',
+    title: `会話の背景（${title}）`,
+    file: `assets/backgrounds/${file}`,
+    status: 'placeholder',
+    source: { type: 'ai', service: 'ChatGPT', plan: '無料', prompt, settings },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: 'docs/ART.md の 5-2',
+  };
+}
+
+const STYLE_PREFIX =
+  'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ';
+
 /** 効果音ラボの効果音（段階19）。page は効果音ラボのページ、file はそこの mp3 の名前 */
 function soundEffectLab(id: string, title: string, file: string, page: string, original: string): AssetEntry {
   return {
@@ -226,27 +316,53 @@ export const ASSETS: AssetEntry[] = [
     status: 'placeholder',
     source: {
       type: 'ai',
-      service: 'Google Gemini（Gemini アプリ）',
+      service: 'ChatGPT',
       plan: '無料',
       prompt:
         'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
-        'Top-down game map, seen from directly above (90-degree overhead view), vertical 9:16 composition. ' +
-        'A small Japanese shrine summer festival at dusk, early 1990s. A red torii gate at the bottom center, a stone path running straight up the middle to a small shrine at the top. Rows of festival stalls along both sides of the path (goldfish scooping, cotton candy, masks, yakisoba), paper lanterns glowing, a small open plaza in the middle, trees around the edges. No people, no characters.',
-      settings: '768×1376。WebP に変えただけで、ほかの加工はしていない',
+        'Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. ' +
+        "Scene: a small Japanese shrine festival (ennichi) at summer dusk, about ten years ago, in a neighboring town's shrine. " +
+        'Layout from bottom to top: Bottom center: a red torii gate at the entrance, with a short stone path leading in. A wide stone-paved approach path (sando) running straight up the middle of the image. ' +
+        'Both sides of the path lined with festival stalls with striped cloth awnings: on the left side a goldfish-scooping stall with a shallow blue water tank full of small red goldfish; on the right side a ramune soda stall with a tub of ice and glass bottles; other stalls such as cotton candy, masks, shaved ice. ' +
+        'Around the middle: an open round plaza with one large paper lantern on a wooden stand at its center and a few wooden benches at the edges. From the right edge of the plaza, a narrow stone path branches off to the right and leads out of the image. ' +
+        'Top: a small wooden shrine building, with an open sandy space in front of it. Trees, stone lanterns and low fences around the outer edges. ' +
+        'Walkable areas (paths, plaza, sandy space) must be clearly distinguishable from non-walkable objects (stalls, trees, stone lanterns, benches, pillars). Paths are wide, at least one eighth of the image width. ' +
+        'Lighting: warm orange paper lanterns strung above the path, indigo and amber dusk sky tones reflected on the ground. ' +
+        'Absolutely no letters or text anywhere: signs, banners, lanterns and awnings are blank or have simple patterns only.',
+      settings: '元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）。ほかの加工はしていない',
     },
-    author: 'RESTOPIA 開発（Google Gemini で作成）',
-    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
     acquiredAt: '2026-10-08',
-    termsCopy: 'docs/licenses/ai-gemini.md',
-    notes: '段階18bの試作の仮の地図。開発者の好みのデザインではないので、本番は ChatGPT で作り直す（看板の文字が崩れるので、本番は看板に文字を書かない）',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: '1-1「金魚の名前」の地図（docs/ART.md の 5-2 の 7）。段階18b の Gemini の仮の地図を、ChatGPT で作り直した絵に差し替えた。歩ける場所は src/data/prototypes.ts の PROTO_FESTIVAL_LAYOUT',
   },
   heroPortrait('normal', '通常'),
   heroPortrait('smile', 'やさしい笑顔'),
   heroPortrait('surprised', '驚き'),
   heroPortrait('determined', '決意'),
+  rikuPortrait('smile', '笑顔'),
+  rikuFace('normal', '通常', 'relaxed and friendly, a small natural smile with the mouth closed'),
+  rikuFace('proud', '得意げ', 'smug and proud, a confident closed-mouth grin, chin slightly raised, one eyebrow up'),
+  rikuFace('serious', '真剣', 'serious and focused, mouth closed, brows drawn together, eyes sharp and determined'),
+  rikuFace('flustered', 'あせり', 'flustered, an awkward nervous smile, eyebrows raised in a troubled way, eyes looking aside'),
+  rikuFace('surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'),
+  rikuFace('smirk', 'にやり', 'a sly mischievous smirk, one corner of the mouth raised, eyes narrowed playfully'),
+  rikuFace('sad', '悲しい', 'sad and quiet, eyes looking down, mouth closed, brows slightly lowered'),
+  backdrop(
+    'shrine_approach',
+    '夕暮れの神社の参道',
+    'shrine_approach.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No characters in the foreground. ' +
+      "A small Japanese shrine's approach path (sando) at summer dusk on a festival evening, in a quiet regional town. A stone-paved path leads to a red torii gate in the distance. Rows of festival food stalls with striped cloth awnings line both sides. Paper lanterns are being lit one by one, warm orange light against an indigo and amber sky. Only a few tiny blurred silhouettes of festival-goers far away. " +
+      'Eye-level camera, the path centered. Keep the lower third of the image simple (ground and stone path), because a dialogue box will cover it. ' +
+      'Absolutely no letters or text anywhere: signs, lanterns, banners and awnings are blank or have simple patterns only.',
+    '元の絵は 941×1672。720×1280 に縮めて WebP にした。プロローグの参道の入口と、屋台の並びの両方で使う',
+  ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
   akariPortrait(

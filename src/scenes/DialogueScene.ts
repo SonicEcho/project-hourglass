@@ -9,6 +9,7 @@ import { BACKDROPS, BLIP_EVERY, CAST, CGS, FACE_EMOTES, FACE_MOTIONS, M1_SCENES,
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { applyKinsoku } from '../ui/kinsoku';
 import { addButton, addText } from '../ui/widgets';
 
 /** 文字送りの速さ（1文字あたりのミリ秒）。語りの文はゆっくり */
@@ -21,6 +22,8 @@ const AUTO_BASE_MS = 1100;
 const AUTO_PER_CHAR_MS = 45;
 /** 話していない人の立ち絵の暗さ（重なっても透けないよう、薄くするのではなく暗くする。段階18a） */
 const DIM_TINT = 0x707070;
+/** 本文の折り返しの幅 */
+const BODY_WRAP = GAME_WIDTH - 68;
 /** 立ち絵の下の端（本文の枠の上の辺） */
 const STAGE_BOTTOM = 560;
 /** 背景・1枚絵を前の絵に重ねて替える時間、人が出入りする時間（ミリ秒） */
@@ -183,7 +186,7 @@ export class DialogueScene extends Phaser.Scene {
     this.box = this.add.rectangle(16, 560, GAME_WIDTH - 32, 200, 0x0b1118, 0.92).setOrigin(0).setStrokeStyle(2, COLORS.border).setDepth(40);
     this.nameBox = this.add.rectangle(28, 540, 140, 36, COLORS.panelLight).setOrigin(0).setStrokeStyle(2, COLORS.accent).setDepth(41);
     this.nameTag = addText(this, 98, 558, '', { size: 15, bold: true, color: COLORS.accentText }).setOrigin(0.5).setDepth(42);
-    this.body = addText(this, 34, 592, '', { size: 17, wrap: GAME_WIDTH - 68 }).setDepth(42);
+    this.body = addText(this, 34, 592, '', { size: 17, wrap: BODY_WRAP }).setDepth(42);
     this.body.setLineSpacing(6);
     this.cursor = addText(this, GAME_WIDTH - 40, 735, '▼', { size: 14, color: COLORS.accentText }).setOrigin(0.5).setDepth(42);
     this.tweens.add({ targets: this.cursor, alpha: 0.2, yoyo: true, repeat: -1, duration: 400 });
@@ -526,13 +529,15 @@ export class DialogueScene extends Phaser.Scene {
   private makeActor(name: string): Actor {
     const def = CAST[name];
     const faceId = (face: string) => (def?.portrait ? `${def.portrait}.${def.faces[face] ?? face}` : '');
+    // その表情の絵、なければ代わりの表情の絵（どちらもなければ ''）
+    const imageFor = (face: string) => [face, def?.fallback?.[face]].map((f) => (f ? faceId(f) : '')).find((x) => x && hasImage(this, x)) ?? '';
     const obj = this.add.container(0, STAGE_BOTTOM);
     const body = this.add.container(0, 0);
     obj.add(body);
     this.stage.add(obj);
     const base = { obj, body, face: def?.firstFace ?? '', sunk: false };
-    if (def?.portrait && hasImage(this, faceId(def.firstFace))) {
-      const img = this.add.image(0, 0, faceId(def.firstFace)).setOrigin(0.5, 1);
+    if (def?.portrait && imageFor(def.firstFace)) {
+      const img = this.add.image(0, 0, imageFor(def.firstFace)).setOrigin(0.5, 1);
       const scale = (def.height ?? 420) / img.height;
       img.setScale(scale);
       // ゆっくり息をするように、わずかに伸び縮みさせる
@@ -544,7 +549,7 @@ export class DialogueScene extends Phaser.Scene {
         setActive: (active) => (active ? img.clearTint() : img.setTint(DIM_TINT)),
         setFace: (face) => {
           // まだ絵のない表情は、代わりの表情の絵で出す
-          const id = [face, def.fallback?.[face]].map((f) => (f ? faceId(f) : '')).find((x) => x && hasImage(this, x));
+          const id = imageFor(face);
           if (id) img.setTexture(id);
         },
       };
@@ -690,7 +695,11 @@ export class DialogueScene extends Phaser.Scene {
       return;
     }
     // 全文で先に折り返しを決めてから1文字ずつ出す（途中の文で折り返すと、行の終わりの文字が一瞬はみ出して見えるため）
-    this.wrapped = this.body.getWrappedText(text).join('\n');
+    // 行の始めに句読点や閉じかっこが来ないよう、禁則処理もする。
+    // 折り返しはここで決めるので、表示する時は文字の枠の自動の折り返しを切る（ぶら下げた句読点を、もう一度折り返さないように）
+    this.body.setWordWrapWidth(BODY_WRAP, true);
+    this.wrapped = applyKinsoku(this.body.getWrappedText(text)).join('\n');
+    this.body.setWordWrapWidth(null);
     if (this.skip) {
       this.finishTyping();
       return;

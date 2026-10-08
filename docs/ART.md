@@ -13,7 +13,7 @@ M0 の「絵と音の方向性」の決まり（2026-10-08、開発者と相談�
 | 背景の枚数を減らす工夫 | 同じ背景を、夕暮れ・夜・砂嵐のノイズなど、ゲームの中の色の加工で使い回す |
 | 立ち絵 | 1人につき基本の1枚を決め、そこから表情だけ作り変える。表情は1人6種類くらい |
 | 山場の1枚絵 | 山場だけに絞る（全体で20〜30枚くらい） |
-| AI の画像サービス | **無料枠を使い倒す**。キャラ（立ち絵・表情・1枚絵・敵）は Gemini系、背景とマップは OpenAI系（ChatGPT）。量産で無料枠が足りない月だけ有料版を使う（キャラは NovelAI が第一候補）。有料版は、絵を見て「この方向で行ける」と思えてから決める |
+| AI の画像サービス | **無料枠を使い倒す**。キャラの基本の1枚は ChatGPT、表情違いは Gemini（基本の1枚を見本に渡して顔だけ変える）、背景とマップは ChatGPT（2026-10-08、開発者が作り比べて決めた）。量産で無料枠が足りない月だけ有料版を使う（キャラは NovelAI が第一候補）。有料版は、絵を見て「この方向で行ける」と思えてから決める |
 | 使わないサービス | Bing Image Creator（以前の規約が「個人の非商用に限る」）、Midjourney（作った画像が公開される設定が基本で、発売前の物語の場面が見えてしまう） |
 
 ## 2. 色の決まり（たたき台）
@@ -115,6 +115,115 @@ Additional views on the same sheet: back view, 4 facial expressions (bright smil
 - 立ち絵は、全員を**同じ構図**（胸から上、縦長、同じくらいの顔の大きさ）で作る。違う構図の絵を並べると、背の高さがちぐはぐに見える（段階18aで、顔と肩だけのハルトの絵を並べた時に分かった）
 - 立ち絵を作ってもらったら、指示文も一緒に教えてもらい、台帳に書く
 - 台帳（`src/data/assets.ts`）に、サービス名・無料か有料か・指示文・見本にした絵・作った日・規約の控え（`docs/licenses/ai-gemini.md`・`ai-openai.md`）を書く。最初は `placeholder`（仮）
+
+## 5-2. M1 の絵を作る順番と指示文（段階31a。2026-10-08 から毎日少しずつ）
+
+ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲームの中で目に入る時間が長く、ほかの絵の見本にもなるものから）。作った絵は、作ったままの大きさの PNG と、実際に使った指示文を一緒に渡してもらう（台帳に書くため）。表情違いは、基本の1枚ができてから Gemini で作る（下の「表情違い」）。
+
+| 順 | 絵 | サービス | 一緒に渡す見本の絵 | 状態 |
+| --- | --- | --- | --- | --- |
+| 1 | ハルトの胸から上の基本の1枚（あかりと同じ構図に作り直す） | ChatGPT | ハルトの設定画、あかりの胸から上の絵（構図の見本） | 未 |
+| 2 | りくの胸から上の基本の1枚（新しい見た目） | ChatGPT | あかりの胸から上の絵（構図の見本） | 済（2026-10-08。`portrait.riku.smile`。下の「りくの見た目（決まった）」） |
+| 3 | 背景：夕暮れの神社の参道（プロローグの最初の場面） | ChatGPT | なし | 済（2026-10-08。`bg.shrine_approach`。屋台の並びの場面にも使う） |
+| 4 | 背景：時計屋の店内（夕暮れ） | ChatGPT | なし | 未 |
+| 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 未 |
+| 6 | 子どものころの3人の基本の1枚（7歳。1人ずつ） | ChatGPT | 高校生の3人の絵 | 未 |
+| 7 | 地図：1-1「金魚の名前」の縁日（見下ろし。段階18b の仮の絵を作り直す） | ChatGPT | 段階18b の仮の地図の絵（配置の見本。あれば） | 済（2026-10-08。`map.festival` を差し替え、歩ける場所の文字の地図も書き直した。少し夜寄りの色なので、ゲームの側で明るさを寄せるか段階25で決める） |
+| ― | 表情違い（あかり・ハルトの足した5つずつ、りくなど） | Gemini | 基本の1枚 | りくの7つは済（2026-10-08）。あかり・ハルトは未 |
+
+**立ち絵の共通の決まり**（全員同じ構図にする。段階18a で、構図が違うと背の高さがちぐはぐに見えたため）
+
+- 縦長（2:3）。頭のてっぺんの少し上から胸の真ん中まで。頭は上から3分の1くらいの所。あかりの胸から上の絵と同じ大きさ・同じ距離
+- 正面向き。腕は体の横に下ろし、手は画面の外
+- 背景は真っ白（後で `scripts/cutout.py` で抜く）。小物・文字・魔法の光は入れない
+
+**1. ハルトの胸から上の基本の1枚**（共通部分の後に付ける。見本の絵2枚を一緒に渡す）
+
+```
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, calm neutral expression with a hint of gentleness.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Haruto. Keep his design exactly as in the attached character sheet: a 17-year-old Japanese high school boy, slim, approachable everyman face. Messy short black hair with a slight navy tint, spiky bangs, ONE single strand in the front bangs colored sand-gold, the rest fully black. Warm amber eyes with a very thin, faint golden ring inside the iris like the outer ring of a clock dial (subtle, not glowing). White school dress shirt, loose sand-gold necktie, open dark navy zip hoodie whose lining and hood interior are dusk orange and show at the front edges.
+Color palette: hair #23222E, sand-gold #D9AE62, amber eyes #C98A3A, navy hoodie #2B3552, dusk orange #E07A4F, skin #F3D6C1.
+```
+
+**2. りくの胸から上の基本の1枚**（共通部分の後に付ける。あかりの絵を構図の見本として一緒に渡す。見た目は `docs/script/M1.md` の 5. の提案）
+
+```
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a big confident grin.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props in hand.
+Background: plain pure white, no shadow, no gradient.
+Character: Riku, a 17-year-old Japanese high school boy, the protagonist's best friend. Cheerful, hot-blooded, a bit of a show-off. Short spiky dark-brown hair, slightly messy, a small black hair pin holding his bangs on one side, a pencil tucked behind his ear. Bright lively brown eyes. Same school uniform as the protagonist: white dress shirt with sleeves rolled up, no tie, collar open, a navy track jacket tied around his waist (may be cut off by the frame).
+Color palette: hair #3A2A20, shirt #F5F2EA, track jacket #2B3552, skin #F1D2B8.
+```
+
+**りくの見た目（決まった。2026-10-08）**
+
+開発者が3回作り比べて決めた。1回目（白シャツに紺のジャージを腰に巻いた絵）は顔つきがよかったが、髪型と服装がハルトに近く、ありきたりだった。眼鏡やヘアバンドを足した案は、別のキャラに見えた。そこで、1回目の顔を見本に添えて「顔はそのまま、髪型と服装だけ変える」形にし、案2に決めた。
+
+- 顔つき：やんちゃで少年っぽいが、爽やか（1回目の顔のまま）。大きく口を開けた笑顔
+- 髪：短く整えたこげ茶。横は短く、前髪を上げて少し横に流し、おでこを見せる。さっぱりして、はねすぎない
+- 服：白いワイシャツの袖を肘までまくり、紺のニットのベスト、夕焼け色の赤いネクタイをゆるめて第一ボタンを外す
+- 色：髪 #4A3222、ベスト #2B3552、ネクタイ #D9483B、シャツ #F5F2EA
+- 使った指示文は台帳（`src/data/assets.ts` の `RIKU_BASE_PROMPT`）に全文を書いた
+
+**りくの表情違い**（Gemini。りくの笑顔の絵を見本として渡す。M1 で使う順に）
+
+あかりと同じ作り方（`docs/ART.md` の 4.「表情違いの作り方」）。毎回、次の頭の文に、表情の1行だけを替えて付ける。
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair, navy knit vest, loose red necktie, rolled-up white sleeves, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects.
+Expression: <下の表の英語>
+```
+
+| 順 | 表情 | Expression の行 |
+| --- | --- | --- |
+| 1 | 得意げ | smug and proud, a confident closed-mouth grin, chin slightly raised, one eyebrow up |
+| 2 | 真剣 | serious and focused, mouth closed, brows drawn together, eyes sharp and determined |
+| 3 | あせり | flustered, an awkward nervous smile, eyebrows raised in a troubled way, eyes looking aside |
+| 4 | 通常 | relaxed and friendly, a small natural smile with the mouth closed |
+| 5 | 驚き | surprised, eyes wide open, mouth slightly open |
+| 6 | にやり | a sly mischievous smirk, one corner of the mouth raised, eyes narrowed playfully |
+| 7 | 悲しい | sad and quiet, eyes looking down, mouth closed, brows slightly lowered |
+
+（1〜5 は M1 の台本で使う。6・7 は後の章でも使える）
+
+**7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
+
+探索の地図は、絵の上に見えないマス目（1マス32、24×43マス）を重ねて、歩ける場所を文字の地図で決める（段階18b）。そのため、次のことを守ってもらう。
+
+- 縦長（9:16）。真上に近い、少しだけ斜めの見下ろし。遠近で奥が小さくならない（マス目がずれるため）
+- 歩ける所（参道・広場・石畳）と、歩けない所（屋台・木・灯籠・長椅子・柱）の境目がはっきり分かる
+- 道は、仲間の小さな絵が通れる太さ（絵の横幅の8分の1くらい以上）
+- 人は描かない（写しの人々や仲間は、ゲームの側で重ねる）。看板・のぼり・提灯に文字を入れない
+- ゲームで使う場所：下の真ん中に入口の鳥居（出発点）、まっすぐ上へ参道、真ん中あたりに広場と大きな提灯（チェックポイント）、参道の左に金魚すくいの屋台（宝箱の場所）、右にラムネの屋台、広場から右へ抜ける石畳の小道、いちばん上に小さな社と、その前の開けた場所（区画の奥のボス）
+
+```
+Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters.
+Scene: a small Japanese shrine festival (ennichi) at summer dusk, about ten years ago, in a neighboring town's shrine.
+Layout from bottom to top:
+- Bottom center: a red torii gate at the entrance, with a short stone path leading in.
+- A wide stone-paved approach path (sando) running straight up the middle of the image.
+- Both sides of the path lined with festival stalls with striped cloth awnings: on the left side a goldfish-scooping stall with a shallow blue water tank full of small red goldfish; on the right side a ramune soda stall with a tub of ice and glass bottles; other stalls such as cotton candy, masks, shaved ice.
+- Around the middle: an open round plaza with one large paper lantern on a wooden stand at its center and a few wooden benches at the edges.
+- From the right edge of the plaza, a narrow stone path branches off to the right and leads out of the image.
+- Top: a small wooden shrine building, with an open sandy space in front of it.
+- Trees, stone lanterns and low fences around the outer edges.
+Walkable areas (paths, plaza, sandy space) must be clearly distinguishable from non-walkable objects (stalls, trees, stone lanterns, benches, pillars). Paths are wide, at least one eighth of the image width.
+Lighting: warm orange paper lanterns strung above the path, indigo and amber dusk sky tones reflected on the ground.
+Absolutely no letters or text anywhere: signs, banners, lanterns and awnings are blank or have simple patterns only.
+```
+
+**3. 背景：夕暮れの神社の参道**（共通部分の後に付ける）
+
+```
+Background art for a visual novel dialogue scene. Vertical 9:16 image. No characters in the foreground.
+A small Japanese shrine's approach path (sando) at summer dusk on a festival evening, in a quiet regional town. A stone-paved path leads to a red torii gate in the distance. Rows of festival food stalls with striped cloth awnings line both sides. Paper lanterns are being lit one by one, warm orange light against an indigo and amber sky. Only a few tiny blurred silhouettes of festival-goers far away.
+Eye-level camera, the path centered. Keep the lower third of the image simple (ground and stone path), because a dialogue box will cover it.
+Absolutely no letters or text anywhere: signs, lanterns, banners and awnings are blank or have simple patterns only.
+```
 
 ## 6. 音
 
