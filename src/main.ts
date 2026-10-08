@@ -81,6 +81,6 @@ if (debug) {
       const weapon = game.scene.getScene('Weapon') as WeaponScene | null;
       weapon?.refresh();
     },
-    openPrototype: (key) => goTo(key, {}),
+    openPrototype: (key, data = {}) => goTo(key, data),
   });
 }

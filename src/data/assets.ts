@@ -83,6 +83,18 @@ function akariPortrait(face: string, title: string, expression: string, base: st
   };
 }
 
+/** ハルトの設定画を作った ChatGPT の指示文（docs/ART.md） */
+const HERO_BASE_PROMPT =
+  'Character design sheet of an original anime-style protagonist for a mobile turn-based JRPG, full body front view, standing in a neutral relaxed pose, plain off-white background, clean lineart with soft cel shading, accurate proportions about 6 heads tall. ' +
+  'Character: Haruto, a 17-year-old Japanese high school boy, slim average build, gentle and understated face, calm neutral expression, not overly handsome, approachable "everyman" look. ' +
+  'Hair: messy short black hair with a slight navy tint, spiky bangs, a few cowlicks on top, ONE single strand in the front bangs colored sand-gold (like hourglass sand), the rest of the hair fully black. ' +
+  'Eyes: warm amber eyes with a very thin, faint golden ring inside the iris, like the outer ring of a clock dial, subtle not glowing. ' +
+  "Outfit: white school dress shirt, loose sand-gold necktie, open dark navy zip hoodie jacket worn over the uniform, the jacket's inner lining and hood interior are dusk orange (sunset color) and show at the front edges and cuffs, charcoal gray school trousers, white sneakers with orange soles. " +
+  'Accessories: an old analog wristwatch with a brass case on his left wrist. ' +
+  'Weapon: holding a one-handed sword pointing down in his right hand; the blade is shaped like the minute hand of a clock (long, slim, tapering to a sharp point, with a small hollow ring near the base), the crossguard is a round brass clock gear, dark brown grip, small brass pommel. ' +
+  'Color palette: black hair #23222E, sand-gold #D9AE62, amber eyes #C98A3A, navy jacket #2B3552, dusk orange #E07A4F, skin #F3D6C1. ' +
+  'Additional views on the same sheet: back view, 4 facial expressions (neutral, gentle smile, surprised, determined), close-up of the sword.';
+
 /** ハルトの胸から上の立ち絵（表情違い）。段階18a の仮の素材 */
 function heroPortrait(face: string, title: string): AssetEntry {
   return {
@@ -95,8 +107,9 @@ function heroPortrait(face: string, title: string): AssetEntry {
       type: 'ai',
       service: 'ChatGPT',
       plan: '無料',
-      prompt: '（開発者が ChatGPT で作った、表情4つを並べた一覧の絵。指示文はまだ記録していない。開発者に聞いて書き足す）',
-      settings: '一覧の絵（透明な背景）を白い背景に重ね、表情ごとに切り出して、scripts/cutout.py（rembg の isnet-anime）で背景を抜いた',
+      prompt: HERO_BASE_PROMPT,
+      settings:
+        '同じ指示文の設定画の表情4つを、ChatGPT が透明な背景の一覧にした絵から切り出した。白い背景に重ねて、scripts/cutout.py（rembg の isnet-anime）で背景を抜いた',
     },
     author: 'RESTOPIA 開発（ChatGPT で作成）',
     license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
@@ -158,6 +171,31 @@ export const ASSETS: AssetEntry[] = [
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
   akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  {
+    id: 'map.festival',
+    kind: 'image',
+    title: '縁日の見下ろしの地図（1-1「金魚の名前」）',
+    file: 'assets/maps/festival.webp',
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt:
+        'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
+        'Top-down game map, seen from directly above (90-degree overhead view), vertical 9:16 composition. ' +
+        'A small Japanese shrine summer festival at dusk, early 1990s. A red torii gate at the bottom center, a stone path running straight up the middle to a small shrine at the top. Rows of festival stalls along both sides of the path (goldfish scooping, cotton candy, masks, yakisoba), paper lanterns glowing, a small open plaza in the middle, trees around the edges. No people, no characters.',
+      settings: '768×1376。WebP に変えただけで、ほかの加工はしていない',
+    },
+    author: 'RESTOPIA 開発（Google Gemini で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: '段階18bの試作の仮の地図。開発者の好みのデザインではないので、本番は ChatGPT で作り直す（看板の文字が崩れるので、本番は看板に文字を書かない）',
+  },
   heroPortrait('normal', '通常'),
   heroPortrait('smile', 'やさしい笑顔'),
   heroPortrait('surprised', '驚き'),
