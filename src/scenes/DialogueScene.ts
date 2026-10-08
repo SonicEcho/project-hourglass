@@ -43,7 +43,7 @@ const SILENT_CHARS = new Set([...'、。，．…‥！？!?「」『』（）()
 const READ_KEY = 'restopia.read';
 
 /** 画面に出す人の並び（人数ごとの x） */
-const STAGE_X: Record<number, number[]> = { 1: [195], 2: [118, 272], 3: [78, 195, 312] };
+const STAGE_X: Record<number, number[]> = { 1: [195], 2: [118, 272], 3: [68, 195, 322] };
 
 export interface DialogueData {
   /** 最初の場面の id */
@@ -487,6 +487,8 @@ export class DialogueScene extends Phaser.Scene {
       const cw = GAME_WIDTH / s;
       const ch = h / s;
       img.setScale(s).setCrop((img.width - cw) / 2, (img.height - ch) / 2, cw, ch);
+      // 同じ絵を夜などに使い回す時は、色をかける
+      if (def.tint !== undefined) img.setTint(def.tint);
       layer.add(img);
       return;
     }
@@ -509,7 +511,7 @@ export class DialogueScene extends Phaser.Scene {
     this.cast = names.slice(0, 3);
     const xs = STAGE_X[this.cast.length] ?? [];
     const small = this.cast.length >= 3;
-    const k = small ? 0.82 : 1;
+    const k = small ? 0.72 : 1;
     this.cast.forEach((name, i) => {
       let actor = this.actors.get(name);
       if (actor && actor.obj.scale !== k) this.tweens.add({ targets: actor.obj, scale: k, duration: ms });

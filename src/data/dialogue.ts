@@ -69,12 +69,11 @@ const RIKU_FACES = {
   にやり: 'smirk',
   悲しい: 'sad',
 };
-const HERO_FALLBACK = { あきれ: '通常', 困り: '通常', 悲しい: '通常', 照れ: '笑顔', 苦笑い: '笑顔' };
 /** 絵のない人の表情（名前だけ。絵ができたら台帳の id に替える） */
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
 export const CAST: Record<string, CastMember> = {
-  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, fallback: HERO_FALLBACK, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 300, wave: 'sawtooth' } },
+  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 450, voice: { pitch: 300, wave: 'sawtooth' } },
   あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, fallback: AKARI_FALLBACK, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
   りく: { portrait: 'portrait.riku', faces: RIKU_FACES, height: 450, firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
   子ハルト: { faces: names('通常', '笑顔', '驚き', '照れ', '困り'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
@@ -117,6 +116,8 @@ export interface Backdrop {
   top: number;
   bottom: number;
   image?: string;
+  /** 絵に重ねる色（同じ絵を夜などに使い回す時） */
+  tint?: number;
   ambient?: Ambient;
 }
 
@@ -135,8 +136,8 @@ export const BACKDROPS: Record<string, Backdrop> = {
   rooftop: { title: '学校の屋上', top: 0x7ab0e0, bottom: 0xe0b080 },
   shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80 },
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
-  clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, ambient: 'dust' },
-  clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, ambient: 'dust' },
+  clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
+  clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, image: 'bg.clock_shop', tint: 0x5a6aa8, ambient: 'dust' },
   clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420, ambient: 'dust' },
   library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020, ambient: 'dust' },
   festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival', ambient: 'lanterns' },
