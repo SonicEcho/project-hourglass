@@ -71,8 +71,8 @@ export const PROTO_ENEMY_STEP_MS = 420;
 
 /** 会話の試作の台本の1つ分 */
 /** あかりの表情（段階18a。立ち絵は台帳の portrait.akari.<表情>） */
-export type AkariFace = 'smile' | 'worried' | 'pout' | 'dejavu';
-export const AKARI_FACES: AkariFace[] = ['smile', 'worried', 'pout', 'dejavu'];
+export type AkariFace = 'smile' | 'laugh' | 'worried' | 'pout' | 'dejavu';
+export const AKARI_FACES: AkariFace[] = ['smile', 'laugh', 'worried', 'pout', 'dejavu'];
 
 export interface ProtoLine {
   id: string;
@@ -113,6 +113,7 @@ export const PROTO_SCRIPT: ProtoLine[] = [
   { id: 'f1', speaker: 'akari', face: 'pout', text: 'えー、左？　……まあいいけど。こっちの文は、右を選んだ時には出てこないの。', next: 'm1' },
   { id: 'm1', speaker: 'hero', text: '右上の「ログ」で、これまでの会話を読み返せる。「早送り」で、選択肢か終わりまで一気に進める。' },
   { id: 'm2', speaker: 'akari', face: 'dejavu', text: '……あれ？　前にも、こんなふうに話したことがある気がする。' },
-  { id: 'm3', speaker: 'akari', face: 'smile', text: 'ううん、なんでもない。表情はこの4つ。笑顔、心配、むっ、それから今の顔。' },
+  { id: 'm3', speaker: 'akari', face: 'smile', text: 'ううん、なんでもない。表情は、笑顔、心配、むっ、さっきの顔。それから……' },
+  { id: 'm3b', speaker: 'akari', face: 'laugh', text: 'あははっ、大笑い！　全部で5つだよ。' },
   { id: 'm4', speaker: null, text: '――会話の試作はここまでです。タップするとタイトルへ戻ります。', end: true },
 ];

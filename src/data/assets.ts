@@ -132,6 +132,7 @@ export const ASSETS: AssetEntry[] = [
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
   akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
   akariPortrait(
     'pout',
