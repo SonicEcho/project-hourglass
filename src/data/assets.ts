@@ -70,7 +70,7 @@ function akariPortrait(face: string, title: string, expression: string, base: st
       plan: '無料',
       prompt:
         `Use this image as the base. Keep everything exactly the same: framing, pose, hands hidden at the sides, hair, red goldfish hair clip, ribbon, cardigan, and art style. Change only the facial expression. No props, no text, no magic effects. Expression: ${expression}`,
-      settings: `見本の絵：${base}。白い背景は scripts/cutout.py で抜いた。元の全身の絵は ChatGPT（無料）で作った。その指示文：${AKARI_BASE_PROMPT}`,
+      settings: `見本の絵：${base}。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた。元の全身の絵は ChatGPT（無料）で作った。その指示文：${AKARI_BASE_PROMPT}`,
     },
     author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
     license: 'Google 利用規約（生成した内容の所有権を主張しない）',

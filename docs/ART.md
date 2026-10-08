@@ -93,8 +93,9 @@ Additional views on the same sheet: back view, 4 facial expressions (bright smil
 
 ## 5. ゲームに入れる時の決まり（段階18a）
 
-- 立ち絵は、白い背景で作ってもらい、`python3 scripts/cutout.py 入力.jpg public/assets/portraits/<キャラ>_<表情>.webp` で背景を透明に抜く（白に近い部分を絵のふちからたどる。髪のすき間に閉じこめられた白は、絵の左右の外側だけ抜く。真ん中の白いシャツや歯は残す）
-- 抜いた後、髪のすき間に小さな白い点が残ることがある（仮の素材では気にしない。本番の素材では手で直すか、作る時に背景を濃い単色にしてもらう）
+- 立ち絵は、白い背景で作ってもらい、`python3 scripts/cutout.py 入力.jpg public/assets/portraits/<キャラ>_<表情>.webp` で背景を透明に抜く。アニメ調の絵に向いた背景を抜く AI（rembg の isnet-anime。無料、この開発の環境で動く）を使う。髪のすき間の背景も抜け、白いシャツや歯は残る
+  - 最初は色の近さで抜く自前の処理にしたが、髪のまわりに白いふちや白い点が残り、開発者がスマホで見て気になった（2026-10-08）。AI で抜く形に変えたら、ふちがきれいになった
+- 元の絵は、できるだけ**作ったままの大きさの PNG**で渡してもらう（縮めたり JPEG にしたりすると、ふちが荒れる）
 - 台帳（`src/data/assets.ts`）に、サービス名・無料か有料か・指示文・見本にした絵・作った日・規約の控え（`docs/licenses/ai-gemini.md`・`ai-openai.md`）を書く。最初は `placeholder`（仮）
 
 ## 6. 音（これから）
