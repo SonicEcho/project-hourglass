@@ -11,3 +11,4 @@ export * from './weapon';
 export * from './save';
 export * from './progress';
 export * from './grid';
+export * from './settings';

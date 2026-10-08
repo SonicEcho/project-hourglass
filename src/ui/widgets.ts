@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS, FONT, RENDER_SCALE } from './theme';
+import { playSe } from '../audio/sound';
+import { SE } from '../data';
 
 export const LONG_PRESS_MS = 500;
 
@@ -96,7 +98,16 @@ export function addButton(
     wrap: w - 6,
   }).setOrigin(0.5);
   parent.add([rect, text]);
-  if (enabled) makePressable(rect, handlers);
+  if (enabled) {
+    const onTap = handlers.onTap;
+    makePressable(rect, {
+      ...handlers,
+      onTap: onTap && (() => {
+        playSe(scene, SE.tap);
+        onTap();
+      }),
+    });
+  }
   else if (handlers.onLongPress) makePressable(rect, { onLongPress: handlers.onLongPress });
   return rect;
 }

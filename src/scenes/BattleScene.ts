@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { playSe } from '../audio/sound';
 import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
 import {
   advance,
@@ -35,7 +36,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, STORY, WEAPON_DATA } from '../data';
+import { BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, SE, STORY, WEAPON_DATA } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
@@ -370,6 +371,7 @@ export class BattleScene extends Phaser.Scene {
         const p = unitPosition(s, e.targetId);
         const isAlly = s.allies.some((a) => a.uid === e.targetId);
         this.popup(p.x, p.y, String(e.amount), isAlly ? COLORS.allyDamage : COLORS.damage, this.special ? 34 : 26);
+        if (!this.skipping) playSe(this, isAlly ? SE.hit : SE.slash);
         if (this.special && !this.skipping) this.cameras.main.shake(120, 0.006);
         if (e.partId !== undefined && e.partAmount !== undefined) {
           const pp = unitPosition(s, e.targetId, e.partId);
@@ -382,6 +384,7 @@ export class BattleScene extends Phaser.Scene {
       case 'heal': {
         const p = unitPosition(s, e.targetId);
         this.popup(p.x, p.y, `+${e.amount}`, COLORS.heal, 24);
+        if (!this.skipping) playSe(this, SE.heal);
         return true;
       }
       case 'passiveHp': {

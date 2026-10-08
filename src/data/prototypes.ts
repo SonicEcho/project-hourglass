@@ -1,6 +1,8 @@
 // エンジンを決めるための試作のデータ（段階16）。本編では使わない。
 // 物語の正式な地図・台詞ではない（形を確かめるための仮のもの）
 
+import { BGM } from './sounds';
+
 /**
  * 探索の試作の区画（24×36マス）。
  *   # 壁　. 通路　S 出発点　C 宝箱　P チェックポイント　B 区画の奥のボスの印
@@ -143,11 +145,13 @@ export interface ProtoMapDef {
   patrols: [number, number][][];
   /** 地図の絵（台帳の id）。なければ図形で描く */
   image?: string;
+  /** 流す BGM（sounds.ts の BGM）。なければ前の画面の曲のまま */
+  bgm?: string;
 }
 
 export const PROTO_MAPS = {
-  shapes: { title: '探索の試作', layout: PROTO_AREA_LAYOUT, patrols: PROTO_PATROLS },
-  festival: { title: '縁日（絵は仮）', layout: PROTO_FESTIVAL_LAYOUT, patrols: PROTO_FESTIVAL_PATROLS, image: 'map.festival' },
+  shapes: { title: '探索の試作', layout: PROTO_AREA_LAYOUT, patrols: PROTO_PATROLS, bgm: BGM.title },
+  festival: { title: '縁日（絵は仮）', layout: PROTO_FESTIVAL_LAYOUT, patrols: PROTO_FESTIVAL_PATROLS, image: 'map.festival', bgm: BGM.festival },
 } satisfies Record<string, ProtoMapDef>;
 export type ProtoMapKey = keyof typeof PROTO_MAPS;
 
