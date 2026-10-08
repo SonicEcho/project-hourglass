@@ -123,26 +123,88 @@ describe('仲間ごとに1つずつ', () => {
   });
 });
 
-describe('会話の試作の台本（段階18a）', () => {
-  it('表情はすべて台帳に立ち絵があり、台本の表情は話す人の表情の一覧にある', async () => {
-    const { ASSETS, PROTO_FACES, PROTO_SCRIPT } = await import('../src/data');
+describe('M1 の台本（段階22）', () => {
+  it('行き先がそろっていて、通しで見る順番の場面が全部ある', async () => {
+    const { M1_SCENES, M1_SCENE_ORDER } = await import('../src/data');
+    const { checkScript } = await import('../src/core');
+    expect(checkScript(M1_SCENES)).toEqual([]);
+    const ids = new Set(M1_SCENES.map((s) => s.id));
+    for (const id of M1_SCENE_ORDER) expect(ids.has(id), id).toBe(true);
+  });
+
+  it('立ち絵のある人は台帳に表情の絵があり、台詞の人と表情は一覧にある', async () => {
+    const { ASSETS, CAST, M1_SCENES } = await import('../src/data');
     const ids = new Set(ASSETS.map((a) => a.id));
-    for (const [who, faces] of Object.entries(PROTO_FACES)) {
-      for (const face of faces) expect(ids.has(`portrait.${who}.${face}`), `${who}.${face}`).toBe(true);
+    for (const [name, def] of Object.entries(CAST)) {
+      expect(def.faces[def.firstFace], name).toBeDefined();
+      if (!def.portrait) continue;
+      for (const face of Object.values(def.faces)) expect(ids.has(`${def.portrait}.${face}`), `${name} ${face}`).toBe(true);
     }
-    for (const line of PROTO_SCRIPT) {
-      if (!line.face) continue;
-      expect(line.speaker, line.id).not.toBeNull();
-      expect(PROTO_FACES[line.speaker!] as readonly string[], line.id).toContain(line.face);
+    for (const scene of M1_SCENES) {
+      for (const step of scene.steps) {
+        if (step.kind !== 'line' || step.style !== 'talk') continue;
+        const where = `${scene.id}（${step.src}行目）`;
+        const def = CAST[step.speaker!];
+        expect(def, `${where} ${step.speaker}`).toBeDefined();
+        if (step.face) expect(Object.keys(def.faces), `${where} ${step.face}`).toContain(step.face);
+      }
     }
   });
 
-  it('次の行と選択肢の行き先が、台本の中にある', async () => {
-    const { PROTO_SCRIPT } = await import('../src/data');
-    const lines = new Set(PROTO_SCRIPT.map((l) => l.id));
-    for (const l of PROTO_SCRIPT) {
-      if (l.next) expect(lines.has(l.next), l.id).toBe(true);
-      for (const c of l.choices ?? []) expect(lines.has(c.next), l.id).toBe(true);
+  it('演出の命令は、ある背景・1枚絵・音・人だけを使う', async () => {
+    const { BACKDROPS, CAST, CGS, M1_SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
+    const assetIds = new Set(ASSETS.map((a) => a.id));
+    for (const def of [...Object.values(BACKDROPS), ...Object.values(CGS)]) if (def.image) expect(assetIds.has(def.image), def.title).toBe(true);
+    for (const id of [...Object.values(SCRIPT_BGM), ...Object.values(SCRIPT_SE)]) if (id) expect(assetIds.has(id), id).toBe(true);
+    for (const scene of M1_SCENES) {
+      for (const step of scene.steps) {
+        if (step.kind !== 'command') continue;
+        const where = `${scene.id}（${step.src}行目）`;
+        const [a] = step.args;
+        if (step.name === 'bg') expect(a === 'none' || a in BACKDROPS, where).toBe(true);
+        if (step.name === 'cg') expect(a === 'off' || a in CGS, where).toBe(true);
+        if (step.name === 'bgm') expect(a === 'stop' || a in SCRIPT_BGM, where).toBe(true);
+        if (step.name === 'se') expect(a in SCRIPT_SE, `${where} ${a}`).toBe(true);
+        if (step.name === 'cast') {
+          expect(step.args.length, where).toBeLessThanOrEqual(3);
+          for (const n of step.args) expect(n in CAST, `${where} ${n}`).toBe(true);
+        }
+        if (step.name === 'fade') expect(['out', 'in', 'white'], where).toContain(a);
+        if (step.name === 'wait') expect(Number(a), where).toBeGreaterThan(0);
+        if (step.name === 'set') expect(step.args.length, where).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+
+  it('本文はスマホの会話の枠に収まる長さ（60文字まで）', async () => {
+    const { M1_SCENES } = await import('../src/data');
+    for (const scene of M1_SCENES) {
+      for (const step of scene.steps) {
+        if (step.kind === 'line' && step.style !== 'note') expect(step.text.length, `${scene.id}（${step.src}行目）${step.text}`).toBeLessThanOrEqual(60);
+      }
+    }
+  });
+
+  it('どの台詞にも、どれかの選択肢を選べばたどり着ける（読まれない行がない）', async () => {
+    const { M1_SCENES } = await import('../src/data');
+    const { chooseOption, runScript } = await import('../src/core');
+    for (const scene of M1_SCENES) {
+      const seen = new Set<number>();
+      const visit = (pos: { scene: string; index: number }, depth: number) => {
+        expect(depth, scene.id).toBeLessThan(50);
+        for (;;) {
+          const r = runScript(M1_SCENES, pos, {});
+          if (r.stop.type === 'end') return;
+          if (r.stop.type === 'choice') {
+            r.stop.choice.options.forEach((_, i) => visit(chooseOption(M1_SCENES, r.pos, i), depth + 1));
+            return;
+          }
+          seen.add(r.stop.line.src);
+          pos = r.pos;
+        }
+      };
+      visit({ scene: scene.id, index: 0 }, 0);
+      for (const step of scene.steps) if (step.kind === 'line') expect(seen.has(step.src), `${scene.id}（${step.src}行目）`).toBe(true);
     }
   });
 });

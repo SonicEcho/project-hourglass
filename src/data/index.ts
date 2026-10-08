@@ -14,3 +14,5 @@ export * from './story';
 export * from './assets';
 export * from './prototypes';
 export * from './sounds';
+export * from './dialogue';
+export * from './scriptM1';
