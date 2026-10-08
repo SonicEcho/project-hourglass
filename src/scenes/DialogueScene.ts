@@ -543,7 +543,9 @@ export class DialogueScene extends Phaser.Scene {
         top: -img.displayHeight,
         setActive: (active) => (active ? img.clearTint() : img.setTint(DIM_TINT)),
         setFace: (face) => {
-          if (hasImage(this, faceId(face))) img.setTexture(faceId(face));
+          // まだ絵のない表情は、代わりの表情の絵で出す
+          const id = [face, def.fallback?.[face]].map((f) => (f ? faceId(f) : '')).find((x) => x && hasImage(this, x));
+          if (id) img.setTexture(id);
         },
       };
     }

@@ -28,21 +28,49 @@ export interface CastMember {
   height?: number;
   /** 文字の音の声色（段階22の試し） */
   voice: BlipVoice;
+  /**
+   * まだ絵のない表情 → 代わりに出す、絵のある表情（段階22の調整6）。台本は増やした表情で書いておき、絵が届いたら差し替えるだけで済むように
+   */
+  fallback?: Record<string, string>;
 }
 
-const AKARI_FACES = { 笑顔: 'smile', 大笑い: 'laugh', 心配: 'worried', むっ: 'pout', デジャヴ: 'dejavu' };
-const HERO_FACES = { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 決意: 'determined' };
+// 表情（段階18a の5つ・4つに、段階22の調整6で足した表情。足した表情の絵は段階31a で作る。id は台帳の portrait.<人>.<id>）
+const AKARI_FACES = {
+  笑顔: 'smile',
+  大笑い: 'laugh',
+  心配: 'worried',
+  むっ: 'pout',
+  デジャヴ: 'dejavu',
+  驚き: 'surprised',
+  照れ: 'shy',
+  悲しい: 'sad',
+  真剣: 'serious',
+  困り笑い: 'wry',
+};
+const AKARI_FALLBACK = { 驚き: '心配', 照れ: '笑顔', 悲しい: '心配', 真剣: 'むっ', 困り笑い: '笑顔' };
+const HERO_FACES = {
+  通常: 'normal',
+  笑顔: 'smile',
+  驚き: 'surprised',
+  決意: 'determined',
+  あきれ: 'exasperated',
+  困り: 'troubled',
+  悲しい: 'sad',
+  照れ: 'shy',
+  苦笑い: 'wry',
+};
+const HERO_FALLBACK = { あきれ: '通常', 困り: '通常', 悲しい: '通常', 照れ: '笑顔', 苦笑い: '笑顔' };
 /** 絵のない人の表情（名前だけ。絵ができたら台帳の id に替える） */
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
 export const CAST: Record<string, CastMember> = {
-  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 300, wave: 'sawtooth' } },
-  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
-  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
-  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
-  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 760, wave: 'triangle' } },
-  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 500, wave: 'square' } },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
+  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, fallback: HERO_FALLBACK, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 300, wave: 'sawtooth' } },
+  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, fallback: AKARI_FALLBACK, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
+  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり', '驚き', 'にやり', '悲しい'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
+  子ハルト: { faces: names('通常', '笑顔', '驚き', '照れ', '困り'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
+  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 760, wave: 'triangle' } },
+  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 500, wave: 'square' } },
+  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
   写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
 };
@@ -120,7 +148,12 @@ export const FACE_MOTIONS: Record<string, ActorMotion> = {
   泣き笑い: 'sink',
   考える: 'sink',
   決意: 'step',
+  真剣: 'step',
+  悲しい: 'sink',
   デジャヴ: 'sway',
+  照れ: 'nod',
+  にやり: 'nod',
+  困り笑い: 'nod',
 };
 
 /** 頭の上の感情のふきだしの印（@emote で使う） */
@@ -131,6 +164,8 @@ export type Emote = (typeof EMOTES)[number];
 export const FACE_EMOTES: Record<string, Emote> = {
   驚き: '！',
   あせり: '汗',
+  困り: '汗',
+  あきれ: '…',
 };
 
 /** 1枚絵（なければ色と名前で仮に描く） */
