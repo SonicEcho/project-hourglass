@@ -21,7 +21,7 @@ export const STORY: Story<CampaignBattle> = [
 
 // ---- 物語の流れ（段階23）：M1 のスライス（プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 → つづく） ----
 // 会話の出来事の id は、台本（scriptM1.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
-// まだ作っていない遊び（昼の日常・探索・時間を返す）は、仮の画面で案内して「次へ」で通す（段階24〜28で本物に置き換える）
+// 昼の日常は日常の画面（段階24）。まだ作っていない遊び（探索・時間を返す）は、仮の画面で案内して「次へ」で通す（段階25〜28で本物に置き換える）
 
 const talk = (id: string, title: string): FlowEvent => ({ id, kind: 'dialogue', title });
 
@@ -31,10 +31,8 @@ export const SLICE_FLOW: Flow = [
     name: 'プロローグ「あの夏」',
     events: [
       talk('prologue_open', 'プロローグ：参道の入口'),
-      talk('prologue_mask', 'プロローグ：お面屋'),
-      talk('prologue_apple', 'プロローグ：りんご飴'),
-      talk('prologue_shooting', 'プロローグ：射的'),
-      talk('prologue_goldfish', 'プロローグ：金魚すくい'),
+      // 屋台めぐり（段階24。屋台の場面は daily.ts の DAILY_HUBS）
+      { id: 'prologue_stalls', kind: 'daily', title: 'プロローグ：屋台めぐり' },
       talk('prologue_end', 'プロローグ：石段の上と、花火'),
     ],
   },
@@ -47,16 +45,8 @@ export const SLICE_FLOW: Flow = [
       talk('d1_morning', '1日目：朝'),
       talk('d1_classroom', '1日目：朝の教室'),
       talk('d1_street', '1日目：放課後の商店街'),
-      {
-        id: 'd1_free',
-        kind: 'daily',
-        title: '1日目：自由な時間',
-        note: 'ここで昼の日常（段階24で、学校の屋上・施設・時計屋から行く場所を選べるようにする）。今は、見たい場面を下から選んで読める。時計屋へ行くと夕暮れになる',
-        optional: [
-          { label: '学校の屋上（あかり）', scene: 'd1_rooftop' },
-          { label: '施設（小話）', scene: 'd1_home' },
-        ],
-      },
+      // 自由な時間（段階24。場所と印は daily.ts の DAILY_HUBS）
+      { id: 'd1_free', kind: 'daily', title: '1日目：自由な時間' },
       talk('d1_clockshop', '1日目：夕暮れの時計屋'),
       talk('d1_library', '1日目：レストピアの蔵書の棚'),
       talk('a11_enter', '1-1：縁日に入る'),
@@ -80,13 +70,8 @@ export const SLICE_FLOW: Flow = [
       talk('d1_return', '1日目：時間を返す'),
       { id: 'day2', kind: 'day', title: '2日目', day: 2 },
       talk('d2_classroom', '2日目：朝の教室'),
-      {
-        id: 'd2_free',
-        kind: 'daily',
-        title: '2日目：昼',
-        note: 'ここで昼の日常（段階24で、行く場所を選べるようにする）。今は「次へ」で、商店街のコンビニに進む',
-      },
-      talk('d2_store', '2日目：コンビニの前'),
+      // 2日目の昼（段階24。商店街のコンビニの場面は daily.ts の DAILY_HUBS）
+      { id: 'd2_free', kind: 'daily', title: '2日目：昼' },
       talk('d2_noa', '2日目：すれ違い'),
       { id: 'to_be_continued', kind: 'end', title: 'つづく' },
     ],

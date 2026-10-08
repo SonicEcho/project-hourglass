@@ -1,7 +1,7 @@
 // 通しの自動確認（段階20・23）。本物のブラウザで毎回確かめる。
 // 使い方: npm run build の後に npm run e2e（dist/ を手元のサーバーで開き、Chromium で自動で遊ぶ）
-// 流れ1（段階23）: タイトル →「はじめる」→ プロローグの会話 → ページを開き直して「つづきから」で同じ場面から続く →
-//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す）。途中の探索の仮の画面でも開き直して続くことを確かめる。
+// 流れ1（段階23・24）: タイトル →「はじめる」→ プロローグの会話 → ページを開き直して「つづきから」で同じ場面から続く →
+//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す。屋台めぐりの計画表と、昼の日常の地図が出るか）。途中の探索の仮の画面でも開き直して続くことを確かめる。
 // 流れ2（段階20）: デバッグメニューの「試作の5戦を最初から」→ 戦闘1〜5（敵のHPを1にして「自動で1ラウンド戦う」）→ 結果。最後に縁日の試作で BGM が切り替わるかを見る。
 // エラーが出る・途中で止まる・思った画面にならない時は失敗（終了コード1）にする。失敗した時の画面は e2e-failure.png に残す
 import { chromium } from 'playwright';
@@ -117,9 +117,13 @@ try {
 
   step('物語の流れを最後（つづく）まで開く');
   let reloaded = false;
+  let sawPlan = false;
+  let sawMap = false;
   for (let i = 0; ; i++) {
     if (i > MAX_EVENTS) throw new Error('物語の流れが終わらない');
     if (await findText('^つづく$')) break;
+    if (await findText('^けいかくひょう$')) sawPlan = true;
+    if (await findText('^どこへ行く？$')) sawMap = true;
     if (!reloaded && (await findText('^探索（仮）$'))) {
       // 探索の仮の画面でも、開き直して続くか
       await page.reload();
@@ -138,10 +142,12 @@ try {
     await page.waitForTimeout(500);
     await until('流れの画面か会話の画面', async () => {
       const s = await scenes();
-      return s.includes('Flow') || s.includes('Dialogue');
+      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily');
     });
   }
   if (!reloaded) throw new Error('探索の仮の画面が出なかった');
+  if (!sawPlan) throw new Error('屋台めぐりの「けいかくひょう」が出なかった');
+  if (!sawMap) throw new Error('昼の日常の地図が出なかった');
   await tap('^タイトルへ$');
   await waitScene('Title');
 

@@ -2,7 +2,7 @@
 // 台詞を直す時は、脚本とこの台本の両方を直す。書き方の決まりは src/core/script.ts の頭、使える人・背景・音は dialogue.ts。
 import { parseScript } from '../core/script';
 
-// 屋台めぐり・射的・金魚すくい（段階24）、探索・戦闘（段階25〜）は、まだないので @note の仮の案内と選択肢で代わりに進める
+// 屋台めぐりは日常の画面（段階24。data/daily.ts）、射的・金魚すくいは @game。探索・戦闘（段階25〜）は、まだないので @note の仮の案内で代わりに進める
 
 export const SCRIPT_M1 = `
 # prologue_open プロローグ：参道の入口
@@ -37,7 +37,6 @@ export const SCRIPT_M1 = `
 @se crowd
 子りく〔得意げ〕「順番は自由。……ほんとは自由じゃないけど、今日は特別だ」
 子あかり〔笑顔〕「ねえ、どこから行く？」
-@note ここで屋台めぐり（段階24で、屋台をタップして好きな順に回れるようにする）。今は、お面・りんご飴・射的・金魚すくいの順に進む
 
 # prologue_mask プロローグ：お面屋
 @bg shrine_stalls
@@ -67,9 +66,7 @@ export const SCRIPT_M1 = `
 @se miss
 子りく〔あせり〕「……計画どおりじゃないから、外れたんだろ」
 子あかり〔笑顔〕「ハルトの番！」
-@note ここで射的の遊び（段階24。ゆれる的が真ん中に来た瞬間にタップ）。今は選択肢で代わりに決める
-? （仮）当てる -> hit
-? （仮）3発とも外す -> miss
+@game shooting hit miss
 * hit
 @se shot
 子ハルト〔通常〕「……いま、だと思った」
@@ -107,9 +104,7 @@ export const SCRIPT_M1 = `
 子あかり〔笑顔〕「……そうかも。そうだよね」
 〈語り〉金魚が、水面に近づく。その一瞬。
 〈語り〉水の音も、提灯の灯りのゆれ方も、今でも覚えてる。
-@note ここで金魚すくいの遊び（段階24。金魚が水面に近づいて光った瞬間にタップ）。今は選択肢で代わりに決める
-? （仮）すくう -> caught
-? （仮）すくえない -> missed
+@game goldfish caught missed
 * caught
 @se splash
 @emote 子あかり ！

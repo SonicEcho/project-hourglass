@@ -11,6 +11,8 @@ export * from './campaign';
 export * from './navi';
 export * from './weapons';
 export * from './story';
+export * from './daily';
+export * from './minigames';
 export * from './assets';
 export * from './prototypes';
 export * from './sounds';
