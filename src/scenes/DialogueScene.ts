@@ -488,7 +488,7 @@ export class DialogueScene extends Phaser.Scene {
       // 店じゅうの時計：少しずつずれた、遠くの音を重ねる
       for (let i = 1; i < this.clockLayers; i++) {
         this.time.delayedCall((CLOCK.tickMs * i) / this.clockLayers + Math.random() * 60, () => {
-          if (this.clockLayers > i && !this.skip) playTick(this, (this.clockSecond + i) % 2 === 0, 0.55 - i * 0.08);
+          if (this.clockLayers > i && !this.skip) playTick(this, (this.clockSecond + i) % 2 === 0, CLOCK.manyGains[i - 1] ?? 0.2);
         });
       }
     }
