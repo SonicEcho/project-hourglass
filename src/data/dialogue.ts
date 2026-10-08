@@ -74,7 +74,7 @@ const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]
 
 export const CAST: Record<string, CastMember> = {
   ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 450, voice: { pitch: 300, wave: 'sawtooth' } },
-  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, fallback: { 微笑み: '笑顔' }, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
+  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
   りく: { portrait: 'portrait.riku', faces: RIKU_FACES, height: 450, firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
   子ハルト: { faces: names('通常', '笑顔', '驚き', '照れ', '困り'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
   子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 760, wave: 'triangle' } },
