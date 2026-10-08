@@ -14,3 +14,5 @@ export * from './grid';
 export * from './settings';
 export * from './script';
 export * from './flow';
+export * from './daily';
+export * from './minigame';

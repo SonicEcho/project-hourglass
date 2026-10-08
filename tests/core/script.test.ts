@@ -170,3 +170,17 @@ describe('時計の時刻を読む（段階22 調整12）', () => {
     expect(scene.steps[1]).toMatchObject({ kind: 'command', name: 'clock', args: ['tick', 'many'] });
   });
 });
+
+describe('小さな遊び（@game。段階24）', () => {
+  it('成功と失敗の行き先を持つ選択肢として読み、後ろの選択肢とはまとめない', () => {
+    const [scene] = parseScript('# a 場面\n@game shooting hit miss\n? A -> hit\n* hit\nハルト「x」\n* miss\n');
+    expect(scene.steps[0]).toMatchObject({ kind: 'choice', game: 'shooting', options: [{ target: 'hit' }, { target: 'miss' }] });
+    expect(scene.steps[1]).toMatchObject({ kind: 'choice', options: [{ label: 'A', target: 'hit' }] });
+    expect(chooseOption([scene], { scene: 'a', index: 0 }, 1)).toEqual({ scene: 'a', index: scene.labels.miss });
+  });
+
+  it('知らない遊びや、行き先が足りない書き方は止める', () => {
+    expect(() => parseScript('# a 場面\n@game dance ok ng\n')).toThrow('知らない遊び');
+    expect(() => parseScript('# a 場面\n@game shooting ok\n')).toThrow('@game は');
+  });
+});

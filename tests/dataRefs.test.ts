@@ -124,9 +124,9 @@ describe('仲間ごとに1つずつ', () => {
 });
 
 describe('M1 の物語の流れ（段階23）', () => {
-  it('書き間違いがなく、会話の出来事と寄り道の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
-    const { M1_SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
-    const { checkFlow, flowEvents } = await import('../src/core');
+  it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
+    const { BACKDROPS, DAILY_HUBS, M1_SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
+    const { checkDailyHub, checkFlow, flowEvents } = await import('../src/core');
     expect(checkFlow(SLICE_FLOW)).toEqual([]);
     const sceneIds = new Set(M1_SCENES.map((s) => s.id));
     const reachable = new Set<string>();
@@ -135,11 +135,22 @@ describe('M1 の物語の流れ（段階23）', () => {
         expect(sceneIds.has(e.id), e.id).toBe(true);
         reachable.add(e.id);
       }
-      for (const o of e.optional ?? []) {
-        expect(sceneIds.has(o.scene), `${e.id} ${o.scene}`).toBe(true);
-        reachable.add(o.scene);
+      if (e.kind === 'daily') {
+        const hub = DAILY_HUBS[e.id];
+        expect(hub, e.id).toBeDefined();
+        expect(checkDailyHub(hub)).toEqual([]);
+        for (const p of hub.places) {
+          expect(p.backdrop in BACKDROPS, `${e.id} ${p.backdrop}`).toBe(true);
+          for (const spot of p.spots) {
+            if (spot.scene) {
+              expect(sceneIds.has(spot.scene), `${e.id} ${spot.scene}`).toBe(true);
+              expect(spot.id, spot.scene).toBe(spot.scene);
+              reachable.add(spot.scene);
+            }
+          }
+        }
       }
-      if (e.kind === 'daily' || e.kind === 'explore' || e.kind === 'return') expect(e.note, e.id).toBeTruthy();
+      if (e.kind === 'explore' || e.kind === 'return') expect(e.note, e.id).toBeTruthy();
     }
     for (const id of M1_SCENE_ORDER) expect(reachable.has(id), id).toBe(true);
   });

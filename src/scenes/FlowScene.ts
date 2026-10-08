@@ -10,7 +10,7 @@ import type { DialogueData } from './DialogueScene';
 import { advanceEvent, currentEvent, run, setEvent, setStoryVars } from './run';
 
 // 物語の流れ（段階23）：今の出来事を見て、その画面へ渡す。出来事を終えた画面は、done を付けてここへ戻る。
-// まだ作っていない遊び（昼の日常・探索・時間を返す）は、ここで仮の画面を出して「次へ」で通す
+// 昼の日常は日常の画面（DailyScene）へ。まだ作っていない遊び（探索・時間を返す）は、ここで仮の画面を出して「次へ」で通す
 
 /** Phaser はデータを渡さずに開くと前のデータを使い回すので、この画面を開く時は必ず done を渡す */
 export interface FlowData {
@@ -20,7 +20,6 @@ export interface FlowData {
 
 /** 仮の画面の見出し */
 const KIND_LABEL: Partial<Record<FlowEvent['kind'], string>> = {
-  daily: '昼の日常（仮）',
   explore: '探索（仮）',
   return: '時間を返す（仮）',
 };
@@ -43,6 +42,9 @@ export class FlowScene extends Phaser.Scene {
       case 'end':
         this.showEnd();
         return;
+      case 'daily':
+        this.scene.start('Daily', { event: event.id });
+        return;
       default:
         this.showPlaceholder(event);
     }
@@ -55,6 +57,7 @@ export class FlowScene extends Phaser.Scene {
       scene: first,
       queue,
       vars: run.vars,
+      seed: run.seed,
       next: { key: 'Flow', data: { done: true } },
       onScene: (id) => setEvent(id),
       onVars: (vars) => setStoryVars(vars),
@@ -80,7 +83,7 @@ export class FlowScene extends Phaser.Scene {
     });
   }
 
-  /** まだ作っていない遊びの仮の画面：何をする所かの案内と、寄り道で読める場面と、「次へ」 */
+  /** まだ作っていない遊びの仮の画面：何をする所かの案内と、「次へ」 */
   private showPlaceholder(event: FlowEvent): void {
     const cx = GAME_WIDTH / 2;
     const root = this.add.container(0, 0);
@@ -95,11 +98,6 @@ export class FlowScene extends Phaser.Scene {
     // 行の頭に「、」などが来ないよう、折り返しを先に決めてから出す（会話の画面と同じ）
     note.setText(applyKinsoku(note.getWrappedText(event.note ?? '')).join('\n')).setWordWrapWidth(null);
     root.add(note);
-    let y = 470;
-    for (const o of event.optional ?? []) {
-      addButton(this, root, cx, y, 280, 52, o.label, { onTap: () => this.openOptional(o.scene) }, { size: 15 });
-      y += 66;
-    }
     addButton(this, root, cx, 720, 260, 64, '次へ', { onTap: () => this.scene.restart({ done: true }) }, {
       size: 20,
       bold: true,
@@ -107,12 +105,6 @@ export class FlowScene extends Phaser.Scene {
       stroke: COLORS.accent,
       strokeWidth: 2,
     });
-  }
-
-  /** 寄り道の場面（見なくてもよい場面）を読んで、この仮の画面に戻る。今の出来事は変えない */
-  private openOptional(scene: string): void {
-    const data: DialogueData = { scene, vars: run.vars, next: { key: 'Flow', data: { done: false } }, onVars: (vars) => setStoryVars(vars) };
-    this.scene.start('Dialogue', data);
   }
 
   /** スライスの終わり */

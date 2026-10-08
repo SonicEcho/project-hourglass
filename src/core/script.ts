@@ -12,6 +12,7 @@
 //   ? 選択肢の文 -> 行き先         選択肢（続けて書いた行が1つの選択肢になる）
 //   * 行き先                       行き先の印
 //   -> 行き先                      行き先へ飛ぶ
+//   @game 名前 成功 失敗            小さな遊び（射的・金魚すくい。段階24）。結果で行き先の印へ分かれる
 //   @end                           場面の終わり（書かなくても、最後の行の後で終わる）
 //   // …                           メモ（読み飛ばす）
 // 本文の {名前} は、@set で覚えた値に置き換える
@@ -105,8 +106,17 @@ export interface ScriptLine {
 export interface ScriptChoice {
   kind: 'choice';
   options: { label: string; target: string }[];
+  /**
+   * 小さな遊び（段階24。@game 名前 成功の行き先 失敗の行き先）。
+   * 遊びの画面を出し、成功なら options[0]、失敗なら options[1] へ進む
+   */
+  game?: MiniGameName;
   src: number;
 }
+
+/** 台本から出せる小さな遊び（段階24） */
+export const MINI_GAMES = ['shooting', 'goldfish'] as const;
+export type MiniGameName = (typeof MINI_GAMES)[number];
 
 export interface ScriptCommand {
   kind: 'command';
@@ -178,7 +188,7 @@ export function parseScript(text: string): ScriptScene[] {
     }
     // 続けて書いた選択肢の行は、1つの選択肢にまとめる
     const last = s.steps[s.steps.length - 1];
-    if (step.kind === 'choice' && last?.kind === 'choice') {
+    if (step.kind === 'choice' && last?.kind === 'choice' && !step.game && !last.game) {
       last.options.push(...step.options);
       return;
     }
@@ -201,6 +211,20 @@ function parseStep(line: string, src: number): ScriptStep | null {
     const name = cmd[1];
     const args = cmd[2] ? cmd[2].split(/\s+/) : [];
     if (name === 'end') return { kind: 'end', src };
+    if (name === 'game') {
+      const [game, ok, ng] = args;
+      if (!(MINI_GAMES as readonly string[]).includes(game)) throw new ScriptError(src, `知らない遊び「${game}」`);
+      if (!ok || !ng || args.length !== 3) throw new ScriptError(src, '@game は「@game 名前 成功の行き先 失敗の行き先」と書く');
+      return {
+        kind: 'choice',
+        options: [
+          { label: '成功', target: ok },
+          { label: '失敗', target: ng },
+        ],
+        game: game as MiniGameName,
+        src,
+      };
+    }
     if (!(SCRIPT_COMMANDS as readonly string[]).includes(name)) throw new ScriptError(src, `知らない命令「@${name}」`);
     if (name === 'caption' || name === 'note') return textLine(name, null, cmd[2], src);
     return { kind: 'command', name: name as ScriptCommandName, args, src };

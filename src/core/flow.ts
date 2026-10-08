@@ -7,7 +7,7 @@ export type FlowEventKind =
   | 'dialogue'
   /** 日が変わる（「2日目」の扉） */
   | 'day'
-  /** 昼の日常（段階24で作る。今は仮の画面） */
+  /** 昼の日常（段階24。場所と印は data の DAILY_HUBS。プロローグの屋台めぐりも） */
   | 'daily'
   /** 探索の区画（段階25で作る。今は仮の画面） */
   | 'explore'
@@ -26,8 +26,6 @@ export interface FlowEvent {
   day?: number;
   /** 仮の画面に出す案内（どの段階で何を作るか） */
   note?: string;
-  /** 仮の画面から寄り道で読める会話の場面（昼の日常の、見なくてもよい場面） */
-  optional?: { label: string; scene: string }[];
 }
 
 export interface FlowChapter {

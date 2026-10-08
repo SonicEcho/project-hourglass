@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { audioLatencyMs, getSettings, playBgm, playBlip, playSe, playTick, setSettings, stopBgm } from '../audio/sound';
-import type { ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
+import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
 import { BACKDROPS, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
@@ -10,6 +10,8 @@ import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { applyKinsoku } from '../ui/kinsoku';
+import { playMiniGame } from './miniGames';
+import { drawBackdrop } from '../ui/backdrop';
 import { addButton, addText } from '../ui/widgets';
 
 /** 文字送りの速さ（1文字あたりのミリ秒）。語りの文はゆっくり */
@@ -58,6 +60,8 @@ export interface DialogueData {
   onScene?: (sceneId: string) => void;
   /** 覚えている値が変わった時に呼ぶ（@set。セーブに入れる。段階23） */
   onVars?: (vars: ScriptVars) => void;
+  /** 小さな遊び（@game）の乱数のシード（段階24。なければ 1） */
+  seed?: number;
 }
 
 /**
@@ -105,6 +109,7 @@ export class DialogueScene extends Phaser.Scene {
   private nextScreen?: DialogueData['next'];
   private onScene?: DialogueData['onScene'];
   private onVars?: DialogueData['onVars'];
+  private seed = 1;
   private debug = false;
 
   private line?: ScriptLine;
@@ -171,6 +176,7 @@ export class DialogueScene extends Phaser.Scene {
     this.nextScreen = data.next;
     this.onScene = data.onScene;
     this.onVars = data.onVars;
+    this.seed = data.seed ?? 1;
     this.onScene?.(data.scene);
     this.line = undefined;
     this.busy = false;
@@ -266,7 +272,8 @@ export class DialogueScene extends Phaser.Scene {
     }
     if (r.stop.type === 'choice') {
       this.pos = r.pos;
-      this.showChoices(r.stop.choice.options.map((o) => o.label));
+      if (r.stop.choice.game) this.playGame(r.stop.choice.game);
+      else this.showChoices(r.stop.choice.options.map((o) => o.label));
       return;
     }
     this.pos = r.pos;
@@ -610,23 +617,7 @@ export class DialogueScene extends Phaser.Scene {
   }
 
   private drawPicture(layer: Phaser.GameObjects.Container, def: Backdrop, top: number, bottom: number, label: boolean): void {
-    const h = bottom - top;
-    if (def.image && hasImage(this, def.image)) {
-      const img = this.add.image(GAME_WIDTH / 2, top + h / 2, def.image);
-      // 画面を覆う大きさにして、はみ出した所は見せない（地図の絵は縦長なので、真ん中あたりが見える）
-      const s = Math.max(GAME_WIDTH / img.width, h / img.height);
-      const cw = GAME_WIDTH / s;
-      const ch = h / s;
-      img.setScale(s).setCrop((img.width - cw) / 2, (img.height - ch) / 2, cw, ch);
-      // 同じ絵を夜などに使い回す時は、色をかける
-      if (def.tint !== undefined) img.setTint(def.tint);
-      layer.add(img);
-      return;
-    }
-    const g = this.add.graphics();
-    g.fillGradientStyle(def.top, def.top, def.bottom, def.bottom, 1).fillRect(0, top, GAME_WIDTH, h);
-    layer.add(g);
-    if (label) layer.add(addText(this, GAME_WIDTH / 2, top + 90, `（仮）${def.title}`, { size: 13, color: '#ffffffaa', align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+    drawBackdrop(this, layer, def, top, bottom, label);
   }
 
   /** 画面に出す人を替える。前からいる人は表情をそのままにする */
@@ -897,6 +888,20 @@ export class DialogueScene extends Phaser.Scene {
       return;
     }
     void this.proceed();
+  }
+
+  /** 小さな遊び（@game）を出し、成功なら1つめ、失敗なら2つめの行き先へ進む（段階24） */
+  private playGame(game: MiniGameName): void {
+    this.setSkip(false);
+    this.setAuto(false);
+    this.sand.stop();
+    this.choosing = true;
+    playMiniGame(this, game, this.seed, (ok) => {
+      this.choosing = false;
+      this.history.push(ok ? '→ 成功' : '→ 失敗');
+      this.pos = chooseOption(this.scenes, this.pos, ok ? 0 : 1);
+      void this.proceed();
+    });
   }
 
   private showChoices(labels: string[]): void {
