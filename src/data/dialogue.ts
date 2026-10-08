@@ -2,7 +2,11 @@
 // 絵がまだない物は、色と名前で仮に描く（段階15の決まり：素材がなくても止まらない）
 import { BGM, SE } from './sounds';
 
-/** 会話の文字の音の声色（段階22の試し。高さは Hz） */
+/**
+ * 会話の文字の音の声色（段階22の試し。高さは Hz）。
+ * スマホの小さいスピーカーは低い音（およそ 250Hz より下）がほとんど出ないので、高さは 250〜800Hz にする（テストで確かめる）。
+ * 音色ごとの聞こえ方の差は、鳴らす時に WAVE_GAIN で補正する
+ */
 export interface BlipVoice {
   pitch: number;
   wave: OscillatorType;
@@ -32,29 +36,37 @@ const HERO_FACES = { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 決
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
 export const CAST: Record<string, CastMember> = {
-  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 210, wave: 'triangle' } },
-  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 470, wave: 'triangle' } },
-  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 260, wave: 'square' } },
-  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 400, wave: 'triangle' } },
-  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 620, wave: 'triangle' } },
-  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 440, wave: 'square' } },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 180, wave: 'sawtooth' } },
-  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 480, wave: 'square' } },
-  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 680, wave: 'square' } },
+  ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 300, voice: { pitch: 300, wave: 'sawtooth' } },
+  あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
+  りく: { faces: names('通常', '笑顔', '得意げ', '真剣', 'あせり'), firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
+  子ハルト: { faces: names('通常', '笑顔', '驚き'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
+  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 760, wave: 'triangle' } },
+  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 500, wave: 'square' } },
+  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
+  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
+  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
 };
 
 /** 立ち絵を出さない人（声だけ・電話）の文字の音の声色。ここにない人は VOICE_DEFAULT */
 export const VOICE_ONLY: Record<string, BlipVoice> = {
-  担任: { pitch: 150, wave: 'sawtooth' },
+  担任: { pitch: 270, wave: 'square' },
   施設の子ども: { pitch: 720, wave: 'triangle' },
-  屋台のおじさん: { pitch: 130, wave: 'sawtooth' },
-  金魚すくいのおじさん: { pitch: 130, wave: 'sawtooth' },
-  わたあめ屋: { pitch: 160, wave: 'sawtooth' },
-  浴衣の女の人: { pitch: 420, wave: 'sine' },
-  ひなの: { pitch: 430, wave: 'triangle' },
-  '？？？': { pitch: 560, wave: 'sine' },
+  屋台のおじさん: { pitch: 260, wave: 'sawtooth' },
+  金魚すくいのおじさん: { pitch: 260, wave: 'sawtooth' },
+  わたあめ屋: { pitch: 280, wave: 'sawtooth' },
+  浴衣の女の人: { pitch: 640, wave: 'sine' },
+  ひなの: { pitch: 620, wave: 'triangle' },
+  '？？？': { pitch: 700, wave: 'sine' },
 };
-export const VOICE_DEFAULT: BlipVoice = { pitch: 300, wave: 'triangle' };
+export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
+/**
+ * 音色ごとの大きさの補正。四角い波（square）は倍音が多くてよく響き、三角の波（triangle）やなめらかな波（sine）は小さく聞こえるので、
+ * どの音色でも同じくらいの大きさに聞こえるようにそろえる
+ */
+export const WAVE_GAIN: Record<OscillatorType, number> = { square: 0.55, sawtooth: 0.75, triangle: 1.6, sine: 1.9, custom: 1 };
+/** 文字の音の高さの範囲（Hz。スマホのスピーカーで聞こえる高さ） */
+export const VOICE_PITCH_RANGE = { min: 250, max: 800 };
+
 /** 文字の音を鳴らす間隔（何文字ごとか）。句読点や記号では鳴らさない */
 export const BLIP_EVERY = 2;
 
