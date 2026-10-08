@@ -3,6 +3,9 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
+import { getSettings, playBgm, playSe, setSettings } from '../audio/sound';
+import { nextVolume } from '../core';
+import { BGM, SE } from '../data';
 import { battleAt, battleCount, continueRun, moveBrokenSave, readSave, startNewRun } from './run';
 
 /** 保存した日時を「10/7 21:05」の形にする */
@@ -40,6 +43,10 @@ export class TitleScene extends Phaser.Scene {
     );
     // クレジット（段階15）。親指の邪魔にならない右上に小さく
     addButton(this, root, GAME_WIDTH - 62, 36, 104, 44, 'クレジット', { onTap: () => this.scene.start('Credits') }, { size: 13 });
+    // 音量（段階19）。クレジットと反対の左上に
+    addButton(this, root, 62, 36, 104, 44, '音量', { onTap: () => this.openVolume() }, { size: 13 });
+    // スマホは最初に画面に触れた後で鳴り始める
+    playBgm(this, BGM.title);
 
     // セーブがあれば「つづきから」（段階11）
     const save = readSave();
@@ -87,5 +94,40 @@ export class TitleScene extends Phaser.Scene {
       }
       addButton(this, root, cx, 640, 260, 64, 'はじめる', { onTap: startNew }, strong);
     }
+  }
+
+  /** 音量の窓。BGM と効果音のボタンを押すたびに 0→25→50→75→100% と変わり、すぐ保存する */
+  private openVolume(): void {
+    const cx = GAME_WIDTH / 2;
+    const panel = this.add.container(0, 0);
+    // 後ろのボタンを押せないよう、画面全体を覆う
+    panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
+    panel.add(this.add.rectangle(cx, 400, 300, 300, COLORS.panel).setStrokeStyle(1, COLORS.border));
+    panel.add(addText(this, cx, 280, '音量', { size: 18, bold: true }).setOrigin(0.5));
+    const pct = (v: number) => `${Math.round(v * 100)}%`;
+    const draw = () => {
+      rows.removeAll(true);
+      const st = getSettings();
+      rows.add(addText(this, cx - 120, 340, 'BGM', { size: 15 }).setOrigin(0, 0.5));
+      addButton(this, rows, cx + 70, 340, 120, 48, pct(st.bgmVolume), {
+        onTap: () => {
+          setSettings({ ...getSettings(), bgmVolume: nextVolume(getSettings().bgmVolume) });
+          draw();
+        },
+      }, { size: 16 });
+      rows.add(addText(this, cx - 120, 410, '効果音', { size: 15 }).setOrigin(0, 0.5));
+      addButton(this, rows, cx + 70, 410, 120, 48, pct(st.seVolume), {
+        onTap: () => {
+          setSettings({ ...getSettings(), seVolume: nextVolume(getSettings().seVolume) });
+          // 新しい大きさで鳴らして聞かせる（ボタンの音は前の大きさで鳴っている）
+          playSe(this, SE.heal);
+          draw();
+        },
+      }, { size: 16 });
+    };
+    const rows = this.add.container(0, 0);
+    panel.add(rows);
+    draw();
+    addButton(this, panel, cx, 500, 160, 48, '閉じる', { onTap: () => panel.destroy(true) }, { size: 15 });
   }
 }

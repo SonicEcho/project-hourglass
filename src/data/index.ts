@@ -13,3 +13,4 @@ export * from './weapons';
 export * from './story';
 export * from './assets';
 export * from './prototypes';
+export * from './sounds';

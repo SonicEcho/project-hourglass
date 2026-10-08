@@ -122,6 +122,45 @@ function heroPortrait(face: string, title: string): AssetEntry {
   };
 }
 
+/** 効果音ラボの効果音（段階19）。page は効果音ラボのページ、file はそこの mp3 の名前 */
+function soundEffectLab(id: string, title: string, file: string, page: string, original: string): AssetEntry {
+  return {
+    id,
+    kind: 'audio',
+    title: `効果音：${title}`,
+    file: `assets/se/${file}`,
+    status: 'final',
+    source: { type: 'free', site: '効果音ラボ', url: `https://soundeffect-lab.info/sound/${page}/` },
+    author: '効果音ラボ',
+    license: '効果音ラボ 利用規約（商用利用無料、クレジット表記は任意）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    termsCopy: 'docs/licenses/soundeffect-lab.md',
+    notes: `元のファイル名：${original}。アプリへの組み込みは規約で許可されている（音源ファイルむき出しでも可）`,
+  };
+}
+
+/** 自作の仮の BGM（段階19。ループの仕組みを確かめるための音。本番は Suno で作った曲に替える） */
+function placeholderBgm(id: string, title: string, file: string): AssetEntry {
+  return {
+    id,
+    kind: 'audio',
+    title: `BGM：${title}（仮）`,
+    file: `assets/bgm/${file}`,
+    status: 'placeholder',
+    source: { type: 'self' },
+    author: 'RESTOPIA 開発',
+    license: '自作',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-08',
+    notes: 'scripts/placeholder_bgm.py でプログラムで合成した音。本番では Suno の有料の版で作った曲に替える（docs/ART.md）',
+  };
+}
+
 export const ASSETS: AssetEntry[] = [
   {
     id: 'title.hourglass',
@@ -171,6 +210,14 @@ export const ASSETS: AssetEntry[] = [
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
   akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  soundEffectLab('se.tap', 'ボタンを押す', 'tap.mp3', 'button', 'decision3.mp3（決定ボタンを押す3）'),
+  soundEffectLab('se.slash', '斬る', 'slash.mp3', 'battle', 'sword-slash2.mp3（剣で斬る2）'),
+  soundEffectLab('se.hit', '打撃', 'hit.mp3', 'battle', 'blow2.mp3（打撃2）'),
+  soundEffectLab('se.heal', '回復', 'heal.mp3', 'battle', 'magic-cure1.mp3（回復魔法1）'),
+  soundEffectLab('se.chest', '宝箱', 'chest.mp3', 'button', 'decision24.mp3（決定ボタンを押す24）'),
+  soundEffectLab('se.encounter', '遭遇', 'encounter.mp3', 'button', 'decision20.mp3（決定ボタンを押す20）'),
+  placeholderBgm('bgm.title', 'タイトル', 'title.wav'),
+  placeholderBgm('bgm.festival', '縁日', 'festival.wav'),
   {
     id: 'map.festival',
     kind: 'image',

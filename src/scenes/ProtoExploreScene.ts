@@ -3,8 +3,9 @@ import type { GridCell, GridMap } from '../core';
 import { findPath, nearestWalkable, parseGrid } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
+import { playBgm, playSe } from '../audio/sound';
 import type { ProtoMapDef, ProtoMapKey } from '../data';
-import { PROTO_ENEMY_STEP_MS, PROTO_MAPS, PROTO_STEP_MS, PROTO_TILE } from '../data';
+import { PROTO_ENEMY_STEP_MS, PROTO_MAPS, PROTO_STEP_MS, PROTO_TILE, SE } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 
@@ -51,6 +52,7 @@ export class ProtoExploreScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (this.def.bgm) playBgm(this, this.def.bgm);
     const layout = this.def.layout;
     this.map = parseGrid(layout);
     this.route = [];
@@ -181,6 +183,7 @@ export class ProtoExploreScene extends Phaser.Scene {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
         e.quietUntil = now + 2000;
         this.say('遭遇！（試作なので戦闘には入らない）');
+        playSe(this, SE.encounter);
         this.cameras.main.shake(150, 0.004);
       }
     }
@@ -229,6 +232,7 @@ export class ProtoExploreScene extends Phaser.Scene {
     const chest = this.chests.get(`${c},${r}`);
     if (chest && chest.fillColor !== 0x4a3a28) {
       chest.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
+      playSe(this, SE.chest);
       this.say('宝箱を開けた！ 素材を手に入れた（試作なので持ち物には入らない）');
     } else if (ch === 'P') {
       this.say('チェックポイント：ここで記録した（試作なので保存はしない）');
