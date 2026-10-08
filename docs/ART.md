@@ -126,6 +126,7 @@ ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲ
 | 2 | りくの胸から上の基本の1枚（新しい見た目） | ChatGPT | あかりの胸から上の絵（構図の見本） | 済（2026-10-08。`portrait.riku.smile`。下の「りくの見た目（決まった）」） |
 | 3 | 背景：夕暮れの神社の参道（プロローグの最初の場面） | ChatGPT | なし | 済（2026-10-08。`bg.shrine_approach`。屋台の並びの場面にも使う） |
 | 4 | 背景：時計屋の店内（夕暮れ） | ChatGPT | なし | 未 |
+| 4b | 背景：時計屋の奥の部屋（夕暮れ。柱時計と作業台） | ChatGPT | 時計屋の店内の絵（同じ店に見えるように。あれば） | 未 |
 | 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 未 |
 | 6 | 子どものころの3人の基本の1枚（7歳。1人ずつ） | ChatGPT | 高校生の3人の絵 | 未 |
 | 7 | 地図：1-1「金魚の名前」の縁日（見下ろし。段階18b の仮の絵を作り直す） | ChatGPT | 段階18b の仮の地図の絵（配置の見本。あれば） | 済（2026-10-08。`map.festival` を差し替え、歩ける場所の文字の地図も書き直した。少し夜寄りの色なので、ゲームの側で明るさを寄せるか段階25で決める） |
@@ -189,6 +190,58 @@ Expression: <下の表の英語>
 | 7 | 悲しい | sad and quiet, eyes looking down, mouth closed, brows slightly lowered |
 
 （1〜5 は M1 の台本で使う。6・7 は後の章でも使える）
+
+**4. 背景：時計屋の店内（夕暮れ）**（共通部分の後に付ける。1-E・1-G。夜の場面は色の加工で使い回す）
+
+```
+Background art for a visual novel dialogue scene. Vertical 9:16 image. No people.
+The interior of a small, old watch and clock shop at the edge of a shopping street in a quiet Japanese regional town, at summer dusk just before closing time. Dozens of wall clocks of different shapes and sizes cover the walls; a glass display counter full of wristwatches in the middle; wooden shelves with table clocks; a tall wooden grandfather clock near the back; a doorway to a back room at the far end, half hidden by a short noren curtain. Warm orange evening sunlight streams in through the front glass door and window, casting long shadows; dust glitters in the light. Nostalgic, quiet, a little mysterious.
+Eye-level camera, looking from the entrance toward the back of the shop. Keep the lower third of the image simple (floor and the front of the counter), because a dialogue box will cover it.
+Absolutely no letters or text anywhere: clock faces have simple marks instead of numbers, no signs, no labels, no price tags.
+```
+
+**4b. 背景：時計屋の奥の部屋（夕暮れ）**（共通部分の後に付ける。1-E・1-G・2-C。店内の絵ができていれば、同じ店に見えるよう見本に添える）
+
+```
+Background art for a visual novel dialogue scene. Vertical 9:16 image. No people.
+The small back room of an old Japanese watch and clock shop, at summer dusk. A cluttered wooden workbench with a desk lamp, tiny screwdrivers, tweezers, a magnifying loupe and opened pocket watches; drawers full of small parts; a few wall clocks. Against the far wall stands a tall antique pendulum clock (grandfather clock), centered in the image, with plain empty wall space around it (a glowing door will appear on that wall later in the game). A small high window lets in orange evening light; the corners fall into soft indigo shadow. Quiet, nostalgic, the feeling that time is about to stop.
+Eye-level camera, the pendulum clock in the center. Keep the lower third of the image simple (floor and the front edge of the workbench), because a dialogue box will cover it.
+Absolutely no letters or text anywhere: clock faces have simple marks instead of numbers, no labels, no papers with writing.
+```
+
+**5. 背景：レストピアの蔵書の棚**（共通部分の後に付ける。1-F・1-G・2-C）
+
+```
+Background art for a visual novel dialogue scene. Vertical 9:16 image. No people.
+A vast, fantastical library where time is stored instead of books. Towering dark-wood bookshelves rise so high that the ceiling cannot be seen, fading into a warm golden haze. On every shelf, hourglasses of many sizes stand in rows like books; inside each hourglass, softly glowing sand, and faint tiny scenes of everyday memories (a sports day, a summer festival, a birthday) shimmer in the glass. Each hourglass has a small blank paper tag tied to it. Fine golden sand particles drift slowly upward in the air. Light comes from the glowing hourglasses themselves: amber and soft gold, with deep indigo shadows between the shelves. Beautiful, quiet, nostalgic, a little lonely.
+Eye-level camera, looking down a long aisle between two shelves. Keep the lower third of the image simple (the floor of the aisle), because a dialogue box will cover it.
+Absolutely no letters or text anywhere: tags and book spines are blank.
+```
+
+**6. 子どものころの3人（7歳）**（共通部分の後に付ける。1人ずつ作る。その人の高校生の立ち絵を見本に添える。構図は高校生と同じにして、背の低さはゲームの側で小さく出して表す）
+
+毎回、次の頭の文に、下の「人ごとの文」を1つ付ける。
+
+```
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Draw the same character as the attached high school portrait, but as a 7-year-old child: round soft cheeks, bigger eyes, small shoulders, childlike proportions. Keep the same face features, hair color and eye color so that they are clearly the same person ten years earlier.
+```
+
+- 子どものハルト（通常の顔。表情違いは Gemini）：
+  ```
+  Character: young Haruto, 7 years old. Quiet, a little shy and distant, a calm neutral expression, looking slightly unsure. Messy short black hair with a slight navy tint, ONE single strand in the front bangs colored sand-gold. Warm amber eyes. Plain white short-sleeve T-shirt with no logo, and a dark navy zip hoodie with dusk-orange lining worn open (a little too big for him).
+  ```
+- 子どものあかり（笑顔。浴衣）：
+  ```
+  Character: young Akari, 7 years old. Bright, cheerful, a big warm smile. Soft chestnut-brown hair in a short bob with side-swept bangs, a small red goldfish hair clip on the left side (shiny and new). A summer yukata, white with a pattern of small red goldfish and light blue water ripples, with a red obi sash.
+  ```
+- 子どものりく（得意げ。甚平）：
+  ```
+  Character: young Riku, 7 years old. A mischievous little leader, a proud confident grin showing his teeth. Short dark-brown hair, a little spiky and messy (not yet styled). Bright lively brown eyes, a small bandage on his cheek. A navy blue jinbei (Japanese summer festival outfit) with a simple white pattern.
+  ```
 
 **7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
 
