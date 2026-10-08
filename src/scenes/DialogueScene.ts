@@ -487,6 +487,8 @@ export class DialogueScene extends Phaser.Scene {
       const cw = GAME_WIDTH / s;
       const ch = h / s;
       img.setScale(s).setCrop((img.width - cw) / 2, (img.height - ch) / 2, cw, ch);
+      // 同じ絵を夜などに使い回す時は、色をかける
+      if (def.tint !== undefined) img.setTint(def.tint);
       layer.add(img);
       return;
     }

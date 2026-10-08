@@ -125,7 +125,7 @@ ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲ
 | 1 | ハルトの胸から上の基本の1枚（あかりと同じ構図に作り直す） | ChatGPT | ハルトの設定画、あかりの胸から上の絵（構図の見本） | 未 |
 | 2 | りくの胸から上の基本の1枚（新しい見た目） | ChatGPT | あかりの胸から上の絵（構図の見本） | 済（2026-10-08。`portrait.riku.smile`。下の「りくの見た目（決まった）」） |
 | 3 | 背景：夕暮れの神社の参道（プロローグの最初の場面） | ChatGPT | なし | 済（2026-10-08。`bg.shrine_approach`。屋台の並びの場面にも使う） |
-| 4 | 背景：時計屋の店内（夕暮れ） | ChatGPT | なし | 未 |
+| 4 | 背景：時計屋の店内（夕暮れ） | ChatGPT | なし | 済（2026-10-08。`bg.clock_shop`。夜の場面は、ゲームの側で青い色をかけて使い回す） |
 | 4b | 背景：時計屋の奥の部屋（夕暮れ。柱時計と作業台） | ChatGPT | 時計屋の店内の絵（同じ店に見えるように。あれば） | 未 |
 | 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 未 |
 | 6 | 子どものころの3人の基本の1枚（7歳。1人ずつ） | ChatGPT | 高校生の3人の絵 | 未 |
@@ -242,6 +242,32 @@ Draw the same character as the attached high school portrait, but as a 7-year-ol
   ```
   Character: young Riku, 7 years old. A mischievous little leader, a proud confident grin showing his teeth. Short dark-brown hair, a little spiky and messy (not yet styled). Bright lively brown eyes, a small bandage on his cheek. A navy blue jinbei (Japanese summer festival outfit) with a simple white pattern.
   ```
+
+**ハルトの表情違い**（Gemini。ハルトの基本の1枚を見本として渡す。M1 で使う順に）
+
+今のハルトの絵（M0 の4枚）は正方形で、あかり・りくと構図が違う。そのため、まず基本の1枚（通常）を作り直してから、表情違いを全部そろえる。基本の1枚は ChatGPT で作る予定だった（上の 1.）が、Gemini で次の指示文を試してもよい（見本の絵2枚を一緒に渡す。1枚目が今のハルトの絵、2枚目があかりの胸から上の絵）。
+
+```
+Redraw the boy from image 1 as a chest-up portrait with exactly the same framing, size and camera distance as image 2. Vertical 2:3 image. Keep his face, hair (black with ONE sand-gold strand in the front bangs), amber eyes, white shirt, loose sand-gold necktie and open navy hoodie with dusk-orange lining exactly as in image 1. Front view, calm neutral expression with a hint of gentleness. Both arms relaxed down at the sides, hands outside the frame. Plain pure white background. Same anime art style as image 2. No props, no text.
+```
+
+基本の1枚ができたら、毎回、次の頭の文に表情の1行だけを替えて付ける。
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair with the single sand-gold strand, amber eyes, white shirt, loose sand-gold necktie, open navy hoodie with dusk-orange lining, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects.
+Expression: <下の表の英語>
+```
+
+| 順 | 表情 | Expression の行 |
+| --- | --- | --- |
+| 1 | 笑顔 | a gentle, slightly shy smile with the mouth closed, eyes soft |
+| 2 | 驚き | surprised, eyes wide open, mouth slightly open |
+| 3 | 決意 | determined, mouth firmly closed, brows set, eyes sharp and steady |
+| 4 | あきれ | exasperated, half-closed eyes, mouth flat, one eyebrow slightly lowered |
+| 5 | 困り | troubled, eyebrows raised in a worried way, mouth slightly open, eyes looking aside |
+| 6 | 悲しい | sad and quiet, eyes looking down, mouth closed, brows slightly lowered |
+| 7 | 照れ | embarrassed, light blush on the cheeks, eyes looking away, a small awkward closed-mouth smile |
+| 8 | 苦笑い | a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled |
 
 **7. 地図：1-1「金魚の名前」の縁日**（共通部分の後に付ける）
 

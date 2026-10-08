@@ -117,6 +117,8 @@ export interface Backdrop {
   top: number;
   bottom: number;
   image?: string;
+  /** 絵に重ねる色（同じ絵を夜などに使い回す時） */
+  tint?: number;
   ambient?: Ambient;
 }
 
@@ -135,8 +137,8 @@ export const BACKDROPS: Record<string, Backdrop> = {
   rooftop: { title: '学校の屋上', top: 0x7ab0e0, bottom: 0xe0b080 },
   shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80 },
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
-  clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, ambient: 'dust' },
-  clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, ambient: 'dust' },
+  clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
+  clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, image: 'bg.clock_shop', tint: 0x5a6aa8, ambient: 'dust' },
   clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420, ambient: 'dust' },
   library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020, ambient: 'dust' },
   festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival', ambient: 'lanterns' },

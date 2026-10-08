@@ -363,6 +363,17 @@ export const ASSETS: AssetEntry[] = [
       'Absolutely no letters or text anywhere: signs, lanterns, banners and awnings are blank or have simple patterns only.',
     '元の絵は 941×1672。720×1280 に縮めて WebP にした。プロローグの参道の入口と、屋台の並びの両方で使う',
   ),
+  backdrop(
+    'clock_shop',
+    '時計屋の店内',
+    'clock_shop.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people. ' +
+      'The interior of a small, old watch and clock shop at the edge of a shopping street in a quiet Japanese regional town, at summer dusk just before closing time. Dozens of wall clocks of different shapes and sizes cover the walls; a glass display counter full of wristwatches in the middle; wooden shelves with table clocks; a tall wooden grandfather clock near the back; a doorway to a back room at the far end, half hidden by a short noren curtain. Warm orange evening sunlight streams in through the front glass door and window, casting long shadows; dust glitters in the light. Nostalgic, quiet, a little mysterious. ' +
+      'Eye-level camera, looking from the entrance toward the back of the shop. Keep the lower third of the image simple (floor and the front of the counter), because a dialogue box will cover it. ' +
+      'Absolutely no letters or text anywhere: clock faces have simple marks instead of numbers, no signs, no labels, no price tags.',
+    '元の絵は 941×1672。720×1280 に縮めて WebP にした。夜の場面（1-G）は、ゲームの側で青い色をかけて使い回す',
+  ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
   akariPortrait(
