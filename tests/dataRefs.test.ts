@@ -138,7 +138,16 @@ describe('M1 の台本（段階22）', () => {
     for (const [name, def] of Object.entries(CAST)) {
       expect(def.faces[def.firstFace], name).toBeDefined();
       if (!def.portrait) continue;
-      for (const face of Object.values(def.faces)) expect(ids.has(`${def.portrait}.${face}`), `${name} ${face}`).toBe(true);
+      // 絵のある表情か、まだ絵がなければ代わりの表情（fallback）に絵がある
+      for (const [face, id] of Object.entries(def.faces)) {
+        const alt = def.fallback?.[face];
+        const ok = ids.has(`${def.portrait}.${id}`) || (alt !== undefined && ids.has(`${def.portrait}.${def.faces[alt]}`));
+        expect(ok, `${name} ${face}`).toBe(true);
+      }
+      for (const [face, alt] of Object.entries(def.fallback ?? {})) {
+        expect(def.faces[face], `${name} ${face}`).toBeDefined();
+        expect(def.faces[alt], `${name} ${face} → ${alt}`).toBeDefined();
+      }
     }
     for (const scene of M1_SCENES) {
       for (const step of scene.steps) {
