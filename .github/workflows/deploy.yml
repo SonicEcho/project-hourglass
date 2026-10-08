@@ -1,9 +1,9 @@
 name: Test and Deploy
 
+# PR の時は走らせない（ブランチへの push で同じ確認が走り、その結果が PR にも出るため。2回走らせると待ち時間が倍になる）
 on:
   push:
     branches: ['**']
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,19 @@ jobs:
       - run: npm test
       - run: npm run build
       # 通しの自動確認（段階20）：公開物を本物のブラウザで開き、タイトルから結果まで自動で遊ぶ。失敗したら公開しない
-      - run: npx playwright install --with-deps chromium
+      # Playwright のブラウザは、版が同じ間は GitHub に覚えておいてもらい、毎回は入れ直さない（待ち時間を縮める）
+      - id: pw
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      # 覚えておいたブラウザを使う時も、動かすのに要る OS の部品だけは入れる
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm run e2e
       - uses: actions/upload-artifact@v4
         if: failure()
