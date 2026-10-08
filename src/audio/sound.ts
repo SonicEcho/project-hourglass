@@ -6,14 +6,21 @@ import { browserStorage } from '../save/storage';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
 // BGM はゲーム全体で1曲だけ。画面が替わっても止めず、別の曲を頼まれた時だけ切り替える。
-// スマホのブラウザは最初に画面に触れるまで音を出せないので、その前に頼まれた BGM は触れた後に始める
+// スマホのブラウザは最初に画面に触れるまで音を出せないので、その前に頼まれた BGM は触れた後に始める。
+// BGM のくり返しは、ブラウザの音の機能（Web Audio）に直接任せる（区間の前から区間へのつなぎも、区間の終わりから始めへも切れ目がない。段階20）
 
 const SETTINGS_KEY = 'restopia.settings';
-/** 曲を切り替える時に、前の曲を小さくしていく時間（ミリ秒） */
-const FADE_MS = 600;
+/** 曲を切り替える時に、前の曲を小さくしていく時間（秒） */
+const FADE_SEC = 0.6;
+
+interface Playing {
+  id: string;
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+}
 
 let settings: Settings | null = null;
-let bgm: { id: string; sound: Phaser.Sound.BaseSound } | null = null;
+let bgm: Playing | null = null;
 /** 音を出せるようになるのを待っている BGM */
 let waitingBgm: string | null = null;
 
@@ -27,11 +34,7 @@ export function getSettings(): Settings {
 export function setSettings(next: Settings): void {
   settings = next;
   browserStorage().write(SETTINGS_KEY, serializeSettings(next));
-  if (bgm) setVolume(bgm.sound, next.bgmVolume);
-}
-
-function setVolume(sound: Phaser.Sound.BaseSound, v: number): void {
-  (sound as Phaser.Sound.WebAudioSound).setVolume(v);
+  if (bgm) bgm.gain.gain.setTargetAtTime(next.bgmVolume, bgm.gain.context.currentTime, 0.02);
 }
 
 function loaded(scene: Phaser.Scene, id: string): boolean {
@@ -51,9 +54,12 @@ export function playSe(scene: Phaser.Scene, id: string): void {
  */
 export function playBgm(scene: Phaser.Scene, id: string): void {
   if (bgm?.id === id || !loaded(scene, id)) return;
-  if (scene.sound.locked) {
+  const mgr = scene.sound;
+  // Web Audio が使えないブラウザでは BGM を鳴らさない（今のスマホのブラウザはどれも使える）
+  if (!(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  if (mgr.locked) {
     if (waitingBgm === null) {
-      scene.sound.once(Phaser.Sound.Events.UNLOCKED, () => {
+      mgr.once(Phaser.Sound.Events.UNLOCKED, () => {
         const next = waitingBgm;
         waitingBgm = null;
         if (next) playBgm(scene.game.scene.getScenes(true)[0] ?? scene, next);
@@ -62,39 +68,40 @@ export function playBgm(scene: Phaser.Scene, id: string): void {
     waitingBgm = id;
     return;
   }
-  stopBgm(scene);
-  const volume = getSettings().bgmVolume;
-  const sound = scene.sound.add(id, { volume });
+  stopBgm();
+  const buffer = scene.cache.audio.get(id) as AudioBuffer;
+  const ctx = mgr.context;
+  const gain = ctx.createGain();
+  gain.gain.value = getSettings().bgmVolume;
+  gain.connect(mgr.destination);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
   const loop = BGM_LOOPS[id];
   if (loop) {
-    sound.addMarker({ name: 'intro', start: 0, duration: loop.start });
-    sound.addMarker({ name: 'loop', start: loop.start, duration: loop.end - loop.start, config: { loop: true, volume } });
-    sound.once(Phaser.Sound.Events.COMPLETE, () => {
-      if (bgm?.sound === sound) sound.play('loop', { volume: getSettings().bgmVolume });
-    });
-    sound.play(loop.start > 0 ? 'intro' : 'loop');
-  } else {
-    sound.play({ loop: true });
+    source.loopStart = loop.start;
+    source.loopEnd = Math.min(loop.end, buffer.duration);
   }
-  bgm = { id, sound };
+  source.connect(gain);
+  source.start();
+  bgm = { id, source, gain };
 }
 
 /** BGM を小さくしながら止める */
-export function stopBgm(scene: Phaser.Scene): void {
+export function stopBgm(): void {
   waitingBgm = null;
   if (!bgm) return;
-  const old = bgm.sound;
+  const { source, gain } = bgm;
   bgm = null;
-  // 小さくしている途中で画面が替わったら、その場で止める
-  const kill = () => old.destroy();
-  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, kill);
-  scene.tweens.add({
-    targets: old,
-    volume: 0,
-    duration: FADE_MS,
-    onComplete: () => {
-      scene.events.off(Phaser.Scenes.Events.SHUTDOWN, kill);
-      old.destroy();
-    },
-  });
+  const now = gain.context.currentTime;
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setValueAtTime(gain.gain.value, now);
+  gain.gain.linearRampToValueAtTime(0, now + FADE_SEC);
+  source.stop(now + FADE_SEC);
+  source.onended = () => gain.disconnect();
+}
+
+/** 今流れている BGM（台帳の id）。自動の確認で使う */
+export function currentBgm(): string | null {
+  return bgm?.id ?? null;
 }

@@ -25,4 +25,8 @@ export const BGM = {
  * BGM のくり返す区間（秒）。書かなければ曲の全体をくり返す。
  * Suno の曲は最初から最後までがループになっていないので、つなぎ目をここに書く（start まで1回だけ流し、start〜end をくり返す）
  */
-export const BGM_LOOPS: Record<string, { start: number; end: number }> = {};
+export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
+  // 仮の BGM（scripts/placeholder_bgm.py が書き出した時に表示する値）。mp3 の頭の無音をよけるため、0.5秒から1周をくり返す
+  [BGM.title]: { start: 0.5, end: 13.131565 },
+  [BGM.festival]: { start: 0.5, end: 9.227256 },
+};

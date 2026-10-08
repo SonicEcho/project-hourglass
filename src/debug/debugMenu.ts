@@ -72,6 +72,13 @@ export function installDebugMenu(nav: DebugNavigator): void {
         notify(battle.replaceState(healAllAllies(battle.getState())) ? '味方を全回復しました' : '演出中は使えません');
       }, !!battle),
     );
+    panel.append(
+      button('自動で1ラウンド戦う（自動対戦の方針）', () => {
+        if (!battle) return;
+        if (battle.autoRound()) close();
+        else notify('演出中は使えません');
+      }, !!battle),
+    );
     for (const e of s?.enemies ?? []) {
       if (e.hp <= 0) continue;
       panel.append(
