@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import type { AkariFace, ProtoLine } from '../data';
+import type { ProtoLine } from '../data';
 import { AKARI, HERO, PROTO_SCRIPT } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -13,18 +13,24 @@ const SKIP_MS = 180;
 
 const NAMES: Record<string, string> = { hero: HERO.name, akari: AKARI.name };
 
-/** 立ち絵の高さ（段階18a。座標系 390×844 での大きさ） */
-const PORTRAIT_HEIGHT = 450;
+/**
+ * 立ち絵の置き方（段階18a。座標系 390×844 での大きさ）。
+ * あかりは胸から上の縦長の絵、ハルトは顔と肩の正方形の絵（構図が違う）。ハルトが低く見えすぎないよう少し大きめにした。本番は同じ構図で作る
+ */
+const PORTRAITS = {
+  akari: { x: 118, height: 450, first: 'smile', shapeX: 105, color: 0xd06b8a },
+  hero: { x: 272, height: 300, first: 'normal', shapeX: 320, color: COLORS.ally },
+} as const;
 /** 話していない人の立ち絵の暗さ（重なっても透けないよう、薄くするのではなく暗くする） */
 const DIM_TINT = 0x707070;
 
 /** 立ち絵の台帳の id */
-const faceId = (face: AkariFace) => `portrait.akari.${face}`;
+const faceId = (who: 'akari' | 'hero', face: string) => `portrait.${who}.${face}`;
 
 /**
  * 会話の試作（段階16）。エンジンを決めるために、会話の画面を小さく試す。本編では使わない。
  * 文字送り、タップで全文 → 次へ、話している人の立ち絵を明るく、選択肢、ログ、早送り
- * 段階18a：あかりは AI で作った仮の立ち絵で、台本の行ごとに表情を差し替える（絵がなければ図形）
+ * 段階18a：あかりとハルトは AI で作った仮の立ち絵で、台本の行ごとに話す人の表情を差し替える（絵がなければ図形）
  */
 export class ProtoDialogueScene extends Phaser.Scene {
   private line!: ProtoLine;
@@ -34,8 +40,8 @@ export class ProtoDialogueScene extends Phaser.Scene {
   private history: string[] = [];
   /** 話している人を明るく、ほかを暗くする */
   private portraits: Record<string, (active: boolean) => void> = {};
-  /** あかりの立ち絵（絵が読み込めない時はない） */
-  private akariImage?: Phaser.GameObjects.Image;
+  /** 立ち絵（絵が読み込めない人はない） */
+  private faceImages: Partial<Record<'akari' | 'hero', Phaser.GameObjects.Image>> = {};
   private nameTag!: Phaser.GameObjects.Text;
   private nameBox!: Phaser.GameObjects.Rectangle;
   private body!: Phaser.GameObjects.Text;
@@ -69,18 +75,21 @@ export class ProtoDialogueScene extends Phaser.Scene {
       c.add(addText(this, 0, 140, NAMES[id], { size: 14, bold: true }).setOrigin(0.5));
       this.portraits[id] = (active) => c.setAlpha(active ? 1 : 0.4);
     };
-    shape('hero', 320, COLORS.ally);
-    this.akariImage = undefined;
-    if (hasImage(this, faceId('smile'))) {
-      // あかりの立ち絵：下の端を本文の枠の上の辺にそろえ（枠は少し透けるので、裏に回さない）、ゆっくり息をするように少し伸び縮みさせる
-      const img = this.add.image(135, 560, faceId('smile')).setOrigin(0.5, 1);
-      const scale = PORTRAIT_HEIGHT / img.height;
+    // 立ち絵（段階18a）：下の端を本文の枠の上の辺にそろえ（枠は少し透けるので、裏に回さない）、ゆっくり息をするように少し伸び縮みさせる。
+    // 絵が読み込めない時は図形で描く。ハルトを先に置き、あかりを手前にする
+    this.faceImages = {};
+    for (const who of ['hero', 'akari'] as const) {
+      const p = PORTRAITS[who];
+      if (!hasImage(this, faceId(who, p.first))) {
+        shape(who, p.shapeX, p.color);
+        continue;
+      }
+      const img = this.add.image(p.x, 560, faceId(who, p.first)).setOrigin(0.5, 1);
+      const scale = p.height / img.height;
       img.setScale(scale);
       this.tweens.add({ targets: img, scaleY: scale * 1.006, yoyo: true, repeat: -1, duration: 1800, ease: 'Sine.easeInOut' });
-      this.akariImage = img;
-      this.portraits.akari = (active) => (active ? img.clearTint() : img.setTint(DIM_TINT));
-    } else {
-      shape('akari', 105, 0xd06b8a);
+      this.faceImages[who] = img;
+      this.portraits[who] = (active) => (active ? img.clearTint() : img.setTint(DIM_TINT));
     }
 
     // 本文の枠
@@ -115,7 +124,8 @@ export class ProtoDialogueScene extends Phaser.Scene {
     this.typing?.remove();
     const speaker = line.speaker;
     for (const [id, setActive] of Object.entries(this.portraits)) setActive(speaker === null || speaker === id);
-    if (line.face && this.akariImage && hasImage(this, faceId(line.face))) this.akariImage.setTexture(faceId(line.face));
+    const img = speaker ? this.faceImages[speaker] : undefined;
+    if (speaker && line.face && img && hasImage(this, faceId(speaker, line.face))) img.setTexture(faceId(speaker, line.face));
     this.nameBox.setVisible(speaker !== null);
     this.nameTag.setText(speaker ? NAMES[speaker] : '');
     this.cursor.setVisible(false);
