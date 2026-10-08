@@ -1,6 +1,6 @@
 # 引き継ぎメモ（これまでの作業のまとめ）
 
-最終更新：2026-10-08（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。M1 の段階分け（段階21〜32）を `docs/milestones/M1.md` に書き、開発者と確認して決めた。段階21の脚本のたたき台（`docs/script/M1.md`）を書いた。開発者の確認待ち。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
+最終更新：2026-10-08（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。M1 の段階分け（段階21〜32）を `docs/milestones/M1.md` に書き、開発者と確認して決めた。段階21の脚本のたたき台（`docs/script/M1.md`）を書いた。脚本で足した決まりとプロローグの伏線は、開発者と確認して `docs/STORY.md`（2-11・2-13）に反映済み。残りは名前の候補・素材の一覧・台詞の確認。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
 
 新しいセッションでは、まずこのファイルを読む。今の仕組みは `docs/design/`（一覧は `docs/design/README.md`）、今の作業の一覧は `docs/milestones/M1.md`（M0 の記録は `docs/milestones/M0.md`）、背景は `docs/CONCEPT.md`。`docs/SPEC.md` は試作（段階1〜14）の記録（段階14から書き足さない）。
 
