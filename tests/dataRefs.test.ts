@@ -123,6 +123,28 @@ describe('仲間ごとに1つずつ', () => {
   });
 });
 
+describe('M1 の物語の流れ（段階23）', () => {
+  it('書き間違いがなく、会話の出来事と寄り道の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
+    const { M1_SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
+    const { checkFlow, flowEvents } = await import('../src/core');
+    expect(checkFlow(SLICE_FLOW)).toEqual([]);
+    const sceneIds = new Set(M1_SCENES.map((s) => s.id));
+    const reachable = new Set<string>();
+    for (const e of flowEvents(SLICE_FLOW)) {
+      if (e.kind === 'dialogue') {
+        expect(sceneIds.has(e.id), e.id).toBe(true);
+        reachable.add(e.id);
+      }
+      for (const o of e.optional ?? []) {
+        expect(sceneIds.has(o.scene), `${e.id} ${o.scene}`).toBe(true);
+        reachable.add(o.scene);
+      }
+      if (e.kind === 'daily' || e.kind === 'explore' || e.kind === 'return') expect(e.note, e.id).toBeTruthy();
+    }
+    for (const id of M1_SCENE_ORDER) expect(reachable.has(id), id).toBe(true);
+  });
+});
+
 describe('M1 の台本（段階22）', () => {
   it('行き先がそろっていて、通しで見る順番の場面が全部ある', async () => {
     const { M1_SCENES, M1_SCENE_ORDER } = await import('../src/data');

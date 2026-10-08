@@ -54,6 +54,10 @@ export interface DialogueData {
   vars?: ScriptVars;
   /** 全部終わった後に移る画面（なければタイトル） */
   next?: { key: string; data?: object };
+  /** 場面を読み始めた時に呼ぶ（物語の流れで、今どの場面かを覚えてセーブする。段階23） */
+  onScene?: (sceneId: string) => void;
+  /** 覚えている値が変わった時に呼ぶ（@set。セーブに入れる。段階23） */
+  onVars?: (vars: ScriptVars) => void;
 }
 
 /**
@@ -99,6 +103,8 @@ export class DialogueScene extends Phaser.Scene {
   private vars: ScriptVars = {};
   private queue: string[] = [];
   private nextScreen?: DialogueData['next'];
+  private onScene?: DialogueData['onScene'];
+  private onVars?: DialogueData['onVars'];
   private debug = false;
 
   private line?: ScriptLine;
@@ -163,6 +169,9 @@ export class DialogueScene extends Phaser.Scene {
     this.vars = { ...(data.vars ?? {}) };
     this.queue = [...(data.queue ?? [])];
     this.nextScreen = data.next;
+    this.onScene = data.onScene;
+    this.onVars = data.onVars;
+    this.onScene?.(data.scene);
     this.line = undefined;
     this.busy = false;
     this.choosing = false;
@@ -247,6 +256,7 @@ export class DialogueScene extends Phaser.Scene {
     this.busy = true;
     this.waitTimer?.remove();
     const r = runScript(this.scenes, this.pos, this.vars);
+    if (JSON.stringify(r.vars) !== JSON.stringify(this.vars)) this.onVars?.(r.vars);
     this.vars = r.vars;
     for (const cmd of r.commands) await this.apply(cmd);
     this.busy = false;
@@ -926,6 +936,7 @@ export class DialogueScene extends Phaser.Scene {
     const next = this.queue.shift();
     if (next) {
       this.pos = { scene: next, index: 0 };
+      this.onScene?.(next);
       void this.proceed();
       return;
     }

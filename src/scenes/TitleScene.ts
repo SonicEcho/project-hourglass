@@ -4,9 +4,9 @@ import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
 import { getSettings, playBgm, playSe, setSettings } from '../audio/sound';
-import { nextVolume } from '../core';
-import { BGM, SE } from '../data';
-import { battleAt, battleCount, continueRun, moveBrokenSave, readSave, startNewRun } from './run';
+import { chapterOfEvent, findEvent, nextVolume } from '../core';
+import { BGM, SE, SLICE_FLOW } from '../data';
+import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
 
 /** 保存した日時を「10/7 21:05」の形にする */
 function formatSavedAt(iso: string): string {
@@ -37,10 +37,7 @@ export class TitleScene extends Phaser.Scene {
     );
     root.add(addText(this, cx, 360, 'RESTOPIA', { size: 34, bold: true }).setOrigin(0.5));
     root.add(addText(this, cx, 400, '思い出だけの理想郷', { size: 15, color: COLORS.accentText }).setOrigin(0.5));
-    root.add(addText(this, cx, 432, 'バトルプロトタイプ', { size: 13, color: COLORS.subText }).setOrigin(0.5));
-    root.add(
-      addText(this, cx, 470, '星図で育てながら5戦。最後はボス「歪みの獣」', { size: 13, color: COLORS.subText }).setOrigin(0.5),
-    );
+    root.add(addText(this, cx, 432, '試作版（M1：プロローグと第1章のはじめ）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     // クレジット（段階15）。親指の邪魔にならない右上に小さく
     addButton(this, root, GAME_WIDTH - 62, 36, 104, 44, 'クレジット', { onTap: () => this.scene.start('Credits') }, { size: 13 });
     // 音量（段階19）。クレジットと反対の左上に
@@ -49,37 +46,43 @@ export class TitleScene extends Phaser.Scene {
     playBgm(this, BGM.title);
 
     // セーブがあれば「つづきから」（段階11）
-    const save = readSave();
-    if (save && !save.ok) {
+    let save = readSave();
+    if (save && !save.ok && save.old) {
+      // 試作の5戦だけの古いセーブ（版1・2）は引き継がない（段階23）。壊れているのではないので、知らせずに片付ける
+      console.info('[save] 古い版のセーブを片付けました', save.error);
+      deleteSave();
+      save = null;
+    } else if (save && !save.ok) {
       console.error('[save] セーブを読めませんでした', save.error);
       moveBrokenSave();
     }
     const strong = { size: 20, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 };
     const startNew = () => {
       startNewRun();
-      this.scene.start('Growth');
+      this.scene.start('Flow', { done: false });
     };
     if (save?.ok) {
       const s = save.save;
-      const next = battleAt(s.run.progress);
-      const count = battleCount(s.run.progress);
+      const event = findEvent(SLICE_FLOW, s.run.event);
+      const chapter = chapterOfEvent(SLICE_FLOW, s.run.event);
       addButton(this, root, cx, 600, 260, 64, 'つづきから', {
         onTap: () => {
-          if (continueRun()) this.scene.start('Growth');
+          if (continueRun()) this.scene.start('Flow', { done: false });
           else this.scene.restart();
         },
       }, strong);
       root.add(
-        addText(this, cx, 645, `${next.name}の前（${count.n}/${count.total}）　${formatSavedAt(s.savedAt)}`, {
+        addText(this, cx, 656, `${chapter?.name ?? ''}　${event?.title ?? ''}\n${formatSavedAt(s.savedAt)}`, {
           size: 12,
           color: COLORS.subText,
+          align: 'center',
         }).setOrigin(0.5),
       );
       // 誤タップでセーブを消さないよう、2回押して始める
       let armed = false;
-      const warn = addText(this, cx, 770, '', { size: 12, color: COLORS.allyDamage, align: 'center' }).setOrigin(0.5);
+      const warn = addText(this, cx, 790, '', { size: 12, color: COLORS.allyDamage, align: 'center' }).setOrigin(0.5);
       root.add(warn);
-      addButton(this, root, cx, 720, 220, 52, 'はじめから', {
+      addButton(this, root, cx, 734, 220, 52, 'はじめから', {
         onTap: () => {
           if (armed) startNew();
           else {
