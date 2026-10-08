@@ -43,12 +43,40 @@ Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft c
 
 | 試作 | サービス | 中身 | 確かめること |
 | --- | --- | --- | --- |
-| 1. あかりの立ち絵 | Gemini系（無料） | 基本の1枚と、表情違い3つ | 同じ顔・同じ服のまま、表情だけ変えられるか |
+| 1. あかりの立ち絵 | 基本の1枚は OpenAI系、表情違いは Gemini系（どちらも無料） | 基本の1枚と、表情違い4つ | 同じ顔・同じ服のまま、表情だけ変えられるか |
 | 2. 見下ろしのマップ | OpenAI系（無料） | 1-1「金魚の名前」の縁日（平成のはじめ、神社の夏祭り） | 見下ろしで、通路と屋台の配置が分かる絵になるか（見えないマス目を重ねられるか） |
 
 結果を見て、探索の形（見下ろしのマップか、場面をつなぐ形か）と、絵柄の指示文を決める。使うと決めた絵は、台帳（`src/data/assets.ts`）に、サービス名・無料か有料か・指示文・作った日・規約の控えの場所を書いて入れる。
 
-**あかりの見た目（たたき台）**：17歳の高校2年生。肩くらいの焦げ茶の髪を、低めの横のポニーテールに。赤い金魚の形の髪留め（本人は理由を知らずに金魚が好き。2人の出会いの小さな伏線）。紺のブレザーの制服に赤いリボン、灰色のスカート。首から小さな銀色のカメラを下げている（写真好き）。やさしい世話焼きの目元。
+**試作1の結果（2026-10-08）**：Gemini で作った立ち絵は、思っていたのと違う印象だった。開発者が ChatGPT で下の指示文から作った立ち絵（杖を持っている絵）のほうが、思っていた姿に近かった。そこで、**キャラの基本の1枚は ChatGPT で作り、その絵を見本として Gemini に渡して、表情違いを作る**形を試す（2つの無料枠を分けて使える）。
+
+**あかりの見た目（決まった）**：ChatGPT で使った指示文のとおり。
+
+- 17歳。あたたかく、やさしく、少しだけ切なさのある顔。いつもそばにいる子
+- 肩くらいのやわらかい栗色の髪、毛先が内巻き、横に流した前髪。後ろの一部を細い赤いリボンでハーフアップ
+- 左側に小さな赤い金魚の髪留め（少し古びている。子どものころから持っている物）
+- 白いシャツに夕焼け色の赤いリボン、クリーム色のニットのカーディガン（袖が少し長く、手が半分隠れる）、紺のプリーツスカート、紺のハイソックス、茶色のローファー（制服は主人公と同じ学校のもの）
+- 武器：背丈ほどの細い木の杖。先に、赤い金魚の形の小さなガラスの灯籠（金魚ちょうちんのような形）。赤と白の房と小さな鈴。灯籠はあたたかく光り、まわりに淡い青の霜のきらめき（回復と氷の魔法。試作のデータのケア・アイスと同じ）
+- 色：髪 #8A5A3C、金魚の赤 #D9483B、カーディガン #F1E6D2、スカート #2B3552、灯籠の光 #FFC979、霜の青 #BFE3F2、肌 #F6DCC8
+
+ChatGPT で使った指示文（台帳に入れる時は、この全文を書く）：
+
+```
+Character design sheet of an original anime-style heroine for a mobile turn-based JRPG, full body front view, standing in a natural friendly pose with hands holding a staff in front of her, plain off-white background, clean lineart with soft cel shading, about 6 heads tall.
+
+Character: Akari, a 17-year-old Japanese high school girl, the protagonist's childhood friend. Warm, kind, cheerful face with a hint of wistfulness, soft gentle smile, the kind of girl who is always nearby.
+Hair: shoulder-length soft chestnut-brown hair with light inward curls at the ends, side-swept bangs, a small half-up section tied at the back with a thin red ribbon.
+Hair accessory: one small red goldfish-shaped hair clip on the left side, slightly old and worn, like something she has had since childhood.
+Eyes: warm brown eyes, round and gentle, natural, not glowing.
+Outfit: same school uniform style as the protagonist: white dress shirt, dusk-red neck ribbon, a soft cream-colored knit cardigan worn over the shirt with sleeves slightly long covering part of her hands, navy pleated school skirt above the knee, navy knee socks, brown loafers.
+Weapon: a slender wooden prayer staff, about her height, with a small glowing glass lantern at the top shaped like a red goldfish (like a Japanese goldfish paper lantern), a short red-and-white tassel and a tiny bell hanging from it. The lantern emits a soft warm light with a few faint pale-blue frost sparkles around it (she uses healing and ice magic).
+
+Color palette: chestnut hair #8A5A3C, goldfish red #D9483B, cream cardigan #F1E6D2, navy skirt #2B3552, warm lantern light #FFC979, frost blue #BFE3F2, skin #F6DCC8.
+Additional views on the same sheet: back view, 4 facial expressions (bright smile, gentle worried look, lost-in-thought deja vu look gazing into the distance, determined while casting), close-up of the goldfish lantern staff.
+```
+
+- この指示文の書き方（髪・髪飾り・目・服・武器・色の番号を分けて書く）を、ほかのキャラの指示文のひな形にする
+- 気になった点：背景が白ではなく暗い光の背景になった。ゲームで使う立ち絵は、白か透明の背景が要る
 
 ## 5. 音（これから）
 
