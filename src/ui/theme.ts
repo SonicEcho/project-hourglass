@@ -86,3 +86,21 @@ export const SKIN = {
   /** 砂の粒の色（砂色。docs/STORY.md の暗い金より明るい、画面の部品用） */
   sand: 0xe8c784,
 } as const;
+
+/** 動きの長さ（ミリ秒。段階32a 調整1） */
+export const MOTION = {
+  /** 画面に入る時の明転 */
+  enterMs: 320,
+  /** 窓が出る */
+  popMs: 220,
+  /** 窓が消える */
+  closeMs: 130,
+  /** 数を数える・ゲージが動く */
+  countMs: 450,
+} as const;
+
+/** 戦闘で敵のいる場所の地面の色（段階32a 調整1。奥が明るめ、手前が暗い） */
+export const STAGE = {
+  floorTop: 0x2a2f5a,
+  floorBottom: 0x0c0f22,
+} as const;

@@ -67,6 +67,21 @@ try {
   await waitScene('Battle');
   await page.waitForTimeout(1500);
   await shot('4-battle');
+  // 画面に入る演出が終わった後（数秒後）の戦闘
+  await page.waitForTimeout(4000);
+  await shot('4b-battle-later');
+
+  // 武器とムーブメント（文字が小さい画面。はみ出しがないかを見る）
+  for (const [label, scene, name] of [['^武器', 'Weapon', '6-weapon'], ['^ムーブメント', 'Navi', '7-navi']]) {
+    await page.goto(`${base}?debug=1&seed=1`);
+    await waitScene('Title');
+    await page.getByText('DBG', { exact: true }).click();
+    await page.locator('button', { hasText: '試作の5戦を最初から' }).click();
+    await waitScene('Growth');
+    await tap(label);
+    await waitScene(scene);
+    await shot(name);
+  }
 
   await page.evaluate(() => localStorage.setItem('restopia.tips', '[]'));
   await page.goto(`${base}?debug=1&seed=1`);

@@ -7,7 +7,7 @@ import { browserStorage } from '../save/storage';
 import { applyKinsoku } from './kinsoku';
 import { COLORS } from './theme';
 import { addButton, addText } from './widgets';
-import { addWindow } from './skin';
+import { addWindow, fadeOutAndDestroy, popIn } from './skin';
 
 // 初めての人向けの説明の窓（段階30）。見た説明はセーブとは別に覚える（はじめからやり直しても出さない）
 
@@ -47,10 +47,11 @@ export function showTipPanel(scene: Phaser.Scene, tip: TipDef, onClose?: () => v
   c.add(body);
   addButton(scene, c, GAME_WIDTH / 2, y + h - 36, 180, 48, 'わかった', {
     onTap: () => {
-      c.destroy(true);
+      fadeOutAndDestroy(scene, c);
       onClose?.();
     },
   }, { size: 16, bold: true, fill: 0x2f6b3f, stroke: 0x6dff9e });
+  popIn(scene, c);
   return c;
 }
 

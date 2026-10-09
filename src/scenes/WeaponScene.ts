@@ -27,7 +27,7 @@ import { describeCondition, describeDecompose, describeEvolution, describeFragme
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
-import { screenBg, addWindow } from '../ui/skin';
+import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
 //
@@ -60,6 +60,7 @@ export class WeaponScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.selected = null;
@@ -137,6 +138,7 @@ export class WeaponScene extends Phaser.Scene {
       bold: true,
     });
     this.overlay = c;
+    popIn(this, c);
   }
 
   private evolve(evo: EvolutionDef): void {
@@ -408,11 +410,11 @@ export class WeaponScene extends Phaser.Scene {
       else this.root.add(this.add.rectangle(x + 4, y + 4, 11, 11, color, alpha).setOrigin(0).setStrokeStyle(1, 0xffffff, alpha));
       if (recommended.has(id)) this.root.add(addText(this, x + 20, y + 2, '★', { size: 11, bold: true, color: COLORS.accentText }));
       // この武器の進化の鍵になる素材（吸わせると鍵が減る）
-      if (keyItems(this.weapon()).has(id)) this.root.add(addText(this, x + (recommended.has(id) ? 34 : 20), y + 3, '鍵', { size: 9, bold: true, color: '#ffb070' }));
+      if (keyItems(this.weapon()).has(id)) this.root.add(addText(this, x + (recommended.has(id) ? 34 : 20), y + 3, '鍵', { size: 10, bold: true, color: '#ffb070' }));
       this.root.add(addText(this, x + w - 4, y + 2, `×${n}`, { size: 12, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
-      this.root.add(addText(this, x + 4, y + 18, name, { size: 9, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
+      this.root.add(addText(this, x + 4, y + 18, name, { size: 10, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
       const sub = it ? (it.kind === 'material' ? describeGains(it.gains, true) : 'アイテム') : describeFragment(D.fragments[id]);
-      this.root.add(addText(this, x + 4, y + 31, sub, { size: 9, color: COLORS.subText, wrap: w - 6 }));
+      this.root.add(addText(this, x + 4, y + 31, sub, { size: 10, color: COLORS.subText, wrap: w - 6 }));
       makePressable(rect, {
         onTap: () => {
           this.selected = selected ? null : id;
@@ -480,7 +482,7 @@ export class WeaponScene extends Phaser.Scene {
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -500,6 +502,7 @@ export class WeaponScene extends Phaser.Scene {
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 }
 

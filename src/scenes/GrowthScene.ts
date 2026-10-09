@@ -12,7 +12,7 @@ import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
-import { screenBg, addWindow } from '../ui/skin';
+import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -50,6 +50,8 @@ const nodeCenter = (n: GrowthNodeDef) => ({ x: MAP_X + n.col * CELL + CELL / 2, 
 export class GrowthScene extends Phaser.Scene {
   private charId = 'hero';
   private selected: string | null = null;
+  /** 前に出した星の砂の数（段階32a 調整1） */
+  private shownPoints: number | null = null;
   private message = '';
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
@@ -62,6 +64,8 @@ export class GrowthScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
+    this.shownPoints = null;
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.selected = null;
@@ -132,7 +136,11 @@ export class GrowthScene extends Phaser.Scene {
       }),
     );
     this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 6, '星の砂', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
-    this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 20, `${g.points}`, { size: 24, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    const pointsText = addText(this, GAME_WIDTH - SIDE_PADDING, 20, `${g.points}`, { size: 24, bold: true, color: COLORS.accentText }).setOrigin(1, 0);
+    this.root.add(pointsText);
+    // マスを開けて減った時などは、前の数から数えるように動く（段階32a 調整1）
+    countText(this, pointsText, this.shownPoints ?? g.points, g.points, (v) => `${v}`);
+    this.shownPoints = g.points;
 
     // マップの道
     const openable = new Set(openableNodes(GROWTH_MAP, g, this.charId).map((n) => n.id));
@@ -164,7 +172,7 @@ export class GrowthScene extends Phaser.Scene {
       const r = current ? 9 : 6;
       const piece = this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff);
       this.root.add(piece);
-      if (current) this.root.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 9, bold: true }).setOrigin(0.5));
+      if (current) this.root.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
     });
 
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
@@ -415,10 +423,11 @@ ${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
       { enabled: this.rewardChosen.length === picks, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
     this.overlay = c;
+    popIn(this, c);
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -438,6 +447,7 @@ ${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 }
 

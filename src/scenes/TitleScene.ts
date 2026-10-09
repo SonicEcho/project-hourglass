@@ -9,7 +9,7 @@ import { BGM, SE, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
-import { screenBg } from '../ui/skin';
+import { enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 
 /** 保存した日時を「10/7 21:05」の形にする */
 function formatSavedAt(iso: string): string {
@@ -25,6 +25,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     const root = this.add.container(0, 0);
     const cx = GAME_WIDTH / 2;
     root.add(screenBg(this));
@@ -171,7 +172,7 @@ export class TitleScene extends Phaser.Scene {
         this.openTips(group);
       },
     }, { size: 14 });
-    addButton(this, panel, cx + 80, GAME_HEIGHT - 74, 150, 48, '閉じる', { onTap: () => panel.destroy(true) }, { size: 15 });
+    addButton(this, panel, cx + 80, GAME_HEIGHT - 74, 150, 48, '閉じる', { onTap: () => fadeOutAndDestroy(this, panel) }, { size: 15 });
   }
 
   /** 音量の窓。BGM と効果音のボタンを押すたびに 0→25→50→75→100% と変わり、すぐ保存する */
@@ -215,6 +216,7 @@ export class TitleScene extends Phaser.Scene {
     const rows = this.add.container(0, 0);
     panel.add(rows);
     draw();
-    addButton(this, panel, cx, 570, 160, 48, '閉じる', { onTap: () => panel.destroy(true) }, { size: 15 });
+    addButton(this, panel, cx, 570, 160, 48, '閉じる', { onTap: () => fadeOutAndDestroy(this, panel) }, { size: 15 });
+    popIn(this, panel);
   }
 }

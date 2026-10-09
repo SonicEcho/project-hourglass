@@ -5,7 +5,7 @@ import { BOSS_PART_REWARDS, NAVI_PARTS } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { battleAt, rerollSeed, startNewRun } from './run';
-import { screenBg } from '../ui/skin';
+import { enterScreen, screenBg } from '../ui/skin';
 
 export interface ResultSceneData {
   outcome: 'victory' | 'defeat';
@@ -23,6 +23,7 @@ export class ResultScene extends Phaser.Scene {
 
   create(data: ResultSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     const root = this.add.container(0, 0);
     const win = data.outcome === 'victory';
     const cx = GAME_WIDTH / 2;

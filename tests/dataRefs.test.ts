@@ -256,6 +256,14 @@ describe('M1 の台本（段階22）', () => {
     expect(SAND_SOUND.fadeInSec + SAND_SOUND.fadeOutSec).toBeLessThan(SAND_SOUND.durationSec);
   });
 
+  it('行動順の顔は、台帳にある立ち絵を使う（段階32a 調整1）', async () => {
+    const { ALLY_FACE, ASSETS, PARTY } = await import('../src/data');
+    for (const [id, face] of Object.entries(ALLY_FACE)) {
+      expect(PARTY.some((c) => c.id === id), id).toBe(true);
+      expect(ASSETS.find((a) => a.id === face)?.kind, face).toBe('image');
+    }
+  });
+
   it('演出の命令は、ある背景・1枚絵・音・人だけを使う', async () => {
     const { ACTOR_MOTIONS, BACKDROPS, CAST, CGS, EMOTES, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
     for (const m of Object.values(FACE_MOTIONS)) expect(ACTOR_MOTIONS as readonly string[]).toContain(m);

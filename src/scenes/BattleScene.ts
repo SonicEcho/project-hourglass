@@ -41,7 +41,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
 import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
-import { actorLinks, chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -50,7 +50,7 @@ import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
 import { battleTipTriggers, nextBattleSpeed } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
-import { addWindow } from '../ui/skin';
+import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -125,6 +125,8 @@ export class BattleScene extends Phaser.Scene {
 
   create(data: BattleSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
+    resetShownValues();
     this.progress = data.progress ?? run.progress;
     this.encounter = data.encounter;
     const areaBattle = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
@@ -279,6 +281,7 @@ export class BattleScene extends Phaser.Scene {
     });
     addButton(this, c, GAME_WIDTH / 2, y + h - 32, 140, 40, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
     this.overlay = c;
+    popIn(this, c);
   }
 
   private startAuto(tactic: Tactic): void {
@@ -552,7 +555,11 @@ export class BattleScene extends Phaser.Scene {
       case 'damage': {
         const p = unitPosition(s, e.targetId);
         const isAlly = s.allies.some((a) => a.uid === e.targetId);
-        this.popup(p.x, p.y, String(e.amount), isAlly ? COLORS.allyDamage : COLORS.damage, this.special ? 34 : 26);
+        // 弱点を突いた時は、黄色で大きく（段階32a 調整1）
+        const weak = e.affinity === 'weak';
+        this.popup(p.x, p.y, String(e.amount), weak ? COLORS.weak : isAlly ? COLORS.allyDamage : COLORS.damage, (this.special ? 34 : 26) + (weak ? 6 : 0));
+        this.impact(p.x, p.y, weak ? COLORS.accent : isAlly ? 0xff8a7a : 0xffffff);
+        if (weak && !this.special && !this.skipping) this.cameras.main.shake(90, 0.004);
         if (!this.skipping) playSe(this, isAlly ? SE.hit : SE.slash);
         if (this.special && !this.skipping) this.cameras.main.shake(120, 0.006);
         if (e.partId !== undefined && e.partAmount !== undefined) {
@@ -650,12 +657,25 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /** 数字や短い文字を出す。大きめに出て、はねるように縮み、少し上がってから消える（段階32a 調整1） */
   private popup(x: number, y: number, text: string, color: string, size: number): void {
     if (this.skipping) return;
     const t = addText(this, x, y, text, { size, color, bold: true, align: 'center' }).setOrigin(0.5);
-    t.setStroke('#000000', 4);
+    t.setStroke('#0a0e1e', Math.max(4, Math.round(size / 5)));
+    t.setShadow(0, 3, '#000000', 4, true, true);
+    t.setScale(1.5);
     this.fxLayer.add(t);
-    this.tweens.add({ targets: t, y: y - 26, duration: 500, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: t, scale: 1, duration: 260, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: t, y: y - 30, duration: 700, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: t, alpha: 0, delay: 900, duration: 300, onComplete: () => t.active && t.destroy() });
+  }
+
+  /** 当たった所に、輪が広がって消える（段階32a 調整1） */
+  private impact(x: number, y: number, color: number): void {
+    if (this.skipping) return;
+    const ring = this.add.circle(x, y, 10).setStrokeStyle(3, color, 0.9);
+    this.fxLayer.add(ring);
+    this.tweens.add({ targets: ring, scale: 3.2, alpha: 0, duration: 320, ease: 'Cubic.easeOut', onComplete: () => ring.active && ring.destroy() });
   }
 
   private bigText(text: string): void {
@@ -1166,7 +1186,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -1187,6 +1207,7 @@ export class BattleScene extends Phaser.Scene {
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 
   /** 勝敗がついた時。戦闘1の勝利ならボス戦へ、それ以外は結果画面へ */
@@ -1206,6 +1227,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.encounter) {
       this.showEncounterEnd(c, win, result);
       this.overlay = c;
+      popIn(this, c);
       return;
     }
     // 勝った後に進む場所。最後まで終わった時（今はボス）は結果画面へ。次の区画・章へ進む時の画面は、今は星図に戻るだけ（段階13）
@@ -1256,6 +1278,7 @@ export class BattleScene extends Phaser.Scene {
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 240, 60, '結果へ', { onTap: () => this.scene.start('Result', data) }, { size: 18, bold: true });
     }
     this.overlay = c;
+    popIn(this, c);
   }
 
   /** 探索から来た戦闘の終わり（段階25）。勝てば報酬を受け取って探索へ、負ければチェックポイントへ */

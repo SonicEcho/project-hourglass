@@ -9,7 +9,7 @@ import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, hubLineup, lineupBase, run, saveRun } from './run';
-import { screenBg, addWindow } from '../ui/skin';
+import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -46,6 +46,7 @@ export class NaviScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.clearSelection();
@@ -417,7 +418,7 @@ export class NaviScene extends Phaser.Scene {
       rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : COLORS.border);
       this.root.add(rect);
       if (!compact) drawPartShape(this, this.root, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
-      this.root.add(addText(this, x + 4, y + chipH - 16, def.name, { size: 9, color: p.placement ? COLORS.subText : COLORS.text }));
+      this.root.add(addText(this, x + 4, y + chipH - 16, def.name, { size: 10, color: p.placement ? COLORS.subText : COLORS.text }));
       if (p.placement) {
         const owner = p.placement.charId;
         const name = PARTY.find((c) => c.id === owner)?.name.slice(0, 1) ?? '';
@@ -441,7 +442,7 @@ export class NaviScene extends Phaser.Scene {
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -461,5 +462,6 @@ export class NaviScene extends Phaser.Scene {
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 }

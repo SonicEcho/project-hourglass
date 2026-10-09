@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { COLORS, SKIN } from './theme';
+import { COLORS, MOTION, SKIN } from './theme';
 
 // 画面の部品の見た目（段階32a）。絵の素材は使わず、図形で描く。色と形は theme.ts の COLORS と SKIN
 
@@ -42,12 +42,7 @@ function drawBackdrop(scene: Phaser.Scene): Phaser.GameObjects.Graphics {
     g.fillEllipse(GAME_WIDTH / 2, GAME_HEIGHT + 40, GAME_WIDTH * (0.9 + i * 0.25), 260 + i * 70);
   }
   // 砂の粒
-  if (!scene.textures.exists('ui-sand')) {
-    const t = scene.make.graphics({}, false);
-    t.fillStyle(0xffffff, 1).fillCircle(2, 2, 2);
-    t.generateTexture('ui-sand', 4, 4);
-    t.destroy();
-  }
+  ensureSandTexture(scene);
   const sand = scene.add.particles(0, 0, 'ui-sand', {
     x: { min: 0, max: GAME_WIDTH },
     y: { min: 0, max: GAME_HEIGHT },
@@ -89,4 +84,91 @@ export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, 
   }
   c.add(g);
   return c;
+}
+
+/**
+ * 画面に入る時の演出（段階32a 調整1）：暗い藍から明るくなりながら、上から砂がさらさら流れ落ちる。
+ * 自分で暗転・明転をする画面（会話・物語の流れ・日常・探索・時間を返す）では使わない
+ */
+export function enterScreen(scene: Phaser.Scene): void {
+  const bg = Phaser.Display.Color.IntegerToRGB(COLORS.bg);
+  scene.cameras.main.fadeIn(MOTION.enterMs, bg.r, bg.g, bg.b);
+  ensureSandTexture(scene);
+  const veil = scene.add.particles(0, 0, 'ui-sand', {
+    x: { min: 0, max: GAME_WIDTH },
+    y: { min: -20, max: GAME_HEIGHT * 0.4 },
+    speedY: { min: 380, max: 620 },
+    gravityY: 400,
+    scale: { min: 0.4, max: 1 },
+    tint: SKIN.sand,
+    alpha: { start: 0.7, end: 0 },
+    lifespan: { min: 350, max: 650 },
+    emitting: false,
+  });
+  veil.setDepth(900);
+  veil.explode(55);
+  scene.time.delayedCall(1200, () => veil.destroy());
+}
+
+/** 砂の粒の絵（2px の丸）を作る。背景・画面に入る演出・ボタンの反応で使う */
+export function ensureSandTexture(scene: Phaser.Scene): void {
+  if (scene.textures.exists('ui-sand')) return;
+  const t = scene.make.graphics({}, false);
+  t.fillStyle(0xffffff, 1).fillCircle(2, 2, 2);
+  t.generateTexture('ui-sand', 4, 4);
+  t.destroy();
+}
+
+/** ボタンを押した時：その場所に砂の粒が小さく散る（段階32a 調整1） */
+export function sparkAt(scene: Phaser.Scene, x: number, y: number): void {
+  ensureSandTexture(scene);
+  const p = scene.add.particles(0, 0, 'ui-sand', {
+    speed: { min: 40, max: 120 },
+    angle: { min: 0, max: 360 },
+    scale: { start: 0.9, end: 0.2 },
+    tint: SKIN.sand,
+    alpha: { start: 0.9, end: 0 },
+    lifespan: 380,
+    emitting: false,
+  });
+  p.setDepth(950);
+  p.explode(10, x, y);
+  scene.time.delayedCall(500, () => p.destroy());
+}
+
+/** 窓をふわっと出す（画面の真ん中を中心に、少し小さい所から大きくなりながら現れる） */
+export function popIn(scene: Phaser.Scene, c: Phaser.GameObjects.Container): void {
+  const cx = GAME_WIDTH / 2;
+  const cy = GAME_HEIGHT / 2;
+  const set = (v: number) => {
+    const s = 0.94 + 0.06 * v;
+    c.setScale(s).setPosition(cx * (1 - s), cy * (1 - s)).setAlpha(v);
+  };
+  set(0);
+  scene.tweens.addCounter({ from: 0, to: 1, duration: MOTION.popMs, ease: 'Back.easeOut', onUpdate: (t) => set(t.getValue() ?? 1) });
+}
+
+/** 窓をすっと消す（押せなくしてから薄くして消す） */
+export function fadeOutAndDestroy(scene: Phaser.Scene, c: Phaser.GameObjects.Container | undefined): void {
+  if (!c || !c.active) return;
+  c.each((o: Phaser.GameObjects.GameObject) => o.disableInteractive());
+  scene.tweens.add({ targets: c, alpha: 0, duration: MOTION.closeMs, onComplete: () => c.destroy(true) });
+}
+
+/**
+ * 数を数えるように変える（段階32a 調整1）。from から to へ、format で文字にして text に入れる。
+ * from と to が同じなら何もしない
+ */
+export function countText(scene: Phaser.Scene, text: Phaser.GameObjects.Text, from: number, to: number, format: (v: number) => string): void {
+  if (from === to) return;
+  text.setText(format(from));
+  scene.tweens.addCounter({
+    from,
+    to,
+    duration: MOTION.countMs,
+    ease: 'Cubic.easeOut',
+    onUpdate: (t) => {
+      if (text.active) text.setText(format(Math.round(t.getValue() ?? to)));
+    },
+  });
 }

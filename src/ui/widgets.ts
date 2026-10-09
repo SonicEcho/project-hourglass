@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { COLORS, FONT, FONT_HEADING, RENDER_SCALE, SKIN } from './theme';
+import { COLORS, FONT, FONT_HEADING, MOTION, RENDER_SCALE, SKIN } from './theme';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
 // 角の丸い四角をなめらかに描く置き換え（skin.ts）を、どの画面よりも先に入れる
-import './skin';
+import { sparkAt } from './skin';
 
 export const LONG_PRESS_MS = 500;
 
@@ -95,10 +95,11 @@ export function addButton(
 ): Phaser.GameObjects.Rectangle {
   const enabled = opts.enabled ?? true;
   const radius = Math.min(SKIN.buttonRadius, h / 2);
-  const shadow = scene.add.rectangle(x, y + SKIN.shadowOffset, w, h, 0x000000, enabled ? 0.38 : 0.2).setRounded(radius);
+  // 押せないボタンは影と光をなくし、ふちも薄くして、押せるボタンと見分けやすくする（段階32a 調整1）
+  const shadow = scene.add.rectangle(x, y + SKIN.shadowOffset, w, h, 0x000000, enabled ? 0.38 : 0).setRounded(radius);
   const rect = scene.add.rectangle(x, y, w, h, enabled ? (opts.fill ?? COLORS.panelLight) : COLORS.disabled).setRounded(radius);
-  rect.setStrokeStyle(opts.strokeWidth ?? 1, opts.stroke ?? COLORS.border);
-  const sheen = scene.add.rectangle(x, y - h / 4 + 1, w - 6, h / 2 - 3, 0xffffff, enabled ? 0.07 : 0.02).setRounded(Math.max(0, radius - 3));
+  rect.setStrokeStyle(opts.strokeWidth ?? 1, opts.stroke ?? COLORS.border, enabled ? 1 : 0.45);
+  const sheen = scene.add.rectangle(x, y - h / 4 + 1, w - 6, h / 2 - 3, 0xffffff, enabled ? 0.07 : 0).setRounded(Math.max(0, radius - 3));
   const text = addText(scene, x, y, label, {
     size: opts.size ?? 14,
     color: enabled ? (opts.textColor ?? COLORS.text) : COLORS.dimText,
@@ -125,12 +126,24 @@ export function addButton(
         onTap();
       }),
     });
+    // 押して離した時：ボタンが一瞬光り、砂の粒が散る（段階32a 調整1）
+    if (onTap) {
+      rect.on('pointerup', () => {
+        const m = rect.getWorldTransformMatrix();
+        sparkAt(scene, m.tx, m.ty);
+        sheen.setAlpha(1).setFillStyle(0xffffff, 0.3);
+        scene.tweens.add({ targets: sheen, alpha: { from: 1, to: 0.23 }, duration: 240 });
+      });
+    }
   }
   else if (handlers.onLongPress) makePressable(rect, { onLongPress: handlers.onLongPress });
   return rect;
 }
 
 /** HPやMPのバー */
+/**
+ * ゲージ。from を渡すと、その割合から ratio まで滑らかに動く（段階32a 調整1。HP が減る・増える時）
+ */
 export function addBar(
   scene: Phaser.Scene,
   parent: Phaser.GameObjects.Container,
@@ -140,15 +153,32 @@ export function addBar(
   h: number,
   ratio: number,
   color: number,
+  from?: number,
 ): void {
   // 角の丸い溝に、光の筋の入った中身（段階32a）
   const r = h / 2;
-  const fw = Math.max(0, Math.min(1, ratio)) * w;
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
   const bg = scene.add.rectangle(x, y, w, h, COLORS.barBg).setOrigin(0, 0.5).setRounded(r).setStrokeStyle(1, 0x000000, 0.6);
-  parent.add(bg);
-  if (fw <= 0) return;
-  const fill = scene.add.rectangle(x, y, Math.max(fw, h), h, color).setOrigin(0, 0.5).setRounded(r);
-  if (fw < h) fill.setScale(fw / h, 1);
-  const shine = scene.add.rectangle(x + 1, y - h / 4, Math.max(0, fw - 2), Math.max(1, h / 3), 0xffffff, 0.28).setOrigin(0, 0.5);
-  parent.add([fill, shine]);
+  const fill = scene.add.rectangle(x, y, h, h, color).setOrigin(0, 0.5).setRounded(r);
+  const shine = scene.add.rectangle(x + 1, y - h / 4, 1, Math.max(1, h / 3), 0xffffff, 0.28).setOrigin(0, 0.5);
+  parent.add([bg, fill, shine]);
+  const show = (v: number) => {
+    const fw = clamp(v) * w;
+    fill.setVisible(fw > 0).setSize(Math.max(fw, h), h).setScale(fw < h ? fw / h : 1, 1);
+    shine.setVisible(fw > 2).setSize(Math.max(1, fw - 2), Math.max(1, h / 3));
+  };
+  if (from === undefined || clamp(from) === clamp(ratio)) {
+    show(ratio);
+    return;
+  }
+  show(from);
+  scene.tweens.addCounter({
+    from: clamp(from),
+    to: clamp(ratio),
+    duration: MOTION.countMs,
+    ease: 'Cubic.easeOut',
+    onUpdate: (t) => {
+      if (fill.active) show(t.getValue() ?? ratio);
+    },
+  });
 }

@@ -1,16 +1,17 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, skillMpCost } from '../core';
-import { BASIC_ATTACK, CARDS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
 import { summarizePassives } from './naviText';
 import { columnX, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
 import { skillPanelLayout } from './skillLayout';
-import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, toCss } from './theme';
+import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, STAGE, toCss } from './theme';
+import { hasImage } from '../assets/loader';
 import { addBar, addButton, addText, makePressable } from './widgets';
-import { screenBg } from './skin';
+import { countText, screenBg } from './skin';
 
 export type Panel = 'none' | 'skills' | 'other' | 'discard' | 'search';
 
@@ -90,6 +91,20 @@ export interface ViewHandlers {
   detail(title: string, body: string): void;
 }
 
+/** 前に出した HP・MP（段階32a 調整1。描き直す時に、前の値から数えるように動かすため）。戦闘の始めに空にする */
+const shownValues = new Map<string, number>();
+
+export function resetShownValues(): void {
+  shownValues.clear();
+}
+
+/** 前に出した値を返し、今の値を覚える（初めてなら今の値） */
+function previousValue(key: string, now: number): number {
+  const prev = shownValues.get(key) ?? now;
+  shownValues.set(key, now);
+  return prev;
+}
+
 export function drawBattle(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   // 何もない所をタップしたら選び直し
   const bg = screenBg(scene);
@@ -97,6 +112,7 @@ export function drawBattle(scene: Phaser.Scene, root: Phaser.GameObjects.Contain
   if (vm.interactive) makePressable(bg, { onTap: () => h.tapBackground() });
 
   drawTurnOrder(scene, root, vm, h);
+  drawStage(scene, root);
   drawEnemies(scene, root, vm, h);
   drawMessage(scene, root, vm);
   drawAllies(scene, root, vm, h);
@@ -136,12 +152,18 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
       isCurrent ? 0xffffff : isPredicted ? COLORS.accent : isActor ? 0xffffff : COLORS.border,
     );
     const label = units.map((u) => u.name.slice(0, 1)).join('');
-    root.add([circle, addText(scene, cx, cy, label, { size: label.length > 1 ? 11 : 13, bold: true, align: 'center' }).setOrigin(0.5)]);
-    if (unit.side === 'enemy') root.add(addText(scene, cx + r - 4, cy - r + 2, '敵', { size: 9, color: '#ffb0b0' }).setOrigin(0.5));
+    root.add(circle);
+    // 立ち絵がある仲間は顔の絵（段階32a 調整1）。2人並んで動く時と敵は名前の1文字
+    const faceId = unit.side === 'ally' && units.length === 1 ? ALLY_FACE[unit.defId] : undefined;
+    if (faceId && hasImage(scene, faceId)) {
+      root.add(faceImage(scene, faceId, cx, cy, r - 1).setAlpha(entry.tentative ? 0.45 : 1));
+      root.add(scene.add.circle(cx, cy, r).setStrokeStyle(circle.lineWidth, circle.strokeColor));
+    } else root.add(addText(scene, cx, cy, label, { size: label.length > 1 ? 11 : 13, bold: true, align: 'center' }).setOrigin(0.5));
+    if (unit.side === 'enemy') root.add(addText(scene, cx + r - 4, cy - r + 2, '敵', { size: 10, color: '#ffb0b0' }).setOrigin(0.5));
     const charging = unit.side === 'enemy' && !!unit.charging;
     const tag = entry.guard ? '防' : entry.precede ? '先' : entry.tentative ? '?' : charging ? '大技' : '';
-    if (tag) root.add(addText(scene, cx, y + height - 7, tag, { size: 9, bold: true, color: COLORS.accentText }).setOrigin(0.5));
-    if (isPredicted && !tag) root.add(addText(scene, cx, y + height - 7, 'ここ', { size: 9, bold: true, color: COLORS.accentText }).setOrigin(0.5));
+    if (tag) root.add(addText(scene, cx, y + height - 7, tag, { size: 10, bold: true, color: COLORS.accentText }).setOrigin(0.5));
+    if (isPredicted && !tag) root.add(addText(scene, cx, y + height - 7, 'ここ', { size: 10, bold: true, color: COLORS.accentText }).setOrigin(0.5));
     const hit = scene.add.rectangle(cx, cy, Math.max(slot, MIN_TAP), MIN_TAP, 0xffffff, 0.001);
     root.add(hit);
     makePressable(hit, {
@@ -190,6 +212,32 @@ export function unitPosition(s: BattleState, id: string, partId?: string): { x: 
   return { x: columnX(Math.max(0, ai), s.allies.length), y: LAYOUT.allies.y + LAYOUT.allies.h / 2 };
 }
 
+/** 立ち絵から顔を丸く切り出した絵（中心 cx, cy、半径 r） */
+function faceImage(scene: Phaser.Scene, id: string, cx: number, cy: number, r: number): Phaser.GameObjects.Image {
+  const src = scene.textures.get(id).getSourceImage();
+  const size = src.width * FACE_CROP.size;
+  const sx = src.width * FACE_CROP.x;
+  const sy = src.height * FACE_CROP.y;
+  const img = scene.add.image(cx, cy, id).setCrop(sx, sy, size, size);
+  img.setOrigin((sx + size / 2) / src.width, (sy + size / 2) / src.height).setScale((r * 2) / size);
+  const shape = scene.make.graphics({}, false).fillStyle(0xffffff).fillCircle(cx, cy, r);
+  img.setMask(shape.createGeometryMask());
+  img.once(Phaser.GameObjects.Events.DESTROY, () => shape.destroy());
+  return img;
+}
+
+/** 敵のいる場所の舞台（段階32a 調整1）：奥の地平の線と、手前ほど暗くなる地面の帯 */
+function drawStage(scene: Phaser.Scene, root: Phaser.GameObjects.Container): void {
+  const { y, h: height } = LAYOUT.enemies;
+  // 地平は敵の足元の少し上（敵が地面に立って見えるように）
+  const horizon = y + height * 0.6;
+  const g = scene.add.graphics();
+  g.fillGradientStyle(STAGE.floorTop, STAGE.floorTop, STAGE.floorBottom, STAGE.floorBottom, 0, 0, 0.75, 0.75);
+  g.fillRect(0, horizon, GAME_WIDTH, y + height - horizon);
+  g.lineStyle(1, COLORS.accent, 0.18).lineBetween(0, horizon, GAME_WIDTH, horizon);
+  root.add(g);
+}
+
 function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const s = vm.state;
   s.enemies.forEach((enemy, i) => {
@@ -206,12 +254,12 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     known.forEach((el, k) => {
       const ix = cx + (k - (known.length - 1) / 2) * 30;
       const iy = LAYOUT.enemies.y + 22;
-      const icon = scene.add.rectangle(ix, iy, 26, 20, ELEMENT_COLOR[el]).setStrokeStyle(1, 0xffffff);
+      const icon = scene.add.rectangle(ix, iy, 26, 20, ELEMENT_COLOR[el]).setRounded(6).setStrokeStyle(1, 0xffffff);
       const t = addText(scene, ix, iy, ELEMENT_LABEL[el], { size: 11, bold: true, color: '#101820', align: 'center' }).setOrigin(0.5);
       root.add([icon, t]);
     });
     if (known.length > 0) {
-      root.add(addText(scene, cx, LAYOUT.enemies.y + 40, '弱点', { size: 9, color: COLORS.subText }).setOrigin(0.5));
+      root.add(addText(scene, cx, LAYOUT.enemies.y + 40, '弱点', { size: 10, color: COLORS.subText }).setOrigin(0.5));
     }
 
     // 本体をタップする領域（ボスは部位の列を除く）
@@ -224,9 +272,14 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       onLongPress: () => h.detail(enemy.name, enemyDetail(enemy)),
     });
 
+    // 足元の影と、後ろのほのかな光（段階32a 調整1）
+    root.add(scene.add.ellipse(cx, bodyY + radius * 0.92, radius * 1.7, 14, 0x000000, alive ? 0.4 : 0.15));
+    if (alive) for (let k = 3; k >= 1; k--) root.add(scene.add.circle(cx, bodyY, radius + k * 9, color, 0.05));
     const body = scene.add.circle(cx, bodyY, radius, color, alive ? 1 : 0.15);
     body.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
     root.add(body);
+    // 丸い体の、左上の照り（敵の絵が入るまでの図形を、少し立体に見せる）
+    if (alive) root.add(scene.add.ellipse(cx - radius * 0.32, bodyY - radius * 0.38, radius * 0.7, radius * 0.45, 0xffffff, 0.18));
     if (enemy.down && alive) {
       root.add(addText(scene, cx, bodyY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
     } else if (enemy.standUpGuard && alive) {
@@ -246,8 +299,11 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     const nameY = bodyY + radius + 16;
     root.add(addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5));
     const barW = g.withParts ? 220 : Math.min(110, colW - 16);
-    addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp);
-    root.add(addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    const hpFrom = previousValue(`${enemy.uid}:hp`, enemy.hp);
+    addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / enemy.maxHp);
+    const hpText = addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5);
+    root.add(hpText);
+    countText(scene, hpText, hpFrom, enemy.hp, (v) => `${v}/${enemy.maxHp}`);
 
     if (g.withParts) drawParts(scene, root, vm, h, enemy);
   });
@@ -330,10 +386,16 @@ function drawAllies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
       root.add(addText(scene, x0 + 6, y + 25, shown, { size: 10, bold: !!plan, color: plan ? COLORS.text : COLORS.dimText }));
     }
     const barW = w - 12;
-    addBar(scene, root, x0 + 6, y + 46, barW, 6, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp);
-    root.add(addText(scene, x0 + 6, y + 50, `HP ${ally.hp}/${ally.maxHp}`, { size: 10, color: COLORS.subText }));
-    addBar(scene, root, x0 + 6, y + 66, barW, 4, ally.mp / ally.maxMp, COLORS.mp);
-    root.add(addText(scene, x0 + w - 6, y + 50, `MP ${ally.mp}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0));
+    const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
+    const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
+    addBar(scene, root, x0 + 6, y + 46, barW, 6, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / ally.maxHp);
+    const hpText = addText(scene, x0 + 6, y + 50, `HP ${ally.hp}/${ally.maxHp}`, { size: 10, color: COLORS.subText });
+    root.add(hpText);
+    countText(scene, hpText, hpFrom, ally.hp, (v) => `HP ${v}/${ally.maxHp}`);
+    addBar(scene, root, x0 + 6, y + 66, barW, 4, ally.mp / ally.maxMp, COLORS.mp, mpFrom / ally.maxMp);
+    const mpText = addText(scene, x0 + w - 6, y + 50, `MP ${ally.mp}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0);
+    root.add(mpText);
+    countText(scene, mpText, mpFrom, ally.mp, (v) => `MP ${v}`);
     makePressable(panel, {
       onTap: vm.interactive ? () => h.tapAlly(ally.uid) : undefined,
       onLongPress: () => h.detail(ally.name, allyDetail(ally)),
@@ -438,6 +500,9 @@ interface CardOptions {
   h: ViewHandlers;
 }
 
+/** 選んだカードが浮き上がる高さ（段階32a 調整1） */
+const CARD_LIFT = 6;
+
 function drawCard(
   scene: Phaser.Scene,
   root: Phaser.GameObjects.Container,
@@ -448,31 +513,36 @@ function drawCard(
   hgt: number,
   o: CardOptions,
 ): void {
+  const yy = o.selected ? cy - CARD_LIFT : cy;
   const def = card.card;
   const color = cardColor(def);
   const dim = !!o.reservedBy;
-  const rect = scene.add.rectangle(x, cy, w, hgt, dim ? 0x141c25 : COLORS.panel).setRounded(8).setStrokeStyle(o.selected ? 4 : 2, o.selected ? COLORS.select : color);
-  const band = scene.add.rectangle(x, cy - hgt / 2 + 12, w - 4, 20, color, dim ? 0.35 : 0.9);
+  // 選んだカードは少し浮き上がり、下に影が落ちる（段階32a 調整1）
+  if (o.selected) root.add(scene.add.rectangle(x, cy + 4, w, hgt, 0x000000, 0.45).setRounded(8));
+  const rect = scene.add.rectangle(x, yy, w, hgt, dim ? 0x141c25 : COLORS.panel).setRounded(8).setStrokeStyle(o.selected ? 4 : 2, o.selected ? COLORS.select : color);
+  const band = scene.add.rectangle(x, yy - hgt / 2 + 12, w - 4, 20, color, dim ? 0.35 : 0.9).setRounded(6);
+  // 下の端に属性の色をうっすら（カードの縁取り）
+  const foot = scene.add.rectangle(x, yy + hgt / 2 - 4, w - 10, 3, color, dim ? 0.15 : 0.55).setRounded(1.5);
   const type = mainDamageType(def);
   const typeLabel = def.support ? 'サポート' : type ? ELEMENT_LABEL[type] : def.effects.some((e) => e.kind === 'heal') ? '回復' : '補助';
-  root.add([rect, band]);
-  root.add(addText(scene, x, cy - hgt / 2 + 12, typeLabel, { size: def.support ? 9 : 11, bold: true, color: '#101820' }).setOrigin(0.5));
+  root.add([rect, band, foot]);
+  root.add(addText(scene, x, yy - hgt / 2 + 12, typeLabel, { size: def.support ? 10 : 11, bold: true, color: '#101820' }).setOrigin(0.5));
   if (o.inCombo && !dim) {
     const bx = x + w / 2 - 8;
-    const by = cy - hgt / 2 + 32;
+    const by = yy - hgt / 2 + 32;
     root.add(scene.add.circle(bx, by, 7, COLORS.accent));
-    root.add(addText(scene, bx, by, 'C', { size: 9, bold: true, color: '#101820' }).setOrigin(0.5));
+    root.add(addText(scene, bx, by, 'C', { size: 10, bold: true, color: '#101820' }).setOrigin(0.5));
   }
   root.add(
-    addText(scene, x, cy - 6, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4, color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5),
+    addText(scene, x, yy - 6, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4, color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5),
   );
   if (o.reservedBy) {
-    root.add(addText(scene, x, cy + hgt / 2 - 18, `${o.reservedBy}が使う`, { size: 9, bold: true, color: COLORS.accentText, align: 'center', wrap: w - 2 }).setOrigin(0.5));
+    root.add(addText(scene, x, yy + hgt / 2 - 18, `${o.reservedBy}が使う`, { size: 10, bold: true, color: COLORS.accentText, align: 'center', wrap: w - 2 }).setOrigin(0.5));
   } else if (def.support) {
-    root.add(addText(scene, x, cy + hgt / 2 - 18, '行動枠なし', { size: 9, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(scene, x, yy + hgt / 2 - 18, '行動枠なし', { size: 10, color: COLORS.subText }).setOrigin(0.5));
   } else {
-    root.add(addText(scene, x, cy + hgt / 2 - 24, weightLabel(def.weight), { size: 11, color: COLORS.subText }).setOrigin(0.5));
-    drawWeightGauge(scene, root, x, cy + hgt / 2 - 10, def.weight);
+    root.add(addText(scene, x, yy + hgt / 2 - 24, weightLabel(def.weight), { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    drawWeightGauge(scene, root, x, yy + hgt / 2 - 10, def.weight);
   }
   makePressable(rect, {
     onTap: o.interactive ? () => o.h.tapCard(card.uid) : undefined,
