@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { BlipVoice } from '../data';
-import { BGM_LOOPS, WAVE_GAIN } from '../data';
+import { BGM_LOOPS, SAND_SOUND, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
@@ -147,6 +147,48 @@ export function playTick(scene: Phaser.Scene, tock: boolean, gain = 1): void {
   g.gain.value = 1.6 * gain * st.seVolume;
   src.connect(band);
   band.connect(g);
+  g.connect(mgr.destination);
+  src.start(now);
+  src.onended = () => g.disconnect();
+}
+
+/**
+ * 語りの文の、砂がさらさら落ちる音（段階31c）。効果音ラボに合う音がなかったので、秒針の音と同じくその場で作る。
+ * 細かい粒の「チリッ」をたくさん散らし、高い音だけ通す。ふわっと始まり、ゆっくり消える
+ */
+export function playSand(scene: Phaser.Scene): void {
+  const st = getSettings();
+  const mgr = scene.sound;
+  if (st.seVolume <= 0 || mgr.locked || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  const ctx = mgr.context;
+  const now = ctx.currentTime;
+  const { durationSec, grainsPerSec, fadeInSec, fadeOutSec, gain } = SAND_SOUND;
+  const len = Math.floor(ctx.sampleRate * durationSec);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  // 粒：短く減っていく小さな雑音を、ばらばらの時に置く
+  const grainLen = Math.floor(ctx.sampleRate * 0.004);
+  const grains = Math.floor(grainsPerSec * durationSec);
+  for (let g = 0; g < grains; g++) {
+    const at = Math.floor(Math.random() * (len - grainLen));
+    const amp = 0.2 + Math.random() * 0.8;
+    for (let i = 0; i < grainLen; i++) data[at + i] += (Math.random() * 2 - 1) * amp * Math.pow(1 - i / grainLen, 3);
+  }
+  // 粒のすき間を埋める、ごく小さなさーっという音
+  for (let i = 0; i < len; i++) data[i] = data[i] * 0.5 + (Math.random() * 2 - 1) * 0.04;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const high = ctx.createBiquadFilter();
+  high.type = 'highpass';
+  high.frequency.value = 3000;
+  const g = ctx.createGain();
+  const peak = gain * st.seVolume;
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(peak, now + fadeInSec);
+  g.gain.setValueAtTime(peak, now + durationSec - fadeOutSec);
+  g.gain.linearRampToValueAtTime(0, now + durationSec);
+  src.connect(high);
+  high.connect(g);
   g.connect(mgr.destination);
   src.start(now);
   src.onended = () => g.disconnect();

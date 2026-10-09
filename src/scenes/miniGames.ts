@@ -89,6 +89,7 @@ function playShooting(scene: Phaser.Scene, done: (ok: boolean) => void): void {
     const ok = isShootingHit(SHOOTING, scene.time.now - start, shot);
     bullets[shot]?.setFillStyle(0x333333);
     pop(scene, layer, cx, shelfY - 90, 'パン！');
+    playSe(scene, SE.shot);
     if (ok) {
       playSe(scene, SE.hit);
       scene.tweens.add({ targets: target, angle: 80, y: shelfY + 60, alpha: 0.4, duration: 380, ease: 'Quad.easeIn' });
@@ -96,7 +97,7 @@ function playShooting(scene: Phaser.Scene, done: (ok: boolean) => void): void {
       finish(true);
       return;
     }
-    playSe(scene, SE.tap);
+    playSe(scene, SE.miss);
     shot += 1;
     if (shot >= SHOOTING.shots) {
       hint.setText('3発とも、外れ……');
@@ -179,7 +180,7 @@ function playGoldfish(scene: Phaser.Scene, seed: number, done: (ok: boolean) => 
     const t = scene.time.now - start;
     const r = goldfishTap(GOLDFISH, schedule, t, misses);
     if (r === 'caught') {
-      playSe(scene, SE.heal);
+      playSe(scene, SE.splash);
       pop(scene, layer, glow.x, glow.y - 20, 'すくった！', '#ffd84a');
       end(true, 'すくった！');
       return;
@@ -187,7 +188,7 @@ function playGoldfish(scene: Phaser.Scene, seed: number, done: (ok: boolean) => 
     misses += 1;
     poi.setAlpha(1 - misses * 0.25);
     if (r === 'broken') {
-      playSe(scene, SE.tap);
+      playSe(scene, SE.poiBreak);
       pop(scene, layer, cx, 420, 'やぶれた……');
       end(false, 'ポイが、やぶれてしまった……');
       return;

@@ -225,8 +225,18 @@ function backdrop(id: string, title: string, file: string, prompt: string, setti
 const STYLE_PREFIX =
   'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ';
 
-/** 効果音ラボの効果音（段階19）。page は効果音ラボのページ、file はそこの mp3 の名前 */
-function soundEffectLab(id: string, title: string, file: string, page: string, original: string): AssetEntry {
+/**
+ * 効果音ラボの効果音（段階19）。page は効果音ラボのページ、file はそこの mp3 の名前。
+ * 段階31c で足した音は acquiredAt を付ける。edit は手を入れた内容（長い環境音を数秒に切る、音を大きくする、など。規約で改変は可）
+ */
+function soundEffectLab(
+  id: string,
+  title: string,
+  file: string,
+  page: string,
+  original: string,
+  opts: { acquiredAt?: string; edit?: string } = {},
+): AssetEntry {
   return {
     id,
     kind: 'audio',
@@ -239,9 +249,11 @@ function soundEffectLab(id: string, title: string, file: string, page: string, o
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
-    acquiredAt: '2026-10-08',
+    acquiredAt: opts.acquiredAt ?? '2026-10-08',
     termsCopy: 'docs/licenses/soundeffect-lab.md',
-    notes: `元のファイル名：${original}。アプリへの組み込みは規約で許可されている（音源ファイルむき出しでも可）`,
+    notes:
+      `元のファイル名：${original}。アプリへの組み込みは規約で許可されている（音源ファイルむき出しでも可）` +
+      (opts.edit ? `。手を入れた所：${opts.edit}` : ''),
   };
 }
 
@@ -319,6 +331,31 @@ export const ASSETS: AssetEntry[] = [
   soundEffectLab('se.heal', '回復', 'heal.mp3', 'battle', 'magic-cure1.mp3（回復魔法1）'),
   soundEffectLab('se.chest', '宝箱', 'chest.mp3', 'button', 'decision24.mp3（決定ボタンを押す24）'),
   soundEffectLab('se.encounter', '遭遇', 'encounter.mp3', 'button', 'decision20.mp3（決定ボタンを押す20）'),
+  // 段階31c：台本の効果音（src/data/dialogue.ts の SCRIPT_SE）
+  soundEffectLab('se.crowd', '祭りの人混み', 'crowd.mp3', 'environment', 'downtown-night1.mp3（夜の繁華街）', { acquiredAt: '2026-10-09', edit: '1秒目から4秒を切り出し、終わりを1.5秒で消した' }),
+  soundEffectLab('se.classroom', '教室のざわめき', 'classroom.mp3', 'environment', 'high-school-class-room1.mp3（騒がしい高校の教室）', { acquiredAt: '2026-10-09', edit: '0.5秒目から3秒を切り出し、終わりを1.2秒で消した' }),
+  soundEffectLab('se.paper', '紙を広げる', 'paper.mp3', 'various', 'paper-take2.mp3（紙を広げる2）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.shot', '射的のコルク', 'shot.mp3', 'various', 'cork-plug1.mp3（コルク栓を抜く1）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.miss', '外れる', 'miss.mp3', 'battle', 'knife-throw1.mp3（ナイフを投げる）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.water', '水の音', 'water.mp3', 'environment', 'creek1.mp3（小川）', { acquiredAt: '2026-10-09', edit: '1秒目から3秒を切り出し、終わりを1.2秒で消した' }),
+  soundEffectLab('se.splash', '水がはねる', 'splash.mp3', 'various', 'lure-drop-down1.mp3（ルアー着水）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.poi_break', 'ポイが破れる', 'poi_break.mp3', 'various', 'paper-tear3.mp3（紙を破く3）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.firework', '打ち上げ花火', 'firework.mp3', 'various', 'fireworks1.mp3（打ち上げ花火1）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.drum', '和太鼓', 'drum.mp3', 'anime', 'drum-japanese1.mp3（和太鼓でドン）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.footsteps', '足音', 'footsteps.mp3', 'various', 'walk-asphalt1.mp3（アスファルトの上を歩く1）', { acquiredAt: '2026-10-09', edit: '0.3秒目から3秒を切り出し、終わりを0.8秒で消し、6dB 大きくした' }),
+  soundEffectLab('se.alarm', '目覚まし時計', 'alarm.mp3', 'machine', 'alerm1.mp3（目覚まし時計のアラーム）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.pan', 'フライパン', 'pan.mp3', 'various', 'fried-egg1.mp3（目玉焼きを焼く）', { acquiredAt: '2026-10-09', edit: '0.5秒目から3秒を切り出し、終わりを1秒で消し、3dB 大きくした' }),
+  soundEffectLab('se.chime', '玄関のチャイム', 'chime.mp3', 'various', 'doorchime1.mp3（ドアチャイム1）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.door_slam', '教室の戸を勢いよく開ける', 'door_slam.mp3', 'various', 'classroom-door-open1.mp3（教室の戸を開ける）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.store_enter', 'コンビニの入店', 'store_enter.mp3', 'various', 'shop-chime1.mp3（入店チャイム）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.bag_open', 'お菓子の袋を開ける', 'bag_open.mp3', 'various', 'sweet-bag-open1.mp3（お菓子の袋を開ける）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.shutter', 'スマホのシャッター', 'shutter.mp3', 'machine', 'camera-shutter2.mp3（カメラのシャッター2）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.send', '送信', 'send.mp3', 'button', 'decision40.mp3（決定ボタンを押す40）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.bell', '扉のベル', 'bell.mp3', 'various', 'bell1.mp3（鈴が鳴る）', { acquiredAt: '2026-10-09', edit: '6dB 大きくした' }),
+  soundEffectLab('se.phone', 'スマホの着信', 'phone.mp3', 'machine', 'mobile-phone-ringtone1.mp3（携帯電話の着信音1）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.noise', 'ノイズ', 'noise.mp3', 'machine', 'snow-noise1.mp3（トランシーバーのノイズ）', { acquiredAt: '2026-10-09', edit: '0.5秒目から0.8秒を切り出し、終わりを0.2秒で消した' }),
+  soundEffectLab('se.hang_up', '電話が切れる', 'hang_up.mp3', 'machine', 'phone-cut1.mp3（電話が切れる1）', { acquiredAt: '2026-10-09' }),
+  soundEffectLab('se.door_open', '扉が開く（砂が吹き上がる）', 'door_open.mp3', 'animal', 'gust-wind1.mp3（突風が吹く）', { acquiredAt: '2026-10-09' }),
   placeholderBgm('bgm.title', 'タイトル', 'title.mp3'),
   placeholderBgm('bgm.festival', '縁日', 'festival.mp3'),
   {

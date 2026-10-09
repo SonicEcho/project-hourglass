@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { audioLatencyMs, getSettings, playBgm, playBlip, playSe, playTick, setSettings, stopBgm } from '../audio/sound';
+import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, setSettings, stopBgm } from '../audio/sound';
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
@@ -298,8 +298,10 @@ export class DialogueScene extends Phaser.Scene {
         else if (SCRIPT_BGM[a]) playBgm(this, SCRIPT_BGM[a]);
         return;
       case 'se': {
+        if (this.skip) return;
         const id = SCRIPT_SE[a];
-        if (id && !this.skip) playSe(this, id);
+        if (id) playSe(this, id);
+        else if (a === 'sand') playSand(this);
         return;
       }
       case 'cast':

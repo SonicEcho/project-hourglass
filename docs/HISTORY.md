@@ -42,6 +42,7 @@
 | 28（M1） | コマ集めと時間を返す（`ReturnScene`、`run.returned`、セーブの版7） | #52 |
 | 29（M1） | 雑魚戦のオートと早送り（`src/sim/tactics.ts`、`Settings.battleSpeed`） | #53 |
 | 30（M1） | 初めての人向けの説明（`src/core/tips.ts`、`src/data/tips.ts`、`src/ui/tipPanel.ts`） | #54 |
+| 31c（M1） | 台本の効果音（効果音ラボの24種類、その場で作る砂の音 `playSand`） | #56 |
 
 ## 以前に挙がった候補（2026-10-09 までの記録）
 
