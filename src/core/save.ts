@@ -17,7 +17,7 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -43,6 +43,8 @@ export interface RunSnapshot {
   explore: ExploreState | null;
   /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3。版5から） */
   linkGauge: ChapterGauge | null;
+  /** 持ち主に返した盗まれた時間（区画の id。返した順。段階28。版7から） */
+  returned: string[];
 }
 
 export interface SaveData {
@@ -82,6 +84,8 @@ export const MIGRATIONS: SaveMigrations = {
   // 版5 → 版6（段階27b）：素材を直接吸わせる形になった。武器の吸わせ枠（absorbed）は、整える時に0で補う。
   // 今のデータにない素材（縁日の古い素材など）は、整える時に捨てる
   5: (raw) => raw,
+  // 版6 → 版7（段階28）：返した時間（returned）を足す。探索の状態のコマは、整える時に0で補う
+  6: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, returned: [] } } : raw),
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -147,6 +151,8 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     vars: stringsOf(raw.vars),
     explore: sanitizeExplore(raw.explore, ctx),
     linkGauge: sanitizeGauge(raw.linkGauge, ctx),
+    // 今の区画にないものと、重なりは捨てる
+    returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
   };
 }
 

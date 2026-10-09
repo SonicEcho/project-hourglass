@@ -48,6 +48,8 @@ export interface CampaignBattle {
   reward: number;
   /** 勝った時にもらえる通常アイテム（段階9） */
   item?: string;
+  /** 勝った時に手に入るコマ（区画の戦闘。盗まれた時間を返すのに使う。段階28） */
+  koma?: number;
   boss?: boolean;
   /** 勝った時に選べるギアの候補（段階8。この中から NAVI_REWARD_PICKS 個） */
   naviReward?: NaviPartId[];

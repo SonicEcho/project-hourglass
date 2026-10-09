@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { AreaDef } from '../../src/core';
 import {
+  addKoma,
   areaGrid,
   findPath,
   isWalkable,
+  komaExtra,
+  komaLeft,
+  komaVars,
   arrive,
   chestAt,
   checkArea,
@@ -45,6 +49,7 @@ const area: AreaDef = {
     { on: 'boss', scene: 'before' },
     { on: 'cleared', scene: 'after' },
   ],
+  komaNeed: 5,
 };
 
 describe('探索（段階25）', () => {
@@ -112,8 +117,24 @@ describe('探索（段階25）', () => {
     expect(patrolRoute(areaGrid(area), [[1, 3], [1, 4]])).toEqual([[1, 3], [1, 4]]);
   });
 
+  it('コマ：勝つと増え、返すのに要る残りと、余りがわかる。残りが少なくなると会話が出る（段階28）', () => {
+    let s = startExplore(area);
+    expect(komaLeft(area, s)).toBe(5);
+    s = addKoma(s, 2);
+    expect(komaVars(area, s)).toEqual({ komaHave: '2', komaNeed: '5', komaLeft: '3' });
+    const withLeft = { ...area, triggers: [{ on: 'komaLeft' as const, left: 3, scene: 'left3' }] };
+    expect(pendingTrigger(withLeft, startExplore(area), 'komaLeft')).toBeNull();
+    expect(pendingTrigger(withLeft, s, 'komaLeft')?.scene).toBe('left3');
+    s = addKoma(s, 4);
+    expect(komaLeft(area, s)).toBe(0);
+    expect(komaExtra(area, s)).toBe(1);
+    // そろった後は「あと◯つ」の会話は出ない
+    expect(pendingTrigger(withLeft, s, 'komaLeft')).toBeNull();
+    expect(normalizeExplore(area, { ...s, koma: -1 })?.koma).toBe(0);
+  });
+
   it('セーブから読んだ状態を、今の区画に合わせて整える', () => {
-    const raw = { area: 't', cell: [0, 0], checkpoint: [3, 3], openedChests: ['c1', 'gone'], defeated: ['e1', 'x'], seen: ['first', 'y'], cleared: true };
+    const raw = { area: 't', cell: [0, 0], checkpoint: [3, 3], openedChests: ['c1', 'gone'], defeated: ['e1', 'x'], seen: ['first', 'y'], cleared: true, koma: 3 };
     expect(normalizeExplore(area, raw)).toEqual({
       area: 't',
       cell: [3, 5],
@@ -122,6 +143,7 @@ describe('探索（段階25）', () => {
       defeated: ['e1'],
       seen: ['first'],
       cleared: true,
+      koma: 3,
     });
     expect(normalizeExplore(area, 'x')).toBeNull();
   });

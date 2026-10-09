@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { AreaDef, AreaTrigger, ExploreState, GridCell, GridMap } from '../core';
 import {
   addItems,
+  addKoma,
   areaGrid,
   arrive,
   chestAt,
@@ -9,6 +10,8 @@ import {
   enemyActive,
   findPath,
   isCheckpoint,
+  komaLeft,
+  komaVars,
   loseBattle,
   markTrigger,
   nearestWalkable,
@@ -21,7 +24,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playSe } from '../audio/sound';
-import { AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
+import { AREA_BATTLES, AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -99,8 +102,12 @@ export class ExploreScene extends Phaser.Scene {
 
     let state = run.explore?.area === area.id ? run.explore : startExplore(area);
     let note = '';
+    let komaGot = 0;
     if (data.won) {
-      state = defeatEnemy(state, data.won);
+      // 倒した印の戦闘のコマを手に入れる（段階28。同じ印で2回もらわないよう、まだ倒していなかった時だけ）
+      const battleId = data.won === area.boss.id ? area.boss.battle : area.enemies.find((e) => e.id === data.won)?.battle;
+      if (!state.defeated.includes(data.won)) komaGot = AREA_BATTLES[battleId ?? '']?.koma ?? 0;
+      state = addKoma(defeatEnemy(state, data.won), komaGot);
       if (data.won === area.boss.id) state = { ...state, cleared: true };
     }
     if (data.lost) {
@@ -123,7 +130,8 @@ export class ExploreScene extends Phaser.Scene {
       return;
     }
     // まだ見ていない途中の会話（勝った回数、ボスに勝った後）
-    const pending = (state.cleared ? pendingTrigger(area, state, 'cleared') : null) ?? pendingTrigger(area, state, 'wins');
+    const pending =
+      (state.cleared ? pendingTrigger(area, state, 'cleared') : null) ?? pendingTrigger(area, state, 'wins') ?? pendingTrigger(area, state, 'komaLeft');
     if (pending) {
       this.openTrigger(pending);
       return;
@@ -131,7 +139,13 @@ export class ExploreScene extends Phaser.Scene {
 
     this.draw();
     if (area.bgm) playBgm(this, area.bgm);
-    this.say(note || (data.won ? '砂嵐を倒した' : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'));
+    const left = komaLeft(area, state);
+    this.say(
+      note ||
+        (data.won
+          ? `砂嵐を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${left > 0 ? `あと${left}つで返せる` : 'そろった'}）` : ''}`
+          : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
+    );
     this.cameras.main.fadeIn(300, 0, 0, 0);
   }
 
@@ -235,14 +249,23 @@ export class ExploreScene extends Phaser.Scene {
     cam.ignore(ui);
     uiCam.ignore(world);
 
-    ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 64, 0x000000, 0.55).setOrigin(0));
-    ui.add(addText(this, GAME_WIDTH / 2 + 20, 12, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
+    ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.55).setOrigin(0));
+    ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
+    // コマ：あと何コマで返せるか（段階28）
+    const left = komaLeft(area, this.state);
+    ui.add(
+      addText(this, GAME_WIDTH / 2, 31, left > 0 ? `コマ ${this.state.koma}/${area.komaNeed}（あと${left}つで返せる）` : `コマ ${this.state.koma}/${area.komaNeed}（そろった！）`, {
+        size: 13,
+        bold: true,
+        color: left > 0 ? COLORS.text : COLORS.accentText,
+      }).setOrigin(0.5, 0),
+    );
     // 章の中で引き継いでいる、連携技のつながりゲージ（段階26の調整3）
     if (usableLinks(LINKS, storyLineup().members).length > 0) {
       const g = storyLinkGauge();
       const full = g >= LINK_GAUGE_MAX;
       ui.add(
-        addText(this, GAME_WIDTH / 2 + 20, 36, full ? '連携技：準備OK' : `連携技：つながり ${Math.round((g / LINK_GAUGE_MAX) * 100)}%`, {
+        addText(this, GAME_WIDTH / 2, 54, full ? '連携技：準備OK' : `連携技：つながり ${Math.round((g / LINK_GAUGE_MAX) * 100)}%`, {
           size: 12,
           bold: full,
           color: full ? COLORS.accentText : COLORS.subText,
@@ -254,8 +277,8 @@ export class ExploreScene extends Phaser.Scene {
       addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
     }
     // 案内は上の帯の下に（下に出すと、地図の下の端にいる仲間が隠れる）
-    ui.add(this.add.rectangle(0, 64, GAME_WIDTH, 52, 0x000000, 0.4).setOrigin(0));
-    this.message = addText(this, GAME_WIDTH / 2, 90, '', { size: 14, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5);
+    ui.add(this.add.rectangle(0, 80, GAME_WIDTH, 52, 0x000000, 0.4).setOrigin(0));
+    this.message = addText(this, GAME_WIDTH / 2, 106, '', { size: 14, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5);
     ui.add(this.message);
     this.hubButton = this.add.container(0, 0);
     ui.add(this.hubButton);
@@ -432,10 +455,11 @@ export class ExploreScene extends Phaser.Scene {
     setExplore(this.state);
     const data: DialogueData = {
       scene,
-      vars: run.vars,
+      // コマの値（台本の {komaHave} {komaNeed} {komaLeft}）を足して渡す。物語の値としては覚えない（段階28）
+      vars: { ...run.vars, ...komaVars(this.area, this.state) },
       seed: run.seed,
       next: { key: 'Explore', data: { won: undefined, lost: undefined, seen: undefined, ...back } satisfies ExploreData },
-      onVars: (vars) => setStoryVars(vars),
+      onVars: (vars) => setStoryVars(Object.fromEntries(Object.entries(vars).filter(([k]) => !k.startsWith('koma')))),
     };
     this.scene.start('Dialogue', data);
   }
@@ -461,10 +485,10 @@ export class ExploreScene extends Phaser.Scene {
     this.time.delayedCall(320, () => this.scene.start('Battle', data));
   }
 
-  /** 区画を出て、物語の次の出来事へ */
+  /** 区画を出て、物語の次の出来事（時間を返す）へ。集めたコマは返す画面で使うので、探索の状態は返し終えるまで残す（段階28） */
   private finishArea(): void {
     this.leaving = true;
-    setExplore(null);
+    setExplore(this.state);
     this.scene.start('Flow', { done: true });
   }
 

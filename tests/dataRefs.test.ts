@@ -161,6 +161,10 @@ describe('M1 の物語の流れ（段階23）', () => {
         expect(area, e.id).toBeDefined();
         expect(checkArea(area)).toEqual([]);
         for (const x of [...area.enemies, area.boss]) expect(x.battle in AREA_BATTLES, `${area.id} ${x.battle}`).toBe(true);
+        // コマ（段階28）：全部集めると返すのに足り、雑魚戦だけでは足りない（最後のコマはボスから）
+        const stormKoma = area.enemies.reduce((n, x) => n + (AREA_BATTLES[x.battle]?.koma ?? 0), 0);
+        expect(stormKoma + (AREA_BATTLES[area.boss.battle]?.koma ?? 0), area.id).toBeGreaterThanOrEqual(area.komaNeed);
+        expect(stormKoma, area.id).toBeLessThan(area.komaNeed);
         for (const b of Object.values(AREA_BATTLES)) for (const e of b.enemies) for (const d of e.drops ?? []) expect(d in ITEMS, `${e.id} ${d}`).toBe(true);
         for (const c of area.chests) for (const item of c.items) expect(item in ITEMS, `${c.id} ${item}`).toBe(true);
         for (const scene of [...area.talkers.map((t) => t.scene), ...area.triggers.map((t) => t.scene)]) {
@@ -169,7 +173,7 @@ describe('M1 の物語の流れ（段階23）', () => {
         }
         if (area.image) expect(ASSETS.some((a) => a.id === area.image), area.image).toBe(true);
       }
-      if (e.kind === 'return') expect(e.note, e.id).toBeTruthy();
+      if (e.kind === 'return') expect(AREAS[e.area ?? ''], e.id).toBeDefined();
     }
     for (const id of M1_SCENE_ORDER) expect(reachable.has(id), id).toBe(true);
   });

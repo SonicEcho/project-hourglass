@@ -54,6 +54,8 @@ export const run: {
   explore: ExploreState | null;
   /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3） */
   linkGauge: ChapterGauge | null;
+  /** 持ち主に返した盗まれた時間（区画の id。段階28） */
+  returned: string[];
 } = {
   active: false,
   seed: 0,
@@ -67,6 +69,7 @@ export const run: {
   vars: {},
   explore: null,
   linkGauge: null,
+  returned: [],
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -105,6 +108,7 @@ export function startNewRun(): void {
   run.vars = {};
   run.explore = null;
   run.linkGauge = null;
+  run.returned = [];
   saveRun();
 }
 
@@ -188,6 +192,7 @@ function snapshot(): RunSnapshot {
     vars: run.vars,
     explore: run.explore,
     linkGauge: run.linkGauge,
+    returned: run.returned,
   };
 }
 
@@ -242,6 +247,7 @@ export function continueRun(): boolean {
   run.vars = s.vars;
   run.explore = s.explore;
   run.linkGauge = s.linkGauge;
+  run.returned = s.returned;
   run.active = true;
   lastWritten = null;
   saveRun();

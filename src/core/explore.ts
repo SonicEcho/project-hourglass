@@ -37,6 +37,8 @@ export interface AreaTalker {
 export type AreaTrigger =
   /** 敵に n 回勝った時 */
   | { on: 'wins'; count: number; scene: string }
+  /** 返すのに要るコマの残りが left 以下になった時（まだそろっていない時。段階28） */
+  | { on: 'komaLeft'; left: number; scene: string }
   /** チェックポイントに初めて着いた時 */
   | { on: 'checkpoint'; scene: string }
   /** ボスの印に触れた時（会話の後でボスと戦う） */
@@ -57,6 +59,11 @@ export interface AreaDef {
   boss: AreaBoss;
   talkers: AreaTalker[];
   triggers: AreaTrigger[];
+  /** 盗まれた時間を返すのに要るコマの数（段階28） */
+  komaNeed: number;
+  /** 返す画面の札に書く、盗まれた時間の名前と持ち主（段階28） */
+  timeTitle?: string;
+  owner?: string;
 }
 
 /** 探索の状態（セーブする） */
@@ -73,6 +80,8 @@ export interface ExploreState {
   seen: string[];
   /** ボスに勝ったか */
   cleared: boolean;
+  /** 集めたコマの数（段階28） */
+  koma: number;
 }
 
 /** 区画の歩ける地図。宝箱のマスは通れない（上を歩けない。段階27b の時の調整） */
@@ -93,7 +102,7 @@ export function cellsOf(area: AreaDef, ch: string): GridCell[] {
 export function startExplore(area: AreaDef): ExploreState {
   const start = cellsOf(area, 'S')[0];
   if (!start) throw new Error(`no start in ${area.id}`);
-  return { area: area.id, cell: start, checkpoint: start, openedChests: [], defeated: [], seen: [], cleared: false };
+  return { area: area.id, cell: start, checkpoint: start, openedChests: [], defeated: [], seen: [], cleared: false, koma: 0 };
 }
 
 const same = (a: GridCell, b: GridCell): boolean => a[0] === b[0] && a[1] === b[1];
@@ -150,15 +159,40 @@ export function loseBattle(state: ExploreState): ExploreState {
   return { ...state, cell: state.checkpoint };
 }
 
-/** 今の状態で、まだ見ていない会話のきっかけ（on の種類ごと）。wins は倒した数で決まる */
+/** 今の状態で、まだ見ていない会話のきっかけ（on の種類ごと）。wins は倒した数、komaLeft はコマの残りで決まる */
 export function pendingTrigger(area: AreaDef, state: ExploreState, on: AreaTrigger['on']): AreaTrigger | null {
   const wins = state.defeated.filter((id) => area.enemies.some((e) => e.id === id)).length;
+  const left = komaLeft(area, state);
   return (
     area.triggers.find((t) => {
       if (t.on !== on || state.seen.includes(t.scene)) return false;
-      return t.on !== 'wins' || wins >= t.count;
+      if (t.on === 'wins') return wins >= t.count;
+      if (t.on === 'komaLeft') return left > 0 && left <= t.left;
+      return true;
     }) ?? null
   );
+}
+
+// ---- コマ（段階28） ----
+
+/** コマを手に入れる */
+export function addKoma(state: ExploreState, n: number): ExploreState {
+  return n > 0 ? { ...state, koma: state.koma + n } : state;
+}
+
+/** 返すのにあと何コマ要るか（そろっていれば0） */
+export function komaLeft(area: AreaDef, state: ExploreState): number {
+  return Math.max(0, area.komaNeed - state.koma);
+}
+
+/** 返した後に余るコマ */
+export function komaExtra(area: AreaDef, state: ExploreState): number {
+  return Math.max(0, state.koma - area.komaNeed);
+}
+
+/** 会話に渡す、コマの値（台本の {komaHave} {komaNeed} {komaLeft}） */
+export function komaVars(area: AreaDef, state: ExploreState): Record<string, string> {
+  return { komaHave: String(Math.min(state.koma, area.komaNeed)), komaNeed: String(area.komaNeed), komaLeft: String(komaLeft(area, state)) };
 }
 
 export function markTrigger(state: ExploreState, scene: string): ExploreState {
@@ -194,6 +228,7 @@ export function normalizeExplore(area: AreaDef, raw: unknown): ExploreState | nu
     defeated: ids(r.defeated, [...area.enemies.map((e) => e.id), area.boss.id]),
     seen: ids(r.seen, scenes),
     cleared: r.cleared === true,
+    koma: Number.isInteger(r.koma) && (r.koma as number) > 0 ? (r.koma as number) : 0,
   };
 }
 
@@ -221,5 +256,6 @@ export function checkArea(area: AreaDef): string[] {
   if (dup.length > 0) errors.push(`${area.id}：id が重なっている：${dup.join('、')}`);
   const start = cellsOf(area, 'S')[0];
   if (start && !findPath(map, start, area.boss.cell)) errors.push(`${area.id}：出発点からボスまで歩けない`);
+  if (!(Number.isInteger(area.komaNeed) && area.komaNeed >= 1)) errors.push(`${area.id}：返すのに要るコマの数がない`);
   return errors;
 }

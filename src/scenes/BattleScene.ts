@@ -1162,7 +1162,9 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: rare, scale: { from: 1.6, to: 1 }, duration: 400, ease: 'Back.easeOut' });
       playSe(this, SE.chest);
     }
-    c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5, 0));
+    // コマ（盗まれた時間を返すのに使う。段階28。探索の画面に戻った時に数える）
+    const komaText = def.koma ? `コマ +${def.koma}\n` : '';
+    c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `${komaText}星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5, 0));
     addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80, 240, 60, '探索へ戻る', { onTap: () => this.scene.start(enc.win.key, enc.win.data) }, {
       size: 18,
       bold: true,

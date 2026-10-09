@@ -26,12 +26,13 @@ export const AREA_TALK_RANGE = 1;
  * 並びは出会う順の目安（広場 → 左右の参道 → 社への道 → 社の前）。数値の目安と測った結果は docs/design/battle.md の 13.
  */
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
-  a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, item: ITEMS.potion.id },
-  a11_storm2: { id: 'a11_storm2', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 5, item: ITEMS.ether.id },
-  a11_storm3: { id: 'a11_storm3', name: '砂嵐', enemies: [BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], reward: 6 },
+  a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, item: ITEMS.potion.id, koma: 1 },
+  a11_storm2: { id: 'a11_storm2', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 5, item: ITEMS.ether.id, koma: 2 },
+  a11_storm3: { id: 'a11_storm3', name: '砂嵐', enemies: [BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], reward: 6, koma: 2 },
   // 社への道の砂嵐は少し強い（HP・攻撃・魔力 ×1.2。ボスの手前の山）
-  a11_storm4: { id: 'a11_storm4', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.hiPotion.id },
-  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [GOLDFISH_BOWL_LORD], reward: 8, boss: true },
+  a11_storm4: { id: 'a11_storm4', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.hiPotion.id, koma: 2 },
+  // ボスは最後のコマを抱えこんでいる（2つ。1-1 は合わせて9つで、返すのに8つ。1つ余る）
+  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [GOLDFISH_BOWL_LORD], reward: 8, boss: true, koma: 2 },
 };
 
 export const AREAS: Record<string, AreaDef> = {
@@ -42,6 +43,10 @@ export const AREAS: Record<string, AreaDef> = {
     layout: PROTO_FESTIVAL_LAYOUT,
     image: 'map.festival',
     bgm: BGM.festival,
+    // 返すのに要るコマ（段階28。AREA_BATTLES の koma の合計は9）
+    komaNeed: 8,
+    timeTitle: '金魚の名前',
+    owner: 'ユウマ',
     // 金魚すくいとラムネの屋台の前
     chests: [
       { id: 'a11_chest_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },
@@ -92,7 +97,8 @@ export const AREAS: Record<string, AreaDef> = {
     triggers: [
       { on: 'wins', count: 1, scene: 'a11_first_koma' },
       { on: 'checkpoint', scene: 'a11_checkpoint' },
-      { on: 'wins', count: 3, scene: 'a11_three_left' },
+      // あとコマが3つ以下になった時（台本の「あと{komaLeft}つ」に本当の数が入る。段階28）
+      { on: 'komaLeft', left: 3, scene: 'a11_three_left' },
       { on: 'boss', scene: 'a11_boss' },
       { on: 'cleared', scene: 'a11_last_koma' },
     ],
