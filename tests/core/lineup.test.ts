@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Flow, Lineup } from '../../src/core';
-import { checkLineup, lineupAt, lineupMembers, usableLinks } from '../../src/core';
+import { checkLineup, gaugeInChapter, lineupAt, lineupMembers, usableLinks } from '../../src/core';
 import { AFTERGLOW, createCampaignSetup, CROSS_DRIVE, PARTY } from '../../src/data';
 
 const two: Lineup = { members: ['akari', 'hero'], unlocks: { growth: true, navi: false, weapon: true } };
@@ -39,5 +39,12 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(checkLineup(two, ids)).toEqual([]);
     expect(checkLineup({ ...two, members: [] }, ids)).toEqual(['パーティが空']);
     expect(checkLineup({ ...two, members: ['hero', 'hero', 'riku'] }, ids)).toEqual(['知らない仲間 riku', '仲間が重なっている：hero']);
+  });
+
+  it('引き継ぐつながりゲージは、同じ章の中だけ使える（章が変わると0。段階26の調整3）', () => {
+    expect(gaugeInChapter({ chapter: 'ch1', value: 70 }, 'ch1')).toBe(70);
+    expect(gaugeInChapter({ chapter: 'ch1', value: 70 }, 'ch2')).toBe(0);
+    expect(gaugeInChapter(null, 'ch1')).toBe(0);
+    expect(gaugeInChapter({ chapter: 'ch1', value: 70 }, undefined)).toBe(0);
   });
 });

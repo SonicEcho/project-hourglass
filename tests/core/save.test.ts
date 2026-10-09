@@ -44,6 +44,7 @@ function freshRun(): RunSnapshot {
     event: 'prologue_open',
     vars: {},
     explore: null,
+    linkGauge: null,
   };
 }
 
@@ -151,6 +152,26 @@ describe('セーブ：古い版から直す', () => {
     });
     expect(res.ok && res.save.version).toBe(SAVE_VERSION);
     expect(res.ok && res.save.run.explore).toBeNull();
+  });
+
+  it('版4のセーブ（つながりゲージを引き継がなかった）は、ゲージなしとして読む', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 4;
+      delete raw.run.linkGauge;
+    });
+    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
+    expect(res.ok && res.save.run.linkGauge).toBeNull();
+  });
+
+  it('引き継ぐつながりゲージ：今の流れにない章は捨て、量は0〜満タンにおさめる', () => {
+    const ok = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'ch1', value: 60 }));
+    expect(ok.ok && ok.save.run.linkGauge).toEqual({ chapter: 'ch1', value: 60 });
+    const over = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'ch1', value: 999 }));
+    expect(over.ok && over.save.run.linkGauge).toEqual({ chapter: 'ch1', value: 100 });
+    const gone = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'removed', value: 50 }));
+    expect(gone.ok && gone.save.run.linkGauge).toBeNull();
+    const bad = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'ch1', value: 'a' }));
+    expect(bad.ok && bad.save.run.linkGauge).toBeNull();
   });
 
   it('直す手順がない古い版は読まない', () => {

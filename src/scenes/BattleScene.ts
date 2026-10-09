@@ -44,7 +44,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
-import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, storyLineup } from './run';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -123,6 +123,8 @@ export class BattleScene extends Phaser.Scene {
     this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
     // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
     this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty(this.lineup)));
+    // 探索から来た戦闘は、章の中で貯めたつながりゲージを引き継いで始める（段階26の調整3）
+    if (areaBattle && this.state.links.length > 0) this.state = { ...this.state, linkGauge: storyLinkGauge() };
     logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
@@ -1113,6 +1115,8 @@ export class BattleScene extends Phaser.Scene {
     }
     const gained = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
     run.growth = { ...run.growth, points: run.growth.points + gained };
+    // 残ったつながりゲージは、章の中の次の戦闘へ引き継ぐ（負けた時は、戦う前の量のまま。段階26の調整3）
+    if (this.state.links.length > 0) setStoryLinkGauge(this.state.linkGauge);
     // ギアの報酬は出さない。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
     const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];

@@ -16,17 +16,18 @@ import {
   patrolRoute,
   pendingTrigger,
   startExplore,
+  usableLinks,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playSe } from '../audio/sound';
-import { AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, SE } from '../data';
+import { AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { run, setExplore, setHubReturn, setStoryVars, storyLineup } from './run';
+import { run, setExplore, setHubReturn, setStoryVars, storyLineup, storyLinkGauge } from './run';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
 // 戦闘・会話から戻る時は、この画面をもう一度開く（いる場所や倒した敵は、セーブした探索の状態から戻す）。
@@ -233,7 +234,19 @@ export class ExploreScene extends Phaser.Scene {
     uiCam.ignore(world);
 
     ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 64, 0x000000, 0.55).setOrigin(0));
-    ui.add(addText(this, GAME_WIDTH / 2 + 20, 20, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
+    ui.add(addText(this, GAME_WIDTH / 2 + 20, 12, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
+    // 章の中で引き継いでいる、連携技のつながりゲージ（段階26の調整3）
+    if (usableLinks(LINKS, storyLineup().members).length > 0) {
+      const g = storyLinkGauge();
+      const full = g >= LINK_GAUGE_MAX;
+      ui.add(
+        addText(this, GAME_WIDTH / 2 + 20, 36, full ? '連携技：準備OK' : `連携技：つながり ${Math.round((g / LINK_GAUGE_MAX) * 100)}%`, {
+          size: 12,
+          bold: full,
+          color: full ? COLORS.accentText : COLORS.subText,
+        }).setOrigin(0.5, 0),
+      );
+    }
     addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     if (isDebugEnabled(window.location.search)) {
       addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });

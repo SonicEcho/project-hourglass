@@ -24,13 +24,17 @@ export const HEAL_DIVISOR = 20;
 export const GUARD_DAMAGE_MULTIPLIER = 0.5;
 /** バトンを受けた仲間の追加行動のダメージ・回復量の倍率 */
 export const BATON_MULTIPLIER = 1.25;
-/** 連携技のつながりゲージ（段階26の調整2）。満タンで連携技を1回使える。使うと0に戻る */
+/**
+ * 連携技のつながりゲージ（段階26の調整2）。満タンで連携技を1回使える。使うと0に戻る。
+ * 探索から来た戦闘では、章の中で戦闘をまたいで引き継ぐ（段階26の調整3）
+ */
 export const LINK_GAUGE_MAX = 100;
 /**
  * ゲージが貯まる量：仲間が弱点を突いた（1体ごと）・敵をダウンさせた・バトンタッチした・部位を壊した・仲間が攻撃を受けた（1人ごと）。
  * 連携技そのものでは貯まらない
  */
-export const LINK_GAUGE_GAIN = { weak: 20, down: 15, baton: 15, partBreak: 25, hurt: 5 } as const;
+// 段階26の調整3：引き継ぐようにしたので減らした（20・15・15・25・5 → 12・10・10・20・4）。1-1 の雑魚戦4つで、撃てる時に撃つと約1.2回、温存するとボス戦を満タンで始められる
+export const LINK_GAUGE_GAIN = { weak: 12, down: 10, baton: 10, partBreak: 20, hurt: 4 } as const;
 
 /** 部位を狙った時に本体に入るダメージの割合 */
 export const PART_BODY_RATIO = 0.5;

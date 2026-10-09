@@ -1,4 +1,4 @@
-import type { ArmoryState, BattleState, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import type { ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -10,7 +10,9 @@ import {
   createNavi,
   advanceFlow,
   findEvent,
+  chapterOfEvent,
   firstEventId,
+  gaugeInChapter,
   lineupAt,
   lineupMembers,
   moveToEvent,
@@ -50,6 +52,8 @@ export const run: {
   vars: Record<string, string>;
   /** 探索の状態（探索の途中の時だけ。段階25） */
   explore: ExploreState | null;
+  /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3） */
+  linkGauge: ChapterGauge | null;
 } = {
   active: false,
   seed: 0,
@@ -62,6 +66,7 @@ export const run: {
   event: firstEventId(SLICE_FLOW),
   vars: {},
   explore: null,
+  linkGauge: null,
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -99,6 +104,7 @@ export function startNewRun(): void {
   run.event = firstEventId(SLICE_FLOW);
   run.vars = {};
   run.explore = null;
+  run.linkGauge = null;
   saveRun();
 }
 
@@ -181,6 +187,7 @@ function snapshot(): RunSnapshot {
     event: run.event,
     vars: run.vars,
     explore: run.explore,
+    linkGauge: run.linkGauge,
   };
 }
 
@@ -234,6 +241,7 @@ export function continueRun(): boolean {
   run.event = s.event;
   run.vars = s.vars;
   run.explore = s.explore;
+  run.linkGauge = s.linkGauge;
   run.active = true;
   lastWritten = null;
   saveRun();
@@ -289,6 +297,17 @@ export function setHubReturn(target: SceneTarget | null): void {
 
 export function getHubReturn(): SceneTarget | null {
   return hubReturn;
+}
+
+/** 今の章で引き継いでいるつながりゲージ（別の章で貯めたものは0） */
+export function storyLinkGauge(): number {
+  return gaugeInChapter(run.linkGauge, chapterOfEvent(SLICE_FLOW, run.event)?.id);
+}
+
+/** 戦闘の後に残ったつながりゲージを、今の章のものとして覚える（セーブは呼ぶ側） */
+export function setStoryLinkGauge(value: number): void {
+  const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
+  run.linkGauge = chapter ? { chapter, value } : null;
 }
 
 /** 物語の今の章のパーティ（ハルトとあかり、など） */

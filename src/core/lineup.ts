@@ -34,3 +34,15 @@ export function checkLineup(lineup: Lineup, characterIds: string[]): string[] {
   if (dup.length > 0) errors.push(`仲間が重なっている：${dup.join('、')}`);
   return errors;
 }
+
+/** 戦闘をまたいで引き継ぐ、連携技のつながりゲージ（章の中だけ。段階26の調整3） */
+export interface ChapterGauge {
+  /** 貯めた章（物語の流れの章の id） */
+  chapter: string;
+  value: number;
+}
+
+/** 今の章で使えるゲージの量。別の章で貯めたもの・なければ0（章が変わると0に戻る） */
+export function gaugeInChapter(g: ChapterGauge | null, chapter: string | undefined): number {
+  return g && chapter !== undefined && g.chapter === chapter ? g.value : 0;
+}
