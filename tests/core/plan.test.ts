@@ -14,7 +14,7 @@ import {
   useSupport,
 } from '../../src/core';
 import { CARDS, SKILLS } from '../../src/data';
-import { ally, attackOn, battle, enemy, eventsOf, execute, guard, planAll, withHand } from './helpers';
+import { ally, attackOn, battle, enemy, eventsOf, execute, fullGauge, guard, planAll, withHand } from './helpers';
 
 const three = () =>
   battle({
@@ -84,28 +84,28 @@ describe('連携技の計画', () => {
   const link = { type: 'link' as const, linkId: 'crossDrive' };
 
   it('ハルトとみおの2人分の行動を使う', () => {
-    const s = setPlan(three(), 'hero', link);
+    const s = setPlan(fullGauge(three()), 'hero', link);
     expect(planOf(s, 'hero')).toBe(planOf(s, 'mio'));
     expect(planOf(s, 'hero')?.actorIds).toEqual(['hero', 'mio']);
     expect(planAll(s, { akari: guard }).plans).toHaveLength(2);
   });
 
   it('参加者でない仲間は選べない。相方が倒れていると選べない', () => {
-    expect(getPlanError(three(), 'akari', link)).not.toBeNull();
-    const s = three();
+    expect(getPlanError(fullGauge(three()), 'akari', link)).not.toBeNull();
+    const s = fullGauge(three());
     s.allies[2].hp = 0;
     expect(getPlanError(s, 'hero', link)).not.toBeNull();
   });
 
   it('相方が別の行動を選び直すと、連携技は取り消される', () => {
-    let s = setPlan(three(), 'hero', link);
+    let s = setPlan(fullGauge(three()), 'hero', link);
     s = setPlan(s, 'mio', guard);
     expect(planOf(s, 'hero')).toBeUndefined();
     expect(planOf(s, 'mio')?.action).toEqual(guard);
   });
 
   it('実行すると敵全体にダメージ、手札を2枚引く', () => {
-    let s = planAll(three(), { hero: link, akari: guard });
+    let s = planAll(fullGauge(three()), { hero: link, akari: guard });
     const hand = s.hand.length;
     s = startExecution(s);
     while (s.phase === 'execute' && !eventsOf(s, 'action').some((e) => e.actionId === 'crossDrive')) {

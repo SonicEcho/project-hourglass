@@ -4,6 +4,8 @@ import {
   DEFAULT_ACTION_WEIGHT,
   GUARD,
   GUARD_DAMAGE_MULTIPLIER,
+  LINK_GAUGE_GAIN,
+  LINK_GAUGE_MAX,
   MIN_DAMAGE,
   ONE_MORE_DRAW,
   PART_BODY_RATIO,
@@ -122,6 +124,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     searchChoice: null,
     queue: [],
     extra: null,
+    linkGauge: 0,
     outcome: 'ongoing',
     log: [{ type: 'battleStart', seed: setup.seed }],
   };
@@ -424,7 +427,26 @@ export function getPlanError(s: BattleState, allyId: string, action: PlayerActio
   const actor = findAlly(s, allyId);
   if (!actor || !isAlive(actor)) return 'that ally cannot act';
   const r = validate(s, actor, action, planPool(s, allyId, action));
-  return typeof r === 'string' ? r : null;
+  if (typeof r === 'string') return r;
+  if (r.link) {
+    // 連携技は、つながりゲージが満タンの時だけ。1ラウンドに1つまで（段階26の調整2）
+    if (s.linkGauge < LINK_GAUGE_MAX) return 'link gauge is not full';
+    const members = r.link.members;
+    if (s.plans.some((p) => !p.done && p.action.type === 'link' && !p.actorIds.some((id) => members.includes(id)))) return 'a link is already planned';
+  }
+  return null;
+}
+
+/** つながりゲージを貯める。満タンになった時は linkReady を残す */
+function gainLinkGauge(s: BattleState, amount: number): void {
+  if (s.links.length === 0 || s.linkGauge >= LINK_GAUGE_MAX) return;
+  s.linkGauge = Math.min(LINK_GAUGE_MAX, s.linkGauge + amount);
+  if (s.linkGauge >= LINK_GAUGE_MAX) s.log.push({ type: 'linkReady' });
+}
+
+/** つながりゲージが満タンか（連携技を使えるか） */
+export function linkReady(s: BattleState): boolean {
+  return s.linkGauge >= LINK_GAUGE_MAX;
 }
 
 /** 計画を決める（同じ仲間の前の計画は置き換える。連携技は2人分の計画をまとめて置き換える） */
@@ -738,6 +760,8 @@ function perform(
   if (r.skill) actor.mp -= skillMpCost(actor, r.skill);
   const members = r.link ? r.link.members.map((id) => findAlly(s, id)!) : [actor];
   s.log.push({ type: 'action', actorIds: members.map((m) => m.uid), actionId: r.def.id, name: r.def.name, extra: opts.extra });
+  // 連携技を使うと、つながりゲージは0に戻る
+  if (r.link) s.linkGauge = 0;
 
   const ctx: EffectContext = {
     s,
@@ -745,6 +769,7 @@ function perform(
     attacker: averageStats(members),
     multiplier: opts.boost ? batonMultiplier(actor) : 1,
     combo: action.type === 'combo',
+    link: !!r.link,
     downed: false,
   };
   const target = retarget(s, r.def, 'target' in action ? action.target : undefined);
@@ -816,6 +841,7 @@ export function passBaton(state: BattleState, toAllyId: string): BattleState {
   const s = clone(state);
   const extra = s.extra!;
   s.log.push({ type: 'baton', fromId: extra.actorId, toId: toAllyId });
+  gainLinkGauge(s, LINK_GAUGE_GAIN.baton);
   s.extra = { actorId: toAllyId, chain: [...extra.chain, toAllyId], boost: true };
   return s;
 }
@@ -838,6 +864,8 @@ interface EffectContext {
   multiplier: number;
   /** コンボ（コンボブーストが効く） */
   combo: boolean;
+  /** 連携技（つながりゲージを貯めない） */
+  link: boolean;
   /** この行動で、まだダウンしていなかった敵をダウンさせた */
   downed: boolean;
 }
@@ -863,7 +891,7 @@ function applyEffect(
       const targets =
         def.target === 'ally' && target?.kind === 'ally'
           ? [findAlly(s, target.id)!]
-          : def.target === 'allies'
+          : def.target === 'allies' || effect.allies
             ? livingAllies(s)
             : [ctx.user];
       for (const t of targets) {
@@ -961,7 +989,11 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
     defense: enemy.def,
     random: randomFactor(random(s)),
     affinity,
-    multiplier: ctx.multiplier * passiveDamageMultiplier(ctx.user, type, ctx.combo) * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
+    multiplier:
+      ctx.multiplier *
+      passiveDamageMultiplier(ctx.user, type, ctx.combo) *
+      (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1) *
+      (enemy.down ? (effect.downBonus ?? 1) : 1),
   });
 
   const found = partId !== undefined ? enemy.parts.find((p) => p.id === partId) : undefined;
@@ -989,9 +1021,11 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
 
   if (affinity === 'weak' && type !== 'magic') {
     revealWeakness(s, enemy, type);
+    if (!ctx.link) gainLinkGauge(s, LINK_GAUGE_GAIN.weak);
     if (canBeDowned(enemy)) {
       enemy.down = true;
       ctx.downed = true;
+      if (!ctx.link) gainLinkGauge(s, LINK_GAUGE_GAIN.down);
       s.log.push({ type: 'down', enemyId: enemy.uid });
       if (enemy.charging) {
         // ダウンさせると、ためが解ける。崩された敵は怒り、立ち上がった次の行動ではためずに攻撃する
@@ -1004,6 +1038,7 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
   if (part && part.hp === 0 && !part.broken) {
     part.broken = true;
     s.log.push({ type: 'partBreak', enemyId: enemy.uid, partId: part.id });
+    if (!ctx.link) gainLinkGauge(s, LINK_GAUGE_GAIN.partBreak);
     if (enemy.charging && enemy.actions.find((a) => a.id === enemy.charging)?.requiresPart === part.id) {
       // ためていた大技を使う部位が壊れた
       enemy.charging = null;
@@ -1029,6 +1064,7 @@ function damageAlly(s: BattleState, enemy: EnemyUnit, action: EnemyActionDef, al
   });
   ally.hp = Math.max(0, ally.hp - amount);
   s.log.push({ type: 'damage', sourceId: enemy.uid, targetId: ally.uid, amount, affinity, hpAfter: ally.hp });
+  gainLinkGauge(s, LINK_GAUGE_GAIN.hurt);
   if (!isAlive(ally)) {
     ally.guarding = false;
     s.log.push({ type: 'defeated', unitId: ally.uid });
@@ -1086,7 +1122,11 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
             defense: enemy.def,
             random: rand,
             affinity,
-            multiplier: multiplier * passiveDamageMultiplier(actor, type, combo) * (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1),
+            multiplier:
+              multiplier *
+              passiveDamageMultiplier(actor, type, combo) *
+              (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1) *
+              (enemy.down ? (effect.downBonus ?? 1) : 1),
           });
         const lo = calc(RANDOM_MIN);
         const hi = calc(RANDOM_MAX);
@@ -1105,7 +1145,7 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
       const allies =
         r.def.target === 'ally' && target?.kind === 'ally'
           ? [findAlly(s, target.id)!]
-          : r.def.target === 'allies'
+          : r.def.target === 'allies' || effect.allies
             ? livingAllies(s)
             : [actor];
       for (const ally of allies) {

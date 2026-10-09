@@ -19,3 +19,8 @@ export function setEnemyHpToOne(state: BattleState, enemyId: string): BattleStat
   if (e && e.hp > 0) e.hp = 1;
   return s;
 }
+
+/** つながりゲージを満タンにする（連携技を試す。段階26の調整2） */
+export function fillLinkGauge(state: BattleState, max: number): BattleState {
+  return { ...structuredClone(state), linkGauge: max };
+}

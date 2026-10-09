@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
-import { healAllAllies, setEnemyHpToOne } from './cheats';
+import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addItems, addParts, defeatEnemy, flowEvents } from '../core';
-import { AREAS, ITEMS, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -77,6 +77,12 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('味方を全回復する', () => {
         if (!battle || !s) return;
         notify(battle.replaceState(healAllAllies(battle.getState())) ? '味方を全回復しました' : '演出中は使えません');
+      }, !!battle),
+    );
+    panel.append(
+      button('つながりゲージを満タンにする（連携技）', () => {
+        if (!battle) return;
+        notify(battle.replaceState(fillLinkGauge(battle.getState(), LINK_GAUGE_MAX)) ? 'つながりゲージを満タンにしました' : '演出中は使えません');
       }, !!battle),
     );
     panel.append(

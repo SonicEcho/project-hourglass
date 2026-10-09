@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Flow, Lineup } from '../../src/core';
 import { checkLineup, lineupAt, lineupMembers, usableLinks } from '../../src/core';
-import { createCampaignSetup, CROSS_DRIVE, PARTY } from '../../src/data';
+import { AFTERGLOW, createCampaignSetup, CROSS_DRIVE, PARTY } from '../../src/data';
 
 const two: Lineup = { members: ['akari', 'hero'], unlocks: { growth: true, navi: false, weapon: true } };
 const all: Lineup = { members: ['hero', 'akari', 'mio'], unlocks: { growth: true, navi: true, weapon: true } };
@@ -12,15 +12,15 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(lineupMembers(PARTY, all).map((c) => c.id)).toEqual(['hero', 'akari', 'mio']);
   });
 
-  it('組む仲間がそろっていない連携技は使えない', () => {
-    expect(usableLinks([CROSS_DRIVE], ['hero', 'akari'])).toEqual([]);
-    expect(usableLinks([CROSS_DRIVE], ['hero', 'akari', 'mio'])).toEqual([CROSS_DRIVE]);
+  it('組む仲間がそろっていない連携技は使えない（1章はアフターグロウだけ）', () => {
+    expect(usableLinks([AFTERGLOW, CROSS_DRIVE], ['hero', 'akari'])).toEqual([AFTERGLOW]);
+    expect(usableLinks([AFTERGLOW, CROSS_DRIVE], ['hero', 'akari', 'mio'])).toEqual([AFTERGLOW, CROSS_DRIVE]);
   });
 
   it('戦闘の設定にも、使える連携技だけが入る', () => {
     const battle = { id: 'b', name: 'b', enemies: [], reward: 0 };
-    expect(createCampaignSetup(battle, 1, lineupMembers(PARTY, two)).links).toEqual([]);
-    expect(createCampaignSetup(battle, 1, PARTY).links).toEqual([CROSS_DRIVE]);
+    expect(createCampaignSetup(battle, 1, lineupMembers(PARTY, two)).links).toEqual([AFTERGLOW]);
+    expect(createCampaignSetup(battle, 1, PARTY).links).toEqual([AFTERGLOW, CROSS_DRIVE]);
   });
 
   it('章のパーティ：なければ前の章のもの、どこにもなければ予備', () => {

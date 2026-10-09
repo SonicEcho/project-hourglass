@@ -38,7 +38,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
 import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
-import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { actorLinks, chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -490,6 +490,10 @@ export class BattleScene extends Phaser.Scene {
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
         return true;
       }
+      case 'linkReady': {
+        this.popup(GAME_WIDTH / 2, LAYOUT.message.y + 10, '連携技 READY!', COLORS.accentText, 24);
+        return true;
+      }
       case 'enraged': {
         const p = unitPosition(s, e.enemyId);
         this.popup(p.x, p.y - 20, '怒り！ためずに攻撃', COLORS.allyDamage, 18);
@@ -889,7 +893,11 @@ export class BattleScene extends Phaser.Scene {
           else if (batonTargets(this.state).length > 0) this.select({ source: 'baton' });
           return;
         }
-        const link = this.state.links[0];
+        // 組める連携技が2つある時は、押すたびに切り替える（段階26の調整2）
+        const mine = this.actor() ? actorLinks(this.state, this.actor()!.uid) : [];
+        const cur = this.selection?.pending.source === 'link' ? this.selection.pending.linkId : undefined;
+        const i = mine.findIndex((l) => l.id === cur);
+        const link = mine[(i + 1) % mine.length];
         if (link) this.select({ source: 'link', linkId: link.id });
       },
       confirm: () => void this.confirmSelection(),
@@ -972,6 +980,7 @@ export class BattleScene extends Phaser.Scene {
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
       skillPage: actor && this.skillPage.actorId === actor.uid ? this.skillPage.page : 0,
       selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
+      selectedLinkId: sel?.pending.source === 'link' ? sel.pending.linkId : undefined,
       comboCardUids: this.selectedComboCards(s),
       selectedTarget: sel?.target,
       batonMode: interactive && sel?.pending.source === 'baton',

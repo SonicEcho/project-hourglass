@@ -192,7 +192,7 @@ describe('パーティと育成の開放（段階26）', () => {
       for (const seed of [1, 2, 3]) {
         const s = autoPlay(createBattle(createCampaignSetup(battle, seed, two)), seed);
         expect(s.allies.map((a) => a.uid), battle.id).toEqual(['hero', 'akari']);
-        expect(s.links, battle.id).toEqual([]);
+        expect(s.links.map((l) => l.id), battle.id).toEqual(['afterglow']);
         expect(s.outcome, `${battle.id} ${seed}`).not.toBe('ongoing');
       }
     }

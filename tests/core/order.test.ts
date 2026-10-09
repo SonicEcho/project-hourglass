@@ -50,7 +50,7 @@ describe('ラウンドの行動順', () => {
 
   it('連携技は2人で1つ。速さは遅い方 ÷ 1.5', () => {
     const s = battle({ allies: [ally('hero', { spd: 12 }), ally('mio', { spd: 16 })], enemies: [enemy('e', { spd: 9 })] });
-    const linked = setPlan(s, 'hero', { type: 'link', linkId: 'crossDrive' });
+    const linked = setPlan({ ...s, linkGauge: 100 }, 'hero', { type: 'link', linkId: 'crossDrive' });
     // 12 ÷ 1.5 = 8 → 敵（9）より後
     expect(ids(linked)).toEqual(['enemy0', 'hero+mio']);
   });
