@@ -27,6 +27,8 @@ import { describeCondition, describeDecompose, describeEvolution, describeFragme
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
+import { addIcon } from '../ui/icons';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
 //
@@ -49,6 +51,8 @@ export class WeaponScene extends Phaser.Scene {
   private page = 0;
   /** 選んでいる素材・アイテム、または記憶の欠片 */
   private selected: string | null = null;
+  /** 素材・欠片の並びの場所（吸わせる演出の出どころ。描くたびに覚え直す） */
+  private itemSpots = new Map<string, { x: number; y: number; color: number }>();
   private message = '';
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
@@ -59,6 +63,7 @@ export class WeaponScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.selected = null;
@@ -90,7 +95,9 @@ export class WeaponScene extends Phaser.Scene {
     this.message = `${before}に${D.items[id].name}を吸わせた（${describeGains(D.items[id].gains)}）`;
     console.log('[weapon] absorb', this.charId, id, JSON.stringify(this.weapon().params));
     if ((run.armory.items[id] ?? 0) <= 0) this.selected = null;
+    const spot = this.itemSpots.get(id);
     this.render();
+    if (spot) this.playAbsorb(spot);
   }
 
   /** 要らない素材を時分解して、記憶の欠片にする */
@@ -113,7 +120,9 @@ export class WeaponScene extends Phaser.Scene {
     this.message = `${before}に記憶の欠片（${D.fragments[id].name}）を吸わせた（${describeFragment(D.fragments[id])}。枠は使わない）`;
     console.log('[weapon] feed', this.charId, id, JSON.stringify(this.weapon().params));
     if ((run.armory.fragments[id] ?? 0) <= 0) this.selected = null;
+    const spot = this.itemSpots.get(id);
     this.render();
+    if (spot) this.playAbsorb(spot);
   }
 
   private confirmEvolve(evo: EvolutionDef): void {
@@ -121,7 +130,7 @@ export class WeaponScene extends Phaser.Scene {
     const c = this.add.container(0, 0).setDepth(200);
     c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive());
     const top = 270;
-    c.add(this.add.rectangle(20, top, GAME_WIDTH - 40, 250, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent));
+    c.add(addWindow(this, 20, top, GAME_WIDTH - 40, 250));
     c.add(addText(this, GAME_WIDTH / 2, top + 18, `${evo.name}に進化する？`, { size: 18, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     c.add(
       addText(this, 40, top + 56, `${describeEvolution(evo, hubLineup().unlocks.navi ? D.boardExtension : 0)}\n\n進化は1回だけ。戻せない`, { size: 13, wrap: GAME_WIDTH - 80 }),
@@ -136,6 +145,7 @@ export class WeaponScene extends Phaser.Scene {
       bold: true,
     });
     this.overlay = c;
+    popIn(this, c);
   }
 
   private evolve(evo: EvolutionDef): void {
@@ -148,6 +158,47 @@ export class WeaponScene extends Phaser.Scene {
     this.render();
     this.playEvolution(before, evo.name);
   }
+
+  /**
+   * 吸わせる演出（段階32a 調整2）：素材の場所から光の粒が武器の枠へ吸い込まれ、武器が光る
+   */
+  private playAbsorb(from: { x: number; y: number; color: number }): void {
+    const width = GAME_WIDTH - SIDE_PADDING * 2;
+    const tx = SIDE_PADDING + width / 2;
+    const ty = CARD_TOP + 68;
+    ensureSandTexture(this);
+    // 素材の場所から武器の枠へ飛んでいく光の粒（白い芯と、素材の色の粒）
+    const flow = (tint: number, scale: number) =>
+      this.add
+        .particles(from.x, from.y, 'ui-sand', {
+          x: { min: -18, max: 18 },
+          y: { min: -10, max: 10 },
+          // 行き先は、粒を出す場所（素材）からの相対の位置で書く
+          moveToX: { min: tx - from.x - 50, max: tx - from.x + 50 },
+          moveToY: { min: ty - from.y - 14, max: ty - from.y + 14 },
+          scale: { start: scale, end: scale * 0.4 },
+          tint,
+          alpha: { start: 1, end: 0.6 },
+          lifespan: 480,
+          frequency: 18,
+          quantity: 2,
+          duration: 300,
+        })
+        .setDepth(150);
+    const glowDots = flow(from.color, 3);
+    const coreDots = flow(0xffffff, 1.6);
+    this.time.delayedCall(1000, () => {
+      glowDots.destroy();
+      coreDots.destroy();
+    });
+    // 粒が届いたら、武器の枠が光る
+    this.time.delayedCall(700, () => {
+      const glow = this.add.rectangle(SIDE_PADDING, CARD_TOP, width, 136, from.color, 0.35).setOrigin(0).setRounded(8).setDepth(140);
+      this.tweens.add({ targets: glow, alpha: 0, duration: 420, onComplete: () => glow.active && glow.destroy() });
+      sparkAt(this, tx, ty);
+    });
+  }
+
 
   /** 進化の演出：画面が光り、武器の名前が変わる */
   private playEvolution(before: string, after: string): void {
@@ -164,6 +215,21 @@ export class WeaponScene extends Phaser.Scene {
     this.tweens.add({ targets: name, alpha: 1, scale: 1, delay: 800, duration: 320, ease: 'Back.easeOut' });
     this.tweens.add({ targets: label, alpha: 1, delay: 1000, duration: 200 });
     this.time.delayedCall(800, () => this.cameras.main.shake(220, 0.01));
+    // 光る瞬間に、砂の粒が大きく弾ける（段階32a 調整2）
+    this.time.delayedCall(700, () => {
+      ensureSandTexture(this);
+      const burst = this.add.particles(0, 0, 'ui-sand', {
+        speed: { min: 120, max: 360 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 1.6, end: 0.2 },
+        tint: COLORS.accent,
+        alpha: { start: 1, end: 0 },
+        lifespan: 900,
+        emitting: false,
+      });
+      c.add(burst);
+      burst.explode(70, GAME_WIDTH / 2, 410);
+    });
     const close = () => c.destroy(true);
     this.time.delayedCall(2200, close);
     makePressable(shade, { onTap: close });
@@ -175,8 +241,10 @@ export class WeaponScene extends Phaser.Scene {
     // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
     saveRun();
     this.root.removeAll(true);
-    this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
-    this.root.add(addText(this, SIDE_PADDING, 8, '武器', { size: 17, bold: true }));
+    this.root.add(screenBg(this));
+    // 見出しのアイコン（段階32a 調整2）
+    this.root.add(addIcon(this, 'weapon', SIDE_PADDING + 9, 20, 18, COLORS.accent));
+    this.root.add(addText(this, SIDE_PADDING + 24, 8, '武器', { size: 17, bold: true }));
     this.root.add(
       addText(this, GAME_WIDTH - SIDE_PADDING, 12, `Lv${D.evolveLevel}で条件を満たすと進化`, { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
     );
@@ -210,7 +278,7 @@ export class WeaponScene extends Phaser.Scene {
       const x = SIDE_PADDING + i * (w + gap);
       const active = c.id === this.charId;
       const ws = run.armory.weapons[c.id];
-      const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setOrigin(0);
+      const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
       this.root.add(rect);
       this.root.add(addText(this, x + 8, top + 5, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
@@ -237,7 +305,7 @@ export class WeaponScene extends Phaser.Scene {
     const owner = lineupBase(hubLineup()).find((c) => c.id === this.charId)!;
     const x0 = SIDE_PADDING;
     const width = GAME_WIDTH - SIDE_PADDING * 2;
-    this.root.add(this.add.rectangle(x0, CARD_TOP, width, 136, COLORS.panel).setOrigin(0).setStrokeStyle(w.evolvedTo ? 2 : 1, w.evolvedTo ? COLORS.accent : COLORS.border));
+    this.root.add(this.add.rectangle(x0, CARD_TOP, width, 136, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(w.evolvedTo ? 2 : 1, w.evolvedTo ? COLORS.accent : COLORS.border));
     this.root.add(addText(this, x0 + 10, CARD_TOP + 8, weaponName(D, w), { size: 18, bold: true, color: w.evolvedTo ? COLORS.accentText : COLORS.text }));
     this.root.add(addText(this, x0 + width - 10, CARD_TOP + 12, `${owner.name}の武器`, { size: 11, color: COLORS.subText }).setOrigin(1, 0));
 
@@ -257,8 +325,9 @@ export class WeaponScene extends Phaser.Scene {
     PARAM_KEYS.forEach((k, i) => {
       const x = x0 + 10 + i * cw;
       const y = CARD_TOP + 66;
-      this.root.add(this.add.rectangle(x, y, cw - 6, 36, COLORS.panelLight).setOrigin(0).setStrokeStyle(1, PARAM_COLOR[k]));
-      this.root.add(addText(this, x + 6, y + 3, PARAM_LABEL[k], { size: 10, color: toCss(PARAM_COLOR[k]) }));
+      this.root.add(this.add.rectangle(x, y, cw - 6, 36, COLORS.panelLight).setRounded(8).setOrigin(0).setStrokeStyle(1, PARAM_COLOR[k]));
+      this.root.add(addIcon(this, k === 'atk' ? 'physical' : k, x + 11, y + 10, 10, PARAM_COLOR[k]));
+      this.root.add(addText(this, x + 19, y + 3, PARAM_LABEL[k], { size: 10, color: toCss(PARAM_COLOR[k]) }));
       const v = w.params[k];
       const extra = k === 'atk' ? '' : v > 0 ? ` +${Math.round(v * D.elementRate * 100)}%` : '';
       this.root.add(addText(this, x + 6, y + 16, `${v}${extra}`, { size: 14, bold: true }));
@@ -302,7 +371,7 @@ export class WeaponScene extends Phaser.Scene {
       const locked = !!w.evolvedTo && !chosen;
       const checks = evolutionChecks(D, w, evo, run.armory.items);
       const ok = !w.evolvedTo && checks.every((c) => c.ok);
-      const rect = this.add.rectangle(x0, y, width, EVO_H, chosen ? 0x3a3214 : COLORS.panel, locked ? 0.5 : 1).setOrigin(0);
+      const rect = this.add.rectangle(x0, y, width, EVO_H, chosen ? 0x3a3214 : COLORS.panel, locked ? 0.5 : 1).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(chosen || ok ? 2 : 1, chosen || ok ? COLORS.accent : COLORS.border);
       this.root.add(rect);
       this.root.add(
@@ -398,7 +467,8 @@ export class WeaponScene extends Phaser.Scene {
       const x = SIDE_PADDING + (i % cols) * (w + gap);
       const y = FRAG_TOP + 36 + Math.floor(i / cols) * (h + gap);
       const selected = this.selected === id;
-      const rect = this.add.rectangle(x, y, w, h, n > 0 ? COLORS.panelLight : COLORS.panel).setOrigin(0);
+      this.itemSpots.set(id, { x: x + w / 2, y: y + h / 2, color });
+      const rect = this.add.rectangle(x, y, w, h, n > 0 ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(selected ? 3 : it?.rarity === 'rare' ? 2 : 1, selected ? COLORS.select : n > 0 ? color : COLORS.border);
       this.root.add(rect);
       const alpha = n > 0 ? 1 : 0.3;
@@ -407,11 +477,11 @@ export class WeaponScene extends Phaser.Scene {
       else this.root.add(this.add.rectangle(x + 4, y + 4, 11, 11, color, alpha).setOrigin(0).setStrokeStyle(1, 0xffffff, alpha));
       if (recommended.has(id)) this.root.add(addText(this, x + 20, y + 2, '★', { size: 11, bold: true, color: COLORS.accentText }));
       // この武器の進化の鍵になる素材（吸わせると鍵が減る）
-      if (keyItems(this.weapon()).has(id)) this.root.add(addText(this, x + (recommended.has(id) ? 34 : 20), y + 3, '鍵', { size: 9, bold: true, color: '#ffb070' }));
+      if (keyItems(this.weapon()).has(id)) this.root.add(addText(this, x + (recommended.has(id) ? 34 : 20), y + 3, '鍵', { size: 10, bold: true, color: '#ffb070' }));
       this.root.add(addText(this, x + w - 4, y + 2, `×${n}`, { size: 12, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
-      this.root.add(addText(this, x + 4, y + 18, name, { size: 9, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
+      this.root.add(addText(this, x + 4, y + 18, name, { size: 10, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
       const sub = it ? (it.kind === 'material' ? describeGains(it.gains, true) : 'アイテム') : describeFragment(D.fragments[id]);
-      this.root.add(addText(this, x + 4, y + 31, sub, { size: 9, color: COLORS.subText, wrap: w - 6 }));
+      this.root.add(addText(this, x + 4, y + 31, sub, { size: 10, color: COLORS.subText, wrap: w - 6 }));
       makePressable(rect, {
         onTap: () => {
           this.selected = selected ? null : id;
@@ -479,7 +549,7 @@ export class WeaponScene extends Phaser.Scene {
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -492,13 +562,14 @@ export class WeaponScene extends Phaser.Scene {
     const text = addText(this, 0, 0, body, { size: 14, wrap: w - 32 });
     const h = text.height + 90;
     const y = GAME_HEIGHT / 2 - h / 2;
-    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
+    const panel = addWindow(this, 20, y, w, h);
     const titleText = addText(this, 36, y + 14, title, { size: 17, bold: true, color: COLORS.accentText });
     text.setPosition(36, y + 44);
     const hint = addText(this, GAME_WIDTH / 2, y + h - 16, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5);
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 }
 

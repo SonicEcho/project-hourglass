@@ -58,7 +58,7 @@ export class ReturnScene extends Phaser.Scene {
   private drawCard(done: boolean): void {
     const a = this.area;
     const top = 150;
-    this.root.add(this.add.rectangle(30, top, GAME_WIDTH - 60, 300, CARD).setOrigin(0).setStrokeStyle(2, COLORS.accent));
+    this.root.add(this.add.rectangle(30, top, GAME_WIDTH - 60, 300, CARD).setRounded(8).setOrigin(0).setStrokeStyle(2, COLORS.accent));
     this.root.add(addText(this, GAME_WIDTH / 2, top + 20, '蔵書', { size: 13, color: COLORS.subText }).setOrigin(0.5, 0));
     this.root.add(addText(this, GAME_WIDTH / 2, top + 42, `「${a.timeTitle ?? a.name}」`, { size: 24, bold: true, color: '#fff3d0' }).setOrigin(0.5, 0));
     this.root.add(addText(this, GAME_WIDTH / 2, top + 86, `持ち主　${a.owner ?? '―'}`, { size: 15 }).setOrigin(0.5, 0));

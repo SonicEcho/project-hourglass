@@ -12,6 +12,8 @@ import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { addIcon } from '../ui/icons';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -19,6 +21,8 @@ const CELL = 48;
 const MAP_X = (GAME_WIDTH - CELL * GROWTH_MAP.cols) / 2;
 const MAP_Y = 58;
 const NODE_R = 17;
+/** 星図の夜空（段階32a 調整2）：星を置く高さの範囲、星の数、マスがきらめく間（ミリ秒） */
+const SKY = { top: 52, bottom: 490, stars: 70, twinkleMs: 1300 } as const;
 
 const STAT_LABEL: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻撃', mag: '魔力', def: '防御', spd: '速さ' };
 const STAT_SHORT: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻', mag: '魔', def: '防', spd: '速' };
@@ -49,6 +53,8 @@ const nodeCenter = (n: GrowthNodeDef) => ({ x: MAP_X + n.col * CELL + CELL / 2, 
 export class GrowthScene extends Phaser.Scene {
   private charId = 'hero';
   private selected: string | null = null;
+  /** 前に出した星の砂の数（段階32a 調整1） */
+  private shownPoints: number | null = null;
   private message = '';
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
@@ -61,6 +67,9 @@ export class GrowthScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
+    this.shownPoints = null;
+    this.makeNightSky();
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.selected = null;
@@ -118,12 +127,14 @@ export class GrowthScene extends Phaser.Scene {
     const back = getHubReturn();
     const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
 
-    this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
+    this.root.add(screenBg(this));
 
     // 上：見出しと星の砂
     const next = back ? null : battleAt(run.progress);
     const area = run.explore ? AREAS[run.explore.area] : undefined;
-    this.root.add(addText(this, SIDE_PADDING, 8, '星図', { size: 17, bold: true }));
+    // 見出しのアイコン（段階32a 調整2）
+    this.root.add(addIcon(this, 'star', SIDE_PADDING + 9, 20, 18, COLORS.accent));
+    this.root.add(addText(this, SIDE_PADDING + 24, 8, '星図', { size: 17, bold: true }));
     this.root.add(
       addText(this, SIDE_PADDING, 32, back ? `${area?.name ?? ''}のチェックポイント` : `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
         size: 11,
@@ -131,7 +142,11 @@ export class GrowthScene extends Phaser.Scene {
       }),
     );
     this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 6, '星の砂', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
-    this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 20, `${g.points}`, { size: 24, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    const pointsText = addText(this, GAME_WIDTH - SIDE_PADDING, 20, `${g.points}`, { size: 24, bold: true, color: COLORS.accentText }).setOrigin(1, 0);
+    this.root.add(pointsText);
+    // マスを開けて減った時などは、前の数から数えるように動く（段階32a 調整1）
+    countText(this, pointsText, this.shownPoints ?? g.points, g.points, (v) => `${v}`);
+    this.shownPoints = g.points;
 
     // マップの道
     const openable = new Set(openableNodes(GROWTH_MAP, g, this.charId).map((n) => n.id));
@@ -140,9 +155,11 @@ export class GrowthScene extends Phaser.Scene {
       for (const nb of neighbors(GROWTH_MAP, n.id)) {
         if (nb.id < n.id) continue;
         const both = isOpened(g, this.charId, n.id) && isOpened(g, this.charId, nb.id);
-        lines.lineStyle(both ? 4 : 2, both ? color : 0x2a3b4e, 1);
         const a = nodeCenter(n);
         const b = nodeCenter(nb);
+        // つながった道は、太い薄い光を下に敷いて、うっすら光って見せる（段階32a 調整2）
+        if (both) lines.lineStyle(12, color, 0.16).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(both ? 4 : 2, both ? color : 0x3a4670, both ? 1 : 0.8);
         lines.lineBetween(a.x, a.y, b.x, b.y);
       }
     }
@@ -163,7 +180,7 @@ export class GrowthScene extends Phaser.Scene {
       const r = current ? 9 : 6;
       const piece = this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff);
       this.root.add(piece);
-      if (current) this.root.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 9, bold: true }).setOrigin(0.5));
+      if (current) this.root.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
     });
 
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
@@ -185,6 +202,7 @@ export class GrowthScene extends Phaser.Scene {
             size: 12,
             bold: true,
           });
+          this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, 0x5aa8ff));
         },
       });
     }
@@ -208,6 +226,7 @@ export class GrowthScene extends Phaser.Scene {
               ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }
               : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: 12, bold: true },
           );
+          this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? COLORS.accent : 0xff9a5a));
         },
       });
     }
@@ -236,6 +255,46 @@ export class GrowthScene extends Phaser.Scene {
       },
       { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
+  }
+
+  /**
+   * 星図の後ろの夜空（段階32a 調整2）：小さな星がまたたき、開けたマスがときどききらめく。
+   * 画面を開いた時に1回だけ作る（マスを開けるたびの描き直しでは作り直さない）
+   */
+  private makeNightSky(): void {
+    const { top, bottom } = SKY;
+    for (let i = 0; i < SKY.stars; i++) {
+      const star = this.add.circle(Phaser.Math.Between(4, GAME_WIDTH - 4), Phaser.Math.Between(top, bottom), Math.random() < 0.15 ? 1.4 : 0.8, 0xffffff, 0.2);
+      star.setDepth(-50);
+      this.tweens.add({ targets: star, alpha: { from: 0.15, to: 0.85 }, duration: Phaser.Math.Between(900, 2600), delay: Phaser.Math.Between(0, 2000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+    this.time.addEvent({
+      delay: SKY.twinkleMs,
+      loop: true,
+      callback: () => {
+        const opened = GROWTH_MAP.nodes.filter((n) => isOpened(run.growth, this.charId, n.id));
+        const n = opened[Math.floor(Math.random() * opened.length)];
+        if (!n || this.overlay) return;
+        const { x, y } = nodeCenter(n);
+        // 4つの角の光を、大きくしてから小さくする（形を描き直して動かす）
+        const gx = x + NODE_R * 0.55;
+        const gy = y - NODE_R * 0.55;
+        const glint = this.add.graphics().setDepth(50);
+        this.tweens.addCounter({
+          from: 0,
+          to: 1,
+          duration: 520,
+          onUpdate: (t) => {
+            const r = 7 * Math.sin(Math.PI * (t.getValue() ?? 1));
+            const w = r * 0.22;
+            if (!glint.active) return;
+            glint.clear().fillStyle(0xffffff, 0.95);
+            glint.fillPoints([gx, gy - r, gx + w, gy - w, gx + r, gy, gx + w, gy + w, gx, gy + r, gx - w, gy + w, gx - r, gy, gx - w, gy - w].reduce<Phaser.Math.Vector2[]>((ps, v, i, a) => (i % 2 ? ps : [...ps, new Phaser.Math.Vector2(v, a[i + 1])]), []), true);
+          },
+          onComplete: () => glint.destroy(),
+        });
+      },
+    });
   }
 
   private drawNode(n: GrowthNodeDef, openable: boolean): void {
@@ -282,7 +341,7 @@ export class GrowthScene extends Phaser.Scene {
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = MAP_Y + CELL * GROWTH_MAP.rows + 6;
     const h = 120;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       const lines = [
@@ -328,7 +387,7 @@ export class GrowthScene extends Phaser.Scene {
     party.forEach((c, i) => {
       const x = SIDE_PADDING + i * (w + gap);
       const active = c.id === this.charId;
-      const rect = this.add.rectangle(x, top, w, 72, active ? COLORS.panelLight : COLORS.panel).setOrigin(0);
+      const rect = this.add.rectangle(x, top, w, 72, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
       this.root.add(rect);
       this.root.add(addText(this, x + 8, top + 6, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
@@ -363,7 +422,7 @@ export class GrowthScene extends Phaser.Scene {
     const top = 150;
     const itemH = 104;
     const h = 120 + candidates.length * (itemH + 8) + 70;
-    c.add(this.add.rectangle(14, top, GAME_WIDTH - 28, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent));
+    c.add(addWindow(this, 14, top, GAME_WIDTH - 28, h));
     c.add(addText(this, GAME_WIDTH / 2, top + 16, 'ギアを手に入れた！', { size: 20, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     c.add(
       addText(this, GAME_WIDTH / 2, top + 50, `${candidates.length}つの中から${picks}つ選ぶ（${this.rewardChosen.length}/${picks}）
@@ -377,7 +436,7 @@ export class GrowthScene extends Phaser.Scene {
       const def = currentNaviData().parts[id];
       const y = top + 104 + i * (itemH + 8);
       const chosen = this.rewardChosen.includes(i);
-      const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setOrigin(0);
+      const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(chosen ? 3 : 1, chosen ? 0x6dff9e : COLORS.border);
       c.add(rect);
       drawPartShape(this, c, def, 0, 38, y + 14, 16);
@@ -414,10 +473,11 @@ ${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
       { enabled: this.rewardChosen.length === picks, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
     this.overlay = c;
+    popIn(this, c);
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -430,13 +490,14 @@ ${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
     const text = addText(this, 0, 0, body, { size: 14, wrap: w - 32 });
     const h = text.height + 90;
     const y = GAME_HEIGHT / 2 - h / 2;
-    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
+    const panel = addWindow(this, 20, y, w, h);
     const titleText = addText(this, 36, y + 14, title, { size: 17, bold: true, color: COLORS.accentText });
     text.setPosition(36, y + 44);
     const hint = addText(this, GAME_WIDTH / 2, y + h - 16, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5);
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 }
 

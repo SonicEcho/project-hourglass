@@ -390,6 +390,23 @@ export const ASSETS: AssetEntry[] = [
   soundEffectLab('se.noise', 'ノイズ', 'noise.mp3', 'machine', 'snow-noise1.mp3（トランシーバーのノイズ）', { acquiredAt: '2026-10-09', edit: '0.5秒目から0.8秒を切り出し、終わりを0.2秒で消した' }),
   soundEffectLab('se.hang_up', '電話が切れる', 'hang_up.mp3', 'machine', 'phone-cut1.mp3（電話が切れる1）', { acquiredAt: '2026-10-09' }),
   soundEffectLab('se.door_open', '扉が開く（砂が吹き上がる）', 'door_open.mp3', 'animal', 'gust-wind1.mp3（突風が吹く）', { acquiredAt: '2026-10-09' }),
+  {
+    id: 'font.heading',
+    kind: 'font',
+    title: '見出しとボタンの書体（Zen Maru Gothic Bold）',
+    file: 'assets/fonts/heading.woff2',
+    status: 'final',
+    source: { type: 'free', site: 'Google Fonts', url: 'https://fonts.google.com/specimen/Zen+Maru+Gothic' },
+    author: 'The Zen Maru Gothic Project Authors',
+    license: 'SIL Open Font License 1.1',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-09',
+    termsCopy: 'docs/licenses/zen-maru-gothic-OFL.txt',
+    notes:
+      'ゲームで使う字だけに絞った（scripts/font-subset.py。絞るのはライセンスで許された改変）。予約された書体名（Reserved Font Name）はないが、ゲームの中では RestopiaHeading の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
+  },
   placeholderBgm('bgm.title', 'タイトル', 'title.mp3'),
   placeholderBgm('bgm.festival', '縁日', 'festival.mp3'),
   {
