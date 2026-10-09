@@ -140,9 +140,21 @@ export interface PartDef {
   hp: number;
   /** 破壊で手に入るはずの素材（結果画面に表示するだけ） */
   material: string;
+  /** 破壊すると必ず落とす素材の id（段階27b） */
+  drop?: string;
   /** 破壊すると本体に露出する弱点 */
   revealsWeakness?: Element[];
 }
+
+/** 敵の落とし物の表（段階27b）。倒すと1つ、確率で選ぶ（確率は constants.ts の DROP_RATES） */
+export interface DropTable {
+  common: string;
+  uncommon?: string;
+  rare?: string;
+}
+
+/** 落とし物の種類（fixed は必ず落とすもの、part は部位破壊） */
+export type DropKind = 'common' | 'uncommon' | 'rare' | 'part' | 'fixed';
 
 export type EnemyAi =
   /** 使える行動からランダム */
@@ -159,8 +171,10 @@ export interface EnemyDef {
   actions: EnemyActionDef[];
   parts?: PartDef[];
   ai: EnemyAi;
-  /** 倒すと落とす素材（段階9）の id */
+  /** 倒すと必ず落とす素材（段階9）の id */
   drops?: string[];
+  /** 倒すと確率で落とす素材の表（段階27b） */
+  dropTable?: DropTable;
 }
 
 export interface BattleSetup {
@@ -206,6 +220,7 @@ export interface PartState {
   hp: number;
   broken: boolean;
   material: string;
+  drop?: string;
   revealsWeakness: Element[];
 }
 
@@ -230,8 +245,11 @@ export interface EnemyUnit extends UnitBase {
   ai: EnemyAi;
   /** ボスの「n回に1回は全体攻撃」の数え上げ */
   aiCounter: number;
-  /** 倒すと落とす素材の id */
+  /** 倒すと必ず落とす素材の id */
   drops: string[];
+  dropTable?: DropTable;
+  /** この戦闘で落とした素材（部位破壊と、倒した時。段階27b） */
+  dropped: string[];
 }
 
 export type Unit = AllyUnit | EnemyUnit;
@@ -306,6 +324,8 @@ export type LogEvent =
   | { type: 'chargeBroken'; enemyId: string; reason: 'down' | 'sealed' }
   | { type: 'oneMore'; actorId: string }
   | { type: 'baton'; fromId: string; toId: string }
+  /** 敵が素材を落とした（段階27b） */
+  | { type: 'drop'; enemyId: string; itemId: string; kind: DropKind }
   /** つながりゲージが満タンになった（連携技を使える） */
   | { type: 'linkReady' }
   | { type: 'guard'; actorId: string }

@@ -2,6 +2,7 @@ import type { ActionDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Sta
 import { allBattles } from '../core';
 import {
   AREA_BATTLES,
+  itemSources,
   BOSS_PART_REWARDS,
   CARDS,
   COMBOS,
@@ -23,7 +24,7 @@ import {
 import { describeAction, formatWeight } from '../ui/describe';
 import { ELEMENT_LABEL, weightLabel } from '../ui/labels';
 import { describePart, PART_COLOR_LABEL, STAT_LABEL } from '../ui/naviText';
-import { describeCondition, describeEvolution, describeFragment, describeItemFragments } from '../ui/weaponText';
+import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, RARITY_LABEL } from '../ui/weaponText';
 
 // データの一覧表（段階17）。src/data から docs/data/ の Markdown を作る。手で書き換えない。
 // 作る命令は npm run data:tables。表が今のデータと同じかは tests/dataTables.test.ts が確かめる
@@ -109,7 +110,7 @@ function enemiesPage(): string {
       '敵（区画と試作の周回に出てくるもの。+ は強化版）',
       table(
         ['名前', 'HP', '攻撃', '魔力', '防御', '速さ', '弱点', '耐性', '行動', '落とす素材'],
-        enemies.map((e) => [e.name, e.stats.hp, e.stats.atk, e.stats.mag, e.stats.def, e.stats.spd, elements(e.weaknesses), elements(e.resistances), actions(e), (e.drops ?? []).map(itemName).join('、') || '―']),
+        enemies.map((e) => [e.name, e.stats.hp, e.stats.atk, e.stats.mag, e.stats.def, e.stats.spd, elements(e.weaknesses), elements(e.resistances), actions(e), [...(e.dropTable ? [`いつも ${itemName(e.dropTable.common)}`, e.dropTable.uncommon && `珍しい ${itemName(e.dropTable.uncommon)}`, e.dropTable.rare && `レア ${itemName(e.dropTable.rare)}`] : []), ...(e.drops ?? []).map((d) => `必ず ${itemName(d)}`)].filter(Boolean).join('、') || '―']),
       ),
     ],
     [
@@ -183,7 +184,7 @@ function growthPage(): string {
 function weaponsPage(): string {
   const D = WEAPON_DATA;
   const evolutions = Object.values(D.weapons).flatMap((w) =>
-    w.evolutions.map((e) => [w.name, charName(w.owner), e.name, [`Lv${D.evolveLevel}`, ...e.conditions.map(describeCondition)].join('、'), describeEvolution(e, D.boardExtension)]),
+    w.evolutions.map((e) => [w.name, charName(w.owner), e.name, [`Lv${D.evolveLevel}`, ...e.conditions.map((c) => describeCondition(c, D))].join('、'), describeEvolution(e, D.boardExtension)]),
   );
   return page(
     '武器・素材・記憶の欠片',
@@ -191,13 +192,18 @@ function weaponsPage(): string {
     [
       ['武器と進化先', table(['武器', '持ち主', '進化先', '条件', '効果'], evolutions)],
       [
-        '素材・アイテム',
-        table(['名前', '種類', '時分解すると', '手に入れ方'], Object.values(ITEMS).map((it) => {
-          const from = it.kind === 'material'
-            ? campaignEnemies().filter((e) => e.drops?.includes(it.id)).map((e) => e.name).join('、')
-            : allBattles(STORY).filter((b) => b.item === it.id).map((b) => `${b.name}の勝利`).join('、');
-          return [it.name, it.kind === 'material' ? '素材' : 'アイテム', describeItemFragments(D, it), from || '―'];
-        })),
+        '素材・アイテム（段階27b：素材は直接吸わせる。吸わせ枠を1つ使う）',
+        [
+          `吸わせ枠（累計）：${D.slotsPerLevel.map((n, i) => `Lv${i + 1} で ${n}`).join('、')}。時分解は${D.decomposeCost}つで記憶の欠片1つ。`,
+          '',
+          table(['名前', '種類', '吸わせると', '時分解すると', '手に入れ方'], Object.values(ITEMS).map((it) => [
+            it.name,
+            it.kind === 'material' ? RARITY_LABEL[it.rarity ?? 'common'] : 'アイテム',
+            it.kind === 'material' ? describeGains(it.gains) : '（吸わせられない）',
+            describeDecompose(D, it),
+            itemSources(it.id).join('、') || '―',
+          ])),
+        ].join('\n'),
       ],
       ['記憶の欠片', table(['名前', '1つ吸わせると'], Object.values(D.fragments).map((f) => [f.name, describeFragment(f)]))],
     ],

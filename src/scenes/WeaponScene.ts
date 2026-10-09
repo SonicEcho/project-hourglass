@@ -1,13 +1,29 @@
 import Phaser from 'phaser';
 import type { EvolutionDef, PartColor, WeaponParamKey, WeaponState } from '../core';
-import { canEvolveAny, evolutionChecks, evolveWeapon, feedFragment, fragmentItem, getEvolveError, getFeedError, getFragmentError, tendencyOf, weaponLevel, weaponName } from '../core';
+import {
+  absorbMaterial,
+  canEvolveAny,
+  evolutionChecks,
+  evolveWeapon,
+  feedFragment,
+  fragmentItem,
+  getAbsorbError,
+  getEvolveError,
+  getFeedError,
+  getFragmentError,
+  paramsAfter,
+  tendencyOf,
+  weaponLevel,
+  weaponName,
+  weaponSlots,
+} from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ARMOR_DOG, CAMPAIGN, FROST_BAT, FRAGMENTS, ITEMS, PARTY, SLIME, WEAPON_DATA } from '../data';
+import { FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
-import { describeCondition, describeEvolution, describeFragment, describeItemFragments, itemGains, PARAM_LABEL } from '../ui/weaponText';
+import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 
@@ -28,6 +44,8 @@ export class WeaponScene extends Phaser.Scene {
   private charId = 'hero';
   /** 下の段のタブ */
   private tab: 'items' | 'fragments' = 'items';
+  /** 素材の一覧のページ（多い時） */
+  private page = 0;
   /** 選んでいる素材・アイテム、または記憶の欠片 */
   private selected: string | null = null;
   private message = '';
@@ -61,14 +79,27 @@ export class WeaponScene extends Phaser.Scene {
 
   // ---- 操作 ----
 
+  /** 素材を武器に吸わせる（段階27b） */
+  private absorb(): void {
+    const id = this.selected;
+    if (!id || getAbsorbError(D, run.armory, this.charId, id)) return;
+    const before = weaponName(D, this.weapon());
+    run.armory = absorbMaterial(D, run.armory, this.charId, id);
+    this.message = `${before}に${D.items[id].name}を吸わせた（${describeGains(D.items[id].gains)}）`;
+    console.log('[weapon] absorb', this.charId, id, JSON.stringify(this.weapon().params));
+    if ((run.armory.items[id] ?? 0) <= 0) this.selected = null;
+    this.render();
+  }
+
+  /** 要らない素材を時分解して、記憶の欠片にする */
   private fragment(): void {
     const id = this.selected;
     if (!id || getFragmentError(D, run.armory, id)) return;
     const it = D.items[id];
     run.armory = fragmentItem(D, run.armory, id);
-    this.message = `${it.name}を時分解した → 記憶の欠片（${describeItemFragments(D, it)}）（「記憶の欠片」のタブで吸わせる）`;
+    this.message = `${it.name}を時分解した（${describeDecompose(D, it)}）。「記憶の欠片」のタブで吸わせる`;
     console.log('[weapon] fragment', id, JSON.stringify(run.armory.fragments));
-    if ((run.armory.items[id] ?? 0) <= 0) this.selected = null;
+    if ((run.armory.items[id] ?? 0) < D.decomposeCost) this.selected = null;
     this.render();
   }
 
@@ -77,7 +108,7 @@ export class WeaponScene extends Phaser.Scene {
     if (!id || getFeedError(D, run.armory, this.charId, id)) return;
     const before = weaponName(D, this.weapon());
     run.armory = feedFragment(D, run.armory, this.charId, id);
-    this.message = `${before}に記憶の欠片（${D.fragments[id].name}）を吸わせた（${describeFragment(D.fragments[id])}）`;
+    this.message = `${before}に記憶の欠片（${D.fragments[id].name}）を吸わせた（${describeFragment(D.fragments[id])}。枠は使わない）`;
     console.log('[weapon] feed', this.charId, id, JSON.stringify(this.weapon().params));
     if ((run.armory.fragments[id] ?? 0) <= 0) this.selected = null;
     this.render();
@@ -201,7 +232,7 @@ export class WeaponScene extends Phaser.Scene {
   /** 武器のスナップ：名前、レベルと経験値、パラメータ、傾向 */
   private drawWeapon(): void {
     const w = this.weapon();
-    const owner = PARTY.find((c) => c.id === this.charId)!;
+    const owner = lineupBase(hubLineup()).find((c) => c.id === this.charId)!;
     const x0 = SIDE_PADDING;
     const width = GAME_WIDTH - SIDE_PADDING * 2;
     this.root.add(this.add.rectangle(x0, CARD_TOP, width, 136, COLORS.panel).setOrigin(0).setStrokeStyle(w.evolvedTo ? 2 : 1, w.evolvedTo ? COLORS.accent : COLORS.border));
@@ -231,21 +262,24 @@ export class WeaponScene extends Phaser.Scene {
       this.root.add(addText(this, x + 6, y + 16, `${v}${extra}`, { size: 14, bold: true }));
     });
 
+    // 吸わせ枠（段階27b）
+    const slots = weaponSlots(D, w);
+    this.root.add(
+      addText(this, x0 + 10, CARD_TOP + 110, `吸わせ枠 ${w.absorbed}/${slots}${w.absorbed >= slots ? '（いっぱい。レベルが上がると増える）' : ''}`, {
+        size: 12,
+        bold: true,
+        color: w.absorbed >= slots ? COLORS.allyDamage : COLORS.text,
+      }),
+    );
     // 傾向（ムーブメントが閉じている間は出さない。段階26）
     if (!hubLineup().unlocks.navi) return;
     const t = tendencyOf(w);
     const totals = (Object.entries(w.tendency) as [PartColor, number][]).filter(([, n]) => n > 0);
     this.root.add(
-      addText(this, x0 + 10, CARD_TOP + 110, `ギアの傾向：${t ? PART_COLOR_LABEL[t] : 'なし'}`, { size: 12, bold: true, color: t ? toCss(PART_COLOR[t]) : COLORS.subText }),
+      addText(this, x0 + 200, CARD_TOP + 110, `傾向：${t ? PART_COLOR_LABEL[t] : 'なし'}`, { size: 12, bold: true, color: t ? toCss(PART_COLOR[t]) : COLORS.subText }),
     );
     this.root.add(
-      addText(
-        this,
-        x0 + 140,
-        CARD_TOP + 112,
-        totals.length > 0 ? totals.map(([c, n]) => `${PART_COLOR_LABEL[c]}${n}`).join(' ') : '（勝つたびに、ムーブメントのギアの色が貯まる）',
-        { size: 10, color: COLORS.subText },
-      ),
+      addText(this, x0 + 290, CARD_TOP + 112, totals.map(([c, n]) => `${PART_COLOR_LABEL[c]}${n}`).join(' '), { size: 10, color: COLORS.subText }),
     );
   }
 
@@ -264,7 +298,7 @@ export class WeaponScene extends Phaser.Scene {
       const width = GAME_WIDTH - SIDE_PADDING * 2;
       const chosen = w.evolvedTo === evo.id;
       const locked = !!w.evolvedTo && !chosen;
-      const checks = evolutionChecks(D, w, evo);
+      const checks = evolutionChecks(D, w, evo, run.armory.items);
       const ok = !w.evolvedTo && checks.every((c) => c.ok);
       const rect = this.add.rectangle(x0, y, width, EVO_H, chosen ? 0x3a3214 : COLORS.panel, locked ? 0.5 : 1).setOrigin(0);
       rect.setStrokeStyle(chosen || ok ? 2 : 1, chosen || ok ? COLORS.accent : COLORS.border);
@@ -274,7 +308,7 @@ export class WeaponScene extends Phaser.Scene {
       );
       this.root.add(addText(this, x0 + 10, y + 28, describeEvolution(evo, ext), { size: 10, wrap: width - 120, color: locked ? COLORS.dimText : COLORS.text }));
       if (!w.evolvedTo) {
-        const line = checks.map((c) => `${c.ok ? '✓' : '✗'}${describeCondition(c.condition)}`).join('　');
+        const line = checks.map((c) => `${c.ok ? '✓' : '✗'}${describeCondition(c.condition, D)}`).join('　');
         this.root.add(addText(this, x0 + 10, y + EVO_H - 20, line, { size: 11, bold: true, color: ok ? '#6dff9e' : COLORS.subText }));
       }
       makePressable(rect, {
@@ -285,7 +319,11 @@ export class WeaponScene extends Phaser.Scene {
               describeEvolution(evo, ext),
               '',
               '条件：',
-              ...checks.map((c) => `${c.ok ? '✓' : '✗'} ${describeCondition(c.condition)}`),
+              ...checks.map((c) => `${c.ok ? '✓' : '✗'} ${describeCondition(c.condition, D)}`),
+              // 鍵の素材の手に入れ方（狩りの目的。段階27b）
+              ...evo.conditions.flatMap((c) =>
+                c.kind === 'key' ? ['', `鍵「${D.items[c.item]?.name ?? c.item}」（持っている：${run.armory.items[c.item] ?? 0}。進化すると1つ使う）`, `手に入れ方：${itemSources(c.item).join('、') || '―'}`] : [],
+              ),
               ...(evo.conditions.some((c) => c.kind === 'tendency') ? ['', '傾向：勝った戦闘で、このキャラのムーブメントにはめていたギアの色のうち、いちばん多い色'] : []),
             ].join('\n'),
           ),
@@ -305,14 +343,14 @@ export class WeaponScene extends Phaser.Scene {
     });
   }
 
-  /** 下の段：「素材・アイテム」（時分解）と「記憶の欠片」（吸わせる）の2つのタブ */
+  /** 下の段：「素材」（吸わせる・時分解）と「記憶の欠片」（吸わせる。枠を使わない）の2つのタブ（段階27b） */
   private drawInventory(): void {
     const itemTotal = Object.values(run.armory.items).reduce((a, n) => a + n, 0);
     const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
     const tabW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
     (['items', 'fragments'] as const).forEach((tab, i) => {
       const active = this.tab === tab;
-      const label = tab === 'items' ? `素材・アイテム（${itemTotal}）` : `記憶の欠片（${fragTotal}）`;
+      const label = tab === 'items' ? `素材（${itemTotal}）` : `記憶の欠片（${fragTotal}）`;
       addButton(
         this,
         this.root,
@@ -325,6 +363,7 @@ export class WeaponScene extends Phaser.Scene {
           onTap: () => {
             this.tab = tab;
             this.selected = null;
+            this.page = 0;
             this.message = '';
             this.render();
           },
@@ -334,63 +373,107 @@ export class WeaponScene extends Phaser.Scene {
     });
 
     const isItems = this.tab === 'items';
-    const ids = isItems ? Object.keys(ITEMS) : Object.keys(FRAGMENTS);
+    // 素材は持っているものだけ（多い時はページを切り替える）。記憶の欠片は4種類とも出す
+    const ids = isItems ? Object.keys(ITEMS).filter((id) => (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
+    const recommended = isItems ? recommendedItems(this.weapon()) : new Set<string>();
     const cols = 4;
-    const gap = 6;
+    const rows = 3;
+    const perPage = cols * rows;
+    const pages = Math.max(1, Math.ceil(ids.length / perPage));
+    if (this.page >= pages) this.page = 0;
+    const gap = 5;
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (cols - 1)) / cols;
-    const h = 56;
-    ids.forEach((id, i) => {
+    const h = 46;
+    if (isItems && ids.length === 0) {
+      this.root.add(addText(this, SIDE_PADDING + 4, FRAG_TOP + 44, '素材を持っていない。砂嵐を倒すと落とす', { size: 12, color: COLORS.subText }));
+    }
+    ids.slice(this.page * perPage, (this.page + 1) * perPage).forEach((id, i) => {
       const n = (isItems ? run.armory.items[id] : run.armory.fragments[id]) ?? 0;
-      const gains = isItems ? itemGains(D, D.items[id]) : D.fragments[id].gains;
-      const color = gainColor(gains);
-      const name = isItems ? D.items[id].name : D.fragments[id].name;
+      const it = isItems ? D.items[id] : undefined;
+      const gains = it ? it.gains : D.fragments[id].gains;
+      const color = it?.rarity === 'rare' ? 0xffd84a : it?.rarity === 'uncommon' ? 0x6dd0ff : it?.rarity === 'part' || it?.rarity === 'boss' ? 0xc58bff : gainColor(gains);
+      const name = it ? it.name : D.fragments[id].name;
       const x = SIDE_PADDING + (i % cols) * (w + gap);
-      const y = FRAG_TOP + 38 + Math.floor(i / cols) * (h + gap);
+      const y = FRAG_TOP + 36 + Math.floor(i / cols) * (h + gap);
       const selected = this.selected === id;
       const rect = this.add.rectangle(x, y, w, h, n > 0 ? COLORS.panelLight : COLORS.panel).setOrigin(0);
-      rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : n > 0 ? color : COLORS.border);
+      rect.setStrokeStyle(selected ? 3 : it?.rarity === 'rare' ? 2 : 1, selected ? COLORS.select : n > 0 ? color : COLORS.border);
       this.root.add(rect);
       const alpha = n > 0 ? 1 : 0.3;
-      if (!isItems) this.root.add(this.add.star(x + 12, y + 13, 4, 3.5, 8, color, alpha));
-      else if (D.items[id].kind === 'material') this.root.add(this.add.circle(x + 12, y + 13, 7, color, alpha));
-      else this.root.add(this.add.rectangle(x + 6, y + 7, 12, 12, color, alpha).setOrigin(0).setStrokeStyle(1, 0xffffff, alpha));
-      this.root.add(addText(this, x + w - 6, y + 4, `×${n}`, { size: 14, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
-      this.root.add(addText(this, x + 5, y + 24, name, { size: 10, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
-      const sub = isItems
-        ? Object.entries(D.items[id].fragments).map(([f, k]) => `${D.fragments[f].name}${k}`).join(' ')
-        : describeFragment(D.fragments[id]);
-      this.root.add(addText(this, x + 5, y + 39, sub, { size: 8, color: COLORS.subText, wrap: w - 6 }));
+      if (!it) this.root.add(this.add.star(x + 10, y + 10, 4, 3.5, 8, color, alpha));
+      else if (it.kind === 'material') this.root.add(this.add.circle(x + 10, y + 10, 6, color, alpha));
+      else this.root.add(this.add.rectangle(x + 4, y + 4, 11, 11, color, alpha).setOrigin(0).setStrokeStyle(1, 0xffffff, alpha));
+      if (recommended.has(id)) this.root.add(addText(this, x + 20, y + 2, '★', { size: 11, bold: true, color: COLORS.accentText }));
+      // この武器の進化の鍵になる素材（吸わせると鍵が減る）
+      if (keyItems(this.weapon()).has(id)) this.root.add(addText(this, x + (recommended.has(id) ? 34 : 20), y + 3, '鍵', { size: 9, bold: true, color: '#ffb070' }));
+      this.root.add(addText(this, x + w - 4, y + 2, `×${n}`, { size: 12, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
+      this.root.add(addText(this, x + 4, y + 18, name, { size: 9, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
+      const sub = it ? (it.kind === 'material' ? describeGains(it.gains, true) : 'アイテム') : describeFragment(D.fragments[id]);
+      this.root.add(addText(this, x + 4, y + 31, sub, { size: 9, color: COLORS.subText, wrap: w - 6 }));
       makePressable(rect, {
         onTap: () => {
           this.selected = selected ? null : id;
           this.message = '';
           this.render();
         },
-        onLongPress: () => (isItems ? this.showDetail(D.items[id].name, itemDetail(id)) : this.showDetail(D.fragments[id].name, fragmentDetail(id))),
+        onLongPress: () => (it ? this.showDetail(it.name, itemDetail(id)) : this.showDetail(D.fragments[id].name, fragmentDetail(id))),
       });
     });
+    if (pages > 1) {
+      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 40, FRAG_TOP + 36 + rows * (h + gap) + 12, 80, 26, `次へ ${this.page + 1}/${pages}`, {
+        onTap: () => {
+          this.page = (this.page + 1) % pages;
+          this.render();
+        },
+      }, { size: 11 });
+    }
 
+    // 選んだもののプレビューとボタン
     const sel = this.selected;
-    const err = sel ? (isItems ? getFragmentError(D, run.armory, sel) : getFeedError(D, run.armory, this.charId, sel)) : 'none';
-    const weapon = weaponName(D, this.weapon());
+    const weapon = this.weapon();
+    const top = FRAG_TOP + 36 + rows * (h + gap) + (pages > 1 ? 28 : 4);
     let text = this.message;
     if (!text) {
-      if (!sel) text = isItems ? '素材・アイテムを選んで「時分解」。記憶の欠片は「記憶の欠片」のタブで武器に吸わせる' : '記憶の欠片を選んで「吸わせる」。どの武器に使うかは3人で取り合い';
-      else if (err) text = `${isItems ? D.items[sel].name : `記憶の欠片（${D.fragments[sel].name}）`}を持っていない`;
+      if (!sel) text = isItems ? '素材を選ぶと、吸わせた時の変化が出る。★は進化先に近づく素材。長押しで詳細' : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
       else if (isItems) {
         const it = D.items[sel];
-        text = `${it.name}を時分解する → 記憶の欠片（${describeItemFragments(D, it)}）。戻せない`;
-      } else text = `${weapon}に記憶の欠片（${D.fragments[sel].name}）を吸わせる（${describeFragment(D.fragments[sel])}）。戻せない`;
+        if (it.kind !== 'material') text = `${it.name}：吸わせられない（${describeDecompose(D, it)}）`;
+        else {
+          const after = paramsAfter(weapon.params, it.gains);
+          const diff = (Object.keys(after) as WeaponParamKey[]).filter((k) => after[k] !== weapon.params[k]).map((k) => `${PARAM_LABEL[k]} ${weapon.params[k]}→${after[k]}`);
+          text = `${it.name}：${diff.join('、') || '変化なし'}（枠 ${weapon.absorbed}→${weapon.absorbed + 1}/${weaponSlots(D, weapon)}）${keyItems(weapon).has(sel) ? '。進化の鍵にもなる素材' : ''}`;
+        }
+      } else text = `${weaponName(D, weapon)}に記憶の欠片（${D.fragments[sel].name}）を吸わせる（${describeFragment(D.fragments[sel])}。枠は使わない）`;
     }
-    const top = FRAG_TOP + 38 + 2 * (h + gap) + 2;
-    this.root.add(addText(this, SIDE_PADDING + 2, top, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 128 }));
-    addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 58, top + 26, 112, 50, isItems ? '時分解' : '吸わせる', { onTap: () => (isItems ? this.fragment() : this.feed()) }, {
-      enabled: !err,
-      fill: isItems ? 0x3a2a5a : 0x2f6b3f,
-      stroke: isItems ? 0xc58bff : 0x6dff9e,
-      size: 15,
-      bold: true,
-    });
+    const btnW = 92;
+    this.root.add(addText(this, SIDE_PADDING + 2, top, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - (isItems ? btnW * 2 + 12 : btnW + 8) }));
+    if (isItems) {
+      const absorbErr = sel ? getAbsorbError(D, run.armory, this.charId, sel) : 'none';
+      const fragErr = sel ? getFragmentError(D, run.armory, sel) : 'none';
+      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW * 1.5 - 6, top + 22, btnW, 44, '吸わせる', { onTap: () => this.absorb() }, {
+        enabled: !absorbErr,
+        fill: 0x2f6b3f,
+        stroke: 0x6dff9e,
+        size: 14,
+        bold: true,
+      });
+      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '時分解', { onTap: () => this.fragment() }, {
+        enabled: !fragErr,
+        fill: 0x3a2a5a,
+        stroke: 0xc58bff,
+        size: 14,
+        bold: true,
+      });
+    } else {
+      const err = sel ? getFeedError(D, run.armory, this.charId, sel) : 'none';
+      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '吸わせる', { onTap: () => this.feed() }, {
+        enabled: !err,
+        fill: 0x2f6b3f,
+        stroke: 0x6dff9e,
+        size: 14,
+        bold: true,
+      });
+    }
   }
 
   private closeOverlay(): void {
@@ -425,32 +508,55 @@ function gainColor(gains: Partial<Record<WeaponParamKey, number>>): number {
   return PARAM_COLOR[els[0]];
 }
 
-/** その素材・アイテムの手に入れ方 */
-function itemSource(itemId: string): string {
-  const enemies = [SLIME, FROST_BAT, ARMOR_DOG].filter((e) => e.drops?.includes(itemId)).map((e) => `${e.name}が落とす`);
-  if (itemId === ITEMS.steelClaw.id) enemies.push('戦闘4の強化版の敵が落とす');
-  const battles = CAMPAIGN.filter((b) => b.item === itemId).map((b) => b.name);
-  if (battles.length > 0) enemies.push(`${battles.join('・')}の勝利でもらえる`);
-  return enemies.length > 0 ? enemies.join('\n') : '―';
+/**
+ * おすすめの素材（★）：まだ進化していなければ、能力値の条件に一番近い進化先を選び、その足りない能力値を上げて、
+ * 条件の能力値を下げない素材（段階27b）
+ */
+function recommendedItems(w: WeaponState): Set<string> {
+  const out = new Set<string>();
+  if (w.evolvedTo) return out;
+  let best: { lack: number; params: WeaponParamKey[] } | null = null;
+  for (const evo of D.weapons[w.defId].evolutions) {
+    const conds = evo.conditions.filter((c) => c.kind === 'param');
+    if (conds.length === 0) continue;
+    const lack = conds.reduce((sum, c) => sum + Math.max(0, c.min - w.params[c.param]), 0);
+    if (lack === 0) continue;
+    if (!best || lack < best.lack) best = { lack, params: conds.map((c) => c.param) };
+  }
+  if (!best) return out;
+  for (const it of Object.values(D.items)) {
+    if (it.kind !== 'material' || (run.armory.items[it.id] ?? 0) <= 0) continue;
+    const helps = best.params.some((k) => (it.gains[k] ?? 0) > 0);
+    const hurts = best.params.some((k) => (it.gains[k] ?? 0) < 0);
+    if (helps && !hurts) out.add(it.id);
+  }
+  return out;
+}
+
+/** その武器の、まだしていない進化の鍵になる素材 */
+function keyItems(w: WeaponState): Set<string> {
+  if (w.evolvedTo) return new Set();
+  return new Set(D.weapons[w.defId].evolutions.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []))));
 }
 
 function itemDetail(itemId: string): string {
   const it = D.items[itemId];
   return [
-    it.kind === 'material' ? '素材' : '通常アイテム（この試作では戦闘で使えない）',
-    `時分解すると：記憶の欠片（${describeItemFragments(D, it)}）`,
-    ...Object.keys(it.fragments).map((id) => `・${D.fragments[id].name}1つにつき：${describeFragment(D.fragments[id])}`),
+    it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : '通常アイテム（今は戦闘で使えない。時分解して記憶の欠片にする）',
+    it.kind === 'material' ? `吸わせると：${describeGains(it.gains)}（吸わせ枠を1つ使う）` : '',
+    `時分解すると：${describeDecompose(D, it)}`,
     '',
-    `手に入れ方：\n${itemSource(itemId)}`,
-  ].join('\n');
+    `手に入れ方：${itemSources(itemId).join('、') || '―'}`,
+  ]
+    .filter((l, i) => l !== '' || i === 3)
+    .join('\n');
 }
 
 function fragmentDetail(fragmentId: string): string {
-  const sources = Object.values(D.items).filter((it) => (it.fragments[fragmentId] ?? 0) > 0).map((it) => it.name);
   return [
     '記憶の欠片。記憶に宿る感情ごとに種類が分かれる',
-    `1つにつき：${describeFragment(D.fragments[fragmentId])}`,
+    `1つにつき：${describeFragment(D.fragments[fragmentId])}（吸わせ枠を使わない）`,
     '',
-    `時分解すると出る素材・アイテム：${sources.join('、') || '―'}`,
+    `要らない素材・アイテムを${D.decomposeCost}つ時分解すると1つできる（その素材が一番大きく上げる能力値の欠片）`,
   ].join('\n');
 }

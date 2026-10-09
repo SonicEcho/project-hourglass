@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RunSnapshot, SaveContext } from '../../src/core';
 import {
+  absorbMaterial,
   addItems,
   createArmory,
   createGrowth,
@@ -56,9 +57,11 @@ function playedRun(): RunSnapshot {
   r.growth = openNode(GROWTH_MAP, r.growth, hero, node.id);
   r.navi = placePart(NAVI_DATA, r.navi, 0, { charId: 'hero', col: 0, row: 0, rotation: 0 });
   r.navi = placePart(NAVI_DATA, r.navi, 1, { charId: 'akari', col: 1, row: 1, rotation: 1 });
-  r.armory = addItems(r.armory, ['slimeJelly', 'slimeJelly', 'steelClaw']);
+  r.armory = addItems(r.armory, ['slimeJelly', 'slimeJelly', 'steelClaw', 'goldfishScale', 'goldfishScale']);
   r.armory = fragmentItem(WEAPON_DATA, r.armory, 'slimeJelly');
   r.armory = feedFragment(WEAPON_DATA, r.armory, 'hero', 'elation');
+  // 段階27b：素材を直接吸わせる（吸わせ枠を使う）
+  r.armory = absorbMaterial(WEAPON_DATA, r.armory, 'akari', 'goldfishScale');
   r.progress = progressAt(STORY, 2);
   r.pendingReward = 'battle2';
   r.event = 'd1_clockshop';
@@ -81,7 +84,9 @@ describe('セーブ：保存して読む', () => {
     if (!res.ok) return;
     expect(res.save.version).toBe(SAVE_VERSION);
     expect(res.save.savedAt).toBe('2026-10-07T12:34:56.000Z');
-    expect(res.save.run).toEqual({ ...r, armory: { ...r.armory, fragments: { courage: 1, elation: 2 } } });
+    // 0個になった素材・欠片は捨てる
+    expect(res.save.run).toEqual({ ...r, armory: { ...r.armory, items: { steelClaw: 1, goldfishScale: 1 }, fragments: {} } });
+    expect(res.save.run.armory.weapons.akari.absorbed).toBe(1);
   });
 
   it('始めたばかりの周回も読み戻せる', () => {
@@ -92,10 +97,18 @@ describe('セーブ：保存して読む', () => {
 
   it('時分解して0個になった素材は、読む時に捨てる', () => {
     const r = playedRun();
-    r.armory = fragmentItem(WEAPON_DATA, r.armory, 'slimeJelly');
     expect(r.armory.items.slimeJelly).toBe(0);
     const res = parseSave(serializeSave(r, AT), ctx);
-    expect(res.ok && res.save.run.armory.items).toEqual({ steelClaw: 1 });
+    expect(res.ok && res.save.run.armory.items).toEqual({ steelClaw: 1, goldfishScale: 1 });
+  });
+
+  it('版5のセーブ（吸わせ枠がなかった）は、枠を0として読む（段階27b）', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 5;
+      for (const w of Object.values(raw.run.armory.weapons) as any[]) delete w.absorbed;
+    });
+    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
+    expect(res.ok && res.save.run.armory.weapons.akari.absorbed).toBe(0);
   });
 });
 

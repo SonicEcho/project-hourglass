@@ -97,8 +97,14 @@ describe('参照している名前が本当にある', () => {
     expect(GROWTH_MAP.nodes.filter((n) => n.kind === 'start').map((n) => (n.kind === 'start' ? n.owner : '')).sort()).toEqual([...partyIds].sort());
   });
 
-  it('素材・アイテムから出る記憶の欠片は、本当にある欠片', () => {
-    for (const it of Object.values(ITEMS)) for (const id of Object.keys(it.fragments)) expect(has(FRAGMENTS, id), `${it.name}：${id}`).toBe(true);
+  it('素材・アイテムを時分解してできる記憶の欠片は、本当にある欠片。敵の落とし物と部位の素材は、本当にある素材（段階27b）', async () => {
+    const { decomposeFragment } = await import('../src/core');
+    const { WEAPON_DATA, knownEnemies } = await import('../src/data');
+    for (const it of Object.values(ITEMS)) expect(has(FRAGMENTS, decomposeFragment(WEAPON_DATA, it.id)), it.name).toBe(true);
+    for (const e of knownEnemies()) {
+      const ids = [...(e.drops ?? []), ...Object.values(e.dropTable ?? {}), ...(e.parts ?? []).flatMap((p) => (p.drop ? [p.drop] : []))];
+      for (const id of ids) expect(ITEMS[id as keyof typeof ITEMS]?.kind, `${e.name}：${id}`).toBe('material');
+    }
   });
 });
 

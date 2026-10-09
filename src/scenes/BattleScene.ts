@@ -494,6 +494,17 @@ export class BattleScene extends Phaser.Scene {
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
         return true;
       }
+      case 'drop': {
+        // 珍しい素材・部位の素材・レアが出た時だけ知らせる（いつもの素材は勝利の表示で。段階27b）
+        if (e.kind === 'common' || e.kind === 'fixed') return false;
+        const p = unitPosition(s, e.enemyId);
+        const name = WEAPON_DATA.items[e.itemId]?.name ?? e.itemId;
+        if (e.kind === 'rare') {
+          playSe(this, SE.chest);
+          this.popup(p.x, p.y - 50, `レア！ ${name}`, COLORS.accentText, 22);
+        } else this.popup(p.x, p.y - 40, name, '#6dd0ff', 15);
+        return true;
+      }
       case 'linkReady': {
         this.popup(GAME_WIDTH / 2, LAYOUT.message.y + 10, '連携技 READY!', COLORS.accentText, 24);
         return true;
@@ -1137,7 +1148,20 @@ export class BattleScene extends Phaser.Scene {
       items: [...result.drops, ...(def.item ? [def.item] : [])],
     });
     saveRun();
-    const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}`;
+    // 落とした素材を種類ごとに（珍しい素材は ◆、レアは ★。段階27b）
+    const drops = this.state.log.flatMap((e) => (e.type === 'drop' ? [e] : []));
+    const mark = (kind: string) => (kind === 'rare' ? '★' : kind === 'uncommon' || kind === 'part' ? '◆' : '');
+    const counts = new Map<string, number>();
+    for (const d of drops) counts.set(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`, (counts.get(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`) ?? 0) + 1);
+    const dropList = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
+    const dropText = `素材：${dropList || 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}`;
+    if (drops.some((d) => d.kind === 'rare')) {
+      const rare = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, '★ レア！', { size: 30, bold: true, color: COLORS.accentText }).setOrigin(0.5);
+      rare.setStroke('#5a3a00', 6);
+      c.add(rare);
+      this.tweens.add({ targets: rare, scale: { from: 1.6, to: 1 }, duration: 400, ease: 'Back.easeOut' });
+      playSe(this, SE.chest);
+    }
     c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5, 0));
     addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80, 240, 60, '探索へ戻る', { onTap: () => this.scene.start(enc.win.key, enc.win.data) }, {
       size: 18,

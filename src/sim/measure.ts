@@ -76,6 +76,9 @@ export interface AreaMeasureResult {
   policy: AreaPolicy;
   cleared: number;
   stages: (StageSummary & { linksTotal: number })[];
+  /** ボスまで進めた回のうち、ボスの前に1人以上進化できた回数（段階27b） */
+  evolvedRuns: number;
+  bossReached: number;
 }
 
 export function measureArea(runs: number, seed: number, policy: AreaPolicy): AreaMeasureResult {
@@ -93,7 +96,9 @@ export function measureArea(runs: number, seed: number, policy: AreaPolicy): Are
       s.linksTotal += r.links[i] ?? 0;
     });
   }
-  return { runs, seed, policy, cleared: records.filter((r) => r.cleared).length, stages };
+  const bossReached = records.filter((r) => r.stages.length === stages.length).length;
+  const evolvedRuns = records.filter((r) => r.stages.length === stages.length && r.evolvedBeforeBoss > 0).length;
+  return { runs, seed, policy, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached };
 }
 
 const POLICY_LABEL: Record<AreaPolicy, string> = {
@@ -109,6 +114,8 @@ export function formatAreaMeasure(m: AreaMeasureResult): string {
     '| --- | ---: | ---: | ---: | ---: | ---: |',
     ...m.stages.map((s) => `| ${s.name} | ${s.reached} | ${pct(s.firstTryWins, s.reached)} | ${avg(s.roundsTotal, s.wins)} | ${avg(s.retriesTotal, s.wins)} | ${s.wins === 0 ? '-' : (s.linksTotal / s.wins).toFixed(2)} |`),
     '',
-    `ボスまで勝ち切れた割合：${pct(m.cleared, m.runs)}。星図はでたらめ、素材はすべて時分解してでたらめな武器へ、つながりゲージは戦闘をまたいで引き継ぐ`,
+    `ボスまで勝ち切れた割合：${pct(m.cleared, m.runs)}。ボスの前に1人以上進化できた割合：${pct(m.evolvedRuns, m.bossReached)}`,
+    '',
+    '星図はでたらめ、素材は一番近い進化先へ向けて吸わせ、残りは時分解（鍵の素材は残す）、つながりゲージは戦闘をまたいで引き継ぐ',
   ].join('\n');
 }

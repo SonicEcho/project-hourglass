@@ -7,11 +7,7 @@ import {
   createArmory,
   createBattle,
   createGrowth,
-  evolveWeapon,
-  feedFragment,
-  fragmentItem,
   getBattleResult,
-  getEvolveError,
   getOpenError,
   lineupMembers,
   openableNodes,
@@ -20,11 +16,12 @@ import {
 } from '../core';
 import type { CampaignBattle } from '../data';
 import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, GROWTH_MAP, PART_BREAK_POINTS, PARTY, SKILLS, START_MEMORY_POINTS, WEAPON_DATA } from '../data';
+import { autoUseArmory } from './autoArmory';
 import { autoPlay, lcg, smartPlay } from './autoBattle';
 import { MAX_ATTEMPTS, type StageRecord } from './autoRun';
 
 // 区画の自動対戦（段階27）：1-1 の縁日を、章のパーティ（ハルトとあかり）で、出会う順に戦ってボスまで通す。
-// 戦闘の間に、星図（でたらめ）と武器（全部時分解してでたらめに吸わせる）で育て、つながりゲージは戦闘をまたいで引き継ぐ。
+// 戦闘の間に、星図（でたらめ）と武器（autoArmory.ts。一番近い進化先へ向けて吸わせる）で育て、つながりゲージは戦闘をまたいで引き継ぐ。
 // 宝箱は最初の戦闘の後に2つとも開ける（縁日の手前にあるので）。負けたらチェックポイントから同じ戦闘をやり直す
 
 /** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay） */
@@ -36,6 +33,8 @@ export interface AreaRunRecord {
   cleared: boolean;
   /** 連携技を使った回数（戦闘ごと。勝った戦闘だけ） */
   links: number[];
+  /** ボスの前までに進化した仲間の数（段階27b） */
+  evolvedBeforeBoss: number;
 }
 
 /** 1-1 の戦闘を出会う順に（敵の印の並び → ボス） */
@@ -53,12 +52,14 @@ export function autoAreaRun(seed: number, policy: AreaPolicy, lineup: Lineup = C
   let gauge = 0;
   const stages: StageRecord[] = [];
   const links: number[] = [];
+  let evolvedBeforeBoss = 0;
   const battles = areaBattleOrder(areaId);
   for (let i = 0; i < battles.length; i++) {
     const def = battles[i];
     if (i === 1) armory = addItems(armory, area.chests.flatMap((c) => c.items));
     growth = spendPoints(growth, members, pick);
-    armory = useArmory(armory, members, pick);
+    armory = autoUseArmory(armory, members.map((c) => c.id), pick);
+    if (def.boss) evolvedBeforeBoss = members.filter((c) => armory.weapons[c.id]?.evolvedTo).length;
     const allies = grownParty(growth, armory, members);
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -75,9 +76,9 @@ export function autoAreaRun(seed: number, policy: AreaPolicy, lineup: Lineup = C
       break;
     }
     stages.push(record);
-    if (!record.won) return { seed, stages, cleared: false, links };
+    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss };
   }
-  return { seed, stages, cleared: true, links };
+  return { seed, stages, cleared: true, links, evolvedBeforeBoss };
 }
 
 function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[]): CharacterDef[] {
@@ -98,21 +99,4 @@ function spendPoints(growth0: GrowthState, members: CharacterDef[], pick: (n: nu
     growth = openNode(GROWTH_MAP, growth, o.c, o.id);
   }
   return growth;
-}
-
-/** 武器：素材・アイテムをすべて時分解し、記憶の欠片をパーティのでたらめな武器に吸わせ、進化できれば最初の進化先へ */
-function useArmory(armory0: ArmoryState, members: CharacterDef[], pick: (n: number) => number): ArmoryState {
-  let armory = armory0;
-  for (const [id, n] of Object.entries(armory.items)) for (let k = 0; k < n; k++) armory = fragmentItem(WEAPON_DATA, armory, id);
-  const owners = members.map((c) => c.id);
-  for (const [id, n] of Object.entries(armory.fragments)) {
-    for (let k = 0; k < n; k++) armory = feedFragment(WEAPON_DATA, armory, owners[pick(owners.length)], id);
-  }
-  for (const owner of owners) {
-    const w = armory.weapons[owner];
-    if (w.evolvedTo) continue;
-    const evo = WEAPON_DATA.weapons[w.defId].evolutions.find((e) => getEvolveError(WEAPON_DATA, armory, owner, e.id) === null);
-    if (evo) armory = evolveWeapon(WEAPON_DATA, armory, owner, evo.id);
-  }
-  return armory;
 }

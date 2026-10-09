@@ -12,12 +12,8 @@ import {
   createBattle,
   createGrowth,
   createNavi,
-  evolveWeapon,
-  feedFragment,
   findBugs,
-  fragmentItem,
   getBattleResult,
-  getEvolveError,
   getOpenError,
   getPlaceError,
   isPartActive,
@@ -44,6 +40,7 @@ import {
   WEAPON_DATA,
 } from '../data';
 import type { CampaignBattle } from '../data';
+import { autoUseArmory } from './autoArmory';
 import { autoPlay, lcg } from './autoBattle';
 
 // 周回の自動対戦（段階12）。タイトルから5戦目のボスまでを、決まった方針で自動で遊ぶ。
@@ -89,7 +86,7 @@ export function autoRun(seed: number): RunRecord {
     const i = battleNumber(STORY, progress);
     const def = placeOf(STORY, progress)!.battle;
     spendPoints(st, pick);
-    useArmory(st, pick);
+    st.armory = autoUseArmory(st.armory, PARTY.map((c) => c.id), pick);
     st.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, st.armory), st.navi);
     const allies = party(st);
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
@@ -126,21 +123,6 @@ function spendPoints(st: AutoRunState, pick: (n: number) => number): void {
     if (options.length === 0) return;
     const o = options[pick(options.length)];
     st.growth = openNode(GROWTH_MAP, st.growth, o.c, o.id);
-  }
-}
-
-/** 武器：素材・アイテムをすべて時分解し、記憶の欠片をでたらめな武器に吸わせ、進化できれば最初の進化先へ */
-function useArmory(st: AutoRunState, pick: (n: number) => number): void {
-  for (const [id, n] of Object.entries(st.armory.items)) for (let k = 0; k < n; k++) st.armory = fragmentItem(WEAPON_DATA, st.armory, id);
-  const owners = Object.keys(st.armory.weapons);
-  for (const [id, n] of Object.entries(st.armory.fragments)) {
-    for (let k = 0; k < n; k++) st.armory = feedFragment(WEAPON_DATA, st.armory, owners[pick(owners.length)], id);
-  }
-  for (const owner of owners) {
-    const w = st.armory.weapons[owner];
-    if (w.evolvedTo) continue;
-    const evo = WEAPON_DATA.weapons[w.defId].evolutions.find((e) => getEvolveError(WEAPON_DATA, st.armory, owner, e.id) === null);
-    if (evo) st.armory = evolveWeapon(WEAPON_DATA, st.armory, owner, evo.id);
   }
 }
 

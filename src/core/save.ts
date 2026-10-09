@@ -17,7 +17,7 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -79,6 +79,9 @@ export const MIGRATIONS: SaveMigrations = {
   3: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, explore: null } } : raw),
   // 版4 → 版5（段階26の調整3）：引き継ぐつながりゲージを足す（版4の時は、戦闘ごとに0から）
   4: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, linkGauge: null } } : raw),
+  // 版5 → 版6（段階27b）：素材を直接吸わせる形になった。武器の吸わせ枠（absorbed）は、整える時に0で補う。
+  // 今のデータにない素材（縁日の古い素材など）は、整える時に捨てる
+  5: (raw) => raw,
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -186,7 +189,8 @@ function sanitizeWeapon(raw: Record<string, unknown>, base: WeaponState, data: W
   if (isObject(raw.tendency)) for (const k of Object.keys(tendency) as PartColor[]) if (isInt(raw.tendency[k])) tendency[k] = Math.max(0, raw.tendency[k]);
   const evolutions = data.weapons[base.defId].evolutions;
   const evolvedTo = typeof raw.evolvedTo === 'string' && evolutions.some((e) => e.id === raw.evolvedTo) ? raw.evolvedTo : null;
-  return { defId: base.defId, params, exp: isInt(raw.exp) ? Math.max(0, raw.exp) : 0, tendency, evolvedTo };
+  const absorbed = isInt(raw.absorbed) ? Math.max(0, raw.absorbed) : 0;
+  return { defId: base.defId, params, exp: isInt(raw.exp) ? Math.max(0, raw.exp) : 0, tendency, evolvedTo, absorbed };
 }
 
 function sanitizeNavi(raw: Record<string, unknown>, data: NaviData): NaviState | null {

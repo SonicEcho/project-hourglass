@@ -14,7 +14,8 @@ export const GOLDFISH_NOISE: EnemyDef = {
   resistances: ['fire'],
   actions: [{ id: 'finSlap', name: 'ひれ打ち', target: 'ally', type: 'physical', power: 28, weight: 1.0 }],
   ai: { type: 'random' },
-  drops: ['goldfishScale'],
+  // 落とし物（段階27b）：いつも うろこ、珍しい ひれ、レア なつの尾びれ
+  dropTable: { common: 'goldfishScale', uncommon: 'goldfishFin', rare: 'natsuTail' },
 };
 
 /** 水風船ノイズ：はずんで速い。物理が弱点（割れる）、氷は効きにくい */
@@ -29,7 +30,7 @@ export const BALLOON_NOISE: EnemyDef = {
     { id: 'splash', name: '水しぶき', target: 'ally', type: 'ice', power: 28, weight: 1.0 },
   ],
   ai: { type: 'random' },
-  drops: ['balloonShard'],
+  dropTable: { common: 'balloonShard', uncommon: 'balloonRubber' },
 };
 
 /** お面ノイズ：かたい。火が弱点（燃える）、物理は効きにくい */
@@ -44,7 +45,7 @@ export const MASK_NOISE: EnemyDef = {
     { id: 'glare', name: 'にらむ', target: 'ally', type: 'magic', power: 26, weight: 1.0 },
   ],
   ai: { type: 'random' },
-  drops: ['maskShard'],
+  dropTable: { common: 'maskShard', uncommon: 'maskString' },
 };
 
 /** わたあめノイズ：ふわふわで物理が効きにくい。雷が弱点（静電気） */
@@ -59,7 +60,7 @@ export const COTTON_NOISE: EnemyDef = {
     { id: 'sweetFog', name: 'あまい霧', target: 'allies', type: 'magic', power: 16, weight: 1.0 },
   ],
   ai: { type: 'random' },
-  drops: ['cottonThread'],
+  dropTable: { common: 'cottonThread', uncommon: 'cottonStick' },
 };
 
 /**
@@ -72,12 +73,12 @@ export const COTTON_NOISE: EnemyDef = {
 export const GOLDFISH_BOWL_LORD: EnemyDef = {
   id: 'goldfishBowlLord',
   name: '金魚鉢のぬし',
-  stats: { hp: 1800, atk: 25, mag: 23, def: 10, spd: 9 },
+  stats: { hp: 1500, atk: 23, mag: 21, def: 10, spd: 9 },
   weaknesses: [],
   resistances: [],
   parts: [
-    { id: 'poiArm', name: 'ポイの腕', hp: 150, material: '破れたポイ' },
-    { id: 'bowl', name: '金魚鉢', hp: 160, material: '金魚鉢のかけら', revealsWeakness: ['ice'] },
+    { id: 'poiArm', name: 'ポイの腕', hp: 150, material: '破れたポイ', drop: 'tornPoi' },
+    { id: 'bowl', name: '金魚鉢', hp: 160, material: '金魚鉢のかけら', drop: 'bowlShard', revealsWeakness: ['ice'] },
   ],
   actions: [
     { id: 'waterShot', name: '水鉄砲', target: 'ally', type: 'ice', power: 30, weight: 1.0 },
@@ -86,7 +87,8 @@ export const GOLDFISH_BOWL_LORD: EnemyDef = {
     { id: 'goldfishSwirl', name: '金魚の渦', target: 'allies', type: 'magic', power: 34, weight: 1.0, charge: true, requiresPart: 'bowl' },
   ],
   ai: { type: 'boss', lowHpRatio: 0.5, allTargetInterval: 2 },
-  drops: ['bowlShard'],
+  // 倒すと必ず「ぬしの金魚」。部位を壊すと、その部位の素材も必ず落とす
+  drops: ['lordGoldfish'],
 };
 
 export const FESTIVAL_NOISES: EnemyDef[] = [GOLDFISH_NOISE, BALLOON_NOISE, MASK_NOISE, COTTON_NOISE];
