@@ -18,10 +18,11 @@ export function describeEffect(effect: Effect, scope: TargetScope): string {
       let text = `${SCOPE_LABEL[scope]}に${element}・威力${effect.power}`;
       if (effect.partMultiplier && effect.partMultiplier !== 1) text += `。部位へのダメージ${effect.partMultiplier}倍`;
       if (effect.ignoreResist) text += '（耐性を無視）';
+      if (effect.downBonus && effect.downBonus !== 1) text += `。ダウン中の敵には${effect.downBonus}倍`;
       return text;
     }
     case 'heal':
-      return `${scope === 'self' ? '自分' : SCOPE_LABEL[scope]}を回復・威力${effect.power}`;
+      return `${effect.allies ? '味方全体' : scope === 'self' ? '自分' : SCOPE_LABEL[scope]}を回復・威力${effect.power}`;
     case 'draw':
       return `手札を${effect.count}枚引く`;
     case 'redraw':

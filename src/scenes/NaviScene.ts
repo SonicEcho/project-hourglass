@@ -8,7 +8,7 @@ import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePass
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, run, saveRun } from './run';
+import { currentNaviData, hubLineup, lineupBase, run, saveRun } from './run';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -48,6 +48,8 @@ export class NaviScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.clearSelection();
+    const members = lineupBase(hubLineup());
+    if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
   }
 
@@ -197,10 +199,12 @@ export class NaviScene extends Phaser.Scene {
 
   private drawTabs(): void {
     const top = 36;
-    const n = PARTY.length;
+    // パーティにいる仲間の盤だけ（段階26）
+    const members = lineupBase(hubLineup());
+    const n = members.length;
     const gap = 6;
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-    PARTY.forEach((c, i) => {
+    members.forEach((c, i) => {
       const x = SIDE_PADDING + i * (w + gap);
       const active = c.id === this.charId;
       const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setOrigin(0);

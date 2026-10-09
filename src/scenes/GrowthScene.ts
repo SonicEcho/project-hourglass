@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
 import { canEvolveAny, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -10,7 +10,7 @@ import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { battleAt, currentNaviData, currentParty, run, saveRun } from './run';
+import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -65,8 +65,12 @@ export class GrowthScene extends Phaser.Scene {
     this.selected = null;
     this.message = '';
     this.rewardChosen = [];
+    // パーティにいない仲間を選んでいたら、先頭の仲間にする（段階26）
+    const members = lineupBase(hubLineup());
+    if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
-    if (run.pendingReward !== null) this.showReward();
+    // ギアの報酬は試作の5戦だけ（ムーブメントが閉じている間は出さない）
+    if (run.pendingReward !== null && hubLineup().unlocks.navi) this.showReward();
   }
 
   /** デバッグメニューから星の砂が変わった時に描き直す */
@@ -106,16 +110,20 @@ export class GrowthScene extends Phaser.Scene {
     this.root.removeAll(true);
     const g = run.growth;
     const base = this.base();
-    const party = currentParty();
+    const lineup = hubLineup();
+    const members = lineupBase(lineup);
+    const party = currentParty(lineup);
+    const back = getHubReturn();
     const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
 
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
 
     // 上：見出しと星の砂
-    const next = battleAt(run.progress);
+    const next = back ? null : battleAt(run.progress);
+    const area = run.explore ? AREAS[run.explore.area] : undefined;
     this.root.add(addText(this, SIDE_PADDING, 8, '星図', { size: 17, bold: true }));
     this.root.add(
-      addText(this, SIDE_PADDING, 32, `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
+      addText(this, SIDE_PADDING, 32, back ? `${area?.name ?? ''}のチェックポイント` : `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
         size: 11,
         color: COLORS.subText,
       }),
@@ -141,8 +149,8 @@ export class GrowthScene extends Phaser.Scene {
     // マス
     for (const n of GROWTH_MAP.nodes) this.drawNode(n, openable.has(n.id));
 
-    // 駒（今のキャラは大きく）
-    PARTY.forEach((c, i) => {
+    // 駒（今のキャラは大きく）。パーティにいない仲間の駒は出さない
+    members.forEach((c, i) => {
       const p = nodeCenter(findNode(GROWTH_MAP, piecePosition(g, c.id))!);
       const offset = [
         { x: -NODE_R + 2, y: -NODE_R + 2 },
@@ -159,37 +167,51 @@ export class GrowthScene extends Phaser.Scene {
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
 
-    // ムーブメントと武器へ（2つ並べる）
-    const naviBugs = PARTY.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
-    const loose = run.navi.parts.filter((p) => !p.placement).length;
+    // ムーブメントと武器へ（2つ並べる。開いているものだけ。段階26）
     const halfW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
-    addButton(
-      this,
-      this.root,
-      SIDE_PADDING + halfW / 2,
-      733,
-      halfW,
-      44,
-      `ムーブメント\nはめていない ${loose}${naviBugs > 0 ? `・狂い ${naviBugs}` : ''}`,
-      { onTap: () => this.scene.start('Navi') },
-      { fill: 0x1e3a5a, stroke: 0x5aa8ff, strokeWidth: 2, size: 12, bold: true },
-    );
-    const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
-    const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
-    const evolvable = PARTY.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
-    addButton(
-      this,
-      this.root,
-      GAME_WIDTH - SIDE_PADDING - halfW / 2,
-      733,
-      halfW,
-      44,
-      `武器\n${evolvable ? '進化できる！' : `素材 ${items}・記憶の欠片 ${fragments}`}`,
-      { onTap: () => this.scene.start('Weapon') },
-      evolvable
-        ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }
-        : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: 12, bold: true },
-    );
+    const subs: { w: number; draw: (x: number, w: number) => void }[] = [];
+    if (lineup.unlocks.navi) {
+      subs.push({
+        w: halfW,
+        draw: (x, w) => {
+          const naviBugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
+          const loose = run.navi.parts.filter((p) => !p.placement).length;
+          addButton(this, this.root, x, 733, w, 44, `ムーブメント\nはめていない ${loose}${naviBugs > 0 ? `・狂い ${naviBugs}` : ''}`, { onTap: () => this.scene.start('Navi') }, {
+            fill: 0x1e3a5a,
+            stroke: 0x5aa8ff,
+            strokeWidth: 2,
+            size: 12,
+            bold: true,
+          });
+        },
+      });
+    }
+    if (lineup.unlocks.weapon) {
+      subs.push({
+        w: halfW,
+        draw: (x, w) => {
+          const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
+          const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
+          const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+          addButton(
+            this,
+            this.root,
+            x,
+            733,
+            w,
+            44,
+            `武器\n${evolvable ? '進化できる！' : `素材 ${items}・記憶の欠片 ${fragments}`}`,
+            { onTap: () => this.scene.start('Weapon') },
+            evolvable
+              ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }
+              : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: 12, bold: true },
+          );
+        },
+      });
+    }
+    // 1つだけなら横いっぱいに
+    if (subs.length === 1) subs[0].draw(GAME_WIDTH / 2, GAME_WIDTH - SIDE_PADDING * 2);
+    else subs.forEach((b, i) => b.draw(i === 0 ? SIDE_PADDING + halfW / 2 : GAME_WIDTH - SIDE_PADDING - halfW / 2, b.w));
 
     // 下：次の戦闘へ
     addButton(
@@ -199,8 +221,17 @@ export class GrowthScene extends Phaser.Scene {
       792,
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
-      next ? `${next.name}へ` : '結果へ',
-      { onTap: () => this.scene.start('Battle', { progress: run.progress }) },
+      back ? '探索へ戻る' : next ? `${next.name}へ` : '結果へ',
+      {
+        onTap: () => {
+          if (!back) {
+            this.scene.start('Battle', { progress: run.progress });
+            return;
+          }
+          setHubReturn(null);
+          this.scene.start(back.key, back.data);
+        },
+      },
       { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
   }
@@ -233,7 +264,7 @@ export class GrowthScene extends Phaser.Scene {
       addText(this, x, y, label, { size: labelSize, bold: true, color: opened || openable ? '#101820' : '#9fb3c8', align: 'center' }).setOrigin(0.5),
     );
     // 他のキャラが開けたマスに小さな印
-    PARTY.forEach((c, i) => {
+    lineupBase(hubLineup()).forEach((c, i) => {
       if (c.id === this.charId || !isOpened(g, c.id, n.id)) return;
       this.root.add(this.add.circle(x - 6 + i * 6, y + NODE_R + 3, 2.5, ALLY_COLOR[c.id] ?? COLORS.ally));
     });
@@ -254,7 +285,7 @@ export class GrowthScene extends Phaser.Scene {
     if (!n) {
       const lines = [
         this.message || `${base.name}の駒を進める。黄色い枠のマス（開けられるマス）をタップ`,
-        '星の砂は3人共通。誰にどう使うかを選ぼう',
+        `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
         `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}　速さ ${grown.stats.spd}`,
       ];
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
@@ -410,7 +441,12 @@ ${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
 // ---- マスとキャラの説明 ----
 
 function nodeTitle(n: GrowthNodeDef, base: CharacterDef): string {
-  if (n.kind === 'start') return n.owner === base.id ? `${base.name}の出発点` : `${PARTY.find((c) => c.id === n.owner)?.name ?? ''}の出発点`;
+  if (n.kind === 'start') {
+    if (n.owner === base.id) return `${base.name}の出発点`;
+    // まだパーティにいない仲間の名前は出さない（段階26）
+    const owner = lineupBase(hubLineup()).find((c) => c.id === n.owner);
+    return owner ? `${owner.name}の出発点` : 'まだいない仲間の出発点';
+  }
   if (n.kind === 'skill') return SKILLS[n.skillId as keyof typeof SKILLS]?.name ?? n.skillId;
   return `${STAT_LABEL[n.stat]}+${n.amount}${n.kind === 'statBig' ? '（大）' : ''}`;
 }
@@ -420,7 +456,7 @@ function nodeDetail(n: GrowthNodeDef, base: CharacterDef): string {
   if (n.kind === 'skill') {
     const def = SKILLS[n.skillId as keyof typeof SKILLS];
     if (!def) return '';
-    const known = currentParty()
+    const known = currentParty(hubLineup())
       .find((c) => c.id === base.id)
       ?.skills.some((k) => k.id === def.id);
     return `${known ? '（もう覚えている。通るだけ）\n' : ''}MP${def.mp}　${describeAction(def)}　${weightLabel(def.weight)}`;

@@ -48,6 +48,30 @@ describe('ボスの大技の予告（ため）', () => {
     expect(eventsOf(s, 'action').some((e) => e.actionId === 'sweep')).toBe(false);
   });
 
+  it('ためをダウンで崩されたボスは怒り、立ち上がった次の行動で、ためずに大技を放つ（その間はダウンしない）', () => {
+    const thunder = { type: 'skill', skillId: 'thunder', target: { kind: 'enemy', id: 'enemy0' } } as const;
+    // 1ラウンド目：ためる
+    let s = execute(planAll(bossWith([sweep]), { hero: guard }));
+    s.enemies[0].weaknesses = ['thunder'];
+    // 2ラウンド目：弱点でダウン → ためが解けて怒る。ボスは立ち上がりに使う
+    s = runUntilInput(declineExtra(execute(planAll(s, { hero: thunder }))));
+    expect(s.enemies[0].enraged).toBe(true);
+    expect(eventsOf(s, 'standUp')).toHaveLength(1);
+    // 3ラウンド目：また弱点を突いてもダウンしない。ボスは、ためずに薙ぎ払いを放つ
+    const before = s.log.length;
+    s = execute(planAll(s, { hero: thunder }));
+    const round3 = s.log.slice(before);
+    expect(round3.some((e) => e.type === 'down')).toBe(false);
+    expect(round3.some((e) => e.type === 'charge')).toBe(false);
+    expect(round3.filter((e) => e.type === 'enraged')).toEqual([{ type: 'enraged', enemyId: 'enemy0' }]);
+    expect(round3.some((e) => e.type === 'action' && e.actionId === 'sweep')).toBe(true);
+    expect(round3.some((e) => e.type === 'damage' && e.targetId === 'hero')).toBe(true);
+    expect(s.enemies[0].enraged).toBe(false);
+    // 4ラウンド目：怒りは解け、また普通にためる
+    s = execute(planAll(s, { hero: guard }));
+    expect(s.enemies[0].charging).toBe('sweep');
+  });
+
   it('ためている大技の部位を壊すと、その場でためが解ける', () => {
     let s = execute(planAll(bossWith([roar]), { hero: guard }));
     expect(s.enemies[0].charging).toBe('roar');

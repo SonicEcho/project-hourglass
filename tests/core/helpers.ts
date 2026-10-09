@@ -43,6 +43,11 @@ export function battle(partial: Partial<BattleSetup> = {}): BattleState {
   return createBattle(setup(partial));
 }
 
+/** つながりゲージを満タンにする（連携技を使える状態。段階26の調整2） */
+export function fullGauge(state: BattleState): BattleState {
+  return { ...structuredClone(state), linkGauge: 100 };
+}
+
 /** 手札を指定したスナップに入れ替える（テスト用に状態を書き換える） */
 export function withHand(state: BattleState, cards: CardDef[]): BattleState {
   const s = structuredClone(state);

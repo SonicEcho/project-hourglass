@@ -1,5 +1,6 @@
 // 物語の流れ（段階23）：章 → 出来事の並び。Phaser に依存しない。
 // 出来事の中身（台本の場面、仮の画面の案内）は data 側が決めるので、ここでは並びと進め方だけを扱う
+import type { Lineup } from './lineup';
 
 /** 出来事の種類 */
 export type FlowEventKind =
@@ -33,6 +34,8 @@ export interface FlowEvent {
 export interface FlowChapter {
   id: string;
   name: string;
+  /** この章で戦う仲間と、開けている育成（段階26）。なければ前の章と同じ */
+  lineup?: Lineup;
   events: FlowEvent[];
 }
 
@@ -58,6 +61,16 @@ export function findEvent(flow: Flow, id: string): FlowEvent | null {
 /** その出来事がある章（なければ null） */
 export function chapterOfEvent(flow: Flow, id: string): FlowChapter | null {
   return flow.find((c) => c.events.some((e) => e.id === id)) ?? null;
+}
+
+/** その出来事の時のパーティ（章の lineup。なければ前の章のもの。どこにもなければ fallback） */
+export function lineupAt(flow: Flow, id: string, fallback: Lineup): Lineup {
+  const i = flow.findIndex((c) => c.events.some((e) => e.id === id));
+  for (let j = i; j >= 0; j--) {
+    const l = flow[j].lineup;
+    if (l) return l;
+  }
+  return fallback;
 }
 
 /** 次の出来事（最後なら null） */

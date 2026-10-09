@@ -36,8 +36,11 @@ export type Effect =
       ignoreResist?: boolean;
       /** 対象ごとに、この中から一番効く属性を選ぶ（弱点があれば弱点を突く） */
       bestOf?: Element[];
+      /** 当てる時にダウンしている敵へのダメージの倍率（連携技。段階26の調整2） */
+      downBonus?: number;
     }
-  | { kind: 'heal'; power: number }
+  /** 回復。allies なら行動の対象にかかわらず味方全体（敵を攻撃した後に回復する連携技など） */
+  | { kind: 'heal'; power: number; allies?: boolean }
   /** 手札を count 枚引く */
   | { kind: 'draw'; count: number }
   /** 手札をすべて捨て、count 枚引き直す */
@@ -217,6 +220,11 @@ export interface EnemyUnit extends UnitBase {
   standUpGuard: boolean;
   /** 力をためている大技の id（次の自分の行動で放つ）。ダウンや部位破壊で解ける */
   charging: string | null;
+  /**
+   * ためをダウンで崩されて怒っている。立ち上がった次の行動では、ためずにすぐ攻撃する（大技もためずに放つ）。
+   * その行動を終えるまではダウンしない（立ち上がりの歯止めが続く）
+   */
+  enraged: boolean;
   actions: EnemyActionDef[];
   parts: PartState[];
   ai: EnemyAi;
@@ -290,12 +298,16 @@ export type LogEvent =
   | { type: 'weaknessFound'; enemyId: string; element: Element }
   | { type: 'down'; enemyId: string }
   | { type: 'standUp'; enemyId: string }
+  /** ためを崩されて怒った敵が、ためずに攻撃する（この後に action が続く） */
+  | { type: 'enraged'; enemyId: string }
   /** 敵が大技の力をためた（次の自分の行動で放つ） */
   | { type: 'charge'; enemyId: string; actionId: string; name: string }
   /** ためが解けた（ダウンした、または部位が壊れて大技が封じられた） */
   | { type: 'chargeBroken'; enemyId: string; reason: 'down' | 'sealed' }
   | { type: 'oneMore'; actorId: string }
   | { type: 'baton'; fromId: string; toId: string }
+  /** つながりゲージが満タンになった（連携技を使える） */
+  | { type: 'linkReady' }
   | { type: 'guard'; actorId: string }
   /** ラウンドの始めの、特性によるHPの増減（狂いで減る・ファーストエイドで回復） */
   | { type: 'passiveHp'; allyId: string; source: 'bug' | 'regen'; amount: number; hpAfter: number }
@@ -331,6 +343,8 @@ export interface BattleState {
   /** 実行の順番待ち（先頭から実行する） */
   queue: QueueEntry[];
   extra: ExtraTurn | null;
+  /** 連携技のつながりゲージ（0〜LINK_GAUGE_MAX。満タンで連携技を使える。段階26の調整2） */
+  linkGauge: number;
   outcome: Outcome;
   log: LogEvent[];
 }

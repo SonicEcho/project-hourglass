@@ -9,7 +9,7 @@ import { PART_COLOR } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeEvolution, describeFragment, describeItemFragments, itemGains, PARAM_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
-import { run, saveRun } from './run';
+import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
 //
@@ -44,6 +44,9 @@ export class WeaponScene extends Phaser.Scene {
     this.overlay = undefined;
     this.selected = null;
     this.message = '';
+    // パーティにいない仲間を選んでいたら、先頭の仲間にする（段階26）
+    const members = lineupBase(hubLineup());
+    if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
   }
 
@@ -88,7 +91,7 @@ export class WeaponScene extends Phaser.Scene {
     c.add(this.add.rectangle(20, top, GAME_WIDTH - 40, 250, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent));
     c.add(addText(this, GAME_WIDTH / 2, top + 18, `${evo.name}に進化する？`, { size: 18, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     c.add(
-      addText(this, 40, top + 56, `${describeEvolution(evo, D.boardExtension)}\n\n進化は1回だけ。戻せない`, { size: 13, wrap: GAME_WIDTH - 80 }),
+      addText(this, 40, top + 56, `${describeEvolution(evo, hubLineup().unlocks.navi ? D.boardExtension : 0)}\n\n進化は1回だけ。戻せない`, { size: 13, wrap: GAME_WIDTH - 80 }),
     );
     const w = (GAME_WIDTH - 40 - 36) / 2;
     addButton(this, c, 32 + w / 2, top + 210, w, 52, 'やめる', { onTap: () => this.closeOverlay() }, { size: 15 });
@@ -148,7 +151,17 @@ export class WeaponScene extends Phaser.Scene {
     this.drawWeapon();
     this.drawEvolutions();
     this.drawInventory();
-    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, '星図へ戻る', { onTap: () => this.scene.start('Growth') }, {
+    // 星図が閉じている時は、探索へ直接戻る（段階26）
+    const back = hubLineup().unlocks.growth ? null : getHubReturn();
+    const leave = () => {
+      if (!back) {
+        this.scene.start('Growth');
+        return;
+      }
+      setHubReturn(null);
+      this.scene.start(back.key, back.data);
+    };
+    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, back ? '探索へ戻る' : '星図へ戻る', { onTap: leave }, {
       size: 16,
       bold: true,
     });
@@ -156,10 +169,11 @@ export class WeaponScene extends Phaser.Scene {
 
   private drawTabs(): void {
     const top = 36;
-    const n = PARTY.length;
+    const members = lineupBase(hubLineup());
+    const n = members.length;
     const gap = 6;
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-    PARTY.forEach((c, i) => {
+    members.forEach((c, i) => {
       const x = SIDE_PADDING + i * (w + gap);
       const active = c.id === this.charId;
       const ws = run.armory.weapons[c.id];
@@ -217,7 +231,8 @@ export class WeaponScene extends Phaser.Scene {
       this.root.add(addText(this, x + 6, y + 16, `${v}${extra}`, { size: 14, bold: true }));
     });
 
-    // 傾向
+    // 傾向（ムーブメントが閉じている間は出さない。段階26）
+    if (!hubLineup().unlocks.navi) return;
     const t = tendencyOf(w);
     const totals = (Object.entries(w.tendency) as [PartColor, number][]).filter(([, n]) => n > 0);
     this.root.add(
@@ -239,7 +254,11 @@ export class WeaponScene extends Phaser.Scene {
     const w = this.weapon();
     const def = D.weapons[w.defId];
     this.root.add(addText(this, SIDE_PADDING, EVO_TOP - 4, '進化先（長押しで詳細）', { size: 11, color: COLORS.subText }));
-    def.evolutions.forEach((evo, i) => {
+    // ムーブメントが閉じている間は、ギアの傾向が条件の進化先と、ブリッジが伸びる話を出さない（段階26）
+    const navi = hubLineup().unlocks.navi;
+    const ext = navi ? D.boardExtension : 0;
+    const evolutions = def.evolutions.filter((e) => navi || w.evolvedTo === e.id || !e.conditions.some((c) => c.kind === 'tendency'));
+    evolutions.forEach((evo, i) => {
       const y = EVO_TOP + 14 + i * (EVO_H + 4);
       const x0 = SIDE_PADDING;
       const width = GAME_WIDTH - SIDE_PADDING * 2;
@@ -253,7 +272,7 @@ export class WeaponScene extends Phaser.Scene {
       this.root.add(
         addText(this, x0 + 10, y + 6, `${chosen ? '★ ' : ''}${evo.name}`, { size: 15, bold: true, color: locked ? COLORS.dimText : chosen ? COLORS.accentText : COLORS.text }),
       );
-      this.root.add(addText(this, x0 + 10, y + 28, describeEvolution(evo, D.boardExtension), { size: 10, wrap: width - 120, color: locked ? COLORS.dimText : COLORS.text }));
+      this.root.add(addText(this, x0 + 10, y + 28, describeEvolution(evo, ext), { size: 10, wrap: width - 120, color: locked ? COLORS.dimText : COLORS.text }));
       if (!w.evolvedTo) {
         const line = checks.map((c) => `${c.ok ? '✓' : '✗'}${describeCondition(c.condition)}`).join('　');
         this.root.add(addText(this, x0 + 10, y + EVO_H - 20, line, { size: 11, bold: true, color: ok ? '#6dff9e' : COLORS.subText }));
@@ -263,7 +282,7 @@ export class WeaponScene extends Phaser.Scene {
           this.showDetail(
             evo.name,
             [
-              describeEvolution(evo, D.boardExtension),
+              describeEvolution(evo, ext),
               '',
               '条件：',
               ...checks.map((c) => `${c.ok ? '✓' : '✗'} ${describeCondition(c.condition)}`),

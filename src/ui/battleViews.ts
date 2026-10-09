@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
-import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, skillMpCost } from '../core';
-import { BASIC_ATTACK, CARDS, GUARD, HAND_SIZE, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, skillMpCost } from '../core';
+import { BASIC_ATTACK, CARDS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -42,6 +42,8 @@ export interface ViewModel {
   /** 魔法・スキルの一覧のページ（技が多い時） */
   skillPage: number;
   selectedComboId?: string;
+  /** 選んでいる連携技（段階26の調整2） */
+  selectedLinkId?: string;
   /** 選んだコンボの材料のスナップ */
   comboCardUids: number[];
   selectedTarget?: { kind: 'enemy' | 'ally'; id: string; partId?: string };
@@ -629,16 +631,20 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
   const s = vm.state;
   const canAct = !!vm.actor && vm.interactive && !s.searchChoice;
   const batonOk = canAct && s.phase === 'extra' && batonTargets(s).length > 0;
-  const link = s.links[0];
-  const linkOk =
-    canAct && s.phase === 'plan' && !!link && link.members.includes(vm.actor!.uid) && link.members.every((id) => (findUnit(s, id)?.hp ?? 0) > 0);
+  // 連携技：今の仲間が組めるもの（選んでいればそれ）。つながりゲージが満タンの時だけ使える（段階26の調整2）
+  const mine = vm.actor ? actorLinks(s, vm.actor.uid) : [];
+  const link = mine.find((l) => l.id === vm.selectedLinkId) ?? mine[0] ?? s.links[0];
+  const ready = linkReady(s);
+  const linkOk = canAct && s.phase === 'plan' && ready && mine.length > 0;
+  const gaugePct = Math.round((s.linkGauge / LINK_GAUGE_MAX) * 100);
+  const linkLabel = s.links.length === 0 ? '連携技' : linkOk && link ? `連携技\n${link.name}${mine.length > 1 ? ' ⇄' : ''}` : ready ? '連携技\n準備OK' : `連携技\nつながり ${gaugePct}%`;
   const n = 4;
   const gap = 6;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
   const items: { kind: 'skills' | 'baton' | 'link' | 'other'; label: string; enabled: boolean; lit?: boolean; active: boolean }[] = [
     { kind: 'skills', label: '魔法・\nスキル', enabled: canAct, active: vm.panel === 'skills' },
     { kind: 'baton', label: 'バトン\nタッチ', enabled: batonOk, lit: batonOk, active: vm.batonMode },
-    { kind: 'link', label: linkOk && link ? `連携技\n${link.name}` : '連携技', enabled: linkOk, lit: linkOk, active: vm.selectedComboId === undefined && false },
+    { kind: 'link', label: linkLabel, enabled: linkOk, lit: linkOk, active: !!vm.selectedLinkId },
     { kind: 'other', label: 'その他', enabled: canAct, active: vm.panel === 'other' },
   ];
   items.forEach((item, i) => {
@@ -667,6 +673,19 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
       },
     );
   });
+  if (s.links.length > 0) {
+    // つながりゲージ：連携技のボタンの下の端に、貯まった分だけ光る帯
+    const x = SIDE_PADDING + 2 * (w + gap) + 6;
+    const bw = w - 12;
+    const by = y + height - 18;
+    root.add(scene.add.rectangle(x, by, bw, 5, 0x000000, 0.5).setOrigin(0, 0.5));
+    if (gaugePct > 0) root.add(scene.add.rectangle(x, by, bw * (gaugePct / 100), 5, ready ? COLORS.accent : 0xff9a5a).setOrigin(0, 0.5));
+  }
+}
+
+/** その仲間が組める連携技（相方も生きているもの） */
+export function actorLinks(s: BattleState, actorId: string): LinkDef[] {
+  return s.links.filter((l) => l.members.includes(actorId) && l.members.every((id) => (findUnit(s, id)?.hp ?? 0) > 0));
 }
 
 function linkDetail(s: BattleState, link: LinkDef): string {
@@ -675,7 +694,8 @@ function linkDetail(s: BattleState, link: LinkDef): string {
     `${a}と${b}の2人技`,
     describeAction(link),
     '',
-    `使い方：計画で${a}か${b}の行動を選ぶ時に「連携技」を押す。2人分の行動をまとめて使う（2人とも生きていれば、いつでも選べる）。`,
+    `つながりゲージ：${s.linkGauge}/${LINK_GAUGE_MAX}。弱点を突く・ダウンさせる・バトンタッチ・部位破壊・攻撃を受けると貯まる。満タンで連携技を1回使え、使うと0に戻る。`,
+    `使い方：ゲージが満タンの時、計画で${a}か${b}の行動を選ぶ時に「連携技」を押す。2人分の行動をまとめて使う（組める技が2つある時は、もう一度押すと切り替わる）。`,
     `行動の速さは、2人のうち遅い方の速さ ÷ 重さ${formatWeight(link.weight)}（${weightLabel(link.weight)}）。`,
     '延長やバトンの追加行動では使えない。',
   ].join('\n');
@@ -742,6 +762,7 @@ function enemyDetail(e: EnemyUnit): string {
   const charged = chargingAction(e);
   if (charged) lines.push(`力をためている：次の行動で「${charged.name}」`, chargeCounterText(e));
   if (e.down) lines.push('ダウン中（次の手番は立ち上がりに使う）');
+  if (e.enraged) lines.push('怒っている：ためを崩されたので、立ち上がった次の行動ではためずに攻撃する（その攻撃まではダウンしない）');
   return lines.join('\n');
 }
 

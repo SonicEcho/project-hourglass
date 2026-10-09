@@ -95,28 +95,40 @@ export function startExplore(area: AreaDef): ExploreState {
 const same = (a: GridCell, b: GridCell): boolean => a[0] === b[0] && a[1] === b[1];
 
 /** マスに着いた時の出来事 */
-export type ArriveEvent =
-  | { type: 'chest'; chest: AreaChest }
-  | { type: 'checkpoint'; first: boolean }
-  | { type: 'none' };
+export type ArriveEvent = { type: 'checkpoint'; first: boolean } | { type: 'none' };
 
 /**
- * マスに着いた。宝箱なら開けて、チェックポイントなら記録する（どちらも新しい状態と出来事を返す）。
- * 宝箱の中身を持ち物に入れるのは呼ぶ側（武器と持ち物は weapon.ts）
+ * マスに着いた。チェックポイントなら記録する（新しい状態と出来事を返す）。
+ * 宝箱は、通っただけでは開かない（タップして隣まで来た時に openChest で開ける）
  */
 export function arrive(area: AreaDef, state: ExploreState, cell: GridCell): { state: ExploreState; event: ArriveEvent } {
-  let next: ExploreState = { ...state, cell };
-  const chest = area.chests.find((c) => same(c.cell, cell) && !state.openedChests.includes(c.id));
-  if (chest) {
-    next = { ...next, openedChests: [...next.openedChests, chest.id] };
-    return { state: next, event: { type: 'chest', chest } };
-  }
+  const next: ExploreState = { ...state, cell };
   if (cellsOf(area, 'P').some((p) => same(p, cell))) {
     // まだどのチェックポイントでも記録していなかった（出発点のまま）なら、初めて
     const first = cellsOf(area, 'P').every((p) => !same(p, state.checkpoint));
     return { state: { ...next, checkpoint: cell }, event: { type: 'checkpoint', first } };
   }
   return { state: next, event: { type: 'none' } };
+}
+
+/** そのマスにある、まだ開けていない宝箱（なければ null） */
+export function chestAt(area: AreaDef, state: ExploreState, cell: GridCell): AreaChest | null {
+  return area.chests.find((c) => same(c.cell, cell) && !state.openedChests.includes(c.id)) ?? null;
+}
+
+/**
+ * 宝箱を開ける（1回だけ）。開けた宝箱と新しい状態を返す。もう開けていた・知らない宝箱なら null。
+ * 中身を持ち物に入れるのは呼ぶ側（武器と持ち物は weapon.ts）
+ */
+export function openChest(area: AreaDef, state: ExploreState, chestId: string): { state: ExploreState; chest: AreaChest } | null {
+  const chest = area.chests.find((c) => c.id === chestId);
+  if (!chest || state.openedChests.includes(chest.id)) return null;
+  return { state: { ...state, openedChests: [...state.openedChests, chest.id] }, chest };
+}
+
+/** チェックポイントのマスか */
+export function isCheckpoint(area: AreaDef, cell: GridCell): boolean {
+  return cellsOf(area, 'P').some((p) => same(p, cell));
 }
 
 /** 敵の印がまだいるか */

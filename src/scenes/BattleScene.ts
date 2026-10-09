@@ -37,13 +37,14 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, SE, STORY, WEAPON_DATA } from '../data';
-import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
+import { actorLinks, chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
-import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, run, saveRun, setActiveBattle } from './run';
+import type { Lineup } from '../core';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -88,6 +89,8 @@ export class BattleScene extends Phaser.Scene {
   private progress!: Progress;
   private encounter?: BattleSceneData['encounter'];
   private battle!: CampaignBattle;
+  /** 戦う仲間（探索から来た戦闘は物語の章のパーティ、試作の5戦は3人。段階26） */
+  private lineup!: Lineup;
   /** 計画中に行動を選んでいる仲間 */
   private planner: string | null = null;
   private selection: Selection | null = null;
@@ -117,8 +120,11 @@ export class BattleScene extends Phaser.Scene {
     this.battle = areaBattle ?? battleAt(this.progress);
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id)) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
+    this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
     // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
-    this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty()));
+    this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty(this.lineup)));
+    // 探索から来た戦闘は、章の中で貯めたつながりゲージを引き継いで始める（段階26の調整3）
+    if (areaBattle && this.state.links.length > 0) this.state = { ...this.state, linkGauge: storyLinkGauge() };
     logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
@@ -486,6 +492,15 @@ export class BattleScene extends Phaser.Scene {
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
         return true;
       }
+      case 'linkReady': {
+        this.popup(GAME_WIDTH / 2, LAYOUT.message.y + 10, '連携技 READY!', COLORS.accentText, 24);
+        return true;
+      }
+      case 'enraged': {
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y - 20, '怒り！ためずに攻撃', COLORS.allyDamage, 18);
+        return true;
+      }
       case 'defeated': {
         const p = unitPosition(s, e.unitId);
         this.popup(p.x, p.y + 30, s.allies.some((a) => a.uid === e.unitId) ? '戦闘不能' : '撃破', COLORS.subText, 16);
@@ -728,6 +743,9 @@ export class BattleScene extends Phaser.Scene {
 
   /** 力をためている敵がいれば、大技の予告を返す */
   private chargeWarning(): string {
+    // ためを崩されて怒っている敵は、次の行動でためずに攻撃してくる（段階26の調整）
+    const angry = this.state.enemies.find((x) => x.hp > 0 && x.enraged);
+    if (angry) return `⚠ ${angry.name}は怒っている！ 立ち上がった次の行動で、ためずにすぐ攻撃してくる（その攻撃まではダウンしない。防御でしのぐ）`;
     const e = this.state.enemies.find((x) => x.hp > 0 && chargingAction(x));
     if (!e) return '';
     const a = chargingAction(e)!;
@@ -877,7 +895,11 @@ export class BattleScene extends Phaser.Scene {
           else if (batonTargets(this.state).length > 0) this.select({ source: 'baton' });
           return;
         }
-        const link = this.state.links[0];
+        // 組める連携技が2つある時は、押すたびに切り替える（段階26の調整2）
+        const mine = this.actor() ? actorLinks(this.state, this.actor()!.uid) : [];
+        const cur = this.selection?.pending.source === 'link' ? this.selection.pending.linkId : undefined;
+        const i = mine.findIndex((l) => l.id === cur);
+        const link = mine[(i + 1) % mine.length];
         if (link) this.select({ source: 'link', linkId: link.id });
       },
       confirm: () => void this.confirmSelection(),
@@ -960,6 +982,7 @@ export class BattleScene extends Phaser.Scene {
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
       skillPage: actor && this.skillPage.actorId === actor.uid ? this.skillPage.page : 0,
       selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
+      selectedLinkId: sel?.pending.source === 'link' ? sel.pending.linkId : undefined,
       comboCardUids: this.selectedComboCards(s),
       selectedTarget: sel?.target,
       batonMode: interactive && sel?.pending.source === 'baton',
@@ -1043,13 +1066,14 @@ export class BattleScene extends Phaser.Scene {
       if (hasReward) run.pendingReward = def.id;
       // 武器：素材とアイテムを受け取り、経験値とギアの傾向を貯める
       const naviData = currentNaviData();
-      const levelsBefore = Object.fromEntries(PARTY.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
+      const members = lineupBase(this.lineup);
+      const levelsBefore = Object.fromEntries(members.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
       run.armory = recordVictory(run.armory, {
         actions: result.actionCounts,
-        colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
+        colorCells: Object.fromEntries(members.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
         items: [...result.drops, ...(def.item ? [def.item] : [])],
       });
-      const levelUps = PARTY.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
+      const levelUps = members.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
         (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
       );
       // 「星図へ」を押す前に閉じても消えないように
@@ -1091,10 +1115,14 @@ export class BattleScene extends Phaser.Scene {
     }
     const gained = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
     run.growth = { ...run.growth, points: run.growth.points + gained };
+    // 残ったつながりゲージは、章の中の次の戦闘へ引き継ぐ（負けた時は、戦う前の量のまま。段階26の調整3）
+    if (this.state.links.length > 0) setStoryLinkGauge(this.state.linkGauge);
+    // ギアの報酬は出さない。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
+    const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];
     run.armory = recordVictory(run.armory, {
       actions: result.actionCounts,
-      colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
+      colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
       items: [...result.drops, ...(def.item ? [def.item] : [])],
     });
     saveRun();

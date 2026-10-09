@@ -1,6 +1,6 @@
 import type { AreaDef } from '../core/explore';
 import type { CampaignBattle } from './campaign';
-import { strengthen } from './campaign';
+import { scaleEnemy } from './campaign';
 import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
 import { PROTO_FESTIVAL_LAYOUT } from './prototypes';
 import { BGM } from './sounds';
@@ -22,20 +22,22 @@ export const AREA_TALK_RANGE = 1;
 
 /**
  * 区画の戦闘（段階25）。敵の砂嵐は段階27で作るので、今は試作の敵で代わりに戦う。
- * reward は星の砂、item は勝った時のアイテム（試作の5戦と同じ形）。ギアの報酬は、育成を開放する段階26で決める
+ * reward は星の砂、item は勝った時のアイテム（試作の5戦と同じ形）。ギアの報酬は出さない（1章はムーブメントが閉じている。段階26）。
+ * 段階26：1章はハルトとあかりの2人で戦うので、3体の戦闘とボスは弱めた（自動対戦の300回で、育成なしの勝率：
+ * storm1 97%、storm2 99%、storm3 92%、storm4 59%、ボス 42%。弱める前は storm3 16%、storm4 3%、ボス 0%）
  */
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐（仮）', enemies: [SLIME, SLIME], reward: 4, item: ITEMS.potion.id },
   a11_storm2: { id: 'a11_storm2', name: '砂嵐（仮）', enemies: [SLIME, FROST_BAT], reward: 5, item: ITEMS.ether.id },
-  a11_storm3: { id: 'a11_storm3', name: '砂嵐（仮）', enemies: [SLIME, FROST_BAT, ARMOR_DOG], reward: 6 },
+  a11_storm3: { id: 'a11_storm3', name: '砂嵐（仮）', enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => scaleEnemy(e, 0.65)), reward: 6 },
   a11_storm4: {
     id: 'a11_storm4',
     name: '砂嵐（仮）',
-    enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => strengthen(e, 1.2)),
+    enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => scaleEnemy(e, 0.75)),
     reward: 6,
     item: ITEMS.hiPotion.id,
   },
-  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし（仮）', enemies: [DISTORTED_BEAST], reward: 8, boss: true },
+  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし（仮）', enemies: [scaleEnemy(DISTORTED_BEAST, 0.6)], reward: 8, boss: true },
 };
 
 export const AREAS: Record<string, AreaDef> = {

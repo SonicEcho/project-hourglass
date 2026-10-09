@@ -41,7 +41,7 @@ function candidates(s: BattleState, pool: ReturnType<typeof availableHand>, acto
   ]);
   const list: PlayerAction[] = [];
   for (const c of availableCombos(s, pool)) list.push({ type: 'combo', comboId: c.id, target: targets[0] });
-  list.push({ type: 'link', linkId: 'crossDrive' });
+  for (const l of s.links) list.push({ type: 'link', linkId: l.id });
   for (const c of pool) {
     if (c.card.target === 'ally') list.push({ type: 'card', cardUid: c.uid, target: { kind: 'ally', id: weakest.uid } });
     for (const t of targets) list.push({ type: 'card', cardUid: c.uid, target: t });
@@ -67,7 +67,10 @@ export function autoPlan(s0: BattleState, pick: (n: number) => number): BattleSt
   }
   for (const a of livingAllies(s)) {
     if (s.plans.some((p) => !p.done && p.actorIds.includes(a.uid))) continue;
-    const valid = candidates(s, availableHand(s, [a.uid]), a.uid).filter((x) => getPlanError(s, a.uid, x) === null);
+    // 相方の行動がもう決まっている連携技は選ばない（選ぶと相方の計画を上書きしてしまう）
+    const partnerFree = (x: PlayerAction) =>
+      x.type !== 'link' || (s.links.find((l) => l.id === x.linkId)?.members ?? []).every((id) => id === a.uid || !s.plans.some((p) => !p.done && p.actorIds.includes(id)));
+    const valid = candidates(s, availableHand(s, [a.uid]), a.uid).filter((x) => partnerFree(x) && getPlanError(s, a.uid, x) === null);
     s = setPlan(s, a.uid, valid[pick(Math.min(valid.length, 5))]);
   }
   return s;

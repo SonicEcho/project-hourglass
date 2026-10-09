@@ -2,6 +2,8 @@ import type { AreaDef, ExploreState } from './explore';
 import { normalizeExplore } from './explore';
 import type { Flow } from './flow';
 import { dayAt, findEvent, firstEventId } from './flow';
+import type { ChapterGauge } from './lineup';
+import { LINK_GAUGE_MAX } from '../data/constants';
 import type { GrowthMap, GrowthState } from './growth';
 import { createGrowth } from './growth';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
@@ -15,7 +17,7 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -39,6 +41,8 @@ export interface RunSnapshot {
   vars: Record<string, string>;
   /** 探索の状態（探索の途中の時だけ。段階25。版4から） */
   explore: ExploreState | null;
+  /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3。版5から） */
+  linkGauge: ChapterGauge | null;
 }
 
 export interface SaveData {
@@ -73,6 +77,8 @@ export type SaveMigrations = Record<number, (raw: Record<string, unknown>) => Re
 export const MIGRATIONS: SaveMigrations = {
   // 版3 → 版4（段階25）：探索の状態を足す（版3の時は、まだ探索がなかった）
   3: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, explore: null } } : raw),
+  // 版4 → 版5（段階26の調整3）：引き継ぐつながりゲージを足す（版4の時は、戦闘ごとに0から）
+  4: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, linkGauge: null } } : raw),
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -137,7 +143,15 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     event,
     vars: stringsOf(raw.vars),
     explore: sanitizeExplore(raw.explore, ctx),
+    linkGauge: sanitizeGauge(raw.linkGauge, ctx),
   };
+}
+
+/** 引き継ぐつながりゲージ：今の流れにない章・形の違うものは捨て、量は 0〜満タンにおさめる */
+function sanitizeGauge(raw: unknown, ctx: SaveContext): ChapterGauge | null {
+  if (!isObject(raw) || typeof raw.chapter !== 'string' || typeof raw.value !== 'number' || !Number.isFinite(raw.value)) return null;
+  if (!ctx.flow.some((c) => c.id === raw.chapter)) return null;
+  return { chapter: raw.chapter, value: Math.max(0, Math.min(LINK_GAUGE_MAX, Math.round(raw.value))) };
 }
 
 function sanitizeGrowth(raw: Record<string, unknown>, ctx: SaveContext): GrowthState | null {

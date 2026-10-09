@@ -19,7 +19,7 @@ import { WeaponScene } from './scenes/WeaponScene';
 import { ResultScene } from './scenes/ResultScene';
 import { allBattles, progressAt } from './core';
 import { STORY } from './data';
-import { initRunFromUrl, run, saveRun, startNewRun } from './scenes/run';
+import { initRunFromUrl, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
 import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
 
@@ -75,6 +75,7 @@ if (debug) {
     },
     restartRun: () => {
       startNewRun();
+      setHubReturn(null);
       goTo('Growth', {});
     },
     refreshGrowth: () => {

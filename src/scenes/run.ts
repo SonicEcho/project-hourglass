@@ -1,4 +1,4 @@
-import type { ArmoryState, BattleState, CharacterDef, ExploreState, FlowEvent, GrowthState, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import type { ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -10,7 +10,11 @@ import {
   createNavi,
   advanceFlow,
   findEvent,
+  chapterOfEvent,
   firstEventId,
+  gaugeInChapter,
+  lineupAt,
+  lineupMembers,
   moveToEvent,
   naviDataWithWeapons,
   parseSave,
@@ -19,7 +23,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREAS, GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 
@@ -48,6 +52,8 @@ export const run: {
   vars: Record<string, string>;
   /** 探索の状態（探索の途中の時だけ。段階25） */
   explore: ExploreState | null;
+  /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3） */
+  linkGauge: ChapterGauge | null;
 } = {
   active: false,
   seed: 0,
@@ -60,6 +66,7 @@ export const run: {
   event: firstEventId(SLICE_FLOW),
   vars: {},
   explore: null,
+  linkGauge: null,
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -97,6 +104,7 @@ export function startNewRun(): void {
   run.event = firstEventId(SLICE_FLOW);
   run.vars = {};
   run.explore = null;
+  run.linkGauge = null;
   saveRun();
 }
 
@@ -179,6 +187,7 @@ function snapshot(): RunSnapshot {
     event: run.event,
     vars: run.vars,
     explore: run.explore,
+    linkGauge: run.linkGauge,
   };
 }
 
@@ -232,6 +241,7 @@ export function continueRun(): boolean {
   run.event = s.event;
   run.vars = s.vars;
   run.explore = s.explore;
+  run.linkGauge = s.linkGauge;
   run.active = true;
   lastWritten = null;
   saveRun();
@@ -266,10 +276,62 @@ export function currentNaviData(): NaviData {
   return naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, run.armory);
 }
 
-/** 成長を反映した仲間（星図 → ムーブメント → 武器の順に反映する） */
-export function currentParty(): CharacterDef[] {
-  const grown = applyGrowth(GROWTH_MAP, run.growth, PARTY, SKILLS);
-  return applyWeapons(WEAPON_DATA, run.armory, applyNavi(currentNaviData(), run.navi, grown));
+// ---- パーティと育成の開放（段階26） ----
+
+/** 画面の行き先（シーンの名前と、渡すデータ） */
+export interface SceneTarget {
+  key: string;
+  data: object;
+}
+
+/**
+ * 育成の画面（星図・ムーブメント・武器）を閉じた時の戻り先。探索のチェックポイントから開いた時だけ。
+ * null の時は試作の5戦の育成（3人・全部開放、「戦闘Nへ」）。セーブはしない（閉じて開き直すと、探索の画面から続く）
+ */
+let hubReturn: SceneTarget | null = null;
+
+/** 探索のチェックポイントから育成の画面を開く時に、戻り先を覚える。試作の5戦に入る時は null にする */
+export function setHubReturn(target: SceneTarget | null): void {
+  hubReturn = target;
+}
+
+export function getHubReturn(): SceneTarget | null {
+  return hubReturn;
+}
+
+/** 今の章で引き継いでいるつながりゲージ（別の章で貯めたものは0） */
+export function storyLinkGauge(): number {
+  return gaugeInChapter(run.linkGauge, chapterOfEvent(SLICE_FLOW, run.event)?.id);
+}
+
+/** 戦闘の後に残ったつながりゲージを、今の章のものとして覚える（セーブは呼ぶ側） */
+export function setStoryLinkGauge(value: number): void {
+  const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
+  run.linkGauge = chapter ? { chapter, value } : null;
+}
+
+/** 物語の今の章のパーティ（ハルトとあかり、など） */
+export function storyLineup(): Lineup {
+  return lineupAt(SLICE_FLOW, run.event, CHAPTER1_LINEUP);
+}
+
+/** 育成の画面で使うパーティ：探索から開いた時は物語の章のもの、それ以外は試作の5戦のもの */
+export function hubLineup(): Lineup {
+  return hubReturn ? storyLineup() : PROTOTYPE_LINEUP;
+}
+
+/** パーティにいる仲間（成長を反映しない、元のデータ） */
+export function lineupBase(lineup: Lineup): CharacterDef[] {
+  return lineupMembers(PARTY, lineup);
+}
+
+/** 成長を反映した、パーティにいる仲間（星図 → ムーブメント → 武器の順に反映する。閉じている育成は反映しない） */
+export function currentParty(lineup: Lineup = PROTOTYPE_LINEUP): CharacterDef[] {
+  const base = lineupBase(lineup);
+  const u = lineup.unlocks;
+  const grown = u.growth ? applyGrowth(GROWTH_MAP, run.growth, base, SKILLS) : base;
+  const navi = u.navi ? applyNavi(currentNaviData(), run.navi, grown) : grown;
+  return u.weapon ? applyWeapons(WEAPON_DATA, run.armory, navi) : navi;
 }
 
 /** デバッグメニューから今の戦闘を操作するための窓口 */

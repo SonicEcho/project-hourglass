@@ -168,6 +168,37 @@ describe('M1 の物語の流れ（段階23）', () => {
   });
 });
 
+describe('パーティと育成の開放（段階26）', () => {
+  it('どの章のパーティも書き間違いがなく、探索の章には自分のパーティがある。1章はハルトとあかりで、ムーブメントは閉じている', async () => {
+    const { CHAPTER1_LINEUP, PARTY, PROTOTYPE_LINEUP, SLICE_FLOW } = await import('../src/data');
+    const { checkLineup } = await import('../src/core');
+    const ids = PARTY.map((c) => c.id);
+    expect(checkLineup(PROTOTYPE_LINEUP, ids)).toEqual([]);
+    for (const c of SLICE_FLOW) {
+      if (c.lineup) expect(checkLineup(c.lineup, ids), c.id).toEqual([]);
+      if (c.events.some((e) => e.kind === 'explore')) expect(c.lineup, c.id).toBeDefined();
+    }
+    expect(SLICE_FLOW.find((c) => c.id === 'ch1')?.lineup).toBe(CHAPTER1_LINEUP);
+    expect(CHAPTER1_LINEUP.members).toEqual(['hero', 'akari']);
+    expect(CHAPTER1_LINEUP.unlocks).toEqual({ growth: true, navi: false, weapon: true });
+  });
+
+  it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {
+    const { AREA_BATTLES, CHAPTER1_LINEUP, PARTY, createCampaignSetup } = await import('../src/data');
+    const { createBattle, lineupMembers } = await import('../src/core');
+    const { autoPlay } = await import('../src/sim/autoBattle');
+    const two = lineupMembers(PARTY, CHAPTER1_LINEUP);
+    for (const battle of Object.values(AREA_BATTLES)) {
+      for (const seed of [1, 2, 3]) {
+        const s = autoPlay(createBattle(createCampaignSetup(battle, seed, two)), seed);
+        expect(s.allies.map((a) => a.uid), battle.id).toEqual(['hero', 'akari']);
+        expect(s.links.map((l) => l.id), battle.id).toEqual(['afterglow']);
+        expect(s.outcome, `${battle.id} ${seed}`).not.toBe('ongoing');
+      }
+    }
+  });
+});
+
 describe('M1 の台本（段階22）', () => {
   it('行き先がそろっていて、通しで見る順番の場面が全部ある', async () => {
     const { M1_SCENES, M1_SCENE_ORDER } = await import('../src/data');

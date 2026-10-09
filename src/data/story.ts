@@ -1,8 +1,10 @@
 import type { Flow, FlowEvent } from '../core/flow';
+import type { Lineup } from '../core/lineup';
 import type { Story } from '../core/progress';
 import { V1_AREA_ID, V1_CHAPTER_ID } from '../core/save';
 import type { CampaignBattle } from './campaign';
 import { CAMPAIGN } from './campaign';
+import { AKARI, HERO, MIO } from './characters';
 
 // 物語の章 → 区画 → 戦闘（段階13）。今は試作の1章・1区画に、今までの5戦だけ。
 // 章・区画・戦闘の id はセーブが覚えるので、名前を変えても id は変えない
@@ -18,6 +20,14 @@ export const STORY: Story<CampaignBattle> = [
     areas: [{ id: PROTOTYPE_AREA_ID, name: '試作の5戦', battles: CAMPAIGN }],
   },
 ];
+
+// ---- パーティと育成の開放（段階26） ----
+
+/** 試作の5戦（デバッグメニュー）：3人で戦い、育成をすべて開ける */
+export const PROTOTYPE_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true } };
+
+/** 1章：ハルトとあかりの2人。育成は星図と武器だけ（みおの加入とムーブメントは2章。M2 で開ける） */
+export const CHAPTER1_LINEUP: Lineup = { members: [HERO.id, AKARI.id], unlocks: { growth: true, navi: false, weapon: true } };
 
 // ---- 物語の流れ（段階23）：M1 のスライス（プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 → つづく） ----
 // 会話の出来事の id は、台本（scriptM1.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
@@ -39,6 +49,7 @@ export const SLICE_FLOW: Flow = [
   {
     id: 'ch1',
     name: '第1章「あっという間の夏」',
+    lineup: CHAPTER1_LINEUP,
     events: [
       talk('chapter1_title', '第1章'),
       { id: 'day1', kind: 'day', title: '1日目', day: 1 },
