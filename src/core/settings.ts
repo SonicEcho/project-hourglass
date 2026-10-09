@@ -1,4 +1,4 @@
-// 遊ぶ人の設定（段階19）。音量と、会話の文字の音（段階22）。セーブとは別に保存する（はじめからやり直しても消えない）
+// 遊ぶ人の設定（段階19）。音量と、会話の文字の音（段階22）、戦闘の早送りとオートの作戦（段階29）。セーブとは別に保存する（はじめからやり直しても消えない）
 
 /** 音量（0〜1） */
 export interface Settings {
@@ -11,6 +11,17 @@ export interface Settings {
    * スピーカーでは早めない（どちらを使っているかはブラウザから分からないので、遊ぶ人が選ぶ）
    */
   audioOut: AudioOut;
+  /** 戦闘の演出の速さ（1・2・3倍。段階29） */
+  battleSpeed: BattleSpeed;
+  /** 雑魚戦のオートの作戦（段階29。src/sim/tactics.ts の id） */
+  autoTactic: string;
+}
+
+export type BattleSpeed = 1 | 2 | 3;
+
+/** 早送りを次の速さへ（×3 の次は ×1） */
+export function nextBattleSpeed(v: BattleSpeed): BattleSpeed {
+  return v === 1 ? 2 : v === 2 ? 3 : 1;
 }
 
 export type AudioOut = 'speaker' | 'wireless';
@@ -18,7 +29,7 @@ export type AudioOut = 'speaker' | 'wireless';
 /** 選べる音量の段階 */
 export const VOLUME_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker' };
+export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 1, autoTactic: 'auto' };
 
 /** 0〜1 の段階のうち、一番近いものにそろえる。数でなければ fallback */
 function toStep(v: unknown, fallback: number): number {
@@ -41,6 +52,8 @@ export function parseSettings(text: string | null): Settings {
     seVolume: toStep(o.seVolume, DEFAULT_SETTINGS.seVolume),
     typeSound: typeof o.typeSound === 'boolean' ? o.typeSound : DEFAULT_SETTINGS.typeSound,
     audioOut: o.audioOut === 'wireless' ? 'wireless' : 'speaker',
+    battleSpeed: o.battleSpeed === 2 || o.battleSpeed === 3 ? o.battleSpeed : 1,
+    autoTactic: typeof o.autoTactic === 'string' && o.autoTactic !== '' ? o.autoTactic : DEFAULT_SETTINGS.autoTactic,
   };
 }
 

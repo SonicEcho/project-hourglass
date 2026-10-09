@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { playSe } from '../audio/sound';
+import { getSettings, playSe, setSettings } from '../audio/sound';
 import { autoExtra, autoPlan, lcg } from '../sim/autoBattle';
+import { extraByTactic, isTactic, planByTactic, type Tactic, TACTICS } from '../sim/tactics';
 import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
 import {
   advance,
@@ -46,6 +47,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
+import { nextBattleSpeed } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 
 /** 選んでいる行動の元 */
@@ -108,6 +110,8 @@ export class BattleScene extends Phaser.Scene {
   /** 連携技・コンボの演出中（数値を大きく、画面を揺らす） */
   private special = false;
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
+  /** オートの作戦（オート中だけ。段階29） */
+  private auto: Tactic | null = null;
 
   constructor() {
     super('Battle');
@@ -135,6 +139,9 @@ export class BattleScene extends Phaser.Scene {
     this.special = false;
     this.waits = [];
     this.overlay = undefined;
+    // 戦闘はいつも手動で始まる。早送りの速さは設定に覚えておいたもの（段階29）
+    this.auto = null;
+    this.applySpeed();
     this.planner = this.nextPlanner(null);
     this.root = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0).setDepth(100);
@@ -202,6 +209,104 @@ export class BattleScene extends Phaser.Scene {
     }
     this.message = this.idleMessage();
     this.render();
+    this.queueAuto();
+  }
+
+  // ---- オートと早送り（段階29） ----
+
+  /** 設定の速さで、演出の時間（待ち・動き）を縮める */
+  private applySpeed(): void {
+    const speed = getSettings().battleSpeed;
+    this.time.timeScale = speed;
+    this.tweens.timeScale = speed;
+  }
+
+  private toggleSpeed(): void {
+    const settings = getSettings();
+    setSettings({ ...settings, battleSpeed: nextBattleSpeed(settings.battleSpeed) });
+    this.applySpeed();
+    this.render();
+  }
+
+  /** オートを使える戦闘か。ボス戦では使えない */
+  private autoAvailable(): boolean {
+    return !this.battle.boss;
+  }
+
+  /** オートの作戦を選ぶ画面。選ぶと覚えて、すぐオートで進める */
+  private showAutoMenu(): void {
+    if (!this.autoAvailable() || this.busy) return;
+    this.closeOverlay();
+    const saved = getSettings().autoTactic;
+    const current = isTactic(saved) ? saved : 'auto';
+    const c = this.add.container(0, 0).setDepth(200);
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0);
+    c.add(shade);
+    makePressable(shade, { onTap: () => this.closeOverlay() });
+    const w = GAME_WIDTH - 40;
+    const rowH = 76;
+    const h = 70 + TACTICS.length * (rowH + 8) + 56;
+    const y = GAME_HEIGHT / 2 - h / 2;
+    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
+    panel.setInteractive();
+    c.add(panel);
+    c.add(addText(this, 36, y + 14, 'オートの作戦', { size: 17, bold: true, color: COLORS.accentText }));
+    c.add(addText(this, 36, y + 40, '選ぶとオートで進む。どこかをタップすると手動に戻る', { size: 12, color: COLORS.subText }));
+    TACTICS.forEach((t, i) => {
+      const ry = y + 70 + i * (rowH + 8);
+      const on = t.id === current;
+      addButton(this, c, GAME_WIDTH / 2, ry + rowH / 2, w - 32, rowH, '', { onTap: () => this.startAuto(t.id) }, on ? { fill: 0x2f6b3f, stroke: 0x6dff9e } : {});
+      c.add(addText(this, 44, ry + 10, `${on ? '▶ ' : ''}${t.name}`, { size: 16, bold: true }));
+      c.add(addText(this, 44, ry + 34, t.desc, { size: 12, wrap: w - 64, color: COLORS.subText }));
+    });
+    addButton(this, c, GAME_WIDTH / 2, y + h - 32, 140, 40, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
+    this.overlay = c;
+  }
+
+  private startAuto(tactic: Tactic): void {
+    this.closeOverlay();
+    if (!this.autoAvailable() || this.busy) return;
+    setSettings({ ...getSettings(), autoTactic: tactic });
+    this.auto = tactic;
+    this.clearSelection();
+    this.message = this.idleMessage();
+    this.render();
+    this.queueAuto();
+  }
+
+  private stopAuto(): void {
+    if (!this.auto) return;
+    this.auto = null;
+    if (!this.busy) {
+      this.message = this.idleMessage();
+      this.render();
+    }
+  }
+
+  /** オート中なら、少し間をおいて次の行動を作戦で決める */
+  private queueAuto(): void {
+    if (!this.auto) return;
+    this.time.delayedCall(250, () => this.autoStep());
+  }
+
+  private autoStep(): void {
+    const tactic = this.auto;
+    if (!tactic || this.busy || this.overlay) return;
+    const s = this.state;
+    if (s.phase === 'plan' && !s.searchChoice) {
+      this.clearSelection();
+      this.state = planByTactic(s, tactic);
+      this.startRound();
+      return;
+    }
+    if (s.phase !== 'extra') return;
+    this.clearSelection();
+    this.busy = true;
+    const after = extraByTactic(s, tactic);
+    void this.play(s, after).then(async () => {
+      if (this.state.phase === 'execute') await this.runExecution();
+      else this.finishPlayerStep();
+    });
   }
 
   // ---- 局面ごとの進行 ----
@@ -255,6 +360,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.state.phase === 'plan') this.planner = this.nextPlanner(null);
     this.message = this.idleMessage();
     this.render();
+    this.queueAuto();
   }
 
   private startRound(): void {
@@ -743,6 +849,7 @@ export class BattleScene extends Phaser.Scene {
   private idleMessage(): string {
     const s = this.state;
     const actor = this.actor();
+    if (this.auto) return `オートで進めている（作戦：${TACTICS.find((t) => t.id === this.auto)?.name ?? ''}）\nどこかをタップすると手動に戻る`;
     if (s.phase === 'extra' && actor) {
       return s.extra?.boost
         ? `バトンを受けた${actor.name}の追加行動（ダメージ・回復1.25倍）`
@@ -927,6 +1034,8 @@ export class BattleScene extends Phaser.Scene {
       confirm: () => void this.confirmSelection(),
       cancel: () => this.cancel(),
       execute: () => this.startRound(),
+      openAuto: () => this.showAutoMenu(),
+      toggleSpeed: () => this.toggleSpeed(),
       detail: (title, body) => this.showDetail(title, body),
     };
   }
@@ -964,7 +1073,7 @@ export class BattleScene extends Phaser.Scene {
   private render(s: BattleState = this.state): void {
     this.root.removeAll(true);
     const sel = this.selection;
-    const interactive = !this.busy && s === this.state && (s.phase === 'plan' || s.phase === 'extra');
+    const interactive = !this.busy && !this.auto && s === this.state && (s.phase === 'plan' || s.phase === 'extra');
     const actor = interactive ? this.actor(s) : undefined;
     const valid = !!sel && this.validate(sel) === null;
 
@@ -990,7 +1099,7 @@ export class BattleScene extends Phaser.Scene {
       for (const id of p.actorIds) planLabels[id] = this.planLabel(p.action, p.actorIds[0]);
     }
 
-    const footer: FooterMode = !interactive ? 'none' : sel ? 'select' : s.phase === 'plan' && !s.searchChoice ? 'execute' : 'none';
+    const footer: FooterMode = this.auto && s.phase !== 'ended' ? 'auto' : !interactive ? 'none' : sel ? 'select' : s.phase === 'plan' && !s.searchChoice ? 'execute' : 'none';
     const vm: ViewModel = {
       state: s,
       order,
@@ -1014,15 +1123,18 @@ export class BattleScene extends Phaser.Scene {
       canConfirm: valid,
       planComplete: isPlanComplete(s),
       interactive,
+      autoAvailable: this.autoAvailable(),
+      speed: getSettings().battleSpeed,
+      autoName: TACTICS.find((t) => t.id === this.auto)?.name ?? '',
     };
     drawBattle(this, this.root, vm, this.handlers());
 
-    // 演出中は全面でタップを受けて早送りにする
-    if (this.busy) {
+    // 演出中は全面でタップを受けて早送りにする。オート中は、タップで手動に戻す（段階29）
+    if (this.busy || this.auto) {
       const blocker = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.001).setOrigin(0);
       this.root.add(blocker);
       blocker.setInteractive();
-      blocker.on('pointerdown', () => this.skip());
+      blocker.on('pointerdown', () => (this.auto ? this.stopAuto() : this.skip()));
     }
   }
 
