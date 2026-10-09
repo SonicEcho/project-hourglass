@@ -200,7 +200,8 @@ export const SCRIPT_BGM: Record<string, string> = {
 };
 
 /**
- * 台本の効果音の名前 → 台帳の id。まだ入れていない音は null（鳴らさない。段階31b で効果音ラボから足す）
+ * 台本の効果音の名前 → 台帳の id（段階31c で効果音ラボの音を入れた）。
+ * null は音のファイルを使わない音：sand（語りの文の砂がさらさら落ちる音）は audio/sound.ts の playSand でその場で作る（効果音ラボに合う音がなかった）
  */
 export const SCRIPT_SE: Record<string, string | null> = {
   tap: SE.tap,
@@ -208,30 +209,31 @@ export const SCRIPT_SE: Record<string, string | null> = {
   chest: SE.chest,
   encounter: SE.encounter,
   sand: null,
-  crowd: null,
-  paper: null,
-  shot: null,
-  miss: null,
-  water: null,
-  splash: null,
-  poi_break: null,
-  firework: null,
-  drum: null,
-  footsteps: null,
-  alarm: null,
-  pan: null,
-  chime: null,
-  door_slam: null,
-  class_laugh: null,
-  store_enter: null,
-  bag_open: null,
-  shutter: null,
-  send: null,
-  bell: null,
-  phone: null,
-  noise: null,
-  hang_up: null,
-  door_open: null,
+  crowd: SE.crowd,
+  murmur: SE.classroom,
+  paper: SE.paper,
+  shot: SE.shot,
+  miss: SE.miss,
+  water: SE.water,
+  splash: SE.splash,
+  poi_break: SE.poiBreak,
+  firework: SE.firework,
+  drum: SE.drum,
+  footsteps: SE.footsteps,
+  alarm: SE.alarm,
+  pan: SE.pan,
+  chime: SE.chime,
+  door_slam: SE.doorSlam,
+  class_laugh: SE.classroom,
+  store_enter: SE.storeEnter,
+  bag_open: SE.bagOpen,
+  shutter: SE.shutter,
+  send: SE.send,
+  bell: SE.bell,
+  phone: SE.phone,
+  noise: SE.noise,
+  hang_up: SE.hangUp,
+  door_open: SE.doorOpen,
 };
 
 /**

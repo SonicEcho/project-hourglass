@@ -247,6 +247,15 @@ describe('M1 の台本（段階22）', () => {
     }
   });
 
+  it('台本の効果音は、その場で作る砂の音のほかは、すべて台帳の音が鳴る（段階31c）', async () => {
+    const { SCRIPT_SE, SAND_SOUND, ASSETS } = await import('../src/data');
+    for (const [name, id] of Object.entries(SCRIPT_SE)) {
+      if (name === 'sand') expect(id, name).toBeNull();
+      else expect(ASSETS.find((a) => a.id === id)?.kind, name).toBe('audio');
+    }
+    expect(SAND_SOUND.fadeInSec + SAND_SOUND.fadeOutSec).toBeLessThan(SAND_SOUND.durationSec);
+  });
+
   it('演出の命令は、ある背景・1枚絵・音・人だけを使う', async () => {
     const { ACTOR_MOTIONS, BACKDROPS, CAST, CGS, EMOTES, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
     for (const m of Object.values(FACE_MOTIONS)) expect(ACTOR_MOTIONS as readonly string[]).toContain(m);
