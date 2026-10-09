@@ -230,6 +230,40 @@ const YOUNG_HEAD =
   'Background: plain pure white, no shadow, no gradient. ' +
   'Draw the same character as the attached high school portrait, but as a 7-year-old child: round soft cheeks, bigger eyes, small shoulders, childlike proportions. Keep the same face features, hair color and eye color so that they are clearly the same person ten years earlier. ';
 
+/** 子どものころの3人の表情違いの指示文の頭（Gemini。基本の1枚を見本にして顔だけ変えた。docs/ART.md の 5-2 の 6） */
+const YOUNG_FACE_HEAD: Record<'hero' | 'akari' | 'riku', string> = {
+  hero: 'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair with the single sand-gold strand, amber eyes, white T-shirt, open navy hoodie with dusk-orange lining, childlike proportions, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects.',
+  akari:
+    'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, short chestnut bob, the small red goldfish hair clip, the small red ribbon in the hair, white goldfish yukata with red obi, childlike proportions, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no tears, no text, no effects.',
+  riku: 'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, messy dark-brown hair, the small bandage on his cheek, navy jinbei with white pattern, childlike proportions, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects.',
+};
+
+/** 子どものころの3人の表情違い（Gemini で、基本の1枚を見本にして顔だけ変えた） */
+function youngFace(who: 'hero' | 'akari' | 'riku', name: string, face: string, title: string, expression: string, base: string): AssetEntry {
+  return {
+    id: `portrait.young_${who}.${face}`,
+    kind: 'image',
+    title: `子どもの${name}の立ち絵（${title}）`,
+    file: `assets/portraits/young_${who}_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt: `${YOUNG_FACE_HEAD[who]}\nExpression: ${expression}`,
+      settings: `見本の絵：子どもの${name}の${base}の立ち絵（ChatGPT で作った基本の1枚。指示文はその台帳）。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
+    },
+    author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-09',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: 'docs/ART.md の 5-2 の 6。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
+  };
+}
+
 /** 子どものころの3人の立ち絵（段階31a。ChatGPT で、高校生の立ち絵を見本にして作った基本の1枚。表情違いは Gemini で作る予定） */
 function youngPortrait(who: 'hero' | 'akari' | 'riku', name: string, face: string, title: string, character: string, reference: string): AssetEntry {
   return {
@@ -358,7 +392,7 @@ export const ASSETS: AssetEntry[] = [
     termsCopy: 'docs/licenses/eruda.txt',
     notes: '?debug=1 の時だけ読み込むスマホ用のログ。配布物にはファイルとして入る',
   },
-  akariPortrait('smile', '笑顔', 'bright smile', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  akariPortrait('smile', '笑顔', 'a bright, warm smile with the mouth slightly open, eyes soft and happy', 'あかりのデジャヴの立ち絵（リボンが赤い版）。2026-10-09 に、リボンの色が違った絵を作り直した', AKARI_ADDED_HEAD),
   soundEffectLab('se.tap', 'ボタンを押す', 'tap.mp3', 'button', 'decision3.mp3（決定ボタンを押す3）'),
   soundEffectLab('se.slash', '斬る', 'slash.mp3', 'battle', 'sword-slash2.mp3（剣で斬る2）'),
   soundEffectLab('se.hit', '打撃', 'hit.mp3', 'battle', 'blow2.mp3（打撃2）'),
@@ -528,8 +562,25 @@ export const ASSETS: AssetEntry[] = [
     'Character: young Riku, 7 years old. A mischievous little leader, a proud confident grin showing his teeth. Short dark-brown hair, a little spiky and messy (not yet styled). Bright lively brown eyes, a small bandage on his cheek. A navy blue jinbei (Japanese summer festival outfit) with a simple white pattern.',
     'りくの笑顔の立ち絵',
   ),
+  youngFace('hero', 'ハルト', 'smile', '笑顔', 'a small, shy but happy smile with the mouth closed, eyes soft, a child who is just starting to open up', '通常'),
+  youngFace('akari', 'あかり', 'worried', '心配', 'gently worried, eyebrows raised in a troubled way, mouth slightly open, eyes looking at someone with concern', '笑顔'),
+  youngFace('riku', 'りく', 'smile', '笑顔', 'a big, bright, carefree open-mouthed smile, eyes happily narrowed', '得意げ'),
+  youngFace(
+    'riku',
+    'りく',
+    'serious',
+    '真剣',
+    'serious and focused, mouth firmly closed, brows drawn together, eyes sharp and determined, like a little leader making a decision',
+    '得意げ',
+  ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
-  akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
+  akariPortrait(
+    'worried',
+    '心配',
+    'gently worried, eyebrows raised in a troubled way, mouth slightly open, eyes looking at someone with concern',
+    'あかりのデジャヴの立ち絵（リボンが赤い版）。2026-10-09 に、リボンの色が違った絵を作り直した',
+    AKARI_ADDED_HEAD,
+  ),
   akariPortrait(
     'pout',
     'むっ',

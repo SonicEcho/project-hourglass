@@ -75,14 +75,14 @@ const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]
 /** 子どものころの3人の立ち絵の高さ。高校生（450）より小さく出して、背の低さを表す（docs/ART.md の 5-2 の 6） */
 const YOUNG_HEIGHT = 360;
 /**
- * 子どものころの3人の表情。絵は基本の1枚だけなので（表情違いは段階31a で Gemini で作る）、ほかの表情はその1枚で代わりに出す。
- * 絵が届いたら、その表情の id を台帳の id に替え、fallback から外す
+ * 子どものころの3人の表情。drawn は絵のある表情 → 台帳の id、base は最初の表情（絵のある表情の1つ）。
+ * 絵のない表情は、絵が届くまで base の絵で代わりに出す。絵が届いたら drawn に足す
  */
-function young(faces: string[], id: string, base: string): Pick<CastMember, 'faces' | 'firstFace' | 'fallback'> {
+function young(faces: string[], drawn: Record<string, string>, base: string): Pick<CastMember, 'faces' | 'firstFace' | 'fallback'> {
   return {
-    faces: Object.fromEntries(faces.map((f) => [f, f === base ? id : f])),
+    faces: Object.fromEntries(faces.map((f) => [f, drawn[f] ?? f])),
     firstFace: base,
-    fallback: Object.fromEntries(faces.filter((f) => f !== base).map((f) => [f, base])),
+    fallback: Object.fromEntries(faces.filter((f) => !(f in drawn)).map((f) => [f, base])),
   };
 }
 
@@ -90,17 +90,17 @@ export const CAST: Record<string, CastMember> = {
   ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 450, voice: { pitch: 300, wave: 'sawtooth' } },
   あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
   りく: { portrait: 'portrait.riku', faces: RIKU_FACES, height: 450, firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
-  子ハルト: { portrait: 'portrait.young_hero', ...young(['通常', '笑顔', '驚き', '照れ', '困り'], 'normal', '通常'), color: 0x4a7fb5, height: YOUNG_HEIGHT, voice: { pitch: 440, wave: 'sawtooth' } },
+  子ハルト: { portrait: 'portrait.young_hero', ...young(['通常', '笑顔', '驚き', '照れ', '困り'], { 通常: 'normal', 笑顔: 'smile' }, '通常'), color: 0x4a7fb5, height: YOUNG_HEIGHT, voice: { pitch: 440, wave: 'sawtooth' } },
   子あかり: {
     portrait: 'portrait.young_akari',
-    ...young(['笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'], 'smile', '笑顔'),
+    ...young(['笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'], { 笑顔: 'smile', 心配: 'worried' }, '笑顔'),
     color: 0xd06b8a,
     height: YOUNG_HEIGHT,
     voice: { pitch: 760, wave: 'triangle' },
   },
   子りく: {
     portrait: 'portrait.young_riku',
-    ...young(['通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'], 'proud', '得意げ'),
+    ...young(['通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'], { 得意げ: 'proud', 笑顔: 'smile', 真剣: 'serious' }, '得意げ'),
     color: 0x6a9a4a,
     height: YOUNG_HEIGHT,
     voice: { pitch: 500, wave: 'square' },
