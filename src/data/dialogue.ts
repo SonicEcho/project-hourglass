@@ -72,13 +72,39 @@ const RIKU_FACES = {
 /** 絵のない人の表情（名前だけ。絵ができたら台帳の id に替える） */
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
+/** 子どものころの3人の立ち絵の高さ。高校生（450）より小さく出して、背の低さを表す（docs/ART.md の 5-2 の 6） */
+const YOUNG_HEIGHT = 360;
+/**
+ * 子どものころの3人の表情。絵は基本の1枚だけなので（表情違いは段階31a で Gemini で作る）、ほかの表情はその1枚で代わりに出す。
+ * 絵が届いたら、その表情の id を台帳の id に替え、fallback から外す
+ */
+function young(faces: string[], id: string, base: string): Pick<CastMember, 'faces' | 'firstFace' | 'fallback'> {
+  return {
+    faces: Object.fromEntries(faces.map((f) => [f, f === base ? id : f])),
+    firstFace: base,
+    fallback: Object.fromEntries(faces.filter((f) => f !== base).map((f) => [f, base])),
+  };
+}
+
 export const CAST: Record<string, CastMember> = {
   ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 450, voice: { pitch: 300, wave: 'sawtooth' } },
   あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
   りく: { portrait: 'portrait.riku', faces: RIKU_FACES, height: 450, firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
-  子ハルト: { faces: names('通常', '笑顔', '驚き', '照れ', '困り'), firstFace: '通常', color: 0x4a7fb5, voice: { pitch: 440, wave: 'sawtooth' } },
-  子あかり: { faces: names('笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'), firstFace: '笑顔', color: 0xd06b8a, voice: { pitch: 760, wave: 'triangle' } },
-  子りく: { faces: names('通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'), firstFace: '得意げ', color: 0x6a9a4a, voice: { pitch: 500, wave: 'square' } },
+  子ハルト: { portrait: 'portrait.young_hero', ...young(['通常', '笑顔', '驚き', '照れ', '困り'], 'normal', '通常'), color: 0x4a7fb5, height: YOUNG_HEIGHT, voice: { pitch: 440, wave: 'sawtooth' } },
+  子あかり: {
+    portrait: 'portrait.young_akari',
+    ...young(['笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'], 'smile', '笑顔'),
+    color: 0xd06b8a,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 760, wave: 'triangle' },
+  },
+  子りく: {
+    portrait: 'portrait.young_riku',
+    ...young(['通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'], 'proud', '得意げ'),
+    color: 0x6a9a4a,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 500, wave: 'square' },
+  },
   ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
   写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
@@ -138,8 +164,8 @@ export const BACKDROPS: Record<string, Backdrop> = {
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
   clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
   clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, image: 'bg.clock_shop', tint: 0x5a6aa8, ambient: 'dust' },
-  clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420, ambient: 'dust' },
-  library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020, ambient: 'dust' },
+  clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420, image: 'bg.clock_shop_back', ambient: 'dust' },
+  library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020, image: 'bg.library', ambient: 'dust' },
   festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival', ambient: 'lanterns' },
 };
 

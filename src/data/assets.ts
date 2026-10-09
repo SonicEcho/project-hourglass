@@ -203,7 +203,7 @@ function rikuFace(face: string, title: string, expression: string): AssetEntry {
 }
 
 /** 会話の背景（段階31a）。ChatGPT で作った1枚絵 */
-function backdrop(id: string, title: string, file: string, prompt: string, settings: string): AssetEntry {
+function backdrop(id: string, title: string, file: string, prompt: string, settings: string, acquiredAt = '2026-10-08'): AssetEntry {
   return {
     id: `bg.${id}`,
     kind: 'image',
@@ -216,9 +216,43 @@ function backdrop(id: string, title: string, file: string, prompt: string, setti
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
-    acquiredAt: '2026-10-08',
+    acquiredAt,
     termsCopy: 'docs/licenses/ai-openai.md',
     notes: 'docs/ART.md の 5-2',
+  };
+}
+
+/** 子どものころの3人（7歳）の指示文の頭（docs/ART.md の 5-2 の 6） */
+const YOUNG_HEAD =
+  'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer. ' +
+  'Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait. ' +
+  'Pose: both arms relaxed down at the sides, hands outside the frame. No props. ' +
+  'Background: plain pure white, no shadow, no gradient. ' +
+  'Draw the same character as the attached high school portrait, but as a 7-year-old child: round soft cheeks, bigger eyes, small shoulders, childlike proportions. Keep the same face features, hair color and eye color so that they are clearly the same person ten years earlier. ';
+
+/** 子どものころの3人の立ち絵（段階31a。ChatGPT で、高校生の立ち絵を見本にして作った基本の1枚。表情違いは Gemini で作る予定） */
+function youngPortrait(who: 'hero' | 'akari' | 'riku', name: string, face: string, title: string, character: string, reference: string): AssetEntry {
+  return {
+    id: `portrait.young_${who}.${face}`,
+    kind: 'image',
+    title: `子どもの${name}の立ち絵（${title}）`,
+    file: `assets/portraits/young_${who}_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'ChatGPT',
+      plan: '無料',
+      prompt: STYLE_PREFIX + YOUNG_HEAD + character,
+      settings: `見本の絵：${reference}。1024×1536 で出てきた。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
+    },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-09',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: 'docs/ART.md の 5-2 の 6。背の低さはゲームの側で小さく出して表す（src/data/dialogue.ts の CAST の height）',
   };
 }
 
@@ -428,6 +462,54 @@ export const ASSETS: AssetEntry[] = [
       'Eye-level camera, looking from the entrance toward the back of the shop. Keep the lower third of the image simple (floor and the front of the counter), because a dialogue box will cover it. ' +
       'Absolutely no letters or text anywhere: clock faces have simple marks instead of numbers, no signs, no labels, no price tags.',
     '元の絵は 941×1672。720×1280 に縮めて WebP にした。夜の場面（1-G）は、ゲームの側で青い色をかけて使い回す',
+  ),
+  backdrop(
+    'clock_shop_back',
+    '時計屋の奥の部屋',
+    'clock_shop_back.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people. ' +
+      'The small back room of an old Japanese watch and clock shop, at summer dusk. Make it look like the back room of the same shop as the attached reference image. A cluttered wooden workbench with a desk lamp, tiny screwdrivers, tweezers, a magnifying loupe and opened pocket watches; drawers full of small parts; a few wall clocks. Against the far wall stands a tall antique pendulum clock (grandfather clock), centered in the image, with plain empty wall space around it (a glowing door will appear on that wall later in the game). A small high window lets in orange evening light; the corners fall into soft indigo shadow. Quiet, nostalgic, the feeling that time is about to stop. ' +
+      'Eye-level camera, the pendulum clock in the center. Keep the lower third of the image simple (floor and the front edge of the workbench), because a dialogue box will cover it. ' +
+      'Absolutely no letters or text anywhere: clock faces have simple marks instead of numbers, no labels, no papers with writing.',
+    '見本の絵：時計屋の店内の背景（bg.clock_shop）。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    '2026-10-09',
+  ),
+  backdrop(
+    'library',
+    'レストピアの蔵書の棚',
+    'library.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people. ' +
+      'A vast, fantastical library where time is stored instead of books. Towering dark-wood bookshelves rise so high that the ceiling cannot be seen, fading into a warm golden haze. On every shelf, hourglasses of many sizes stand in rows like books; inside each hourglass, softly glowing sand, and faint tiny scenes of everyday memories (a sports day, a summer festival, a birthday) shimmer in the glass. Each hourglass has a small blank paper tag tied to it. Fine golden sand particles drift slowly upward in the air. Light comes from the glowing hourglasses themselves: amber and soft gold, with deep indigo shadows between the shelves. Beautiful, quiet, nostalgic, a little lonely. ' +
+      'Eye-level camera, looking down a long aisle between two shelves. Keep the lower third of the image simple (the floor of the aisle), because a dialogue box will cover it. ' +
+      'Absolutely no letters or text anywhere: tags and book spines are blank.',
+    '元の絵は 941×1672。720×1280 に縮めて WebP にした。2枚作り、下の3分の1（床）がすっきりした方を使った',
+    '2026-10-09',
+  ),
+  youngPortrait(
+    'hero',
+    'ハルト',
+    'normal',
+    '通常',
+    'Character: young Haruto, 7 years old. Quiet, a little shy and distant, a calm neutral expression, looking slightly unsure. Messy short black hair with a slight navy tint, ONE single strand in the front bangs colored sand-gold. Warm amber eyes. Plain white short-sleeve T-shirt with no logo, and a dark navy zip hoodie with dusk-orange lining worn open (a little too big for him).',
+    'ハルトの通常の立ち絵',
+  ),
+  youngPortrait(
+    'akari',
+    'あかり',
+    'smile',
+    '笑顔',
+    'Character: young Akari, 7 years old. Bright, cheerful, a big warm smile. Soft chestnut-brown hair in a short bob with side-swept bangs, a small red goldfish hair clip on the left side (shiny and new). A summer yukata, white with a pattern of small red goldfish and light blue water ripples, with a red obi sash.',
+    'あかりのデジャヴの立ち絵（リボンが赤い版）',
+  ),
+  youngPortrait(
+    'riku',
+    'りく',
+    'proud',
+    '得意げ',
+    'Character: young Riku, 7 years old. A mischievous little leader, a proud confident grin showing his teeth. Short dark-brown hair, a little spiky and messy (not yet styled). Bright lively brown eyes, a small bandage on his cheek. A navy blue jinbei (Japanese summer festival outfit) with a simple white pattern.',
+    'りくの笑顔の立ち絵',
   ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait('worried', '心配', 'gentle worried look', 'ChatGPT の全身の絵を Gemini で白い背景に描き直した絵'),
