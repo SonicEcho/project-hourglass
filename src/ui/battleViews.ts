@@ -17,8 +17,10 @@ export type Panel = 'none' | 'skills' | 'other' | 'discard' | 'search';
 export type FooterMode =
   /** 行動を選んでいる最中：キャンセル／決定 */
   | 'select'
-  /** 計画中で何も選んでいない：実行 */
+  /** 計画中で何も選んでいない：オート／早送り／実行 */
   | 'execute'
+  /** オートで進めている（段階29）：どこかをタップすると手動に戻る */
+  | 'auto'
   | 'none';
 
 export interface ViewModel {
@@ -56,6 +58,12 @@ export interface ViewModel {
   planComplete: boolean;
   /** 操作を受け付けるか（演出中は false） */
   interactive: boolean;
+  /** オートを使える戦闘か（ボス戦では使えない。段階29） */
+  autoAvailable: boolean;
+  /** 演出の速さ（1・2・3倍） */
+  speed: number;
+  /** オート中の作戦の名前 */
+  autoName: string;
 }
 
 export interface ViewHandlers {
@@ -74,6 +82,10 @@ export interface ViewHandlers {
   confirm(): void;
   cancel(): void;
   execute(): void;
+  /** オートの作戦を選ぶ（段階29） */
+  openAuto(): void;
+  /** 早送りの速さを切り替える */
+  toggleSpeed(): void;
   detail(title: string, body: string): void;
 }
 
@@ -718,18 +730,35 @@ function drawFooter(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
       bold: true,
     });
   } else if (vm.footer === 'execute') {
+    // 左から オート（雑魚戦だけ）・早送り・実行（段階29）
     const left = vm.state.allies.filter((a) => a.hp > 0 && !vm.planLabels[a.uid]).length;
+    const gap = 6;
+    const autoW = vm.autoAvailable ? 76 : 0;
+    const speedW = 56;
+    const execW = GAME_WIDTH - SIDE_PADDING * 2 - speedW - gap - (autoW ? autoW + gap : 0);
+    let x = SIDE_PADDING;
+    const cy = y + height / 2;
+    if (autoW) {
+      addButton(scene, root, x + autoW / 2, cy, autoW, height - 12, 'オート', { onTap: () => h.openAuto() }, { enabled: vm.interactive, size: 15, bold: true });
+      x += autoW + gap;
+    }
+    addButton(scene, root, x + speedW / 2, cy, speedW, height - 12, `×${vm.speed}`, { onTap: () => h.toggleSpeed() }, { enabled: vm.interactive, size: 15, bold: true });
+    x += speedW + gap;
     addButton(
       scene,
       root,
-      GAME_WIDTH / 2,
-      y + height / 2,
-      GAME_WIDTH - SIDE_PADDING * 2,
+      x + execW / 2,
+      cy,
+      execW,
       height - 12,
-      vm.planComplete ? '実行' : `実行（あと${left}人の行動を選ぶ）`,
+      vm.planComplete ? '実行' : `実行（あと${left}人）`,
       { onTap: () => h.execute() },
       { enabled: vm.planComplete && vm.interactive, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
+  } else if (vm.footer === 'auto') {
+    const w = GAME_WIDTH - SIDE_PADDING * 2;
+    root.add(scene.add.rectangle(GAME_WIDTH / 2, y + height / 2, w, height - 12, 0x1d3b5a).setStrokeStyle(2, 0x7fc4ff));
+    root.add(addText(scene, GAME_WIDTH / 2, y + height / 2, `オート（${vm.autoName}）×${vm.speed}\nどこかをタップすると手動に戻る`, { size: 14, bold: true, align: 'center' }).setOrigin(0.5));
   }
 }
 

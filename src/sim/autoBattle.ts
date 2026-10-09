@@ -32,7 +32,7 @@ export function lcg(seed: number): (n: number) => number {
 }
 
 /** 単純な方針で選べる行動の候補 */
-function candidates(s: BattleState, pool: ReturnType<typeof availableHand>, actorId: string): PlayerAction[] {
+export function candidates(s: BattleState, pool: ReturnType<typeof availableHand>, actorId: string): PlayerAction[] {
   const actor = s.allies.find((a) => a.uid === actorId)!;
   const enemies = s.enemies.filter((e) => e.hp > 0);
   const weakest = livingAllies(s).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
