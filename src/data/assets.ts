@@ -202,22 +202,23 @@ function rikuFace(face: string, title: string, expression: string): AssetEntry {
   };
 }
 
-/** 会話の背景（段階31a）。ChatGPT で作った1枚絵 */
-function backdrop(id: string, title: string, file: string, prompt: string, settings: string, acquiredAt = '2026-10-08'): AssetEntry {
+/** 会話の背景（段階31a）。ChatGPT か Gemini で作った1枚絵 */
+function backdrop(id: string, title: string, file: string, prompt: string, settings: string, acquiredAt = '2026-10-08', service: 'chatgpt' | 'gemini' = 'chatgpt'): AssetEntry {
+  const gemini = service === 'gemini';
   return {
     id: `bg.${id}`,
     kind: 'image',
     title: `会話の背景（${title}）`,
     file: `assets/backgrounds/${file}`,
     status: 'placeholder',
-    source: { type: 'ai', service: 'ChatGPT', plan: '無料', prompt, settings },
-    author: 'RESTOPIA 開発（ChatGPT で作成）',
-    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    source: { type: 'ai', service: gemini ? 'Google Gemini（Gemini アプリ）' : 'ChatGPT', plan: '無料', prompt, settings },
+    author: gemini ? 'RESTOPIA 開発（Google Gemini で作成）' : 'RESTOPIA 開発（ChatGPT で作成）',
+    license: gemini ? 'Google 利用規約（生成した内容の所有権を主張しない）' : 'OpenAI 利用規約（出力の権利は利用者に渡す）',
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
     acquiredAt,
-    termsCopy: 'docs/licenses/ai-openai.md',
+    termsCopy: gemini ? 'docs/licenses/ai-gemini.md' : 'docs/licenses/ai-openai.md',
     notes: 'docs/ART.md の 5-2',
   };
 }
@@ -537,6 +538,32 @@ export const ASSETS: AssetEntry[] = [
       'Absolutely no letters or text anywhere: tags and book spines are blank.',
     '元の絵は 941×1672。720×1280 に縮めて WebP にした。2枚作り、下の3分の1（床）がすっきりした方を使った',
     '2026-10-09',
+  ),
+  backdrop(
+    'shopping_street',
+    '商店街',
+    'shopping_street.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people in the foreground. ' +
+      'A small covered shopping street (shotengai) in a quiet Japanese regional town, on a summer afternoon after school. A long, straight street under a translucent arcade roof, with small family-run shops on both sides: a convenience store with bright glass doors on the left, a bakery, a bookshop, a small vegetable shop with crates outside. Far down the street, at the very end, a small old watch and clock shop with warm light inside. A tall round street clock on a post stands in the middle distance; its face has simple marks and two clear hands, no numbers. Bicycles parked along the shop fronts, potted plants, a few tiny blurred figures far away. Soft afternoon sunlight with a hint of early-evening amber; calm, lived-in, nostalgic. ' +
+      'Eye-level camera, the street centered and receding into the distance. Keep the lower third of the image simple (the paved street), because a dialogue box will cover it. ' +
+      'Absolutely no letters or text anywhere: shop signs, banners, posters and windows are blank or have simple patterns only.',
+    '元の絵は 941×1672。720×1280 に縮めて WebP にした。1-C・2-B と、日常の商店街で使う',
+    '2026-10-09',
+    'gemini',
+  ),
+  backdrop(
+    'classroom',
+    '教室（朝）',
+    'classroom.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people. ' +
+      "An ordinary Japanese high school classroom on a summer morning before homeroom. Rows of wooden desks and chairs, a few school bags hanging on desk hooks, a green chalkboard at the front wiped mostly clean, a teacher's podium, a round wall clock above the chalkboard with simple marks instead of numbers. Large windows along one side with white curtains moving in a light breeze, bright morning sunlight falling across the desks, blue summer sky and green trees outside. Fresh, peaceful, slightly nostalgic. " +
+      'Eye-level camera from the back of the room looking toward the chalkboard. Keep the lower third of the image simple (the floor and the backs of the nearest desks), because a dialogue box will cover it. ' +
+      'Absolutely no letters or text anywhere: the chalkboard, posters and notices are blank.',
+    '元の絵は 940×1672。720×1280 に縮めて WebP にした。1-B・2-A と、日常の学校で使う',
+    '2026-10-09',
+    'gemini',
   ),
   youngPortrait(
     'hero',

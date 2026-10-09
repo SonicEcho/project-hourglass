@@ -130,7 +130,25 @@ ChatGPT の無料枠で、毎日少しずつ作る。上から順に作る（ゲ
 | 5 | 背景：レストピアの蔵書の棚 | ChatGPT | なし | 済（2026-10-09。`bg.library`。2枚作り、下の3分の1（床）がすっきりした方を使った） |
 | 6 | 子どものころの3人の基本の1枚（7歳。1人ずつ） | ChatGPT | 高校生の3人の絵 | 済（2026-10-09。`portrait.young_hero.normal`・`young_akari.smile`・`young_riku.proud`。立ち絵の高さは 360（高校生は 450）。ほかの表情は、表情違いができるまでこの1枚で代わりに出す） |
 | 7 | 地図：1-1「金魚の名前」の縁日（見下ろし。段階18b の仮の絵を作り直す） | ChatGPT | 段階18b の仮の地図の絵（配置の見本。あれば） | 済（2026-10-08。`map.festival` を差し替え、歩ける場所の文字の地図も書き直した。少し夜寄りの色なので、ゲームの側で明るさを寄せるか段階25で決める） |
+| 8 | 背景：商店街（昼。奥に時計屋、真ん中に街の時計） | ChatGPT（実際は Gemini） | なし | 済（2026-10-09。`bg.shopping_street`。1-C・2-B と日常の商店街） |
+| 9 | 背景：教室（朝） | ChatGPT（実際は Gemini） | なし | 済（2026-10-09。`bg.classroom`。1-B・2-A と日常の学校） |
+| 10 | 1枚絵：ノアとのすれ違い（2-C） | ChatGPT | ハルトとあかりの立ち絵 | まだ |
 | ― | 表情違い（あかり・ハルトの足した5つずつ、りくなど） | Gemini | 基本の1枚 | りくの7つ、ハルトの8つ、あかりの足した5つは済（2026-10-08）。あかりの笑顔・心配のリボンの色の直し（デジャヴの絵を見本に作り直した）と、子どもの3人の M1 で使う表情違い（ハルトの笑顔、あかりの心配、りくの笑顔・真剣）は済（2026-10-09）。子どもの3人のほかの表情（台本の `CAST` にある物）は、後の章で使う時に作る |
+
+**8〜10 の指示文**（2026-10-09。共通部分は下の指示文にもう付けてある。8・9 は Gemini で作った。台帳 `src/data/assets.ts` に全文がある）
+
+- 8 商店街：放課後の商店街。左にコンビニ、パン屋・本屋・八百屋、通りの奥に小さな時計屋、真ん中に数字のない街の時計（1-C で秒針が止まる）。下の3分の1は石畳だけ
+- 9 教室：朝の教室を後ろから黒板の方へ。窓と白いカーテン、黒板の上に数字のない丸い時計。下の3分の1は床と手前の机の背
+- 10 ノアとのすれ違い：
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A single key visual (event CG). Vertical 9:16 image.
+Inside an endless library whose towering shelves hold glowing hourglasses instead of books, dim indigo shadows and soft golden light. A boy and a girl in Japanese school uniforms (keep their designs exactly as in the attached reference portraits) stand in the aisle, seen from a slight side angle. A mysterious girl walks past them, very close, in the opposite direction. The passing girl: about 17, pale silver hair with a faint blue-green tint in a short bob, cool blue-green eyes, expressionless, a clean white long coat with thin blue-green lines like a futuristic uniform; she gives off a cold, faint white light that contrasts with the warm golden library. Her eyes are turned not toward the boy but toward the girl beside him, as if she recognizes her. The boy is looking at the passing girl in surprise. Grains of golden sand drift in the air between them, and time feels frozen for a moment.
+Keep the lower quarter of the image simple, because a text box may cover it.
+Absolutely no letters or text anywhere.
+```
 
 **立ち絵の共通の決まり**（全員同じ構図にする。段階18a で、構図が違うと背の高さがちぐはぐに見えたため）
 
