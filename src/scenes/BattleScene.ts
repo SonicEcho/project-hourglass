@@ -18,6 +18,7 @@ import {
   getPlanError,
   getRoundOrder,
   getSupportError,
+  isOffBalance,
   isPlanComplete,
   linkReady,
   passBaton,
@@ -747,9 +748,9 @@ export class BattleScene extends Phaser.Scene {
   private linkChance(): string {
     const s = this.state;
     if (s.phase !== 'plan' || !linkReady(s)) return '';
-    const downed = s.enemies.filter((e) => e.hp > 0 && e.down);
+    const downed = s.enemies.filter((e) => isOffBalance(e));
     if (downed.length === 0) return '';
-    return `★ 連携技のチャンス！ ${downed.map((e) => e.name).join('・')}はダウン中（連携技は最初に動き、ダウン中の敵に大ダメージ）`;
+    return `★ 連携技のチャンス！ ${downed.map((e) => e.name).join('・')}は体勢が崩れている（連携技は最初に動き、大ダメージ）`;
   }
 
   private chargeWarning(): string {

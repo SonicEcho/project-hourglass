@@ -974,6 +974,14 @@ export function effectiveHit(
   return { type, affinity };
 }
 
+/**
+ * 体勢が崩れているか：ダウン中か、立ち上がったばかりでまだ行動していない（段階26の調整5）。
+ * 連携技の倍率（downBonus）は、この敵に乗る。連携技は最初に動くので、ダウンさせた次のラウンドの始めに狙える
+ */
+export function isOffBalance(enemy: EnemyUnit): boolean {
+  return isAlive(enemy) && (enemy.down || enemy.standUpGuard);
+}
+
 /** 弱点を突いた時にダウンするか（ダウン中と、立ち上がってまだ行動していない敵はダウンしない） */
 export function canBeDowned(enemy: EnemyUnit): boolean {
   return isAlive(enemy) && !enemy.down && !enemy.standUpGuard;
@@ -994,7 +1002,7 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
       ctx.multiplier *
       passiveDamageMultiplier(ctx.user, type, ctx.combo) *
       (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1) *
-      (enemy.down ? (effect.downBonus ?? 1) : 1),
+      (isOffBalance(enemy) ? (effect.downBonus ?? 1) : 1),
   });
 
   const found = partId !== undefined ? enemy.parts.find((p) => p.id === partId) : undefined;
@@ -1127,7 +1135,7 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
               multiplier *
               passiveDamageMultiplier(actor, type, combo) *
               (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1) *
-              (enemy.down ? (effect.downBonus ?? 1) : 1),
+              (isOffBalance(enemy) ? (effect.downBonus ?? 1) : 1),
           });
         const lo = calc(RANDOM_MIN);
         const hi = calc(RANDOM_MAX);

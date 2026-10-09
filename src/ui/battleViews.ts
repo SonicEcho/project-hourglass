@@ -216,6 +216,9 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     root.add(body);
     if (enemy.down && alive) {
       root.add(addText(scene, cx, bodyY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
+    } else if (enemy.standUpGuard && alive) {
+      // 立ち上がったばかりで、まだ動いていない（体勢が崩れている。連携技が2倍で当たる）
+      root.add(addText(scene, cx, bodyY, '体勢崩れ', { size: 14, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
     }
     if (!alive) root.add(addText(scene, cx, bodyY, '撃破', { size: 14, color: COLORS.dimText }).setOrigin(0.5));
     // 大技の予告：力をためている
@@ -696,8 +699,8 @@ function linkDetail(s: BattleState, link: LinkDef): string {
     '',
     `つながりゲージ：${s.linkGauge}/${LINK_GAUGE_MAX}。弱点を突く・ダウンさせる・バトンタッチ・部位破壊・攻撃を受けると貯まる。満タンで連携技を1回使え、使うと0に戻る。`,
     `使い方：ゲージが満タンの時、計画で${a}か${b}の行動を選ぶ時に「連携技」を押す。2人分の行動をまとめて使う（組める技が2つある時は、もう一度押すと切り替わる）。`,
-    '必ずラウンドの最初に動く（防御の次）。ラウンドの始めにダウンしている敵には、立ち上がる前に当たる。',
-    '狙い目：敵が動いた後にダウンさせると、次のラウンドの始めもダウンしたまま。そこで連携技を選ぶと、ダウン中の倍率で当たる。',
+    '必ずラウンドの最初に動く（防御の次）。体勢が崩れた敵（ダウン中か、立ち上がったばかりでまだ動いていない敵）には大きく効く。',
+    '狙い目：敵をダウンさせた次のラウンドに連携技を選ぶと、敵が動く前に、崩れた体勢へ当たる。',
     '延長やバトンの追加行動では使えない。',
   ].join('\n');
 }
@@ -763,6 +766,7 @@ function enemyDetail(e: EnemyUnit): string {
   const charged = chargingAction(e);
   if (charged) lines.push(`力をためている：次の行動で「${charged.name}」`, chargeCounterText(e));
   if (e.down) lines.push('ダウン中（次の手番は立ち上がりに使う）');
+  else if (e.standUpGuard) lines.push('体勢が崩れている：立ち上がったばかりで、まだ動いていない（ダウンはしないが、連携技が大きく効く）');
   if (e.enraged) lines.push('怒っている：ためを崩されたので、立ち上がった次の行動ではためずに攻撃する（その攻撃まではダウンしない）');
   return lines.join('\n');
 }
