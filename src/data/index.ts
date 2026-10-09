@@ -5,6 +5,7 @@ export * from './cards';
 export * from './links';
 export * from './combos';
 export * from './enemies';
+export * from './festivalEnemies';
 export * from './encounters';
 export * from './growthMap';
 export * from './campaign';

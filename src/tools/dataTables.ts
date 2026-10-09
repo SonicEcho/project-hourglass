@@ -1,6 +1,7 @@
 import type { ActionDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
 import { allBattles } from '../core';
 import {
+  AREA_BATTLES,
   BOSS_PART_REWARDS,
   CARDS,
   COMBOS,
@@ -82,10 +83,10 @@ function snapsPage(): string {
   ]);
 }
 
-/** 周回に出てくる敵（強化版を含む。同じ名前は1回） */
+/** 区画（探索）と周回に出てくる敵（強化版を含む。同じ名前は1回） */
 function campaignEnemies(): EnemyDef[] {
   const seen = new Map<string, EnemyDef>();
-  for (const b of allBattles(STORY)) for (const e of b.enemies) if (!seen.has(e.name)) seen.set(e.name, e);
+  for (const b of [...Object.values(AREA_BATTLES), ...allBattles(STORY)]) for (const e of b.enemies) if (!seen.has(e.name)) seen.set(e.name, e);
   return [...seen.values()];
 }
 
@@ -103,17 +104,24 @@ function enemiesPage(): string {
     (e.parts ?? []).map((p) => [e.name, p.name, p.hp, actions({ ...e, actions: e.actions.filter((a) => a.requiresPart === p.id) }) || '―', p.revealsWeakness ? elements(p.revealsWeakness) : '―', p.material, BOSS_PART_REWARDS[p.id] ? partName(BOSS_PART_REWARDS[p.id]) : '―']),
   );
   const battles = STORY.flatMap((c) => c.areas.flatMap((a) => a.battles.map((b) => ({ c, a, b }))));
-  return page('敵と周回の戦闘', '正は `src/data/enemies.ts`・`src/data/campaign.ts`・`src/data/story.ts`。仕組みは `docs/design/battle.md`・`docs/design/run.md`。', [
+  return page('敵と周回の戦闘', '正は `src/data/festivalEnemies.ts`・`src/data/enemies.ts`・`src/data/areas.ts`・`src/data/campaign.ts`・`src/data/story.ts`。仕組みは `docs/design/battle.md`・`docs/design/run.md`。', [
     [
-      '敵（周回に出てくるもの。+ は強化版）',
+      '敵（区画と試作の周回に出てくるもの。+ は強化版）',
       table(
         ['名前', 'HP', '攻撃', '魔力', '防御', '速さ', '弱点', '耐性', '行動', '落とす素材'],
         enemies.map((e) => [e.name, e.stats.hp, e.stats.atk, e.stats.mag, e.stats.def, e.stats.spd, elements(e.weaknesses), elements(e.resistances), actions(e), (e.drops ?? []).map(itemName).join('、') || '―']),
       ),
     ],
+    [
+      '区画の戦闘（探索。段階25・27）',
+      table(
+        ['戦闘（id）', '敵', '星の砂', 'アイテム'],
+        Object.values(AREA_BATTLES).map((b) => [`${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―']),
+      ),
+    ],
     ['部位', parts.length ? table(['敵', '部位', 'HP', '壊すと封じる行動', '壊すと露出する弱点', '素材（表示のみ）', 'ギア（表示のみ）'], parts) : 'なし'],
     [
-      '周回の戦闘',
+      '試作の周回の戦闘（デバッグメニューの「試作の5戦」）',
       [
         `最初の星の砂：${START_MEMORY_POINTS}。部位を1つ壊すごとに +${PART_BREAK_POINTS}。ギアは候補から${NAVI_REWARD_PICKS}つ選ぶ。`,
         '',

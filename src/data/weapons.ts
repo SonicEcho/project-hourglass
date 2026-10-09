@@ -22,6 +22,12 @@ export const ITEMS = {
   frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', fragments: { wonder: 3, relief: 1 } },
   hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', fragments: { relief: 3, courage: 2 } },
   steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', fragments: { courage: 3 } },
+  // 1-1 の縁日の砂嵐の素材（段階27）
+  goldfishScale: { id: 'goldfishScale', name: '金魚のうろこ', kind: 'material', fragments: { relief: 3, courage: 1 } },
+  balloonShard: { id: 'balloonShard', name: '水風船のかけら', kind: 'material', fragments: { relief: 2, wonder: 2 } },
+  maskShard: { id: 'maskShard', name: 'お面のかけら', kind: 'material', fragments: { courage: 3, elation: 1 } },
+  cottonThread: { id: 'cottonThread', name: 'わたあめの糸', kind: 'material', fragments: { elation: 3, wonder: 1 } },
+  bowlShard: { id: 'bowlShard', name: '金魚鉢のかけら', kind: 'material', fragments: { relief: 3, elation: 3 } },
   potion: { id: 'potion', name: 'ポーション', kind: 'item', fragments: { courage: 2 } },
   ether: { id: 'ether', name: 'エーテル', kind: 'item', fragments: { elation: 2, relief: 2, wonder: 2 } },
   hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', fragments: { courage: 4 } },

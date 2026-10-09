@@ -155,6 +155,7 @@ describe('M1 の物語の流れ（段階23）', () => {
         expect(area, e.id).toBeDefined();
         expect(checkArea(area)).toEqual([]);
         for (const x of [...area.enemies, area.boss]) expect(x.battle in AREA_BATTLES, `${area.id} ${x.battle}`).toBe(true);
+        for (const b of Object.values(AREA_BATTLES)) for (const e of b.enemies) for (const d of e.drops ?? []) expect(d in ITEMS, `${e.id} ${d}`).toBe(true);
         for (const c of area.chests) for (const item of c.items) expect(item in ITEMS, `${c.id} ${item}`).toBe(true);
         for (const scene of [...area.talkers.map((t) => t.scene), ...area.triggers.map((t) => t.scene)]) {
           expect(sceneIds.has(scene), `${area.id} ${scene}`).toBe(true);

@@ -1,7 +1,7 @@
 import type { AreaDef } from '../core/explore';
 import type { CampaignBattle } from './campaign';
 import { scaleEnemy } from './campaign';
-import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
+import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
 import { PROTO_FESTIVAL_LAYOUT } from './prototypes';
 import { BGM } from './sounds';
 import { ITEMS } from './weapons';
@@ -21,23 +21,17 @@ export const AREA_GRACE_MS = 1800;
 export const AREA_TALK_RANGE = 1;
 
 /**
- * 区画の戦闘（段階25）。敵の砂嵐は段階27で作るので、今は試作の敵で代わりに戦う。
- * reward は星の砂、item は勝った時のアイテム（試作の5戦と同じ形）。ギアの報酬は出さない（1章はムーブメントが閉じている。段階26）。
- * 段階26：1章はハルトとあかりの2人で戦うので、3体の戦闘とボスは弱めた（自動対戦の300回で、育成なしの勝率：
- * storm1 97%、storm2 99%、storm3 92%、storm4 59%、ボス 42%。弱める前は storm3 16%、storm4 3%、ボス 0%）
+ * 区画の戦闘（段階25・27）。1-1 は縁日の砂嵐（festivalEnemies.ts）と、区画のボス「金魚鉢のぬし」。
+ * reward は星の砂、item は勝った時のアイテム。ギアの報酬は出さない（1章はムーブメントが閉じている。段階26）。
+ * 並びは出会う順の目安（広場 → 左右の参道 → 社への道 → 社の前）。数値の目安と測った結果は docs/design/battle.md の 13.
  */
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
-  a11_storm1: { id: 'a11_storm1', name: '砂嵐（仮）', enemies: [SLIME, SLIME], reward: 4, item: ITEMS.potion.id },
-  a11_storm2: { id: 'a11_storm2', name: '砂嵐（仮）', enemies: [SLIME, FROST_BAT], reward: 5, item: ITEMS.ether.id },
-  a11_storm3: { id: 'a11_storm3', name: '砂嵐（仮）', enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => scaleEnemy(e, 0.65)), reward: 6 },
-  a11_storm4: {
-    id: 'a11_storm4',
-    name: '砂嵐（仮）',
-    enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => scaleEnemy(e, 0.75)),
-    reward: 6,
-    item: ITEMS.hiPotion.id,
-  },
-  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし（仮）', enemies: [scaleEnemy(DISTORTED_BEAST, 0.6)], reward: 8, boss: true },
+  a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, item: ITEMS.potion.id },
+  a11_storm2: { id: 'a11_storm2', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 5, item: ITEMS.ether.id },
+  a11_storm3: { id: 'a11_storm3', name: '砂嵐', enemies: [BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], reward: 6 },
+  // 社への道の砂嵐は少し強い（HP・攻撃・魔力 ×1.2。ボスの手前の山）
+  a11_storm4: { id: 'a11_storm4', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.hiPotion.id },
+  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [GOLDFISH_BOWL_LORD], reward: 8, boss: true },
 };
 
 export const AREAS: Record<string, AreaDef> = {
@@ -50,8 +44,8 @@ export const AREAS: Record<string, AreaDef> = {
     bgm: BGM.festival,
     // 金魚すくいとラムネの屋台の前
     chests: [
-      { id: 'a11_chest_goldfish', cell: [9, 29], items: [ITEMS.slimeJelly.id, ITEMS.slimeJelly.id, ITEMS.potion.id] },
-      { id: 'a11_chest_ramune', cell: [14, 29], items: [ITEMS.frostFeather.id, ITEMS.hardFur.id] },
+      { id: 'a11_chest_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },
+      { id: 'a11_chest_ramune', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
     ],
     enemies: [
       {
