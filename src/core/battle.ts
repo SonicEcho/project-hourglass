@@ -89,6 +89,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     down: false,
     standUpGuard: false,
     charging: null,
+    enraged: false,
     actions: clone(def.actions),
     parts: (def.parts ?? []).map((p) => ({
       id: p.id,
@@ -657,8 +658,18 @@ function runEnemy(s: BattleState, enemyId: string): void {
     return;
   }
   // 使える行動が残っていなければ何もしない
-  if (usableEnemyActions(e).length === 0) return;
+  if (usableEnemyActions(e).length === 0) {
+    e.enraged = false;
+    return;
+  }
   const action = chooseEnemyAction(s, e);
+  if (e.enraged) {
+    // ためを崩されて怒っている：大技も、ためずにすぐ放つ
+    e.enraged = false;
+    s.log.push({ type: 'enraged', enemyId: e.uid });
+    enemyAttack(s, e, action);
+    return;
+  }
   if (action.charge) {
     // 大技は、まず力をためる（このラウンドは攻撃しない）
     e.charging = action.id;
@@ -983,8 +994,9 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
       ctx.downed = true;
       s.log.push({ type: 'down', enemyId: enemy.uid });
       if (enemy.charging) {
-        // ダウンさせると、ためが解ける
+        // ダウンさせると、ためが解ける。崩された敵は怒り、立ち上がった次の行動ではためずに攻撃する
         enemy.charging = null;
+        enemy.enraged = true;
         s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'down' });
       }
     }

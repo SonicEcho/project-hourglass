@@ -217,6 +217,11 @@ export interface EnemyUnit extends UnitBase {
   standUpGuard: boolean;
   /** 力をためている大技の id（次の自分の行動で放つ）。ダウンや部位破壊で解ける */
   charging: string | null;
+  /**
+   * ためをダウンで崩されて怒っている。立ち上がった次の行動では、ためずにすぐ攻撃する（大技もためずに放つ）。
+   * その行動を終えるまではダウンしない（立ち上がりの歯止めが続く）
+   */
+  enraged: boolean;
   actions: EnemyActionDef[];
   parts: PartState[];
   ai: EnemyAi;
@@ -290,6 +295,8 @@ export type LogEvent =
   | { type: 'weaknessFound'; enemyId: string; element: Element }
   | { type: 'down'; enemyId: string }
   | { type: 'standUp'; enemyId: string }
+  /** ためを崩されて怒った敵が、ためずに攻撃する（この後に action が続く） */
+  | { type: 'enraged'; enemyId: string }
   /** 敵が大技の力をためた（次の自分の行動で放つ） */
   | { type: 'charge'; enemyId: string; actionId: string; name: string }
   /** ためが解けた（ダウンした、または部位が壊れて大技が封じられた） */

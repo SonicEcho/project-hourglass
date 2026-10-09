@@ -742,6 +742,7 @@ function enemyDetail(e: EnemyUnit): string {
   const charged = chargingAction(e);
   if (charged) lines.push(`力をためている：次の行動で「${charged.name}」`, chargeCounterText(e));
   if (e.down) lines.push('ダウン中（次の手番は立ち上がりに使う）');
+  if (e.enraged) lines.push('怒っている：ためを崩されたので、立ち上がった次の行動ではためずに攻撃する（その攻撃まではダウンしない）');
   return lines.join('\n');
 }
 

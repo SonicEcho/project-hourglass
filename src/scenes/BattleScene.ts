@@ -490,6 +490,11 @@ export class BattleScene extends Phaser.Scene {
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
         return true;
       }
+      case 'enraged': {
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y - 20, '怒り！ためずに攻撃', COLORS.allyDamage, 18);
+        return true;
+      }
       case 'defeated': {
         const p = unitPosition(s, e.unitId);
         this.popup(p.x, p.y + 30, s.allies.some((a) => a.uid === e.unitId) ? '戦闘不能' : '撃破', COLORS.subText, 16);
@@ -732,6 +737,9 @@ export class BattleScene extends Phaser.Scene {
 
   /** 力をためている敵がいれば、大技の予告を返す */
   private chargeWarning(): string {
+    // ためを崩されて怒っている敵は、次の行動でためずに攻撃してくる（段階26の調整）
+    const angry = this.state.enemies.find((x) => x.hp > 0 && x.enraged);
+    if (angry) return `⚠ ${angry.name}は怒っている！ 立ち上がった次の行動で、ためずにすぐ攻撃してくる（その攻撃まではダウンしない。防御でしのぐ）`;
     const e = this.state.enemies.find((x) => x.hp > 0 && chargingAction(x));
     if (!e) return '';
     const a = chargingAction(e)!;
