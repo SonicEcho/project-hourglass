@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { AreaDef } from '../../src/core';
 import {
   areaGrid,
+  findPath,
+  isWalkable,
   arrive,
   chestAt,
   checkArea,
@@ -51,6 +53,15 @@ describe('探索（段階25）', () => {
     expect(s.cell).toEqual([3, 5]);
     expect(s.checkpoint).toEqual([3, 5]);
     expect(checkArea(area)).toEqual([]);
+  });
+
+  it('宝箱のマスは通れない（上を歩けない）。道は宝箱をよける', () => {
+    const map = areaGrid(area);
+    expect(isWalkable(map, [1, 1])).toBe(false);
+    expect(isWalkable(map, [2, 1])).toBe(true);
+    // 宝箱の隣のマスへは歩ける
+    expect(findPath(map, [3, 5], [2, 1])).not.toBeNull();
+    expect(checkArea({ ...area, chests: [{ id: 'c9', cell: [0, 0], items: [] }] })).toContain('t：宝箱 c9 が通れないマス（0,0）にある');
   });
 
   it('宝箱は通っただけでは開かない（段階26）', () => {
@@ -117,6 +128,6 @@ describe('探索（段階25）', () => {
 
   it('区画の書き間違いを見つける', () => {
     const bad: AreaDef = { ...area, chests: [{ id: 'c1', cell: [0, 0], items: [] }], boss: { id: 'c1', cell: [3, 1], battle: 'bb' } };
-    expect(checkArea(bad)).toEqual(['t：宝箱 c1 が通れないマス（0,0）にある', 't：id が重なっている：c1']);
+    expect(checkArea(bad)).toEqual(['t：宝箱 c1 が通れないマス（0,0）にある', 't：宝箱 c1 の隣に立てるマスがない', 't：id が重なっている：c1']);
   });
 });

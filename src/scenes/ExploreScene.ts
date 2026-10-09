@@ -159,6 +159,8 @@ export class ExploreScene extends Phaser.Scene {
         if (ch === '#') gridView.fillStyle(0xff3030, 0.3).fillRect(c * T, r * T, T, T);
       }),
     );
+    // 宝箱のマスも通れない
+    for (const c of area.chests) gridView.fillStyle(0xff3030, 0.3).fillRect(c.cell[0] * T, c.cell[1] * T, T, T);
     world.add(gridView);
 
     // チェックポイント（大きな提灯の手前）
@@ -285,15 +287,27 @@ export class ExploreScene extends Phaser.Scene {
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
     const chest = talker ? null : chestAt(this.area, this.state, cell);
     const boss = !talker && !chest && !this.state.cleared && near(this.area.boss.cell, cell, 1);
-    const goal = talker ? talker.cell : chest ? chest.cell : boss ? this.area.boss.cell : cell;
-    const target = nearestWalkable(this.map, goal);
-    if (!target) return;
     const from = this.nextCell ?? this.state.cell;
-    const path = findPath(this.map, from, target);
-    if (!path) return;
-    if (talker || chest || boss) {
-      path.pop(); // 相手のマスの手前で止まる（宝箱の上に立っていたら、その場で開ける）
-      this.goal = talker ? { kind: 'talk', id: talker.id } : chest ? { kind: 'chest', id: chest.id } : { kind: 'boss' };
+    let target: GridCell | null;
+    let path: GridCell[] | null;
+    if (chest) {
+      // 宝箱のマスは通れないので、隣の立てるマスのうち一番近い所まで歩いてから開ける
+      const sides: GridCell[] = [[chest.cell[0], chest.cell[1] - 1], [chest.cell[0] + 1, chest.cell[1]], [chest.cell[0], chest.cell[1] + 1], [chest.cell[0] - 1, chest.cell[1]]];
+      const options = sides.map((c) => ({ c, p: findPath(this.map, from, c) })).filter((o) => o.p !== null) as { c: GridCell; p: GridCell[] }[];
+      options.sort((a, b) => a.p.length - b.p.length);
+      target = options[0]?.c ?? null;
+      path = options[0]?.p ?? null;
+    } else {
+      const goal = talker ? talker.cell : boss ? this.area.boss.cell : cell;
+      target = nearestWalkable(this.map, goal);
+      path = target ? findPath(this.map, from, target) : null;
+    }
+    if (!target || !path) return;
+    if (talker || boss) {
+      path.pop(); // 相手のマスの手前で止まる
+      this.goal = talker ? { kind: 'talk', id: talker.id } : { kind: 'boss' };
+    } else if (chest) {
+      this.goal = { kind: 'chest', id: chest.id };
     } else {
       this.goal = null;
     }

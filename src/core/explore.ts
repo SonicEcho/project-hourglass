@@ -75,8 +75,12 @@ export interface ExploreState {
   cleared: boolean;
 }
 
+/** 区画の歩ける地図。宝箱のマスは通れない（上を歩けない。段階27b の時の調整） */
 export function areaGrid(area: AreaDef): GridMap {
-  return parseGrid(area.layout);
+  const map = parseGrid(area.layout);
+  const blocked = [...map.blocked];
+  for (const c of area.chests) if (c.cell[0] >= 0 && c.cell[0] < map.cols && c.cell[1] >= 0 && c.cell[1] < map.rows) blocked[c.cell[1] * map.cols + c.cell[0]] = true;
+  return { ...map, blocked };
 }
 
 /** 文字の地図の中の、ある記号のマス */
@@ -199,7 +203,13 @@ export function checkArea(area: AreaDef): string[] {
   const map = areaGrid(area);
   const where = (what: string, cell: GridCell) => !isWalkable(map, cell) && errors.push(`${area.id}：${what} が通れないマス（${cell}）にある`);
   if (cellsOf(area, 'S').length !== 1) errors.push(`${area.id}：出発点（S）が1つではない`);
-  for (const c of area.chests) where(`宝箱 ${c.id}`, c.cell);
+  // 宝箱は、文字の地図では通れるマスに置き（置いたマスが通れなくなる）、隣のマスから開けられること
+  const raw = parseGrid(area.layout);
+  for (const c of area.chests) {
+    if (!isWalkable(raw, c.cell)) errors.push(`${area.id}：宝箱 ${c.id} が通れないマス（${c.cell}）にある`);
+    const around: GridCell[] = [[c.cell[0], c.cell[1] - 1], [c.cell[0] + 1, c.cell[1]], [c.cell[0], c.cell[1] + 1], [c.cell[0] - 1, c.cell[1]]];
+    if (!around.some((x) => isWalkable(map, x))) errors.push(`${area.id}：宝箱 ${c.id} の隣に立てるマスがない`);
+  }
   for (const e of area.enemies) {
     e.patrol.forEach((p) => where(`敵 ${e.id} の道`, p));
     if (e.patrol.length >= 2 && patrolRoute(map, e.patrol).length < 2) errors.push(`${area.id}：敵 ${e.id} の道がつながらない`);
