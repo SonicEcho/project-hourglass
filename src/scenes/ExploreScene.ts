@@ -33,6 +33,7 @@ import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
 import { run, setExplore, setHubReturn, setStoryVars, storyLineup, storyLinkGauge } from './run';
+import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
 // 戦闘・会話から戻る時は、この画面をもう一度開く（いる場所や倒した敵は、セーブした探索の状態から戻す）。
@@ -108,6 +109,9 @@ export class ExploreScene extends Phaser.Scene {
     let state = run.explore?.area === area.id ? run.explore : startExplore(area);
     let note = '';
     let komaGot = 0;
+    // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
+    if (data.won) notePlayBattle(run.event, true);
+    if (data.lost) notePlayBattle(run.event, false);
     if (data.won) {
       // 倒した印の戦闘のコマを手に入れる（段階28。同じ印で2回もらわないよう、まだ倒していなかった時だけ）
       const battleId = data.won === area.boss.id ? area.boss.battle : area.enemies.find((e) => e.id === data.won)?.battle;
@@ -162,6 +166,8 @@ export class ExploreScene extends Phaser.Scene {
       this.tipOpen = false;
       this.tweens.resumeAll();
       this.graceUntil = this.time.now + AREA_GRACE_MS;
+      // 同じ場面で当てはまる次の説明を続けて出す（段階32b）
+      this.showTip(atCheckpoint);
     });
     if (!shown) return;
     this.tipOpen = true;

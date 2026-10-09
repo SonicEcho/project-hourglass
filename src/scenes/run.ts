@@ -26,6 +26,7 @@ import type { CampaignBattle } from '../data';
 import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
+import { notePlayEvent } from './playRecord';
 
 /**
  * 1回の通しプレイ（星図と5戦の周回）の状態。
@@ -127,6 +128,7 @@ export function setEvent(id: string): void {
   run.event = pos.event;
   run.progress = { ...run.progress, day: pos.day };
   saveRun();
+  notePlayEvent(run.event);
 }
 
 /** 今の出来事を終えて、次の出来事へ進めて保存する */
@@ -135,6 +137,7 @@ export function advanceEvent(): FlowEvent {
   run.event = pos.event;
   run.progress = { ...run.progress, day: pos.day };
   saveRun();
+  notePlayEvent(run.event);
   return currentEvent();
 }
 

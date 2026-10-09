@@ -9,6 +9,7 @@ import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
 import { advanceEvent, currentEvent, run, setEvent, setStoryVars } from './run';
 import { screenBg } from '../ui/skin';
+import { notePlayEvent, setPlayTracking } from './playRecord';
 
 // 物語の流れ（段階23）：今の出来事を見て、その画面へ渡す。出来事を終えた画面は、done を付けてここへ戻る。
 // 昼の日常は日常の画面（DailyScene）へ。まだ作っていない遊び（探索・時間を返す）は、ここで仮の画面を出して「次へ」で通す
@@ -32,6 +33,9 @@ export class FlowScene extends Phaser.Scene {
   create(data: FlowData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     const event = data?.done ? advanceEvent() : currentEvent();
+    // 遊んだ記録（段階32b）：ここから物語の時間を数える。進めた時は advanceEvent が覚える
+    setPlayTracking(true);
+    if (!data?.done) notePlayEvent(event.id);
     switch (event.kind) {
       case 'dialogue':
         this.openDialogue(event);
@@ -129,6 +133,8 @@ export class FlowScene extends Phaser.Scene {
     root.add(addText(this, cx, 360, 'つづく', { size: 34, bold: true, color: '#f3e2b8' }).setOrigin(0.5));
     root.add(addText(this, cx, 420, 'ここまで遊んでくれて、ありがとうございます', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     this.cameras.main.fadeIn(800, 0, 0, 0);
-    addButton(this, root, cx, 640, 220, 56, 'タイトルへ', { onTap: () => this.scene.start('Title') }, { size: 16 });
+    // 試遊の後に、遊んだ記録のスクリーンショットを送ってもらう（段階32b）
+    addButton(this, root, cx, 610, 240, 56, '遊んだ記録を見る', { onTap: () => this.scene.start('PlayLog', { back: 'Flow' }) }, { size: 16 });
+    addButton(this, root, cx, 690, 240, 56, 'タイトルへ', { onTap: () => this.scene.start('Title') }, { size: 16 });
   }
 }

@@ -243,8 +243,10 @@ export class BattleScene extends Phaser.Scene {
   /** 操作を待つ時に、今の場面の初めての説明があれば出す（段階30。オート中は出さない） */
   private maybeTip(): void {
     if (this.auto || this.busy || this.tipOpen || this.state.phase === 'ended') return;
+    // 閉じたら、同じ場面で当てはまる次の説明を続けて出す（段階32b。1つだけで終わらないように）
     this.tipOpen = maybeShowTip(this, battleTipTriggers(this.state, { autoAvailable: this.autoTipOk }), () => {
       this.tipOpen = false;
+      this.maybeTip();
     });
   }
 

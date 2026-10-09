@@ -217,8 +217,9 @@ export class DialogueScene extends Phaser.Scene {
     // 枠の内側の、砂色の細い線（段階32a。紙の文では出さない）
     this.boxLine = this.add.graphics().setDepth(40);
     this.boxLine.lineStyle(1, COLORS.accent, 0.3).strokeRoundedRect(22, 566, GAME_WIDTH - 44, 188, 8);
-    this.nameBox = this.add.rectangle(28, 540, 140, 36, COLORS.panelLight).setRounded(8).setOrigin(0).setStrokeStyle(2, COLORS.accent).setDepth(41);
-    this.nameTag = addText(this, 98, 558, '', { size: 15, bold: true, color: COLORS.accentText }).setOrigin(0.5).setDepth(42);
+    // 名前の札は、最初の台詞が出るまで隠す（場面の始めの @wait の間に、空の札が出ないように。段階32b）
+    this.nameBox = this.add.rectangle(28, 540, 140, 36, COLORS.panelLight).setRounded(8).setOrigin(0).setStrokeStyle(2, COLORS.accent).setDepth(41).setVisible(false);
+    this.nameTag = addText(this, 98, 558, '', { size: 15, bold: true, color: COLORS.accentText }).setOrigin(0.5).setDepth(42).setVisible(false);
     this.body = addText(this, 34, 592, '', { size: 17, wrap: BODY_WRAP }).setDepth(42);
     this.body.setLineSpacing(6);
     this.cursor = addText(this, GAME_WIDTH - 40, 735, '▼', { size: 14, color: COLORS.accentText }).setOrigin(0.5).setDepth(42);
@@ -812,6 +813,10 @@ export class DialogueScene extends Phaser.Scene {
     const name = style === 'note' ? '開発メモ' : `${line.speaker ?? ''}${line.tag ? `（${line.tag}）` : ''}`;
     this.nameBox.setVisible(named && !isCaption);
     this.nameTag.setVisible(named && !isCaption).setText(name);
+    // 長い名前（金魚すくいのおじさん、など）でも札からはみ出さないよう、札の幅を名前に合わせる（段階32b）
+    const plateW = Math.max(140, Math.ceil(this.nameTag.width) + 32);
+    this.nameBox.setSize(plateW, 36);
+    this.nameTag.setX(28 + plateW / 2);
 
     // 文の色と枠
     const paper = style === 'document';

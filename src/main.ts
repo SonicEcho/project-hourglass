@@ -21,6 +21,8 @@ import { ResultScene } from './scenes/ResultScene';
 import { allBattles, progressAt } from './core';
 import { STORY } from './data';
 import { initRunFromUrl, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { notePlayInput, tickPlayRecord } from './scenes/playRecord';
+import { PlayLogScene } from './scenes/PlayLogScene';
 import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
 
@@ -45,6 +47,16 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => saveRun());
 
+// 遊んだ記録（段階32b）：画面が表に出ていて、最近触っている間だけ、今の出来事にいた時間を数える
+const tickPlay = () => tickPlayRecord(run.active ? run.event : null, document.visibilityState === 'visible');
+window.setInterval(tickPlay, 5000);
+window.addEventListener('pointerdown', () => notePlayInput(), { capture: true });
+document.addEventListener('visibilitychange', () => {
+  // 裏に回る直前までの分を足してから止める（表に戻った時は、そこから数え直す）
+  if (document.visibilityState === 'hidden') tickPlayRecord(run.active ? run.event : null, true);
+  tickPlay();
+});
+
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -58,7 +70,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene],
+  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene],
 });
 
 if (debug) {
