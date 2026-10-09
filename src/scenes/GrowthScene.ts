@@ -10,6 +10,7 @@ import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
+import { maybeShowTip } from '../ui/tipPanel';
 import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
@@ -71,6 +72,7 @@ export class GrowthScene extends Phaser.Scene {
     this.render();
     // ギアの報酬は試作の5戦だけ（ムーブメントが閉じている間は出さない）
     if (run.pendingReward !== null && hubLineup().unlocks.navi) this.showReward();
+    else maybeShowTip(this, ['growth_star']);
   }
 
   /** デバッグメニューから星の砂が変わった時に描き直す */

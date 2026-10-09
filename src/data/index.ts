@@ -21,3 +21,4 @@ export * from './sounds';
 export * from './dialogue';
 export * from './scriptM1';
 export * from './itemSources';
+export * from './tips';

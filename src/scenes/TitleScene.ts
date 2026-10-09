@@ -5,7 +5,9 @@ import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
 import { getSettings, playBgm, playSe, setSettings } from '../audio/sound';
 import { chapterOfEvent, findEvent, nextVolume } from '../core';
-import { BGM, SE, SLICE_FLOW } from '../data';
+import { BGM, SE, SLICE_FLOW, TIPS } from '../data';
+import type { TipGroup } from '../core';
+import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
 
 /** 保存した日時を「10/7 21:05」の形にする */
@@ -42,6 +44,8 @@ export class TitleScene extends Phaser.Scene {
     addButton(this, root, GAME_WIDTH - 62, 36, 104, 44, 'クレジット', { onTap: () => this.scene.start('Credits') }, { size: 13 });
     // 音量（段階19）。クレジットと反対の左上に
     addButton(this, root, 62, 36, 104, 44, '音量', { onTap: () => this.openVolume() }, { size: 13 });
+    // 初めての人向けの説明を読み返す（段階30）
+    addButton(this, root, 62, 88, 104, 44, '説明', { onTap: () => this.openTips() }, { size: 13 });
     // スマホは最初に画面に触れた後で鳴り始める
     playBgm(this, BGM.title);
 
@@ -97,6 +101,56 @@ export class TitleScene extends Phaser.Scene {
       }
       addButton(this, root, cx, 640, 260, 64, 'はじめる', { onTap: startNew }, strong);
     }
+  }
+
+  /** 説明の一覧（段階30）。戦闘・探索・育成のタブ。タップで読む。まだ見ていない説明は、遊んでいて使う場面になると出る */
+  private openTips(group: TipGroup = 'battle'): void {
+    const cx = GAME_WIDTH / 2;
+    const panel = this.add.container(0, 0).setDepth(400);
+    panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
+    panel.add(this.add.rectangle(cx, GAME_HEIGHT / 2, GAME_WIDTH - 24, GAME_HEIGHT - 60, COLORS.panel).setStrokeStyle(1, COLORS.border));
+    panel.add(addText(this, cx, 62, '説明', { size: 18, bold: true }).setOrigin(0.5));
+    const groups: { id: TipGroup; name: string }[] = [
+      { id: 'battle', name: '戦闘' },
+      { id: 'explore', name: '探索' },
+      { id: 'growth', name: '育成' },
+    ];
+    const tabW = (GAME_WIDTH - 60 - 12) / 3;
+    groups.forEach((g, i) => {
+      const on = g.id === group;
+      addButton(this, panel, 30 + tabW / 2 + i * (tabW + 6), 112, tabW, 44, g.name, {
+        onTap: () => {
+          if (on) return;
+          panel.destroy(true);
+          this.openTips(g.id);
+        },
+      }, on ? { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent } : { size: 15 });
+    });
+    const seen = seenTips();
+    const name = groups.find((g) => g.id === group)?.name ?? '';
+    TIPS.filter((t) => t.group === group).forEach((tip, i) => {
+      const read = seen.includes(tip.id);
+      addButton(this, panel, cx, 172 + i * 54, GAME_WIDTH - 60, 46, read ? tip.title : `${tip.title}（まだ出ていない）`, {
+        onTap: () => showTipPanel(this, tip, undefined, `説明（${name}）`),
+      }, { size: 14, fill: read ? undefined : 0x1a2430 });
+    });
+    // 説明をもう一度、使う場面で出す（2回押して決める）
+    let armed = false;
+    const resetLabel = addText(this, cx, GAME_HEIGHT - 128, '', { size: 11, color: COLORS.allyDamage, align: 'center' }).setOrigin(0.5);
+    panel.add(resetLabel);
+    addButton(this, panel, cx - 80, GAME_HEIGHT - 74, 150, 48, 'はじめから出す', {
+      onTap: () => {
+        if (!armed) {
+          armed = true;
+          resetLabel.setText('見た説明を忘れて、使う場面でまた出します。\nもう一度押してください');
+          return;
+        }
+        resetTips();
+        panel.destroy(true);
+        this.openTips(group);
+      },
+    }, { size: 14 });
+    addButton(this, panel, cx + 80, GAME_HEIGHT - 74, 150, 48, '閉じる', { onTap: () => panel.destroy(true) }, { size: 15 });
   }
 
   /** 音量の窓。BGM と効果音のボタンを押すたびに 0→25→50→75→100% と変わり、すぐ保存する */
