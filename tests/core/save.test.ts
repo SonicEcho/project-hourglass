@@ -46,6 +46,7 @@ function freshRun(): RunSnapshot {
     vars: {},
     explore: null,
     linkGauge: null,
+    returned: [],
   };
 }
 
@@ -187,6 +188,16 @@ describe('セーブ：古い版から直す', () => {
     expect(bad.ok && bad.save.run.linkGauge).toBeNull();
   });
 
+  it('版6のセーブ（返した時間がなかった）は、まだ何も返していないものとして読む。知らない区画は捨てる（段階28）', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 6;
+      delete raw.run.returned;
+    });
+    expect(res.ok && res.save.run.returned).toEqual([]);
+    const kept = parseEdited((raw) => (raw.run.returned = ['a11', 'removed', 'a11']));
+    expect(kept.ok && kept.save.run.returned).toEqual(['a11']);
+  });
+
   it('直す手順がない古い版は読まない', () => {
     const res = parseEdited((raw) => (raw.version = 0));
     expect(res).toEqual({ ok: false, error: '版0から直す手順がない', old: true });
@@ -286,7 +297,7 @@ describe('セーブ：今のデータに合わせて整える', () => {
   });
 
   it('探索の状態を読み戻す。知らない区画なら、探索の途中ではないことにする', () => {
-    const explore = { area: 'a11', cell: [11, 17], checkpoint: [11, 17], openedChests: ['a11_chest_goldfish'], defeated: ['a11_e_plaza'], seen: ['a11_first_koma'], cleared: false };
+    const explore = { area: 'a11', cell: [11, 17], checkpoint: [11, 17], openedChests: ['a11_chest_goldfish'], defeated: ['a11_e_plaza'], seen: ['a11_first_koma'], cleared: false, koma: 3 };
     const res = parseEdited((raw) => (raw.run.explore = explore));
     expect(res.ok && res.save.run.explore).toEqual(explore);
     const res2 = parseEdited((raw) => (raw.run.explore = { ...explore, area: 'gone' }));

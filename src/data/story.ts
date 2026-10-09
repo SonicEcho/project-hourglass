@@ -31,7 +31,7 @@ export const CHAPTER1_LINEUP: Lineup = { members: [HERO.id, AKARI.id], unlocks: 
 
 // ---- 物語の流れ（段階23）：M1 のスライス（プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 → つづく） ----
 // 会話の出来事の id は、台本（scriptM1.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
-// 昼の日常は日常の画面（段階24）、探索は探索の画面（段階25）。まだ作っていない遊び（時間を返す）は、仮の画面で案内して「次へ」で通す（段階28で本物に置き換える）
+// 昼の日常は日常の画面（段階24）、探索は探索の画面（段階25）、時間を返すのは返す画面（段階28）
 
 const talk = (id: string, title: string): FlowEvent => ({ id, kind: 'dialogue', title });
 
@@ -63,12 +63,8 @@ export const SLICE_FLOW: Flow = [
       talk('a11_enter', '1-1：縁日に入る'),
       // 縁日の探索（段階25。区画は areas.ts の AREAS。探索の途中の会話も、区画のきっかけから出す）
       { id: 'a11_explore', kind: 'explore', title: '1-1「金魚の名前」：縁日の探索', area: 'a11' },
-      {
-        id: 'a11_return',
-        kind: 'return',
-        title: '1-1：時間を返す',
-        note: 'ここで時間を返す（段階28で作る）。そろったコマで、盗まれた夏の夜を持ち主へ返す。今は「次へ」で、返す場面の会話に進む',
-      },
+      // 時間を返す（段階28。集めたコマで、盗まれた時間を持ち主へ返す。画面は ReturnScene）
+      { id: 'a11_return', kind: 'return', title: '1-1：時間を返す', area: 'a11' },
       talk('d1_return', '1日目：時間を返す'),
       { id: 'day2', kind: 'day', title: '2日目', day: 2 },
       talk('d2_classroom', '2日目：朝の教室'),

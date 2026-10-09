@@ -51,6 +51,13 @@ export class FlowScene extends Phaser.Scene {
         }
         this.showPlaceholder(event);
         return;
+      case 'return':
+        if (event.area) {
+          this.scene.start('Return', { area: event.area });
+          return;
+        }
+        this.showPlaceholder(event);
+        return;
       default:
         this.showPlaceholder(event);
     }
