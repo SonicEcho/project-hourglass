@@ -5,7 +5,7 @@ import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playT
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
-import { BACKDROPS, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, BG_VIEW_MS, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -104,6 +104,9 @@ export function clearReadLog(): void {
 /** 本文の枠の色（段階32a で藍に寄せた） */
 const DIALOGUE_BOX = 0x0d1230;
 
+/** 背景だけを見せた絵（ゲームを開いている間だけ覚える。段階32b） */
+const viewedBackdrops = new Set<string>();
+
 export class DialogueScene extends Phaser.Scene {
   private scenes: ScriptScene[] = M1_SCENES;
   private pos!: ScriptPos;
@@ -166,6 +169,12 @@ export class DialogueScene extends Phaser.Scene {
   private boxLine!: Phaser.GameObjects.Graphics;
   private blipLabel!: Phaser.GameObjects.Text;
   private toast?: Phaser.GameObjects.Text;
+  /** 今の背景の絵（台帳の id。絵のない背景は null） */
+  private bgImage: string | null = null;
+  /** 背景だけを見せている間、タップで早めに終える */
+  private viewDone?: () => void;
+  /** 背景だけを見せるために下げた部品と、下げる前に見えていたか（下げていない時は undefined） */
+  private viewHidden?: { parts: Phaser.GameObjects.Components.Visible[]; shown: boolean[] };
 
   constructor() {
     super('Dialogue');
@@ -195,6 +204,9 @@ export class DialogueScene extends Phaser.Scene {
 
     this.zoom = 1;
     this.monoFx = undefined;
+    this.bgImage = null;
+    this.viewDone = undefined;
+    this.viewHidden = undefined;
     this.bgLayer = this.add.container(0, 0);
     this.stage = this.add.container(0, 0);
     this.cgLayer = this.add.container(0, 0);
@@ -258,6 +270,10 @@ export class DialogueScene extends Phaser.Scene {
 
     // 画面のどこかをタップ（ボタン・選択肢の上は除く）
     this.input.on('pointerup', (_p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (this.viewDone) {
+        this.viewDone();
+        return;
+      }
       if (over.length > 0 || this.choosing || this.logLayer) return;
       this.advance();
     });
@@ -272,6 +288,7 @@ export class DialogueScene extends Phaser.Scene {
     const r = runScript(this.scenes, this.pos, this.vars);
     if (JSON.stringify(r.vars) !== JSON.stringify(this.vars)) this.onVars?.(r.vars);
     this.vars = r.vars;
+    const imageBefore = this.bgImage;
     for (const cmd of r.commands) await this.apply(cmd);
     if (r.stop.type === 'end') {
       await this.endScene();
@@ -279,6 +296,7 @@ export class DialogueScene extends Phaser.Scene {
     }
     this.busy = false;
     if (r.stop.type === 'choice') {
+      this.restoreAfterView();
       this.pos = r.pos;
       if (r.stop.choice.game) this.playGame(r.stop.choice.game);
       else this.showChoices(r.stop.choice.options.map((o) => o.label));
@@ -291,6 +309,8 @@ export class DialogueScene extends Phaser.Scene {
     }
     markRead(r.stop.key);
     if (this.fadedOut) await this.fade('in');
+    if (this.bgImage && this.bgImage !== imageBefore) await this.viewBackdrop(this.bgImage);
+    else this.restoreAfterView();
     this.showLine(r.stop.line, r.stop.text);
   }
 
@@ -300,6 +320,8 @@ export class DialogueScene extends Phaser.Scene {
     switch (cmd.name) {
       case 'bg':
         this.setBackdrop(a ?? 'black');
+        // 初めて見る絵なら、明転する前から本文の枠と立ち絵を下げておく（出てから消えるちらつきを防ぐ。段階32b）
+        if (this.bgImage && !this.skip && !viewedBackdrops.has(this.bgImage)) this.hideForView();
         return;
       case 'bgm':
         if (a === 'stop') stopBgm();
@@ -388,6 +410,7 @@ export class DialogueScene extends Phaser.Scene {
       console.warn('[dialogue] 背景がない', id);
       return;
     }
+    this.bgImage = def.image ?? null;
     const holder = this.add.container(0, 0);
     this.drawPicture(holder, def, 0, GAME_HEIGHT, id !== 'black' && id !== 'white' && id !== 'none');
     if (def.ambient) this.addAmbient(holder, def.ambient);
@@ -395,6 +418,49 @@ export class DialogueScene extends Phaser.Scene {
     this.crossfade(this.bgLayer, holder);
     // 場所が替わったら、寄っていたのを戻す
     if (this.zoom !== 1) this.setZoom(1);
+  }
+
+  /**
+   * 背景の絵が替わった時に、文字の窓・名前の札・立ち絵を下げて、背景だけを少し見せる（段階32b）。
+   * タップで早めに終える。早送りの時と、ゲームを開いてから一度見せた絵は見せない
+   */
+  private async viewBackdrop(image: string): Promise<void> {
+    if (this.skip || viewedBackdrops.has(image)) {
+      this.restoreAfterView();
+      return;
+    }
+    viewedBackdrops.add(image);
+    this.hideForView();
+    await new Promise<void>((resolve) => {
+      const finish = () => {
+        timer.remove();
+        this.viewDone = undefined;
+        resolve();
+      };
+      const timer = this.time.delayedCall(BG_VIEW_MS, finish);
+      this.viewDone = finish;
+    });
+    this.restoreAfterView();
+  }
+
+  /** 本文の枠・名前の札・立ち絵を下げる（もう下げていれば何もしない） */
+  private hideForView(): void {
+    if (this.viewHidden) return;
+    const parts = [this.box, this.boxLine, this.body, this.cursor, this.nameBox, this.nameTag];
+    this.viewHidden = { parts, shown: parts.map((p) => p.visible) };
+    for (const p of parts) p.setVisible(false);
+    this.tweens.killTweensOf(this.stage);
+    this.stage.setAlpha(0);
+  }
+
+  /** 下げた部品を戻す。1枚絵や時計の寄りを出している時は、立ち絵は隠したまま */
+  private restoreAfterView(): void {
+    const h = this.viewHidden;
+    if (!h) return;
+    this.viewHidden = undefined;
+    h.parts.forEach((p, i) => p.setVisible(h.shown[i]));
+    const hidden = this.cgLayer.list.length > 0 || this.clockLayer.list.length > 0;
+    this.tweens.add({ targets: this.stage, alpha: hidden ? 0 : 1, duration: 300 });
   }
 
   /** 止まった絵に見えないよう、絵をゆっくり寄せては戻す（中心を保ったまま大きくするので、端に隙間はできない） */
