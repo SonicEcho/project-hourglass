@@ -158,9 +158,9 @@ export const BACKDROPS: Record<string, Backdrop> = {
   shrine_hill: { title: '神社の裏の高台（夜）', top: 0x0a0e24, bottom: 0x2a2a50, ambient: 'stars' },
   home_kitchen: { title: '施設の台所（朝）', top: 0xf0e2c0, bottom: 0xb8a080 },
   home_kitchen_evening: { title: '施設の台所（夕方）', top: 0xe0a070, bottom: 0x8a6050 },
-  classroom: { title: '教室', top: 0xd8e4ec, bottom: 0x9aa8a0 },
+  classroom: { title: '教室', top: 0xd8e4ec, bottom: 0x9aa8a0, image: 'bg.classroom' },
   rooftop: { title: '学校の屋上', top: 0x7ab0e0, bottom: 0xe0b080 },
-  shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80 },
+  shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80, image: 'bg.shopping_street' },
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
   clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
   clock_shop_night: { title: '時計屋の店内（夜）', top: 0x202840, bottom: 0x3a2a30, image: 'bg.clock_shop', tint: 0x5a6aa8, ambient: 'dust' },
@@ -284,3 +284,9 @@ export const CLOCK = {
 
 /** 語りの文に流れる砂の色（ヴィクトの鎖の砂時計と同じ暗い金。docs/STORY.md の 2-11） */
 export const NARRATION_SAND_COLOR = 0xb08a3a;
+
+/**
+ * 会話の途中で背景の絵が替わった時に、文字の窓と立ち絵を下げて、背景だけを見せる長さ（ミリ秒。段階32b）。
+ * タップで先へ進める。同じ絵は、ゲームを開いている間は最初の1回だけ見せる（探索の途中の短い会話で毎回止まらないように）
+ */
+export const BG_VIEW_MS = 2500;
