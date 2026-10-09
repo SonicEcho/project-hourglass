@@ -19,6 +19,7 @@ import {
   getRoundOrder,
   getSupportError,
   isPlanComplete,
+  linkReady,
   passBaton,
   planOf,
   planPool,
@@ -736,12 +737,21 @@ export class BattleScene extends Phaser.Scene {
         : `Extend! ${actor.name}の追加行動（1枚引いた。バトンタッチ・見送りも可）`;
     }
     if (s.phase !== 'plan') return '';
-    const warn = this.chargeWarning();
+    const warn = this.chargeWarning() || this.linkChance();
     const base = this.planMessage();
     return warn ? `${warn}\n${base}` : base;
   }
 
   /** 力をためている敵がいれば、大技の予告を返す */
+  /** 連携技が撃てて、ダウン中の敵がいれば、狙い目を知らせる（段階26の調整4） */
+  private linkChance(): string {
+    const s = this.state;
+    if (s.phase !== 'plan' || !linkReady(s)) return '';
+    const downed = s.enemies.filter((e) => e.hp > 0 && e.down);
+    if (downed.length === 0) return '';
+    return `★ 連携技のチャンス！ ${downed.map((e) => e.name).join('・')}はダウン中（連携技は最初に動き、ダウン中の敵に大ダメージ）`;
+  }
+
   private chargeWarning(): string {
     // ためを崩されて怒っている敵は、次の行動でためずに攻撃してくる（段階26の調整）
     const angry = this.state.enemies.find((x) => x.hp > 0 && x.enraged);

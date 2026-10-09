@@ -48,11 +48,11 @@ describe('ラウンドの行動順', () => {
     expect(ids(s)).toEqual(['mio', 'hero', 'enemy0']);
   });
 
-  it('連携技は2人で1つ。速さは遅い方 ÷ 1.5', () => {
-    const s = battle({ allies: [ally('hero', { spd: 12 }), ally('mio', { spd: 16 })], enemies: [enemy('e', { spd: 9 })] });
-    const linked = setPlan({ ...s, linkGauge: 100 }, 'hero', { type: 'link', linkId: 'crossDrive' });
-    // 12 ÷ 1.5 = 8 → 敵（9）より後
-    expect(ids(linked)).toEqual(['enemy0', 'hero+mio']);
+  it('連携技は2人で1つ。重くても必ず最初に動く（防御の次。段階26の調整4）', () => {
+    const s = battle({ allies: [ally('hero', { spd: 12 }), ally('mio', { spd: 16 }), ally('akari', { spd: 1 })], enemies: [enemy('e', { spd: 99 })] });
+    const linked = planAll({ ...s, linkGauge: 100 }, { hero: { type: 'link', linkId: 'crossDrive' }, akari: guard });
+    // 12 ÷ 1.5 = 8 で、敵（99）よりずっと遅いが、防御の次に来る
+    expect(ids(linked)).toEqual(['akari', 'hero+mio', 'enemy0']);
   });
 
   it('プレビューで、その行動をした場合の自分の位置がわかる', () => {

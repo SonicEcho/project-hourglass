@@ -571,7 +571,8 @@ export function getRoundOrder(s: BattleState, preview?: { allyId: string; action
     const members = ids.map((id) => findAlly(s, id)!).filter(Boolean);
     const spd = Math.min(...members.map((m) => m.spd));
     const guard = plan?.action.type === 'guard';
-    const precede = ids.some((id) => s.precedeIds.includes(id));
+    // 連携技は必ず最初に動く（防御の次。段階26の調整4）
+    const precede = plan?.action.type === 'link' || ids.some((id) => s.precedeIds.includes(id));
     const planIndex = plan ? s.plans.indexOf(plan) : undefined;
     keyed.push({
       key: { tier: guard ? 0 : precede ? 1 : 2, speed: actionSpeed(spd, weight), side: 'ally', spd, index: index++ },
@@ -597,7 +598,7 @@ function queueToEntry(s: BattleState, q: QueueEntry): OrderEntry {
     planIndex: q.planIndex,
     tentative: false,
     guard: plan.action.type === 'guard',
-    precede: plan.actorIds.some((id) => s.precedeIds.includes(id)),
+    precede: plan.action.type === 'link' || plan.actorIds.some((id) => s.precedeIds.includes(id)),
   };
 }
 

@@ -70,12 +70,28 @@ describe('連携技のつながりゲージ', () => {
     expect(eventsOf(s, 'heal').map((h) => h.targetId).sort()).toEqual(['akari', 'hero']);
   });
 
-  it('ダウン中の敵には、連携技のダメージが1.5倍', () => {
+  it('ダウン中の敵には、連携技のダメージが2倍（段階26の調整4）', () => {
     const s = fullGauge(duo(false));
     const normal = previewAction(s, 'hero', afterglow).targets.find((t) => t.unitId === 'enemy0')!;
     s.enemies[0].down = true;
     const downed = previewAction(s, 'hero', afterglow).targets.find((t) => t.unitId === 'enemy0')!;
-    expect(downed.min).toBe(Math.floor(normal.min * 1.5));
+    expect(downed.min).toBeGreaterThanOrEqual(normal.min * 2 - 1);
+    expect(downed.min).toBeLessThanOrEqual(normal.min * 2 + 1);
+  });
+
+  it('連携技は、ダウンしている敵が立ち上がる前に当たる（必ず最初に動く）', () => {
+    // 敵はとても速いが、連携技はその前に動く。ラウンドの始めにダウン中の敵には2倍で当たり、敵は立ち上がりに番を使う
+    const s0 = fullGauge(
+      battle({
+        allies: [ally('hero', { spd: 5 }), ally('akari', { spd: 5 })],
+        enemies: [enemy('a', { spd: 99 })],
+      }),
+    );
+    s0.enemies[0].down = true;
+    const s = execute(planAll(s0, { hero: afterglow }));
+    const order = s.log.filter((e) => e.type === 'action' || e.type === 'standUp').map((e) => e.type);
+    expect(order[0]).toBe('action');
+    expect(order).toContain('standUp');
   });
 
   it('連携技がない（組む仲間がいない）パーティでは貯まらない', () => {
