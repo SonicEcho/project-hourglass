@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { AreaDef, AreaTrigger, ExploreState, GridCell, GridMap } from '../core';
 import {
+  exploreTipTriggers,
   addItems,
   addKoma,
   areaGrid,
@@ -28,6 +29,7 @@ import { AREA_BATTLES, AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TIL
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
+import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
 import { run, setExplore, setHubReturn, setStoryVars, storyLineup, storyLinkGauge } from './run';
@@ -71,6 +73,8 @@ export class ExploreScene extends Phaser.Scene {
   private enemies: Enemy[] = [];
   /** この時刻までは、敵の印に触れても戦闘にしない（戻ってきた直後など） */
   private graceUntil = 0;
+  /** 初めての人向けの説明を出している間は、敵も自分も止める（段階30） */
+  private tipOpen = false;
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
   private chestSprites = new Map<string, Phaser.GameObjects.Rectangle>();
@@ -99,6 +103,7 @@ export class ExploreScene extends Phaser.Scene {
     // 育成の画面から戻ってきた（または別の道で来た）ので、育成の画面の戻り先は忘れる
     setHubReturn(null);
     this.graceUntil = this.time.now + AREA_GRACE_MS;
+    this.tipOpen = false;
 
     let state = run.explore?.area === area.id ? run.explore : startExplore(area);
     let note = '';
@@ -147,6 +152,20 @@ export class ExploreScene extends Phaser.Scene {
           : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
+    this.showTip(false);
+  }
+
+  /** 今の場面の初めての説明があれば出す。出している間は動きを止め、閉じたら少しの間は敵に触れても戦闘にしない */
+  private showTip(atCheckpoint: boolean): void {
+    if (this.tipOpen || this.leaving) return;
+    const shown = maybeShowTip(this, exploreTipTriggers(this.state, { atCheckpoint }), () => {
+      this.tipOpen = false;
+      this.tweens.resumeAll();
+      this.graceUntil = this.time.now + AREA_GRACE_MS;
+    });
+    if (!shown) return;
+    this.tipOpen = true;
+    this.tweens.pauseAll();
   }
 
   private draw(): void {
@@ -293,7 +312,7 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (this.leaving || !this.player) return;
+    if (this.leaving || !this.player || this.tipOpen) return;
     if (this.time.now < this.graceUntil) return;
     for (const e of this.enemies) {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
@@ -380,7 +399,7 @@ export class ExploreScene extends Phaser.Scene {
       if (t) {
         this.route = [];
         this.openTrigger(t);
-      }
+      } else this.showTip(true);
     }
     // ボスの隣まで来たら
     if (!this.state.cleared && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk') {

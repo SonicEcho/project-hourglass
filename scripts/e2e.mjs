@@ -3,7 +3,9 @@
 // 流れ1（段階23・24・28。時間を返す画面では「返す」→「次へ」）: タイトル →「はじめる」→ プロローグの会話 → ページを開き直して「つづきから」で同じ場面から続く →
 //   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す。屋台めぐりの計画表と、昼の日常の地図が出るか）。途中の探索の画面でも開き直して続き、縁日の BGM が流れることを確かめる。
 // 流れ2（段階20）: デバッグメニューの「試作の5戦を最初から」→ 戦闘1〜5（敵のHPを1にして「自動で1ラウンド戦う」）→ 結果。最後に縁日の試作で BGM が切り替わるかを見る。
+// 初めての人向けの説明（段階30）は最初から全部見たことにして通し、最後に、見た説明を忘れると星図で説明が出ることを確かめる。
 // エラーが出る・途中で止まる・思った画面にならない時は失敗（終了コード1）にする。失敗した時の画面は e2e-failure.png に残す
+import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 
@@ -92,6 +94,12 @@ async function claimReward() {
   await tap('^受け取る$');
   await until('報酬の窓が閉じる', async () => !(await findText('^ギアを手に入れた！$')));
 }
+
+// 初めての人向けの説明（段階30）は、流れの途中で窓が出て止まらないよう、最初から全部見たことにしておく（最後に1つだけ出ることを確かめる）
+const TIP_IDS = [...readFileSync(new URL('../src/data/tips.ts', import.meta.url), 'utf8').matchAll(/id: '([a-z_]+)'/g)].map((m) => m[1]);
+await page.addInitScript((ids) => {
+  if (localStorage.getItem('restopia.tips') === null) localStorage.setItem('restopia.tips', JSON.stringify(ids));
+}, TIP_IDS);
 
 let failed = false;
 try {
@@ -185,6 +193,16 @@ try {
   await debugButton('試作：縁日のマップを歩く');
   await waitScene('ProtoExplore');
   await until('縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
+
+  step('見た説明を忘れると、星図を開いた時に説明が出る');
+  await page.evaluate(() => localStorage.setItem('restopia.tips', '[]'));
+  await page.goto(`${base}?debug=1&seed=1`);
+  await waitScene('Title');
+  await debugButton('試作の5戦を最初から');
+  await waitScene('Growth');
+  await until('星図の説明', () => findText('^はじめての説明$'));
+  await tap('^わかった$');
+  await until('説明が閉じる', async () => !(await findText('^はじめての説明$')));
 
   if (errors.length > 0) throw new Error(errors.join('\n'));
   console.log('通しの自動確認：成功');

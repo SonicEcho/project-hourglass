@@ -45,9 +45,10 @@ import { actorLinks, chargeCounterText, drawBattle, type FooterMode, type Panel,
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
+import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
-import { nextBattleSpeed } from '../core';
+import { battleTipTriggers, nextBattleSpeed } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 
 /** 選んでいる行動の元 */
@@ -112,6 +113,10 @@ export class BattleScene extends Phaser.Scene {
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
   /** オートの作戦（オート中だけ。段階29） */
   private auto: Tactic | null = null;
+  /** 初めての人向けの説明を出している（段階30） */
+  private tipOpen = false;
+  /** この戦闘でオートの説明を出してよいか（雑魚戦で、最初の戦闘の説明を前の戦闘までに見ている） */
+  private autoTipOk = false;
 
   constructor() {
     super('Battle');
@@ -142,6 +147,8 @@ export class BattleScene extends Phaser.Scene {
     // 戦闘はいつも手動で始まる。早送りの速さは設定に覚えておいたもの（段階29）
     this.auto = null;
     this.applySpeed();
+    this.tipOpen = false;
+    this.autoTipOk = this.autoAvailable() && seenTips().includes('battle_plan');
     this.planner = this.nextPlanner(null);
     this.root = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0).setDepth(100);
@@ -154,6 +161,7 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => setActiveBattle(null));
     this.message = this.idleMessage();
     this.render();
+    this.maybeTip();
     // 1ラウンド目の始めの、狂い・ファーストエイドによるHPの増減を見せる
     this.time.delayedCall(300, () => {
       for (const e of this.state.log) if (e.type === 'passiveHp') this.showEvent(this.state, e);
@@ -209,6 +217,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.message = this.idleMessage();
     this.render();
+    this.maybeTip();
     this.queueAuto();
   }
 
@@ -226,6 +235,14 @@ export class BattleScene extends Phaser.Scene {
     setSettings({ ...settings, battleSpeed: nextBattleSpeed(settings.battleSpeed) });
     this.applySpeed();
     this.render();
+  }
+
+  /** 操作を待つ時に、今の場面の初めての説明があれば出す（段階30。オート中は出さない） */
+  private maybeTip(): void {
+    if (this.auto || this.busy || this.tipOpen || this.state.phase === 'ended') return;
+    this.tipOpen = maybeShowTip(this, battleTipTriggers(this.state, { autoAvailable: this.autoTipOk }), () => {
+      this.tipOpen = false;
+    });
   }
 
   /** オートを使える戦闘か。ボス戦では使えない */
@@ -271,6 +288,7 @@ export class BattleScene extends Phaser.Scene {
     this.clearSelection();
     this.message = this.idleMessage();
     this.render();
+    this.maybeTip();
     this.queueAuto();
   }
 
@@ -291,7 +309,7 @@ export class BattleScene extends Phaser.Scene {
 
   private autoStep(): void {
     const tactic = this.auto;
-    if (!tactic || this.busy || this.overlay) return;
+    if (!tactic || this.busy || this.overlay || this.tipOpen) return;
     const s = this.state;
     if (s.phase === 'plan' && !s.searchChoice) {
       this.clearSelection();
@@ -360,6 +378,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.state.phase === 'plan') this.planner = this.nextPlanner(null);
     this.message = this.idleMessage();
     this.render();
+    this.maybeTip();
     this.queueAuto();
   }
 

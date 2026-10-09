@@ -25,6 +25,7 @@ import { PART_COLOR } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
+import { maybeShowTip } from '../ui/tipPanel';
 import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
@@ -66,6 +67,7 @@ export class WeaponScene extends Phaser.Scene {
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
+    maybeShowTip(this, ['growth_weapon']);
   }
 
   /** デバッグメニューから記憶の欠片や経験値が変わった時に描き直す */
