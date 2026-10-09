@@ -348,9 +348,25 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
   - Suno の無料の版で作った曲は、売り物に使えない（後から有料にしても、さかのぼって使えるようにはならない）。商用に使える権利は、有料の期間にダウンロードした曲だけに付く（2026-09-03 から。Pro は月20曲、Premier は月60曲まで）。解約しても、ダウンロード済みの曲は使い続けられる
   - 使うなら、無料の版で曲調を試してから、有料の版を必要な月だけ契約して本番の曲を作る。ダウンロードした日の規約の控えを取る
   - Suno の曲はループ前提ではないので、つなぎ目を探して切る作業が要る（Claude が曲を解析して、つなぎ目を探す）
-- 曲調の指示文の例（Instrumental をオンにして、Style of Music に書く）：
-  - タイトル・夕暮れの街：`nostalgic emotional JRPG title theme, solo piano and soft strings, music box accents, gentle warm melody with a hint of sadness, summer evening sunset atmosphere, slow tempo 76 bpm, cinematic, instrumental, no vocals, no fade out`
-  - 縁日・祭り：`cheerful Japanese summer festival music, shinobue bamboo flute, taiko drums, shamisen, light percussion, playful and nostalgic, dusk atmosphere with paper lanterns, medium tempo 110 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - ふだんの戦闘：`energetic JRPG battle theme, driving rock drums and bass, fast strings, bright synth lead, ticking clock percussion motif, heroic and tense, fast tempo 150 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - 泣きの場面：`heartbreaking emotional piano ballad, solo piano with soft cello, slow and fragile, memories of a lost summer, quiet and tender, tempo 64 bpm, cinematic JRPG sad scene, instrumental, no vocals`
+- **M1 の本番の BGM（段階31b。7曲）**：どの場面に何曲かは `docs/script/M1.md` の 5. の素材一覧。台本の名前（`@bgm`）との対応は `src/data/dialogue.ts` の `SCRIPT_BGM`。Pro の月20曲で、1曲あたり2〜3回作り直せる
+- 曲調の指示文（Instrumental をオンにして、Style of Music に書く。②⑤⑥は 2026-10-09 に足したたたき台）：
+
+| 番号 | 優先 | 曲 | 流れる所 | 台本の名前 |
+| --- | --- | --- | --- | --- |
+| ① | 高 | タイトル・夕暮れの街 | タイトル、夕暮れの時計屋 | `title` |
+| ② | 高 | 日常 | 朝・学校・商店街 | `daily` |
+| ③ | 高 | 縁日の探索（プロローグの祭りと共用でもよい） | 1-1 の探索、プロローグ | `festival`、`prologue` |
+| ④ | 高 | ふだんの戦闘 | 雑魚戦 | （戦闘の画面） |
+| ⑤ | 高 | ボス戦 | 1-1 のボス | （戦闘の画面） |
+| ⑥ | 中 | レストピア（蔵書の棚） | 1-F、2-C | `library` |
+| ⑦ | 中 | 返す場面・泣き | 時間を返す、2日目の電話 | `return` |
+
+  - ① タイトル・夕暮れの街：`nostalgic emotional JRPG title theme, solo piano and soft strings, music box accents, gentle warm melody with a hint of sadness, summer evening sunset atmosphere, slow tempo 76 bpm, cinematic, instrumental, no vocals, no fade out`
+  - ② 日常：`warm slice-of-life JRPG town theme, acoustic guitar, light piano, soft woodwinds, gentle percussion, relaxed summer morning in a small Japanese town, carefree and nostalgic, medium tempo 100 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - ③ 縁日・祭り：`cheerful Japanese summer festival music, shinobue bamboo flute, taiko drums, shamisen, light percussion, playful and nostalgic, dusk atmosphere with paper lanterns, medium tempo 110 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - ④ ふだんの戦闘：`energetic JRPG battle theme, driving rock drums and bass, fast strings, bright synth lead, ticking clock percussion motif, heroic and tense, fast tempo 150 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - ⑤ ボス戦：`intense JRPG boss battle theme, heavy taiko and rock drums, distorted guitar, dramatic strings and choir pads, shinobue flute melody twisted into a darker minor key, ticking clock motif, urgent and powerful, tempo 160 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - ⑥ レストピア（蔵書の棚）：`mysterious and beautiful fantasy library theme, celesta, harp, soft choir pads, gentle strings, music box, floating golden sand atmosphere, quiet wonder with a touch of loneliness, slow tempo 70 bpm, loopable game background music, instrumental, no vocals, no fade out`
+  - ⑦ 返す場面・泣き：`heartbreaking emotional piano ballad, solo piano with soft cello, slow and fragile, memories of a lost summer, quiet and tender, tempo 64 bpm, cinematic JRPG sad scene, instrumental, no vocals`
+- 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦）と実際に使った指示文と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
 
