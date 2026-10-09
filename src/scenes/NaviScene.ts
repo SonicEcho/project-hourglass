@@ -10,6 +10,7 @@ import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, hubLineup, lineupBase, run, saveRun } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { addIcon } from '../ui/icons';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -177,7 +178,9 @@ export class NaviScene extends Phaser.Scene {
     this.root.removeAll(true);
     this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / this.board().cols));
     this.root.add(screenBg(this));
-    this.root.add(addText(this, SIDE_PADDING, 8, 'ムーブメント', { size: 17, bold: true }));
+    // 見出しのアイコン（段階32a 調整2）
+    this.root.add(addIcon(this, 'gear', SIDE_PADDING + 9, 20, 18, COLORS.accent));
+    this.root.add(addText(this, SIDE_PADDING + 24, 8, 'ムーブメント', { size: 17, bold: true }));
     this.root.add(
       addText(this, GAME_WIDTH - SIDE_PADDING, 12, '光る帯＝ブリッジ', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
     );

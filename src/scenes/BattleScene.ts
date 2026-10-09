@@ -673,9 +673,20 @@ export class BattleScene extends Phaser.Scene {
   /** 当たった所に、輪が広がって消える（段階32a 調整1） */
   private impact(x: number, y: number, color: number): void {
     if (this.skipping) return;
-    const ring = this.add.circle(x, y, 10).setStrokeStyle(3, color, 0.9);
+    // 図形の丸を拡大する形だと描かれないことがあったので、線を描き直して広げる
+    const ring = this.add.graphics();
     this.fxLayer.add(ring);
-    this.tweens.add({ targets: ring, scale: 3.2, alpha: 0, duration: 320, ease: 'Cubic.easeOut', onComplete: () => ring.active && ring.destroy() });
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 320,
+      ease: 'Cubic.easeOut',
+      onUpdate: (t) => {
+        const v = t.getValue() ?? 1;
+        if (ring.active) ring.clear().lineStyle(3 * (1 - v) + 1, color, 0.9 * (1 - v)).strokeCircle(x, y, 10 + 24 * v);
+      },
+      onComplete: () => ring.active && ring.destroy(),
+    });
   }
 
   private bigText(text: string): void {

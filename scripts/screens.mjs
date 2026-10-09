@@ -80,6 +80,7 @@ try {
     await waitScene('Growth');
     await tap(label);
     await waitScene(scene);
+    await page.waitForTimeout(1500);
     await shot(name);
   }
 

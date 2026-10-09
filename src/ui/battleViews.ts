@@ -12,6 +12,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, STAGE, t
 import { hasImage } from '../assets/loader';
 import { addBar, addButton, addText, makePressable } from './widgets';
 import { countText, screenBg } from './skin';
+import { addIcon, type IconKind } from './icons';
 
 export type Panel = 'none' | 'skills' | 'other' | 'discard' | 'search';
 
@@ -255,8 +256,7 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       const ix = cx + (k - (known.length - 1) / 2) * 30;
       const iy = LAYOUT.enemies.y + 22;
       const icon = scene.add.rectangle(ix, iy, 26, 20, ELEMENT_COLOR[el]).setRounded(6).setStrokeStyle(1, 0xffffff);
-      const t = addText(scene, ix, iy, ELEMENT_LABEL[el], { size: 11, bold: true, color: '#101820', align: 'center' }).setOrigin(0.5);
-      root.add([icon, t]);
+      root.add([icon, addIcon(scene, el, ix, iy, 14, 0x101820)]);
     });
     if (known.length > 0) {
       root.add(addText(scene, cx, LAYOUT.enemies.y + 40, '弱点', { size: 10, color: COLORS.subText }).setOrigin(0.5));
@@ -389,13 +389,17 @@ function drawAllies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
     const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
     const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
     addBar(scene, root, x0 + 6, y + 46, barW, 6, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / ally.maxHp);
-    const hpText = addText(scene, x0 + 6, y + 50, `HP ${ally.hp}/${ally.maxHp}`, { size: 10, color: COLORS.subText });
+    // HP はハート、MP はしずくのアイコン（段階32a 調整2）
+    root.add(addIcon(scene, 'hp', x0 + 11, y + 57, 10, COLORS.hp));
+    const hpText = addText(scene, x0 + 19, y + 50, `${ally.hp}/${ally.maxHp}`, { size: 10, color: COLORS.subText });
     root.add(hpText);
-    countText(scene, hpText, hpFrom, ally.hp, (v) => `HP ${v}/${ally.maxHp}`);
+    countText(scene, hpText, hpFrom, ally.hp, (v) => `${v}/${ally.maxHp}`);
     addBar(scene, root, x0 + 6, y + 66, barW, 4, ally.mp / ally.maxMp, COLORS.mp, mpFrom / ally.maxMp);
-    const mpText = addText(scene, x0 + w - 6, y + 50, `MP ${ally.mp}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0);
+    const mpText = addText(scene, x0 + w - 6, y + 50, `${ally.maxMp}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0);
+    root.add(addIcon(scene, 'mp', x0 + w - 12 - mpText.width, y + 57, 10, COLORS.mp));
+    mpText.setText(`${ally.mp}`);
     root.add(mpText);
-    countText(scene, mpText, mpFrom, ally.mp, (v) => `MP ${v}`);
+    countText(scene, mpText, mpFrom, ally.mp, (v) => `${v}`);
     makePressable(panel, {
       onTap: vm.interactive ? () => h.tapAlly(ally.uid) : undefined,
       onLongPress: () => h.detail(ally.name, allyDetail(ally)),
@@ -526,7 +530,13 @@ function drawCard(
   const type = mainDamageType(def);
   const typeLabel = def.support ? 'サポート' : type ? ELEMENT_LABEL[type] : def.effects.some((e) => e.kind === 'heal') ? '回復' : '補助';
   root.add([rect, band, foot]);
-  root.add(addText(scene, x, yy - hgt / 2 + 12, typeLabel, { size: def.support ? 10 : 11, bold: true, color: '#101820' }).setOrigin(0.5));
+  // 属性のアイコンと名前を並べて、帯の真ん中に置く（段階32a 調整2）
+  const typeText = addText(scene, x, yy - hgt / 2 + 12, typeLabel, { size: def.support ? 10 : 11, bold: true, color: '#101820' }).setOrigin(0.5);
+  const iconKind: IconKind = def.support ? 'support' : type ?? (typeLabel === '回復' ? 'heal' : 'support');
+  const left = x - (12 + 2 + typeText.width) / 2;
+  root.add(addIcon(scene, iconKind, left + 6, yy - hgt / 2 + 12, 12, 0x101820, dim ? 0.5 : 1));
+  typeText.setX(left + 14 + typeText.width / 2);
+  root.add(typeText);
   if (o.inCombo && !dim) {
     const bx = x + w / 2 - 8;
     const by = yy - hgt / 2 + 32;

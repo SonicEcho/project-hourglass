@@ -13,6 +13,7 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { addIcon } from '../ui/icons';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -20,6 +21,8 @@ const CELL = 48;
 const MAP_X = (GAME_WIDTH - CELL * GROWTH_MAP.cols) / 2;
 const MAP_Y = 58;
 const NODE_R = 17;
+/** 星図の夜空（段階32a 調整2）：星を置く高さの範囲、星の数、マスがきらめく間（ミリ秒） */
+const SKY = { top: 52, bottom: 490, stars: 70, twinkleMs: 1300 } as const;
 
 const STAT_LABEL: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻撃', mag: '魔力', def: '防御', spd: '速さ' };
 const STAT_SHORT: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻', mag: '魔', def: '防', spd: '速' };
@@ -66,6 +69,7 @@ export class GrowthScene extends Phaser.Scene {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     enterScreen(this);
     this.shownPoints = null;
+    this.makeNightSky();
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.selected = null;
@@ -128,7 +132,9 @@ export class GrowthScene extends Phaser.Scene {
     // 上：見出しと星の砂
     const next = back ? null : battleAt(run.progress);
     const area = run.explore ? AREAS[run.explore.area] : undefined;
-    this.root.add(addText(this, SIDE_PADDING, 8, '星図', { size: 17, bold: true }));
+    // 見出しのアイコン（段階32a 調整2）
+    this.root.add(addIcon(this, 'star', SIDE_PADDING + 9, 20, 18, COLORS.accent));
+    this.root.add(addText(this, SIDE_PADDING + 24, 8, '星図', { size: 17, bold: true }));
     this.root.add(
       addText(this, SIDE_PADDING, 32, back ? `${area?.name ?? ''}のチェックポイント` : `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
         size: 11,
@@ -149,9 +155,11 @@ export class GrowthScene extends Phaser.Scene {
       for (const nb of neighbors(GROWTH_MAP, n.id)) {
         if (nb.id < n.id) continue;
         const both = isOpened(g, this.charId, n.id) && isOpened(g, this.charId, nb.id);
-        lines.lineStyle(both ? 4 : 2, both ? color : 0x2a3b4e, 1);
         const a = nodeCenter(n);
         const b = nodeCenter(nb);
+        // つながった道は、太い薄い光を下に敷いて、うっすら光って見せる（段階32a 調整2）
+        if (both) lines.lineStyle(12, color, 0.16).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(both ? 4 : 2, both ? color : 0x3a4670, both ? 1 : 0.8);
         lines.lineBetween(a.x, a.y, b.x, b.y);
       }
     }
@@ -194,6 +202,7 @@ export class GrowthScene extends Phaser.Scene {
             size: 12,
             bold: true,
           });
+          this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, 0x5aa8ff));
         },
       });
     }
@@ -217,6 +226,7 @@ export class GrowthScene extends Phaser.Scene {
               ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }
               : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: 12, bold: true },
           );
+          this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? COLORS.accent : 0xff9a5a));
         },
       });
     }
@@ -245,6 +255,46 @@ export class GrowthScene extends Phaser.Scene {
       },
       { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
     );
+  }
+
+  /**
+   * 星図の後ろの夜空（段階32a 調整2）：小さな星がまたたき、開けたマスがときどききらめく。
+   * 画面を開いた時に1回だけ作る（マスを開けるたびの描き直しでは作り直さない）
+   */
+  private makeNightSky(): void {
+    const { top, bottom } = SKY;
+    for (let i = 0; i < SKY.stars; i++) {
+      const star = this.add.circle(Phaser.Math.Between(4, GAME_WIDTH - 4), Phaser.Math.Between(top, bottom), Math.random() < 0.15 ? 1.4 : 0.8, 0xffffff, 0.2);
+      star.setDepth(-50);
+      this.tweens.add({ targets: star, alpha: { from: 0.15, to: 0.85 }, duration: Phaser.Math.Between(900, 2600), delay: Phaser.Math.Between(0, 2000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+    this.time.addEvent({
+      delay: SKY.twinkleMs,
+      loop: true,
+      callback: () => {
+        const opened = GROWTH_MAP.nodes.filter((n) => isOpened(run.growth, this.charId, n.id));
+        const n = opened[Math.floor(Math.random() * opened.length)];
+        if (!n || this.overlay) return;
+        const { x, y } = nodeCenter(n);
+        // 4つの角の光を、大きくしてから小さくする（形を描き直して動かす）
+        const gx = x + NODE_R * 0.55;
+        const gy = y - NODE_R * 0.55;
+        const glint = this.add.graphics().setDepth(50);
+        this.tweens.addCounter({
+          from: 0,
+          to: 1,
+          duration: 520,
+          onUpdate: (t) => {
+            const r = 7 * Math.sin(Math.PI * (t.getValue() ?? 1));
+            const w = r * 0.22;
+            if (!glint.active) return;
+            glint.clear().fillStyle(0xffffff, 0.95);
+            glint.fillPoints([gx, gy - r, gx + w, gy - w, gx + r, gy, gx + w, gy + w, gx, gy + r, gx - w, gy + w, gx - r, gy, gx - w, gy - w].reduce<Phaser.Math.Vector2[]>((ps, v, i, a) => (i % 2 ? ps : [...ps, new Phaser.Math.Vector2(v, a[i + 1])]), []), true);
+          },
+          onComplete: () => glint.destroy(),
+        });
+      },
+    });
   }
 
   private drawNode(n: GrowthNodeDef, openable: boolean): void {
