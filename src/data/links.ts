@@ -1,7 +1,8 @@
 import type { LinkDef } from '../core/types';
 
 // 連携技（2人の行動をまとめて使う大技）。つながりゲージが満タンの時だけ使える（段階26の調整2）。
-// ゲージは仲間が弱点を突く・ダウンさせる・バトンタッチすると貯まり、使うと0に戻る（数値は constants.ts の LINK_GAUGE_*）
+// ゲージは仲間が弱点を突く・ダウンさせる・バトンタッチすると貯まり、使うと0に戻る（数値は constants.ts の LINK_GAUGE_*）。
+// 連携技は必ずラウンドの最初に動き（防御の次）、ダウン中の敵には2倍（段階26の調整4。数値は遊んで調整する）
 
 /** ハルトとみおの2人技 */
 export const CROSS_DRIVE: LinkDef = {
@@ -11,8 +12,8 @@ export const CROSS_DRIVE: LinkDef = {
   weight: 1.5,
   target: 'enemies',
   effects: [
-    // 連携技は耐性を無視する。ダウン中の敵には 1.5倍（段階26の調整2で威力 50 → 110）
-    { kind: 'damage', type: 'physical', power: 110, ignoreResist: true, downBonus: 1.5 },
+    // 連携技は耐性を無視する。ダウン中の敵には2倍（威力 50 → 110（調整2）→ 80（調整4））
+    { kind: 'damage', type: 'physical', power: 80, ignoreResist: true, downBonus: 2 },
     { kind: 'draw', count: 2 },
   ],
 };
@@ -25,8 +26,8 @@ export const AFTERGLOW: LinkDef = {
   weight: 1.5,
   target: 'enemies',
   effects: [
-    // 夕焼けの光：敵ごとに火か氷の効く方で（弱点があれば弱点を突く）。ダウン中の敵には 1.5倍。その後、味方全体を回復
-    { kind: 'damage', type: 'fire', power: 100, bestOf: ['fire', 'ice'], ignoreResist: true, downBonus: 1.5 },
+    // 夕焼けの光：敵ごとに火か氷の効く方で（弱点があれば弱点を突く）。ダウン中の敵には2倍（威力 100 → 70（調整4））。その後、味方全体を回復
+    { kind: 'damage', type: 'fire', power: 70, bestOf: ['fire', 'ice'], ignoreResist: true, downBonus: 2 },
     { kind: 'heal', power: 25, allies: true },
   ],
 };

@@ -5,7 +5,7 @@ export function actionSpeed(spd: number, weight: number): number {
 
 /**
  * ラウンドの中の並び順を決める要素
- * - tier: 0 防御、1 先制（クイックステップ）、2 それ以外
+ * - tier: 0 防御、1 先制（クイックステップ・連携技）、2 それ以外
  * - speed: 行動の速さ
  * - side / spd: 同じ速さの時は味方が先、その次は速さ（能力値）の高い順
  * - index: それでも同じなら登録順（味方 → 敵）
