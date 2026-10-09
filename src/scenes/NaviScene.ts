@@ -9,6 +9,8 @@ import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, hubLineup, lineupBase, run, saveRun } from './run';
+import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { addIcon } from '../ui/icons';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -45,6 +47,7 @@ export class NaviScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.clearSelection();
@@ -174,8 +177,10 @@ export class NaviScene extends Phaser.Scene {
     saveRun();
     this.root.removeAll(true);
     this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / this.board().cols));
-    this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
-    this.root.add(addText(this, SIDE_PADDING, 8, 'ムーブメント', { size: 17, bold: true }));
+    this.root.add(screenBg(this));
+    // 見出しのアイコン（段階32a 調整2）
+    this.root.add(addIcon(this, 'gear', SIDE_PADDING + 9, 20, 18, COLORS.accent));
+    this.root.add(addText(this, SIDE_PADDING + 24, 8, 'ムーブメント', { size: 17, bold: true }));
     this.root.add(
       addText(this, GAME_WIDTH - SIDE_PADDING, 12, '光る帯＝ブリッジ', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
     );
@@ -207,7 +212,7 @@ export class NaviScene extends Phaser.Scene {
     members.forEach((c, i) => {
       const x = SIDE_PADDING + i * (w + gap);
       const active = c.id === this.charId;
-      const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setOrigin(0);
+      const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
       this.root.add(rect);
       const bugs = findBugs(currentNaviData(), run.navi, c.id).length;
@@ -249,7 +254,7 @@ export class NaviScene extends Phaser.Scene {
         if (!cellSet.has(key([col, row]))) continue;
         const x = o.x + col * this.cell;
         const y = o.y + row * this.cell;
-        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, row === b.commandRow ? 0x3a3a1e : COLORS.panel).setOrigin(0);
+        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, row === b.commandRow ? 0x3a3a1e : COLORS.panel).setRounded(8).setOrigin(0);
         rect.setStrokeStyle(1, COLORS.border);
         this.root.add(rect);
         makePressable(rect, {
@@ -350,7 +355,7 @@ export class NaviScene extends Phaser.Scene {
   private drawInfo(): void {
     const top = 392;
     const h = 120;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
@@ -412,11 +417,11 @@ export class NaviScene extends Phaser.Scene {
       const x = SIDE_PADDING + (i % LIST_COLS) * (w + CHIP_GAP);
       const y = LIST_TOP + 18 + Math.floor(i / LIST_COLS) * (chipH + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
-      const rect = this.add.rectangle(x, y, w, chipH, p.placement ? COLORS.panel : COLORS.panelLight).setOrigin(0);
+      const rect = this.add.rectangle(x, y, w, chipH, p.placement ? COLORS.panel : COLORS.panelLight).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : COLORS.border);
       this.root.add(rect);
       if (!compact) drawPartShape(this, this.root, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
-      this.root.add(addText(this, x + 4, y + chipH - 16, def.name, { size: 9, color: p.placement ? COLORS.subText : COLORS.text }));
+      this.root.add(addText(this, x + 4, y + chipH - 16, def.name, { size: 10, color: p.placement ? COLORS.subText : COLORS.text }));
       if (p.placement) {
         const owner = p.placement.charId;
         const name = PARTY.find((c) => c.id === owner)?.name.slice(0, 1) ?? '';
@@ -440,7 +445,7 @@ export class NaviScene extends Phaser.Scene {
   }
 
   private closeOverlay(): void {
-    this.overlay?.destroy(true);
+    fadeOutAndDestroy(this, this.overlay);
     this.overlay = undefined;
   }
 
@@ -453,12 +458,13 @@ export class NaviScene extends Phaser.Scene {
     const text = addText(this, 0, 0, body, { size: 14, wrap: w - 32 });
     const h = text.height + 90;
     const y = GAME_HEIGHT / 2 - h / 2;
-    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
+    const panel = addWindow(this, 20, y, w, h);
     const titleText = addText(this, 36, y + 14, title, { size: 17, bold: true, color: COLORS.accentText });
     text.setPosition(36, y + 44);
     const hint = addText(this, GAME_WIDTH / 2, y + h - 16, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5);
     c.add([panel, titleText, text, hint]);
     makePressable(shade, { onTap: () => this.closeOverlay() });
     this.overlay = c;
+    popIn(this, c);
   }
 }

@@ -101,6 +101,9 @@ export function clearReadLog(): void {
  * 文字送り、タップで全文 → 次へ、話している人の立ち絵を明るく、選択肢、ログ、早送り（読んだ所だけ）、オート。
  * 語りの文には砂が流れる。背景・立ち絵・1枚絵は、絵がなければ色と名前で仮に描く
  */
+/** 本文の枠の色（段階32a で藍に寄せた） */
+const DIALOGUE_BOX = 0x0d1230;
+
 export class DialogueScene extends Phaser.Scene {
   private scenes: ScriptScene[] = M1_SCENES;
   private pos!: ScriptPos;
@@ -160,6 +163,7 @@ export class DialogueScene extends Phaser.Scene {
   private skipButton!: Phaser.GameObjects.Rectangle;
   private autoButton!: Phaser.GameObjects.Rectangle;
   private blipButton!: Phaser.GameObjects.Rectangle;
+  private boxLine!: Phaser.GameObjects.Graphics;
   private blipLabel!: Phaser.GameObjects.Text;
   private toast?: Phaser.GameObjects.Text;
 
@@ -209,8 +213,11 @@ export class DialogueScene extends Phaser.Scene {
     this.setBackdrop('black');
 
     // 本文の枠
-    this.box = this.add.rectangle(16, 560, GAME_WIDTH - 32, 200, 0x0b1118, 0.92).setOrigin(0).setStrokeStyle(2, COLORS.border).setDepth(40);
-    this.nameBox = this.add.rectangle(28, 540, 140, 36, COLORS.panelLight).setOrigin(0).setStrokeStyle(2, COLORS.accent).setDepth(41);
+    this.box = this.add.rectangle(16, 560, GAME_WIDTH - 32, 200, DIALOGUE_BOX, 0.92).setRounded(12).setOrigin(0).setStrokeStyle(2, COLORS.border).setDepth(40);
+    // 枠の内側の、砂色の細い線（段階32a。紙の文では出さない）
+    this.boxLine = this.add.graphics().setDepth(40);
+    this.boxLine.lineStyle(1, COLORS.accent, 0.3).strokeRoundedRect(22, 566, GAME_WIDTH - 44, 188, 8);
+    this.nameBox = this.add.rectangle(28, 540, 140, 36, COLORS.panelLight).setRounded(8).setOrigin(0).setStrokeStyle(2, COLORS.accent).setDepth(41);
     this.nameTag = addText(this, 98, 558, '', { size: 15, bold: true, color: COLORS.accentText }).setOrigin(0.5).setDepth(42);
     this.body = addText(this, 34, 592, '', { size: 17, wrap: BODY_WRAP }).setDepth(42);
     this.body.setLineSpacing(6);
@@ -792,6 +799,7 @@ export class DialogueScene extends Phaser.Scene {
       : style === 'voice' ? { ...(VOICE_ONLY[line.speaker ?? ''] ?? CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT), phone: line.tag === '電話' }
       : undefined;
     for (const o of [this.box, this.body]) o.setVisible(!isCaption);
+    this.boxLine.setVisible(!isCaption && style !== 'document');
 
     // 立ち絵：話している人だけ明るく。声だけ・地の文などは全員を暗く（語りの文は誰も暗くしない）
     const speaker = style === 'talk' ? line.speaker : null;
@@ -807,7 +815,7 @@ export class DialogueScene extends Phaser.Scene {
 
     // 文の色と枠
     const paper = style === 'document';
-    this.box.setFillStyle(paper ? 0xf1e6d2 : 0x0b1118, paper ? 0.97 : 0.92);
+    this.box.setFillStyle(paper ? 0xf1e6d2 : DIALOGUE_BOX, paper ? 0.97 : 0.92);
     const color = paper ? '#3a2a20' : style === 'narration' ? '#f3e2b8' : style === 'monologue' ? '#cfd8e3' : style === 'note' ? COLORS.accentText : COLORS.text;
     this.body.setColor(color);
     this.cursor.setVisible(false);

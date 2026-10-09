@@ -5,6 +5,7 @@ import { ASSETS } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
+import { enterScreen, screenBg } from '../ui/skin';
 
 const TOP = 90;
 const BOTTOM = 740;
@@ -17,7 +18,8 @@ export class CreditsScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0);
+    enterScreen(this);
+    screenBg(this);
 
     // 一覧（ドラッグで動かす）
     const list = this.add.container(0, TOP);

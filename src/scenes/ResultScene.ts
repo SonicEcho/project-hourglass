@@ -5,6 +5,7 @@ import { BOSS_PART_REWARDS, NAVI_PARTS } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { battleAt, rerollSeed, startNewRun } from './run';
+import { enterScreen, screenBg } from '../ui/skin';
 
 export interface ResultSceneData {
   outcome: 'victory' | 'defeat';
@@ -22,11 +23,12 @@ export class ResultScene extends Phaser.Scene {
 
   create(data: ResultSceneData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
     const root = this.add.container(0, 0);
     const win = data.outcome === 'victory';
     const cx = GAME_WIDTH / 2;
 
-    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
+    root.add(screenBg(this));
     root.add(
       addText(this, cx, 130, win ? 'クリア！' : '敗北…', { size: 46, bold: true, color: win ? COLORS.accentText : COLORS.allyDamage }).setOrigin(0.5),
     );
@@ -39,7 +41,7 @@ export class ResultScene extends Phaser.Scene {
 
     // 破壊した部位と、手に入るはずの素材（表示のみ）
     const top = 250;
-    root.add(this.add.rectangle(20, top, GAME_WIDTH - 40, 230, COLORS.panel).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    root.add(this.add.rectangle(20, top, GAME_WIDTH - 40, 230, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     root.add(addText(this, 36, top + 14, '破壊した部位', { size: 15, bold: true, color: COLORS.accentText }));
     if (data.brokenParts.length === 0) {
       root.add(addText(this, 36, top + 50, 'なし', { size: 14, color: COLORS.subText }));
