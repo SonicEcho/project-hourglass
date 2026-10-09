@@ -50,6 +50,7 @@ import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
 import { battleTipTriggers, nextBattleSpeed } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
+import { addWindow } from '../ui/skin';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -264,9 +265,9 @@ export class BattleScene extends Phaser.Scene {
     const rowH = 76;
     const h = 70 + TACTICS.length * (rowH + 8) + 56;
     const y = GAME_HEIGHT / 2 - h / 2;
-    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
-    panel.setInteractive();
-    c.add(panel);
+    c.add(addWindow(this, 20, y, w, h));
+    // 窓の中のすき間を押しても閉じない
+    c.add(this.add.rectangle(20, y, w, h, 0x000000, 0.001).setOrigin(0).setInteractive());
     c.add(addText(this, 36, y + 14, 'オートの作戦', { size: 17, bold: true, color: COLORS.accentText }));
     c.add(addText(this, 36, y + 40, '選ぶとオートで進む。どこかをタップすると手動に戻る', { size: 12, color: COLORS.subText }));
     TACTICS.forEach((t, i) => {
@@ -1179,7 +1180,7 @@ export class BattleScene extends Phaser.Scene {
     const text = addText(this, 0, 0, body, { size: 14, wrap: w - 32 });
     const h = text.height + 90;
     const y = GAME_HEIGHT / 2 - h / 2 - 60;
-    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
+    const panel = addWindow(this, 20, y, w, h);
     const titleText = addText(this, 36, y + 14, title, { size: 17, bold: true, color: COLORS.accentText });
     text.setPosition(36, y + 44);
     const hint = addText(this, GAME_WIDTH / 2, y + h - 16, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5);

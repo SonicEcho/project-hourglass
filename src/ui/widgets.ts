@@ -1,13 +1,16 @@
 import Phaser from 'phaser';
-import { COLORS, FONT, RENDER_SCALE } from './theme';
+import { COLORS, FONT, FONT_HEADING, RENDER_SCALE, SKIN } from './theme';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
+// 角の丸い四角をなめらかに描く置き換え（skin.ts）を、どの画面よりも先に入れる
+import './skin';
 
 export const LONG_PRESS_MS = 500;
 
 export interface TextStyle {
   size?: number;
   color?: string;
+  /** 太字。太字は見出しの書体（丸みのある書体）で出す（段階32a） */
   bold?: boolean;
   align?: 'left' | 'center' | 'right';
   wrap?: number;
@@ -15,7 +18,7 @@ export interface TextStyle {
 
 export function addText(scene: Phaser.Scene, x: number, y: number, text: string, style: TextStyle = {}): Phaser.GameObjects.Text {
   const t = scene.add.text(x, y, text, {
-    fontFamily: FONT,
+    fontFamily: style.bold ? FONT_HEADING : FONT,
     fontSize: `${style.size ?? 14}px`,
     color: style.color ?? COLORS.text,
     fontStyle: style.bold ? 'bold' : 'normal',
@@ -75,7 +78,10 @@ export interface ButtonOptions {
   bold?: boolean;
 }
 
-/** 角丸でない簡単なボタン。中心座標で置く */
+/**
+ * ボタン。中心座標で置く。角が丸く、下に影、上半分にうっすら光。押すと少し沈む（段階32a）。
+ * 返す四角の色（setFillStyle・setStrokeStyle）は、あとから替えてよい
+ */
 export function addButton(
   scene: Phaser.Scene,
   parent: Phaser.GameObjects.Container,
@@ -88,17 +94,29 @@ export function addButton(
   opts: ButtonOptions = {},
 ): Phaser.GameObjects.Rectangle {
   const enabled = opts.enabled ?? true;
-  const rect = scene.add.rectangle(x, y, w, h, enabled ? (opts.fill ?? COLORS.panelLight) : COLORS.disabled);
+  const radius = Math.min(SKIN.buttonRadius, h / 2);
+  const shadow = scene.add.rectangle(x, y + SKIN.shadowOffset, w, h, 0x000000, enabled ? 0.38 : 0.2).setRounded(radius);
+  const rect = scene.add.rectangle(x, y, w, h, enabled ? (opts.fill ?? COLORS.panelLight) : COLORS.disabled).setRounded(radius);
   rect.setStrokeStyle(opts.strokeWidth ?? 1, opts.stroke ?? COLORS.border);
+  const sheen = scene.add.rectangle(x, y - h / 4 + 1, w - 6, h / 2 - 3, 0xffffff, enabled ? 0.07 : 0.02).setRounded(Math.max(0, radius - 3));
   const text = addText(scene, x, y, label, {
     size: opts.size ?? 14,
     color: enabled ? (opts.textColor ?? COLORS.text) : COLORS.dimText,
     align: 'center',
-    bold: opts.bold,
+    bold: true,
     wrap: w - 6,
   }).setOrigin(0.5);
-  parent.add([rect, text]);
+  parent.add([shadow, rect, sheen, text]);
   if (enabled) {
+    // 押した時に少し沈む
+    const face = [rect, sheen, text];
+    const press = (down: boolean) => {
+      for (const o of face) o.setScale(down ? SKIN.pressScale : 1);
+      for (const o of face) o.y = (o === sheen ? y - h / 4 + 1 : y) + (down ? 2 : 0);
+    };
+    rect.on('pointerdown', () => press(true));
+    rect.on('pointerup', () => press(false));
+    rect.on('pointerout', () => press(false));
     const onTap = handlers.onTap;
     makePressable(rect, {
       ...handlers,
@@ -123,7 +141,14 @@ export function addBar(
   ratio: number,
   color: number,
 ): void {
-  const bg = scene.add.rectangle(x, y, w, h, COLORS.barBg).setOrigin(0, 0.5);
-  const fill = scene.add.rectangle(x, y, Math.max(0, Math.min(1, ratio)) * w, h, color).setOrigin(0, 0.5);
-  parent.add([bg, fill]);
+  // 角の丸い溝に、光の筋の入った中身（段階32a）
+  const r = h / 2;
+  const fw = Math.max(0, Math.min(1, ratio)) * w;
+  const bg = scene.add.rectangle(x, y, w, h, COLORS.barBg).setOrigin(0, 0.5).setRounded(r).setStrokeStyle(1, 0x000000, 0.6);
+  parent.add(bg);
+  if (fw <= 0) return;
+  const fill = scene.add.rectangle(x, y, Math.max(fw, h), h, color).setOrigin(0, 0.5).setRounded(r);
+  if (fw < h) fill.setScale(fw / h, 1);
+  const shine = scene.add.rectangle(x + 1, y - h / 4, Math.max(0, fw - 2), Math.max(1, h / 3), 0xffffff, 0.28).setOrigin(0, 0.5);
+  parent.add([fill, shine]);
 }

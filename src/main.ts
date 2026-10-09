@@ -48,7 +48,7 @@ window.addEventListener('pagehide', () => saveRun());
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
-  backgroundColor: '#101820',
+  backgroundColor: '#121831',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

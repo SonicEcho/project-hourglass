@@ -7,6 +7,7 @@ import { browserStorage } from '../save/storage';
 import { applyKinsoku } from './kinsoku';
 import { COLORS } from './theme';
 import { addButton, addText } from './widgets';
+import { addWindow } from './skin';
 
 // 初めての人向けの説明の窓（段階30）。見た説明はセーブとは別に覚える（はじめからやり直しても出さない）
 
@@ -39,7 +40,7 @@ export function showTipPanel(scene: Phaser.Scene, tip: TipDef, onClose?: () => v
   body.setText(tip.body.split('\n').map((p) => applyKinsoku(body.getWrappedText(p)).join('\n')).join('\n\n')).setWordWrapWidth(null);
   const h = body.height + 150;
   const y = Math.max(40, GAME_HEIGHT / 2 - h / 2 - 40);
-  c.add(scene.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent));
+  c.add(addWindow(scene, 20, y, w, h));
   c.add(addText(scene, 40, y + 14, label, { size: 12, color: COLORS.subText }));
   c.add(addText(scene, 40, y + 34, tip.title, { size: 18, bold: true, color: COLORS.accentText }));
   body.setPosition(40, y + 68);

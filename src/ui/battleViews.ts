@@ -10,6 +10,7 @@ import { columnX, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
 import { skillPanelLayout } from './skillLayout';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, toCss } from './theme';
 import { addBar, addButton, addText, makePressable } from './widgets';
+import { screenBg } from './skin';
 
 export type Panel = 'none' | 'skills' | 'other' | 'discard' | 'search';
 
@@ -91,7 +92,7 @@ export interface ViewHandlers {
 
 export function drawBattle(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   // 何もない所をタップしたら選び直し
-  const bg = scene.add.rectangle(0, 0, GAME_WIDTH, 844, COLORS.bg).setOrigin(0);
+  const bg = screenBg(scene);
   root.add(bg);
   if (vm.interactive) makePressable(bg, { onTap: () => h.tapBackground() });
 
@@ -238,7 +239,7 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     if (charged) {
       const label = `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
       const ty = bodyY - radius - 12;
-      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setStrokeStyle(1, 0xff9a5a);
+      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
       root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
     }
 
@@ -261,7 +262,7 @@ function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: 
     const targetable = usable && vm.interactive && vm.scope === 'enemy';
     const sel = vm.selectedTarget;
     const selected = sel?.kind === 'enemy' && sel.id === enemy.uid && sel.partId === part.id;
-    const rect = scene.add.rectangle(x, PART_ROW_Y, w, PART_H, usable ? COLORS.panel : 0x161d25);
+    const rect = scene.add.rectangle(x, PART_ROW_Y, w, PART_H, usable ? COLORS.panel : 0x161d25).setRounded(8);
     rect.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
     root.add(rect);
     const left = x - w / 2 + 8;
@@ -281,7 +282,7 @@ function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: 
 
 function drawMessage(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel): void {
   const { y, h: height } = LAYOUT.message;
-  root.add(scene.add.rectangle(0, y, GAME_WIDTH, height, 0x0b1118).setOrigin(0));
+  root.add(scene.add.rectangle(0, y, GAME_WIDTH, height, COLORS.barBg, 0.8).setOrigin(0));
   root.add(
     addText(scene, GAME_WIDTH / 2, y + height / 2, vm.message, { size: vm.message.length > 56 ? 10 : 12, align: 'center', wrap: GAME_WIDTH - 12 }).setOrigin(0.5),
   );
@@ -302,7 +303,7 @@ function drawAllies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
     const isActor = vm.actor?.uid === ally.uid;
     const targetable = vm.interactive && ((vm.scope === 'ally' && alive) || (vm.batonMode && batonIds.has(ally.uid)));
     const selected = vm.selectedTarget?.kind === 'ally' && vm.selectedTarget.id === ally.uid;
-    const panel = scene.add.rectangle(x0, y + 2, w, height - 4, isActor ? COLORS.panelLight : alive ? COLORS.panel : 0x161d25).setOrigin(0);
+    const panel = scene.add.rectangle(x0, y + 2, w, height - 4, isActor ? COLORS.panelLight : alive ? COLORS.panel : 0x161d25).setRounded(8).setOrigin(0);
     panel.setStrokeStyle(
       selected ? 4 : isActor ? 3 : targetable ? 2 : 1,
       selected ? COLORS.select : targetable ? COLORS.accent : isActor ? 0xffffff : COLORS.border,
@@ -384,7 +385,7 @@ function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
     .sort((a, b) => b.have / b.need - a.have / a.need)
     .slice(0, 3);
   const cy = y + COMBO_STRIP_H / 2;
-  const strip = scene.add.rectangle(GAME_WIDTH / 2, cy, GAME_WIDTH - SIDE_PADDING * 2, COMBO_STRIP_H, 0x0b1118).setStrokeStyle(1, 0x2a3b4e);
+  const strip = scene.add.rectangle(GAME_WIDTH / 2, cy, GAME_WIDTH - SIDE_PADDING * 2, COMBO_STRIP_H, 0x0b1118).setRounded(8).setStrokeStyle(1, 0x2a3b4e);
   root.add(strip);
   makePressable(strip, { onLongPress: () => h.detail('コンボ一覧', comboListText(s, vm.pool)) });
   if (entries.length === 0) {
@@ -397,7 +398,7 @@ function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
     const ready = e.have === e.need;
     const x = SIDE_PADDING + 2 + i * (w + gap) + w / 2;
     const selected = vm.selectedComboId === e.combo.id;
-    const chip = scene.add.rectangle(x, cy, w, COMBO_STRIP_H - 4, ready ? 0x5a4a10 : COLORS.panel);
+    const chip = scene.add.rectangle(x, cy, w, COMBO_STRIP_H - 4, ready ? 0x5a4a10 : COLORS.panel).setRounded(8);
     chip.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : ready ? COLORS.accent : COLORS.border);
     const label = ready ? `★${e.combo.name}` : `${e.combo.name} あと1枚`;
     root.add(chip);
@@ -450,7 +451,7 @@ function drawCard(
   const def = card.card;
   const color = cardColor(def);
   const dim = !!o.reservedBy;
-  const rect = scene.add.rectangle(x, cy, w, hgt, dim ? 0x141c25 : COLORS.panel).setStrokeStyle(o.selected ? 4 : 2, o.selected ? COLORS.select : color);
+  const rect = scene.add.rectangle(x, cy, w, hgt, dim ? 0x141c25 : COLORS.panel).setRounded(8).setStrokeStyle(o.selected ? 4 : 2, o.selected ? COLORS.select : color);
   const band = scene.add.rectangle(x, cy - hgt / 2 + 12, w - 4, 20, color, dim ? 0.35 : 0.9);
   const type = mainDamageType(def);
   const typeLabel = def.support ? 'サポート' : type ? ELEMENT_LABEL[type] : def.effects.some((e) => e.kind === 'heal') ? '回復' : '補助';
@@ -530,7 +531,7 @@ const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS
 
 function panelBackground(scene: Phaser.Scene, root: Phaser.GameObjects.Container, title: string): void {
   const { y, h: height } = LAYOUT.hand;
-  root.add(scene.add.rectangle(SIDE_PADDING, y, GAME_WIDTH - SIDE_PADDING * 2, height, COLORS.panel).setOrigin(0).setStrokeStyle(1, COLORS.border));
+  root.add(scene.add.rectangle(SIDE_PADDING, y, GAME_WIDTH - SIDE_PADDING * 2, height, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
   root.add(addText(scene, SIDE_PADDING + 8, y + 4, title, { size: 11, color: COLORS.subText }));
 }
 
@@ -757,7 +758,7 @@ function drawFooter(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
     );
   } else if (vm.footer === 'auto') {
     const w = GAME_WIDTH - SIDE_PADDING * 2;
-    root.add(scene.add.rectangle(GAME_WIDTH / 2, y + height / 2, w, height - 12, 0x1d3b5a).setStrokeStyle(2, 0x7fc4ff));
+    root.add(scene.add.rectangle(GAME_WIDTH / 2, y + height / 2, w, height - 12, 0x1d3b5a).setRounded(8).setStrokeStyle(2, 0x7fc4ff));
     root.add(addText(scene, GAME_WIDTH / 2, y + height / 2, `オート（${vm.autoName}）×${vm.speed}\nどこかをタップすると手動に戻る`, { size: 14, bold: true, align: 'center' }).setOrigin(0.5));
   }
 }

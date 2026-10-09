@@ -12,6 +12,7 @@ import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { screenBg, addWindow } from '../ui/skin';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
 
@@ -118,7 +119,7 @@ export class GrowthScene extends Phaser.Scene {
     const back = getHubReturn();
     const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
 
-    this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
+    this.root.add(screenBg(this));
 
     // 上：見出しと星の砂
     const next = back ? null : battleAt(run.progress);
@@ -282,7 +283,7 @@ export class GrowthScene extends Phaser.Scene {
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = MAP_Y + CELL * GROWTH_MAP.rows + 6;
     const h = 120;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       const lines = [
@@ -328,7 +329,7 @@ export class GrowthScene extends Phaser.Scene {
     party.forEach((c, i) => {
       const x = SIDE_PADDING + i * (w + gap);
       const active = c.id === this.charId;
-      const rect = this.add.rectangle(x, top, w, 72, active ? COLORS.panelLight : COLORS.panel).setOrigin(0);
+      const rect = this.add.rectangle(x, top, w, 72, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
       this.root.add(rect);
       this.root.add(addText(this, x + 8, top + 6, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
@@ -363,7 +364,7 @@ export class GrowthScene extends Phaser.Scene {
     const top = 150;
     const itemH = 104;
     const h = 120 + candidates.length * (itemH + 8) + 70;
-    c.add(this.add.rectangle(14, top, GAME_WIDTH - 28, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent));
+    c.add(addWindow(this, 14, top, GAME_WIDTH - 28, h));
     c.add(addText(this, GAME_WIDTH / 2, top + 16, 'ギアを手に入れた！', { size: 20, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     c.add(
       addText(this, GAME_WIDTH / 2, top + 50, `${candidates.length}つの中から${picks}つ選ぶ（${this.rewardChosen.length}/${picks}）
@@ -377,7 +378,7 @@ export class GrowthScene extends Phaser.Scene {
       const def = currentNaviData().parts[id];
       const y = top + 104 + i * (itemH + 8);
       const chosen = this.rewardChosen.includes(i);
-      const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setOrigin(0);
+      const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(chosen ? 3 : 1, chosen ? 0x6dff9e : COLORS.border);
       c.add(rect);
       drawPartShape(this, c, def, 0, 38, y + 14, 16);
@@ -430,7 +431,7 @@ ${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
     const text = addText(this, 0, 0, body, { size: 14, wrap: w - 32 });
     const h = text.height + 90;
     const y = GAME_HEIGHT / 2 - h / 2;
-    const panel = this.add.rectangle(20, y, w, h, COLORS.panel).setOrigin(0).setStrokeStyle(2, COLORS.accent);
+    const panel = addWindow(this, 20, y, w, h);
     const titleText = addText(this, 36, y + 14, title, { size: 17, bold: true, color: COLORS.accentText });
     text.setPosition(36, y + 44);
     const hint = addText(this, GAME_WIDTH / 2, y + h - 16, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5);

@@ -8,6 +8,7 @@ import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
 import { advanceEvent, currentEvent, run, setEvent, setStoryVars } from './run';
+import { screenBg } from '../ui/skin';
 
 // 物語の流れ（段階23）：今の出来事を見て、その画面へ渡す。出来事を終えた画面は、done を付けてここへ戻る。
 // 昼の日常は日常の画面（DailyScene）へ。まだ作っていない遊び（探索・時間を返す）は、ここで仮の画面を出して「次へ」で通す
@@ -100,13 +101,13 @@ export class FlowScene extends Phaser.Scene {
   private showPlaceholder(event: FlowEvent): void {
     const cx = GAME_WIDTH / 2;
     const root = this.add.container(0, 0);
-    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.bg).setOrigin(0));
+    root.add(screenBg(this));
     addButton(this, root, 52, 36, 84, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     const chapter = chapterOfEvent(SLICE_FLOW, event.id);
     root.add(addText(this, cx, 110, `${chapter?.name ?? ''}　${run.progress.day}日目`, { size: 13, color: COLORS.subText }).setOrigin(0.5));
     root.add(addText(this, cx, 150, KIND_LABEL[event.kind] ?? '', { size: 14, color: COLORS.accentText }).setOrigin(0.5));
     root.add(addText(this, cx, 190, event.title, { size: 20, bold: true, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
-    root.add(this.add.rectangle(cx, 330, GAME_WIDTH - 40, 190, COLORS.panel).setStrokeStyle(1, COLORS.border));
+    root.add(this.add.rectangle(cx, 330, GAME_WIDTH - 40, 190, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
     const note = addText(this, 36, 250, '', { size: 14, wrap: GAME_WIDTH - 72 }).setLineSpacing(6);
     // 行の頭に「、」などが来ないよう、折り返しを先に決めてから出す（会話の画面と同じ）
     note.setText(applyKinsoku(note.getWrappedText(event.note ?? '')).join('\n')).setWordWrapWidth(null);
