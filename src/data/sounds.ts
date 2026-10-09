@@ -40,6 +40,38 @@ export const SE = {
   doorOpen: 'se.door_open',
 } as const;
 
+/**
+ * 効果音ごとの大きさ（効果音の音量を1とした時。書かなければ1）。
+ * 段階31c で足した台本の効果音は、ボタンや戦闘の音より大きく聞こえたので下げる（段階32b、開発者の確認）。
+ * 元のファイルが特に大きいもの（目覚まし・着信・入店チャイム・コルク）は、もう少し下げる
+ */
+export const SE_GAIN: Partial<Record<string, number>> = {
+  [SE.crowd]: 0.6,
+  [SE.classroom]: 0.6,
+  [SE.paper]: 0.6,
+  [SE.shot]: 0.45,
+  [SE.miss]: 0.6,
+  [SE.water]: 0.6,
+  [SE.splash]: 0.6,
+  [SE.poiBreak]: 0.6,
+  [SE.firework]: 0.6,
+  [SE.drum]: 0.6,
+  [SE.footsteps]: 0.6,
+  [SE.alarm]: 0.4,
+  [SE.pan]: 0.6,
+  [SE.chime]: 0.5,
+  [SE.doorSlam]: 0.55,
+  [SE.storeEnter]: 0.45,
+  [SE.bagOpen]: 0.6,
+  [SE.shutter]: 0.6,
+  [SE.send]: 0.6,
+  [SE.bell]: 0.6,
+  [SE.phone]: 0.4,
+  [SE.noise]: 0.55,
+  [SE.hangUp]: 0.55,
+  [SE.doorOpen]: 0.6,
+};
+
 /** BGM（台帳の id） */
 export const BGM = {
   title: 'bgm.title',

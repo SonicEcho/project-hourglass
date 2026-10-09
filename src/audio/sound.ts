@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { BlipVoice } from '../data';
-import { BGM_LOOPS, SAND_SOUND, WAVE_GAIN } from '../data';
+import { BGM_LOOPS, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
@@ -46,7 +46,7 @@ function loaded(scene: Phaser.Scene, id: string): boolean {
 export function playSe(scene: Phaser.Scene, id: string): void {
   const v = getSettings().seVolume;
   if (v <= 0 || !loaded(scene, id) || scene.sound.locked) return;
-  scene.sound.play(id, { volume: v });
+  scene.sound.play(id, { volume: v * (SE_GAIN[id] ?? 1) });
 }
 
 /**

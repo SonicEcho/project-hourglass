@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, CARD_NAME_LINES, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -389,14 +389,15 @@ function drawAllies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
     const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
     const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
     addBar(scene, root, x0 + 6, y + 46, barW, 6, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / ally.maxHp);
-    // HP はハート、MP はしずくのアイコン（段階32a 調整2）
-    root.add(addIcon(scene, 'hp', x0 + 11, y + 57, 10, COLORS.hp));
-    const hpText = addText(scene, x0 + 19, y + 50, `${ally.hp}/${ally.maxHp}`, { size: 10, color: COLORS.subText });
+    // HP・MP は文字の札で出す（段階32b。ハートとしずくのアイコンより分かりやすい、と開発者の確認）
+    const hpLabel = addText(scene, x0 + 6, y + 50, 'HP', { size: 10, bold: true, color: toCss(COLORS.hp) });
+    root.add(hpLabel);
+    const hpText = addText(scene, x0 + 10 + hpLabel.width, y + 50, `${ally.hp}/${ally.maxHp}`, { size: 10, color: COLORS.subText });
     root.add(hpText);
     countText(scene, hpText, hpFrom, ally.hp, (v) => `${v}/${ally.maxHp}`);
     addBar(scene, root, x0 + 6, y + 66, barW, 4, ally.mp / ally.maxMp, COLORS.mp, mpFrom / ally.maxMp);
     const mpText = addText(scene, x0 + w - 6, y + 50, `${ally.maxMp}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0);
-    root.add(addIcon(scene, 'mp', x0 + w - 12 - mpText.width, y + 57, 10, COLORS.mp));
+    root.add(addText(scene, x0 + w - 10 - mpText.width, y + 50, 'MP', { size: 10, bold: true, color: toCss(COLORS.mp) }).setOrigin(1, 0));
     mpText.setText(`${ally.mp}`);
     root.add(mpText);
     countText(scene, mpText, mpFrom, ally.mp, (v) => `${v}`);
@@ -544,7 +545,10 @@ function drawCard(
     root.add(addText(scene, bx, by, 'C', { size: 10, bold: true, color: '#101820' }).setOrigin(0.5));
   }
   root.add(
-    addText(scene, x, yy - 6, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4, color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5),
+    // 長い名前は言葉の切れ目で2行に分ける（段階32b。data の CARD_NAME_LINES）
+    CARD_NAME_LINES[def.id]
+      ? addText(scene, x, yy - 6, CARD_NAME_LINES[def.id] ?? '', { size: 12, bold: true, align: 'center', color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5).setLineSpacing(2)
+      : addText(scene, x, yy - 6, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4, color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5),
   );
   if (o.reservedBy) {
     root.add(addText(scene, x, yy + hgt / 2 - 18, `${o.reservedBy}が使う`, { size: 10, bold: true, color: COLORS.accentText, align: 'center', wrap: w - 2 }).setOrigin(0.5));

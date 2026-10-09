@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { buildFolder, DISTORTED_BEAST, ENCOUNTERS, FOLDER, PARTY } from '../src/data';
+import { buildFolder, CARD_NAME_LINES, CARDS, DISTORTED_BEAST, ENCOUNTERS, FOLDER, PARTY } from '../src/data';
 
 describe('データ定義', () => {
+  it('カードの名前の2行の分け方は、改行を除くと名前と同じで、2行まで（段階32b）', () => {
+    for (const [id, lines] of Object.entries(CARD_NAME_LINES)) {
+      const card = (CARDS as Record<string, { name: string }>)[id];
+      expect(card, id).toBeDefined();
+      expect(lines?.replace('\n', '')).toBe(card.name);
+      expect(lines?.split('\n').length).toBe(2);
+    }
+  });
+
   it('アルバムは20枚', () => {
     expect(buildFolder()).toHaveLength(20);
     expect(FOLDER.reduce((n, f) => n + f.count, 0)).toBe(20);

@@ -166,6 +166,8 @@ export class ExploreScene extends Phaser.Scene {
       this.tipOpen = false;
       this.tweens.resumeAll();
       this.graceUntil = this.time.now + AREA_GRACE_MS;
+      // 同じ場面で当てはまる次の説明を続けて出す（段階32b）
+      this.showTip(atCheckpoint);
     });
     if (!shown) return;
     this.tipOpen = true;
