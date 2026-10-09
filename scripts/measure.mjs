@@ -13,7 +13,12 @@ const runs = arg('runs', 200);
 const seed = arg('seed', 1);
 const { module } = await runnerImport('./src/sim/measure.ts');
 const started = Date.now();
-const text = module.formatMeasure(module.measure(runs, seed));
+const text = [
+  module.formatMeasure(module.measure(runs, seed)),
+  // 段階27：1-1 の縁日（2人のパーティ）を、2つの方針で
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart')),
+].join('\n\n');
 const took = `\n\n（${((Date.now() - started) / 1000).toFixed(1)}秒）\n`;
 console.log(text + took);
 // GitHub Actions では、実行結果のページ（Summary）にも出す

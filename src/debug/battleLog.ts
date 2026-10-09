@@ -57,6 +57,8 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `  ${name(s, e.enemyId)}のためが解けた（${e.reason === 'down' ? 'ダウン' : '部位破壊で封じた'}）`;
     case 'enraged':
       return `${name(s, e.enemyId)}は怒っている（ためずに攻撃）`;
+    case 'drop':
+      return `  ${name(s, e.enemyId)}が素材を落とした：${e.itemId}（${e.kind}）`;
     case 'linkReady':
       return '  つながりゲージが満タン（連携技を使える）';
     case 'oneMore':

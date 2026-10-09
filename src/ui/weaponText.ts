@@ -1,4 +1,5 @@
-import type { EvolutionCondition, EvolutionDef, FragmentDef, ItemDef, WeaponData, WeaponParamKey } from '../core';
+import type { EvolutionCondition, EvolutionDef, FragmentDef, ItemDef, ItemRarity, WeaponData, WeaponParamKey } from '../core';
+import { decomposeFragment } from '../core';
 import { ELEMENT_LABEL } from './labels';
 import { PART_COLOR_LABEL, STAT_LABEL, summarizePassives } from './naviText';
 
@@ -11,26 +12,28 @@ export function describeFragment(f: FragmentDef): string {
   return (Object.entries(f.gains) as [WeaponParamKey, number][]).map(([k, v]) => `${PARAM_LABEL[k]} +${v}`).join('、');
 }
 
-/** 素材・アイテムを時分解した時に手に入る記憶の欠片（例：「高揚×3、勇気×1」） */
-export function describeItemFragments(data: WeaponData, item: ItemDef, sep = '、'): string {
-  return Object.entries(item.fragments)
-    .map(([id, n]) => `${data.fragments[id].name}×${n}`)
-    .join(sep);
+/** 能力値の上がり下がり（例：「氷+2、火−1」） */
+export function describeGains(gains: Partial<Record<WeaponParamKey, number>>, short = false): string {
+  return (Object.entries(gains) as [WeaponParamKey, number][])
+    .filter(([, v]) => v !== 0)
+    .map(([k, v]) => `${short ? PARAM_SHORT[k] : PARAM_LABEL[k]}${v > 0 ? '+' : '−'}${Math.abs(v)}`)
+    .join(short ? ' ' : '、');
 }
 
-/** 素材・アイテムを時分解して全部吸わせた時に上がるものの合計 */
-export function itemGains(data: WeaponData, item: ItemDef): Partial<Record<WeaponParamKey, number>> {
-  const total: Partial<Record<WeaponParamKey, number>> = {};
-  for (const [id, n] of Object.entries(item.fragments)) {
-    for (const [k, v] of Object.entries(data.fragments[id].gains) as [WeaponParamKey, number][]) total[k] = (total[k] ?? 0) + v * n;
-  }
-  return total;
+export const PARAM_SHORT: Record<WeaponParamKey, string> = { atk: '攻', fire: '火', ice: '氷', thunder: '雷' };
+
+export const RARITY_LABEL: Record<ItemRarity, string> = { common: 'いつも', uncommon: '珍しい', rare: 'レア', part: '部位', boss: 'ボス' };
+
+/** 時分解した時の説明（例：「2つで 安堵の欠片 1つ」） */
+export function describeDecompose(data: WeaponData, item: ItemDef): string {
+  return `${data.decomposeCost}つで、記憶の欠片（${data.fragments[decomposeFragment(data, item.id)].name}）1つ`;
 }
 
 /** 進化の条件 */
-export function describeCondition(c: EvolutionCondition | { kind: 'level'; min: number }): string {
+export function describeCondition(c: EvolutionCondition | { kind: 'level'; min: number }, data?: WeaponData): string {
   if (c.kind === 'level') return `Lv${c.min}`;
   if (c.kind === 'param') return `${PARAM_LABEL[c.param]} ${c.min}以上`;
+  if (c.kind === 'key') return `鍵：${data?.items[c.item]?.name ?? c.item}`;
   return `傾向が${PART_COLOR_LABEL[c.color]}`;
 }
 

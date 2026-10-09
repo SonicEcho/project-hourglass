@@ -97,8 +97,14 @@ describe('参照している名前が本当にある', () => {
     expect(GROWTH_MAP.nodes.filter((n) => n.kind === 'start').map((n) => (n.kind === 'start' ? n.owner : '')).sort()).toEqual([...partyIds].sort());
   });
 
-  it('素材・アイテムから出る記憶の欠片は、本当にある欠片', () => {
-    for (const it of Object.values(ITEMS)) for (const id of Object.keys(it.fragments)) expect(has(FRAGMENTS, id), `${it.name}：${id}`).toBe(true);
+  it('素材・アイテムを時分解してできる記憶の欠片は、本当にある欠片。敵の落とし物と部位の素材は、本当にある素材（段階27b）', async () => {
+    const { decomposeFragment } = await import('../src/core');
+    const { WEAPON_DATA, knownEnemies } = await import('../src/data');
+    for (const it of Object.values(ITEMS)) expect(has(FRAGMENTS, decomposeFragment(WEAPON_DATA, it.id)), it.name).toBe(true);
+    for (const e of knownEnemies()) {
+      const ids = [...(e.drops ?? []), ...Object.values(e.dropTable ?? {}), ...(e.parts ?? []).flatMap((p) => (p.drop ? [p.drop] : []))];
+      for (const id of ids) expect(ITEMS[id as keyof typeof ITEMS]?.kind, `${e.name}：${id}`).toBe('material');
+    }
   });
 });
 
@@ -155,6 +161,7 @@ describe('M1 の物語の流れ（段階23）', () => {
         expect(area, e.id).toBeDefined();
         expect(checkArea(area)).toEqual([]);
         for (const x of [...area.enemies, area.boss]) expect(x.battle in AREA_BATTLES, `${area.id} ${x.battle}`).toBe(true);
+        for (const b of Object.values(AREA_BATTLES)) for (const e of b.enemies) for (const d of e.drops ?? []) expect(d in ITEMS, `${e.id} ${d}`).toBe(true);
         for (const c of area.chests) for (const item of c.items) expect(item in ITEMS, `${c.id} ${item}`).toBe(true);
         for (const scene of [...area.talkers.map((t) => t.scene), ...area.triggers.map((t) => t.scene)]) {
           expect(sceneIds.has(scene), `${area.id} ${scene}`).toBe(true);

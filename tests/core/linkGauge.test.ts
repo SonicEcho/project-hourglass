@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPlanError, linkReady, passBaton, previewAction } from '../../src/core';
+import { declineExtra, getPlanError, isOffBalance, linkReady, passBaton, previewAction, runUntilInput } from '../../src/core';
 import type { BattleState } from '../../src/core';
 import { LINK_GAUGE_GAIN, LINK_GAUGE_MAX, SKILLS } from '../../src/data';
 import { ally, battle, enemy, eventsOf, execute, fullGauge, guard, planAll } from './helpers';
@@ -92,6 +92,25 @@ describe('連携技のつながりゲージ', () => {
     const order = s.log.filter((e) => e.type === 'action' || e.type === 'standUp').map((e) => e.type);
     expect(order[0]).toBe('action');
     expect(order).toContain('standUp');
+  });
+
+  it('先にダウンさせた敵は、立ち上がっても次のラウンドの始めは体勢が崩れたまま。連携技は動く前に2倍で当たる（段階26の調整5）', () => {
+    // ハルトが速く、敵より先に弱点でダウンさせる → 敵はそのラウンドの番で立ち上がる
+    let s = execute(planAll(duo(), { hero: fire('enemy0'), akari: guard }));
+    s = runUntilInput(declineExtra(s));
+    expect(s.phase).toBe('plan');
+    expect(s.enemies[0].down).toBe(false);
+    expect(isOffBalance(s.enemies[0])).toBe(true);
+    expect(isOffBalance(s.enemies[1])).toBe(false);
+    // 次のラウンド：連携技のプレビューは、崩れた敵だけ2倍
+    s = fullGauge(s);
+    const p = previewAction(s, 'hero', afterglow).targets;
+    const a = p.find((t) => t.unitId === 'enemy0')!;
+    const b = p.find((t) => t.unitId === 'enemy1')!;
+    expect(a.min).toBeGreaterThanOrEqual(b.min * 2 - 1);
+    // 敵が動けば、体勢は戻る
+    s = execute(planAll(s, { hero: guard, akari: guard }));
+    expect(isOffBalance(s.enemies[0])).toBe(false);
   });
 
   it('連携技がない（組む仲間がいない）パーティでは貯まらない', () => {

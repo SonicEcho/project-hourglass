@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { addParts, createNavi, findBugs, isPartActive } from '../src/core';
 import { CAMPAIGN, NAVI_DATA, NAVI_PARTS, PARTY, START_NAVI_PARTS } from '../src/data';
 import { arrangeNavi, autoRun, MAX_ATTEMPTS } from '../src/sim/autoRun';
-import { formatMeasure, measure, summarize } from '../src/sim/measure';
+import { formatAreaMeasure, formatMeasure, measure, measureArea, summarize } from '../src/sim/measure';
+import { areaBattleOrder, autoAreaRun } from '../src/sim/autoArea';
 
 describe('自動対戦：周回', () => {
   it.each([1, 2])('タイトルからボスまで進み、戦闘ごとの結果が残る（seed %i）', (seed) => {
@@ -58,5 +59,23 @@ describe('自動対戦：集計', () => {
     const text = formatMeasure(measure(2, 3));
     for (const c of CAMPAIGN) expect(text).toContain(`| ${c.name} |`);
     expect(formatMeasure(measure(2, 3))).toBe(text);
+  });
+});
+
+describe('自動対戦：1-1 の縁日（段階27）', () => {
+  it.each(['random', 'smart'] as const)('2人のパーティで、出会う順にボスまで戦い、戦闘ごとの結果が残る（%s）', (policy) => {
+    const r = autoAreaRun(3, policy);
+    const order = areaBattleOrder();
+    expect(order.at(-1)?.boss).toBe(true);
+    expect(r.stages.length).toBeGreaterThan(0);
+    expect(r.stages.length).toBeLessThanOrEqual(order.length);
+    expect(r.cleared).toBe(r.stages.length === order.length && r.stages.every((s) => s.won));
+    expect(autoAreaRun(3, policy)).toEqual(r);
+  });
+
+  it('弱点をねらう方針は、ボスまで勝ち切れる（考えれば勝てる）', () => {
+    const m = measureArea(10, 1, 'smart');
+    expect(m.cleared).toBe(10);
+    expect(formatAreaMeasure(m)).toContain('金魚鉢のぬし');
   });
 });

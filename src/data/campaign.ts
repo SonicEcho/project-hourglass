@@ -25,10 +25,7 @@ export function strengthen(enemy: EnemyDef, rate: number, extraDrops: string[] =
   };
 }
 
-/**
- * 2人のパーティ向けに弱めた版（段階26。HP・攻撃・魔力・部位のHPを rate 倍。名前は変えない）。
- * 1章の探索の戦闘で、試作の敵を代わりに使う間だけ（砂嵐とボスは段階27で作り直す）
- */
+/** 強さを変えた版（HP・攻撃・魔力・部位のHPを rate 倍。名前は変えない。段階26・27） */
 export function scaleEnemy(enemy: EnemyDef, rate: number): EnemyDef {
   return {
     ...enemy,

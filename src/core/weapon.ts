@@ -22,15 +22,22 @@ export interface FragmentDef {
   gains: Partial<WeaponParams>;
 }
 
+/** 素材の種類（段階27b）。落とし物の確率と、画面の色分けに使う */
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'part' | 'boss';
+
 /**
- * 素材（敵が落とす）と通常アイテム（勝利の報酬）。時分解すると、決まった記憶の欠片が決まった数だけ手に入る
+ * 素材（敵が落とす）と通常アイテム（勝利の報酬）。
+ * 段階27b：素材は武器に直接吸わせる（gains の分だけ能力値が上下する。吸わせ枠を1つ使う）。
+ * 要らない素材・アイテムは時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）
  */
 export interface ItemDef {
   id: string;
   name: string;
   kind: 'material' | 'item';
-  /** 時分解した時に手に入る記憶の欠片（欠片の id → 数） */
-  fragments: Record<string, number>;
+  /** 吸わせた時の能力値の上がり下がり（素材だけ吸わせられる）。アイテムは時分解した時の欠片の種類を決めるだけ */
+  gains: Partial<WeaponParams>;
+  /** 素材の種類（アイテムにはない） */
+  rarity?: ItemRarity;
 }
 
 /** 進化の条件（全部満たすと進化できる） */
@@ -38,7 +45,9 @@ export type EvolutionCondition =
   /** パラメータが min 以上 */
   | { kind: 'param'; param: WeaponParamKey; min: number }
   /** ギアの傾向（貯まった色のうち一番多い色）が color */
-  | { kind: 'tendency'; color: PartColor };
+  | { kind: 'tendency'; color: PartColor }
+  /** 鍵の素材を持っている（進化すると1つ使う。段階27b） */
+  | { kind: 'key'; item: string };
 
 export interface EvolutionDef {
   id: string;
@@ -73,6 +82,12 @@ export interface WeaponData {
   elementRate: number;
   /** 進化した時に盤に増えるマスの数 */
   boardExtension: number;
+  /** レベルごとの吸わせ枠（累計。Lv1, Lv2, …。段階27b） */
+  slotsPerLevel: number[];
+  /** 時分解：この数の素材・アイテムで、記憶の欠片1つ */
+  decomposeCost: number;
+  /** 能力値 → その能力値を上げる記憶の欠片の id（時分解で使う） */
+  fragmentFor: Record<WeaponParamKey, string>;
 }
 
 export interface WeaponState {
@@ -83,6 +98,8 @@ export interface WeaponState {
   tendency: Record<PartColor, number>;
   /** 進化先の id（まだなら null） */
   evolvedTo: string | null;
+  /** 吸わせた素材の数（吸わせ枠を使った数。段階27b） */
+  absorbed: number;
 }
 
 export interface ArmoryState {
@@ -106,6 +123,7 @@ export function createArmory(data: WeaponData): ArmoryState {
       exp: 0,
       tendency: { red: 0, blue: 0, green: 0, yellow: 0 },
       evolvedTo: null,
+      absorbed: 0,
     };
   }
   return { weapons, items: {}, fragments: {} };
@@ -123,20 +141,68 @@ export function addItems(armory: ArmoryState, ids: string[]): ArmoryState {
   return { ...armory, items };
 }
 
-/** 時分解できない理由。できるなら null */
-export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: string): string | null {
-  if (!data.items[itemId]) return 'unknown item';
+/** 武器の吸わせ枠（今のレベルまでの合計） */
+export function weaponSlots(data: WeaponData, w: WeaponState): number {
+  const lv = weaponLevel(data, w.exp);
+  return data.slotsPerLevel[Math.min(lv, data.slotsPerLevel.length) - 1] ?? 0;
+}
+
+/** 素材を吸わせた後の能力値（下がっても0より小さくならない）。プレビューにも使う */
+export function paramsAfter(params: WeaponParams, gains: Partial<WeaponParams>): WeaponParams {
+  const next = { ...params };
+  for (const k of PARAM_KEYS) next[k] = Math.max(0, next[k] + (gains[k] ?? 0));
+  return next;
+}
+
+/** 素材を吸わせられない理由。吸わせられるなら null */
+export function getAbsorbError(data: WeaponData, armory: ArmoryState, charId: string, itemId: string): string | null {
+  const w = armory.weapons[charId];
+  if (!w) return 'no weapon';
+  const it = data.items[itemId];
+  if (!it) return 'unknown item';
+  if (it.kind !== 'material') return 'only materials can be absorbed';
   if ((armory.items[itemId] ?? 0) <= 0) return 'no item left';
+  if (w.absorbed >= weaponSlots(data, w)) return 'no slot left';
   return null;
 }
 
-/** 素材・アイテムを1つ時分解する（素材・アイテムはなくなり、決まった記憶の欠片が増える） */
+/** 素材を武器に吸わせる（素材は1つ減り、能力値が上下し、吸わせ枠を1つ使う） */
+export function absorbMaterial(data: WeaponData, armory: ArmoryState, charId: string, itemId: string): ArmoryState {
+  const err = getAbsorbError(data, armory, charId, itemId);
+  if (err) throw new Error(err);
+  const w = armory.weapons[charId];
+  return {
+    ...armory,
+    weapons: { ...armory.weapons, [charId]: { ...w, params: paramsAfter(w.params, data.items[itemId].gains), absorbed: w.absorbed + 1 } },
+    items: { ...armory.items, [itemId]: armory.items[itemId] - 1 },
+  };
+}
+
+/** 時分解でできる記憶の欠片（一番大きく上がる能力値。同じなら 攻撃 → 火 → 氷 → 雷 の順） */
+export function decomposeFragment(data: WeaponData, itemId: string): string {
+  const gains = data.items[itemId]?.gains ?? {};
+  let best: WeaponParamKey = 'atk';
+  for (const k of PARAM_KEYS) if ((gains[k] ?? 0) > (gains[best] ?? 0)) best = k;
+  return data.fragmentFor[best];
+}
+
+/** 時分解できない理由。できるなら null */
+export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: string): string | null {
+  if (!data.items[itemId]) return 'unknown item';
+  if ((armory.items[itemId] ?? 0) < data.decomposeCost) return 'not enough items';
+  return null;
+}
+
+/** 素材・アイテムを時分解する（decomposeCost 個がなくなり、記憶の欠片が1つ増える。要らない素材の整理） */
 export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: string): ArmoryState {
   const err = getFragmentError(data, armory, itemId);
   if (err) throw new Error(err);
-  const fragments = { ...armory.fragments };
-  for (const [id, n] of Object.entries(data.items[itemId].fragments)) fragments[id] = (fragments[id] ?? 0) + n;
-  return { ...armory, items: { ...armory.items, [itemId]: armory.items[itemId] - 1 }, fragments };
+  const f = decomposeFragment(data, itemId);
+  return {
+    ...armory,
+    items: { ...armory.items, [itemId]: armory.items[itemId] - data.decomposeCost },
+    fragments: { ...armory.fragments, [f]: (armory.fragments[f] ?? 0) + 1 },
+  };
 }
 
 /** 記憶の欠片を吸わせられない理由。吸わせられるなら null */
@@ -147,7 +213,7 @@ export function getFeedError(data: WeaponData, armory: ArmoryState, charId: stri
   return null;
 }
 
-/** 記憶の欠片を武器に吸わせる（記憶の欠片はなくなり、パラメータが上がる） */
+/** 記憶の欠片を武器に吸わせる（記憶の欠片はなくなり、パラメータが上がる。吸わせ枠は使わない） */
 export function feedFragment(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): ArmoryState {
   const err = getFeedError(data, armory, charId, fragmentId);
   if (err) throw new Error(err);
@@ -155,8 +221,8 @@ export function feedFragment(data: WeaponData, armory: ArmoryState, charId: stri
   const params = { ...w.params };
   for (const k of PARAM_KEYS) params[k] += data.fragments[fragmentId].gains[k] ?? 0;
   return {
+    ...armory,
     weapons: { ...armory.weapons, [charId]: { ...w, params } },
-    items: armory.items,
     fragments: { ...armory.fragments, [fragmentId]: armory.fragments[fragmentId] - 1 },
   };
 }
@@ -200,17 +266,19 @@ export function findEvolution(data: WeaponData, w: WeaponState, evolutionId: str
   return data.weapons[w.defId]?.evolutions.find((e) => e.id === evolutionId);
 }
 
-/** 進化の条件を1つずつ確かめる（レベルの条件を含む） */
+/** 進化の条件を1つずつ確かめる（レベルの条件を含む）。鍵の素材は、パーティ共通の持ち物 items で確かめる */
 export function evolutionChecks(
   data: WeaponData,
   w: WeaponState,
   evo: EvolutionDef,
+  items: Record<string, number> = {},
 ): { condition: EvolutionCondition | { kind: 'level'; min: number }; ok: boolean }[] {
   const checks: { condition: EvolutionCondition | { kind: 'level'; min: number }; ok: boolean }[] = [
     { condition: { kind: 'level', min: data.evolveLevel }, ok: weaponLevel(data, w.exp) >= data.evolveLevel },
   ];
   for (const c of evo.conditions) {
-    checks.push({ condition: c, ok: c.kind === 'param' ? w.params[c.param] >= c.min : tendencyOf(w) === c.color });
+    const ok = c.kind === 'param' ? w.params[c.param] >= c.min : c.kind === 'key' ? (items[c.item] ?? 0) >= 1 : tendencyOf(w) === c.color;
+    checks.push({ condition: c, ok });
   }
   return checks;
 }
@@ -222,7 +290,7 @@ export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: st
   if (w.evolvedTo) return 'already evolved';
   const evo = findEvolution(data, w, evolutionId);
   if (!evo) return 'unknown evolution';
-  if (!evolutionChecks(data, w, evo).every((c) => c.ok)) return 'conditions are not met';
+  if (!evolutionChecks(data, w, evo, armory.items).every((c) => c.ok)) return 'conditions are not met';
   return null;
 }
 
@@ -230,7 +298,10 @@ export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: st
 export function evolveWeapon(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string): ArmoryState {
   const err = getEvolveError(data, armory, charId, evolutionId);
   if (err) throw new Error(err);
-  return { ...armory, weapons: { ...armory.weapons, [charId]: { ...armory.weapons[charId], evolvedTo: evolutionId } } };
+  // 鍵の素材を使う
+  const items = { ...armory.items };
+  for (const c of findEvolution(data, armory.weapons[charId], evolutionId)!.conditions) if (c.kind === 'key') items[c.item] -= 1;
+  return { ...armory, items, weapons: { ...armory.weapons, [charId]: { ...armory.weapons[charId], evolvedTo: evolutionId } } };
 }
 
 /** 今の武器の名前（進化していれば進化先の名前） */

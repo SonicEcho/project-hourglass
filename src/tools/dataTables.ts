@@ -1,6 +1,8 @@
 import type { ActionDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
 import { allBattles } from '../core';
 import {
+  AREA_BATTLES,
+  itemSources,
   BOSS_PART_REWARDS,
   CARDS,
   COMBOS,
@@ -22,7 +24,7 @@ import {
 import { describeAction, formatWeight } from '../ui/describe';
 import { ELEMENT_LABEL, weightLabel } from '../ui/labels';
 import { describePart, PART_COLOR_LABEL, STAT_LABEL } from '../ui/naviText';
-import { describeCondition, describeEvolution, describeFragment, describeItemFragments } from '../ui/weaponText';
+import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, RARITY_LABEL } from '../ui/weaponText';
 
 // データの一覧表（段階17）。src/data から docs/data/ の Markdown を作る。手で書き換えない。
 // 作る命令は npm run data:tables。表が今のデータと同じかは tests/dataTables.test.ts が確かめる
@@ -82,10 +84,10 @@ function snapsPage(): string {
   ]);
 }
 
-/** 周回に出てくる敵（強化版を含む。同じ名前は1回） */
+/** 区画（探索）と周回に出てくる敵（強化版を含む。同じ名前は1回） */
 function campaignEnemies(): EnemyDef[] {
   const seen = new Map<string, EnemyDef>();
-  for (const b of allBattles(STORY)) for (const e of b.enemies) if (!seen.has(e.name)) seen.set(e.name, e);
+  for (const b of [...Object.values(AREA_BATTLES), ...allBattles(STORY)]) for (const e of b.enemies) if (!seen.has(e.name)) seen.set(e.name, e);
   return [...seen.values()];
 }
 
@@ -103,17 +105,24 @@ function enemiesPage(): string {
     (e.parts ?? []).map((p) => [e.name, p.name, p.hp, actions({ ...e, actions: e.actions.filter((a) => a.requiresPart === p.id) }) || '―', p.revealsWeakness ? elements(p.revealsWeakness) : '―', p.material, BOSS_PART_REWARDS[p.id] ? partName(BOSS_PART_REWARDS[p.id]) : '―']),
   );
   const battles = STORY.flatMap((c) => c.areas.flatMap((a) => a.battles.map((b) => ({ c, a, b }))));
-  return page('敵と周回の戦闘', '正は `src/data/enemies.ts`・`src/data/campaign.ts`・`src/data/story.ts`。仕組みは `docs/design/battle.md`・`docs/design/run.md`。', [
+  return page('敵と周回の戦闘', '正は `src/data/festivalEnemies.ts`・`src/data/enemies.ts`・`src/data/areas.ts`・`src/data/campaign.ts`・`src/data/story.ts`。仕組みは `docs/design/battle.md`・`docs/design/run.md`。', [
     [
-      '敵（周回に出てくるもの。+ は強化版）',
+      '敵（区画と試作の周回に出てくるもの。+ は強化版）',
       table(
         ['名前', 'HP', '攻撃', '魔力', '防御', '速さ', '弱点', '耐性', '行動', '落とす素材'],
-        enemies.map((e) => [e.name, e.stats.hp, e.stats.atk, e.stats.mag, e.stats.def, e.stats.spd, elements(e.weaknesses), elements(e.resistances), actions(e), (e.drops ?? []).map(itemName).join('、') || '―']),
+        enemies.map((e) => [e.name, e.stats.hp, e.stats.atk, e.stats.mag, e.stats.def, e.stats.spd, elements(e.weaknesses), elements(e.resistances), actions(e), [...(e.dropTable ? [`いつも ${itemName(e.dropTable.common)}`, e.dropTable.uncommon && `珍しい ${itemName(e.dropTable.uncommon)}`, e.dropTable.rare && `レア ${itemName(e.dropTable.rare)}`] : []), ...(e.drops ?? []).map((d) => `必ず ${itemName(d)}`)].filter(Boolean).join('、') || '―']),
+      ),
+    ],
+    [
+      '区画の戦闘（探索。段階25・27）',
+      table(
+        ['戦闘（id）', '敵', '星の砂', 'アイテム'],
+        Object.values(AREA_BATTLES).map((b) => [`${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―']),
       ),
     ],
     ['部位', parts.length ? table(['敵', '部位', 'HP', '壊すと封じる行動', '壊すと露出する弱点', '素材（表示のみ）', 'ギア（表示のみ）'], parts) : 'なし'],
     [
-      '周回の戦闘',
+      '試作の周回の戦闘（デバッグメニューの「試作の5戦」）',
       [
         `最初の星の砂：${START_MEMORY_POINTS}。部位を1つ壊すごとに +${PART_BREAK_POINTS}。ギアは候補から${NAVI_REWARD_PICKS}つ選ぶ。`,
         '',
@@ -175,7 +184,7 @@ function growthPage(): string {
 function weaponsPage(): string {
   const D = WEAPON_DATA;
   const evolutions = Object.values(D.weapons).flatMap((w) =>
-    w.evolutions.map((e) => [w.name, charName(w.owner), e.name, [`Lv${D.evolveLevel}`, ...e.conditions.map(describeCondition)].join('、'), describeEvolution(e, D.boardExtension)]),
+    w.evolutions.map((e) => [w.name, charName(w.owner), e.name, [`Lv${D.evolveLevel}`, ...e.conditions.map((c) => describeCondition(c, D))].join('、'), describeEvolution(e, D.boardExtension)]),
   );
   return page(
     '武器・素材・記憶の欠片',
@@ -183,13 +192,18 @@ function weaponsPage(): string {
     [
       ['武器と進化先', table(['武器', '持ち主', '進化先', '条件', '効果'], evolutions)],
       [
-        '素材・アイテム',
-        table(['名前', '種類', '時分解すると', '手に入れ方'], Object.values(ITEMS).map((it) => {
-          const from = it.kind === 'material'
-            ? campaignEnemies().filter((e) => e.drops?.includes(it.id)).map((e) => e.name).join('、')
-            : allBattles(STORY).filter((b) => b.item === it.id).map((b) => `${b.name}の勝利`).join('、');
-          return [it.name, it.kind === 'material' ? '素材' : 'アイテム', describeItemFragments(D, it), from || '―'];
-        })),
+        '素材・アイテム（段階27b：素材は直接吸わせる。吸わせ枠を1つ使う）',
+        [
+          `吸わせ枠（累計）：${D.slotsPerLevel.map((n, i) => `Lv${i + 1} で ${n}`).join('、')}。時分解は${D.decomposeCost}つで記憶の欠片1つ。`,
+          '',
+          table(['名前', '種類', '吸わせると', '時分解すると', '手に入れ方'], Object.values(ITEMS).map((it) => [
+            it.name,
+            it.kind === 'material' ? RARITY_LABEL[it.rarity ?? 'common'] : 'アイテム',
+            it.kind === 'material' ? describeGains(it.gains) : '（吸わせられない）',
+            describeDecompose(D, it),
+            itemSources(it.id).join('、') || '―',
+          ])),
+        ].join('\n'),
       ],
       ['記憶の欠片', table(['名前', '1つ吸わせると'], Object.values(D.fragments).map((f) => [f.name, describeFragment(f)]))],
     ],

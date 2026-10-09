@@ -2,6 +2,7 @@ import {
   BASIC_ATTACK,
   BATON_MULTIPLIER,
   DEFAULT_ACTION_WEIGHT,
+  DROP_RATES,
   GUARD,
   GUARD_DAMAGE_MULTIPLIER,
   LINK_GAUGE_GAIN,
@@ -26,6 +27,7 @@ import type {
   CardInstance,
   ComboDef,
   DamageType,
+  DropKind,
   Effect,
   Element,
   EnemyActionDef,
@@ -100,11 +102,14 @@ export function createBattle(setup: BattleSetup): BattleState {
       hp: p.hp,
       broken: false,
       material: p.material,
+      drop: p.drop,
       revealsWeakness: [...(p.revealsWeakness ?? [])],
     })),
     ai: clone(def.ai),
     aiCounter: 0,
     drops: [...(def.drops ?? [])],
+    dropTable: def.dropTable ? { ...def.dropTable } : undefined,
+    dropped: [],
   }));
   const s: BattleState = {
     seed: setup.seed,
@@ -974,6 +979,14 @@ export function effectiveHit(
   return { type, affinity };
 }
 
+/**
+ * 体勢が崩れているか：ダウン中か、立ち上がったばかりでまだ行動していない（段階26の調整5）。
+ * 連携技の倍率（downBonus）は、この敵に乗る。連携技は最初に動くので、ダウンさせた次のラウンドの始めに狙える
+ */
+export function isOffBalance(enemy: EnemyUnit): boolean {
+  return isAlive(enemy) && (enemy.down || enemy.standUpGuard);
+}
+
 /** 弱点を突いた時にダウンするか（ダウン中と、立ち上がってまだ行動していない敵はダウンしない） */
 export function canBeDowned(enemy: EnemyUnit): boolean {
   return isAlive(enemy) && !enemy.down && !enemy.standUpGuard;
@@ -983,6 +996,8 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
   const { s } = ctx;
   // 連続攻撃の途中で倒れた敵には当てない
   if (!isAlive(enemy)) return;
+  // 当てる前に体勢が崩れていたか（倒した時の落とし物に使う）
+  const wasOffBalance = isOffBalance(enemy);
   const { type, affinity } = effectiveHit(enemy, effect);
   const amount = calcDamage({
     power: effect.power,
@@ -994,7 +1009,7 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
       ctx.multiplier *
       passiveDamageMultiplier(ctx.user, type, ctx.combo) *
       (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1) *
-      (enemy.down ? (effect.downBonus ?? 1) : 1),
+      (isOffBalance(enemy) ? (effect.downBonus ?? 1) : 1),
   });
 
   const found = partId !== undefined ? enemy.parts.find((p) => p.id === partId) : undefined;
@@ -1046,11 +1061,30 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
       s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'sealed' });
     }
     for (const el of part.revealsWeakness) revealWeakness(s, enemy, el);
+    if (part.drop) dropItem(s, enemy, part.drop, 'part');
   }
   if (!isAlive(enemy)) {
     enemy.down = false;
     s.log.push({ type: 'defeated', unitId: enemy.uid });
+    dropOnDefeat(s, enemy, wasOffBalance);
   }
+}
+
+function dropItem(s: BattleState, enemy: EnemyUnit, itemId: string, kind: DropKind): void {
+  enemy.dropped.push(itemId);
+  s.log.push({ type: 'drop', enemyId: enemy.uid, itemId, kind });
+}
+
+/** 倒した時の落とし物：必ず落とすもの、と表から1つ（段階27b） */
+function dropOnDefeat(s: BattleState, enemy: EnemyUnit, offBalance: boolean): void {
+  for (const id of enemy.drops) dropItem(s, enemy, id, 'fixed');
+  const t = enemy.dropTable;
+  if (!t) return;
+  const rates = offBalance ? DROP_RATES.offBalance : DROP_RATES.normal;
+  const r = random(s);
+  if (t.rare && r < rates.rare) dropItem(s, enemy, t.rare, 'rare');
+  else if (t.uncommon && r < rates.rare + rates.uncommon) dropItem(s, enemy, t.uncommon, 'uncommon');
+  else dropItem(s, enemy, t.common, 'common');
 }
 
 function damageAlly(s: BattleState, enemy: EnemyUnit, action: EnemyActionDef, ally: AllyUnit): void {
@@ -1127,7 +1161,7 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
               multiplier *
               passiveDamageMultiplier(actor, type, combo) *
               (enemy.guarding ? GUARD_DAMAGE_MULTIPLIER : 1) *
-              (enemy.down ? (effect.downBonus ?? 1) : 1),
+              (isOffBalance(enemy) ? (effect.downBonus ?? 1) : 1),
           });
         const lo = calc(RANDOM_MIN);
         const hi = calc(RANDOM_MAX);
@@ -1179,7 +1213,7 @@ export function getBattleResult(s: BattleState): BattleResult {
         .filter((p) => p.broken)
         .map((p) => ({ enemyId: e.uid, enemyName: e.name, partId: p.id, partName: p.name, material: p.material })),
     ),
-    drops: s.enemies.filter((e) => !isAlive(e)).flatMap((e) => e.drops),
+    drops: s.enemies.flatMap((e) => e.dropped),
     actionCounts: countActions(s),
   };
 }

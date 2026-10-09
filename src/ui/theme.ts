@@ -48,6 +48,11 @@ export const ENEMY_COLOR: Record<string, number> = {
   frostBat: 0x7fa8ff,
   armorDog: 0xa08060,
   distortedBeast: 0x9a5cd0,
+  goldfishNoise: 0xff7a4a,
+  balloonNoise: 0x5ab8e8,
+  maskNoise: 0xe8d8b0,
+  cottonNoise: 0xf5b8d8,
+  goldfishBowlLord: 0x4a9ad0,
 };
 
 export const ALLY_COLOR: Record<string, number> = {

@@ -36,6 +36,15 @@ export const LINK_GAUGE_MAX = 100;
 // 段階26の調整3：引き継ぐようにしたので減らした（20・15・15・25・5 → 12・10・10・20・4）。1-1 の雑魚戦4つで、撃てる時に撃つと約1.2回、温存するとボス戦を満タンで始められる
 export const LINK_GAUGE_GAIN = { weak: 12, down: 10, baton: 10, partBreak: 20, hurt: 4 } as const;
 
+/**
+ * 敵の落とし物の確率（段階27b）。倒すと1つ。残りはいつもの素材。
+ * 体勢が崩れた敵（ダウン中・立ち上がったばかり）を倒すと、珍しい素材とレアが出やすい
+ */
+export const DROP_RATES = {
+  normal: { uncommon: 0.2, rare: 0.05 },
+  offBalance: { uncommon: 0.3, rare: 0.1 },
+} as const;
+
 /** 部位を狙った時に本体に入るダメージの割合 */
 export const PART_BODY_RATIO = 0.5;
 
