@@ -10,6 +10,7 @@ import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
 import { enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { notePlayStart, setPlayTracking } from './playRecord';
 
 /** 保存した日時を「10/7 21:05」の形にする */
 function formatSavedAt(iso: string): string {
@@ -26,6 +27,8 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     enterScreen(this);
+    // タイトルにいる間は、遊んだ記録の時間を数えない（段階32b）
+    setPlayTracking(false);
     const root = this.add.container(0, 0);
     const cx = GAME_WIDTH / 2;
     root.add(screenBg(this));
@@ -68,6 +71,8 @@ export class TitleScene extends Phaser.Scene {
     addButton(this, root, 62, 36, 104, 44, '音量', { onTap: () => this.openVolume() }, { size: 13 });
     // 初めての人向けの説明を読み返す（段階30）
     addButton(this, root, 62, 88, 104, 44, '説明', { onTap: () => this.openTips() }, { size: 13 });
+    // 遊んだ記録（段階32b）。試遊の後にスクリーンショットを送ってもらう
+    addButton(this, root, GAME_WIDTH - 62, 88, 104, 44, '記録', { onTap: () => this.scene.start('PlayLog', { back: 'Title' }) }, { size: 13 });
     // スマホは最初に画面に触れた後で鳴り始める
     playBgm(this, BGM.title);
 
@@ -84,6 +89,7 @@ export class TitleScene extends Phaser.Scene {
     }
     const strong = { size: 20, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 };
     const startNew = () => {
+      notePlayStart();
       startNewRun();
       this.scene.start('Flow', { done: false });
     };

@@ -165,7 +165,19 @@ try {
   if (!sawReturn) throw new Error('時間を返す画面が出なかった');
   if (!sawPlan) throw new Error('屋台めぐりの「けいかくひょう」が出なかった');
   if (!sawMap) throw new Error('昼の日常の地図が出なかった');
+
+  step('遊んだ記録の画面（段階32b）');
+  await tap('^遊んだ記録を見る$');
+  await waitScene('PlayLog');
+  await until('一番先が「つづく」', () => findText('一番先：つづく\n'));
+  await until('はじめた回数と、つづくまで着いた回数', () => findText('はじめから　1回　　「つづく」まで　1回'));
+  await tap('^戻る$');
+  await until('「つづく」の画面に戻る', () => findText('^つづく$'));
   await tap('^タイトルへ$');
+  await waitScene('Title');
+  await tap('^記録$');
+  await waitScene('PlayLog');
+  await tap('^戻る$');
   await waitScene('Title');
 
   step('試作の5戦を最初から');

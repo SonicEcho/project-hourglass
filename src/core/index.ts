@@ -19,3 +19,4 @@ export * from './minigame';
 export * from './explore';
 export * from './lineup';
 export * from './tips';
+export * from './playlog';

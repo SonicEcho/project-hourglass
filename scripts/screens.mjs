@@ -84,6 +84,33 @@ try {
     await shot(name);
   }
 
+  // 遊んだ記録の画面（段階32b）。見本の記録を入れて開く
+  await page.evaluate(() => {
+    const m = 60_000;
+    const events = {
+      prologue_open: { ms: 3.2 * m, wins: 0, losses: 0 },
+      prologue_stalls: { ms: 4.5 * m, wins: 0, losses: 0 },
+      prologue_end: { ms: 2.1 * m, wins: 0, losses: 0 },
+      chapter1_title: { ms: 0.2 * m, wins: 0, losses: 0 },
+      day1: { ms: 0.1 * m, wins: 0, losses: 0 },
+      d1_morning: { ms: 1.8 * m, wins: 0, losses: 0 },
+      d1_classroom: { ms: 2.4 * m, wins: 0, losses: 0 },
+      d1_street: { ms: 1.5 * m, wins: 0, losses: 0 },
+      d1_free: { ms: 3.7 * m, wins: 0, losses: 0 },
+      d1_clockshop: { ms: 1.9 * m, wins: 0, losses: 0 },
+      d1_library: { ms: 1.2 * m, wins: 0, losses: 0 },
+      a11_enter: { ms: 0.9 * m, wins: 0, losses: 0 },
+      a11_explore: { ms: 14.6 * m, wins: 5, losses: 1 },
+    };
+    const at = new Date().toISOString();
+    localStorage.setItem('restopia.playlog', JSON.stringify({ startedAt: at, starts: 1, events, furthest: 'a11_explore', last: 'a11_explore', lastAt: at, finished: 0 }));
+  });
+  await page.goto(`${base}?debug=1&seed=1`);
+  await waitScene('Title');
+  await tap('^記録$');
+  await waitScene('PlayLog');
+  await shot('8-playlog');
+
   await page.evaluate(() => localStorage.setItem('restopia.tips', '[]'));
   await page.goto(`${base}?debug=1&seed=1`);
   await waitScene('Title');
