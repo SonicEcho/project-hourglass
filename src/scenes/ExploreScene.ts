@@ -4,12 +4,15 @@ import {
   addItems,
   areaGrid,
   arrive,
+  chestAt,
   defeatEnemy,
   enemyActive,
   findPath,
+  isCheckpoint,
   loseBattle,
   markTrigger,
   nearestWalkable,
+  openChest,
   patrolRoute,
   pendingTrigger,
   startExplore,
@@ -23,7 +26,7 @@ import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { run, setExplore, setStoryVars } from './run';
+import { run, setExplore, setHubReturn, setStoryVars, storyLineup } from './run';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
 // 戦闘・会話から戻る時は、この画面をもう一度開く（いる場所や倒した敵は、セーブした探索の状態から戻す）。
@@ -59,8 +62,8 @@ export class ExploreScene extends Phaser.Scene {
   private route: GridCell[] = [];
   private nextCell: GridCell | null = null;
   private walking = false;
-  /** 道の終わりで話す人・ボス */
-  private goal: { kind: 'talk'; id: string } | { kind: 'boss' } | null = null;
+  /** 道の終わりで話す人・開ける宝箱・ボス */
+  private goal: { kind: 'talk'; id: string } | { kind: 'chest'; id: string } | { kind: 'boss' } | null = null;
   private enemies: Enemy[] = [];
   /** この時刻までは、敵の印に触れても戦闘にしない（戻ってきた直後など） */
   private graceUntil = 0;
@@ -70,6 +73,8 @@ export class ExploreScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Arc;
   private message!: Phaser.GameObjects.Text;
   private messageTimer?: Phaser.Time.TimerEvent;
+  /** チェックポイントに立っている時だけ出す、育成の画面への入口（段階26） */
+  private hubButton!: Phaser.GameObjects.Container;
 
   constructor() {
     super('Explore');
@@ -87,6 +92,8 @@ export class ExploreScene extends Phaser.Scene {
     this.enemies = [];
     this.leaving = false;
     this.chestSprites = new Map();
+    // 育成の画面から戻ってきた（または別の道で来た）ので、育成の画面の戻り先は忘れる
+    setHubReturn(null);
     this.graceUntil = this.time.now + AREA_GRACE_MS;
 
     let state = run.explore?.area === area.id ? run.explore : startExplore(area);
@@ -123,7 +130,7 @@ export class ExploreScene extends Phaser.Scene {
 
     this.draw();
     if (area.bgm) playBgm(this, area.bgm);
-    this.say(note || (data.won ? '砂嵐を倒した' : 'タップした場所まで歩く。敵の印に触れると戦闘'));
+    this.say(note || (data.won ? '砂嵐を倒した' : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'));
     this.cameras.main.fadeIn(300, 0, 0, 0);
   }
 
@@ -235,6 +242,9 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(this.add.rectangle(0, 64, GAME_WIDTH, 52, 0x000000, 0.4).setOrigin(0));
     this.message = addText(this, GAME_WIDTH / 2, 90, '', { size: 14, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5);
     ui.add(this.message);
+    this.hubButton = this.add.container(0, 0);
+    ui.add(this.hubButton);
+    this.updateHubButton();
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.length > 0 || this.leaving) return;
@@ -259,22 +269,25 @@ export class ExploreScene extends Phaser.Scene {
   /** タップしたマス：話せる人・ボスなら隣まで歩いてから。それ以外はそこまで歩く */
   private tapCell(cell: GridCell): void {
     const talker = this.area.talkers.find((t) => near(t.cell, cell, 0));
-    const boss = !this.state.cleared && near(this.area.boss.cell, cell, 1);
-    const goal = talker ? talker.cell : boss ? this.area.boss.cell : cell;
+    // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
+    const chest = talker ? null : chestAt(this.area, this.state, cell);
+    const boss = !talker && !chest && !this.state.cleared && near(this.area.boss.cell, cell, 1);
+    const goal = talker ? talker.cell : chest ? chest.cell : boss ? this.area.boss.cell : cell;
     const target = nearestWalkable(this.map, goal);
     if (!target) return;
     const from = this.nextCell ?? this.state.cell;
     const path = findPath(this.map, from, target);
     if (!path) return;
-    if (talker || boss) {
-      path.pop(); // 相手のマスの手前で止まる
-      this.goal = talker ? { kind: 'talk', id: talker.id } : { kind: 'boss' };
+    if (talker || chest || boss) {
+      path.pop(); // 相手のマスの手前で止まる（宝箱の上に立っていたら、その場で開ける）
+      this.goal = talker ? { kind: 'talk', id: talker.id } : chest ? { kind: 'chest', id: chest.id } : { kind: 'boss' };
     } else {
       this.goal = null;
     }
     this.marker.setPosition(target[0] * T + T / 2, target[1] * T + T / 2).setVisible(true);
     this.route = path;
     if (!this.walking) this.step();
+    this.updateHubButton();
   }
 
   private step(): void {
@@ -284,6 +297,7 @@ export class ExploreScene extends Phaser.Scene {
       this.walking = false;
       this.nextCell = null;
       this.marker.setVisible(false);
+      this.updateHubButton();
       this.reachGoal();
       return;
     }
@@ -302,18 +316,13 @@ export class ExploreScene extends Phaser.Scene {
     });
   }
 
-  /** マスに着いた：宝箱・チェックポイント */
+  /** マスに着いた：チェックポイント（宝箱は通っただけでは開かない） */
   private arriveAt(cell: GridCell): void {
     const r = arrive(this.area, this.state, cell);
     this.state = r.state;
-    if (r.event.type === 'chest') {
-      run.armory = addItems(run.armory, r.event.chest.items);
-      this.chestSprites.get(r.event.chest.id)?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
-      playSe(this, SE.chest);
-      this.say(`宝箱を開けた！　${summarize(r.event.chest.items)}`);
-    } else if (r.event.type === 'checkpoint') {
+    if (r.event.type === 'checkpoint') {
       playSe(this, SE.heal);
-      this.say('チェックポイント：ここまでを記録した');
+      this.say(`チェックポイント：ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
     }
     setExplore(this.state);
     if (r.event.type === 'checkpoint') {
@@ -339,9 +348,50 @@ export class ExploreScene extends Phaser.Scene {
       if (talker) this.openScene(talker.scene, { area: this.area.id });
       return;
     }
+    if (goal.kind === 'chest') {
+      this.openChestNow(goal.id);
+      return;
+    }
     const t = pendingTrigger(this.area, this.state, 'boss');
     if (t) this.openTrigger(t);
     else this.startBattle(this.area.boss.battle, this.area.boss.id);
+  }
+
+  /** 宝箱を開けて、中身を持ち物に入れる */
+  private openChestNow(chestId: string): void {
+    const r = openChest(this.area, this.state, chestId);
+    if (!r) return;
+    this.state = r.state;
+    run.armory = addItems(run.armory, r.chest.items);
+    this.chestSprites.get(r.chest.id)?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
+    playSe(this, SE.chest);
+    this.say(`宝箱を開けた！　${summarize(r.chest.items)}`);
+    setExplore(this.state);
+  }
+
+  /** チェックポイントに立ち止まっている時だけ、育成の画面への入口を出す（段階26） */
+  private updateHubButton(): void {
+    if (!this.hubButton) return;
+    this.hubButton.removeAll(true);
+    const unlocks = storyLineup().unlocks;
+    const target = unlocks.growth ? 'Growth' : unlocks.weapon ? 'Weapon' : null;
+    if (!target || this.walking || this.route.length > 0 || !isCheckpoint(this.area, this.state.cell)) return;
+    addButton(this, this.hubButton, GAME_WIDTH / 2, GAME_HEIGHT - 56, 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
+      size: 17,
+      bold: true,
+      fill: 0x1e3a5a,
+      stroke: 0x6bc8ff,
+      strokeWidth: 2,
+    });
+  }
+
+  /** 育成の画面（星図・武器）を開く。閉じると、この画面のチェックポイントに戻る */
+  private openHub(target: string): void {
+    if (this.leaving) return;
+    this.leaving = true;
+    setExplore(this.state);
+    setHubReturn({ key: 'Explore', data: { area: this.area.id, won: undefined, lost: undefined, seen: undefined } satisfies ExploreData });
+    this.scene.start(target);
   }
 
   /** 途中の会話を見る。見終えたら、この画面に seen を付けて戻る */
@@ -403,6 +453,12 @@ export class ExploreScene extends Phaser.Scene {
     this.messageTimer?.remove();
     this.messageTimer = this.time.delayedCall(2800, () => this.tweens.add({ targets: this.message, alpha: 0.4, duration: 300 }));
   }
+}
+
+/** 育成の入口のボタンの名前（開いている育成だけ。「星図・武器」など） */
+function hubLabel(): string {
+  const u = storyLineup().unlocks;
+  return [u.growth && '星図', u.navi && 'ムーブメント', u.weapon && '武器'].filter(Boolean).join('・');
 }
 
 /** 2つのマスが、range マス以内（縦横斜め）か */

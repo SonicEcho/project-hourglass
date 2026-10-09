@@ -3,12 +3,14 @@ import type { AreaDef } from '../../src/core';
 import {
   areaGrid,
   arrive,
+  chestAt,
   checkArea,
   defeatEnemy,
   enemyActive,
   loseBattle,
   markTrigger,
   normalizeExplore,
+  openChest,
   patrolRoute,
   pendingTrigger,
   startExplore,
@@ -51,11 +53,21 @@ describe('探索（段階25）', () => {
     expect(checkArea(area)).toEqual([]);
   });
 
-  it('宝箱は1回だけ開く', () => {
+  it('宝箱は通っただけでは開かない（段階26）', () => {
     const r = arrive(area, startExplore(area), [1, 1]);
-    expect(r.event).toEqual({ type: 'chest', chest: area.chests[0] });
-    expect(r.state.openedChests).toEqual(['c1']);
-    expect(arrive(area, r.state, [1, 1]).event).toEqual({ type: 'none' });
+    expect(r.event).toEqual({ type: 'none' });
+    expect(r.state.openedChests).toEqual([]);
+    expect(chestAt(area, r.state, [1, 1])).toEqual(area.chests[0]);
+    expect(chestAt(area, r.state, [2, 1])).toBeNull();
+  });
+
+  it('宝箱は開けると1回だけ中身が出る', () => {
+    const r = openChest(area, startExplore(area), 'c1');
+    expect(r?.chest).toEqual(area.chests[0]);
+    expect(r?.state.openedChests).toEqual(['c1']);
+    expect(openChest(area, r!.state, 'c1')).toBeNull();
+    expect(chestAt(area, r!.state, [1, 1])).toBeNull();
+    expect(openChest(area, startExplore(area), 'nothing')).toBeNull();
   });
 
   it('チェックポイントで記録し、負けるとそこへ戻る', () => {

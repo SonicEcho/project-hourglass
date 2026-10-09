@@ -1,6 +1,6 @@
 # 引き継ぎメモ（これまでの作業のまとめ）
 
-最終更新：2026-10-09（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。M1 の段階分け（段階21〜32）を `docs/milestones/M1.md` に書き、開発者と確認して決めた。段階21〜24（脚本、会話の画面、物語の流れの骨組み、昼の日常）は済。段階25（探索）を作ってマージし、開発者のスマホでの確認待ち。次は段階26。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
+最終更新：2026-10-09（**M0 完了**。段階10〜20をすべて main にマージし、開発者のスマホで確認済み。M1 の段階分け（段階21〜32）を `docs/milestones/M1.md` に書き、開発者と確認して決めた。段階21〜24（脚本、会話の画面、物語の流れの骨組み、昼の日常）は済。段階25（探索）を作ってマージ。段階26（パーティと育成の開放、宝箱はタップで開ける）を作り、開発者のスマホでの確認待ち。次は段階27。物語は `docs/STORY.md`、絵と音の方向性は `docs/ART.md`、名前と用語は `docs/NAMING.md`、構想ノートは `docs/CONCEPT.md`、マイルストーンは `docs/ROADMAP.md`、M0 の記録は `docs/milestones/M0.md`）
 
 新しいセッションでは、まずこのファイルを読む。今の仕組みは `docs/design/`（一覧は `docs/design/README.md`）、今の作業の一覧は `docs/milestones/M1.md`（M0 の記録は `docs/milestones/M0.md`）、背景は `docs/CONCEPT.md`。`docs/SPEC.md` は試作（段階1〜14）の記録（段階14から書き足さない）。
 
@@ -14,7 +14,7 @@
 - 周回の状態は「章・区画・何戦目・何日目」（`run.progress`）で持つ。今は試作の1章・1区画・5戦（段階13）
 - 音（段階19）：タイトルと縁日の試作で BGM（自作の仮の音）、ボタン・戦闘・探索で効果音（効果音ラボ）。タイトルの「音量」で大きさを変えられる
 - `?debug=1` のデバッグメニューから、探索の試作（図形の地図、縁日の絵の地図）と、M1 の会話の場面（段階22。「M1 を通しで読む」、場面を選んで開く）を開ける
-- テストは388件、すべて通る。`main` への push で GitHub Actions がテストし、通れば GitHub Pages に公開する
+- テストは396件、すべて通る。`main` への push で GitHub Actions がテストし、通れば GitHub Pages に公開する
 - 開発者の最新の感想：ボスの手応えは「ちょうどいい」。段階7（成長マップ）は確認済みで、気になる点は今のところなし
 - 段階8（ナビカス盤）は確認済み。感想は「いい感じのバランスで面白かった」
 
@@ -52,6 +52,7 @@
 | 23（M1） | 物語の流れの骨組み（`src/core/flow.ts`、`SLICE_FLOW`、`FlowScene`）、セーブの版3 | #44 |
 | 24（M1） | 昼の日常（`src/core/daily.ts`、`DAILY_HUBS`、`DailyScene`）、屋台めぐり、射的と金魚すくい（`src/core/minigame.ts`、`@game`） | #45〜#46 |
 | 25（M1） | 探索（`src/core/explore.ts`、`AREAS`、`ExploreScene`）、探索から来た戦闘、セーブの版4 | #47 |
+| 26（M1） | パーティと育成の開放（`src/core/lineup.ts`、章の `lineup`。1章はハルトとあかり、星図と武器だけ）、チェックポイントから育成へ、宝箱はタップで開ける | （未マージ） |
 
 ## いまのルールの要点
 
@@ -84,6 +85,7 @@
 | `src/core/flow.ts` `src/data/story.ts`（`SLICE_FLOW`） `src/scenes/FlowScene.ts` | 物語の流れ（段階23）：章 → 出来事の並びと進め方、M1 の流れ、出来事ごとの画面（会話へ渡す・仮の画面・日の扉・つづく）。書き方は `docs/design/run.md` の 0. |
 | `src/core/daily.ts` `src/data/daily.ts` `src/scenes/DailyScene.ts` / `src/core/minigame.ts` `src/data/minigames.ts` `src/scenes/miniGames.ts` | 昼の日常と屋台めぐり、射的・金魚すくい（段階24）。`docs/design/daily.md` |
 | `src/core/explore.ts` `src/data/areas.ts` `src/scenes/ExploreScene.ts` | 探索（段階25）：区画の地図・宝箱・敵の印・チェックポイント・途中の会話。戦闘は `BattleScene` の「探索から来た戦闘」。`docs/design/explore.md` |
+| `src/core/lineup.ts` `SLICE_FLOW` の `lineup` | パーティと育成の開放（段階26）：章ごとの戦う仲間と、開けている育成。`run.ts` の `storyLineup`・`hubLineup`・`setHubReturn`。`docs/design/growth.md` の 5. |
 | `src/scenes/DialogueScene.ts` | 会話の画面（文字送り、選択肢、ログ、早送り、オート、語りの砂）。書き方は `docs/design/dialogue.md` |
 | `src/assets/` `src/data/assets.ts` | 素材を読み込む部品と、素材台帳（入手元・ライセンス。クレジットの画面もここから作る） |
 | `src/audio/sound.ts` `src/data/sounds.ts` | 音を鳴らす部品と、音の名前・BGM のくり返す区間 |
@@ -116,8 +118,9 @@
 
 ## 次にやること（2026-10-09 時点）
 
-- **次は段階26（パーティと育成の開放）**：1章はハルトとあかりの2人で戦う。探索のチェックポイントから星図と武器を開ける（ムーブメントは出てこない）。詳しくは `docs/milestones/M1.md` の「段階26の詳細」。探索から来た戦闘のギアの報酬・チェックポイントの回復も、ここで決める（`docs/design/explore.md` の 2.・3.）
-- その後：段階27（縁日の砂嵐と区画のボス。今は試作の敵で代わりに戦っている）、28（コマ集めと時間を返す。今は「時間を返す」が仮の画面）、29（雑魚戦のオート）、30（初めての人向けの説明）、31（絵と本番の BGM）、32（磨きと試遊の準備）
+- **段階26（パーティと育成の開放）は開発者のスマホでの確認待ち**：1章はハルトとあかりの2人で戦う。探索のチェックポイントに立つと「星図・武器」のボタン（ムーブメントは出ない）。宝箱はタップした時だけ開く（開発者の依頼）。2人では試作の敵が強すぎたので、区画の3体の戦闘とボスを仮に弱めた（`docs/design/explore.md` の 3.）
+- **次は段階27（縁日の砂嵐と区画のボス）**：2人のパーティで、砂嵐3〜4種とボスを作り、自動対戦で勝率を測って決める（仮に弱めた `scaleEnemy` の戦闘を置き換える）。アルバムと手札の数（2人でも20枚・5枚）もここで見直す
+- その後：段階28（コマ集めと時間を返す。今は「時間を返す」が仮の画面）、29（雑魚戦のオート）、30（初めての人向けの説明）、31（絵と本番の BGM）、32（磨きと試遊の準備）
 - 段階25（探索）は、開発者のスマホでの確認待ち（PR #47 でマージ済み）
 - 絵の残り（ChatGPT の枠が戻ったら）：時計屋の奥の部屋、レストピアの蔵書の棚、子どものころの3人、あかりの笑顔・心配の作り直し（リボンの色）。指示文は `docs/ART.md` の 5-2
 - M1 の全体の流れと決まったこと：`docs/milestones/M1.md`。脚本は `docs/script/M1.md`。新しい仕組みの設計書：`docs/design/dialogue.md`（会話）、`run.md`（物語の流れ・セーブ）、`daily.md`（昼の日常・小さな遊び）、`explore.md`（探索）

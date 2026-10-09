@@ -37,13 +37,14 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PARTY, SE, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
 import { chargeCounterText, drawBattle, type FooterMode, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import type { ResultSceneData } from './ResultScene';
-import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, run, saveRun, setActiveBattle } from './run';
+import type { Lineup } from '../core';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, storyLineup } from './run';
 
 /** 選んでいる行動の元 */
 type Pending =
@@ -88,6 +89,8 @@ export class BattleScene extends Phaser.Scene {
   private progress!: Progress;
   private encounter?: BattleSceneData['encounter'];
   private battle!: CampaignBattle;
+  /** 戦う仲間（探索から来た戦闘は物語の章のパーティ、試作の5戦は3人。段階26） */
+  private lineup!: Lineup;
   /** 計画中に行動を選んでいる仲間 */
   private planner: string | null = null;
   private selection: Selection | null = null;
@@ -117,8 +120,9 @@ export class BattleScene extends Phaser.Scene {
     this.battle = areaBattle ?? battleAt(this.progress);
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id)) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
+    this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
     // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
-    this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty()));
+    this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty(this.lineup)));
     logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
@@ -1043,13 +1047,14 @@ export class BattleScene extends Phaser.Scene {
       if (hasReward) run.pendingReward = def.id;
       // 武器：素材とアイテムを受け取り、経験値とギアの傾向を貯める
       const naviData = currentNaviData();
-      const levelsBefore = Object.fromEntries(PARTY.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
+      const members = lineupBase(this.lineup);
+      const levelsBefore = Object.fromEntries(members.map((p) => [p.id, weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)]));
       run.armory = recordVictory(run.armory, {
         actions: result.actionCounts,
-        colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
+        colorCells: Object.fromEntries(members.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
         items: [...result.drops, ...(def.item ? [def.item] : [])],
       });
-      const levelUps = PARTY.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
+      const levelUps = members.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
         (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
       );
       // 「星図へ」を押す前に閉じても消えないように
@@ -1091,10 +1096,12 @@ export class BattleScene extends Phaser.Scene {
     }
     const gained = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
     run.growth = { ...run.growth, points: run.growth.points + gained };
+    // ギアの報酬は出さない。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
+    const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];
     run.armory = recordVictory(run.armory, {
       actions: result.actionCounts,
-      colorCells: Object.fromEntries(PARTY.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
+      colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
       items: [...result.drops, ...(def.item ? [def.item] : [])],
     });
     saveRun();

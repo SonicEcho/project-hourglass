@@ -1,3 +1,4 @@
+import { usableLinks } from '../core/lineup';
 import type { BattleSetup, CharacterDef, EnemyDef } from '../core/types';
 import { buildFolder } from './cards';
 import { COMBOS } from './combos';
@@ -21,6 +22,23 @@ export function strengthen(enemy: EnemyDef, rate: number, extraDrops: string[] =
       atk: Math.round(enemy.stats.atk * rate),
       mag: Math.round(enemy.stats.mag * rate),
     },
+  };
+}
+
+/**
+ * 2人のパーティ向けに弱めた版（段階26。HP・攻撃・魔力・部位のHPを rate 倍。名前は変えない）。
+ * 1章の探索の戦闘で、試作の敵を代わりに使う間だけ（砂嵐とボスは段階27で作り直す）
+ */
+export function scaleEnemy(enemy: EnemyDef, rate: number): EnemyDef {
+  return {
+    ...enemy,
+    stats: {
+      ...enemy.stats,
+      hp: Math.round(enemy.stats.hp * rate),
+      atk: Math.round(enemy.stats.atk * rate),
+      mag: Math.round(enemy.stats.mag * rate),
+    },
+    parts: enemy.parts?.map((p) => ({ ...p, hp: Math.round(p.hp * rate) })),
   };
 }
 
@@ -53,13 +71,13 @@ export const CAMPAIGN: CampaignBattle[] = [
   { id: 'battle5', name: '戦闘5（ボス）', enemies: [DISTORTED_BEAST], reward: 0, boss: true },
 ];
 
-/** 戦闘の設定。allies は成長を反映したキャラ */
+/** 戦闘の設定。allies は成長を反映した、戦う仲間（パーティにいない仲間と組む連携技は出さない。段階26） */
 export function createCampaignSetup(battle: CampaignBattle, seed: number, allies: CharacterDef[]): BattleSetup {
   return {
     allies,
     enemies: battle.enemies,
     deck: buildFolder(),
-    links: LINKS,
+    links: usableLinks(LINKS, allies.map((a) => a.id)),
     combos: COMBOS,
     seed,
   };
