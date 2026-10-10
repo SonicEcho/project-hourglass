@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
 import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
-import { playBgm, stopAmbience } from '../audio/sound';
+import { playBgm, playSand, stopAmbience } from '../audio/sound';
 import { chapterOfEvent, findEvent } from '../core';
 import { BGM, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
@@ -21,6 +21,9 @@ function formatSavedAt(iso: string): string {
 }
 
 export class TitleScene extends Phaser.Scene {
+  /** 物語の流れへ移る途中（段階32b 調整5。2回押しで二重に始めないように） */
+  private leaving = false;
+
   constructor() {
     super('Title');
   }
@@ -28,10 +31,12 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     enterScreen(this);
+    this.leaving = false;
+    this.input.enabled = true;
     // タイトルにいる間は、遊んだ記録の時間を数えない（段階32b）
     setPlayTracking(false);
     stopAmbience();
-    const root = this.add.container(0, 0);
+    let root = this.add.container(0, 0);
     const cx = GAME_WIDTH / 2;
     root.add(screenBg(this));
     // 砂時計の後ろのほのかな光（段階32a）。ゆっくり明るくなったり暗くなったりする
@@ -66,6 +71,11 @@ export class TitleScene extends Phaser.Scene {
     root.add(fall);
     root.add(addText(this, cx, 360, 'RESTOPIA', { size: 34, bold: true }).setOrigin(0.5).setLetterSpacing(4));
     root.add(addText(this, cx, 400, '思い出だけの理想郷', { size: 15, color: COLORS.accentText }).setOrigin(0.5));
+    // 物語の流れへ移る時に消すもの（ボタンと小さな文字）。題字と砂時計は残す（段階32b 調整5）
+    const ui = this.add.container(0, 0);
+    root.add(ui);
+    const flow = (data: object) => this.leave(glow, fall, ui, () => this.scene.start('Flow', data));
+    root = ui;
     root.add(addText(this, cx, 432, '試作版（M1：プロローグと第1章のはじめ）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3）
     addButton(this, root, GAME_WIDTH - 66, 36, 112, 44, 'オプション', {
@@ -107,7 +117,7 @@ export class TitleScene extends Phaser.Scene {
     const startNew = () => {
       notePlayStart();
       startNewRun();
-      this.scene.start('Flow', { done: false });
+      flow({ done: false, fromTitle: true });
     };
     if (save?.ok) {
       const s = save.save;
@@ -115,7 +125,7 @@ export class TitleScene extends Phaser.Scene {
       const chapter = chapterOfEvent(SLICE_FLOW, s.run.event);
       addButton(this, root, cx, 600, 260, 64, 'つづきから', {
         onTap: () => {
-          if (continueRun()) this.scene.start('Flow', { done: false });
+          if (continueRun()) flow({ done: false, fromTitle: true });
           else this.scene.restart();
         },
       }, strong);
@@ -145,6 +155,27 @@ export class TitleScene extends Phaser.Scene {
       }
       addButton(this, root, cx, 640, 260, 64, 'はじめる', { onTap: startNew }, strong);
     }
+  }
+
+  /**
+   * タイトルから物語の流れへ移る時の余韻（段階32b 調整5）。ほかのボタンを押せなくし、ボタンと小さな文字を消す。
+   * 砂時計の砂を強く流して光を明るくし、砂の音を鳴らす。少し置いて暗転し、一呼吸おいてから次の画面へ。
+   * BGM は止めない（画面が替わっても曲は続ける決まり。docs/design/tech.md。日常の画面などは自分で曲を流さないため）
+   */
+  private leave(glow: Phaser.GameObjects.Graphics, fall: Phaser.GameObjects.Particles.ParticleEmitter, ui: Phaser.GameObjects.Container, go: () => void): void {
+    if (this.leaving) return;
+    this.leaving = true;
+    this.input.enabled = false;
+    playSand(this);
+    this.tweens.add({ targets: ui, alpha: 0, duration: TITLE_EXIT.uiFadeMs, ease: 'Sine.easeOut' });
+    this.tweens.killTweensOf(glow);
+    this.tweens.add({ targets: glow, alpha: 1, duration: TITLE_EXIT.holdMs, ease: 'Sine.easeOut' });
+    fall.frequency = TITLE_EXIT.sandFrequency;
+    this.time.delayedCall(TITLE_EXIT.holdMs, () => {
+      const cam = this.cameras.main;
+      cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.time.delayedCall(TITLE_EXIT.blackMs, go));
+      cam.fadeOut(TITLE_EXIT.fadeMs, 0, 0, 0);
+    });
   }
 
   /** 説明の一覧（段階30）。戦闘・探索・育成のタブ。タップで読む。まだ見ていない説明は、遊んでいて使う場面になると出る */

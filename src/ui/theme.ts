@@ -103,6 +103,22 @@ export const MOTION = {
   countMs: 450,
 } as const;
 
+/** タイトルから物語の流れへ移る時の余韻（段階32b 調整5）。ボタンが消える → 砂が強く流れる → 暗転 → 黒のまま一呼吸 */
+export const TITLE_EXIT = {
+  /** ボタンと小さな文字が消える */
+  uiFadeMs: 500,
+  /** 押してから暗転を始めるまで */
+  holdMs: 900,
+  /** 暗転 */
+  fadeMs: 1100,
+  /** 暗転した後、次の画面までの間 */
+  blackMs: 450,
+  /** 砂時計の砂の粒を出す間隔（ふだんは 45） */
+  sandFrequency: 12,
+  /** 会話の途中から続く時の、会話の画面の明転 */
+  dialogueFadeInMs: 700,
+} as const;
+
 /** 戦闘で敵のいる場所の地面の色（段階32a 調整1。奥が明るめ、手前が暗い） */
 export const STAGE = {
   floorTop: 0x2a2f5a,

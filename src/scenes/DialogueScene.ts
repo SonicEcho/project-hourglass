@@ -64,6 +64,8 @@ export interface DialogueData {
   onVars?: (vars: ScriptVars) => void;
   /** 小さな遊び（@game）の乱数のシード（段階24。なければ 1） */
   seed?: number;
+  /** 画面を暗い所から明るくして始める（ミリ秒。タイトルから続く時。段階32b 調整5） */
+  fadeInMs?: number;
 }
 
 /**
@@ -186,6 +188,7 @@ export class DialogueScene extends Phaser.Scene {
 
   create(data: DialogueData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    if (data.fadeInMs) this.cameras.main.fadeIn(data.fadeInMs, 0, 0, 0);
     this.debug = isDebugEnabled(window.location.search);
     this.pos = { scene: data.scene, index: 0 };
     this.vars = { ...(data.vars ?? {}) };
@@ -403,11 +406,12 @@ export class DialogueScene extends Phaser.Scene {
       if (kind === 'out') {
         this.fadedOut = true;
         cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => resolve());
-        cam.fadeOut(ms, 0, 0, 0);
+        // 始めの明転（fadeInMs）の途中でも上書きする（fadeOut だと動いている間は無視され、終わりを待ち続けてしまう）
+        cam.fade(ms, 0, 0, 0, true);
       } else if (kind === 'in') {
         this.fadedOut = false;
         cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => resolve());
-        cam.fadeIn(ms, 0, 0, 0);
+        cam.fadeFrom(ms, 0, 0, 0, true);
       } else {
         cam.flash(ms + 150, 255, 255, 255);
         this.time.delayedCall(ms, resolve);
