@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { BlipVoice } from '../data';
+import { addSandGrains, addSandHiss } from './sandNoise';
 import { AMBIENCE, BGM_LOOPS, KOMA_SOUND, SAND_RISE_SOUND, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 
@@ -169,7 +170,7 @@ export function playTick(scene: Phaser.Scene, tock: boolean, gain = 1): void {
 
 /**
  * 語りの文の、砂がさらさら落ちる音（段階31c）。効果音ラボに合う音がなかったので、秒針の音と同じくその場で作る。
- * 細かい粒の「チリッ」をたくさん散らし、高い音だけ通す。ふわっと始まり、ゆっくり消える
+ * ごく短く弱い粒をたくさん散らし、ゆらぐ「さーっ」を敷いて、高い音だけ通す（材料は sandNoise.ts）。ふわっと始まり、ゆっくり消える
  */
 export function playSand(scene: Phaser.Scene): void {
   const st = getSettings();
@@ -177,25 +178,20 @@ export function playSand(scene: Phaser.Scene): void {
   if (st.seVolume <= 0 || mgr.locked || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
   const ctx = mgr.context;
   const now = ctx.currentTime;
-  const { durationSec, grainsPerSec, fadeInSec, fadeOutSec, gain } = SAND_SOUND;
+  const { durationSec, grainsPerSec, grain, hiss, highpassHz, lowpassHz, fadeInSec, fadeOutSec, gain } = SAND_SOUND;
   const len = Math.floor(ctx.sampleRate * durationSec);
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buf.getChannelData(0);
-  // 粒：短く減っていく小さな雑音を、ばらばらの時に置く
-  const grainLen = Math.floor(ctx.sampleRate * 0.004);
-  const grains = Math.floor(grainsPerSec * durationSec);
-  for (let g = 0; g < grains; g++) {
-    const at = Math.floor(Math.random() * (len - grainLen));
-    const amp = 0.2 + Math.random() * 0.8;
-    for (let i = 0; i < grainLen; i++) data[at + i] += (Math.random() * 2 - 1) * amp * Math.pow(1 - i / grainLen, 3);
-  }
-  // 粒のすき間を埋める、ごく小さなさーっという音
-  for (let i = 0; i < len; i++) data[i] = data[i] * 0.5 + (Math.random() * 2 - 1) * 0.04;
+  addSandGrains(data, ctx.sampleRate, Math.floor(grainsPerSec * durationSec), grain);
+  addSandHiss(data, ctx.sampleRate, hiss);
   const src = ctx.createBufferSource();
   src.buffer = buf;
   const high = ctx.createBiquadFilter();
   high.type = 'highpass';
-  high.frequency.value = 3000;
+  high.frequency.value = highpassHz;
+  const low = ctx.createBiquadFilter();
+  low.type = 'lowpass';
+  low.frequency.value = lowpassHz;
   const g = ctx.createGain();
   const peak = gain * st.seVolume;
   g.gain.setValueAtTime(0, now);
@@ -203,7 +199,8 @@ export function playSand(scene: Phaser.Scene): void {
   g.gain.setValueAtTime(peak, now + durationSec - fadeOutSec);
   g.gain.linearRampToValueAtTime(0, now + durationSec);
   src.connect(high);
-  high.connect(g);
+  high.connect(low);
+  low.connect(g);
   g.connect(mgr.destination);
   src.start(now);
   src.onended = () => g.disconnect();
@@ -258,26 +255,21 @@ export function playSandRise(scene: Phaser.Scene): void {
   const len = Math.floor(ctx.sampleRate * r.durationSec);
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buf.getChannelData(0);
-  // 粒：時間とともに増やす（1秒あたりの数を、始めから終わりへ直線で）
-  const grainLen = Math.floor(ctx.sampleRate * 0.004);
-  const grains = Math.floor(((r.grainsFrom + r.grainsTo) / 2) * r.durationSec);
-  for (let k = 0; k < grains; k++) {
-    // 密度が直線で増える時の置き場所（後ろほど多い）
-    const u = Math.random();
-    const a: number = r.grainsFrom;
-    const b: number = r.grainsTo;
-    const t = a === b ? u : (Math.sqrt(a * a + (b * b - a * a) * u) - a) / (b - a);
-    const at = Math.min(len - grainLen, Math.floor(t * (len - grainLen)));
-    const amp = 0.2 + Math.random() * 0.8;
-    for (let i = 0; i < grainLen; i++) data[at + i] += (Math.random() * 2 - 1) * amp * Math.pow(1 - i / grainLen, 3);
-  }
-  for (let i = 0; i < len; i++) data[i] = data[i] * 0.5 + (Math.random() * 2 - 1) * 0.03;
+  // 粒：時間とともに増やす（1秒あたりの数を、始めから終わりへ直線で。後ろほど多く置く）
+  const a: number = r.grainsFrom;
+  const b: number = r.grainsTo;
+  const place = (u: number) => (a === b ? u : (Math.sqrt(a * a + (b * b - a * a) * u) - a) / (b - a));
+  addSandGrains(data, ctx.sampleRate, Math.floor(((a + b) / 2) * r.durationSec), SAND_SOUND.grain, Math.random, place);
+  addSandHiss(data, ctx.sampleRate, SAND_SOUND.hiss);
   const src = ctx.createBufferSource();
   src.buffer = buf;
   const high = ctx.createBiquadFilter();
   high.type = 'highpass';
   high.frequency.setValueAtTime(r.highFrom, now);
   high.frequency.exponentialRampToValueAtTime(r.highTo, now + r.durationSec);
+  const low = ctx.createBiquadFilter();
+  low.type = 'lowpass';
+  low.frequency.value = SAND_SOUND.lowpassHz;
   const g = ctx.createGain();
   const peak = r.gain * st.seVolume;
   g.gain.setValueAtTime(0, now);
@@ -285,7 +277,8 @@ export function playSandRise(scene: Phaser.Scene): void {
   g.gain.setValueAtTime(peak, now + r.durationSec - r.fadeOutSec);
   g.gain.linearRampToValueAtTime(0, now + r.durationSec);
   src.connect(high);
-  high.connect(g);
+  high.connect(low);
+  low.connect(g);
   g.connect(mgr.destination);
   // 昇る音
   const osc = ctx.createOscillator();

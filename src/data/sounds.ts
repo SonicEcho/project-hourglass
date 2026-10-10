@@ -75,9 +75,9 @@ export const SE_GAIN: Partial<Record<string, number>> = {
 /**
  * 環境音（段階32b 調整3）：背景が出ている間、小さく鳴り続ける音（屋台の並ぶ参道の人混み）。
  * 台帳の短い音（人混みは4秒）を、少し高さを変えながら重ねて鳴らし続け、同じ音のくり返しに聞こえないようにする。
- * gain は効果音の音量を1とした時の大きさ、everySec は次の音を重ね始めるまでの間（秒。少しばらつかせる）、fadeSec は始めと終わりにふわっと変える時間
+ * gain は効果音の音量を1とした時の大きさ（2026-10-10、祭の人混みが小さいと開発者から聞いて 0.3 → 0.5）、everySec は次の音を重ね始めるまでの間（秒。少しばらつかせる）、fadeSec は始めと終わりにふわっと変える時間
  */
-export const AMBIENCE = { gain: 0.3, everySec: 2.2, jitterSec: 0.5, rateMin: 0.92, rateMax: 1.08, fadeSec: 0.8 } as const;
+export const AMBIENCE = { gain: 0.5, everySec: 2.2, jitterSec: 0.5, rateMin: 0.92, rateMax: 1.08, fadeSec: 0.8 } as const;
 
 /** BGM（台帳の id） */
 export const BGM = {
@@ -95,16 +95,26 @@ export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
   [BGM.festival]: { start: 0.5, end: 9.227256 },
 };
 
-/** 語りの文の、砂がさらさら落ちる音（段階31c。audio/sound.ts の playSand がその場で作る） */
+/**
+ * 語りの文の、砂がさらさら落ちる音（段階31c。audio/sound.ts の playSand がその場で作る。材料は audio/sandNoise.ts）。
+ * 段階32b の直し（2026-10-10）：粒が長く強くてザラザラに聞こえたので、ごく短く弱い粒を多く散らし、ゆらぐ「さーっ」を敷いた
+ */
 export const SAND_SOUND = {
   /** 長さ（秒） */
   durationSec: 1.8,
-  /** 1秒あたりの粒の数（多いと「さーっ」、少ないと「ぱらぱら」） */
-  grainsPerSec: 900,
+  /** 1秒あたりの粒の数（多くて弱いほど「さらさら」、少なくて強いほど「ぱらぱら・ザラザラ」） */
+  grainsPerSec: 3200,
+  /** 粒の形（長さは秒） */
+  grain: { grainSec: 0.0012, ampMin: 0.04, ampMax: 0.3 },
+  /** 下に敷く「さーっ」（ゆらぎの速さは Hz） */
+  hiss: { amp: 0.15, flutterDepth: 0.45, flutterHz: [2.3, 3.7, 6.1] },
+  /** 通す高さ（この間の高い音だけ。Hz） */
+  highpassHz: 4500,
+  lowpassHz: 11000,
   fadeInSec: 0.3,
   fadeOutSec: 0.9,
-  /** 大きさ（効果音の音量を1とした時） */
-  gain: 0.9,
+  /** 大きさ（効果音の音量を1とした時。直す前と同じくらいの大きさに合わせた） */
+  gain: 2.0,
 } as const;
 
 /**
@@ -130,19 +140,19 @@ export const KOMA_SOUND = {
  */
 export const SAND_RISE_SOUND = {
   durationSec: 2.0,
-  /** 1秒あたりの粒の数（始め → 終わり） */
-  grainsFrom: 250,
-  grainsTo: 1400,
+  /** 1秒あたりの粒の数（始め → 終わり）。粒と「さーっ」の形は語りの砂（SAND_SOUND）と同じ */
+  grainsFrom: 900,
+  grainsTo: 4000,
   /** 粒の高さ（高い音だけ通す境目。始め → 終わり、Hz） */
-  highFrom: 1800,
-  highTo: 6500,
+  highFrom: 3000,
+  highTo: 7000,
   /** 昇る音の高さ（始め → 終わり、Hz） */
   toneFrom: 330,
   toneTo: 1320,
   /** 昇る音の大きさ（粒の大きさを1とした時） */
-  toneGain: 0.08,
+  toneGain: 0.04,
   fadeInSec: 0.4,
   fadeOutSec: 0.5,
   /** 大きさ（効果音の音量を1とした時） */
-  gain: 0.9,
+  gain: 1.8,
 } as const;
