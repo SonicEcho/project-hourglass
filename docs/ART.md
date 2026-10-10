@@ -351,6 +351,428 @@ Eye-level camera, the path centered. Keep the lower third of the image simple (g
 Absolutely no letters or text anywhere: signs, lanterns, banners and awnings are blank or have simple patterns only.
 ```
 
+## 5-3. M2 の絵を作る順番と指示文（1章の残りと2章。2026-10-10）
+
+`docs/script/M2.md` の素材の一覧（5. と 12.）を、5-2 と同じ形の指示文にした。上から順に作る（ゲームの中で長く目に入るもの、ほかの絵の見本になるものから）。作った絵は、作ったままの大きさの PNG と実際に使った指示文を一緒に渡してもらう。
+
+- 脚本のたたき台の指示文から直したところ：2-1 は昭和44年（1969年）なので「1960年代のはじめ」を「1969年」に直した。「切り取られるグラウンド」の手前の3人は、高校生2人と小学生（みお）にした。巾着・たばこ・腕時計など手に持つ・身に付ける小物は、立ち絵の決まり（小物なし、手は画面の外）に合わせて外した
+- みお・カイは戦闘にも出るので、ノアと同じく **設定画（全身。武器も入れる）→ 胸から上の基本の1枚** の順で作る
+- 敵の絵（砂嵐とボス）は、まだ M1 の分も作っていない。下の「敵の絵の共通部分」は**たたき台**で、最初の1体（1-2 のブリキノイズ）を作って、戦闘画面に置いてから決める
+
+### 作る順番
+
+| 順 | 絵 | サービス | 一緒に渡す見本の絵 | 状態 |
+| --- | --- | --- | --- | --- |
+| 1 | みおの設定画 → 胸から上の基本の1枚 | ChatGPT | 子どものあかりの立ち絵（絵柄・構図・子どもの体つき） | まだ |
+| 2 | カイの設定画 → 胸から上の基本の1枚 | ChatGPT | ノアの設定画（同じ組織の制服）、あかりの笑顔の立ち絵（構図） | まだ |
+| 3 | 1枚絵：切り取られるグラウンド（2-3。2章の山場） | ChatGPT | ハルト・あかり・みお・カイの立ち絵 | まだ |
+| 4 | いさむ（今）、写しのいさむ、写しの源三 | ChatGPT | あかりの笑顔の立ち絵（構図）。写しのいさむは、いさむとみおの立ち絵も | まだ |
+| 5 | 背景：昭和44年の町工場の中、雪の町工場の路地 | ChatGPT | なし | まだ |
+| 6 | 地図：2-1 の雪の町工場の路地 | ChatGPT | 1-1 の縁日の地図（見下ろし方の見本） | まだ |
+| 7 | 1枚絵：親方の背中（2-1） | ChatGPT | 写しのいさむ・写しの源三の立ち絵 | まだ |
+| 8 | こうじ（今）、けんた（今）、写しのけんた、写しのこうじ、写しのまさる | ChatGPT | あかりの笑顔の立ち絵（構図）。写しは、今の本人の立ち絵も | まだ |
+| 9 | 背景：パン屋の店内、楽器店の店内、体育館のステージ、河川敷のグラウンド | ChatGPT | なし | まだ |
+| 10 | 地図：2-2 の文化祭の高校、2-3 の河川敷のグラウンド | ChatGPT | 1-1 の縁日の地図 | まだ |
+| 11 | 1枚絵：代打の一打（2-3）、弦が切れても歌うステージ（2-2） | ChatGPT | 写しの人たちの立ち絵 | まだ |
+| 12 | 1-2 の残り：背景（昭和の商店街、時計屋の店内（昼）、川沿いの帰り道）、地図、1枚絵（夕焼けの二人乗り） | ChatGPT | 下の各項 | まだ |
+| 13 | 敵：1-2 の砂嵐4つとボス、2章の砂嵐12とボス3つ、カイの戦闘の絵 | ChatGPT（多い時は Gemini） | 最初に作った敵の絵（絵柄をそろえる） | まだ（共通部分がたたき台） |
+| ― | 表情違い（みお・カイ・ふみ・写しの人たち、ノアの悲しい、ハルトの悔しい・怒り、あかりの考える・泣き笑い） | Gemini | 基本の1枚 | まだ |
+| 低 | だいち・さき（今。笑顔1つずつ）、教室（放課後） | ― | ― | なければ声だけ・色の加工で代わりにする |
+
+### 共通部分
+
+毎回、先頭に 3. の絵柄の共通部分を付ける（下の指示文には、もう付けてある所と、「頭」だけ書いた所がある）。
+
+**立ち絵の頭**（人ごとの文の前に付ける。`<表情>` は人ごとに替える）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, <表情>.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl in the cardigan.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+**背景の頭**
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Background art for a visual novel dialogue scene. Vertical 9:16 image. No people.
+```
+
+（背景の文の最後に、毎回 `Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.` を付ける）
+
+**1枚絵の頭**
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A single key visual (event CG). Vertical 9:16 image.
+```
+
+（1枚絵の文の最後に、毎回 `Keep the lower quarter of the image simple, because a text box may cover it. Absolutely no letters or text anywhere.` を付ける）
+
+**地図の頭**（7. の縁日の地図と同じ決まり。見えないマス目 24×43 を重ねる）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters.
+```
+
+（地図の文の最後に、毎回 `Walkable areas must be clearly distinguishable from non-walkable objects. Paths are wide, at least one eighth of the image width. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.` を付ける）
+
+**敵の絵の共通部分（たたき台）**（`<姿>` と `<時代の色>` を敵ごとに替える。白い背景で作り、`scripts/cutout.py` で抜く）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
+
+Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (<時代の色>). Eerie but not gory, readable as a small silhouette on a phone screen.
+Body: <姿>
+```
+
+時代の色（2. の色の決まり）：昭和 `sepia, faded green and orange`／平成 `bright pastel and light blue`。ボスは `Body:` の前に `A large boss monster, filling most of the image.` を足す。
+
+### 1. みお（設定画 → 胸から上の基本の1枚）
+
+**設定画**（子どものあかりの立ち絵を添付）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Character design sheet of an original anime-style girl for a mobile turn-based JRPG, full body front view, standing in a lively, confident pose, plain off-white background, clean lineart with soft cel shading, childlike proportions about 5 heads tall. Same art style as the attached reference portrait.
+Character: Mio, a petite, energetic 10-year-old Japanese girl (4th grade of elementary school) from a shopping street in a quiet regional town. The neighborhood's cheerful "helper" who joins the little league team, the town festival and everything else. Sporty, loud, always running, loves giving names to everything. A wide confident grin, but a hint of something she cannot remember behind her bright eyes.
+Hair: bright light-brown short hair, slightly messy from running, with one tiny side tuft tied up by a small orange hair tie.
+Eyes: big, lively warm brown eyes.
+Face: round cheeks, a slightly sunburnt nose.
+Outfit: a plain sunny-yellow T-shirt with no logo or text, navy shorts, a white-and-orange sports wristband on her right wrist, white ankle socks and worn-out red sneakers, a small adhesive bandage on one knee.
+Weapon: a deck of ordinary playing cards that has turned into glowing magic cards; she holds a fan of cards in one hand, the cards glowing with soft warm light and leaving thin light trails. Among them, one hand-drawn joker card drawn by a child with crayons (a smiling clown face, no letters).
+Color palette: hair #B07A4A, T-shirt #F2C94C, shorts #2B3552, wristband orange #E07A4F, sneakers #D9483B, skin #F3D2B8, card light #FFE3A0.
+Additional views on the same sheet: back view, 4 facial expressions (big grin, frustrated pout, surprised, serious), close-up of the hand-drawn joker card.
+Absolutely no letters, numbers or text anywhere, including on the cards (use simple suit marks only).
+```
+
+**胸から上の基本の1枚**（決めた設定画と、子どものあかりの立ち絵を添付。立ち絵の高さは 360）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a wide, confident grin.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the little girl in the yukata, with the same childlike proportions.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props, no cards.
+Background: plain pure white, no shadow, no gradient.
+Character: Mio. Keep her design exactly as in the attached character sheet: bright light-brown short hair with one tiny side tuft tied by a small orange hair tie, big lively brown eyes, round cheeks, a slightly sunburnt nose, a plain sunny-yellow T-shirt with no logo.
+```
+
+### 2. カイ（設定画 → 胸から上の基本の1枚）
+
+黒髪に青緑の一筋は、ハルトの砂色の一筋と対（同じアーカイバーだった伏線。6章で回収）。
+
+**設定画**（ノアの設定画を添付）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Character design sheet of an original anime-style rival character for a mobile turn-based JRPG, full body front view, standing in an arrogant, relaxed pose with his weight on one leg, plain off-white background, clean lineart with soft cel shading, about 7 heads tall. Same art style as the attached reference sheet.
+Character: Kai, a young man around 20 from a cold, white future. A top-ranked time agent ("archiver") who steals people's happy memories, called the best archiver after a certain genius disappeared. Proud, sarcastic and cold, looks down on everyone; underneath, a rival who has been chasing someone he could never surpass.
+Hair: short black hair, slightly spiky, with ONE single streak of blue-green in the front.
+Eyes: sharp, narrow pale-gold eyes, a confident smirk.
+Outfit: the same organization's uniform as the silver-haired girl in the attached sheet: a clean white long coat with a high collar and thin blue-green lines along the seams, but worn open and a little carelessly, sleeves slightly pushed up; a black high-neck inner top; slim black trousers; white boots; the same small hourglass-shaped clasp, worn on his belt instead of the collar.
+Weapon: "Frame", a hollow square frame-shaped blade about the size of a large picture frame, its four edges are thin, razor-sharp white metal with blue-green light lines, like a camera viewfinder turned into a weapon. He holds it by one corner; the space inside the frame looks slightly frozen and drained of color.
+Color palette: black hair #1E2230, blue-green streak #4CC2B8, pale-gold eyes #D8C27A, white coat #F4F7F8, accent lines #4CC2B8, black inner #15181F, skin #F1D9C8.
+Additional views on the same sheet: back view, 4 facial expressions (smug smirk, looking down on someone, neutral, serious), close-up of the Frame blade.
+Absolutely no letters or text anywhere.
+```
+
+**胸から上の基本の1枚**（決めた設定画と、あかりの笑顔の立ち絵を添付）
+
+立ち絵の頭（`<表情>` は `a confident, condescending smirk`）の後に：
+
+```
+Character: Kai. Keep his design exactly as in the attached character sheet: short black hair with one blue-green streak in the front, sharp narrow pale-gold eyes, white high-collared long coat with thin blue-green lines worn open over a black high-neck inner top. No weapon, no glowing light effects in this portrait.
+```
+
+**戦闘の絵**（決めた設定画を添付。敵の絵の共通部分は使わず、これだけで作る）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading. No text, no watermark, no signature.
+
+Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. Full body, centered, plain pure white background, no shadow, no ground.
+Kai, keep his design exactly as in the attached character sheet, in a fighting stance: holding the square frame-shaped blade "Frame" up in front of him like a camera viewfinder, looking at the viewer through it with a cold smirk, his open white coat flaring. Thin blue-green light lines run along the blade.
+```
+
+### 3. 1枚絵：切り取られるグラウンド（2-3。2章の山場）
+
+ハルト・あかり・みお・カイの立ち絵を添付。1枚絵の頭の後に：
+
+```
+A late 1990s Japanese riverside little league baseball field on a bright summer afternoon, pastel sky. A glowing rectangular frame of white light slices across the whole scene like a camera viewfinder; inside the frame the field, players and cheering parents are frozen and drained of color, as if being cut out like a photograph. On top of the backstop stands Kai, a young man in an open white long coat with thin blue-green lines (keep his design as in the attached portrait), holding a square frame-shaped blade, a tiny hourglass forming in his other hand with the frozen field inside it. In the foreground, a high school boy and a high school girl and a small 10-year-old girl (keep their designs exactly as in the attached reference portraits) reach out too late. Grains of golden sand scatter.
+```
+
+### 4. 2-1 の人たち（立ち絵）
+
+いさむ（今。75歳）：立ち絵の頭（`<表情>` は `a calm, taciturn expression with gentle eyes behind his glasses`）の後に
+
+```
+Character: Isamu, a Japanese gear craftsman around 75 years old, Mio's grandfather, who runs a tiny old machine workshop in a quiet regional town. Small and wiry, short white hair, thin round glasses, deep wrinkles, a stubborn mouth but gentle eyes. An old brown cardigan over a faded factory work jacket. A man of few words.
+```
+
+写しのいさむ（昭和44年。18歳）：いさむとみおの立ち絵も添付。立ち絵の頭（`<表情>` は `a serious, determined face, cheeks red from the cold`）の後に
+
+```
+Character: young Isamu, the same man as the attached elderly portrait but 57 years earlier: an 18-year-old apprentice at a small machine workshop in the winter of 1969. Keep the same face features so he is clearly the same person, with lively eyes that look like the attached little girl's (his granddaughter). Very short buzz-cut black hair, cheeks red from the cold, an oil-stained gray work jacket.
+```
+
+写しの源三（親方。昭和44年。50代）：立ち絵の頭（`<表情>` は `a stern, intimidating face with thick brows`）の後に
+
+```
+Character: Genzo, the stern master of a small Japanese machine workshop in the winter of 1969, in his 50s. Thick eyebrows, a weathered face, a white hand towel tied around his head, a heavy dark navy work jacket. Intimidating, but you can trust him with your life.
+```
+
+### 5. 2-1 の背景
+
+昭和44年の町工場の中（2-1-8。6-A は同じ絵を古びた今の色に加工して使い回す）：背景の頭の後に
+
+```
+Inside a small Japanese machine workshop on a winter night in 1969, sepia tones. A single bare light bulb hangs over a worn wooden workbench with files, calipers and a few tiny brass gears. Old lathes and drilling machines driven by long leather belts from a ceiling shaft stand in the shadows; metal shavings on the concrete floor; a small kerosene stove glowing orange; snow visible through a frosted window. Humble, hardworking, quiet.
+Eye-level camera, the workbench and the bare bulb in the center.
+```
+
+昭和44年の雪の町工場の路地（2-1 の会話）：背景の頭の後に
+
+```
+A narrow alley in a small factory district of a Japanese town at snowy winter dusk in 1969, sepia tones with soft white snow. Small wooden machine workshops with sliding doors and warm lit windows on both sides, utility poles and sagging wires, a public bathhouse chimney with steam in the distance, snow piled at the edges of the alley.
+Eye-level camera, the alley running straight into the distance.
+```
+
+### 6. 地図：2-1 の雪の町工場の路地
+
+地図の頭の後に（場所は脚本の区画の並び：入口 → 銭湯の前の長いす → 工場の門 → 工場の中の旋盤）
+
+```
+Scene: a small factory district of a Japanese town at snowy winter dusk in 1969, sepia-tinted retro colors with white snow.
+Layout from bottom to top:
+- Bottom center: the entrance of a narrow alley.
+- Narrow alleys winding upward between small wooden machine workshops with sliding doors and warm lit windows, with one or two short side alleys.
+- Around the middle: a public bathhouse with steam rising and a long wooden bench in front of it, a small open space.
+- Upper part: a small factory gate.
+- Top: the inside of a small workshop seen from above with its roof removed, with a large old lathe in an open space in front of it.
+- Utility poles, snow piles, barrels and stacked wood along the edges.
+```
+
+### 7. 1枚絵：親方の背中（2-1-8）
+
+写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に
+
+```
+Inside a small Japanese machine workshop on a snowy winter night in 1969, sepia tones with warm light from a single bare bulb. On the workbench, a tiny brass clock gear glints. An old master craftsman with a white towel around his head walks away toward the back of the workshop, his broad back to the viewer, his ears slightly red. In the foreground, an 18-year-old apprentice in an oil-stained work jacket bows deeply, his face hidden, tears falling (keep their designs as in the attached portraits). Lathes and belts in the shadows, snow visible through the window.
+```
+
+### 8. 2-2・2-3 の人たち（立ち絵）
+
+こうじ（今。40歳。パン屋）：立ち絵の頭（`<表情>` は `a kind, slightly self-deprecating smile`）の後に
+
+```
+Character: Koji, a 40-year-old Japanese bakery owner on a shopping street in a quiet regional town. A gentle, good-natured face, slightly tired eyes, short neat black hair, a white baker's coat and a white baker's cap. Friendly to everyone, but always puts himself down.
+```
+
+けんた（今。37歳。楽器店）：立ち絵の頭（`<表情>` は `a relaxed, easygoing grin`）の後に
+
+```
+Character: Kenta, a 37-year-old Japanese man who runs a small musical instrument shop on a shopping street. Slightly messy medium-length dark-brown hair, light stubble, a casual dark T-shirt under a canvas shop apron. A laid-back, chatty former high school band frontman who gave up music long ago.
+```
+
+写しのけんた（平成18年。17歳）：けんたの立ち絵も添付。立ち絵の頭（`<表情>` は `a bright, cocky grin full of energy`）の後に
+
+```
+Character: young Kenta, the same man as the attached adult portrait but 20 years earlier: a 17-year-old Japanese high school boy at his school festival in autumn 2006, the singer and guitarist of a three-piece band. Keep the same face features so he is clearly the same person. Spiky dark-brown hair, a black gakuran school uniform worn open over a white T-shirt.
+```
+
+写しのこうじ（平成10年。12歳）：こうじの立ち絵も添付。立ち絵の頭（`<表情>` は `a nervous, unsure face, biting his lip`）の後に
+
+```
+Character: young Koji, the same man as the attached adult portrait but 28 years earlier: a 12-year-old boy on a little league baseball team in the summer of 1998, always on the bench. Keep the same face features so he is clearly the same person. Short black hair, a slightly dirty white baseball uniform with navy trim that is a little too big for him, a baseball cap. No letters or numbers on the uniform or cap.
+```
+
+写しのまさる（平成10年。40代。こうじの父）：こうじの立ち絵も添付。立ち絵の頭（`<表情>` は `a big, warm, proud smile`）の後に
+
+```
+Character: Masaru, Koji's father, a Japanese man in his 40s in the summer of 1998, a cheerful working dad watching his son's little league game. A face that resembles the attached portrait (his son as an adult), sun-tanned skin, short black hair, a faded polo shirt with a towel around his neck. No letters or logos.
+```
+
+### 9. 2-2・2-3 と日常の背景
+
+パン屋の店内（7-A、8-B）：背景の頭の後に
+
+```
+Inside a small, warm family bakery on a shopping street in a quiet Japanese regional town, late afternoon. Wooden shelves and baskets of freshly baked bread, a glass display case, a small counter with an old cash register, an oven glowing in the back kitchen visible through a doorway, warm orange light through the front window.
+Eye-level camera, looking from the entrance toward the counter.
+```
+
+楽器店の店内（6-A、7-A。夜は色の加工）：背景の頭の後に
+
+```
+Inside a small, slightly cluttered musical instrument shop on a shopping street in a quiet Japanese regional town, at dusk. Electric and acoustic guitars hanging on the wall, a few amplifiers, a drum kit in the corner, racks of sheet music books with blank covers, a worn counter with guitar strings and picks. Warm light, a little dusty and nostalgic.
+Eye-level camera, the guitar wall in the center.
+```
+
+体育館のステージ（2-2 の会話。平成18年の文化祭）：背景の頭の後に
+
+```
+A Japanese high school gymnasium decorated for the school festival on a bright autumn afternoon in 2006, bright pastel and light blue tones. A stage with curtains pulled open, amplifiers, a drum kit and microphone stands set up for a band, paper flower decorations and blank banners, rows of folding chairs on the gym floor, sunlight through the high windows.
+Eye-level camera from the middle of the gym, the stage in the center.
+```
+
+河川敷のグラウンド（2-3 の会話。平成10年の夏。今の場面は色の加工で使い回す）：背景の頭の後に
+
+```
+A riverside little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer sky and light blue tones. A dirt diamond, a tall backstop net, a simple wooden scoreboard with blank panels, a grassy embankment where families sit, a small white concession tent, the river and an iron bridge in the distance, cumulonimbus clouds.
+Eye-level camera from behind home plate, looking toward the outfield.
+```
+
+### 10. 地図：2-2 の文化祭の高校、2-3 の河川敷のグラウンド
+
+2-2（入口の校門のアーチ → 模擬店の中庭 → 音楽室の前の廊下 → 体育館のステージ）：地図の頭の後に
+
+```
+Scene: a Japanese high school during its school festival on a bright autumn afternoon in 2006, bright pastel and light blue colors.
+Layout from bottom to top:
+- Bottom center: the school gate with a decorated festival arch (blank, no letters).
+- A wide path leading up into a courtyard lined with festival stalls with tents and tables.
+- Around the middle: the courtyard with a few benches and a tree in the center.
+- Upper part: a long open-air corridor along a school building, with the music room at one side.
+- Top: the entrance of the gymnasium with its stage area visible inside (roof removed).
+- Flower beds, bicycles in racks, and fences along the edges.
+```
+
+2-3（土手の入口 → ベンチの裏の木陰 → 売店のテント → ホームベース）：地図の頭の後に
+
+```
+Scene: a riverside little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+Layout from bottom to top:
+- Bottom center: a path coming down the grassy embankment from the levee road.
+- A dirt path along the embankment, with a team bench and a big shady tree behind it.
+- Around the middle: a small white concession tent with a few folding tables.
+- Top: the baseball diamond with home plate and a tall backstop net, an open dirt space in front of home plate.
+- The river along one side, tall summer grass, a few bicycles parked on the embankment.
+```
+
+### 11. 1枚絵：代打の一打（2-3）、弦が切れても歌うステージ（2-2）
+
+代打の一打（写しのこうじと写しのまさるの立ち絵を添付）：1枚絵の頭の後に
+
+```
+A riverside little league baseball field on a bright summer afternoon in 1998, bright pastel summer colors. The last inning, two outs. A 12-year-old pinch hitter in a slightly oversized white uniform swings the bat with all his strength, his arms trembling, his eyes shut tight, the ball just leaving the bat. Behind the backstop, his father in a polo shirt with a towel around his neck jumps up from the bench, shouting with joy (keep their designs as in the attached portraits). Teammates leaning out of the dugout, cumulonimbus clouds, sparkling light. No letters or numbers on uniforms or the scoreboard.
+```
+
+弦が切れても歌うステージ（写しのけんたの立ち絵を添付）：1枚絵の頭の後に
+
+```
+A packed Japanese high school gymnasium during the school festival in autumn 2006. On the stage, a 17-year-old boy in an open black gakuran (keep his design as in the attached portrait) keeps singing into the microphone with his eyes closed, holding his electric guitar with one broken string curling loose. Behind him a girl on bass and a boy on drums smile and keep the rhythm. The audience claps along with raised hands, colorful stage lights and dust sparkling in the beams.
+```
+
+### 12. 1-2 の残り
+
+昭和の商店街（1-2 の会話。夕焼け）：背景の頭の後に
+
+```
+A small covered shopping arcade street in a Japanese regional town in the summer of 1988, at sunset. Old storefronts line both sides: a greengrocer with wooden fruit crates, a tiny candy shop (dagashi-ya) with a wooden bench in front, an electronics shop with old CRT televisions in the window, a tobacco stand with a red public telephone, and a small clock shop with a warmly lit window. Faded cloth awnings; at the far end the arcade opens onto a gentle downhill slope glowing in golden evening light. Warm, slightly faded sepia-like colors, like an old photograph.
+Eye-level camera, the street centered.
+```
+
+時計屋の店内（昼。3-B、4-A）：店内の絵（`bg.clock_shop`）を添付。背景の頭の後に
+
+```
+The same old watch and clock shop as the attached image, but at noon on a bright summer day. Soft white daylight through the front glass door and windows, the wall clocks and the glass display counter in clear, natural colors, a calm and cozy everyday atmosphere instead of the dusk mood.
+Eye-level camera, the same angle as the attached image.
+```
+
+川沿いの帰り道（4-A。あかり3）：背景の頭の後に
+
+```
+A quiet path along a small river in a Japanese regional town at summer dusk. A low concrete embankment with summer grass, a narrow paved path, an old iron railing, a small bridge in the distance, the river reflecting the orange and indigo sky, dragonflies.
+Eye-level camera, the path leading into the distance.
+```
+
+地図：1-2 の昭和の商店街（入口 → 駄菓子屋の前 → 時計屋の前 → 出口の坂）：地図の頭の後に
+
+```
+Scene: a small covered shopping arcade street in a Japanese regional town in the summer of 1988, at sunset, in warm sepia-tinted retro colors.
+Layout from bottom to top:
+- Bottom center: the arcade entrance.
+- A wide straight arcade street running up the middle of the image, with two or three narrow side alleys branching left and right.
+- Storefronts along both sides: a greengrocer with fruit crates, a small candy shop with a wooden bench in front, an electronics shop with old CRT TVs, a tobacco stand with a red public phone, and a small clock shop with a lit window.
+- Top: the arcade exit, opening onto a gentle downhill slope.
+```
+
+1枚絵：夕焼けの二人乗り（1-2-9。1章の山場）：写しのふみ・写しのきよしの立ち絵を添付。1枚絵の頭の後に
+
+```
+A small Japanese shopping arcade street in the summer of 1988 at sunset, in warm, slightly faded sepia-like colors, the street opening onto a gentle downhill slope bathed in golden evening light. A middle-aged man pedals an old black utility bicycle down the slope, turning his head slightly back with a shy, awkward smile; his wife sits sideways on the rear rack, holding onto his back, laughing with teary eyes (keep their designs as in the attached reference portraits). Shopkeepers wave from the storefronts behind them, welcoming her home. Long shadows, warm backlight.
+```
+
+### 13. 敵の `Body:` の文（敵の絵の共通部分に入れる）
+
+| 区画 | 敵 | 時代の色 | `Body:` |
+| --- | --- | --- | --- |
+| 1-2 | ブリキノイズ | 昭和 | `a broken tin toy robot tangled with wind-up springs and keys, heavy and stiff` |
+| 1-2 | 黒電話ノイズ | 昭和 | `an old black rotary telephone tangled in its own coiled cords like tentacles, the bell ringing nonstop` |
+| 1-2 | ラムネノイズ | 昭和 | `a swarm of glass ramune soda bottles with marbles rattling inside, quick and jittery` |
+| 1-2 | めんこノイズ | 昭和 | `a whirling flock of old paper menko cards and spinning beigoma tops (blank cards, no letters)` |
+| 1-2 | 自転車のぬし（ボス） | 昭和 | `a swirling tangle of several old bicycles, wheels and bells knotted together by noise, a faint shadow of a rear carrier seat at its center` |
+| 2-1 | 歯車ノイズ | 昭和 | `a lump of gears and mainsprings grinding against each other without meshing, charging forward` |
+| 2-1 | ネジノイズ | 昭和 | `a fast swarm of screws, nuts and bolts` |
+| 2-1 | 真空管ノイズ | 昭和 | `an old vacuum-tube radio collapsing into noise, glowing tubes crackling with electricity` |
+| 2-1 | そろばんノイズ | 昭和 | `a wooden abacus whose beads fly apart and float around it like a shield` |
+| 2-1 | 旋盤のぬし（ボス） | 昭和 | `a vortex of an old lathe, leather belts and metal shavings, a tool post like a blade, a small glowing brass gear at its center` |
+| 2-2 | ガラケーノイズ | 平成 | `a flock of old flip phones with antennas, screens flashing and ringing` |
+| 2-2 | ラジカセノイズ | 平成 | `a boombox with cassette tapes unspooling around it like ribbons, speakers blasting` |
+| 2-2 | メトロノームノイズ | 平成 | `a wooden metronome whose pendulum swings so fast it blurs` |
+| 2-2 | 写真シールノイズ | 平成 | `a swarm of small photo stickers peeling off and fluttering, decorated with sparkles and hearts (no faces, no letters)` |
+| 2-2 | アンプのぬし（ボス） | 平成 | `a tower of guitar amplifiers and speakers wrapped in tangled cables, one broken guitar string whipping around` |
+| 2-3 | ボールノイズ | 平成 | `a fast swarm of baseballs with red stitches` |
+| 2-3 | メガホンノイズ | 平成 | `a cluster of plastic cheering megaphones whose cheers have turned into angry roars` |
+| 2-3 | 水筒ノイズ | 平成 | `a big sports water jug and ice water splashing around it` |
+| 2-3 | 電子ペットノイズ | 平成 | `a small egg-shaped handheld digital pet toy with a tiny pixel creature on its screen (no logos)` |
+| 2-3 | スコアボードのぬし（ボス） | 平成 | `a giant made of a wooden scoreboard, a backstop net and hundreds of megaphones, its score panels spinning endlessly (blank panels, no numbers)` |
+
+### 14. 表情違い（Gemini）
+
+基本の1枚を見本に渡し、次の頭の文の `<その人の見た目>` と `<表情>` を替えて送る（あかり・りくと同じ作り方）。1回に1つの表情。
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, <その人の見た目>, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no tears unless stated, no text, no effects.
+Expression: <表情>
+```
+
+`<その人の見た目>` の例：みお `bright light-brown short hair with one tiny side tuft tied by an orange hair tie, sunny-yellow T-shirt, childlike proportions`／カイ `short black hair with one blue-green streak, pale-gold eyes, open white long coat with thin blue-green lines over a black high-neck inner`／ノア `silver short bob with a blue-green tint, blue-green eyes, white high-collared coat with blue-green lines, hourglass collar clasp`／ふみ `thin white hair in a low bun, deep wrinkles, beige knitted cardigan`
+
+| 表情 | `<表情>` | 使う人（`docs/script/M2.md` の 5.・12.） |
+| --- | --- | --- |
+| 通常 | `relaxed and natural, mouth closed` | みお、カイ、ふみ、いさむ、写しのいさむ、写しのきよし、こうじ、写しのこうじ |
+| 笑顔 | `a bright, warm smile with the mouth slightly open` | みお、ふみ、いさむ、こうじ、けんた、写しのけんた |
+| 大笑い | `laughing happily with the mouth wide open, eyes closed` | みお、けんた |
+| 驚き | `surprised, eyes wide open, mouth slightly open` | みお、ふみ、写しのふみ、写しのいさむ、こうじ、写しのけんた、写しのこうじ |
+| むっ | `pouting, cheeks puffed, frowning a little` | みお |
+| 真剣 | `serious and focused, mouth firmly closed, brows set, eyes steady and determined` | みお、カイ、写しのいさむ |
+| 泣き笑い | `smiling through tears, eyes wet and slightly narrowed, a trembling smile` | みお、ふみ、写しのふみ、いさむ、写しのいさむ、けんた、写しのけんた、写しのこうじ、あかり |
+| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しのふみ、写しのきよし、けんた |
+| 考える | `thoughtful, eyes looking up and aside, mouth slightly pursed` | みお、ふみ、いさむ、こうじ、けんた、あかり |
+| 心配 | `gently worried, eyebrows raised in a troubled way, mouth slightly open` | みお |
+| 悔しい | `frustrated and regretful, biting the lip, brows drawn together, eyes glistening` | みお、ハルト |
+| 困り笑い | `a troubled smile, eyebrows raised in a worried way, a small awkward smile` | みお |
+| さみしげ | `quietly lonely, a faint sad smile, eyes looking down` | ふみ、いさむ、こうじ、けんた |
+| 苦笑い | `a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled` | こうじ、けんた |
+| 余裕 | `a relaxed, arrogant smirk, eyes half-lidded` | カイ |
+| 見下す | `looking down on someone with cold, narrowed eyes, chin slightly raised, a faint sneer` | カイ |
+| 悲しい | `sad and quiet, eyes looking down, mouth closed, brows slightly lowered` | ノア |
+| 怒り | `angry, brows sharply drawn together, teeth clenched, eyes blazing` | ハルト |
+
+（ハルト・あかりは 5-2 の頭の文を使う。表情の名前は台本の〔 〕と同じにする）
+
 ## 6. 音
 
 BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各サイトの規約を調べた（公式ページを読めたものは「公式」、読めなかったものは解説サイトから）。
