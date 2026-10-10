@@ -2,7 +2,7 @@
 // 台詞を直す時は、脚本とこの台本の両方を直す。書き方の決まりは src/core/script.ts の頭、使える人・背景・音は dialogue.ts。
 import { parseScript } from '../core/script';
 
-// 屋台めぐりは日常の画面（段階24。data/daily.ts）、射的・金魚すくいは @game。探索・戦闘（段階25〜）は、まだないので @note の仮の案内で代わりに進める
+// 屋台めぐりは日常の画面（段階24。data/daily.ts）、射的・金魚すくいは @game。探索と戦闘は区画（data/areas.ts）で、途中の会話は区画のきっかけから出す
 
 export const SCRIPT_M1 = `
 # prologue_open プロローグ：参道の入口
@@ -455,7 +455,6 @@ export const SCRIPT_M1 = `
 ハルト〔驚き〕「なんだ、これ……！」
 あかり〔驚き〕「わたしのも……髪留めが」
 ハルト〔決意〕「……考えるのは後だ。来るぞ！」
-@note ここで最初の戦闘（段階25〜27で、探索と戦闘につなぐ）
 
 # a11_first_koma 1-1：最初のコマ
 @bg festival
@@ -505,7 +504,6 @@ export const SCRIPT_M1 = `
 @cast ハルト あかり
 あかり〔心配〕「あの中……一番大事なところ、抱えこんでる」
 ハルト〔決意〕「……返してもらう」
-@note ここでボス戦（段階27）
 
 # a11_last_koma 1-1：最後のコマ
 @bg festival
