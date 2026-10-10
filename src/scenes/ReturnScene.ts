@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import type { AreaDef } from '../core';
 import { addFragments, komaExtra } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { playSe } from '../audio/sound';
-import { AREAS, FRAGMENTS, SE } from '../data';
+import { playSandRise } from '../audio/sound';
+import { AREAS, FRAGMENTS } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { describeFragment } from '../ui/weaponText';
 import { addButton, addText } from '../ui/widgets';
@@ -89,7 +89,7 @@ export class ReturnScene extends Phaser.Scene {
   private giveBack(): void {
     if (this.busy) return;
     this.busy = true;
-    playSe(this, SE.heal);
+    playSandRise(this);
     const frames = this.root.list.filter((o) => o.name === 'koma') as Phaser.GameObjects.Rectangle[];
     frames.forEach((f, i) => {
       // 砂粒
