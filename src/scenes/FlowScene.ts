@@ -4,7 +4,7 @@ import type { FlowEvent } from '../core';
 import { chapterOfEvent, dialogueRun } from '../core';
 import { SLICE_FLOW } from '../data';
 import { applyKinsoku } from '../ui/kinsoku';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { stopAmbience } from '../audio/sound';
 import type { DialogueData } from './DialogueScene';
@@ -19,6 +19,8 @@ import { notePlayEvent, setPlayTracking } from './playRecord';
 export interface FlowData {
   /** 今の出来事を終えた（次の出来事へ進める） */
   done: boolean;
+  /** タイトルから来た（段階32b 調整5。暗転して来るので、会話の画面を明転で始める） */
+  fromTitle?: boolean;
 }
 
 /** 仮の画面の見出し */
@@ -41,7 +43,7 @@ export class FlowScene extends Phaser.Scene {
     if (!data?.done) notePlayEvent(event.id);
     switch (event.kind) {
       case 'dialogue':
-        this.openDialogue(event);
+        this.openDialogue(event, data?.fromTitle ?? false);
         return;
       case 'day':
         this.showDay(event);
@@ -72,13 +74,14 @@ export class FlowScene extends Phaser.Scene {
   }
 
   /** 会話の出来事が続く所までを、会話の画面1回で続けて読む。場面を読み始めるたびに、今の出来事を覚えてセーブする */
-  private openDialogue(event: FlowEvent): void {
+  private openDialogue(event: FlowEvent, fadeIn: boolean): void {
     const [first, ...queue] = dialogueRun(SLICE_FLOW, event.id);
     const data: DialogueData = {
       scene: first,
       queue,
       vars: run.vars,
       seed: run.seed,
+      fadeInMs: fadeIn ? TITLE_EXIT.dialogueFadeInMs : 0,
       next: { key: 'Flow', data: { done: true } },
       onScene: (id) => setEvent(id),
       onVars: (vars) => setStoryVars(vars),
