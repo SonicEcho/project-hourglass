@@ -145,15 +145,17 @@ export interface Backdrop {
   /** 絵に重ねる色（同じ絵を夜などに使い回す時） */
   tint?: number;
   ambient?: Ambient;
+  /** 出ている間、小さく鳴り続ける環境音（効果音の台帳の id。段階32b 調整3） */
+  ambienceSe?: string;
 }
 
 export const BACKDROPS: Record<string, Backdrop> = {
   black: { title: '黒', top: 0x000000, bottom: 0x000000 },
   white: { title: '白', top: 0xf4f4f0, bottom: 0xdcdcd6 },
   shrine_approach: { title: '夕暮れの神社の参道', top: 0x3a3060, bottom: 0xd07a4a, image: 'bg.shrine_approach', ambient: 'lanterns' },
-  shrine_stalls: { title: '参道（屋台の並び）', top: 0x2e2a58, bottom: 0xc0603a, image: 'bg.shrine_approach', ambient: 'lanterns' },
-  goldfish_stall: { title: '金魚すくいの屋台', top: 0x2a3a60, bottom: 0x3a8ab0, ambient: 'lanterns' },
-  shooting_stall: { title: '射的の屋台', top: 0x3a2a50, bottom: 0xb05a3a, ambient: 'lanterns' },
+  shrine_stalls: { title: '参道（屋台の並び）', top: 0x2e2a58, bottom: 0xc0603a, image: 'bg.shrine_approach', ambient: 'lanterns', ambienceSe: SE.crowd },
+  goldfish_stall: { title: '金魚すくいの屋台', top: 0x2a3a60, bottom: 0x3a8ab0, ambient: 'lanterns', ambienceSe: SE.crowd },
+  shooting_stall: { title: '射的の屋台', top: 0x3a2a50, bottom: 0xb05a3a, ambient: 'lanterns', ambienceSe: SE.crowd },
   shrine_steps: { title: '神社の石段の上', top: 0x1a1e40, bottom: 0x6a4a6a, ambient: 'stars' },
   shrine_hill: { title: '神社の裏の高台（夜）', top: 0x0a0e24, bottom: 0x2a2a50, ambient: 'stars' },
   home_kitchen: { title: '施設の台所（朝）', top: 0xf0e2c0, bottom: 0xb8a080 },
@@ -289,4 +291,7 @@ export const NARRATION_SAND_COLOR = 0xb08a3a;
  * 会話の途中で背景の絵が替わった時に、文字の窓と立ち絵を下げて、背景だけを見せる長さ（ミリ秒。段階32b）。
  * タップで先へ進める。同じ絵は、ゲームを開いている間は最初の1回だけ見せる（探索の途中の短い会話で毎回止まらないように）
  */
-export const BG_VIEW_MS = 2500;
+export const BG_VIEW_MS = 2000;
+
+/** 背景だけを見せる長さを、絵ごとに変える（初めて来るレストピアの図書館は、ゆっくり見せる。段階32b 調整3） */
+export const BG_VIEW_MS_BY_IMAGE: Record<string, number> = { 'bg.library': 3500 };

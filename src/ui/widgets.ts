@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, FONT, FONT_HEADING, MOTION, RENDER_SCALE, SKIN } from './theme';
+import { COLORS, FONT, FONT_HAND, FONT_HEADING, MOTION, RENDER_SCALE, SKIN } from './theme';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
 // 角の丸い四角をなめらかに描く置き換え（skin.ts）を、どの画面よりも先に入れる
@@ -14,14 +14,16 @@ export interface TextStyle {
   bold?: boolean;
   align?: 'left' | 'center' | 'right';
   wrap?: number;
+  /** 子どもの手書き風の書体で出す（けいかくひょう。段階32b 調整3） */
+  hand?: boolean;
 }
 
 export function addText(scene: Phaser.Scene, x: number, y: number, text: string, style: TextStyle = {}): Phaser.GameObjects.Text {
   const t = scene.add.text(x, y, text, {
-    fontFamily: style.bold ? FONT_HEADING : FONT,
+    fontFamily: style.hand ? FONT_HAND : style.bold ? FONT_HEADING : FONT,
     fontSize: `${style.size ?? 14}px`,
     color: style.color ?? COLORS.text,
-    fontStyle: style.bold ? 'bold' : 'normal',
+    fontStyle: style.bold && !style.hand ? 'bold' : 'normal',
     align: style.align ?? 'left',
     wordWrap: style.wrap ? { width: style.wrap, useAdvancedWrap: true } : undefined,
   });

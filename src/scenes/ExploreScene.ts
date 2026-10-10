@@ -6,6 +6,7 @@ import {
   addKoma,
   areaGrid,
   arrive,
+  bossReady,
   chestAt,
   defeatEnemy,
   enemyActive,
@@ -24,7 +25,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { playBgm, playSe } from '../audio/sound';
+import { playBgm, playSe, stopAmbience } from '../audio/sound';
 import { AREA_BATTLES, AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -32,7 +33,7 @@ import { addButton, addText } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { run, setExplore, setHubReturn, setStoryVars, storyLineup, storyLinkGauge } from './run';
+import { currentParty, run, setExplore, setHubReturn, setStoryVars, storyLineup, storyLinkGauge } from './run';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -84,6 +85,8 @@ export class ExploreScene extends Phaser.Scene {
   private messageTimer?: Phaser.Time.TimerEvent;
   /** チェックポイントに立っている時だけ出す、育成の画面への入口（段階26） */
   private hubButton!: Phaser.GameObjects.Container;
+  /** 下の帯の、仲間の今の HP・MP（段階32b 調整3） */
+  private vitalsText!: Phaser.GameObjects.Text;
 
   constructor() {
     super('Explore');
@@ -94,6 +97,7 @@ export class ExploreScene extends Phaser.Scene {
     if (!area) throw new Error(`unknown area ${data.area}`);
     this.area = area;
     this.map = areaGrid(area);
+    stopAmbience();
     this.route = [];
     this.nextCell = null;
     this.walking = false;
@@ -233,10 +237,17 @@ export class ExploreScene extends Phaser.Scene {
     if (!this.state.cleared) {
       const [bc, br] = area.boss.cell;
       const boss = this.add.container(bc * T + T / 2, br * T + T / 2);
-      boss.add(this.add.circle(0, 0, T * 0.75, 0x8a4fbf).setStrokeStyle(2, 0xffffff));
-      boss.add(addText(this, 0, 0, 'ぬし', { size: 13, bold: true }).setOrigin(0.5));
+      // コマがそろうまでは眠っている（暗く、ゆっくり息をする。段階32b 調整3）
+      const awake = this.bossReady();
+      boss.add(this.add.circle(0, 0, T * 0.75, awake ? 0x8a4fbf : 0x4a3a60).setStrokeStyle(2, awake ? 0xffffff : 0x8a80a0));
+      boss.add(addText(this, 0, 0, 'ぬし', { size: 13, bold: true, color: awake ? COLORS.text : COLORS.subText }).setOrigin(0.5));
+      if (!awake) {
+        const z = addText(this, T * 0.6, -T * 0.8, 'z z', { size: 12, bold: true, color: COLORS.subText }).setOrigin(0.5);
+        boss.add(z);
+        this.tweens.add({ targets: z, y: z.y - 6, alpha: 0.3, yoyo: true, repeat: -1, duration: 1200 });
+      }
       world.add(boss);
-      this.tweens.add({ targets: boss, scale: 1.1, yoyo: true, repeat: -1, duration: 800 });
+      this.tweens.add({ targets: boss, scale: awake ? 1.1 : 1.04, yoyo: true, repeat: -1, duration: awake ? 800 : 1600 });
     }
     // タップした所の印
     this.marker = this.add.circle(0, 0, 6, 0xffd84a, 0.8).setVisible(false);
@@ -308,6 +319,11 @@ export class ExploreScene extends Phaser.Scene {
     this.hubButton = this.add.container(0, 0);
     ui.add(this.hubButton);
     this.updateHubButton();
+    // 仲間の今の HP・MP（区画の中では戦闘をまたいで持ち越す。段階32b 調整3）
+    ui.add(this.add.rectangle(0, GAME_HEIGHT - 26, GAME_WIDTH, 26, 0x000000, 0.55).setOrigin(0));
+    this.vitalsText = addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 13, '', { size: 12 }).setOrigin(0.5);
+    ui.add(this.vitalsText);
+    this.refreshVitals();
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.length > 0 || this.leaving) return;
@@ -397,7 +413,8 @@ export class ExploreScene extends Phaser.Scene {
     this.state = r.state;
     if (r.event.type === 'checkpoint') {
       playSe(this, SE.heal);
-      this.say(`チェックポイント：ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
+      this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
+      if (r.event.healed) this.refreshVitals();
     }
     setExplore(this.state);
     if (r.event.type === 'checkpoint') {
@@ -408,7 +425,7 @@ export class ExploreScene extends Phaser.Scene {
       } else this.showTip(true);
     }
     // ボスの隣まで来たら
-    if (!this.state.cleared && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk') {
+    if (!this.state.cleared && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk' && (this.bossReady() || this.goal?.kind === 'boss')) {
       this.route = [];
       this.goal = { kind: 'boss' };
     }
@@ -427,9 +444,37 @@ export class ExploreScene extends Phaser.Scene {
       this.openChestNow(goal.id);
       return;
     }
+    if (!this.bossReady()) {
+      // コマがそろうまでは戦えない（雑魚を飛ばしてボスに勝ち、コマが足りないまま区画を出ないように。段階32b 調整3）
+      const need = komaLeft(this.area, this.state) - this.bossKoma();
+      this.say(`ぬしは、まだ眠っている。先にほかの砂嵐からコマを集めよう（あと${need}つ）`);
+      return;
+    }
     const t = pendingTrigger(this.area, this.state, 'boss');
     if (t) this.openTrigger(t);
     else this.startBattle(this.area.boss.battle, this.area.boss.id);
+  }
+
+  /** 下の帯の、仲間の今の HP・MP（全回復の時は薄い色） */
+  private refreshVitals(): void {
+    const vitals = this.state.vitals;
+    const line = currentParty(storyLineup())
+      .map((c) => {
+        const v = vitals?.[c.id];
+        return `${c.name} HP ${Math.min(v?.hp ?? c.stats.hp, c.stats.hp)}/${c.stats.hp}  MP ${Math.min(v?.mp ?? c.stats.mp, c.stats.mp)}/${c.stats.mp}`;
+      })
+      .join('　');
+    this.vitalsText.setText(line).setColor(vitals ? COLORS.text : COLORS.subText);
+  }
+
+  /** ボスが抱えているコマの数 */
+  private bossKoma(): number {
+    return AREA_BATTLES[this.area.boss.battle]?.koma ?? 0;
+  }
+
+  /** ボスに挑めるか（ボスのコマを足せば返せる数になっている） */
+  private bossReady(): boolean {
+    return bossReady(this.area, this.state, this.bossKoma());
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */

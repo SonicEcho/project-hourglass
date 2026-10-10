@@ -5,10 +5,12 @@ import {
   areaGrid,
   findPath,
   isWalkable,
+  keepVitals,
   komaExtra,
   komaLeft,
   komaVars,
   arrive,
+  bossReady,
   chestAt,
   checkArea,
   defeatEnemy,
@@ -88,8 +90,8 @@ describe('探索（段階25）', () => {
 
   it('チェックポイントで記録し、負けるとそこへ戻る', () => {
     const r = arrive(area, startExplore(area), [3, 3]);
-    expect(r.event).toEqual({ type: 'checkpoint', first: true });
-    expect(arrive(area, r.state, [3, 3]).event).toEqual({ type: 'checkpoint', first: false });
+    expect(r.event).toEqual({ type: 'checkpoint', first: true, healed: false });
+    expect(arrive(area, r.state, [3, 3]).event).toEqual({ type: 'checkpoint', first: false, healed: false });
     const away = { ...r.state, cell: [1, 1] as [number, number] };
     expect(loseBattle(away).cell).toEqual([3, 3]);
     // 記録する前に負けたら出発点へ
@@ -133,6 +135,34 @@ describe('探索（段階25）', () => {
     expect(normalizeExplore(area, { ...s, koma: -1 })?.koma).toBe(0);
   });
 
+  it('ボスは、ボスのコマを足せば返せる数になるまで戦えない（段階32b 調整3）', () => {
+    // area は返すのに5つ。ボスが2つ抱えているなら、3つ集めるまで眠っている
+    let s = startExplore(area);
+    expect(bossReady(area, s, 2)).toBe(false);
+    s = addKoma(s, 2);
+    expect(bossReady(area, s, 2)).toBe(false);
+    s = addKoma(s, 1);
+    expect(bossReady(area, s, 2)).toBe(true);
+    expect(bossReady(area, startExplore(area), 5)).toBe(true);
+  });
+
+  it('HP・MP：勝った後は持ち越し、チェックポイントに着くと全回復、負けても全回復（段階32b 調整3）', () => {
+    const vitals = { hero: { hp: 40, mp: 3 } };
+    let s = keepVitals(startExplore(area), vitals);
+    expect(s.vitals).toEqual(vitals);
+    // 覚えた値は、渡した物と切り離す
+    vitals.hero.hp = 1;
+    expect(s.vitals?.hero.hp).toBe(40);
+    expect(loseBattle(s).vitals).toBeUndefined();
+    const r = arrive(area, s, [3, 3]);
+    expect(r.event).toEqual({ type: 'checkpoint', first: true, healed: true });
+    expect(r.state.vitals).toBeUndefined();
+    expect(arrive(area, r.state, [3, 3]).event).toEqual({ type: 'checkpoint', first: false, healed: false });
+    // 歩くだけでは変わらない
+    s = keepVitals(s, { hero: { hp: 40, mp: 3 } });
+    expect(arrive(area, s, [3, 4]).state.vitals).toEqual({ hero: { hp: 40, mp: 3 } });
+  });
+
   it('セーブから読んだ状態を、今の区画に合わせて整える', () => {
     const raw = { area: 't', cell: [0, 0], checkpoint: [3, 3], openedChests: ['c1', 'gone'], defeated: ['e1', 'x'], seen: ['first', 'y'], cleared: true, koma: 3 };
     expect(normalizeExplore(area, raw)).toEqual({
@@ -146,6 +176,9 @@ describe('探索（段階25）', () => {
       koma: 3,
     });
     expect(normalizeExplore(area, 'x')).toBeNull();
+    // HP・MP は形の合う仲間だけ残す（なければ全回復）
+    expect(normalizeExplore(area, { ...raw, vitals: { hero: { hp: 30, mp: 2 }, bad: { hp: 'x' } } })?.vitals).toEqual({ hero: { hp: 30, mp: 2 } });
+    expect(normalizeExplore(area, { ...raw, vitals: { bad: 1 } })?.vitals).toBeUndefined();
   });
 
   it('区画の書き間違いを見つける', () => {

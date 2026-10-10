@@ -32,7 +32,7 @@
 | `src/tools/` | 開発用の道具の処理（データの一覧表を作る `dataTables.ts`） |
 | `src/debug/` | デバッグメニュー、戦闘ログ、チート、eruda、ビルド情報、通しの自動確認が画面を調べる窓口（`testHook.ts`。`?debug=1` の時だけ `window.__restopia`） |
 | `tests/` | Vitest のテスト（`tests/core/` がロジック） |
-| `scripts/` | 開発用の命令（`measure.mjs`、`data-tables.mjs`）と、立ち絵の背景を抜く `cutout.py`（Python。`pip install "rembg[cpu]"` が要る。アニメ向けの背景を抜く AI を使う）、見出しの書体を使う字だけに絞る `font-subset.py`（`pip install fonttools brotli`）、主な画面を撮る `screens.mjs`（段階32a） |
+| `scripts/` | 開発用の命令（`measure.mjs`、`data-tables.mjs`）と、立ち絵の背景を抜く `cutout.py`（Python。`pip install "rembg[cpu]"` が要る。アニメ向けの背景を抜く AI を使う）、見出しの書体と手書き風の書体を使う字だけに絞る `font-subset.py`（`pip install fonttools brotli`）、主な画面を撮る `screens.mjs`（段階32a） |
 | `docs/` | 文書（`docs/design/README.md` の一覧）。`docs/licenses/` は利用規約・ライセンス文の控え。`docs/data/` はデータの一覧表（自動で作る） |
 
 ## 3. 設計の原則
@@ -111,3 +111,4 @@
 - 2026-10-07 段階16：**エンジンは Phaser 3 を続ける**と決めた。開発者のスマホ（Pixel 5a）で、探索の試作が59fps以上を保ち、滑らかさ・会話の文字・操作の手触りとも「とても良かった」
 - 段階15：素材台帳の正は `src/data/assets.ts`（クレジットの画面とテストが同じものを読む）。配布物に入るライブラリ（Phaser、eruda）も台帳に載せる（MIT は売り物でも使えるが、著作権表示が要る）
 - 段階12：`npm run measure` は、TypeScript のまま読み込むため Vite の `runnerImport` を使う（道具を増やさない）
+- 2026-10-10 段階32b 調整3：屋台めぐりの「けいかくひょう」に、子どもの手書き風の書体 Hachi Maru Pop（SIL OFL）を足した（はちまるポップ・よもぎ・Zen Kurenaido を見比べ、一番子どもの字らしいものにした）。かな・英数字と `src/data/daily.ts` の字だけに絞って 56KB（`hand.woff2`。`addText` の `hand`）。見出しの書体と一緒に起動の画面で読み込む

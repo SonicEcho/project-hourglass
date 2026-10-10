@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, setSettings, stopBgm } from '../audio/sound';
+import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm } from '../audio/sound';
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
-import { BACKDROPS, BG_VIEW_MS, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -13,6 +13,8 @@ import { applyKinsoku } from '../ui/kinsoku';
 import { playMiniGame } from './miniGames';
 import { drawBackdrop } from '../ui/backdrop';
 import { addButton, addText } from '../ui/widgets';
+import { openOptions } from '../ui/options';
+import { fadeOutAndDestroy } from '../ui/skin';
 
 /** 文字送りの速さ（1文字あたりのミリ秒）。語りの文はゆっくり */
 const CHAR_MS = 35;
@@ -165,10 +167,12 @@ export class DialogueScene extends Phaser.Scene {
   private logLayer?: Phaser.GameObjects.Container;
   private skipButton!: Phaser.GameObjects.Rectangle;
   private autoButton!: Phaser.GameObjects.Rectangle;
-  private blipButton!: Phaser.GameObjects.Rectangle;
   private boxLine!: Phaser.GameObjects.Graphics;
-  private blipLabel!: Phaser.GameObjects.Text;
   private toast?: Phaser.GameObjects.Text;
+  /** 章の扉の題字（@logo）。次の文で消す */
+  private logoLayer?: Phaser.GameObjects.Container;
+  /** 題字の演出の途中（この時刻まではタップで先へ進めない） */
+  private logoReadyAt = 0;
   /** 今の背景の絵（台帳の id。絵のない背景は null） */
   private bgImage: string | null = null;
   /** 背景だけを見せている間、タップで早めに終える */
@@ -201,6 +205,8 @@ export class DialogueScene extends Phaser.Scene {
     this.actors.clear();
     this.cast = [];
     this.logLayer = undefined;
+    this.logoLayer = undefined;
+    this.logoReadyAt = 0;
 
     this.zoom = 1;
     this.monoFx = undefined;
@@ -261,9 +267,8 @@ export class DialogueScene extends Phaser.Scene {
     // 上のボタン
     const ui = this.add.container(0, 0).setDepth(50);
     addButton(this, ui, 42, 30, 70, 40, '戻る', { onTap: () => this.leave() }, { size: 13 });
-    this.blipButton = addButton(this, ui, 121, 30, 74, 40, '', { onTap: () => this.toggleBlip() }, { size: 12 });
-    this.blipLabel = ui.list[ui.list.length - 1] as Phaser.GameObjects.Text;
-    this.refreshBlipButton();
+    // 音量・文字の音・出力先は、オプションの窓で変える（段階32b 調整3。前は文字の音だけのボタンだった）
+    addButton(this, ui, 123, 30, 82, 40, 'オプション', { onTap: () => this.openOptions() }, { size: 12 });
     this.autoButton = addButton(this, ui, 200, 30, 70, 40, 'オート', { onTap: () => this.toggleAuto() }, { size: 13 });
     this.skipButton = addButton(this, ui, 276, 30, 70, 40, '早送り', { onTap: () => this.toggleSkip() }, { size: 13 });
     addButton(this, ui, 350, 30, 68, 40, 'ログ', { onTap: () => this.toggleLog() }, { size: 13 });
@@ -379,6 +384,14 @@ export class DialogueScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * 絵や人をゆっくり替えずに、すぐ替える時（早送りの間と、暗転している間）。
+   * 暗転している間にゆっくり替えると、明転した時に前の絵が一瞬見えるため（段階32b 調整3。プロローグの終わり → 章の扉）
+   */
+  private get instant(): boolean {
+    return this.skip || this.fadedOut;
+  }
+
   private delay(ms: number): Promise<void> {
     if (ms <= 0) return Promise.resolve();
     return new Promise((resolve) => this.time.delayedCall(ms, resolve));
@@ -411,6 +424,9 @@ export class DialogueScene extends Phaser.Scene {
       return;
     }
     this.bgImage = def.image ?? null;
+    // 屋台の並ぶ参道などは、人混みの音を小さく鳴らし続ける（段階32b 調整3。前は場面の途中で1回だけ鳴らしていた）
+    if (def.ambienceSe) startAmbience(this, def.ambienceSe);
+    else stopAmbience();
     const holder = this.add.container(0, 0);
     this.drawPicture(holder, def, 0, GAME_HEIGHT, id !== 'black' && id !== 'white' && id !== 'none');
     if (def.ambient) this.addAmbient(holder, def.ambient);
@@ -437,7 +453,7 @@ export class DialogueScene extends Phaser.Scene {
         this.viewDone = undefined;
         resolve();
       };
-      const timer = this.time.delayedCall(BG_VIEW_MS, finish);
+      const timer = this.time.delayedCall(BG_VIEW_MS_BY_IMAGE[image] ?? BG_VIEW_MS, finish);
       this.viewDone = finish;
     });
     this.restoreAfterView();
@@ -661,7 +677,7 @@ export class DialogueScene extends Phaser.Scene {
   private crossfade(layer: Phaser.GameObjects.Container, holder: Phaser.GameObjects.Container): void {
     const prev = [...layer.list];
     layer.add(holder);
-    if (this.skip || prev.length === 0) {
+    if (this.instant || prev.length === 0) {
       prev.forEach((o) => o.destroy());
       return;
     }
@@ -671,7 +687,7 @@ export class DialogueScene extends Phaser.Scene {
 
   /** 1枚絵（絵がなければ色と名前で仮に描く）。出している間は立ち絵を隠す */
   private setCg(id: string | null): void {
-    const ms = this.skip ? 0 : PICTURE_FADE_MS;
+    const ms = this.instant ? 0 : PICTURE_FADE_MS;
     this.tweens.killTweensOf(this.stage);
     if (id === null) {
       const prev = [...this.cgLayer.list];
@@ -698,7 +714,7 @@ export class DialogueScene extends Phaser.Scene {
 
   /** 画面に出す人を替える。前からいる人は表情をそのままにする */
   private setCast(names: string[]): void {
-    const ms = this.skip ? 0 : ACTOR_FADE_MS;
+    const ms = this.instant ? 0 : ACTOR_FADE_MS;
     for (const [name, actor] of this.actors) {
       if (!names.includes(name)) {
         this.actors.delete(name);
@@ -859,8 +875,12 @@ export class DialogueScene extends Phaser.Scene {
     this.shown = 0;
     this.typing?.remove();
     const style = line.style;
-    const isCaption = style === 'caption';
+    const isCaption = style === 'caption' || style === 'logo';
     this.setCaptionVisible(isCaption);
+    if (this.logoLayer) {
+      fadeOutAndDestroy(this, this.logoLayer);
+      this.logoLayer = undefined;
+    }
     this.voice =
       style === 'talk' ? (CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT)
       : style === 'voice' ? { ...(VOICE_ONLY[line.speaker ?? ''] ?? CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT), phone: line.tag === '電話' }
@@ -898,6 +918,12 @@ export class DialogueScene extends Phaser.Scene {
 
     this.history.push(style === 'talk' || style === 'voice' || style === 'document' ? `${name}「${text}」` : text);
 
+    if (style === 'logo') {
+      this.caption.setText('');
+      this.showLogo(text);
+      this.finishTyping();
+      return;
+    }
     if (isCaption) {
       this.caption.setText(text).setAlpha(0);
       this.tweens.add({ targets: this.caption, alpha: 1, duration: this.skip ? 50 : 600 });
@@ -954,16 +980,19 @@ export class DialogueScene extends Phaser.Scene {
     this.blipTimer?.remove();
     this.blipTimer = undefined;
     this.shown = this.wrapped.length;
-    if (this.line?.style !== 'caption') this.body.setText(this.wrapped);
-    this.cursor.setVisible(this.line?.style !== 'caption');
+    const big = this.line?.style === 'caption' || this.line?.style === 'logo';
+    if (!big) this.body.setText(this.wrapped);
+    this.cursor.setVisible(!big);
     this.waitTimer?.remove();
-    if (this.skip) this.waitTimer = this.time.delayedCall(SKIP_MS, () => this.advance());
-    else if (this.auto) this.waitTimer = this.time.delayedCall(AUTO_BASE_MS + this.text.length * AUTO_PER_CHAR_MS, () => this.advance());
+    // 題字の演出の途中なら、終わるまで待ってから進める
+    const logoWait = Math.max(0, this.logoReadyAt - this.time.now);
+    if (this.skip) this.waitTimer = this.time.delayedCall(SKIP_MS + logoWait, () => this.advance());
+    else if (this.auto) this.waitTimer = this.time.delayedCall(AUTO_BASE_MS + this.text.length * AUTO_PER_CHAR_MS + logoWait, () => this.advance());
   }
 
   /** タップ：文字送りの途中なら全文、全部出ていれば次へ */
   private advance(): void {
-    if (this.busy || this.choosing) return;
+    if (this.busy || this.choosing || this.time.now < this.logoReadyAt) return;
     if (this.typing) {
       this.finishTyping();
       return;
@@ -1075,26 +1104,83 @@ export class DialogueScene extends Phaser.Scene {
     this.tweens.killTweensOf(targets);
     if (on) {
       targets.forEach((o) => o.setVisible(true));
-      this.captionBg.setAlpha(this.skip ? 1 : 0);
-      this.tweens.add({ targets: this.captionBg, alpha: 1, duration: this.skip ? 0 : PICTURE_FADE_MS });
+      this.captionBg.setAlpha(this.instant ? 1 : 0);
+      this.tweens.add({ targets: this.captionBg, alpha: 1, duration: this.instant ? 0 : PICTURE_FADE_MS });
       return;
     }
     this.tweens.add({ targets, alpha: 0, duration: this.skip ? 0 : PICTURE_FADE_MS, onComplete: () => targets.forEach((o) => o.setVisible(false)) });
   }
 
-  private toggleBlip(): void {
-    // 入（スピーカー）→ 無線（Bluetooth のイヤホン。音を早めに鳴らす）→ 切 → 入 …
-    const st = getSettings();
-    const next = !st.typeSound ? { typeSound: true, audioOut: 'speaker' as const } : st.audioOut === 'speaker' ? { typeSound: true, audioOut: 'wireless' as const } : { typeSound: false };
-    setSettings({ ...st, ...next });
-    this.refreshBlipButton();
+  /** オプションの窓。開いている間は、オートと早送りを止める */
+  private openOptions(): void {
+    this.setSkip(false);
+    this.setAuto(false);
+    openOptions(this, { depth: 120 });
   }
 
-  private refreshBlipButton(): void {
-    const st = getSettings();
-    const on = st.typeSound;
-    this.blipLabel.setText(!on ? '文字音 切' : st.audioOut === 'wireless' ? '文字音 無線' : '文字音 入');
-    this.blipButton.setFillStyle(on ? 0x2a4a5a : COLORS.panelLight).setStrokeStyle(on ? 2 : 1, on ? 0x7ac8e0 : COLORS.border);
+  /**
+   * 章の扉の題字（@logo。段階32b 調整3）。黒い幕の上に、金の線が左右へ伸び、題名の文字が広い字間から1つずつ寄ってきて光り、
+   * 副題がふわっと出て、線から砂がこぼれ落ちる。「題名　副題」の形（全角の空白で分ける）
+   */
+  private showLogo(text: string): void {
+    const [title, ...rest] = text.split('　');
+    const sub = rest.join('　');
+    const cx = GAME_WIDTH / 2;
+    const cy = GAME_HEIGHT / 2 - 30;
+    const fast = this.skip;
+    const t = (ms: number) => (fast ? 0 : ms);
+    const layer = this.add.container(0, 0).setDepth(72);
+    this.logoLayer = layer;
+    // 奥のほのかな光
+    const glow = this.add.graphics();
+    for (let i = 0; i < 8; i++) glow.fillStyle(COLORS.accent, 0.03).fillCircle(cx, cy, 30 + i * 22);
+    glow.setAlpha(0);
+    layer.add(glow);
+    this.tweens.add({ targets: glow, alpha: 1, duration: t(1400) });
+    // 題名の文字：1つずつ、広い字間・少し上から、今の位置へ寄る
+    const letters = [...title].map((ch) =>
+      addText(this, 0, cy, ch, { size: 40, bold: true, color: '#f3e2b8' }).setOrigin(0.5).setShadow(0, 0, '#d9ae62', 14, false, true),
+    );
+    const gap = 6;
+    const total = letters.reduce((w, l) => w + l.width, 0) + gap * (letters.length - 1);
+    let x = cx - total / 2;
+    letters.forEach((l, i) => {
+      const to = x + l.width / 2;
+      x += l.width + gap;
+      l.setX(cx + (to - cx) * 2.2).setY(cy - 10).setAlpha(0);
+      layer.add(l);
+      this.tweens.add({ targets: l, x: to, y: cy, alpha: 1, delay: t(300 + i * 90), duration: t(900), ease: 'Cubic.easeOut' });
+      // 寄り終えたら、左から順に一度だけ明るく光る
+      this.tweens.add({ targets: l, scale: 1.12, yoyo: true, delay: t(1500 + i * 70), duration: t(160), ease: 'Sine.easeOut' });
+    });
+    // 金の線：真ん中から左右へ伸びる
+    const lineY = cy + 34;
+    const line = this.add.rectangle(cx, lineY, Math.max(total + 40, 240), 2, COLORS.accent, 0.9).setScale(0, 1);
+    layer.add(line);
+    this.tweens.add({ targets: line, scaleX: 1, delay: t(200), duration: t(1000), ease: 'Cubic.easeInOut' });
+    // 副題
+    if (sub) {
+      const subText = addText(this, cx, lineY + 30, sub, { size: 16, color: COLORS.accentText }).setOrigin(0.5).setAlpha(0).setLetterSpacing(4);
+      layer.add(subText);
+      this.tweens.add({ targets: subText, alpha: 1, y: lineY + 24, delay: t(1600), duration: t(800), ease: 'Sine.easeOut' });
+    }
+    // 線からこぼれ落ちる砂
+    const sand = this.add.particles(0, 0, 'dialogue-sand', {
+      emitZone: { type: 'random', source: new Phaser.Geom.Rectangle(cx - total / 2, lineY, total, 2) } as Phaser.Types.GameObjects.Particles.EmitZoneData,
+      speedY: { min: 12, max: 30 },
+      speedX: { min: -4, max: 4 },
+      lifespan: 2600,
+      alpha: { start: 0.8, end: 0 },
+      scale: { min: 0.5, max: 1 },
+      tint: NARRATION_SAND_COLOR,
+      frequency: 70,
+      emitting: false,
+    });
+    layer.add(sand);
+    this.time.delayedCall(t(1200), () => sand.active && sand.start());
+    if (!fast) playSand(this);
+    // 演出の途中で、うっかりタップして飛ばさないように
+    this.logoReadyAt = this.time.now + t(1800);
   }
 
   private showToast(msg: string): void {

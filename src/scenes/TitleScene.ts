@@ -3,13 +3,14 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
-import { getSettings, playBgm, playSe, setSettings } from '../audio/sound';
-import { chapterOfEvent, findEvent, nextVolume } from '../core';
-import { BGM, SE, SLICE_FLOW, TIPS } from '../data';
+import { playBgm, stopAmbience } from '../audio/sound';
+import { chapterOfEvent, findEvent } from '../core';
+import { BGM, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
-import { enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { enterScreen, fadeOutAndDestroy, screenBg } from '../ui/skin';
+import { openOptions } from '../ui/options';
 import { notePlayStart, setPlayTracking } from './playRecord';
 
 /** 保存した日時を「10/7 21:05」の形にする */
@@ -29,6 +30,7 @@ export class TitleScene extends Phaser.Scene {
     enterScreen(this);
     // タイトルにいる間は、遊んだ記録の時間を数えない（段階32b）
     setPlayTracking(false);
+    stopAmbience();
     const root = this.add.container(0, 0);
     const cx = GAME_WIDTH / 2;
     root.add(screenBg(this));
@@ -65,14 +67,28 @@ export class TitleScene extends Phaser.Scene {
     root.add(addText(this, cx, 360, 'RESTOPIA', { size: 34, bold: true }).setOrigin(0.5).setLetterSpacing(4));
     root.add(addText(this, cx, 400, '思い出だけの理想郷', { size: 15, color: COLORS.accentText }).setOrigin(0.5));
     root.add(addText(this, cx, 432, '試作版（M1：プロローグと第1章のはじめ）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
-    // クレジット（段階15）。親指の邪魔にならない右上に小さく
-    addButton(this, root, GAME_WIDTH - 62, 36, 104, 44, 'クレジット', { onTap: () => this.scene.start('Credits') }, { size: 13 });
-    // 音量（段階19）。クレジットと反対の左上に
-    addButton(this, root, 62, 36, 104, 44, '音量', { onTap: () => this.openVolume() }, { size: 13 });
-    // 初めての人向けの説明を読み返す（段階30）
-    addButton(this, root, 62, 88, 104, 44, '説明', { onTap: () => this.openTips() }, { size: 13 });
-    // 遊んだ記録（段階32b）。試遊の後にスクリーンショットを送ってもらう
-    addButton(this, root, GAME_WIDTH - 62, 88, 104, 44, '記録', { onTap: () => this.scene.start('PlayLog', { back: 'Title' }) }, { size: 13 });
+    // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3）
+    addButton(this, root, GAME_WIDTH - 66, 36, 112, 44, 'オプション', {
+      onTap: () =>
+        openOptions(this, {
+          links: [
+            { label: '説明を読む', onTap: () => this.openTips() },
+            { label: '遊んだ記録', onTap: () => this.scene.start('PlayLog', { back: 'Title' }) },
+            { label: 'クレジット', onTap: () => this.scene.start('Credits') },
+          ],
+        }),
+    }, { size: 13 });
+    // スマホのブラウザは、最初に画面に触れるまで音を出せない。それまでは案内を出す（段階32b 調整3）
+    if (this.sound.locked) {
+      const hint = addText(this, cx, 500, '画面をタップすると音が出ます', { size: 14, color: COLORS.accentText }).setOrigin(0.5);
+      root.add(hint);
+      this.tweens.add({ targets: hint, alpha: 0.35, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.sound.once(Phaser.Sound.Events.UNLOCKED, () => {
+        if (!hint.active) return;
+        this.tweens.killTweensOf(hint);
+        this.tweens.add({ targets: hint, alpha: 0, duration: 400, onComplete: () => hint.destroy() });
+      });
+    }
     // スマホは最初に画面に触れた後で鳴り始める
     playBgm(this, BGM.title);
 
@@ -179,50 +195,5 @@ export class TitleScene extends Phaser.Scene {
       },
     }, { size: 14 });
     addButton(this, panel, cx + 80, GAME_HEIGHT - 74, 150, 48, '閉じる', { onTap: () => fadeOutAndDestroy(this, panel) }, { size: 15 });
-  }
-
-  /** 音量の窓。BGM と効果音のボタンを押すたびに 0→25→50→75→100% と変わり、すぐ保存する */
-  private openVolume(): void {
-    const cx = GAME_WIDTH / 2;
-    const panel = this.add.container(0, 0);
-    // 後ろのボタンを押せないよう、画面全体を覆う
-    panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(this.add.rectangle(cx, 430, 300, 360, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
-    panel.add(addText(this, cx, 280, '音量', { size: 18, bold: true }).setOrigin(0.5));
-    const pct = (v: number) => `${Math.round(v * 100)}%`;
-    const draw = () => {
-      rows.removeAll(true);
-      const st = getSettings();
-      rows.add(addText(this, cx - 120, 340, 'BGM', { size: 15 }).setOrigin(0, 0.5));
-      addButton(this, rows, cx + 70, 340, 120, 48, pct(st.bgmVolume), {
-        onTap: () => {
-          setSettings({ ...getSettings(), bgmVolume: nextVolume(getSettings().bgmVolume) });
-          draw();
-        },
-      }, { size: 16 });
-      rows.add(addText(this, cx - 120, 410, '効果音', { size: 15 }).setOrigin(0, 0.5));
-      addButton(this, rows, cx + 70, 410, 120, 48, pct(st.seVolume), {
-        onTap: () => {
-          setSettings({ ...getSettings(), seVolume: nextVolume(getSettings().seVolume) });
-          // 新しい大きさで鳴らして聞かせる（ボタンの音は前の大きさで鳴っている）
-          playSe(this, SE.heal);
-          draw();
-        },
-      }, { size: 16 });
-      // 出力先（会話の文字の音のタイミングを合わせる。段階22）
-      rows.add(addText(this, cx - 120, 480, '出力先', { size: 15 }).setOrigin(0, 0.5));
-      addButton(this, rows, cx + 70, 480, 120, 48, st.audioOut === 'wireless' ? 'Bluetooth' : 'スピーカー', {
-        onTap: () => {
-          setSettings({ ...getSettings(), audioOut: getSettings().audioOut === 'wireless' ? 'speaker' : 'wireless' });
-          draw();
-        },
-      }, { size: 14 });
-      rows.add(addText(this, cx, 520, 'Bluetooth（無線）のイヤホンの時は、会話の文字の音を早めに鳴らす', { size: 11, color: COLORS.subText, align: 'center', wrap: 270 }).setOrigin(0.5));
-    };
-    const rows = this.add.container(0, 0);
-    panel.add(rows);
-    draw();
-    addButton(this, panel, cx, 570, 160, 48, '閉じる', { onTap: () => fadeOutAndDestroy(this, panel) }, { size: 15 });
-    popIn(this, panel);
   }
 }

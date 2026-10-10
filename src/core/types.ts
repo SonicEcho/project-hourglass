@@ -185,6 +185,17 @@ export interface BattleSetup {
   links?: LinkDef[];
   combos?: ComboDef[];
   seed: number;
+  /**
+   * 前の戦闘から持ち越した HP・MP（仲間の id ごと。段階32b 調整3。区画の中の戦闘）。
+   * 書いていない仲間は全回復で始まる。最大を超える分は最大にそろえる
+   */
+  vitals?: Record<string, Vitals>;
+}
+
+/** 戦闘をまたいで持ち越す HP・MP */
+export interface Vitals {
+  hp: number;
+  mp: number;
 }
 
 // ---- 戦闘中の状態 ----

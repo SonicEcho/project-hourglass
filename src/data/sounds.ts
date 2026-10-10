@@ -72,6 +72,13 @@ export const SE_GAIN: Partial<Record<string, number>> = {
   [SE.doorOpen]: 0.6,
 };
 
+/**
+ * 環境音（段階32b 調整3）：背景が出ている間、小さく鳴り続ける音（屋台の並ぶ参道の人混み）。
+ * 台帳の短い音（人混みは4秒）を、少し高さを変えながら重ねて鳴らし続け、同じ音のくり返しに聞こえないようにする。
+ * gain は効果音の音量を1とした時の大きさ、everySec は次の音を重ね始めるまでの間（秒。少しばらつかせる）、fadeSec は始めと終わりにふわっと変える時間
+ */
+export const AMBIENCE = { gain: 0.3, everySec: 2.2, jitterSec: 0.5, rateMin: 0.92, rateMax: 1.08, fadeSec: 0.8 } as const;
+
 /** BGM（台帳の id） */
 export const BGM = {
   title: 'bgm.title',

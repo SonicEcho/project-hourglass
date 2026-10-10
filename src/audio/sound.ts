@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { BlipVoice } from '../data';
-import { BGM_LOOPS, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
+import { AMBIENCE, BGM_LOOPS, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
@@ -25,6 +25,20 @@ let bgm: Playing | null = null;
 /** 音を出せるようになるのを待っている BGM */
 let waitingBgm: string | null = null;
 
+/** 鳴っている環境音（段階32b 調整3） */
+interface Ambience {
+  id: string;
+  /** まとめて大きさを変える所 */
+  master: GainNode | null;
+  timer: ReturnType<typeof setTimeout> | null;
+}
+let ambience: Ambience | null = null;
+
+/** 環境音の大きさ（効果音の音量に合わせる） */
+function ambienceLevel(id: string): number {
+  return getSettings().seVolume * (SE_GAIN[id] ?? 1) * AMBIENCE.gain;
+}
+
 /** 音量の設定（初めて使う時にブラウザの保存から読む） */
 export function getSettings(): Settings {
   if (!settings) settings = parseSettings(browserStorage().read(SETTINGS_KEY));
@@ -36,6 +50,7 @@ export function setSettings(next: Settings): void {
   settings = next;
   browserStorage().write(SETTINGS_KEY, serializeSettings(next));
   if (bgm) bgm.gain.gain.setTargetAtTime(next.bgmVolume, bgm.gain.context.currentTime, 0.02);
+  if (ambience?.master) ambience.master.gain.setTargetAtTime(ambienceLevel(ambience.id), ambience.master.context.currentTime, 0.02);
 }
 
 function loaded(scene: Phaser.Scene, id: string): boolean {
@@ -207,6 +222,70 @@ export function audioLatencyMs(scene: Phaser.Scene): number {
   const ctx = mgr.context as AudioContext;
   const sec = (ctx.outputLatency || 0) + (ctx.baseLatency || 0) || 0.05;
   return Math.min(300, Math.max(0, Math.round(sec * 1000)));
+}
+
+/**
+ * 環境音を鳴らし始める（段階32b 調整3）。同じ音が鳴っていればそのまま。短い音を、高さを少し変えながら重ねて鳴らし続ける。
+ * 音を出せない間に頼まれたら、出せるようになってから始める
+ */
+export function startAmbience(scene: Phaser.Scene, id: string): void {
+  if (ambience?.id === id) return;
+  stopAmbience();
+  const mgr = scene.sound;
+  if (!loaded(scene, id) || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  const amb: Ambience = { id, master: null, timer: null };
+  ambience = amb;
+  const begin = () => {
+    if (ambience !== amb) return;
+    const ctx = mgr.context;
+    const buffer = scene.cache.audio.get(id) as AudioBuffer;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0, ctx.currentTime);
+    master.gain.linearRampToValueAtTime(ambienceLevel(id), ctx.currentTime + AMBIENCE.fadeSec);
+    master.connect(mgr.destination);
+    amb.master = master;
+    const spawn = () => {
+      if (ambience !== amb) return;
+      const now = ctx.currentTime;
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const rate = AMBIENCE.rateMin + Math.random() * (AMBIENCE.rateMax - AMBIENCE.rateMin);
+      src.playbackRate.value = rate;
+      // 始めをふわっと（台帳の音は終わりが消えていくので、終わりはそのまま重ねる）
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(1, now + AMBIENCE.fadeSec);
+      src.connect(g);
+      g.connect(master);
+      src.start(now);
+      src.onended = () => g.disconnect();
+      const next = AMBIENCE.everySec + (Math.random() * 2 - 1) * AMBIENCE.jitterSec;
+      amb.timer = setTimeout(spawn, Math.max(0.5, next) * 1000);
+    };
+    spawn();
+  };
+  if (mgr.locked) mgr.once(Phaser.Sound.Events.UNLOCKED, begin);
+  else begin();
+}
+
+/** 環境音を小さくしながら止める */
+export function stopAmbience(): void {
+  const amb = ambience;
+  ambience = null;
+  if (!amb) return;
+  if (amb.timer) clearTimeout(amb.timer);
+  const master = amb.master;
+  if (!master) return;
+  const now = master.context.currentTime;
+  master.gain.cancelScheduledValues(now);
+  master.gain.setValueAtTime(master.gain.value, now);
+  master.gain.linearRampToValueAtTime(0, now + AMBIENCE.fadeSec);
+  setTimeout(() => master.disconnect(), (AMBIENCE.fadeSec + 0.1) * 1000);
+}
+
+/** 今鳴っている環境音（台帳の id）。自動の確認で使う */
+export function currentAmbience(): string | null {
+  return ambience?.id ?? null;
 }
 
 /** BGM を小さくしながら止める */
