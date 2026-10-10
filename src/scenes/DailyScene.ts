@@ -7,6 +7,7 @@ import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { startAmbience, stopAmbience } from '../audio/sound';
+import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
 import { run, setStoryVars } from './run';
 
@@ -76,9 +77,12 @@ export class DailyScene extends Phaser.Scene {
 
   private header(root: Phaser.GameObjects.Container, title: string): void {
     root.add(this.add.rectangle(0, 0, GAME_WIDTH, 96, 0x000000, 0.55).setOrigin(0));
-    addButton(this, root, 52, 36, 84, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
-    root.add(addText(this, GAME_WIDTH / 2 + 30, 26, this.hub.time, { size: 12, color: COLORS.subText }).setOrigin(0.5));
-    root.add(addText(this, GAME_WIDTH / 2 + 30, 56, title, { size: 18, bold: true }).setOrigin(0.5));
+    // 左上はオプション（音の設定と「タイトルへ戻る」。段階32b 調整4）。題は画面の真ん中に
+    addButton(this, root, 52, 36, 84, 44, 'オプション', {
+      onTap: () => openOptions(this, { depth: 100, links: [{ label: 'タイトルへ戻る', onTap: () => this.scene.start('Title') }] }),
+    }, { size: 12 });
+    root.add(addText(this, GAME_WIDTH / 2, 26, this.hub.time, { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(this, GAME_WIDTH / 2, 56, title, { size: 18, bold: true }).setOrigin(0.5));
   }
 
   /** 地図：場所を選ぶ。まだ見ていない印がある場所には、その印を添える */

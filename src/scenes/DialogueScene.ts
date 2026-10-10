@@ -266,12 +266,11 @@ export class DialogueScene extends Phaser.Scene {
 
     // 上のボタン
     const ui = this.add.container(0, 0).setDepth(50);
-    addButton(this, ui, 42, 30, 70, 40, '戻る', { onTap: () => this.leave() }, { size: 13 });
-    // 音量・文字の音・出力先は、オプションの窓で変える（段階32b 調整3。前は文字の音だけのボタンだった）
-    addButton(this, ui, 123, 30, 82, 40, 'オプション', { onTap: () => this.openOptions() }, { size: 12 });
-    this.autoButton = addButton(this, ui, 200, 30, 70, 40, 'オート', { onTap: () => this.toggleAuto() }, { size: 13 });
-    this.skipButton = addButton(this, ui, 276, 30, 70, 40, '早送り', { onTap: () => this.toggleSkip() }, { size: 13 });
-    addButton(this, ui, 350, 30, 68, 40, 'ログ', { onTap: () => this.toggleLog() }, { size: 13 });
+    // 音量・文字の音・出力先と「タイトルへ戻る」は、オプションの窓にまとめる（段階32b 調整3・4。上の端をすっきりさせる）
+    addButton(this, ui, 52, 30, 84, 40, 'オプション', { onTap: () => this.openOptions() }, { size: 12 });
+    this.autoButton = addButton(this, ui, 216, 30, 66, 40, 'オート', { onTap: () => this.toggleAuto() }, { size: 13 });
+    this.skipButton = addButton(this, ui, 288, 30, 66, 40, '早送り', { onTap: () => this.toggleSkip() }, { size: 13 });
+    addButton(this, ui, 356, 30, 58, 40, 'ログ', { onTap: () => this.toggleLog() }, { size: 13 });
 
     // 画面のどこかをタップ（ボタン・選択肢の上は除く）
     this.input.on('pointerup', (_p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
@@ -1051,6 +1050,8 @@ export class DialogueScene extends Phaser.Scene {
     const next = this.queue.shift();
     // 場面の切れ目は、暗転してから替える（いきなり切り替わらないように。台本で暗転している時はそのまま）。次の場面の最初の文で明転する
     if (!this.fadedOut) await this.fade('out');
+    // 前の場面の最後の文を、暗いうちに下げる（次の場面が @fade in で始まると、明転した時に前の文の窓が一瞬見えるため。段階32b 調整4）
+    this.clearTextBox();
     this.busy = false;
     if (next) {
       this.pos = { scene: next, index: 0 };
@@ -1064,6 +1065,14 @@ export class DialogueScene extends Phaser.Scene {
     // 暗転したまま次の画面へ（カメラは画面を移る時に作り直されるので、ここで元に戻すと一瞬だけ明るく見える）
     if (this.nextScreen) this.scene.start(this.nextScreen.key, this.nextScreen.data);
     else this.scene.start('Title');
+  }
+
+  /** 本文の枠・名前の札・文を下げる（次の文を出す時に showLine が出し直す） */
+  private clearTextBox(): void {
+    for (const o of [this.box, this.boxLine, this.body, this.cursor, this.nameBox, this.nameTag]) o.setVisible(false);
+    this.body.setText('');
+    this.sand.stop();
+    this.sand.killAll();
   }
 
   private leave(): void {
@@ -1115,7 +1124,7 @@ export class DialogueScene extends Phaser.Scene {
   private openOptions(): void {
     this.setSkip(false);
     this.setAuto(false);
-    openOptions(this, { depth: 120 });
+    openOptions(this, { depth: 120, links: [{ label: 'タイトルへ戻る', onTap: () => this.leave() }] });
   }
 
   /**
