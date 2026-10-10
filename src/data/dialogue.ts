@@ -212,7 +212,7 @@ export const CGS: Record<string, Backdrop> = {
   white_city: { title: '1枚絵：白い街（夢）', top: 0xffffff, bottom: 0xd8e0e8 },
   fireworks: { title: '1枚絵：高台で花火を見る3人の後ろ姿', top: 0x0a0e30, bottom: 0x40305a },
   photo_goldfish: { title: '写真：浴衣の小さなあかりが、金魚の袋をふたつ提げている', top: 0x3a3060, bottom: 0xd07a4a },
-  noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90 },
+  noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing' },
 };
 
 /**
