@@ -231,6 +231,50 @@ const YOUNG_HEAD =
   'Background: plain pure white, no shadow, no gradient. ' +
   'Draw the same character as the attached high school portrait, but as a 7-year-old child: round soft cheeks, bigger eyes, small shoulders, childlike proportions. Keep the same face features, hair color and eye color so that they are clearly the same person ten years earlier. ';
 
+/** 胸から上の立ち絵の構図の決まり（docs/ART.md の 5-2「立ち絵の共通の決まり」）。人ごとの文の前に付ける */
+const PORTRAIT_FRAMING =
+  'Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl. ' +
+  'Pose: both arms relaxed down at the sides, hands outside the frame. No props. ' +
+  'Background: plain pure white, no shadow, no gradient. ';
+
+/** ノアの設定画（全身）の ChatGPT の指示文（2026-10-10。docs/ART.md の「ノアの見た目（決まった）」）。胸から上の絵と1枚絵は、この設定画を見本にした */
+const NOA_SHEET_PROMPT =
+  'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ' +
+  'Character design sheet of an original anime-style heroine for a mobile turn-based JRPG, full body front view, standing upright in a calm, composed pose with arms at her sides, plain off-white background, clean lineart with soft cel shading, about 6 heads tall. Same art style as the attached reference portrait. ' +
+  'Character: Noa, a 17-year-old girl from several decades in the future, a former time agent (an "archiver" who collected people\'s happy memories) since childhood. Rational, cool and expressionless, a little detached, but with a quiet loneliness and a strong sense of right and wrong hidden inside. ' +
+  'Hair: pale silver hair with a faint blue-green tint, a neat short bob with straight bangs, one thin lock slightly longer on one side. ' +
+  'Eyes: cool blue-green eyes, calm and sharp, not glowing. ' +
+  'Outfit: a clean white long coat with a high collar, designed like a futuristic uniform, with thin blue-green lines running along the seams and cuffs; a fitted dark navy inner top; slim white trousers or a short pleated skirt with dark tights; simple white boots. Minimal, functional, no decorations except a small hourglass-shaped clasp at the collar. ' +
+  'Aura: she gives off a faint, cold white light, contrasting with the warm dusk colors of the present-day characters. ' +
+  'Color palette: silver hair #D8E2E6 with blue-green tint #7FC8C2, blue-green eyes #3FA6A0, white coat #F4F7F8, accent lines #4CC2B8, navy inner #22304A, skin #F4E1D6. ' +
+  'Additional views on the same sheet: back view, 4 facial expressions (expressionless, a tiny reluctant smile, cold glare, surprised), close-up of the hourglass collar clasp.';
+
+/** ChatGPT で作った胸から上の基本の1枚（2026-10-10。ノアと、M2 の 1-2 の人たち。表情違いは Gemini で作る） */
+function chatgptPortrait(who: string, name: string, face: string, title: string, prompt: string, reference: string, notes: string): AssetEntry {
+  return {
+    id: `portrait.${who}.${face}`,
+    kind: 'image',
+    title: `${name}の立ち絵（${title}）`,
+    file: `assets/portraits/${who}_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'ChatGPT',
+      plan: '無料',
+      prompt,
+      settings: `見本の絵：${reference}。1024×1536 で出てきた。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
+    },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-10',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes,
+  };
+}
+
 /** 子どものころの3人の表情違いの指示文の頭（Gemini。基本の1枚を見本にして顔だけ変えた。docs/ART.md の 5-2 の 6） */
 const YOUNG_FACE_HEAD: Record<'hero' | 'akari' | 'riku', string> = {
   hero: 'Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, hair with the single sand-gold strand, amber eyes, white T-shirt, open navy hoodie with dusk-orange lining, childlike proportions, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no text, no effects.',
@@ -617,6 +661,87 @@ export const ASSETS: AssetEntry[] = [
     'serious and focused, mouth firmly closed, brows drawn together, eyes sharp and determined, like a little leader making a decision',
     '得意げ',
   ),
+  chatgptPortrait(
+    'noa',
+    'ノア',
+    'normal',
+    '通常',
+    STYLE_PREFIX +
+      'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a calm expressionless face. ' +
+      PORTRAIT_FRAMING.replace('the girl', 'the girl in the cardigan') +
+      'Character: Noa. Keep her design exactly as in the attached character sheet: pale silver hair with a faint blue-green tint in a short bob, cool blue-green eyes, white high-collared futuristic long coat with thin blue-green lines, dark navy inner top, small hourglass-shaped collar clasp. No glowing light effects in this portrait.',
+    `ノアの設定画（ChatGPT で作った全身の絵。その指示文：${NOA_SHEET_PROMPT}）と、あかりの笑顔の立ち絵（構図の見本）`,
+    'ノアの見た目を決めた基本の1枚（docs/ART.md の「ノアの見た目（決まった）」）。M1 では 2-C の1枚絵だけに出る',
+  ),
+  chatgptPortrait(
+    'fumi',
+    'ふみ',
+    'normal',
+    '通常',
+    STYLE_PREFIX +
+      'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a calm, gentle expression with a soft, slightly lonely smile. ' +
+      PORTRAIT_FRAMING +
+      'Character: Fumi, a very old Japanese grandmother, clearly in her mid-80s. She must look truly elderly, like a real old granny, NOT a young or middle-aged woman with gray hair. ' +
+      'Face: a small, rounded face with many deep wrinkles (crow\'s feet, laugh lines, forehead lines), sagging cheeks and a softened jawline, thin lips, slightly drooping eyelids, small narrow kind eyes, a few faint age spots on the cheeks. ' +
+      'Hair: thin, pure white hair, pulled back into a small low bun, a little sparse at the hairline. ' +
+      'Body: very small and frail, rounded shoulders, a slightly hunched upper back, a short thin neck with wrinkles. ' +
+      'Clothes: a soft, old-fashioned beige knitted cardigan buttoned over a plain pale blouse with a small round collar, like a typical Japanese grandmother in a quiet regional town. ' +
+      'Mood: gentle and warm, a person who has quietly lived a long life alone after losing her husband. ' +
+      'Make her look older: deeper wrinkles, more hunched posture, thinner white hair. Do not beautify or make her look young.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 1-2 の持ち主（docs/script/M2.md の 5.）。開発者の希望で、脚本のたたき台より年を取った見た目にした。最初の指示文で若く見えたので、最後の1文を足して作り直した',
+  ),
+  chatgptPortrait(
+    'past_fumi',
+    '写しのふみ',
+    'smile',
+    '笑顔',
+    STYLE_PREFIX +
+      'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a lively, strong-willed smile. ' +
+      PORTRAIT_FRAMING +
+      'Character: young Fumi, the same woman as the attached elderly portrait but about 40 years earlier: a Japanese woman in her early 40s in the summer of 1988. Keep the same face features and kind eyes so she is clearly the same person. Short permed black hair, slightly thin after a month in hospital but cheerful. A modest 1980s blouse with a small round collar and a light summer cardigan, her going-out clothes for the day she leaves the hospital.',
+    'ふみ（今）の立ち絵（同じ人に見せるため）と、あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 1-2 の写し（昭和63年の夏、40代）。ノイズとセピアの加工はゲームの側でかける',
+  ),
+  chatgptPortrait(
+    'past_kiyoshi',
+    '写しのきよし',
+    'normal',
+    '通常',
+    STYLE_PREFIX +
+      'Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a blunt, taciturn expression, mouth closed, but kind eyes. ' +
+      PORTRAIT_FRAMING +
+      'Character: Kiyoshi, a Japanese man in his mid 40s in the summer of 1988, a quiet, stubborn craftsman who is bad at showing his feelings. Short cropped black hair, sun-tanned face, stern brows. A faded navy work jacket over a white undershirt.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 1-2 の写し（昭和63年の夏、40代。ふみの夫）。ノイズとセピアの加工はゲームの側でかける',
+  ),
+  {
+    id: 'cg.noa_passing',
+    kind: 'image',
+    title: '1枚絵（ノアとのすれ違い）',
+    file: 'assets/cg/noa_passing.webp',
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'ChatGPT',
+      plan: '無料',
+      prompt:
+        STYLE_PREFIX +
+        'A single key visual (event CG). Vertical 9:16 image. ' +
+        'Inside an endless library whose towering shelves hold glowing hourglasses instead of books, dim indigo shadows and soft golden light. A boy and a girl in Japanese school uniforms (keep their designs exactly as in the attached reference portraits) stand in the aisle, seen from a slight side angle. A mysterious girl walks past them, very close, in the opposite direction. The passing girl: about 17, pale silver hair with a faint blue-green tint in a short bob, cool blue-green eyes, expressionless, a clean white long coat with thin blue-green lines like a futuristic uniform; she gives off a cold, faint white light that contrasts with the warm golden library. Her eyes are turned not toward the boy but toward the girl beside him, as if she recognizes her. The boy is looking at the passing girl in surprise. Grains of golden sand drift in the air between them, and time feels frozen for a moment. ' +
+        'Keep the lower quarter of the image simple, because a text box may cover it. ' +
+        'Absolutely no letters or text anywhere.',
+      settings: '見本の絵：ハルトとあかりの立ち絵、ノアの設定画と胸から上の絵。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-10',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes: 'M1 の 2-C（docs/ART.md の 5-2 の 10）。ノアの目線はハルトの隣（あかり）に向く（docs/STORY.md の伏線）',
+  },
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait(
     'worried',
