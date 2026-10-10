@@ -20,6 +20,8 @@ export interface DailySpot {
   /** 見る会話の場面の id（なければ、印を選ぶとすぐ次へ進む。ends の印） */
   scene?: string;
   label: string;
+  /** 「けいかくひょう」に書く名前（子どものりくの字なので、ひらがな。なければ label。段階32b 調整3） */
+  planLabel?: string;
   mark: SpotMark;
   /** 場所の絵の上の位置（390×844 の座標） */
   x: number;

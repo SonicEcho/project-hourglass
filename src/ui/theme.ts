@@ -12,6 +12,10 @@ export const FONT = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP
 export const HEADING_FONT_NAME = 'RestopiaHeading';
 export const FONT_HEADING = `"${HEADING_FONT_NAME}", ${FONT}`;
 
+/** 子どもの手書き風の書体（段階32b 調整3。Hachi Maru Pop を、屋台めぐりの「けいかくひょう」の字だけに絞ったもの） */
+export const HAND_FONT_NAME = 'RestopiaHand';
+export const FONT_HAND = `"${HAND_FONT_NAME}", ${FONT}`;
+
 // 画面の部品の色（段階32a で藍寄りに整えた。docs/ART.md の 2.「全体・画面の部品：茜色と藍色、砂色」）
 export const COLORS = {
   bg: 0x121831,

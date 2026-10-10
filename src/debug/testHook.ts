@@ -13,11 +13,20 @@ export interface TestHook {
   bgm(): string | null;
 }
 
-function visibleTexts(list: Phaser.GameObjects.GameObject[], out: Phaser.GameObjects.Text[]): void {
+/** 画面に出ている文字。1文字ずつ置いた文（けいかくひょうの手書きの字）は、入れ物に data の text で全文を書いておく */
+interface FoundText {
+  text: string;
+  getBounds(): Phaser.Geom.Rectangle;
+}
+
+function visibleTexts(list: Phaser.GameObjects.GameObject[], out: FoundText[]): void {
   for (const o of list) {
     if ('visible' in o && !(o as unknown as Phaser.GameObjects.Components.Visible).visible) continue;
-    if (o instanceof Phaser.GameObjects.Container) visibleTexts(o.list, out);
-    else if (o instanceof Phaser.GameObjects.Text) out.push(o);
+    if (o instanceof Phaser.GameObjects.Container) {
+      const whole = o.getData('text');
+      if (typeof whole === 'string') out.push({ text: whole, getBounds: () => o.getBounds() });
+      visibleTexts(o.list, out);
+    } else if (o instanceof Phaser.GameObjects.Text) out.push(o);
   }
 }
 
@@ -28,7 +37,7 @@ export function installTestHook(game: Phaser.Game): void {
       const re = new RegExp(pattern);
       let found: { text: string; x: number; y: number } | null = null;
       for (const scene of game.scene.getScenes(true)) {
-        const texts: Phaser.GameObjects.Text[] = [];
+        const texts: FoundText[] = [];
         scene.children.depthSort();
         visibleTexts(scene.children.getChildren(), texts);
         for (const t of texts) {

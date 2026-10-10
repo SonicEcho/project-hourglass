@@ -34,7 +34,6 @@ export const SCRIPT_M1 = `
 子りく「そうだよ。二人じゃさびしいし、四人だと多い。三人がちょうどいいんだろ」
 子あかり〔大笑い〕「なにそれ」
 @bg shrine_stalls
-@se crowd
 子りく〔得意げ〕「順番は自由。……ほんとは自由じゃないけど、今日は特別だ」
 子あかり〔笑顔〕「ねえ、どこから行く？」
 
@@ -180,7 +179,7 @@ export const SCRIPT_M1 = `
 @bg black
 @cast
 @fade in
-@caption RESTOPIA　思い出だけの理想郷
+@logo RESTOPIA　思い出だけの理想郷
 @caption 第1章　あっという間の夏
 
 # d1_morning 1日目：朝（施設）

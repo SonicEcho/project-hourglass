@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getSettings, playSe, setSettings } from '../audio/sound';
+import { getSettings, playSe, setSettings, stopAmbience } from '../audio/sound';
 import { autoExtra, autoPlan, lcg } from '../sim/autoBattle';
 import { extraByTactic, isTactic, planByTactic, type Tactic, TACTICS } from '../sim/tactics';
 import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
@@ -37,6 +37,8 @@ import {
   recordVictory,
   weaponLevel,
   weaponName,
+  keepVitals,
+  vitalsAfter,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
@@ -127,6 +129,7 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     enterScreen(this);
     resetShownValues();
+    stopAmbience();
     this.progress = data.progress ?? run.progress;
     this.encounter = data.encounter;
     const areaBattle = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
@@ -135,8 +138,10 @@ export class BattleScene extends Phaser.Scene {
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id)) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
     this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
-    // 毎戦闘、HPとMPは全回復した状態で始まる。星図の成長を反映した仲間で戦う
-    this.state = createBattle(createCampaignSetup(this.battle, seed, currentParty(this.lineup)));
+    // 星図の成長を反映した仲間で戦う。試作の5戦は、毎戦闘 HP と MP が全回復した状態で始まる。
+    // 探索から来た戦闘は、区画の中の前の戦闘で残った HP・MP から始まる（段階32b 調整3。チェックポイントで全回復）
+    const vitals = areaBattle ? run.explore?.vitals : undefined;
+    this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup)), vitals });
     // 探索から来た戦闘は、章の中で貯めたつながりゲージを引き継いで始める（段階26の調整3）
     if (areaBattle && this.state.links.length > 0) this.state = { ...this.state, linkGauge: storyLinkGauge() };
     logEvents(this.state.log);
@@ -1307,6 +1312,8 @@ export class BattleScene extends Phaser.Scene {
     run.growth = { ...run.growth, points: run.growth.points + gained };
     // 残ったつながりゲージは、章の中の次の戦闘へ引き継ぐ（負けた時は、戦う前の量のまま。段階26の調整3）
     if (this.state.links.length > 0) setStoryLinkGauge(this.state.linkGauge);
+    // 残った HP・MP は、区画の中の次の戦闘へ持ち越す（段階32b 調整3）
+    if (run.explore) run.explore = keepVitals(run.explore, vitalsAfter(this.state));
     // ギアの報酬は出さない。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
     const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];

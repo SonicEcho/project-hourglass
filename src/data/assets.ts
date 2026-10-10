@@ -442,6 +442,23 @@ export const ASSETS: AssetEntry[] = [
     notes:
       'ゲームで使う字だけに絞った（scripts/font-subset.py。絞るのはライセンスで許された改変）。予約された書体名（Reserved Font Name）はないが、ゲームの中では RestopiaHeading の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
   },
+  {
+    id: 'font.hand',
+    kind: 'font',
+    title: '子どもの手書き風の書体（Hachi Maru Pop）',
+    file: 'assets/fonts/hand.woff2',
+    status: 'final',
+    source: { type: 'free', site: 'Google Fonts', url: 'https://fonts.google.com/specimen/Hachi+Maru+Pop' },
+    author: 'The Hachi Maru Pop Project Authors',
+    license: 'SIL Open Font License 1.1',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-10',
+    termsCopy: 'docs/licenses/hachi-maru-pop-OFL.txt',
+    notes:
+      '屋台めぐりの「けいかくひょう」（子どものりくの字）に使う。かな・英数字と src/data/daily.ts の字だけに絞った（scripts/font-subset.py）。ゲームの中では RestopiaHand の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
+  },
   placeholderBgm('bgm.title', 'タイトル', 'title.mp3'),
   placeholderBgm('bgm.festival', '縁日', 'festival.mp3'),
   {

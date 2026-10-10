@@ -1,4 +1,4 @@
-import type { ArmoryState, BattleState, CharacterDef, GrowthState, Lineup } from '../core';
+import type { ArmoryState, BattleState, CharacterDef, GrowthState, Lineup, Vitals } from '../core';
 import {
   addItems,
   applyGrowth,
@@ -13,6 +13,7 @@ import {
   openableNodes,
   openNode,
   recordVictory,
+  vitalsAfter,
 } from '../core';
 import type { CampaignBattle } from '../data';
 import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, GROWTH_MAP, PART_BREAK_POINTS, PARTY, SKILLS, START_MEMORY_POINTS, WEAPON_DATA } from '../data';
@@ -22,7 +23,12 @@ import { MAX_ATTEMPTS, type StageRecord } from './autoRun';
 
 // 区画の自動対戦（段階27）：1-1 の縁日を、章のパーティ（ハルトとあかり）で、出会う順に戦ってボスまで通す。
 // 戦闘の間に、星図（でたらめ）と武器（autoArmory.ts。一番近い進化先へ向けて吸わせる）で育て、つながりゲージは戦闘をまたいで引き継ぐ。
-// 宝箱は最初の戦闘の後に2つとも開ける（縁日の手前にあるので）。負けたらチェックポイントから同じ戦闘をやり直す
+// 宝箱は最初の戦闘の後に2つとも開ける（縁日の手前にあるので）。負けたらチェックポイントから同じ戦闘をやり直す。
+// HP・MP は戦闘をまたいで持ち越す（段階32b 調整3）。チェックポイントの先の戦闘（CHECKPOINT_FROM 番目から）は、星図・武器で育てるために
+// チェックポイントへ寄る（全回復する）ものとする。負けてやり直す時も全回復
+
+/** チェックポイントより先の戦闘（1-1 は社への道の砂嵐とボス。地図の P は、広場と左右の参道の砂嵐の先） */
+const CHECKPOINT_FROM = 3;
 
 /** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay） */
 export type AreaPolicy = 'random' | 'smart';
@@ -50,6 +56,7 @@ export function autoAreaRun(seed: number, policy: AreaPolicy, lineup: Lineup = C
   let growth: GrowthState = createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS);
   let armory: ArmoryState = createArmory(WEAPON_DATA);
   let gauge = 0;
+  let vitals: Record<string, Vitals> | undefined;
   const stages: StageRecord[] = [];
   const links: number[] = [];
   let evolvedBeforeBoss = 0;
@@ -61,15 +68,17 @@ export function autoAreaRun(seed: number, policy: AreaPolicy, lineup: Lineup = C
     armory = autoUseArmory(armory, members.map((c) => c.id), pick);
     if (def.boss) evolvedBeforeBoss = members.filter((c) => armory.weapons[c.id]?.evolvedTo).length;
     const allies = grownParty(growth, armory, members);
+    if (i >= CHECKPOINT_FROM) vitals = undefined;
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const battleSeed = (seed + i + attempt * 100) >>> 0;
-      const start: BattleState = { ...createBattle(createCampaignSetup(def, battleSeed, allies)), linkGauge: gauge };
+      const start: BattleState = { ...createBattle({ ...createCampaignSetup(def, battleSeed, allies), vitals: attempt === 0 ? vitals : undefined }), linkGauge: gauge };
       const s = policy === 'smart' ? smartPlay(start, battleSeed) : autoPlay(start, battleSeed);
       if (s.outcome !== 'victory') continue;
       record = { attempts: attempt + 1, won: true, rounds: s.round };
       links.push(s.log.filter((e) => e.type === 'action' && s.links.some((l) => l.id === e.actionId)).length);
       gauge = s.linkGauge;
+      vitals = vitalsAfter(s);
       const result = getBattleResult(s);
       growth = { ...growth, points: growth.points + battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS) };
       armory = recordVictory(armory, { actions: result.actionCounts, colorCells: {}, items: [...result.drops, ...(def.item ? [def.item] : [])] });

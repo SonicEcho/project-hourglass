@@ -175,7 +175,10 @@ try {
   await until('「つづく」の画面に戻る', () => findText('^つづく$'));
   await tap('^タイトルへ$');
   await waitScene('Title');
-  await tap('^記録$');
+  // タイトルの音量・説明・記録・クレジットは「オプション」にまとめた（段階32b 調整3）
+  await tap('^オプション$');
+  await until('オプションの窓', () => findText('^BGM$'));
+  await tap('^遊んだ記録$');
   await waitScene('PlayLog');
   await tap('^戻る$');
   await waitScene('Title');

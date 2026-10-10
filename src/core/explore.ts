@@ -1,6 +1,7 @@
 // 探索（段階25）：区画の地図を歩き、宝箱を開け、敵の印に触れて戦い、チェックポイントで記録する。Phaser に依存しない。
 // 区画の中身（地図・宝箱・敵・会話のきっかけ）は data 側が決める。ここでは探索の状態と、その変え方だけを扱う
 import type { GridCell, GridMap } from './grid';
+import type { Vitals } from './types';
 import { findPath, isWalkable, parseGrid } from './grid';
 
 /** 宝箱：開けると素材・アイテムが持ち物に入る */
@@ -82,6 +83,11 @@ export interface ExploreState {
   cleared: boolean;
   /** 集めたコマの数（段階28） */
   koma: number;
+  /**
+   * 前の戦闘から持ち越す仲間の HP・MP（段階32b 調整3）。なければ全回復。
+   * 区画の中の戦闘は、勝ったら残りを次の戦闘へ持ち越す。チェックポイントに着くと全回復、負けてチェックポイントへ戻る時も全回復
+   */
+  vitals?: Record<string, Vitals>;
 }
 
 /** 区画の歩ける地図。宝箱のマスは通れない（上を歩けない。段階27b の時の調整） */
@@ -108,7 +114,7 @@ export function startExplore(area: AreaDef): ExploreState {
 const same = (a: GridCell, b: GridCell): boolean => a[0] === b[0] && a[1] === b[1];
 
 /** マスに着いた時の出来事 */
-export type ArriveEvent = { type: 'checkpoint'; first: boolean } | { type: 'none' };
+export type ArriveEvent = { type: 'checkpoint'; first: boolean; healed: boolean } | { type: 'none' };
 
 /**
  * マスに着いた。チェックポイントなら記録する（新しい状態と出来事を返す）。
@@ -119,7 +125,9 @@ export function arrive(area: AreaDef, state: ExploreState, cell: GridCell): { st
   if (cellsOf(area, 'P').some((p) => same(p, cell))) {
     // まだどのチェックポイントでも記録していなかった（出発点のまま）なら、初めて
     const first = cellsOf(area, 'P').every((p) => !same(p, state.checkpoint));
-    return { state: { ...next, checkpoint: cell }, event: { type: 'checkpoint', first } };
+    // チェックポイントに着くと、HP・MP が全回復する（段階32b 調整3）
+    const { vitals, ...rest } = next;
+    return { state: { ...rest, checkpoint: cell }, event: { type: 'checkpoint', first, healed: vitals !== undefined } };
   }
   return { state: next, event: { type: 'none' } };
 }
@@ -154,9 +162,15 @@ export function defeatEnemy(state: ExploreState, enemyId: string): ExploreState 
   return state.defeated.includes(enemyId) ? state : { ...state, defeated: [...state.defeated, enemyId] };
 }
 
-/** 負けた。最後に記録したチェックポイントへ戻る（倒した敵・開けた宝箱はそのまま） */
+/** 負けた。最後に記録したチェックポイントへ戻り、HP・MP は全回復（倒した敵・開けた宝箱はそのまま） */
 export function loseBattle(state: ExploreState): ExploreState {
-  return { ...state, cell: state.checkpoint };
+  const { vitals: _, ...rest } = state;
+  return { ...rest, cell: state.checkpoint };
+}
+
+/** 勝った戦闘の終わりの HP・MP を、次の戦闘へ持ち越すために覚える（段階32b 調整3） */
+export function keepVitals(state: ExploreState, vitals: Record<string, Vitals>): ExploreState {
+  return { ...state, vitals: structuredClone(vitals) };
 }
 
 /** 今の状態で、まだ見ていない会話のきっかけ（on の種類ごと）。wins は倒した数、komaLeft はコマの残りで決まる */
@@ -183,6 +197,14 @@ export function addKoma(state: ExploreState, n: number): ExploreState {
 /** 返すのにあと何コマ要るか（そろっていれば0） */
 export function komaLeft(area: AreaDef, state: ExploreState): number {
   return Math.max(0, area.komaNeed - state.koma);
+}
+
+/**
+ * ボスに挑めるか（段階32b 調整3）：ボスが抱えているコマ（bossKoma）を足せば、返せる数になっている。
+ * 雑魚の砂嵐を飛ばしてボスに勝ち、コマが足りないまま区画を出てしまわないように。1-1 では砂嵐を全部倒した時
+ */
+export function bossReady(area: AreaDef, state: ExploreState, bossKoma: number): boolean {
+  return komaLeft(area, state) <= bossKoma;
 }
 
 /** 返した後に余るコマ */
@@ -229,7 +251,20 @@ export function normalizeExplore(area: AreaDef, raw: unknown): ExploreState | nu
     seen: ids(r.seen, scenes),
     cleared: r.cleared === true,
     koma: Number.isInteger(r.koma) && (r.koma as number) > 0 ? (r.koma as number) : 0,
+    ...(normalizeVitals(r.vitals) ? { vitals: normalizeVitals(r.vitals) } : {}),
   };
+}
+
+/** セーブから読んだ HP・MP。形が違う仲間は除く（全回復になる）。1人もいなければ undefined */
+function normalizeVitals(raw: unknown): Record<string, Vitals> | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+  const out: Record<string, Vitals> = {};
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    const o = v as Record<string, unknown> | null;
+    if (o && num(o.hp) && num(o.mp)) out[id] = { hp: o.hp, mp: o.mp };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 /** 区画のデータの書き間違い（通れないマスに置いた、id の重なり、など）を、全部まとめて返す（テストで使う） */

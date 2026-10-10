@@ -40,6 +40,7 @@ import type {
   SkillDef,
   TargetRef,
   Unit,
+  Vitals,
 } from './types';
 
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
@@ -57,15 +58,19 @@ const clone = <T>(v: T): T => structuredClone(v);
 
 /** 戦闘を作り、1ラウンド目の計画の状態にする */
 export function createBattle(setup: BattleSetup): BattleState {
+  const carried = (id: string, key: keyof Vitals, max: number): number => {
+    const v = setup.vitals?.[id]?.[key];
+    return typeof v === 'number' && Number.isFinite(v) ? Math.max(key === 'hp' ? 1 : 0, Math.min(max, Math.floor(v))) : max;
+  };
   const allies: AllyUnit[] = setup.allies.map((def) => ({
     uid: def.id,
     defId: def.id,
     name: def.name,
     side: 'ally',
     maxHp: def.stats.hp,
-    hp: def.stats.hp,
+    hp: carried(def.id, 'hp', def.stats.hp),
     maxMp: def.stats.mp,
-    mp: def.stats.mp,
+    mp: carried(def.id, 'mp', def.stats.mp),
     atk: def.stats.atk,
     mag: def.stats.mag,
     def: def.stats.def,
@@ -136,6 +141,14 @@ export function createBattle(setup: BattleSetup): BattleState {
   shuffleInPlace(s, s.deck);
   startRound(s);
   return s;
+}
+
+/**
+ * 戦闘の終わりの仲間の HP・MP（次の戦闘へ持ち越す。段階32b 調整3）。
+ * 倒れたまま勝った仲間は、HP 1 で起き上がる
+ */
+export function vitalsAfter(s: BattleState): Record<string, Vitals> {
+  return Object.fromEntries(s.allies.map((a) => [a.uid, { hp: Math.max(1, a.hp), mp: a.mp }]));
 }
 
 export function isAlive(u: Unit): boolean {

@@ -6,6 +6,7 @@ import { SLICE_FLOW } from '../data';
 import { applyKinsoku } from '../ui/kinsoku';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
+import { stopAmbience } from '../audio/sound';
 import type { DialogueData } from './DialogueScene';
 import { advanceEvent, currentEvent, run, setEvent, setStoryVars } from './run';
 import { screenBg } from '../ui/skin';
@@ -32,6 +33,8 @@ export class FlowScene extends Phaser.Scene {
 
   create(data: FlowData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    // 環境音は、会話・日常の画面の背景が鳴らす。物語の流れを通る時は止める（段階32b 調整3）
+    stopAmbience();
     const event = data?.done ? advanceEvent() : currentEvent();
     // 遊んだ記録（段階32b）：ここから物語の時間を数える。進めた時は advanceEvent が覚える
     setPlayTracking(true);

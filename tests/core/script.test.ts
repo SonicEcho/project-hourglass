@@ -54,6 +54,12 @@ describe('台本を読む（段階22）', () => {
     ]);
   });
 
+  it('@logo は題字の行になる（段階32b 調整3）', () => {
+    const [scene] = parseScript('# t 扉\n@logo RESTOPIA　思い出だけの理想郷');
+    expect(scene.steps[0]).toMatchObject({ kind: 'line', style: 'logo', speaker: null, text: 'RESTOPIA　思い出だけの理想郷' });
+    expect(() => parseScript('# t\n@logo')).toThrow('本文が空');
+  });
+
   it('続けて書いた選択肢は1つにまとめる', () => {
     const choice = scenes[0].steps.find((s) => s.kind === 'choice');
     expect(choice).toMatchObject({ options: [{ label: '右へ', target: 'right' }, { label: '左へ', target: 'left' }] });

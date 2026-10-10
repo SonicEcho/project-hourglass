@@ -6,6 +6,7 @@ import { BACKDROPS, DAILY_HUBS } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
+import { startAmbience, stopAmbience } from '../audio/sound';
 import type { DialogueData } from './DialogueScene';
 import { run, setStoryVars } from './run';
 
@@ -82,6 +83,7 @@ export class DailyScene extends Phaser.Scene {
 
   /** 地図：場所を選ぶ。まだ見ていない印がある場所には、その印を添える */
   private showMap(): void {
+    stopAmbience();
     const root = this.add.container(0, 0);
     root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1a1712).setOrigin(0));
     // 町の地図（仮）：道と、場所の円
@@ -115,6 +117,9 @@ export class DailyScene extends Phaser.Scene {
   private showPlace(place: DailyPlace): void {
     const root = this.add.container(0, 0);
     const def = BACKDROPS[place.backdrop] ?? BACKDROPS.black;
+    // 屋台の並ぶ参道などは、人混みの音を小さく鳴らし続ける（段階32b 調整3）
+    if (def.ambienceSe) startAmbience(this, def.ambienceSe);
+    else stopAmbience();
     drawBackdrop(this, root, def, 0, GAME_HEIGHT, true);
     this.header(root, place.name);
     for (const spot of place.spots) this.drawSpot(root, place, spot);
@@ -171,27 +176,71 @@ export class DailyScene extends Phaser.Scene {
     else go();
   }
 
-  /** 屋台めぐりの「けいかくひょう」：子どものりくの字で、回る屋台の一覧。回った屋台に丸 */
+  /**
+   * 屋台めぐりの「けいかくひょう」：子どものりくの字で、回る屋台の一覧。回った屋台に赤い丸。
+   * 子どもの手書き風の書体で、1文字ずつ少し傾け、大きさと高さをそろえずに書く（段階32b 調整3）
+   */
   private drawPlan(root: Phaser.GameObjects.Container): void {
     const spots = this.hub.places.flatMap((p) => p.spots).filter((s) => s.required);
-    const x = 24;
-    const y = 590;
     const w = GAME_WIDTH - 48;
     const h = 200;
-    root.add(this.add.rectangle(x, y, w, h, 0xf4ecd8, 0.95).setOrigin(0).setStrokeStyle(2, 0x8a6a2a).setAngle(-1.5));
-    root.add(addText(this, x + 18, y + 14, this.hub.plan ?? '', { size: 17, bold: true, color: '#3a2a20' }).setAngle(-1.5));
+    // 紙ごと少し傾ける（中の字も一緒に傾く）
+    const paper = this.add.container(GAME_WIDTH / 2, 590 + h / 2).setAngle(-1.5);
+    root.add(paper);
+    const left = -w / 2;
+    const top = -h / 2;
+    paper.add(this.add.rectangle(0, 0, w, h, 0xf4ecd8, 0.95).setStrokeStyle(2, 0x8a6a2a));
+    this.scribble(paper, left + 18, top + 28, this.hub.plan ?? '', 24, 1);
+    // 右の列は、長い名前（きんぎょすくい）のために少し広く
+    const cols = [
+      { left, w: w * 0.46 },
+      { left: left + w * 0.46, w: w * 0.54 },
+    ];
     spots.forEach((s, i) => {
-      const cx = x + 40 + (i % 2) * (w / 2);
-      const cy = y + 72 + Math.floor(i / 2) * 58;
-      root.add(addText(this, cx + 26, cy, s.label, { size: 18, color: '#3a2a20' }).setOrigin(0, 0.5));
+      const { left: colLeft, w: colW } = cols[i % 2];
+      const cy = top + 84 + Math.floor(i / 2) * 58;
+      const boxX = colLeft + 20;
+      const textX = boxX + 22;
+      // 長い名前は、赤い丸ごと列に収まるよう、字を小さくする
+      const room = colLeft + colW - 26 - textX;
+      let size = 18;
+      let written = this.scribble(paper, textX, cy, s.planLabel ?? s.label, size, i + 2);
+      while (written.width > room && size > 12) {
+        written.holder.destroy();
+        size -= 1;
+        written = this.scribble(paper, textX, cy, s.planLabel ?? s.label, size, i + 2);
+      }
+      const textW = written.width;
       if (isSeen(run.vars, s.id)) {
-        // 回った屋台に、赤い丸（りくの字）
-        root.add(this.add.ellipse(cx + 26 + 48, cy, 130, 46).setStrokeStyle(3, 0xc8402f).setAngle(-6));
-        root.add(addText(this, cx, cy, '✓', { size: 22, bold: true, color: '#c8402f' }).setOrigin(0.5));
+        // 回った屋台に、赤い丸（りくの字）。丸は字の幅に合わせ、紙（その列）からはみ出さないように収める
+        const ringW = Math.min(textW + 22, colLeft + colW - 12 - (boxX + 12));
+        const ringX = Math.min(textX + textW / 2, colLeft + colW - 12 - ringW / 2);
+        paper.add(this.add.ellipse(ringX, cy, ringW, 42).setStrokeStyle(3, 0xc8402f).setAngle(-5));
+        paper.add(addText(this, boxX, cy, '✓', { size: 22, bold: true, color: '#c8402f' }).setOrigin(0.5));
       } else {
-        root.add(addText(this, cx, cy, '□', { size: 20, color: '#3a2a20' }).setOrigin(0.5));
+        paper.add(addText(this, boxX, cy, '□', { size: 20, color: '#3a2a20' }).setOrigin(0.5));
       }
     });
+  }
+
+  /**
+   * 子どもの字で1行書く（左の端 x、行の真ん中 y）。1文字ずつ、傾き・大きさ・高さ・字間を少しずつ変える。
+   * 揺れ方は seed で決まる（開くたびに字が変わらないように）。字を入れた入れ物と、書いた幅を返す
+   */
+  private scribble(parent: Phaser.GameObjects.Container, x: number, y: number, text: string, size: number, seed: number): { holder: Phaser.GameObjects.Container; width: number } {
+    // 1文字ずつ置くので、全文は入れ物に書いておく（通しの自動確認が文で探せるように）
+    const holder = this.add.container(0, 0).setData('text', text);
+    parent.add(holder);
+    let cx = x;
+    [...text].forEach((ch, i) => {
+      // 小さな決まった乱数（-1〜1）
+      const r = (k: number) => Math.sin((seed * 31 + i * 7 + k) * 12.9898) % 1;
+      const t = addText(this, 0, 0, ch, { size: Math.round(size * (1 + r(1) * 0.1)), color: '#3a2a20', hand: true }).setOrigin(0, 0.5);
+      t.setPosition(cx, y + r(2) * 2.5).setAngle(r(3) * 7);
+      holder.add(t);
+      cx += t.width * 0.94 + r(4) * 1.5;
+    });
+    return { holder, width: cx - x };
   }
 
   private confirm(text: string, onYes: () => void): void {

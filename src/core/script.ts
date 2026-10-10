@@ -39,6 +39,8 @@ export const SCRIPT_COMMANDS = [
   'set',
   /** 章の扉などの大きな文字（@caption 文。タップで次へ） */
   'caption',
+  /** 題字（@logo 題名　副題。全角の空白の前が題名、後が副題。金の線と砂の演出で出す。タップで次へ。段階32b 調整3） */
+  'logo',
   /** まだ作っていない遊びの所に出す仮の案内（@note 文。タップで次へ） */
   'note',
   /** 立ち絵の芝居（@act 名前 動き。動きは data/dialogue.ts の ACTOR_MOTIONS） */
@@ -86,6 +88,8 @@ export type LineStyle =
   | 'document'
   /** 章の扉などの大きな文字 */
   | 'caption'
+  /** 題字（RESTOPIA　思い出だけの理想郷） */
+  | 'logo'
   /** まだ作っていない遊びの所の仮の案内 */
   | 'note';
 
@@ -226,7 +230,7 @@ function parseStep(line: string, src: number): ScriptStep | null {
       };
     }
     if (!(SCRIPT_COMMANDS as readonly string[]).includes(name)) throw new ScriptError(src, `知らない命令「@${name}」`);
-    if (name === 'caption' || name === 'note') return textLine(name, null, cmd[2], src);
+    if (name === 'caption' || name === 'note' || name === 'logo') return textLine(name, null, cmd[2], src);
     return { kind: 'command', name: name as ScriptCommandName, args, src };
   }
   const talk = RE_TALK.exec(line);
