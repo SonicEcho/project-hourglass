@@ -25,7 +25,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { playBgm, playSe, stopAmbience } from '../audio/sound';
+import { playBgm, playKoma, playSe, stopAmbience } from '../audio/sound';
 import { AREA_BATTLES, AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -160,6 +160,8 @@ export class ExploreScene extends Phaser.Scene {
           : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
+    // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
+    if (komaGot > 0) this.time.delayedCall(300, () => playKoma(this, left <= 0));
     this.showTip(false);
   }
 

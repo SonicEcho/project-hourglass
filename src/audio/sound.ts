@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { BlipVoice } from '../data';
-import { AMBIENCE, BGM_LOOPS, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
+import { AMBIENCE, BGM_LOOPS, KOMA_SOUND, SAND_RISE_SOUND, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
@@ -207,6 +207,102 @@ export function playSand(scene: Phaser.Scene): void {
   g.connect(mgr.destination);
   src.start(now);
   src.onended = () => g.disconnect();
+}
+
+/**
+ * コマを手に入れた時の「キラン」（段階31c の残り）。澄んだ音（正弦波と、その倍の高さの小さな音）を少しずつずらして重ねる。
+ * all はそろった時（3音）
+ */
+export function playKoma(scene: Phaser.Scene, all = false): void {
+  const st = getSettings();
+  const mgr = scene.sound;
+  if (st.seVolume <= 0 || mgr.locked || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  const ctx = mgr.context;
+  const { stepSec, ringSec, gain } = KOMA_SOUND;
+  const notes = all ? KOMA_SOUND.all : KOMA_SOUND.notes;
+  notes.forEach((hz, i) => {
+    const at = ctx.currentTime + i * stepSec;
+    const g = ctx.createGain();
+    const peak = gain * st.seVolume;
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(peak, at + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + ringSec);
+    g.connect(mgr.destination);
+    for (const [mul, amp] of [[1, 1], [2, 0.25]] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = hz * mul;
+      const og = ctx.createGain();
+      og.gain.value = amp;
+      osc.connect(og);
+      og.connect(g);
+      osc.start(at);
+      osc.stop(at + ringSec);
+      osc.onended = () => og.disconnect();
+    }
+    setTimeout(() => g.disconnect(), (i * stepSec + ringSec) * 1000 + 100);
+  });
+}
+
+/**
+ * 時間を返す時の、砂が昇る音（段階31c の残り）。語りの砂の音と同じ粒を、後ろほど濃く散らし、高い音だけ通す境目を上げていく。
+ * 下に、高さが上がっていくうっすらした音を重ねる
+ */
+export function playSandRise(scene: Phaser.Scene): void {
+  const st = getSettings();
+  const mgr = scene.sound;
+  if (st.seVolume <= 0 || mgr.locked || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  const ctx = mgr.context;
+  const now = ctx.currentTime;
+  const r = SAND_RISE_SOUND;
+  const len = Math.floor(ctx.sampleRate * r.durationSec);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  // 粒：時間とともに増やす（1秒あたりの数を、始めから終わりへ直線で）
+  const grainLen = Math.floor(ctx.sampleRate * 0.004);
+  const grains = Math.floor(((r.grainsFrom + r.grainsTo) / 2) * r.durationSec);
+  for (let k = 0; k < grains; k++) {
+    // 密度が直線で増える時の置き場所（後ろほど多い）
+    const u = Math.random();
+    const a: number = r.grainsFrom;
+    const b: number = r.grainsTo;
+    const t = a === b ? u : (Math.sqrt(a * a + (b * b - a * a) * u) - a) / (b - a);
+    const at = Math.min(len - grainLen, Math.floor(t * (len - grainLen)));
+    const amp = 0.2 + Math.random() * 0.8;
+    for (let i = 0; i < grainLen; i++) data[at + i] += (Math.random() * 2 - 1) * amp * Math.pow(1 - i / grainLen, 3);
+  }
+  for (let i = 0; i < len; i++) data[i] = data[i] * 0.5 + (Math.random() * 2 - 1) * 0.03;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const high = ctx.createBiquadFilter();
+  high.type = 'highpass';
+  high.frequency.setValueAtTime(r.highFrom, now);
+  high.frequency.exponentialRampToValueAtTime(r.highTo, now + r.durationSec);
+  const g = ctx.createGain();
+  const peak = r.gain * st.seVolume;
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(peak, now + r.fadeInSec);
+  g.gain.setValueAtTime(peak, now + r.durationSec - r.fadeOutSec);
+  g.gain.linearRampToValueAtTime(0, now + r.durationSec);
+  src.connect(high);
+  high.connect(g);
+  g.connect(mgr.destination);
+  // 昇る音
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(r.toneFrom, now);
+  osc.frequency.exponentialRampToValueAtTime(r.toneTo, now + r.durationSec);
+  const og = ctx.createGain();
+  og.gain.value = r.toneGain;
+  osc.connect(og);
+  og.connect(g);
+  src.start(now);
+  osc.start(now);
+  osc.stop(now + r.durationSec);
+  src.onended = () => {
+    og.disconnect();
+    g.disconnect();
+  };
 }
 
 /**
