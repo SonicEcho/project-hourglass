@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getSettings, playSe, setSettings, stopAmbience } from '../audio/sound';
+import { getSettings, playBgm, playSe, setSettings, stopAmbience } from '../audio/sound';
 import { autoExtra, autoPlan, lcg } from '../sim/autoBattle';
 import { extraByTactic, isTactic, planByTactic, type Tactic, TACTICS } from '../sim/tactics';
 import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
@@ -42,7 +42,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BASIC_ATTACK, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BASIC_ATTACK, BGM, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
@@ -137,6 +137,8 @@ export class BattleScene extends Phaser.Scene {
     this.battle = areaBattle ?? battleAt(this.progress);
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id)) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
+    // 戦闘の曲（ボスはボス戦の曲）。探索に戻ると、探索の画面が区画の曲に戻す
+    playBgm(this, this.battle.boss ? BGM.boss : BGM.battle);
     this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
     // 星図の成長を反映した仲間で戦う。試作の5戦は、毎戦闘 HP と MP が全回復した状態で始まる。
     // 探索から来た戦闘は、区画の中の前の戦闘で残った HP・MP から始まる（段階32b 調整3。チェックポイントで全回復）

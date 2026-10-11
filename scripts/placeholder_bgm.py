@@ -1,6 +1,6 @@
 """段階19の仮の BGM を合成する（自作。ループの仕組みを確かめるための音で、本番では Suno の曲に替える）。
 
-使い方: python3 scripts/placeholder_bgm.py public/assets/bgm/title.mp3 public/assets/bgm/festival.mp3
+使い方: python3 scripts/placeholder_bgm.py <タイトルの曲の書き出し先> public/assets/bgm/festival.mp3（2026-10-11 からタイトルは魔王魂の仮の曲。縁日の曲だけ使う）
 必要なもの: numpy、ffmpeg（mp3 に書き出す）
 音を鳴らし終わった余韻は曲の頭に回り込ませて足すので、最後から最初へ切れ目なくつながる。
 mp3 は始めと終わりに少し無音が入るので、くり返す1周の前後に PAD 秒ずつ余分に書き出す（段階20）。

@@ -108,8 +108,8 @@ try {
   await waitScene('Title');
   await tap('^はじめる$');
   await waitScene('Dialogue');
-  const bgm = await page.evaluate(() => window.__restopia.bgm());
-  if (bgm !== 'bgm.title') throw new Error(`タイトルの BGM が流れていない（${bgm}）`);
+  // BGM は初めて流す時に読むので、少し待つ（2026-10-11）
+  await until('タイトルの BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.title');
   step('プロローグの会話が始まった');
   for (let i = 0; i < 3; i++) {
     await tapAt(195, 650);
@@ -190,6 +190,9 @@ try {
   for (let n = 1; n <= BATTLES; n++) {
     const label = await tap(n === BATTLES ? '（ボス）へ$' : `^戦闘${n}へ$`);
     step(`${label.replace(/へ$/, '')}`);
+    await waitScene('Battle');
+    const battleBgm = n === BATTLES ? 'bgm.boss' : 'bgm.battle';
+    await until(`戦闘の BGM（${battleBgm}）`, async () => (await page.evaluate(() => window.__restopia.bgm())) === battleBgm);
     await winBattle();
     if (n === BATTLES) {
       await tap('^結果へ$');

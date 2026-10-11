@@ -25,8 +25,8 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { playBgm, playKoma, playSe, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, AREA_ENEMY_STEP_MS, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
+import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
+import { AREA_BATTLES, AREA_ENEMY_STEP_MS, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -152,6 +152,8 @@ export class ExploreScene extends Phaser.Scene {
 
     this.draw();
     if (area.bgm) playBgm(this, area.bgm);
+    // 戦闘に入った時にすぐ曲が変わるよう、戦闘の曲を先に読んでおく
+    prefetchBgm([BGM.battle, BGM.boss]);
     const left = komaLeft(area, state);
     this.say(
       note ||

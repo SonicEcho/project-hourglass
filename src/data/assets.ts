@@ -389,6 +389,33 @@ function placeholderBgm(id: string, title: string, file: string): AssetEntry {
   };
 }
 
+/**
+ * 魔王魂の曲を使った仮の BGM（2026-10-11、開発者が曲を選んだ。本番の曲（Suno）ができるまでの仮）。
+ * 長さを切ってつなぎ目を整えた（scripts/maou_bgm.py）。ファイル名に maoudamashii を入れるのは、魔王魂の二次配布の決まり
+ */
+function maouBgm(id: string, title: string, song: string, page: string, edit: string): AssetEntry {
+  return {
+    id,
+    kind: 'audio',
+    title: `BGM：${title}（仮。魔王魂「${song}」）`,
+    file: `assets/bgm/maoudamashii_${page}.mp3`,
+    status: 'placeholder',
+    source: { type: 'free', site: '魔王魂', url: `https://maou.audio/bgm_${page}/` },
+    author: '魔王魂（森田交一）',
+    license: 'クリエイティブ・コモンズ 表示 4.0 国際（または魔王魂素材利用規約）',
+    commercialUse: true,
+    creditRequired: true,
+    credit: '音楽：魔王魂',
+    modifyAllowed: true,
+    acquiredAt: '2026-10-11',
+    termsCopy: 'docs/licenses/maoudamashii.md',
+    notes: `元のファイル：maou_bgm_${page}.mp3（通常版）。手を入れた所：${edit}、96kbps の mp3 にした。曲だけを配ること、生成 AI の学習は禁止`,
+  };
+}
+
+const MAOU_LOOP_EDIT = '曲の中の同じ部分が繰り返す所でくり返すように切り（終わりのフェードアウトは使わない）、つなぎ目の直前60ms をなめらかにした';
+const MAOU_WHOLE_EDIT = '頭と終わりの無音を切り、終わりを0.8秒で消した（曲の全体をくり返す）';
+
 export const ASSETS: AssetEntry[] = [
   {
     id: 'title.hourglass',
@@ -503,8 +530,13 @@ export const ASSETS: AssetEntry[] = [
     notes:
       '屋台めぐりの「けいかくひょう」（子どものりくの字）に使う。かな・英数字と src/data/daily.ts の字だけに絞った（scripts/font-subset.py）。ゲームの中では RestopiaHand の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
   },
-  placeholderBgm('bgm.title', 'タイトル', 'title.mp3'),
   placeholderBgm('bgm.festival', '縁日', 'festival.mp3'),
+  maouBgm('bgm.title', 'タイトル', 'ピアノ41', 'piano41', MAOU_WHOLE_EDIT),
+  maouBgm('bgm.daily', '日常', 'アコースティック39', 'acoustic39', MAOU_LOOP_EDIT),
+  maouBgm('bgm.library', 'レストピア', 'オーケストラ14', 'orchestra14', MAOU_WHOLE_EDIT),
+  maouBgm('bgm.return', '返す場面', 'ピアノ24', 'piano24', MAOU_WHOLE_EDIT),
+  maouBgm('bgm.battle', 'ふだんの戦闘', 'ファンタジー12', 'fantasy12', MAOU_LOOP_EDIT),
+  maouBgm('bgm.boss', 'ボス戦', 'ファンタジー03', 'fantasy03', MAOU_LOOP_EDIT),
   {
     id: 'map.festival',
     kind: 'image',

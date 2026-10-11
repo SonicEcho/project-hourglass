@@ -819,5 +819,19 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
   - ⑤ ボス戦：`intense JRPG boss battle theme, heavy taiko and rock drums, distorted guitar, dramatic strings and choir pads, shinobue flute melody twisted into a darker minor key, ticking clock motif, urgent and powerful, tempo 160 bpm, loopable game background music, instrumental, no vocals, no fade out`
   - ⑥ レストピア（蔵書の棚）：`mysterious and beautiful fantasy library theme, celesta, harp, soft choir pads, gentle strings, music box, floating golden sand atmosphere, quiet wonder with a touch of loneliness, slow tempo 70 bpm, loopable game background music, instrumental, no vocals, no fade out`
   - ⑦ 返す場面・泣き：`heartbreaking emotional piano ballad, solo piano with soft cello, slow and fragile, memories of a lost summer, quiet and tender, tempo 64 bpm, cinematic JRPG sad scene, instrumental, no vocals`
+- **仮の BGM（2026-10-11、開発者が選んだ）**：本番の曲（Suno）ができるまで、魔王魂の曲を仮に使う。いずれ Suno の曲に替えるかもしれない（替える時は台帳の id はそのままで、ファイルと `BGM_LOOPS` を替える）。③縁日だけは、まだ自作の仮の音
+
+| 番号 | 曲 | 魔王魂の曲 | くり返し方 |
+| --- | --- | --- | --- |
+| ① | タイトル（`title`） | ピアノ41 https://maou.audio/bgm_piano41/ | 全体（繰り返す部分がない曲） |
+| ② | 日常（`daily`） | アコースティック39 https://maou.audio/bgm_acoustic39/ | 曲の中の繰り返し（1周 約170.8秒） |
+| ④ | ふだんの戦闘 | ファンタジー12 https://maou.audio/bgm_fantasy12/ | 曲の中の繰り返し（1周 106.67秒） |
+| ⑤ | ボス戦 | ファンタジー03 https://maou.audio/bgm_fantasy03/ | 曲の中の繰り返し（1周 約134.8秒） |
+| ⑥ | レストピア（`library`） | オーケストラ14 https://maou.audio/bgm_orchestra14/ | 全体 |
+| ⑦ | 返す場面（`return`） | ピアノ24 https://maou.audio/bgm_piano24/ | 全体 |
+
+  - 魔王魂は CC BY 4.0（または魔王魂素材利用規約）。売り物に使え、改変もよい。**クレジットに「音楽：魔王魂」が要る**（台帳の `credit`。クレジットの画面に出る）。規約の控えは `docs/licenses/maoudamashii.md`
+  - 上の「音のファイルに暗号をかける」仕組みは作らない（魔王魂は暗号化を「許可」しているだけで、求めてはいない。CC BY 4.0 はそのまま配るのが本来の形）。ファイル名は魔王魂の二次配布の決まりに合わせて `maoudamashii_*.mp3` にした
+  - 切り出しは `scripts/maou_bgm.py`（落とした mp3 から作り直せる）。ファンタジー03 の URL は、開発者の書いた `bgm_fantasy3` ではなく `bgm_fantasy03`（`bgm_fantasy3` は見つからなかった）
 - 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦）と実際に使った指示文と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
 
