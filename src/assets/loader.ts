@@ -14,7 +14,12 @@ export function assetUrl(entry: Pick<AssetEntry, 'file'>): string {
   return `${import.meta.env.BASE_URL}${entry.file ?? ''}`;
 }
 
-/** 台帳の画像・SVG・音を、起動の画面の preload で読み込む */
+/** BGM か（台帳の id が bgm. で始まる音） */
+export function isBgm(entry: Pick<AssetEntry, 'id' | 'kind'>): boolean {
+  return entry.kind === 'audio' && entry.id.startsWith('bgm.');
+}
+
+/** 台帳の画像・SVG・効果音を、起動の画面の preload で読み込む */
 export function queueAssets(scene: Phaser.Scene, assets: AssetEntry[] = ASSETS): void {
   scene.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
     failed.add(file.key);
@@ -25,7 +30,8 @@ export function queueAssets(scene: Phaser.Scene, assets: AssetEntry[] = ASSETS):
     if (a.kind === 'image') scene.load.image(a.id, assetUrl(a));
     // SVG は高解像度の画面でもにじまないよう、描く倍率に合わせた大きさで読み込む
     else if (a.kind === 'svg') scene.load.svg(a.id, assetUrl(a), { scale: RENDER_SCALE });
-    else if (a.kind === 'audio') scene.load.audio(a.id, assetUrl(a));
+    // BGM は起動では読まず、初めて流す時に audio/sound.ts が読む（1曲が1〜2MB あるため）
+    else if (a.kind === 'audio' && !isBgm(a)) scene.load.audio(a.id, assetUrl(a));
   }
 }
 

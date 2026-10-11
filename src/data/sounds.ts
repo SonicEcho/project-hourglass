@@ -79,10 +79,15 @@ export const SE_GAIN: Partial<Record<string, number>> = {
  */
 export const AMBIENCE = { gain: 0.5, everySec: 2.2, jitterSec: 0.5, rateMin: 0.92, rateMax: 1.08, fadeSec: 0.8 } as const;
 
-/** BGM（台帳の id） */
+/** BGM（台帳の id。bgm. で始める：起動では読まず、初めて流す時に読む印） */
 export const BGM = {
   title: 'bgm.title',
+  daily: 'bgm.daily',
   festival: 'bgm.festival',
+  library: 'bgm.library',
+  return: 'bgm.return',
+  battle: 'bgm.battle',
+  boss: 'bgm.boss',
 } as const;
 
 /**
@@ -91,8 +96,11 @@ export const BGM = {
  */
 export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
   // 仮の BGM（scripts/placeholder_bgm.py が書き出した時に表示する値）。mp3 の頭の無音をよけるため、0.5秒から1周をくり返す
-  [BGM.title]: { start: 0.5, end: 13.131565 },
   [BGM.festival]: { start: 0.5, end: 9.227256 },
+  // 魔王魂の仮の BGM（2026-10-11。scripts/maou_bgm.py が書き出した時に表示する値）。タイトル・レストピア・返す場面は、繰り返す部分がない曲なので全体をくり返す
+  [BGM.daily]: { start: 0.275669, end: 171.123129 },
+  [BGM.battle]: { start: 4.301179, end: 110.967846 },
+  [BGM.boss]: { start: 0.527143, end: 135.363855 },
 };
 
 /**
