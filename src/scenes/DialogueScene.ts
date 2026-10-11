@@ -820,8 +820,18 @@ export class DialogueScene extends Phaser.Scene {
       fitAll();
       // 今の表情の絵に、その差分を重ねてよいか（目を閉じた表情・口を開けた表情には重ねない）
       const fits = (part?: PortraitPart) => !!part && part.faces.some((f) => img.texture.key.endsWith(`.${f}`));
+      // 表情ごとに別の差分の絵がある時は、今の表情の絵に替える
+      const partFor = (part: PortraitPart) => {
+        const byFace = Object.entries(part.byFace ?? {}).find(([f, id]) => img.texture.key.endsWith(`.${f}`) && hasImage(this, id));
+        return byFace?.[1] ?? part.image;
+      };
       let mouthOpen = false;
-      const showMouth = () => mouth?.setVisible(mouthOpen && fits(parts?.talk));
+      const showMouth = () => {
+        if (!mouth || !parts?.talk) return;
+        const show = mouthOpen && fits(parts.talk);
+        if (show && mouth.texture.key !== partFor(parts.talk)) mouth.setTexture(partFor(parts.talk));
+        mouth.setVisible(show);
+      };
       if (eyes) {
         const blinkOnce = (then: () => void) => {
           if (!obj.active) return;

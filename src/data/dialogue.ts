@@ -80,7 +80,10 @@ const RIKU_FACES = {
 export interface PortraitPart {
   image: string;
   faces: string[];
+  /** 表情ごとに別の差分の絵を使う時（表情の id → 台帳の id）。ない表情は image */
+  byFace?: Record<string, string>;
 }
+const RIKU_TALK_FACES = ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'];
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
   あかり: {
     blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry', 'thinking'] },
@@ -96,7 +99,12 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
   // りくの閉じた目は眉が上がった絵なので、眉の形が違う表情（真剣・あせり・悲しい）には重ねない
   りく: {
     blink: { image: 'portrait.part.riku_blink', faces: ['normal', 'smile', 'proud', 'surprised', 'smirk'] },
-    talk: { image: 'portrait.part.riku_talk', faces: ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] },
+    // 口は表情ごとに、その表情から口だけ開けた絵で作った（1つの口では、顔の傾きが違う表情で口や鼻がずれたため）
+    talk: {
+      image: 'portrait.part.riku_talk_normal',
+      faces: RIKU_TALK_FACES,
+      byFace: Object.fromEntries(RIKU_TALK_FACES.map((f) => [f, `portrait.part.riku_talk_${f}`])),
+    },
   },
 };
 
