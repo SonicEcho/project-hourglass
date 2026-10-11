@@ -798,6 +798,144 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hea
 Use this image as the base. Keep everything exactly the same: framing, pose, hair, clothes, mouth, eyebrows, and art style. Plain pure white background. Change ONLY the eyes: both eyes gently closed, as in the middle of a natural blink, relaxed eyelids with eyelashes visible. Do not change the face shape, the eyebrows or the mouth. No text, no effects.
 ```
 
+## 5-5. ChatGPT で作る絵の残り（2026-10-11 に整理）
+
+5-2・5-3 で「まだ」の絵のうち、ChatGPT で作るものだけを集めた（Gemini の表情違いは 5-2 と 5-3 の 14.）。要る段階の早い順に並べた（段階37 は 1-2、38 はみおの加入、39 は 2-1・2-2、40 は 2-3 とカイ）。指示文は、5-3 にあるものはそちらを使う。5-3 になかった M1 の残りは、この節の下に足した。
+
+### 人物像（まだ絵のない人）
+
+見た目を決める元になる設定。台本（`docs/script/M1.md` の 5.、`docs/script/M2.md` の 5.・12.）と物語（`docs/STORY.md`）から集めた。名前の書き方は `docs/NAMING.md`（今を生きている人はひらがな、昭和のうちに亡くなった人は漢字）。
+
+| 人 | 年齢・時代 | 立場 | 人柄 | 見た目 | 要る表情 |
+| --- | --- | --- | --- | --- | --- |
+| みお | 10歳（小学4年）・今 | 3人目の仲間（2章の 5-C で加入）。商店街の「助っ人」で、少年野球にも祭りにも顔を出す。武器は切り札のトランプ（呼び名は「ジョーカーズ」） | 元気で声が大きく、いつも走っている。何にでも名前をつける。2年前の夏、遊びに誘った友だちを事故で亡くしたが、その日の楽しかった時間は盗まれていて、事故のことしか覚えていない（本人は気づいていない。7章で回収）。1〜6章は明るい子として過ごす | 明るい茶色のショート、横に小さな結び（橙の髪ゴム）、大きな茶色の目、丸いほお、少し日焼けした鼻。黄色の無地のTシャツ、紺の半ズボン、右手首に白と橙のリストバンド、ひざに絆創膏、赤いスニーカー。立ち絵の高さは 360（子どもの3人と同じ） | 通常・笑顔・大笑い・驚き・むっ・真剣・泣き笑い・照れ・考える・心配・悔しい・困り笑い |
+| カイ | 20歳くらい・未来 | 時間保管局のアーカイバー。ハルトが消えた後「一番のアーカイバー」と呼ばれる。2-3 で負け戦の相手になり、時間を持ち去る。後半は味方につく | 傲慢で皮肉屋、冷たく、人を見下す。その裏で、越えられなかった「消えた天才」（ハルト）をずっと追ってきたライバル。戦い方は「切り取る」（音はカメラのシャッター） | 黒い短髪に青緑の一筋（ハルトの砂色の一筋と対。6章の伏線）、細く鋭い淡い金の目。ノアと同じ白い詰め襟のロングコート（青緑の細い線）を前を開けてだらしなく着る、黒いハイネック、黒いズボン、白いブーツ、砂時計の留め具はベルトに。武器は四角い枠の形の刃「フレーム」 | 余裕・見下す・通常・真剣 |
+| ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 寝ぐせの残る黒い短髪、眠たげな目、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札） | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
+| 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影。短い黒髪、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
+| 写しのひなの | 小学1年・同じ縁日 | ゆうまの妹。金魚に「なつ」と「まつり」と名付ける | 甘えん坊で、兄のあとを追いかける | ゆうまに似た目、短い二つ結び、薄い桃色の浴衣（朝顔の柄。子どものあかりの「白地に赤い金魚」と重ならないように） | 笑顔・泣き |
+| いさむ | 75歳・今 | 2-1 の持ち主。みおの祖父で、小さな町工場の歯車職人 | 口数が少なく頑固だが、目は優しい | 小柄でやせている、白髪の短髪、細い丸眼鏡、深いしわ。色あせた作業着の上に古い茶色のカーディガン | 通常・笑顔・考える・さみしげ・泣き笑い |
+| 写しのいさむ | 18歳・昭和44年（1969年）の冬 | 町工場の見習い。親方の源三に「いい仕事だ」と言われる日 | ひたむきで不器用 | 坊主に近い短髪、寒さで赤いほお、油で汚れた灰色の作業着。みおに似た目 | 真剣・驚き・泣き笑い・通常 |
+| 源三 | 50代・昭和44年 | 町工場の親方（昭和のうちに亡くなった） | こわもてで厳しいが、命を預けられる。照れると耳が赤くなる（照れの顔は背中で見せる） | 太い眉、日に焼けたしわの顔、頭に白い手ぬぐい、厚手の紺の作業着 | 通常 |
+| こうじ | 40歳・今 | 2-3 の持ち主。商店街のパン屋の店主。息子はそうた（声だけ） | 人がよく、誰にでも親切だが、すぐ自分を下げる | 人のよさそうな顔、少し疲れた目、短く整えた黒髪、白いコックコートと帽子 | 通常・笑顔・さみしげ・考える・苦笑い・驚き |
+| 写しのこうじ | 12歳・平成10年（1998年）の夏 | 少年野球のベンチの子。最終回に代打で出る | 気弱で自信がない | 短い黒髪、少し大きすぎる白いユニフォーム（紺の線。番号と文字なし）、野球帽 | 通常・驚き・泣き笑い |
+| まさる | 40代・平成10年 | こうじの父。土手から試合を見ている | 陽気で、息子を信じている | 大人のこうじに似た顔、日焼け、短い黒髪、色あせたポロシャツに首のタオル | 笑顔 |
+| けんた | 37歳・今 | 2-2 の持ち主。商店街の楽器店の店主。高校のバンド「ラストチャイム」のボーカルとギターだった | 気さくでおしゃべり。音楽はとうにやめた | 少しぼさぼさの中くらいの長さのこげ茶の髪、無精ひげ、黒っぽいTシャツに帆布のエプロン | 笑顔・苦笑い・考える・さみしげ・泣き笑い・照れ・大笑い |
+| 写しのけんた | 17歳・平成18年（2006年）の秋の文化祭 | 3人組のバンドのボーカルとギター。弦が切れても歌い切る | 自信家で元気 | けんたの面影。つんつんのこげ茶の髪、前を開けた学ランに白いTシャツ | 笑顔・驚き・泣き笑い |
+| だいち・さき（低） | 37歳くらい・今 | けんたのバンドの仲間（だいちはドラム、さきはベース）。7-A だけ | だいちはおおらか、さきはしっかり者（案） | だいちは大柄で短髪、さきは肩までの髪に眼鏡（案）。なければ声だけにする | 笑顔（1つずつ） |
+
+### 作る順番（ChatGPT の分だけ）
+
+| 順 | 要る段階 | 絵 | 指示文 | 一緒に渡す見本の絵 |
+| --- | --- | --- | --- | --- |
+| 1 | 37 | 地図：1-2 の昭和の商店街 | 5-3 の 12. | 1-1 の縁日の地図 |
+| 2 | 37 | 背景：昭和の商店街（夕焼け） | 5-3 の 12. | なし |
+| 3 | 37 | 1枚絵：夕焼けの二人乗り | 5-3 の 12. | 写しのふみ（笑顔）・写しのきよし（通常） |
+| 4 | 37 | 敵：ブリキノイズ（最初の1体。敵の絵の共通部分を、これを戦闘画面に置いて決める） | 5-3 の共通部分と 13. | なし |
+| 5 | 38 | みおの設定画 → 胸から上の基本の1枚 | 5-3 の 1. | 子どものあかり（笑顔） |
+| 6 | 40 | カイの設定画 → 胸から上の基本の1枚 → 戦闘の絵 | 5-3 の 2. | ノアの設定画、あかり（笑顔） |
+| 7 | 37 | 敵：1-2 の残り（黒電話・ラムネ・めんこ・自転車のぬし） | 5-3 の 13. | ブリキノイズ |
+| 8 | 37 | 背景：時計屋の店内（昼）、川沿いの帰り道 | 5-3 の 12. | 時計屋の店内（夕暮れ） |
+| 9 | 39 | いさむ、写しのいさむ、写しの源三 | 5-3 の 4. | あかり（笑顔）。写しのいさむは、いさむ・みおも |
+| 10 | 39 | 背景：昭和44年の町工場の中、雪の町工場の路地／地図：2-1 | 5-3 の 5.・6. | 1-1 の縁日の地図 |
+| 11 | 39 | 1枚絵：親方の背中 | 5-3 の 7. | 写しのいさむ・写しの源三 |
+| 12 | 39 | けんた、写しのけんた／背景：体育館のステージ、楽器店の店内／地図：2-2 | 5-3 の 8.〜10. | あかり（笑顔）、けんた |
+| 13 | 39 | 1枚絵：弦が切れても歌うステージ | 5-3 の 11. | 写しのけんた |
+| 14 | 39 | 敵：2-1・2-2 の砂嵐8とボス2 | 5-3 の 13. | ブリキノイズ |
+| 15 | 40 | こうじ、写しのこうじ、まさる／背景：河川敷のグラウンド、パン屋の店内／地図：2-3 | 5-3 の 8.〜10. | あかり（笑顔）、こうじ |
+| 16 | 40 | 1枚絵：切り取られるグラウンド、代打の一打 | 5-3 の 3.・11. | ハルト・あかり・みお・カイ／写しのこうじ・まさる |
+| 17 | 40 | 敵：2-3 の砂嵐4とボス／1-1 の砂嵐4とボス（今は仮の絵） | 5-3 の 13.、下の 1-1 の敵 | ブリキノイズ |
+| 18 | ― | M1 の残り：ゆうま、写しのゆうま・ひなの | 下 | あかり（笑顔）。写しは、ゆうまと子どものあかり |
+| 19 | ― | M1 の残り：背景（金魚すくいの屋台、射的の屋台、石段の上、高台、施設の台所、学校の屋上、コンビニの店内、白い街）／1枚絵（花火、金魚の写真） | 下 | 下の各項 |
+| 低 | ― | だいち・さき、教室（放課後） | 上の人物像から作る | ― |
+
+M1 の残り（18・19）は、今は絵なしや色の加工で通せているので後ろにした。早く見たい場面があれば前に出してよい。
+
+### M1 の残りの指示文（2026-10-11 に足した。頭は 5-3 の共通部分）
+
+**ゆうま**：立ち絵の頭（`<表情>` は `a tired, laid-back expression with sleepy half-lidded eyes, but kind`）の後に
+
+```
+Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and a little sleepy-looking, but kind and friendly. Messy short black hair with a bit of bed head, sleepy eyes, clean-shaven. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text.
+```
+
+**写しのゆうま**：ゆうまの立ち絵も添付。立ち絵の頭（`<表情>` は `a bright, big-brotherly grin`）の後に
+
+```
+Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same face features so he is clearly the same person, with childlike proportions. Short black hair, a plain navy summer yukata.
+```
+
+**写しのひなの**：写しのゆうまの立ち絵も添付。立ち絵の頭（`<表情>` は `a big happy smile`）の後に
+
+```
+Character: young Hinano, the 7-year-old little sister of the attached boy, at a summer shrine festival. Eyes that resemble her brother's, round cheeks, childlike proportions. Short black hair in two small pigtails. A pale pink summer yukata with a morning glory pattern and a yellow obi sash (no goldfish pattern).
+```
+
+（子どもの立ち絵は、子どものあかりの絵を構図の見本にする。立ち絵の頭の `the girl in the cardigan` を `the little girl in the yukata, with the same childlike proportions` に替える）
+
+**背景**：背景の頭の後に、下の文を1つ付け、最後に背景の締めの文を付ける。
+
+- 金魚すくいの屋台（P-3。遊びの水面にも使う）
+  ```
+  Close-up of a goldfish-scooping stall at a small Japanese shrine festival at summer dusk. A wide shallow blue water tank full of small red and black goldfish, paper scoops (poi) and small bowls on the edge, a striped cloth awning above, paper lanterns glowing warm orange, the indigo dusk sky behind.
+  Eye-level camera, slightly looking down at the water tank in the center.
+  ```
+- 射的の屋台（P-3）
+  ```
+  A shooting gallery stall (shateki) at a small Japanese shrine festival at summer dusk. Tiered red shelves lined with small prizes (a toy robot, a plush bear, a box of caramel, small dolls), cork-gun rifles resting on the front counter, a striped cloth awning, paper lanterns glowing warm orange, the indigo dusk sky behind.
+  Eye-level camera from in front of the counter, the prize shelves in the center.
+  ```
+- 神社の石段の上（P-4。夕暮れから夜へ）
+  ```
+  The top of a long stone stairway of a small Japanese shrine in a regional town, at the end of a summer festival evening, the sky fading from amber to deep indigo with the first stars. Worn stone steps leading down toward the festival lights far below, a small red torii and stone lanterns at the top, quiet summer trees around.
+  Eye-level camera from the top step, looking out over the town and the festival lights.
+  ```
+- 神社の裏の高台（P-5。夜）
+  ```
+  A small grassy hill behind a Japanese shrine on a summer night, an old wooden fence at the edge, a view over the dark rooftops of a quiet regional town under a deep indigo starry sky, the open sky above left empty for fireworks.
+  Eye-level camera, looking out from the hilltop toward the sky.
+  ```
+- 施設の台所（1-A・1-D。朝と夕方は色の加工）
+  ```
+  The homely kitchen and dining room of a small children's home in a Japanese regional town, in the morning. A long wooden dining table with many mismatched chairs, an old fridge with children's drawings (no letters), a stove with a frying pan. On the windowsill, an old glass fish tank with one big orange goldfish. On a shelf, a few faded festival prizes: a small toy robot, a plush bear, a caramel box. Soft morning light through the window.
+  Eye-level camera, the window with the fish tank slightly off center.
+  ```
+- 学校の屋上（1-D。夕方の少し前）
+  ```
+  The rooftop of a Japanese high school in a quiet regional town, in the late afternoon before sunset. A tall green chain-link fence along the edge, a concrete floor, a water tank and the stairwell door, the town and distant mountains below, a wide sky with soft orange clouds.
+  Eye-level camera, looking toward the fence and the town.
+  ```
+- コンビニの店内（1-C・2-B）
+  ```
+  Inside a small generic convenience store in a Japanese regional town, after school. Bright fluorescent light, shelves of snacks and drinks with blank packages, a drink refrigerator along the back wall, an ice cream freezer chest, a checkout counter with a register at one side, orange evening light through the glass front. No brand logos.
+  Eye-level camera from the entrance, the counter on one side.
+  ```
+- 白い街（1-A の夢。ぼんやりでよい。共通部分の夕暮れの色は外す）
+  ```
+  A dreamlike, hazy vision of a pure white futuristic city: smooth white towers and bridges with thin blue-green light lines, empty and silent, no people, soft overexposed light as if seen through fog, edges fading into white. Cold, lonely and beautiful, like a half-forgotten memory.
+  Eye-level camera, a long empty white street leading into the distance.
+  ```
+
+**1枚絵**：1枚絵の頭の後に。
+
+- 高台で花火を見る3人の後ろ姿（P-5。子どもの3人の立ち絵を添付）
+  ```
+  A small grassy hill behind a Japanese shrine on a summer night. Three 7-year-old children seen from behind, sitting side by side on the grass, looking up at big colorful fireworks blooming in the deep indigo sky over a quiet town (keep their designs exactly as in the attached portraits): a quiet boy with black hair and one sand-gold strand in a navy hoodie on the left, a girl with a chestnut bob and a red goldfish hair clip in a white yukata with red goldfish in the middle, a spiky-haired boy in a navy jinbei on the right pointing at the sky. Three small white fox masks pushed up on the backs of their heads. The light of the fireworks colors their backs. Nostalgic, a moment that should never end.
+  ```
+- 金魚の写真（1-D。あかりのスマホの古い写真。子どものあかりの立ち絵を添付）
+  ```
+  An old, slightly faded snapshot photo taken about ten years ago at a shrine festival at night, warm and a little blurry like a phone photo. A 7-year-old girl with a chestnut bob and a red goldfish hair clip, in a white yukata with small red goldfish (keep her design as in the attached portrait), smiling proudly at the camera and holding up two small plastic bags of water, each with one red goldfish, one in each hand. Paper lanterns blurred in the background. Square 1:1 image instead of 9:16.
+  ```
+
+**1-1 の敵の `Body:`**（今の戦闘の仮の絵を替える時に。時代の色は平成 `bright pastel and light blue`。ボスは `A large boss monster, filling most of the image.` を足す）
+
+| 敵 | `Body:` |
+| --- | --- |
+| 金魚ノイズ | `a big red goldfish swimming in the air, trailing torn festival water bags and splashes, its fins fraying into static` |
+| 水風船ノイズ | `a bunch of bouncing festival water balloons on rubber strings, wobbling and splashing` |
+| お面ノイズ | `a cluster of festival character masks (plain fox, oni and round-face masks, no famous characters) stacked like a totem, glaring` |
+| わたあめノイズ | `a fluffy cloud of pink cotton candy on a wooden stick, sticky strands reaching out like arms` |
+| 金魚鉢のぬし（ボス） | `a giant round glass goldfish bowl with swirling water inside and many goldfish circling, two arms made of paper goldfish scoops (poi), water overflowing as waves` |
+
 ## 6. 音
 
 BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各サイトの規約を調べた（公式ページを読めたものは「公式」、読めなかったものは解説サイトから）。
