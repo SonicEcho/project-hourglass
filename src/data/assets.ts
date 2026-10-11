@@ -309,6 +309,13 @@ function geminiFace(who: string, name: string, face: string, title: string, look
   };
 }
 
+/** 口だけ開けた絵の指示文（Gemini。りくの口パク。docs/ART.md の 5-4） */
+const TALK_SRC_PROMPT =
+  'Use this image as the base. Keep everything exactly the same: framing, pose, head angle, hair, eyes, eyebrows, nose, face shape, clothes, and art style. Plain pure white background. Change ONLY the mouth: open it slightly as if in the middle of saying a word, a small natural talking mouth, keeping the same mood of the expression. Do not move or change the nose, the eyes or the eyebrows. No text, no effects.';
+
+/** りくの表情の名前（台帳の表示名に使う） */
+const RIKU_FACE_TITLES = { normal: '通常', proud: '得意げ', serious: '真剣', sad: '悲しい', smirk: 'にやり', flustered: 'あせり' } as const;
+
 /** 目を閉じた絵の指示文（Gemini。段階46b。docs/ART.md の 5-4） */
 const BLINK_SRC_PROMPT =
   'Use this image as the base. Keep everything exactly the same: framing, pose, hair, clothes, mouth, eyebrows, and art style. Plain pure white background. Change ONLY the eyes: both eyes gently closed, as in the middle of a natural blink, relaxed eyelids with eyelashes visible. Do not change the face shape, the eyebrows or the mouth. No text, no effects.';
@@ -907,6 +914,24 @@ export const ASSETS: AssetEntry[] = [
     '通常',
     'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける',
   ),
+  // りくの口パクの元の絵（2026-10-11。docs/ART.md の 5-4）。表情ごとに、口だけ開けた絵。会話には出さず、口のまわりだけ切り抜く
+  ...(['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] as const).map(
+    (f): AssetEntry => ({
+      ...rikuFace(f, RIKU_FACE_TITLES[f], ''),
+      id: `portrait.riku.talk_${f}_src`,
+      title: `りくの立ち絵（${RIKU_FACE_TITLES[f]}で口を開けた絵。口パクの元）`,
+      file: `assets/portraits/riku_talk_${f}_src.webp`,
+      source: {
+        type: 'ai',
+        service: 'Google Gemini（Gemini アプリ）',
+        plan: '無料',
+        prompt: TALK_SRC_PROMPT,
+        settings: `見本の絵：りくの${RIKU_FACE_TITLES[f]}の立ち絵。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
+      },
+      acquiredAt: '2026-10-11',
+      notes: '会話には出さない（起動の時も読み込まない）。口のまわりだけを切り抜いて、口パクの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
+    }),
+  ),
   // まばたきの差分の元の絵（段階46b。docs/ART.md の 5-4）。会話には出さず、scripts/portrait_parts.py で目だけ切り抜く
   ...(
     [
@@ -926,7 +951,7 @@ export const ASSETS: AssetEntry[] = [
       settings: `見本の絵：${name}の通常の立ち絵。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
     },
     acquiredAt: '2026-10-11',
-    notes: '会話には出さない。目のまわりだけを切り抜いて、まばたきの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
+    notes: '会話には出さない（起動の時も読み込まない）。目のまわりだけを切り抜いて、まばたきの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
   })),
 ];
 
@@ -938,7 +963,9 @@ const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
   ['akari_blink', 'portrait.akari.laugh', 'あかりの閉じた目（まばたき）'],
   ['akari_talk', 'portrait.akari.worried', 'あかりの開いた口（口パク）'],
   ['hero_talk', 'portrait.hero.surprised', 'ハルトの開いた口（口パク）'],
-  ['riku_talk', 'portrait.riku.surprised', 'りくの開いた口（口パク）'],
+  ...(['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] as const).map(
+    (f): [string, string, string] => [`riku_talk_${f}`, `portrait.riku.talk_${f}_src`, `りくの開いた口（口パク。${RIKU_FACE_TITLES[f]}）`],
+  ),
   ['hero_blink', 'portrait.hero.blink_src', 'ハルトの閉じた目（まばたき）'],
   ['riku_blink', 'portrait.riku.blink_src', 'りくの閉じた目（まばたき）'],
 ];

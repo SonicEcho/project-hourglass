@@ -7,9 +7,11 @@ describe('立ち絵のまばたき・口パクの差分（段階46b）', () => {
     for (const [name, parts] of Object.entries(PORTRAIT_PARTS)) {
       for (const part of [parts.blink, parts.talk]) {
         if (!part) continue;
-        const entry = ASSETS.find((a) => a.id === part.image);
-        expect(entry, `${name} ${part.image}`).toBeDefined();
-        expect(existsSync(`public/${entry!.file}`), entry!.file).toBe(true);
+        for (const image of [part.image, ...Object.values(part.byFace ?? {})]) {
+          const entry = ASSETS.find((a) => a.id === image);
+          expect(entry, `${name} ${image}`).toBeDefined();
+          expect(existsSync(`public/${entry!.file}`), entry!.file).toBe(true);
+        }
       }
     }
   });
@@ -19,7 +21,12 @@ describe('立ち絵のまばたき・口パクの差分（段階46b）', () => {
       const cast = CAST[name];
       expect(cast, name).toBeDefined();
       const ids = Object.values(cast.faces);
-      for (const part of [parts.blink, parts.talk]) for (const f of part?.faces ?? []) expect(ids, `${name} ${f}`).toContain(f);
+      for (const part of [parts.blink, parts.talk]) for (const f of [...(part?.faces ?? []), ...Object.keys(part?.byFace ?? {})]) expect(ids, `${name} ${f}`).toContain(f);
     }
+  });
+
+  it('差分を切り抜く元の絵（id が _src で終わる）は、会話の表情に使っていない', () => {
+    const used = Object.values(CAST).flatMap((c) => Object.values(c.faces).map((f) => `${c.portrait}.${f}`));
+    expect(used.filter((id) => id.endsWith('_src'))).toEqual([]);
   });
 });

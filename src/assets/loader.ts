@@ -19,7 +19,8 @@ export function queueAssets(scene: Phaser.Scene, assets: AssetEntry[] = ASSETS):
     console.warn(`[assets] 読み込めなかった：${file.key}（${file.url}）。図形で代わりに描く`);
   });
   for (const a of assets) {
-    if (!a.file) continue;
+    // id が _src で終わる絵は、差分を切り抜く元の絵（scripts/portrait_parts.py）。画面では使わないので読み込まない
+    if (!a.file || a.id.endsWith('_src')) continue;
     if (a.kind === 'image') scene.load.image(a.id, assetUrl(a));
     // SVG は高解像度の画面でもにじまないよう、描く倍率に合わせた大きさで読み込む
     else if (a.kind === 'svg') scene.load.svg(a.id, assetUrl(a), { scale: RENDER_SCALE });

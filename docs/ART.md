@@ -782,9 +782,15 @@ Expression: <表情>
 | あかりの閉じた目 | 大笑い | 済 |
 | あかりの開いた口 | 心配 | 済 |
 | ハルトの開いた口 | 驚き | 済 |
-| りくの開いた口 | 驚き（縦を縮めた） | 済 |
+| りくの開いた口 | 表情ごとに、Gemini でその表情から口だけ開けた絵（`riku_talk_<表情>_src`。下の指示文） | 済（2026-10-11。はじめは「驚き」の口を全部の表情に重ねたが、顔の傾きが違う表情で口の線や鼻がずれたので、表情ごとに作り直した） |
 | ハルトの閉じた目 | 目を閉じた絵（Gemini で作った `hero_blink_src`） | 済（2026-10-11。全部の表情に重ねる） |
 | りくの閉じた目 | 目を閉じた絵（Gemini で作った `riku_blink_src`。笑った目になった） | 済（2026-10-11。眉が上がった絵なので、眉の形が違う真剣・あせり・悲しいには重ねない） |
+
+**口だけ開けた絵**（Gemini。その表情の絵を見本として渡す。1つの口をどの表情にも重ねるとずれる人だけ、表情ごとに作る。できた絵を `<人>_talk_<表情>_src.webp` として portraits に入れ、`scripts/portrait_parts.py` に口の範囲を足して切り抜き、`PORTRAIT_PARTS` の `byFace` に足す。id が `_src` で終わる絵は、起動の時に読み込まない）
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, head angle, hair, eyes, eyebrows, nose, face shape, clothes, and art style. Plain pure white background. Change ONLY the mouth: open it slightly as if in the middle of saying a word, a small natural talking mouth, keeping the same mood of the expression. Do not move or change the nose, the eyes or the eyebrows. No text, no effects.
+```
 
 **目を閉じた絵**（Gemini。その人の「通常」の絵を見本として渡す。できた絵を `<人>_blink_src.webp` として portraits に入れ、`scripts/portrait_parts.py` に目の範囲を足して切り抜く）
 
