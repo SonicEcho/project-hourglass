@@ -26,6 +26,10 @@ PARTS = {
     "hero_talk": ("hero_surprised", (400, 398, 466, 446), 6, 1.0),
     # りくの開いた口：「驚き」の口（大きく開いているので、縦を縮めて話す口の大きさにする）
     "riku_talk": ("riku_surprised", (398, 370, 484, 420), 6, 0.75),
+    # ハルトの閉じた目：Gemini で「通常」から目だけ閉じた絵（hero_blink_src）。眉の下から頬の上まで
+    "hero_blink": ("hero_blink_src", (290, 290, 580, 362), 5, 1.0),
+    # りくの閉じた目：Gemini で「通常」から目を閉じた絵（riku_blink_src。笑った目になった）。眉の下から頬の上まで
+    "riku_blink": ("riku_blink_src", (265, 246, 585, 330), 5, 1.0),
 }
 
 

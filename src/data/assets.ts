@@ -109,7 +109,7 @@ const HERO_REDRAW_PROMPT =
   'Redraw the boy from image 1 as a chest-up portrait with exactly the same framing, size and camera distance as image 2. Vertical 2:3 image. Keep his face, hair (black with ONE sand-gold strand in the front bangs), amber eyes, white shirt, loose sand-gold necktie and open navy hoodie with dusk-orange lining exactly as in image 1. Front view, calm neutral expression with a hint of gentleness. Both arms relaxed down at the sides, hands outside the frame. Plain pure white background. Same anime art style as image 2. No props, no text.';
 
 /** ハルトの胸から上の立ち絵（2026-10-08 に Gemini で作り直した。expression がない物は基本の1枚） */
-function heroPortrait(face: string, title: string, expression?: string): AssetEntry {
+function heroPortrait(face: string, title: string, expression?: string, acquiredAt = '2026-10-08'): AssetEntry {
   return {
     id: `portrait.hero.${face}`,
     kind: 'image',
@@ -133,7 +133,7 @@ function heroPortrait(face: string, title: string, expression?: string): AssetEn
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
-    acquiredAt: '2026-10-08',
+    acquiredAt,
     termsCopy: 'docs/licenses/ai-gemini.md',
     notes: 'ChatGPT の規約の控えは docs/licenses/ai-openai.md。見た目は docs/ART.md のハルトの見た目',
   };
@@ -278,6 +278,40 @@ function chatgptPortrait(who: string, name: string, face: string, title: string,
     notes,
   };
 }
+
+/** 表情違いの指示文の頭（Gemini。基本の1枚を見本にして顔だけ変えた。docs/ART.md の 5-3 の 14）。look は「その人の見た目」 */
+const faceHead = (look: string) =>
+  `Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, ${look}, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no tears unless stated, no text, no effects.`;
+
+/** ChatGPT の基本の1枚から Gemini で作った表情違い（2026-10-11。ノアと、M2 の 1-2 の人たち） */
+function geminiFace(who: string, name: string, face: string, title: string, look: string, expression: string, base: string, notes: string): AssetEntry {
+  return {
+    id: `portrait.${who}.${face}`,
+    kind: 'image',
+    title: `${name}の立ち絵（${title}）`,
+    file: `assets/portraits/${who}_${face}.webp`,
+    status: 'placeholder',
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt: `${faceHead(look)}\nExpression: ${expression}`,
+      settings: `見本の絵：${name}の${base}の立ち絵（ChatGPT で作った基本の1枚。指示文はその台帳）。843×1264 で出てきた（基本の1枚は 1024×1536。縦横の比は同じで、画面では高さをそろえて出す）。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
+    },
+    author: 'RESTOPIA 開発（Google Gemini と ChatGPT で作成）',
+    license: 'Google 利用規約（生成した内容の所有権を主張しない）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-11',
+    termsCopy: 'docs/licenses/ai-gemini.md',
+    notes: `${notes}。ChatGPT の規約の控えは docs/licenses/ai-openai.md`,
+  };
+}
+
+/** 目を閉じた絵の指示文（Gemini。段階46b。docs/ART.md の 5-4） */
+const BLINK_SRC_PROMPT =
+  'Use this image as the base. Keep everything exactly the same: framing, pose, hair, clothes, mouth, eyebrows, and art style. Plain pure white background. Change ONLY the eyes: both eyes gently closed, as in the middle of a natural blink, relaxed eyelids with eyelashes visible. Do not change the face shape, the eyebrows or the mouth. No text, no effects.';
 
 /** 子どものころの3人の表情違いの指示文の頭（Gemini。基本の1枚を見本にして顔だけ変えた。docs/ART.md の 5-2 の 6） */
 const YOUNG_FACE_HEAD: Record<'hero' | 'akari' | 'riku', string> = {
@@ -586,6 +620,8 @@ export const ASSETS: AssetEntry[] = [
   heroPortrait('sad', '悲しい', 'sad and quiet, eyes looking down, mouth closed, brows slightly lowered'),
   heroPortrait('shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking away, a small awkward closed-mouth smile'),
   heroPortrait('wry', '苦笑い', 'a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled'),
+  heroPortrait('frustrated', '悔しい', 'frustrated and regretful, biting the lip, brows drawn together, eyes glistening', '2026-10-11'),
+  heroPortrait('angry', '怒り', 'angry, brows sharply drawn together, teeth clenched, eyes blazing', '2026-10-11'),
   rikuPortrait('smile', '笑顔'),
   rikuFace('normal', '通常', 'relaxed and friendly, a small natural smile with the mouth closed'),
   rikuFace('proud', '得意げ', 'smug and proud, a confident closed-mouth grin, chin slightly raised, one eyebrow up'),
@@ -812,6 +848,86 @@ export const ASSETS: AssetEntry[] = [
       ['gentle', '微笑み', 'a gentle, soft smile with the mouth closed, eyes warm and slightly narrowed, calm and kind'],
     ] as const
   ).map(([face, title, expression]) => akariPortrait(face, title, expression, 'Gemini で作ったデジャヴの立ち絵（リボンが赤い物）。843×1264 で出てきた', AKARI_ADDED_HEAD)),
+  // M2 で足した表情（2026-10-11。docs/ART.md の 5-3 の 14）
+  ...(
+    [
+      ['thinking', '考える', 'thoughtful, eyes looking up and aside, mouth slightly pursed'],
+      ['teary', '泣き笑い', 'smiling through tears, eyes wet and slightly narrowed, a trembling smile'],
+    ] as const
+  ).map(([face, title, expression]) => ({
+    ...akariPortrait(face, title, expression, 'Gemini で作ったデジャヴの立ち絵（リボンが赤い物）。843×1264 で出てきた', AKARI_ADDED_HEAD),
+    acquiredAt: '2026-10-11',
+  })),
+  geminiFace(
+    'noa',
+    'ノア',
+    'sad',
+    '悲しい',
+    'silver short bob with a blue-green tint, blue-green eyes, white high-collared coat with blue-green lines, hourglass collar clasp',
+    'sad and quiet, eyes looking down, mouth closed, brows slightly lowered',
+    '通常',
+    'M2 で使う（docs/script/M2.md の 12.）',
+  ),
+  ...(
+    [
+      ['smile', '笑顔', 'a bright, warm smile with the mouth slightly open'],
+      ['lonely', 'さみしげ', 'quietly lonely, a faint sad smile, eyes looking down'],
+      ['thinking', '考える', 'thoughtful, eyes looking up and aside, mouth slightly pursed'],
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'],
+      ['teary', '泣き笑い', 'smiling through tears, eyes wet and slightly narrowed, a trembling smile'],
+    ] as const
+  ).map(([face, title, expression]) =>
+    geminiFace('fumi', 'ふみ', face, title, 'thin white hair in a low bun, deep wrinkles, beige knitted cardigan', expression, '通常', 'M2 の 1-2 の持ち主（docs/script/M2.md の 5.）'),
+  ),
+  ...(
+    [
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'],
+      ['shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile'],
+      ['teary', '泣き笑い', 'smiling through tears, eyes wet and slightly narrowed, a trembling smile'],
+    ] as const
+  ).map(([face, title, expression]) =>
+    geminiFace(
+      'past_fumi',
+      '写しのふみ',
+      face,
+      title,
+      'short permed black hair, modest 1980s blouse with a small round collar and a light summer cardigan',
+      expression,
+      '笑顔',
+      'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける',
+    ),
+  ),
+  geminiFace(
+    'past_kiyoshi',
+    '写しのきよし',
+    'shy',
+    '照れ',
+    'short cropped black hair, sun-tanned face, faded navy work jacket over a white undershirt',
+    'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile',
+    '通常',
+    'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける',
+  ),
+  // まばたきの差分の元の絵（段階46b。docs/ART.md の 5-4）。会話には出さず、scripts/portrait_parts.py で目だけ切り抜く
+  ...(
+    [
+      ['hero', 'ハルト', heroPortrait('normal', '通常')],
+      ['riku', 'りく', rikuFace('normal', '通常', '')],
+    ] as const
+  ).map(([who, name, base]): AssetEntry => ({
+    ...base,
+    id: `portrait.${who}.blink_src`,
+    title: `${name}の立ち絵（目を閉じた絵。まばたきの元）`,
+    file: `assets/portraits/${who}_blink_src.webp`,
+    source: {
+      type: 'ai',
+      service: 'Google Gemini（Gemini アプリ）',
+      plan: '無料',
+      prompt: BLINK_SRC_PROMPT,
+      settings: `見本の絵：${name}の通常の立ち絵。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜いた`,
+    },
+    acquiredAt: '2026-10-11',
+    notes: '会話には出さない。目のまわりだけを切り抜いて、まばたきの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
+  })),
 ];
 
 /**
@@ -823,6 +939,8 @@ const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
   ['akari_talk', 'portrait.akari.worried', 'あかりの開いた口（口パク）'],
   ['hero_talk', 'portrait.hero.surprised', 'ハルトの開いた口（口パク）'],
   ['riku_talk', 'portrait.riku.surprised', 'りくの開いた口（口パク）'],
+  ['hero_blink', 'portrait.hero.blink_src', 'ハルトの閉じた目（まばたき）'],
+  ['riku_blink', 'portrait.riku.blink_src', 'りくの閉じた目（まばたき）'],
 ];
 for (const [file, from, title] of PORTRAIT_PART_FILES) {
   const src = ASSETS.find((a) => a.id === from);
