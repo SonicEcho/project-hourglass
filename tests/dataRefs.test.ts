@@ -131,8 +131,8 @@ describe('仲間ごとに1つずつ', () => {
 
 describe('物語の流れ（段階23・34）', () => {
   it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
-    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, DAILY_HUBS, ITEMS, SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
-    const { checkArea, checkDailyHub, checkFlow, flowEvents, isPlaceholder } = await import('../src/core');
+    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, ITEMS, SCENES, M1_SCENE_ORDER, SLICE_FLOW, TOWN } = await import('../src/data');
+    const { checkArea, checkBonds, checkDailyHub, checkFlow, flowEvents, isPlaceholder } = await import('../src/core');
     expect(checkFlow(SLICE_FLOW)).toEqual([]);
     const sceneIds = new Set(SCENES.map((s) => s.id));
     const reachable = new Set<string>();
@@ -150,6 +150,15 @@ describe('物語の流れ（段階23・34）', () => {
         const hub = DAILY_HUBS[e.id];
         expect(hub, e.id).toBeDefined();
         expect(checkDailyHub(hub)).toEqual([]);
+        // 誰と過ごすか（段階35）：会える相手には絆の出来事があり、その場面は台本にある
+        for (const partner of hub.partners ?? []) {
+          expect(BOND_EVENTS[partner], `${e.id} ${partner}`).toBeDefined();
+          expect(BOND_PARTNER_NAMES[partner], partner).toBeDefined();
+          for (const b of BOND_EVENTS[partner]) {
+            expect(sceneIds.has(b.id), `${e.id} ${b.id}`).toBe(true);
+            if (b.from <= (hub.day ?? 0)) reachable.add(b.id);
+          }
+        }
         for (const p of hub.places) {
           expect(p.backdrop in BACKDROPS, `${e.id} ${p.backdrop}`).toBe(true);
           for (const spot of p.spots) {
@@ -181,6 +190,10 @@ describe('物語の流れ（段階23・34）', () => {
       if (e.kind === 'return') expect(AREAS[e.area ?? ''], e.id).toBeDefined();
     }
     for (const id of M1_SCENE_ORDER) expect(reachable.has(id), id).toBe(true);
+    // 町の地図と絆の出来事（段階35）
+    expect(checkBonds(BOND_EVENTS, TOWN)).toEqual([]);
+    for (const p of Object.values(TOWN)) expect(p.backdrop in BACKDROPS, p.id).toBe(true);
+    for (const events of Object.values(BOND_EVENTS)) for (const b of events) expect(reachable.has(b.id), b.id).toBe(true);
   });
 });
 

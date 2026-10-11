@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { finishesAfter, isSeen, markSeen, requiredLeft, spotState } from '../core';
-import { BACKDROPS, DAILY_HUBS } from '../data';
+import { bondLevel, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, spotState } from '../core';
+import { BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -13,7 +13,8 @@ import { run, setStoryVars } from './run';
 
 // 昼の日常（段階24）：地図から場所を選び、場所の絵に出ている印をタップして出来事を見る。
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
-// 見た印は、物語で覚えた値（run.vars）に入れてセーブする。日常を終えたら、物語の流れへ done で戻る
+// 見た印は、物語で覚えた値（run.vars）に入れてセーブする。日常を終えたら、物語の流れへ done で戻る。
+// 段階35：昼に選べる回数（絆の出来事と小話）と、相手ごとの絆の出来事。画面を開くたびに、今の値で日常を組み立てる（resolveHub）
 
 /** Phaser はデータを渡さずに開くと前のデータを使い回すので、この画面を開く時は必ず全部渡す（なければ undefined を書く） */
 export interface DailyData {
@@ -45,20 +46,22 @@ export class DailyScene extends Phaser.Scene {
   create(data: DailyData): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.eventId = data.event;
-    const hub = DAILY_HUBS[data.event];
-    if (!hub) throw new Error(`no daily hub ${data.event}`);
-    this.hub = hub;
+    const data0 = DAILY_HUBS[data.event];
+    if (!data0) throw new Error(`no daily hub ${data.event}`);
     if (data.finished) {
+      const hub = resolveHub(data0, run.vars, BOND_EVENTS, TOWN);
       const spot = hub.places.flatMap((p) => p.spots).find((s) => s.id === data.finished);
       if (spot) {
         const end = finishesAfter(hub, run.vars, spot);
-        setStoryVars(markSeen(run.vars, spot.id));
+        setStoryVars(markVisited(hub, run.vars, spot));
         if (end) {
           this.finish();
           return;
         }
       }
     }
+    const hub = resolveHub(data0, run.vars, BOND_EVENTS, TOWN);
+    this.hub = hub;
     const place = hub.places.find((p) => p.id === data.place) ?? (hub.places.length === 1 ? hub.places[0] : null);
     if (place) this.showPlace(place);
     else this.showMap();
@@ -81,8 +84,11 @@ export class DailyScene extends Phaser.Scene {
     addButton(this, root, 52, 36, 84, 44, 'オプション', {
       onTap: () => openOptions(this, { depth: 100, links: [{ label: 'タイトルへ戻る', onTap: () => this.scene.start('Title') }] }),
     }, { size: 12 });
-    root.add(addText(this, GAME_WIDTH / 2, 26, this.hub.time, { size: 12, color: COLORS.subText }).setOrigin(0.5));
-    root.add(addText(this, GAME_WIDTH / 2, 56, title, { size: 18, bold: true }).setOrigin(0.5));
+    root.add(addText(this, GAME_WIDTH / 2, 22, this.hub.time, { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(this, GAME_WIDTH / 2, 50, title, { size: 18, bold: true }).setOrigin(0.5));
+    // 昼に選べる回数（段階35）
+    const left = picksLeft(this.hub, run.vars);
+    if (Number.isFinite(left)) root.add(addText(this, GAME_WIDTH / 2, 80, `昼に選べるのは、あと${left}回`, { size: 12, color: COLORS.accentText }).setOrigin(0.5));
   }
 
   /** 地図：場所を選ぶ。まだ見ていない印がある場所には、その印を添える */
@@ -90,13 +96,16 @@ export class DailyScene extends Phaser.Scene {
     stopAmbience();
     const root = this.add.container(0, 0);
     root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1a1712).setOrigin(0));
-    // 町の地図（仮）：道と、場所の円
+    // 町の地図（仮）：格子の道と、場所の円（段階35：場所の位置は町じゅうで同じ。data/daily.ts の TOWN）
     const g = this.add.graphics();
     g.fillStyle(0x2a241c, 1).fillRoundedRect(20, 120, GAME_WIDTH - 40, 560, 16);
     g.lineStyle(14, 0x4a4030, 1);
-    const places = this.hub.places;
-    for (let i = 1; i < places.length; i++) g.lineBetween(places[i - 1].mapX, places[i - 1].mapY, places[i].mapX, places[i].mapY);
+    const xs = [...new Set(Object.values(TOWN).map((p) => p.mapX))];
+    const ys = [...new Set(Object.values(TOWN).map((p) => p.mapY))];
+    for (const x of xs) g.lineBetween(x, Math.min(...ys), x, Math.max(...ys));
+    for (const y of ys) g.lineBetween(Math.min(...xs), y, Math.max(...xs), y);
     root.add(g);
+    const places = this.hub.places;
     this.header(root, 'どこへ行く？');
     for (const place of places) {
       const open = place.spots.filter((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends);
@@ -113,8 +122,12 @@ export class DailyScene extends Phaser.Scene {
       });
     }
     const left = requiredLeft(this.hub, run.vars);
-    const hint = left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。\n時計屋へ行くと、夕暮れになる';
-    root.add(addText(this, GAME_WIDTH / 2, 730, hint, { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
+    const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
+    if (this.hub.picks !== undefined) lines.push(`♥と…は、1日に${this.hub.picks}回まで。！は回数を使わない`);
+    // 絆の深さ（段階35）：会える相手ごとに、見た絆の出来事の数
+    const bonds = (this.hub.partners ?? []).map((p) => `${BOND_PARTNER_NAMES[p] ?? p} ${'♥'.repeat(bondLevel(run.vars, BOND_EVENTS[p] ?? [])) || '―'}`);
+    if (bonds.length > 0) lines.push(`絆　${bonds.join('　')}`);
+    root.add(addText(this, GAME_WIDTH / 2, 740, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
   }
 
   /** 場所の絵と、そこに出ている印 */
@@ -160,6 +173,10 @@ export class DailyScene extends Phaser.Scene {
     }
     if (state === 'seen') {
       this.toast('ここは、もう見た');
+      return;
+    }
+    if (state === 'spent') {
+      this.toast(`今日は、もう時間がない（昼に選べるのは${this.hub.picks ?? 0}回まで）`);
       return;
     }
     const go = () => {
