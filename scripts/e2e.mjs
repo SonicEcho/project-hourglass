@@ -149,7 +149,7 @@ try {
       await tap('^返す$');
       await tap('^次へ$');
       sawReturn = true;
-    } else if (await findText('^2日目$')) {
+    } else if (await findText('^\\d日目$')) {
       await page.waitForTimeout(700);
       await tapAt(195, 422);
     } else {

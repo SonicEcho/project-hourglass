@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addItems, addParts, defeatEnemy, flowEvents } from '../core';
-import { AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, M1_SCENES, NAVI_PARTS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -217,7 +217,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
     );
 
     // 会話（段階22）：脚本の場面を開く
-    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '会話（段階22。M1 の台本）'));
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '会話（段階22。M1・M2 の台本）'));
     panel.append(
       button('M1 を通しで読む（プロローグから、ノアとのすれ違いまで）', () => {
         close();
@@ -226,7 +226,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
       }),
     );
     const select = el('select', 'display:block;width:100%;min-height:44px;margin:6px 0;font:14px sans-serif;');
-    for (const sc of M1_SCENES) {
+    for (const sc of SCENES) {
       const o = el('option', '', `${sc.title}（${sc.id}）`);
       o.value = sc.id;
       select.append(o);

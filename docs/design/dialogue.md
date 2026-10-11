@@ -4,7 +4,7 @@
 
 ## 1. 台本
 
-- 台本は、脚本（`docs/script/M1.md`）とほぼ同じ書き方の文字で `src/data/scriptM1.ts` に書く。読み取りと進め方は `src/core/script.ts`（Phaser を読み込まない。テストは `tests/core/script.test.ts`）
+- 台本は、脚本（`docs/script/M1.md`・`M2.md`）とほぼ同じ書き方の文字で `src/data/scriptM1.ts`・`scriptM2.ts`（段階34から。M2 の場面）に書く。会話の画面は、両方を合わせた `SCENES` から場面を引く。読み取りと進め方は `src/core/script.ts`（Phaser を読み込まない。テストは `tests/core/script.test.ts`）
 - 1つの台本の文字に、場面（`# id 名前`）をいくつも書く。場面の id は、物語の流れのデータ（段階23）とデバッグメニューが使う
 - 台詞を直す時は、脚本と台本の両方を直す
 

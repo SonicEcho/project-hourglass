@@ -137,6 +137,51 @@ export function summarizePlayLog(log: PlayLog, flow: Flow): { rows: PlayLogRow[]
   };
 }
 
+/** 記録の画面の、まとめた1行（段階34）：日（またはプロローグ）の行と、区画（探索）の行 */
+export interface PlayLogSection {
+  title: string;
+  /** 区画（探索の出来事）の行。日の行の下に、字下げして出す */
+  explore: boolean;
+  ms: number;
+  wins: number;
+  losses: number;
+  /** 中の出来事のどれかに着いた */
+  reached: boolean;
+  /** 中の出来事に、id のもの（最後にいた所）がある */
+  ids: string[];
+}
+
+/**
+ * 出来事ごとの行を、日ごと・区画ごとにまとめる（段階34。出来事が増えて1画面に入らなくなったため）。
+ * 最初の日の前はプロローグ（最初の章の名前）、日が変わる出来事から次の日の行。探索の出来事は、それぞれ1行にする。
+ * 日の行は、その日の探索以外の出来事を合わせたもの
+ */
+export function playLogSections(rows: PlayLogRow[], flow: Flow): PlayLogSection[] {
+  const kinds = new Map(flowEvents(flow).map((e) => [e.id, e.kind]));
+  const out: PlayLogSection[] = [];
+  const make = (title: string, explore: boolean): PlayLogSection => ({ title, explore, ms: 0, wins: 0, losses: 0, reached: false, ids: [] });
+  let day: PlayLogSection = make(flow[0]?.name ?? '', false);
+  out.push(day);
+  for (const r of rows) {
+    const kind = kinds.get(r.id);
+    let into = day;
+    if (kind === 'day') {
+      day = make(r.title, false);
+      out.push(day);
+      into = day;
+    } else if (kind === 'explore') {
+      into = make(r.title, true);
+      out.push(into);
+    }
+    into.ms += r.ms;
+    into.wins += r.wins;
+    into.losses += r.losses;
+    into.reached ||= r.reached;
+    into.ids.push(r.id);
+  }
+  return out.filter((sec) => sec.ids.length > 0);
+}
+
 /** 時間を「12:05」（分:秒）の形にする。1時間を超えたら「1:02:05」 */
 export function formatPlayTime(ms: number): string {
   const s = Math.floor(Math.max(0, ms) / 1000);
