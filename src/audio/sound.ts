@@ -3,9 +3,10 @@ import type { Settings } from '../core';
 import { parseSettings, serializeSettings } from '../core';
 import type { AssetEntry, BlipVoice } from '../data';
 import { addSandGrains, addSandHiss } from './sandNoise';
-import { AMBIENCE, ASSETS, BGM_LOOPS, KOMA_SOUND, SAND_RISE_SOUND, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
+import { AMBIENCE, ASSETS, BGM_HEAD, BGM_LOOPS, KOMA_SOUND, SAND_RISE_SOUND, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
 import { readBgm } from './bgmStore';
+import { isDebugEnabled } from '../debug/debugFlag';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
 // BGM はゲーム全体で1曲だけ。画面が替わっても止めず、別の曲を頼まれた時だけ切り替える。
@@ -20,7 +21,14 @@ const FADE_SEC = 0.6;
 interface Playing {
   id: string;
   source: AudioBufferSourceNode;
+  /** 曲の音量（設定の BGM 音量。止める時もここで小さくする） */
   gain: GainNode;
+  /** 鳴らしている音のデータの大きさ（頭から全体へ移る時に重ねて切り替える） */
+  part: GainNode;
+  /** 曲の頭だけを鳴らしている（全体が解けたら移る） */
+  head: boolean;
+  /** 鳴らし始めた時刻（音の時計。全体へ移る時に、鳴っている位置を出す） */
+  startedAt: number;
 }
 
 let settings: Settings | null = null;
@@ -88,39 +96,109 @@ export function playBgm(scene: Phaser.Scene, id: string): void {
   if (!entry || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
   wantedBgm = id;
   if (bgm?.id === id) return;
-  void bgmBuffer(mgr.context, entry).then((buffer) => {
+  // まだ解いていない曲は、頭だけを先に解いてすぐ鳴らし、その後で全体を解いて移る（2026-10-11。全体を解くとスマホで1〜3秒かかるため）
+  const fromHead = !decoded.has(id) && !decoding.has(id) && !mgr.locked;
+  void (async () => {
+    if (fromHead) {
+      const head = await decodeHead(mgr.context, entry);
+      if (head && wantedBgm === id && bgm?.id !== id && !mgr.locked) startBgm(mgr, id, head, true);
+    }
+    const buffer = await bgmBuffer(mgr.context, entry);
     // 読めなかった時は、次に頼まれた時にもう一度読む
-    if (!buffer && wantedBgm === id) wantedBgm = bgm?.id ?? null;
-    if (!buffer || wantedBgm !== id || bgm?.id === id) return;
+    if (!buffer && wantedBgm === id && bgm?.id !== id) wantedBgm = bgm?.id ?? null;
+    if (!buffer || wantedBgm !== id) return;
+    if (bgm?.id === id) {
+      if (bgm.head) switchToFull(mgr, bgm, buffer);
+      return;
+    }
     // スマホのブラウザは最初に画面に触れるまで音を出せないので、触れた後に始める
     if (mgr.locked) {
       mgr.once(Phaser.Sound.Events.UNLOCKED, () => {
-        if (wantedBgm === id && bgm?.id !== id) startBgm(mgr, id, buffer);
+        if (wantedBgm === id && bgm?.id !== id) startBgm(mgr, id, buffer, false);
       });
       return;
     }
-    startBgm(mgr, id, buffer);
-  });
+    startBgm(mgr, id, buffer, false);
+  })();
 }
 
-/** 前の曲を小さくしながら止めて、用意のできた曲を始める */
-function startBgm(mgr: Phaser.Sound.WebAudioSoundManager, id: string, buffer: AudioBuffer): void {
+/** 曲のくり返し方を音の元に付ける（頭だけの時はくり返さない） */
+function setLoop(source: AudioBufferSourceNode, id: string, buffer: AudioBuffer, head: boolean): void {
+  source.buffer = buffer;
+  source.loop = !head;
+  const loop = BGM_LOOPS[id];
+  if (loop && !head) {
+    source.loopStart = loop.start;
+    source.loopEnd = Math.min(loop.end, buffer.duration);
+  }
+}
+
+/** 前の曲を小さくしながら止めて、用意のできた曲（頭だけか全体）を始める */
+function startBgm(mgr: Phaser.Sound.WebAudioSoundManager, id: string, buffer: AudioBuffer, head: boolean): void {
   fadeOutBgm();
   const ctx = mgr.context;
   const gain = ctx.createGain();
   gain.gain.value = getSettings().bgmVolume;
   gain.connect(mgr.destination);
+  const part = ctx.createGain();
+  part.connect(gain);
   const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-  const loop = BGM_LOOPS[id];
-  if (loop) {
-    source.loopStart = loop.start;
-    source.loopEnd = Math.min(loop.end, buffer.duration);
+  setLoop(source, id, buffer, head);
+  source.connect(part);
+  const startedAt = ctx.currentTime;
+  source.start(startedAt);
+  bgm = { id, source, gain, part, head, startedAt };
+}
+
+/** 頭だけを鳴らしている曲を、解けた全体へ移す。鳴っている位置から続け、少し重ねて切り替える */
+function switchToFull(mgr: Phaser.Sound.WebAudioSoundManager, playing: Playing, buffer: AudioBuffer): void {
+  const ctx = mgr.context;
+  const at = ctx.currentTime + 0.02;
+  let offset = at - playing.startedAt;
+  const loop = BGM_LOOPS[playing.id];
+  const loopEnd = loop ? Math.min(loop.end, buffer.duration) : buffer.duration;
+  const loopStart = loop?.start ?? 0;
+  if (offset >= loopEnd) offset = loopStart + ((offset - loopStart) % (loopEnd - loopStart));
+  const part = ctx.createGain();
+  part.gain.setValueAtTime(0, at);
+  part.gain.linearRampToValueAtTime(1, at + BGM_HEAD.crossfadeSec);
+  part.connect(playing.gain);
+  const source = ctx.createBufferSource();
+  setLoop(source, playing.id, buffer, false);
+  source.connect(part);
+  source.start(at, offset);
+  const old = playing.source;
+  const oldPart = playing.part;
+  oldPart.gain.setValueAtTime(1, at);
+  oldPart.gain.linearRampToValueAtTime(0, at + BGM_HEAD.crossfadeSec);
+  old.stop(at + BGM_HEAD.crossfadeSec + 0.01);
+  old.onended = () => oldPart.disconnect();
+  playing.source = source;
+  playing.part = part;
+  playing.head = false;
+  debugLog(`${playing.id}：全体へ移った（${offset.toFixed(2)}秒の所から）`);
+}
+
+/** 曲の頭（BGM_HEAD.sec 秒ぶんの mp3）だけを解く。小さい曲や解けない時は null（全体を待つ） */
+async function decodeHead(ctx: BaseAudioContext, entry: AssetEntry): Promise<AudioBuffer | null> {
+  try {
+    const t0 = performance.now();
+    const data = await fetchBgm(entry);
+    const bytes = BGM_HEAD.sec * BGM_HEAD.bytesPerSec;
+    if (data.byteLength < bytes * 2) return null;
+    const t1 = performance.now();
+    const head = await ctx.decodeAudioData(data.slice(0, bytes));
+    debugLog(`${entry.id}：読む ${Math.round(t1 - t0)}ms・頭を解く ${Math.round(performance.now() - t1)}ms（${head.duration.toFixed(1)}秒ぶん）`);
+    return head;
+  } catch (e) {
+    console.warn(`[sound] BGM の頭を解けなかった：${entry.id}`, e);
+    return null;
   }
-  source.connect(gain);
-  source.start();
-  bgm = { id, source, gain };
+}
+
+/** ?debug=1 の時だけ、曲の読み込みの時間をログに出す（スマホでは eruda で見る） */
+function debugLog(msg: string): void {
+  if (isDebugEnabled(window.location.search)) console.info(`[bgm] ${msg}`);
 }
 
 /**
@@ -145,9 +223,12 @@ function bgmBuffer(ctx: BaseAudioContext, entry: AssetEntry): Promise<AudioBuffe
 
 async function decodeBgm(ctx: BaseAudioContext, entry: AssetEntry): Promise<AudioBuffer | null> {
   try {
+    const t0 = performance.now();
     const data = await fetchBgm(entry);
+    const t1 = performance.now();
     // 解くと元のデータが使えなくなるので、写しを渡す
     const buffer = await ctx.decodeAudioData(data.slice(0));
+    debugLog(`${entry.id}：読む ${Math.round(t1 - t0)}ms・全体を解く ${Math.round(performance.now() - t1)}ms（${buffer.duration.toFixed(0)}秒）`);
     decoded.set(entry.id, buffer);
     for (const old of decoded.keys()) {
       if (decoded.size <= KEEP_DECODED) break;
@@ -484,4 +565,9 @@ function fadeOutBgm(): void {
 /** 今流れている BGM（台帳の id）。自動の確認で使う */
 export function currentBgm(): string | null {
   return bgm?.id ?? null;
+}
+
+/** 今流れている BGM を、頭だけで鳴らしているか（自動の確認で使う） */
+export function bgmFromHead(): boolean {
+  return bgm?.head ?? false;
 }
