@@ -47,6 +47,8 @@ const AKARI_FACES = {
   真剣: 'serious',
   困り笑い: 'wry',
   微笑み: 'gentle',
+  考える: 'thinking',
+  泣き笑い: 'teary',
 };
 const HERO_FACES = {
   通常: 'normal',
@@ -58,6 +60,8 @@ const HERO_FACES = {
   悲しい: 'sad',
   照れ: 'shy',
   苦笑い: 'wry',
+  悔しい: 'frustrated',
+  怒り: 'angry',
 };
 const RIKU_FACES = {
   通常: 'normal',
@@ -79,11 +83,21 @@ export interface PortraitPart {
 }
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
   あかり: {
-    blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry'] },
-    talk: { image: 'portrait.part.akari_talk', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy'] },
+    blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry', 'thinking'] },
+    talk: { image: 'portrait.part.akari_talk', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'thinking', 'teary'] },
   },
-  ハルト: { talk: { image: 'portrait.part.hero_talk', faces: ['normal', 'determined', 'exasperated', 'sad', 'shy', 'smile'] } },
-  りく: { talk: { image: 'portrait.part.riku_talk', faces: ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] } },
+  ハルト: {
+    blink: {
+      image: 'portrait.part.hero_blink',
+      faces: ['normal', 'smile', 'surprised', 'determined', 'exasperated', 'troubled', 'sad', 'shy', 'wry', 'frustrated', 'angry'],
+    },
+    talk: { image: 'portrait.part.hero_talk', faces: ['normal', 'determined', 'exasperated', 'sad', 'shy', 'smile'] },
+  },
+  // りくの閉じた目は眉が上がった絵なので、眉の形が違う表情（真剣・あせり・悲しい）には重ねない
+  りく: {
+    blink: { image: 'portrait.part.riku_blink', faces: ['normal', 'smile', 'proud', 'surprised', 'smirk'] },
+    talk: { image: 'portrait.part.riku_talk', faces: ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] },
+  },
 };
 
 /** まばたきの間（ミリ秒）：次のまばたきまで min〜max、閉じている時間、2回続ける割合。口パク：開け閉めの間 */
@@ -129,11 +143,11 @@ export const CAST: Record<string, CastMember> = {
   ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
   写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
-  // M2（段階35）。みおは絵がまだない。ふみは基本の1枚だけあり、ほかの表情は届くまで基本の1枚で代わりに出す
+  // M2（段階35）。みおは絵がまだない。ふみは全部の表情の絵がある（2026-10-11）
   みお: { faces: names('笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい'), firstFace: '笑顔', color: 0xe08a3a, voice: { pitch: 720, wave: 'square' } },
   ふみ: {
     portrait: 'portrait.fumi',
-    ...young(['通常', '笑顔', '驚き', '泣き笑い', 'さみしげ', '考える'], { 通常: 'normal' }, '通常'),
+    ...young(['通常', '笑顔', '驚き', '泣き笑い', 'さみしげ', '考える'], { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 泣き笑い: 'teary', さみしげ: 'lonely', 考える: 'thinking' }, '通常'),
     color: 0x9a7a8a,
     height: 430,
     voice: { pitch: 470, wave: 'triangle' },
