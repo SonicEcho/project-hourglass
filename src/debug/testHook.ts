@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { currentBgm } from '../audio/sound';
+import { bgmFromHead, currentBgm } from '../audio/sound';
 
 // 通しの自動確認（段階20、scripts/e2e.mjs）が画面を外から調べる窓口。?debug=1 の時だけ main.ts から用意する。
 // 画面は canvas に描くので、ボタンの文字の位置をここで教え、外からその位置をタップしてもらう
@@ -11,6 +11,8 @@ export interface TestHook {
   findText(pattern: string): { text: string; x: number; y: number } | null;
   /** 今流れている BGM（台帳の id） */
   bgm(): string | null;
+  /** 今の BGM を頭だけで鳴らしているか（全体が解けたら false） */
+  bgmHead(): boolean;
 }
 
 /** 画面に出ている文字。1文字ずつ置いた文（けいかくひょうの手書きの字）は、入れ物に data の text で全文を書いておく */
@@ -49,6 +51,7 @@ export function installTestHook(game: Phaser.Game): void {
       return found;
     },
     bgm: () => currentBgm(),
+    bgmHead: () => bgmFromHead(),
   };
   (window as unknown as { __restopia: TestHook }).__restopia = hook;
 }

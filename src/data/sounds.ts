@@ -91,6 +91,12 @@ export const BGM = {
 } as const;
 
 /**
+ * BGM の頭（2026-10-11）：まだ解いていない曲は、mp3 の頭の sec 秒ぶん（96kbps なので1秒 12000 バイト）だけを先に解いてすぐ鳴らし、
+ * 全体が解けたら鳴っている位置から全体へ移る（crossfadeSec 秒重ねる）。全体を解くのにスマホで1〜3秒かかるため。sec はそれより十分長く
+ */
+export const BGM_HEAD = { sec: 15, bytesPerSec: 12000, crossfadeSec: 0.05 } as const;
+
+/**
  * BGM のくり返す区間（秒）。書かなければ曲の全体をくり返す。
  * Suno の曲は最初から最後までがループになっていないので、つなぎ目をここに書く（start まで1回だけ流し、start〜end をくり返す）
  */

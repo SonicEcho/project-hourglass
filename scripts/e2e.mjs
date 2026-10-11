@@ -197,6 +197,8 @@ try {
     await waitScene('Battle');
     const battleBgm = n === BATTLES ? 'bgm.boss' : 'bgm.battle';
     await until(`戦闘の BGM（${battleBgm}）`, async () => (await page.evaluate(() => window.__restopia.bgm())) === battleBgm);
+    // まだ解いていない曲は頭だけで鳴り始め、全体が解けたら移る（2026-10-11）
+    await until('BGM が曲の全体へ移る', async () => !(await page.evaluate(() => window.__restopia.bgmHead())));
     await winBattle();
     if (n === BATTLES) {
       await tap('^結果へ$');
