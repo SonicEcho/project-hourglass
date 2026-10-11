@@ -110,6 +110,10 @@ try {
   await waitScene('Dialogue');
   // BGM は初めて流す時に読むので、少し待つ（2026-10-11）
   await until('タイトルの BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.title');
+  // 「はじめる」で曲を全部ダウンロードして端末にしまう（2026-10-11）
+  const BGM_COUNT = [...readFileSync(new URL('../src/data/assets.ts', import.meta.url), 'utf8').matchAll(/Bgm\('bgm\./g)].length;
+  const stored = await page.evaluate(async () => (await (await caches.open('restopia-bgm')).keys()).length);
+  if (stored !== BGM_COUNT) throw new Error(`端末にしまった曲が ${stored} 曲（台帳は ${BGM_COUNT} 曲）`);
   step('プロローグの会話が始まった');
   for (let i = 0; i < 3; i++) {
     await tapAt(195, 650);

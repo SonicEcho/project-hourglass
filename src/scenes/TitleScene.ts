@@ -4,6 +4,7 @@ import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
 import { addImageOr } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
 import { playBgm, playSand, stopAmbience } from '../audio/sound';
+import { prepareBgm } from '../audio/bgmStore';
 import { chapterOfEvent, findEvent } from '../core';
 import { BGM, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
@@ -18,6 +19,18 @@ function formatSavedAt(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** 曲のダウンロード（タイトルから始める時。2026-10-11） */
+interface BgmJob {
+  state: 'loading' | 'ok' | 'error';
+  loaded: number;
+  total: number;
+}
+
+/** バイトを「1.2」（MB）の形にする */
+function mb(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(1);
 }
 
 export class TitleScene extends Phaser.Scene {
@@ -166,6 +179,8 @@ export class TitleScene extends Phaser.Scene {
     if (this.leaving) return;
     this.leaving = true;
     this.input.enabled = false;
+    // 余韻の間に、まだしまっていない曲をダウンロードする（2026-10-11）
+    const job = this.startBgmJob();
     playSand(this);
     this.tweens.add({ targets: ui, alpha: 0, duration: TITLE_EXIT.uiFadeMs, ease: 'Sine.easeOut' });
     this.tweens.killTweensOf(glow);
@@ -173,8 +188,87 @@ export class TitleScene extends Phaser.Scene {
     fall.frequency = TITLE_EXIT.sandFrequency;
     this.time.delayedCall(TITLE_EXIT.holdMs, () => {
       const cam = this.cameras.main;
-      cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.time.delayedCall(TITLE_EXIT.blackMs, go));
+      cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.time.delayedCall(TITLE_EXIT.blackMs, () => this.waitBgm(job, go)));
       cam.fadeOut(TITLE_EXIT.fadeMs, 0, 0, 0);
+    });
+  }
+
+  /** 足りない曲のダウンロードを始める */
+  private startBgmJob(): BgmJob {
+    const job: BgmJob = { state: 'loading', loaded: 0, total: 0 };
+    prepareBgm((loaded, total) => {
+      job.loaded = loaded;
+      job.total = total;
+    }).then(
+      () => (job.state = 'ok'),
+      (e) => {
+        console.warn('[bgm] 曲をダウンロードできなかった', e);
+        job.state = 'error';
+      },
+    );
+    return job;
+  }
+
+  /**
+   * 余韻が終わった時に曲がそろっていなければ、暗い画面に進み具合を出して待つ（2026-10-11）。
+   * 取れなかった時は「もう一度」と「曲なしで進む」（曲なしで進んだら、流す時にその場で読む）
+   */
+  private waitBgm(job: BgmJob, go: () => void): void {
+    if (job.state === 'ok') {
+      go();
+      return;
+    }
+    const cx = GAME_WIDTH / 2;
+    const cam = this.cameras.main;
+    cam.resetFX();
+    const layer = this.add.container(0, 0).setDepth(1000);
+    // 下のボタンを押せないように、全体を覆う
+    layer.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 1).setOrigin(0).setInteractive());
+    const title = addText(this, cx, 380, '曲を読み込んでいます', { size: 16, color: COLORS.accentText }).setOrigin(0.5);
+    const barW = 240;
+    const barBg = this.add.rectangle(cx - barW / 2, 420, barW, 6, COLORS.panel).setOrigin(0, 0.5);
+    const bar = this.add.rectangle(cx - barW / 2, 420, 0, 6, COLORS.accent).setOrigin(0, 0.5);
+    const amount = addText(this, cx, 448, '', { size: 13, color: COLORS.subText }).setOrigin(0.5);
+    layer.add([title, barBg, bar, amount]);
+    const buttons = this.add.container(0, 0);
+    layer.add(buttons);
+    const show = () => {
+      if (job.total > 0) {
+        bar.width = barW * Math.min(1, job.loaded / job.total);
+        amount.setText(`${mb(job.loaded)} / ${mb(job.total)}MB`);
+      }
+    };
+    show();
+    const timer = this.time.addEvent({
+      delay: 100,
+      loop: true,
+      callback: () => {
+        if (job.state !== 'error') show();
+        if (job.state === 'ok') {
+          timer.remove();
+          cam.fadeOut(200, 0, 0, 0);
+          cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, go);
+        } else if (job.state === 'error' && buttons.length === 0) {
+          title.setText('曲を読み込めませんでした');
+          amount.setText('電波のよい所で、もう一度試してください');
+          this.input.enabled = true;
+          addButton(this, buttons, cx, 530, 220, 56, 'もう一度', {
+            onTap: () => {
+              timer.remove();
+              layer.destroy(true);
+              this.input.enabled = false;
+              this.waitBgm(this.startBgmJob(), go);
+            },
+          }, { size: 16, bold: true });
+          addButton(this, buttons, cx, 606, 220, 52, '曲なしで進む', {
+            onTap: () => {
+              timer.remove();
+              this.input.enabled = false;
+              go();
+            },
+          }, { size: 15 });
+        }
+      },
     });
   }
 

@@ -3,7 +3,7 @@
 使い方: python3 scripts/maou_bgm.py <魔王魂から落とした mp3 のフォルダ> public/assets/bgm
   （numpy と ffmpeg が要る。曲は https://maou.audio/ の各曲のページから、通常版の mp3 を落とす）
 
-くり返し方は2つ。書き出した後に表示する値を src/data/sounds.ts の BGM_LOOPS に書く。
+くり返し方は2つ。書き出した後に表示する値を src/data/sounds.ts の BGM_LOOPS に、version と bytes を台帳（src/data/assets.ts）に書く。
 - loop：曲の中で同じ部分が繰り返す所（1周の長さ L は、波形を少しずつずらして重ね、一番よく合う所を探した）を使う。
   鳴り始めの少し前から [S+L] までを流し、その後ろに [S, S+1秒) の写しを足す（区間の終わりの先も続きの音にしておく）。
   区間の終わりの直前 60ms は、戻り先 S の直前の音へなめらかに移す（つなぎ目で音が跳ねないように）。くり返すのは S〜S+L
@@ -11,6 +11,7 @@
 大きさは、どの曲も聞こえ方の大きさ（ラウドネス）を TARGET_LUFS にそろえる（2026-10-11、タイトルだけ小さく他が大きいと開発者から聞いて）。
 TARGET_LUFS は、一番小さいタイトルの曲を上げても音が割れない所（最大で約 -1dB）で、自作の仮の縁日の曲とも同じ大きさ
 """
+import hashlib
 import json
 import subprocess
 import sys
@@ -73,7 +74,10 @@ for name, fname, mode, S, L in SONGS:
     before = loudness(y)
     y = y * 10 ** ((TARGET_LUFS - before) / 20)
     result[fname].update({'lufs': round(before, 1), 'gainDb': round(TARGET_LUFS - before, 1), 'peakDb': round(float(20 * np.log10(np.abs(y).max())), 1)})
+    path = f'{out}/{fname}'
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '2', '-i', '-',
-                    '-codec:a', 'libmp3lame', '-b:a', '96k', f'{out}/{fname}'],
+                    '-codec:a', 'libmp3lame', '-b:a', '96k', path],
                    input=y.astype(np.float32).tobytes(), check=True)
+    data = open(path, 'rb').read()
+    result[fname].update({'version': hashlib.sha256(data).hexdigest()[:12], 'bytes': len(data)})
 print(json.dumps(result, indent=1, ensure_ascii=False))

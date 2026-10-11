@@ -41,6 +41,10 @@ export interface AssetEntry {
   /** 手に入れた時の利用規約・ライセンス文の控え（リポジトリの中の場所）。フリー素材とライブラリは必須 */
   termsCopy?: string;
   notes?: string;
+  /** 中身の印（BGM だけ。sha256 の頭12文字）。URL の ?v= に付け、端末にしまった古い曲と見分ける。テストがファイルと合うか確かめる */
+  version?: string;
+  /** ファイルの大きさ（バイト。BGM だけ。読み込みの進み具合を出すのに使う） */
+  bytes?: number;
 }
 
 
@@ -371,7 +375,7 @@ function soundEffectLab(
 }
 
 /** 自作の仮の BGM（段階19。ループの仕組みを確かめるための音。本番は Suno で作った曲に替える） */
-function placeholderBgm(id: string, title: string, file: string): AssetEntry {
+function placeholderBgm(id: string, title: string, file: string, version: string, bytes: number): AssetEntry {
   return {
     id,
     kind: 'audio',
@@ -385,6 +389,8 @@ function placeholderBgm(id: string, title: string, file: string): AssetEntry {
     creditRequired: false,
     modifyAllowed: true,
     acquiredAt: '2026-10-08',
+    version,
+    bytes,
     notes: 'scripts/placeholder_bgm.py でプログラムで合成した音。本番では Suno の有料の版で作った曲に替える（docs/ART.md）',
   };
 }
@@ -393,7 +399,7 @@ function placeholderBgm(id: string, title: string, file: string): AssetEntry {
  * 魔王魂の曲を使った仮の BGM（2026-10-11、開発者が曲を選んだ。本番の曲（Suno）ができるまでの仮）。
  * 長さを切ってつなぎ目を整えた（scripts/maou_bgm.py）。ファイル名に maoudamashii を入れるのは、魔王魂の二次配布の決まり
  */
-function maouBgm(id: string, title: string, song: string, page: string, edit: string): AssetEntry {
+function maouBgm(id: string, title: string, song: string, page: string, edit: string, version: string, bytes: number): AssetEntry {
   return {
     id,
     kind: 'audio',
@@ -409,6 +415,8 @@ function maouBgm(id: string, title: string, song: string, page: string, edit: st
     modifyAllowed: true,
     acquiredAt: '2026-10-11',
     termsCopy: 'docs/licenses/maoudamashii.md',
+    version,
+    bytes,
     notes: `元のファイル：maou_bgm_${page}.mp3（通常版）。手を入れた所：${edit}、96kbps の mp3 にした。曲だけを配ること、生成 AI の学習は禁止`,
   };
 }
@@ -530,13 +538,13 @@ export const ASSETS: AssetEntry[] = [
     notes:
       '屋台めぐりの「けいかくひょう」（子どものりくの字）に使う。かな・英数字と src/data/daily.ts の字だけに絞った（scripts/font-subset.py）。ゲームの中では RestopiaHand の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
   },
-  placeholderBgm('bgm.festival', '縁日', 'festival.mp3'),
-  maouBgm('bgm.title', 'タイトル', 'ピアノ41', 'piano41', MAOU_WHOLE_EDIT),
-  maouBgm('bgm.daily', '日常', 'アコースティック39', 'acoustic39', MAOU_LOOP_EDIT),
-  maouBgm('bgm.library', 'レストピア', 'オーケストラ14', 'orchestra14', MAOU_WHOLE_EDIT),
-  maouBgm('bgm.return', '返す場面', 'ピアノ24', 'piano24', MAOU_WHOLE_EDIT),
-  maouBgm('bgm.battle', 'ふだんの戦闘', 'ファンタジー12', 'fantasy12', MAOU_LOOP_EDIT),
-  maouBgm('bgm.boss', 'ボス戦', 'ファンタジー03', 'fantasy03', MAOU_LOOP_EDIT),
+  placeholderBgm('bgm.festival', '縁日', 'festival.mp3', 'f43d091d1e0e', 78620),
+  maouBgm('bgm.title', 'タイトル', 'ピアノ41', 'piano41', MAOU_WHOLE_EDIT, '1112bbfa66c4', 932929),
+  maouBgm('bgm.daily', '日常', 'アコースティック39', 'acoustic39', MAOU_LOOP_EDIT, 'ef9bf7af38fa', 2066435),
+  maouBgm('bgm.library', 'レストピア', 'オーケストラ14', 'orchestra14', MAOU_WHOLE_EDIT, 'f1808a68cd24', 753311),
+  maouBgm('bgm.return', '返す場面', 'ピアノ24', 'piano24', MAOU_WHOLE_EDIT, 'b25b0eb8f6d5', 1027597),
+  maouBgm('bgm.battle', 'ふだんの戦闘', 'ファンタジー12', 'fantasy12', MAOU_LOOP_EDIT, 'f035f943f3e5', 1344515),
+  maouBgm('bgm.boss', 'ボス戦', 'ファンタジー03', 'fantasy03', MAOU_LOOP_EDIT, '90d556e23282', 1637295),
   {
     id: 'map.festival',
     kind: 'image',

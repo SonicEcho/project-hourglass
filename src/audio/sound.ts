@@ -5,12 +5,12 @@ import type { AssetEntry, BlipVoice } from '../data';
 import { addSandGrains, addSandHiss } from './sandNoise';
 import { AMBIENCE, ASSETS, BGM_LOOPS, KOMA_SOUND, SAND_RISE_SOUND, SAND_SOUND, SE_GAIN, WAVE_GAIN } from '../data';
 import { browserStorage } from '../save/storage';
-import { assetUrl } from '../assets/loader';
+import { readBgm } from './bgmStore';
 
 // 音を鳴らす部品（段階19）。音はすべてここを通して鳴らす。
 // BGM はゲーム全体で1曲だけ。画面が替わっても止めず、別の曲を頼まれた時だけ切り替える。
 // スマホのブラウザは最初に画面に触れるまで音を出せないので、その前に頼まれた BGM は触れた後に始める。
-// BGM のファイルは起動の時には読まず、初めて流す時に読む（効果音は起動の時に読む）。
+// BGM のファイルは起動の時には読まない（効果音は起動の時に読む）。タイトルから始める時に端末にしまい（bgmStore.ts）、流す時にそこから読む。
 // BGM のくり返しは、ブラウザの音の機能（Web Audio）に直接任せる（区間の前から区間へのつなぎも、区間の終わりから始めへも切れ目がない。段階20）
 
 const SETTINGS_KEY = 'restopia.settings';
@@ -31,6 +31,8 @@ let wantedBgm: string | null = null;
 const KEEP_DECODED = 2;
 /** 音に解いた曲（古く使ったものから順に並ぶ） */
 const decoded = new Map<string, AudioBuffer>();
+/** 音に解いている途中の曲 */
+const decoding = new Map<string, Promise<AudioBuffer | null>>();
 /** 読んだ（読んでいる）曲の mp3 */
 const encoded = new Map<string, Promise<ArrayBuffer>>();
 
@@ -125,13 +127,23 @@ function startBgm(mgr: Phaser.Sound.WebAudioSoundManager, id: string, buffer: Au
  * 曲の音のデータを用意する。読んだ mp3 は小さいので全部残し、音に解いたもの（1曲で数十MB）は最近使った KEEP_DECODED 曲だけ残す。
  * 読めない・解けない時は null（BGM なしで続ける）
  */
-async function bgmBuffer(ctx: BaseAudioContext, entry: AssetEntry): Promise<AudioBuffer | null> {
+function bgmBuffer(ctx: BaseAudioContext, entry: AssetEntry): Promise<AudioBuffer | null> {
   const hit = decoded.get(entry.id);
   if (hit) {
     decoded.delete(entry.id);
     decoded.set(entry.id, hit);
-    return hit;
+    return Promise.resolve(hit);
   }
+  let p = decoding.get(entry.id);
+  if (!p) {
+    p = decodeBgm(ctx, entry);
+    decoding.set(entry.id, p);
+    void p.then(() => decoding.delete(entry.id));
+  }
+  return p;
+}
+
+async function decodeBgm(ctx: BaseAudioContext, entry: AssetEntry): Promise<AudioBuffer | null> {
   try {
     const data = await fetchBgm(entry);
     // 解くと元のデータが使えなくなるので、写しを渡す
@@ -148,18 +160,26 @@ async function bgmBuffer(ctx: BaseAudioContext, entry: AssetEntry): Promise<Audi
   }
 }
 
-/** 曲の mp3 を読む（同じ曲を2回読まない） */
+/** 曲の mp3 を読む（同じ曲を2回読まない。端末にしまってあればそこから） */
 function fetchBgm(entry: AssetEntry): Promise<ArrayBuffer> {
   let p = encoded.get(entry.id);
   if (!p) {
-    p = fetch(assetUrl(entry)).then((r) => {
-      if (!r.ok) throw new Error(`${r.status} ${r.url}`);
-      return r.arrayBuffer();
-    });
+    p = readBgm(entry);
     p.catch(() => encoded.delete(entry.id));
     encoded.set(entry.id, p);
   }
   return p;
+}
+
+/**
+ * すぐ後で流す曲を、先に音に解いておく（会話の台本の先にある曲など。流す時に待たないように）。
+ * 流れている曲と同じなら何もしない
+ */
+export function warmBgm(scene: Phaser.Scene, id: string): void {
+  const entry = ASSETS.find((a) => a.id === id && a.kind === 'audio' && a.file);
+  const mgr = scene.sound;
+  if (!entry || bgm?.id === id || decoded.has(id) || !(mgr instanceof Phaser.Sound.WebAudioSoundManager)) return;
+  void bgmBuffer(mgr.context, entry);
 }
 
 /** すぐ後で流しそうな曲を、先に読んでおく（探索に入ったら戦闘の曲など。解くのは流す時） */
