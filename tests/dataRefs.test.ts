@@ -193,6 +193,8 @@ describe('物語の流れ（段階23・34）', () => {
     // 町の地図と絆の出来事（段階35）
     expect(checkBonds(BOND_EVENTS, TOWN)).toEqual([]);
     for (const p of Object.values(TOWN)) expect(p.backdrop in BACKDROPS, p.id).toBe(true);
+    // 返す画面の記憶の景色（段階46d）
+    for (const area of Object.values(AREAS)) if (area.memory) expect(area.memory in BACKDROPS, area.id).toBe(true);
     for (const events of Object.values(BOND_EVENTS)) for (const b of events) expect(reachable.has(b.id), b.id).toBe(true);
   });
 });

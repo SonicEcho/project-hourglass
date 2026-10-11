@@ -69,6 +69,27 @@ const RIKU_FACES = {
   にやり: 'smirk',
   悲しい: 'sad',
 };
+/**
+ * 立ち絵のまばたき・口パクの差分（段階46b。docs/design/dialogue.md の 2.）。人ごとに、重ねる絵（台帳の id）と、重ねてよい表情の絵（台帳の id の終わり。CAST の faces の値）。
+ * 目を閉じた表情・口を開けた表情には重ねない。差分のない人・表情は止まった絵のまま。絵が届いたら、台帳とここに足すだけ
+ */
+export interface PortraitPart {
+  image: string;
+  faces: string[];
+}
+export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
+  あかり: {
+    blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry'] },
+    talk: { image: 'portrait.part.akari_talk', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy'] },
+  },
+  ハルト: { talk: { image: 'portrait.part.hero_talk', faces: ['normal', 'determined', 'exasperated', 'sad', 'shy', 'smile'] } },
+  りく: { talk: { image: 'portrait.part.riku_talk', faces: ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] } },
+};
+
+/** まばたきの間（ミリ秒）：次のまばたきまで min〜max、閉じている時間、2回続ける割合。口パク：開け閉めの間 */
+export const BLINK = { minMs: 2200, maxMs: 5400, closedMs: 110, doubleRate: 0.25 };
+export const MOUTH_FLAP_MS = 110;
+
 /** 絵のない人の表情（名前だけ。絵ができたら台帳の id に替える） */
 const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
@@ -143,7 +164,8 @@ export const VOICE_PITCH_RANGE = { min: 250, max: 800 };
 export const BLIP_EVERY = 2;
 
 /** 背景に流す空気（提灯の灯り、星、舞う砂） */
-export type Ambient = 'lanterns' | 'stars' | 'dust';
+/** 背景・1枚絵に流す粒（motes：金の粒がゆっくり昇ってまたたく。段階46c） */
+export type Ambient = 'lanterns' | 'stars' | 'dust' | 'motes';
 
 /** 背景。image は台帳の id（なければ上から下への色の帯と名前で仮に描く） */
 export interface Backdrop {
@@ -156,6 +178,8 @@ export interface Backdrop {
   ambient?: Ambient;
   /** 出ている間、小さく鳴り続ける環境音（効果音の台帳の id。段階32b 調整3） */
   ambienceSe?: string;
+  /** 光のゆらぎ（1枚絵。段階46c）：光の中心（絵の幅・高さに対する割合）と色。ゆっくり明るくなったり暗くなったりする */
+  glow?: { x: number; y: number; color: number };
 }
 
 export const BACKDROPS: Record<string, Backdrop> = {
@@ -222,10 +246,10 @@ export const FACE_EMOTES: Record<string, Emote> = {
 
 /** 1枚絵（なければ色と名前で仮に描く） */
 export const CGS: Record<string, Backdrop> = {
-  white_city: { title: '1枚絵：白い街（夢）', top: 0xffffff, bottom: 0xd8e0e8 },
-  fireworks: { title: '1枚絵：高台で花火を見る3人の後ろ姿', top: 0x0a0e30, bottom: 0x40305a },
+  white_city: { title: '1枚絵：白い街（夢）', top: 0xffffff, bottom: 0xd8e0e8, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
+  fireworks: { title: '1枚絵：高台で花火を見る3人の後ろ姿', top: 0x0a0e30, bottom: 0x40305a, ambient: 'stars', glow: { x: 0.5, y: 0.25, color: 0xffb070 } },
   photo_goldfish: { title: '写真：浴衣の小さなあかりが、金魚の袋をふたつ提げている', top: 0x3a3060, bottom: 0xd07a4a },
-  noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing' },
+  noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
 };
 
 /**

@@ -13,6 +13,10 @@ export interface TestHook {
   bgm(): string | null;
   /** 今の BGM を頭だけで鳴らしているか（全体が解けたら false） */
   bgmHead(): boolean;
+  /** 画面を直接開く（見た目の確かめで、演出の画面を撮るため。段階46） */
+  start(key: string, data?: object): void;
+  /** 動いている画面そのもの（演出を外から呼んで撮るため。段階46） */
+  scene(key: string): Phaser.Scene | null;
 }
 
 /** 画面に出ている文字。1文字ずつ置いた文（けいかくひょうの手書きの字）は、入れ物に data の text で全文を書いておく */
@@ -52,6 +56,11 @@ export function installTestHook(game: Phaser.Game): void {
     },
     bgm: () => currentBgm(),
     bgmHead: () => bgmFromHead(),
+    start: (key, data) => {
+      for (const s of game.scene.getScenes(true)) s.scene.stop();
+      game.scene.start(key, data);
+    },
+    scene: (key) => game.scene.getScene(key) ?? null,
   };
   (window as unknown as { __restopia: TestHook }).__restopia = hook;
 }

@@ -813,3 +813,26 @@ export const ASSETS: AssetEntry[] = [
     ] as const
   ).map(([face, title, expression]) => akariPortrait(face, title, expression, 'Gemini で作ったデジャヴの立ち絵（リボンが赤い物）。843×1264 で出てきた', AKARI_ADDED_HEAD)),
 ];
+
+/**
+ * 立ち絵のまばたき・口パクの差分（段階46b）。元の表情の絵から目・口のまわりだけを切り抜いた透明な絵（scripts/portrait_parts.py）。
+ * 入手元・ライセンスは元の絵と同じ。会話の画面で表情の絵に重ねる（src/data/dialogue.ts の PORTRAIT_PARTS）
+ */
+const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
+  ['akari_blink', 'portrait.akari.laugh', 'あかりの閉じた目（まばたき）'],
+  ['akari_talk', 'portrait.akari.worried', 'あかりの開いた口（口パク）'],
+  ['hero_talk', 'portrait.hero.surprised', 'ハルトの開いた口（口パク）'],
+  ['riku_talk', 'portrait.riku.surprised', 'りくの開いた口（口パク）'],
+];
+for (const [file, from, title] of PORTRAIT_PART_FILES) {
+  const src = ASSETS.find((a) => a.id === from);
+  if (!src) throw new Error(`立ち絵の差分の元の絵がない：${from}`);
+  ASSETS.push({
+    ...src,
+    id: `portrait.part.${file}`,
+    title,
+    file: `assets/portraits/parts/${file}.webp`,
+    acquiredAt: '2026-10-11',
+    notes: `${src.title}から切り抜いた（scripts/portrait_parts.py。段階46b）。${src.notes ?? ''}`,
+  });
+}
