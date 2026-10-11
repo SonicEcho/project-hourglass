@@ -6,6 +6,7 @@ import {
   enterPlayEvent,
   formatPlayTime,
   parsePlayLog,
+  playLogSections,
   PLAY_TICK_MAX_MS,
   recordPlayBattle,
   recordPlayStart,
@@ -102,7 +103,37 @@ describe('遊んだ記録（段階32b）', () => {
     expect(formatPlayTime(3_725_000)).toBe('1:02:05');
   });
 
-  it('M1 の流れの出来事は、記録の画面の1画面に入る数', () => {
-    expect(summarizePlayLog(createPlayLog(t0), SLICE_FLOW).rows.length).toBeLessThanOrEqual(24);
+  it('記録の画面では、日ごと・区画ごとの行にまとめる。日の行は探索以外を合わせる（段階34）', () => {
+    const f: Flow = [
+      { id: 'p', name: 'プロローグ', events: [{ id: 'a', kind: 'dialogue', title: 'A' }] },
+      {
+        id: 'c1',
+        name: '1章',
+        events: [
+          { id: 'd1', kind: 'day', title: '1日目', day: 1 },
+          { id: 'b', kind: 'dialogue', title: 'B' },
+          { id: 'x', kind: 'explore', title: '探索', area: 'a11' },
+          { id: 'c', kind: 'dialogue', title: 'C' },
+          { id: 'd2', kind: 'day', title: '2日目', day: 2 },
+          { id: 'end', kind: 'end', title: 'つづく' },
+        ],
+      },
+    ];
+    let log = enterPlayEvent(createPlayLog(t0), f, 'c', t0);
+    log = addPlayTime(addPlayTime(addPlayTime(log, 'b', 1000, t0), 'x', 5000, t0), 'c', 2000, t0);
+    log = recordPlayBattle(recordPlayBattle(log, 'x', true), 'x', false);
+    const secs = playLogSections(summarizePlayLog(log, f).rows, f);
+    expect(secs.map((s) => [s.title, s.explore, s.ms, s.wins, s.losses, s.reached])).toEqual([
+      ['プロローグ', false, 0, 0, 0, true],
+      ['1日目', false, 3000, 0, 0, true],
+      ['探索', true, 5000, 1, 1, true],
+      ['2日目', false, 0, 0, 0, false],
+    ]);
+    expect(secs[1].ids).toEqual(['d1', 'b', 'c']);
+  });
+
+  it('今の流れは、まとめた行なら記録の画面の1画面に入る数（段階34）', () => {
+    const rows = summarizePlayLog(createPlayLog(t0), SLICE_FLOW).rows;
+    expect(playLogSections(rows, SLICE_FLOW).length).toBeLessThanOrEqual(24);
   });
 });

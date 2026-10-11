@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { findEvent, formatPlayTime, summarizePlayLog } from '../core';
+import { findEvent, formatPlayTime, playLogSections, summarizePlayLog } from '../core';
 import { SLICE_FLOW } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -54,26 +54,29 @@ export class PlayLogScene extends Phaser.Scene {
     ];
     root.add(addText(this, 24, 62, lines.join('\n'), { size: 13, color: COLORS.subText, wrap: GAME_WIDTH - 48 }).setLineSpacing(4));
 
-    // 出来事ごとの表（流れの順）
-    root.add(addWindow(this, 12, ROW_TOP - 34, GAME_WIDTH - 24, sum.rows.length * ROW_H + 44));
+    // 日ごと・区画ごとの表（流れの順。段階34で、出来事ごとからまとめた行にした）
+    const rows = playLogSections(sum.rows, SLICE_FLOW);
+    root.add(addWindow(this, 12, ROW_TOP - 34, GAME_WIDTH - 24, rows.length * ROW_H + 44));
     const colTime = GAME_WIDTH - 104;
     const colBattle = GAME_WIDTH - 30;
-    root.add(addText(this, 26, ROW_TOP - 24, '出来事', { size: 11, color: COLORS.dimText }));
+    root.add(addText(this, 26, ROW_TOP - 24, '日・区画', { size: 11, color: COLORS.dimText }));
     root.add(addText(this, colTime, ROW_TOP - 24, '時間', { size: 11, color: COLORS.dimText }).setOrigin(1, 0));
     root.add(addText(this, colBattle, ROW_TOP - 24, '勝ち・負け', { size: 11, color: COLORS.dimText }).setOrigin(1, 0));
-    sum.rows.forEach((r, i) => {
+    rows.forEach((r, i) => {
       const y = ROW_TOP + i * ROW_H;
-      const here = r.id === log.last;
+      const here = log.last !== null && r.ids.includes(log.last);
       const color = here ? COLORS.accentText : r.reached ? COLORS.text : COLORS.dimText;
       if (here) root.add(this.add.rectangle(18, y - 2, GAME_WIDTH - 36, ROW_H - 2, COLORS.accent, 0.12).setOrigin(0).setRounded(4));
-      root.add(addText(this, 26, y, `${here ? '▶ ' : ''}${r.title}`, { size: 12, color }));
+      // 区画の行は、話の題だけ（「1-1「金魚の名前」：縁日の探索」→「1-1「金魚の名前」」。時間の欄にかからないように）
+      const title = r.explore ? r.title.split('：')[0] : r.title;
+      root.add(addText(this, r.explore ? 42 : 26, y, `${here ? '▶ ' : ''}${title}`, { size: 12, color }));
       root.add(addText(this, colTime, y, r.ms > 0 ? formatPlayTime(r.ms) : '', { size: 12, color }).setOrigin(1, 0));
       const battles = r.wins + r.losses > 0 ? `${r.wins}・${r.losses}` : '';
       root.add(addText(this, colBattle, y, battles, { size: 12, color: r.losses > 0 ? COLORS.allyDamage : color }).setOrigin(1, 0));
     });
 
     // 下のボタン：戻る、記録を消す（2回押し）
-    const by = ROW_TOP + sum.rows.length * ROW_H + 56;
+    const by = ROW_TOP + rows.length * ROW_H + 56;
     addButton(this, root, cx - 84, by, 150, 48, '戻る', {
       onTap: () => this.scene.start(back, back === 'Flow' ? { done: false } : {}),
     }, { size: 16 });

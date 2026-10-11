@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Flow } from '../../src/core';
-import { advanceFlow, chapterOfEvent, checkFlow, dayAt, dialogueRun, eventNumber, findEvent, firstEventId, moveToEvent, nextEvent } from '../../src/core';
+import { advanceFlow, chapterOfEvent, checkFlow, dayAt, dialogueRun, eventNumber, findEvent, firstEventId, isPlaceholder, moveToEvent, nextEvent } from '../../src/core';
 
 const flow: Flow = [
   { id: 'p', name: 'プロローグ', events: [{ id: 'a', kind: 'dialogue', title: 'A' }, { id: 'b', kind: 'dialogue', title: 'B' }] },
@@ -10,7 +10,7 @@ const flow: Flow = [
     events: [
       { id: 'd1', kind: 'day', title: '1日目', day: 1 },
       { id: 'c', kind: 'dialogue', title: 'C' },
-      { id: 'x', kind: 'explore', title: '探索' },
+      { id: 'x', kind: 'explore', title: '探索', note: '仮' },
       { id: 'e', kind: 'dialogue', title: 'E' },
       { id: 'd2', kind: 'day', title: '2日目', day: 2 },
       { id: 'f', kind: 'dialogue', title: 'F' },
@@ -49,6 +49,33 @@ describe('物語の流れ（段階23）', () => {
     expect(dialogueRun(flow, 'a')).toEqual(['a', 'b']);
     expect(dialogueRun(flow, 'c')).toEqual(['c']);
     expect(dialogueRun(flow, 'x')).toEqual([]);
+  });
+
+  it('仮の画面の出来事：会話・昼の日常は案内のあるもの、探索・時間を返すは区画のないもの。会話は仮の手前でまとめるのをやめる（段階34）', () => {
+    expect(isPlaceholder({ id: 'a', kind: 'dialogue', title: 'A' })).toBe(false);
+    expect(isPlaceholder({ id: 'a', kind: 'dialogue', title: 'A', note: '仮' })).toBe(true);
+    expect(isPlaceholder({ id: 'a', kind: 'daily', title: 'A', note: '仮' })).toBe(true);
+    expect(isPlaceholder({ id: 'a', kind: 'explore', title: 'A', area: 'a11' })).toBe(false);
+    expect(isPlaceholder({ id: 'a', kind: 'return', title: 'A' })).toBe(true);
+    expect(isPlaceholder({ id: 'a', kind: 'day', title: 'A', day: 1 })).toBe(false);
+    const f: Flow = [
+      {
+        id: 'c',
+        name: '章',
+        events: [
+          { id: 'a', kind: 'dialogue', title: 'A' },
+          { id: 'b', kind: 'dialogue', title: 'B', note: '仮' },
+          { id: 'c', kind: 'dialogue', title: 'C' },
+          { id: 'end', kind: 'end', title: 'つづく' },
+        ],
+      },
+    ];
+    expect(dialogueRun(f, 'a')).toEqual(['a']);
+    expect(dialogueRun(f, 'b')).toEqual([]);
+    expect(dialogueRun(f, 'c')).toEqual(['c']);
+    expect(checkFlow(f)).toEqual([]);
+    const noNote: Flow = [{ id: 'c', name: '章', events: [{ id: 'x', kind: 'explore', title: 'X' }, { id: 'end', kind: 'end', title: 'つづく' }] }];
+    expect(checkFlow(noNote)).toEqual(['仮の画面に案内がない：x']);
   });
 
   it('章と、何番目かを引ける', () => {

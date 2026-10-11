@@ -25,7 +25,7 @@ export interface FlowEvent {
   title: string;
   /** day の時：何日目になるか */
   day?: number;
-  /** 仮の画面に出す案内（どの段階で何を作るか） */
+  /** 仮の画面に出す案内（どの段階で何を作るか）。会話・昼の日常は、これがあると仮の画面にする（段階34） */
   note?: string;
   /** explore の時：探索する区画（data の AREAS の id） */
   area?: string;
@@ -71,6 +71,16 @@ export function lineupAt(flow: Flow, id: string, fallback: Lineup): Lineup {
     if (l) return l;
   }
   return fallback;
+}
+
+/**
+ * まだ中身がなく、仮の画面でつなぐ出来事か（段階34）。
+ * 会話・昼の日常は案内（note）を書いたもの。探索・時間を返すは区画（area）のないもの
+ */
+export function isPlaceholder(e: FlowEvent): boolean {
+  if (e.kind === 'dialogue' || e.kind === 'daily') return e.note !== undefined;
+  if (e.kind === 'explore' || e.kind === 'return') return !e.area;
+  return false;
 }
 
 /** 次の出来事（最後なら null） */
@@ -121,12 +131,12 @@ export function eventNumber(flow: Flow, id: string): { n: number; total: number 
 
 /**
  * id から続けて読む会話の場面（会話の出来事が続く所まで）。
- * 会話の画面を1回開くだけで、場面をまたいで続けて読めるようにする
+ * 会話の画面を1回開くだけで、場面をまたいで続けて読めるようにする。仮の画面の会話の手前で止める
  */
 export function dialogueRun(flow: Flow, id: string): string[] {
   const all = flowEvents(flow);
   const out: string[] = [];
-  for (let i = all.findIndex((e) => e.id === id); i >= 0 && i < all.length && all[i].kind === 'dialogue'; i++) out.push(all[i].id);
+  for (let i = all.findIndex((e) => e.id === id); i >= 0 && i < all.length && all[i].kind === 'dialogue' && !isPlaceholder(all[i]); i++) out.push(all[i].id);
   return out;
 }
 
@@ -140,6 +150,7 @@ export function checkFlow(flow: Flow): string[] {
     if (seen.has(e.id)) errors.push(`出来事の id が重なっている：${e.id}`);
     seen.add(e.id);
     if (e.kind === 'day' && !(Number.isInteger(e.day) && e.day! >= 1)) errors.push(`日が変わる出来事に日の番号がない：${e.id}`);
+    if (isPlaceholder(e) && !e.note) errors.push(`仮の画面に案内がない：${e.id}`);
   }
   const last = all[all.length - 1];
   if (last && last.kind !== 'end') errors.push('最後の出来事が「つづく」ではない');

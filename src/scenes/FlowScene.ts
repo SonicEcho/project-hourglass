@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { FlowEvent } from '../core';
-import { chapterOfEvent, dialogueRun } from '../core';
+import { chapterOfEvent, dialogueRun, isPlaceholder } from '../core';
 import { SLICE_FLOW } from '../data';
 import { applyKinsoku } from '../ui/kinsoku';
 import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
@@ -13,7 +13,7 @@ import { screenBg } from '../ui/skin';
 import { notePlayEvent, setPlayTracking } from './playRecord';
 
 // 物語の流れ（段階23）：今の出来事を見て、その画面へ渡す。出来事を終えた画面は、done を付けてここへ戻る。
-// 昼の日常は日常の画面（DailyScene）へ。まだ作っていない遊び（探索・時間を返す）は、ここで仮の画面を出して「次へ」で通す
+// 昼の日常は日常の画面（DailyScene）へ。まだ中身のない出来事（段階34。isPlaceholder）は、ここで仮の画面を出して「次へ」で通す
 
 /** Phaser はデータを渡さずに開くと前のデータを使い回すので、この画面を開く時は必ず done を渡す */
 export interface FlowData {
@@ -25,6 +25,9 @@ export interface FlowData {
 
 /** 仮の画面の見出し */
 const KIND_LABEL: Partial<Record<FlowEvent['kind'], string>> = {
+  dialogue: '会話（仮）',
+  daily: '昼の日常（仮）',
+  explore: '探索（仮）',
   return: '時間を返す（仮）',
 };
 
@@ -41,6 +44,10 @@ export class FlowScene extends Phaser.Scene {
     // 遊んだ記録（段階32b）：ここから物語の時間を数える。進めた時は advanceEvent が覚える
     setPlayTracking(true);
     if (!data?.done) notePlayEvent(event.id);
+    if (isPlaceholder(event)) {
+      this.showPlaceholder(event);
+      return;
+    }
     switch (event.kind) {
       case 'dialogue':
         this.openDialogue(event, data?.fromTitle ?? false);
@@ -55,18 +62,10 @@ export class FlowScene extends Phaser.Scene {
         this.scene.start('Daily', { event: event.id });
         return;
       case 'explore':
-        if (event.area) {
-          this.scene.start('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined });
-          return;
-        }
-        this.showPlaceholder(event);
+        this.scene.start('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined });
         return;
       case 'return':
-        if (event.area) {
-          this.scene.start('Return', { area: event.area });
-          return;
-        }
-        this.showPlaceholder(event);
+        this.scene.start('Return', { area: event.area });
         return;
       default:
         this.showPlaceholder(event);
@@ -131,7 +130,7 @@ export class FlowScene extends Phaser.Scene {
     });
   }
 
-  /** スライスの終わり */
+  /** 流れの終わり（段階34から、2章の終わり） */
   private showEnd(): void {
     const cx = GAME_WIDTH / 2;
     const root = this.add.container(0, 0);

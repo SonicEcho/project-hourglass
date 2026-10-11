@@ -129,14 +129,19 @@ describe('仲間ごとに1つずつ', () => {
   });
 });
 
-describe('M1 の物語の流れ（段階23）', () => {
+describe('物語の流れ（段階23・34）', () => {
   it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
-    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, DAILY_HUBS, ITEMS, M1_SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
-    const { checkArea, checkDailyHub, checkFlow, flowEvents } = await import('../src/core');
+    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, DAILY_HUBS, ITEMS, SCENES, M1_SCENE_ORDER, SLICE_FLOW } = await import('../src/data');
+    const { checkArea, checkDailyHub, checkFlow, flowEvents, isPlaceholder } = await import('../src/core');
     expect(checkFlow(SLICE_FLOW)).toEqual([]);
-    const sceneIds = new Set(M1_SCENES.map((s) => s.id));
+    const sceneIds = new Set(SCENES.map((s) => s.id));
     const reachable = new Set<string>();
     for (const e of flowEvents(SLICE_FLOW)) {
+      // 仮の画面の出来事（段階34）は、中身を作る段階で確かめる。会話の場面は、まだ台本にない
+      if (isPlaceholder(e)) {
+        if (e.kind === 'dialogue') expect(sceneIds.has(e.id), e.id).toBe(false);
+        continue;
+      }
       if (e.kind === 'dialogue') {
         expect(sceneIds.has(e.id), e.id).toBe(true);
         reachable.add(e.id);
@@ -187,7 +192,7 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(checkLineup(PROTOTYPE_LINEUP, ids)).toEqual([]);
     for (const c of SLICE_FLOW) {
       if (c.lineup) expect(checkLineup(c.lineup, ids), c.id).toEqual([]);
-      if (c.events.some((e) => e.kind === 'explore')) expect(c.lineup, c.id).toBeDefined();
+      if (c.events.some((e) => e.kind === 'explore' && e.area)) expect(c.lineup, c.id).toBeDefined();
     }
     expect(SLICE_FLOW.find((c) => c.id === 'ch1')?.lineup).toBe(CHAPTER1_LINEUP);
     expect(CHAPTER1_LINEUP.members).toEqual(['hero', 'akari']);
@@ -210,17 +215,17 @@ describe('パーティと育成の開放（段階26）', () => {
   });
 });
 
-describe('M1 の台本（段階22）', () => {
+describe('台本（段階22。M1・M2）', () => {
   it('行き先がそろっていて、通しで見る順番の場面が全部ある', async () => {
-    const { M1_SCENES, M1_SCENE_ORDER } = await import('../src/data');
+    const { SCENES, M1_SCENE_ORDER } = await import('../src/data');
     const { checkScript } = await import('../src/core');
-    expect(checkScript(M1_SCENES)).toEqual([]);
-    const ids = new Set(M1_SCENES.map((s) => s.id));
+    expect(checkScript(SCENES)).toEqual([]);
+    const ids = new Set(SCENES.map((s) => s.id));
     for (const id of M1_SCENE_ORDER) expect(ids.has(id), id).toBe(true);
   });
 
   it('立ち絵のある人は台帳に表情の絵があり、台詞の人と表情は一覧にある', async () => {
-    const { ASSETS, CAST, M1_SCENES } = await import('../src/data');
+    const { ASSETS, CAST, SCENES } = await import('../src/data');
     const ids = new Set(ASSETS.map((a) => a.id));
     for (const [name, def] of Object.entries(CAST)) {
       expect(def.faces[def.firstFace], name).toBeDefined();
@@ -236,7 +241,7 @@ describe('M1 の台本（段階22）', () => {
         expect(def.faces[alt], `${name} ${face} → ${alt}`).toBeDefined();
       }
     }
-    for (const scene of M1_SCENES) {
+    for (const scene of SCENES) {
       for (const step of scene.steps) {
         if (step.kind !== 'line' || step.style !== 'talk') continue;
         const where = `${scene.id}（${step.src}行目）`;
@@ -265,13 +270,13 @@ describe('M1 の台本（段階22）', () => {
   });
 
   it('演出の命令は、ある背景・1枚絵・音・人だけを使う', async () => {
-    const { ACTOR_MOTIONS, BACKDROPS, CAST, CGS, EMOTES, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
+    const { ACTOR_MOTIONS, BACKDROPS, CAST, CGS, EMOTES, FACE_EMOTES, FACE_MOTIONS, SCENES, SCRIPT_BGM, SCRIPT_SE, ASSETS } = await import('../src/data');
     for (const m of Object.values(FACE_MOTIONS)) expect(ACTOR_MOTIONS as readonly string[]).toContain(m);
     for (const e of Object.values(FACE_EMOTES)) expect(EMOTES as readonly string[]).toContain(e);
     const assetIds = new Set(ASSETS.map((a) => a.id));
     for (const def of [...Object.values(BACKDROPS), ...Object.values(CGS)]) if (def.image) expect(assetIds.has(def.image), def.title).toBe(true);
     for (const id of [...Object.values(SCRIPT_BGM), ...Object.values(SCRIPT_SE)]) if (id) expect(assetIds.has(id), id).toBe(true);
-    for (const scene of M1_SCENES) {
+    for (const scene of SCENES) {
       for (const step of scene.steps) {
         if (step.kind !== 'command') continue;
         const where = `${scene.id}（${step.src}行目）`;
@@ -317,8 +322,8 @@ describe('M1 の台本（段階22）', () => {
   });
 
   it('本文はスマホの会話の枠に収まる長さ（60文字まで）', async () => {
-    const { M1_SCENES } = await import('../src/data');
-    for (const scene of M1_SCENES) {
+    const { SCENES } = await import('../src/data');
+    for (const scene of SCENES) {
       for (const step of scene.steps) {
         if (step.kind === 'line' && step.style !== 'note') expect(step.text.length, `${scene.id}（${step.src}行目）${step.text}`).toBeLessThanOrEqual(60);
       }
@@ -326,17 +331,17 @@ describe('M1 の台本（段階22）', () => {
   });
 
   it('どの台詞にも、どれかの選択肢を選べばたどり着ける（読まれない行がない）', async () => {
-    const { M1_SCENES } = await import('../src/data');
+    const { SCENES } = await import('../src/data');
     const { chooseOption, runScript } = await import('../src/core');
-    for (const scene of M1_SCENES) {
+    for (const scene of SCENES) {
       const seen = new Set<number>();
       const visit = (pos: { scene: string; index: number }, depth: number) => {
         expect(depth, scene.id).toBeLessThan(50);
         for (;;) {
-          const r = runScript(M1_SCENES, pos, {});
+          const r = runScript(SCENES, pos, {});
           if (r.stop.type === 'end') return;
           if (r.stop.type === 'choice') {
-            r.stop.choice.options.forEach((_, i) => visit(chooseOption(M1_SCENES, r.pos, i), depth + 1));
+            r.stop.choice.options.forEach((_, i) => visit(chooseOption(SCENES, r.pos, i), depth + 1));
             return;
           }
           seen.add(r.stop.line.src);

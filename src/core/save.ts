@@ -17,12 +17,16 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
 export const V1_AREA_ID = 'trial';
 export const v1BattleId = (stage: number): string => `battle${stage + 1}`;
+
+/** 版7までの「つづく」（M1 の終わり）の出来事の id と、版8でその続きにあたる出来事の id（段階34） */
+export const V7_END_EVENT = 'to_be_continued';
+export const V7_END_NEXT = 'day3';
 
 /** 周回の状態のうち、セーブするもの */
 export interface RunSnapshot {
@@ -86,6 +90,9 @@ export const MIGRATIONS: SaveMigrations = {
   5: (raw) => raw,
   // 版6 → 版7（段階28）：返した時間（returned）を足す。探索の状態のコマは、整える時に0で補う
   6: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, returned: [] } } : raw),
+  // 版7 → 版8（段階34）：流れを2章の終わりまで伸ばし、「つづく」の出来事が M1 の終わりから2章の終わり（ch2_end）に替わった。
+  // M1 の「つづく」にいたセーブは、その続きの3日目の扉から始める
+  7: (raw) => (isObject(raw.run) && raw.run.event === V7_END_EVENT ? { ...raw, run: { ...raw.run, event: V7_END_NEXT } } : raw),
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */

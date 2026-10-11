@@ -5,7 +5,7 @@ import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playT
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
-import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, M1_SCENES, NARRATION_SAND_COLOR, SCRIPT_BGM, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, NARRATION_SAND_COLOR, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -112,7 +112,7 @@ const DIALOGUE_BOX = 0x0d1230;
 const viewedBackdrops = new Set<string>();
 
 export class DialogueScene extends Phaser.Scene {
-  private scenes: ScriptScene[] = M1_SCENES;
+  private scenes: ScriptScene[] = SCENES;
   private pos!: ScriptPos;
   private vars: ScriptVars = {};
   private queue: string[] = [];

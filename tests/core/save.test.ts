@@ -198,6 +198,24 @@ describe('セーブ：古い版から直す', () => {
     expect(kept.ok && kept.save.run.returned).toEqual(['a11']);
   });
 
+  it('版7のセーブで M1 の「つづく」にいたものは、3日目の扉から続く。ほかの出来事はそのまま（段階34）', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 7;
+      raw.run.event = 'to_be_continued';
+    });
+    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
+    expect(res.ok && res.save.run.event).toBe('day3');
+    expect(res.ok && res.save.run.progress.day).toBe(3);
+    const kept = parseEdited((raw) => {
+      raw.version = 7;
+      raw.run.event = 'd2_noa';
+    });
+    expect(kept.ok && kept.save.run.event).toBe('d2_noa');
+    // 版8では、M1 の「つづく」は知らない出来事なので最初から
+    const v8 = parseEdited((raw) => (raw.run.event = 'to_be_continued'));
+    expect(v8.ok && v8.save.run.event).toBe('prologue_open');
+  });
+
   it('直す手順がない古い版は読まない', () => {
     const res = parseEdited((raw) => (raw.version = 0));
     expect(res).toEqual({ ok: false, error: '版0から直す手順がない', old: true });
