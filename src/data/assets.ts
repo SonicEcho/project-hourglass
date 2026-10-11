@@ -279,6 +279,26 @@ function chatgptPortrait(who: string, name: string, face: string, title: string,
   };
 }
 
+/** ChatGPT で作った背景・地図・1枚絵・敵の絵（2026-10-11 から。M2 の分） */
+function chatgptArt(id: string, title: string, file: string, prompt: string, settings: string, notes: string): AssetEntry {
+  return {
+    id,
+    kind: 'image',
+    title,
+    file,
+    status: 'placeholder',
+    source: { type: 'ai', service: 'ChatGPT', plan: '無料', prompt, settings },
+    author: 'RESTOPIA 開発（ChatGPT で作成）',
+    license: 'OpenAI 利用規約（出力の権利は利用者に渡す）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-11',
+    termsCopy: 'docs/licenses/ai-openai.md',
+    notes,
+  };
+}
+
 /** 表情違いの指示文の頭（Gemini。基本の1枚を見本にして顔だけ変えた。docs/ART.md の 5-3 の 14）。look は「その人の見た目」 */
 const faceHead = (look: string) =>
   `Use this image as the base. Keep everything exactly the same: framing, pose, arms down with hands outside the frame, ${look}, and art style. Plain pure white background. Change only the facial expression. No props, no sweat drops, no tears unless stated, no text, no effects.`;
@@ -825,6 +845,61 @@ export const ASSETS: AssetEntry[] = [
     termsCopy: 'docs/licenses/ai-openai.md',
     notes: 'M1 の 2-C（docs/ART.md の 5-2 の 10）。ノアの目線はハルトの隣（あかり）に向く（docs/STORY.md の伏線）',
   },
+  // M2 の 1-2 の地図・背景・1枚絵と、最初の敵の絵（2026-10-11。docs/ART.md の 5-3 の 12・13）
+  chatgptArt(
+    'map.showa_street',
+    '昭和の商店街の見下ろしの地図（1-2「夕暮れの二人乗り」）',
+    'assets/maps/showa_street.webp',
+    STYLE_PREFIX +
+      'Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. ' +
+      'Scene: a real, lived-in Japanese shotengai (local shopping street) in a regional town in the summer of 1988, at sunset, in warm sepia-tinted retro colors. It must look like an actual old town shopping street, NOT a festival with separate stalls. ' +
+      "Structure: Both sides of the street are continuous rows of old two-story wooden and mortar shop-houses built wall to wall with no gaps between them: the shop on the ground floor, the family's living quarters upstairs with small windows, laundry poles and air-conditioner units. Tiled and tin roofs seen from above. " +
+      'Each shop opens directly onto the street with its goods spilling out in front: wooden fruit crates, racks and display cases, cloth or metal awnings, half-open roll-up shutters. ' +
+      'The street is open to the sky (no arcade roof covering it), lined with old suzuran-shaped street lamps and small blank decorative flags hung between them. ' +
+      'Everyday clutter along the shop fronts: parked bicycles, potted plants, plastic beer crates, a vending machine, a red public phone, a round red mailbox, utility poles and sagging wires. ' +
+      'Layout from bottom to top: Bottom center: the entrance of the shopping street, a simple steel gateway arch with a blank sign board. One wide straight street running up the middle of the image. ' +
+      'Two or three narrow back alleys between the buildings, branching left and right, with walls and drainpipes on both sides. ' +
+      'Shops along the street: a greengrocer with fruit crates, a small candy shop (dagashi-ya) with a wooden bench in front, an electronics shop with old CRT TVs in the window, a tobacco stand with a red public phone, and a small clock shop with a warmly lit window. ' +
+      'Top: the end of the shopping street, opening onto a gentle downhill slope toward the town. ' +
+      'Walkable areas (the street, the back alleys, the slope) must be clearly distinguishable from non-walkable objects (buildings, goods, bicycles, poles). The main street is wide, at least one eighth of the image width. ' +
+      'Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.',
+    '見本の絵：昭和の商店街の背景（bg.showa_street。店の並びをそろえるため）。元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）',
+    'M2 の 1-2 の地図（docs/ART.md の 5-3 の 12）。はじめは縁日の地図を見本に付けたら、店が屋台のように離れて建ったので、見本を外して指示文を書き直した。歩ける場所の文字の地図は、段階37で区画を作る時に書く',
+  ),
+  chatgptArt(
+    'bg.showa_street',
+    '背景（昭和の商店街・夕焼け）',
+    'assets/backgrounds/showa_street.webp',
+    STYLE_PREFIX +
+      'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people. ' +
+      'A small covered shopping arcade street in a Japanese regional town in the summer of 1988, at sunset. Old storefronts line both sides: a greengrocer with wooden fruit crates, a tiny candy shop (dagashi-ya) with a wooden bench in front, an electronics shop with old CRT televisions in the window, a tobacco stand with a red public telephone, and a small clock shop with a warmly lit window. Faded cloth awnings; at the far end the arcade opens onto a gentle downhill slope glowing in golden evening light. Warm, slightly faded sepia-like colors, like an old photograph. ' +
+      'Eye-level camera, the street centered. ' +
+      'Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.',
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M2 の 1-2 の会話の背景（docs/ART.md の 5-3 の 12）',
+  ),
+  chatgptArt(
+    'cg.tandem_bicycle',
+    '1枚絵（夕焼けの二人乗り）',
+    'assets/cg/tandem_bicycle.webp',
+    STYLE_PREFIX +
+      'A single key visual (event CG). Vertical 9:16 image. ' +
+      'A small Japanese shopping arcade street in the summer of 1988 at sunset, in warm, slightly faded sepia-like colors, the street opening onto a gentle downhill slope bathed in golden evening light. A middle-aged man pedals an old black utility bicycle down the slope, turning his head slightly back with a shy, awkward smile; his wife sits sideways on the rear rack, holding onto his back, laughing with teary eyes (keep their designs as in the attached reference portraits). Shopkeepers wave from the storefronts behind them, welcoming her home. Long shadows, warm backlight. ' +
+      'Keep the lower quarter of the image simple, because a text box may cover it. Absolutely no letters or text anywhere.',
+    '見本の絵：写しのふみ（笑顔）・写しのきよし（通常）の立ち絵。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M2 の 1-2-9（1章の山場。docs/ART.md の 5-3 の 12）',
+  ),
+  chatgptArt(
+    'enemy.tin_noise',
+    '敵の絵（ブリキノイズ）',
+    'assets/enemies/tin_noise.webp',
+    'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature. ' +
+      'Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. ' +
+      'It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded green and orange). Eerie but not gory, readable as a small silhouette on a phone screen. ' +
+      'Body: a broken tin toy robot tangled with wind-up springs and keys, heavy and stiff',
+    '見本の絵なし。元の絵は 1254×1254。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜き、640×640 に縮めた（まわりの薄い砂の渦は、抜く時にほとんど消えた）',
+    'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）。最初に作った敵の絵。戦闘画面に敵の絵を出す仕組みは段階37で作り、その時にこの絵を置いて、敵の絵の共通部分を決める',
+  ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait(
     'worried',
