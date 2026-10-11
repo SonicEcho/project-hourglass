@@ -697,15 +697,22 @@ A quiet path along a small river in a Japanese regional town at summer dusk. A l
 Eye-level camera, the path leading into the distance.
 ```
 
-地図：1-2 の昭和の商店街（入口 → 駄菓子屋の前 → 時計屋の前 → 出口の坂）：地図の頭の後に
+地図：1-2 の昭和の商店街（入口 → 駄菓子屋の前 → 時計屋の前 → 出口の坂）：地図の頭の後に。**見本の絵は付けない**（2026-10-11。縁日の地図を見本に付けたら、店が屋台のように離れて建ち、間に広場ができて、本物の商店街に見えなかった。壁を接して並ぶ2階建ての店を言葉で指定し、アーケードの屋根は真上から通りが隠れるので外した）
 
 ```
-Scene: a small covered shopping arcade street in a Japanese regional town in the summer of 1988, at sunset, in warm sepia-tinted retro colors.
+Scene: a real, lived-in Japanese shotengai (local shopping street) in a regional town in the summer of 1988, at sunset, in warm sepia-tinted retro colors. It must look like an actual old town shopping street, NOT a festival with separate stalls.
+Structure:
+- Both sides of the street are continuous rows of old two-story wooden and mortar shop-houses built wall to wall with no gaps between them: the shop on the ground floor, the family's living quarters upstairs with small windows, laundry poles and air-conditioner units. Tiled and tin roofs seen from above.
+- Each shop opens directly onto the street with its goods spilling out in front: wooden fruit crates, racks and display cases, cloth or metal awnings, half-open roll-up shutters.
+- The street is open to the sky (no arcade roof covering it), lined with old suzuran-shaped street lamps and small blank decorative flags hung between them.
+- Everyday clutter along the shop fronts: parked bicycles, potted plants, plastic beer crates, a vending machine, a red public phone, a round red mailbox, utility poles and sagging wires.
 Layout from bottom to top:
-- Bottom center: the arcade entrance.
-- A wide straight arcade street running up the middle of the image, with two or three narrow side alleys branching left and right.
-- Storefronts along both sides: a greengrocer with fruit crates, a small candy shop with a wooden bench in front, an electronics shop with old CRT TVs, a tobacco stand with a red public phone, and a small clock shop with a lit window.
-- Top: the arcade exit, opening onto a gentle downhill slope.
+- Bottom center: the entrance of the shopping street, a simple steel gateway arch with a blank sign board.
+- One wide straight street running up the middle of the image.
+- Two or three narrow back alleys between the buildings, branching left and right, with walls and drainpipes on both sides.
+- Shops along the street: a greengrocer with fruit crates, a small candy shop (dagashi-ya) with a wooden bench in front, an electronics shop with old CRT TVs in the window, a tobacco stand with a red public phone, and a small clock shop with a warmly lit window.
+- Top: the end of the shopping street, opening onto a gentle downhill slope toward the town.
+Walkable areas (the street, the back alleys, the slope) must be clearly distinguishable from non-walkable objects (buildings, goods, bicycles, poles).
 ```
 
 1枚絵：夕焼けの二人乗り（1-2-9。1章の山場）：写しのふみ・写しのきよしの立ち絵を添付。1枚絵の頭の後に
@@ -827,7 +834,7 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 
 | 順 | 要る段階 | 絵 | 指示文 | 一緒に渡す見本の絵 |
 | --- | --- | --- | --- | --- |
-| 1 | 37 | 地図：1-2 の昭和の商店街 | 5-3 の 12. | 1-1 の縁日の地図 |
+| 1 | 37 | 地図：1-2 の昭和の商店街 | 5-3 の 12. | なし（縁日の地図に引っ張られて屋台の並びになったため） |
 | 2 | 37 | 背景：昭和の商店街（夕焼け） | 5-3 の 12. | なし |
 | 3 | 37 | 1枚絵：夕焼けの二人乗り | 5-3 の 12. | 写しのふみ（笑顔）・写しのきよし（通常） |
 | 4 | 37 | 敵：ブリキノイズ（最初の1体。敵の絵の共通部分を、これを戦闘画面に置いて決める） | 5-3 の共通部分と 13. | なし |
