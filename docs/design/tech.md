@@ -52,6 +52,7 @@
 - ロジック（戦闘・星図・ムーブメント・武器・進み具合・セーブ）、データの整合（`tests/data.test.ts` など）、Phaser に依存しない補助関数（デバッグ判定、ビルド情報、スキルの並べ方）、自動対戦（`tests/sim.test.ts`）
 - **通しの自動確認**（`npm run e2e`、`scripts/e2e.mjs`。段階20）：`npm run build` した公開物を手元のサーバーで開き、Playwright の Chromium で自動で遊ぶ。タイトル →「はじめる」→ 戦闘1〜5（デバッグの「敵のHPを1にする」と「自動で1ラウンド戦う」で進める）→ 結果。戦闘2の後にページを開き直して「つづきから」で続くか、BGM が流れて縁日の試作で切り替わるか、戦闘で戦闘の曲（ボスはボス戦の曲）になるかも見る。エラーが出たり止まったりしたら失敗し、その時の画面を `e2e-failure.png` に残す。1回およそ1分
   - 画面は canvas なので、ボタンは文字の位置を `window.__restopia.findText()` で調べてタップする。画面の文字を変えたら、`scripts/e2e.mjs` の探す文字も合わせる
+  - 演出の見た目を撮る時は、`window.__restopia.start(画面, データ)` で画面を直接開き、`window.__restopia.scene(画面)` で演出を外から呼べる（段階46）
 - コミットの前に `npm test`、`npx tsc --noEmit`、`npm run build`、`npm run e2e` がすべて通ること
 
 ## 5. 自動対戦の測定

@@ -47,6 +47,8 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 8,
     timeTitle: '金魚の名前',
     owner: 'ユウマ',
+    // 返す画面で、すり切れた映像として流す景色（段階46d）
+    memory: 'shrine_approach',
     // 金魚すくいとラムネの屋台の前
     chests: [
       { id: 'a11_chest_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },

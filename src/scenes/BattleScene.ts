@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { getSettings, playBgm, playSe, setSettings, stopAmbience } from '../audio/sound';
 import { autoExtra, autoPlan, lcg } from '../sim/autoBattle';
 import { extraByTactic, isTactic, planByTactic, type Tactic, TACTICS } from '../sim/tactics';
-import type { ActionDef, ActionPreview, AllyUnit, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
+import type { ActionDef, ActionPreview, AllyUnit, Bark, BarkMemory, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
 import {
   advance,
   applyExtra,
@@ -42,15 +42,16 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BASIC_ATTACK, BGM, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
+import { portraitImageId } from '../ui/portrait';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
-import { battleTipTriggers, nextBattleSpeed } from '../core';
+import { battleTipTriggers, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
@@ -111,6 +112,8 @@ export class BattleScene extends Phaser.Scene {
   private fxLayer!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
   private skipping = false;
+  /** 戦闘中のひとことを出しすぎないための覚え（段階46a） */
+  private barkMemory: BarkMemory = NEW_BARK_MEMORY;
   /** 連携技・コンボの演出中（数値を大きく、画面を揺らす） */
   private special = false;
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
@@ -151,6 +154,7 @@ export class BattleScene extends Phaser.Scene {
     this.panel = 'none';
     this.busy = false;
     this.skipping = false;
+    this.barkMemory = NEW_BARK_MEMORY;
     this.special = false;
     this.waits = [];
     this.overlay = undefined;
@@ -471,10 +475,13 @@ export class BattleScene extends Phaser.Scene {
     const link = act?.type === 'action' ? prev.links.find((l) => l.id === act.actionId) : undefined;
     const combo = act?.type === 'action' ? prev.combos.find((c) => c.id === act.actionId) : undefined;
     this.special = !!(link || combo);
+    // 戦闘中のひとこと（段階46a）。早送りの間も、出しすぎないための覚えは進める
+    const barks = pickBarks(prev, next, BARKS, BARK_RULES, this.barkMemory);
+    this.barkMemory = barks.memory;
     if (act) {
       this.message = this.describeHeadline(prev, act);
       this.render(prev);
-      if (link) await this.linkCutIn(prev, link);
+      if (link) await this.linkCutIn(prev, link, barks.link);
       else if (combo) await this.comboCutIn(combo);
       else {
         this.banner(this.message);
@@ -486,13 +493,55 @@ export class BattleScene extends Phaser.Scene {
     for (const e of events) {
       if (this.showEvent(next, e)) await this.wait(FX.popup);
     }
+    if (barks.after) await this.showBark(barks.after);
+    if (barks.victory) await this.showBark(barks.victory);
     await this.wait(FX.settle);
     this.fxLayer.removeAll(true);
     this.special = false;
   }
 
+  /** 顔の帯：仲間の顔とひとことを、横から差し込む（段階46a。docs/design/battle.md の 12-3） */
+  private async showBark(bark: Bark): Promise<void> {
+    if (this.skipping) return;
+    const y = LAYOUT.enemies.y + LAYOUT.enemies.h - 62;
+    const band = this.add.container(-GAME_WIDTH, y);
+    this.fxLayer.add(band);
+    this.drawBarkBand(band, bark, 84);
+    this.tweens.add({ targets: band, x: 0, duration: 240, ease: 'Cubic.easeOut' });
+    await this.wait(240 + BARK_SHOW_MS);
+    if (!band.active) return;
+    this.tweens.add({ targets: band, x: GAME_WIDTH * 0.4, alpha: 0, duration: 200, onComplete: () => band.destroy() });
+    await this.wait(120);
+  }
+
+  /** 帯の中身（入れ物の原点が帯の左の中ほど）：色の帯、金の線、顔（立ち絵の顔のあたりを切り出す）、名前とひとこと */
+  private drawBarkBand(band: Phaser.GameObjects.Container, bark: Bark, h: number): void {
+    const color = ALLY_COLOR[bark.allyId] ?? COLORS.ally;
+    band.add(this.add.rectangle(0, 0, GAME_WIDTH, h, 0x0b0f22, 0.92).setOrigin(0, 0.5));
+    band.add(this.add.rectangle(0, 0, 150, h, color, 0.85).setOrigin(0, 0.5));
+    band.add(this.add.rectangle(0, -h / 2, GAME_WIDTH, 2, COLORS.accent).setOrigin(0, 0.5));
+    band.add(this.add.rectangle(0, h / 2, GAME_WIDTH, 2, COLORS.accent).setOrigin(0, 0.5));
+    const id = portraitImageId(this, BARK_CAST[bark.allyId] ?? '', bark.face);
+    const faceW = 150;
+    if (id) {
+      const src = this.textures.get(id).getSourceImage();
+      // 顔のあたり（立ち絵の幅の 22〜78%、高さの 15% から）を帯の高さに合わせて切り出す
+      const cw = src.width * 0.56;
+      const scale = faceW / cw;
+      const ch = (h - 4) / scale;
+      const sx = src.width * 0.22;
+      const sy = src.height * 0.15;
+      const img = this.add.image(-sx * scale, -h / 2 + 2 - sy * scale, id).setOrigin(0).setScale(scale).setCrop(sx, sy, cw, ch);
+      band.add(img);
+    } else band.add(addText(this, faceW / 2, 0, bark.name, { size: 22, bold: true, align: 'center' }).setOrigin(0.5));
+    band.add(addText(this, faceW + 14, -h / 2 + 10, bark.name, { size: 12, bold: true, color: COLORS.accentText }));
+    const line = addText(this, faceW + 14, 8, bark.text, { size: 18, bold: true, wrap: GAME_WIDTH - faceW - 24 }).setOrigin(0, 0.5);
+    line.setStroke('#000000', 4);
+    band.add(line);
+  }
+
   /** 連携技のカットイン：2人の帯が左右から入り、技名を大きく出す */
-  private async linkCutIn(s: BattleState, link: LinkDef): Promise<void> {
+  private async linkCutIn(s: BattleState, link: LinkDef, barks: Bark[] = []): Promise<void> {
     if (this.skipping) return;
     const c = this.add.container(0, 0);
     this.fxLayer.add(c);
@@ -501,12 +550,17 @@ export class BattleScene extends Phaser.Scene {
       const unit = findUnit(s, id);
       const y = 250 + i * 90;
       const band = this.add.container(i === 0 ? -GAME_WIDTH : GAME_WIDTH, y);
-      band.add(this.add.rectangle(0, 0, GAME_WIDTH, 72, ALLY_COLOR[id] ?? COLORS.ally).setOrigin(0, 0.5));
-      const name = addText(this, GAME_WIDTH / 2, 0, unit?.name ?? id, { size: 30, bold: true, align: 'center' }).setOrigin(0.5);
-      name.setStroke('#000000', 5);
-      band.add(name);
+      // 2人のかけ合い（段階46a）。台詞があれば顔とひとことの帯、なければ名前の帯
+      const bark = barks.find((b) => b.allyId === unit?.defId);
+      if (bark) this.drawBarkBand(band, bark, 80);
+      else {
+        band.add(this.add.rectangle(0, 0, GAME_WIDTH, 72, ALLY_COLOR[id] ?? COLORS.ally).setOrigin(0, 0.5));
+        const name = addText(this, GAME_WIDTH / 2, 0, unit?.name ?? id, { size: 30, bold: true, align: 'center' }).setOrigin(0.5);
+        name.setStroke('#000000', 5);
+        band.add(name);
+      }
       c.add(band);
-      this.tweens.add({ targets: band, x: 0, duration: 260, delay: i * 120, ease: 'Cubic.easeOut' });
+      this.tweens.add({ targets: band, x: 0, duration: 260, delay: i * (bark ? 420 : 120), ease: 'Cubic.easeOut' });
     });
     const cross = addText(this, GAME_WIDTH / 2, 295, '×', { size: 28, bold: true, color: COLORS.accentText }).setOrigin(0.5);
     cross.setAlpha(0);
@@ -516,9 +570,10 @@ export class BattleScene extends Phaser.Scene {
     const title = addText(this, GAME_WIDTH / 2, 455, `${link.name}！`, { size: 40, bold: true, color: '#ffffff', align: 'center' }).setOrigin(0.5);
     title.setStroke('#c08000', 8).setScale(2.4).setAlpha(0);
     c.add([label, title]);
-    this.tweens.add({ targets: label, alpha: 1, delay: 450, duration: 150 });
-    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 450, duration: 280, ease: 'Back.easeOut' });
-    await this.wait(1150);
+    const talk = barks.length > 0 ? 700 : 0;
+    this.tweens.add({ targets: label, alpha: 1, delay: 450 + talk, duration: 150 });
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 450 + talk, duration: 280, ease: 'Back.easeOut' });
+    await this.wait(1150 + talk);
     if (!this.skipping) {
       const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0);
       this.fxLayer.add(flash);

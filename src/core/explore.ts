@@ -65,6 +65,8 @@ export interface AreaDef {
   /** 返す画面の札に書く、盗まれた時間の名前と持ち主（段階28） */
   timeTitle?: string;
   owner?: string;
+  /** 返す画面の後ろに流す、その時間の景色（会話の背景 BACKDROPS の id。段階46d「記憶の再生」） */
+  memory?: string;
 }
 
 /** 探索の状態（セーブする） */

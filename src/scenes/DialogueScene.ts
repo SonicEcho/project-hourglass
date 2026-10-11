@@ -4,8 +4,8 @@ import { hasImage } from '../assets/loader';
 import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm, warmBgm } from '../audio/sound';
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
-import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
-import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, NARRATION_SAND_COLOR, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } from '../data';
+import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -81,7 +81,12 @@ interface Actor {
   sunk: boolean;
   setActive(active: boolean): void;
   setFace(face: string): void;
+  /** 口を開ける・閉じる（口パクの差分がある表情だけ。段階46b） */
+  setMouth(open: boolean): void;
 }
+
+/** 口パクで口を閉じる文字（句読点・記号・空白） */
+const MOUTH_REST = new Set([...'、。，．・…‥！？!?「」『』（）()〜ー― 　\n']);
 
 let readLog: Set<string> | null = null;
 function getReadLog(): Set<string> {
@@ -157,6 +162,8 @@ export class DialogueScene extends Phaser.Scene {
   /** 鳴っている時計の数（0 は止まっている。店じゅうの時計の時は CLOCK.manyLayers） */
   private clockLayers = 0;
   private actors = new Map<string, Actor>();
+  /** 文字送りの間、口を動かしている人（段階46b） */
+  private talking?: Actor;
   private cast: string[] = [];
   private box!: Phaser.GameObjects.Rectangle;
   private nameBox!: Phaser.GameObjects.Rectangle;
@@ -207,6 +214,7 @@ export class DialogueScene extends Phaser.Scene {
     this.fadedOut = false;
     this.history = [];
     this.actors.clear();
+    this.talking = undefined;
     this.cast = [];
     this.logLayer = undefined;
     this.logoLayer = undefined;
@@ -517,6 +525,7 @@ export class DialogueScene extends Phaser.Scene {
       lanterns: { speedY: { min: -14, max: -5 }, speedX: { min: -4, max: 4 }, lifespan: 5000, scale: { min: 1.5, max: 3 }, tint: [0xffc979, 0xffa04a, 0xffe0a0], frequency: 260 },
       stars: { speed: 0, lifespan: 3200, scale: { min: 0.6, max: 1.4 }, tint: [0xffffff, 0xcfe0ff], frequency: 180 },
       dust: { speedY: { min: 4, max: 12 }, speedX: { min: -5, max: 5 }, lifespan: 6000, scale: { min: 0.6, max: 1.2 }, tint: [0xd9ae62, 0xb08a3a], frequency: 220 },
+      motes: { speedY: { min: -22, max: -8 }, speedX: { min: -4, max: 4 }, lifespan: 6500, scale: { min: 0.8, max: 2 }, tint: [0xffd98c, 0xffe8b0, 0xf2c45a], frequency: 110, blendMode: Phaser.BlendModes.ADD },
     };
     const emitter = this.add.particles(0, 0, 'dialogue-sand', {
       ...configs[kind],
@@ -526,6 +535,28 @@ export class DialogueScene extends Phaser.Scene {
       advance: 4000,
     });
     holder.add(emitter);
+  }
+
+  /** 光のゆらぎ（段階46c）：ぼんやりした光を足し合わせの色で重ね、ゆっくり明るくしたり暗くしたりする */
+  private addGlow(holder: Phaser.GameObjects.Container, glow: NonNullable<Backdrop['glow']>): void {
+    if (!this.textures.exists('dialogue-glow')) {
+      const size = 256;
+      const tex = this.textures.createCanvas('dialogue-glow', size, size);
+      const ctx = tex?.getContext();
+      if (!tex || !ctx) return;
+      const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(0.4, 'rgba(255,255,255,0.35)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+      tex.refresh();
+    }
+    const light = this.add.image(GAME_WIDTH * glow.x, STAGE_BOTTOM * glow.y, 'dialogue-glow').setTint(glow.color).setBlendMode(Phaser.BlendModes.ADD);
+    light.setScale((GAME_WIDTH * 1.3) / 256).setAlpha(0.18);
+    holder.add(light);
+    const tween = this.tweens.add({ targets: light, alpha: 0.42, duration: 2250, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    holder.once(Phaser.GameObjects.Events.DESTROY, () => tween.remove());
   }
 
   /** @zoom：背景・立ち絵・1枚絵だけを、顔のあたりを中心に寄せる（本文の枠とボタンは動かさない） */
@@ -714,6 +745,9 @@ export class DialogueScene extends Phaser.Scene {
     }
     const holder = this.add.container(0, 0);
     this.drawPicture(holder, def, 0, STAGE_BOTTOM, true);
+    // 動く1枚絵（段階46c）：光のゆらぎと、舞う粒を重ねる
+    if (def.glow) this.addGlow(holder, def.glow);
+    if (def.ambient) this.addAmbient(holder, def.ambient);
     // 1枚絵は、ゆっくり寄っていく
     this.drift(holder, GAME_WIDTH / 2, STAGE_BOTTOM / 2, CG_DRIFT_SCALE, CG_DRIFT_MS);
     this.crossfade(this.cgLayer, holder);
@@ -773,17 +807,63 @@ export class DialogueScene extends Phaser.Scene {
       const breath = this.add.container(0, 0, [img]);
       this.tweens.add({ targets: breath, scaleY: 1.006, yoyo: true, repeat: -1, duration: 1800, ease: 'Sine.easeInOut' });
       body.add(breath);
+      // まばたき・口パクの差分（段階46b）：表情の絵に、目・口のまわりだけの透明な絵を重ねる
+      const parts = PORTRAIT_PARTS[name];
+      const overlay = (part?: PortraitPart) => (part && hasImage(this, part.image) ? this.add.image(0, 0, part.image).setOrigin(0.5, 1).setVisible(false) : undefined);
+      const eyes = overlay(parts?.blink);
+      const mouth = overlay(parts?.talk);
+      for (const o of [eyes, mouth]) if (o) breath.add(o);
+      const fitAll = () => {
+        fit();
+        for (const o of [eyes, mouth]) o?.setScale(img.scaleX);
+      };
+      fitAll();
+      // 今の表情の絵に、その差分を重ねてよいか（目を閉じた表情・口を開けた表情には重ねない）
+      const fits = (part?: PortraitPart) => !!part && part.faces.some((f) => img.texture.key.endsWith(`.${f}`));
+      let mouthOpen = false;
+      const showMouth = () => mouth?.setVisible(mouthOpen && fits(parts?.talk));
+      if (eyes) {
+        const blinkOnce = (then: () => void) => {
+          if (!obj.active) return;
+          if (this.skip || !fits(parts?.blink)) return then();
+          eyes.setVisible(true);
+          this.time.delayedCall(BLINK.closedMs, () => {
+            if (!obj.active) return;
+            eyes.setVisible(false);
+            then();
+          });
+        };
+        const schedule = () => {
+          if (!obj.active) return;
+          this.time.delayedCall(BLINK.minMs + Math.random() * (BLINK.maxMs - BLINK.minMs), () =>
+            blinkOnce(() => (Math.random() < BLINK.doubleRate ? this.time.delayedCall(140, () => blinkOnce(schedule)) : schedule())),
+          );
+        };
+        schedule();
+      }
       return {
         ...base,
         top: -img.displayHeight,
-        setActive: (active) => (active ? img.clearTint() : img.setTint(DIM_TINT)),
+        setActive: (active) => {
+          for (const o of [img, eyes, mouth]) {
+            if (!o) continue;
+            if (active) o.clearTint();
+            else o.setTint(DIM_TINT);
+          }
+        },
         setFace: (face) => {
           // まだ絵のない表情は、代わりの表情の絵で出す
           const id = imageFor(face);
           if (id) {
             img.setTexture(id);
-            fit();
+            fitAll();
+            eyes?.setVisible(false);
+            showMouth();
           }
+        },
+        setMouth: (open) => {
+          mouthOpen = open;
+          showMouth();
         },
       };
     }
@@ -799,6 +879,7 @@ export class DialogueScene extends Phaser.Scene {
       top: -356,
       setActive: (active) => [head, torso, label].forEach((o) => o.setAlpha(active ? 1 : 0.45)),
       setFace: (face) => faceText.setText(`〔${face}〕`),
+      setMouth: () => undefined,
     };
   }
 
@@ -904,6 +985,8 @@ export class DialogueScene extends Phaser.Scene {
     const speaker = style === 'talk' ? line.speaker : null;
     const speaking = speaker ? this.actors.get(speaker) : undefined;
     if (speaking && line.face) this.changeFace(speaking, line.face);
+    this.talking?.setMouth(false);
+    this.talking = speaking;
     for (const [name, actor] of this.actors) actor.setActive(style === 'narration' || name === speaker);
 
     // 名前の札
@@ -977,6 +1060,9 @@ export class DialogueScene extends Phaser.Scene {
         callback: () => {
           this.shown++;
           this.body.setText(all.slice(0, this.shown));
+          // 口パク：句読点では閉じ、ほかは一定の間で開け閉めする
+          const ch = all[this.shown - 1] ?? '';
+          this.talking?.setMouth(!MOUTH_REST.has(ch) && Math.floor((this.shown * charMs) / MOUTH_FLAP_MS) % 2 === 0);
           if (this.shown >= all.length) this.finishTyping();
         },
       });
@@ -991,6 +1077,7 @@ export class DialogueScene extends Phaser.Scene {
     this.typing = undefined;
     this.blipTimer?.remove();
     this.blipTimer = undefined;
+    this.talking?.setMouth(false);
     this.shown = this.wrapped.length;
     const big = this.line?.style === 'caption' || this.line?.style === 'logo';
     if (!big) this.body.setText(this.wrapped);

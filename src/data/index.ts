@@ -24,3 +24,4 @@ export * from './itemSources';
 export * from './tips';
 export * from './faces';
 export * from './scriptM2';
+export * from './barks';

@@ -773,6 +773,24 @@ Expression: <表情>
 
 （ハルト・あかりは 5-2 の頭の文を使う。表情の名前は台本の〔 〕と同じにする）
 
+## 5-4. まばたき・口パクの差分（段階46b。2026-10-11）
+
+会話の立ち絵の、目を閉じた所・口を開けた所だけの透明な絵（`public/assets/portraits/parts/`）。同じ構図で作った別の表情の絵から、`python3 scripts/portrait_parts.py` で切り抜いて作る（切り抜く範囲はスクリプトに書いてある）。新しい表情の絵を足した時に、目・口がほぼ同じ位置なら、`src/data/dialogue.ts` の `PORTRAIT_PARTS` の表情の一覧に足すだけで使える。
+
+| 差分 | 元の絵 | 状態 |
+| --- | --- | --- |
+| あかりの閉じた目 | 大笑い | 済 |
+| あかりの開いた口 | 心配 | 済 |
+| ハルトの開いた口 | 驚き | 済 |
+| りくの開いた口 | 驚き（縦を縮めた） | 済 |
+| ハルト・りくの閉じた目 | まだない（目を閉じた表情の絵がない） | Gemini で作る（下の指示文） |
+
+**目を閉じた絵**（Gemini。その人の「通常」の絵を見本として渡す。できた絵を `<人>_blink_src.webp` として portraits に入れ、`scripts/portrait_parts.py` に目の範囲を足して切り抜く）
+
+```
+Use this image as the base. Keep everything exactly the same: framing, pose, hair, clothes, mouth, eyebrows, and art style. Plain pure white background. Change ONLY the eyes: both eyes gently closed, as in the middle of a natural blink, relaxed eyelids with eyelashes visible. Do not change the face shape, the eyebrows or the mouth. No text, no effects.
+```
+
 ## 6. 音
 
 BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各サイトの規約を調べた（公式ページを読めたものは「公式」、読めなかったものは解説サイトから）。
