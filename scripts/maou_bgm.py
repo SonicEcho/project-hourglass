@@ -8,6 +8,8 @@
   鳴り始めの少し前から [S+L] までを流し、その後ろに [S, S+1秒) の写しを足す（区間の終わりの先も続きの音にしておく）。
   区間の終わりの直前 60ms は、戻り先 S の直前の音へなめらかに移す（つなぎ目で音が跳ねないように）。くり返すのは S〜S+L
 - whole：同じ部分の繰り返しがない曲。鳴り始めから、鳴り終わり＋1.5秒までを切り出し、全体をくり返す
+大きさは、どの曲も聞こえ方の大きさ（ラウドネス）を TARGET_LUFS にそろえる（2026-10-11、タイトルだけ小さく他が大きいと開発者から聞いて）。
+TARGET_LUFS は、一番小さいタイトルの曲を上げても音が割れない所（最大で約 -1dB）で、自作の仮の縁日の曲とも同じ大きさ
 """
 import json
 import subprocess
@@ -16,6 +18,7 @@ import sys
 import numpy as np
 
 SR = 44100
+TARGET_LUFS = -17.4
 src, out = sys.argv[1], sys.argv[2]
 
 SONGS = [
@@ -33,6 +36,13 @@ def decode(path):
     raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 'f32le', '-ac', '2', '-ar', str(SR), '-'],
                          capture_output=True, check=True).stdout
     return np.frombuffer(raw, dtype=np.float32).reshape(-1, 2).copy()
+
+
+def loudness(y):
+    """聞こえ方の大きさ（LUFS。ffmpeg の ebur128 で測る）"""
+    r = subprocess.run(['ffmpeg', '-nostats', '-f', 'f32le', '-ar', str(SR), '-ac', '2', '-i', '-', '-af', 'ebur128', '-f', 'null', '-'],
+                       input=y.astype(np.float32).tobytes(), capture_output=True, check=True).stderr.decode()
+    return float(r.split('Integrated loudness:')[1].split('I:')[1].split('LUFS')[0])
 
 
 def onset(x):
@@ -60,6 +70,9 @@ for name, fname, mode, S, L in SONGS:
         fin = int(0.01 * SR); y[:fin] *= np.linspace(0, 1, fin)[:, None]
         fo = int(0.8 * SR); y[-fo:] *= np.linspace(1, 0, fo)[:, None]
         result[fname] = {'whole': True, 'sec': round(len(y) / SR, 3)}
+    before = loudness(y)
+    y = y * 10 ** ((TARGET_LUFS - before) / 20)
+    result[fname].update({'lufs': round(before, 1), 'gainDb': round(TARGET_LUFS - before, 1), 'peakDb': round(float(20 * np.log10(np.abs(y).max())), 1)})
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '2', '-i', '-',
                     '-codec:a', 'libmp3lame', '-b:a', '96k', f'{out}/{fname}'],
                    input=y.astype(np.float32).tobytes(), check=True)
