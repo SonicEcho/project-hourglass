@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyHub } from '../../src/core';
-import { checkDailyHub, finishesAfter, isSeen, markSeen, requiredLeft, seenKey, spotState } from '../../src/core';
+import type { BondEvent, DailyHub } from '../../src/core';
+import {
+  allSpots,
+  bondLevel,
+  checkBonds,
+  checkDailyHub,
+  finishesAfter,
+  isSeen,
+  markSeen,
+  markVisited,
+  metKey,
+  picksLeft,
+  requiredLeft,
+  resolveHub,
+  seenKey,
+  spotState,
+  usesPick,
+} from '../../src/core';
 
 const stalls: DailyHub = {
   id: 'stalls',
@@ -66,5 +82,119 @@ describe('昼の日常（段階24）', () => {
       places: [{ id: 'p', name: 'p', backdrop: 'x', mapX: 0, mapY: 0, spots: [{ id: 'a', scene: 'a', label: 'A', mark: 'talk', x: 0, y: 0 }, { id: 'a', label: 'A', mark: 'talk', x: 0, y: 0 }] }],
     };
     expect(checkDailyHub(bad)).toEqual(['bad：同じ名前の印が2つある：a', 'bad：場面も終わりもない印：a', 'bad：日常を終える印がない']);
+  });
+});
+
+// ---- 誰と過ごすか（段階35） ----
+describe('誰と過ごすか（段階35）', () => {
+  const placeInfo = (id: string) => ({ id, name: id, backdrop: 'x', mapX: 0, mapY: 0 });
+  const TOWN_T = { school: placeInfo('school'), home: placeInfo('home'), shop: placeInfo('shop') };
+  const BONDS: Record<string, BondEvent[]> = {
+    akari: [
+      { id: 'a1', title: '1', label: 'A1', from: 1, place: 'school', x: 0, y: 0 },
+      { id: 'a2', title: '2', label: 'A2', from: 3, place: 'home', x: 0, y: 0 },
+      { id: 'a3', title: '3', label: 'A3', from: 4, place: 'school', x: 0, y: 0 },
+    ],
+    mio: [{ id: 'm1', title: '1', label: 'M1', from: 6, place: 'shop', x: 0, y: 0 }],
+  };
+  const day = (n: number, partners = ['akari', 'mio']): DailyHub => ({
+    id: `d${n}`,
+    time: '',
+    day: n,
+    picks: 2,
+    partners,
+    places: [
+      { ...TOWN_T.school, spots: [{ id: `t${n}`, scene: `t${n}`, label: '小話', mark: 'talk', x: 0, y: 0 }] },
+      {
+        ...TOWN_T.shop,
+        spots: [
+          { id: `r${n}`, scene: `r${n}`, label: '必ず', mark: 'main', x: 0, y: 0, required: true },
+          { id: `go${n}`, label: '→', mark: 'go', x: 0, y: 0, ends: true },
+        ],
+      },
+    ],
+  });
+  const ids = (hub: DailyHub) => allSpots(hub).map((s) => s.id);
+  /** 印を見たことにする（画面と同じ：組み立てた日常で、見た値を覚える） */
+  const visit = (raw: DailyHub, vars: Record<string, string>, id: string) => {
+    const hub = resolveHub(raw, vars, BONDS, TOWN_T);
+    const s = allSpots(hub).find((x) => x.id === id);
+    if (!s) throw new Error(`no spot ${id}`);
+    return { end: finishesAfter(hub, vars, s), vars: markVisited(hub, vars, s) };
+  };
+
+  it('会える相手ごとに、まだ見ていない一番前の絆の出来事が、その場所に出る（場所がなければ、日を進める場所の前に足す）', () => {
+    const hub = resolveHub(day(3), {}, BONDS, TOWN_T);
+    expect(ids(hub)).toEqual(['t3', 'a1', 'r3', 'go3']);
+    // a1 を見たら、次は a2（3日目から）。場所は施設で、時計屋より前に入る
+    const after = resolveHub(day(3), markSeen({}, 'a1'), BONDS, TOWN_T);
+    expect(after.places.map((p) => p.id)).toEqual(['school', 'home', 'shop']);
+    expect(ids(after)).toContain('a2');
+    // みおは6日目から
+    expect(ids(resolveHub(day(6), {}, BONDS, TOWN_T))).toContain('m1');
+  });
+
+  it('先の出来事は、何日目からより前には出ない。見なかった出来事は、次の日も同じ所から', () => {
+    const vars = markSeen({}, 'a1');
+    expect(ids(resolveHub(day(2), vars, BONDS, TOWN_T))).not.toContain('a2');
+    expect(ids(resolveHub(day(5), vars, BONDS, TOWN_T))).toContain('a2');
+    expect(ids(resolveHub(day(5), vars, BONDS, TOWN_T))).not.toContain('a3');
+  });
+
+  it('同じ相手は1日に1回：見た後も、その日は見た出来事の印のまま（続きは次の日）', () => {
+    const { vars } = visit(day(4), markSeen({}, 'a1'), 'a2');
+    const hub = resolveHub(day(4), vars, BONDS, TOWN_T);
+    const a2 = allSpots(hub).find((s) => s.id === 'a2');
+    expect(a2 && spotState(hub, vars, a2)).toBe('seen');
+    expect(ids(hub)).not.toContain('a3');
+    expect(ids(resolveHub(day(5), vars, BONDS, TOWN_T))).toContain('a3');
+    expect(bondLevel(vars, BONDS.akari)).toBe(2);
+    expect(vars[metKey('d4', 'akari')]).toBe('a2');
+  });
+
+  it('昼に選べるのは2回。必ず見る出来事は回数を使わない。使い切ったら、残りの絆と小話は選べない', () => {
+    let vars: Record<string, string> = {};
+    const raw = day(6);
+    expect(picksLeft(resolveHub(raw, vars, BONDS, TOWN_T), vars)).toBe(2);
+    let r = visit(raw, vars, 'r6');
+    expect(r.end).toBe(false);
+    vars = r.vars;
+    expect(picksLeft(resolveHub(raw, vars, BONDS, TOWN_T), vars)).toBe(2);
+    r = visit(raw, vars, 'a1');
+    expect(r.end).toBe(false);
+    vars = r.vars;
+    const hub = resolveHub(raw, vars, BONDS, TOWN_T);
+    expect(picksLeft(hub, vars)).toBe(1);
+    // 2回目で使い切り、必ず見る出来事も見たので、夕暮れへ
+    r = visit(raw, vars, 'm1');
+    expect(r.end).toBe(true);
+    const spent = resolveHub(raw, r.vars, BONDS, TOWN_T);
+    const talkSpot = allSpots(spent).find((s) => s.id === 't6');
+    expect(talkSpot && spotState(spent, r.vars, talkSpot)).toBe('spent');
+    expect(usesPick(allSpots(spent).find((s) => s.id === 'r6')!)).toBe(false);
+  });
+
+  it('使い切っても、必ず見る出来事が残っていれば夕暮れにならない（見たら夕暮れ）', () => {
+    let vars: Record<string, string> = {};
+    vars = visit(day(6), vars, 'a1').vars;
+    const r = visit(day(6), vars, 't6');
+    expect(r.end).toBe(false);
+    expect(visit(day(6), r.vars, 'r6').end).toBe(true);
+  });
+
+  it('回数を決めていない日常は、今までどおり何回でも', () => {
+    const hub: DailyHub = { ...day(3), picks: undefined };
+    expect(picksLeft(hub, {})).toBe(Infinity);
+  });
+
+  it('絆の出来事の書き間違いを見つける', () => {
+    expect(checkBonds(BONDS, TOWN_T)).toEqual([]);
+    const bad: Record<string, BondEvent[]> = {
+      x: [
+        { id: 'b', title: '', label: '', from: 3, place: 'nowhere', x: 0, y: 0 },
+        { id: 'b', title: '', label: '', from: 2, place: 'home', x: 0, y: 0 },
+      ],
+    };
+    expect(checkBonds(bad, TOWN_T)).toEqual(['x：町の地図にない場所：b nowhere', 'x：同じ id の絆の出来事が2つある：b', 'x：前の出来事より早く出る：b']);
   });
 });
