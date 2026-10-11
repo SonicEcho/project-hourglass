@@ -819,7 +819,7 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
   - ⑤ ボス戦：`intense JRPG boss battle theme, heavy taiko and rock drums, distorted guitar, dramatic strings and choir pads, shinobue flute melody twisted into a darker minor key, ticking clock motif, urgent and powerful, tempo 160 bpm, loopable game background music, instrumental, no vocals, no fade out`
   - ⑥ レストピア（蔵書の棚）：`mysterious and beautiful fantasy library theme, celesta, harp, soft choir pads, gentle strings, music box, floating golden sand atmosphere, quiet wonder with a touch of loneliness, slow tempo 70 bpm, loopable game background music, instrumental, no vocals, no fade out`
   - ⑦ 返す場面・泣き：`heartbreaking emotional piano ballad, solo piano with soft cello, slow and fragile, memories of a lost summer, quiet and tender, tempo 64 bpm, cinematic JRPG sad scene, instrumental, no vocals`
-- **仮の BGM（2026-10-11、開発者が選んだ）**：本番の曲（Suno）ができるまで、魔王魂の曲を仮に使う。いずれ Suno の曲に替えるかもしれない（替える時は台帳の id はそのままで、ファイルと `BGM_LOOPS` を替える）。③縁日だけは、まだ自作の仮の音
+- **仮の BGM（2026-10-11、開発者が選んだ）**：本番の曲（Suno）ができるまで、魔王魂の曲を仮に使う。いずれ Suno の曲に替えるかもしれない（替える時は台帳の id はそのままで、ファイルと `BGM_LOOPS`、台帳の `version`・`bytes` を替える）。③縁日だけは、まだ自作の仮の音
 
 | 番号 | 曲 | 魔王魂の曲 | くり返し方 |
 | --- | --- | --- | --- |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkScript, chooseOption, fillText, parseClockTime, parseReadLog, parseScript, readKey, runScript, serializeReadLog } from '../../src/core';
+import { checkScript, chooseOption, fillText, nextBgm, parseClockTime, parseReadLog, parseScript, readKey, runScript, serializeReadLog } from '../../src/core';
 import type { ScriptLine } from '../../src/core';
 
 const SAMPLE = `
@@ -188,5 +188,27 @@ describe('小さな遊び（@game。段階24）', () => {
   it('知らない遊びや、行き先が足りない書き方は止める', () => {
     expect(() => parseScript('# a 場面\n@game dance ok ng\n')).toThrow('知らない遊び');
     expect(() => parseScript('# a 場面\n@game shooting ok\n')).toThrow('@game は');
+  });
+});
+
+describe('この先で流す BGM（2026-10-11）', () => {
+  const scenes = parseScript(`
+# a 場面A
+@bgm daily
+あかり「おはよう」
+@bgm stop
+ハルト「……」
+# b 場面B
+ハルト「行こう」
+@bgm library
+あかり「うん」
+`);
+  it('今の位置から後ろの @bgm を探し、stop は飛ばす', () => {
+    expect(nextBgm(scenes, { scene: 'a', index: 0 })).toBe('daily');
+    expect(nextBgm(scenes, { scene: 'a', index: 1 })).toBeNull();
+  });
+  it('今の場面になければ、続けて行う場面から探す', () => {
+    expect(nextBgm(scenes, { scene: 'a', index: 1 }, ['b'])).toBe('library');
+    expect(nextBgm(scenes, { scene: 'b', index: 2 })).toBeNull();
   });
 });

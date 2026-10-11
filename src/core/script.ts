@@ -307,6 +307,22 @@ export function fillText(text: string, vars: ScriptVars): string {
   return text.replace(/\{([^}]+)\}/g, (_, k: string) => vars[k] ?? '？');
 }
 
+/**
+ * この先で流す BGM の名前（2026-10-11。先に音に解いておき、曲が替わる時に待たないように）。
+ * 今の場面の pos.index から後ろ、続けて行う場面（queue）の順に、@bgm を探す（stop は飛ばす）。分かれ道は気にせず、書いてある順に見る
+ */
+export function nextBgm(scenes: ScriptScene[], pos: ScriptPos, queue: string[] = []): string | null {
+  const order = [pos, ...queue.map((scene) => ({ scene, index: 0 }))];
+  for (const p of order) {
+    const scene = scenes.find((s) => s.id === p.scene);
+    if (!scene) continue;
+    for (const step of scene.steps.slice(p.index)) {
+      if (step.kind === 'command' && step.name === 'bgm' && step.args[0] && step.args[0] !== 'stop') return step.args[0];
+    }
+  }
+  return null;
+}
+
 /** 次の止まる所まで進める。受け取った vars は書き換えず、新しいものを返す */
 export function runScript(scenes: ScriptScene[], pos: ScriptPos, vars: ScriptVars): ScriptRun {
   const scene = findScene(scenes, pos.scene);

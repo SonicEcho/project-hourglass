@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm } from '../audio/sound';
+import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm, warmBgm } from '../audio/sound';
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
-import { chooseOption, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
+import { chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote } from '../data';
 import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, NARRATION_SAND_COLOR, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
@@ -198,6 +198,7 @@ export class DialogueScene extends Phaser.Scene {
     this.onVars = data.onVars;
     this.seed = data.seed ?? 1;
     this.onScene?.(data.scene);
+    this.warmNextBgm(this.pos);
     this.line = undefined;
     this.busy = false;
     this.choosing = false;
@@ -297,6 +298,8 @@ export class DialogueScene extends Phaser.Scene {
     this.vars = r.vars;
     const imageBefore = this.bgImage;
     for (const cmd of r.commands) await this.apply(cmd);
+    // 曲が替わったら、その次に流す曲を先に解いておく（2026-10-11）
+    if (r.commands.some((c) => c.name === 'bgm')) this.warmNextBgm(r.pos);
     if (r.stop.type === 'end') {
       await this.endScene();
       return;
@@ -319,6 +322,12 @@ export class DialogueScene extends Phaser.Scene {
     if (this.bgImage && this.bgImage !== imageBefore) await this.viewBackdrop(this.bgImage);
     else this.restoreAfterView();
     this.showLine(r.stop.line, r.stop.text);
+  }
+
+  /** この先の台本で流す曲を、先に音に解いておく（曲が替わる時に待たないように） */
+  private warmNextBgm(pos: ScriptPos): void {
+    const name = nextBgm(this.scenes, pos, this.queue);
+    if (name && SCRIPT_BGM[name]) warmBgm(this, SCRIPT_BGM[name]);
   }
 
   /** 演出の命令を1つ行う。時間がかかるものは終わるまで待つ */

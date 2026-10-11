@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { AssetEntry } from '../data';
 import { ASSETS } from '../data';
 import { RENDER_SCALE } from '../ui/theme';
+import { assetUrl, isBgm } from './paths';
 
 // 素材を読み込む部品（段階15）。素材の読み込みはここだけで行う。
 // 画面は台帳（src/data/assets.ts）の id で素材を使い、ファイルがない・読み込めない時は今までの図形で代わりに描く
@@ -9,15 +10,7 @@ import { RENDER_SCALE } from '../ui/theme';
 /** 読み込めなかった素材の id */
 const failed = new Set<string>();
 
-/** public/ からの場所を、公開先のサブパス（/project-hourglass/）付きの URL にする */
-export function assetUrl(entry: Pick<AssetEntry, 'file'>): string {
-  return `${import.meta.env.BASE_URL}${entry.file ?? ''}`;
-}
-
-/** BGM か（台帳の id が bgm. で始まる音） */
-export function isBgm(entry: Pick<AssetEntry, 'id' | 'kind'>): boolean {
-  return entry.kind === 'audio' && entry.id.startsWith('bgm.');
-}
+export { assetUrl, isBgm } from './paths';
 
 /** 台帳の画像・SVG・効果音を、起動の画面の preload で読み込む */
 export function queueAssets(scene: Phaser.Scene, assets: AssetEntry[] = ASSETS): void {
@@ -30,7 +23,7 @@ export function queueAssets(scene: Phaser.Scene, assets: AssetEntry[] = ASSETS):
     if (a.kind === 'image') scene.load.image(a.id, assetUrl(a));
     // SVG は高解像度の画面でもにじまないよう、描く倍率に合わせた大きさで読み込む
     else if (a.kind === 'svg') scene.load.svg(a.id, assetUrl(a), { scale: RENDER_SCALE });
-    // BGM は起動では読まず、初めて流す時に audio/sound.ts が読む（1曲が1〜2MB あるため）
+    // BGM は起動では読まない（1曲が1〜2MB あるため。タイトルから始める時に端末にしまい、流す時に audio/sound.ts が読む）
     else if (a.kind === 'audio' && !isBgm(a)) scene.load.audio(a.id, assetUrl(a));
   }
 }
