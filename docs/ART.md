@@ -469,7 +469,7 @@ Character: Mio. Keep her design exactly as in the attached character sheet: brig
 
 ### 2. カイ（設定画 → 胸から上の基本の1枚）
 
-黒髪に青緑の一筋は、ハルトの砂色の一筋と対（同じアーカイバーだった伏線。6章で回収）。
+髪と目は、ハルトから遠ざける（2026-10-11 に変えた）。はじめは「黒髪に青緑の一筋」をハルトの砂色の一筋と対にして、同じアーカイバーだった伏線にしていた。しかし設定画を作ると、髪型までハルトに似て、2章でハルトの正体に気づかれそうだった（開発者の判断）。そこで、灰色がかった金髪のオールバックと、鋼色の灰色の目に変えた（淡い金の目も、ハルトの琥珀の目と近かった）。同じ組織にいたことは、ノアと同じ白いコートと砂時計の留め具で伝える。最初の設定画（黒髪）のコート・武器・ポーズはそのまま使い、髪と目だけ直す
 
 **設定画**（ノアの設定画を添付）
 
@@ -478,13 +478,23 @@ Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft c
 
 Character design sheet of an original anime-style rival character for a mobile turn-based JRPG, full body front view, standing in an arrogant, relaxed pose with his weight on one leg, plain off-white background, clean lineart with soft cel shading, about 7 heads tall. Same art style as the attached reference sheet.
 Character: Kai, a young man around 20 from a cold, white future. A top-ranked time agent ("archiver") who steals people's happy memories, called the best archiver after a certain genius disappeared. Proud, sarcastic and cold, looks down on everyone; underneath, a rival who has been chasing someone he could never surpass.
-Hair: short black hair, slightly spiky, with ONE single streak of blue-green in the front.
-Eyes: sharp, narrow pale-gold eyes, a confident smirk.
+Hair: ash-blond (a cool, dull champagne blond, NOT silver, NOT white, NOT black), neatly swept back from the forehead with one or two thin loose strands falling over the forehead, the sides cut short, slightly longer and smooth at the back. No colored streaks or highlights. A neat, cold, elite look.
+Eyes: sharp, narrow, cold steel-gray eyes, a confident smirk.
 Outfit: the same organization's uniform as the silver-haired girl in the attached sheet: a clean white long coat with a high collar and thin blue-green lines along the seams, but worn open and a little carelessly, sleeves slightly pushed up; a black high-neck inner top; slim black trousers; white boots; the same small hourglass-shaped clasp, worn on his belt instead of the collar.
 Weapon: "Frame", a hollow square frame-shaped blade about the size of a large picture frame, its four edges are thin, razor-sharp white metal with blue-green light lines, like a camera viewfinder turned into a weapon. He holds it by one corner; the space inside the frame looks slightly frozen and drained of color.
-Color palette: black hair #1E2230, blue-green streak #4CC2B8, pale-gold eyes #D8C27A, white coat #F4F7F8, accent lines #4CC2B8, black inner #15181F, skin #F1D9C8.
+Color palette: ash-blond hair #CDBF9E with shadows #9E9278, steel-gray eyes #8A939C, white coat #F4F7F8, accent lines #4CC2B8, black inner #15181F, skin #F1D9C8.
 Additional views on the same sheet: back view, 4 facial expressions (smug smirk, looking down on someone, neutral, serious), close-up of the Frame blade.
 Absolutely no letters or text anywhere.
+```
+
+**設定画の髪と目の直し**（2026-10-11。黒髪で作った最初の設定画を添付して、同じチャットで送る。うまく変わらなければ、上の設定画の指示文を新しいチャットで送る）
+
+```
+Edit the attached character sheet. Keep everything exactly the same: the white high-collared long coat with thin blue-green lines worn open, the rolled-up sleeves, the black high-neck inner top, the belt with the hourglass-shaped buckle, the black trousers, the white boots, the square frame-shaped blade "Frame", all the poses, the layout of the sheet and the art style.
+Change ONLY his hair and eyes, on every view and every face on the sheet:
+- Hair: ash-blond (a cool, dull champagne blond, NOT silver, NOT white, NOT black), neatly swept back from the forehead with one or two thin loose strands falling over the forehead, the sides cut short, slightly longer and smooth at the back. No colored streaks or highlights at all. A neat, cold, elite look, the opposite of messy hair.
+- Eyes: sharp, narrow, cold steel-gray eyes (no gold, no amber).
+Keep his arrogant, confident smirk and the same face shape. Color palette: hair #CDBF9E with shadows #9E9278, eyes #8A939C. Absolutely no letters or text anywhere.
 ```
 
 **胸から上の基本の1枚**（決めた設定画と、あかりの笑顔の立ち絵を添付）
@@ -492,7 +502,7 @@ Absolutely no letters or text anywhere.
 立ち絵の頭（`<表情>` は `a confident, condescending smirk`）の後に：
 
 ```
-Character: Kai. Keep his design exactly as in the attached character sheet: short black hair with one blue-green streak in the front, sharp narrow pale-gold eyes, white high-collared long coat with thin blue-green lines worn open over a black high-neck inner top. No weapon, no glowing light effects in this portrait.
+Character: Kai. Keep his design exactly as in the attached character sheet: swept-back ash-blond hair with one or two loose strands over the forehead, sharp narrow steel-gray eyes, white high-collared long coat with thin blue-green lines worn open over a black high-neck inner top. No weapon, no glowing light effects in this portrait.
 ```
 
 **戦闘の絵**（決めた設定画を添付。敵の絵の共通部分は使わず、これだけで作る）
@@ -755,7 +765,7 @@ Use this image as the base. Keep everything exactly the same: framing, pose, arm
 Expression: <表情>
 ```
 
-`<その人の見た目>` の例：みお `bright light-brown short hair with one tiny side tuft tied by an orange hair tie, sunny-yellow T-shirt, childlike proportions`／カイ `short black hair with one blue-green streak, pale-gold eyes, open white long coat with thin blue-green lines over a black high-neck inner`／ノア `silver short bob with a blue-green tint, blue-green eyes, white high-collared coat with blue-green lines, hourglass collar clasp`／ふみ `thin white hair in a low bun, deep wrinkles, beige knitted cardigan`
+`<その人の見た目>` の例：みお `bright light-brown short hair with one tiny side tuft tied by an orange hair tie, sunny-yellow T-shirt, childlike proportions`／カイ `swept-back ash-blond hair, steel-gray eyes, open white long coat with thin blue-green lines over a black high-neck inner`／ノア `silver short bob with a blue-green tint, blue-green eyes, white high-collared coat with blue-green lines, hourglass collar clasp`／ふみ `thin white hair in a low bun, deep wrinkles, beige knitted cardigan`
 
 | 表情 | `<表情>` | 使う人（`docs/script/M2.md` の 5.・12.） |
 | --- | --- | --- |
@@ -816,7 +826,7 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 | 人 | 年齢・時代 | 立場 | 人柄 | 見た目 | 要る表情 |
 | --- | --- | --- | --- | --- | --- |
 | みお | 10歳（小学4年）・今 | 3人目の仲間（2章の 5-C で加入）。商店街の「助っ人」で、少年野球にも祭りにも顔を出す。武器は切り札のトランプ（呼び名は「ジョーカーズ」） | 元気で声が大きく、いつも走っている。何にでも名前をつける。2年前の夏、遊びに誘った友だちを事故で亡くしたが、その日の楽しかった時間は盗まれていて、事故のことしか覚えていない（本人は気づいていない。7章で回収）。1〜6章は明るい子として過ごす | 明るい茶色のショート、横に小さな結び（橙の髪ゴム）、大きな茶色の目、丸いほお、少し日焼けした鼻。黄色の無地のTシャツ、紺の半ズボン、右手首に白と橙のリストバンド、ひざに絆創膏、赤いスニーカー。立ち絵の高さは 360（子どもの3人と同じ） | 通常・笑顔・大笑い・驚き・むっ・真剣・泣き笑い・照れ・考える・心配・悔しい・困り笑い |
-| カイ | 20歳くらい・未来 | 時間保管局のアーカイバー。ハルトが消えた後「一番のアーカイバー」と呼ばれる。2-3 で負け戦の相手になり、時間を持ち去る。後半は味方につく | 傲慢で皮肉屋、冷たく、人を見下す。その裏で、越えられなかった「消えた天才」（ハルト）をずっと追ってきたライバル。戦い方は「切り取る」（音はカメラのシャッター） | 黒い短髪に青緑の一筋（ハルトの砂色の一筋と対。6章の伏線）、細く鋭い淡い金の目。ノアと同じ白い詰め襟のロングコート（青緑の細い線）を前を開けてだらしなく着る、黒いハイネック、黒いズボン、白いブーツ、砂時計の留め具はベルトに。武器は四角い枠の形の刃「フレーム」 | 余裕・見下す・通常・真剣 |
+| カイ | 20歳くらい・未来 | 時間保管局のアーカイバー。ハルトが消えた後「一番のアーカイバー」と呼ばれる。2-3 で負け戦の相手になり、時間を持ち去る。後半は味方につく | 傲慢で皮肉屋、冷たく、人を見下す。その裏で、越えられなかった「消えた天才」（ハルト）をずっと追ってきたライバル。戦い方は「切り取る」（音はカメラのシャッター） | 灰色がかった金髪のオールバック（前髪を1〜2本垂らす、横は短い）、細く鋭い鋼色の灰色の目（ハルトに似せない。5-3 の 2.）。ノアと同じ白い詰め襟のロングコート（青緑の細い線）を前を開けてだらしなく着る、黒いハイネック、黒いズボン、白いブーツ、砂時計の留め具はベルトに。武器は四角い枠の形の刃「フレーム」 | 余裕・見下す・通常・真剣 |
 | ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 寝ぐせの残る黒い短髪、眠たげな目、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札） | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
 | 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影。短い黒髪、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
 | 写しのひなの | 小学1年・同じ縁日 | ゆうまの妹。金魚に「なつ」と「まつり」と名付ける | 甘えん坊で、兄のあとを追いかける | ゆうまに似た目、短い二つ結び、薄い桃色の浴衣（朝顔の柄。子どものあかりの「白地に赤い金魚」と重ならないように） | 笑顔・泣き |
