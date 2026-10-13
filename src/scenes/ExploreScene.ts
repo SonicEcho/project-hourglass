@@ -177,6 +177,7 @@ export class ExploreScene extends Phaser.Scene {
   /** 今の場面の初めての説明があれば出す。出している間は動きを止め、閉じたら少しの間は敵に触れても戦闘にしない */
   private showTip(atCheckpoint: boolean): void {
     if (this.tipOpen || this.leaving) return;
+    const before = new Set(this.children.list);
     const shown = maybeShowTip(this, exploreTipTriggers(this.state, { atCheckpoint }), () => {
       this.tipOpen = false;
       for (const t of this.pausedTweens) t.resume();
@@ -187,6 +188,8 @@ export class ExploreScene extends Phaser.Scene {
     });
     if (!shown) return;
     this.tipOpen = true;
+    // 説明の窓は画面の文字用のカメラだけに映す（地図用のカメラにも映ると、地図の左上に暗い幕がもう1枚重なる）
+    this.cameras.main.ignore(this.children.list.filter((o) => !before.has(o)));
     // 止めるのは地図の上の動きだけ。tweens.pauseAll() は説明の窓が出る動きまで止めてしまい、
     // 見えない窓が残って後ろを押せなくなる（音は鳴っているのに固まる。段階32a で窓に動きを付けてから）
     this.pausedTweens = this.tweens.getTweens().filter((t) => !t.isPaused() && t.targets.some((o) => this.inWorld(o)));
