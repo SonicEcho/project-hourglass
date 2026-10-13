@@ -983,26 +983,55 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
   - Suno の無料の版で作った曲は、売り物に使えない（後から有料にしても、さかのぼって使えるようにはならない）。商用に使える権利は、有料の期間にダウンロードした曲だけに付く（2026-09-03 から。Pro は月20曲、Premier は月60曲まで）。解約しても、ダウンロード済みの曲は使い続けられる
   - 使うなら、無料の版で曲調を試してから、有料の版を必要な月だけ契約して本番の曲を作る。ダウンロードした日の規約の控えを取る
   - Suno の曲はループ前提ではないので、つなぎ目を探して切る作業が要る（Claude が曲を解析して、つなぎ目を探す）
-- **M1 の本番の BGM（段階31b。7曲）**：どの場面に何曲かは `docs/script/M1.md` の 5. の素材一覧。台本の名前（`@bgm`）との対応は `src/data/dialogue.ts` の `SCRIPT_BGM`。Pro の月20曲で、1曲あたり2〜3回作り直せる
-- 曲調の指示文（Instrumental をオンにして、Style of Music に書く。②⑤⑥は 2026-10-09 に足したたたき台）：
+- **M1 の本番の BGM（段階31b。8曲）**：どの場面に何曲かは `docs/script/M1.md` の 5. の素材一覧。台本の名前（`@bgm`）との対応は `src/data/dialogue.ts` の `SCRIPT_BGM`。Pro の月20曲で、1曲あたり2回くらい作り直せる
+- **作り方（2026-10-13、開発者と決めた）**：最初のたたき台（2026-10-09）で作り始めたら、「場面に合わない」「印象に残らない」曲になった。原因は、指示文がジャンルの説明（「JRPG の町の曲」など）で、場面の説明になっていなかったことと、曲どうしに共通の旋律がなかったこと。そこで、次の形で作る
+  1. **先にメインテーマ（① タイトル）だけを作り込む**。条件は、1回聴いたら口ずさめる短い旋律があること。決まるまで、ほかの曲は作らない
+  2. **メインテーマから派生させる曲**（①b 夕暮れ・⑤ ボス戦・⑦ 返す場面）は、Suno の Cover で ① の曲を元にして、Style of Music だけを替えて作る。同じ旋律が場面ごとに形を変えて出てくるので、ゲーム全体の曲が1つにまとまり、記憶に残る。Cover は元の曲の旋律をどこまで残すかを選べる（設定の名前は Suno の版で変わる）。旋律が消えたら元の曲に寄せ、元の曲のままなら離す
+  3. ほかの曲（②③④⑥）は、何度も聴く曲なので別の旋律でよい
+- **指示文の書き方**：Style of Music に書く（Instrumental はオン）。入れたくない音は Exclude styles（除外の欄）に書く（指示文に `no ○○` と書くより効く）
+  - 先頭に**場面**を書く：何が起きている時に流れるか、プレイヤーにどう感じてほしいか（物語の中身。`docs/STORY.md`）。ジャンル名（JRPG など）は最小にする（入れると「よくある曲」になる）
+  - 楽器は2〜3個まで。Suno は先頭のほうの言葉を強く拾うので、大事なものから書く
+  - **会話の後ろで流れる曲**（①b・②⑥）は、`background music under dialogue, steady dynamics` を入れ、途中で大きく盛り上げない（Suno は放っておくと歌もののように盛り上げて、会話から浮く）
+  - 調・テンポ・音色（`felt piano`、`mellow` など）は具体的に書く。開発者が選んだ仮の曲（魔王魂）は、タイトルと返す場面が短調のピアノで柔らかい音、日常がゆったりした速さだった（2026-10-13 に解析した）ので、それに寄せた
+- **試し方**：1回で変えるのは1か所だけ（どの言葉が効いたか分かるように）。惜しい曲は作り直さず、Extend や Cover で寄せる。合うかどうかは、ゲームの背景の絵（`public/assets/backgrounds/`）を見ながら聴いて決める
 
-| 番号 | 優先 | 曲 | 流れる所 | 台本の名前 |
-| --- | --- | --- | --- | --- |
-| ① | 高 | タイトル・夕暮れの街 | タイトル、夕暮れの時計屋 | `title` |
-| ② | 高 | 日常 | 朝・学校・商店街 | `daily` |
-| ③ | 高 | 縁日の探索（プロローグの祭りと共用でもよい） | 1-1 の探索、プロローグ | `festival`、`prologue` |
-| ④ | 高 | ふだんの戦闘 | 雑魚戦 | （戦闘の画面） |
-| ⑤ | 高 | ボス戦 | 1-1 のボス | （戦闘の画面） |
-| ⑥ | 中 | レストピア（蔵書の棚） | 1-F、2-C | `library` |
-| ⑦ | 中 | 返す場面・泣き | 時間を返す、2日目の電話 | `return` |
+| 番号 | 優先 | 曲 | 流れる所 | 台本の名前 | 作り方 |
+| --- | --- | --- | --- | --- | --- |
+| ① | 高 | タイトル（メインテーマ） | タイトル | `title` | 最初に作り込む |
+| ①b | 中 | 夕暮れの時計屋 | 夕暮れの時計屋（1-E などは今の台本では BGM なし。使う場面は台本で決める） | （未定。`dusk` の予定） | ① の Cover |
+| ② | 高 | 日常 | 朝・学校・商店街 | `daily` | 新しく作る |
+| ③ | 高 | 縁日の探索（プロローグの祭りと共用でもよい） | 1-1 の探索、プロローグ | `festival`、`prologue` | 新しく作る |
+| ④ | 高 | ふだんの戦闘 | 雑魚戦 | （戦闘の画面） | 新しく作る |
+| ⑤ | 高 | ボス戦 | 1-1 のボス | （戦闘の画面） | ① の Cover（合わなければ新しく作る） |
+| ⑥ | 中 | レストピア（蔵書の棚） | 1-F、2-C | `library` | 新しく作る |
+| ⑦ | 中 | 返す場面・泣き | 時間を返す、2日目の電話 | `return` | ① の Cover |
 
-  - ① タイトル・夕暮れの街：`nostalgic emotional JRPG title theme, solo piano and soft strings, music box accents, gentle warm melody with a hint of sadness, summer evening sunset atmosphere, slow tempo 76 bpm, cinematic, instrumental, no vocals, no fade out`
-  - ② 日常：`warm slice-of-life JRPG town theme, acoustic guitar, light piano, soft woodwinds, gentle percussion, relaxed summer morning in a small Japanese town, carefree and nostalgic, medium tempo 100 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - ③ 縁日・祭り：`cheerful Japanese summer festival music, shinobue bamboo flute, taiko drums, shamisen, light percussion, playful and nostalgic, dusk atmosphere with paper lanterns, medium tempo 110 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - ④ ふだんの戦闘：`energetic JRPG battle theme, driving rock drums and bass, fast strings, bright synth lead, ticking clock percussion motif, heroic and tense, fast tempo 150 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - ⑤ ボス戦：`intense JRPG boss battle theme, heavy taiko and rock drums, distorted guitar, dramatic strings and choir pads, shinobue flute melody twisted into a darker minor key, ticking clock motif, urgent and powerful, tempo 160 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - ⑥ レストピア（蔵書の棚）：`mysterious and beautiful fantasy library theme, celesta, harp, soft choir pads, gentle strings, music box, floating golden sand atmosphere, quiet wonder with a touch of loneliness, slow tempo 70 bpm, loopable game background music, instrumental, no vocals, no fade out`
-  - ⑦ 返す場面・泣き：`heartbreaking emotional piano ballad, solo piano with soft cello, slow and fragile, memories of a lost summer, quiet and tender, tempo 64 bpm, cinematic JRPG sad scene, instrumental, no vocals`
+- 指示文（2026-10-13 に書き直した。上が Style of Music、下が Exclude styles）：
+  - ① タイトル（メインテーマ）：魔王魂の「ピアノ41」（今の仮のタイトル曲）の雰囲気に寄せ、旋律を覚えやすくした
+    - `solo piano, a simple memorable main theme built on a short five-note motif, G minor, slow 66 bpm, soft felt piano in the middle and low register, melancholic and mysterious like a half-forgotten summer memory, sparse at first, then the motif returns with octave bass and fuller chords showing quiet determination, then settles back into silence, instrumental`
+    - `vocals, strings, drums, synth, music box, fade out`
+  - ①b 夕暮れの時計屋（① の Cover）：
+    - `warm gentle arrangement for piano and soft strings, a quiet old clock shop at sunset, many clocks ticking softly, golden evening light through the window, nostalgic and calm with a little sadness, slow 66 bpm, background music under dialogue, steady dynamics, instrumental`
+    - `vocals, drums, big climax, fade out`
+  - ② 日常：
+    - `peaceful everyday life in a small Japanese town, acoustic guitar and light piano, school, shopping arcade, summer afternoon with best friends, ordinary days the player will miss later, relaxed 80 bpm, simple repeating melody, background music under dialogue, steady dynamics, instrumental`
+    - `vocals, electric guitar, synth, build-up, fade out`
+  - ③ 縁日の探索：
+    - `a summer night festival inside a stolen memory, shinobue bamboo flute and light taiko, paper lanterns and goldfish scooping, children laughing in the distance, cheerful and nostalgic but slightly dreamlike like an old recording, 100 bpm, looping exploration music, steady dynamics, instrumental`
+    - `vocals, rock drums, synth, fade out`
+  - ④ ふだんの戦闘（砂嵐は、何度も再生されてすり切れた時間のノイズ。悪者ではない）：
+    - `battle against monsters made of TV static and worn-out memories, driving drums and bass with a piano riff, ticking clock rhythm, tense but not evil, energetic and heroic, 140 bpm, loop-friendly game battle music, instrumental`
+    - `vocals, dubstep, EDM drop, fade out`
+  - ⑤ ボス戦（① の Cover。ボスは時間を盗むアーカイバー。ハルトの元の仲間）：
+    - `boss battle against an agent who steals time, the main theme played fast and fierce in a minor key, driving drums, strings and piano, ticking clock rhythm, urgent and powerful with a hint of sorrow, 150 bpm, loop-friendly, instrumental`
+    - `vocals, choir with lyrics, EDM drop, fade out`
+  - ⑥ レストピア（蔵書の棚。盗まれた楽しい時間が、砂時計になって並ぶ所）：
+    - `a vast silent library of hourglasses holding stolen happy moments, celesta and harp over soft pads, golden sand floating in the air, beautiful but empty, eternal stillness, quiet wonder with loneliness, slow 70 bpm, ambient, background music under dialogue, steady dynamics, instrumental`
+    - `vocals, drums, fade out`
+  - ⑦ 返す場面・泣き（① の Cover。景色が金色の砂になって昇り、持ち主に時間が戻る）：
+    - `the main theme as a slow tender piano piece, returning a lost happy memory to its owner, the scene dissolves into golden sand, tears and a smile, solo piano with soft cello, fragile at first then warm, 60 bpm, instrumental`
+    - `vocals, drums, fade out`
+  - 最初のたたき台（2026-10-09。使わない）：① `nostalgic emotional JRPG title theme, solo piano and soft strings, music box accents, ...`、② `warm slice-of-life JRPG town theme, ...`、③ `cheerful Japanese summer festival music, ...`、④ `energetic JRPG battle theme, ...`、⑤ `intense JRPG boss battle theme, ...`、⑥ `mysterious and beautiful fantasy library theme, ...`、⑦ `heartbreaking emotional piano ballad, ...`（ジャンル名が先頭で、場面の説明がなかった）
 - **仮の BGM（2026-10-11、開発者が選んだ）**：本番の曲（Suno）ができるまで、魔王魂の曲を仮に使う。いずれ Suno の曲に替えるかもしれない（替える時は台帳の id はそのままで、ファイルと `BGM_LOOPS`、台帳の `version`・`bytes` を替える）。③縁日だけは、まだ自作の仮の音
 
 | 番号 | 曲 | 魔王魂の曲 | くり返し方 |
@@ -1018,5 +1047,5 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
   - 上の「音のファイルに暗号をかける」仕組みは作らない（魔王魂は暗号化を「許可」しているだけで、求めてはいない。CC BY 4.0 はそのまま配るのが本来の形）。ファイル名は魔王魂の二次配布の決まりに合わせて `maoudamashii_*.mp3` にした
   - 大きさ（2026-10-11、開発者から「タイトルだけ小さく、他は大きい」）：元の曲は聞こえ方の大きさ（ラウドネス）が最大16dB 違った（タイトル −22.8 LUFS、戦闘 −7.1 LUFS）。全曲を −17.4 LUFS（自作の仮の縁日の曲と同じ。タイトルを上げても音が割れない上限）にそろえた。Suno の曲を入れる時も、同じ大きさにそろえる
   - 切り出しは `scripts/maou_bgm.py`（落とした mp3 から作り直せる）。ファンタジー03 の URL は、開発者の書いた `bgm_fantasy3` ではなく `bgm_fantasy03`（`bgm_fantasy3` は見つからなかった）
-- 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦）と実際に使った指示文と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
+- 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦、①b）と実際に使った指示文（Exclude styles も）と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
 
