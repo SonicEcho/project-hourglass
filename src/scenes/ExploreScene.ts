@@ -77,6 +77,10 @@ export class ExploreScene extends Phaser.Scene {
   private graceUntil = 0;
   /** 初めての人向けの説明を出している間は、敵も自分も止める（段階30） */
   private tipOpen = false;
+  /** 地図（仲間について動くカメラで映すもの） */
+  private world?: Phaser.GameObjects.Container;
+  /** 説明を出している間だけ止めている、地図の上の動き */
+  private pausedTweens: Phaser.Tweens.Tween[] = [];
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
   private chestSprites = new Map<string, Phaser.GameObjects.Rectangle>();
@@ -109,6 +113,8 @@ export class ExploreScene extends Phaser.Scene {
     setHubReturn(null);
     this.graceUntil = this.time.now + AREA_GRACE_MS;
     this.tipOpen = false;
+    this.world = undefined;
+    this.pausedTweens = [];
 
     let state = run.explore?.area === area.id ? run.explore : startExplore(area);
     let note = '';
@@ -142,6 +148,8 @@ export class ExploreScene extends Phaser.Scene {
       this.finishArea();
       return;
     }
+    // 区画の曲に戻す。戦闘から戻ってすぐ途中の会話を開く時も、戦闘の曲のままにしない（2026-10-13）
+    if (area.bgm) playBgm(this, area.bgm);
     // まだ見ていない途中の会話（勝った回数、ボスに勝った後）
     const pending =
       (state.cleared ? pendingTrigger(area, state, 'cleared') : null) ?? pendingTrigger(area, state, 'wins') ?? pendingTrigger(area, state, 'komaLeft');
@@ -151,7 +159,6 @@ export class ExploreScene extends Phaser.Scene {
     }
 
     this.draw();
-    if (area.bgm) playBgm(this, area.bgm);
     // 戦闘に入った時にすぐ曲が変わるよう、戦闘の曲を先に読んでおく
     prefetchBgm([BGM.battle, BGM.boss]);
     const left = komaLeft(area, state);
@@ -172,19 +179,34 @@ export class ExploreScene extends Phaser.Scene {
     if (this.tipOpen || this.leaving) return;
     const shown = maybeShowTip(this, exploreTipTriggers(this.state, { atCheckpoint }), () => {
       this.tipOpen = false;
-      this.tweens.resumeAll();
+      for (const t of this.pausedTweens) t.resume();
+      this.pausedTweens = [];
       this.graceUntil = this.time.now + AREA_GRACE_MS;
       // 同じ場面で当てはまる次の説明を続けて出す（段階32b）
       this.showTip(atCheckpoint);
     });
     if (!shown) return;
     this.tipOpen = true;
-    this.tweens.pauseAll();
+    // 止めるのは地図の上の動きだけ。tweens.pauseAll() は説明の窓が出る動きまで止めてしまい、
+    // 見えない窓が残って後ろを押せなくなる（音は鳴っているのに固まる。段階32a で窓に動きを付けてから）
+    this.pausedTweens = this.tweens.getTweens().filter((t) => !t.isPaused() && t.targets.some((o) => this.inWorld(o)));
+    for (const t of this.pausedTweens) t.pause();
+  }
+
+  /** 地図の中のもの（地図の入れ物の中に、入れ子でも入っている）か */
+  private inWorld(o: unknown): boolean {
+    let p = (o as Phaser.GameObjects.GameObject | null)?.parentContainer;
+    while (p) {
+      if (p === this.world) return true;
+      p = p.parentContainer;
+    }
+    return false;
   }
 
   private draw(): void {
     const area = this.area;
     const world = this.add.container(0, 0);
+    this.world = world;
     const ui = this.add.container(0, 0);
     if (area.image && hasImage(this, area.image)) {
       world.add(this.add.image(0, 0, area.image).setOrigin(0).setDisplaySize(this.map.cols * T, this.map.rows * T));
@@ -398,7 +420,7 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.walking = true;
     this.nextCell = next;
-    this.tweens.add({
+    const walk = this.tweens.add({
       targets: this.player,
       x: next[0] * T + T / 2,
       y: next[1] * T + T / 2,
@@ -409,6 +431,11 @@ export class ExploreScene extends Phaser.Scene {
         this.step();
       },
     });
+    // チェックポイントで説明が出た直後の一歩は、説明を閉じるまで待つ
+    if (this.tipOpen) {
+      walk.pause();
+      this.pausedTweens.push(walk);
+    }
   }
 
   /** マスに着いた：チェックポイント（宝箱は通っただけでは開かない） */
