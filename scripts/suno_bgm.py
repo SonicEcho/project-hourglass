@@ -23,10 +23,22 @@ src, out = sys.argv[1], sys.argv[2]
 
 SONGS = [
     # 落とした mp3, 書き出すファイル, くり返し方, S（サンプル）, E（サンプル）
-    ('title', 'suno_title.mp3', 'whole', None, None),
-    ('返す場面', 'suno_return.mp3', 'whole', None, None),
-    # ボス戦：曲の途中でテンポが少しずつ上がる（約154 → 158）。81.2秒（2番の頭）→ 170.2秒（最後のサビの前）でつなぐ（約89秒、58小節）
-    ('boss battle', 'suno_boss.mp3', 'loop', 3582993, 7506105),
+    # タイトルと返す場面は、メインテーマ（Paper Umbrella）を Cover した曲。落とした時の名前は NoTitle・ReturnTheMemory
+    ('NoTitle', 'suno_title.mp3', 'whole', None, None),
+    ('ReturnTheMemory', 'suno_return.mp3', 'whole', None, None),
+    # 日常：67.2秒 → 153.5秒（約86秒）
+    ('ArcadeAfternoon', 'suno_daily.mp3', 'loop', 2962432, 6767566),
+    # プロローグの祭り：35.6秒 → 120.4秒（約85秒）
+    ('TimePassesMemory', 'suno_prologue.mp3', 'loop', 1571840, 5308938),
+    # 縁日（1-1。プロローグの曲を Cover した）：31.3秒 → 108.9秒（約78秒）
+    ('LostFair', 'suno_festival.mp3', 'loop', 1380352, 4801388),
+    # レストピア：拍のはっきりしない曲で、よく似た2点が見つからなかったので全体をくり返す
+    ('RESTOPIA', 'suno_library.mp3', 'whole', None, None),
+    # ふだんの戦闘：23.4秒 → 57.0秒（約34秒）
+    ('AttackAndStrike', 'suno_battle.mp3', 'loop', 1030144, 2511759),
+    # ボス戦（1-1）：97.3秒 → 161.5秒（約64秒）
+    ('FirstCombat', 'suno_boss_1_1.mp3', 'loop', 4290560, 7123129),
+    # 2026-10-13 の最初の版のボス戦（Paper Umbrella を Cover した和風メタル。81.2秒 → 170.2秒）は、ラスボスの候補として残し、ゲームからは外した
 ]
 
 

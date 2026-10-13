@@ -275,12 +275,12 @@ export const CGS: Record<string, Backdrop> = {
 };
 
 /**
- * 台本の BGM の名前 → 台帳の id。本番の曲（段階31b）ができるまでは仮の曲（魔王魂の曲と、自作の仮の縁日の曲）で流す
+ * 台本の BGM の名前 → 台帳の id。2026-10-13 から、どの曲も開発者が Suno で作った曲（docs/ART.md の 6.）
  */
 export const SCRIPT_BGM: Record<string, string> = {
   title: BGM.title,
   daily: BGM.daily,
-  prologue: BGM.festival,
+  prologue: BGM.prologue,
   festival: BGM.festival,
   library: BGM.library,
   return: BGM.return,

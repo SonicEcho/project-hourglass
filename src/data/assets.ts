@@ -435,71 +435,21 @@ function soundEffectLab(
   };
 }
 
-/** 自作の仮の BGM（段階19。ループの仕組みを確かめるための音。本番は Suno で作った曲に替える） */
-function placeholderBgm(id: string, title: string, file: string, version: string, bytes: number): AssetEntry {
-  return {
-    id,
-    kind: 'audio',
-    title: `BGM：${title}（仮）`,
-    file: `assets/bgm/${file}`,
-    status: 'placeholder',
-    source: { type: 'self' },
-    author: 'RESTOPIA 開発',
-    license: '自作',
-    commercialUse: true,
-    creditRequired: false,
-    modifyAllowed: true,
-    acquiredAt: '2026-10-08',
-    version,
-    bytes,
-    notes: 'scripts/placeholder_bgm.py でプログラムで合成した音。本番では Suno の有料の版で作った曲に替える（docs/ART.md）',
-  };
-}
-
-/**
- * 魔王魂の曲を使った仮の BGM（2026-10-11、開発者が曲を選んだ。本番の曲（Suno）ができるまでの仮）。
- * 長さを切ってつなぎ目を整えた（scripts/maou_bgm.py）。ファイル名に maoudamashii を入れるのは、魔王魂の二次配布の決まり
- */
-function maouBgm(id: string, title: string, song: string, page: string, edit: string, version: string, bytes: number): AssetEntry {
-  return {
-    id,
-    kind: 'audio',
-    title: `BGM：${title}（仮。魔王魂「${song}」）`,
-    file: `assets/bgm/maoudamashii_${page}.mp3`,
-    status: 'placeholder',
-    source: { type: 'free', site: '魔王魂', url: `https://maou.audio/bgm_${page}/` },
-    author: '魔王魂（森田交一）',
-    license: 'クリエイティブ・コモンズ 表示 4.0 国際（または魔王魂素材利用規約）',
-    commercialUse: true,
-    creditRequired: true,
-    credit: '音楽：魔王魂',
-    modifyAllowed: true,
-    acquiredAt: '2026-10-11',
-    termsCopy: 'docs/licenses/maoudamashii.md',
-    version,
-    bytes,
-    notes: `元のファイル：maou_bgm_${page}.mp3（通常版）。手を入れた所：${edit}、96kbps の mp3 にした。曲だけを配ること、生成 AI の学習は禁止`,
-  };
-}
-
-const MAOU_LOOP_EDIT = '曲の中の同じ部分が繰り返す所でくり返すように切り（終わりのフェードアウトは使わない）、つなぎ目の直前60ms をなめらかにした';
-const MAOU_WHOLE_EDIT = '頭と終わりの無音を切り、終わりを0.8秒で消した（曲の全体をくり返す）';
-
-/** Paper Umbrella（開発者が Suno で作ったボーカル入りの曲。メインテーマの候補）を Cover して作った曲の指示文の元（docs/ART.md の 6.） */
+/** Paper Umbrella（開発者が Suno で作ったボーカル入りの曲。メインテーマ）を Cover して作った曲の指示文の元（docs/ART.md の 6.） */
 const SUNO_MAIN_THEME = 'Paper Umbrella（wafu rock, Japanese traditional rock fusion, fast shamisen riff, taiko drums, distorted guitar, shinobue flute hook, tight driving rhythm, powerful female vocal, G minor, 150 bpm, fierce and cool, festival energy with a dark edge）';
 
 /**
- * Suno で作った BGM（2026-10-13、開発者が Pro（有料の版）で作った。メインテーマの候補 Paper Umbrella を Cover して作った曲）。
- * 長さを切ってつなぎ目を整えた（scripts/suno_bgm.py）。Pro で作った曲は、権利が開発者に移る（docs/licenses/ai-suno.md）
+ * Suno で作った BGM（2026-10-13、開発者が Pro（有料の版）で作った）。長さを切ってつなぎ目を整えた（scripts/suno_bgm.py）。
+ * Pro で作った曲は、権利が開発者に移る（docs/licenses/ai-suno.md）。coverOf は、元にした曲（Cover で作った時）
  */
-function sunoBgm(id: string, title: string, file: string, prompt: string, edit: string, version: string, bytes: number): AssetEntry {
+function sunoBgm(id: string, title: string, file: string, prompt: string, edit: string, version: string, bytes: number, coverOf?: string): AssetEntry {
   return {
     id,
     kind: 'audio',
     title: `BGM：${title}`,
     file: `assets/bgm/${file}`,
     status: 'placeholder',
-    source: { type: 'ai', service: 'Suno', plan: 'Pro（有料）', prompt, settings: `${SUNO_MAIN_THEME} を Cover した` },
+    source: { type: 'ai', service: 'Suno', plan: 'Pro（有料）', prompt, ...(coverOf ? { settings: `${coverOf} を Cover した` } : {}) },
     author: 'RESTOPIA 開発（Suno で作曲）',
     license: '自作（Suno の Pro で作った曲。権利は開発者）',
     commercialUse: true,
@@ -509,7 +459,7 @@ function sunoBgm(id: string, title: string, file: string, prompt: string, edit: 
     termsCopy: 'docs/licenses/ai-suno.md',
     version,
     bytes,
-    notes: `メインテーマを決めるための候補（開発者が試しに作った）。手を入れた所：${edit}、96kbps の mp3 にした。prompt は Claude が渡した指示文（実際に使った文と違えば書き直す）`,
+    notes: `手を入れた所：${edit}、96kbps の mp3 にした。prompt は Claude が渡した指示文（実際に使った文と違えば書き直す）`,
   };
 }
 
@@ -630,7 +580,6 @@ export const ASSETS: AssetEntry[] = [
     notes:
       '屋台めぐりの「けいかくひょう」（子どものりくの字）に使う。かな・英数字と src/data/daily.ts の字だけに絞った（scripts/font-subset.py）。ゲームの中では RestopiaHand の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
   },
-  placeholderBgm('bgm.festival', '縁日', 'festival.mp3', 'f43d091d1e0e', 78620),
   sunoBgm(
     'bgm.title',
     'タイトル',
@@ -639,9 +588,45 @@ export const ASSETS: AssetEntry[] = [
     SUNO_WHOLE_EDIT,
     'f9dd63739456',
     2337586,
+    SUNO_MAIN_THEME,
   ),
-  maouBgm('bgm.daily', '日常', 'アコースティック39', 'acoustic39', MAOU_LOOP_EDIT, 'ef9bf7af38fa', 2066435),
-  maouBgm('bgm.library', 'レストピア', 'オーケストラ14', 'orchestra14', MAOU_WHOLE_EDIT, 'f1808a68cd24', 753311),
+  sunoBgm(
+    'bgm.daily',
+    '日常',
+    'suno_daily.mp3',
+    'mellow city pop slice-of-life theme, warm Rhodes electric piano, groovy bass, light drums with soft hi-hat, clean guitar cutting, lazy summer afternoon in a shopping arcade, nostalgic and cozy, B-flat major, 88 bpm, catchy but gentle two-bar phrase, background music under dialogue, steady dynamics, loop-friendly, instrumental',
+    SUNO_LOOP_EDIT,
+    'b6428559ff56',
+    1854216,
+  ),
+  sunoBgm(
+    'bgm.prologue',
+    'プロローグの祭り',
+    'suno_prologue.mp3',
+    'nostalgic Japanese summer festival at dusk, festival music drifting from a distance, soft shinobue bamboo flute melody, gentle koto and harp, warm strings, faint taiko far away, wind chimes, paper lanterns glowing in the evening, a childhood summer remembered years later, warm and wistful, happy but bittersweet, B-flat major with gentle minor chord touches, 88 bpm, simple repeating melody, background music under dialogue, steady dynamics, loop-friendly, instrumental',
+    SUNO_LOOP_EDIT,
+    'd82d134a6d36',
+    1457364,
+  ),
+  sunoBgm(
+    'bgm.festival',
+    '縁日（1-1）',
+    'suno_festival.mp3',
+    'the same festival melody heard inside a replayed memory, like a worn VHS recording, slightly detuned and wobbly tape, soft lo-fi texture, shinobue and light taiko, distant festival bells, dreamlike and a little uncanny but still warm and playful, B-flat major, 100 bpm, looping exploration music, steady dynamics, instrumental',
+    SUNO_LOOP_EDIT,
+    '88c613139ac7',
+    1319437,
+    'TimePassesMemory（プロローグの祭りの曲）',
+  ),
+  sunoBgm(
+    'bgm.library',
+    'レストピア',
+    'suno_library.mp3',
+    'majestic otherworldly library theme, an endless library of glowing hourglasses with towering shelves rising beyond sight, pipe organ and deep strings, slow swelling wordless choir, celesta sparkles on top, cathedral reverb, unexpected chord shifts to distant keys, awe and mystery, grand and mysterious, E-flat lydian, slow 72 bpm, background music under dialogue, steady dynamics, loop-friendly, instrumental',
+    SUNO_WHOLE_EDIT,
+    'c1e64b63ab39',
+    1536671,
+  ),
   sunoBgm(
     'bgm.return',
     '返す場面',
@@ -650,16 +635,25 @@ export const ASSETS: AssetEntry[] = [
     SUNO_WHOLE_EDIT,
     '0cfdb1a30efd',
     2319718,
+    SUNO_MAIN_THEME,
   ),
-  maouBgm('bgm.battle', 'ふだんの戦闘', 'ファンタジー12', 'fantasy12', MAOU_LOOP_EDIT, 'f035f943f3e5', 1344515),
+  sunoBgm(
+    'bgm.battle',
+    'ふだんの戦闘',
+    'suno_battle.mp3',
+    'glitchy rock battle theme, driving drums and distorted bass, catchy guitar riff, static noise stutters and tape-stop effects, VHS tape wobble, ticking clock rhythm, short punchy intro then straight into the main riff, repeated two-bar hook, tense and cool, G minor, 145 bpm, loop-friendly game battle music, consistent energy, instrumental',
+    SUNO_LOOP_EDIT,
+    'a8ed33277d64',
+    696260,
+  ),
   sunoBgm(
     'bgm.boss',
-    'ボス戦',
-    'suno_boss.mp3',
-    'intense wafu metal boss battle, the main theme melody twisted and urgent, heavy taiko, aggressive shamisen and distorted guitar, G minor, 165 bpm, dark and powerful, loop-friendly, instrumental',
+    'ボス戦（1-1）',
+    'suno_boss_1_1.mp3',
+    'first boss battle in a summer festival memory, tense but playful, taiko and shamisen with light rock drums and bass, shinobue flute hook, catchy riff, mischievous and quirky, a giant goldfish bowl monster, energetic but not epic, G minor, 140 bpm, loop-friendly game battle music, instrumental',
     SUNO_LOOP_EDIT,
-    '230392eecaf4',
-    2055150,
+    'c9bb1cff44cc',
+    1951078,
   ),
   {
     id: 'map.festival',

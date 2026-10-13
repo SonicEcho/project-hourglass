@@ -1,4 +1,5 @@
 """魔王魂の曲を、ゲームの仮の BGM に切り出す（2026-10-11。本番の曲（Suno）ができるまでの仮）。
+2026-10-13 に、すべて Suno の曲（scripts/suno_bgm.py）に替えたので、今はゲームで使っていない（記録として残す）。
 
 使い方: python3 scripts/maou_bgm.py <魔王魂から落とした mp3 のフォルダ> public/assets/bgm
   （numpy と ffmpeg が要る。曲は https://maou.audio/ の各曲のページから、通常版の mp3 を落とす）

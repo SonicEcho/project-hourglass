@@ -83,6 +83,7 @@ export const AMBIENCE = { gain: 0.5, everySec: 2.2, jitterSec: 0.5, rateMin: 0.9
 export const BGM = {
   title: 'bgm.title',
   daily: 'bgm.daily',
+  prologue: 'bgm.prologue',
   festival: 'bgm.festival',
   library: 'bgm.library',
   return: 'bgm.return',
@@ -101,13 +102,12 @@ export const BGM_HEAD = { sec: 15, bytesPerSec: 12000, crossfadeSec: 0.05 } as c
  * Suno の曲は最初から最後までがループになっていないので、つなぎ目をここに書く（start まで1回だけ流し、start〜end をくり返す）
  */
 export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
-  // 仮の BGM（scripts/placeholder_bgm.py が書き出した時に表示する値）。mp3 の頭の無音をよけるため、0.5秒から1周をくり返す
-  [BGM.festival]: { start: 0.5, end: 9.227256 },
-  // 魔王魂の仮の BGM（2026-10-11。scripts/maou_bgm.py が書き出した時に表示する値）。レストピアは、繰り返す部分がない曲なので全体をくり返す
-  [BGM.daily]: { start: 0.275669, end: 171.123129 },
-  [BGM.battle]: { start: 4.301179, end: 110.967846 },
-  // Suno の BGM（2026-10-13。scripts/suno_bgm.py が書き出した時に表示する値）。タイトル・返す場面は全体をくり返す
-  [BGM.boss]: { start: 81.247007, end: 170.206463 },
+  // Suno の BGM（2026-10-13。scripts/suno_bgm.py が書き出した時に表示する値）。タイトル・レストピア・返す場面は全体をくり返す
+  [BGM.daily]: { start: 67.175329, end: 153.459546 },
+  [BGM.prologue]: { start: 35.64263, end: 120.384082 },
+  [BGM.festival]: { start: 31.300499, end: 108.875011 },
+  [BGM.battle]: { start: 23.359274, end: 56.955986 },
+  [BGM.boss]: { start: 97.29161, end: 161.5222 },
 };
 
 /**
