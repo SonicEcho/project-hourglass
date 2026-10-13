@@ -148,6 +148,8 @@ export class ExploreScene extends Phaser.Scene {
       this.finishArea();
       return;
     }
+    // 区画の曲に戻す。戦闘から戻ってすぐ途中の会話を開く時も、戦闘の曲のままにしない（2026-10-13）
+    if (area.bgm) playBgm(this, area.bgm);
     // まだ見ていない途中の会話（勝った回数、ボスに勝った後）
     const pending =
       (state.cleared ? pendingTrigger(area, state, 'cleared') : null) ?? pendingTrigger(area, state, 'wins') ?? pendingTrigger(area, state, 'komaLeft');
@@ -157,7 +159,6 @@ export class ExploreScene extends Phaser.Scene {
     }
 
     this.draw();
-    if (area.bgm) playBgm(this, area.bgm);
     // 戦闘に入った時にすぐ曲が変わるよう、戦闘の曲を先に読んでおく
     prefetchBgm([BGM.battle, BGM.boss]);
     const left = komaLeft(area, state);

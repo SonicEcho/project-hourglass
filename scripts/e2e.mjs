@@ -248,6 +248,15 @@ try {
   await tapAt(195, 600);
   await until('仲間が歩く', async () => { const now = await hero(); return now[0] !== before[0] || now[1] !== before[1]; }, 5000);
 
+  step('探索の戦闘に勝って、すぐ会話になる時も縁日の曲に戻る');
+  const back = { key: 'Explore', data: { area: 'a11', won: undefined, lost: true, seen: undefined } };
+  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm1', win: b, lose: b } }), back);
+  await until('戦闘の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.battle');
+  // 1回目に勝つと「最初のコマ」の会話になる
+  await page.evaluate(() => window.__restopia.start('Explore', { area: 'a11', won: 'a11_e_plaza', lost: undefined, seen: undefined }));
+  await waitScene('Dialogue');
+  await until('会話で縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
+
   if (errors.length > 0) throw new Error(errors.join('\n'));
   console.log('通しの自動確認：成功');
 } catch (e) {
