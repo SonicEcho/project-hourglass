@@ -485,6 +485,37 @@ function maouBgm(id: string, title: string, song: string, page: string, edit: st
 const MAOU_LOOP_EDIT = '曲の中の同じ部分が繰り返す所でくり返すように切り（終わりのフェードアウトは使わない）、つなぎ目の直前60ms をなめらかにした';
 const MAOU_WHOLE_EDIT = '頭と終わりの無音を切り、終わりを0.8秒で消した（曲の全体をくり返す）';
 
+/** Paper Umbrella（開発者が Suno で作ったボーカル入りの曲。メインテーマの候補）を Cover して作った曲の指示文の元（docs/ART.md の 6.） */
+const SUNO_MAIN_THEME = 'Paper Umbrella（wafu rock, Japanese traditional rock fusion, fast shamisen riff, taiko drums, distorted guitar, shinobue flute hook, tight driving rhythm, powerful female vocal, G minor, 150 bpm, fierce and cool, festival energy with a dark edge）';
+
+/**
+ * Suno で作った BGM（2026-10-13、開発者が Pro（有料の版）で作った。メインテーマの候補 Paper Umbrella を Cover して作った曲）。
+ * 長さを切ってつなぎ目を整えた（scripts/suno_bgm.py）。Pro で作った曲は、権利が開発者に移る（docs/licenses/ai-suno.md）
+ */
+function sunoBgm(id: string, title: string, file: string, prompt: string, edit: string, version: string, bytes: number): AssetEntry {
+  return {
+    id,
+    kind: 'audio',
+    title: `BGM：${title}`,
+    file: `assets/bgm/${file}`,
+    status: 'placeholder',
+    source: { type: 'ai', service: 'Suno', plan: 'Pro（有料）', prompt, settings: `${SUNO_MAIN_THEME} を Cover した` },
+    author: 'RESTOPIA 開発（Suno で作曲）',
+    license: '自作（Suno の Pro で作った曲。権利は開発者）',
+    commercialUse: true,
+    creditRequired: false,
+    modifyAllowed: true,
+    acquiredAt: '2026-10-13',
+    termsCopy: 'docs/licenses/ai-suno.md',
+    version,
+    bytes,
+    notes: `メインテーマを決めるための候補（開発者が試しに作った）。手を入れた所：${edit}、96kbps の mp3 にした。prompt は Claude が渡した指示文（実際に使った文と違えば書き直す）`,
+  };
+}
+
+const SUNO_LOOP_EDIT = '前後の音が一番よく似た2点（テンポの差が1%未満）でくり返すように切り（終わりは使わない）、つなぎ目の直前60ms をなめらかにした';
+const SUNO_WHOLE_EDIT = '頭と終わりの無音を切り、終わりを0.8秒で消した（曲の全体をくり返す）';
+
 export const ASSETS: AssetEntry[] = [
   {
     id: 'title.hourglass',
@@ -600,12 +631,36 @@ export const ASSETS: AssetEntry[] = [
       '屋台めぐりの「けいかくひょう」（子どものりくの字）に使う。かな・英数字と src/data/daily.ts の字だけに絞った（scripts/font-subset.py）。ゲームの中では RestopiaHand の名前で読み込む。書体だけを売ることはしない（配布物に入れるのは可）',
   },
   placeholderBgm('bgm.festival', '縁日', 'festival.mp3', 'f43d091d1e0e', 78620),
-  maouBgm('bgm.title', 'タイトル', 'ピアノ41', 'piano41', MAOU_WHOLE_EDIT, '1112bbfa66c4', 932929),
+  sunoBgm(
+    'bgm.title',
+    'タイトル',
+    'suno_title.mp3',
+    'solo piano, the main theme melody played clearly with gentle momentum, warm and nostalgic, bittersweet but hopeful, quiet determination, flowing left hand arpeggios, brighter major chords in the chorus, G minor, 84 bpm, felt piano, instrumental',
+    SUNO_WHOLE_EDIT,
+    'f9dd63739456',
+    2337586,
+  ),
   maouBgm('bgm.daily', '日常', 'アコースティック39', 'acoustic39', MAOU_LOOP_EDIT, 'ef9bf7af38fa', 2066435),
   maouBgm('bgm.library', 'レストピア', 'オーケストラ14', 'orchestra14', MAOU_WHOLE_EDIT, 'f1808a68cd24', 753311),
-  maouBgm('bgm.return', '返す場面', 'ピアノ24', 'piano24', MAOU_WHOLE_EDIT, 'b25b0eb8f6d5', 1027597),
+  sunoBgm(
+    'bgm.return',
+    '返す場面',
+    'suno_return.mp3',
+    'the main theme as a slow tender piece, solo piano with soft cello, G minor, 60 bpm, fragile then warm, tears and a smile, instrumental',
+    SUNO_WHOLE_EDIT,
+    '0cfdb1a30efd',
+    2319718,
+  ),
   maouBgm('bgm.battle', 'ふだんの戦闘', 'ファンタジー12', 'fantasy12', MAOU_LOOP_EDIT, 'f035f943f3e5', 1344515),
-  maouBgm('bgm.boss', 'ボス戦', 'ファンタジー03', 'fantasy03', MAOU_LOOP_EDIT, '90d556e23282', 1637295),
+  sunoBgm(
+    'bgm.boss',
+    'ボス戦',
+    'suno_boss.mp3',
+    'intense wafu metal boss battle, the main theme melody twisted and urgent, heavy taiko, aggressive shamisen and distorted guitar, G minor, 165 bpm, dark and powerful, loop-friendly, instrumental',
+    SUNO_LOOP_EDIT,
+    '230392eecaf4',
+    2055150,
+  ),
   {
     id: 'map.festival',
     kind: 'image',

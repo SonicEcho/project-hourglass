@@ -103,10 +103,11 @@ export const BGM_HEAD = { sec: 15, bytesPerSec: 12000, crossfadeSec: 0.05 } as c
 export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
   // 仮の BGM（scripts/placeholder_bgm.py が書き出した時に表示する値）。mp3 の頭の無音をよけるため、0.5秒から1周をくり返す
   [BGM.festival]: { start: 0.5, end: 9.227256 },
-  // 魔王魂の仮の BGM（2026-10-11。scripts/maou_bgm.py が書き出した時に表示する値）。タイトル・レストピア・返す場面は、繰り返す部分がない曲なので全体をくり返す
+  // 魔王魂の仮の BGM（2026-10-11。scripts/maou_bgm.py が書き出した時に表示する値）。レストピアは、繰り返す部分がない曲なので全体をくり返す
   [BGM.daily]: { start: 0.275669, end: 171.123129 },
   [BGM.battle]: { start: 4.301179, end: 110.967846 },
-  [BGM.boss]: { start: 0.527143, end: 135.363855 },
+  // Suno の BGM（2026-10-13。scripts/suno_bgm.py が書き出した時に表示する値）。タイトル・返す場面は全体をくり返す
+  [BGM.boss]: { start: 81.247007, end: 170.206463 },
 };
 
 /**
