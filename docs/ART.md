@@ -1032,20 +1032,26 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
     - `the main theme as a slow tender piano piece, returning a lost happy memory to its owner, the scene dissolves into golden sand, tears and a smile, solo piano with soft cello, fragile at first then warm, 60 bpm, instrumental`
     - `vocals, drums, fade out`
   - 最初のたたき台（2026-10-09。使わない）：① `nostalgic emotional JRPG title theme, solo piano and soft strings, music box accents, ...`、② `warm slice-of-life JRPG town theme, ...`、③ `cheerful Japanese summer festival music, ...`、④ `energetic JRPG battle theme, ...`、⑤ `intense JRPG boss battle theme, ...`、⑥ `mysterious and beautiful fantasy library theme, ...`、⑦ `heartbreaking emotional piano ballad, ...`（ジャンル名が先頭で、場面の説明がなかった）
-- **仮の BGM（2026-10-11、開発者が選んだ）**：本番の曲（Suno）ができるまで、魔王魂の曲を仮に使う。いずれ Suno の曲に替えるかもしれない（替える時は台帳の id はそのままで、ファイルと `BGM_LOOPS`、台帳の `version`・`bytes` を替える）。③縁日だけは、まだ自作の仮の音
+- **メインテーマの候補（2026-10-13、開発者が Suno の Pro で作った）**：上の指示文で作ったたたき台は、どれも「かっこいいけど頭に残らない」になった。歌ありで作ると、Suno は歌詞のサビに合わせて覚えやすい旋律を作るので、まず歌ありで作ってから、Cover で歌を外すことにした
+  - 開発者の好きな曲（自作の Dustline Rodeo）と、頭に残った候補（Paper Umbrella）を解析すると、共通点は「G minor、短い言葉を2回重ねるサビ（Ride it out, ride it out／Take me there, take me there）、隣り合った音を行き来する幅の狭い旋律、130〜150の勢い」だった。今後の曲づくりの軸にする
+  - Paper Umbrella：和風ロックの指示文（`wafu rock, Japanese traditional rock fusion, fast shamisen riff, taiko drums, distorted guitar, shinobue flute hook, tight driving rhythm, powerful female vocal, G minor, 150 bpm, fierce and cool, festival energy with a dark edge`）で、歌詞は Suno が作った。約152、G minor
+  - この曲を Cover して、タイトル・返す場面・ボス戦を作り、仮の BGM と入れ替えた（下の表。台帳の指示文は Claude が渡したもので、実際に使った文と違えば書き直す）。タイトルは、最初の指示文（`melancholic and mysterious`、66 bpm）では暗くなりすぎたので、`warm and nostalgic, bittersweet but hopeful`、84 bpm、`brighter major chords in the chorus` に直した
+  - 切り出しは `scripts/suno_bgm.py`。ボス戦は曲の途中でテンポが少しずつ上がる（約154 → 158）ので、テンポの差が1%未満の2点（81.2秒 → 170.2秒）でつないだ
+- **仮の BGM（2026-10-11、開発者が選んだ）**：本番の曲（Suno）ができるまで、魔王魂の曲を仮に使う。替える時は台帳の id はそのままで、ファイルと `BGM_LOOPS`、台帳の `version`・`bytes` を替える。③縁日だけは、まだ自作の仮の音
 
-| 番号 | 曲 | 魔王魂の曲 | くり返し方 |
+| 番号 | 曲 | 今の曲 | くり返し方 |
 | --- | --- | --- | --- |
-| ① | タイトル（`title`） | ピアノ41 https://maou.audio/bgm_piano41/ | 全体（繰り返す部分がない曲） |
-| ② | 日常（`daily`） | アコースティック39 https://maou.audio/bgm_acoustic39/ | 曲の中の繰り返し（1周 約170.8秒） |
-| ④ | ふだんの戦闘 | ファンタジー12 https://maou.audio/bgm_fantasy12/ | 曲の中の繰り返し（1周 106.67秒） |
-| ⑤ | ボス戦 | ファンタジー03 https://maou.audio/bgm_fantasy03/ | 曲の中の繰り返し（1周 約134.8秒） |
-| ⑥ | レストピア（`library`） | オーケストラ14 https://maou.audio/bgm_orchestra14/ | 全体 |
-| ⑦ | 返す場面（`return`） | ピアノ24 https://maou.audio/bgm_piano24/ | 全体 |
+| ① | タイトル（`title`） | Suno（Paper Umbrella の Cover。ピアノ） | 全体 |
+| ② | 日常（`daily`） | 魔王魂「アコースティック39」 https://maou.audio/bgm_acoustic39/ | 曲の中の繰り返し（1周 約170.8秒） |
+| ④ | ふだんの戦闘 | 魔王魂「ファンタジー12」 https://maou.audio/bgm_fantasy12/ | 曲の中の繰り返し（1周 106.67秒） |
+| ⑤ | ボス戦 | Suno（Paper Umbrella の Cover。和風メタル） | 81.2秒 → 170.2秒（1周 約89.0秒） |
+| ⑥ | レストピア（`library`） | 魔王魂「オーケストラ14」 https://maou.audio/bgm_orchestra14/ | 全体 |
+| ⑦ | 返す場面（`return`） | Suno（Paper Umbrella の Cover。ピアノとチェロ） | 全体 |
 
+  - 2026-10-11 まで、①は魔王魂「ピアノ41」、⑤は「ファンタジー03」（1周 約134.8秒）、⑦は「ピアノ24」だった（2026-10-13 に Suno の曲に替えた）
   - 魔王魂は CC BY 4.0（または魔王魂素材利用規約）。売り物に使え、改変もよい。**クレジットに「音楽：魔王魂」が要る**（台帳の `credit`。クレジットの画面に出る）。規約の控えは `docs/licenses/maoudamashii.md`
   - 上の「音のファイルに暗号をかける」仕組みは作らない（魔王魂は暗号化を「許可」しているだけで、求めてはいない。CC BY 4.0 はそのまま配るのが本来の形）。ファイル名は魔王魂の二次配布の決まりに合わせて `maoudamashii_*.mp3` にした
   - 大きさ（2026-10-11、開発者から「タイトルだけ小さく、他は大きい」）：元の曲は聞こえ方の大きさ（ラウドネス）が最大16dB 違った（タイトル −22.8 LUFS、戦闘 −7.1 LUFS）。全曲を −17.4 LUFS（自作の仮の縁日の曲と同じ。タイトルを上げても音が割れない上限）にそろえた。Suno の曲を入れる時も、同じ大きさにそろえる
-  - 切り出しは `scripts/maou_bgm.py`（落とした mp3 から作り直せる）。ファンタジー03 の URL は、開発者の書いた `bgm_fantasy3` ではなく `bgm_fantasy03`（`bgm_fantasy3` は見つからなかった）
+  - 切り出しは `scripts/maou_bgm.py`（落とした mp3 から作り直せる）
 - 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦、①b）と実際に使った指示文（Exclude styles も）と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
 

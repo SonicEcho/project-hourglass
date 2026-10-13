@@ -23,13 +23,11 @@ TARGET_LUFS = -17.4
 src, out = sys.argv[1], sys.argv[2]
 
 SONGS = [
+    # タイトル（ピアノ41）・返す場面（ピアノ24）・ボス戦（ファンタジー03）は、2026-10-13 に Suno の曲（scripts/suno_bgm.py）に替えた
     # 落とした mp3, 書き出すファイル, くり返し方, S（秒）, 1周のサンプル数
     ('maou_bgm_fantasy12', 'maoudamashii_fantasy12.mp3', 'loop', 5.0, 4704000),
     ('maou_bgm_acoustic39', 'maoudamashii_acoustic39.mp3', 'loop', 1.0, 7534373),
-    ('maou_bgm_fantasy03', 'maoudamashii_fantasy03.mp3', 'loop', 0.75, 5946299),
     ('maou_bgm_orchestra14', 'maoudamashii_orchestra14.mp3', 'whole', None, None),
-    ('maou_bgm_piano41', 'maoudamashii_piano41.mp3', 'whole', None, None),
-    ('maou_bgm_piano24', 'maoudamashii_piano24.mp3', 'whole', None, None),
 ]
 
 
