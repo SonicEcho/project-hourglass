@@ -228,6 +228,26 @@ try {
   await tap('^わかった$');
   await until('説明が閉じる', async () => !(await findText('^はじめての説明$')));
 
+  step('探索で説明が出ても固まらない（窓が見えて、閉じたら歩ける）');
+  await page.evaluate(() => window.__restopia.start('Explore', { area: 'a11' }));
+  await waitScene('Explore');
+  // 説明の窓が見えるまで出てくる（2026-10-13 の直し。窓の出る動きまで止めていて、見えない窓で後ろを押せなくなっていた）
+  for (let i = 0; i < 4; i++) {
+    await until('探索の説明の窓', () => findText('^はじめての説明$'));
+    // 窓（いちばん手前の入れ物）がすき通ったままでなく、ちゃんと見えるまで出てくる
+    await until('探索の説明の窓が見える', () =>
+      page.evaluate(() => window.__restopia.scene('Explore').children.list.some((o) => o.depth === 500 && o.active && o.alpha > 0.9)),
+    3000);
+    await tap('^わかった$');
+    await page.waitForTimeout(500);
+    if (!(await findText('^はじめての説明$'))) break;
+  }
+  await until('説明が閉じる', async () => !(await findText('^はじめての説明$')));
+  const hero = () => page.evaluate(() => { const s = window.__restopia.scene('Explore'); return [s.player.x, s.player.y]; });
+  const before = await hero();
+  await tapAt(195, 600);
+  await until('仲間が歩く', async () => { const now = await hero(); return now[0] !== before[0] || now[1] !== before[1]; }, 5000);
+
   if (errors.length > 0) throw new Error(errors.join('\n'));
   console.log('通しの自動確認：成功');
 } catch (e) {
