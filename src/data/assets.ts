@@ -254,7 +254,7 @@ const NOA_SHEET_PROMPT =
   'Additional views on the same sheet: back view, 4 facial expressions (expressionless, a tiny reluctant smile, cold glare, surprised), close-up of the hourglass collar clasp.';
 
 /** ChatGPT で作った胸から上の基本の1枚（2026-10-10。ノアと、M2 の 1-2 の人たち。表情違いは Gemini で作る） */
-function chatgptPortrait(who: string, name: string, face: string, title: string, prompt: string, reference: string, notes: string): AssetEntry {
+function chatgptPortrait(who: string, name: string, face: string, title: string, prompt: string, reference: string, notes: string, acquiredAt = '2026-10-10'): AssetEntry {
   return {
     id: `portrait.${who}.${face}`,
     kind: 'image',
@@ -273,14 +273,14 @@ function chatgptPortrait(who: string, name: string, face: string, title: string,
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
-    acquiredAt: '2026-10-10',
+    acquiredAt,
     termsCopy: 'docs/licenses/ai-openai.md',
     notes,
   };
 }
 
 /** ChatGPT で作った背景・地図・1枚絵・敵の絵（2026-10-11 から。M2 の分） */
-function chatgptArt(id: string, title: string, file: string, prompt: string, settings: string, notes: string): AssetEntry {
+function chatgptArt(id: string, title: string, file: string, prompt: string, settings: string, notes: string, acquiredAt = '2026-10-11'): AssetEntry {
   return {
     id,
     kind: 'image',
@@ -293,7 +293,7 @@ function chatgptArt(id: string, title: string, file: string, prompt: string, set
     commercialUse: true,
     creditRequired: false,
     modifyAllowed: true,
-    acquiredAt: '2026-10-11',
+    acquiredAt,
     termsCopy: 'docs/licenses/ai-openai.md',
     notes,
   };
@@ -402,6 +402,28 @@ function youngPortrait(who: 'hero' | 'akari' | 'riku', name: string, face: strin
 
 const STYLE_PREFIX =
   'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature. ';
+
+/** M2 の指示文の決まった部分（docs/ART.md の 5-3 の共通部分）。2026-10-13 から */
+const portraitHead = (expression: string, reference = 'the girl in the cardigan') =>
+  STYLE_PREFIX +
+  `Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, ${expression}. ` +
+  `Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of ${reference}. ` +
+  'Pose: both arms relaxed down at the sides, hands outside the frame. No props. ' +
+  'Background: plain pure white, no shadow, no gradient. ';
+const BG_HEAD = STYLE_PREFIX + 'Background art for a visual novel dialogue scene. Vertical 9:16 image. No people. ';
+const BG_TAIL =
+  'Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.';
+const CG_HEAD = STYLE_PREFIX + 'A single key visual (event CG). Vertical 9:16 image. ';
+const CG_TAIL = 'Keep the lower quarter of the image simple, because a text box may cover it. Absolutely no letters or text anywhere.';
+/** 敵の絵の頭。era は時代の色。2026-10-13 から、ブリキノイズの絵柄にそろえる1文と、大きく少なく描く1文（ラムネノイズの直しから）を足した */
+const enemyHead = (era: string, few = false) =>
+  'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature. ' +
+  'Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly. ' +
+  `It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (${era}). Eerie but not gory, readable as a small silhouette on a phone screen. ` +
+  (few ? "Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance. " : '');
+const SHOWA_COLORS = 'sepia, faded green and orange';
+/** 白い背景を抜いた敵の絵の設定（rembg は砂とノイズの体を背景とみなして消すので、白を抜く道具を使った） */
+const ENEMY_CUT = '元の絵は 1254×1254。白い背景は scripts/cutout_white.py（広い白を抜き、小さな白い光りは残す）で抜き、640×640 に縮めた。見本の絵：ブリキノイズ';
 
 /**
  * 効果音ラボの効果音（段階19）。page は効果音ラボのページ、file はそこの mp3 の名前。
@@ -948,6 +970,204 @@ export const ASSETS: AssetEntry[] = [
       'Body: a broken tin toy robot tangled with wind-up springs and keys, heavy and stiff',
     '見本の絵なし。元の絵は 1254×1254。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜き、640×640 に縮めた（まわりの薄い砂の渦は、抜く時にほとんど消えた）',
     'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）。最初に作った敵の絵。戦闘画面に敵の絵を出す仕組みは段階37で作り、その時にこの絵を置いて、敵の絵の共通部分を決める',
+  ),
+  // M2 のみお・カイ・2-1 の人たちと背景・地図・1枚絵、1-2 の残りの背景と敵（2026-10-13〜14。docs/ART.md の 5-5 の作る順番の 5〜11）
+  chatgptPortrait(
+    'mio',
+    'みお',
+    'smile',
+    '笑顔',
+    portraitHead('a wide, confident grin', 'the little girl in the yukata, with the same childlike proportions').replace('No props. ', 'No props, no cards. ') +
+      'Character: Mio. Keep her design exactly as in the attached character sheet: bright light-brown short hair with one tiny side tuft tied by a small orange hair tie, big lively brown eyes, round cheeks, a slightly sunburnt nose, a plain sunny-yellow T-shirt with no logo.',
+    'みおの設定画（開発者が持っている）と、子どものあかりの笑顔の立ち絵（構図の見本）',
+    '3人目の仲間（docs/ART.md の 5-3 の 1）。表情違いは Gemini で作る（5-3 の 14）',
+    '2026-10-13',
+  ),
+  chatgptPortrait(
+    'kai',
+    'カイ',
+    'smug',
+    '余裕',
+    portraitHead('a confident, condescending smirk') +
+      'Character: Kai. Keep his design exactly as in the attached character sheet: swept-back ash-blond hair with one or two loose strands over the forehead, sharp narrow steel-gray eyes, white high-collared long coat with thin blue-green lines worn open over a black high-neck inner top. No weapon, no glowing light effects in this portrait.',
+    'カイの設定画（髪と目を直した後。開発者が持っている）と、あかりの笑顔の立ち絵（構図の見本）',
+    '2-3 の相手（docs/ART.md の 5-3 の 2）。表情違いは Gemini で作る（5-3 の 14）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'enemy.kai',
+    '敵の絵（カイ）',
+    'assets/enemies/kai.webp',
+    'Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading. No text, no watermark, no signature. ' +
+      'Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. Full body, centered, plain pure white background, no shadow, no ground. ' +
+      'Kai, keep his design exactly as in the attached character sheet, in a fighting stance: holding the square frame-shaped blade "Frame" up in front of him like a camera viewfinder, looking at the viewer through it with a cold smirk, his open white coat flaring. Thin blue-green light lines run along the blade.',
+    '見本の絵：カイの設定画（髪と目を直した後）。元の絵は 1254×1254。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜き、640×640 に縮めた',
+    '2-3 の負け戦の相手（docs/ART.md の 5-3 の 2）。戦闘画面に敵の絵を出す仕組みは段階37で作る',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'enemy.phone_noise',
+    '敵の絵（黒電話ノイズ）',
+    'assets/enemies/phone_noise.webp',
+    enemyHead(SHOWA_COLORS) + 'Body: an old black rotary telephone tangled in its own coiled cords like tentacles, the bell ringing nonstop',
+    ENEMY_CUT,
+    'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'enemy.ramune_noise',
+    '敵の絵（ラムネノイズ）',
+    'assets/enemies/ramune_noise.webp',
+    enemyHead(SHOWA_COLORS) +
+      'Body: a swarm of glass ramune soda bottles with marbles rattling inside, quick and jittery' +
+      ' / 直しの指示（同じチャットで、できた絵を添付）: Edit the attached enemy art. Keep the overall concept, the art style, the black-and-white static noise and the drifting sand, the plain pure white background. ' +
+      'Fix the bottles: every bottle must be a classic Japanese ramune bottle (Codd-neck bottle), NOT a modern bottle: Made entirely of thick, pale aqua-green glass (light blue-green tint), slightly bubbly old glass. ' +
+      'A slim body with a distinctive pinched neck: two small dents (pressed-in pockets) in the middle of the neck, and above them a narrow chamber. ' +
+      'One clear glass marble (a round transparent ball) trapped in that narrow neck chamber, above the dents, NOT floating in the body of the bottle. The marble must not look like an eye. ' +
+      'The mouth is sealed by the marble from inside: no screw cap, no cork, no orange or red caps. At most a thin plain blue plastic ring at the very top. Some bottles have fizzy clear soda with small bubbles inside. ' +
+      'Make it fewer, larger bottles (about 8 to 12) so each ramune shape reads clearly as a small silhouette on a phone screen. The creature is a quick, jittery swarm: the bottles bump and rattle together, marbles clinking, with a few loose glass marbles bouncing around it. ' +
+      'Colors of its era: sepia, faded green and orange (orange only in the sand and light, not on the bottles).',
+    ENEMY_CUT,
+    'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）。最初の絵はキャップ付きの今の瓶になり、ビー玉が目玉に見えたので、直しの指示で作り直した（直しの指示は Claude が渡した文。開発者が実際に送った文と違えば直す）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'enemy.menko_noise',
+    '敵の絵（めんこノイズ）',
+    'assets/enemies/menko_noise.webp',
+    enemyHead(SHOWA_COLORS) + 'Body: a whirling flock of old paper menko cards and spinning beigoma tops (blank cards, no letters)',
+    ENEMY_CUT,
+    'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'enemy.bicycle_boss',
+    '敵の絵（自転車のぬし）',
+    'assets/enemies/bicycle_boss.webp',
+    enemyHead(SHOWA_COLORS) +
+      'A large boss monster, filling most of the image. ' +
+      'Body: a swirling tangle of several old bicycles, wheels and bells knotted together by noise, a faint shadow of a rear carrier seat at its center',
+    ENEMY_CUT,
+    'M2 の 1-2 のボス（docs/ART.md の 5-3 の 13）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'bg.clock_shop_day',
+    '背景（時計屋の店内・昼）',
+    'assets/backgrounds/clock_shop_day.webp',
+    BG_HEAD +
+      'The same old watch and clock shop as the attached image, but at noon on a bright summer day. Soft white daylight through the front glass door and windows, the wall clocks and the glass display counter in clear, natural colors, a calm and cozy everyday atmosphere instead of the dusk mood. ' +
+      'Eye-level camera, the same angle as the attached image. ' +
+      BG_TAIL,
+    '見本の絵：時計屋の店内（夕暮れ。bg.clock_shop）。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M2 の 3-B・4-A（docs/ART.md の 5-3 の 12）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'bg.riverside_path',
+    '背景（川沿いの帰り道・夕暮れ）',
+    'assets/backgrounds/riverside_path.webp',
+    BG_HEAD +
+      'A quiet path along a small river in a Japanese regional town at summer dusk. A low concrete embankment with summer grass, a narrow paved path, an old iron railing, a small bridge in the distance, the river reflecting the orange and indigo sky, dragonflies. ' +
+      'Eye-level camera, the path leading into the distance. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M2 の 4-A（あかり3。docs/ART.md の 5-3 の 12）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'map.factory_alley',
+    '昭和44年の雪の町工場の路地の見下ろしの地図（2-1）',
+    'assets/maps/factory_alley.webp',
+    STYLE_PREFIX +
+      'Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 image. A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. ' +
+      'Scene: a small factory district of a Japanese town at snowy winter dusk in 1969, sepia-tinted retro colors with white snow. ' +
+      'Layout from bottom to top: Bottom center: the entrance of a narrow alley. Narrow alleys winding upward between small wooden machine workshops with sliding doors and warm lit windows, with one or two short side alleys. ' +
+      'Around the middle: a public bathhouse with steam rising and a long wooden bench in front of it, a small open space. Upper part: a small factory gate. ' +
+      'Top: the inside of a small workshop seen from above with its roof removed, with a large old lathe in an open space in front of it. Utility poles, snow piles, barrels and stacked wood along the edges. ' +
+      'Walkable areas must be clearly distinguishable from non-walkable objects. Paths are wide, at least one eighth of the image width. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.',
+    '見本の絵：1-1 の縁日の地図（見下ろし方の見本として渡す指示）。元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）',
+    'M2 の 2-1 の地図（docs/ART.md の 5-3 の 6）。入口 → 銭湯の前の長いす → 工場の門 → 工場の中の旋盤。歩ける場所の文字の地図は、段階39で区画を作る時に書く',
+    '2026-10-13',
+  ),
+  chatgptPortrait(
+    'isamu',
+    'いさむ',
+    'normal',
+    '通常',
+    portraitHead('a calm, taciturn expression with gentle eyes behind his glasses') +
+      "Character: Isamu, a Japanese gear craftsman around 75 years old, Mio's grandfather, who runs a tiny old machine workshop in a quiet regional town. Small and wiry, short white hair, thin round glasses, deep wrinkles, a stubborn mouth but gentle eyes. An old brown cardigan over a faded factory work jacket. A man of few words.",
+    'あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 2-1 の持ち主（docs/ART.md の 5-3 の 4）',
+    '2026-10-13',
+  ),
+  chatgptPortrait(
+    'past_isamu',
+    '写しのいさむ',
+    'serious',
+    '真剣',
+    portraitHead('a serious, determined face, cheeks red from the cold') +
+      "Character: young Isamu, the same man as the attached elderly portrait but 57 years earlier: an 18-year-old apprentice at a small machine workshop in the winter of 1969. Keep the same face features so he is clearly the same person, with lively eyes that look like the attached little girl's (his granddaughter). Very short buzz-cut black hair, cheeks red from the cold, an oil-stained gray work jacket.",
+    'いさむ（今）とみおの立ち絵（同じ人・孫に見せるため）と、あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 2-1 の写し（昭和44年の冬、18歳。docs/ART.md の 5-3 の 4）。ノイズとセピアの加工はゲームの側でかける',
+    '2026-10-13',
+  ),
+  chatgptPortrait(
+    'past_genzo',
+    '写しの源三',
+    'normal',
+    '通常',
+    portraitHead('a stern, intimidating face with thick brows') +
+      'Character: Genzo, the stern master of a small Japanese machine workshop in the winter of 1969, in his 50s. Thick eyebrows, a weathered face, a white hand towel tied around his head, a heavy dark navy work jacket. Intimidating, but you can trust him with your life.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 2-1 の写し（昭和44年の冬。町工場の親方。docs/ART.md の 5-3 の 4）。ノイズとセピアの加工はゲームの側でかける',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'bg.factory_1969',
+    '背景（昭和44年の町工場の中・冬の夜）',
+    'assets/backgrounds/factory_1969.webp',
+    BG_HEAD +
+      'Inside a small Japanese machine workshop on a winter night in 1969, sepia tones. A single bare light bulb hangs over a worn wooden workbench with files, calipers and a few tiny brass gears. Old lathes and drilling machines driven by long leather belts from a ceiling shaft stand in the shadows; metal shavings on the concrete floor; a small kerosene stove glowing orange; snow visible through a frosted window. Humble, hardworking, quiet. ' +
+      'Eye-level camera, the workbench and the bare bulb in the center. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M2 の 2-1-8（docs/ART.md の 5-3 の 5）。6-A は同じ絵を古びた今の色に加工して使い回す',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'bg.factory_alley',
+    '背景（昭和44年の雪の町工場の路地・夕暮れ）',
+    'assets/backgrounds/factory_alley.webp',
+    BG_HEAD +
+      'A narrow alley in a small factory district of a Japanese town at snowy winter dusk in 1969, sepia tones with soft white snow. Small wooden machine workshops with sliding doors and warm lit windows on both sides, utility poles and sagging wires, a public bathhouse chimney with steam in the distance, snow piled at the edges of the alley. ' +
+      'Eye-level camera, the alley running straight into the distance. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M2 の 2-1 の会話（docs/ART.md の 5-3 の 5）',
+    '2026-10-13',
+  ),
+  chatgptArt(
+    'cg.master_back',
+    '1枚絵（親方の背中）',
+    'assets/cg/master_back.webp',
+    CG_HEAD +
+      'Inside a small Japanese machine workshop on a snowy winter night in 1969, sepia tones with warm light from a single bare bulb. On the workbench, a tiny brass clock gear glints. An old master craftsman with a white towel around his head walks away toward the back of the workshop, his broad back to the viewer, his ears slightly red. In the foreground, an 18-year-old apprentice in an oil-stained work jacket bows deeply, his face hidden, tears falling (keep their designs as in the attached portraits). Lathes and belts in the shadows, snow visible through the window. ' +
+      CG_TAIL,
+    '見本の絵：写しのいさむ（真剣）・写しの源三（通常）の立ち絵。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M2 の 2-1-8（2-1 の山場。docs/ART.md の 5-3 の 7）',
+    '2026-10-14',
+  ),
+  chatgptPortrait(
+    'kenta',
+    'けんた',
+    'smile',
+    '笑顔',
+    portraitHead('a relaxed, easygoing grin') +
+      'Character: Kenta, a 37-year-old Japanese man who runs a small musical instrument shop on a shopping street. Slightly messy medium-length dark-brown hair, light stubble, a casual dark T-shirt under a canvas shop apron. A laid-back, chatty former high school band frontman who gave up music long ago.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 2-2 の持ち主（docs/ART.md の 5-3 の 8）',
+    '2026-10-14',
   ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait(

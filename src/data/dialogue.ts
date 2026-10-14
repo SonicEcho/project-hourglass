@@ -118,7 +118,7 @@ const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]
 /** 子どものころの3人の立ち絵の高さ。高校生（450）より小さく出して、背の低さを表す（docs/ART.md の 5-2 の 6） */
 const YOUNG_HEIGHT = 360;
 /**
- * 絵が一部の表情だけある人の表情（子どものころの3人、M2 のふみ）。drawn は絵のある表情 → 台帳の id、base は最初の表情（絵のある表情の1つ）。
+ * 絵が一部の表情だけある人の表情（子どものころの3人、M2 のふみ・みお）。drawn は絵のある表情 → 台帳の id、base は最初の表情（絵のある表情の1つ）。
  * 絵のない表情は、絵が届くまで base の絵で代わりに出す。絵が届いたら drawn に足す
  */
 function young(faces: string[], drawn: Record<string, string>, base: string): Pick<CastMember, 'faces' | 'firstFace' | 'fallback'> {
@@ -151,8 +151,14 @@ export const CAST: Record<string, CastMember> = {
   ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
   写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
-  // M2（段階35）。みおは絵がまだない。ふみは全部の表情の絵がある（2026-10-11）
-  みお: { faces: names('笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい'), firstFace: '笑顔', color: 0xe08a3a, voice: { pitch: 720, wave: 'square' } },
+  // M2（段階35）。みおは笑顔の絵だけある（2026-10-13。ほかの表情は Gemini で作るまで笑顔で代わりに出す）。ふみは全部の表情の絵がある（2026-10-11）
+  みお: {
+    portrait: 'portrait.mio',
+    ...young(['笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0xe08a3a,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 720, wave: 'square' },
+  },
   ふみ: {
     portrait: 'portrait.fumi',
     ...young(['通常', '笑顔', '驚き', '泣き笑い', 'さみしげ', '考える'], { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 泣き笑い: 'teary', さみしげ: 'lonely', 考える: 'thinking' }, '通常'),
