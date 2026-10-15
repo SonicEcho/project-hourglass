@@ -212,6 +212,18 @@ export const CAST: Record<string, CastMember> = {
     voice: { pitch: 255, wave: 'sawtooth' },
     tint: SEPIA_TINT,
   },
+  // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
+  // 写しのけんた・だいち・さきは絵がまだない（写しのけんたの絵が届いたら portrait と tint を足す）
+  けんた: {
+    portrait: 'portrait.kenta',
+    ...young(['笑顔', '苦笑い', '考える', 'さみしげ', '泣き笑い', '照れ', '大笑い'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0x6a5a4a,
+    height: 440,
+    voice: { pitch: 330, wave: 'square' },
+  },
+  写しのけんた: { faces: names('笑顔', '驚き', '泣き笑い'), firstFace: '笑顔', color: 0x8a90a0, voice: { pitch: 420, wave: 'square' } },
+  だいち: { faces: names('笑顔'), firstFace: '笑顔', color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
+  さき: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
 };
 
 /** 立ち絵を出さない人（声だけ・電話）の文字の音の声色。ここにない人は VOICE_DEFAULT */
@@ -300,6 +312,11 @@ export const BACKDROPS: Record<string, Backdrop> = {
   // 段階39：2-1-8 の昭和44年の工場の中（夜）と、6-A の今の工場（同じ絵を、古びた今の色にして使い回す）
   factory_1969: { title: '昭和44年の町工場の中（夜）', top: 0x3a2a1a, bottom: 0x6a4a2a, image: 'bg.factory_1969', ambient: 'dust' },
   factory_now: { title: '町工場の中（今）', top: 0x8a8a80, bottom: 0x4a4a48, image: 'bg.factory_1969', tint: 0x9a9890, ambient: 'dust' },
+  // 段階39b：2-2 の平成18年の秋の高校の文化祭（会話の背景。絵が届くまで仮の色）、体育館のステージ、商店街の楽器店（昼と、閉店後の夜）
+  school_festival: { title: '平成の高校の文化祭（秋の昼）', top: 0xa8d8f0, bottom: 0xf0c8d8, ambienceSe: SE.crowd },
+  school_gym: { title: '高校の体育館のステージ', top: 0x2a2a40, bottom: 0x8a6a4a, ambient: 'dust' },
+  music_shop: { title: '商店街の楽器店（昼）', top: 0xe0c8a0, bottom: 0x6a4a3a, ambient: 'dust' },
+  music_shop_night: { title: '商店街の楽器店（夜。閉店後）', top: 0x1a2038, bottom: 0x5a3a2a, ambient: 'dust' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
@@ -347,6 +364,8 @@ export const CGS: Record<string, Backdrop> = {
   tandem_bicycle: { title: '1枚絵：夕焼けの坂を下る二人乗り', top: 0xe0a060, bottom: 0x7a4a30, image: 'cg.tandem_bicycle', ambient: 'motes', glow: { x: 0.7, y: 0.25, color: 0xffc070 } },
   // 段階39：2-1-8（2-1 の山場）。裸電球の光と、金の粒
   master_back: { title: '1枚絵：振り返らずに歩いていく親方の背中', top: 0x3a2a1a, bottom: 0x7a5a3a, image: 'cg.master_back', ambient: 'motes', glow: { x: 0.5, y: 0.15, color: 0xffd08a } },
+  // 段階39b：2-2-7（2-2 の山場）。絵が届くまで仮の色。スポットライトの光と、金の粒
+  string_stage: { title: '1枚絵：弦が切れても歌うステージ', top: 0x1a1a30, bottom: 0xc08a50, ambient: 'motes', glow: { x: 0.5, y: 0.2, color: 0xfff0c0 } },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
 };
 

@@ -132,6 +132,11 @@ export interface EnemyActionDef {
   requiresPart?: string;
   /** 大技。使う前に1回「力をためる」（その間は攻撃しない）。次の自分の行動で放つ */
   charge?: boolean;
+  /**
+   * アンコール（段階39b。2-2 のアンプのぬし）：直前に放った大技をもう一度。選んだ時に、その大技に置き換わる（ため・封じ・崩しは置き換えた大技のまま）。
+   * まだ大技を放っていない時と、その大技が部位破壊で封じられた時は選ばない。target・type・power は使わない
+   */
+  encore?: boolean;
 }
 
 export interface PartDef {
@@ -246,6 +251,8 @@ export interface EnemyUnit extends UnitBase {
   standUpGuard: boolean;
   /** 力をためている大技の id（次の自分の行動で放つ）。ダウンや部位破壊で解ける */
   charging: string | null;
+  /** 最後に放った大技の id（アンコールでもう一度放つ。段階39b） */
+  lastBigMove: string | null;
   /**
    * ためをダウンで崩されて怒っている。立ち上がった次の行動では、ためずにすぐ攻撃する（大技もためずに放つ）。
    * その行動を終えるまではダウンしない（立ち上がりの歯止めが続く）

@@ -3,6 +3,7 @@ import type { CampaignBattle } from './campaign';
 import { scaleEnemy } from './campaign';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
+import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { ROOMS } from './rooms';
 import { BGM } from './sounds';
@@ -61,6 +62,16 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
   a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 8, koma: 2 },
   a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2 },
+  // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。並びは出会う順（校門 → 中庭の下 → 中庭の上 → お化け屋敷の教室 → 渡り廊下の番人）。
+  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。番人は少し強い（×1.3。ボスの手前の山）。
+  // 駐輪場の逃げる敵はコマを持たない寄り道で、勝つとレアの素材「ラストチャイムのデモテープ」
+  a22_storm1: { id: 'a22_storm1', name: '砂嵐', enemies: [FLIP_PHONE_NOISE, STICKER_NOISE], reward: 6, item: ITEMS.potion.id, koma: 1 },
+  a22_storm2: { id: 'a22_storm2', name: '砂嵐', enemies: [BOOMBOX_NOISE, FLIP_PHONE_NOISE, STICKER_NOISE], reward: 7, item: ITEMS.ether.id, koma: 2 },
+  a22_storm3: { id: 'a22_storm3', name: '砂嵐', enemies: [METRONOME_NOISE, STICKER_NOISE, BOOMBOX_NOISE], reward: 7, koma: 2 },
+  a22_storm4: { id: 'a22_storm4', name: '砂嵐', enemies: [FLIP_PHONE_NOISE, METRONOME_NOISE, BOOMBOX_NOISE], reward: 8, item: ITEMS.hiPotion.id, koma: 2 },
+  a22_storm5: { id: 'a22_storm5', name: '砂嵐', enemies: [METRONOME_NOISE, BOOMBOX_NOISE, FLIP_PHONE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 8, koma: 2 },
+  a22_runner: { id: 'a22_runner', name: '砂嵐', enemies: [STICKER_NOISE, STICKER_NOISE, STICKER_NOISE], reward: 6, item: ITEMS.demoTape.id },
+  a22_boss: { id: 'a22_boss', name: 'アンプのぬし', enemies: [AMP_LORD], reward: 11, boss: true, koma: 2 },
 };
 
 
@@ -291,6 +302,94 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
       { on: 'boss', scene: 'a21_boss' },
       { on: 'cleared', scene: 'a21_last_koma' },
+    ],
+  },
+  // 2-2「最後の文化祭」：平成18年の秋の高校の文化祭（段階39b）。部屋をつなぐ形で作った最初の区画。
+  // 校門 → 中庭（左に寄り道の駐輪場）→ 渡り廊下（右にお化け屋敷の教室）→ 番人を倒すと開く体育館
+  a22: {
+    id: 'a22',
+    name: '2-2「最後の文化祭」',
+    rooms: [ROOMS.school_gate, ROOMS.school_courtyard, ROOMS.school_bikes, ROOMS.school_corridor, ROOMS.school_classroom, ROOMS.school_gym],
+    links: [
+      { a: { room: 'school_gate', side: 'top' }, b: { room: 'school_courtyard', side: 'bottom' } },
+      { a: { room: 'school_courtyard', side: 'left' }, b: { room: 'school_bikes', side: 'right' } },
+      { a: { room: 'school_courtyard', side: 'top' }, b: { room: 'school_corridor', side: 'bottom' } },
+      { a: { room: 'school_corridor', side: 'right' }, b: { room: 'school_classroom', side: 'left' } },
+      // 体育館への扉は、渡り廊下の番人を倒すと開く
+      { a: { room: 'school_corridor', side: 'top' }, b: { room: 'school_gym', side: 'bottom' }, opensWhen: 'a22_e_stage' },
+    ],
+    // 平成の文化祭の探索の曲が届くまで、日常の曲
+    bgm: BGM.daily,
+    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
+    komaNeed: 10,
+    timeTitle: '最後の文化祭',
+    owner: 'ケンタ',
+    memory: 'school_festival',
+    // 中庭の右の模擬店の裏、駐輪場の奥、お化け屋敷の教室の奥。寄り道の2つにはムーブメントのギア
+    chests: [
+      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id, ITEMS.potion.id] },
+      { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id, ITEMS.ether.id], gears: ['iceBoost'] },
+      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], items: [ITEMS.glitterPen.id, ITEMS.ringtoneChip.id, ITEMS.hiPotion.id], gears: ['comboBoost'] },
+    ],
+    enemies: [
+      {
+        id: 'a22_e_gate',
+        patrol: [
+          [5, 12],
+          [18, 12],
+        ],
+        battle: 'a22_storm1',
+      },
+      {
+        id: 'a22_e_stalls',
+        room: 'school_courtyard',
+        patrol: [
+          [6, 35],
+          [17, 35],
+        ],
+        battle: 'a22_storm2',
+      },
+      // 駐輪場の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a22_e_runner', room: 'school_bikes', move: 'flee', patrol: [[8, 16]], battle: 'a22_runner' },
+      // 中庭の上の模擬店の通り：近づくと追ってくる
+      {
+        id: 'a22_e_upper',
+        room: 'school_courtyard',
+        move: 'chase',
+        patrol: [
+          [7, 13],
+          [16, 13],
+        ],
+        battle: 'a22_storm3',
+      },
+      // お化け屋敷の教室：暗幕の迷路で追ってくる
+      {
+        id: 'a22_e_haunted',
+        room: 'school_classroom',
+        move: 'chase',
+        patrol: [
+          [10, 6],
+          [10, 17],
+        ],
+        battle: 'a22_storm4',
+      },
+      // 渡り廊下の番人：倒すと体育館への扉が開く
+      { id: 'a22_e_stage', room: 'school_corridor', move: 'guard', patrol: [[11, 3]], battle: 'a22_storm5' },
+    ],
+    // 体育館のステージ
+    boss: { id: 'a22_boss', room: 'school_gym', cell: [11, 4], battle: 'a22_boss' },
+    talkers: [
+      { id: 'a22_voice_committee', cell: [6, 18], scene: 'a22_voice_committee', label: '実行委員' },
+      { id: 'a22_voice_stall', room: 'school_courtyard', cell: [6, 28], scene: 'a22_voice_stall', label: '模擬店の生徒' },
+      { id: 'a22_voice_classmate', room: 'school_corridor', cell: [19, 16], scene: 'a22_voice_classmate', label: 'クラスメイト' },
+      { id: 'a22_voice_teacher', room: 'school_corridor', cell: [7, 6], scene: 'a22_voice_teacher', label: '音楽の先生' },
+    ],
+    triggers: [
+      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 23], scene: 'a22_checkpoint' },
+      { on: 'checkpoint', room: 'school_corridor', cell: [5, 8], scene: 'a22_music_room' },
+      { on: 'komaLeft', left: 3, scene: 'a22_three_left' },
+      { on: 'boss', scene: 'a22_boss' },
+      { on: 'cleared', scene: 'a22_last_koma' },
     ],
   },
 };

@@ -97,6 +97,7 @@ function enemiesPage(): string {
   const actions = (e: EnemyDef) =>
     e.actions
       .map((a) => {
+        if (a.encore) return `${a.name}（直前に放った大技をもう一度・大技（ためてから放つ））`;
         const notes = [a.charge ? '大技（ためてから放つ）' : '', a.requiresPart ? `${e.parts?.find((p) => p.id === a.requiresPart)?.name ?? a.requiresPart}を使う` : ''].filter(Boolean);
         return `${a.name}（${a.target === 'allies' ? '全体' : '単体'}・${ELEMENT_LABEL[a.type]}・威力${a.power}${notes.length ? `・${notes.join('・')}` : ''}）`;
       })

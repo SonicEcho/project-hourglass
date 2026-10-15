@@ -53,6 +53,7 @@
 | 38（M2） | みおの加入とムーブメントの開放（2章のパーティ `CHAPTER2_LINEUP`、ギアは宝箱と出来事のごほうび（`AreaChest`・`AreaTrigger` の `gears`、`triggerGears`）、ムーブメントの説明 `growth_navi`、2-1 の区画 `FACTORY_ALLEY_LAYOUT`（敵は仮）、5-A・5-B・5-C と 2-1 の会話の台本、みおの武器「切り札のトランプ」、探索の下の帯を3人の列に） | — |
 | 39a（M2） | 2-1 の砂嵐4つと「旋盤のぬし」（`factoryEnemies.ts`）、2-1 の素材とみおの進化の鍵、2-1-7・2-1-8・5-D・6-A の台本、返した翌日のごほうびのギア（`spotGears`）、自動対戦を章ごとのパーティとムーブメントに（`areaLineup`）、2-1 の勝率の測定。2-2（39b）は段階47の後 | — |
 | 47（M2） | 部屋をつなぐ探索と敵の動き（部屋 `rooms.ts`、つなぎ `links`・閉じた出入口、`passDoor`・`roomPositions`・`reachableCells`、全体の地図、敵の動き4種類 `enemyNext`・`ENEMY_MOVES`、セーブの版9、試しの区画 `TRIAL_AREAS`、配置の下絵 `scripts/room_sketch.mjs`） | — |
+| 39b（M2） | 2-2「最後の文化祭」を部屋をつなぐ形の最初の区画として作った（6部屋 `SCHOOL_*_LAYOUT`、番人で開く体育館、寄り道の駐輪場とお化け屋敷の教室）。平成の砂嵐4つと「アンプのぬし」（`schoolEnemies.ts`）、敵の大技「アンコール」（`encore`）、2-2 の素材、6-A（楽器店）・6-B・2-2 の会話・6-C・7-A の台本、2-2 の勝率の測定、部屋の絵の指示文と下絵（`docs/ART.md` の 6-3）。絵は届いてから | — |
 | 31b の仮（M1） | 仮の BGM：魔王魂の曲6つ（タイトル・日常・レストピア・返す場面・戦闘・ボス戦。`scripts/maou_bgm.py`）。大きさを −17.4 LUFS にそろえた。戦闘の画面で戦闘の曲に切り替え、BGM は初めて流す時に読む（`src/audio/sound.ts`） | — |
 | 46（M2） | 感情を伝える動き：戦闘中のひとこと（`src/core/bark.ts`・`src/data/barks.ts`）、立ち絵のまばたきと口パク（`PORTRAIT_PARTS`・`scripts/portrait_parts.py`）、動く1枚絵（`motes`・`glow`）、返す画面の記憶の再生（`AreaDef.memory`） | #77 |
 

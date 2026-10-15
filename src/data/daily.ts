@@ -11,7 +11,7 @@ export const TOWN: Record<string, DailyPlaceInfo> = {
   school: { id: 'school', name: '学校', backdrop: 'classroom', mapX: 85, mapY: 200 },
   river_path: { id: 'river_path', name: '川沿いの道', backdrop: 'river_path', mapX: 195, mapY: 200 },
   riverside: { id: 'riverside', name: '河川敷', backdrop: 'riverside_ground', mapX: 305, mapY: 200 },
-  music_shop: { id: 'music_shop', name: '楽器店', backdrop: 'shopping_street', mapX: 85, mapY: 330 },
+  music_shop: { id: 'music_shop', name: '楽器店', backdrop: 'music_shop', mapX: 85, mapY: 330 },
   home: { id: 'home', name: '施設', backdrop: 'home_kitchen', mapX: 305, mapY: 330 },
   factory: { id: 'factory', name: '工場', backdrop: 'factory_now', mapX: 85, mapY: 460 },
   street: { id: 'street', name: '商店街', backdrop: 'shopping_street', mapX: 195, mapY: 460 },
@@ -74,7 +74,7 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a12', id: 'd4_fumi', label: '来る日じゃないのに', place: 'clockshop', x: 195, y: ROW1 },
   // 2-1 の翌日（6日目）：いさむの工場（6-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
   { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
-  // 2-2 の翌日（7日目）：閉店後の楽器店で、けんたたち3人（7-A）。台本は段階39b（段階47の後）
+  // 2-2 の翌日（7日目）：閉店後の楽器店で、けんたたち3人（7-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
 ];
 

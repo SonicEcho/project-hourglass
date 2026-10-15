@@ -224,7 +224,7 @@ describe('部屋と試しの区画（段階47）', () => {
   it('部屋の一覧に書き間違いがなく、試しの区画は区画の決まりを満たし、戦闘と絵がある', async () => {
     const { AREA_BATTLES, ASSETS, ENEMY_MOVES, ROOMS, TRIAL_AREAS } = await import('../src/data');
     const { checkArea, checkRoom } = await import('../src/core');
-    for (const room of Object.values(ROOMS)) {
+    for (const room of Object.values(ROOMS) as import('../src/core').RoomDef[]) {
       expect(checkRoom(room), room.id).toEqual([]);
       if (room.image) expect(ASSETS.some((a) => a.id === room.image), room.image).toBe(true);
     }
@@ -277,6 +277,26 @@ describe('パーティと育成の開放（段階26）', () => {
     }
     // 2-1-4 で、みおが拾った歯車を渡す
     expect(AREAS.a21.triggers.find((t) => t.scene === 'a21_checkpoint')?.gears?.length).toBeGreaterThan(0);
+  });
+
+  it('2-2（段階39b）は部屋をつなぐ形：6部屋すべてに行け、体育館へは渡り廊下の番人を倒すと入れる。コマを持つ砂嵐は、ボスを起こすのにちょうど足りる', async () => {
+    const { AREAS, AREA_BATTLES } = await import('../src/data');
+    const { passDoor, startExplore, exitCells, roomOf, reachableCells } = await import('../src/core');
+    const area = AREAS.a22;
+    expect(area.rooms).toHaveLength(6);
+    expect(Object.keys(reachableCells(area)).sort()).toEqual(area.rooms.map((r) => r.id).sort());
+    const atCorridor = { ...startExplore(area), room: 'school_corridor' };
+    const door = exitCells(roomOf(area, 'school_corridor'), 'top')[1];
+    expect(passDoor(area, atCorridor, door)?.type).toBe('locked');
+    const opened = passDoor(area, { ...atCorridor, defeated: ['a22_e_stage'] }, door);
+    expect(opened?.type === 'moved' && opened.state.room).toBe('school_gym');
+    // 番人は渡り廊下の印。逃げる敵はコマを持たない寄り道
+    expect(area.enemies.find((e) => e.id === 'a22_e_stage')?.move).toBe('guard');
+    expect(AREA_BATTLES[area.enemies.find((e) => e.move === 'flee')!.battle].koma ?? 0).toBe(0);
+    const storms = area.enemies.reduce((n, e) => n + (AREA_BATTLES[e.battle].koma ?? 0), 0);
+    const boss = AREA_BATTLES[area.boss.battle].koma ?? 0;
+    expect(storms).toBeLessThan(area.komaNeed);
+    expect(storms + boss).toBeGreaterThanOrEqual(area.komaNeed);
   });
 
   it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {

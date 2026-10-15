@@ -98,6 +98,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     down: false,
     standUpGuard: false,
     charging: null,
+    lastBigMove: null,
     enraged: false,
     actions: clone(def.actions),
     parts: (def.parts ?? []).map((p) => ({
@@ -703,7 +704,7 @@ function runEnemy(s: BattleState, enemyId: string): void {
     e.enraged = false;
     return;
   }
-  const action = chooseEnemyAction(s, e);
+  const action = resolveEncore(e, chooseEnemyAction(s, e));
   if (e.enraged) {
     // ためを崩されて怒っている：大技も、ためずにすぐ放つ
     e.enraged = false;
@@ -721,6 +722,7 @@ function runEnemy(s: BattleState, enemyId: string): void {
 }
 
 function enemyAttack(s: BattleState, e: EnemyUnit, action: EnemyActionDef): void {
+  if (action.charge) e.lastBigMove = action.id;
   s.log.push({ type: 'action', actorIds: [e.uid], actionId: action.id, name: action.name, extra: false });
   const targets = action.target === 'ally' ? [randomPick(s, livingAllies(s))] : livingAllies(s);
   for (const t of targets) damageAlly(s, e, action, t);
@@ -743,9 +745,17 @@ export function chooseEnemyAction(s: BattleState, enemy: EnemyUnit): EnemyAction
   return randomPick(s, available);
 }
 
-/** 部位が壊れて封じられた行動を除いた、使える行動 */
+/** 部位が壊れて封じられた行動を除いた、使える行動（アンコールは、もう一度放てる大技がある時だけ） */
 export function usableEnemyActions(enemy: EnemyUnit): EnemyActionDef[] {
-  return enemy.actions.filter((a) => !a.requiresPart || !enemy.parts.find((p) => p.id === a.requiresPart)?.broken);
+  const unsealed = enemy.actions.filter((a) => !a.requiresPart || !enemy.parts.find((p) => p.id === a.requiresPart)?.broken);
+  return unsealed.filter((a) => !a.encore || unsealed.some((b) => b.id === enemy.lastBigMove && !b.encore));
+}
+
+/** アンコールを、直前に放った大技に置き換える（名前は「アンコール：大技」。ほかの行動はそのまま） */
+function resolveEncore(enemy: EnemyUnit, action: EnemyActionDef): EnemyActionDef {
+  if (!action.encore) return action;
+  const again = enemy.actions.find((a) => a.id === enemy.lastBigMove);
+  return again ? { ...again, name: `${action.name}：${again.name}` } : action;
 }
 
 /** 狙っていた敵が倒れていたら、残っている敵に向け直す（部位が壊れていたら本体へ） */
