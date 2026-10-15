@@ -82,3 +82,48 @@ describe('ボスの大技の予告（ため）', () => {
     expect(eventsOf(s, 'action').some((e) => e.actionId === 'roar')).toBe(false);
   });
 });
+
+describe('アンコール（段階39b。2-2 のアンプのぬし）', () => {
+  const encore: EnemyActionDef = { id: 'encore', name: 'アンコール', target: 'allies', type: 'magic', power: 0, weight: 1, charge: true, encore: true };
+
+  it('まだ大技を放っていない時は選ばない', () => {
+    const s = execute(planAll(bossWith([slam, encore]), { hero: guard }));
+    expect(eventsOf(s, 'charge')).toHaveLength(0);
+    expect(eventsOf(s, 'action').some((e) => e.actionId === 'slam')).toBe(true);
+  });
+
+  it('直前に放った大技をもう一度、ためてから放つ', () => {
+    let s = execute(planAll(bossWith([sweep]), { hero: guard }));
+    s = execute(planAll(s, { hero: guard }));
+    expect(s.enemies[0].lastBigMove).toBe('sweep');
+    s.enemies[0].actions = [sweep, encore];
+    // 行動はでたらめに選ぶので、アンコールが出るまで進める（シードで決まる）
+    let found = -1;
+    for (let i = 0; i < 12 && found < 0; i++) {
+      const before = s.log.length;
+      s = execute(planAll(s, { hero: guard }));
+      found = s.log.findIndex((e, j) => j >= before && e.type === 'charge' && e.name === 'アンコール：薙ぎ払い');
+    }
+    expect(found).toBeGreaterThan(-1);
+    expect(s.log[found]).toEqual({ type: 'charge', enemyId: 'enemy0', actionId: 'sweep', name: 'アンコール：薙ぎ払い' });
+    expect(chargingAction(s.enemies[0])?.id).toBe('sweep');
+    const before2 = s.log.length;
+    s = execute(planAll(s, { hero: guard }));
+    expect(s.log.slice(before2).some((e) => e.type === 'action' && e.actionId === 'sweep')).toBe(true);
+  });
+
+  it('もう一度放つ大技の部位が壊れていたら、アンコールも使えない', () => {
+    let s = execute(planAll(bossWith([roar]), { hero: guard }));
+    s = execute(planAll(s, { hero: guard }));
+    expect(s.enemies[0].lastBigMove).toBe('roar');
+    s.enemies[0].actions = [roar, encore, slam];
+    s.enemies[0].parts[1].hp = 1;
+    s = execute(planAll(s, { hero: attackOn('enemy0', 'horn') }));
+    expect(s.enemies[0].parts[1].broken).toBe(true);
+    for (let i = 0; i < 4; i++) {
+      const before = s.log.length;
+      s = execute(planAll(s, { hero: guard }));
+      expect(s.log.slice(before).some((e) => e.type === 'charge')).toBe(false);
+    }
+  });
+});

@@ -6,4 +6,6 @@ export const ENEMY_ART: Record<string, string> = {
   ramuneNoise: 'enemy.ramune_noise',
   menkoNoise: 'enemy.menko_noise',
   bicycleLord: 'enemy.bicycle_boss',
+  // 段階40：2-3 の負け戦のカイ
+  kai: 'enemy.kai',
 };

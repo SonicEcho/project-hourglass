@@ -132,6 +132,11 @@ export interface EnemyActionDef {
   requiresPart?: string;
   /** 大技。使う前に1回「力をためる」（その間は攻撃しない）。次の自分の行動で放つ */
   charge?: boolean;
+  /**
+   * アンコール（段階39b。2-2 のアンプのぬし）：直前に放った大技をもう一度。選んだ時に、その大技に置き換わる（ため・封じ・崩しは置き換えた大技のまま）。
+   * まだ大技を放っていない時と、その大技が部位破壊で封じられた時は選ばない。target・type・power は使わない
+   */
+  encore?: boolean;
 }
 
 export interface PartDef {
@@ -190,6 +195,17 @@ export interface BattleSetup {
    * 書いていない仲間は全回復で始まる。最大を超える分は最大にそろえる
    */
   vitals?: Record<string, Vitals>;
+  /** 負け戦（段階40）：決まったラウンドか、敵の HP が決まった割合を切った所で打ち切る */
+  cutoff?: BattleCutoff;
+}
+
+/**
+ * 負け戦の打ち切り（段階40。2-3 のカイ）。勝てない強さにはせず、rounds ラウンド目の終わりか、
+ * どれかの敵の HP が最大の enemyHpRatio を切った時に終わる（outcome は cutoff）。仲間が全員倒れた時も cutoff（全滅の画面は出さない）
+ */
+export interface BattleCutoff {
+  rounds: number;
+  enemyHpRatio: number;
 }
 
 /** 戦闘をまたいで持ち越す HP・MP */
@@ -246,6 +262,8 @@ export interface EnemyUnit extends UnitBase {
   standUpGuard: boolean;
   /** 力をためている大技の id（次の自分の行動で放つ）。ダウンや部位破壊で解ける */
   charging: string | null;
+  /** 最後に放った大技の id（アンコールでもう一度放つ。段階39b） */
+  lastBigMove: string | null;
   /**
    * ためをダウンで崩されて怒っている。立ち上がった次の行動では、ためずにすぐ攻撃する（大技もためずに放つ）。
    * その行動を終えるまではダウンしない（立ち上がりの歯止めが続く）
@@ -301,7 +319,8 @@ export interface ExtraTurn {
  */
 export type Phase = 'plan' | 'execute' | 'extra' | 'ended';
 
-export type Outcome = 'ongoing' | 'victory' | 'defeat';
+/** cutoff は負け戦の打ち切り（段階40） */
+export type Outcome = 'ongoing' | 'victory' | 'defeat' | 'cutoff';
 
 export type LogEvent =
   | { type: 'battleStart'; seed: number }
@@ -376,6 +395,8 @@ export interface BattleState {
   extra: ExtraTurn | null;
   /** 連携技のつながりゲージ（0〜LINK_GAUGE_MAX。満タンで連携技を使える。段階26の調整2） */
   linkGauge: number;
+  /** 負け戦の打ち切り（段階40） */
+  cutoff?: BattleCutoff;
   outcome: Outcome;
   log: LogEvent[];
 }

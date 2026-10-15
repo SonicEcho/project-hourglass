@@ -628,6 +628,129 @@ Walkable areas must be clearly distinguishable from non-walkable objects. Absolu
 
 （届いたら：今の 2-1 の文字の地図の左右を開け、寄り道の部屋2つを `src/data/rooms.ts` に足して 2-1 の区画につなぐ。寄り道1には逃げる敵と宝箱、寄り道2には追ってくる敵と宝箱を置き、今の 2-1 の宝箱2つの一方を寄り道へ移す。勝率を測り直す）
 
+#### 6-3. 2-2 の文化祭の高校の部屋（段階39b。2026-10-15）
+
+2-2 は、10. の縦長の地図1枚の代わりに、部屋6つ（正方形5つ・縦長1つ）で作る。並びは 校門 → 中庭（左に寄り道の駐輪場）→ 渡り廊下と音楽室の前（右に寄り道のお化け屋敷の教室）→ 体育館。下絵は `docs/sketches/room_school_*.png`（`node scripts/room_sketch.mjs <部屋の id> <出力.png>` で作った）。どの部屋も、地図の頭の後に書き、正方形の部屋は `Vertical 9:16 image.` を `Square 1:1 image (1024x1024).` に、縦長の部屋は `Vertical image (1024x1536).` に替える。下絵と一緒に、1枚目ができたら2枚目からは1枚目の絵も「絵柄の見本」として付ける（6部屋の色と絵柄をそろえる）。
+
+| 部屋 | 形 | 出入口 | 下絵 | 台帳の id（届いたら） |
+| --- | --- | --- | --- | --- |
+| 校門の前庭 | 正方形 | 上 | `room_school_gate.png` | `map.school_gate` |
+| 模擬店の中庭 | 縦長 | 下・上・左 | `room_school_courtyard.png` | `map.school_courtyard` |
+| 駐輪場（寄り道） | 正方形 | 右 | `room_school_bikes.png` | `map.school_bikes` |
+| 渡り廊下と音楽室の前 | 正方形 | 下・上・右 | `room_school_corridor.png` | `map.school_corridor` |
+| お化け屋敷の教室（寄り道） | 正方形 | 左 | `room_school_classroom.png` | `map.school_classroom` |
+| 体育館 | 正方形 | 下 | `room_school_gym.png` | `map.school_gym` |
+
+どの部屋にも、場面の文の後に次の共通の2文を付ける（`<edges>` は部屋ごとの出入口の文）。
+
+```
+<edges> All other edges are closed by school buildings, walls, fences, hedges or trees.
+Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
+```
+
+出入口の文：`An opening at the center of the <top/bottom/left/right> edge, one sixth of the image <width/height> wide, leading out of the image.`（使う辺の数だけ並べる）
+
+校門の前庭（出入口：上）
+
+```
+Scene: the front yard just inside the gate of a Japanese high school during its school festival on a bright autumn afternoon in 2006, bright pastel and light blue colors.
+Bottom center: the school gate with a hand-made decorated festival arch of paper flowers and balloons (blank, no letters), the path entering from the bottom edge. A wide paved front yard with flower beds at the upper corners and two small flower beds in the middle, bicycles and a few festival guide boards (blank). A path leaves the yard straight up through the top edge toward the courtyard.
+```
+
+模擬店の中庭（出入口：下・上・左）
+
+```
+Scene: the school courtyard of a Japanese high school during its school festival on a bright autumn afternoon in 2006, bright pastel and light blue colors.
+Rows of student food stalls with colorful tents and folding tables along both sides (four small tent blocks as in the sketch), paper lanterns and garlands strung overhead. In the middle, a big tree with a round bench around it, and a wooden bench just below-left of the tree. Paths lead out through the bottom edge (to the gate), the top edge (to the school building) and the left edge (to the bicycle parking).
+```
+
+駐輪場（寄り道。出入口：右）
+
+```
+Scene: the bicycle parking area behind a Japanese high school building on a bright autumn afternoon in 2006, bright pastel and light blue colors.
+Four long rows of student bicycles in metal racks under a thin roof, with small gaps between them so you can weave through, as in the sketch. A wide path comes in from the right edge through the middle. Fallen ginkgo leaves, a vending machine against the wall, a dead-end corner at the top left.
+```
+
+渡り廊下と音楽室の前（出入口：下・上・右）
+
+```
+Scene: an open-air roofed walkway between school buildings of a Japanese high school during its school festival on a bright autumn afternoon in 2006, bright pastel and light blue colors.
+A wide walkway crosses the lower half from the bottom edge and turns right toward the right edge. On the upper left, a corridor runs in front of the music room with its windows and sliding door (a few music stands and instrument cases by the door). A straight path leads up through the top edge to the gymnasium. Posters on the walls are blank.
+```
+
+お化け屋敷の教室（寄り道。出入口：左）
+
+```
+Scene: a classroom turned into a haunted house attraction for a Japanese high school festival in 2006, seen from above with the ceiling removed, dim purple and light blue lighting with pastel accents.
+Desks stacked and covered with black curtains form a winding maze (three long curtain walls as in the sketch), with paper ghosts, fake spider webs and a few glowing paper lanterns. The entrance comes in from the left edge. A dead-end corner at the top right.
+```
+
+体育館（出入口：下）
+
+```
+Scene: the inside of a Japanese high school gymnasium during its school festival in 2006, seen from above with the roof removed, bright pastel and light blue colors with warm stage lights.
+At the top, a raised wooden stage with curtains pulled aside, a drum set, guitar amplifiers and speakers on it, cables on the floor. Below, a wide polished wooden floor with court lines and rows of folding chairs pushed to the sides, as in the sketch. The entrance comes in from the bottom edge.
+```
+
+（届いたら：台帳に `map.school_*` を書き、`src/data/rooms.ts` の 2-2 の部屋に `image` を足す。絵と歩ける場所がずれていたら、文字の地図を絵に合わせて直す）
+
+#### 6-4. 2-3 の河川敷のグラウンドの部屋（段階40。2026-10-15）
+
+2-3 も、10. の縦長の地図1枚の代わりに、部屋6つ（正方形5つ・縦長1つ）で作る。並びは 土手の道 → ベンチの裏の木陰（右に寄り道の川べり）→ 売店のテント（左に寄り道の用具小屋の裏）→ ダイヤモンド。下絵は `docs/sketches/room_riverside_*.png`。頼み方（地図の頭、正方形・縦長の替え方、共通の2文、出入口の文、1枚目を絵柄の見本に付ける）は 6-3 と同じ。色は `bright summer colors, clear blue sky and light blue accents, 1998`。
+
+| 部屋 | 形 | 出入口 | 下絵 | 台帳の id（届いたら） |
+| --- | --- | --- | --- | --- |
+| 土手の道 | 正方形 | 上 | `room_riverside_levee.png` | `map.riverside_levee` |
+| ベンチの裏の木陰 | 縦長 | 下・上・右 | `room_riverside_bench.png` | `map.riverside_bench` |
+| 川べり（寄り道） | 正方形 | 左 | `room_riverside_bank.png` | `map.riverside_bank` |
+| 売店のテント | 正方形 | 下・上・左 | `room_riverside_stand.png` | `map.riverside_stand` |
+| 用具小屋の裏（寄り道） | 正方形 | 右 | `room_riverside_shed.png` | `map.riverside_shed` |
+| ダイヤモンド | 正方形 | 下 | `room_riverside_diamond.png` | `map.riverside_diamond` |
+
+土手の道（出入口：上）
+
+```
+Scene: the bottom of a grassy river embankment next to a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+A wide dirt path runs along the foot of the embankment from the lower left to the right, then a gentle slope path climbs up along the right side and turns left to leave through the top edge. Tall summer grass and a few parked bicycles on the embankment, a small grassy hollow on the left with a wooden bench.
+```
+
+ベンチの裏の木陰（出入口：下・上・右）
+
+```
+Scene: the area behind the team bench of a riverside little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+In the lower part, a long wooden team bench with a small roof (as in the sketch). In the middle, a big shady tree with dappled shadows and a cooler box under it. Paths lead out through the bottom edge (to the embankment), the top edge (to the concession tent) and the right edge (to the riverbank). Cicada-filled summer mood.
+```
+
+川べり（寄り道。出入口：左）
+
+```
+Scene: a quiet riverbank next to a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+The river runs along the whole right side (not walkable, sparkling water). A sandy and grassy bank with three clumps of tall reeds and summer grass (as in the sketch), a few stray baseballs in the grass, an old bucket. The entrance comes in from the left edge.
+```
+
+売店のテント（出入口：下・上・左）
+
+```
+Scene: a small white concession tent beside a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+The tent with folding tables, a tub of ice water with floating ramune bottles (blank labels), shade umbrellas. An open dirt area in front of the tent. Paths lead out through the bottom edge, the top edge (toward the diamond) and the left edge (toward the equipment shed).
+```
+
+用具小屋の裏（寄り道。出入口：右）
+
+```
+Scene: the back of a small wooden equipment shed beside a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+Narrow passages divided by a long practice net and stacks of bat boxes and base bags (two long dividers as in the sketch), a roller for the field, buckets of balls. The entrance comes in from the right edge. A dead-end corner at the top left.
+```
+
+ダイヤモンド（出入口：下）
+
+```
+Scene: the infield of a little league baseball field by a river in a Japanese town on a bright summer afternoon in 1998, seen from above, bright summer colors.
+At the top, home plate in front of a tall backstop net, with the ends of the net at the upper corners (as in the sketch). Below, the dirt infield with bases and white chalk lines, the pitcher's mound. A wooden scoreboard (blank panels, no numbers) is visible beyond the backstop. The entrance comes in from the bottom edge.
+```
+
+（届いたら：台帳に `map.riverside_*` を書き、`src/data/rooms.ts` の 2-3 の部屋に `image` を足す）
+
 ### 7. 1枚絵：親方の背中（2-1-8）
 
 写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に
@@ -699,6 +822,8 @@ Eye-level camera from behind home plate, looking toward the outfield.
 ```
 
 ### 10. 地図：2-2 の文化祭の高校、2-3 の河川敷のグラウンド
+
+（2-2 は段階39b、2-3 は段階40 で部屋6つに分けた。下の文ではなく 6-3・6-4 で頼む）
 
 2-2（入口の校門のアーチ → 模擬店の中庭 → 音楽室の前の廊下 → 体育館のステージ）：地図の頭の後に
 

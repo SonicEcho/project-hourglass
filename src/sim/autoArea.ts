@@ -37,9 +37,9 @@ import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
 
 /**
  * チェックポイントより先の戦闘（この番目から）。1-1 は社への道の砂嵐とボス（地図の P は、広場と左右の参道の砂嵐の先）。
- * 1-2 は駄菓子屋の前（P）の先の砂嵐から（段階37）。チェックポイントの先では、育成のために寄る（全回復する）ものとする
+ * 1-2 は駄菓子屋の前（P）の先の砂嵐から（段階37）。2-2 は中庭のベンチ（P）の先の、駐輪場の逃げる敵から（段階39b）。2-3 もベンチの裏（P）の先の、川べりの逃げる敵から（段階40）。チェックポイントの先では、育成のために寄る（全回復する）ものとする
  */
-const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2 };
+const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2, a22: 2, a23: 2 };
 
 /** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay） */
 export type AreaPolicy = 'random' | 'smart';

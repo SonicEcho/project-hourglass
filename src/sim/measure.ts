@@ -89,6 +89,8 @@ export const MEASURED_AREAS: Record<string, { title: string; prior: string[] }> 
   a11: { title: '1-1 の縁日', prior: [] },
   a12: { title: '1-2 の商店街（1-1 を通した後から）', prior: ['a11'] },
   a21: { title: '2-1 の町工場（1-1・1-2 を通した後から。みおを入れた3人、ムーブメントあり）', prior: ['a11', 'a12'] },
+  a22: { title: '2-2 の文化祭の高校（1-1・1-2・2-1 を通した後から。みおを入れた3人、ムーブメントあり）', prior: ['a11', 'a12', 'a21'] },
+  a23: { title: '2-3 の河川敷のグラウンド（1-1〜2-2 を通した後から。みおを入れた3人、ムーブメントあり）', prior: ['a11', 'a12', 'a21', 'a22'] },
 };
 
 export function measureArea(runs: number, seed: number, policy: AreaPolicy, areaId = 'a11'): AreaMeasureResult {

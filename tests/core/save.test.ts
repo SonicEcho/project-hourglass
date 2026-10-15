@@ -18,7 +18,7 @@ import {
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { AREAS, GROWTH_MAP, NAVI_DATA, PARTY, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREAS, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -28,6 +28,7 @@ const ctx: SaveContext = {
   weaponData: WEAPON_DATA,
   story: STORY,
   flow: SLICE_FLOW,
+  renamedEvents: RENAMED_EVENTS,
   areas: AREAS,
 };
 
@@ -310,6 +311,10 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res2.ok && res2.save.run.progress.day).toBe(2);
     const res3 = parseEdited((raw) => (raw.run.event = 'removedEvent'));
     expect(res3.ok && res3.save.run.event).toBe('prologue_open');
+    // なくなった出来事は、代わりの出来事から（段階40：仮の「2-3：返す」→ カイの会話）
+    const res4 = parseEdited((raw) => (raw.run.event = 'a23_return'));
+    expect(res4.ok && res4.save.run.event).toBe('d7_kai');
+    expect(res4.ok && res4.save.run.progress.day).toBe(7);
     expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
     expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
   });

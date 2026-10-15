@@ -106,3 +106,25 @@ describe('自動対戦：2-1 の町工場（段階39）', () => {
     expect(formatAreaMeasure(m)).toContain('旋盤のぬし');
   });
 });
+
+describe('自動対戦：2-2 の文化祭の高校（段階39b）', () => {
+  it('1-1・1-2・2-1 を通した後、2-2 も3人で戦い、部屋をまたいだ戦闘を出会う順に通す。弱点をねらう方針はボスまで勝ち切れる', () => {
+    expect(areaLineup('a22').members).toEqual(['hero', 'akari', 'mio']);
+    const r = autoAreaRun(2, 'smart', undefined, 'a22', ['a11', 'a12', 'a21']);
+    expect(r.stages.length).toBe(areaBattleOrder('a22').length);
+    const m = measureArea(2, 1, 'smart', 'a22');
+    expect(m.cleared).toBe(2);
+    expect(formatAreaMeasure(m)).toContain('## 2-2 の文化祭の高校');
+    expect(formatAreaMeasure(m)).toContain('アンプのぬし');
+  });
+});
+
+describe('自動対戦：2-3 の河川敷（段階40）', () => {
+  it('1-1〜2-2 を通した後、2-3 も3人で戦い、弱点をねらう方針はボスまで勝ち切れる', () => {
+    expect(areaLineup('a23').members).toEqual(['hero', 'akari', 'mio']);
+    const m = measureArea(2, 1, 'smart', 'a23');
+    expect(m.cleared).toBe(2);
+    expect(formatAreaMeasure(m)).toContain('## 2-3 の河川敷');
+    expect(formatAreaMeasure(m)).toContain('スコアボードのぬし');
+  });
+});

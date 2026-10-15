@@ -1,7 +1,7 @@
 // 通しの自動確認（段階20・23）。本物のブラウザで毎回確かめる。
 // 使い方: npm run build の後に npm run e2e（dist/ を手元のサーバーで開き、Chromium で自動で遊ぶ）
 // 流れ1（段階23・24・28。時間を返す画面では「返す」→「次へ」）: タイトル →「はじめる」→ プロローグの会話 → ページを開き直して「つづきから」で同じ場面から続く →
-//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す。屋台めぐりの計画表と、昼の日常の地図が出るか）。途中の探索の画面でも開き直して続き、縁日の BGM が流れることを確かめる。
+//   デバッグメニューの「次の出来事へ飛ばす」で、物語の流れを最後（つづく）まで1つずつ開く（仮の画面の「次へ」、日の扉も押す。屋台めぐりの計画表と、昼の日常の地図が出るか）。途中の探索の画面でも開き直して続き、縁日の BGM が流れることを確かめる。 物語の戦闘（段階40。カイの負け戦）は、ラウンドを進めて打ち切りの窓の「次へ」で続ける。
 // 流れ2（段階20）: デバッグメニューの「試作の5戦を最初から」→ 戦闘1〜5（敵のHPを1にして「自動で1ラウンド戦う」）→ 結果。最後に縁日の試作で BGM が切り替わるかを見る。
 // 初めての人向けの説明（段階30）は最初から全部見たことにして通し、最後に、見た説明を忘れると星図で説明が出ることを確かめる。
 // エラーが出る・途中で止まる・思った画面にならない時は失敗（終了コード1）にする。失敗した時の画面は e2e-failure.png に残す
@@ -132,6 +132,7 @@ try {
   let sawPlan = false;
   let sawMap = false;
   let sawReturn = false;
+  let sawCutoff = false;
   for (let i = 0; ; i++) {
     if (i > MAX_EVENTS) throw new Error('物語の流れが終わらない');
     if (await findText('^つづく$')) break;
@@ -153,6 +154,16 @@ try {
       await tap('^返す$');
       await tap('^次へ$');
       sawReturn = true;
+    } else if ((await scenes()).includes('Battle')) {
+      // 物語の戦闘（段階40。カイの負け戦）：ラウンドを進めると打ち切りの窓が出て、「次へ」で話の続きへ
+      for (let round = 0; round < 12 && !(await findText('^次へ$')); round++) {
+        await debugButton('自動で1ラウンド戦う');
+        await closeDebugMenu();
+        await page.waitForTimeout(800);
+      }
+      await until('打ち切りの窓', () => findText('動きが、見えない'), 60000);
+      await tap('^次へ$');
+      sawCutoff = true;
     } else if (await findText('^\\d日目$')) {
       await page.waitForTimeout(700);
       await tapAt(195, 422);
@@ -162,9 +173,10 @@ try {
     await page.waitForTimeout(500);
     await until('流れの画面か会話の画面', async () => {
       const s = await scenes();
-      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily') || s.includes('Explore') || s.includes('Return');
+      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily') || s.includes('Explore') || s.includes('Return') || s.includes('Battle');
     });
   }
+  if (!sawCutoff) throw new Error('カイの負け戦の打ち切りが出なかった');
   if (!reloaded) throw new Error('探索の画面が出なかった');
   if (!sawReturn) throw new Error('時間を返す画面が出なかった');
   if (!sawPlan) throw new Error('屋台めぐりの「けいかくひょう」が出なかった');

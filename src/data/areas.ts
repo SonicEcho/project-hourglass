@@ -3,6 +3,8 @@ import type { CampaignBattle } from './campaign';
 import { scaleEnemy } from './campaign';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
+import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
+import { BALL_NOISE, JUG_NOISE, KAI, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { ROOMS } from './rooms';
 import { BGM } from './sounds';
@@ -61,6 +63,27 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
   a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 8, koma: 2 },
   a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2 },
+  // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。並びは出会う順（校門 → 中庭の下 → 中庭の上 → お化け屋敷の教室 → 渡り廊下の番人）。
+  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。番人は少し強い（×1.3。ボスの手前の山）。
+  // 駐輪場の逃げる敵はコマを持たない寄り道で、勝つとレアの素材「ラストチャイムのデモテープ」
+  a22_storm1: { id: 'a22_storm1', name: '砂嵐', enemies: [FLIP_PHONE_NOISE, STICKER_NOISE], reward: 6, item: ITEMS.potion.id, koma: 1 },
+  a22_storm2: { id: 'a22_storm2', name: '砂嵐', enemies: [BOOMBOX_NOISE, FLIP_PHONE_NOISE, STICKER_NOISE], reward: 7, item: ITEMS.ether.id, koma: 2 },
+  a22_storm3: { id: 'a22_storm3', name: '砂嵐', enemies: [METRONOME_NOISE, STICKER_NOISE, BOOMBOX_NOISE], reward: 7, koma: 2 },
+  a22_storm4: { id: 'a22_storm4', name: '砂嵐', enemies: [FLIP_PHONE_NOISE, METRONOME_NOISE, BOOMBOX_NOISE], reward: 8, item: ITEMS.hiPotion.id, koma: 2 },
+  a22_storm5: { id: 'a22_storm5', name: '砂嵐', enemies: [METRONOME_NOISE, BOOMBOX_NOISE, FLIP_PHONE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 8, koma: 2 },
+  a22_runner: { id: 'a22_runner', name: '砂嵐', enemies: [STICKER_NOISE, STICKER_NOISE, STICKER_NOISE], reward: 6, item: ITEMS.demoTape.id },
+  a22_boss: { id: 'a22_boss', name: 'アンプのぬし', enemies: [AMP_LORD], reward: 11, boss: true, koma: 2 },
+  // 2-3 の河川敷のグラウンド（段階40。部屋をつなぐ形）。並びは出会う順（土手の道 → ベンチの前 → 川べりの逃げる敵 → ベンチの裏の上 → 用具小屋の裏 → 売店の番人）。
+  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10）。番人は ×1.15。川べりの逃げる敵はコマなしで、勝つとレアの素材「最後のスコアブック」
+  a23_storm1: { id: 'a23_storm1', name: '砂嵐', enemies: [BALL_NOISE, PET_NOISE], reward: 7, item: ITEMS.potion.id, koma: 1 },
+  a23_storm2: { id: 'a23_storm2', name: '砂嵐', enemies: [MEGAPHONE_NOISE, BALL_NOISE, JUG_NOISE], reward: 7, item: ITEMS.ether.id, koma: 2 },
+  a23_runner: { id: 'a23_runner', name: '砂嵐', enemies: [PET_NOISE, PET_NOISE, PET_NOISE], reward: 7, item: ITEMS.scorebook.id },
+  a23_storm3: { id: 'a23_storm3', name: '砂嵐', enemies: [JUG_NOISE, PET_NOISE, MEGAPHONE_NOISE], reward: 8, koma: 2 },
+  a23_storm4: { id: 'a23_storm4', name: '砂嵐', enemies: [BALL_NOISE, MEGAPHONE_NOISE, PET_NOISE], reward: 8, item: ITEMS.hiPotion.id, koma: 2 },
+  a23_storm5: { id: 'a23_storm5', name: '砂嵐', enemies: [JUG_NOISE, BALL_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15)), reward: 9, koma: 2 },
+  a23_boss: { id: 'a23_boss', name: 'スコアボードのぬし', enemies: [SCOREBOARD_LORD], reward: 12, boss: true, koma: 2 },
+  // 返す直前のカイ（段階40。負け戦）。4ラウンド目の終わりか、カイの HP が半分を切った所で打ち切る。報酬はない（物語の流れの battle の出来事から始める）
+  a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5 } },
 };
 
 
@@ -291,6 +314,181 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
       { on: 'boss', scene: 'a21_boss' },
       { on: 'cleared', scene: 'a21_last_koma' },
+    ],
+  },
+  // 2-2「最後の文化祭」：平成18年の秋の高校の文化祭（段階39b）。部屋をつなぐ形で作った最初の区画。
+  // 校門 → 中庭（左に寄り道の駐輪場）→ 渡り廊下（右にお化け屋敷の教室）→ 番人を倒すと開く体育館
+  a22: {
+    id: 'a22',
+    name: '2-2「最後の文化祭」',
+    rooms: [ROOMS.school_gate, ROOMS.school_courtyard, ROOMS.school_bikes, ROOMS.school_corridor, ROOMS.school_classroom, ROOMS.school_gym],
+    links: [
+      { a: { room: 'school_gate', side: 'top' }, b: { room: 'school_courtyard', side: 'bottom' } },
+      { a: { room: 'school_courtyard', side: 'left' }, b: { room: 'school_bikes', side: 'right' } },
+      { a: { room: 'school_courtyard', side: 'top' }, b: { room: 'school_corridor', side: 'bottom' } },
+      { a: { room: 'school_corridor', side: 'right' }, b: { room: 'school_classroom', side: 'left' } },
+      // 体育館への扉は、渡り廊下の番人を倒すと開く
+      { a: { room: 'school_corridor', side: 'top' }, b: { room: 'school_gym', side: 'bottom' }, opensWhen: 'a22_e_stage' },
+    ],
+    // 平成の文化祭の探索の曲が届くまで、日常の曲
+    bgm: BGM.daily,
+    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
+    komaNeed: 10,
+    timeTitle: '最後の文化祭',
+    owner: 'ケンタ',
+    memory: 'school_festival',
+    // 中庭の右の模擬店の裏、駐輪場の奥、お化け屋敷の教室の奥。寄り道の2つにはムーブメントのギア
+    chests: [
+      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id, ITEMS.potion.id] },
+      { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id, ITEMS.ether.id], gears: ['iceBoost'] },
+      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], items: [ITEMS.glitterPen.id, ITEMS.ringtoneChip.id, ITEMS.hiPotion.id], gears: ['comboBoost'] },
+    ],
+    enemies: [
+      {
+        id: 'a22_e_gate',
+        patrol: [
+          [5, 12],
+          [18, 12],
+        ],
+        battle: 'a22_storm1',
+      },
+      {
+        id: 'a22_e_stalls',
+        room: 'school_courtyard',
+        patrol: [
+          [6, 35],
+          [17, 35],
+        ],
+        battle: 'a22_storm2',
+      },
+      // 駐輪場の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a22_e_runner', room: 'school_bikes', move: 'flee', patrol: [[8, 16]], battle: 'a22_runner' },
+      // 中庭の上の模擬店の通り：近づくと追ってくる
+      {
+        id: 'a22_e_upper',
+        room: 'school_courtyard',
+        move: 'chase',
+        patrol: [
+          [7, 13],
+          [16, 13],
+        ],
+        battle: 'a22_storm3',
+      },
+      // お化け屋敷の教室：暗幕の迷路で追ってくる
+      {
+        id: 'a22_e_haunted',
+        room: 'school_classroom',
+        move: 'chase',
+        patrol: [
+          [10, 6],
+          [10, 17],
+        ],
+        battle: 'a22_storm4',
+      },
+      // 渡り廊下の番人：倒すと体育館への扉が開く
+      { id: 'a22_e_stage', room: 'school_corridor', move: 'guard', patrol: [[11, 3]], battle: 'a22_storm5' },
+    ],
+    // 体育館のステージ
+    boss: { id: 'a22_boss', room: 'school_gym', cell: [11, 4], battle: 'a22_boss' },
+    talkers: [
+      { id: 'a22_voice_committee', cell: [6, 18], scene: 'a22_voice_committee', label: '実行委員' },
+      { id: 'a22_voice_stall', room: 'school_courtyard', cell: [6, 28], scene: 'a22_voice_stall', label: '模擬店の生徒' },
+      { id: 'a22_voice_classmate', room: 'school_corridor', cell: [19, 16], scene: 'a22_voice_classmate', label: 'クラスメイト' },
+      { id: 'a22_voice_teacher', room: 'school_corridor', cell: [7, 6], scene: 'a22_voice_teacher', label: '音楽の先生' },
+    ],
+    triggers: [
+      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 23], scene: 'a22_checkpoint' },
+      { on: 'checkpoint', room: 'school_corridor', cell: [5, 8], scene: 'a22_music_room' },
+      { on: 'komaLeft', left: 3, scene: 'a22_three_left' },
+      { on: 'boss', scene: 'a22_boss' },
+      { on: 'cleared', scene: 'a22_last_koma' },
+    ],
+  },
+  // 2-3「最後の打席」：平成10年の夏の河川敷のグラウンド（段階40）。ボスに勝ってコマがそろった後、返す直前にカイに持ち去られる（物語の流れの a23_kai）。
+  // 土手の道 → ベンチの裏の木陰（右に寄り道の川べり）→ 売店のテント（左に用具小屋の裏）→ 番人を倒すと開くダイヤモンド
+  a23: {
+    id: 'a23',
+    name: '2-3「最後の打席」',
+    rooms: [ROOMS.riverside_levee, ROOMS.riverside_bench, ROOMS.riverside_bank, ROOMS.riverside_stand, ROOMS.riverside_shed, ROOMS.riverside_diamond],
+    links: [
+      { a: { room: 'riverside_levee', side: 'top' }, b: { room: 'riverside_bench', side: 'bottom' } },
+      { a: { room: 'riverside_bench', side: 'right' }, b: { room: 'riverside_bank', side: 'left' } },
+      { a: { room: 'riverside_bench', side: 'top' }, b: { room: 'riverside_stand', side: 'bottom' } },
+      { a: { room: 'riverside_stand', side: 'left' }, b: { room: 'riverside_shed', side: 'right' } },
+      // ダイヤモンドへは、売店の上の番人を倒すと入れる
+      { a: { room: 'riverside_stand', side: 'top' }, b: { room: 'riverside_diamond', side: 'bottom' }, opensWhen: 'a23_e_gate' },
+    ],
+    // 平成の夏の河川敷の探索の曲が届くまで、日常の曲
+    bgm: BGM.daily,
+    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）。返す前にカイに持ち去られる
+    komaNeed: 10,
+    timeTitle: '最後の打席',
+    owner: 'コウジ',
+    memory: 'riverside_1998',
+    chests: [
+      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id, ITEMS.potion.id] },
+      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id, ITEMS.ether.id], gears: ['startDash'] },
+      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [4, 4], items: [ITEMS.autographBall.id, ITEMS.cheerBand.id, ITEMS.hiPotion.id], gears: ['breaker'] },
+    ],
+    enemies: [
+      {
+        id: 'a23_e_slope',
+        patrol: [
+          [17, 15],
+          [17, 8],
+        ],
+        battle: 'a23_storm1',
+      },
+      {
+        id: 'a23_e_bench',
+        room: 'riverside_bench',
+        patrol: [
+          [5, 33],
+          [18, 33],
+        ],
+        battle: 'a23_storm2',
+      },
+      // 川べりの逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a23_e_runner', room: 'riverside_bank', move: 'flee', patrol: [[10, 16]], battle: 'a23_runner' },
+      // ベンチの裏の上：近づくと追ってくる
+      {
+        id: 'a23_e_shade',
+        room: 'riverside_bench',
+        move: 'chase',
+        patrol: [
+          [8, 9],
+          [15, 9],
+        ],
+        battle: 'a23_storm3',
+      },
+      // 用具小屋の裏：追ってくる
+      {
+        id: 'a23_e_shed',
+        room: 'riverside_shed',
+        move: 'chase',
+        patrol: [
+          [10, 6],
+          [10, 18],
+        ],
+        battle: 'a23_storm4',
+      },
+      // 売店の上の番人：倒すとダイヤモンドへの道が開く
+      { id: 'a23_e_gate', room: 'riverside_stand', move: 'guard', patrol: [[11, 5]], battle: 'a23_storm5' },
+    ],
+    // ホームベースの前
+    boss: { id: 'a23_boss', room: 'riverside_diamond', cell: [11, 6], battle: 'a23_boss' },
+    talkers: [
+      { id: 'a23_voice_kid', cell: [7, 13], scene: 'a23_voice_kid', label: 'スタンドの子ども' },
+      { id: 'a23_voice_coach', room: 'riverside_bench', cell: [5, 28], scene: 'a23_voice_coach', label: '監督' },
+      { id: 'a23_voice_shop', room: 'riverside_stand', cell: [18, 13], scene: 'a23_voice_shop', label: '売店のおばちゃん' },
+      { id: 'a23_voice_rival', room: 'riverside_stand', cell: [4, 16], scene: 'a23_voice_rival', label: '相手チームの子' },
+    ],
+    triggers: [
+      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 21], scene: 'a23_checkpoint' },
+      { on: 'checkpoint', room: 'riverside_stand', cell: [12, 14], scene: 'a23_stand' },
+      { on: 'komaLeft', left: 3, scene: 'a23_three_left' },
+      { on: 'boss', scene: 'a23_boss' },
+      { on: 'cleared', scene: 'a23_last_koma' },
     ],
   },
 };

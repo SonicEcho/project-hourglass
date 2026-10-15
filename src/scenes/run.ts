@@ -23,7 +23,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -179,6 +179,7 @@ export function saveContext(): SaveContext {
     story: STORY,
     flow: SLICE_FLOW,
     areas: AREAS,
+    renamedEvents: RENAMED_EVENTS,
   };
 }
 
