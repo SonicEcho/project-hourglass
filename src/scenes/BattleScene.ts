@@ -1291,7 +1291,9 @@ export class BattleScene extends Phaser.Scene {
     const c = this.add.container(0, 0).setDepth(300);
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive();
     const win = this.state.outcome === 'victory';
-    const title = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 90, win ? '勝利！' : '敗北…', {
+    // 負け戦の打ち切り（段階40）は、勝ちも全滅も出さない
+    const cutoff = this.state.outcome === 'cutoff';
+    const title = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 90, win ? '勝利！' : cutoff ? '……' : '敗北…', {
       size: 44,
       bold: true,
       color: win ? COLORS.accentText : COLORS.allyDamage,
@@ -1360,6 +1362,12 @@ export class BattleScene extends Phaser.Scene {
   private showEncounterEnd(c: Phaser.GameObjects.Container, win: boolean, result: ReturnType<typeof getBattleResult>): void {
     const enc = this.encounter!;
     const def = this.battle;
+    if (this.state.outcome === 'cutoff') {
+      // 負け戦（段階40）：手が届かないまま終わる。報酬はなく、そのまま話の続きへ
+      c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, `${this.state.enemies[0]?.name ?? ''}の動きが、見えない……`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 240, 60, '次へ', { onTap: () => this.scene.start(enc.win.key, enc.win.data) }, { size: 18, bold: true });
+      return;
+    }
     if (!win) {
       c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, '最後に記録したチェックポイントから、やり直す', { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });

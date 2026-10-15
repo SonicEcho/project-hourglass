@@ -78,6 +78,10 @@ describe('物語の流れ（段階23）', () => {
     expect(checkFlow(f)).toEqual([]);
     const noNote: Flow = [{ id: 'c', name: '章', events: [{ id: 'x', kind: 'explore', title: 'X' }, { id: 'end', kind: 'end', title: 'つづく' }] }];
     expect(checkFlow(noNote)).toEqual(['仮の画面に案内がない：x']);
+    // 物語の戦闘（段階40）は、戦闘の id が要る。会話の続きの1回の画面には入らない
+    const battle: Flow = [{ id: 'c', name: '章', events: [{ id: 'k', kind: 'battle', title: 'K', battle: 'kai' }, { id: 'n', kind: 'battle', title: 'N' }, { id: 'end', kind: 'end', title: 'つづく' }] }];
+    expect(checkFlow(battle)).toEqual(['戦闘の出来事に戦闘の id がない：n']);
+    expect(isPlaceholder(battle[0].events[0])).toBe(false);
   });
 
   it('章と、何番目かを引ける', () => {

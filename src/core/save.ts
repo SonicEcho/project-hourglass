@@ -71,6 +71,8 @@ export interface SaveContext {
   flow: Flow;
   /** 探索の区画（段階25） */
   areas: Record<string, AreaDef>;
+  /** なくなった出来事 → 代わりに続ける出来事（段階40。仮の「2-3：返す」を、カイの会話に替えた） */
+  renamedEvents?: Record<string, string>;
 }
 
 /** ある版のセーブを、次の版の形に直す手順（キーは直す前の版の番号） */
@@ -140,8 +142,9 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
   if (pendingReward !== null && typeof pendingReward !== 'string') return null;
   if (!isObject(raw.growth) || !isObject(raw.navi) || !isObject(raw.armory)) return null;
   if (typeof raw.event !== 'string' || !isObject(raw.vars)) return null;
-  // 今の流れにない出来事なら、最初の出来事から
-  const event = findEvent(ctx.flow, raw.event) ? raw.event : firstEventId(ctx.flow);
+  // なくなった出来事は代わりの出来事から。今の流れにない出来事なら、最初の出来事から
+  const renamed = ctx.renamedEvents?.[raw.event] ?? raw.event;
+  const event = findEvent(ctx.flow, renamed) ? renamed : firstEventId(ctx.flow);
   const growth = sanitizeGrowth(raw.growth, ctx);
   const armory = sanitizeArmory(raw.armory, ctx.weaponData);
   if (!growth || !armory) return null;

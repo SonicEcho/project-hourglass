@@ -84,7 +84,7 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
     case 'reshuffle':
       return `  捨て札${e.count}枚をシャッフルして山札へ`;
     case 'battleEnd':
-      return `戦闘終了：${e.outcome === 'victory' ? '勝利' : '敗北'}`;
+      return `戦闘終了：${e.outcome === 'victory' ? '勝利' : e.outcome === 'cutoff' ? '打ち切り（負け戦）' : '敗北'}`;
   }
 }
 

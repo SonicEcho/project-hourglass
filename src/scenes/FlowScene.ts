@@ -8,7 +8,8 @@ import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { stopAmbience } from '../audio/sound';
 import type { DialogueData } from './DialogueScene';
-import { advanceEvent, currentEvent, run, setEvent, setStoryVars } from './run';
+import { advanceEvent, currentEvent, run, setEvent, setExplore, setStoryVars } from './run';
+import type { BattleSceneData } from './BattleScene';
 import { screenBg } from '../ui/skin';
 import { notePlayEvent, setPlayTracking } from './playRecord';
 
@@ -29,6 +30,7 @@ const KIND_LABEL: Partial<Record<FlowEvent['kind'], string>> = {
   daily: '昼の日常（仮）',
   explore: '探索（仮）',
   return: '時間を返す（仮）',
+  battle: '戦闘（仮）',
 };
 
 export class FlowScene extends Phaser.Scene {
@@ -67,6 +69,13 @@ export class FlowScene extends Phaser.Scene {
       case 'return':
         this.scene.start('Return', { area: event.area });
         return;
+      case 'battle': {
+        // 物語の戦闘（段階40。カイの負け戦）。前の区画の探索は、返さずに終わったので片付ける。勝ち負けにかかわらず次の出来事へ
+        setExplore(null);
+        const next = { key: 'Flow', data: { done: true } satisfies FlowData };
+        this.scene.start('Battle', { encounter: { battle: event.battle!, win: next, lose: next } } satisfies BattleSceneData);
+        return;
+      }
       default:
         this.showPlaceholder(event);
     }

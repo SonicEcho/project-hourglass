@@ -36,11 +36,9 @@ export const CHAPTER2_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], u
 // 会話の出来事の id は、台本（scriptM1.ts・scriptM2.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
 // 昼の日常は日常の画面（段階24）、探索は探索の画面（段階25）、時間を返すのは返す画面（段階28）。
 // まだ中身のない出来事は仮の画面（段階34）：案内（note）を書く。中身を作る段階で案内を消す。
-// 段階36：仮の探索・時間を返すにも区画の id（area）を書く（返した翌日の場面を出すため）。2-3 の返す出来事は負け戦なので書かない（段階40で決める）
+// 段階36：仮の探索・時間を返すにも区画の id（area）を書く（返した翌日の場面を出すため）。2-3 は返す直前にカイに持ち去られるので、返す出来事の代わりに物語の戦闘（battle）を置いた（段階40）。2章の終わりまで、仮の画面はもうない
 
 const talk = (id: string, title: string): FlowEvent => ({ id, kind: 'dialogue', title });
-/** 仮の画面の会話（台本はまだない） */
-const talkTodo = (id: string, title: string, note: string): FlowEvent => ({ id, kind: 'dialogue', title, note });
 const day = (n: number): FlowEvent => ({ id: `day${n}`, kind: 'day', title: `${n}日目`, day: n });
 
 export const SLICE_FLOW: Flow = [
@@ -121,16 +119,22 @@ export const SLICE_FLOW: Flow = [
       talk('d6_return', '6日目：時間を返す'),
       day(7),
       { id: 'd7_free', kind: 'daily', title: '7日目：昼' },
-      talkTodo('d7_library', '7日目：夕暮れ・蔵書の棚', '7-B。「最後の打席」の砂時計。\n台本は段階40で入れる。'),
-      { id: 'a23_explore', kind: 'explore', area: 'a23', title: '2-3「最後の打席」：河川敷の探索', note: '平成10年の夏の河川敷のグラウンド。ホームベースの「スコアボードのぬし」。\n段階40で作る。' },
-      { id: 'a23_return', kind: 'return', title: '2-3：返す直前にカイ（負け戦）', note: '返す直前にカイが現れる。負けても話は進み、「最後の打席」は持ち去られる。\n段階40で作る。' },
-      talkTodo('d7_taken', '7日目：持ち去られる', '7-C。カイとノア（ハルトたちのいない場面）、空いた棚。最後に「7日目　おわり」。\n台本は段階40で入れる。'),
+      talk('d7_library', '7日目：夕暮れ・蔵書の棚'),
+      // 2-3 の区画（段階40。areas.ts の AREAS の a23）。ボスに勝ってコマがそろった後、返す直前にカイが現れる（負け戦）。2-3 は返せないので、返す出来事はない
+      talk('a23_enter', '2-3：河川敷に入る'),
+      { id: 'a23_explore', kind: 'explore', area: 'a23', title: '2-3「最後の打席」：河川敷の探索' },
+      talk('d7_kai', '7日目：返す直前にカイ'),
+      { id: 'a23_kai', kind: 'battle', battle: 'a23_kai', title: '2-3：カイとの戦い（負け戦）' },
+      talk('d7_taken', '7日目：持ち去られる'),
       day(8),
-      talkTodo('d8_classroom', '8日目：朝の教室', '8-A。時計の秒針が、また三秒止まる。\n台本は段階40で入れる。'),
+      talk('d8_classroom', '8日目：朝の教室'),
       { id: 'd8_free', kind: 'daily', title: '8日目：昼' },
-      talkTodo('d8_evening', '8日目：夕暮れ・2章の終わり', '8-C。棚は空いたまま。遠くに白い人影、奥から祭囃子。最後に「第2章　おわり」。\n台本は段階40で入れる。'),
+      talk('d8_evening', '8日目：夕暮れ・2章の終わり'),
       // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、3日目から続く
       { id: 'ch2_end', kind: 'end', title: 'つづく' },
     ],
   },
 ];
+
+/** なくなった出来事 → セーブを読む時に代わりに続ける出来事（段階40。仮の画面だった「2-3：返す直前にカイ」は、カイの会話から） */
+export const RENAMED_EVENTS: Record<string, string> = { a23_return: 'd7_kai' };

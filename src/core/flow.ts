@@ -12,8 +12,10 @@ export type FlowEventKind =
   | 'daily'
   /** 探索の区画（段階25。区画は data の AREAS） */
   | 'explore'
-  /** 時間を返す（段階28で作る。今は仮の画面） */
+  /** 時間を返す（段階28） */
   | 'return'
+  /** 物語の戦闘（段階40。2-3 の返す直前のカイの負け戦）。battle は区画の戦闘（data の AREA_BATTLES）の id。勝ち負けにかかわらず次の出来事へ */
+  | 'battle'
   /** 「つづく」（スライスの終わり） */
   | 'end';
 
@@ -29,6 +31,8 @@ export interface FlowEvent {
   note?: string;
   /** explore・return の時：探索する区画・時間を返す区画（data の AREAS の id）。仮の画面でも書いておく（段階36：返した翌日の場面に使う） */
   area?: string;
+  /** battle の時：戦う区画の戦闘の id（段階40） */
+  battle?: string;
 }
 
 export interface FlowChapter {
@@ -167,6 +171,7 @@ export function checkFlow(flow: Flow): string[] {
     seen.add(e.id);
     if (e.kind === 'day' && !(Number.isInteger(e.day) && e.day! >= 1)) errors.push(`日が変わる出来事に日の番号がない：${e.id}`);
     if (isPlaceholder(e) && !e.note) errors.push(`仮の画面に案内がない：${e.id}`);
+    if (e.kind === 'battle' && !e.battle) errors.push(`戦闘の出来事に戦闘の id がない：${e.id}`);
   }
   const last = all[all.length - 1];
   if (last && last.kind !== 'end') errors.push('最後の出来事が「つづく」ではない');

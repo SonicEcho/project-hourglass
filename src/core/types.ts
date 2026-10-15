@@ -195,6 +195,17 @@ export interface BattleSetup {
    * 書いていない仲間は全回復で始まる。最大を超える分は最大にそろえる
    */
   vitals?: Record<string, Vitals>;
+  /** 負け戦（段階40）：決まったラウンドか、敵の HP が決まった割合を切った所で打ち切る */
+  cutoff?: BattleCutoff;
+}
+
+/**
+ * 負け戦の打ち切り（段階40。2-3 のカイ）。勝てない強さにはせず、rounds ラウンド目の終わりか、
+ * どれかの敵の HP が最大の enemyHpRatio を切った時に終わる（outcome は cutoff）。仲間が全員倒れた時も cutoff（全滅の画面は出さない）
+ */
+export interface BattleCutoff {
+  rounds: number;
+  enemyHpRatio: number;
 }
 
 /** 戦闘をまたいで持ち越す HP・MP */
@@ -308,7 +319,8 @@ export interface ExtraTurn {
  */
 export type Phase = 'plan' | 'execute' | 'extra' | 'ended';
 
-export type Outcome = 'ongoing' | 'victory' | 'defeat';
+/** cutoff は負け戦の打ち切り（段階40） */
+export type Outcome = 'ongoing' | 'victory' | 'defeat' | 'cutoff';
 
 export type LogEvent =
   | { type: 'battleStart'; seed: number }
@@ -383,6 +395,8 @@ export interface BattleState {
   extra: ExtraTurn | null;
   /** 連携技のつながりゲージ（0〜LINK_GAUGE_MAX。満タンで連携技を使える。段階26の調整2） */
   linkGauge: number;
+  /** 負け戦の打ち切り（段階40） */
+  cutoff?: BattleCutoff;
   outcome: Outcome;
   log: LogEvent[];
 }

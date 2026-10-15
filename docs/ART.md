@@ -694,6 +694,63 @@ At the top, a raised wooden stage with curtains pulled aside, a drum set, guitar
 
 （届いたら：台帳に `map.school_*` を書き、`src/data/rooms.ts` の 2-2 の部屋に `image` を足す。絵と歩ける場所がずれていたら、文字の地図を絵に合わせて直す）
 
+#### 6-4. 2-3 の河川敷のグラウンドの部屋（段階40。2026-10-15）
+
+2-3 も、10. の縦長の地図1枚の代わりに、部屋6つ（正方形5つ・縦長1つ）で作る。並びは 土手の道 → ベンチの裏の木陰（右に寄り道の川べり）→ 売店のテント（左に寄り道の用具小屋の裏）→ ダイヤモンド。下絵は `docs/sketches/room_riverside_*.png`。頼み方（地図の頭、正方形・縦長の替え方、共通の2文、出入口の文、1枚目を絵柄の見本に付ける）は 6-3 と同じ。色は `bright summer colors, clear blue sky and light blue accents, 1998`。
+
+| 部屋 | 形 | 出入口 | 下絵 | 台帳の id（届いたら） |
+| --- | --- | --- | --- | --- |
+| 土手の道 | 正方形 | 上 | `room_riverside_levee.png` | `map.riverside_levee` |
+| ベンチの裏の木陰 | 縦長 | 下・上・右 | `room_riverside_bench.png` | `map.riverside_bench` |
+| 川べり（寄り道） | 正方形 | 左 | `room_riverside_bank.png` | `map.riverside_bank` |
+| 売店のテント | 正方形 | 下・上・左 | `room_riverside_stand.png` | `map.riverside_stand` |
+| 用具小屋の裏（寄り道） | 正方形 | 右 | `room_riverside_shed.png` | `map.riverside_shed` |
+| ダイヤモンド | 正方形 | 下 | `room_riverside_diamond.png` | `map.riverside_diamond` |
+
+土手の道（出入口：上）
+
+```
+Scene: the bottom of a grassy river embankment next to a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+A wide dirt path runs along the foot of the embankment from the lower left to the right, then a gentle slope path climbs up along the right side and turns left to leave through the top edge. Tall summer grass and a few parked bicycles on the embankment, a small grassy hollow on the left with a wooden bench.
+```
+
+ベンチの裏の木陰（出入口：下・上・右）
+
+```
+Scene: the area behind the team bench of a riverside little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+In the lower part, a long wooden team bench with a small roof (as in the sketch). In the middle, a big shady tree with dappled shadows and a cooler box under it. Paths lead out through the bottom edge (to the embankment), the top edge (to the concession tent) and the right edge (to the riverbank). Cicada-filled summer mood.
+```
+
+川べり（寄り道。出入口：左）
+
+```
+Scene: a quiet riverbank next to a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+The river runs along the whole right side (not walkable, sparkling water). A sandy and grassy bank with three clumps of tall reeds and summer grass (as in the sketch), a few stray baseballs in the grass, an old bucket. The entrance comes in from the left edge.
+```
+
+売店のテント（出入口：下・上・左）
+
+```
+Scene: a small white concession tent beside a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+The tent with folding tables, a tub of ice water with floating ramune bottles (blank labels), shade umbrellas. An open dirt area in front of the tent. Paths lead out through the bottom edge, the top edge (toward the diamond) and the left edge (toward the equipment shed).
+```
+
+用具小屋の裏（寄り道。出入口：右）
+
+```
+Scene: the back of a small wooden equipment shed beside a little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer colors.
+Narrow passages divided by a long practice net and stacks of bat boxes and base bags (two long dividers as in the sketch), a roller for the field, buckets of balls. The entrance comes in from the right edge. A dead-end corner at the top left.
+```
+
+ダイヤモンド（出入口：下）
+
+```
+Scene: the infield of a little league baseball field by a river in a Japanese town on a bright summer afternoon in 1998, seen from above, bright summer colors.
+At the top, home plate in front of a tall backstop net, with the ends of the net at the upper corners (as in the sketch). Below, the dirt infield with bases and white chalk lines, the pitcher's mound. A wooden scoreboard (blank panels, no numbers) is visible beyond the backstop. The entrance comes in from the bottom edge.
+```
+
+（届いたら：台帳に `map.riverside_*` を書き、`src/data/rooms.ts` の 2-3 の部屋に `image` を足す）
+
 ### 7. 1枚絵：親方の背中（2-1-8）
 
 写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に
@@ -766,7 +823,7 @@ Eye-level camera from behind home plate, looking toward the outfield.
 
 ### 10. 地図：2-2 の文化祭の高校、2-3 の河川敷のグラウンド
 
-（2-2 は段階39b で部屋6つに分けた。2-2 は下の文ではなく 6-3 で頼む）
+（2-2 は段階39b、2-3 は段階40 で部屋6つに分けた。下の文ではなく 6-3・6-4 で頼む）
 
 2-2（入口の校門のアーチ → 模擬店の中庭 → 音楽室の前の廊下 → 体育館のステージ）：地図の頭の後に
 

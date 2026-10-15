@@ -15,7 +15,7 @@ export const TOWN: Record<string, DailyPlaceInfo> = {
   home: { id: 'home', name: '施設', backdrop: 'home_kitchen', mapX: 305, mapY: 330 },
   factory: { id: 'factory', name: '工場', backdrop: 'factory_now', mapX: 85, mapY: 460 },
   street: { id: 'street', name: '商店街', backdrop: 'shopping_street', mapX: 195, mapY: 460 },
-  bakery: { id: 'bakery', name: 'パン屋', backdrop: 'shopping_street', mapX: 305, mapY: 460 },
+  bakery: { id: 'bakery', name: 'パン屋', backdrop: 'bakery', mapX: 305, mapY: 460 },
   convenience: { id: 'convenience', name: 'コンビニ', backdrop: 'convenience_store', mapX: 85, mapY: 590 },
   clockshop: { id: 'clockshop', name: '時計屋', backdrop: 'clock_shop', mapX: 305, mapY: 590 },
 };

@@ -1,5 +1,5 @@
 import { usableLinks } from '../core/lineup';
-import type { BattleSetup, CharacterDef, EnemyDef } from '../core/types';
+import type { BattleCutoff, BattleSetup, CharacterDef, EnemyDef } from '../core/types';
 import { buildFolder } from './cards';
 import { COMBOS } from './combos';
 import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
@@ -51,6 +51,8 @@ export interface CampaignBattle {
   /** 勝った時に手に入るコマ（区画の戦闘。盗まれた時間を返すのに使う。段階28） */
   koma?: number;
   boss?: boolean;
+  /** 負け戦（段階40）：決まったラウンドか、敵の HP の割合で打ち切る（勝ちも全滅もない） */
+  cutoff?: BattleCutoff;
   /** 勝った時に選べるギアの候補（段階8。この中から NAVI_REWARD_PICKS 個） */
   naviReward?: NaviPartId[];
 }
@@ -79,5 +81,6 @@ export function createCampaignSetup(battle: CampaignBattle, seed: number, allies
     links: usableLinks(LINKS, allies.map((a) => a.id)),
     combos: COMBOS,
     seed,
+    ...(battle.cutoff ? { cutoff: battle.cutoff } : {}),
   };
 }

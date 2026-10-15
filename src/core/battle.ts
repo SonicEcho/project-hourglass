@@ -136,6 +136,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     queue: [],
     extra: null,
     linkGauge: 0,
+    ...(setup.cutoff ? { cutoff: { ...setup.cutoff } } : {}),
     outcome: 'ongoing',
     log: [{ type: 'battleStart', seed: setup.seed }],
   };
@@ -296,18 +297,33 @@ function startRound(s: BattleState): void {
 function endRound(s: BattleState): void {
   for (const u of [...s.allies, ...s.enemies]) u.guarding = false;
   s.log.push({ type: 'roundEnd', round: s.round });
+  // 負け戦は、決まったラウンドの終わりで打ち切る（段階40）
+  if (s.cutoff && s.round >= s.cutoff.rounds) {
+    endBattle(s, 'cutoff');
+    return;
+  }
   startRound(s);
 }
 
 function updateOutcome(s: BattleState): void {
   if (s.outcome !== 'ongoing') return;
-  if (livingEnemies(s).length === 0) s.outcome = 'victory';
-  else if (livingAllies(s).length === 0) s.outcome = 'defeat';
-  else return;
+  if (s.cutoff) {
+    // 負け戦：敵の HP が決まった割合を切るか、どちらかが倒れ切ったら打ち切り（勝ちも全滅もない）
+    const cutoff = s.cutoff;
+    const done = livingEnemies(s).length === 0 || livingAllies(s).length === 0 || s.enemies.some((e) => e.hp < e.maxHp * cutoff.enemyHpRatio);
+    if (done) endBattle(s, 'cutoff');
+    return;
+  }
+  if (livingEnemies(s).length === 0) endBattle(s, 'victory');
+  else if (livingAllies(s).length === 0) endBattle(s, 'defeat');
+}
+
+function endBattle(s: BattleState, outcome: Exclude<BattleState['outcome'], 'ongoing'>): void {
+  s.outcome = outcome;
   s.phase = 'ended';
   s.queue = [];
   s.extra = null;
-  s.log.push({ type: 'battleEnd', outcome: s.outcome });
+  s.log.push({ type: 'battleEnd', outcome });
 }
 
 // ---- 行動の解決 ----

@@ -299,6 +299,24 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(storms + boss).toBeGreaterThanOrEqual(area.komaNeed);
   });
 
+  it('2-3（段階40）は部屋をつなぐ形で、ダイヤモンドへは番人を倒すと入れる。返す出来事の代わりに、カイの負け戦（物語の戦闘）が続く', async () => {
+    const { AREAS, AREA_BATTLES, SLICE_FLOW } = await import('../src/data');
+    const { flowEvents, reachableCells } = await import('../src/core');
+    const area = AREAS.a23;
+    expect(area.rooms).toHaveLength(6);
+    expect(Object.keys(reachableCells(area)).sort()).toEqual(area.rooms.map((r) => r.id).sort());
+    expect(area.links?.find((l) => l.b.room === 'riverside_diamond')?.opensWhen).toBe('a23_e_gate');
+    const events = flowEvents(SLICE_FLOW);
+    // 物語の戦闘は区画の戦闘を指し、打ち切り（負け戦）がある
+    for (const e of events.filter((x) => x.kind === 'battle')) expect(AREA_BATTLES[e.battle ?? '']?.cutoff, e.id).toBeDefined();
+    const i = events.findIndex((e) => e.id === 'a23_explore');
+    expect(events.slice(i + 1, i + 4).map((e) => e.kind)).toEqual(['dialogue', 'battle', 'dialogue']);
+    expect(events.some((e) => e.kind === 'return' && e.area === 'a23')).toBe(false);
+    // 2章の終わりまで、仮の画面はない
+    const { isPlaceholder } = await import('../src/core');
+    expect(events.filter((e) => isPlaceholder(e)).map((e) => e.id)).toEqual([]);
+  });
+
   it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {
     const { AREA_BATTLES, CHAPTER1_LINEUP, PARTY, createCampaignSetup } = await import('../src/data');
     const { createBattle, lineupMembers } = await import('../src/core');

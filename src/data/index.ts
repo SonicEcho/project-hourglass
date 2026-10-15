@@ -9,6 +9,7 @@ export * from './festivalEnemies';
 export * from './showaEnemies';
 export * from './factoryEnemies';
 export * from './schoolEnemies';
+export * from './riversideEnemies';
 export * from './enemyArt';
 export * from './encounters';
 export * from './growthMap';
