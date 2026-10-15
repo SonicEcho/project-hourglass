@@ -34,6 +34,8 @@ export interface DailySpot {
   confirm?: string;
   /** 絆の出来事の相手（段階35。resolveHub が絆の出来事から作る印に付く） */
   partner?: string;
+  /** この印の前に見ておく印の id（段階36。「工場の後に楽器店」。その印がその日に出ていて、まだ見ていなければ、まだ選べない） */
+  after?: string;
 }
 
 export interface DailyPlace {
@@ -88,6 +90,23 @@ export interface BondEvent {
 }
 
 /**
+ * 返した翌日に持ち主に会う出来事（段階36）。区画の時間を返した次の日の昼に、必ず見る出来事として、その場所に出る。
+ * id は会話の場面の id と同じ（見たかどうかを、この id で覚える）
+ */
+export interface ReturnVisit {
+  /** 返した区画の id */
+  area: string;
+  id: string;
+  /** 印の名前（「来る日じゃないのに」など） */
+  label: string;
+  /** 出る場所の id（町の地図の場所） */
+  place: string;
+  /** 場所の絵の上の位置 */
+  x: number;
+  y: number;
+}
+
+/**
  * 印の今の状態：見た／見られる／まだ見られない（必ず見る出来事が残っている時の、日を進める印）／
  * 今日はもう時間がない（段階35。昼に選べる回数を使い切った後の、絆の出来事と小話）
  */
@@ -116,9 +135,16 @@ export function requiredLeft(hub: DailyHub, vars: Record<string, string>): Daily
   return allSpots(hub).filter((s) => s.required && !isSeen(vars, s.id));
 }
 
+/** この印の前に見ておく、まだ見ていない印（日を進める印は、必ず見る出来事の残り。段階36：after の印） */
+export function blockers(hub: DailyHub, vars: Record<string, string>, spot: DailySpot): DailySpot[] {
+  if (spot.ends) return requiredLeft(hub, vars);
+  if (!spot.after || isSeen(vars, spot.after)) return [];
+  return allSpots(hub).filter((s) => s.id === spot.after);
+}
+
 export function spotState(hub: DailyHub, vars: Record<string, string>, spot: DailySpot): SpotState {
   if (isSeen(vars, spot.id) && !spot.ends) return 'seen';
-  if (spot.ends && requiredLeft(hub, vars).length > 0) return 'locked';
+  if (blockers(hub, vars, spot).length > 0) return 'locked';
   if (usesPick(spot) && picksLeft(hub, vars) <= 0) return 'spent';
   return 'open';
 }
@@ -163,8 +189,22 @@ export function bondLevel(vars: Record<string, string>, events: readonly BondEve
   return events.filter((e) => isSeen(vars, e.id)).length;
 }
 
+// ---- 返した翌日に持ち主に会う（段階36） ----
+
+/** その日に出る、返した翌日の出来事（returnDays：区画の id → 返した日。flow.ts の returnDays） */
+export function visitsFor(hub: DailyHub, visits: readonly ReturnVisit[], returnDays: Readonly<Record<string, number>>): ReturnVisit[] {
+  if (hub.day === undefined) return [];
+  return visits.filter((v) => returnDays[v.area] !== undefined && returnDays[v.area] + 1 === hub.day);
+}
+
+/** 返した翌日の出来事の印（必ず見る出来事） */
+export function visitSpot(v: ReturnVisit): DailySpot {
+  return { id: v.id, scene: v.id, label: v.label, mark: 'main', x: v.x, y: v.y, required: true };
+}
+
 /**
  * その日の日常を、今の値で組み立てる（段階35）：会える相手ごとに、絆の出来事の印をその場所に足す。
+ * 段階36：返した翌日の出来事（visits。visitsFor で選んだもの）も、必ず見る出来事としてその場所の先頭に足す。
  * 日常のデータにない場所は町の地図（town）から足す（日を進める印のある場所より前に入れる）。印のない場所は出さない
  */
 export function resolveHub(
@@ -172,21 +212,25 @@ export function resolveHub(
   vars: Record<string, string>,
   bonds: Readonly<Record<string, readonly BondEvent[]>>,
   town: Readonly<Record<string, DailyPlaceInfo>>,
+  visits: readonly ReturnVisit[] = [],
 ): DailyHub {
   const places: DailyPlace[] = hub.places.map((p) => ({ ...p, spots: [...p.spots] }));
+  /** その場所（日常のデータになければ、町の地図から足す） */
+  const placeOf = (id: string): DailyPlace | undefined => {
+    const found = places.find((p) => p.id === id);
+    if (found) return found;
+    const info = town[id];
+    if (!info) return undefined;
+    const place: DailyPlace = { ...info, spots: [] };
+    const goAt = places.findIndex((p) => p.spots.some((s) => s.ends));
+    places.splice(goAt < 0 ? places.length : goAt, 0, place);
+    return place;
+  };
+  for (const v of visits) placeOf(v.place)?.spots.unshift(visitSpot(v));
   for (const partner of hub.partners ?? []) {
     const ev = bondEventFor(hub, vars, partner, bonds[partner] ?? []);
     if (!ev) continue;
-    const spot: DailySpot = { id: ev.id, scene: ev.id, label: ev.label, mark: 'bond', x: ev.x, y: ev.y, partner };
-    let place = places.find((p) => p.id === ev.place);
-    if (!place) {
-      const info = town[ev.place];
-      if (!info) continue;
-      place = { ...info, spots: [] };
-      const goAt = places.findIndex((p) => p.spots.some((s) => s.ends));
-      places.splice(goAt < 0 ? places.length : goAt, 0, place);
-    }
-    place.spots.push(spot);
+    placeOf(ev.place)?.spots.push({ id: ev.id, scene: ev.id, label: ev.label, mark: 'bond', x: ev.x, y: ev.y, partner });
   }
   return { ...hub, places: places.filter((p) => p.spots.length > 0) };
 }
@@ -220,6 +264,21 @@ export function checkDailyHub(hub: DailyHub): string[] {
   }
   const canEnd = spots.some((s) => s.ends) || (hub.finishWhenRequiredSeen && spots.some((s) => s.required));
   if (!canEnd) errors.push(`${hub.id}：日常を終える印がない`);
+  return errors;
+}
+
+/** 返した翌日の出来事の書き間違い（場所がない、同じ id、同じ区画が2つ）を、全部まとめて返す（テストで使う。段階36） */
+export function checkVisits(visits: readonly ReturnVisit[], town: Readonly<Record<string, DailyPlaceInfo>>): string[] {
+  const errors: string[] = [];
+  const ids = new Set<string>();
+  const areas = new Set<string>();
+  for (const v of visits) {
+    if (ids.has(v.id)) errors.push(`同じ id の返した翌日の出来事が2つある：${v.id}`);
+    if (areas.has(v.area)) errors.push(`同じ区画の返した翌日の出来事が2つある：${v.area}`);
+    ids.add(v.id);
+    areas.add(v.area);
+    if (!town[v.place]) errors.push(`町の地図にない場所：${v.id} ${v.place}`);
+  }
   return errors;
 }
 

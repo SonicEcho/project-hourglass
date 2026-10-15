@@ -1,6 +1,6 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addParts, defeatEnemy, flowEvents } from '../core';
+import { addItems, addParts, defeatEnemy, flowEvents, nextEvent } from '../core';
 import { AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
@@ -155,6 +155,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.active = true;
         // 探索の途中なら、探索を終えたことにする
         if (run.explore) setExplore(null);
+        markReturnedBefore(nextEvent(SLICE_FLOW, run.event)?.id ?? run.event);
         advanceEvent();
         nav.openFlow();
       }),
@@ -172,6 +173,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         run.active = true;
         if (run.explore) setExplore(null);
+        markReturnedBefore(eventSelect.value);
         setEvent(eventSelect.value);
         nav.openFlow();
       }),
@@ -311,4 +313,12 @@ export function installDebugMenu(nav: DebugNavigator): void {
     render();
     panel.style.display = 'block';
   });
+}
+
+/** 飛ばした「時間を返す」出来事は、返したことにする（段階36：返した翌日に持ち主に会う場面が出るように）。前へ戻っても消さない */
+function markReturnedBefore(id: string): void {
+  const all = flowEvents(SLICE_FLOW);
+  for (const e of all.slice(0, Math.max(0, all.findIndex((x) => x.id === id)))) {
+    if (e.kind === 'return' && e.area && AREAS[e.area] && !run.returned.includes(e.area)) run.returned = [...run.returned, e.area];
+  }
 }
