@@ -588,6 +588,46 @@ Layout from bottom to top:
 - Utility poles, snow piles, barrels and stacked wood along the edges.
 ```
 
+#### 6-2. 2-1 の手直しと寄り道の部屋（段階47。2026-10-15、開発者が手直しすると決めた）
+
+今の 2-1 の地図は辺の真ん中に開いた所がないので、銭湯の前の広場の左右（行 19〜22。絵の高さの真ん中、幅は絵の6分の1）を開け、そこへ正方形の寄り道の部屋を2つつなぐ。下絵は `docs/sketches/`（`scripts/room_sketch.mjs` で作った）。
+
+| 絵 | ChatGPT に付ける絵 | 台帳の id（届いたら） |
+| --- | --- | --- |
+| 2-1 の地図の手直し（左右の辺を開ける） | 今の地図 `public/assets/maps/factory_alley.webp` と、開ける所を青く塗った `docs/sketches/factory_alley_openings.jpg` | `map.factory_alley`（差し替え） |
+| 寄り道1「雪の資材置き場」（左の辺の先。出入口は右の辺） | `docs/sketches/room_factory_yard.png`、今の 2-1 の地図（絵柄の見本） | `map.factory_yard` |
+| 寄り道2「銭湯の裏の路地」（右の辺の先。出入口は左の辺） | `docs/sketches/room_bath_alley.png`、今の 2-1 の地図（絵柄の見本） | `map.bath_alley` |
+
+2-1 の地図の手直し（今の地図を付けて、編集として頼む。地図の頭は付けない）
+
+```
+Edit the attached map illustration. Keep everything exactly the same (style, colors, buildings, layout, size 768x1376), except for the two areas painted blue in the second attached image.
+In each blue area, replace the buildings with snowy ground so that a path opens from the open space in front of the bathhouse straight out to the left edge and to the right edge of the image. Each path is as wide as the blue area (one sixth of the image height) and leads out of the image. Line the new paths with low snow piles, a few barrels or a fence, so they look natural.
+Absolutely no letters or text anywhere.
+```
+
+寄り道1「雪の資材置き場」：地図の頭の後に（`Vertical 9:16 image.` を `Square 1:1 image (1024x1024).` に替える）
+
+```
+Scene: a snowy materials yard behind a small machine workshop in a Japanese town at winter dusk in 1969, sepia-tinted retro colors with white snow, the same art style as the attached map.
+An opening at the center of the right edge, one sixth of the image height wide, leading out of the image. All other edges are closed by wooden fences, sheds and snowy trees.
+Inside: stacks of steel bars and pipes under snow, oil drums, a small shed, piles of wood crates, footprints in the snow. A small dead-end corner at the top left.
+Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the opening.
+Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs are blank.
+```
+
+寄り道2「銭湯の裏の路地」：地図の頭の後に（同じく正方形に替える）
+
+```
+Scene: a narrow winding back alley behind a public bathhouse in a Japanese town at winter dusk in 1969, sepia-tinted retro colors with white snow, the same art style as the attached map.
+An opening at the center of the left edge, one sixth of the image height wide, leading out of the image. All other edges are closed by wooden walls, the bathhouse back wall and snowy trees.
+Inside: a narrow path winding up, right and down between wooden walls, the bathhouse boiler with a tall chimney and rising steam, stacked firewood, buckets, a dead end at the bottom right.
+Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the opening.
+Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs are blank.
+```
+
+（届いたら：今の 2-1 の文字の地図の左右を開け、寄り道の部屋2つを `src/data/rooms.ts` に足して 2-1 の区画につなぐ。寄り道1には逃げる敵と宝箱、寄り道2には追ってくる敵と宝箱を置き、今の 2-1 の宝箱2つの一方を寄り道へ移す。勝率を測り直す）
+
 ### 7. 1枚絵：親方の背中（2-1-8）
 
 写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に
