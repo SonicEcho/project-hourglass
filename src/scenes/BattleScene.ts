@@ -4,7 +4,6 @@ import { autoExtra, autoPlan, lcg } from '../sim/autoBattle';
 import { extraByTactic, isTactic, planByTactic, type Tactic, TACTICS } from '../sim/tactics';
 import type { ActionDef, ActionPreview, AllyUnit, Bark, BarkMemory, BattleState, CardInstance, ComboDef, LinkDef, LogEvent, PlayerAction, Progress, TargetRef, TargetScope } from '../core';
 import {
-  addParts,
   advance,
   applyExtra,
   battleReward,
@@ -43,7 +42,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, createCampaignSetup, GUARD, NAVI_DATA, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
@@ -1372,11 +1371,9 @@ export class BattleScene extends Phaser.Scene {
     if (this.state.links.length > 0) setStoryLinkGauge(this.state.linkGauge);
     // 残った HP・MP は、区画の中の次の戦闘へ持ち越す（段階32b 調整3）
     if (run.explore) run.explore = keepVitals(run.explore, vitalsAfter(this.state));
-    // ムーブメントが閉じている間は、ギアを渡さず、盤の色（傾向）も貯めない（段階26）。開いていれば、戦闘に決まったギアがそのまま手に入る（段階38）
+    // ギアの報酬は出さない（ギアは宝箱と出来事のごほうびで手に入る。段階38）。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
     const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];
-    const gears = this.lineup.unlocks.navi ? (def.gears ?? []) : [];
-    if (gears.length > 0) run.navi = addParts(run.navi, gears);
     run.armory = recordVictory(run.armory, {
       actions: result.actionCounts,
       colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
@@ -1389,8 +1386,7 @@ export class BattleScene extends Phaser.Scene {
     const counts = new Map<string, number>();
     for (const d of drops) counts.set(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`, (counts.get(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`) ?? 0) + 1);
     const dropList = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
-    const gearText = gears.length > 0 ? `\nギア：${gears.map((g) => NAVI_DATA.parts[g]?.name ?? g).join('、')}` : '';
-    const dropText = `素材：${dropList || 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}${gearText}`;
+    const dropText = `素材：${dropList || 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}`;
     if (drops.some((d) => d.kind === 'rare')) {
       const rare = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, '★ レア！', { size: 30, bold: true, color: COLORS.accentText }).setOrigin(0.5);
       rare.setStroke('#5a3a00', 6);

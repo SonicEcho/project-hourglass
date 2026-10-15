@@ -116,8 +116,8 @@ function enemiesPage(): string {
     [
       '区画の戦闘（探索。段階25・27）',
       table(
-        ['戦闘（id）', '敵', '星の砂', 'アイテム', 'ギア（段階38。ムーブメントが開いている時）'],
-        Object.values(AREA_BATTLES).map((b) => [`${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―', (b.gears ?? []).map(partName).join('、') || '―']),
+        ['戦闘（id）', '敵', '星の砂', 'アイテム'],
+        Object.values(AREA_BATTLES).map((b) => [`${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―']),
       ),
     ],
     ['部位', parts.length ? table(['敵', '部位', 'HP', '壊すと封じる行動', '壊すと露出する弱点', '素材（表示のみ）', 'ギア（表示のみ）'], parts) : 'なし'],

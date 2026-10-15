@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { AreaDef, AreaTrigger, ExploreState, GridCell, GridMap } from '../core';
 import {
+  addParts,
   exploreTipTriggers,
   addItems,
   addKoma,
@@ -20,13 +21,14 @@ import {
   openChest,
   patrolRoute,
   pendingTrigger,
+  triggerGears,
   startExplore,
   usableLinks,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, AREA_ENEMY_STEP_MS, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
+import { AREA_BATTLES, AREA_ENEMY_STEP_MS, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -132,6 +134,12 @@ export class ExploreScene extends Phaser.Scene {
     if (data.lost) {
       state = loseBattle(state);
       note = 'チェックポイントへ戻った';
+    }
+    // 会話のごほうびのギア（段階38。2-1 の銭湯の前で、みおが拾った歯車など）
+    const gears = data.seen ? triggerGears(area, state, data.seen) : [];
+    if (gears.length > 0) {
+      run.navi = addParts(run.navi, gears);
+      note = `ギアを手に入れた！　${gearNames(gears)}`;
     }
     if (data.seen) state = markTrigger(state, data.seen);
     this.state = state;
@@ -526,9 +534,11 @@ export class ExploreScene extends Phaser.Scene {
     if (!r) return;
     this.state = r.state;
     run.armory = addItems(run.armory, r.chest.items);
+    const gears = r.chest.gears ?? [];
+    if (gears.length > 0) run.navi = addParts(run.navi, gears);
     this.chestSprites.get(r.chest.id)?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
-    this.say(`宝箱を開けた！　${summarize(r.chest.items)}`);
+    this.say(`宝箱を開けた！　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : ''].filter(Boolean).join('　')}`);
     setExplore(this.state);
   }
 
@@ -635,6 +645,11 @@ function hubLabel(): string {
 /** 2つのマスが、range マス以内（縦横斜め）か */
 function near(a: GridCell, b: GridCell, range: number): boolean {
   return Math.abs(a[0] - b[0]) <= range && Math.abs(a[1] - b[1]) <= range;
+}
+
+/** ギアの名前を「、」でつなぐ */
+function gearNames(ids: string[]): string {
+  return ids.map((id) => NAVI_DATA.parts[id]?.name ?? id).join('、');
 }
 
 /** 「スライムゼリー×2、ポーション」のようにまとめる */

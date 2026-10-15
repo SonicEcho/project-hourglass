@@ -4,11 +4,12 @@ import type { GridCell, GridMap } from './grid';
 import type { Vitals } from './types';
 import { findPath, isWalkable, parseGrid } from './grid';
 
-/** 宝箱：開けると素材・アイテムが持ち物に入る */
+/** 宝箱：開けると素材・アイテムが持ち物に入る。gears はムーブメントのギア（段階38。ギアは戦闘では落とさず、宝箱と出来事のごほうびで手に入る） */
 export interface AreaChest {
   id: string;
   cell: GridCell;
   items: string[];
+  gears?: string[];
 }
 
 /** 敵の印：決まった道を行き来する。触れると戦闘（battle は区画の戦闘の id） */
@@ -34,8 +35,9 @@ export interface AreaTalker {
   label: string;
 }
 
-/** 探索の途中の会話のきっかけ（1回だけ） */
-export type AreaTrigger =
+/** 探索の途中の会話のきっかけ（1回だけ）。gears を書くと、その会話を見た時にごほうびのギアが手に入る（段階38。2-1 でみおが拾った歯車など） */
+export type AreaTrigger = AreaTriggerKind & { gears?: string[] };
+type AreaTriggerKind =
   /** 敵に n 回勝った時。after を書くと、その会話を見た後だけ（段階37。1-2 の「時計屋の後の戦闘」） */
   | { on: 'wins'; count: number; scene: string; after?: string }
   /** 返すのに要るコマの残りが left 以下になった時（まだそろっていない時。段階28） */
@@ -218,6 +220,12 @@ export function komaExtra(area: AreaDef, state: ExploreState): number {
 /** 会話に渡す、コマの値（台本の {komaHave} {komaNeed} {komaLeft}） */
 export function komaVars(area: AreaDef, state: ExploreState): Record<string, string> {
   return { komaHave: String(Math.min(state.koma, area.komaNeed)), komaNeed: String(area.komaNeed), komaLeft: String(komaLeft(area, state)) };
+}
+
+/** 会話を見た時に手に入るごほうびのギア（段階38）。もう見た会話・ごほうびのない会話は空（同じごほうびを2回渡さないよう、markTrigger の前に呼ぶ） */
+export function triggerGears(area: AreaDef, state: ExploreState, scene: string): string[] {
+  if (state.seen.includes(scene)) return [];
+  return area.triggers.find((t) => t.scene === scene)?.gears ?? [];
 }
 
 export function markTrigger(state: ExploreState, scene: string): ExploreState {

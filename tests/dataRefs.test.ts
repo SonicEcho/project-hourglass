@@ -249,18 +249,16 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(ch2.slice(0, join).some((e) => e.kind === 'explore')).toBe(false);
   });
 
-  it('区画の戦闘のギア（段階38）は、ムーブメントが開いている章の区画の、ボスでない戦闘だけ', async () => {
-    const { AREA_BATTLES, AREAS, NAVI_PARTS, SLICE_FLOW } = await import('../src/data');
+  it('ギア（段階38）は戦闘では落とさず、ムーブメントが開いている章の区画の、宝箱と会話のごほうびで手に入る', async () => {
+    const { AREAS, NAVI_PARTS, SLICE_FLOW } = await import('../src/data');
     const naviAreas = new Set(SLICE_FLOW.filter((c) => c.lineup?.unlocks.navi).flatMap((c) => c.events.flatMap((e) => (e.kind === 'explore' && e.area ? [e.area] : []))));
-    for (const b of Object.values(AREA_BATTLES)) {
-      if (!b.gears) continue;
-      expect(b.boss, b.id).toBeFalsy();
-      for (const g of b.gears) expect(NAVI_PARTS[g], `${b.id} ${g}`).toBeDefined();
-      const area = Object.values(AREAS).find((a) => a.enemies.some((e) => e.battle === b.id));
-      expect(area && naviAreas.has(area.id), b.id).toBe(true);
+    for (const area of Object.values(AREAS)) {
+      const gears = [...area.chests.flatMap((c) => c.gears ?? []), ...area.triggers.flatMap((t) => t.gears ?? [])];
+      for (const g of gears) expect(NAVI_PARTS[g as keyof typeof NAVI_PARTS], `${area.id} ${g}`).toBeDefined();
+      if (gears.length > 0) expect(naviAreas.has(area.id), area.id).toBe(true);
     }
-    // 2-1 の最初の砂嵐はギアを落とす（2-1-4 で、みおが拾った歯車を見せる）
-    expect(AREA_BATTLES.a21_storm1.gears?.length).toBeGreaterThan(0);
+    // 2-1-4 で、みおが拾った歯車を渡す
+    expect(AREAS.a21.triggers.find((t) => t.scene === 'a21_checkpoint')?.gears?.length).toBeGreaterThan(0);
   });
 
   it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {

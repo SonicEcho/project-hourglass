@@ -44,12 +44,12 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 10, boss: true, koma: 2 },
   // 2-1 の町工場（段階38）。2-1 の砂嵐（歯車・ネジ・真空管・そろばんノイズ）と「旋盤のぬし」は段階39で作るので、それまでは 1-2 の昭和の砂嵐で代わりにする（仮）。
   // 3人になり、ムーブメントも開くので、1-2 より少し強くした。数値と勝率は段階39で決める。
-  // 並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。勝つと、決まったギアがそのまま手に入る（段階38）
-  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.potion.id, koma: 1, gears: ['speedMemory'] },
-  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [RAMUNE_NOISE, MENKO_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.ether.id, koma: 2, gears: ['thunderBoost'] },
-  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, koma: 2, gears: ['mpMemory'] },
-  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, item: ITEMS.hiPotion.id, koma: 2, gears: ['batonReceiver'] },
-  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.4)), reward: 8, koma: 2, gears: ['firstAid'] },
+  // 並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
+  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.potion.id, koma: 1 },
+  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [RAMUNE_NOISE, MENKO_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.ether.id, koma: 2 },
+  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, koma: 2 },
+  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
+  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.4)), reward: 8, koma: 2 },
   // ボスの代わり（仮）：旋盤のぬしができるまで、強い砂嵐の群れ
   a21_boss: { id: 'a21_boss', name: '砂嵐の渦（仮）', enemies: [TIN_NOISE, PHONE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.6)), reward: 10, boss: true, koma: 2 },
 };
@@ -317,10 +317,10 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 10,
     timeTitle: '親方の背中',
     owner: 'イサム',
-    // 銭湯の左の道の奥と、右の道の奥
+    // 銭湯の左の道の奥と、右の道の奥。ムーブメントのギアも入っている（段階38）
     chests: [
-      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.tinSpring.id, ITEMS.phoneCord.id, ITEMS.potion.id] },
-      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.menkoCard.id, ITEMS.ramuneGlass.id, ITEMS.ether.id] },
+      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.tinSpring.id, ITEMS.phoneCord.id, ITEMS.potion.id], gears: ['thunderBoost'] },
+      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.menkoCard.id, ITEMS.ramuneGlass.id, ITEMS.ether.id], gears: ['firstAid'] },
     ],
     enemies: [
       {
@@ -376,8 +376,8 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     triggers: [
       { on: 'wins', count: 1, scene: 'a21_first_koma' },
-      // ムーブメントの開放（2-1-4）
-      { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint' },
+      // ムーブメントの開放（2-1-4）。みおが拾った歯車を、ごほうびのギアとして渡す
+      { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint', gears: ['speedMemory'] },
       { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
       { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
     ],

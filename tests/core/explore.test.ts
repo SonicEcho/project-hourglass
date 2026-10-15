@@ -22,6 +22,7 @@ import {
   patrolRoute,
   pendingTrigger,
   startExplore,
+  triggerGears,
 } from '../../src/core';
 
 // 小さな区画：S 出発点、P チェックポイント、# は通れない
@@ -46,7 +47,7 @@ const area: AreaDef = {
   talkers: [{ id: 'v1', cell: [4, 4], scene: 'voice', label: '人' }],
   triggers: [
     { on: 'wins', count: 1, scene: 'first' },
-    { on: 'checkpoint', scene: 'cp' },
+    { on: 'checkpoint', scene: 'cp', gears: ['speedMemory'] },
     { on: 'wins', count: 2, scene: 'two' },
     { on: 'boss', scene: 'before' },
     { on: 'cleared', scene: 'after' },
@@ -226,5 +227,16 @@ describe('チェックポイントが2つある区画（段階37）', () => {
       ],
     };
     expect(checkArea(bad)).toEqual(['t：会話 left のチェックポイント（2,3）が P のマスではない', 't：会話 eaten の先に見る会話 nothing がない']);
+  });
+});
+
+describe('会話のごほうびのギア（段階38）', () => {
+  it('ごほうびのある会話を初めて見た時だけ、そのギアを返す（見た後と、ごほうびのない会話は空）', () => {
+    const s0 = startExplore(area);
+    expect(triggerGears(area, s0, 'cp')).toEqual(['speedMemory']);
+    expect(triggerGears(area, s0, 'first')).toEqual([]);
+    expect(triggerGears(area, s0, 'unknown')).toEqual([]);
+    const s1 = markTrigger(s0, 'cp');
+    expect(triggerGears(area, s1, 'cp')).toEqual([]);
   });
 });
