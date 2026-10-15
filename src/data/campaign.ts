@@ -1,5 +1,5 @@
 import { usableLinks } from '../core/lineup';
-import type { BattleCutoff, BattleSetup, CharacterDef, EnemyDef } from '../core/types';
+import type { BattleCutoff, BattleSetup, CardDef, CharacterDef, EnemyDef } from '../core/types';
 import { buildFolder } from './cards';
 import { COMBOS } from './combos';
 import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
@@ -55,6 +55,8 @@ export interface CampaignBattle {
   cutoff?: BattleCutoff;
   /** 勝った時に選べるギアの候補（段階8。この中から NAVI_REWARD_PICKS 個） */
   naviReward?: NaviPartId[];
+  /** 勝った時に手に入るスナップ（区画のボス。段階41） */
+  snaps?: string[];
 }
 
 export const CAMPAIGN: CampaignBattle[] = [
@@ -73,11 +75,11 @@ export const CAMPAIGN: CampaignBattle[] = [
 ];
 
 /** 戦闘の設定。allies は成長を反映した、戦う仲間（パーティにいない仲間と組む連携技は出さない。段階26） */
-export function createCampaignSetup(battle: CampaignBattle, seed: number, allies: CharacterDef[]): BattleSetup {
+export function createCampaignSetup(battle: CampaignBattle, seed: number, allies: CharacterDef[], deck: CardDef[] = buildFolder()): BattleSetup {
   return {
     allies,
     enemies: battle.enemies,
-    deck: buildFolder(),
+    deck,
     links: usableLinks(LINKS, allies.map((a) => a.id)),
     combos: COMBOS,
     seed,

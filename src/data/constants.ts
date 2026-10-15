@@ -7,6 +7,10 @@ export const DEFAULT_ACTION_WEIGHT = 1.0;
 
 /** ラウンドの始めに手札をこの枚数まで補充する */
 export const HAND_SIZE = 5;
+/** アルバム（山札）の枚数。編集してもこの枚数ちょうどにする（段階41） */
+export const ALBUM_SIZE = 20;
+/** アルバムに入れられる、同じスナップの枚数の上限（段階41） */
+export const ALBUM_COPY_MAX = 4;
 /** 延長になった時に引く枚数 */
 export const ONE_MORE_DRAW = 1;
 /** 1ラウンドにチーム全体で使えるサポートスナップの枚数 */

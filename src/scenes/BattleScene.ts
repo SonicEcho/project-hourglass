@@ -42,7 +42,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
@@ -51,7 +51,7 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
-import { battleTipTriggers, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
+import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
@@ -146,7 +146,9 @@ export class BattleScene extends Phaser.Scene {
     // 星図の成長を反映した仲間で戦う。試作の5戦は、毎戦闘 HP と MP が全回復した状態で始まる。
     // 探索から来た戦闘は、区画の中の前の戦闘で残った HP・MP から始まる（段階32b 調整3。チェックポイントで全回復）
     const vitals = areaBattle ? run.explore?.vitals : undefined;
-    this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup)), vitals });
+    // 探索から来た戦闘は、編集したアルバムで戦う（段階41。試作の5戦は最初のアルバム）
+    const deck = areaBattle ? albumDeck(run.album, CARDS) : undefined;
+    this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup), deck), vitals });
     // 探索から来た戦闘は、章の中で貯めたつながりゲージを引き継いで始める（段階26の調整3）
     if (areaBattle && this.state.links.length > 0) this.state = { ...this.state, linkGauge: storyLinkGauge() };
     logEvents(this.state.log);
@@ -689,6 +691,12 @@ export class BattleScene extends Phaser.Scene {
       case 'standUp': {
         const p = unitPosition(s, e.enemyId);
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
+        return true;
+      }
+      case 'encore': {
+        // アンコール（段階41）：もう一度使うスナップの名前。まだ誰も使っていなければ不発
+        const p = unitPosition(s, e.actorId);
+        this.popup(p.x, p.y - 20, e.name ? `アンコール：${e.name}` : 'アンコール：不発', e.name ? COLORS.accentText : COLORS.subText, 16);
         return true;
       }
       case 'drop': {
@@ -1387,6 +1395,9 @@ export class BattleScene extends Phaser.Scene {
       colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
       items: [...result.drops, ...(def.item ? [def.item] : [])],
     });
+    // 区画のボスのスナップ（段階41）
+    const snaps = def.snaps ?? [];
+    if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
     saveRun();
     // 落とした素材を種類ごとに（珍しい素材は ◆、レアは ★。段階27b）
     const drops = this.state.log.flatMap((e) => (e.type === 'drop' ? [e] : []));
@@ -1394,7 +1405,7 @@ export class BattleScene extends Phaser.Scene {
     const counts = new Map<string, number>();
     for (const d of drops) counts.set(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`, (counts.get(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`) ?? 0) + 1);
     const dropList = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
-    const dropText = `素材：${dropList || 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}`;
+    const dropText = `素材：${dropList || 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
     if (drops.some((d) => d.kind === 'rare')) {
       const rare = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, '★ レア！', { size: 30, bold: true, color: COLORS.accentText }).setOrigin(0.5);
       rare.setStroke('#5a3a00', 6);

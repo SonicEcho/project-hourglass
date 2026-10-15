@@ -52,7 +52,9 @@ export type Effect =
   /** 山札の上から count 枚を見て、1枚を手札に加える（残りは山札の下へ） */
   | { kind: 'search'; count: number }
   /** 選んだ仲間のこのラウンドの行動を、最初に実行する */
-  | { kind: 'precede' };
+  | { kind: 'precede' }
+  /** アンコール（段階41）：このラウンドに最後に使われたスナップを、同じ相手にもう一度（使う人の能力値で） */
+  | { kind: 'encore' };
 
 /** 味方の行動（スナップ、魔法・スキル、基本行動、連携技）の共通定義 */
 export interface ActionDef {
@@ -71,6 +73,8 @@ export interface SkillDef extends ActionDef {
 export interface CardDef extends ActionDef {
   /** サポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で1枚まで） */
   support?: boolean;
+  /** このスナップを使う仲間は、そのラウンドの最初に動く（段階41。ピンチヒッター） */
+  precede?: boolean;
 }
 
 /**
@@ -366,6 +370,8 @@ export type LogEvent =
   | { type: 'draw'; cardUids: number[] }
   | { type: 'discardHand'; cardUids: number[] }
   | { type: 'retrieve'; cardUid: number }
+  /** アンコール（段階41）：name はもう一度使ったスナップ。このラウンドにまだスナップが使われていなければ null（不発） */
+  | { type: 'encore'; actorId: string; name: string | null }
   | { type: 'reshuffle'; count: number }
   | { type: 'battleEnd'; outcome: Exclude<Outcome, 'ongoing'> };
 
@@ -386,6 +392,8 @@ export interface BattleState {
   plans: Plan[];
   /** クイックステップで先制する仲間 */
   precedeIds: string[];
+  /** このラウンドに最後に使われたスナップと、その相手（アンコールでもう一度使う。段階41） */
+  lastSnap?: { card: CardDef; target?: TargetRef } | null;
   /** このラウンドにサポートスナップを使った */
   supportUsed: boolean;
   /** サーチで見ているスナップ（1枚選ぶまで計画を進められない） */

@@ -54,6 +54,8 @@ export interface AreaChest extends InRoom {
   cell: GridCell;
   items: string[];
   gears?: string[];
+  /** 入っているスナップ（段階41。持ち物に入り、アルバムの画面で入れ替えられる） */
+  snaps?: string[];
 }
 
 /**
@@ -121,6 +123,8 @@ export interface AreaDef {
   owner?: string;
   /** 返す画面の後ろに流す、その時間の景色（会話の背景 BACKDROPS の id。段階46d「記憶の再生」） */
   memory?: string;
+  /** 返した時に持ち主からもらうスナップ（段階41。返した報酬） */
+  returnSnaps?: string[];
 }
 
 /** 探索の状態（セーブする） */

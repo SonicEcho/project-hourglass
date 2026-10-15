@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addKoma, addParts, defeatEnemy, flowEvents, nextEvent } from '../core';
-import { AREA_BATTLES, AREAS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addItems, addKoma, addParts, countOf, defeatEnemy, flowEvents, gainSnaps, nextEvent } from '../core';
+import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -116,6 +116,14 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.navi = addParts(run.navi, Object.keys(NAVI_PARTS));
         nav.refreshGrowth();
         notify(`ギアを${Object.keys(NAVI_PARTS).length}個もらいました（${run.navi.parts.length}個）`);
+      }),
+    );
+
+    panel.append(
+      button(`スナップを全種類1枚ずつもらう（今 ${countOf(run.album.owned)}枚。アルバムは探索のチェックポイントの星図から）`, () => {
+        run.album = gainSnaps(run.album, Object.keys(CARDS));
+        nav.refreshGrowth();
+        notify(`スナップを${Object.keys(CARDS).length}枚もらいました（${countOf(run.album.owned)}枚）`);
       }),
     );
 

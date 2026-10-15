@@ -81,6 +81,8 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `  手札${e.cardUids.length}枚を捨てた`;
     case 'retrieve':
       return `  捨て札から${cardName(s, e.cardUid)}を手札へ`;
+    case 'encore':
+      return `  アンコール（${name(s, e.actorId)}）：${e.name ? `${e.name}をもう一度` : '不発（このラウンドにまだスナップが使われていない）'}`;
     case 'reshuffle':
       return `  捨て札${e.count}枚をシャッフルして山札へ`;
     case 'battleEnd':

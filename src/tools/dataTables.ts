@@ -1,7 +1,8 @@
-import type { ActionDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
+import type { ActionDef, CardDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
 import { allBattles } from '../core';
 import {
   AREA_BATTLES,
+  AREAS,
   itemSources,
   BOSS_PART_REWARDS,
   CARDS,
@@ -69,6 +70,19 @@ function charactersPage(): string {
   ]);
 }
 
+/** そのスナップが手に入る所（区画の宝箱・ボス・返した報酬） */
+function snapSources(id: string): string[] {
+  const out: string[] = [];
+  for (const a of Object.values(AREAS)) {
+    const area = a.name.split('「')[0];
+    for (const c of a.chests) if (c.snaps?.includes(id)) out.push(`${area}の宝箱`);
+    if (a.returnSnaps?.includes(id)) out.push(`${area}を返した報酬`);
+    const boss = AREA_BATTLES[a.boss.battle];
+    if (boss?.snaps?.includes(id)) out.push(`${area}のボス`);
+  }
+  return out;
+}
+
 function snapsPage(): string {
   const total = FOLDER.reduce((n, f) => n + f.count, 0);
   return page('スナップ・コンボ・連携技', '正は `src/data/cards.ts`・`src/data/combos.ts`・`src/data/links.ts`。仕組みは `docs/design/battle.md`。', [
@@ -79,6 +93,16 @@ function snapsPage(): string {
         FOLDER.map(({ card, count }) => [card.name, count, describeAction(card), card.support ? '―' : `${weightLabel(card.weight)}（${formatWeight(card.weight)}）`, card.support ? 'サポート（行動枠を使わない）' : '行動']),
       ),
     ],
+    [
+      '最初のアルバムにないスナップ（段階41。宝箱・ボス・返した報酬で手に入る）',
+      table(
+        ['スナップ', '効果', '重さ', '入手'],
+        Object.values(CARDS as Record<string, CardDef>)
+          .filter((c) => !FOLDER.some((f) => f.card.id === c.id))
+          .map((c) => [c.name, describeAction(c), `${weightLabel(c.weight)}（${formatWeight(c.weight)}）`, snapSources(c.id).join('、') || '―']),
+      ),
+    ],
+    ['スナップの入手（段階41）', table(['スナップ', '入手'], Object.values(CARDS as Record<string, CardDef>).flatMap((c) => (snapSources(c.id).length > 0 ? [[c.name, snapSources(c.id).join('、')]] : [])))],
     ['コンボ', table(['コンボ', '材料', '効果', '重さ'], COMBOS.map((c) => [c.name, c.cards.map(cardName).join('＋'), ...actionRow(c).slice(1)]))],
     ['連携技', table(['連携技', '2人', '効果', '重さ'], LINKS.map((l) => [l.name, l.members.map(charName).join('×'), ...actionRow(l).slice(1)]))],
   ]);

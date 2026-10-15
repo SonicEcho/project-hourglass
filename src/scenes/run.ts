@@ -1,10 +1,11 @@
-import type { ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import type { AlbumState, ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
 import {
   allBattles,
   applyGrowth,
   applyNavi,
   applyWeapons,
   battleNumber,
+  createAlbum,
   createArmory,
   createGrowth,
   createNavi,
@@ -23,7 +24,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, CARDS, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -57,6 +58,8 @@ export const run: {
   linkGauge: ChapterGauge | null;
   /** 持ち主に返した盗まれた時間（区画の id。段階28） */
   returned: string[];
+  /** 持っているスナップと、アルバムの中身（段階41） */
+  album: AlbumState;
 } = {
   active: false,
   seed: 0,
@@ -71,6 +74,7 @@ export const run: {
   explore: null,
   linkGauge: null,
   returned: [],
+  album: createAlbum(FOLDER),
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -110,6 +114,7 @@ export function startNewRun(): void {
   run.explore = null;
   run.linkGauge = null;
   run.returned = [];
+  run.album = createAlbum(FOLDER);
   saveRun();
 }
 
@@ -180,6 +185,8 @@ export function saveContext(): SaveContext {
     flow: SLICE_FLOW,
     areas: AREAS,
     renamedEvents: RENAMED_EVENTS,
+    cards: CARDS,
+    initialAlbum: createAlbum(FOLDER),
   };
 }
 
@@ -197,6 +204,7 @@ function snapshot(): RunSnapshot {
     explore: run.explore,
     linkGauge: run.linkGauge,
     returned: run.returned,
+    album: run.album,
   };
 }
 
@@ -252,6 +260,7 @@ export function continueRun(): boolean {
   run.explore = s.explore;
   run.linkGauge = s.linkGauge;
   run.returned = s.returned;
+  run.album = s.album;
   run.active = true;
   lastWritten = null;
   saveRun();
