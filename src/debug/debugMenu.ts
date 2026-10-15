@@ -1,6 +1,6 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addKoma, addParts, countOf, defeatEnemy, flowEvents, gainSnaps, nextEvent } from '../core';
+import { addItems, addKoma, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
 import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
@@ -136,13 +136,16 @@ export function installDebugMenu(nav: DebugNavigator): void {
       }),
     );
     panel.append(
-      button(`3人の武器を Lv${WEAPON_DATA.evolveLevel} にする`, () => {
-        const need = WEAPON_DATA.levelExp[WEAPON_DATA.evolveLevel - 2] ?? 0;
+      // 段階42：次の進化（2回目は Lv5、3回目は Lv7）に要るレベルまで上げる
+      button('3人の武器を、次の進化に要るレベルにする', () => {
         const weapons = { ...run.armory.weapons };
-        for (const [id, w] of Object.entries(weapons)) weapons[id] = { ...w, exp: Math.max(w.exp, need) };
+        for (const [id, w] of Object.entries(weapons)) {
+          const need = WEAPON_DATA.levelExp[evolveLevelFor(WEAPON_DATA, w.path.length + 1) - 2] ?? 0;
+          weapons[id] = { ...w, exp: Math.max(w.exp, need) };
+        }
         run.armory = { ...run.armory, weapons };
         nav.refreshGrowth();
-        notify(`3人の武器を Lv${WEAPON_DATA.evolveLevel} にしました`);
+        notify('3人の武器を、次の進化に要るレベルにしました');
       }),
     );
 

@@ -13,14 +13,14 @@ import { getPlaceError, placePart } from './navi';
 import type { Progress, Story } from './progress';
 import type { CardDef } from './types';
 import { findBattle, normalizeProgress } from './progress';
-import type { ArmoryState, WeaponData, WeaponParams, WeaponState } from './weapon';
+import type { ArmoryState, EvolutionStep, WeaponData, WeaponParams, WeaponState } from './weapon';
 import { createArmory, naviDataWithWeapons } from './weapon';
 
 // セーブと中断・再開（段階11）。Phaser にもブラウザの保存にも依存しない。
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -108,6 +108,21 @@ export const MIGRATIONS: SaveMigrations = {
   8: (raw) => raw,
   // 版9 → 版10（段階41）：持っているスナップとアルバムの中身（album）を足した。前の版のセーブは、整える時に最初のアルバムで補う
   9: (raw) => raw,
+  // 版10 → 版11（段階42）：武器の進化が1回きりから進化ツリーになり、evolvedTo（進化先1つ）を path（通った進化先と型の列）に替えた。
+  // 前の版で進化していた武器は、その進化先の1つ目の型を選んだことにする（1つ目の型は、前と同じくブリッジの行が横に伸びる）
+  10: (raw) => {
+    if (!isObject(raw.run) || !isObject(raw.run.armory) || !isObject(raw.run.armory.weapons)) return raw;
+    const weapons: Record<string, unknown> = {};
+    for (const [owner, w] of Object.entries(raw.run.armory.weapons)) {
+      if (!isObject(w)) {
+        weapons[owner] = w;
+        continue;
+      }
+      const { evolvedTo, ...rest } = w;
+      weapons[owner] = { ...rest, path: typeof evolvedTo === 'string' ? [{ id: evolvedTo, style: 0 }] : [] };
+    }
+    return { ...raw, run: { ...raw.run, armory: { ...raw.run.armory, weapons } } };
+  },
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -217,10 +232,17 @@ function sanitizeWeapon(raw: Record<string, unknown>, base: WeaponState, data: W
   if (isObject(raw.params)) for (const k of Object.keys(params) as (keyof WeaponParams)[]) if (isInt(raw.params[k])) params[k] = raw.params[k];
   const tendency = { ...base.tendency };
   if (isObject(raw.tendency)) for (const k of Object.keys(tendency) as PartColor[]) if (isInt(raw.tendency[k])) tendency[k] = Math.max(0, raw.tendency[k]);
-  const evolutions = data.weapons[base.defId].evolutions;
-  const evolvedTo = typeof raw.evolvedTo === 'string' && evolutions.some((e) => e.id === raw.evolvedTo) ? raw.evolvedTo : null;
+  // 通った進化先：親から順につながっている所までを残す（今のデータにない進化先・まだ作っていない先・知らない型で切る）
+  const def = data.weapons[base.defId];
+  const path: EvolutionStep[] = [];
+  for (const step of Array.isArray(raw.path) ? raw.path : []) {
+    if (!isObject(step) || typeof step.id !== 'string' || !isInt(step.style)) break;
+    const evo = def.evolutions.find((e) => e.id === step.id);
+    if (!evo || evo.sealed || evo.from !== path[path.length - 1]?.id || step.style < 0 || step.style >= (evo.styles?.length ?? 0)) break;
+    path.push({ id: step.id, style: step.style });
+  }
   const absorbed = isInt(raw.absorbed) ? Math.max(0, raw.absorbed) : 0;
-  return { defId: base.defId, params, exp: isInt(raw.exp) ? Math.max(0, raw.exp) : 0, tendency, evolvedTo, absorbed };
+  return { defId: base.defId, params, exp: isInt(raw.exp) ? Math.max(0, raw.exp) : 0, tendency, path, absorbed };
 }
 
 function sanitizeNavi(raw: Record<string, unknown>, data: NaviData): NaviState | null {

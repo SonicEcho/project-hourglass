@@ -4,6 +4,7 @@ import {
   absorbMaterial,
   canEvolveAny,
   evolutionChecks,
+  evolutionVisibility,
   evolveWeapon,
   feedFragment,
   fragmentItem,
@@ -11,6 +12,7 @@ import {
   getEvolveError,
   getFeedError,
   getFragmentError,
+  nextEvolutions,
   paramsAfter,
   tendencyOf,
   weaponLevel,
@@ -23,7 +25,7 @@ import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
-import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
+import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
@@ -32,7 +34,8 @@ import { addIcon } from '../ui/icons';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
 //
-// 記憶の欠片をタップで選び「吸わせる」。Lv3 で条件を全部満たした進化先に「進化」ボタンが出る（確認してから進化）
+// 記憶の欠片をタップで選び「吸わせる」。条件を全部満たした次の進化先に「進化」ボタンが出る（型を選んで、確認してから進化）。
+// 段階42：進化は何度もできる（進化ツリー）。ここには次の進化先だけを出し、ツリー全体は「ツリーを見る」（WeaponTreeScene）で
 
 const D = WEAPON_DATA;
 const PARAM_KEYS: WeaponParamKey[] = ['atk', 'fire', 'ice', 'thunder'];
@@ -40,7 +43,7 @@ const PARAM_COLOR: Record<WeaponParamKey, number> = { atk: ELEMENT_COLOR.physica
 
 const CARD_TOP = 92;
 const EVO_TOP = 234;
-const EVO_H = 84;
+const EVO_H = 78;
 const FRAG_TOP = 518;
 
 export class WeaponScene extends Phaser.Scene {
@@ -125,19 +128,33 @@ export class WeaponScene extends Phaser.Scene {
     if (spot) this.playAbsorb(spot);
   }
 
-  private confirmEvolve(evo: EvolutionDef): void {
+  /** 進化の確認：型を2つから1つ選んでから「進化する」（段階42） */
+  private confirmEvolve(evo: EvolutionDef, style: number | null = null): void {
     this.closeOverlay();
+    const ext = hubLineup().unlocks.navi ? D.boardExtension : 0;
     const c = this.add.container(0, 0).setDepth(200);
     c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive());
-    const top = 270;
-    c.add(addWindow(this, 20, top, GAME_WIDTH - 40, 250));
+    const top = 190;
+    const h = 380;
+    c.add(addWindow(this, 20, top, GAME_WIDTH - 40, h));
     c.add(addText(this, GAME_WIDTH / 2, top + 18, `${evo.name}に進化する？`, { size: 18, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
-    c.add(
-      addText(this, 40, top + 56, `${describeEvolution(evo, hubLineup().unlocks.navi ? D.boardExtension : 0)}\n\n進化は1回だけ。戻せない`, { size: 13, wrap: GAME_WIDTH - 80 }),
-    );
+    c.add(addText(this, 40, top + 52, describeEvolution(evo) || '―', { size: 13, wrap: GAME_WIDTH - 80 }));
+    c.add(addText(this, 40, top + 96, '型を1つ選ぶ（効果は次の進化にも引き継ぐ）', { size: 12, bold: true, color: COLORS.subText }));
+    (evo.styles ?? []).forEach((st, i) => {
+      const y = top + 120 + i * 76;
+      const chosen = style === i;
+      const rect = this.add.rectangle(36, y, GAME_WIDTH - 72, 68, chosen ? 0x3a3214 : COLORS.panel).setRounded(8).setOrigin(0);
+      rect.setStrokeStyle(chosen ? 3 : 1, chosen ? COLORS.accent : COLORS.border);
+      c.add(rect);
+      c.add(addText(this, 48, y + 8, `${evo.name}・${st.name}`, { size: 15, bold: true, color: chosen ? COLORS.accentText : COLORS.text }));
+      c.add(addText(this, 48, y + 32, describeStyle(st, ext).replace(/^[^：]*：/, ''), { size: 11, wrap: GAME_WIDTH - 96 }));
+      makePressable(rect, { onTap: () => this.confirmEvolve(evo, i) });
+    });
+    c.add(addText(this, GAME_WIDTH / 2, top + h - 92, '進化と型は戻せない', { size: 12, color: COLORS.subText }).setOrigin(0.5, 0));
     const w = (GAME_WIDTH - 40 - 36) / 2;
-    addButton(this, c, 32 + w / 2, top + 210, w, 52, 'やめる', { onTap: () => this.closeOverlay() }, { size: 15 });
-    addButton(this, c, GAME_WIDTH - 32 - w / 2, top + 210, w, 52, '進化する', { onTap: () => this.evolve(evo) }, {
+    addButton(this, c, 32 + w / 2, top + h - 40, w, 52, 'やめる', { onTap: () => this.closeOverlay() }, { size: 15 });
+    addButton(this, c, GAME_WIDTH - 32 - w / 2, top + h - 40, w, 52, '進化する', { onTap: () => style !== null && this.evolve(evo, style) }, {
+      enabled: style !== null,
       fill: 0x5a4a10,
       stroke: COLORS.accent,
       strokeWidth: 2,
@@ -145,18 +162,20 @@ export class WeaponScene extends Phaser.Scene {
       bold: true,
     });
     this.overlay = c;
-    popIn(this, c);
+    // 型を選び直した時は、窓をはじき出さずにそのまま描き替える
+    if (style === null) popIn(this, c);
   }
 
-  private evolve(evo: EvolutionDef): void {
+  private evolve(evo: EvolutionDef, style: number): void {
     this.closeOverlay();
-    if (getEvolveError(D, run.armory, this.charId, evo.id)) return;
+    if (getEvolveError(D, run.armory, this.charId, evo.id, style)) return;
     const before = weaponName(D, this.weapon());
-    run.armory = evolveWeapon(D, run.armory, this.charId, evo.id);
-    console.log('[weapon] evolve', this.charId, evo.id);
-    this.message = `${before}が${evo.name}に進化した！`;
+    run.armory = evolveWeapon(D, run.armory, this.charId, evo.id, style);
+    const after = weaponName(D, this.weapon());
+    console.log('[weapon] evolve', this.charId, evo.id, style);
+    this.message = `${before}が${after}に進化した！`;
     this.render();
-    this.playEvolution(before, evo.name);
+    this.playEvolution(before, after);
   }
 
   /**
@@ -246,7 +265,7 @@ export class WeaponScene extends Phaser.Scene {
     this.root.add(addIcon(this, 'weapon', SIDE_PADDING + 9, 20, 18, COLORS.accent));
     this.root.add(addText(this, SIDE_PADDING + 24, 8, '武器', { size: 17, bold: true }));
     this.root.add(
-      addText(this, GAME_WIDTH - SIDE_PADDING, 12, `Lv${D.evolveLevel}で条件を満たすと進化`, { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
+      addText(this, GAME_WIDTH - SIDE_PADDING, 12, '条件を満たすと進化。何度も進化する', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
     );
     this.drawTabs();
     this.drawWeapon();
@@ -284,7 +303,7 @@ export class WeaponScene extends Phaser.Scene {
       this.root.add(addText(this, x + 8, top + 5, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
       const ready = canEvolveAny(D, run.armory, c.id);
       this.root.add(
-        addText(this, x + 8, top + 26, ready ? '進化できる！' : `Lv${weaponLevel(D, ws.exp)}${ws.evolvedTo ? '・進化済み' : ''}`, {
+        addText(this, x + 8, top + 26, ready ? '進化できる！' : `Lv${weaponLevel(D, ws.exp)}${ws.path.length > 0 ? `・進化${ws.path.length}回` : ''}`, {
           size: 10,
           color: ready ? COLORS.accentText : COLORS.subText,
         }),
@@ -305,8 +324,9 @@ export class WeaponScene extends Phaser.Scene {
     const owner = lineupBase(hubLineup()).find((c) => c.id === this.charId)!;
     const x0 = SIDE_PADDING;
     const width = GAME_WIDTH - SIDE_PADDING * 2;
-    this.root.add(this.add.rectangle(x0, CARD_TOP, width, 136, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(w.evolvedTo ? 2 : 1, w.evolvedTo ? COLORS.accent : COLORS.border));
-    this.root.add(addText(this, x0 + 10, CARD_TOP + 8, weaponName(D, w), { size: 18, bold: true, color: w.evolvedTo ? COLORS.accentText : COLORS.text }));
+    const evolved = w.path.length > 0;
+    this.root.add(this.add.rectangle(x0, CARD_TOP, width, 136, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(evolved ? 2 : 1, evolved ? COLORS.accent : COLORS.border));
+    this.root.add(addText(this, x0 + 10, CARD_TOP + 8, weaponName(D, w), { size: 18, bold: true, color: evolved ? COLORS.accentText : COLORS.text }));
     this.root.add(addText(this, x0 + width - 10, CARD_TOP + 12, `${owner.name}の武器`, { size: 11, color: COLORS.subText }).setOrigin(1, 0));
 
     // レベルと経験値
@@ -354,40 +374,50 @@ export class WeaponScene extends Phaser.Scene {
     );
   }
 
-  /** 進化先の3つ。条件を ✓／✗ で見せ、全部 ✓ なら「進化」 */
+  /** 次の進化先（段階42。ツリーの1段先だけ）。条件を ✓／✗ で見せ、全部 ✓ なら「進化」。ツリー全体は「ツリーを見る」 */
   private drawEvolutions(): void {
     const w = this.weapon();
-    const def = D.weapons[w.defId];
-    this.root.add(addText(this, SIDE_PADDING, EVO_TOP - 4, '進化先（長押しで詳細）', { size: 11, color: COLORS.subText }));
-    // ムーブメントが閉じている間は、ギアの傾向が条件の進化先と、ブリッジが伸びる話を出さない（段階26）
+    const tier = w.path.length + 1;
+    this.root.add(addText(this, SIDE_PADDING, EVO_TOP - 4, `${tier}回目の進化先（長押しで詳細）`, { size: 11, color: COLORS.subText }));
+    addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 56, EVO_TOP + 4, 112, 26, 'ツリーを見る', { onTap: () => this.scene.start('WeaponTree', { charId: this.charId }) }, {
+      size: 12,
+      bold: true,
+      stroke: COLORS.accent,
+      textColor: COLORS.accentText,
+    });
+    // ムーブメントが閉じている間は、ギアの傾向が条件の進化先と、盤が広がる話を出さない（段階26）
     const navi = hubLineup().unlocks.navi;
     const ext = navi ? D.boardExtension : 0;
-    const evolutions = def.evolutions.filter((e) => navi || w.evolvedTo === e.id || !e.conditions.some((c) => c.kind === 'tendency'));
+    const evolutions = nextEvolutions(D, w).filter((e) => !e.sealed && (navi || !e.conditions.some((c) => c.kind === 'tendency')));
+    if (evolutions.length === 0) {
+      this.root.add(
+        addText(this, SIDE_PADDING + 4, EVO_TOP + 30, 'この先の進化は、まだ見えない。\n（ツリーで、先に続く影と言い伝えを見られる）', { size: 12, color: COLORS.subText, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 8 }),
+      );
+      return;
+    }
     evolutions.forEach((evo, i) => {
-      const y = EVO_TOP + 14 + i * (EVO_H + 4);
+      const y = EVO_TOP + 22 + i * (EVO_H + 4);
       const x0 = SIDE_PADDING;
       const width = GAME_WIDTH - SIDE_PADDING * 2;
-      const chosen = w.evolvedTo === evo.id;
-      const locked = !!w.evolvedTo && !chosen;
       const checks = evolutionChecks(D, w, evo, run.armory.items);
-      const ok = !w.evolvedTo && checks.every((c) => c.ok);
-      const rect = this.add.rectangle(x0, y, width, EVO_H, chosen ? 0x3a3214 : COLORS.panel, locked ? 0.5 : 1).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(chosen || ok ? 2 : 1, chosen || ok ? COLORS.accent : COLORS.border);
+      const ok = checks.every((c) => c.ok);
+      const rect = this.add.rectangle(x0, y, width, EVO_H, COLORS.panel).setRounded(8).setOrigin(0);
+      rect.setStrokeStyle(ok ? 2 : 1, ok ? COLORS.accent : COLORS.border);
       this.root.add(rect);
-      this.root.add(
-        addText(this, x0 + 10, y + 6, `${chosen ? '★ ' : ''}${evo.name}`, { size: 15, bold: true, color: locked ? COLORS.dimText : chosen ? COLORS.accentText : COLORS.text }),
-      );
-      this.root.add(addText(this, x0 + 10, y + 28, describeEvolution(evo, ext), { size: 10, wrap: width - 120, color: locked ? COLORS.dimText : COLORS.text }));
-      if (!w.evolvedTo) {
-        const line = checks.map((c) => `${c.ok ? '✓' : '✗'}${describeCondition(c.condition, D)}`).join('　');
-        this.root.add(addText(this, x0 + 10, y + EVO_H - 20, line, { size: 11, bold: true, color: ok ? '#6dff9e' : COLORS.subText }));
-      }
+      this.root.add(addText(this, x0 + 10, y + 6, evo.name, { size: 15, bold: true }));
+      if (evo.detour) this.root.add(addText(this, x0 + 16 + evo.name.length * 15, y + 9, '寄り道', { size: 10, bold: true, color: '#ffb070' }));
+      this.root.add(addText(this, x0 + 10, y + 27, describeEvolution(evo), { size: 10, wrap: width - 120 }));
+      const line = checks.map((c) => `${c.ok ? '✓' : '✗'}${describeCondition(c.condition, D)}`).join('　');
+      this.root.add(addText(this, x0 + 10, y + EVO_H - 20, line, { size: 11, bold: true, color: ok ? '#6dff9e' : COLORS.subText }));
       makePressable(rect, {
         onLongPress: () =>
           this.showDetail(
             evo.name,
             [
-              describeEvolution(evo, ext),
+              describeEvolution(evo),
+              '',
+              '型（進化する時にどちらか1つ）：',
+              ...(evo.styles ?? []).map((st) => `・${describeStyle(st, ext)}`),
               '',
               '条件：',
               ...checks.map((c) => `${c.ok ? '✓' : '✗'} ${describeCondition(c.condition, D)}`),
@@ -396,6 +426,7 @@ export class WeaponScene extends Phaser.Scene {
                 c.kind === 'key' ? ['', `鍵「${D.items[c.item]?.name ?? c.item}」（持っている：${run.armory.items[c.item] ?? 0}。進化すると1つ使う）`, `手に入れ方：${itemSources(c.item).join('、') || '―'}`] : [],
               ),
               ...(evo.conditions.some((c) => c.kind === 'tendency') ? ['', '傾向：勝った戦闘で、このキャラのムーブメントにはめていたギアの色のうち、いちばん多い色'] : []),
+              ...(evo.detour ? ['', '寄り道：短い枝。この先へは進化しない'] : []),
             ].join('\n'),
           ),
       });
@@ -408,8 +439,6 @@ export class WeaponScene extends Phaser.Scene {
           bold: true,
           textColor: COLORS.accentText,
         });
-      } else if (chosen) {
-        this.root.add(addText(this, x0 + width - 52, y + EVO_H / 2, '進化済み', { size: 12, bold: true, color: COLORS.accentText }).setOrigin(0.5));
       }
     });
   }
@@ -587,9 +616,8 @@ function gainColor(gains: Partial<Record<WeaponParamKey, number>>): number {
  */
 function recommendedItems(w: WeaponState): Set<string> {
   const out = new Set<string>();
-  if (w.evolvedTo) return out;
   let best: { lack: number; params: WeaponParamKey[] } | null = null;
-  for (const evo of D.weapons[w.defId].evolutions) {
+  for (const evo of nextEvolutions(D, w).filter((e) => !e.sealed && !e.detour)) {
     const conds = evo.conditions.filter((c) => c.kind === 'param');
     if (conds.length === 0) continue;
     const lack = conds.reduce((sum, c) => sum + Math.max(0, c.min - w.params[c.param]), 0);
@@ -606,10 +634,10 @@ function recommendedItems(w: WeaponState): Set<string> {
   return out;
 }
 
-/** その武器の、まだしていない進化の鍵になる素材 */
+/** その武器の、これから先の進化の鍵になる素材（段階42：次の進化先だけでなく、今の武器から行ける先の全部） */
 function keyItems(w: WeaponState): Set<string> {
-  if (w.evolvedTo) return new Set();
-  return new Set(D.weapons[w.defId].evolutions.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []))));
+  const ahead = D.weapons[w.defId].evolutions.filter((e) => !['passed', 'unreachable'].includes(evolutionVisibility(D, w, e.id)));
+  return new Set(ahead.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []))));
 }
 
 function itemDetail(itemId: string): string {

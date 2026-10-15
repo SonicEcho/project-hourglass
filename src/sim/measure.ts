@@ -81,6 +81,8 @@ export interface AreaMeasureResult {
   stages: (StageSummary & { linksTotal: number })[];
   /** ボスまで進めた回のうち、ボスの前に1人以上進化できた回数（段階27b） */
   evolvedRuns: number;
+  /** ボスまで進めた回の、仲間ごとの進化の回数と武器のレベルの合計（段階42） */
+  weaponTotals: Record<string, { evolutions: number; level: number }>;
   bossReached: number;
 }
 
@@ -111,7 +113,15 @@ export function measureArea(runs: number, seed: number, policy: AreaPolicy, area
   }
   const bossReached = records.filter((r) => r.stages.length === stages.length).length;
   const evolvedRuns = records.filter((r) => r.stages.length === stages.length && r.evolvedBeforeBoss > 0).length;
-  return { runs, seed, policy, area: areaId, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached };
+  const weaponTotals: AreaMeasureResult['weaponTotals'] = {};
+  for (const r of records.filter((x) => x.stages.length === stages.length)) {
+    for (const [id, w] of Object.entries(r.weaponsBeforeBoss)) {
+      const t = (weaponTotals[id] ??= { evolutions: 0, level: 0 });
+      t.evolutions += w.evolutions;
+      t.level += w.level;
+    }
+  }
+  return { runs, seed, policy, area: areaId, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached, weaponTotals };
 }
 
 const POLICY_LABEL: Record<AreaPolicy, string> = {
@@ -128,6 +138,9 @@ export function formatAreaMeasure(m: AreaMeasureResult): string {
     ...m.stages.map((s) => `| ${s.name} | ${s.reached} | ${pct(s.firstTryWins, s.reached)} | ${avg(s.roundsTotal, s.wins)} | ${avg(s.retriesTotal, s.wins)} | ${s.wins === 0 ? '-' : (s.linksTotal / s.wins).toFixed(2)} |`),
     '',
     `ボスまで勝ち切れた割合：${pct(m.cleared, m.runs)}。ボスの前に1人以上進化できた割合：${pct(m.evolvedRuns, m.bossReached)}`,
+    `ボスの前の武器（平均。進化の回数／レベル）：${Object.entries(m.weaponTotals)
+      .map(([id, t]) => `${PARTY.find((c) => c.id === id)?.name ?? id} ${avg(t.evolutions, m.bossReached)}回／Lv${avg(t.level, m.bossReached)}`)
+      .join('、')}`,
     '',
     '星図はでたらめ、素材は一番近い進化先へ向けて吸わせ、残りは時分解（鍵の素材は残す）、つながりゲージは戦闘をまたいで引き継ぐ',
   ].join('\n');

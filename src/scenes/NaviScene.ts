@@ -179,7 +179,9 @@ export class NaviScene extends Phaser.Scene {
     // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
     saveRun();
     this.root.removeAll(true);
-    this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / this.board().cols));
+    const b = this.board();
+    // 段階42：型で盤が下にも伸びるので、高さにも収める
+    this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / b.cols), Math.floor(BOARD_H / b.rows));
     this.root.add(screenBg(this));
     // 見出しのアイコン（段階32a 調整2）
     this.root.add(addIcon(this, 'gear', SIDE_PADDING + 9, 20, 18, COLORS.accent));

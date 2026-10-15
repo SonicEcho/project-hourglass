@@ -7,6 +7,7 @@ import {
   createNavi,
   lineupAt,
   naviDataWithWeapons,
+  weaponLevel,
   applyGrowth,
   applyWeapons,
   battleReward,
@@ -52,6 +53,8 @@ export interface AreaRunRecord {
   links: number[];
   /** ボスの前までに進化した仲間の数（段階27b） */
   evolvedBeforeBoss: number;
+  /** ボスの前の、仲間ごとの進化の回数と武器のレベル（段階42） */
+  weaponsBeforeBoss: Record<string, { evolutions: number; level: number }>;
 }
 
 /** 区画の戦闘を出会う順に（敵の印の並び → ボス） */
@@ -99,6 +102,7 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
   const stages: StageRecord[] = [];
   const links: number[] = [];
   let evolvedBeforeBoss = 0;
+  let weaponsBeforeBoss: AreaRunRecord['weaponsBeforeBoss'] = {};
   const battles = areaBattleOrder(areaId);
   const checkpointFrom = CHECKPOINT_FROM[areaId] ?? 0;
   for (let i = 0; i < battles.length; i++) {
@@ -108,7 +112,12 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
     carry.growth = spendPoints(carry.growth, members, pick);
     carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick);
     if (navi) carry.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory), carry.navi);
-    if (def.boss) evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.evolvedTo).length;
+    if (def.boss) {
+      evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.path.length).length;
+      weaponsBeforeBoss = Object.fromEntries(
+        members.map((c) => [c.id, { evolutions: carry.armory.weapons[c.id].path.length, level: weaponLevel(WEAPON_DATA, carry.armory.weapons[c.id].exp) }]),
+      );
+    }
     const allies = grownParty(carry.growth, carry.armory, members, navi ? carry.navi : null);
     if (i >= checkpointFrom) vitals = undefined;
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
@@ -129,9 +138,9 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
       break;
     }
     stages.push(record);
-    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss };
+    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss, weaponsBeforeBoss };
   }
-  return { seed, stages, cleared: true, links, evolvedBeforeBoss };
+  return { seed, stages, cleared: true, links, evolvedBeforeBoss, weaponsBeforeBoss };
 }
 
 function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[], navi: NaviState | null): CharacterDef[] {

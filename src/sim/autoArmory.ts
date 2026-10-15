@@ -1,20 +1,20 @@
 import type { ArmoryState, WeaponParamKey } from '../core';
-import { absorbMaterial, evolveWeapon, feedFragment, fragmentItem, getAbsorbError, getEvolveError, getFragmentError } from '../core';
+import { absorbMaterial, evolveWeapon, feedFragment, fragmentItem, getAbsorbError, getEvolveError, getFragmentError, nextEvolutions } from '../core';
 import { WEAPON_DATA } from '../data';
 
 // 自動対戦の武器の育て方（段階27b）。周回（autoRun）と 1-1（autoArea）の両方で使う。
 // 仲間を順番に回し、一番近い進化先に近づく素材（足りない能力値を上げ、条件の能力値を下げないもの）から吸わせる。
 // 枠が余れば、上がる方が大きい素材も吸わせる。吸わせられずに残った素材は時分解し、記憶の欠片をでたらめな仲間に吸わせる。
-// 進化できれば、最初に条件を満たした進化先へ
+// 進化できれば、最初に条件を満たした進化先へ（型は1つ目。段階42：2回目・3回目も同じ。寄り道は目指さない）
 
 const D = WEAPON_DATA;
 
 /** 一番近い進化先の、条件の能力値（なければ空） */
 function targetParams(armory: ArmoryState, owner: string): WeaponParamKey[] {
   const w = armory.weapons[owner];
-  if (!w || w.evolvedTo) return [];
+  if (!w) return [];
   let best: { lack: number; params: WeaponParamKey[] } | null = null;
-  for (const evo of D.weapons[w.defId].evolutions) {
+  for (const evo of nextEvolutions(D, w).filter((e) => !e.sealed && !e.detour)) {
     const conds = evo.conditions.flatMap((c) => (c.kind === 'param' ? [c] : []));
     if (conds.length === 0) continue;
     const lack = conds.reduce((sum, c) => sum + Math.max(0, c.min - w.params[c.param]), 0);
@@ -66,8 +66,8 @@ export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: 
   }
   for (const owner of owners) {
     const w = armory.weapons[owner];
-    if (!w || w.evolvedTo) continue;
-    const evo = D.weapons[w.defId].evolutions.find((e) => getEvolveError(D, armory, owner, e.id) === null);
+    if (!w) continue;
+    const evo = nextEvolutions(D, w).find((e) => !e.detour && getEvolveError(D, armory, owner, e.id) === null);
     if (evo) armory = evolveWeapon(D, armory, owner, evo.id);
   }
   return armory;
