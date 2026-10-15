@@ -876,6 +876,8 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 
 M1 の残り（18・19）は、今は絵なしや色の加工で通せているので後ろにした。早く見たい場面があれば前に出してよい。
 
+1章で足りない絵は、Gemini の表情違いも含めて 5-6 に全部まとめた（2026-10-15）。18・19 の中身と、作る順番はそちらを見る。
+
 ### M1 の残りの指示文（2026-10-11 に足した。頭は 5-3 の共通部分）
 
 **ゆうま**：立ち絵の頭（`<表情>` は `a tired, laid-back expression with sleepy half-lidded eyes, but kind`）の後に
@@ -961,6 +963,78 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 | お面ノイズ | `a cluster of festival character masks (plain fox, oni and round-face masks, no famous characters) stacked like a totem, glaring` |
 | わたあめノイズ | `a fluffy cloud of pink cotton candy on a wooden stick, sticky strands reaching out like arms` |
 | 金魚鉢のぬし（ボス） | `a giant round glass goldfish bowl with swirling water inside and many goldfish circling, two arms made of paper goldfish scoops (poi), water overflowing as waves` |
+
+## 5-6. 1章で足りない絵の一覧（2026-10-15）
+
+1章（プロローグ、1日目〜4日目、1-1、1-2）で、まだ絵がない物を全部集めた。台本（`src/data/scriptM1.ts`、`docs/script/M1.md` の 5.、`docs/script/M2.md` の 5.）、会話の人の表情（`src/data/dialogue.ts` の `CAST`）、会話の背景と1枚絵（同じく `BACKDROPS`・`CGS`）、戦闘の敵（`src/data/enemies.ts`）を、台帳（`src/data/assets.ts`）と見比べた。今は、絵のない表情は基本の1枚で、絵のない背景・1枚絵は色と名前で代わりに出している。
+
+上から順に作る（1章の通しで目に入る時間が長いもの、ほかの絵の見本になるものから）。指示文の場所は右の列。ChatGPT の分は 5-5 の作る順番にも同じ番号で並べた（18・19）。
+
+### ChatGPT で作る物
+
+| 順 | 絵 | 使う所 | 指示文 | 一緒に渡す見本の絵 |
+| --- | --- | --- | --- | --- |
+| 1 | 背景：施設の台所（朝。夕方は色の加工） | 1-A・1-D、日常の「施設」（2章でも使う） | 5-5 の「M1 の残りの指示文」 | なし |
+| 2 | 背景：コンビニの店内 | 1-C、4日目の小話、日常の「コンビニ」 | 同上 | なし |
+| 3 | 背景：学校の屋上 | 1-D、3日目 | 同上 | なし |
+| 4 | 背景：金魚すくいの屋台 | P-3（金魚すくいの遊びの水面にも） | 同上 | なし |
+| 5 | 背景：射的の屋台 | P-3 | 同上 | なし |
+| 6 | 背景：神社の石段の上 | P-4 | 同上 | なし |
+| 7 | 背景：神社の裏の高台（夜） | P-5 | 同上 | なし |
+| 8 | 1枚絵：高台で花火を見る3人の後ろ姿 | P-5 | 同上 | 子どもの3人の立ち絵 |
+| 9 | 1枚絵：金魚の写真 | 1-D | 同上 | 子どものあかり（笑顔） |
+| 10 | 1枚絵：白い街（夢） | 1-A | 同上 | なし |
+| 11 | ゆうま（通常）の基本の1枚 | 1-C・1-E・1-G・2-B | 同上 | あかり（笑顔） |
+| 12 | 写しのゆうま（笑顔）、写しのひなの（笑顔） | 1-1 | 同上 | ゆうま、子どものあかり（構図）。ひなのは写しのゆうまも |
+| 13 | 敵：1-1 の砂嵐4つ（金魚・水風船・お面・わたあめ）とボス（金魚鉢のぬし） | 1-1 の戦闘（今はゲームの側で描いた仮の姿） | 5-3 の敵の絵の共通部分（2026-10-13 に足した2文も）と、5-5 の「1-1 の敵の `Body:`」。時代の色は平成 | ブリキノイズ |
+| 低 | 背景：教室（放課後） | 3日目の小話 | まだない（教室の絵の色の加工で代わりにしている） | 教室（朝） |
+| 低 | 射的の景品3つ（ビー玉の袋・ブリキのロボット・紙ふうせん）の小さな絵 | P-3 の射的の遊び | まだない（今はゲームの側で図形で描いている） | ― |
+
+### Gemini で作る物（表情違い）
+
+5-3 の 14. の頭の文で、基本の1枚を見本に渡して、1回に1つの表情を作る。表情の文は、高校生の同じ表情と同じにした（台帳の `heroPortrait`・`akariPortrait`・`rikuFace`）。
+
+| 順 | 人 | 足りない表情（台本の〔 〕の名前） | 見本の絵 | `<その人の見た目>` |
+| --- | --- | --- | --- | --- |
+| 1 | 子どものあかり | むっ・驚き・大笑い・照れ・悲しい・デジャヴ | 笑顔（`young_akari_smile`） | `soft chestnut-brown short bob, a small red goldfish hair clip on the left, white summer yukata with small red goldfish, childlike proportions` |
+| 2 | 子どものりく | 通常・驚き・にやり・あせり・照れ | 得意げ（`young_riku_proud`） | `short spiky dark-brown hair, a small bandage on his cheek, navy jinbei with a simple white pattern, childlike proportions` |
+| 3 | 子どものハルト | 驚き・照れ・困り | 通常（`young_hero_normal`） | `messy short black hair with one sand-gold strand in the bangs, amber eyes, white T-shirt and an open navy zip hoodie, childlike proportions` |
+| 4 | ゆうま | 笑顔・考える・泣き笑い・苦笑い・驚き | 通常（ChatGPT の 11 ができてから） | `messy short black hair with a bit of bed head, sleepy eyes, vertically striped convenience store shirt and a plain apron` |
+| 5 | 写しのひなの | 泣き | 笑顔（ChatGPT の 12 ができてから） | `short black hair in two small pigtails, pale pink yukata with a morning glory pattern, childlike proportions` |
+
+| 表情 | `<表情>` |
+| --- | --- |
+| 通常 | `relaxed and friendly, a small natural smile with the mouth closed` |
+| 驚き | `surprised, eyes wide open, mouth slightly open, eyebrows raised` |
+| 大笑い | `laughing happily with open mouth, eyes closed` |
+| むっ | `pouting, cheeks puffed, frowning a little` |
+| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small shy smile with the mouth closed` |
+| 悲しい | `sad and quiet, eyes looking down, brows slightly lowered, mouth closed, eyes a little moist` |
+| デジャヴ | `lost in thought, eyes looking slightly off to the side into the distance, a faint wistful feeling of deja vu` |
+| にやり | `a sly mischievous smirk, one corner of the mouth raised, eyes narrowed playfully` |
+| あせり | `flustered, an awkward nervous smile, eyebrows raised in a troubled way, eyes looking aside` |
+| 困り | `troubled, eyebrows raised in a worried way, mouth slightly open, eyes looking aside` |
+| 笑顔 | `a bright, warm smile with the mouth slightly open` |
+| 考える | `thoughtful, eyes looking up and aside, mouth slightly pursed` |
+| 泣き笑い | `smiling through tears, eyes wet and slightly narrowed, a trembling smile` |
+| 苦笑い | `a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled` |
+| 泣き | `crying, tears streaming down the cheeks, mouth open in a sob, eyebrows drawn up` |
+
+（泣きは、この節で足した文。1回だけ涙を描いてよい表情なので、頭の文の `no tears unless stated` はそのままでよい）
+
+### あとで作る物（低）
+
+- まばたき・口パクの差分（5-4）：子どもの3人、ふみ、写しのふみ、写しのきよし、ゆうま。今は止まった絵のまま出る。表情違いがそろってから作る
+
+### 絵はあるが、まだ画面につないでいない物
+
+作る物ではない。出す段階で台帳の id をつなぐ。
+
+| 絵 | つなぐ所 | 段階 |
+| --- | --- | --- |
+| 川沿いの帰り道（`bg.riverside_path`） | 会話の背景 `river_path`（4日目のあかり3。今は色だけ） | 1章の昼の出来事の台本を入れる時 |
+| 時計屋の店内（昼）（`bg.clock_shop_day`） | 3日目・4日目の時計屋（今は夕暮れの絵） | 36 |
+| 昭和の商店街の背景・地図、夕焼けの二人乗り、1-2 の敵5つ | 1-2 の区画 | 37 |
 
 ## 6. 音
 
