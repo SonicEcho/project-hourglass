@@ -36,12 +36,12 @@ export interface AreaTalker {
 
 /** 探索の途中の会話のきっかけ（1回だけ） */
 export type AreaTrigger =
-  /** 敵に n 回勝った時 */
-  | { on: 'wins'; count: number; scene: string }
+  /** 敵に n 回勝った時。after を書くと、その会話を見た後だけ（段階37。1-2 の「時計屋の後の戦闘」） */
+  | { on: 'wins'; count: number; scene: string; after?: string }
   /** 返すのに要るコマの残りが left 以下になった時（まだそろっていない時。段階28） */
   | { on: 'komaLeft'; left: number; scene: string }
-  /** チェックポイントに初めて着いた時 */
-  | { on: 'checkpoint'; scene: string }
+  /** チェックポイントに初めて着いた時。cell を書くと、そのチェックポイントだけ（段階37。チェックポイントが2つある区画） */
+  | { on: 'checkpoint'; scene: string; cell?: GridCell }
   /** ボスの印に触れた時（会話の後でボスと戦う） */
   | { on: 'boss'; scene: string }
   /** ボスに勝った時（会話の後で区画を出る） */
@@ -182,8 +182,9 @@ export function pendingTrigger(area: AreaDef, state: ExploreState, on: AreaTrigg
   return (
     area.triggers.find((t) => {
       if (t.on !== on || state.seen.includes(t.scene)) return false;
-      if (t.on === 'wins') return wins >= t.count;
+      if (t.on === 'wins') return wins >= t.count && (t.after === undefined || state.seen.includes(t.after));
       if (t.on === 'komaLeft') return left > 0 && left <= t.left;
+      if (t.on === 'checkpoint' && t.cell) return same(t.cell, state.cell);
       return true;
     }) ?? null
   );
@@ -294,5 +295,9 @@ export function checkArea(area: AreaDef): string[] {
   const start = cellsOf(area, 'S')[0];
   if (start && !findPath(map, start, area.boss.cell)) errors.push(`${area.id}：出発点からボスまで歩けない`);
   if (!(Number.isInteger(area.komaNeed) && area.komaNeed >= 1)) errors.push(`${area.id}：返すのに要るコマの数がない`);
+  for (const t of area.triggers) {
+    if (t.on === 'checkpoint' && t.cell && !isCheckpoint(area, t.cell)) errors.push(`${area.id}：会話 ${t.scene} のチェックポイント（${t.cell}）が P のマスではない`);
+    if (t.on === 'wins' && t.after && !area.triggers.some((x) => x.scene === t.after)) errors.push(`${area.id}：会話 ${t.scene} の先に見る会話 ${t.after} がない`);
+  }
   return errors;
 }

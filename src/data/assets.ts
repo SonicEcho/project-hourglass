@@ -935,7 +935,7 @@ export const ASSETS: AssetEntry[] = [
       'Walkable areas (the street, the back alleys, the slope) must be clearly distinguishable from non-walkable objects (buildings, goods, bicycles, poles). The main street is wide, at least one eighth of the image width. ' +
       'Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.',
     '見本の絵：昭和の商店街の背景（bg.showa_street。店の並びをそろえるため）。元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）',
-    'M2 の 1-2 の地図（docs/ART.md の 5-3 の 12）。はじめは縁日の地図を見本に付けたら、店が屋台のように離れて建ったので、見本を外して指示文を書き直した。歩ける場所の文字の地図は、段階37で区画を作る時に書く',
+    'M2 の 1-2 の地図（docs/ART.md の 5-3 の 12）。はじめは縁日の地図を見本に付けたら、店が屋台のように離れて建ったので、見本を外して指示文を書き直した。歩ける場所の文字の地図は、段階37で書いた（areas.ts の SHOWA_STREET_LAYOUT）',
   ),
   chatgptArt(
     'bg.showa_street',
@@ -969,7 +969,7 @@ export const ASSETS: AssetEntry[] = [
       'It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded green and orange). Eerie but not gory, readable as a small silhouette on a phone screen. ' +
       'Body: a broken tin toy robot tangled with wind-up springs and keys, heavy and stiff',
     '見本の絵なし。元の絵は 1254×1254。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜き、640×640 に縮めた（まわりの薄い砂の渦は、抜く時にほとんど消えた）',
-    'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）。最初に作った敵の絵。戦闘画面に敵の絵を出す仕組みは段階37で作り、その時にこの絵を置いて、敵の絵の共通部分を決める',
+    'M2 の 1-2 の砂嵐（docs/ART.md の 5-3 の 13）。最初に作った敵の絵。段階37で戦闘画面に出した（enemyArt.ts の ENEMY_ART）',
   ),
   // M2 のみお・カイ・2-1 の人たちと背景・地図・1枚絵、1-2 の残りの背景と敵（2026-10-13〜14。docs/ART.md の 5-5 の作る順番の 5〜11）
   chatgptPortrait(
@@ -1002,7 +1002,7 @@ export const ASSETS: AssetEntry[] = [
       'Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. Full body, centered, plain pure white background, no shadow, no ground. ' +
       'Kai, keep his design exactly as in the attached character sheet, in a fighting stance: holding the square frame-shaped blade "Frame" up in front of him like a camera viewfinder, looking at the viewer through it with a cold smirk, his open white coat flaring. Thin blue-green light lines run along the blade.',
     '見本の絵：カイの設定画（髪と目を直した後）。元の絵は 1254×1254。白い背景は scripts/cutout.py（rembg の isnet-anime）で抜き、640×640 に縮めた',
-    '2-3 の負け戦の相手（docs/ART.md の 5-3 の 2）。戦闘画面に敵の絵を出す仕組みは段階37で作る',
+    '2-3 の負け戦の相手（docs/ART.md の 5-3 の 2）。戦闘画面に敵の絵を出す仕組みは段階37で作った（enemyArt.ts の ENEMY_ART。カイは段階40で足す）',
     '2026-10-13',
   ),
   chatgptArt(

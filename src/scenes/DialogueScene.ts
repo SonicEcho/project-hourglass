@@ -26,6 +26,9 @@ const AUTO_BASE_MS = 1100;
 const AUTO_PER_CHAR_MS = 45;
 /** 話していない人の立ち絵の暗さ（重なっても透けないよう、薄くするのではなく暗くする。段階18a） */
 const DIM_TINT = 0x707070;
+/** 2つの色をかけ合わせる（セピアの写しを、話していない時に暗くする。段階37） */
+const mulTint = (a: number, b: number): number =>
+  [16, 8, 0].reduce((acc, sh) => acc | (Math.round((((a >> sh) & 0xff) * ((b >> sh) & 0xff)) / 255) << sh), 0);
 /** 本文の折り返しの幅 */
 const BODY_WRAP = GAME_WIDTH - 68;
 /** 立ち絵の下の端（本文の枠の上の辺） */
@@ -800,6 +803,7 @@ export class DialogueScene extends Phaser.Scene {
     const base = { obj, body, face: def?.firstFace ?? '', sunk: false };
     if (def?.portrait && imageFor(def.firstFace)) {
       const img = this.add.image(0, 0, imageFor(def.firstFace)).setOrigin(0.5, 1);
+      if (def.tint !== undefined) img.setTint(def.tint);
       // 絵ごとに元の大きさが違っても、同じ高さで出す（表情を替えた時も測り直す）
       const fit = () => img.setScale((def.height ?? 420) / img.height);
       fit();
@@ -857,8 +861,9 @@ export class DialogueScene extends Phaser.Scene {
         setActive: (active) => {
           for (const o of [img, eyes, mouth]) {
             if (!o) continue;
-            if (active) o.clearTint();
-            else o.setTint(DIM_TINT);
+            // 写しの人々はセピアのまま（段階37）。話していない時は、さらに暗く
+            if (active) (def.tint === undefined ? o.clearTint() : o.setTint(def.tint));
+            else o.setTint(def.tint === undefined ? DIM_TINT : mulTint(def.tint, DIM_TINT));
           }
         },
         setFace: (face) => {

@@ -18,6 +18,9 @@ const text = [
   // 段階27：1-1 の縁日（2人のパーティ）を、2つの方針で
   module.formatAreaMeasure(module.measureArea(runs, seed, 'random')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'smart')),
+  // 段階37：1-2 の商店街（1-1 を通した後の育ち具合から）
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a12')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a12')),
 ].join('\n\n');
 const took = `\n\n（${((Date.now() - started) / 1000).toFixed(1)}秒）\n`;
 console.log(text + took);

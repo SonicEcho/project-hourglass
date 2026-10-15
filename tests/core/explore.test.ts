@@ -186,3 +186,45 @@ describe('探索（段階25）', () => {
     expect(checkArea(bad)).toEqual(['t：宝箱 c1 が通れないマス（0,0）にある', 't：宝箱 c1 の隣に立てるマスがない', 't：id が重なっている：c1']);
   });
 });
+
+describe('チェックポイントが2つある区画（段階37）', () => {
+  // 左の P（1,3）と右の P（5,3）。右の P の会話を見た後に、2回目の勝ちで出る会話
+  const two: AreaDef = {
+    ...area,
+    layout: ['#######', '#.....#', '#.###.#', '#P...P#', '#.....#', '#..S..#', '#######'],
+    triggers: [
+      { on: 'checkpoint', cell: [1, 3], scene: 'left' },
+      { on: 'checkpoint', cell: [5, 3], scene: 'right' },
+      { on: 'wins', count: 2, after: 'right', scene: 'eaten' },
+    ],
+  };
+
+  it('着いたチェックポイントの会話だけが出る', () => {
+    const atRight = arrive(two, startExplore(two), [5, 3]).state;
+    expect(pendingTrigger(two, atRight, 'checkpoint')?.scene).toBe('right');
+    const atLeft = arrive(two, startExplore(two), [1, 3]).state;
+    expect(pendingTrigger(two, atLeft, 'checkpoint')?.scene).toBe('left');
+    // 見た後は、もう一方に着いた時だけ
+    const seen = markTrigger(atLeft, 'left');
+    expect(pendingTrigger(two, seen, 'checkpoint')).toBeNull();
+    expect(pendingTrigger(two, arrive(two, seen, [5, 3]).state, 'checkpoint')?.scene).toBe('right');
+  });
+
+  it('先に見る会話（after）を見るまで、勝った回数の会話は出ない', () => {
+    const won = defeatEnemy(defeatEnemy(startExplore(two), 'e1'), 'e2');
+    expect(pendingTrigger(two, won, 'wins')).toBeNull();
+    expect(pendingTrigger(two, markTrigger(won, 'right'), 'wins')?.scene).toBe('eaten');
+  });
+
+  it('書き間違い：P でないマスのチェックポイント、ない会話を先に見る', () => {
+    expect(checkArea(two)).toEqual([]);
+    const bad: AreaDef = {
+      ...two,
+      triggers: [
+        { on: 'checkpoint', cell: [2, 3], scene: 'left' },
+        { on: 'wins', count: 2, after: 'nothing', scene: 'eaten' },
+      ],
+    };
+    expect(checkArea(bad)).toEqual(['t：会話 left のチェックポイント（2,3）が P のマスではない', 't：会話 eaten の先に見る会話 nothing がない']);
+  });
+});

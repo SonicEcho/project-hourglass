@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addParts, defeatEnemy, flowEvents, nextEvent } from '../core';
-import { AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addItems, addKoma, addParts, defeatEnemy, flowEvents, nextEvent } from '../core';
+import { AREA_BATTLES, AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -191,7 +191,8 @@ export function installDebugMenu(nav: DebugNavigator): void {
       panel.append(
         button('探索：敵の印を全部倒したことにする', () => {
           close();
-          setExplore(exArea.enemies.reduce((st, e) => defeatEnemy(st, e.id), ex));
+          // 倒した砂嵐のコマも手に入れる（段階37。足さないと、ボスが眠ったままで戦えない）
+          setExplore(exArea.enemies.reduce((st, e) => (st.defeated.includes(e.id) ? st : addKoma(defeatEnemy(st, e.id), AREA_BATTLES[e.battle]?.koma ?? 0)), ex));
           nav.openExplore(exArea.id);
         }),
         button('探索：ボスの手前へ移る', () => {

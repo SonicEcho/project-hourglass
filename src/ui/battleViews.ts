@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, CARD_NAME_LINES, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, CARD_NAME_LINES, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -275,11 +275,25 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     // 足元の影と、後ろのほのかな光（段階32a 調整1）
     root.add(scene.add.ellipse(cx, bodyY + radius * 0.92, radius * 1.7, 14, 0x000000, alive ? 0.4 : 0.15));
     if (alive) for (let k = 3; k >= 1; k--) root.add(scene.add.circle(cx, bodyY, radius + k * 9, color, 0.05));
-    const body = scene.add.circle(cx, bodyY, radius, color, alive ? 1 : 0.15);
-    body.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
-    root.add(body);
-    // 丸い体の、左上の照り（敵の絵が入るまでの図形を、少し立体に見せる）
-    if (alive) root.add(scene.add.ellipse(cx - radius * 0.32, bodyY - radius * 0.38, radius * 0.7, radius * 0.45, 0xffffff, 0.18));
+    const art = ENEMY_ART[enemy.defId];
+    if (art && hasImage(scene, art)) {
+      // 敵の絵（段階37）：丸の代わりに、丸より少し大きく出す（列の幅に収める）。選べる時・選んだ時は、足もとに輪
+      if (selected || targetable) {
+        const ring = scene.add.ellipse(cx, bodyY + radius * 0.92, radius * 2.1, 22, 0x000000, 0);
+        ring.setStrokeStyle(selected ? 4 : 2, selected ? COLORS.select : COLORS.accent);
+        root.add(ring);
+      }
+      const img = scene.add.image(cx, bodyY - radius * 0.12, art);
+      img.setScale(Math.min(radius * 2.6, colW - 8) / Math.max(img.width, img.height));
+      if (!alive) img.setAlpha(0.2).setTint(0x606060);
+      root.add(img);
+    } else {
+      const body = scene.add.circle(cx, bodyY, radius, color, alive ? 1 : 0.15);
+      body.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
+      root.add(body);
+      // 丸い体の、左上の照り（敵の絵がない敵の図形を、少し立体に見せる）
+      if (alive) root.add(scene.add.ellipse(cx - radius * 0.32, bodyY - radius * 0.38, radius * 0.7, radius * 0.45, 0xffffff, 0.18));
+    }
     if (enemy.down && alive) {
       root.add(addText(scene, cx, bodyY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
     } else if (enemy.standUpGuard && alive) {
