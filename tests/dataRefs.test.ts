@@ -131,8 +131,9 @@ describe('仲間ごとに1つずつ', () => {
 
 describe('物語の流れ（段階23・34）', () => {
   it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
-    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, ITEMS, SCENES, M1_SCENE_ORDER, SLICE_FLOW, TOWN } = await import('../src/data');
-    const { checkArea, checkBonds, checkDailyHub, checkFlow, flowEvents, isPlaceholder } = await import('../src/core');
+    const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, ITEMS, RETURN_VISITS, SCENES, M1_SCENE_ORDER, SLICE_FLOW, TOWN } = await import('../src/data');
+    const { checkArea, checkBonds, checkDailyHub, checkFlow, checkVisits, flowEvents, isPlaceholder, returnDays, visitsFor } = await import('../src/core');
+    const shownVisits = new Set<string>();
     expect(checkFlow(SLICE_FLOW)).toEqual([]);
     const sceneIds = new Set(SCENES.map((s) => s.id));
     const reachable = new Set<string>();
@@ -158,6 +159,12 @@ describe('物語の流れ（段階23・34）', () => {
             expect(sceneIds.has(b.id), `${e.id} ${b.id}`).toBe(true);
             if (b.from <= (hub.day ?? 0)) reachable.add(b.id);
           }
+        }
+        // 返した翌日の出来事（段階36）：通しで遊んで全部返した時に、その日に出るもの
+        for (const v of visitsFor(hub, RETURN_VISITS, returnDays(SLICE_FLOW, e.id, Object.keys(AREAS)))) {
+          expect(sceneIds.has(v.id), `${e.id} ${v.id}`).toBe(true);
+          shownVisits.add(v.id);
+          reachable.add(v.id);
         }
         for (const p of hub.places) {
           expect(p.backdrop in BACKDROPS, `${e.id} ${p.backdrop}`).toBe(true);
@@ -196,18 +203,21 @@ describe('物語の流れ（段階23・34）', () => {
     // 返す画面の記憶の景色（段階46d）
     for (const area of Object.values(AREAS)) if (area.memory) expect(area.memory in BACKDROPS, area.id).toBe(true);
     for (const events of Object.values(BOND_EVENTS)) for (const b of events) expect(reachable.has(b.id), b.id).toBe(true);
+    // 返した翌日の出来事（段階36）：書き間違いがなく、どれも返した次の日の昼に出る
+    expect(checkVisits(RETURN_VISITS, TOWN)).toEqual([]);
+    for (const v of RETURN_VISITS) expect(shownVisits.has(v.id), v.id).toBe(true);
   });
 });
 
 describe('パーティと育成の開放（段階26）', () => {
   it('どの章のパーティも書き間違いがなく、探索の章には自分のパーティがある。1章はハルトとあかりで、ムーブメントは閉じている', async () => {
     const { CHAPTER1_LINEUP, PARTY, PROTOTYPE_LINEUP, SLICE_FLOW } = await import('../src/data');
-    const { checkLineup } = await import('../src/core');
+    const { checkLineup, isPlaceholder } = await import('../src/core');
     const ids = PARTY.map((c) => c.id);
     expect(checkLineup(PROTOTYPE_LINEUP, ids)).toEqual([]);
     for (const c of SLICE_FLOW) {
       if (c.lineup) expect(checkLineup(c.lineup, ids), c.id).toEqual([]);
-      if (c.events.some((e) => e.kind === 'explore' && e.area)) expect(c.lineup, c.id).toBeDefined();
+      if (c.events.some((e) => e.kind === 'explore' && !isPlaceholder(e))) expect(c.lineup, c.id).toBeDefined();
     }
     expect(SLICE_FLOW.find((c) => c.id === 'ch1')?.lineup).toBe(CHAPTER1_LINEUP);
     expect(CHAPTER1_LINEUP.members).toEqual(['hero', 'akari']);

@@ -1,9 +1,10 @@
-import type { BondEvent, DailyHub, DailyPlace, DailyPlaceInfo, DailySpot } from '../core/daily';
+import type { BondEvent, DailyHub, DailyPlace, DailyPlaceInfo, DailySpot, ReturnVisit } from '../core/daily';
 
 // 昼の日常（段階24）。物語の流れ（story.ts の SLICE_FLOW）の daily の出来事ごとに、場所と印を書く。
 // 印の id は、会話の場面がある時は場面の id と同じにする（見たかどうかを、この id でセーブに覚える）。
 // 位置は 390×844 の座標（場所の絵の上の印、地図の上の場所）
 // 段階35：町の地図の場所は TOWN に1つずつ書き、どの日も同じ位置に出す。絆の出来事は BOND_EVENTS（相手ごとの続きもの）
+// 段階36：返した翌日に持ち主に会う出来事は RETURN_VISITS（区画ごと。返した次の日の昼に、必ず見る出来事として出る）
 
 /** 町の地図の場所（段階35）。地図は格子の道で、場所は列（x）と行（y）の交わる所に置く */
 export const TOWN: Record<string, DailyPlaceInfo> = {
@@ -37,8 +38,8 @@ const toDusk = (id: string, label = '時計屋の奥へ（夕暮れになる）'
   ends: true,
   confirm: '時計屋へ行くと、夕暮れになります。\n行きますか？',
 });
-/** 必ず見る出来事 */
-const main = (id: string, label: string, y = ROW1): DailySpot => ({ id, scene: id, label, mark: 'main', x: 195, y, required: true });
+/** 必ず見る出来事（after：先に見ておく印。段階36の「工場の後に楽器店」） */
+const main = (id: string, label: string, y = ROW1, after?: string): DailySpot => ({ id, scene: id, label, mark: 'main', x: 195, y, required: true, after });
 /** 小話 */
 const talk = (id: string, label: string, y = ROW1): DailySpot => ({ id, scene: id, label, mark: 'talk', x: 195, y });
 
@@ -61,6 +62,21 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 7, place: 'convenience', x: 195, y: ROW1 },
   ],
 };
+
+/**
+ * 返した翌日に持ち主に会う出来事（段階36）。区画の時間を返した次の日の昼に、その場所に必ず見る出来事として出る。
+ * 返したかどうかは、返した記録（セーブの returned）と物語の流れから決める（flow.ts の returnDays）。脚本は docs/script/M2.md
+ */
+export const RETURN_VISITS: ReturnVisit[] = [
+  // 1-1 の翌日（2日目）：ゆうまが、妹のひなのに電話する（docs/script/M1.md の 2-B）
+  { area: 'a11', id: 'd2_store', label: 'コンビニの前', place: 'street', x: 195, y: ROW1 },
+  // 1-2 の翌日（4日目）：ふみさんが、来る日じゃないのに店に来る（4-A）
+  { area: 'a12', id: 'd4_fumi', label: '来る日じゃないのに', place: 'clockshop', x: 195, y: ROW1 },
+  // 2-1 の翌日（6日目）：いさむの工場（6-A）。台本は段階39
+  { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1 },
+  // 2-2 の翌日（7日目）：閉店後の楽器店で、けんたたち3人（7-A）。台本は段階39
+  { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
+];
 
 /** 絆の相手の名前（地図の下の「絆」に出す） */
 export const BOND_PARTNER_NAMES: Record<string, string> = { akari: 'あかり', mio: 'みお' };
@@ -109,17 +125,16 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       }),
     ],
   },
-  // 2日目の昼（2-B）。商店街のコンビニは必ず見る。見たら、時計屋へ行ける
+  // 2日目の昼（2-B）。商店街のコンビニ（1-1 を返した翌日のゆうま。段階36から RETURN_VISITS）は必ず見る。見たら、時計屋へ行ける
   d2_free: {
     id: 'd2_free',
     time: '2日目　放課後',
-    places: [
-      at('street', { id: 'd2_store', scene: 'd2_store', label: 'コンビニの前', mark: 'main', x: 195, y: 360, required: true }),
-      at('clockshop', { ...toDusk('d2_to_dusk'), y: 400 }),
-    ],
+    day: 2,
+    places: [at('clockshop', { ...toDusk('d2_to_dusk'), y: 400 })],
   },
   // ---- 3日目〜8日目の昼（段階35。脚本 docs/script/M2.md の 3-B・4-A・5-B・6-A・7-A・8-B） ----
-  // 必ず見る出来事（持ち主に会う場面）は、まだ仮の場面（台本の @note）。返した翌日は段階36、返す前の持ち主は区画の段階で入れる
+  // 返す前の持ち主に会う場面は、まだ仮の場面（台本の @note。区画の段階で入れる）。返した翌日の場面は RETURN_VISITS から出る（段階36）。
+  // 6日目・7日目は、返した翌日の持ち主の後に、次の持ち主（after）
   d3_free: {
     id: 'd3_free',
     time: '3日目　放課後',
@@ -134,7 +149,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 4,
     picks: DAILY_PICKS,
     partners: ['akari'],
-    places: [at('convenience', talk('d4_talk', 'コンビニ（小話）', ROW2)), at('clockshop', main('d4_fumi', '来る日じゃないのに'), toDusk('d4_to_dusk'))],
+    places: [at('convenience', talk('d4_talk', 'コンビニ（小話）', ROW2)), at('clockshop', toDusk('d4_to_dusk'))],
   },
   d5_free: {
     id: 'd5_free',
@@ -151,8 +166,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
-      at('factory', main('d6_isamu', 'いさむの工場')),
-      at('music_shop', main('d6_kenta', '楽器店のけんた')),
+      at('music_shop', main('d6_kenta', '楽器店のけんた', ROW1, 'd6_isamu')),
       at('clockshop', talk('d6_talk', '店の中（小話）'), toDusk('d6_to_dusk')),
     ],
   },
@@ -163,8 +177,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
-      at('music_shop', main('d7_kenta', '閉店後の楽器店')),
-      at('bakery', main('d7_bakery', 'パン屋の親子')),
+      at('bakery', main('d7_bakery', 'パン屋の親子', ROW1, 'd7_kenta')),
       at('clockshop', talk('d7_talk', '店の中（小話）'), toDusk('d7_to_dusk')),
     ],
   },

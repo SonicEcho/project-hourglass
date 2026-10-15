@@ -27,7 +27,7 @@ export interface FlowEvent {
   day?: number;
   /** 仮の画面に出す案内（どの段階で何を作るか）。会話・昼の日常は、これがあると仮の画面にする（段階34） */
   note?: string;
-  /** explore の時：探索する区画（data の AREAS の id） */
+  /** explore・return の時：探索する区画・時間を返す区画（data の AREAS の id）。仮の画面でも書いておく（段階36：返した翌日の場面に使う） */
   area?: string;
 }
 
@@ -75,12 +75,12 @@ export function lineupAt(flow: Flow, id: string, fallback: Lineup): Lineup {
 
 /**
  * まだ中身がなく、仮の画面でつなぐ出来事か（段階34）。
- * 会話・昼の日常は案内（note）を書いたもの。探索・時間を返すは区画（area）のないもの
+ * 案内（note）を書いたもの。探索・時間を返すは、区画（area）のないものも（段階36：区画がまだなくても、区画の id を書いておけるように）
  */
 export function isPlaceholder(e: FlowEvent): boolean {
-  if (e.kind === 'dialogue' || e.kind === 'daily') return e.note !== undefined;
-  if (e.kind === 'explore' || e.kind === 'return') return !e.area;
-  return false;
+  if (e.kind === 'day' || e.kind === 'end') return false;
+  if (e.note !== undefined) return true;
+  return (e.kind === 'explore' || e.kind === 'return') && !e.area;
 }
 
 /** 次の出来事（最後なら null） */
@@ -137,6 +137,22 @@ export function dialogueRun(flow: Flow, id: string): string[] {
   const all = flowEvents(flow);
   const out: string[] = [];
   for (let i = all.findIndex((e) => e.id === id); i >= 0 && i < all.length && all[i].kind === 'dialogue' && !isPlaceholder(all[i]); i++) out.push(all[i].id);
+  return out;
+}
+
+/**
+ * 返した時間と、返した日（段階36）：今の出来事より前の「時間を返す」出来事ごとに、区画の id → 何日目に返したか。
+ * 中身のある返す出来事は、返した記録（セーブの returned）にある区画だけ（負け戦で返せなかった区画は入らない）。
+ * 仮の画面の返す出来事は、通ったら返したことにする（区画を作るまで、翌日の場面を見られるように）
+ */
+export function returnDays(flow: Flow, currentId: string, returned: readonly string[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  let day = 1;
+  for (const e of flowEvents(flow)) {
+    if (e.id === currentId) break;
+    if (e.kind === 'day' && e.day) day = e.day;
+    if (e.kind === 'return' && e.area && (isPlaceholder(e) || returned.includes(e.area))) out[e.area] = day;
+  }
   return out;
 }
 

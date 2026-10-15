@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { BondEvent, DailyHub } from '../../src/core';
+import type { BondEvent, DailyHub, ReturnVisit } from '../../src/core';
 import {
   allSpots,
+  blockers,
   bondLevel,
   checkBonds,
+  checkVisits,
   checkDailyHub,
   finishesAfter,
   isSeen,
@@ -16,6 +18,7 @@ import {
   seenKey,
   spotState,
   usesPick,
+  visitsFor,
 } from '../../src/core';
 
 const stalls: DailyHub = {
@@ -196,5 +199,70 @@ describe('誰と過ごすか（段階35）', () => {
       ],
     };
     expect(checkBonds(bad, TOWN_T)).toEqual(['x：町の地図にない場所：b nowhere', 'x：同じ id の絆の出来事が2つある：b', 'x：前の出来事より早く出る：b']);
+  });
+});
+
+// ---- 返した翌日に持ち主に会う（段階36） ----
+describe('返した翌日に持ち主に会う（段階36）', () => {
+  const placeInfo = (id: string) => ({ id, name: id, backdrop: 'x', mapX: 0, mapY: 0 });
+  const TOWN_T = { street: placeInfo('street'), factory: placeInfo('factory'), shop: placeInfo('shop'), clock: placeInfo('clock') };
+  const VISITS: ReturnVisit[] = [
+    { area: 'a11', id: 'v11', label: 'ゆうま', place: 'street', x: 0, y: 0 },
+    { area: 'a21', id: 'v21', label: 'いさむ', place: 'factory', x: 0, y: 0 },
+    { area: 'a22', id: 'v22', label: 'けんた', place: 'shop', x: 0, y: 0 },
+  ];
+  const hub = (day: number): DailyHub => ({
+    id: `d${day}`,
+    time: '',
+    day,
+    places: [
+      { ...TOWN_T.shop, spots: [{ id: 'next', scene: 'next', label: '次の持ち主', mark: 'main', x: 0, y: 0, required: true, after: 'v21' }] },
+      { ...TOWN_T.clock, spots: [{ id: 'go', label: '→', mark: 'go', x: 0, y: 0, ends: true }] },
+    ],
+  });
+  const ids = (h: DailyHub) => allSpots(h).map((s) => s.id);
+
+  it('返した次の日だけ、その区画の出来事が出る', () => {
+    const days = { a11: 1, a21: 5 };
+    expect(visitsFor(hub(2), VISITS, days).map((v) => v.id)).toEqual(['v11']);
+    expect(visitsFor(hub(3), VISITS, days)).toEqual([]);
+    expect(visitsFor(hub(6), VISITS, days).map((v) => v.id)).toEqual(['v21']);
+    // 返していない区画（a22）は出ない。日のない日常（屋台めぐり）にも出ない
+    expect(visitsFor(hub(7), VISITS, days)).toEqual([]);
+    expect(visitsFor({ ...hub(2), day: undefined }, VISITS, days)).toEqual([]);
+  });
+
+  it('必ず見る出来事として、その場所の先頭に出る（場所がなければ、日を進める場所の前に足す）', () => {
+    const h = resolveHub(hub(6), {}, {}, TOWN_T, visitsFor(hub(6), VISITS, { a21: 5 }));
+    expect(h.places.map((p) => p.id)).toEqual(['shop', 'factory', 'clock']);
+    const v = allSpots(h).find((s) => s.id === 'v21')!;
+    expect(v).toMatchObject({ scene: 'v21', mark: 'main', required: true });
+    expect(requiredLeft(h, {}).map((s) => s.id)).toEqual(['next', 'v21']);
+    // 同じ場所なら、先頭に入る
+    const same = resolveHub(hub(7), {}, {}, TOWN_T, visitsFor(hub(7), VISITS, { a22: 6 }));
+    expect(ids(same)).toEqual(['v22', 'next', 'go']);
+  });
+
+  it('「工場の後に楽器店」：先に見る印を見るまで、後の印は選べない。先の印が出ていない日は、すぐ選べる', () => {
+    const h = resolveHub(hub(6), {}, {}, TOWN_T, visitsFor(hub(6), VISITS, { a21: 5 }));
+    const next = allSpots(h).find((s) => s.id === 'next')!;
+    expect(spotState(h, {}, next)).toBe('locked');
+    expect(blockers(h, {}, next).map((s) => s.id)).toEqual(['v21']);
+    expect(spotState(h, markSeen({}, 'v21'), next)).toBe('open');
+    // 日を進める印は、今までどおり必ず見る出来事の残り
+    const go = allSpots(h).find((s) => s.id === 'go')!;
+    expect(blockers(h, markSeen({}, 'v21'), go).map((s) => s.id)).toEqual(['next']);
+    // 返していない日は、先の印がないので、すぐ選べる
+    const alone = resolveHub(hub(6), {}, {}, TOWN_T, []);
+    expect(spotState(alone, {}, allSpots(alone).find((s) => s.id === 'next')!)).toBe('open');
+  });
+
+  it('書き間違いを見つける', () => {
+    expect(checkVisits(VISITS, TOWN_T)).toEqual([]);
+    const bad: ReturnVisit[] = [
+      { area: 'a', id: 'x', label: '', place: 'nowhere', x: 0, y: 0 },
+      { area: 'a', id: 'x', label: '', place: 'street', x: 0, y: 0 },
+    ];
+    expect(checkVisits(bad, TOWN_T)).toEqual(['町の地図にない場所：x nowhere', '同じ id の返した翌日の出来事が2つある：x', '同じ区画の返した翌日の出来事が2つある：a']);
   });
 });

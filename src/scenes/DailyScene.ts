@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { bondLevel, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, spotState } from '../core';
-import { BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, TOWN } from '../data';
+import { blockers, bondLevel, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -15,6 +15,7 @@ import { run, setStoryVars } from './run';
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
 // 見た印は、物語で覚えた値（run.vars）に入れてセーブする。日常を終えたら、物語の流れへ done で戻る。
 // 段階35：昼に選べる回数（絆の出来事と小話）と、相手ごとの絆の出来事。画面を開くたびに、今の値で日常を組み立てる（resolveHub）
+// 段階36：返した翌日に持ち主に会う出来事（RETURN_VISITS）も、返した記録から組み立てる
 
 /** Phaser はデータを渡さずに開くと前のデータを使い回すので、この画面を開く時は必ず全部渡す（なければ undefined を書く） */
 export interface DailyData {
@@ -35,6 +36,12 @@ const MARK_STYLE: Record<SpotMark, { color: number; icon: string }> = {
   go: { color: 0xd9ae62, icon: '→' },
 };
 
+/** 今の値で、その日の日常を組み立てる（絆の出来事と、返した翌日の出来事を足す） */
+function build(data: DailyHub): DailyHub {
+  const visits = visitsFor(data, RETURN_VISITS, returnDays(SLICE_FLOW, run.event, run.returned));
+  return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits);
+}
+
 export class DailyScene extends Phaser.Scene {
   private hub!: DailyHub;
   private eventId = '';
@@ -49,7 +56,7 @@ export class DailyScene extends Phaser.Scene {
     const data0 = DAILY_HUBS[data.event];
     if (!data0) throw new Error(`no daily hub ${data.event}`);
     if (data.finished) {
-      const hub = resolveHub(data0, run.vars, BOND_EVENTS, TOWN);
+      const hub = build(data0);
       const spot = hub.places.flatMap((p) => p.spots).find((s) => s.id === data.finished);
       if (spot) {
         const end = finishesAfter(hub, run.vars, spot);
@@ -60,7 +67,7 @@ export class DailyScene extends Phaser.Scene {
         }
       }
     }
-    const hub = resolveHub(data0, run.vars, BOND_EVENTS, TOWN);
+    const hub = build(data0);
     this.hub = hub;
     const place = hub.places.find((p) => p.id === data.place) ?? (hub.places.length === 1 ? hub.places[0] : null);
     if (place) this.showPlace(place);
@@ -168,7 +175,7 @@ export class DailyScene extends Phaser.Scene {
   private tapSpot(place: DailyPlace, spot: DailySpot): void {
     const state = spotState(this.hub, run.vars, spot);
     if (state === 'locked') {
-      this.toast(`先に見ておきたい出来事がある：${requiredLeft(this.hub, run.vars).map((s) => s.label).join('、')}`);
+      this.toast(`先に見ておきたい出来事がある：${blockers(this.hub, run.vars, spot).map((s) => s.label).join('、')}`);
       return;
     }
     if (state === 'seen') {
