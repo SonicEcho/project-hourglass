@@ -3,10 +3,13 @@ import type { RunSnapshot, SaveContext } from '../../src/core';
 import {
   absorbMaterial,
   addItems,
+  addToAlbum,
+  createAlbum,
   createArmory,
   createGrowth,
   createNavi,
   feedFragment,
+  gainSnaps,
   fragmentItem,
   MIGRATIONS,
   openableNodes,
@@ -14,11 +17,12 @@ import {
   parseSave,
   placePart,
   progressAt,
+  removeFromAlbum,
   SAVE_VERSION,
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { AREAS, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREAS, CARDS, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -30,6 +34,8 @@ const ctx: SaveContext = {
   flow: SLICE_FLOW,
   renamedEvents: RENAMED_EVENTS,
   areas: AREAS,
+  cards: CARDS,
+  initialAlbum: createAlbum(FOLDER),
 };
 
 const AT = new Date('2026-10-07T12:34:56Z');
@@ -48,6 +54,7 @@ function freshRun(): RunSnapshot {
     explore: null,
     linkGauge: null,
     returned: [],
+    album: createAlbum(FOLDER),
   };
 }
 
@@ -68,6 +75,8 @@ function playedRun(): RunSnapshot {
   r.pendingReward = 'battle2';
   r.event = 'd1_clockshop';
   r.vars = { goldfish: 'あかね', prize: 'robot' };
+  // 段階41：ジョーカーを手に入れて、ソード1枚と入れ替えた
+  r.album = addToAlbum(removeFromAlbum(gainSnaps(r.album, ['joker']), 'sword'), 'joker');
   return r;
 }
 
@@ -215,6 +224,31 @@ describe('セーブ：古い版から直す', () => {
     // 版8では、M1 の「つづく」は知らない出来事なので最初から
     const v8 = parseEdited((raw) => (raw.run.event = 'to_be_continued'));
     expect(v8.ok && v8.save.run.event).toBe('prologue_open');
+  });
+
+  it('版9のセーブ（アルバムがなかった）は、最初のアルバムで読む（段階41）', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 9;
+      delete raw.run.album;
+    });
+    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
+    expect(res.ok && res.save.run.album).toEqual(createAlbum(FOLDER));
+  });
+
+  it('アルバム：知らないスナップは捨て、持っていない分・上限を超える分は外す。20枚ちょうどでなければ最初のアルバムに戻す（段階41）', () => {
+    const res = parseEdited((raw) => {
+      raw.run.album.owned.removed = 3;
+      raw.run.album.album.removed = 1;
+      raw.run.album.album.heavyBlow = 1;
+    });
+    // 知らないスナップを外すと19枚になるので、最初のアルバムに戻す（持ち物のジョーカーは残る）
+    expect(res.ok && res.save.run.album.owned.removed).toBeUndefined();
+    expect(res.ok && res.save.run.album.owned.joker).toBe(1);
+    expect(res.ok && res.save.run.album.album).toEqual(createAlbum(FOLDER).album);
+    // 最初の持ち物は、セーブになくても持っていることにする
+    const kept = parseEdited((raw) => delete raw.run.album.owned.sword);
+    expect(kept.ok && kept.save.run.album.owned.sword).toBe(3);
+    expect(kept.ok && kept.save.run.album.album.joker).toBe(1);
   });
 
   it('直す手順がない古い版は読まない', () => {

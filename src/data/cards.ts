@@ -19,6 +19,19 @@ export const CARDS = {
     effects: [{ kind: 'damage', type: 'physical', power: 30, partMultiplier: 2 }],
   },
   draw: { id: 'draw', name: 'ドロー', weight: 0, target: 'self', support: true, effects: [{ kind: 'draw', count: 2 }] },
+  // 段階41：2章で手に入る新しいスナップ（docs/NAMING.md の「M2 の固有の名前」）。最初のアルバムには入っていない
+  // ジョーカー：どの属性にもなる。相手ごとに一番効く属性を自動で選ぶ（脚本の「手札の1枚を好きな属性に変える」を、仕組みに合う形にした）
+  joker: {
+    id: 'joker',
+    name: 'ジョーカー',
+    weight: 1.0,
+    target: 'enemy',
+    effects: [{ kind: 'damage', type: 'physical', power: 36, bestOf: ['physical', 'fire', 'ice', 'thunder'] }],
+  },
+  // アンコール：このラウンドに最後に使われたスナップを、同じ相手にもう一度。重いので、たいてい仲間の後に動く
+  encore: { id: 'encore', name: 'アンコール', weight: 1.6, target: 'self', effects: [{ kind: 'encore' }] },
+  // ピンチヒッター：使う仲間が、このラウンドの最初に動く（クイックステップと同じ先制）
+  pinchHitter: { id: 'pinchHitter', name: 'ピンチヒッター', weight: 1.0, target: 'enemy', precede: true, effects: [{ kind: 'damage', type: 'physical', power: 30 }] },
 } satisfies Record<string, CardDef>;
 
 /**
@@ -33,6 +46,7 @@ export const CARD_NAME_LINES: Partial<Record<string, string>> = {
   wideShot: 'ワイド\nショット',
   quickStep: 'クイック\nステップ',
   breakArm: 'ブレイク\nアーム',
+  pinchHitter: 'ピンチ\nヒッター',
 };
 
 /** アルバム（パーティ共通の山札）20枚の構成 */
@@ -53,4 +67,11 @@ export const FOLDER: { card: CardDef; count: number }[] = [
 /** アルバムを枚数分に展開する */
 export function buildFolder(folder = FOLDER): CardDef[] {
   return folder.flatMap(({ card, count }) => Array.from({ length: count }, () => card));
+}
+
+/** スナップの名前を「ジョーカー、ソード×2」のようにまとめる（手に入れた時の知らせ。段階41） */
+export function snapNames(ids: string[]): string {
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, n]) => `${(CARDS as Record<string, CardDef>)[id]?.name ?? id}${n > 1 ? `×${n}` : ''}`).join('、');
 }

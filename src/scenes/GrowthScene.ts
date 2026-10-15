@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { canEvolveAny, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition } from '../core';
+import { canEvolveAny, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
@@ -186,53 +186,65 @@ export class GrowthScene extends Phaser.Scene {
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
 
-    // ムーブメントと武器へ（2つ並べる。開いているものだけ。段階26）
-    const halfW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
-    const subs: { w: number; draw: (x: number, w: number) => void }[] = [];
+    // ムーブメントと武器へ（並べる。開いているものだけ。段階26）。アルバムは、入れ替えられるスナップがある時だけ（探索のチェックポイント。段階41）
+    // 3つ並ぶ時は幅が狭いので、アイコンを省いて文字を短く・小さくする
+    const subs: ((x: number, w: number, compact: boolean) => void)[] = [];
     if (lineup.unlocks.navi) {
-      subs.push({
-        w: halfW,
-        draw: (x, w) => {
-          const naviBugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
-          const loose = run.navi.parts.filter((p) => !p.placement).length;
-          addButton(this, this.root, x, 733, w, 44, `ムーブメント\nはめていない ${loose}${naviBugs > 0 ? `・狂い ${naviBugs}` : ''}`, { onTap: () => this.scene.start('Navi') }, {
-            fill: 0x1e3a5a,
-            stroke: 0x5aa8ff,
-            strokeWidth: 2,
-            size: 12,
-            bold: true,
-          });
-          this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, 0x5aa8ff));
-        },
+      subs.push((x, w, compact) => {
+        const naviBugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
+        const loose = run.navi.parts.filter((p) => !p.placement).length;
+        const label = compact
+          ? `ムーブメント\nはめていない${loose}${naviBugs > 0 ? ` 狂い${naviBugs}` : ''}`
+          : `ムーブメント\nはめていない ${loose}${naviBugs > 0 ? `・狂い ${naviBugs}` : ''}`;
+        addButton(this, this.root, x, 733, w, 44, label, { onTap: () => this.scene.start('Navi') }, {
+          fill: 0x1e3a5a,
+          stroke: 0x5aa8ff,
+          strokeWidth: 2,
+          size: compact ? 10 : 12,
+          bold: true,
+        });
+        if (!compact) this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, 0x5aa8ff));
       });
     }
     if (lineup.unlocks.weapon) {
-      subs.push({
-        w: halfW,
-        draw: (x, w) => {
-          const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
-          const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
-          const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
-          addButton(
-            this,
-            this.root,
-            x,
-            733,
-            w,
-            44,
-            `武器\n${evolvable ? '進化できる！' : `素材 ${items}・記憶の欠片 ${fragments}`}`,
-            { onTap: () => this.scene.start('Weapon') },
-            evolvable
-              ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: 12, bold: true, textColor: COLORS.accentText }
-              : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: 12, bold: true },
-          );
-          this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? COLORS.accent : 0xff9a5a));
-        },
+      subs.push((x, w, compact) => {
+        const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
+        const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
+        const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+        const stock = compact ? `素材${items}・欠片${fragments}` : `素材 ${items}・記憶の欠片 ${fragments}`;
+        addButton(
+          this,
+          this.root,
+          x,
+          733,
+          w,
+          44,
+          `武器\n${evolvable ? '進化できる！' : stock}`,
+          { onTap: () => this.scene.start('Weapon') },
+          evolvable
+            ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: compact ? 10 : 12, bold: true, textColor: COLORS.accentText }
+            : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: compact ? 10 : 12, bold: true },
+        );
+        if (!compact) this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? COLORS.accent : 0xff9a5a));
+      });
+    }
+    if (back && hasSpare(run.album)) {
+      subs.push((x, w, compact) => {
+        const spare = countOf(spareSnaps(run.album));
+        addButton(this, this.root, x, 733, w, 44, `アルバム\n入れていない ${spare}枚`, { onTap: () => this.scene.start('Album') }, {
+          fill: 0x3a2a5a,
+          stroke: 0xa98be0,
+          strokeWidth: 2,
+          size: compact ? 10 : 12,
+          bold: true,
+        });
+        if (!compact) this.root.add(addIcon(this, 'support', x - w / 2 + 18, 733, 16, 0xa98be0));
       });
     }
     // 1つだけなら横いっぱいに
-    if (subs.length === 1) subs[0].draw(GAME_WIDTH / 2, GAME_WIDTH - SIDE_PADDING * 2);
-    else subs.forEach((b, i) => b.draw(i === 0 ? SIDE_PADDING + halfW / 2 : GAME_WIDTH - SIDE_PADDING - halfW / 2, b.w));
+    const gap = 6;
+    const subW = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (subs.length - 1)) / Math.max(1, subs.length);
+    subs.forEach((draw, i) => draw(SIDE_PADDING + subW / 2 + i * (subW + gap), subW, subs.length >= 3));
 
     // 下：次の戦闘へ
     addButton(

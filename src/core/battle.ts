@@ -24,6 +24,7 @@ import type {
   AllyUnit,
   BattleSetup,
   BattleState,
+  CardDef,
   CardInstance,
   ComboDef,
   DamageType,
@@ -131,6 +132,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     phase: 'plan',
     plans: [],
     precedeIds: [],
+    lastSnap: null,
     supportUsed: false,
     searchChoice: null,
     queue: [],
@@ -283,6 +285,7 @@ function startRound(s: BattleState): void {
   s.phase = 'plan';
   s.plans = [];
   s.precedeIds = [];
+  s.lastSnap = null;
   s.supportUsed = false;
   s.searchChoice = null;
   s.queue = [];
@@ -572,6 +575,13 @@ export interface OrderEntry {
   precede: boolean;
 }
 
+/** その行動で先に動くか：連携技、クイックステップを受けた仲間、先に動くスナップ（ピンチヒッター。段階41） */
+function actsFirst(s: BattleState, ids: string[], action: PlayerAction | undefined): boolean {
+  if (action?.type === 'link') return true;
+  if (ids.some((id) => s.precedeIds.includes(id))) return true;
+  return action?.type === 'card' && !!s.hand.find((c) => c.uid === action.cardUid)?.card.precede;
+}
+
 /** 計画の行動の重さ */
 function planWeight(s: BattleState, plan: Plan): number {
   const actor = findAlly(s, plan.actorIds[0]);
@@ -607,7 +617,7 @@ export function getRoundOrder(s: BattleState, preview?: { allyId: string; action
     const spd = Math.min(...members.map((m) => m.spd));
     const guard = plan?.action.type === 'guard';
     // 連携技は必ず最初に動く（防御の次。段階26の調整4）
-    const precede = plan?.action.type === 'link' || ids.some((id) => s.precedeIds.includes(id));
+    const precede = actsFirst(s, ids, plan?.action);
     const planIndex = plan ? s.plans.indexOf(plan) : undefined;
     keyed.push({
       key: { tier: guard ? 0 : precede ? 1 : 2, speed: actionSpeed(spd, weight), side: 'ally', spd, index: index++ },
@@ -633,7 +643,7 @@ function queueToEntry(s: BattleState, q: QueueEntry): OrderEntry {
     planIndex: q.planIndex,
     tentative: false,
     guard: plan.action.type === 'guard',
-    precede: plan.action.type === 'link' || plan.actorIds.some((id) => s.precedeIds.includes(id)),
+    precede: actsFirst(s, plan.actorIds, plan.action),
   };
 }
 
@@ -820,6 +830,8 @@ function perform(
   const target = retarget(s, r.def, 'target' in action ? action.target : undefined);
   const pick = 'pickCardUid' in action ? action.pickCardUid : undefined;
   for (const effect of r.def.effects) applyEffect(ctx, effect, r.def, target, pick);
+  // アンコールでもう一度使えるよう、使ったスナップを覚える（アンコール自身は覚えない。段階41）
+  if (action.type === 'card' && !r.def.effects.some((e) => e.kind === 'encore')) s.lastSnap = { card: r.def as CardDef, target };
   return { downed: ctx.downed };
 }
 
@@ -976,6 +988,15 @@ function applyEffect(
     case 'precede':
       // サポートスナップの効果は useSupport で処理する
       return;
+    case 'encore': {
+      // このラウンドに最後に使われたスナップを、同じ相手に（倒れていたら向け直して）もう一度
+      const last = s.lastSnap;
+      s.log.push({ type: 'encore', actorId: ctx.user.uid, name: last?.card.name ?? null });
+      if (!last) return;
+      const again = retarget(s, last.card, last.target);
+      for (const e of last.card.effects) if (e.kind !== 'encore') applyEffect(ctx, e, last.card, again, undefined);
+      return;
+    }
   }
 }
 

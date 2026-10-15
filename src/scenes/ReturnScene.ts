@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import type { AreaDef } from '../core';
-import { addFragments, komaExtra } from '../core';
+import { addFragments, gainSnaps, komaExtra } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { playSandRise, playTick } from '../audio/sound';
-import { AREAS, BACKDROPS, FRAGMENTS } from '../data';
+import { AREAS, BACKDROPS, FRAGMENTS, snapNames } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { describeFragment } from '../ui/weaponText';
@@ -277,7 +277,22 @@ export class ReturnScene extends Phaser.Scene {
 
   /** 返した時間をセーブに残し、探索の状態を片付けて、物語の次へ */
   private showNext(): void {
-    if (!run.returned.includes(this.area.id)) run.returned = [...run.returned, this.area.id];
+    if (!run.returned.includes(this.area.id)) {
+      // 返した報酬のスナップ（段階41）。返した時に1回だけ
+      const snaps = this.area.returnSnaps ?? [];
+      if (snaps.length > 0) {
+        run.album = gainSnaps(run.album, snaps);
+        this.root.add(
+          addText(this, GAME_WIDTH / 2, 640, `${this.area.owner ?? '持ち主'}の想いが、スナップになった：${snapNames(snaps)}\n（チェックポイントのアルバムで入れ替えられる）`, {
+            size: 13,
+            color: COLORS.accentText,
+            align: 'center',
+            wrap: GAME_WIDTH - 40,
+          }).setOrigin(0.5),
+        );
+      }
+      run.returned = [...run.returned, this.area.id];
+    }
     run.explore = null;
     saveRun();
     addButton(this, this.root, GAME_WIDTH / 2, 700, 240, 60, '次へ', { onTap: () => this.scene.start('Flow', { done: true }) }, { size: 18, bold: true });

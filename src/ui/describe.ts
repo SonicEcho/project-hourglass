@@ -35,6 +35,8 @@ export function describeEffect(effect: Effect, scope: TargetScope): string {
       return `山札の上から${effect.count}枚を見て、1枚を手札に加える`;
     case 'precede':
       return '選んだ仲間のこのラウンドの行動が最初に来る';
+    case 'encore':
+      return 'このラウンドに最後に使われたスナップを、同じ相手にもう一度使う（まだ誰も使っていなければ不発）';
   }
 }
 
@@ -49,7 +51,9 @@ export function describeAction(def: ActionDef): string {
     if (m && m[1] === text) parts[parts.length - 1] = `${text} ×${Number(m[2] ?? 1) + 1}回`;
     else parts.push(text);
   }
-  return parts.join('。その後、');
+  const text = parts.join('。その後、');
+  // 先に動くスナップ（ピンチヒッター。段階41）
+  return 'precede' in def && def.precede ? `${text}。使う仲間は、このラウンドの最初に動く` : text;
 }
 
 /** スナップやスキルの主な属性（色分け用） */

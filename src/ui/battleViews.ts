@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { ActionDef, AllyUnit, BattleState, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
+import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, skillMpCost } from '../core';
 import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, CARD_NAME_LINES, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
@@ -188,11 +188,17 @@ function enemyGeometry(s: BattleState, i: number) {
     bodyY: withParts ? LAYOUT.enemies.y + 98 : LAYOUT.enemies.y + 120,
     radius: withParts ? 52 : 42,
     withParts,
+    // 敵の絵の大きさと中心の高さ。ボス（部位あり）は、名前と HP を絵の足もとに重ねて、部位の列の上いっぱいに大きく出す（2026-10-15、開発者の指摘で大きくした）
+    artSize: withParts ? BOSS_ART_SIZE : 0,
+    artY: withParts ? BOSS_ART_BOTTOM - BOSS_ART_SIZE / 2 : LAYOUT.enemies.y + 120 - 42 * 0.12,
   };
 }
 
 const PART_ROW_Y = LAYOUT.enemies.y + LAYOUT.enemies.h - 30;
 const PART_H = 50;
+/** ボスの絵の一辺と、絵の下の端（部位の列の少し上） */
+const BOSS_ART_SIZE = 214;
+const BOSS_ART_BOTTOM = PART_ROW_Y - PART_H / 2 - 6;
 
 function partX(index: number, count: number): number {
   const w = (GAME_WIDTH - SIDE_PADDING * 2) / count;
@@ -244,6 +250,12 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
   s.enemies.forEach((enemy, i) => {
     const g = enemyGeometry(s, i);
     const { cx, colW, bodyY, radius } = g;
+    const art = ENEMY_ART[enemy.defId];
+    const withArt = !!art && hasImage(scene, art);
+    // ボスの絵は大きく出すので、影・光・足もとの輪も絵の大きさに合わせる
+    const bigArt = withArt && g.artSize > 0;
+    const footY = bigArt ? BOSS_ART_BOTTOM - 8 : bodyY + radius * 0.92;
+    const footW = bigArt ? g.artSize * 0.75 : radius * 1.7;
     const alive = enemy.hp > 0;
     const targetable = alive && vm.interactive && vm.scope === 'enemy';
     const sel = vm.selectedTarget;
@@ -252,14 +264,16 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
 
     // 判明した弱点
     const known = enemy.knownWeaknesses;
+    // ボスの絵は大きいので、弱点は絵の頭に重ねず左上に出す
+    const weakX = g.withParts ? SIDE_PADDING + 14 + ((known.length - 1) / 2) * 30 : cx;
     known.forEach((el, k) => {
-      const ix = cx + (k - (known.length - 1) / 2) * 30;
+      const ix = weakX + (k - (known.length - 1) / 2) * 30;
       const iy = LAYOUT.enemies.y + 22;
       const icon = scene.add.rectangle(ix, iy, 26, 20, ELEMENT_COLOR[el]).setRounded(6).setStrokeStyle(1, 0xffffff);
       root.add([icon, addIcon(scene, el, ix, iy, 14, 0x101820)]);
     });
     if (known.length > 0) {
-      root.add(addText(scene, cx, LAYOUT.enemies.y + 40, '弱点', { size: 10, color: COLORS.subText }).setOrigin(0.5));
+      root.add(addText(scene, weakX, LAYOUT.enemies.y + 40, '弱点', { size: 10, color: COLORS.subText }).setOrigin(0.5));
     }
 
     // 本体をタップする領域（ボスは部位の列を除く）
@@ -273,18 +287,21 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     });
 
     // 足元の影と、後ろのほのかな光（段階32a 調整1）
-    root.add(scene.add.ellipse(cx, bodyY + radius * 0.92, radius * 1.7, 14, 0x000000, alive ? 0.4 : 0.15));
-    if (alive) for (let k = 3; k >= 1; k--) root.add(scene.add.circle(cx, bodyY, radius + k * 9, color, 0.05));
-    const art = ENEMY_ART[enemy.defId];
-    if (art && hasImage(scene, art)) {
+    root.add(scene.add.ellipse(cx, footY, footW, 14, 0x000000, alive ? 0.4 : 0.15));
+    if (alive) {
+      const glowY = bigArt ? g.artY : bodyY;
+      const glowR = bigArt ? g.artSize * 0.42 : radius;
+      for (let k = 3; k >= 1; k--) root.add(scene.add.circle(cx, glowY, glowR + k * 9, color, 0.05));
+    }
+    if (withArt) {
       // 敵の絵（段階37）：丸の代わりに、丸より少し大きく出す（列の幅に収める）。選べる時・選んだ時は、足もとに輪
       if (selected || targetable) {
-        const ring = scene.add.ellipse(cx, bodyY + radius * 0.92, radius * 2.1, 22, 0x000000, 0);
+        const ring = scene.add.ellipse(cx, footY, bigArt ? footW * 1.2 : radius * 2.1, 22, 0x000000, 0);
         ring.setStrokeStyle(selected ? 4 : 2, selected ? COLORS.select : COLORS.accent);
         root.add(ring);
       }
-      const img = scene.add.image(cx, bodyY - radius * 0.12, art);
-      img.setScale(Math.min(radius * 2.6, colW - 8) / Math.max(img.width, img.height));
+      const img = scene.add.image(cx, g.artY, art);
+      img.setScale(Math.min(bigArt ? g.artSize : radius * 2.6, colW - 8) / Math.max(img.width, img.height));
       if (!alive) img.setAlpha(0.2).setTint(0x606060);
       root.add(img);
     } else {
@@ -310,12 +327,16 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
     }
 
-    const nameY = bodyY + radius + 16;
-    root.add(addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5));
+    // ボスの大きな絵では、名前と HP を絵の足もとに重ねる（名前は縁取りで読めるように）
+    const nameY = bigArt ? BOSS_ART_BOTTOM - 36 : bodyY + radius + 16;
+    const nameText = addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5);
+    if (bigArt) nameText.setStroke('#0b1018', 4);
+    root.add(nameText);
     const barW = g.withParts ? 220 : Math.min(110, colW - 16);
     const hpFrom = previousValue(`${enemy.uid}:hp`, enemy.hp);
     addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / enemy.maxHp);
     const hpText = addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5);
+    if (bigArt) hpText.setStroke('#0b1018', 3);
     root.add(hpText);
     countText(scene, hpText, hpFrom, enemy.hp, (v) => `${v}/${enemy.maxHp}`);
 
@@ -491,7 +512,22 @@ function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   });
 }
 
+/** どの属性にもなるスナップ（ジョーカー。段階41）：一番効く属性を自動で選ぶ */
+function isWild(def: ActionDef): boolean {
+  return def.effects.some((e) => e.kind === 'damage' && !!e.bestOf);
+}
+
+/** スナップの帯の見た目（属性の名前・アイコン・色）。戦闘の手札とアルバムの画面で使う（段階41） */
+export function snapLook(def: CardDef): { label: string; icon: IconKind; color: number } {
+  const type = mainDamageType(def);
+  const wild = isWild(def);
+  const label = def.support ? 'サポート' : wild ? '万能' : type ? ELEMENT_LABEL[type] : def.effects.some((e) => e.kind === 'heal') ? '回復' : '補助';
+  const icon: IconKind = def.support ? 'support' : wild ? 'star' : type ?? (label === '回復' ? 'heal' : 'support');
+  return { label, icon, color: cardColor(def) };
+}
+
 function cardColor(def: ActionDef): number {
+  if (isWild(def)) return COLORS.accent;
   const t = mainDamageType(def);
   if (t) return ELEMENT_COLOR[t];
   if (def.effects.some((e) => e.kind === 'heal')) return 0x4cd07d;
@@ -542,12 +578,10 @@ function drawCard(
   const band = scene.add.rectangle(x, yy - hgt / 2 + 12, w - 4, 20, color, dim ? 0.35 : 0.9).setRounded(6);
   // 下の端に属性の色をうっすら（カードの縁取り）
   const foot = scene.add.rectangle(x, yy + hgt / 2 - 4, w - 10, 3, color, dim ? 0.15 : 0.55).setRounded(1.5);
-  const type = mainDamageType(def);
-  const typeLabel = def.support ? 'サポート' : type ? ELEMENT_LABEL[type] : def.effects.some((e) => e.kind === 'heal') ? '回復' : '補助';
+  const { label: typeLabel, icon: iconKind } = snapLook(def);
   root.add([rect, band, foot]);
   // 属性のアイコンと名前を並べて、帯の真ん中に置く（段階32a 調整2）
   const typeText = addText(scene, x, yy - hgt / 2 + 12, typeLabel, { size: def.support ? 10 : 11, bold: true, color: '#101820' }).setOrigin(0.5);
-  const iconKind: IconKind = def.support ? 'support' : type ?? (typeLabel === '回復' ? 'heal' : 'support');
   const left = x - (12 + 2 + typeText.width) / 2;
   root.add(addIcon(scene, iconKind, left + 6, yy - hgt / 2 + 12, 12, 0x101820, dim ? 0.5 : 1));
   typeText.setX(left + 14 + typeText.width / 2);

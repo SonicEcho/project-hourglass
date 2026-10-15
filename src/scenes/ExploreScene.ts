@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
+  gainSnaps,
   addParts,
   enemyNext,
   exploreTipTriggers,
@@ -34,7 +35,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, TRIAL_AREAS } from '../data';
+import { AREA_BATTLES, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, snapNames, TRIAL_AREAS } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -574,9 +575,14 @@ export class ExploreScene extends Phaser.Scene {
     run.armory = addItems(run.armory, r.chest.items);
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
+    // スナップは持ち物に入る（段階41。チェックポイントのアルバムで入れ替える）
+    const snaps = r.chest.snaps ?? [];
+    if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
     this.chestSprites.get(r.chest.id)?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
-    this.say(`宝箱を開けた！　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : ''].filter(Boolean).join('　')}`);
+    this.say(
+      `宝箱を開けた！　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : ''].filter(Boolean).join('　')}`,
+    );
     setExplore(this.state);
   }
 

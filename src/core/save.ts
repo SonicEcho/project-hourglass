@@ -1,3 +1,5 @@
+import type { AlbumState } from './album';
+import { sanitizeAlbum } from './album';
 import type { AreaDef, ExploreState } from './explore';
 import { normalizeExplore } from './explore';
 import type { Flow } from './flow';
@@ -9,6 +11,7 @@ import { createGrowth } from './growth';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
 import { getPlaceError, placePart } from './navi';
 import type { Progress, Story } from './progress';
+import type { CardDef } from './types';
 import { findBattle, normalizeProgress } from './progress';
 import type { ArmoryState, WeaponData, WeaponParams, WeaponState } from './weapon';
 import { createArmory, naviDataWithWeapons } from './weapon';
@@ -17,7 +20,7 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -49,6 +52,8 @@ export interface RunSnapshot {
   linkGauge: ChapterGauge | null;
   /** 持ち主に返した盗まれた時間（区画の id。返した順。段階28。版7から） */
   returned: string[];
+  /** 持っているスナップと、アルバムの中身（段階41。版10から） */
+  album: AlbumState;
 }
 
 export interface SaveData {
@@ -73,6 +78,9 @@ export interface SaveContext {
   areas: Record<string, AreaDef>;
   /** なくなった出来事 → 代わりに続ける出来事（段階40。仮の「2-3：返す」を、カイの会話に替えた） */
   renamedEvents?: Record<string, string>;
+  /** スナップ（id → 中身）と、最初の持ち物とアルバム（段階41） */
+  cards: Record<string, CardDef>;
+  initialAlbum: AlbumState;
 }
 
 /** ある版のセーブを、次の版の形に直す手順（キーは直す前の版の番号） */
@@ -98,6 +106,8 @@ export const MIGRATIONS: SaveMigrations = {
   // 版8 → 版9（段階47）：区画が部屋をつないだ形になり、探索の状態に今いる部屋（room・checkpointRoom・visited）を足した。
   // 前の版の探索の途中は、部屋が1つの区画として、整える時に最初の部屋で補う
   8: (raw) => raw,
+  // 版9 → 版10（段階41）：持っているスナップとアルバムの中身（album）を足した。前の版のセーブは、整える時に最初のアルバムで補う
+  9: (raw) => raw,
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -166,6 +176,7 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     linkGauge: sanitizeGauge(raw.linkGauge, ctx),
     // 今の区画にないものと、重なりは捨てる
     returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
+    album: sanitizeAlbum(raw.album, ctx.cards, ctx.initialAlbum),
   };
 }
 
