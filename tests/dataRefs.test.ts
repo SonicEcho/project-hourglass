@@ -129,6 +129,17 @@ describe('仲間ごとに1つずつ', () => {
   });
 });
 
+describe('敵の絵（段階37）', () => {
+  it('敵の絵の対応は、区画の敵の id と、台帳の絵を指す', async () => {
+    const { AREA_BATTLES, ASSETS, ENEMY_ART } = await import('../src/data');
+    const enemyIds = new Set(Object.values(AREA_BATTLES).flatMap((b) => b.enemies.map((e) => e.id)));
+    for (const [id, art] of Object.entries(ENEMY_ART)) {
+      expect(enemyIds.has(id), id).toBe(true);
+      expect(ASSETS.find((a) => a.id === art)?.kind, art).toBe('image');
+    }
+  });
+});
+
 describe('物語の流れ（段階23・34）', () => {
   it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
     const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, ITEMS, RETURN_VISITS, SCENES, M1_SCENE_ORDER, SLICE_FLOW, TOWN } = await import('../src/data');

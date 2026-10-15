@@ -79,15 +79,17 @@ export const SLICE_FLOW: Flow = [
       // ---- 1章の残り（段階34。脚本 docs/script/M2.md の 3日目・4日目） ----
       day(3),
       // 3日目〜8日目の昼は、誰と過ごすか（段階35。場所と印は daily.ts の DAILY_HUBS、絆の出来事は BOND_EVENTS）
-      talkTodo('d3_classroom', '3日目：朝の教室', '3-A。りくは今日も休み。\n台本は段階37で入れる。'),
+      talk('d3_classroom', '3日目：朝の教室'),
       { id: 'd3_free', kind: 'daily', title: '3日目：昼' },
-      talkTodo('d3_library', '3日目：夕暮れ・蔵書の棚', '3-C。「夕暮れの二人乗り」の砂時計を見つける。\n台本は段階37で入れる。'),
-      { id: 'a12_explore', kind: 'explore', area: 'a12', title: '1-2「夕暮れの二人乗り」：商店街の探索', note: '昭和の終わりの商店街。コマを集め、坂の上の「自転車のぬし」と戦う。\n区画とボスは段階37で作る。' },
-      { id: 'a12_return', kind: 'return', area: 'a12', title: '1-2：時間を返す', note: 'ふみさんに、退院の日の二人乗りを返す。\n段階37で、1-2 の区画と一緒に作る。' },
-      talkTodo('d3_return', '3日目：夕暮れの時計屋', '3-D。返した後の時計屋。最後に「3日目　おわり」。\n台本は段階37で入れる。'),
+      talk('d3_library', '3日目：夕暮れ・蔵書の棚'),
+      // 1-2 の区画（段階37。areas.ts の AREAS の a12。探索の途中の会話は区画のきっかけから出す）
+      talk('a12_enter', '1-2：商店街に入る'),
+      { id: 'a12_explore', kind: 'explore', area: 'a12', title: '1-2「夕暮れの二人乗り」：商店街の探索' },
+      { id: 'a12_return', kind: 'return', area: 'a12', title: '1-2：時間を返す' },
+      talk('d3_return', '3日目：時間を返す'),
       day(4),
       { id: 'd4_free', kind: 'daily', title: '4日目：昼' },
-      talkTodo('d4_evening', '4日目：夕暮れ・1章の終わり', '4-B。時計の秒針が三秒止まる。蔵書の棚へ。最後に「第1章　おわり」。\n台本は段階37で入れる。'),
+      talk('d4_evening', '4日目：夕暮れ・1章の終わり'),
     ],
   },
   {

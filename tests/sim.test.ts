@@ -79,3 +79,15 @@ describe('自動対戦：1-1 の縁日（段階27）', () => {
     expect(formatAreaMeasure(m)).toContain('金魚鉢のぬし');
   });
 });
+
+describe('自動対戦：1-2 の商店街（段階37）', () => {
+  it('1-1 を通した後の育ち具合から始め、弱点をねらう方針はボスまで勝ち切れる', () => {
+    const r = autoAreaRun(3, 'smart', undefined, 'a12', ['a11']);
+    expect(r.stages.length).toBe(areaBattleOrder('a12').length);
+    expect(autoAreaRun(3, 'smart', undefined, 'a12', ['a11'])).toEqual(r);
+    const m = measureArea(4, 1, 'smart', 'a12');
+    expect(m.cleared).toBe(4);
+    expect(formatAreaMeasure(m)).toContain('## 1-2 の商店街');
+    expect(formatAreaMeasure(m)).toContain('自転車のぬし');
+  });
+});

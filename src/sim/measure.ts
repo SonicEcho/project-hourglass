@@ -74,6 +74,7 @@ export interface AreaMeasureResult {
   runs: number;
   seed: number;
   policy: AreaPolicy;
+  area: string;
   cleared: number;
   stages: (StageSummary & { linksTotal: number })[];
   /** ボスまで進めた回のうち、ボスの前に1人以上進化できた回数（段階27b） */
@@ -81,9 +82,16 @@ export interface AreaMeasureResult {
   bossReached: number;
 }
 
-export function measureArea(runs: number, seed: number, policy: AreaPolicy): AreaMeasureResult {
-  const records: AreaRunRecord[] = Array.from({ length: runs }, (_, k) => autoAreaRun((seed + k * 10000) >>> 0, policy));
-  const stages = areaBattleOrder().map((b) => ({ name: `${b.name}（${b.enemies.map((e) => e.name).join('・')}）`, reached: 0, firstTryWins: 0, wins: 0, roundsTotal: 0, retriesTotal: 0, linksTotal: 0 }));
+/** 測る区画と、先に通す区画（段階37。1-2 は 1-1 を通した後の育ち具合から） */
+export const MEASURED_AREAS: Record<string, { title: string; prior: string[] }> = {
+  a11: { title: '1-1 の縁日', prior: [] },
+  a12: { title: '1-2 の商店街（1-1 を通した後から）', prior: ['a11'] },
+};
+
+export function measureArea(runs: number, seed: number, policy: AreaPolicy, areaId = 'a11'): AreaMeasureResult {
+  const prior = MEASURED_AREAS[areaId]?.prior ?? [];
+  const records: AreaRunRecord[] = Array.from({ length: runs }, (_, k) => autoAreaRun((seed + k * 10000) >>> 0, policy, undefined, areaId, prior));
+  const stages = areaBattleOrder(areaId).map((b) => ({ name: `${b.name}（${b.enemies.map((e) => e.name).join('・')}）`, reached: 0, firstTryWins: 0, wins: 0, roundsTotal: 0, retriesTotal: 0, linksTotal: 0 }));
   for (const r of records) {
     r.stages.forEach((st, i) => {
       const s = stages[i];
@@ -98,7 +106,7 @@ export function measureArea(runs: number, seed: number, policy: AreaPolicy): Are
   }
   const bossReached = records.filter((r) => r.stages.length === stages.length).length;
   const evolvedRuns = records.filter((r) => r.stages.length === stages.length && r.evolvedBeforeBoss > 0).length;
-  return { runs, seed, policy, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached };
+  return { runs, seed, policy, area: areaId, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached };
 }
 
 const POLICY_LABEL: Record<AreaPolicy, string> = {
@@ -108,7 +116,7 @@ const POLICY_LABEL: Record<AreaPolicy, string> = {
 
 export function formatAreaMeasure(m: AreaMeasureResult): string {
   return [
-    `## 1-1 の縁日（ハルトとあかり、${m.runs}回、シード ${m.seed}〜、${POLICY_LABEL[m.policy]}）`,
+    `## ${MEASURED_AREAS[m.area]?.title ?? m.area}（ハルトとあかり、${m.runs}回、シード ${m.seed}〜、${POLICY_LABEL[m.policy]}）`,
     '',
     '| 戦闘 | 進めた回数 | 1回目で勝てた割合 | 平均ラウンド（勝った時） | 平均やり直し | 連携技（勝った戦闘1回あたり） |',
     '| --- | ---: | ---: | ---: | ---: | ---: |',

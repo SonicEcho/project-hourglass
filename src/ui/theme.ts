@@ -62,6 +62,12 @@ export const ENEMY_COLOR: Record<string, number> = {
   maskNoise: 0xe8d8b0,
   cottonNoise: 0xf5b8d8,
   goldfishBowlLord: 0x4a9ad0,
+  // 1-2（段階37）。絵がある時は絵で出す（data/enemyArt.ts）。絵が読めない時の色
+  tinNoise: 0xb0a080,
+  phoneNoise: 0x3a3a40,
+  ramuneNoise: 0x8ad0c8,
+  menkoNoise: 0xd08a50,
+  bicycleLord: 0xc06a40,
 };
 
 export const ALLY_COLOR: Record<string, number> = {

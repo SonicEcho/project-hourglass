@@ -21,14 +21,17 @@ import { autoUseArmory } from './autoArmory';
 import { autoPlay, lcg, smartPlay } from './autoBattle';
 import { MAX_ATTEMPTS, type StageRecord } from './autoRun';
 
-// 区画の自動対戦（段階27）：1-1 の縁日を、章のパーティ（ハルトとあかり）で、出会う順に戦ってボスまで通す。
+// 区画の自動対戦（段階27。段階37で 1-2 も）：1-1 の縁日を、章のパーティ（ハルトとあかり）で、出会う順に戦ってボスまで通す。
 // 戦闘の間に、星図（でたらめ）と武器（autoArmory.ts。一番近い進化先へ向けて吸わせる）で育て、つながりゲージは戦闘をまたいで引き継ぐ。
 // 宝箱は最初の戦闘の後に2つとも開ける（縁日の手前にあるので）。負けたらチェックポイントから同じ戦闘をやり直す。
 // HP・MP は戦闘をまたいで持ち越す（段階32b 調整3）。チェックポイントの先の戦闘（CHECKPOINT_FROM 番目から）は、星図・武器で育てるために
 // チェックポイントへ寄る（全回復する）ものとする。負けてやり直す時も全回復
 
-/** チェックポイントより先の戦闘（1-1 は社への道の砂嵐とボス。地図の P は、広場と左右の参道の砂嵐の先） */
-const CHECKPOINT_FROM = 3;
+/**
+ * チェックポイントより先の戦闘（この番目から）。1-1 は社への道の砂嵐とボス（地図の P は、広場と左右の参道の砂嵐の先）。
+ * 1-2 は駄菓子屋の前（P）の先の砂嵐から（段階37）。チェックポイントの先では、育成のために寄る（全回復する）ものとする
+ */
+const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2 };
 
 /** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay） */
 export type AreaPolicy = 'random' | 'smart';
@@ -43,45 +46,61 @@ export interface AreaRunRecord {
   evolvedBeforeBoss: number;
 }
 
-/** 1-1 の戦闘を出会う順に（敵の印の並び → ボス） */
+/** 区画の戦闘を出会う順に（敵の印の並び → ボス） */
 export function areaBattleOrder(areaId = 'a11'): CampaignBattle[] {
   const area = AREAS[areaId];
   return [...area.enemies.map((e) => AREA_BATTLES[e.battle]), AREA_BATTLES[area.boss.battle]];
 }
 
-export function autoAreaRun(seed: number, policy: AreaPolicy, lineup: Lineup = CHAPTER1_LINEUP, areaId = 'a11'): AreaRunRecord {
+/** 区画をまたいで引き継ぐもの（星図・武器・つながりゲージ） */
+interface Carry {
+  growth: GrowthState;
+  armory: ArmoryState;
+  gauge: number;
+}
+
+/**
+ * 区画を、出会う順にボスまで通す。prior に書いた区画を先に同じ方針で通し、その育ち具合（星図・武器・つながりゲージ）から始める（段階37。1-2 は 1-1 の後）。
+ * 先の区画で負け切っても、そこまでの育ち具合で続ける
+ */
+export function autoAreaRun(seed: number, policy: AreaPolicy, lineup: Lineup = CHAPTER1_LINEUP, areaId = 'a11', prior: string[] = []): AreaRunRecord {
   const pick = lcg((seed * 7919 + 3) % 2147483648);
-  const area = AREAS[areaId];
   const members = lineupMembers(PARTY, lineup);
-  let growth: GrowthState = createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS);
-  let armory: ArmoryState = createArmory(WEAPON_DATA);
-  let gauge = 0;
+  const carry: Carry = { growth: createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS), armory: createArmory(WEAPON_DATA), gauge: 0 };
+  for (const id of prior) runArea(seed, policy, members, id, carry, pick);
+  return runArea(seed, policy, members, areaId, carry, pick);
+}
+
+function runArea(seed: number, policy: AreaPolicy, members: CharacterDef[], areaId: string, carry: Carry, pick: (n: number) => number): AreaRunRecord {
+  const area = AREAS[areaId];
   let vitals: Record<string, Vitals> | undefined;
   const stages: StageRecord[] = [];
   const links: number[] = [];
   let evolvedBeforeBoss = 0;
   const battles = areaBattleOrder(areaId);
+  const checkpointFrom = CHECKPOINT_FROM[areaId] ?? 0;
   for (let i = 0; i < battles.length; i++) {
     const def = battles[i];
-    if (i === 1) armory = addItems(armory, area.chests.flatMap((c) => c.items));
-    growth = spendPoints(growth, members, pick);
-    armory = autoUseArmory(armory, members.map((c) => c.id), pick);
-    if (def.boss) evolvedBeforeBoss = members.filter((c) => armory.weapons[c.id]?.evolvedTo).length;
-    const allies = grownParty(growth, armory, members);
-    if (i >= CHECKPOINT_FROM) vitals = undefined;
+    // 宝箱は最初の戦闘の後に開ける
+    if (i === 1) carry.armory = addItems(carry.armory, area.chests.flatMap((c) => c.items));
+    carry.growth = spendPoints(carry.growth, members, pick);
+    carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick);
+    if (def.boss) evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.evolvedTo).length;
+    const allies = grownParty(carry.growth, carry.armory, members);
+    if (i >= checkpointFrom) vitals = undefined;
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const battleSeed = (seed + i + attempt * 100) >>> 0;
-      const start: BattleState = { ...createBattle({ ...createCampaignSetup(def, battleSeed, allies), vitals: attempt === 0 ? vitals : undefined }), linkGauge: gauge };
+      const start: BattleState = { ...createBattle({ ...createCampaignSetup(def, battleSeed, allies), vitals: attempt === 0 ? vitals : undefined }), linkGauge: carry.gauge };
       const s = policy === 'smart' ? smartPlay(start, battleSeed) : autoPlay(start, battleSeed);
       if (s.outcome !== 'victory') continue;
       record = { attempts: attempt + 1, won: true, rounds: s.round };
       links.push(s.log.filter((e) => e.type === 'action' && s.links.some((l) => l.id === e.actionId)).length);
-      gauge = s.linkGauge;
+      carry.gauge = s.linkGauge;
       vitals = vitalsAfter(s);
       const result = getBattleResult(s);
-      growth = { ...growth, points: growth.points + battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS) };
-      armory = recordVictory(armory, { actions: result.actionCounts, colorCells: {}, items: [...result.drops, ...(def.item ? [def.item] : [])] });
+      carry.growth = { ...carry.growth, points: carry.growth.points + battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS) };
+      carry.armory = recordVictory(carry.armory, { actions: result.actionCounts, colorCells: {}, items: [...result.drops, ...(def.item ? [def.item] : [])] });
       break;
     }
     stages.push(record);

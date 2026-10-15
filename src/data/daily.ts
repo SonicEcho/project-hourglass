@@ -133,7 +133,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     places: [at('clockshop', { ...toDusk('d2_to_dusk'), y: 400 })],
   },
   // ---- 3日目〜8日目の昼（段階35。脚本 docs/script/M2.md の 3-B・4-A・5-B・6-A・7-A・8-B） ----
-  // 返す前の持ち主に会う場面は、まだ仮の場面（台本の @note。区画の段階で入れる）。返した翌日の場面は RETURN_VISITS から出る（段階36）。
+  // 返す前の持ち主に会う場面は、まだ仮の場面（台本の @note。区画の段階で入れる。3日目のふみさんは段階37で入れた）。返した翌日の場面は RETURN_VISITS から出る（段階36）。
   // 6日目・7日目は、返した翌日の持ち主の後に、次の持ち主（after）
   d3_free: {
     id: 'd3_free',

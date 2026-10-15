@@ -32,7 +32,12 @@ export interface CastMember {
    * まだ絵のない表情 → 代わりに出す、絵のある表情（段階22の調整6）。台本は増やした表情で書いておき、絵が届いたら差し替えるだけで済むように
    */
   fallback?: Record<string, string>;
+  /** 立ち絵にかける色（段階37。写しの人々は、昭和の写真のようなセピアにする） */
+  tint?: number;
 }
+
+/** 写しの人々の立ち絵にかけるセピアの色（段階37。ノイズは会話の @noise で出す） */
+export const SEPIA_TINT = 0xe8c898;
 
 // 表情（段階18a の5つ・4つに、段階22の調整6で足した表情。足した表情の絵は段階31a で作る。id は台帳の portrait.<人>.<id>）
 const AKARI_FACES = {
@@ -166,6 +171,23 @@ export const CAST: Record<string, CastMember> = {
     height: 430,
     voice: { pitch: 470, wave: 'triangle' },
   },
+  // 1-2 の写し（段階37。昭和63年の夏の40代）。セピアをかける
+  写しのふみ: {
+    portrait: 'portrait.past_fumi',
+    ...young(['笑顔', '照れ', '驚き', '泣き笑い'], { 笑顔: 'smile', 照れ: 'shy', 驚き: 'surprised', 泣き笑い: 'teary' }, '笑顔'),
+    color: 0xb08a7a,
+    height: 450,
+    voice: { pitch: 560, wave: 'triangle' },
+    tint: SEPIA_TINT,
+  },
+  写しのきよし: {
+    portrait: 'portrait.past_kiyoshi',
+    ...young(['通常', '照れ'], { 通常: 'normal', 照れ: 'shy' }, '通常'),
+    color: 0x5a6a8a,
+    height: 460,
+    voice: { pitch: 260, wave: 'sawtooth' },
+    tint: SEPIA_TINT,
+  },
 };
 
 /** 立ち絵を出さない人（声だけ・電話）の文字の音の声色。ここにない人は VOICE_DEFAULT */
@@ -177,6 +199,11 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   わたあめ屋: { pitch: 280, wave: 'sawtooth' },
   浴衣の女の人: { pitch: 640, wave: 'sine' },
   ひなの: { pitch: 620, wave: 'triangle' },
+  // 1-2 の写しの人々（段階37）
+  八百屋: { pitch: 250, wave: 'sawtooth' },
+  駄菓子屋のおばあちゃん: { pitch: 480, wave: 'triangle' },
+  電器屋の子ども: { pitch: 740, wave: 'square' },
+  たばこ屋: { pitch: 300, wave: 'sawtooth' },
   '？？？': { pitch: 700, wave: 'sine' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
@@ -236,6 +263,8 @@ export const BACKDROPS: Record<string, Backdrop> = {
   clock_shop_back: { title: '時計屋の奥の部屋', top: 0xb05a3a, bottom: 0x3a2420, image: 'bg.clock_shop_back', ambient: 'dust' },
   library: { title: 'レストピアの蔵書の棚', top: 0x0e1430, bottom: 0x3a3020, image: 'bg.library', ambient: 'dust' },
   festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival', ambient: 'lanterns' },
+  // 段階37：1-2 の昭和の終わりの商店街（夕焼け）
+  showa_street: { title: '昭和の終わりの商店街（夕焼け）', top: 0xd08a50, bottom: 0x6a4a30, image: 'bg.showa_street', ambient: 'dust' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
@@ -279,6 +308,8 @@ export const CGS: Record<string, Backdrop> = {
   white_city: { title: '1枚絵：白い街（夢）', top: 0xffffff, bottom: 0xd8e0e8, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
   fireworks: { title: '1枚絵：高台で花火を見る3人の後ろ姿', top: 0x0a0e30, bottom: 0x40305a, ambient: 'stars', glow: { x: 0.5, y: 0.25, color: 0xffb070 } },
   photo_goldfish: { title: '写真：浴衣の小さなあかりが、金魚の袋をふたつ提げている', top: 0x3a3060, bottom: 0xd07a4a },
+  // 段階37：1-2-9（1章の山場）。夕日の光と、金の粒
+  tandem_bicycle: { title: '1枚絵：夕焼けの坂を下る二人乗り', top: 0xe0a060, bottom: 0x7a4a30, image: 'cg.tandem_bicycle', ambient: 'motes', glow: { x: 0.7, y: 0.25, color: 0xffc070 } },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
 };
 

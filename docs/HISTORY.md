@@ -49,6 +49,7 @@
 | 34（M2） | 物語の流れを2章の終わりまで伸ばす（3日目〜8日目の出来事、仮の画面 `isPlaceholder`、2章の扉 `src/data/scriptM2.ts`、セーブの版8、遊んだ記録を日ごと・区画ごとの行に `playLogSections`） | #71 |
 | 35（M2） | 1日の流れ：誰と過ごすか（昼に2回、絆の出来事の続きもの `BOND_EVENTS`・`resolveHub`、町の地図 `TOWN`、3日目〜8日目の昼、絆の出来事5つと小話6つの台本、みお・ふみを会話の一覧に） | — |
 | 36（M2） | 返した翌日に持ち主に会う場面の型（`RETURN_VISITS`・`returnDays`・`visitsFor`、先に見る印 `after`、1-1 の2日目を置き換え、4-A ふみさんの台本、時計屋の店内（昼）の背景） | — |
+| 37（M2） | 1-2「夕暮れの二人乗り」の区画とボス（`SHOWA_STREET_LAYOUT`、昭和の砂嵐4つと「自転車のぬし」`showaEnemies.ts`、チェックポイントの場所と先に見る会話のきっかけ、戦闘画面の敵の絵 `ENEMY_ART`、写しのセピア `CAST.tint`、3-A〜3-D・4-B と 1-2 の台本、1-2 の勝率の測定） | — |
 | 31b の仮（M1） | 仮の BGM：魔王魂の曲6つ（タイトル・日常・レストピア・返す場面・戦闘・ボス戦。`scripts/maou_bgm.py`）。大きさを −17.4 LUFS にそろえた。戦闘の画面で戦闘の曲に切り替え、BGM は初めて流す時に読む（`src/audio/sound.ts`） | — |
 | 46（M2） | 感情を伝える動き：戦闘中のひとこと（`src/core/bark.ts`・`src/data/barks.ts`）、立ち絵のまばたきと口パク（`PORTRAIT_PARTS`・`scripts/portrait_parts.py`）、動く1枚絵（`motes`・`glow`）、返す画面の記憶の再生（`AreaDef.memory`） | #77 |
 
