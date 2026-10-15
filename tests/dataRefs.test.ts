@@ -203,7 +203,7 @@ describe('物語の流れ（段階23・34）', () => {
           expect(sceneIds.has(scene), `${area.id} ${scene}`).toBe(true);
           reachable.add(scene);
         }
-        if (area.image) expect(ASSETS.some((a) => a.id === area.image), area.image).toBe(true);
+        for (const room of area.rooms) if (room.image) expect(ASSETS.some((a) => a.id === room.image), room.image).toBe(true);
       }
       if (e.kind === 'return') expect(AREAS[e.area ?? ''], e.id).toBeDefined();
     }
@@ -217,6 +217,24 @@ describe('物語の流れ（段階23・34）', () => {
     // 返した翌日の出来事（段階36）：書き間違いがなく、どれも返した次の日の昼に出る
     expect(checkVisits(RETURN_VISITS, TOWN)).toEqual([]);
     for (const v of RETURN_VISITS) expect(shownVisits.has(v.id), v.id).toBe(true);
+  });
+});
+
+describe('部屋と試しの区画（段階47）', () => {
+  it('部屋の一覧に書き間違いがなく、試しの区画は区画の決まりを満たし、戦闘と絵がある', async () => {
+    const { AREA_BATTLES, ASSETS, ENEMY_MOVES, ROOMS, TRIAL_AREAS } = await import('../src/data');
+    const { checkArea, checkRoom } = await import('../src/core');
+    for (const room of Object.values(ROOMS)) {
+      expect(checkRoom(room), room.id).toEqual([]);
+      if (room.image) expect(ASSETS.some((a) => a.id === room.image), room.image).toBe(true);
+    }
+    for (const area of Object.values(TRIAL_AREAS)) {
+      expect(checkArea(area)).toEqual([]);
+      for (const e of [...area.enemies, area.boss]) expect(AREA_BATTLES[e.battle], e.id).toBeDefined();
+      // 4種類の動きを全部置いている
+      expect(new Set(area.enemies.map((e) => e.move ?? 'patrol'))).toEqual(new Set(Object.keys(ENEMY_MOVES)));
+      expect(area.rooms.length).toBeGreaterThan(1);
+    }
   });
 });
 

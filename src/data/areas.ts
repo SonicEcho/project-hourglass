@@ -1,10 +1,10 @@
-import type { AreaDef } from '../core/explore';
+import type { AreaDef, EnemyMove, EnemyTuning } from '../core/explore';
 import type { CampaignBattle } from './campaign';
 import { scaleEnemy } from './campaign';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
-import { PROTO_FESTIVAL_LAYOUT } from './prototypes';
+import { ROOMS } from './rooms';
 import { BGM } from './sounds';
 import { ITEMS } from './weapons';
 
@@ -19,6 +19,16 @@ export const AREA_STEP_MS = 140;
 export const AREA_ENEMY_STEP_MS = 420;
 /** 戦闘や会話から戻った後、敵の印に触れても戦闘にしない間（ミリ秒） */
 export const AREA_GRACE_MS = 1800;
+/**
+ * 敵の動き方ごとの数値（段階47b）。stepMs は1マス進む時間（仲間は AREA_STEP_MS）。追ってくる敵は仲間より遅いので逃げ切れる。
+ * 逃げる敵は仲間と同じくらい速いので、行き止まりに追いこんで捕まえる
+ */
+export const ENEMY_MOVES = {
+  patrol: { stepMs: AREA_ENEMY_STEP_MS, notice: 0, giveUp: 0 },
+  chase: { stepMs: AREA_ENEMY_STEP_MS, notice: 4, giveUp: 7 },
+  guard: { stepMs: 0, notice: 0, giveUp: 0 },
+  flee: { stepMs: 150, notice: 4, giveUp: 0 },
+} satisfies Record<EnemyMove, EnemyTuning & { stepMs: number }>;
 /** 話せる人に、この距離（マス）まで近づくと話す */
 export const AREA_TALK_RANGE = 1;
 
@@ -53,115 +63,16 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2 },
 };
 
-/**
- * 2-1 の町工場の路地の歩ける場所（段階38。地図の絵 map.factory_alley は 24×43マス）。
- * 下の路地の入口の門（S）から細い路地を上り、銭湯の前の広場（長いすの左の P）へ。銭湯の左右の道を回って、工場の門の前（右の P）、門をくぐって工場の中の旋盤の前へ。
- * 段階47で部屋をつなぐ形になったら、この絵を1つ目の部屋にして、寄り道の部屋を足す
- */
-export const FACTORY_ALLEY_LAYOUT = [
-  '########################',
-  '########################',
-  '########################',
-  '########################',
-  '########################',
-  '#########......#########',
-  '#########......#########',
-  '#########......#########',
-  '##########....##########',
-  '##########....##########',
-  '#####...........########',
-  '#####..........P....####',
-  '#####..###########..####',
-  '#####..###########..####',
-  '#####..############.####',
-  '#####..############.####',
-  '#####..############.####',
-  '#####..############.####',
-  '#####..############.####',
-  '#####..##......####.####',
-  '#####.....####......####',
-  '#####....P..........####',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '###########...##########',
-  '##########.....#########',
-  '##########.....#########',
-  '##########.....#########',
-  '##########.....#########',
-  '##########.....#########',
-  '##########..S.##########',
-  '##########....##########',
-];
 
-/**
- * 1-2 の商店街の歩ける場所（段階37。地図の絵 map.showa_street は 24×43マス）。
- * 下のアーケードの入口（S）からまっすぐの通りを上り、駄菓子屋の前の縁台（左の P）、時計屋の前（右の P）を通って、上の出口の坂へ。
- * 通りの両側は店（通れない）。時計屋の手前の歩道だけ、少し広い
- */
-export const SHOWA_STREET_LAYOUT = [
-  '########################',
-  '########################',
-  '########################',
-  '########################',
-  '########################',
-  '###########....#########',
-  '##########.....#########',
-  '##########.....#########',
-  '##########......########',
-  '##########.......#######',
-  '##########.......#######',
-  '##########.......#######',
-  '##########.......#######',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#######..........#######',
-  '#######..........#######',
-  '#######.........P#######',
-  '#######..........#######',
-  '#######..........#######',
-  '#######..........#######',
-  '#######..........#######',
-  '#######............#####',
-  '#######.P..........#####',
-  '#######............#####',
-  '#######............#####',
-  '#######..........#######',
-  '########..........######',
-  '########..........######',
-  '########..........######',
-  '########..........######',
-  '########..........######',
-  '########........########',
-  '########........########',
-  '########........########',
-  '########....S...########',
-  '########........########',
-];
+
+
 
 export const AREAS: Record<string, AreaDef> = {
   // 1-1「金魚の名前」：平成の終わりの縁日
   a11: {
     id: 'a11',
     name: '1-1「金魚の名前」',
-    layout: PROTO_FESTIVAL_LAYOUT,
-    image: 'map.festival',
+    rooms: [ROOMS.festival_grounds],
     bgm: BGM.festival,
     // 返すのに要るコマ（段階28。AREA_BATTLES の koma の合計は9）
     komaNeed: 8,
@@ -229,8 +140,7 @@ export const AREAS: Record<string, AreaDef> = {
   a12: {
     id: 'a12',
     name: '1-2「夕暮れの二人乗り」',
-    layout: SHOWA_STREET_LAYOUT,
-    image: 'map.showa_street',
+    rooms: [ROOMS.showa_street],
     // 昭和の商店街の探索の曲が届くまで、日常の曲（商店街のシティポップ）
     bgm: BGM.daily,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
@@ -308,8 +218,7 @@ export const AREAS: Record<string, AreaDef> = {
   a21: {
     id: 'a21',
     name: '2-1「親方の背中」',
-    layout: FACTORY_ALLEY_LAYOUT,
-    image: 'map.factory_alley',
+    rooms: [ROOMS.factory_alley],
     // 昭和の町工場の探索の曲が届くまで、日常の曲
     bgm: BGM.daily,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
@@ -383,5 +292,36 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'boss', scene: 'a21_boss' },
       { on: 'cleared', scene: 'a21_last_koma' },
     ],
+  },
+};
+
+/**
+ * 試しの区画（段階47。デバッグメニューの「試しの区画」から入る。本編の流れでは使わない）。
+ * 商店街（出発点）の上の出入口は、番人を倒すと開く縁日へ。左の出入口は、寄り道の町工場（逃げる敵と宝箱）へ。
+ * 商店街には追ってくる敵、縁日には見回りの敵と、奥にボス。戦闘は 1-1 の戦闘を使い回す
+ */
+export const TRIAL_AREAS: Record<string, AreaDef> = {
+  trial47: {
+    id: 'trial47',
+    name: '試しの区画（段階47）',
+    rooms: [ROOMS.trial_street, ROOMS.trial_factory, ROOMS.trial_festival],
+    links: [
+      { a: { room: 'trial_street', side: 'top' }, b: { room: 'trial_festival', side: 'bottom' }, opensWhen: 'trial_guard' },
+      { a: { room: 'trial_street', side: 'left' }, b: { room: 'trial_factory', side: 'right' } },
+    ],
+    bgm: BGM.daily,
+    komaNeed: 7,
+    timeTitle: '試しの区画',
+    owner: '―',
+    chests: [{ id: 'trial_chest', room: 'trial_factory', cell: [5, 12], items: [ITEMS.potion.id], gears: ['mpSave'] }],
+    enemies: [
+      { id: 'trial_chaser', move: 'chase', patrol: [[9, 32], [16, 32]], battle: 'a11_storm1' },
+      { id: 'trial_guard', move: 'guard', patrol: [[12, 7]], battle: 'a11_storm2' },
+      { id: 'trial_runner', move: 'flee', room: 'trial_factory', patrol: [[6, 16]], battle: 'a11_storm3' },
+      { id: 'trial_walker', room: 'trial_festival', patrol: [[7, 32], [16, 32], [16, 33], [7, 33]], battle: 'a11_storm4' },
+    ],
+    boss: { id: 'trial_boss', room: 'trial_festival', cell: [12, 7], battle: 'a11_boss' },
+    talkers: [],
+    triggers: [],
   },
 };
