@@ -139,9 +139,10 @@ const rod: WeaponDef = {
   ],
 };
 
+// みおの武器（段階38）：前から大事にしているトランプが、光るカードになったもの。みおの呼び名は「ジョーカーズ」（docs/NAMING.md）。id は前の名前のまま
 const cards: WeaponDef = {
   id: 'throwCards',
-  name: '投げカード',
+  name: '切り札のトランプ',
   owner: 'mio',
   evolutions: [
     { id: 'thunderCards', name: 'サンダーカード', conditions: [{ kind: 'param', param: 'thunder', min: 6 }], attackElement: 'thunder', stats: { spd: 2 } },

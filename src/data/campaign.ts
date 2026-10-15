@@ -53,6 +53,8 @@ export interface CampaignBattle {
   boss?: boolean;
   /** 勝った時に選べるギアの候補（段階8。この中から NAVI_REWARD_PICKS 個） */
   naviReward?: NaviPartId[];
+  /** 勝った時にそのまま手に入るギア（区画の戦闘。ムーブメントが開いている時だけ。段階38） */
+  gears?: NaviPartId[];
 }
 
 export const CAMPAIGN: CampaignBattle[] = [

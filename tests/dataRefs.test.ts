@@ -235,6 +235,34 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(CHAPTER1_LINEUP.unlocks).toEqual({ growth: true, navi: false, weapon: true });
   });
 
+  it('2章（段階38）はみおが加わって3人で、ムーブメントも開く。みおが仲間になる 5-C より前の2章に戦闘はない', async () => {
+    const { CHAPTER1_LINEUP, CHAPTER2_LINEUP, SLICE_FLOW } = await import('../src/data');
+    const { lineupAt } = await import('../src/core');
+    expect(SLICE_FLOW.find((c) => c.id === 'ch2')?.lineup).toBe(CHAPTER2_LINEUP);
+    expect(CHAPTER2_LINEUP.members).toEqual(['hero', 'akari', 'mio']);
+    expect(CHAPTER2_LINEUP.unlocks).toEqual({ growth: true, navi: true, weapon: true });
+    expect(lineupAt(SLICE_FLOW, 'a21_explore', CHAPTER1_LINEUP)).toBe(CHAPTER2_LINEUP);
+    expect(lineupAt(SLICE_FLOW, 'a12_explore', CHAPTER1_LINEUP)).toBe(CHAPTER1_LINEUP);
+    const ch2 = SLICE_FLOW.find((c) => c.id === 'ch2')!.events;
+    const join = ch2.findIndex((e) => e.id === 'd5_evening');
+    expect(join).toBeGreaterThan(0);
+    expect(ch2.slice(0, join).some((e) => e.kind === 'explore')).toBe(false);
+  });
+
+  it('区画の戦闘のギア（段階38）は、ムーブメントが開いている章の区画の、ボスでない戦闘だけ', async () => {
+    const { AREA_BATTLES, AREAS, NAVI_PARTS, SLICE_FLOW } = await import('../src/data');
+    const naviAreas = new Set(SLICE_FLOW.filter((c) => c.lineup?.unlocks.navi).flatMap((c) => c.events.flatMap((e) => (e.kind === 'explore' && e.area ? [e.area] : []))));
+    for (const b of Object.values(AREA_BATTLES)) {
+      if (!b.gears) continue;
+      expect(b.boss, b.id).toBeFalsy();
+      for (const g of b.gears) expect(NAVI_PARTS[g], `${b.id} ${g}`).toBeDefined();
+      const area = Object.values(AREAS).find((a) => a.enemies.some((e) => e.battle === b.id));
+      expect(area && naviAreas.has(area.id), b.id).toBe(true);
+    }
+    // 2-1 の最初の砂嵐はギアを落とす（2-1-4 で、みおが拾った歯車を見せる）
+    expect(AREA_BATTLES.a21_storm1.gears?.length).toBeGreaterThan(0);
+  });
+
   it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {
     const { AREA_BATTLES, CHAPTER1_LINEUP, PARTY, createCampaignSetup } = await import('../src/data');
     const { createBattle, lineupMembers } = await import('../src/core');

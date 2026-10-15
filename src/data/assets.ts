@@ -1087,7 +1087,7 @@ export const ASSETS: AssetEntry[] = [
       'Top: the inside of a small workshop seen from above with its roof removed, with a large old lathe in an open space in front of it. Utility poles, snow piles, barrels and stacked wood along the edges. ' +
       'Walkable areas must be clearly distinguishable from non-walkable objects. Paths are wide, at least one eighth of the image width. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.',
     '見本の絵：1-1 の縁日の地図（見下ろし方の見本として渡す指示）。元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）',
-    'M2 の 2-1 の地図（docs/ART.md の 5-3 の 6）。入口 → 銭湯の前の長いす → 工場の門 → 工場の中の旋盤。歩ける場所の文字の地図は、段階39で区画を作る時に書く',
+    'M2 の 2-1 の地図（docs/ART.md の 5-3 の 6）。入口 → 銭湯の前の長いす → 工場の門 → 工場の中の旋盤。歩ける場所の文字の地図は段階38で書いた（areas.ts の FACTORY_ALLEY_LAYOUT）',
     '2026-10-13',
   ),
   chatgptPortrait(

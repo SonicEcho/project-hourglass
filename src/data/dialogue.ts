@@ -159,7 +159,7 @@ export const CAST: Record<string, CastMember> = {
   // M2（段階35）。みおは笑顔の絵だけある（2026-10-13。ほかの表情は Gemini で作るまで笑顔で代わりに出す）。ふみは全部の表情の絵がある（2026-10-11）
   みお: {
     portrait: 'portrait.mio',
-    ...young(['笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい'], { 笑顔: 'smile' }, '笑顔'),
+    ...young(['笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい', 'むっ', '泣き笑い'], { 笑顔: 'smile' }, '笑顔'),
     color: 0xe08a3a,
     height: YOUNG_HEIGHT,
     voice: { pitch: 720, wave: 'square' },
@@ -188,6 +188,30 @@ export const CAST: Record<string, CastMember> = {
     voice: { pitch: 260, wave: 'sawtooth' },
     tint: SEPIA_TINT,
   },
+  // 2-1 の人たち（段階38）。基本の1枚だけある（2026-10-13。ほかの表情は、絵が届くまで基本の絵で代わりに出す）。写しはセピアをかける
+  いさむ: {
+    portrait: 'portrait.isamu',
+    ...young(['通常', '笑顔', '考える', 'さみしげ'], { 通常: 'normal' }, '通常'),
+    color: 0x7a6a50,
+    height: 420,
+    voice: { pitch: 250, wave: 'sawtooth' },
+  },
+  写しのいさむ: {
+    portrait: 'portrait.past_isamu',
+    ...young(['真剣', '笑顔', '泣き笑い'], { 真剣: 'serious' }, '真剣'),
+    color: 0x6a7a8a,
+    height: 450,
+    voice: { pitch: 380, wave: 'sawtooth' },
+    tint: SEPIA_TINT,
+  },
+  写しの源三: {
+    portrait: 'portrait.past_genzo',
+    ...young(['通常'], { 通常: 'normal' }, '通常'),
+    color: 0x5a4a3a,
+    height: 470,
+    voice: { pitch: 255, wave: 'sawtooth' },
+    tint: SEPIA_TINT,
+  },
 };
 
 /** 立ち絵を出さない人（声だけ・電話）の文字の音の声色。ここにない人は VOICE_DEFAULT */
@@ -204,6 +228,12 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   駄菓子屋のおばあちゃん: { pitch: 480, wave: 'triangle' },
   電器屋の子ども: { pitch: 740, wave: 'square' },
   たばこ屋: { pitch: 300, wave: 'sawtooth' },
+  // 5-A・2-1 の声だけの人（段階38）
+  パン屋: { pitch: 460, wave: 'triangle' },
+  ラジオ: { pitch: 330, wave: 'square' },
+  銭湯のおかみさん: { pitch: 500, wave: 'triangle' },
+  先輩の職人: { pitch: 280, wave: 'sawtooth' },
+  八百屋の子ども: { pitch: 740, wave: 'square' },
   '？？？': { pitch: 700, wave: 'sine' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
@@ -265,6 +295,8 @@ export const BACKDROPS: Record<string, Backdrop> = {
   festival: { title: '縁日（1-1）', top: 0x2a3060, bottom: 0xc06a40, image: 'map.festival', ambient: 'lanterns' },
   // 段階37：1-2 の昭和の終わりの商店街（夕焼け）
   showa_street: { title: '昭和の終わりの商店街（夕焼け）', top: 0xd08a50, bottom: 0x6a4a30, image: 'bg.showa_street', ambient: 'dust' },
+  // 段階38：2-1 の昭和44年の冬の町工場の路地
+  factory_alley: { title: '昭和の町工場の路地（雪の夕暮れ）', top: 0xb0a090, bottom: 0x5a4a40, image: 'bg.factory_alley' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */

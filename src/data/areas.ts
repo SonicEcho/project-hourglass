@@ -42,7 +42,68 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
   a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 7, koma: 2 },
   a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 10, boss: true, koma: 2 },
+  // 2-1 の町工場（段階38）。2-1 の砂嵐（歯車・ネジ・真空管・そろばんノイズ）と「旋盤のぬし」は段階39で作るので、それまでは 1-2 の昭和の砂嵐で代わりにする（仮）。
+  // 3人になり、ムーブメントも開くので、1-2 より少し強くした。数値と勝率は段階39で決める。
+  // 並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。勝つと、決まったギアがそのまま手に入る（段階38）
+  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.potion.id, koma: 1, gears: ['speedMemory'] },
+  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [RAMUNE_NOISE, MENKO_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.ether.id, koma: 2, gears: ['thunderBoost'] },
+  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, koma: 2, gears: ['mpMemory'] },
+  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, item: ITEMS.hiPotion.id, koma: 2, gears: ['batonReceiver'] },
+  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.4)), reward: 8, koma: 2, gears: ['firstAid'] },
+  // ボスの代わり（仮）：旋盤のぬしができるまで、強い砂嵐の群れ
+  a21_boss: { id: 'a21_boss', name: '砂嵐の渦（仮）', enemies: [TIN_NOISE, PHONE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.6)), reward: 10, boss: true, koma: 2 },
 };
+
+/**
+ * 2-1 の町工場の路地の歩ける場所（段階38。地図の絵 map.factory_alley は 24×43マス）。
+ * 下の路地の入口の門（S）から細い路地を上り、銭湯の前の広場（長いすの左の P）へ。銭湯の左右の道を回って、工場の門の前（右の P）、門をくぐって工場の中の旋盤の前へ。
+ * 段階47で部屋をつなぐ形になったら、この絵を1つ目の部屋にして、寄り道の部屋を足す
+ */
+export const FACTORY_ALLEY_LAYOUT = [
+  '########################',
+  '########################',
+  '########################',
+  '########################',
+  '########################',
+  '#########......#########',
+  '#########......#########',
+  '#########......#########',
+  '##########....##########',
+  '##########....##########',
+  '#####...........########',
+  '#####..........P....####',
+  '#####..###########..####',
+  '#####..###########..####',
+  '#####..############.####',
+  '#####..############.####',
+  '#####..############.####',
+  '#####..############.####',
+  '#####..############.####',
+  '#####..##......####.####',
+  '#####.....####......####',
+  '#####....P..........####',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '###########...##########',
+  '##########.....#########',
+  '##########.....#########',
+  '##########.....#########',
+  '##########.....#########',
+  '##########.....#########',
+  '##########..S.##########',
+  '##########....##########',
+];
 
 /**
  * 1-2 の商店街の歩ける場所（段階37。地図の絵 map.showa_street は 24×43マス）。
@@ -242,6 +303,83 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'komaLeft', left: 3, scene: 'a12_three_left' },
       { on: 'boss', scene: 'a12_boss' },
       { on: 'cleared', scene: 'a12_last_koma' },
+    ],
+  },
+  // 2-1「親方の背中」：昭和44年の冬の町工場の路地（段階38。みおの初めての戦闘とムーブメントの開放まで。敵とボスは段階39）
+  a21: {
+    id: 'a21',
+    name: '2-1「親方の背中」',
+    layout: FACTORY_ALLEY_LAYOUT,
+    image: 'map.factory_alley',
+    // 昭和の町工場の探索の曲が届くまで、日常の曲
+    bgm: BGM.daily,
+    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
+    komaNeed: 10,
+    timeTitle: '親方の背中',
+    owner: 'イサム',
+    // 銭湯の左の道の奥と、右の道の奥
+    chests: [
+      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.tinSpring.id, ITEMS.phoneCord.id, ITEMS.potion.id] },
+      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.menkoCard.id, ITEMS.ramuneGlass.id, ITEMS.ether.id] },
+    ],
+    enemies: [
+      {
+        id: 'a21_e_lower',
+        patrol: [
+          [11, 33],
+          [13, 33],
+          [13, 30],
+          [11, 30],
+        ],
+        battle: 'a21_storm1',
+      },
+      {
+        id: 'a21_e_upper',
+        patrol: [
+          [13, 25],
+          [11, 25],
+        ],
+        battle: 'a21_storm2',
+      },
+      {
+        id: 'a21_e_left',
+        patrol: [
+          [6, 19],
+          [6, 14],
+        ],
+        battle: 'a21_storm3',
+      },
+      {
+        id: 'a21_e_right',
+        patrol: [
+          [19, 14],
+          [19, 19],
+        ],
+        battle: 'a21_storm4',
+      },
+      {
+        id: 'a21_e_yard',
+        patrol: [
+          [9, 7],
+          [14, 7],
+        ],
+        battle: 'a21_storm5',
+      },
+    ],
+    // 工場の中、旋盤の前
+    boss: { id: 'a21_boss', cell: [11, 5], battle: 'a21_boss' },
+    talkers: [
+      { id: 'a21_voice_bath', cell: [14, 19], scene: 'a21_voice_bath', label: '銭湯のおかみさん' },
+      { id: 'a21_voice_senior', cell: [7, 11], scene: 'a21_voice_senior', label: '先輩の職人' },
+      { id: 'a21_voice_radio', cell: [11, 27], scene: 'a21_voice_radio', label: 'ラジオ' },
+      { id: 'a21_voice_kid', cell: [14, 37], scene: 'a21_voice_kid', label: '八百屋の子ども' },
+    ],
+    triggers: [
+      { on: 'wins', count: 1, scene: 'a21_first_koma' },
+      // ムーブメントの開放（2-1-4）
+      { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint' },
+      { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
+      { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
     ],
   },
 };

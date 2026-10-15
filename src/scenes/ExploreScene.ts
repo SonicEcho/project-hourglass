@@ -90,7 +90,7 @@ export class ExploreScene extends Phaser.Scene {
   /** チェックポイントに立っている時だけ出す、育成の画面への入口（段階26） */
   private hubButton!: Phaser.GameObjects.Container;
   /** 下の帯の、仲間の今の HP・MP（段階32b 調整3） */
-  private vitalsText!: Phaser.GameObjects.Text;
+  private vitalsTexts: Phaser.GameObjects.Text[] = [];
 
   constructor() {
     super('Explore');
@@ -349,9 +349,16 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(this.hubButton);
     this.updateHubButton();
     // 仲間の今の HP・MP（区画の中では戦闘をまたいで持ち越す。段階32b 調整3）
-    ui.add(this.add.rectangle(0, GAME_HEIGHT - 26, GAME_WIDTH, 26, 0x000000, 0.55).setOrigin(0));
-    this.vitalsText = addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 13, '', { size: 12 }).setOrigin(0.5);
-    ui.add(this.vitalsText);
+    // 3人の時（2章から。段階38）は1行に入らないので、仲間ごとの列に名前と HP・MP の2行で出す
+    const members = currentParty(storyLineup());
+    const band = vitalsBandHeight(members.length);
+    ui.add(this.add.rectangle(0, GAME_HEIGHT - band, GAME_WIDTH, band, 0x000000, 0.55).setOrigin(0));
+    // 3人の時は、下の端のビルド日時と右下の設定のボタンにかからないよう、その上と左に並べる
+    this.vitalsTexts =
+      members.length > 2
+        ? members.map((_, i) => addText(this, 8 + (VITALS_WIDTH * (i + 0.5)) / members.length, GAME_HEIGHT - band + 17, '', { size: 11, align: 'center' }).setOrigin(0.5))
+        : [addText(this, GAME_WIDTH / 2, GAME_HEIGHT - band / 2, '', { size: 12 }).setOrigin(0.5)];
+    ui.add(this.vitalsTexts);
     this.refreshVitals();
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
@@ -492,13 +499,15 @@ export class ExploreScene extends Phaser.Scene {
   /** 下の帯の、仲間の今の HP・MP（全回復の時は薄い色） */
   private refreshVitals(): void {
     const vitals = this.state.vitals;
-    const line = currentParty(storyLineup())
-      .map((c) => {
-        const v = vitals?.[c.id];
-        return `${c.name} HP ${Math.min(v?.hp ?? c.stats.hp, c.stats.hp)}/${c.stats.hp}  MP ${Math.min(v?.mp ?? c.stats.mp, c.stats.mp)}/${c.stats.mp}`;
-      })
-      .join('　');
-    this.vitalsText.setText(line).setColor(vitals ? COLORS.text : COLORS.subText);
+    const members = currentParty(storyLineup());
+    const lines = members.map((c) => {
+      const v = vitals?.[c.id];
+      const hp = `${Math.min(v?.hp ?? c.stats.hp, c.stats.hp)}/${c.stats.hp}`;
+      const mp = `${Math.min(v?.mp ?? c.stats.mp, c.stats.mp)}/${c.stats.mp}`;
+      return members.length > 2 ? `${c.name} HP ${hp}\nMP ${mp}` : `${c.name} HP ${hp}  MP ${mp}`;
+    });
+    const texts = this.vitalsTexts.length === lines.length ? lines : [lines.join('　')];
+    this.vitalsTexts.forEach((t, i) => t.setText(texts[i] ?? '').setColor(vitals ? COLORS.text : COLORS.subText));
   }
 
   /** ボスが抱えているコマの数 */
@@ -530,7 +539,7 @@ export class ExploreScene extends Phaser.Scene {
     const unlocks = storyLineup().unlocks;
     const target = unlocks.growth ? 'Growth' : unlocks.weapon ? 'Weapon' : null;
     if (!target || this.walking || this.route.length > 0 || !isCheckpoint(this.area, this.state.cell)) return;
-    addButton(this, this.hubButton, GAME_WIDTH / 2, GAME_HEIGHT - 56, 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
+    addButton(this, this.hubButton, GAME_WIDTH / 2, GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyLineup()).length), 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
       size: 17,
       bold: true,
       fill: 0x1e3a5a,
@@ -609,6 +618,13 @@ export class ExploreScene extends Phaser.Scene {
     this.messageTimer = this.time.delayedCall(2800, () => this.tweens.add({ targets: this.message, alpha: 0.4, duration: 300 }));
   }
 }
+
+/** 下の帯（仲間の HP・MP）の高さ。3人の時は2行で、下の端のビルド日時の分だけ高い */
+function vitalsBandHeight(members: number): number {
+  return members > 2 ? 48 : 26;
+}
+/** 3人の時に HP・MP を並べる幅（右下の設定のボタンの左まで） */
+const VITALS_WIDTH = GAME_WIDTH - 56;
 
 /** 育成の入口のボタンの名前（開いている育成だけ。「星図・武器」など） */
 function hubLabel(): string {
