@@ -7,6 +7,7 @@ export * from './combos';
 export * from './enemies';
 export * from './festivalEnemies';
 export * from './showaEnemies';
+export * from './factoryEnemies';
 export * from './enemyArt';
 export * from './encounters';
 export * from './growthMap';

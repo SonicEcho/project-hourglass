@@ -46,6 +46,19 @@ export const ITEMS = {
   bentSpoke: { id: 'bentSpoke', name: '曲がったスポーク', kind: 'material', rarity: 'part', gains: { atk: 3 } },
   rustyBell: { id: 'rustyBell', name: 'さびたベル', kind: 'material', rarity: 'part', gains: { thunder: 3, ice: 1 } },
   lordCarrier: { id: 'lordCarrier', name: 'ぬしの荷台', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
+  // ---- 2-1 の町工場（段階39）。みおの進化の鍵（フィラメント・真空管のボルト）もここ ----
+  wornGear: { id: 'wornGear', name: 'すり減った歯車', kind: 'material', rarity: 'common', gains: { atk: 2, thunder: 1 } },
+  masterGear: { id: 'masterGear', name: '親歯車', kind: 'material', rarity: 'uncommon', gains: { atk: 3, ice: -1 } },
+  rustyScrew: { id: 'rustyScrew', name: 'さびたネジ', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
+  brassBolt: { id: 'brassBolt', name: '真鍮のボルト', kind: 'material', rarity: 'uncommon', gains: { fire: 3, thunder: -1 } },
+  tubeGlass: { id: 'tubeGlass', name: '真空管のかけら', kind: 'material', rarity: 'common', gains: { thunder: 2, ice: 1 } },
+  filament: { id: 'filament', name: 'フィラメント', kind: 'material', rarity: 'uncommon', gains: { thunder: 3, fire: 1 } },
+  expoTicket: { id: 'expoTicket', name: '万博のきっぷ', kind: 'material', rarity: 'rare', gains: { fire: 3, ice: 3, thunder: 2 } },
+  abacusBead: { id: 'abacusBead', name: 'そろばんの珠', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
+  abacusFrame: { id: 'abacusFrame', name: 'そろばんの枠', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
+  chippedTool: { id: 'chippedTool', name: '欠けたバイト', kind: 'material', rarity: 'part', gains: { atk: 3 } },
+  brokenBelt: { id: 'brokenBelt', name: '切れたベルト', kind: 'material', rarity: 'part', gains: { thunder: 2, fire: 2 } },
+  lordGear: { id: 'lordGear', name: 'ぬしの歯車', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
   // ---- 試作の5戦の敵の素材（デバッグメニューの「試作の5戦」） ----
   slimeJelly: { id: 'slimeJelly', name: 'スライムゼリー', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
   frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', rarity: 'common', gains: { thunder: 2, ice: 1 } },
@@ -145,7 +158,17 @@ const cards: WeaponDef = {
   name: '切り札のトランプ',
   owner: 'mio',
   evolutions: [
-    { id: 'thunderCards', name: 'サンダーカード', conditions: [{ kind: 'param', param: 'thunder', min: 6 }], attackElement: 'thunder', stats: { spd: 2 } },
+    // 段階39：鍵は 2-1 の雑魚の珍しい素材。トリックカードは、ムーブメントの開いた2章から加わるので、ギアの傾向のまま（はめ方で目指す進化先）
+    {
+      id: 'thunderCards',
+      name: 'サンダーカード',
+      conditions: [
+        { kind: 'param', param: 'thunder', min: 6 },
+        { kind: 'key', item: 'filament' },
+      ],
+      attackElement: 'thunder',
+      stats: { spd: 2 },
+    },
     {
       id: 'trickCards',
       name: 'トリックカード',
@@ -153,7 +176,16 @@ const cards: WeaponDef = {
       stats: { spd: 1 },
       passives: [{ kind: 'oneMoreDraw', count: 1 }],
     },
-    { id: 'flameCards', name: 'フレイムカード', conditions: [{ kind: 'param', param: 'fire', min: 6 }], attackElement: 'fire', stats: { spd: 1 } },
+    {
+      id: 'flameCards',
+      name: 'フレイムカード',
+      conditions: [
+        { kind: 'param', param: 'fire', min: 6 },
+        { kind: 'key', item: 'brassBolt' },
+      ],
+      attackElement: 'fire',
+      stats: { spd: 1 },
+    },
   ],
 };
 

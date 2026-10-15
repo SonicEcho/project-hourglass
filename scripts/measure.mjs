@@ -21,6 +21,9 @@ const text = [
   // 段階37：1-2 の商店街（1-1 を通した後の育ち具合から）
   module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a12')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a12')),
+  // 段階39：2-1 の町工場（1-1・1-2 を通した後から。みおを入れた3人、ムーブメントあり）
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a21')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a21')),
 ].join('\n\n');
 const took = `\n\n（${((Date.now() - started) / 1000).toFixed(1)}秒）\n`;
 console.log(text + took);

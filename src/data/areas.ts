@@ -2,6 +2,7 @@ import type { AreaDef } from '../core/explore';
 import type { CampaignBattle } from './campaign';
 import { scaleEnemy } from './campaign';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
+import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { PROTO_FESTIVAL_LAYOUT } from './prototypes';
 import { BGM } from './sounds';
@@ -42,16 +43,14 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
   a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 7, koma: 2 },
   a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 10, boss: true, koma: 2 },
-  // 2-1 の町工場（段階38）。2-1 の砂嵐（歯車・ネジ・真空管・そろばんノイズ）と「旋盤のぬし」は段階39で作るので、それまでは 1-2 の昭和の砂嵐で代わりにする（仮）。
-  // 3人になり、ムーブメントも開くので、1-2 より少し強くした。数値と勝率は段階39で決める。
-  // 並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
-  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.potion.id, koma: 1 },
-  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [RAMUNE_NOISE, MENKO_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.ether.id, koma: 2 },
-  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, koma: 2 },
-  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
-  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.4)), reward: 8, koma: 2 },
-  // ボスの代わり（仮）：旋盤のぬしができるまで、強い砂嵐の群れ
-  a21_boss: { id: 'a21_boss', name: '砂嵐の渦（仮）', enemies: [TIN_NOISE, PHONE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.6)), reward: 10, boss: true, koma: 2 },
+  // 2-1 の町工場（段階39。段階38では 1-2 の砂嵐で代わりにしていた）。並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。
+  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。工場の中の砂嵐は少し強い（ボスの手前の山）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
+  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [GEAR_NOISE, SCREW_NOISE], reward: 6, item: ITEMS.potion.id, koma: 1 },
+  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], reward: 6, item: ITEMS.ether.id, koma: 2 },
+  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE], reward: 7, koma: 2 },
+  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
+  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 8, koma: 2 },
+  a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2 },
 };
 
 /**
@@ -305,7 +304,7 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'cleared', scene: 'a12_last_koma' },
     ],
   },
-  // 2-1「親方の背中」：昭和44年の冬の町工場の路地（段階38。みおの初めての戦闘とムーブメントの開放まで。敵とボスは段階39）
+  // 2-1「親方の背中」：昭和44年の冬の町工場の路地（段階38。みおの初めての戦闘とムーブメントの開放。段階39で敵とボス、返す場面）
   a21: {
     id: 'a21',
     name: '2-1「親方の背中」',
@@ -317,10 +316,11 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 10,
     timeTitle: '親方の背中',
     owner: 'イサム',
+    memory: 'factory_alley',
     // 銭湯の左の道の奥と、右の道の奥。ムーブメントのギアも入っている（段階38）
     chests: [
-      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.tinSpring.id, ITEMS.phoneCord.id, ITEMS.potion.id], gears: ['thunderBoost'] },
-      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.menkoCard.id, ITEMS.ramuneGlass.id, ITEMS.ether.id], gears: ['firstAid'] },
+      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'] },
+      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'] },
     ],
     enemies: [
       {
@@ -380,6 +380,8 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint', gears: ['speedMemory'] },
       { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
       { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
+      { on: 'boss', scene: 'a21_boss' },
+      { on: 'cleared', scene: 'a21_last_koma' },
     ],
   },
 };

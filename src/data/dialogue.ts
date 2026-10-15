@@ -191,14 +191,14 @@ export const CAST: Record<string, CastMember> = {
   // 2-1 の人たち（段階38）。基本の1枚だけある（2026-10-13。ほかの表情は、絵が届くまで基本の絵で代わりに出す）。写しはセピアをかける
   いさむ: {
     portrait: 'portrait.isamu',
-    ...young(['通常', '笑顔', '考える', 'さみしげ'], { 通常: 'normal' }, '通常'),
+    ...young(['通常', '笑顔', '考える', 'さみしげ', '泣き笑い'], { 通常: 'normal' }, '通常'),
     color: 0x7a6a50,
     height: 420,
     voice: { pitch: 250, wave: 'sawtooth' },
   },
   写しのいさむ: {
     portrait: 'portrait.past_isamu',
-    ...young(['真剣', '笑顔', '泣き笑い'], { 真剣: 'serious' }, '真剣'),
+    ...young(['真剣', '笑顔', '泣き笑い', '驚き'], { 真剣: 'serious' }, '真剣'),
     color: 0x6a7a8a,
     height: 450,
     voice: { pitch: 380, wave: 'sawtooth' },
@@ -297,6 +297,9 @@ export const BACKDROPS: Record<string, Backdrop> = {
   showa_street: { title: '昭和の終わりの商店街（夕焼け）', top: 0xd08a50, bottom: 0x6a4a30, image: 'bg.showa_street', ambient: 'dust' },
   // 段階38：2-1 の昭和44年の冬の町工場の路地
   factory_alley: { title: '昭和の町工場の路地（雪の夕暮れ）', top: 0xb0a090, bottom: 0x5a4a40, image: 'bg.factory_alley' },
+  // 段階39：2-1-8 の昭和44年の工場の中（夜）と、6-A の今の工場（同じ絵を、古びた今の色にして使い回す）
+  factory_1969: { title: '昭和44年の町工場の中（夜）', top: 0x3a2a1a, bottom: 0x6a4a2a, image: 'bg.factory_1969', ambient: 'dust' },
+  factory_now: { title: '町工場の中（今）', top: 0x8a8a80, bottom: 0x4a4a48, image: 'bg.factory_1969', tint: 0x9a9890, ambient: 'dust' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
@@ -342,6 +345,8 @@ export const CGS: Record<string, Backdrop> = {
   photo_goldfish: { title: '写真：浴衣の小さなあかりが、金魚の袋をふたつ提げている', top: 0x3a3060, bottom: 0xd07a4a },
   // 段階37：1-2-9（1章の山場）。夕日の光と、金の粒
   tandem_bicycle: { title: '1枚絵：夕焼けの坂を下る二人乗り', top: 0xe0a060, bottom: 0x7a4a30, image: 'cg.tandem_bicycle', ambient: 'motes', glow: { x: 0.7, y: 0.25, color: 0xffc070 } },
+  // 段階39：2-1-8（2-1 の山場）。裸電球の光と、金の粒
+  master_back: { title: '1枚絵：振り返らずに歩いていく親方の背中', top: 0x3a2a1a, bottom: 0x7a5a3a, image: 'cg.master_back', ambient: 'motes', glow: { x: 0.5, y: 0.15, color: 0xffd08a } },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
 };
 
