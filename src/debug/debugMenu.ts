@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addItems, addKoma, addParts, defeatEnemy, flowEvents, nextEvent } from '../core';
-import { AREA_BATTLES, AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -185,7 +185,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
 
     // 探索（段階25）：探索の途中の時だけ
     const ex = run.explore;
-    const exArea = ex ? AREAS[ex.area] : undefined;
+    const exArea = ex ? (AREAS[ex.area] ?? TRIAL_AREAS[ex.area]) : undefined;
     if (ex && exArea) {
       panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', `探索（段階25）：${exArea.name}　倒した敵 ${ex.defeated.length}/${exArea.enemies.length}`));
       panel.append(
@@ -198,11 +198,23 @@ export function installDebugMenu(nav: DebugNavigator): void {
         button('探索：ボスの手前へ移る', () => {
           close();
           const [c, r] = exArea.boss.cell;
-          setExplore({ ...ex, cell: [c, r + 2] });
+          const room = exArea.boss.room ?? exArea.rooms[0].id;
+          setExplore({ ...ex, room, cell: [c, r + 2], visited: ex.visited.includes(room) ? ex.visited : [...ex.visited, room] });
           nav.openExplore(exArea.id);
         }),
       );
     }
+
+    // 部屋をつなぐ探索と敵の動き（段階47）：今ある地図の絵3枚を部屋としてつなぎ、4種類の動きの敵を置いた区画
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '試しの区画（段階47。本編では使わない。探索の途中だった区画は、次に入ると最初から）'));
+    panel.append(
+      button('試しの区画：部屋をつなぐ探索と敵の動き', () => {
+        close();
+        run.active = true;
+        setExplore(null);
+        nav.openExplore('trial47');
+      }),
+    );
 
     // エンジンを決めるための試作（段階16。本編では使わない）
     panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '試作（エンジンを決めるため。本編では使わない）'));

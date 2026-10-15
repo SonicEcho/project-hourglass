@@ -1,9 +1,10 @@
-import type { AreaDef } from '../core/explore';
+import type { AreaDef, EnemyMove, EnemyTuning } from '../core/explore';
 import type { CampaignBattle } from './campaign';
 import { scaleEnemy } from './campaign';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
+import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
-import { PROTO_FESTIVAL_LAYOUT } from './prototypes';
+import { ROOMS } from './rooms';
 import { BGM } from './sounds';
 import { ITEMS } from './weapons';
 
@@ -18,6 +19,16 @@ export const AREA_STEP_MS = 140;
 export const AREA_ENEMY_STEP_MS = 420;
 /** 戦闘や会話から戻った後、敵の印に触れても戦闘にしない間（ミリ秒） */
 export const AREA_GRACE_MS = 1800;
+/**
+ * 敵の動き方ごとの数値（段階47b）。stepMs は1マス進む時間（仲間は AREA_STEP_MS）。追ってくる敵は仲間より遅いので逃げ切れる。
+ * 逃げる敵は仲間と同じくらい速いので、行き止まりに追いこんで捕まえる
+ */
+export const ENEMY_MOVES = {
+  patrol: { stepMs: AREA_ENEMY_STEP_MS, notice: 0, giveUp: 0 },
+  chase: { stepMs: AREA_ENEMY_STEP_MS, notice: 4, giveUp: 7 },
+  guard: { stepMs: 0, notice: 0, giveUp: 0 },
+  flee: { stepMs: 150, notice: 4, giveUp: 0 },
+} satisfies Record<EnemyMove, EnemyTuning & { stepMs: number }>;
 /** 話せる人に、この距離（マス）まで近づくと話す */
 export const AREA_TALK_RANGE = 1;
 
@@ -42,66 +53,26 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
   a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 7, koma: 2 },
   a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 10, boss: true, koma: 2 },
+  // 2-1 の町工場（段階39。段階38では 1-2 の砂嵐で代わりにしていた）。並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。
+  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。工場の中の砂嵐は少し強い（ボスの手前の山）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
+  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [GEAR_NOISE, SCREW_NOISE], reward: 6, item: ITEMS.potion.id, koma: 1 },
+  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], reward: 6, item: ITEMS.ether.id, koma: 2 },
+  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE], reward: 7, koma: 2 },
+  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
+  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 8, koma: 2 },
+  a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2 },
 };
 
-/**
- * 1-2 の商店街の歩ける場所（段階37。地図の絵 map.showa_street は 24×43マス）。
- * 下のアーケードの入口（S）からまっすぐの通りを上り、駄菓子屋の前の縁台（左の P）、時計屋の前（右の P）を通って、上の出口の坂へ。
- * 通りの両側は店（通れない）。時計屋の手前の歩道だけ、少し広い
- */
-export const SHOWA_STREET_LAYOUT = [
-  '########################',
-  '########################',
-  '########################',
-  '########################',
-  '########################',
-  '###########....#########',
-  '##########.....#########',
-  '##########.....#########',
-  '##########......########',
-  '##########.......#######',
-  '##########.......#######',
-  '##########.......#######',
-  '##########.......#######',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#########.......########',
-  '#######..........#######',
-  '#######..........#######',
-  '#######.........P#######',
-  '#######..........#######',
-  '#######..........#######',
-  '#######..........#######',
-  '#######..........#######',
-  '#######............#####',
-  '#######.P..........#####',
-  '#######............#####',
-  '#######............#####',
-  '#######..........#######',
-  '########..........######',
-  '########..........######',
-  '########..........######',
-  '########..........######',
-  '########..........######',
-  '########........########',
-  '########........########',
-  '########........########',
-  '########....S...########',
-  '########........########',
-];
+
+
+
 
 export const AREAS: Record<string, AreaDef> = {
   // 1-1「金魚の名前」：平成の終わりの縁日
   a11: {
     id: 'a11',
     name: '1-1「金魚の名前」',
-    layout: PROTO_FESTIVAL_LAYOUT,
-    image: 'map.festival',
+    rooms: [ROOMS.festival_grounds],
     bgm: BGM.festival,
     // 返すのに要るコマ（段階28。AREA_BATTLES の koma の合計は9）
     komaNeed: 8,
@@ -169,8 +140,7 @@ export const AREAS: Record<string, AreaDef> = {
   a12: {
     id: 'a12',
     name: '1-2「夕暮れの二人乗り」',
-    layout: SHOWA_STREET_LAYOUT,
-    image: 'map.showa_street',
+    rooms: [ROOMS.showa_street],
     // 昭和の商店街の探索の曲が届くまで、日常の曲（商店街のシティポップ）
     bgm: BGM.daily,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
@@ -243,5 +213,115 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'boss', scene: 'a12_boss' },
       { on: 'cleared', scene: 'a12_last_koma' },
     ],
+  },
+  // 2-1「親方の背中」：昭和44年の冬の町工場の路地（段階38。みおの初めての戦闘とムーブメントの開放。段階39で敵とボス、返す場面）
+  a21: {
+    id: 'a21',
+    name: '2-1「親方の背中」',
+    rooms: [ROOMS.factory_alley],
+    // 昭和の町工場の探索の曲が届くまで、日常の曲
+    bgm: BGM.daily,
+    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
+    komaNeed: 10,
+    timeTitle: '親方の背中',
+    owner: 'イサム',
+    memory: 'factory_alley',
+    // 銭湯の左の道の奥と、右の道の奥。ムーブメントのギアも入っている（段階38）
+    chests: [
+      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'] },
+      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'] },
+    ],
+    enemies: [
+      {
+        id: 'a21_e_lower',
+        patrol: [
+          [11, 33],
+          [13, 33],
+          [13, 30],
+          [11, 30],
+        ],
+        battle: 'a21_storm1',
+      },
+      {
+        id: 'a21_e_upper',
+        patrol: [
+          [13, 25],
+          [11, 25],
+        ],
+        battle: 'a21_storm2',
+      },
+      {
+        id: 'a21_e_left',
+        patrol: [
+          [6, 19],
+          [6, 14],
+        ],
+        battle: 'a21_storm3',
+      },
+      {
+        id: 'a21_e_right',
+        patrol: [
+          [19, 14],
+          [19, 19],
+        ],
+        battle: 'a21_storm4',
+      },
+      {
+        id: 'a21_e_yard',
+        patrol: [
+          [9, 7],
+          [14, 7],
+        ],
+        battle: 'a21_storm5',
+      },
+    ],
+    // 工場の中、旋盤の前
+    boss: { id: 'a21_boss', cell: [11, 5], battle: 'a21_boss' },
+    talkers: [
+      { id: 'a21_voice_bath', cell: [14, 19], scene: 'a21_voice_bath', label: '銭湯のおかみさん' },
+      { id: 'a21_voice_senior', cell: [7, 11], scene: 'a21_voice_senior', label: '先輩の職人' },
+      { id: 'a21_voice_radio', cell: [11, 27], scene: 'a21_voice_radio', label: 'ラジオ' },
+      { id: 'a21_voice_kid', cell: [14, 37], scene: 'a21_voice_kid', label: '八百屋の子ども' },
+    ],
+    triggers: [
+      { on: 'wins', count: 1, scene: 'a21_first_koma' },
+      // ムーブメントの開放（2-1-4）。みおが拾った歯車を、ごほうびのギアとして渡す
+      { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint', gears: ['speedMemory'] },
+      { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
+      { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
+      { on: 'boss', scene: 'a21_boss' },
+      { on: 'cleared', scene: 'a21_last_koma' },
+    ],
+  },
+};
+
+/**
+ * 試しの区画（段階47。デバッグメニューの「試しの区画」から入る。本編の流れでは使わない）。
+ * 商店街（出発点）の上の出入口は、番人を倒すと開く縁日へ。左の出入口は、寄り道の町工場（逃げる敵と宝箱）へ。
+ * 商店街には追ってくる敵、縁日には見回りの敵と、奥にボス。戦闘は 1-1 の戦闘を使い回す
+ */
+export const TRIAL_AREAS: Record<string, AreaDef> = {
+  trial47: {
+    id: 'trial47',
+    name: '試しの区画（段階47）',
+    rooms: [ROOMS.trial_street, ROOMS.trial_factory, ROOMS.trial_festival],
+    links: [
+      { a: { room: 'trial_street', side: 'top' }, b: { room: 'trial_festival', side: 'bottom' }, opensWhen: 'trial_guard' },
+      { a: { room: 'trial_street', side: 'left' }, b: { room: 'trial_factory', side: 'right' } },
+    ],
+    bgm: BGM.daily,
+    komaNeed: 7,
+    timeTitle: '試しの区画',
+    owner: '―',
+    chests: [{ id: 'trial_chest', room: 'trial_factory', cell: [5, 12], items: [ITEMS.potion.id], gears: ['mpSave'] }],
+    enemies: [
+      { id: 'trial_chaser', move: 'chase', patrol: [[9, 32], [16, 32]], battle: 'a11_storm1' },
+      { id: 'trial_guard', move: 'guard', patrol: [[12, 7]], battle: 'a11_storm2' },
+      { id: 'trial_runner', move: 'flee', room: 'trial_factory', patrol: [[6, 16]], battle: 'a11_storm3' },
+      { id: 'trial_walker', room: 'trial_festival', patrol: [[7, 32], [16, 32], [16, 33], [7, 33]], battle: 'a11_storm4' },
+    ],
+    boss: { id: 'trial_boss', room: 'trial_festival', cell: [12, 7], battle: 'a11_boss' },
+    talkers: [],
+    triggers: [],
   },
 };

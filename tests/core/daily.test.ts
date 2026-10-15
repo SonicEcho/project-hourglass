@@ -16,6 +16,7 @@ import {
   requiredLeft,
   resolveHub,
   seenKey,
+  spotGears,
   spotState,
   usesPick,
   visitsFor,
@@ -208,7 +209,7 @@ describe('返した翌日に持ち主に会う（段階36）', () => {
   const TOWN_T = { street: placeInfo('street'), factory: placeInfo('factory'), shop: placeInfo('shop'), clock: placeInfo('clock') };
   const VISITS: ReturnVisit[] = [
     { area: 'a11', id: 'v11', label: 'ゆうま', place: 'street', x: 0, y: 0 },
-    { area: 'a21', id: 'v21', label: 'いさむ', place: 'factory', x: 0, y: 0 },
+    { area: 'a21', id: 'v21', label: 'いさむ', place: 'factory', x: 0, y: 0, gears: ['batonReceiver'] },
     { area: 'a22', id: 'v22', label: 'けんた', place: 'shop', x: 0, y: 0 },
   ];
   const hub = (day: number): DailyHub => ({
@@ -241,6 +242,15 @@ describe('返した翌日に持ち主に会う（段階36）', () => {
     // 同じ場所なら、先頭に入る
     const same = resolveHub(hub(7), {}, {}, TOWN_T, visitsFor(hub(7), VISITS, { a22: 6 }));
     expect(ids(same)).toEqual(['v22', 'next', 'go']);
+  });
+
+  it('ごほうびのギア（段階39）：見る前の印だけが返し、見た後とごほうびのない印は空', () => {
+    const h = resolveHub(hub(6), {}, {}, TOWN_T, visitsFor(hub(6), VISITS, { a21: 5 }));
+    const v = allSpots(h).find((s) => s.id === 'v21')!;
+    expect(v.gears).toEqual(['batonReceiver']);
+    expect(spotGears(h, {}, v)).toEqual(['batonReceiver']);
+    expect(spotGears(h, markVisited(h, {}, v), v)).toEqual([]);
+    expect(spotGears(h, {}, allSpots(h).find((s) => s.id === 'next')!)).toEqual([]);
   });
 
   it('「工場の後に楽器店」：先に見る印を見るまで、後の印は選べない。先の印が出ていない日は、すぐ選べる', () => {

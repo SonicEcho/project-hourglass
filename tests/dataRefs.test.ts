@@ -203,7 +203,7 @@ describe('物語の流れ（段階23・34）', () => {
           expect(sceneIds.has(scene), `${area.id} ${scene}`).toBe(true);
           reachable.add(scene);
         }
-        if (area.image) expect(ASSETS.some((a) => a.id === area.image), area.image).toBe(true);
+        for (const room of area.rooms) if (room.image) expect(ASSETS.some((a) => a.id === room.image), room.image).toBe(true);
       }
       if (e.kind === 'return') expect(AREAS[e.area ?? ''], e.id).toBeDefined();
     }
@@ -220,6 +220,24 @@ describe('物語の流れ（段階23・34）', () => {
   });
 });
 
+describe('部屋と試しの区画（段階47）', () => {
+  it('部屋の一覧に書き間違いがなく、試しの区画は区画の決まりを満たし、戦闘と絵がある', async () => {
+    const { AREA_BATTLES, ASSETS, ENEMY_MOVES, ROOMS, TRIAL_AREAS } = await import('../src/data');
+    const { checkArea, checkRoom } = await import('../src/core');
+    for (const room of Object.values(ROOMS)) {
+      expect(checkRoom(room), room.id).toEqual([]);
+      if (room.image) expect(ASSETS.some((a) => a.id === room.image), room.image).toBe(true);
+    }
+    for (const area of Object.values(TRIAL_AREAS)) {
+      expect(checkArea(area)).toEqual([]);
+      for (const e of [...area.enemies, area.boss]) expect(AREA_BATTLES[e.battle], e.id).toBeDefined();
+      // 4種類の動きを全部置いている
+      expect(new Set(area.enemies.map((e) => e.move ?? 'patrol'))).toEqual(new Set(Object.keys(ENEMY_MOVES)));
+      expect(area.rooms.length).toBeGreaterThan(1);
+    }
+  });
+});
+
 describe('パーティと育成の開放（段階26）', () => {
   it('どの章のパーティも書き間違いがなく、探索の章には自分のパーティがある。1章はハルトとあかりで、ムーブメントは閉じている', async () => {
     const { CHAPTER1_LINEUP, PARTY, PROTOTYPE_LINEUP, SLICE_FLOW } = await import('../src/data');
@@ -233,6 +251,32 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(SLICE_FLOW.find((c) => c.id === 'ch1')?.lineup).toBe(CHAPTER1_LINEUP);
     expect(CHAPTER1_LINEUP.members).toEqual(['hero', 'akari']);
     expect(CHAPTER1_LINEUP.unlocks).toEqual({ growth: true, navi: false, weapon: true });
+  });
+
+  it('2章（段階38）はみおが加わって3人で、ムーブメントも開く。みおが仲間になる 5-C より前の2章に戦闘はない', async () => {
+    const { CHAPTER1_LINEUP, CHAPTER2_LINEUP, SLICE_FLOW } = await import('../src/data');
+    const { lineupAt } = await import('../src/core');
+    expect(SLICE_FLOW.find((c) => c.id === 'ch2')?.lineup).toBe(CHAPTER2_LINEUP);
+    expect(CHAPTER2_LINEUP.members).toEqual(['hero', 'akari', 'mio']);
+    expect(CHAPTER2_LINEUP.unlocks).toEqual({ growth: true, navi: true, weapon: true });
+    expect(lineupAt(SLICE_FLOW, 'a21_explore', CHAPTER1_LINEUP)).toBe(CHAPTER2_LINEUP);
+    expect(lineupAt(SLICE_FLOW, 'a12_explore', CHAPTER1_LINEUP)).toBe(CHAPTER1_LINEUP);
+    const ch2 = SLICE_FLOW.find((c) => c.id === 'ch2')!.events;
+    const join = ch2.findIndex((e) => e.id === 'd5_evening');
+    expect(join).toBeGreaterThan(0);
+    expect(ch2.slice(0, join).some((e) => e.kind === 'explore')).toBe(false);
+  });
+
+  it('ギア（段階38）は戦闘では落とさず、ムーブメントが開いている章の区画の、宝箱と会話のごほうびで手に入る', async () => {
+    const { AREAS, NAVI_PARTS, SLICE_FLOW } = await import('../src/data');
+    const naviAreas = new Set(SLICE_FLOW.filter((c) => c.lineup?.unlocks.navi).flatMap((c) => c.events.flatMap((e) => (e.kind === 'explore' && e.area ? [e.area] : []))));
+    for (const area of Object.values(AREAS)) {
+      const gears = [...area.chests.flatMap((c) => c.gears ?? []), ...area.triggers.flatMap((t) => t.gears ?? [])];
+      for (const g of gears) expect(NAVI_PARTS[g as keyof typeof NAVI_PARTS], `${area.id} ${g}`).toBeDefined();
+      if (gears.length > 0) expect(naviAreas.has(area.id), area.id).toBe(true);
+    }
+    // 2-1-4 で、みおが拾った歯車を渡す
+    expect(AREAS.a21.triggers.find((t) => t.scene === 'a21_checkpoint')?.gears?.length).toBeGreaterThan(0);
   });
 
   it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {

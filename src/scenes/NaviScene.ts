@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { maybeShowTip } from '../ui/tipPanel';
 import type { Cell, CharacterDef, OwnedPart, Placement, Rotation } from '../core';
 import { boardParts, boardPassives, boardStats, findBugs, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
@@ -54,6 +55,8 @@ export class NaviScene extends Phaser.Scene {
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
+    // 初めて開いた時の説明（段階38。2-1 の銭湯の前で、ムーブメントが開いた後）
+    maybeShowTip(this, ['growth_navi']);
   }
 
   /** デバッグメニューからギアが増えた時に描き直す */

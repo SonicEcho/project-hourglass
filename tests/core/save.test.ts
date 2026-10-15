@@ -315,9 +315,13 @@ describe('セーブ：今のデータに合わせて整える', () => {
   });
 
   it('探索の状態を読み戻す。知らない区画なら、探索の途中ではないことにする', () => {
-    const explore = { area: 'a11', cell: [11, 17], checkpoint: [11, 17], openedChests: ['a11_chest_goldfish'], defeated: ['a11_e_plaza'], seen: ['a11_first_koma'], cleared: false, koma: 3 };
+    const explore = { area: 'a11', room: 'festival_grounds', cell: [11, 17], checkpoint: [11, 17], checkpointRoom: 'festival_grounds', visited: ['festival_grounds'], openedChests: ['a11_chest_goldfish'], defeated: ['a11_e_plaza'], seen: ['a11_first_koma'], cleared: false, koma: 3 };
     const res = parseEdited((raw) => (raw.run.explore = explore));
     expect(res.ok && res.save.run.explore).toEqual(explore);
+    // 版8の探索の途中（部屋がない。段階47）は、部屋が1つの区画として最初の部屋にいたことにする
+    const { room: _r, checkpointRoom: _c, visited: _v, ...v8 } = explore;
+    const old = parseEdited((raw) => ((raw.version = 8), (raw.run.explore = v8)));
+    expect(old.ok && old.save.run.explore).toEqual(explore);
     const res2 = parseEdited((raw) => (raw.run.explore = { ...explore, area: 'gone' }));
     expect(res2.ok && res2.save.run.explore).toBeNull();
   });

@@ -3,7 +3,7 @@ import { addParts, createNavi, findBugs, isPartActive } from '../src/core';
 import { CAMPAIGN, NAVI_DATA, NAVI_PARTS, PARTY, START_NAVI_PARTS } from '../src/data';
 import { arrangeNavi, autoRun, MAX_ATTEMPTS } from '../src/sim/autoRun';
 import { formatAreaMeasure, formatMeasure, measure, measureArea, summarize } from '../src/sim/measure';
-import { areaBattleOrder, autoAreaRun } from '../src/sim/autoArea';
+import { areaBattleOrder, areaLineup, autoAreaRun } from '../src/sim/autoArea';
 
 describe('自動対戦：周回', () => {
   it.each([1, 2])('タイトルからボスまで進み、戦闘ごとの結果が残る（seed %i）', (seed) => {
@@ -89,5 +89,20 @@ describe('自動対戦：1-2 の商店街（段階37）', () => {
     expect(m.cleared).toBe(4);
     expect(formatAreaMeasure(m)).toContain('## 1-2 の商店街');
     expect(formatAreaMeasure(m)).toContain('自転車のぬし');
+  });
+});
+
+describe('自動対戦：2-1 の町工場（段階39）', () => {
+  it('1-1・1-2 を2人で通した後、2-1 はみおを入れた3人で戦い、ムーブメントのギアもはめる。弱点をねらう方針はボスまで勝ち切れる', () => {
+    expect(areaLineup('a11').members).toEqual(['hero', 'akari']);
+    expect(areaLineup('a21').members).toEqual(['hero', 'akari', 'mio']);
+    const r = autoAreaRun(3, 'smart', undefined, 'a21', ['a11', 'a12']);
+    expect(r.stages.length).toBe(areaBattleOrder('a21').length);
+    expect(autoAreaRun(3, 'smart', undefined, 'a21', ['a11', 'a12'])).toEqual(r);
+    const m = measureArea(3, 1, 'smart', 'a21');
+    expect(m.cleared).toBe(3);
+    expect(formatAreaMeasure(m)).toContain('## 2-1 の町工場');
+    expect(formatAreaMeasure(m)).toContain('ハルト・あかり・みお');
+    expect(formatAreaMeasure(m)).toContain('旋盤のぬし');
   });
 });

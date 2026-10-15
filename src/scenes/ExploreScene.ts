@@ -1,7 +1,14 @@
 import Phaser from 'phaser';
-import type { AreaDef, AreaTrigger, ExploreState, GridCell, GridMap } from '../core';
+import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
+  addParts,
+  enemyNext,
   exploreTipTriggers,
+  inRoom,
+  passDoor,
+  roomOf,
+  roomPositions,
+  startMind,
   addItems,
   addKoma,
   areaGrid,
@@ -20,13 +27,14 @@ import {
   openChest,
   patrolRoute,
   pendingTrigger,
+  triggerGears,
   startExplore,
   usableLinks,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, AREA_ENEMY_STEP_MS, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ITEMS, LINK_GAUGE_MAX, LINKS, SE } from '../data';
+import { AREA_BATTLES, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, TRIAL_AREAS } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -38,7 +46,9 @@ import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
 // 戦闘・会話から戻る時は、この画面をもう一度開く（いる場所や倒した敵は、セーブした探索の状態から戻す）。
-// 区画のボスに勝ち、その後の会話を見たら、物語の流れへ done で戻る
+// 区画のボスに勝ち、その後の会話を見たら、物語の流れへ done で戻る。
+// 段階47：区画は部屋を出入口でつないだもの。出入口のマスに着くと、短く暗転して、つながった部屋の出入口の内側に出る（画面を開き直す）。
+// 敵の印は、動き方の種類ごとに1歩ずつ行き先を決める（core/explore.ts の enemyNext）
 
 const T = AREA_TILE;
 
@@ -57,13 +67,20 @@ export interface ExploreData {
 interface Enemy {
   id: string;
   battle: string;
+  move: EnemyMove;
   sprite: Phaser.GameObjects.Container;
   route: GridCell[];
-  index: number;
+  mind: EnemyMind;
+  /** 追ってくる途中の「！」 */
+  alert?: Phaser.GameObjects.Text;
 }
 
 export class ExploreScene extends Phaser.Scene {
   private area!: AreaDef;
+  /** 今いる部屋（段階47） */
+  private room!: RoomDef;
+  /** デバッグメニューの試しの区画（段階47。物語の流れには戻らない） */
+  private trial = false;
   private map!: GridMap;
   private state!: ExploreState;
   private player!: Phaser.GameObjects.Container;
@@ -90,17 +107,17 @@ export class ExploreScene extends Phaser.Scene {
   /** チェックポイントに立っている時だけ出す、育成の画面への入口（段階26） */
   private hubButton!: Phaser.GameObjects.Container;
   /** 下の帯の、仲間の今の HP・MP（段階32b 調整3） */
-  private vitalsText!: Phaser.GameObjects.Text;
+  private vitalsTexts: Phaser.GameObjects.Text[] = [];
 
   constructor() {
     super('Explore');
   }
 
   create(data: ExploreData): void {
-    const area = AREAS[data.area];
+    const area = AREAS[data.area] ?? TRIAL_AREAS[data.area];
     if (!area) throw new Error(`unknown area ${data.area}`);
     this.area = area;
-    this.map = areaGrid(area);
+    this.trial = !AREAS[data.area];
     stopAmbience();
     this.route = [];
     this.nextCell = null;
@@ -120,8 +137,8 @@ export class ExploreScene extends Phaser.Scene {
     let note = '';
     let komaGot = 0;
     // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
-    if (data.won) notePlayBattle(run.event, true);
-    if (data.lost) notePlayBattle(run.event, false);
+    if (data.won && !this.trial) notePlayBattle(run.event, true);
+    if (data.lost && !this.trial) notePlayBattle(run.event, false);
     if (data.won) {
       // 倒した印の戦闘のコマを手に入れる（段階28。同じ印で2回もらわないよう、まだ倒していなかった時だけ）
       const battleId = data.won === area.boss.id ? area.boss.battle : area.enemies.find((e) => e.id === data.won)?.battle;
@@ -133,8 +150,16 @@ export class ExploreScene extends Phaser.Scene {
       state = loseBattle(state);
       note = 'チェックポイントへ戻った';
     }
+    // 会話のごほうびのギア（段階38。2-1 の銭湯の前で、みおが拾った歯車など）
+    const gears = data.seen ? triggerGears(area, state, data.seen) : [];
+    if (gears.length > 0) {
+      run.navi = addParts(run.navi, gears);
+      note = `ギアを手に入れた！　${gearNames(gears)}`;
+    }
     if (data.seen) state = markTrigger(state, data.seen);
     this.state = state;
+    this.room = roomOf(area, state.room);
+    this.map = areaGrid(area, state.room);
     setExplore(state);
 
     // 戻ってきた時の続き：ボスの前の会話を見たらボス戦、ボスの後の会話を見たら区画を出る
@@ -211,12 +236,13 @@ export class ExploreScene extends Phaser.Scene {
     const world = this.add.container(0, 0);
     this.world = world;
     const ui = this.add.container(0, 0);
-    if (area.image && hasImage(this, area.image)) {
-      world.add(this.add.image(0, 0, area.image).setOrigin(0).setDisplaySize(this.map.cols * T, this.map.rows * T));
+    const room = this.room;
+    if (room.image && hasImage(this, room.image)) {
+      world.add(this.add.image(0, 0, room.image).setOrigin(0).setDisplaySize(this.map.cols * T, this.map.rows * T));
     } else {
       const g = this.add.graphics();
       g.fillStyle(0x0b1118, 1).fillRect(0, 0, this.map.cols * T, this.map.rows * T);
-      area.layout.forEach((line, r) =>
+      room.layout.forEach((line, r) =>
         [...line].forEach((ch, c) => {
           if (ch !== '#') g.fillStyle((c + r) % 2 === 0 ? 0x22303f : 0x1f2c3a, 1).fillRect(c * T, r * T, T, T);
         }),
@@ -225,18 +251,18 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 見えないマス目（デバッグの時だけ「マス目」のボタンで見せる）
     const gridView = this.add.graphics().setVisible(false);
-    area.layout.forEach((line, r) =>
+    room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
         gridView.lineStyle(1, 0xffffff, 0.15).strokeRect(c * T, r * T, T, T);
         if (ch === '#') gridView.fillStyle(0xff3030, 0.3).fillRect(c * T, r * T, T, T);
       }),
     );
     // 宝箱のマスも通れない
-    for (const c of area.chests) gridView.fillStyle(0xff3030, 0.3).fillRect(c.cell[0] * T, c.cell[1] * T, T, T);
+    for (const c of area.chests) if (this.here(c)) gridView.fillStyle(0xff3030, 0.3).fillRect(c.cell[0] * T, c.cell[1] * T, T, T);
     world.add(gridView);
 
     // チェックポイント（大きな提灯の手前）
-    area.layout.forEach((line, r) =>
+    room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
         if (ch !== 'P') return;
         const ring = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.45).setStrokeStyle(3, 0x6bc8ff);
@@ -246,6 +272,7 @@ export class ExploreScene extends Phaser.Scene {
     );
     // 宝箱
     for (const chest of area.chests) {
+      if (!this.here(chest)) continue;
       const opened = this.state.openedChests.includes(chest.id);
       const box = this.add
         .rectangle(chest.cell[0] * T + T / 2, chest.cell[1] * T + T / 2, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f)
@@ -255,6 +282,7 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
+      if (!this.here(t)) continue;
       const x = t.cell[0] * T + T / 2;
       const y = t.cell[1] * T + T / 2;
       world.add(this.add.ellipse(x, y, T * 0.6, T * 0.8, 0xc8d0e0, 0.55));
@@ -263,7 +291,7 @@ export class ExploreScene extends Phaser.Scene {
       this.tweens.add({ targets: bubble, y: bubble.y - 4, yoyo: true, repeat: -1, duration: 700 });
     }
     // ボスの印
-    if (!this.state.cleared) {
+    if (!this.state.cleared && this.here(area.boss)) {
       const [bc, br] = area.boss.cell;
       const boss = this.add.container(bc * T + T / 2, br * T + T / 2);
       // コマがそろうまでは眠っている（暗く、ゆっくり息をする。段階32b 調整3）
@@ -283,12 +311,17 @@ export class ExploreScene extends Phaser.Scene {
     world.add(this.marker);
     // 敵の印（倒したものは出さない）
     for (const e of area.enemies) {
-      if (!enemyActive(this.state, e.id)) continue;
-      const route = patrolRoute(this.map, e.patrol);
-      const sprite = this.add.container(route[0][0] * T + T / 2, route[0][1] * T + T / 2);
-      sprite.add(this.add.rectangle(0, 0, T * 0.62, T * 0.62, COLORS.enemy).setAngle(45).setStrokeStyle(2, 0xffffff));
+      if (!enemyActive(this.state, e.id) || !this.here(e)) continue;
+      const move = e.move ?? 'patrol';
+      const route = e.patrol.length >= 2 ? patrolRoute(this.map, e.patrol) : [e.patrol[0]];
+      const sprite = this.enemySprite(e.battle, move, route[0]);
       world.add(sprite);
-      const enemy: Enemy = { id: e.id, battle: e.battle, sprite, route, index: 0 };
+      const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route) };
+      if (move === 'chase') {
+        enemy.alert = addText(this, 0, -T * 0.95, '！', { size: 16, bold: true, color: '#ffd84a' }).setOrigin(0.5).setVisible(false);
+        enemy.alert.setStroke('#5a1a00', 4);
+        sprite.add(enemy.alert);
+      }
       this.enemies.push(enemy);
       this.stepEnemy(enemy);
     }
@@ -349,10 +382,19 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(this.hubButton);
     this.updateHubButton();
     // 仲間の今の HP・MP（区画の中では戦闘をまたいで持ち越す。段階32b 調整3）
-    ui.add(this.add.rectangle(0, GAME_HEIGHT - 26, GAME_WIDTH, 26, 0x000000, 0.55).setOrigin(0));
-    this.vitalsText = addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 13, '', { size: 12 }).setOrigin(0.5);
-    ui.add(this.vitalsText);
+    // 仲間ごとの列に名前と HP・MP の2行で出す（段階38で3人の時、段階47で2人の時も。1行だと左右がはみ出していた）
+    const members = currentParty(storyLineup());
+    const band = vitalsBandHeight(members.length);
+    ui.add(this.add.rectangle(0, GAME_HEIGHT - band, GAME_WIDTH, band, 0x000000, 0.55).setOrigin(0));
+    // 下の端のビルド日時と右下の設定のボタンにかからないよう、その上と左に並べる
+    this.vitalsTexts =
+      members.length > 1
+        ? members.map((_, i) => addText(this, 8 + (VITALS_WIDTH * (i + 0.5)) / members.length, GAME_HEIGHT - band + 17, '', { size: 11, align: 'center' }).setOrigin(0.5))
+        : [addText(this, GAME_WIDTH / 2, GAME_HEIGHT - band / 2, '', { size: 12 }).setOrigin(0.5)];
+    ui.add(this.vitalsTexts);
     this.refreshVitals();
+    // 全体の地図（段階47a）：部屋が2つ以上の区画だけ。入った部屋とつながりを、右上に小さく出す
+    if (area.rooms.length > 1) ui.add(this.drawRoomMap());
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (over.length > 0 || this.leaving) return;
@@ -376,10 +418,10 @@ export class ExploreScene extends Phaser.Scene {
 
   /** タップしたマス：話せる人・ボスなら隣まで歩いてから。それ以外はそこまで歩く */
   private tapCell(cell: GridCell): void {
-    const talker = this.area.talkers.find((t) => near(t.cell, cell, 0));
+    const talker = this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
     const chest = talker ? null : chestAt(this.area, this.state, cell);
-    const boss = !talker && !chest && !this.state.cleared && near(this.area.boss.cell, cell, 1);
+    const boss = !talker && !chest && !this.state.cleared && this.here(this.area.boss) && near(this.area.boss.cell, cell, 1);
     const from = this.nextCell ?? this.state.cell;
     let target: GridCell | null;
     let path: GridCell[] | null;
@@ -445,6 +487,17 @@ export class ExploreScene extends Phaser.Scene {
   private arriveAt(cell: GridCell): void {
     const r = arrive(this.area, this.state, cell);
     this.state = r.state;
+    // 出入口（段階47a）：つながった部屋へ移る。閉じていれば止まる
+    const door = passDoor(this.area, this.state, cell);
+    if (door?.type === 'moved') {
+      this.changeRoom(door.state);
+      return;
+    }
+    if (door?.type === 'locked') {
+      this.route = [];
+      this.goal = null;
+      this.say(`この先は、まだ通れない。${this.lockHint(door.link.opensWhen)}`);
+    }
     if (r.event.type === 'checkpoint') {
       playSe(this, SE.heal);
       this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
@@ -459,7 +512,7 @@ export class ExploreScene extends Phaser.Scene {
       } else this.showTip(true);
     }
     // ボスの隣まで来たら
-    if (!this.state.cleared && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk' && (this.bossReady() || this.goal?.kind === 'boss')) {
+    if (!this.state.cleared && this.here(this.area.boss) && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk' && (this.bossReady() || this.goal?.kind === 'boss')) {
       this.route = [];
       this.goal = { kind: 'boss' };
     }
@@ -492,13 +545,15 @@ export class ExploreScene extends Phaser.Scene {
   /** 下の帯の、仲間の今の HP・MP（全回復の時は薄い色） */
   private refreshVitals(): void {
     const vitals = this.state.vitals;
-    const line = currentParty(storyLineup())
-      .map((c) => {
-        const v = vitals?.[c.id];
-        return `${c.name} HP ${Math.min(v?.hp ?? c.stats.hp, c.stats.hp)}/${c.stats.hp}  MP ${Math.min(v?.mp ?? c.stats.mp, c.stats.mp)}/${c.stats.mp}`;
-      })
-      .join('　');
-    this.vitalsText.setText(line).setColor(vitals ? COLORS.text : COLORS.subText);
+    const members = currentParty(storyLineup());
+    const lines = members.map((c) => {
+      const v = vitals?.[c.id];
+      const hp = `${Math.min(v?.hp ?? c.stats.hp, c.stats.hp)}/${c.stats.hp}`;
+      const mp = `${Math.min(v?.mp ?? c.stats.mp, c.stats.mp)}/${c.stats.mp}`;
+      return members.length > 1 ? `${c.name} HP ${hp}\nMP ${mp}` : `${c.name} HP ${hp}  MP ${mp}`;
+    });
+    const texts = this.vitalsTexts.length === lines.length ? lines : [lines.join('　')];
+    this.vitalsTexts.forEach((t, i) => t.setText(texts[i] ?? '').setColor(vitals ? COLORS.text : COLORS.subText));
   }
 
   /** ボスが抱えているコマの数 */
@@ -517,9 +572,11 @@ export class ExploreScene extends Phaser.Scene {
     if (!r) return;
     this.state = r.state;
     run.armory = addItems(run.armory, r.chest.items);
+    const gears = r.chest.gears ?? [];
+    if (gears.length > 0) run.navi = addParts(run.navi, gears);
     this.chestSprites.get(r.chest.id)?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
-    this.say(`宝箱を開けた！　${summarize(r.chest.items)}`);
+    this.say(`宝箱を開けた！　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : ''].filter(Boolean).join('　')}`);
     setExplore(this.state);
   }
 
@@ -529,8 +586,8 @@ export class ExploreScene extends Phaser.Scene {
     this.hubButton.removeAll(true);
     const unlocks = storyLineup().unlocks;
     const target = unlocks.growth ? 'Growth' : unlocks.weapon ? 'Weapon' : null;
-    if (!target || this.walking || this.route.length > 0 || !isCheckpoint(this.area, this.state.cell)) return;
-    addButton(this, this.hubButton, GAME_WIDTH / 2, GAME_HEIGHT - 56, 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
+    if (!target || this.walking || this.route.length > 0 || !isCheckpoint(this.area, this.state.cell, this.state.room)) return;
+    addButton(this, this.hubButton, GAME_WIDTH / 2, GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyLineup()).length), 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
       size: 17,
       bold: true,
       fill: 0x1e3a5a,
@@ -592,14 +649,101 @@ export class ExploreScene extends Phaser.Scene {
   /** 区画を出て、物語の次の出来事（時間を返す）へ。集めたコマは返す画面で使うので、探索の状態は返し終えるまで残す（段階28） */
   private finishArea(): void {
     this.leaving = true;
+    // 試しの区画は、物語の流れに戻らずタイトルへ（段階47）
+    if (this.trial) {
+      setExplore(null);
+      this.scene.start('Title');
+      return;
+    }
     setExplore(this.state);
     this.scene.start('Flow', { done: true });
   }
 
+  /** 部屋に置いたものが、今いる部屋にあるか（段階47） */
+  private here(thing: { room?: string }): boolean {
+    return inRoom(this.area, thing, this.state.room);
+  }
+
+  /** つながった部屋へ移る：短く暗転して、画面を開き直す（入った直後は、戻ってきた時と同じ間だけ敵に触れても戦闘にしない） */
+  private changeRoom(state: ExploreState): void {
+    if (this.leaving) return;
+    this.leaving = true;
+    this.state = state;
+    setExplore(state);
+    playSe(this, SE.footsteps);
+    const data: ExploreData = { area: this.area.id, won: undefined, lost: undefined, seen: undefined };
+    this.cameras.main.fadeOut(220, 0, 0, 0);
+    this.time.delayedCall(240, () => this.scene.restart(data));
+  }
+
+  /** 閉じた出入口の手がかり（開ける印が敵なら「◯◯の番人を倒すと開く」） */
+  private lockHint(opensWhen: string | undefined): string {
+    if (opensWhen === this.area.boss.id) return 'ぬしを倒すと開く';
+    const e = this.area.enemies.find((x) => x.id === opensWhen);
+    if (!e) return '';
+    return e.move === 'guard' ? '近くの番人を倒すと開く' : 'どこかの砂嵐を倒すと開く';
+  }
+
+  /** 敵の印：敵の絵（ENEMY_ART）を小さく。絵のない敵は赤い菱形。番人は少し大きく、逃げる敵は光らせる（段階47b） */
+  private enemySprite(battle: string, move: EnemyMove, at: GridCell): Phaser.GameObjects.Container {
+    const sprite = this.add.container(at[0] * T + T / 2, at[1] * T + T / 2);
+    const size = move === 'guard' ? 1.35 : 1;
+    if (move === 'flee') {
+      const glow = this.add.circle(0, 0, T * 0.6, 0xffe08a, 0.45);
+      sprite.add(glow);
+      this.tweens.add({ targets: glow, alpha: 0.1, scale: 1.3, yoyo: true, repeat: -1, duration: 600 });
+    }
+    const art = ENEMY_ART[AREA_BATTLES[battle]?.enemies[0]?.id ?? ''];
+    if (art && hasImage(this, art)) {
+      const img = this.add.image(0, 0, art);
+      img.setScale((T * 1.1 * size) / Math.max(img.width, img.height));
+      sprite.add(img);
+    } else {
+      sprite.add(this.add.rectangle(0, 0, T * 0.62 * size, T * 0.62 * size, COLORS.enemy).setAngle(45).setStrokeStyle(2, move === 'flee' ? 0xffe08a : 0xffffff));
+    }
+    if (move === 'guard') sprite.add(addText(this, 0, T * 0.7, '番人', { size: 10, bold: true, color: COLORS.accentText }).setOrigin(0.5));
+    return sprite;
+  }
+
+  /** 敵の印の次の1歩（動き方ごと。core/explore.ts の enemyNext）。番人は動かない */
   private stepEnemy(e: Enemy): void {
-    e.index = (e.index + 1) % e.route.length;
-    const [c, r] = e.route[e.index];
-    this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: AREA_ENEMY_STEP_MS, onComplete: () => this.stepEnemy(e) });
+    const tuning = ENEMY_MOVES[e.move];
+    if (e.move === 'guard' || tuning.stepMs <= 0) return;
+    const player = this.nextCell ?? this.state.cell;
+    e.mind = enemyNext(this.map, e.move, e.route, e.mind, player, tuning);
+    e.alert?.setVisible(e.mind.chasing);
+    const [c, r] = e.mind.cell;
+    this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: tuning.stepMs, onComplete: () => this.stepEnemy(e) });
+  }
+
+  /** 全体の地図（段階47a）：入った部屋とつながり。今いる部屋は明るく */
+  private drawRoomMap(): Phaser.GameObjects.Container {
+    const pos = roomPositions(this.area);
+    const seen = this.state.visited.filter((id) => pos[id]);
+    const xs = seen.map((id) => pos[id][0]);
+    const ys = seen.map((id) => pos[id][1]);
+    const w = 18;
+    const h = 14;
+    const gap = 8;
+    const cols = Math.max(...xs) - Math.min(...xs) + 1;
+    const rows = Math.max(...ys) - Math.min(...ys) + 1;
+    const box = this.add.container(GAME_WIDTH - 12 - cols * (w + gap), 140);
+    box.add(this.add.rectangle(-6, -6, cols * (w + gap) + 4, rows * (h + gap) + 4, 0x000000, 0.5).setOrigin(0));
+    const at = (id: string): [number, number] => [(pos[id][0] - Math.min(...xs)) * (w + gap) + w / 2, (pos[id][1] - Math.min(...ys)) * (h + gap) + h / 2];
+    const g = this.add.graphics().lineStyle(2, 0x8a9aaa, 1);
+    for (const link of this.area.links ?? []) {
+      if (!seen.includes(link.a.room) || !seen.includes(link.b.room)) continue;
+      const [x1, y1] = at(link.a.room);
+      const [x2, y2] = at(link.b.room);
+      g.lineBetween(x1, y1, x2, y2);
+    }
+    box.add(g);
+    for (const id of seen) {
+      const [x, y] = at(id);
+      const now = id === this.state.room;
+      box.add(this.add.rectangle(x, y, w, h, now ? 0xffd84a : 0x3a4a5a).setStrokeStyle(1, now ? 0xffffff : 0x8a9aaa));
+    }
+    return box;
   }
 
   private say(text: string): void {
@@ -610,6 +754,13 @@ export class ExploreScene extends Phaser.Scene {
   }
 }
 
+/** 下の帯（仲間の HP・MP）の高さ。2人以上の時は2行で、下の端のビルド日時の分だけ高い */
+function vitalsBandHeight(members: number): number {
+  return members > 1 ? 48 : 26;
+}
+/** HP・MP を仲間ごとの列に並べる幅（右下の設定のボタンの左まで） */
+const VITALS_WIDTH = GAME_WIDTH - 56;
+
 /** 育成の入口のボタンの名前（開いている育成だけ。「星図・武器」など） */
 function hubLabel(): string {
   const u = storyLineup().unlocks;
@@ -619,6 +770,11 @@ function hubLabel(): string {
 /** 2つのマスが、range マス以内（縦横斜め）か */
 function near(a: GridCell, b: GridCell, range: number): boolean {
   return Math.abs(a[0] - b[0]) <= range && Math.abs(a[1] - b[1]) <= range;
+}
+
+/** ギアの名前を「、」でつなぐ */
+function gearNames(ids: string[]): string {
+  return ids.map((id) => NAVI_DATA.parts[id]?.name ?? id).join('、');
 }
 
 /** 「スライムゼリー×2、ポーション」のようにまとめる */

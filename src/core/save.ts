@@ -17,7 +17,7 @@ import { createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -93,6 +93,9 @@ export const MIGRATIONS: SaveMigrations = {
   // 版7 → 版8（段階34）：流れを2章の終わりまで伸ばし、「つづく」の出来事が M1 の終わりから2章の終わり（ch2_end）に替わった。
   // M1 の「つづく」にいたセーブは、その続きの3日目の扉から始める
   7: (raw) => (isObject(raw.run) && raw.run.event === V7_END_EVENT ? { ...raw, run: { ...raw.run, event: V7_END_NEXT } } : raw),
+  // 版8 → 版9（段階47）：区画が部屋をつないだ形になり、探索の状態に今いる部屋（room・checkpointRoom・visited）を足した。
+  // 前の版の探索の途中は、部屋が1つの区画として、整える時に最初の部屋で補う
+  8: (raw) => raw,
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */

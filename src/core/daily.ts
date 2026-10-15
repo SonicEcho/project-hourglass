@@ -36,6 +36,8 @@ export interface DailySpot {
   partner?: string;
   /** この印の前に見ておく印の id（段階36。「工場の後に楽器店」。その印がその日に出ていて、まだ見ていなければ、まだ選べない） */
   after?: string;
+  /** 見た時にもらえるごほうびのギア（段階39。返した翌日に持ち主がくれる物など） */
+  gears?: string[];
 }
 
 export interface DailyPlace {
@@ -104,6 +106,8 @@ export interface ReturnVisit {
   /** 場所の絵の上の位置 */
   x: number;
   y: number;
+  /** 見た時にもらえるごほうびのギア（段階39。2-1 の翌日に、いさむが最後に削った歯車をくれる） */
+  gears?: string[];
 }
 
 /**
@@ -199,7 +203,12 @@ export function visitsFor(hub: DailyHub, visits: readonly ReturnVisit[], returnD
 
 /** 返した翌日の出来事の印（必ず見る出来事） */
 export function visitSpot(v: ReturnVisit): DailySpot {
-  return { id: v.id, scene: v.id, label: v.label, mark: 'main', x: v.x, y: v.y, required: true };
+  return { id: v.id, scene: v.id, label: v.label, mark: 'main', x: v.x, y: v.y, required: true, ...(v.gears ? { gears: v.gears } : {}) };
+}
+
+/** 印を見終えた時にもらえるごほうびのギア（段階39）。もう見た印・ごほうびのない印は空（同じごほうびを2回渡さないよう、markVisited の前に呼ぶ） */
+export function spotGears(hub: DailyHub, vars: Record<string, string>, spot: DailySpot): string[] {
+  return spot.gears && spotState(hub, vars, spot) !== 'seen' ? spot.gears : [];
 }
 
 /**

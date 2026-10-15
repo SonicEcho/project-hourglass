@@ -1,6 +1,8 @@
 import { CAMPAIGN } from '../data';
 import type { AreaPolicy, AreaRunRecord } from './autoArea';
-import { areaBattleOrder, autoAreaRun } from './autoArea';
+import { areaBattleOrder, areaLineup, autoAreaRun } from './autoArea';
+import { lineupMembers } from '../core';
+import { PARTY } from '../data';
 import type { RunRecord } from './autoRun';
 import { autoRun, MAX_ATTEMPTS } from './autoRun';
 
@@ -86,6 +88,7 @@ export interface AreaMeasureResult {
 export const MEASURED_AREAS: Record<string, { title: string; prior: string[] }> = {
   a11: { title: '1-1 の縁日', prior: [] },
   a12: { title: '1-2 の商店街（1-1 を通した後から）', prior: ['a11'] },
+  a21: { title: '2-1 の町工場（1-1・1-2 を通した後から。みおを入れた3人、ムーブメントあり）', prior: ['a11', 'a12'] },
 };
 
 export function measureArea(runs: number, seed: number, policy: AreaPolicy, areaId = 'a11'): AreaMeasureResult {
@@ -116,7 +119,7 @@ const POLICY_LABEL: Record<AreaPolicy, string> = {
 
 export function formatAreaMeasure(m: AreaMeasureResult): string {
   return [
-    `## ${MEASURED_AREAS[m.area]?.title ?? m.area}（ハルトとあかり、${m.runs}回、シード ${m.seed}〜、${POLICY_LABEL[m.policy]}）`,
+    `## ${MEASURED_AREAS[m.area]?.title ?? m.area}（${lineupMembers(PARTY, areaLineup(m.area)).map((c) => c.name).join('・')}、${m.runs}回、シード ${m.seed}〜、${POLICY_LABEL[m.policy]}）`,
     '',
     '| 戦闘 | 進めた回数 | 1回目で勝てた割合 | 平均ラウンド（勝った時） | 平均やり直し | 連携技（勝った戦闘1回あたり） |',
     '| --- | ---: | ---: | ---: | ---: | ---: |',

@@ -1371,7 +1371,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.state.links.length > 0) setStoryLinkGauge(this.state.linkGauge);
     // 残った HP・MP は、区画の中の次の戦闘へ持ち越す（段階32b 調整3）
     if (run.explore) run.explore = keepVitals(run.explore, vitalsAfter(this.state));
-    // ギアの報酬は出さない。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
+    // ギアの報酬は出さない（ギアは宝箱と出来事のごほうびで手に入る。段階38）。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
     const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];
     run.armory = recordVictory(run.armory, {

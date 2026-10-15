@@ -29,6 +29,9 @@ export const PROTOTYPE_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], 
 /** 1章：ハルトとあかりの2人。育成は星図と武器だけ（みおの加入とムーブメントは2章。M2 で開ける） */
 export const CHAPTER1_LINEUP: Lineup = { members: [HERO.id, AKARI.id], unlocks: { growth: true, navi: false, weapon: true } };
 
+/** 2章（段階38）：みおが加わって3人。ムーブメントも開ける（どの育成も、探索のチェックポイントから開く。初めて開けるのは 2-1 の銭湯の前） */
+export const CHAPTER2_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true } };
+
 // ---- 物語の流れ（段階23）：プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 →（段階34）3日目〜8日目 → 2章の終わりの「つづく」 ----
 // 会話の出来事の id は、台本（scriptM1.ts・scriptM2.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
 // 昼の日常は日常の画面（段階24）、探索は探索の画面（段階25）、時間を返すのは返す画面（段階28）。
@@ -95,22 +98,25 @@ export const SLICE_FLOW: Flow = [
   {
     id: 'ch2',
     name: '第2章「背中を押す声」',
-    // パーティは、まだ1章のまま。みおを入れた3人と、ムーブメントの開放は段階38
+    // みおを入れた3人と、ムーブメントの開放（段階38）。みおが仲間になるのは 5-C（d5_evening）で、それより前に戦闘はない
+    lineup: CHAPTER2_LINEUP,
     events: [
       talk('chapter2_title', '第2章'),
       day(5),
-      talkTodo('d5_morning', '5日目：朝の通学路', '5-A。商店街を自転車で走り抜ける小学生、みお。\n台本は段階38で入れる。'),
+      talk('d5_morning', '5日目：朝の通学路'),
       { id: 'd5_free', kind: 'daily', title: '5日目：昼' },
-      talkTodo('d5_evening', '5日目：夕暮れ・みおの加入', '5-C。みおが袖をつかんでついてくる。蔵書の棚で「親方の背中」。みおが仲間になる。\n台本は段階38で入れる。'),
-      { id: 'a21_explore', kind: 'explore', area: 'a21', title: '2-1「親方の背中」：町工場の探索', note: '昭和44年の冬の町工場の路地。みおの初めての戦闘、ムーブメントの開放、「旋盤のぬし」。\n段階38・39で作る。' },
-      { id: 'a21_return', kind: 'return', area: 'a21', title: '2-1：時間を返す', note: 'いさむに、親方の「いい仕事だ」を返す。\n段階39で作る。' },
-      talkTodo('d5_return', '5日目：夕暮れの時計屋', '5-D。返した後の時計屋。最後に「5日目　おわり」。\n台本は段階39で入れる。'),
+      talk('d5_evening', '5日目：夕暮れ・みおの加入'),
+      // 2-1 の区画（段階38・39。areas.ts の AREAS の a21）。みおの武器（2-1-1）とムーブメントの開放（2-1-4）、町工場の砂嵐と「旋盤のぬし」
+      talk('a21_enter', '2-1：路地に入る'),
+      { id: 'a21_explore', kind: 'explore', area: 'a21', title: '2-1「親方の背中」：町工場の探索' },
+      { id: 'a21_return', kind: 'return', area: 'a21', title: '2-1：時間を返す' },
+      talk('d5_return', '5日目：時間を返す'),
       day(6),
       { id: 'd6_free', kind: 'daily', title: '6日目：昼' },
-      talkTodo('d6_library', '6日目：夕暮れ・調査ノート', '6-B。蔵書の棚で、りくの調査ノートの破れたページを見つける。「最後の文化祭」。\n台本は段階39で入れる。'),
-      { id: 'a22_explore', kind: 'explore', area: 'a22', title: '2-2「最後の文化祭」：高校の探索', note: '平成18年の秋の高校。体育館の「アンプのぬし」。\n段階39で作る。' },
-      { id: 'a22_return', kind: 'return', area: 'a22', title: '2-2：時間を返す', note: 'けんたに、最後の文化祭のステージを返す。\n段階39で作る。' },
-      talkTodo('d6_return', '6日目：返した後', '6-C。最後に「6日目　おわり」。\n台本は段階39で入れる。'),
+      talkTodo('d6_library', '6日目：夕暮れ・調査ノート', '6-B。蔵書の棚で、りくの調査ノートの破れたページを見つける。「最後の文化祭」。\n台本は段階39b（2-2。段階47の後）で入れる。'),
+      { id: 'a22_explore', kind: 'explore', area: 'a22', title: '2-2「最後の文化祭」：高校の探索', note: '平成18年の秋の高校。体育館の「アンプのぬし」。\n段階39b（2-2。段階47の後）で作る。' },
+      { id: 'a22_return', kind: 'return', area: 'a22', title: '2-2：時間を返す', note: 'けんたに、最後の文化祭のステージを返す。\n段階39b（2-2。段階47の後）で作る。' },
+      talkTodo('d6_return', '6日目：返した後', '6-C。最後に「6日目　おわり」。\n台本は段階39b（2-2。段階47の後）で入れる。'),
       day(7),
       { id: 'd7_free', kind: 'daily', title: '7日目：昼' },
       talkTodo('d7_library', '7日目：夕暮れ・蔵書の棚', '7-B。「最後の打席」の砂時計。\n台本は段階40で入れる。'),

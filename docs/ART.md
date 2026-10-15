@@ -424,6 +424,12 @@ Top-down map illustration for a mobile RPG exploration scene. Vertical 9:16 imag
 
 （地図の文の最後に、毎回 `Walkable areas must be clearly distinguishable from non-walkable objects. Paths are wide, at least one eighth of the image width. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.` を付ける）
 
+**部屋の地図の頭**（段階47。区画を部屋に分けて作る時。地図の頭の「Vertical 9:16 image」を、部屋の形に合わせて替え、出入口を言葉で書く）
+
+- 正方形の部屋（24×24マス）：`Square 1:1 image (1024×1024).` 縦長の部屋（24×43マス）：今の地図と同じ `Vertical image (1024×1536).`
+- 出入口は辺の真ん中だけ、幅は絵の6分の1（4マス）。使う辺ごとに `An opening at the center of the <top/bottom/left/right> edge, one sixth of the image <width/height> wide, leading out of the image.`、使わない辺は `All other edges are closed by walls, buildings, fences or trees.` と書く
+- 配置の下絵を付ける：文字の地図から `node scripts/room_sketch.mjs <部屋の id か、文字の地図のファイル> <出力.png>` で作る（通れる所は明るい色、通れない所は暗い色、出入口は青）。`Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings.` を足す。絵と歩ける場所がずれにくくなる
+
 **敵の絵の共通部分（たたき台）**（`<姿>` と `<時代の色>` を敵ごとに替える。白い背景で作り、`scripts/cutout.py` で抜く）
 
 ```

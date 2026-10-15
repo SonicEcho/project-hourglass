@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { blockers, bondLevel, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { addParts, blockers, bondLevel, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -55,10 +55,17 @@ export class DailyScene extends Phaser.Scene {
     this.eventId = data.event;
     const data0 = DAILY_HUBS[data.event];
     if (!data0) throw new Error(`no daily hub ${data.event}`);
+    let gearNote = '';
     if (data.finished) {
       const hub = build(data0);
       const spot = hub.places.flatMap((p) => p.spots).find((s) => s.id === data.finished);
       if (spot) {
+        // ごほうびのギア（段階39。返した翌日に持ち主がくれる物）
+        const gears = spotGears(hub, run.vars, spot);
+        if (gears.length > 0) {
+          run.navi = addParts(run.navi, gears);
+          gearNote = `ギアを手に入れた！　${gears.map((g) => NAVI_DATA.parts[g]?.name ?? g).join('、')}`;
+        }
         const end = finishesAfter(hub, run.vars, spot);
         setStoryVars(markVisited(hub, run.vars, spot));
         if (end) {
@@ -73,6 +80,7 @@ export class DailyScene extends Phaser.Scene {
     if (place) this.showPlace(place);
     else this.showMap();
     this.cameras.main.fadeIn(250, 0, 0, 0);
+    if (gearNote) this.toast(gearNote);
   }
 
   /** 日常を終えて、物語の次の出来事へ */
