@@ -335,6 +335,12 @@ try {
   await closeDebugMenu();
   await tap('^ポーチ$');
   await until('欠片が40', () => findText('^記憶の欠片 4\\d'));
+  // ポーションを持てる数まで交換してから、もう一度押すと満タンの案内
+  for (let i = 0; i < 3 && !(await findText('^ポーション　欠片 1\\n持っている 3/3$')); i++) {
+    await tap('^ポーション　欠片 1');
+    await tap('^交換する$');
+    await page.waitForTimeout(300);
+  }
   await tap('^ポーション　欠片 1');
   await until('満タンの案内', () => findText('ポーチがいっぱい'));
   await tap('^ギア$');

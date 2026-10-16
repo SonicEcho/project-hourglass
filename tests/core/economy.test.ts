@@ -6,17 +6,23 @@ const AREA_IDS = ['a11', 'a12', 'a21', 'a22', 'a23'];
 const battlesOf = (id: string) => [...AREAS[id].enemies.map((e) => AREA_BATTLES[e.battle]), AREA_BATTLES[AREAS[id].boss.battle]];
 
 describe('1つの区画で入る量（段階55）', () => {
-  it('星の砂：部位破壊と合わせて、その章の区域の約半分（20〜28。1-2・2-1 は多め、40まで）', () => {
+  it('星の砂：星図は仲間ごとに開けるので、章の区画の合計が、その章にパーティ全体で開けられる区域の値段の 8〜14割', () => {
     const region: Record<number, number> = {};
     for (const n of GROWTH_MAP.nodes) region[n.chapter ?? 1] = (region[n.chapter ?? 1] ?? 0) + (GROWTH_COST[n.kind as keyof typeof GROWTH_COST] ?? 0);
-    for (const id of AREA_IDS) {
+    const sandOf = (id: string) => {
       const battles = battlesOf(id);
       const parts = battles.flatMap((b) => b.enemies).reduce((n, e) => n + (e.parts?.length ?? 0), 0);
-      const sand = battles.reduce((n, b) => n + b.reward, 0) + parts * PART_BREAK_POINTS;
-      expect(sand, id).toBeGreaterThanOrEqual(20);
-      expect(sand, id).toBeLessThanOrEqual(['a12', 'a21'].includes(id) ? 40 : 28);
-    }
-    expect(region[1] + region[2]).toBe(72);
+      return battles.reduce((n, b) => n + b.reward, 0) + parts * PART_BREAK_POINTS;
+    };
+    // 1章：ハルトとあかりが1章の区域を開ける。2章：2人は2章の区域を、みおは全部を
+    const ch1 = region[1] * 2;
+    const ch2 = region[2] * 2 + (region[1] + region[2]);
+    const got1 = sandOf('a11') + sandOf('a12');
+    const got2 = sandOf('a21') + sandOf('a22') + sandOf('a23');
+    expect(got1 / ch1).toBeGreaterThanOrEqual(0.8);
+    expect(got1 / ch1).toBeLessThanOrEqual(1.4);
+    expect(got2 / ch2).toBeGreaterThanOrEqual(0.8);
+    expect(got2 / ch2).toBeLessThanOrEqual(1.4);
   });
 
   it('消費アイテム：宝箱と勝利のアイテムを合わせて2〜3つ', () => {
