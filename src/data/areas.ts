@@ -67,6 +67,9 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE], reward: 7, koma: 2 },
   a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
   a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 8, koma: 2 },
+  // 2-1 の寄り道の部屋（地図の絵の手直しと一緒に。2026-10-17）：コマなし。資材置き場の逃げる敵はレアの素材「万博のきっぷ」、銭湯の裏の追ってくる敵は真鍮のボルト（消費アイテムは区画で2〜3つのままにする。economy.md の 3.）
+  a21_runner: { id: 'a21_runner', name: '砂嵐', enemies: [GEAR_NOISE, TUBE_NOISE, GEAR_NOISE], reward: 6, item: ITEMS.expoTicket.id },
+  a21_alley: { id: 'a21_alley', name: '砂嵐', enemies: [SCREW_NOISE, ABACUS_NOISE, SCREW_NOISE], reward: 7, item: ITEMS.brassBolt.id },
   a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2, snaps: ['heavyBlow'] },
   // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。並びは出会う順（校門 → 中庭の下 → 中庭の上 → お化け屋敷の教室 → 渡り廊下の番人）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。番人は少し強い（×1.3。ボスの手前の山）。
@@ -266,7 +269,12 @@ export const AREAS: Record<string, AreaDef> = {
   a21: {
     id: 'a21',
     name: '2-1「親方の背中」',
-    rooms: [ROOMS.factory_alley],
+    // 路地が1つ目の部屋。銭湯の前の広場の左に「雪の資材置き場」、右に「銭湯の裏の路地」（どちらも行き止まりの寄り道。docs/ART.md の 6-2）
+    rooms: [ROOMS.factory_alley, ROOMS.factory_yard, ROOMS.bath_alley],
+    links: [
+      { a: { room: 'factory_alley', side: 'left' }, b: { room: 'factory_yard', side: 'right' } },
+      { a: { room: 'factory_alley', side: 'right' }, b: { room: 'bath_alley', side: 'left' } },
+    ],
     // 昭和の町工場の探索の曲が届くまで、日常の曲
     bgm: BGM.daily,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
@@ -276,19 +284,21 @@ export const AREAS: Record<string, AreaDef> = {
     memory: 'factory_alley',
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['joker'],
-    // 銭湯の左の道の奥と、右の道の奥。ムーブメントのギアも入っている（段階38）
+    // 資材置き場の左上の行き止まり（寄り道の部屋を足した時に、銭湯の左の道の奥から移した）、銭湯の右の道の奥、銭湯の裏の路地の行き止まり。ムーブメントのギアも入っている（段階38）
     // 狩り（段階43）：採取の場所は、1回目の宝箱とラジオの所
     hunt: {
       gathers: [
-        { id: 'a21_gather_left', cell: [5, 12], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id] },
+        { id: 'a21_gather_left', room: 'factory_yard', cell: [4, 3], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id] },
         { id: 'a21_gather_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id] },
         { id: 'a21_gather_radio', cell: [11, 27], items: [ITEMS.tubeGlass.id] },
+        { id: 'a21_gather_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.rustyScrew.id, ITEMS.filament.id] },
       ],
       tables: { factory_alley: ['a21_storm1', 'a21_storm2', 'a21_storm3', 'a21_storm4', 'a21_storm5'] },
     },
     chests: [
-      { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'], snaps: ['thunderChip'] },
+      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'], snaps: ['thunderChip'] },
       { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'], snaps: ['draw'] },
+      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id, ITEMS.filament.id, ITEMS.abacusFrame.id] },
     ],
     enemies: [
       {
@@ -332,6 +342,19 @@ export const AREAS: Record<string, AreaDef> = {
           [14, 7],
         ],
         battle: 'a21_storm5',
+      },
+      // 資材置き場の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a21_e_runner', room: 'factory_yard', move: 'flee', patrol: [[12, 11]], battle: 'a21_runner' },
+      // 銭湯の裏の路地：右の細い通りで、近づくと追ってくる（寄り道。コマなし）
+      {
+        id: 'a21_e_alley',
+        room: 'bath_alley',
+        move: 'chase',
+        patrol: [
+          [18, 6],
+          [18, 16],
+        ],
+        battle: 'a21_alley',
       },
     ],
     // 工場の中、旋盤の前

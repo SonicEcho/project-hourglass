@@ -1086,8 +1086,9 @@ export const ASSETS: AssetEntry[] = [
       'Around the middle: a public bathhouse with steam rising and a long wooden bench in front of it, a small open space. Upper part: a small factory gate. ' +
       'Top: the inside of a small workshop seen from above with its roof removed, with a large old lathe in an open space in front of it. Utility poles, snow piles, barrels and stacked wood along the edges. ' +
       'Walkable areas must be clearly distinguishable from non-walkable objects. Paths are wide, at least one eighth of the image width. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.',
-    '見本の絵：1-1 の縁日の地図（見下ろし方の見本として渡す指示）。元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）',
-    'M2 の 2-1 の地図（docs/ART.md の 5-3 の 6）。入口 → 銭湯の前の長いす → 工場の門 → 工場の中の旋盤。歩ける場所の文字の地図は段階38で書いた（rooms.ts の FACTORY_ALLEY_LAYOUT）',
+    '見本の絵：1-1 の縁日の地図（見下ろし方の見本として渡す指示）。元の絵は 941×1672。768×1376（24×43マス）に縮めて WebP にした（縦が 0.8% 伸びる）。' +
+      '2026-10-17 に、銭湯の前の広場の左右を辺まで開けた絵に差し替えた（今の地図と、開ける所を青く塗った docs/sketches/factory_alley_openings.jpg を付けて、docs/ART.md の 6-2 の編集の指示文で頼んだ。元の絵は 937×1679）',
+    'M2 の 2-1 の地図（docs/ART.md の 5-3 の 6）。入口 → 銭湯の前の長いす → 工場の門 → 工場の中の旋盤。歩ける場所の文字の地図は段階38で書いた（rooms.ts の FACTORY_ALLEY_LAYOUT）。左右の開いた所に寄り道の部屋2つ（map.factory_yard・map.bath_alley）がつながる',
     '2026-10-13',
   ),
   chatgptPortrait(
@@ -1247,8 +1248,134 @@ export const ASSETS: AssetEntry[] = [
     CG_HEAD +
       'A packed Japanese high school gymnasium during the school festival in autumn 2006. On the stage, a 17-year-old boy in an open black gakuran (keep his design as in the attached portrait) keeps singing into the microphone with his eyes closed, holding his electric guitar with one broken string curling loose. Behind him a girl on bass and a boy on drums smile and keep the rhythm. The audience claps along with raised hands, colorful stage lights and dust sparkling in the beams. ' +
       CG_TAIL,
-    '見本の絵：写しのけんたの立ち絵（まだ台帳にない）。元の絵は 941×1672。ギターの頭の飾り文字を軽くぼかした。720×1280 に縮めて WebP にした',
+    '見本の絵：写しのけんたの立ち絵（portrait.past_kenta.smile。絵を作った時はまだ台帳になかった）。元の絵は 941×1672。ギターの頭の飾り文字を軽くぼかした。720×1280 に縮めて WebP にした',
     'M2 の 2-2-7（2-2 の山場。docs/ART.md の 5-3 の 11）',
+    '2026-10-17',
+  ),
+  // 写しのけんた、1章の背景7つ、2-1 の地図の手直しと寄り道の部屋2つ（2026-10-17。docs/ART.md の 5-3 の 8、5-5 の「M1 の残りの指示文」、6-2）
+  chatgptPortrait(
+    'past_kenta',
+    '写しのけんた',
+    'smile',
+    '笑顔',
+    portraitHead('a bright, cocky grin full of energy') +
+      'Character: young Kenta, the same man as the attached adult portrait but 20 years earlier: a 17-year-old Japanese high school boy at his school festival in autumn 2006, the singer and guitarist of a three-piece band. Keep the same face features so he is clearly the same person. Spiky dark-brown hair, a black gakuran school uniform worn open over a white T-shirt.',
+    'けんた（今）の立ち絵（同じ人に見せるため）と、あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 2-2 の写し（平成18年の秋、17歳。docs/ART.md の 5-3 の 8）。ノイズとセピアの加工はゲームの側でかける',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.goldfish_stall',
+    '背景（金魚すくいの屋台）',
+    'assets/backgrounds/goldfish_stall.webp',
+    BG_HEAD +
+      'Close-up of a goldfish-scooping stall at a small Japanese shrine festival at summer dusk. A wide shallow blue water tank full of small red and black goldfish, paper scoops (poi) and small bowls on the edge, a striped cloth awning above, paper lanterns glowing warm orange, the indigo dusk sky behind. ' +
+      'Eye-level camera, slightly looking down at the water tank in the center. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M1 の P-3（docs/ART.md の 5-6 の 4）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.shooting_stall',
+    '背景（射的の屋台）',
+    'assets/backgrounds/shooting_stall.webp',
+    BG_HEAD +
+      'A shooting gallery stall (shateki) at a small Japanese shrine festival at summer dusk. Tiered red shelves lined with small prizes (a toy robot, a plush bear, a box of caramel, small dolls), cork-gun rifles resting on the front counter, a striped cloth awning, paper lanterns glowing warm orange, the indigo dusk sky behind. ' +
+      'Eye-level camera from in front of the counter, the prize shelves in the center. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M1 の P-3（docs/ART.md の 5-6 の 5）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.shrine_steps',
+    '背景（神社の石段の上）',
+    'assets/backgrounds/shrine_steps.webp',
+    BG_HEAD +
+      'The top of a long stone stairway of a small Japanese shrine in a regional town, at the end of a summer festival evening, the sky fading from amber to deep indigo with the first stars. Worn stone steps leading down toward the festival lights far below, a small red torii and stone lanterns at the top, quiet summer trees around. ' +
+      'Eye-level camera from the top step, looking out over the town and the festival lights. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M1 の P-4（docs/ART.md の 5-6 の 6）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.shrine_hill',
+    '背景（神社の裏の高台・夜）',
+    'assets/backgrounds/shrine_hill.webp',
+    BG_HEAD +
+      'A small grassy hill behind a Japanese shrine on a summer night, an old wooden fence at the edge, a view over the dark rooftops of a quiet regional town under a deep indigo starry sky, the open sky above left empty for fireworks. ' +
+      'Eye-level camera, looking out from the hilltop toward the sky. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M1 の P-5（docs/ART.md の 5-6 の 7）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.home_kitchen',
+    '背景（施設の台所）',
+    'assets/backgrounds/home_kitchen.webp',
+    BG_HEAD +
+      'The homely kitchen and dining room of a small children\'s home in a Japanese regional town, in the morning. A long wooden dining table with many mismatched chairs, an old fridge with children\'s drawings (no letters), a stove with a frying pan. On the windowsill, an old glass fish tank with one big orange goldfish. On a shelf, a few faded festival prizes: a small toy robot, a plush bear, a caramel box. Soft morning light through the window. ' +
+      'Eye-level camera, the window with the fish tank slightly off center. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M1 の 1-A・1-D、日常の「施設」（docs/ART.md の 5-6 の 1）。夕方（home_kitchen_evening）は同じ絵に色をかけて使い回す',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.rooftop',
+    '背景（学校の屋上）',
+    'assets/backgrounds/rooftop.webp',
+    BG_HEAD +
+      'The rooftop of a Japanese high school in a quiet regional town, in the late afternoon before sunset. A tall green chain-link fence along the edge, a concrete floor, a water tank and the stairwell door, the town and distant mountains below, a wide sky with soft orange clouds. ' +
+      'Eye-level camera, looking toward the fence and the town. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M1 の 1-D と3日目（docs/ART.md の 5-6 の 3）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.convenience_store',
+    '背景（コンビニの店内）',
+    'assets/backgrounds/convenience_store.webp',
+    BG_HEAD +
+      'Inside a small generic convenience store in a Japanese regional town, after school. Bright fluorescent light, shelves of snacks and drinks with blank packages, a drink refrigerator along the back wall, an ice cream freezer chest, a checkout counter with a register at one side, orange evening light through the glass front. No brand logos. ' +
+      'Eye-level camera from the entrance, the counter on one side. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M1 の 1-C、4日目の小話、日常の「コンビニ」（docs/ART.md の 5-6 の 2）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'map.factory_yard',
+    '2-1 の寄り道1「雪の資材置き場」の見下ろしの地図（正方形）',
+    'assets/maps/factory_yard.webp',
+    STYLE_PREFIX +
+      'Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024x1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. ' +
+      'Scene: a snowy materials yard behind a small machine workshop in a Japanese town at winter dusk in 1969, sepia-tinted retro colors with white snow, the same art style as the attached map. ' +
+      'An opening at the center of the right edge, one sixth of the image height wide, leading out of the image. All other edges are closed by wooden fences, sheds and snowy trees. ' +
+      'Inside: stacks of steel bars and pipes under snow, oil drums, a small shed, piles of wood crates, footprints in the snow. A small dead-end corner at the top left. ' +
+      'Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the opening. ' +
+      'Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs are blank.',
+    '見本の絵：今の 2-1 の地図（絵柄の見本）と、下絵 docs/sketches/room_factory_yard.png。元の絵は 1254×1254。1024×1024（24×24マス）に縮めて WebP にした。絵は下絵どおりではないので、歩ける場所の文字の地図は絵に合わせて書いた（rooms.ts の FACTORY_YARD_LAYOUT）',
+    'M2 の 2-1 の寄り道の部屋（docs/ART.md の 6-2）。2-1 の路地の左の辺につながる。逃げる砂嵐と宝箱',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'map.bath_alley',
+    '2-1 の寄り道2「銭湯の裏の路地」の見下ろしの地図（正方形）',
+    'assets/maps/bath_alley.webp',
+    STYLE_PREFIX +
+      'Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024x1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. ' +
+      'Scene: a narrow winding back alley behind a public bathhouse in a Japanese town at winter dusk in 1969, sepia-tinted retro colors with white snow, the same art style as the attached map. ' +
+      'An opening at the center of the left edge, one sixth of the image height wide, leading out of the image. All other edges are closed by wooden walls, the bathhouse back wall and snowy trees. ' +
+      'Inside: a narrow path winding up, right and down between wooden walls, the bathhouse boiler with a tall chimney and rising steam, stacked firewood, buckets, a dead end at the bottom right. ' +
+      'Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the opening. ' +
+      'Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs are blank.',
+    '見本の絵：今の 2-1 の地図（絵柄の見本）と、下絵 docs/sketches/room_bath_alley.png。元の絵は 1254×1254。1024×1024（24×24マス）に縮めて WebP にした。絵は下絵どおりではないので、歩ける場所の文字の地図は絵に合わせて書いた（rooms.ts の BATH_ALLEY_LAYOUT）',
+    'M2 の 2-1 の寄り道の部屋（docs/ART.md の 6-2）。2-1 の路地の右の辺につながる。追ってくる砂嵐と宝箱',
     '2026-10-17',
   ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
