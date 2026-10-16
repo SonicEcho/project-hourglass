@@ -1,4 +1,4 @@
-import type { AlbumState, ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext } from '../core';
+import type { AlbumState, ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -24,7 +24,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREAS, CARDS, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CARDS, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -65,6 +65,8 @@ export const run: {
    * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）。fade は記憶の薄れ（段階57）による、その回の実入りの割合
    */
   hunt: { salt: number; state: ExploreState; fade: number } | null;
+  /** 戦闘中の印（段階44）：閉じたら「つづきから」でこの戦闘の始めから。戦闘の外では null */
+  battle: SavedBattle | null;
 } = {
   active: false,
   seed: 0,
@@ -81,6 +83,7 @@ export const run: {
   returned: [],
   album: createAlbum(FOLDER),
   hunt: null,
+  battle: null,
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -122,6 +125,7 @@ export function startNewRun(): void {
   run.returned = [];
   run.album = createAlbum(FOLDER);
   run.hunt = null;
+  run.battle = null;
   saveRun();
 }
 
@@ -139,6 +143,8 @@ export function setEvent(id: string): void {
   const pos = moveToEvent(SLICE_FLOW, id);
   run.event = pos.event;
   run.progress = { ...run.progress, day: pos.day };
+  // 出来事を移したら、戦闘中の印は消す（段階44。デバッグで戦闘の途中から飛んだ時など）
+  run.battle = null;
   saveRun();
   notePlayEvent(run.event);
 }
@@ -217,6 +223,7 @@ export function saveContext(): SaveContext {
     renamedEvents: RENAMED_EVENTS,
     cards: CARDS,
     initialAlbum: createAlbum(FOLDER),
+    battleIds: Object.keys(AREA_BATTLES),
   };
 }
 
@@ -235,7 +242,14 @@ function snapshot(): RunSnapshot {
     linkGauge: run.linkGauge,
     returned: run.returned,
     album: run.album,
+    battle: run.battle,
   };
+}
+
+/** 戦闘中の印を付ける・消す（段階44）。保存する */
+export function setBattleMark(mark: SavedBattle | null): void {
+  run.battle = mark;
+  saveRun();
 }
 
 /** 今の周回の状態を保存する。周回の外（タイトル、クリア後）では何もしない。中身が前と同じなら書き込まない */
@@ -291,6 +305,7 @@ export function continueRun(): boolean {
   run.linkGauge = s.linkGauge;
   run.returned = s.returned;
   run.album = s.album;
+  run.battle = s.battle;
   run.hunt = null;
   run.active = true;
   lastWritten = null;
@@ -346,6 +361,12 @@ let hubReturn: SceneTarget | null = null;
 /** 探索のチェックポイントから育成の画面を開く時に、戻り先を覚える。試作の5戦に入る時は null にする */
 export function setHubReturn(target: SceneTarget | null): void {
   hubReturn = target;
+}
+
+/** 拠点（レストピア）から開いた育成の画面なら、拠点へ戻る行き先（段階45。ムーブメント・武器・アルバムも、星図を通さず拠点へ戻す） */
+export function hubBack(): SceneTarget | null {
+  const back = getHubReturn();
+  return back?.key === 'Hub' ? back : null;
 }
 
 export function getHubReturn(): SceneTarget | null {

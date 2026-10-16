@@ -12,7 +12,7 @@ import { enterScreen, screenBg } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { maybeShowTip } from '../ui/tipPanel';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { run, saveRun } from './run';
+import { hubBack, run, saveRun, setHubReturn } from './run';
 
 // アルバムの編集（段階41。docs/design/battle.md の 2.）。探索のチェックポイントの星図から開く。
 // 持っているスナップを1種類1行に並べ、「−」で外し「＋」で入れる。ALBUM_SIZE 枚ちょうどの時だけ星図へ戻れる。
@@ -130,8 +130,19 @@ export class AlbumScene extends Phaser.Scene {
       800,
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
-      complete ? '星図へ戻る' : `あと${ALBUM_SIZE - total}枚入れると戻れる`,
-      { onTap: () => this.scene.start('Growth') },
+      complete ? (hubBack()?.label ?? '星図へ戻る') : `あと${ALBUM_SIZE - total}枚入れると戻れる`,
+      {
+        onTap: () => {
+          // 拠点から開いた時は拠点へ戻る（段階45）
+          const hub = hubBack();
+          if (!hub) {
+            this.scene.start('Growth');
+            return;
+          }
+          setHubReturn(null);
+          this.scene.start(hub.key, hub.data);
+        },
+      },
       complete ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true } : { enabled: false, size: 15 },
     );
   }

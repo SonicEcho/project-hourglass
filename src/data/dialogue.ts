@@ -153,8 +153,14 @@ export const CAST: Record<string, CastMember> = {
     height: YOUNG_HEIGHT,
     voice: { pitch: 500, wave: 'square' },
   },
-  // 交換所の番人（段階52）。時間保管局の取引の窓口の係。立ち絵はまだない（名前と色の札で出す）
-  ペトラ: { faces: names('通常', '笑顔', '困り', '驚き', '真剣'), firstFace: '通常', color: 0x6a7f9a, voice: { pitch: 520, wave: 'triangle' } },
+  // 交換所の番人（段階52）。時間保管局の取引の窓口の係（2026-10-17 に通常の立ち絵が届いた。ほかの表情は Gemini で作るまで通常で代わりに出す）
+  ペトラ: {
+    portrait: 'portrait.petra',
+    ...young(['通常', '笑顔', '困り', '驚き', '真剣'], { 通常: 'normal' }, '通常'),
+    color: 0x6a7f9a,
+    height: 440,
+    voice: { pitch: 520, wave: 'triangle' },
+  },
   ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
   写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
@@ -227,7 +233,13 @@ export const CAST: Record<string, CastMember> = {
   だいち: { faces: names('笑顔'), firstFace: '笑顔', color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
   さき: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
   // 2-3 の人たちと、カイ・ノア（段階40）。こうじと写しの2人は絵がまだない（色の札）。カイは余裕、ノアは通常・悲しいの絵がある
-  こうじ: { faces: names('笑顔', '通常', 'さみしげ', '考える', '苦笑い', '驚き'), firstFace: '笑顔', color: 0xb08a5a, voice: { pitch: 310, wave: 'square' } },
+  こうじ: {
+    portrait: 'portrait.koji',
+    ...young(['笑顔', '通常', 'さみしげ', '考える', '苦笑い', '驚き'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0xb08a5a,
+    height: 440,
+    voice: { pitch: 310, wave: 'square' },
+  },
   写しのこうじ: { faces: names('通常', '驚き', '泣き笑い'), firstFace: '通常', color: 0x8aa0c0, voice: { pitch: 640, wave: 'square' } },
   写しのまさる: { faces: names('笑顔'), firstFace: '笑顔', color: 0x7a8a6a, voice: { pitch: 280, wave: 'sawtooth' } },
   カイ: {
@@ -316,7 +328,7 @@ export const BACKDROPS: Record<string, Backdrop> = {
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
   // 段階35（M2 の昼の日常）。絵が届くまで仮の色
   river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a },
-  riverside_ground: { title: '河川敷のグラウンド', top: 0x9ac0e0, bottom: 0xa08a5a },
+  riverside_ground: { title: '河川敷のグラウンド', top: 0x9ac0e0, bottom: 0xa08a5a, image: 'bg.riverside_1998', tint: 0xd8d0c0 },
   home_tv_dark: { title: '施設の居間（テレビの光だけ）', top: 0x101828, bottom: 0x2a3a5a },
   clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
   // 段階36：昼の店内（4-A の返した翌日のふみさん）
@@ -334,13 +346,13 @@ export const BACKDROPS: Record<string, Backdrop> = {
   factory_now: { title: '町工場の中（今）', top: 0x8a8a80, bottom: 0x4a4a48, image: 'bg.factory_1969', tint: 0x9a9890, ambient: 'dust' },
   // 段階39b：2-2 の平成18年の秋の高校の文化祭（会話の背景。絵が届くまで仮の色）、体育館のステージ、商店街の楽器店（昼と、閉店後の夜）
   school_festival: { title: '平成の高校の文化祭（秋の昼）', top: 0xa8d8f0, bottom: 0xf0c8d8, ambienceSe: SE.crowd },
-  school_gym: { title: '高校の体育館のステージ', top: 0x2a2a40, bottom: 0x8a6a4a, ambient: 'dust' },
-  music_shop: { title: '商店街の楽器店（昼）', top: 0xe0c8a0, bottom: 0x6a4a3a, ambient: 'dust' },
-  music_shop_night: { title: '商店街の楽器店（夜。閉店後）', top: 0x1a2038, bottom: 0x5a3a2a, ambient: 'dust' },
+  school_gym: { title: '高校の体育館のステージ', top: 0x2a2a40, bottom: 0x8a6a4a, image: 'bg.school_gym', ambient: 'dust' },
+  music_shop: { title: '商店街の楽器店（昼）', top: 0xe0c8a0, bottom: 0x6a4a3a, image: 'bg.music_shop', ambient: 'dust' },
+  music_shop_night: { title: '商店街の楽器店（夜。閉店後）', top: 0x1a2038, bottom: 0x5a3a2a, image: 'bg.music_shop', tint: 0x6070a8, ambient: 'dust' },
   // 段階40：2-3 の平成10年の夏の河川敷（会話の背景。絵が届くまで仮の色）、レストピアの高い所の橋（7-C のカイとノア）、商店街のパン屋
-  riverside_1998: { title: '平成の夏の河川敷のグラウンド', top: 0x8ac8f0, bottom: 0x9ab070 },
+  riverside_1998: { title: '平成の夏の河川敷のグラウンド', top: 0x8ac8f0, bottom: 0x9ab070, image: 'bg.riverside_1998' },
   library_bridge: { title: 'レストピアの高い所（棚と棚をつなぐ細い橋）', top: 0x080c20, bottom: 0x2a2a3a, image: 'bg.library', tint: 0x7080a8, ambient: 'dust' },
-  bakery: { title: '商店街のパン屋（昼）', top: 0xf0d8b0, bottom: 0x9a6a40, ambient: 'dust' },
+  bakery: { title: '商店街のパン屋（昼）', top: 0xf0d8b0, bottom: 0x9a6a40, image: 'bg.bakery', ambient: 'dust' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
@@ -388,8 +400,8 @@ export const CGS: Record<string, Backdrop> = {
   tandem_bicycle: { title: '1枚絵：夕焼けの坂を下る二人乗り', top: 0xe0a060, bottom: 0x7a4a30, image: 'cg.tandem_bicycle', ambient: 'motes', glow: { x: 0.7, y: 0.25, color: 0xffc070 } },
   // 段階39：2-1-8（2-1 の山場）。裸電球の光と、金の粒
   master_back: { title: '1枚絵：振り返らずに歩いていく親方の背中', top: 0x3a2a1a, bottom: 0x7a5a3a, image: 'cg.master_back', ambient: 'motes', glow: { x: 0.5, y: 0.15, color: 0xffd08a } },
-  // 段階39b：2-2-7（2-2 の山場）。絵が届くまで仮の色。スポットライトの光と、金の粒
-  string_stage: { title: '1枚絵：弦が切れても歌うステージ', top: 0x1a1a30, bottom: 0xc08a50, ambient: 'motes', glow: { x: 0.5, y: 0.2, color: 0xfff0c0 } },
+  // 段階39b：2-2-7（2-2 の山場。2026-10-17 に絵が届いた）。スポットライトの光と、金の粒
+  string_stage: { title: '1枚絵：弦が切れても歌うステージ', top: 0x1a1a30, bottom: 0xc08a50, image: 'cg.string_stage', ambient: 'motes', glow: { x: 0.5, y: 0.2, color: 0xfff0c0 } },
   // 段階40：2-3-7（代打の一打）と 7-C（切り取られるグラウンド。2章の山場）。絵が届くまで仮の色
   pinch_hit: { title: '1枚絵：代打の一打', top: 0x6ab0e8, bottom: 0xc0a060, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
   cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, glow: { x: 0.5, y: 0.4, color: 0xe0f0ff } },

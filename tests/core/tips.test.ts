@@ -75,5 +75,14 @@ describe('説明（段階30）', () => {
     expect(exploreTipTriggers(s, { atCheckpoint: false })).toEqual(['explore_basic']);
     expect(exploreTipTriggers(s, { atCheckpoint: true })).toEqual(['explore_basic', 'explore_checkpoint']);
     expect(exploreTipTriggers({ ...s, koma: 2 }, { atCheckpoint: false })).toEqual(['explore_basic', 'explore_koma']);
+    // 段階45：記憶をたどる時は「記憶をたどる」
+    expect(exploreTipTriggers(s, { atCheckpoint: false, hunting: true })).toEqual(['explore_basic', 'explore_hunt']);
+  });
+
+  it('戦闘：ポーチに物がある時の計画で「ポーチ」（段階45）', () => {
+    const s = storm();
+    expect(battleTipTriggers(s, { autoAvailable: false })).not.toContain('battle_pouch');
+    const withPouch: BattleState = { ...s, pouch: [{ item: { id: 'potion', name: 'ポーション', weight: 1, target: 'ally', effects: [] }, count: 1, used: 0 }] };
+    expect(battleTipTriggers(withPouch, { autoAvailable: false })).toContain('battle_pouch');
   });
 });

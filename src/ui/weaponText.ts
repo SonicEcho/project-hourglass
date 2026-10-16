@@ -51,7 +51,7 @@ export function describeEvolution(evo: EvolutionDef): string {
 export function describeStyle(style: EvolutionStyleDef, boardExtension: number): string {
   const parts: string[] = [...summarizePassives(style.passives ?? [])];
   for (const [k, v] of Object.entries(style.stats ?? {})) parts.push(`${STAT_LABEL[k as keyof typeof STAT_LABEL]} +${v}`);
-  if (boardExtension > 0) parts.push(style.board === 'row' ? `ブリッジが横に${boardExtension}マス伸びる` : `盤の下に縦に${boardExtension}マス増える`);
+  if (boardExtension > 0) parts.push(style.board === 'row' ? `ブリッジが下に${boardExtension}マス伸びる` : `盤の右に横に${boardExtension}マス増える`);
   return `${style.name}：${parts.join('。')}`;
 }
 

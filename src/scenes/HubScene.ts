@@ -10,6 +10,7 @@ import { addButton, addText } from '../ui/widgets';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
+import { notePlayCount } from './playRecord';
 import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
@@ -60,9 +61,11 @@ export class HubScene extends Phaser.Scene {
     // 狩り
     const hunts = huntableAreas(AREAS, run.returned);
     addButton(this, root, cx, 180, w, 62, '記憶をたどる', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
-    // ポーチの中身（段階51）
-    const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}/${POUCH_MAX}`).join('　');
-    root.add(addText(this, cx, 236, `ポーチ：${pouch}`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    // ポーチの中身（段階51）。絵の上でも読めるよう、暗い下地に白い字（2026-10-16 開発者の指摘：見にくかった）
+    const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}`).join('　');
+    root.add(this.add.rectangle(cx, 237, w, 44, 0x0b0f22, 0.85).setRounded(8).setStrokeStyle(1, COLORS.border));
+    root.add(addText(this, cx, 225, `ポーチ（1種類${POUCH_MAX}個まで）`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(this, cx, 245, pouch, { size: 14, bold: true, color: COLORS.text }).setOrigin(0.5));
     // 育成（今の章で開いているものだけ）
     const unlocks = storyLineup().unlocks;
     const grow: [string, string][] = [];
@@ -161,6 +164,7 @@ export class HubScene extends Phaser.Scene {
     const fade = enterFade(run.vars, areaId, dayAt(SLICE_FLOW, run.event), MEMORY_FADE_RATES);
     if (!fade) return;
     setStoryVars(fade.vars);
+    notePlayCount('hunt');
     startHunt(startExplore(area), fade.rate);
     const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
     this.cameras.main.fadeOut(250, 0, 0, 0);

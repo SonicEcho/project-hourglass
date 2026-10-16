@@ -27,13 +27,19 @@ export interface PlayLog {
   lastAt: string | null;
   /** 「つづく」まで着いた回数 */
   finished: number;
+  /** M2 で足した遊びの回数（段階45）：hunt 記憶をたどった回数、exchange 交換した回数、lost 落とし物を届けた数、pouch ポーチを使った数 */
+  counts: Record<PlayCountKey, number>;
 }
+
+export type PlayCountKey = 'hunt' | 'exchange' | 'lost' | 'pouch';
+const COUNT_KEYS: PlayCountKey[] = ['hunt', 'exchange', 'lost', 'pouch'];
+const zeroCounts = (): Record<PlayCountKey, number> => ({ hunt: 0, exchange: 0, lost: 0, pouch: 0 });
 
 /** 1回に足す時間の上限。端末が眠っていた間などに、大きな時間がまとめて入らないようにする */
 export const PLAY_TICK_MAX_MS = 15_000;
 
 export function createPlayLog(now: Date): PlayLog {
-  return { startedAt: now.toISOString(), starts: 0, events: {}, furthest: null, last: null, lastAt: null, finished: 0 };
+  return { startedAt: now.toISOString(), starts: 0, events: {}, furthest: null, last: null, lastAt: null, finished: 0, counts: zeroCounts() };
 }
 
 function entryOf(log: PlayLog, id: string): PlayLogEntry {
@@ -65,6 +71,12 @@ export function enterPlayEvent(log: PlayLog, flow: Flow, id: string, now: Date):
 /** 「はじめから」を押した */
 export function recordPlayStart(log: PlayLog): PlayLog {
   return { ...log, starts: log.starts + 1 };
+}
+
+/** M2 で足した遊びの回数を足す（段階45） */
+export function recordPlayCount(log: PlayLog, key: PlayCountKey, n = 1): PlayLog {
+  const counts = { ...zeroCounts(), ...log.counts };
+  return { ...log, counts: { ...counts, [key]: counts[key] + Math.max(0, Math.floor(n)) } };
 }
 
 /** 出来事 id で戦闘に勝った・負けた */
@@ -105,6 +117,7 @@ export function parsePlayLog(text: string | null, flow: Flow, now: Date): PlayLo
     last,
     lastAt: last ? isoOrNull(o.lastAt) : null,
     finished: count(o.finished),
+    counts: Object.fromEntries(COUNT_KEYS.map((k) => [k, count(o.counts && typeof o.counts === 'object' ? (o.counts as Record<string, unknown>)[k] : 0)])) as Record<PlayCountKey, number>,
   };
 }
 

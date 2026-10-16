@@ -96,8 +96,8 @@ describe('ムーブメント：置く・外す', () => {
 describe('ムーブメント：ブリッジ', () => {
   it('効果ギアは、ブリッジに1マス以上乗っている時だけ効く', () => {
     let n = owning('breaker', 'firstAid');
-    n = placePart(NAVI_DATA, n, 0, at('hero', 0, 0, 1)); // 縦に置いて、2行目（ブリッジ）を通る
-    n = placePart(NAVI_DATA, n, 1, at('hero', 2, 3)); // 一番下の行
+    n = placePart(NAVI_DATA, n, 0, at('hero', 1, 0, 1)); // 縦に置いて、2列目（ブリッジ）に乗る
+    n = placePart(NAVI_DATA, n, 1, at('hero', 2, 3)); // 右下（ブリッジの外）
     expect(isPartActive(NAVI_DATA, n.parts[0])).toBe(true);
     expect(isPartActive(NAVI_DATA, n.parts[1])).toBe(false);
     expect(boardPassives(NAVI_DATA, n, 'hero')).toEqual([NAVI_PARTS.breaker.effect]);
@@ -183,7 +183,7 @@ describe('ムーブメント：ギアの入手', () => {
 
   it('各キャラの盤のブリッジには、置けるマスがある', () => {
     for (const board of Object.values(NAVI_BOARDS)) {
-      expect(board.cells.some(([, r]) => r === board.commandRow)).toBe(true);
+      expect(board.cells.some(([c]) => c === board.commandCol)).toBe(true);
     }
     expect(Object.keys(NAVI_BOARDS).sort()).toEqual(PARTY.map((c) => c.id).sort());
   });

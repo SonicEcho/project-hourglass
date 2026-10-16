@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, CARD_NAME_LINES, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, CARD_NAME_LINES, CARDS, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -161,7 +161,7 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     // 立ち絵がある仲間は顔の絵（段階32a 調整1）。2人並んで動く時と敵は名前の1文字
     const faceId = unit.side === 'ally' && units.length === 1 ? ALLY_FACE[unit.defId] : undefined;
     if (faceId && hasImage(scene, faceId)) {
-      root.add(faceImage(scene, faceId, cx, cy, r - 1).setAlpha(entry.tentative ? 0.45 : 1));
+      root.add(faceImage(scene, faceId, cx, cy, r - 1, FACE_CROPS[unit.defId]).setAlpha(entry.tentative ? 0.45 : 1));
       root.add(scene.add.circle(cx, cy, r).setStrokeStyle(circle.lineWidth, circle.strokeColor));
     } else root.add(addText(scene, cx, cy, label, { size: label.length > 1 ? 11 : 13, bold: true, align: 'center' }).setOrigin(0.5));
     if (unit.side === 'enemy') root.add(addText(scene, cx + r - 4, cy - r + 2, '敵', { size: 10, color: '#ffb0b0' }).setOrigin(0.5));
@@ -224,11 +224,11 @@ export function unitPosition(s: BattleState, id: string, partId?: string): { x: 
 }
 
 /** 立ち絵から顔を丸く切り出した絵（中心 cx, cy、半径 r） */
-function faceImage(scene: Phaser.Scene, id: string, cx: number, cy: number, r: number): Phaser.GameObjects.Image {
+function faceImage(scene: Phaser.Scene, id: string, cx: number, cy: number, r: number, crop: { x: number; y: number; size: number } = FACE_CROP): Phaser.GameObjects.Image {
   const src = scene.textures.get(id).getSourceImage();
-  const size = src.width * FACE_CROP.size;
-  const sx = src.width * FACE_CROP.x;
-  const sy = src.height * FACE_CROP.y;
+  const size = src.width * crop.size;
+  const sx = src.width * crop.x;
+  const sy = src.height * crop.y;
   const img = scene.add.image(cx, cy, id).setCrop(sx, sy, size, size);
   img.setOrigin((sx + size / 2) / src.width, (sy + size / 2) / src.height).setScale((r * 2) / size);
   const shape = scene.make.graphics({}, false).fillStyle(0xffffff).fillCircle(cx, cy, r);

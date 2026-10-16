@@ -46,7 +46,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BARK_CAST, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
@@ -54,9 +54,10 @@ import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
+import { notePlayCount } from './playRecord';
 import type { Lineup } from '../core';
 import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
-import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
 /** 選んでいる行動の元 */
@@ -154,6 +155,11 @@ export class BattleScene extends Phaser.Scene {
     this.encounter = data.encounter;
     const areaBattle = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
     if (data.encounter && !areaBattle) throw new Error(`unknown area battle ${data.encounter.battle}`);
+    // 戦闘中の印（段階44）：閉じたら「つづきから」で、この戦闘の始めから続ける。記憶をたどる戦闘（セーブしない）と試作の5戦は書かない
+    if (data.encounter && !data.encounter.hunt) {
+      const target = (t: { key: string; data: object }) => ({ key: t.key, data: { ...t.data } as Record<string, unknown> });
+      setBattleMark({ battle: data.encounter.battle, win: target(data.encounter.win), lose: target(data.encounter.lose) });
+    }
     this.battle = areaBattle ?? battleAt(this.progress);
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id) + (data.encounter?.seedShift ?? 0) * 104729) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
@@ -546,12 +552,13 @@ export class BattleScene extends Phaser.Scene {
     const faceW = 150;
     if (id) {
       const src = this.textures.get(id).getSourceImage();
-      // 顔のあたり（立ち絵の幅の 22〜78%、高さの 15% から）を帯の高さに合わせて切り出す
-      const cw = src.width * 0.56;
+      // 顔のあたりを帯の高さに合わせて切り出す（範囲は仲間ごと。BARK_FACE_CROP）
+      const crop = BARK_FACE_CROP[bark.allyId] ?? BARK_FACE_CROP.default;
+      const cw = src.width * crop.w;
       const scale = faceW / cw;
       const ch = (h - 4) / scale;
-      const sx = src.width * 0.22;
-      const sy = src.height * 0.15;
+      const sx = src.width * crop.x;
+      const sy = src.height * crop.y;
       const img = this.add.image(-sx * scale, -h / 2 + 2 - sy * scale, id).setOrigin(0).setScale(scale).setCrop(sx, sy, cw, ch);
       band.add(img);
     } else band.add(addText(this, faceW / 2, 0, bark.name, { size: 22, bold: true, align: 'center' }).setOrigin(0.5));
@@ -1329,11 +1336,14 @@ export class BattleScene extends Phaser.Scene {
   /** 勝敗がついた時。戦闘1の勝利ならボス戦へ、それ以外は結果画面へ */
   private showEnd(): void {
     this.closeOverlay();
+    // 戦闘が終わったので、戦闘中の印を消す（段階44）
+    if (run.battle) setBattleMark(null);
     // ポーチ（段階51）：使った消費アイテムは、勝っても負けても減る
     const used = getBattleResult(this.state).pouchUsed;
     if (Object.keys(used).length > 0) {
       run.armory = spendItems(run.armory, used);
       saveRun();
+      notePlayCount('pouch', Object.values(used).reduce((a, n) => a + n, 0));
     }
     const c = this.add.container(0, 0).setDepth(300);
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive();

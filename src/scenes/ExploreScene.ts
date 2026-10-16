@@ -234,7 +234,7 @@ export class ExploreScene extends Phaser.Scene {
   private showTip(atCheckpoint: boolean): void {
     if (this.tipOpen || this.leaving) return;
     const before = new Set(this.children.list);
-    const shown = maybeShowTip(this, exploreTipTriggers(this.state, { atCheckpoint }), () => {
+    const shown = maybeShowTip(this, exploreTipTriggers(this.state, { atCheckpoint, hunting: this.hunting }), () => {
       this.tipOpen = false;
       for (const t of this.pausedTweens) t.resume();
       this.pausedTweens = [];

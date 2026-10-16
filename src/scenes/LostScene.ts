@@ -9,6 +9,7 @@ import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
+import { notePlayCount } from './playRecord';
 import { run, saveRun, setStoryVars } from './run';
 
 // 落とし物の棚（段階53。docs/design/economy.md の 5-3）：拠点で、記憶の中の落とし物を受けて、今の持ち主に届ける。
@@ -28,7 +29,7 @@ function rewardText(d: LostItemDef): string {
   const r = d.reward;
   const parts = [
     ...(r.items ?? []).map((id) => WEAPON_DATA.items[id]?.name ?? id),
-    ...(r.fragments?.length ? [`記憶の欠片 ${r.fragments.length}（${[...new Set(r.fragments)].map((id) => FRAGMENTS[id as keyof typeof FRAGMENTS]?.name ?? id).join('・')}）`] : []),
+    ...(r.fragments?.length ? [`記憶の欠片×${r.fragments.length}（${[...new Set(r.fragments)].map((id) => FRAGMENTS[id as keyof typeof FRAGMENTS]?.name ?? id).join('・')}）`] : []),
     ...(r.gears ?? []).map((id) => `ギア「${NAVI_PARTS[id as keyof typeof NAVI_PARTS]?.name ?? id}」`),
     ...(r.snaps ?? []).map((id) => `スナップ「${CARDS[id as keyof typeof CARDS]?.name ?? id}」`),
     ...(r.points ? [`星の砂 ${r.points}`] : []),
@@ -102,7 +103,9 @@ export class LostScene extends Phaser.Scene {
         textColor: st === 'delivered' ? COLORS.dimText : COLORS.text,
       });
     });
-    root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+    // 案内は絵の上でも読めるよう、暗い下地に（段階45）
+    root.add(this.add.rectangle(GAME_WIDTH / 2, 690, GAME_WIDTH - 24, 60, 0x0b0f22, 0.85).setRounded(8).setStrokeStyle(1, COLORS.border));
+    root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 44 }).setOrigin(0.5));
     addButton(this, root, GAME_WIDTH / 2, 780, GAME_WIDTH - 60, 56, 'レストピアへ戻る', { onTap: () => this.scene.start('Hub', { seen: undefined }) }, { size: 17, bold: true });
   }
 
@@ -151,6 +154,7 @@ export class LostScene extends Phaser.Scene {
     if (d.reward.points) run.growth = { ...run.growth, points: run.growth.points + d.reward.points };
     setStoryVars(r.vars);
     saveRun();
+    notePlayCount('lost');
     this.talk(d.deliverScene, { seen: undefined, got: rewardText(d) });
   }
 }

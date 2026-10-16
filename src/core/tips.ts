@@ -53,12 +53,15 @@ export function battleTipTriggers(s: BattleState, ctx: { autoAvailable: boolean 
   if (s.enemies.some((e) => e.hp > 0 && (e.parts.length > 0 || e.charging))) out.push('battle_boss');
   if (s.phase === 'plan' && s.links.length > 0 && linkReady(s)) out.push('battle_link');
   if (s.phase === 'plan' && ctx.autoAvailable) out.push('battle_auto');
+  // ポーチ（段階51。段階45で説明を足した）：ポーチに物がある時の計画
+  if (s.phase === 'plan' && s.pouch.length > 0) out.push('battle_pouch');
   return out;
 }
 
-/** 探索で、今の場面に合う説明の id。atCheckpoint：チェックポイントに立っている */
-export function exploreTipTriggers(state: ExploreState, ctx: { atCheckpoint: boolean }): string[] {
+/** 探索で、今の場面に合う説明の id。atCheckpoint：チェックポイントに立っている。hunting：記憶をたどっている（段階45） */
+export function exploreTipTriggers(state: ExploreState, ctx: { atCheckpoint: boolean; hunting?: boolean }): string[] {
   const out = ['explore_basic'];
+  if (ctx.hunting) out.push('explore_hunt');
   if (ctx.atCheckpoint) out.push('explore_checkpoint');
   if (state.koma > 0) out.push('explore_koma');
   return out;

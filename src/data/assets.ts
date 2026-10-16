@@ -1169,6 +1169,88 @@ export const ASSETS: AssetEntry[] = [
     'M2 の 2-2 の持ち主（docs/ART.md の 5-3 の 8）',
     '2026-10-14',
   ),
+  // 2-2・2-3 の人と背景、2-2 の1枚絵、交換所のペトラ（2026-10-17。docs/ART.md の 5-3 の 8・9・11）
+  chatgptPortrait(
+    'koji',
+    'こうじ',
+    'smile',
+    '笑顔',
+    portraitHead('a kind, slightly self-deprecating smile') +
+      "Character: Koji, a 40-year-old Japanese bakery owner on a shopping street in a quiet regional town. A gentle, good-natured face, slightly tired eyes, short neat black hair, a white baker's coat and a white baker's cap. Friendly to everyone, but always puts himself down.",
+    'あかりの笑顔の立ち絵（構図の見本）',
+    'M2 の 2-3 の持ち主（docs/ART.md の 5-3 の 8）',
+    '2026-10-17',
+  ),
+  chatgptPortrait(
+    'petra',
+    'ペトラ',
+    'normal',
+    '通常',
+    portraitHead('a calm, businesslike expression with a faint polite smile') +
+      'Character: Petra, a woman in her late twenties who works at the trading counter of the Time Archive Bureau, an office of the far future. Neat dark navy-black hair tied in a single low ponytail, thin silver-rimmed glasses, calm intelligent eyes. A crisp white shirt with a dark navy vest, black sleeve covers on her forearms, and a small hourglass-shaped bureau badge on her chest. Tidy and rule-abiding, a quiet clerk who is secretly pleased when the numbers in her ledger add up. No text or letters on the badge.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    '拠点の交換所の番人（段階52。docs/ART.md の 5-3 の 8 の後ろ）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.riverside_1998',
+    '背景（平成10年の夏の河川敷のグラウンド）',
+    'assets/backgrounds/riverside_1998.webp',
+    BG_HEAD +
+      'A riverside little league baseball field in a Japanese town on a bright summer afternoon in 1998, bright summer sky and light blue tones. A dirt diamond, a tall backstop net, a simple wooden scoreboard with blank panels, a grassy embankment where families sit, a small white concession tent, the river and an iron bridge in the distance, cumulonimbus clouds. ' +
+      'Eye-level camera from behind home plate, looking toward the outfield. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'M2 の 2-3 の会話（docs/ART.md の 5-3 の 9）。今の河川敷（riverside_ground）は同じ絵を色の加工で使い回す',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.bakery',
+    '背景（商店街のパン屋の店内）',
+    'assets/backgrounds/bakery.webp',
+    BG_HEAD +
+      'Inside a small, warm family bakery on a shopping street in a quiet Japanese regional town, late afternoon. Wooden shelves and baskets of freshly baked bread, a glass display case, a small counter with an old cash register, an oven glowing in the back kitchen visible through a doorway, warm orange light through the front window. ' +
+      'Eye-level camera, looking from the entrance toward the counter. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M2 のこうじの店（7-A・8-B、docs/ART.md の 5-3 の 9）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.music_shop',
+    '背景（商店街の楽器店の店内）',
+    'assets/backgrounds/music_shop.webp',
+    BG_HEAD +
+      'Inside a small, slightly cluttered musical instrument shop on a shopping street in a quiet Japanese regional town, at dusk. Electric and acoustic guitars hanging on the wall, a few amplifiers, a drum kit in the corner, racks of sheet music books with blank covers, a worn counter with guitar strings and picks. Warm light, a little dusty and nostalgic. ' +
+      'Eye-level camera, the guitar wall in the center. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。アンプに実在のメーカーの文字が描かれていたので、その所をぼかした。720×1280 に縮めて WebP にした',
+    'M2 のけんたの店（6-A・7-A。夜は色の加工。docs/ART.md の 5-3 の 9）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'bg.school_gym',
+    '背景（平成18年の文化祭の体育館のステージ）',
+    'assets/backgrounds/school_gym.webp',
+    BG_HEAD +
+      'A Japanese high school gymnasium decorated for the school festival on a bright autumn afternoon in 2006, bright pastel and light blue tones. A stage with curtains pulled open, amplifiers, a drum kit and microphone stands set up for a band, paper flower decorations and blank banners, rows of folding chairs on the gym floor, sunlight through the high windows. ' +
+      'Eye-level camera from the middle of the gym, the stage in the center. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    'M2 の 2-2 の会話（docs/ART.md の 5-3 の 9）',
+    '2026-10-17',
+  ),
+  chatgptArt(
+    'cg.string_stage',
+    '1枚絵（弦が切れても歌うステージ）',
+    'assets/cg/string_stage.webp',
+    CG_HEAD +
+      'A packed Japanese high school gymnasium during the school festival in autumn 2006. On the stage, a 17-year-old boy in an open black gakuran (keep his design as in the attached portrait) keeps singing into the microphone with his eyes closed, holding his electric guitar with one broken string curling loose. Behind him a girl on bass and a boy on drums smile and keep the rhythm. The audience claps along with raised hands, colorful stage lights and dust sparkling in the beams. ' +
+      CG_TAIL,
+    '見本の絵：写しのけんたの立ち絵（まだ台帳にない）。元の絵は 941×1672。ギターの頭の飾り文字を軽くぼかした。720×1280 に縮めて WebP にした',
+    'M2 の 2-2-7（2-2 の山場。docs/ART.md の 5-3 の 11）',
+    '2026-10-17',
+  ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait(
     'worried',

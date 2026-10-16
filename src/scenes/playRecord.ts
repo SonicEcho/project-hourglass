@@ -1,5 +1,5 @@
-import type { PlayLog } from '../core';
-import { addPlayTime, createPlayLog, enterPlayEvent, parsePlayLog, recordPlayBattle, recordPlayStart, serializePlayLog } from '../core';
+import type { PlayCountKey, PlayLog } from '../core';
+import { addPlayTime, createPlayLog, enterPlayEvent, parsePlayLog, recordPlayBattle, recordPlayCount, recordPlayStart, serializePlayLog } from '../core';
 import { SLICE_FLOW } from '../data';
 import { browserStorage } from '../save/storage';
 
@@ -61,6 +61,11 @@ export function notePlayEvent(id: string): void {
 /** 「はじめから」を押した */
 export function notePlayStart(): void {
   store(recordPlayStart(playRecord()));
+}
+
+/** M2 で足した遊びの回数（段階45）：記憶をたどった・交換した・落とし物を届けた・ポーチを使った */
+export function notePlayCount(key: PlayCountKey, n = 1): void {
+  store(recordPlayCount(playRecord(), key, n));
 }
 
 /** 物語の出来事 id で、戦闘に勝った・負けた */

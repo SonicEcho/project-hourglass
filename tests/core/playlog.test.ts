@@ -3,6 +3,7 @@ import type { Flow } from '../../src/core';
 import {
   addPlayTime,
   createPlayLog,
+  recordPlayCount,
   enterPlayEvent,
   formatPlayTime,
   parsePlayLog,
@@ -135,5 +136,18 @@ describe('遊んだ記録（段階32b）', () => {
   it('今の流れは、まとめた行なら記録の画面の1画面に入る数（段階34）', () => {
     const rows = summarizePlayLog(createPlayLog(t0), SLICE_FLOW).rows;
     expect(playLogSections(rows, SLICE_FLOW).length).toBeLessThanOrEqual(24);
+  });
+});
+
+describe('遊んだ記録：M2 で足した遊びの回数（段階45）', () => {
+  it('記憶をたどる・交換・落とし物・ポーチの回数を足し、保存して読み戻せる（前の記録は0から）', () => {
+    let log = createPlayLog(new Date('2026-10-16T00:00:00Z'));
+    expect(log.counts).toEqual({ hunt: 0, exchange: 0, lost: 0, pouch: 0 });
+    log = recordPlayCount(recordPlayCount(log, 'hunt'), 'pouch', 2);
+    expect(log.counts).toEqual({ hunt: 1, exchange: 0, lost: 0, pouch: 2 });
+    expect(parsePlayLog(serializePlayLog(log), SLICE_FLOW, new Date()).counts).toEqual(log.counts);
+    const old = JSON.parse(serializePlayLog(log));
+    delete old.counts;
+    expect(parsePlayLog(JSON.stringify(old), SLICE_FLOW, new Date()).counts).toEqual({ hunt: 0, exchange: 0, lost: 0, pouch: 0 });
   });
 });

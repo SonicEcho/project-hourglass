@@ -6,10 +6,11 @@ import { addButton, addText } from '../ui/widgets';
 import { playBgm, playSand, stopAmbience } from '../audio/sound';
 import { prepareBgm } from '../audio/bgmStore';
 import { chapterOfEvent, findEvent } from '../core';
-import { BGM, SLICE_FLOW, TIPS } from '../data';
+import { AREA_BATTLES, BGM, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
-import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
+import { continueRun, deleteSave, moveBrokenSave, readSave, run, startNewRun } from './run';
+import type { BattleSceneData } from './BattleScene';
 import { enterScreen, fadeOutAndDestroy, screenBg } from '../ui/skin';
 import { openOptions } from '../ui/options';
 import { canToggleFullscreen, isFullscreen, onFullscreenChange, toggleFullscreen } from '../ui/fullscreen';
@@ -89,8 +90,10 @@ export class TitleScene extends Phaser.Scene {
     const ui = this.add.container(0, 0);
     root.add(ui);
     const flow = (data: object) => this.leave(glow, fall, ui, () => this.scene.start('Flow', data));
+    // 戦闘の途中から続ける（段階44）
+    const battle = (data: BattleSceneData) => this.leave(glow, fall, ui, () => this.scene.start('Battle', data));
     root = ui;
-    root.add(addText(this, cx, 432, '試作版（M1：プロローグと第1章のはじめ）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(this, cx, 432, '試作版（第2章のおわりまで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3）
     addButton(this, root, GAME_WIDTH - 66, 36, 112, 44, 'オプション', {
       onTap: () =>
@@ -152,12 +155,14 @@ export class TitleScene extends Phaser.Scene {
       const chapter = chapterOfEvent(SLICE_FLOW, s.run.event);
       addButton(this, root, cx, 600, 260, 64, 'つづきから', {
         onTap: () => {
-          if (continueRun()) flow({ done: false, fromTitle: true });
-          else this.scene.restart();
+          if (!continueRun()) this.scene.restart();
+          // 戦闘の途中で閉じていたら、その戦闘の始めから（段階44）
+          else if (run.battle) battle({ encounter: { battle: run.battle.battle, win: run.battle.win, lose: run.battle.lose } });
+          else flow({ done: false, fromTitle: true });
         },
       }, strong);
       root.add(
-        addText(this, cx, 656, `${chapter?.name ?? ''}　${event?.title ?? ''}\n${formatSavedAt(s.savedAt)}`, {
+        addText(this, cx, 656, `${chapter?.name ?? ''}　${event?.title ?? ''}${s.run.battle ? `（${AREA_BATTLES[s.run.battle.battle]?.name ?? '戦闘'}の途中）` : ''}\n${formatSavedAt(s.savedAt)}`, {
           size: 12,
           color: COLORS.subText,
           align: 'center',

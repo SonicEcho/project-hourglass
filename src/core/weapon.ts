@@ -62,7 +62,7 @@ export interface EvolutionStyleDef {
   name: string;
   stats?: Partial<Stats>;
   passives?: PassiveEffect[];
-  /** 盤に足すマスの形：row はブリッジの行の右端に横へ、column は盤の下へ縦に */
+  /** 盤に足すマスの形：row はブリッジ（縦の列）の下へ、column は盤の右へ横に（2026-10-16 にブリッジを縦にした） */
   board: BoardExtension;
 }
 

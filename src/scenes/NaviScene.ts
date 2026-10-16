@@ -9,7 +9,7 @@ import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePass
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, hubLineup, lineupBase, run, saveRun } from './run';
+import { currentNaviData, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -201,10 +201,21 @@ export class NaviScene extends Phaser.Scene {
       800,
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
-      '星図へ戻る',
-      { onTap: () => this.scene.start('Growth') },
+      hubBack()?.label ?? '星図へ戻る',
+      { onTap: () => this.leave() },
       { size: 16, bold: true },
     );
+  }
+
+  /** 戻る：拠点から開いた時は拠点へ（段階45）、それ以外は星図へ */
+  private leave(): void {
+    const hub = hubBack();
+    if (!hub) {
+      this.scene.start('Growth');
+      return;
+    }
+    setHubReturn(null);
+    this.scene.start(hub.key, hub.data);
   }
 
   private drawTabs(): void {
@@ -250,7 +261,7 @@ export class NaviScene extends Phaser.Scene {
 
     // ブリッジ（光る帯）
     this.root.add(
-      this.add.rectangle(o.x - 6, o.y + b.commandRow * this.cell - 3, this.cell * b.cols + 12, this.cell + 6, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
+      this.add.rectangle(o.x + b.commandCol * this.cell - 3, o.y - 6, this.cell + 6, this.cell * b.rows + 12, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
     );
 
     // マス
@@ -259,7 +270,7 @@ export class NaviScene extends Phaser.Scene {
         if (!cellSet.has(key([col, row]))) continue;
         const x = o.x + col * this.cell;
         const y = o.y + row * this.cell;
-        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, row === b.commandRow ? 0x3a3a1e : COLORS.panel).setRounded(8).setOrigin(0);
+        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, col === b.commandCol ? 0x3a3a1e : COLORS.panel).setRounded(8).setOrigin(0);
         rect.setStrokeStyle(1, COLORS.border);
         this.root.add(rect);
         makePressable(rect, {
