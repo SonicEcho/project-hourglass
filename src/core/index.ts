@@ -24,3 +24,4 @@ export * from './tips';
 export * from './playlog';
 export * from './bark';
 export * from './exchange';
+export * from './lost';

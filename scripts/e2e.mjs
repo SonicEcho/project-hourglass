@@ -292,7 +292,7 @@ try {
   await until('ポーションを使った', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.pouch[0]?.used)) === 1, 20000);
   await winBattle();
 
-  step('レストピアの拠点（段階50）と狩り（段階43）：昼の時計屋から拠点に入り、星図を開いて戻り、返した区画で狩り、ぬしに勝っても続き、拠点から時計屋へ戻っても昼の回数は減らない');
+  step('レストピアの拠点（段階50）と記憶をたどる（段階43）・交換所（段階52）・落とし物（段階53）：昼の時計屋から拠点に入り、星図・交換所を開いて戻り、落とし物を受け、返した区画をたどって見つけ、ぬしに勝っても続き、落とし物を届け、拠点から時計屋へ戻っても昼の回数は減らない');
   const skipTips = async () => {
     for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
       await tap('^わかった$');
@@ -345,13 +345,30 @@ try {
   await until('2回目はできない', () => findText('もう交換した'));
   await tap('^レストピアへ戻る$');
   await waitScene('Hub');
-  await tap('^返した時間へ（狩り）$');
+  // 落とし物（段階53）：初めては棚の会話。1-1 の「金魚のヘアピン」を受ける
+  await tap('^落とし物の棚$');
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Lost'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Lost');
+  await tap('^金魚のヘアピン');
+  await tap('^受ける$');
+  await until('受けた', () => findText('^金魚のヘアピン　→ ゆうまさん\\n記憶をたどって探す$'));
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
+  await tap('^記憶をたどる$');
   // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
   await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n星の砂と経験値は半分$'));
   await tap('^1-1「金魚の名前」');
   await waitScene('Explore');
   await skipTips();
-  await until('狩りの案内', () => findText('^狩り：素材を集める$'));
+  await until('記憶をたどるの案内', () => findText('^記憶をたどる：素材を集める$'));
+  // 受けた探し物の光る所を拾う（光る所の隣まで歩くのと同じ処理）
+  await page.evaluate(() => window.__restopia.scene('Explore').openChestNow('lost:a11_hairpin'));
+  await until('落とし物を見つけた', () => findText('^落とし物を見つけた'));
   // 探索の画面の中から、ぬしとの戦闘を始める（ぬしの隣まで歩くのと同じ処理）
   await page.evaluate(() => window.__restopia.scene('Explore').startBattle('a11_boss', 'a11_boss'));
   await winBattle();
@@ -365,6 +382,21 @@ try {
   await until('ぬしに勝っても狩りが続く', () => findText('^ぬしを倒した。'));
   if (await findText('^ぬし$')) throw new Error('倒したぬしがまだいる');
   await tap('^レストピア\\nへ戻る$');
+  await waitScene('Hub');
+  // 見つけた落とし物を、棚から届ける（ゆうまに会う会話の後、ごほうび）
+  await tap('^落とし物の棚$');
+  await waitScene('Lost');
+  await tap('^金魚のヘアピン');
+  await tap('^届ける$');
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Lost'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Lost');
+  await until('届けた', () => findText('^届けた！'));
+  await tap('^レストピアへ戻る$');
   await waitScene('Hub');
   await tap('^時計屋へ戻る$');
   await waitScene('Daily');

@@ -13,7 +13,7 @@ import type { ExploreData } from './ExploreScene';
 import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
-// 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）の場所もここ。
+// 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）もここ。
 // 日も昼の回数も使わない。拠点にいることはセーブしない（閉じたら昼の日常から）
 
 /** 育成の画面から拠点へ戻る時の戻り先（育成の画面の戻るボタンと見出しに使う） */
@@ -59,7 +59,7 @@ export class HubScene extends Phaser.Scene {
     const strong = { size: 17, bold: true, fill: 0x2f4f3a, stroke: 0x6fe0a0, strokeWidth: 2 };
     // 狩り
     const hunts = huntableAreas(AREAS, run.returned);
-    addButton(this, root, cx, 180, w, 62, '返した時間へ（狩り）', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
+    addButton(this, root, cx, 180, w, 62, '記憶をたどる', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
     // ポーチの中身（段階51）
     const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}/${POUCH_MAX}`).join('　');
     root.add(addText(this, cx, 236, `ポーチ：${pouch}`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
@@ -85,9 +85,9 @@ export class HubScene extends Phaser.Scene {
       });
     });
     const below = 290 + Math.ceil(grow.length / Math.max(1, per)) * 64 + 30;
-    // 交換所（段階52）と落とし物の棚（段階53で作る）
+    // 交換所（段階52）と落とし物の棚（段階53）
     addButton(this, root, cx, below + 20, w, 54, '交換所', { onTap: () => this.openExchange() }, { size: 15, bold: true, fill: 0x24384a, stroke: 0x6bc8ff, strokeWidth: 2 });
-    addButton(this, root, cx, below + 84, w, 54, '落とし物の棚（準備中）', {}, { size: 15, enabled: false });
+    addButton(this, root, cx, below + 84, w, 54, '落とし物の棚', { onTap: () => this.openLost() }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
     // 昼へ戻る
     addButton(this, root, cx, 780, w, 56, '時計屋へ戻る', { onTap: () => this.leave() }, { size: 17, bold: true });
     this.cameras.main.fadeIn(250, 0, 0, 0);
@@ -104,6 +104,12 @@ export class HubScene extends Phaser.Scene {
   private openExchange(): void {
     if (this.overlay) return;
     this.scene.start('Exchange', { seen: undefined });
+  }
+
+  /** 落とし物の棚を開く（段階53。初めてなら、棚の会話から） */
+  private openLost(): void {
+    if (this.overlay) return;
+    this.scene.start('Lost', { seen: undefined, got: undefined });
   }
 
   /** 昼の時計屋へ戻る（昼の日常の途中でなければ、物語の流れへ） */
@@ -125,7 +131,7 @@ export class HubScene extends Phaser.Scene {
     this.overlay = panel;
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
     panel.add(addWindow(this, cx - 165, top, 330, h));
-    panel.add(addText(this, cx, top + 30, 'どの時間で狩る？', { size: 17, bold: true }).setOrigin(0.5));
+    panel.add(addText(this, cx, top + 30, 'どの記憶をたどる？', { size: 17, bold: true }).setOrigin(0.5));
     panel.add(addText(this, cx, top + 58, '砂嵐とぬしから素材を集める', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
     const now = storyLineup().chapter;
     areas.forEach((area, i) => {

@@ -32,14 +32,17 @@ import {
   triggerGears,
   startExplore,
   usableLinks,
+  findLost,
   huntArea,
+  lostOfSpot,
+  lostSpots,
   areaChapter,
   huntRewardRate,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -135,7 +138,11 @@ export class ExploreScene extends Phaser.Scene {
       this.scene.start('Flow', { done: false });
       return;
     }
-    const area = this.hunting && hunt && base.hunt ? huntArea({ ...base, hunt: base.hunt }, hunt.salt) : base;
+    // 記憶をたどる時は、受けている探し物（落とし物。段階53）の光る所も置く
+    const area =
+      this.hunting && hunt && base.hunt
+        ? huntArea({ ...base, hunt: { ...base.hunt, gathers: [...base.hunt.gathers, ...lostSpots(LOST_ITEMS, run.vars, base.id)] } }, hunt.salt)
+        : base;
     this.area = area;
     this.trial = !AREAS[data.area];
     stopAmbience();
@@ -213,7 +220,7 @@ export class ExploreScene extends Phaser.Scene {
         (data.won
           ? `${data.won === area.boss.id ? 'ぬし' : '砂嵐'}を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${left > 0 ? `あと${left}つで返せる` : 'そろった'}）` : ''}`
           : this.hunting
-            ? '狩り：砂嵐とぬしから素材を集める。光る所をタップすると素材を拾える'
+            ? '記憶をたどる：砂嵐の名残とぬしから素材を集める。光る所をタップすると素材を拾える'
             : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
@@ -299,7 +306,9 @@ export class ExploreScene extends Phaser.Scene {
       const opened = this.state.openedChests.includes(chest.id);
       const [x, y] = [chest.cell[0] * T + T / 2, chest.cell[1] * T + T / 2];
       if (this.hunting) {
-        const spot = this.add.rectangle(x, y, T * 0.5, T * 0.5, opened ? 0x3a4a3a : 0x6fe0a0).setAngle(45).setStrokeStyle(2, opened ? 0x5a6a5a : 0xffffff);
+        // 落とし物の光る所（段階53）は金色
+        const lost = lostOfSpot(chest.id) !== null;
+        const spot = this.add.rectangle(x, y, T * 0.5, T * 0.5, opened ? 0x3a4a3a : lost ? 0xffd84a : 0x6fe0a0).setAngle(45).setStrokeStyle(2, opened ? 0x5a6a5a : 0xffffff);
         if (!opened) this.tweens.add({ targets: spot, alpha: 0.45, scale: 1.2, yoyo: true, repeat: -1, duration: 700 });
         this.chestSprites.set(chest.id, spot);
         world.add(spot);
@@ -380,7 +389,7 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
     // コマ：あと何コマで返せるか（段階28）。狩りではコマはないので、狩りの案内（段階43）
     const left = komaLeft(area, this.state);
-    if (this.hunting) ui.add(addText(this, GAME_WIDTH / 2, 31, '狩り：素材を集める', { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
+    if (this.hunting) ui.add(addText(this, GAME_WIDTH / 2, 31, '記憶をたどる：素材を集める', { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     else ui.add(
       addText(this, GAME_WIDTH / 2, 31, left > 0 ? `コマ ${this.state.koma}/${area.komaNeed}（あと${left}つで返せる）` : `コマ ${this.state.koma}/${area.komaNeed}（そろった！）`, {
         size: 13,
@@ -626,6 +635,19 @@ export class ExploreScene extends Phaser.Scene {
     const r = openChest(this.area, this.state, chestId);
     if (!r) return;
     this.state = r.state;
+    // 落とし物の光る所（段階53）：見つけた印を付け、声が残っていれば会話を見る
+    const lostId = lostOfSpot(chestId);
+    if (lostId) {
+      const def = LOST_ITEMS.find((d) => d.id === lostId);
+      setStoryVars(findLost(run.vars, lostId));
+      this.chestSprites.get(chestId)?.setFillStyle(0x3a4a3a).setStrokeStyle(2, 0x5a6a5a);
+      this.tweens.killTweensOf(this.chestSprites.get(chestId) ?? []);
+      playSe(this, SE.chest);
+      this.say(`落とし物を見つけた！　${def?.name ?? ''}（拠点の落とし物の棚から、${def?.owner ?? ''}さんに届けられる）`);
+      this.keep(this.state);
+      if (def?.findScene) this.openScene(def.findScene, this.back());
+      return;
+    }
     // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51。入らなかった分は捨てる）
     const capped = capItems(WEAPON_DATA, addItems(run.armory, r.chest.items));
     run.armory = capped.armory;
