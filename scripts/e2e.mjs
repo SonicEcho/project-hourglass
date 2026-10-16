@@ -269,6 +269,29 @@ try {
   await waitScene('Dialogue');
   await until('会話で縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
 
+  step('ポーチ（段階51）：戦闘の「その他」からポーションを味方に使うと、残りが減る');
+  await debugButton('ポーチを満タンにする');
+  await closeDebugMenu();
+  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm1', win: b, lose: b } }), back);
+  await waitScene('Battle');
+  await page.waitForTimeout(800);
+  for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
+    await tap('^わかった$');
+    await page.waitForTimeout(400);
+  }
+  await tap('^その他$');
+  await tap('^ポーション\\n残り3$');
+  const allies = await page.evaluate(() => window.__restopia.scene('Battle').state.allies.length);
+  // 1人目（ハルト）の顔を2回タップして決める（仲間の列の真ん中）
+  await tapAt(390 / allies / 2, 414);
+  await page.waitForTimeout(300);
+  await tapAt(390 / allies / 2, 414);
+  await until('ポーションを予約した', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.plans.some((p) => p.action.type === 'item'))));
+  await debugButton('自動で1ラウンド戦う');
+  await closeDebugMenu();
+  await until('ポーションを使った', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.pouch[0]?.used)) === 1, 20000);
+  await winBattle();
+
   step('レストピアの拠点（段階50）と狩り（段階43）：昼の時計屋から拠点に入り、星図を開いて戻り、返した区画で狩り、ぬしに勝っても続き、拠点から時計屋へ戻っても昼の回数は減らない');
   const skipTips = async () => {
     for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {

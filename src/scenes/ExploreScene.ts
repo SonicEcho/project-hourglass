@@ -11,6 +11,7 @@ import {
   roomPositions,
   startMind,
   addItems,
+  capItems,
   addKoma,
   areaGrid,
   arrive,
@@ -38,7 +39,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, snapNames, TRIAL_AREAS } from '../data';
+import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -625,7 +626,9 @@ export class ExploreScene extends Phaser.Scene {
     const r = openChest(this.area, this.state, chestId);
     if (!r) return;
     this.state = r.state;
-    run.armory = addItems(run.armory, r.chest.items);
+    // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51。入らなかった分は捨てる）
+    const capped = capItems(WEAPON_DATA, addItems(run.armory, r.chest.items));
+    run.armory = capped.armory;
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
     // スナップは持ち物に入る（段階41。チェックポイントのアルバムで入れ替える）
@@ -638,7 +641,7 @@ export class ExploreScene extends Phaser.Scene {
     } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
-      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : ''].filter(Boolean).join('　')}`,
+      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : '', capped.overflow.length > 0 ? `（ポーチがいっぱい：${summarize(capped.overflow)}は入らなかった）` : ''].filter(Boolean).join('　')}`,
     );
     this.keep(this.state);
   }

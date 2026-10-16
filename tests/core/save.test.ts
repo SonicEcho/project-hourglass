@@ -88,6 +88,16 @@ function parseEdited(edit: (raw: any) => void) {
 }
 
 describe('セーブ：保存して読む', () => {
+  it('ポーチの消費アイテムを持てる数より多く持っていたら、読み込む時にそろえる（段階51）', () => {
+    const res = parseEdited((raw) => {
+      raw.run.armory.items.potion = 7;
+      raw.run.armory.items.ether = 2;
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.save.run.armory.items).toMatchObject({ potion: 3, ether: 2 });
+  });
+
   it('保存した周回を、そのまま読み戻せる', () => {
     const r = playedRun();
     const res = parseSave(serializeSave(r, AT), ctx);

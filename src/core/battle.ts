@@ -10,6 +10,7 @@ import {
   MIN_DAMAGE,
   ONE_MORE_DRAW,
   PART_BODY_RATIO,
+  POUCH_USES_PER_BATTLE,
   RANDOM_MAX,
   RANDOM_MIN,
   SUPPORT_PER_ROUND,
@@ -37,6 +38,7 @@ import type {
   PassiveEffect,
   Plan,
   PlayerAction,
+  PouchStock,
   QueueEntry,
   SkillDef,
   TargetRef,
@@ -139,6 +141,8 @@ export function createBattle(setup: BattleSetup): BattleState {
     extra: null,
     linkGauge: 0,
     ...(setup.cutoff ? { cutoff: { ...setup.cutoff } } : {}),
+    pouch: (setup.pouch ?? []).filter((p) => p.count > 0).map((p) => ({ item: clone(p.item), count: Math.floor(p.count), used: 0 })),
+    pouchUsesLeft: setup.pouchUses ?? POUCH_USES_PER_BATTLE,
     outcome: 'ongoing',
     log: [{ type: 'battleStart', seed: setup.seed }],
   };
@@ -274,6 +278,22 @@ export function availableHand(s: BattleState, exceptAllyIds: string[] = []): Car
 }
 
 /** まだ行動を選んでいない、生きている仲間 */
+/** ポーチ（段階51）：持っている数（items）から、戦闘に持ち込む消費アイテムを作る（持っていない物は入れない。order の順） */
+export function pouchFrom(defs: Record<string, ActionDef>, order: string[], items: Record<string, number>): PouchStock[] {
+  return order.filter((id) => defs[id] && (items[id] ?? 0) > 0).map((id) => ({ item: defs[id], count: items[id], used: 0 }));
+}
+
+/**
+ * ポーチ（段階51）：この消費アイテムを今使える残りの数と、この戦闘で使える残りの回数。
+ * まだ実行していない計画で予約した分を引く（exceptAllyIds の仲間の計画は、選び直しで空くので引かない）
+ */
+export function pouchLeft(s: BattleState, itemId: string, exceptAllyIds: string[] = []): { count: number; uses: number } {
+  const reserved = s.plans.filter((p) => !p.done && p.action.type === 'item' && !p.actorIds.some((id) => exceptAllyIds.includes(id)));
+  const stock = s.pouch.find((p) => p.item.id === itemId);
+  const same = reserved.filter((p) => p.action.type === 'item' && p.action.itemId === itemId).length;
+  return { count: Math.max(0, (stock?.count ?? 0) - same), uses: Math.max(0, s.pouchUsesLeft - reserved.length) };
+}
+
 export function unplannedAllies(s: BattleState): AllyUnit[] {
   return livingAllies(s).filter((a) => !planOf(s, a.uid));
 }
@@ -337,6 +357,8 @@ interface Resolved {
   cards: CardInstance[];
   skill?: SkillDef;
   link?: LinkDef;
+  /** ポーチの消費アイテム（段階51） */
+  stock?: PouchStock;
 }
 
 /**
@@ -375,6 +397,11 @@ function resolveAction(s: BattleState, actor: AllyUnit, action: PlayerAction, po
       if (!cards) return 'combo cards are not available';
       return { def: combo, cards };
     }
+    case 'item': {
+      const stock = s.pouch.find((p) => p.item.id === action.itemId);
+      if (!stock) return 'unknown item';
+      return { def: stock.item, cards: [], stock };
+    }
   }
 }
 
@@ -399,6 +426,13 @@ function targetError(s: BattleState, def: ActionDef, target: TargetRef | undefin
 function validate(s: BattleState, actor: AllyUnit, action: PlayerAction, pool: CardInstance[]): Resolved | string {
   const r = resolveAction(s, actor, action, pool);
   if (typeof r === 'string') return r;
+  if (action.type === 'item') {
+    // 計画中は、選び直す仲間（連携技なら相方も）の予約を空けて数える。追加行動は、まだ実行していない計画の予約を全部引く
+    const except = s.phase === 'plan' ? [actor.uid, ...(planOf(s, actor.uid)?.actorIds ?? [])] : [];
+    const left = pouchLeft(s, action.itemId, except);
+    if (left.count <= 0) return 'no items left';
+    if (left.uses <= 0) return 'pouch uses are used up';
+  }
   const target = 'target' in action ? action.target : undefined;
   const err = targetError(s, r.def, target);
   if (err) return err;
@@ -696,8 +730,8 @@ function runPlan(s: BattleState, planIndex: number): void {
   }
   const pool = s.hand.filter((c) => plan.cardUids.includes(c.uid));
   const result = perform(s, actors[0], plan.action, pool, { extra: false, boost: false });
-  if (result === 'mp') {
-    s.log.push({ type: 'cancel', actorIds: plan.actorIds, reason: 'mp' });
+  if (result === 'mp' || result === 'target') {
+    s.log.push({ type: 'cancel', actorIds: plan.actorIds, reason: result });
     return;
   }
   if (result.downed) triggerOneMore(s, actors[0].uid, [actors[0].uid]);
@@ -805,11 +839,19 @@ function perform(
   action: PlayerAction,
   pool: CardInstance[],
   opts: { extra: boolean; boost: boolean },
-): { downed: boolean } | 'mp' {
+): { downed: boolean } | 'mp' | 'target' {
   const r = resolveAction(s, actor, action, pool);
   if (typeof r === 'string') {
     if (r === 'not enough MP') return 'mp';
     throw new Error(r);
+  }
+  if (r.stock && action.type === 'item') {
+    // 使う相手が番の前に倒れていたら、使わずに残す
+    const to = findAlly(s, action.target.id);
+    if (!to || !isAlive(to)) return 'target';
+    r.stock.count -= 1;
+    r.stock.used += 1;
+    s.pouchUsesLeft -= 1;
   }
   discardCards(s, r.cards.map((c) => c.uid));
   if (r.skill) actor.mp -= skillMpCost(actor, r.skill);
@@ -872,7 +914,7 @@ export function applyExtra(state: BattleState, action: PlayerAction): BattleStat
   s.phase = 'execute';
   updateOutcome(s);
   // 連鎖延長：追加行動で、まだダウンしていない別の敵をダウンさせたら、さらに延長
-  if (result !== 'mp' && result.downed) triggerOneMore(s, actor.uid, extra.chain);
+  if (typeof result !== 'string' && result.downed) triggerOneMore(s, actor.uid, extra.chain);
   return s;
 }
 
@@ -984,6 +1026,21 @@ function applyEffect(
       ctx.user.guarding = true;
       s.log.push({ type: 'guard', actorId: ctx.user.uid });
       return;
+    case 'restore': {
+      const t = target?.kind === 'ally' ? findAlly(s, target.id) : ctx.user;
+      if (!t || !isAlive(t)) return;
+      if (effect.hp) {
+        const amount = Math.min(effect.hp, t.maxHp - t.hp);
+        t.hp += amount;
+        s.log.push({ type: 'heal', sourceId: ctx.user.uid, targetId: t.uid, amount, hpAfter: t.hp });
+      }
+      if (effect.mp) {
+        const amount = Math.min(effect.mp, t.maxMp - t.mp);
+        t.mp += amount;
+        s.log.push({ type: 'mpRestore', sourceId: ctx.user.uid, targetId: t.uid, amount, mpAfter: t.mp });
+      }
+      return;
+    }
     case 'search':
     case 'precede':
       // サポートスナップの効果は useSupport で処理する
@@ -1171,7 +1228,8 @@ function damageAlly(s: BattleState, enemy: EnemyUnit, action: EnemyActionDef, al
 export interface TargetPreview {
   unitId: string;
   partId?: string;
-  kind: 'damage' | 'heal';
+  /** mp はポーチのエーテルで戻る MP（段階51） */
+  kind: 'damage' | 'heal' | 'mp';
   /** 本体へのダメージ、または回復量の幅 */
   min: number;
   max: number;
@@ -1206,6 +1264,11 @@ export function previewAction(s: BattleState, allyId: string, action: PlayerActi
   const targets: TargetPreview[] = [];
 
   for (const effect of r.def.effects) {
+    if (effect.kind === 'restore' && target?.kind === 'ally') {
+      const ally = findAlly(s, target.id)!;
+      if (effect.hp) targets.push({ unitId: ally.uid, kind: 'heal', min: Math.min(effect.hp, ally.maxHp - ally.hp), max: Math.min(effect.hp, ally.maxHp - ally.hp), affinity: 'normal' });
+      if (effect.mp) targets.push({ unitId: ally.uid, kind: 'mp', min: Math.min(effect.mp, ally.maxMp - ally.mp), max: Math.min(effect.mp, ally.maxMp - ally.mp), affinity: 'normal' });
+    }
     if (effect.kind === 'damage') {
       const enemies = r.def.target === 'enemy' && target?.kind === 'enemy' ? [findEnemy(s, target.id)!] : livingEnemies(s);
       for (const enemy of enemies) {
@@ -1261,8 +1324,10 @@ export interface BattleResult {
   brokenParts: { enemyId: string; enemyName: string; partId: string; partName: string; material: string }[];
   /** 倒した敵が落とした素材の id */
   drops: string[];
-  /** 仲間ごとの行動の回数（防御は数えない。連携技は参加した2人とも数える） */
+  /** 仲間ごとの行動の回数（防御とポーチは数えない。連携技は参加した2人とも数える） */
   actionCounts: Record<string, number>;
+  /** ポーチの消費アイテムごとの、使った数（段階51。使っていない物は書かない） */
+  pouchUsed: Record<string, number>;
 }
 
 export function getBattleResult(s: BattleState): BattleResult {
@@ -1275,13 +1340,14 @@ export function getBattleResult(s: BattleState): BattleResult {
     ),
     drops: s.enemies.flatMap((e) => e.dropped),
     actionCounts: countActions(s),
+    pouchUsed: Object.fromEntries(s.pouch.filter((p) => p.used > 0).map((p) => [p.item.id, p.used])),
   };
 }
 
 function countActions(s: BattleState): Record<string, number> {
   const out: Record<string, number> = Object.fromEntries(s.allies.map((a) => [a.uid, 0]));
   for (const e of s.log) {
-    if (e.type !== 'action' || e.actionId === GUARD.id) continue;
+    if (e.type !== 'action' || e.actionId === GUARD.id || s.pouch.some((p) => p.item.id === e.actionId)) continue;
     for (const id of e.actorIds) if (id in out) out[id]++;
   }
   return out;

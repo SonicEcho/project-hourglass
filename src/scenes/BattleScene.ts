@@ -25,6 +25,7 @@ import {
   passBaton,
   planOf,
   planPool,
+  pouchFrom,
   previewAction,
   resolveSearch,
   setPlan,
@@ -35,6 +36,8 @@ import {
   basicAttackFor,
   boardColorCells,
   recordVictory,
+  capItems,
+  spendItems,
   weaponLevel,
   weaponName,
   keepVitals,
@@ -42,7 +45,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
@@ -64,6 +67,7 @@ type Pending =
   | { source: 'link'; linkId: string }
   | { source: 'combo'; comboId: string }
   | { source: 'support'; cardUid: number }
+  | { source: 'item'; itemId: string }
   | { source: 'baton' };
 
 interface Selection {
@@ -158,7 +162,9 @@ export class BattleScene extends Phaser.Scene {
     const vitals = areaBattle ? (data.encounter?.hunt ? run.hunt?.state.vitals : run.explore?.vitals) : undefined;
     // 探索から来た戦闘は、編集したアルバムで戦う（段階41。試作の5戦は最初のアルバム）
     const deck = areaBattle ? albumDeck(run.album, CARDS) : undefined;
-    this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup), deck), vitals });
+    // ポーチ（段階51）：持っている消費アイテムを持ち込む（使った分は、戦闘の終わりに減らす）
+    const pouch = pouchFrom(POUCH_ITEMS, POUCH_ORDER, run.armory.items);
+    this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup), deck), vitals, pouch });
     // 探索から来た戦闘は、章の中で貯めたつながりゲージを引き継いで始める（段階26の調整3）
     if (areaBattle && this.state.links.length > 0) this.state = { ...this.state, linkGauge: storyLinkGauge() };
     logEvents(this.state.log);
@@ -652,6 +658,12 @@ export class BattleScene extends Phaser.Scene {
         if (!this.skipping) playSe(this, SE.heal);
         return true;
       }
+      case 'mpRestore': {
+        const p = unitPosition(s, e.targetId);
+        this.popup(p.x, p.y, `MP +${e.amount}`, '#8fc8ff', 22);
+        if (!this.skipping) playSe(this, SE.heal);
+        return true;
+      }
       case 'passiveHp': {
         const p = unitPosition(s, e.allyId);
         if (e.source === 'bug') this.popup(p.x, p.y, `狂い ${e.amount}`, COLORS.allyDamage, 18);
@@ -685,7 +697,7 @@ export class BattleScene extends Phaser.Scene {
       }
       case 'cancel': {
         const p = unitPosition(s, e.actorIds[0]);
-        this.popup(p.x, p.y, e.reason === 'dead' ? '行動できない' : 'MPが足りない', COLORS.subText, 14);
+        this.popup(p.x, p.y, e.reason === 'dead' ? '行動できない' : e.reason === 'target' ? '相手が倒れていた' : 'MPが足りない', COLORS.subText, 14);
         return true;
       }
       case 'charge': {
@@ -839,6 +851,8 @@ export class BattleScene extends Phaser.Scene {
         return s.links.find((l) => l.id === p.linkId);
       case 'combo':
         return s.combos.find((c) => c.id === p.comboId);
+      case 'item':
+        return s.pouch.find((x) => x.item.id === p.itemId)?.item;
       case 'baton':
         return undefined;
     }
@@ -876,6 +890,8 @@ export class BattleScene extends Phaser.Scene {
         return { type: 'link', linkId: p.linkId };
       case 'combo':
         return { type: 'combo', comboId: p.comboId, target: sel.target };
+      case 'item':
+        return { type: 'item', itemId: p.itemId, target: sel.target as TargetRef };
     }
   }
 
@@ -972,7 +988,7 @@ export class BattleScene extends Phaser.Scene {
         const part = unit.parts.find((x) => x.id === t.partId);
         return `${part?.name ?? ''} ${range(t.partMin!, t.partMax!)}／本体 ${range(t.min, t.max)}${tag}`;
       }
-      return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : ''}${range(t.min, t.max)}${tag}`;
+      return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : t.kind === 'mp' ? 'MP回復' : ''}${range(t.min, t.max)}${tag}`;
     });
     if (merged.length > 3) parts.push('…');
     const order = p.orderIndex >= 0 ? `行動順 ${p.orderIndex + 1}番目` : '';
@@ -1127,6 +1143,7 @@ export class BattleScene extends Phaser.Scene {
         }
         this.select({ source: kind }, true);
       },
+      tapItem: (itemId) => this.select({ source: 'item', itemId }, true),
       tapDiscard: (uid) => {
         if (!this.selection) return;
         this.selection.pickCardUid = uid;
@@ -1198,6 +1215,8 @@ export class BattleScene extends Phaser.Scene {
         return `連携：${s.links.find((l) => l.id === action.linkId)?.name ?? ''}`;
       case 'combo':
         return `${s.combos.find((c) => c.id === action.comboId)?.name ?? ''}${to}`;
+      case 'item':
+        return `${s.pouch.find((p) => p.item.id === action.itemId)?.item.name ?? 'ポーチ'}${to}`;
     }
   }
 
@@ -1244,6 +1263,7 @@ export class BattleScene extends Phaser.Scene {
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
+      selectedItemId: sel?.pending.source === 'item' ? sel.pending.itemId : undefined,
       skillPage: actor && this.skillPage.actorId === actor.uid ? this.skillPage.page : 0,
       selectedComboId: sel?.pending.source === 'combo' ? sel.pending.comboId : undefined,
       selectedLinkId: sel?.pending.source === 'link' ? sel.pending.linkId : undefined,
@@ -1306,6 +1326,12 @@ export class BattleScene extends Phaser.Scene {
   /** 勝敗がついた時。戦闘1の勝利ならボス戦へ、それ以外は結果画面へ */
   private showEnd(): void {
     this.closeOverlay();
+    // ポーチ（段階51）：使った消費アイテムは、勝っても負けても減る
+    const used = getBattleResult(this.state).pouchUsed;
+    if (Object.keys(used).length > 0) {
+      run.armory = spendItems(run.armory, used);
+      saveRun();
+    }
     const c = this.add.container(0, 0).setDepth(300);
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive();
     const win = this.state.outcome === 'victory';
@@ -1344,13 +1370,16 @@ export class BattleScene extends Phaser.Scene {
         colorCells: Object.fromEntries(members.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
         items: [...result.drops, ...(def.item ? [def.item] : [])],
       });
+      // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51）
+      const capped = capItems(WEAPON_DATA, run.armory);
+      run.armory = capped.armory;
       const levelUps = members.filter((p) => weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp) > levelsBefore[p.id]).map(
         (p) => `${weaponName(WEAPON_DATA, run.armory.weapons[p.id])} Lv${weaponLevel(WEAPON_DATA, run.armory.weapons[p.id].exp)}`,
       );
       // 「星図へ」を押す前に閉じても消えないように
       saveRun();
       const reward = def.item;
-      const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${reward ? `　アイテム：${summarizeItems([reward])}` : ''}`;
+      const dropText = `素材：${result.drops.length > 0 ? summarizeItems(result.drops) : 'なし'}${reward ? `　アイテム：${summarizeItems([reward])}` : ''}${fullText(capped.overflow)}`;
       const nextBattle = battleAt(run.progress);
       c.add(
         addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}${levelUps.length > 0 ? `\nレベルアップ：${levelUps.join('、')}` : ''}${hasReward ? `\nギアを${NAVI_REWARD_PICKS}つ選べる` : ''}\n次は${nextBattle.name}`, {
@@ -1412,6 +1441,9 @@ export class BattleScene extends Phaser.Scene {
       items: [...result.drops, ...(prize ? [prize] : [])],
       expRate: rate,
     });
+    // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51）
+    const capped = capItems(WEAPON_DATA, run.armory);
+    run.armory = capped.armory;
     // 区画のボスのスナップ（段階41）
     const snaps = enc.hunt ? [] : (def.snaps ?? []);
     if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
@@ -1422,7 +1454,7 @@ export class BattleScene extends Phaser.Scene {
     const counts = new Map<string, number>();
     for (const d of drops) counts.set(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`, (counts.get(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`) ?? 0) + 1);
     const dropList = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
-    const dropText = `素材：${dropList || 'なし'}${prize ? `　アイテム：${summarizeItems([prize])}` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
+    const dropText = `素材：${dropList || 'なし'}${prize ? `　アイテム：${summarizeItems([prize])}` : ''}${fullText(capped.overflow)}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
     if (drops.some((d) => d.kind === 'rare')) {
       const rare = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, '★ レア！', { size: 30, bold: true, color: COLORS.accentText }).setOrigin(0.5);
       rare.setStroke('#5a3a00', 6);
@@ -1448,6 +1480,11 @@ function summarizeItems(ids: string[]): string {
   const counts = new Map<string, number>();
   for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
   return [...counts].map(([id, n]) => `${WEAPON_DATA.items[id]?.name ?? id}${n > 1 ? `×${n}` : ''}`).join('、');
+}
+
+/** ポーチがいっぱいで入らなかった消費アイテム（段階51）。なければ空 */
+function fullText(overflow: string[]): string {
+  return overflow.length > 0 ? `\n（ポーチがいっぱい：${summarizeItems(overflow)}は入らなかった）` : '';
 }
 
 /** デバッグ用に、出来事をコンソールへ出す（?debug=1 なら eruda で見られる） */

@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addKoma, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
-import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
+import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -130,9 +130,16 @@ export function installDebugMenu(nav: DebugNavigator): void {
     panel.append(
       button('素材とアイテムを全種類2つずつもらう', () => {
         const ids = Object.keys(ITEMS);
-        run.armory = addItems(run.armory, [...ids, ...ids]);
+        run.armory = capItems(WEAPON_DATA, addItems(run.armory, [...ids, ...ids])).armory;
         nav.refreshGrowth();
         notify('素材とアイテムを全種類2つずつもらいました');
+      }),
+    );
+    panel.append(
+      // 段階51：ポーチの消費アイテムを、持てる数まで（次に始める戦闘から使える）
+      button('ポーチを満タンにする', () => {
+        run.armory = capItems(WEAPON_DATA, addItems(run.armory, POUCH_ORDER.flatMap((id) => Array.from({ length: POUCH_MAX }, () => id)))).armory;
+        notify(`ポーチを満タンにしました（1種類${POUCH_MAX}個。次に始める戦闘から使える）`);
       }),
     );
     panel.append(

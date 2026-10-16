@@ -37,6 +37,8 @@ export function describeEffect(effect: Effect, scope: TargetScope): string {
       return '選んだ仲間のこのラウンドの行動が最初に来る';
     case 'encore':
       return 'このラウンドに最後に使われたスナップを、同じ相手にもう一度使う（まだ誰も使っていなければ不発）';
+    case 'restore':
+      return [effect.hp ? `HP を${effect.hp}回復` : '', effect.mp ? `MP を${effect.mp}回復` : ''].filter(Boolean).join('・') + `（${SCOPE_LABEL[scope]}）`;
   }
 }
 

@@ -445,7 +445,8 @@ export class WeaponScene extends Phaser.Scene {
 
   /** 下の段：「素材」（吸わせる・時分解）と「記憶の欠片」（吸わせる。枠を使わない）の2つのタブ（段階27b） */
   private drawInventory(): void {
-    const itemTotal = Object.values(run.armory.items).reduce((a, n) => a + n, 0);
+    // ポーチの消費アイテム（段階51）は素材の一覧に出さない（吸わせられず、時分解もできない）
+    const itemTotal = Object.entries(run.armory.items).reduce((a, [id, n]) => a + (D.items[id]?.kind === 'material' ? n : 0), 0);
     const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
     const tabW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
     (['items', 'fragments'] as const).forEach((tab, i) => {
@@ -474,7 +475,7 @@ export class WeaponScene extends Phaser.Scene {
 
     const isItems = this.tab === 'items';
     // 素材は持っているものだけ（多い時はページを切り替える）。記憶の欠片は4種類とも出す
-    const ids = isItems ? Object.keys(ITEMS).filter((id) => (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
+    const ids = isItems ? Object.keys(ITEMS).filter((id) => D.items[id]?.kind === 'material' && (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
     const recommended = isItems ? recommendedItems(this.weapon()) : new Set<string>();
     const cols = 4;
     const rows = 3;
@@ -643,7 +644,7 @@ function keyItems(w: WeaponState): Set<string> {
 function itemDetail(itemId: string): string {
   const it = D.items[itemId];
   return [
-    it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : '通常アイテム（今は戦闘で使えない。時分解して記憶の欠片にする）',
+    it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : 'ポーチの消費アイテム（戦闘の「その他」から使う）',
     it.kind === 'material' ? `吸わせると：${describeGains(it.gains)}（吸わせ枠を1つ使う）` : '',
     `時分解すると：${describeDecompose(D, it)}`,
     '',

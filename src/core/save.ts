@@ -14,7 +14,7 @@ import type { Progress, Story } from './progress';
 import type { CardDef } from './types';
 import { findBattle, normalizeProgress } from './progress';
 import type { ArmoryState, EvolutionStep, WeaponData, WeaponParams, WeaponState } from './weapon';
-import { createArmory, naviDataWithWeapons } from './weapon';
+import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 
 // セーブと中断・再開（段階11）。Phaser にもブラウザの保存にも依存しない。
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
@@ -226,7 +226,8 @@ function sanitizeArmory(raw: Record<string, unknown>, data: WeaponData): ArmoryS
     const w = raw.weapons[owner];
     weapons[owner] = isObject(w) && w.defId === base.defId ? sanitizeWeapon(w, base, data) : base;
   }
-  return { weapons, items: countsOf(raw.items, data.items), fragments: countsOf(raw.fragments, data.fragments) };
+  // ポーチの消費アイテムは持てる数にそろえる（段階51より前のセーブは、いくつでも持てた）
+  return capItems(data, { weapons, items: countsOf(raw.items, data.items), fragments: countsOf(raw.fragments, data.fragments) }).armory;
 }
 
 function sanitizeWeapon(raw: Record<string, unknown>, base: WeaponState, data: WeaponData): WeaponState {

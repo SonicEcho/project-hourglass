@@ -16,6 +16,7 @@ export * from './growthMap';
 export * from './campaign';
 export * from './navi';
 export * from './weapons';
+export * from './pouch';
 export * from './story';
 export * from './daily';
 export * from './areas';

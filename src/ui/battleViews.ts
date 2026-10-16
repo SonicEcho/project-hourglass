@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
-import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, skillMpCost } from '../core';
+import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
 import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, CARD_NAME_LINES, CARDS, FACE_CROP, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
@@ -44,6 +44,8 @@ export interface ViewModel {
   scope: TargetScope | null;
   selectedCardUid?: number;
   selectedSkillId?: string;
+  /** 選んでいるポーチの消費アイテム（段階51） */
+  selectedItemId?: string;
   /** 魔法・スキルの一覧のページ（技が多い時） */
   skillPage: number;
   selectedComboId?: string;
@@ -76,6 +78,8 @@ export interface ViewHandlers {
   tapCard(uid: number): void;
   tapCombo(id: string): void;
   tapSkill(id: string): void;
+  /** ポーチの消費アイテムを選ぶ（段階51） */
+  tapItem(itemId: string): void;
   /** 魔法・スキルの一覧の次のページ */
   nextSkillPage(): void;
   tapBasic(kind: 'attack' | 'guard' | 'decline'): void;
@@ -710,24 +714,42 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
 function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   panelBackground(scene, root, 'その他');
   const { y } = LAYOUT.hand;
+  const left = SIDE_PADDING + 8;
+  const width = GAME_WIDTH - SIDE_PADDING * 2 - 16;
+  const gap = 5;
+  // 1段目：通常攻撃・防御（追加行動の時は「見送る」も）。長押しで説明
+  const basics: { kind: 'attack' | 'guard' | 'decline'; label: string; title: string; detail: string }[] = [vm.actor ? basicAttackFor(vm.actor) : BASIC_ATTACK, GUARD].map((def) =>
+    def.id === 'guard'
+      ? { kind: 'guard' as const, label: '防御\n受けるダメージ半減', title: '防御', detail: 'このラウンドの間、受けるダメージ半減。行動の速さに関係なく、ラウンドの最初に効く。ラウンドの終わりに解ける。' }
+      : { kind: 'attack' as const, label: `${def.name}\n${weightLabel(def.weight)}`, title: def.name, detail: `${describeAction(def)}\n\n${weightHelp(def.weight, vm.actor)}` },
+  );
+  if (vm.state.phase === 'extra') basics.push({ kind: 'decline', label: '追加行動を\n見送る', title: '追加行動を見送る', detail: '追加行動をしないで、ラウンドの残りを続ける。' });
+  const bw = (width - gap * (basics.length - 1)) / basics.length;
   const rowH = 44;
-  const items: { kind: 'attack' | 'guard' | 'decline'; label: string; detail: string }[] = [vm.actor ? basicAttackFor(vm.actor) : BASIC_ATTACK, GUARD].map((def) => ({
-    kind: def.id === 'guard' ? ('guard' as const) : ('attack' as const),
-    label: def.id === 'guard' ? '防御　このラウンドの間、受けるダメージ半減（最初に効く）' : `${def.name}　${describeAction(def)}　${weightLabel(def.weight)}`,
-    detail: def.id === 'guard' ? '行動の速さに関係なく、ラウンドの最初に効く。ラウンドの終わりに解ける。' : `${describeAction(def)}\n\n${weightHelp(def.weight, vm.actor)}`,
-  }));
-  if (vm.state.phase === 'extra') items.push({ kind: 'decline', label: '追加行動を見送る', detail: '追加行動をしないで、ラウンドの残りを続ける。' });
-  items.forEach((item, i) => {
+  basics.forEach((b, i) => {
+    addButton(scene, root, left + bw / 2 + i * (bw + gap), y + 24 + rowH / 2, bw, rowH, b.label, { onTap: () => h.tapBasic(b.kind), onLongPress: () => h.detail(b.title, b.detail) }, { enabled: vm.interactive, size: 12 });
+  });
+  // 2段目：ポーチ（段階51）。残りの数と、この戦闘で使える残りの回数
+  const top = y + 24 + rowH + 8;
+  const pouch = vm.state.pouch;
+  const except = vm.actor && vm.state.phase === 'plan' ? [vm.actor.uid, ...(planOf(vm.state, vm.actor.uid)?.actorIds ?? [])] : [];
+  const uses = pouch.length > 0 ? pouchLeft(vm.state, pouch[0].item.id, except).uses : vm.state.pouchUsesLeft;
+  root.add(addText(scene, left, top, pouch.length > 0 ? `ポーチ（この戦闘で、あと${uses}回使える）` : 'ポーチは空（宝箱や勝利で手に入る）', { size: 11, color: COLORS.subText }));
+  if (pouch.length === 0) return;
+  const pw = (width - gap * 2) / 3;
+  pouch.forEach((p, i) => {
+    const left2 = pouchLeft(vm.state, p.item.id, except);
+    const selected = vm.selectedItemId === p.item.id;
     addButton(
       scene,
       root,
-      GAME_WIDTH / 2,
-      y + 24 + rowH / 2 + i * (rowH + 5),
-      GAME_WIDTH - SIDE_PADDING * 2 - 16,
+      left + pw / 2 + i * (pw + gap),
+      top + 20 + rowH / 2,
+      pw,
       rowH,
-      item.label,
-      { onTap: () => h.tapBasic(item.kind), onLongPress: () => h.detail(item.label.split('　')[0], item.detail) },
-      { enabled: vm.interactive, size: 12 },
+      `${p.item.name}\n残り${left2.count}`,
+      { onTap: () => h.tapItem(p.item.id), onLongPress: () => h.detail(p.item.name, `${describeAction(p.item)}\n\n手番を1つ使う。1つの戦闘で使えるのは${vm.state.pouchUsesLeft + pouch.reduce((n, x) => n + x.used, 0)}回まで。倒れた仲間には使えない。`) },
+      { enabled: vm.interactive && left2.count > 0 && left2.uses > 0, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: 11 },
     );
   });
 }

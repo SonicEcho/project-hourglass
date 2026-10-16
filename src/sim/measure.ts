@@ -84,6 +84,8 @@ export interface AreaMeasureResult {
   /** ボスまで進めた回の、仲間ごとの進化の回数と武器のレベルの合計（段階42） */
   weaponTotals: Record<string, { evolutions: number; level: number }>;
   bossReached: number;
+  /** 1回の区画で使ったポーチの平均の数の合計（段階51） */
+  pouchUsedTotal: number;
 }
 
 /** 測る区画と、先に通す区画（段階37。1-2 は 1-1 を通した後の育ち具合から） */
@@ -121,12 +123,14 @@ export function measureArea(runs: number, seed: number, policy: AreaPolicy, area
       t.level += w.level;
     }
   }
-  return { runs, seed, policy, area: areaId, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached, weaponTotals };
+  const pouchUsedTotal = records.reduce((a, r) => a + r.pouchUsed, 0);
+  return { runs, seed, policy, area: areaId, cleared: records.filter((r) => r.cleared).length, stages, evolvedRuns, bossReached, weaponTotals, pouchUsedTotal };
 }
 
 const POLICY_LABEL: Record<AreaPolicy, string> = {
   random: '手はほぼでたらめ',
   smart: '弱点をねらう（弱点を突く、弱点が隠れた部位を先に壊す、ためには防御、連携技は体勢が崩れた敵がいる時）',
+  pouch: '弱点をねらう＋ポーチを使う（HP が3割を切った仲間にポーション、MP がない仲間にエーテル）',
 };
 
 export function formatAreaMeasure(m: AreaMeasureResult): string {
@@ -137,7 +141,7 @@ export function formatAreaMeasure(m: AreaMeasureResult): string {
     '| --- | ---: | ---: | ---: | ---: | ---: |',
     ...m.stages.map((s) => `| ${s.name} | ${s.reached} | ${pct(s.firstTryWins, s.reached)} | ${avg(s.roundsTotal, s.wins)} | ${avg(s.retriesTotal, s.wins)} | ${s.wins === 0 ? '-' : (s.linksTotal / s.wins).toFixed(2)} |`),
     '',
-    `ボスまで勝ち切れた割合：${pct(m.cleared, m.runs)}。ボスの前に1人以上進化できた割合：${pct(m.evolvedRuns, m.bossReached)}`,
+    `ボスまで勝ち切れた割合：${pct(m.cleared, m.runs)}。ボスの前に1人以上進化できた割合：${pct(m.evolvedRuns, m.bossReached)}${m.policy === 'pouch' ? `。区画で使ったポーチ（平均）：${avg(m.pouchUsedTotal, m.runs)}個` : ''}`,
     `ボスの前の武器（平均。進化の回数／レベル）：${Object.entries(m.weaponTotals)
       .map(([id, t]) => `${PARTY.find((c) => c.id === id)?.name ?? id} ${avg(t.evolutions, m.bossReached)}回／Lv${avg(t.level, m.bossReached)}`)
       .join('、')}`,

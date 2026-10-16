@@ -1,6 +1,9 @@
 import type { ArmoryState, BattleState, CharacterDef, GrowthState, Lineup, NaviState, Vitals } from '../core';
 import {
   addItems,
+  capItems,
+  pouchFrom,
+  spendItems,
   addParts,
   applyNavi,
   boardColorCells,
@@ -23,7 +26,7 @@ import {
   vitalsAfter,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, GROWTH_MAP, NAVI_DATA, PART_BREAK_POINTS, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, GROWTH_MAP, NAVI_DATA, PART_BREAK_POINTS, PARTY, POUCH_ITEMS, POUCH_ORDER, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 import { autoUseArmory } from './autoArmory';
 import { autoPlay, lcg, smartPlay } from './autoBattle';
 import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
@@ -42,8 +45,8 @@ import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
  */
 const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2, a22: 2, a23: 2 };
 
-/** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay） */
-export type AreaPolicy = 'random' | 'smart';
+/** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay）、pouch（smart に、ポーチを使うのを足す。段階51） */
+export type AreaPolicy = 'random' | 'smart' | 'pouch';
 
 export interface AreaRunRecord {
   seed: number;
@@ -55,6 +58,8 @@ export interface AreaRunRecord {
   evolvedBeforeBoss: number;
   /** ボスの前の、仲間ごとの進化の回数と武器のレベル（段階42） */
   weaponsBeforeBoss: Record<string, { evolutions: number; level: number }>;
+  /** この区画で使ったポーチの数（段階51。pouch の方針だけ） */
+  pouchUsed: number;
 }
 
 /** 区画の戦闘を出会う順に（敵の印の並び → ボス） */
@@ -103,6 +108,7 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
   const links: number[] = [];
   let evolvedBeforeBoss = 0;
   let weaponsBeforeBoss: AreaRunRecord['weaponsBeforeBoss'] = {};
+  let pouchUsed = 0;
   const battles = areaBattleOrder(areaId);
   const checkpointFrom = CHECKPOINT_FROM[areaId] ?? 0;
   // 章の区切り（段階49）：星図は、まだ来ていない章の区域を開けない
@@ -110,7 +116,7 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
   for (let i = 0; i < battles.length; i++) {
     const def = battles[i];
     // 宝箱は最初の戦闘の後に開ける
-    if (i === 1) carry.armory = addItems(carry.armory, area.chests.flatMap((c) => c.items));
+    if (i === 1) carry.armory = capItems(WEAPON_DATA, addItems(carry.armory, area.chests.flatMap((c) => c.items))).armory;
     carry.growth = spendPoints(carry.growth, members, pick, chapter);
     carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick);
     if (navi) carry.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory), carry.navi);
@@ -125,8 +131,13 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const battleSeed = (seed + i + attempt * 100) >>> 0;
-      const start: BattleState = { ...createBattle({ ...createCampaignSetup(def, battleSeed, allies), vitals: attempt === 0 ? vitals : undefined }), linkGauge: carry.gauge };
-      const s = policy === 'smart' ? smartPlay(start, battleSeed) : autoPlay(start, battleSeed);
+      const pouch = policy === 'pouch' ? pouchFrom(POUCH_ITEMS, POUCH_ORDER, carry.armory.items) : [];
+      const start: BattleState = { ...createBattle({ ...createCampaignSetup(def, battleSeed, allies), vitals: attempt === 0 ? vitals : undefined, pouch }), linkGauge: carry.gauge };
+      const s = policy === 'random' ? autoPlay(start, battleSeed) : smartPlay(start, battleSeed, { pouch: policy === 'pouch' });
+      // 使ったポーチは、勝っても負けても減る
+      const used = getBattleResult(s).pouchUsed;
+      carry.armory = spendItems(carry.armory, used);
+      pouchUsed += Object.values(used).reduce((a, n) => a + n, 0);
       if (s.outcome !== 'victory') continue;
       record = { attempts: attempt + 1, won: true, rounds: s.round };
       links.push(s.log.filter((e) => e.type === 'action' && s.links.some((l) => l.id === e.actionId)).length);
@@ -136,13 +147,13 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
       carry.growth = { ...carry.growth, points: carry.growth.points + battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS) };
       const naviData = naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory);
       const colorCells = navi ? Object.fromEntries(members.map((c) => [c.id, boardColorCells(naviData, carry.navi, c.id)])) : {};
-      carry.armory = recordVictory(carry.armory, { actions: result.actionCounts, colorCells, items: [...result.drops, ...(def.item ? [def.item] : [])] });
+      carry.armory = capItems(WEAPON_DATA, recordVictory(carry.armory, { actions: result.actionCounts, colorCells, items: [...result.drops, ...(def.item ? [def.item] : [])] })).armory;
       break;
     }
     stages.push(record);
-    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss, weaponsBeforeBoss };
+    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss, weaponsBeforeBoss, pouchUsed };
   }
-  return { seed, stages, cleared: true, links, evolvedBeforeBoss, weaponsBeforeBoss };
+  return { seed, stages, cleared: true, links, evolvedBeforeBoss, weaponsBeforeBoss, pouchUsed };
 }
 
 function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[], navi: NaviState | null): CharacterDef[] {

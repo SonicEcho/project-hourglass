@@ -54,7 +54,9 @@ export type Effect =
   /** 選んだ仲間のこのラウンドの行動を、最初に実行する */
   | { kind: 'precede' }
   /** アンコール（段階41）：このラウンドに最後に使われたスナップを、同じ相手にもう一度（使う人の能力値で） */
-  | { kind: 'encore' };
+  | { kind: 'encore' }
+  /** ポーチの消費アイテム（段階51）：決まった量の HP・MP を戻す（魔力やバトンの割増しに関係しない） */
+  | { kind: 'restore'; hp?: number; mp?: number };
 
 /** 味方の行動（スナップ、魔法・スキル、基本行動、連携技）の共通定義 */
 export interface ActionDef {
@@ -201,6 +203,19 @@ export interface BattleSetup {
   vitals?: Record<string, Vitals>;
   /** 負け戦（段階40）：決まったラウンドか、敵の HP が決まった割合を切った所で打ち切る */
   cutoff?: BattleCutoff;
+  /** ポーチ（段階51）：持ち込む消費アイテムと数。書かなければ空 */
+  pouch?: PouchStock[];
+  /** ポーチを1つの戦闘で使える回数（書かなければ data の POUCH_USES_PER_BATTLE） */
+  pouchUses?: number;
+}
+
+/** ポーチの消費アイテム1種類（段階51）。item は使った時の行動（効き目は restore） */
+export interface PouchStock {
+  item: ActionDef;
+  /** 残りの数 */
+  count: number;
+  /** この戦闘で使った数 */
+  used: number;
 }
 
 /**
@@ -333,7 +348,8 @@ export type LogEvent =
   /** actorIds: 行動した者（連携技は2人）。extra: 延長・バトンの追加行動 */
   | { type: 'action'; actorIds: string[]; actionId: string; name: string; extra: boolean }
   /** 自分の番が来る前に倒れた、MPが足りないなどで行動できなかった */
-  | { type: 'cancel'; actorIds: string[]; reason: 'dead' | 'mp' }
+  /** target：ポーチの消費アイテムを使う相手が、番が来る前に倒れた（使わずに残る。段階51） */
+  | { type: 'cancel'; actorIds: string[]; reason: 'dead' | 'mp' | 'target' }
   | { type: 'support'; cardUid: number; name: string; targetId?: string }
   | { type: 'search'; shownUids: number[]; pickedUid: number }
   | {
@@ -347,6 +363,8 @@ export type LogEvent =
       hpAfter: number;
     }
   | { type: 'heal'; sourceId: string; targetId: string; amount: number; hpAfter: number }
+  /** MP が戻った（ポーチのエーテル。段階51） */
+  | { type: 'mpRestore'; sourceId: string; targetId: string; amount: number; mpAfter: number }
   | { type: 'weaknessFound'; enemyId: string; element: Element }
   | { type: 'down'; enemyId: string }
   | { type: 'standUp'; enemyId: string }
@@ -405,6 +423,10 @@ export interface BattleState {
   linkGauge: number;
   /** 負け戦の打ち切り（段階40） */
   cutoff?: BattleCutoff;
+  /** ポーチ（段階51） */
+  pouch: PouchStock[];
+  /** ポーチをこの戦闘で使える残りの回数 */
+  pouchUsesLeft: number;
   outcome: Outcome;
   log: LogEvent[];
 }
@@ -419,4 +441,6 @@ export type PlayerAction =
   | { type: 'card'; cardUid: number; target?: TargetRef; pickCardUid?: number }
   | { type: 'skill'; skillId: string; target?: TargetRef; pickCardUid?: number }
   | { type: 'link'; linkId: string }
-  | { type: 'combo'; comboId: string; target?: TargetRef };
+  | { type: 'combo'; comboId: string; target?: TargetRef }
+  /** ポーチの消費アイテムを味方に使う（段階51） */
+  | { type: 'item'; itemId: string; target: TargetRef };

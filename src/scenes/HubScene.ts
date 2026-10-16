@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { areaChapter, eventPassed, hasSpare, huntableAreas, huntRewardRate, isSeen, markSeen, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, SLICE_FLOW } from '../data';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, POUCH_MAX, POUCH_ORDER, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -59,7 +59,10 @@ export class HubScene extends Phaser.Scene {
     const strong = { size: 17, bold: true, fill: 0x2f4f3a, stroke: 0x6fe0a0, strokeWidth: 2 };
     // 狩り
     const hunts = huntableAreas(AREAS, run.returned);
-    addButton(this, root, cx, 190, w, 62, '返した時間へ（狩り）', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
+    addButton(this, root, cx, 180, w, 62, '返した時間へ（狩り）', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
+    // ポーチの中身（段階51）
+    const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}/${POUCH_MAX}`).join('　');
+    root.add(addText(this, cx, 236, `ポーチ：${pouch}`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
     // 育成（今の章で開いているものだけ）
     const unlocks = storyLineup().unlocks;
     const grow: [string, string][] = [];

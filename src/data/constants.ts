@@ -15,6 +15,10 @@ export const ALBUM_COPY_MAX = 4;
 export const ONE_MORE_DRAW = 1;
 /** 1ラウンドにチーム全体で使えるサポートスナップの枚数 */
 export const SUPPORT_PER_ROUND = 1;
+/** ポーチ（段階51）：1種類を持てる数 */
+export const POUCH_MAX = 3;
+/** ポーチ（段階51）：1つの戦闘で使える回数（計画で予約した分も数える） */
+export const POUCH_USES_PER_BATTLE = 3;
 
 /** ダメージの乱数幅 */
 export const RANDOM_MIN = 0.9;
