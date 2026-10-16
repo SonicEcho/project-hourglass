@@ -187,7 +187,7 @@ export class DailyScene extends Phaser.Scene {
   private tapSpot(place: DailyPlace, spot: DailySpot): void {
     if (spot.mark === 'hub') {
       this.cameras.main.fadeOut(250, 0, 0, 0);
-      this.time.delayedCall(260, () => this.scene.start('Hub'));
+      this.time.delayedCall(260, () => this.scene.start('Hub', { seen: undefined }));
       return;
     }
     const state = spotState(this.hub, run.vars, spot);

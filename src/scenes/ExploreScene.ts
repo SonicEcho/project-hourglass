@@ -617,7 +617,7 @@ export class ExploreScene extends Phaser.Scene {
     if (this.leaving) return;
     this.leaving = true;
     run.hunt = null;
-    this.scene.start('Hub');
+    this.scene.start('Hub', { seen: undefined });
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */

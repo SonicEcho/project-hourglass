@@ -1,22 +1,23 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, hasSpare, huntableAreas, huntRewardRate, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW } from '../data';
+import { areaChapter, eventPassed, hasSpare, huntableAreas, huntRewardRate, isSeen, markSeen, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DailyData } from './DailyScene';
+import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
-import { currentEvent, run, setHubReturn, startHunt, storyLineup } from './run';
+import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
 // 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）を1つの画面から開く。交換所（段階52）と落とし物の棚（段階53）の場所もここ。
 // 日も昼の回数も使わない。拠点にいることはセーブしない（閉じたら昼の日常から）
 
 /** 育成の画面から拠点へ戻る時の戻り先（育成の画面の戻るボタンと見出しに使う） */
-const BACK_TO_HUB = { key: 'Hub', data: {}, label: 'レストピアへ戻る', place: 'レストピア（蔵書の棚）' };
+const BACK_TO_HUB = { key: 'Hub', data: { seen: undefined }, label: 'レストピアへ戻る', place: 'レストピア（蔵書の棚）' };
 
 export class HubScene extends Phaser.Scene {
   private overlay?: Phaser.GameObjects.Container;
@@ -25,10 +26,24 @@ export class HubScene extends Phaser.Scene {
     super('Hub');
   }
 
-  create(): void {
+  create(data: { seen?: string } = {}): void {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    enterScreen(this);
     this.overlay = undefined;
+    // 拠点の会話（段階50）：見終えて戻ってきたら覚える。まだ見ていない会話があれば、先に見る
+    if (data.seen) setStoryVars(markSeen(run.vars, data.seen));
+    const pending = HUB_SCENES.find((h) => !isSeen(run.vars, h.scene) && (!h.after || eventPassed(SLICE_FLOW, run.event, h.after)));
+    if (pending) {
+      const talk: DialogueData = {
+        scene: pending.scene,
+        vars: run.vars,
+        seed: run.seed,
+        next: { key: 'Hub', data: { seen: pending.scene } },
+        onVars: (vars) => setStoryVars(vars),
+      };
+      this.scene.start('Dialogue', talk);
+      return;
+    }
+    enterScreen(this);
     // 育成の画面から戻ってきた（または昼から来た）ので、育成の戻り先は忘れる
     setHubReturn(null);
     stopAmbience();
@@ -78,7 +93,7 @@ export class HubScene extends Phaser.Scene {
   /** 育成の画面を開く。閉じると拠点に戻る */
   private openGrowth(key: string): void {
     if (this.overlay) return;
-    setHubReturn(BACK_TO_HUB);
+    setHubReturn({ ...BACK_TO_HUB, data: { seen: undefined } });
     this.scene.start(key);
   }
 

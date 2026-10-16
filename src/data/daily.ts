@@ -52,6 +52,17 @@ export const HUB_SPOT: { place: string; spot: DailySpot } = {
   spot: { id: 'restopia', label: '時計屋の奥へ（レストピア）', mark: 'hub', x: 195, y: 660 },
 };
 
+/**
+ * 拠点に入った時に、まだ見ていなければ先に見せる会話（段階50）。after は、その出来事より後の時だけ。
+ * 見たかどうかは、日常の印と同じく物語で覚えた値（見た:場面の id）に入れる
+ */
+export const HUB_SCENES: { scene: string; after?: string }[] = [
+  // 初めて拠点に入った時：自分たちの記憶の棚
+  { scene: 'hub_intro' },
+  // 2-3「最後の打席」を持ち去られた後：取り返してから入ると決める
+  { scene: 'hub_taken', after: 'd7_taken' },
+];
+
 /** 昼に選べる回数（段階35。docs/milestones/M2.md の「決まったこと」） */
 export const DAILY_PICKS = 2;
 

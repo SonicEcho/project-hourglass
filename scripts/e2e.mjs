@@ -284,6 +284,13 @@ try {
   await tap('^時計屋$');
   await until('拠点の印', () => findText('^時計屋の奥へ（レストピア）$'));
   await tapAt(195, 660);
+  // 初めて入ると、拠点の会話（自分たちの記憶の棚）を先に見る。デバッグ中は早送りで最後まで進む
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Hub'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
   await waitScene('Hub');
   await skipTips();
   // 拠点から星図を開き、「レストピアへ戻る」で拠点に戻る
