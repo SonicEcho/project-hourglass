@@ -153,6 +153,8 @@ export const CAST: Record<string, CastMember> = {
     height: YOUNG_HEIGHT,
     voice: { pitch: 500, wave: 'square' },
   },
+  // 交換所の番人（段階52）。時間保管局の取引の窓口の係。立ち絵はまだない（名前と色の札で出す）
+  ペトラ: { faces: names('通常', '笑顔', '困り', '驚き', '真剣'), firstFace: '通常', color: 0x6a7f9a, voice: { pitch: 520, wave: 'triangle' } },
   ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
   写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },

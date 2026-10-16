@@ -13,7 +13,7 @@ import type { ExploreData } from './ExploreScene';
 import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
-// 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）を1つの画面から開く。交換所（段階52）と落とし物の棚（段階53）の場所もここ。
+// 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）の場所もここ。
 // 日も昼の回数も使わない。拠点にいることはセーブしない（閉じたら昼の日常から）
 
 /** 育成の画面から拠点へ戻る時の戻り先（育成の画面の戻るボタンと見出しに使う） */
@@ -85,8 +85,8 @@ export class HubScene extends Phaser.Scene {
       });
     });
     const below = 290 + Math.ceil(grow.length / Math.max(1, per)) * 64 + 30;
-    // 交換所と落とし物の棚（段階52・53で作る）
-    addButton(this, root, cx, below + 20, w, 54, '交換所（準備中）', {}, { size: 15, enabled: false });
+    // 交換所（段階52）と落とし物の棚（段階53で作る）
+    addButton(this, root, cx, below + 20, w, 54, '交換所', { onTap: () => this.openExchange() }, { size: 15, bold: true, fill: 0x24384a, stroke: 0x6bc8ff, strokeWidth: 2 });
     addButton(this, root, cx, below + 84, w, 54, '落とし物の棚（準備中）', {}, { size: 15, enabled: false });
     // 昼へ戻る
     addButton(this, root, cx, 780, w, 56, '時計屋へ戻る', { onTap: () => this.leave() }, { size: 17, bold: true });
@@ -98,6 +98,12 @@ export class HubScene extends Phaser.Scene {
     if (this.overlay) return;
     setHubReturn({ ...BACK_TO_HUB, data: { seen: undefined } });
     this.scene.start(key);
+  }
+
+  /** 交換所を開く（段階52。初めてなら、ペトラの会話から） */
+  private openExchange(): void {
+    if (this.overlay) return;
+    this.scene.start('Exchange', { seen: undefined });
   }
 
   /** 昼の時計屋へ戻る（昼の日常の途中でなければ、物語の流れへ） */

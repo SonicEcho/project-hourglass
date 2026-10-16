@@ -322,6 +322,29 @@ try {
   await skipTips();
   await tap('^レストピアへ戻る$');
   await waitScene('Hub');
+  // 交換所（段階52）：初めてはペトラの会話。ポーチが満タンならポーションは交換できず、ギアは欠片で1回だけ交換できる
+  await tap('^交換所$');
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Exchange'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Exchange');
+  await debugButton('記憶の欠片を10個ずつもらう');
+  await closeDebugMenu();
+  await tap('^ポーチ$');
+  await until('欠片が40', () => findText('^記憶の欠片 4\\d'));
+  await tap('^ポーション　欠片 1');
+  await until('満タンの案内', () => findText('ポーチがいっぱい'));
+  await tap('^ギア$');
+  await tap('^MPメモリ　欠片 10');
+  await tap('^交換する$');
+  await until('交換した印', () => findText('^MPメモリ　欠片 10\\n交換した$'));
+  await tap('^MPメモリ　欠片 10');
+  await until('2回目はできない', () => findText('もう交換した'));
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
   await tap('^返した時間へ（狩り）$');
   // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
   await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n星の砂と経験値は半分$'));
