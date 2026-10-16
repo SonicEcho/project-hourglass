@@ -17,13 +17,13 @@ export const BUG_HP_RATE = 0.05;
 const part = <T extends NaviPartDef>(p: T): T => p;
 
 export const NAVI_PARTS = {
-  // 能力値ギア（どこでも効く）。名前は上がる能力値の呼び名＋歯車（2026-10-16 開発者と決めた。「○○メモリ」はナビカスらしさが残るため）
-  hpMemory: part({ id: 'hpMemory', name: 'HPの歯車', color: 'red', cells: ONE, kind: 'stat', stats: { hp: 20 } }),
-  mpMemory: part({ id: 'mpMemory', name: 'MPの歯車', color: 'blue', cells: ONE, kind: 'stat', stats: { mp: 8 } }),
-  powerMemory: part({ id: 'powerMemory', name: '攻撃の歯車', color: 'red', cells: LINE2, kind: 'stat', stats: { atk: 3 } }),
-  magicMemory: part({ id: 'magicMemory', name: '魔力の歯車', color: 'blue', cells: LINE2, kind: 'stat', stats: { mag: 3 } }),
-  guardMemory: part({ id: 'guardMemory', name: '防御の歯車', color: 'green', cells: LINE2, kind: 'stat', stats: { def: 2 } }),
-  speedMemory: part({ id: 'speedMemory', name: '速さの歯車', color: 'yellow', cells: L3, kind: 'stat', stats: { spd: 2 } }),
+  // 能力値ギア（どこでも効く）。名前は上がる能力値＋ギア（2026-10-16 開発者と決めた。「○○メモリ」はナビカスらしさが残るため）
+  hpMemory: part({ id: 'hpMemory', name: 'HPギア', color: 'red', cells: ONE, kind: 'stat', stats: { hp: 20 } }),
+  mpMemory: part({ id: 'mpMemory', name: 'MPギア', color: 'blue', cells: ONE, kind: 'stat', stats: { mp: 8 } }),
+  powerMemory: part({ id: 'powerMemory', name: 'パワーギア', color: 'red', cells: LINE2, kind: 'stat', stats: { atk: 3 } }),
+  magicMemory: part({ id: 'magicMemory', name: 'マジックギア', color: 'blue', cells: LINE2, kind: 'stat', stats: { mag: 3 } }),
+  guardMemory: part({ id: 'guardMemory', name: 'ガードギア', color: 'green', cells: LINE2, kind: 'stat', stats: { def: 2 } }),
+  speedMemory: part({ id: 'speedMemory', name: 'スピードギア', color: 'yellow', cells: L3, kind: 'stat', stats: { spd: 2 } }),
   // 効果ギア（ブリッジに乗っている時だけ効く）
   fireBoost: part({ id: 'fireBoost', name: 'ファイアブースト', color: 'red', cells: L3, kind: 'effect', effect: { kind: 'elementBoost', element: 'fire', rate: 0.25 } }),
   iceBoost: part({ id: 'iceBoost', name: 'アイスブースト', color: 'blue', cells: L3, kind: 'effect', effect: { kind: 'elementBoost', element: 'ice', rate: 0.25 } }),

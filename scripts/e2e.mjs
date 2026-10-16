@@ -365,10 +365,10 @@ try {
   await tap('^ポーション　欠片 1');
   await until('満タンの案内', () => findText('ポーチがいっぱい'));
   await tap('^ギア$');
-  await tap('^MPの歯車　欠片 10');
+  await tap('^MPギア　欠片 10');
   await tap('^交換する$');
-  await until('交換した印', () => findText('^MPの歯車　欠片 10\\n交換した$'));
-  await tap('^MPの歯車　欠片 10');
+  await until('交換した印', () => findText('^MPギア　欠片 10\\n交換した$'));
+  await tap('^MPギア　欠片 10');
   await until('2回目はできない', () => findText('もう交換した'));
   await tap('^レストピアへ戻る$');
   await waitScene('Hub');
