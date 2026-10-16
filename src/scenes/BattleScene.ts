@@ -79,7 +79,15 @@ export interface BattleSceneData {
    * 探索から来た戦闘（段階25）。battle は区画の戦闘（AREA_BATTLES）の id。
    * 勝ったら報酬を受け取って win の画面へ、負けたら lose の画面へ（試作の5戦の進み具合は変えない）
    */
-  encounter?: { battle: string; win: { key: string; data: object }; lose: { key: string; data: object } };
+  encounter?: {
+    battle: string;
+    win: { key: string; data: object };
+    lose: { key: string; data: object };
+    /** 狩りの戦闘（段階43）：HP・MP は狩りの状態（run.hunt）から持ち越し、ぬしのスナップは渡さない */
+    hunt?: boolean;
+    /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
+    seedShift?: number;
+  };
 }
 
 /** 文字から作る、ずらしの数（探索の戦闘のシードを、戦闘ごとに変えるため） */
@@ -138,14 +146,14 @@ export class BattleScene extends Phaser.Scene {
     const areaBattle = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
     if (data.encounter && !areaBattle) throw new Error(`unknown area battle ${data.encounter.battle}`);
     this.battle = areaBattle ?? battleAt(this.progress);
-    const seed = areaBattle ? (run.seed + textHash(areaBattle.id)) >>> 0 : battleSeed(this.progress);
+    const seed = areaBattle ? (run.seed + textHash(areaBattle.id) + (data.encounter?.seedShift ?? 0) * 104729) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
     // 戦闘の曲（ボスはボス戦の曲）。探索に戻ると、探索の画面が区画の曲に戻す
     playBgm(this, this.battle.boss ? BGM.boss : BGM.battle);
     this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
     // 星図の成長を反映した仲間で戦う。試作の5戦は、毎戦闘 HP と MP が全回復した状態で始まる。
     // 探索から来た戦闘は、区画の中の前の戦闘で残った HP・MP から始まる（段階32b 調整3。チェックポイントで全回復）
-    const vitals = areaBattle ? run.explore?.vitals : undefined;
+    const vitals = areaBattle ? (data.encounter?.hunt ? run.hunt?.state.vitals : run.explore?.vitals) : undefined;
     // 探索から来た戦闘は、編集したアルバムで戦う（段階41。試作の5戦は最初のアルバム）
     const deck = areaBattle ? albumDeck(run.album, CARDS) : undefined;
     this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup), deck), vitals });
@@ -1382,21 +1390,25 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
     const gained = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
+    // 勝利のアイテム（ポーションや、逃げる敵のデモテープなど）は1回目だけ。狩りではもらえない（段階43）
+    const prize = enc.hunt ? undefined : def.item;
     run.growth = { ...run.growth, points: run.growth.points + gained };
     // 残ったつながりゲージは、章の中の次の戦闘へ引き継ぐ（負けた時は、戦う前の量のまま。段階26の調整3）
     if (this.state.links.length > 0) setStoryLinkGauge(this.state.linkGauge);
     // 残った HP・MP は、区画の中の次の戦闘へ持ち越す（段階32b 調整3）
-    if (run.explore) run.explore = keepVitals(run.explore, vitalsAfter(this.state));
+    if (enc.hunt) {
+      if (run.hunt) run.hunt = { ...run.hunt, state: keepVitals(run.hunt.state, vitalsAfter(this.state)) };
+    } else if (run.explore) run.explore = keepVitals(run.explore, vitalsAfter(this.state));
     // ギアの報酬は出さない（ギアは宝箱と出来事のごほうびで手に入る。段階38）。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
     const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];
     run.armory = recordVictory(run.armory, {
       actions: result.actionCounts,
       colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
-      items: [...result.drops, ...(def.item ? [def.item] : [])],
+      items: [...result.drops, ...(prize ? [prize] : [])],
     });
     // 区画のボスのスナップ（段階41）
-    const snaps = def.snaps ?? [];
+    const snaps = enc.hunt ? [] : (def.snaps ?? []);
     if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
     saveRun();
     // 落とした素材を種類ごとに（珍しい素材は ◆、レアは ★。段階27b）
@@ -1405,7 +1417,7 @@ export class BattleScene extends Phaser.Scene {
     const counts = new Map<string, number>();
     for (const d of drops) counts.set(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`, (counts.get(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`) ?? 0) + 1);
     const dropList = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
-    const dropText = `素材：${dropList || 'なし'}${def.item ? `　アイテム：${summarizeItems([def.item])}` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
+    const dropText = `素材：${dropList || 'なし'}${prize ? `　アイテム：${summarizeItems([prize])}` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
     if (drops.some((d) => d.kind === 'rare')) {
       const rare = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, '★ レア！', { size: 30, bold: true, color: COLORS.accentText }).setOrigin(0.5);
       rare.setStroke('#5a3a00', 6);
@@ -1414,7 +1426,7 @@ export class BattleScene extends Phaser.Scene {
       playSe(this, SE.chest);
     }
     // コマ（盗まれた時間を返すのに使う。段階28。探索の画面に戻った時に数える）
-    const komaText = def.koma ? `コマ +${def.koma}\n` : '';
+    const komaText = def.koma && !enc.hunt ? `コマ +${def.koma}\n` : '';
     c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 52, `${komaText}星の砂 +${gained}（合計 ${run.growth.points}）\n${dropText}`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5, 0));
     addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80, 240, 60, '探索へ戻る', { onTap: () => this.scene.start(enc.win.key, enc.win.data) }, {
       size: 18,

@@ -495,3 +495,21 @@ describe('探索の試作の地図（段階16・18b）', () => {
     }
   });
 });
+
+describe('周回・狩り（段階43）', () => {
+  it('返す区画（1-1〜2-2）に狩りの中身があり、書き間違いがない。素材はある物、2-3 は返さないので狩りはない', async () => {
+    const { AREA_BATTLES, AREAS, ITEMS } = await import('../src/data');
+    const { checkHunt, huntableAreas } = await import('../src/core');
+    const hunts = huntableAreas(AREAS, Object.keys(AREAS));
+    expect(hunts.map((a) => a.id)).toEqual(['a11', 'a12', 'a21', 'a22']);
+    for (const area of hunts) {
+      expect(checkHunt(area, AREA_BATTLES), area.id).toEqual([]);
+      for (const g of area.hunt.gathers) for (const item of g.items) expect(item in ITEMS, `${g.id} ${item}`).toBe(true);
+      // 表の戦闘は、その区画の戦闘（ほかの区画の敵を混ぜない）。ぬしと負け戦は入れない
+      for (const table of Object.values(area.hunt.tables ?? {})) for (const b of table) {
+        expect(b.startsWith(`${area.id}_`), b).toBe(true);
+        expect(AREA_BATTLES[b].boss, b).toBeFalsy();
+      }
+    }
+  });
+});

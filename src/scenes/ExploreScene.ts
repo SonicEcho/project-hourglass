@@ -31,6 +31,7 @@ import {
   triggerGears,
   startExplore,
   usableLinks,
+  huntArea,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
@@ -42,7 +43,8 @@ import { addButton, addText } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { currentParty, run, setExplore, setHubReturn, setStoryVars, storyLineup, storyLinkGauge } from './run';
+import { currentEvent, currentParty, nextHuntCount, run, setExplore, setHubReturn, setHuntState, setStoryVars, storyLineup, storyLinkGauge } from './run';
+import type { DailyData } from './DailyScene';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -50,6 +52,8 @@ import { notePlayBattle } from './playRecord';
 // 区画のボスに勝ち、その後の会話を見たら、物語の流れへ done で戻る。
 // 段階47：区画は部屋を出入口でつないだもの。出入口のマスに着くと、短く暗転して、つながった部屋の出入口の内側に出る（画面を開き直す）。
 // 敵の印は、動き方の種類ごとに1歩ずつ行き先を決める（core/explore.ts の enemyNext）
+// 段階43：狩り（hunt）の時は、返し終えた区画を狩りの区画（core/hunt.ts の huntArea）にして歩く。状態はセーブしない run.hunt に置く。
+// コマ・会話はなく、ぬしはいつでも挑めて、勝っても区画は終わらない。左上の「時計屋へ」で昼の時計屋に戻る
 
 const T = AREA_TILE;
 
@@ -63,6 +67,8 @@ export interface ExploreData {
   lost?: boolean;
   /** 見終えて戻ってきた、途中の会話（場面の id） */
   seen?: string;
+  /** 狩り（段階43。返し終えた区画に入り直している） */
+  hunt?: boolean;
 }
 
 interface Enemy {
@@ -82,6 +88,8 @@ export class ExploreScene extends Phaser.Scene {
   private room!: RoomDef;
   /** デバッグメニューの試しの区画（段階47。物語の流れには戻らない） */
   private trial = false;
+  /** 狩りの途中（段階43） */
+  private hunting = false;
   private map!: GridMap;
   private state!: ExploreState;
   private player!: Phaser.GameObjects.Container;
@@ -115,8 +123,17 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   create(data: ExploreData): void {
-    const area = AREAS[data.area] ?? TRIAL_AREAS[data.area];
-    if (!area) throw new Error(`unknown area ${data.area}`);
+    const base = AREAS[data.area] ?? TRIAL_AREAS[data.area];
+    if (!base) throw new Error(`unknown area ${data.area}`);
+    this.hunting = data.hunt === true;
+    const hunt = run.hunt;
+    if (this.hunting && (!hunt || !base.hunt)) {
+      // 狩りの状態がない（ふつうは起きない）：物語の流れへ戻る（前に開いた時の仲間や敵が update で動かないよう、移る途中にする）
+      this.leaving = true;
+      this.scene.start('Flow', { done: false });
+      return;
+    }
+    const area = this.hunting && hunt && base.hunt ? huntArea({ ...base, hunt: base.hunt }, hunt.salt) : base;
     this.area = area;
     this.trial = !AREAS[data.area];
     stopAmbience();
@@ -134,18 +151,19 @@ export class ExploreScene extends Phaser.Scene {
     this.world = undefined;
     this.pausedTweens = [];
 
-    let state = run.explore?.area === area.id ? run.explore : startExplore(area);
+    let state = this.hunting && hunt ? hunt.state : run.explore?.area === area.id ? run.explore : startExplore(area);
     let note = '';
     let komaGot = 0;
     // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
-    if (data.won && !this.trial) notePlayBattle(run.event, true);
-    if (data.lost && !this.trial) notePlayBattle(run.event, false);
+    if (data.won && !this.trial && !this.hunting) notePlayBattle(run.event, true);
+    if (data.lost && !this.trial && !this.hunting) notePlayBattle(run.event, false);
     if (data.won) {
       // 倒した印の戦闘のコマを手に入れる（段階28。同じ印で2回もらわないよう、まだ倒していなかった時だけ）
       const battleId = data.won === area.boss.id ? area.boss.battle : area.enemies.find((e) => e.id === data.won)?.battle;
-      if (!state.defeated.includes(data.won)) komaGot = AREA_BATTLES[battleId ?? '']?.koma ?? 0;
+      // 狩りでは、コマは手に入らず、ぬしに勝っても区画は終わらない（段階43）
+      if (!state.defeated.includes(data.won) && !this.hunting) komaGot = AREA_BATTLES[battleId ?? '']?.koma ?? 0;
       state = addKoma(defeatEnemy(state, data.won), komaGot);
-      if (data.won === area.boss.id) state = { ...state, cleared: true };
+      if (data.won === area.boss.id && !this.hunting) state = { ...state, cleared: true };
     }
     if (data.lost) {
       state = loseBattle(state);
@@ -161,7 +179,7 @@ export class ExploreScene extends Phaser.Scene {
     this.state = state;
     this.room = roomOf(area, state.room);
     this.map = areaGrid(area, state.room);
-    setExplore(state);
+    this.keep(state);
 
     // 戻ってきた時の続き：ボスの前の会話を見たらボス戦、ボスの後の会話を見たら区画を出る
     const bossTrigger = area.triggers.find((t) => t.on === 'boss');
@@ -191,8 +209,10 @@ export class ExploreScene extends Phaser.Scene {
     this.say(
       note ||
         (data.won
-          ? `砂嵐を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${left > 0 ? `あと${left}つで返せる` : 'そろった'}）` : ''}`
-          : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
+          ? `${data.won === area.boss.id ? 'ぬし' : '砂嵐'}を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${left > 0 ? `あと${left}つで返せる` : 'そろった'}）` : ''}`
+          : this.hunting
+            ? '狩り：砂嵐とぬしから素材を集める。光る所をタップすると素材を拾える'
+            : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
@@ -271,13 +291,19 @@ export class ExploreScene extends Phaser.Scene {
         this.tweens.add({ targets: ring, alpha: 0.4, yoyo: true, repeat: -1, duration: 900 });
       }),
     );
-    // 宝箱
+    // 宝箱（狩りでは採取の場所：光る緑のひし形。段階43）
     for (const chest of area.chests) {
       if (!this.here(chest)) continue;
       const opened = this.state.openedChests.includes(chest.id);
-      const box = this.add
-        .rectangle(chest.cell[0] * T + T / 2, chest.cell[1] * T + T / 2, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f)
-        .setStrokeStyle(2, opened ? 0x6b5a40 : 0xffd84a);
+      const [x, y] = [chest.cell[0] * T + T / 2, chest.cell[1] * T + T / 2];
+      if (this.hunting) {
+        const spot = this.add.rectangle(x, y, T * 0.5, T * 0.5, opened ? 0x3a4a3a : 0x6fe0a0).setAngle(45).setStrokeStyle(2, opened ? 0x5a6a5a : 0xffffff);
+        if (!opened) this.tweens.add({ targets: spot, alpha: 0.45, scale: 1.2, yoyo: true, repeat: -1, duration: 700 });
+        this.chestSprites.set(chest.id, spot);
+        world.add(spot);
+        continue;
+      }
+      const box = this.add.rectangle(x, y, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f).setStrokeStyle(2, opened ? 0x6b5a40 : 0xffd84a);
       this.chestSprites.set(chest.id, box);
       world.add(box);
     }
@@ -292,7 +318,7 @@ export class ExploreScene extends Phaser.Scene {
       this.tweens.add({ targets: bubble, y: bubble.y - 4, yoyo: true, repeat: -1, duration: 700 });
     }
     // ボスの印
-    if (!this.state.cleared && this.here(area.boss)) {
+    if (this.bossHere()) {
       const [bc, br] = area.boss.cell;
       const boss = this.add.container(bc * T + T / 2, br * T + T / 2);
       // コマがそろうまでは眠っている（暗く、ゆっくり息をする。段階32b 調整3）
@@ -350,9 +376,10 @@ export class ExploreScene extends Phaser.Scene {
 
     ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.55).setOrigin(0));
     ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
-    // コマ：あと何コマで返せるか（段階28）
+    // コマ：あと何コマで返せるか（段階28）。狩りではコマはないので、狩りの案内（段階43）
     const left = komaLeft(area, this.state);
-    ui.add(
+    if (this.hunting) ui.add(addText(this, GAME_WIDTH / 2, 31, '狩り：素材を集める', { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
+    else ui.add(
       addText(this, GAME_WIDTH / 2, 31, left > 0 ? `コマ ${this.state.koma}/${area.komaNeed}（あと${left}つで返せる）` : `コマ ${this.state.koma}/${area.komaNeed}（そろった！）`, {
         size: 13,
         bold: true,
@@ -371,7 +398,8 @@ export class ExploreScene extends Phaser.Scene {
         }).setOrigin(0.5, 0),
       );
     }
-    addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
+    if (this.hunting) addButton(this, ui, 46, 32, 76, 44, '時計屋へ', { onTap: () => this.leaveHunt() }, { size: 13 });
+    else addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     if (isDebugEnabled(window.location.search)) {
       addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
     }
@@ -422,7 +450,7 @@ export class ExploreScene extends Phaser.Scene {
     const talker = this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
     const chest = talker ? null : chestAt(this.area, this.state, cell);
-    const boss = !talker && !chest && !this.state.cleared && this.here(this.area.boss) && near(this.area.boss.cell, cell, 1);
+    const boss = !talker && !chest && this.bossHere() && near(this.area.boss.cell, cell, 1);
     const from = this.nextCell ?? this.state.cell;
     let target: GridCell | null;
     let path: GridCell[] | null;
@@ -504,7 +532,7 @@ export class ExploreScene extends Phaser.Scene {
       this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
       if (r.event.healed) this.refreshVitals();
     }
-    setExplore(this.state);
+    this.keep(this.state);
     if (r.event.type === 'checkpoint') {
       const t = pendingTrigger(this.area, this.state, 'checkpoint');
       if (t) {
@@ -513,7 +541,7 @@ export class ExploreScene extends Phaser.Scene {
       } else this.showTip(true);
     }
     // ボスの隣まで来たら
-    if (!this.state.cleared && this.here(this.area.boss) && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk' && (this.bossReady() || this.goal?.kind === 'boss')) {
+    if (this.bossHere() && near(this.area.boss.cell, cell, 1) && this.goal?.kind !== 'talk' && (this.bossReady() || this.goal?.kind === 'boss')) {
       this.route = [];
       this.goal = { kind: 'boss' };
     }
@@ -562,9 +590,35 @@ export class ExploreScene extends Phaser.Scene {
     return AREA_BATTLES[this.area.boss.battle]?.koma ?? 0;
   }
 
-  /** ボスに挑めるか（ボスのコマを足せば返せる数になっている） */
+  /** ボスに挑めるか（ボスのコマを足せば返せる数になっている。狩りでは、いつでも。段階43） */
   private bossReady(): boolean {
-    return bossReady(this.area, this.state, this.bossKoma());
+    return this.hunting || bossReady(this.area, this.state, this.bossKoma());
+  }
+
+  /** ボスの印が今の部屋にいるか（狩りでは、勝つとその回は消える） */
+  private bossHere(): boolean {
+    return !this.state.cleared && enemyActive(this.state, this.area.boss.id) && this.here(this.area.boss);
+  }
+
+  /** 探索の状態を覚える（狩りはセーブしない run.hunt に。段階43） */
+  private keep(state: ExploreState): void {
+    if (this.hunting) setHuntState(state);
+    else setExplore(state);
+  }
+
+  /** この画面を開き直す時のデータ（区画と、狩りかどうか） */
+  private back(extra: Partial<ExploreData> = {}): ExploreData {
+    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, ...extra };
+  }
+
+  /** 狩りを終えて、昼の時計屋へ戻る（段階43）。昼の日常の途中でなければ、物語の流れへ */
+  private leaveHunt(): void {
+    if (this.leaving) return;
+    this.leaving = true;
+    run.hunt = null;
+    const data: DailyData = { event: run.event, place: 'clockshop', finished: undefined };
+    if (currentEvent().kind === 'daily') this.scene.start('Daily', data);
+    else this.scene.start('Flow', { done: false });
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */
@@ -578,12 +632,16 @@ export class ExploreScene extends Phaser.Scene {
     // スナップは持ち物に入る（段階41。チェックポイントのアルバムで入れ替える）
     const snaps = r.chest.snaps ?? [];
     if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
-    this.chestSprites.get(r.chest.id)?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
+    const sprite = this.chestSprites.get(r.chest.id);
+    if (sprite && this.hunting) {
+      this.tweens.killTweensOf(sprite);
+      sprite.setAlpha(1).setScale(1).setFillStyle(0x3a4a3a).setStrokeStyle(2, 0x5a6a5a);
+    } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
-      `宝箱を開けた！　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : ''].filter(Boolean).join('　')}`,
+      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : ''].filter(Boolean).join('　')}`,
     );
-    setExplore(this.state);
+    this.keep(this.state);
   }
 
   /** チェックポイントに立ち止まっている時だけ、育成の画面への入口を出す（段階26） */
@@ -606,8 +664,8 @@ export class ExploreScene extends Phaser.Scene {
   private openHub(target: string): void {
     if (this.leaving) return;
     this.leaving = true;
-    setExplore(this.state);
-    setHubReturn({ key: 'Explore', data: { area: this.area.id, won: undefined, lost: undefined, seen: undefined } satisfies ExploreData });
+    this.keep(this.state);
+    setHubReturn({ key: 'Explore', data: this.back() });
     this.scene.start(target);
   }
 
@@ -619,13 +677,13 @@ export class ExploreScene extends Phaser.Scene {
   private openScene(scene: string, back: ExploreData): void {
     if (this.leaving) return;
     this.leaving = true;
-    setExplore(this.state);
+    this.keep(this.state);
     const data: DialogueData = {
       scene,
       // コマの値（台本の {komaHave} {komaNeed} {komaLeft}）を足して渡す。物語の値としては覚えない（段階28）
       vars: { ...run.vars, ...komaVars(this.area, this.state) },
       seed: run.seed,
-      next: { key: 'Explore', data: { won: undefined, lost: undefined, seen: undefined, ...back } satisfies ExploreData },
+      next: { key: 'Explore', data: this.back(back) },
       onVars: (vars) => setStoryVars(Object.fromEntries(Object.entries(vars).filter(([k]) => !k.startsWith('koma')))),
     };
     this.scene.start('Dialogue', data);
@@ -634,12 +692,14 @@ export class ExploreScene extends Phaser.Scene {
   private startBattle(battle: string, enemyId: string): void {
     if (this.leaving) return;
     this.leaving = true;
-    setExplore(this.state);
+    this.keep(this.state);
     const data: BattleSceneData = {
       encounter: {
         battle,
-        win: { key: 'Explore', data: { area: this.area.id, won: enemyId, lost: undefined, seen: undefined } satisfies ExploreData },
-        lose: { key: 'Explore', data: { area: this.area.id, won: undefined, lost: true, seen: undefined } satisfies ExploreData },
+        win: { key: 'Explore', data: this.back({ won: enemyId }) },
+        lose: { key: 'Explore', data: this.back({ lost: true }) },
+        // 狩り（段階43）：同じ砂嵐と何度戦っても落とす物が変わるよう、狩りの戦闘の回数でシードをずらす
+        ...(this.hunting ? { hunt: true, seedShift: nextHuntCount() } : {}),
       },
     };
     const cam = this.cameras.main;
@@ -675,9 +735,9 @@ export class ExploreScene extends Phaser.Scene {
     if (this.leaving) return;
     this.leaving = true;
     this.state = state;
-    setExplore(state);
+    this.keep(state);
     playSe(this, SE.footsteps);
-    const data: ExploreData = { area: this.area.id, won: undefined, lost: undefined, seen: undefined };
+    const data = this.back();
     this.cameras.main.fadeOut(220, 0, 0, 0);
     this.time.delayedCall(240, () => this.scene.restart(data));
   }

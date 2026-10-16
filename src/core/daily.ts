@@ -12,7 +12,9 @@ export type SpotMark =
   /** 屋台（プロローグ） */
   | 'stall'
   /** ここへ行くと日が進む（夕暮れの時計屋など） */
-  | 'go';
+  | 'go'
+  /** 返し終えた区画に入り直して、素材を集める（段階43。回数を使わず、時間も進まない） */
+  | 'hunt';
 
 export interface DailySpot {
   /** 印の名前（見たかどうかを、この名前で覚える。会話の場面がある時は、場面の id と同じにする） */
@@ -214,6 +216,7 @@ export function spotGears(hub: DailyHub, vars: Record<string, string>, spot: Dai
 /**
  * その日の日常を、今の値で組み立てる（段階35）：会える相手ごとに、絆の出来事の印をその場所に足す。
  * 段階36：返した翌日の出来事（visits。visitsFor で選んだもの）も、必ず見る出来事としてその場所の先頭に足す。
+ * 段階43：狩りの入口の印（hunt）も、その場所に足す。
  * 日常のデータにない場所は町の地図（town）から足す（日を進める印のある場所より前に入れる）。印のない場所は出さない
  */
 export function resolveHub(
@@ -222,6 +225,7 @@ export function resolveHub(
   bonds: Readonly<Record<string, readonly BondEvent[]>>,
   town: Readonly<Record<string, DailyPlaceInfo>>,
   visits: readonly ReturnVisit[] = [],
+  hunt?: { place: string; spot: DailySpot },
 ): DailyHub {
   const places: DailyPlace[] = hub.places.map((p) => ({ ...p, spots: [...p.spots] }));
   /** その場所（日常のデータになければ、町の地図から足す） */
@@ -236,6 +240,8 @@ export function resolveHub(
     return place;
   };
   for (const v of visits) placeOf(v.place)?.spots.unshift(visitSpot(v));
+  // 狩りの入口（段階43。返した区画がある時だけ、呼ぶ側が渡す）
+  if (hunt) placeOf(hunt.place)?.spots.push(hunt.spot);
   for (const partner of hub.partners ?? []) {
     const ev = bondEventFor(hub, vars, partner, bonds[partner] ?? []);
     if (!ev) continue;

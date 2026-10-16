@@ -104,7 +104,7 @@ if (debug) {
     openPrototype: (key, data = {}) => goTo(key, data),
     openDialogue: (data) => goTo('Dialogue', data),
     openFlow: () => goTo('Flow', { done: false }),
-    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined }),
+    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined }),
   });
   installTestHook(game);
 }

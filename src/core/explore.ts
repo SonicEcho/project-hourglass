@@ -3,6 +3,7 @@
 // 段階47：区画は部屋（使い回せる部品）を出入口でつないだもの。部屋が1つだけの区画（1-1・1-2・2-1）もこの形。
 // 宝箱・敵・ボス・話せる人は「どの部屋のどのマス」で書く（room を書かなければ、最初の部屋）。敵には動き方の種類がある
 import type { GridCell, GridMap } from './grid';
+import type { AreaHunt } from './hunt';
 import type { Vitals } from './types';
 import { findPath, isWalkable, parseGrid } from './grid';
 
@@ -125,6 +126,8 @@ export interface AreaDef {
   memory?: string;
   /** 返した時に持ち主からもらうスナップ（段階41。返した報酬） */
   returnSnaps?: string[];
+  /** 返し終えた後に入り直す、狩りの中身（段階43。core/hunt.ts） */
+  hunt?: AreaHunt;
 }
 
 /** 探索の状態（セーブする） */
