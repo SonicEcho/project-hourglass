@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { addParts, blockers, bondLevel, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, startExplore, visitsFor } from '../core';
-import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUNT_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { addParts, areaChapter, blockers, bondLevel, huntableAreas, huntRewardRate, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, startExplore, visitsFor } from '../core';
+import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUNT_OLD_AREA_RATE, HUNT_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -10,7 +10,7 @@ import { startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
-import { run, setStoryVars, startHunt } from './run';
+import { run, setStoryVars, startHunt, storyLineup } from './run';
 
 // 昼の日常（段階24）：地図から場所を選び、場所の絵に出ている印をタップして出来事を見る。
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
@@ -299,8 +299,11 @@ export class DailyScene extends Phaser.Scene {
     panel.add(this.add.rectangle(cx, top + h / 2, 330, h, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
     panel.add(addText(this, cx, top + 30, 'どの時間で狩る？', { size: 17, bold: true }).setOrigin(0.5));
     panel.add(addText(this, cx, top + 58, '昼の時間は進まない。砂嵐とぬしから素材を集める', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
+    // 前の章の区画は、星の砂と経験値が半分（段階49）
+    const now = storyLineup().chapter;
     areas.forEach((area, i) => {
-      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, area.name, { onTap: () => this.enterHunt(area.id) }, { size: 14 });
+      const half = huntRewardRate(areaChapter(SLICE_FLOW, area.id), now, HUNT_OLD_AREA_RATE) < 1;
+      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, half ? `${area.name}\n星の砂と経験値は半分` : area.name, { onTap: () => this.enterHunt(area.id) }, { size: 13 });
     });
     addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', { onTap: () => panel.destroy(true) }, { size: 14 });
   }

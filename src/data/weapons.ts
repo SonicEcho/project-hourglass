@@ -337,12 +337,6 @@ const cards: WeaponDef = {
   ],
 };
 
-/**
- * 章ごとの武器のレベルの上限（段階49。docs/design/economy.md の 2.）。上限の間も経験値は貯まり、上限が上がるとその分で上がる。
- * 書いていない章は上限なし（武器のレベルの表の終わりまで）
- */
-export const WEAPON_LEVEL_CAPS: Record<number, number> = { 1: 5, 2: 7 };
-
 export const WEAPON_DATA: WeaponData = {
   weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards },
   fragments: FRAGMENTS,

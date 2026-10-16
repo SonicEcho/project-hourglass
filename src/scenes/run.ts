@@ -4,7 +4,6 @@ import {
   applyGrowth,
   applyNavi,
   applyWeapons,
-  capWeaponData,
   battleNumber,
   createAlbum,
   createArmory,
@@ -25,7 +24,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREAS, CARDS, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA, WEAPON_LEVEL_CAPS } from '../data';
+import { AREAS, CARDS, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -374,11 +373,6 @@ export function hubLineup(): Lineup {
 /** その章で開けられる星図のマスの章（段階49。試作の5戦など、章のないパーティは制限なし） */
 export function growthChapter(lineup: Lineup): number {
   return lineup.chapter ?? Infinity;
-}
-
-/** その章の武器のレベルの上限で切った武器のデータ（段階49。レベル・吸わせ枠・進化の条件に使う） */
-export function weaponDataFor(lineup: Lineup): typeof WEAPON_DATA {
-  return capWeaponData(WEAPON_DATA, lineup.chapter === undefined ? undefined : WEAPON_LEVEL_CAPS[lineup.chapter]);
 }
 
 /** パーティにいる仲間（成長を反映しない、元のデータ） */

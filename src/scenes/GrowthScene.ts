@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
 import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY } from '../data';
+import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -11,7 +11,7 @@ import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, weaponDataFor } from './run';
+import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -78,10 +78,22 @@ export class GrowthScene extends Phaser.Scene {
     // パーティにいない仲間を選んでいたら、先頭の仲間にする（段階26）
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
+    this.noticeGrownMap();
     this.render();
     // ギアの報酬は試作の5戦だけ（ムーブメントが閉じている間は出さない）
     if (run.pendingReward !== null && hubLineup().unlocks.navi) this.showReward();
     else maybeShowTip(this, ['growth_star']);
+  }
+
+  /** 章が進んで星図の区域が増えていたら、初めて開いた時に一度だけ知らせる（段階49。見たことは物語の値に覚える） */
+  private noticeGrownMap(): void {
+    const now = growthChapter(hubLineup());
+    if (!Number.isFinite(now)) return;
+    const chapters = [...new Set(GROWTH_MAP.nodes.flatMap((n) => (n.chapter !== undefined && n.chapter <= now ? [n.chapter] : [])))];
+    const fresh = chapters.filter((c) => run.vars[`星図:広がった:${c}`] !== '1');
+    if (fresh.length === 0) return;
+    this.message = '星図が広がった！　上の方に、新しい星が現れた';
+    setStoryVars({ ...run.vars, ...Object.fromEntries(fresh.map((c) => [`星図:広がった:${c}`, '1'])) });
   }
 
   /** デバッグメニューから星の砂が変わった時に描き直す */
@@ -154,6 +166,8 @@ export class GrowthScene extends Phaser.Scene {
     for (const n of GROWTH_MAP.nodes) {
       for (const nb of neighbors(GROWTH_MAP, n.id)) {
         if (nb.id < n.id) continue;
+        // まだ章が来ていない区域への道は描かない（段階49）
+        if (chapterLocked(n, growthChapter(hubLineup())) || chapterLocked(nb, growthChapter(hubLineup()))) continue;
         const both = isOpened(g, this.charId, n.id) && isOpened(g, this.charId, nb.id);
         const a = nodeCenter(n);
         const b = nodeCenter(nb);
@@ -210,7 +224,7 @@ export class GrowthScene extends Phaser.Scene {
       subs.push((x, w, compact) => {
         const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
         const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
-        const evolvable = members.some((c) => canEvolveAny(weaponDataFor(lineup), run.armory, c.id));
+        const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
         const stock = compact ? `素材${items}・欠片${fragments}` : `素材 ${items}・記憶の欠片 ${fragments}`;
         addButton(
           this,
@@ -309,15 +323,13 @@ export class GrowthScene extends Phaser.Scene {
     });
   }
 
-  private drawNode(n: GrowthNodeDef, openableNow: boolean): void {
-    let openable = openableNow;
+  private drawNode(n: GrowthNodeDef, openable: boolean): void {
     const g = run.growth;
     const { x, y } = nodeCenter(n);
     const opened = isOpened(g, this.charId, n.id);
     const selected = this.selected === n.id;
-    // まだ章が来ていないマス（段階49）は、開けられる隣でも暗いまま。下に「2章」と出す
-    const locked = !opened && chapterLocked(n, growthChapter(hubLineup()));
-    if (locked) openable = false;
+    // まだ章が来ていないマス（段階49）は描かない（その章が来ると、星図が広がる）
+    if (chapterLocked(n, growthChapter(hubLineup()))) return;
     const alpha = opened ? 1 : openable ? 0.75 : 0.28;
     let shape: Phaser.GameObjects.Shape;
     let label = '';
@@ -345,7 +357,6 @@ export class GrowthScene extends Phaser.Scene {
       if (c.id === this.charId || !isOpened(g, c.id, n.id)) return;
       this.root.add(this.add.circle(x - 6 + i * 6, y + NODE_R + 3, 2.5, ALLY_COLOR[c.id] ?? COLORS.ally));
     });
-    if (locked) this.root.add(addText(this, x, y + NODE_R + 5, `${n.chapter}章`, { size: 8, bold: true, color: COLORS.subText }).setOrigin(0.5));
     const hit = this.add.rectangle(x, y, CELL - 2, CELL - 2, 0xffffff, 0.001);
     this.root.add(hit);
     makePressable(hit, {
@@ -374,9 +385,7 @@ export class GrowthScene extends Phaser.Scene {
     const opened = isOpened(run.growth, base.id, n.id);
     const status = opened
       ? '開けた'
-      : chapterLocked(n, growthChapter(hubLineup()))
-        ? `${n.chapter}章から開けられる`
-        : err === 'not enough memory points'
+      : err === 'not enough memory points'
         ? `星の砂が足りない（${cost}pt）`
         : err
           ? 'まだ届かない（開けたマスの隣だけ開けられる）'

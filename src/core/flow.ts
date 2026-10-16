@@ -67,6 +67,15 @@ export function chapterOfEvent(flow: Flow, id: string): FlowChapter | null {
   return flow.find((c) => c.events.some((e) => e.id === id)) ?? null;
 }
 
+/** 区画が物語の何章にあるか（段階49。区画の探索の出来事がある章のパーティの chapter。なければ undefined） */
+export function areaChapter(flow: Flow, areaId: string): number | undefined {
+  for (const c of flow) {
+    const e = c.events.find((x) => x.kind === 'explore' && x.area === areaId);
+    if (e) return lineupAt(flow, e.id, { members: [], unlocks: { growth: false, navi: false, weapon: false } }).chapter;
+  }
+  return undefined;
+}
+
 /** その出来事の時のパーティ（章の lineup。なければ前の章のもの。どこにもなければ fallback） */
 export function lineupAt(flow: Flow, id: string, fallback: Lineup): Lineup {
   const i = flow.findIndex((c) => c.events.some((e) => e.id === id));

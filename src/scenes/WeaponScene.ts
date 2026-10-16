@@ -3,7 +3,6 @@ import type { EvolutionDef, PartColor, WeaponParamKey, WeaponState } from '../co
 import {
   absorbMaterial,
   canEvolveAny,
-  maxWeaponLevel,
   evolutionChecks,
   evolutionVisibility,
   evolveWeapon,
@@ -29,7 +28,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/th
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn, weaponDataFor } from './run';
+import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -38,8 +37,7 @@ import { addIcon } from '../ui/icons';
 // 記憶の欠片をタップで選び「吸わせる」。条件を全部満たした次の進化先に「進化」ボタンが出る（型を選んで、確認してから進化）。
 // 段階42：進化は何度もできる（進化ツリー）。ここには次の進化先だけを出し、ツリー全体は「ツリーを見る」（WeaponTreeScene）で
 
-/** 武器のデータ。画面を開く時に、章のレベルの上限で切った物にする（段階49） */
-let D = WEAPON_DATA;
+const D = WEAPON_DATA;
 const PARAM_KEYS: WeaponParamKey[] = ['atk', 'fire', 'ice', 'thunder'];
 const PARAM_COLOR: Record<WeaponParamKey, number> = { atk: ELEMENT_COLOR.physical, fire: ELEMENT_COLOR.fire, ice: ELEMENT_COLOR.ice, thunder: ELEMENT_COLOR.thunder };
 
@@ -67,7 +65,6 @@ export class WeaponScene extends Phaser.Scene {
   }
 
   create(): void {
-    D = weaponDataFor(hubLineup());
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     enterScreen(this);
     this.root = this.add.container(0, 0);
@@ -340,7 +337,7 @@ export class WeaponScene extends Phaser.Scene {
     this.root.add(addText(this, x0 + 10, CARD_TOP + 38, `Lv${lv}`, { size: 15, bold: true }));
     addBar(this, this.root, x0 + 56, CARD_TOP + 48, 180, 8, ratio, 0xffc83a);
     this.root.add(
-      addText(this, x0 + 244, CARD_TOP + 40, next === undefined ? `経験値 ${w.exp}（${lv < maxWeaponLevel(WEAPON_DATA) ? 'この章の上限' : '最大'}）` : `経験値 ${w.exp}/${next}`, { size: 11, color: COLORS.subText }),
+      addText(this, x0 + 244, CARD_TOP + 40, next === undefined ? `経験値 ${w.exp}（最大）` : `経験値 ${w.exp}/${next}`, { size: 11, color: COLORS.subText }),
     );
 
     // パラメータ（4つ並べる）

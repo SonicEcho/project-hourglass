@@ -86,3 +86,12 @@ export function checkHunt(area: HuntableArea, battles: Readonly<Record<string, u
   errors.push(...checkArea(huntArea(area, 0)).map((e) => `狩り：${e}`));
   return errors;
 }
+
+/**
+ * 狩りの報酬（星の砂と武器の経験値）の割合（段階49。docs/design/economy.md の 2.）。
+ * 今の章の区画は全部、前の章の区画は oldRate（格下の砂嵐からは伸びにくい）。章が分からなければ全部。素材は割合をかけない
+ */
+export function huntRewardRate(areaChapter: number | undefined, nowChapter: number | undefined, oldRate: number): number {
+  if (areaChapter === undefined || nowChapter === undefined) return 1;
+  return areaChapter < nowChapter ? oldRate : 1;
+}

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { GrowthState } from '../../src/core';
-import { capWeaponData, chapterLocked, createArmory, createGrowth, getOpenError, maxWeaponLevel, openableNodes, openNode, weaponLevel, weaponSlots } from '../../src/core';
-import { CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_CHAPTER_ROWS, GROWTH_MAP, HERO, PARTY, SLICE_FLOW, WEAPON_DATA, WEAPON_LEVEL_CAPS } from '../../src/data';
+import { areaChapter, chapterLocked, createArmory, createGrowth, getOpenError, huntRewardRate, openableNodes, openNode, recordVictory } from '../../src/core';
+import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_CHAPTER_ROWS, GROWTH_MAP, HERO, HUNT_OLD_AREA_RATE, PARTY, SLICE_FLOW, WEAPON_DATA } from '../../src/data';
 
-// 章の区切り（段階49。docs/design/economy.md の 2.・7.）：星図の章の鍵と、武器のレベルの上限
+// 章の区切り（段階49。docs/design/economy.md の 2.・7.）：星図の区域は章で広がる。狩りで前の章の区画は、星の砂と経験値が半分
 describe('星図の章の鍵（段階49）', () => {
   it('上の3行（17マス）は2章から。ほかはいつでも', () => {
     const locked = GROWTH_MAP.nodes.filter((n) => n.chapter !== undefined);
@@ -30,26 +30,29 @@ describe('星図の章の鍵（段階49）', () => {
   });
 });
 
-describe('武器のレベルの上限（段階49）', () => {
-  it('上限で切ったデータでは、経験値が貯まってもレベル・吸わせ枠が上限で止まり、上限が上がると貯めた分で上がる', () => {
-    const ch1 = capWeaponData(WEAPON_DATA, 5);
-    const w = { ...createArmory(WEAPON_DATA).weapons.hero, exp: 60 };
-    expect(w.exp).toBe(60);
-    expect(weaponLevel(ch1, w.exp)).toBe(5);
-    expect(maxWeaponLevel(ch1)).toBe(5);
-    expect(weaponSlots(ch1, w)).toBe(weaponSlots(WEAPON_DATA, { ...w, exp: WEAPON_DATA.levelExp[3] }));
-    expect(weaponLevel(capWeaponData(WEAPON_DATA, 7), w.exp)).toBe(7);
-    // 上限がない・表より大きい時はそのまま
-    expect(capWeaponData(WEAPON_DATA)).toBe(WEAPON_DATA);
-    expect(capWeaponData(WEAPON_DATA, 99)).toBe(WEAPON_DATA);
+describe('狩りの報酬の割合（段階49）', () => {
+  it('区画の章は物語の流れから決まる（1-1・1-2 は1章、2-1〜2-3 は2章）。章のパーティには章の番号がある', () => {
+    expect(['a11', 'a12'].map((a) => areaChapter(SLICE_FLOW, a))).toEqual([1, 1]);
+    expect(['a21', 'a22', 'a23'].map((a) => areaChapter(SLICE_FLOW, a))).toEqual([2, 2, 2]);
+    expect(areaChapter(SLICE_FLOW, 'nowhere')).toBeUndefined();
+    for (const id of Object.keys(AREAS)) expect(areaChapter(SLICE_FLOW, id), id).toBeDefined();
+    expect([CHAPTER1_LINEUP.chapter, CHAPTER2_LINEUP.chapter]).toEqual([1, 2]);
   });
 
-  it('物語の章のパーティには章の番号があり、どの章にも武器の上限がある（1章 Lv5、2章 Lv7）', () => {
-    expect(CHAPTER1_LINEUP.chapter).toBe(1);
-    expect(CHAPTER2_LINEUP.chapter).toBe(2);
-    for (const c of SLICE_FLOW) if (c.lineup?.chapter !== undefined) expect(WEAPON_LEVEL_CAPS[c.lineup.chapter], c.id).toBeDefined();
-    expect(WEAPON_LEVEL_CAPS).toEqual({ 1: 5, 2: 7 });
-    // 2章の上限は、今の武器のレベルの表の終わり（3回目の進化 Lv7）に届く
-    expect(WEAPON_LEVEL_CAPS[2]).toBe(maxWeaponLevel(WEAPON_DATA));
+  it('今の章の区画は全部、前の章の区画は半分。章が分からなければ全部', () => {
+    expect(HUNT_OLD_AREA_RATE).toBe(0.5);
+    expect(huntRewardRate(2, 2, HUNT_OLD_AREA_RATE)).toBe(1);
+    expect(huntRewardRate(1, 2, HUNT_OLD_AREA_RATE)).toBe(0.5);
+    expect(huntRewardRate(undefined, 2, HUNT_OLD_AREA_RATE)).toBe(1);
+    expect(huntRewardRate(1, undefined, HUNT_OLD_AREA_RATE)).toBe(1);
+  });
+
+  it('経験値の割合：行動の回数に割合をかけて切り捨て。素材は割合に関係なく入る（上限はない）', () => {
+    const a = createArmory(WEAPON_DATA);
+    const half = recordVictory(a, { actions: { hero: 7, akari: 1 }, colorCells: {}, items: ['maskShard'], expRate: 0.5 });
+    expect(half.weapons.hero.exp).toBe(3);
+    expect(half.weapons.akari.exp).toBe(0);
+    expect(half.items.maskShard).toBe(1);
+    expect(recordVictory(a, { actions: { hero: 7 }, colorCells: {}, items: [] }).weapons.hero.exp).toBe(7);
   });
 });

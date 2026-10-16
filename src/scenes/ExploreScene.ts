@@ -32,11 +32,13 @@ import {
   startExplore,
   usableLinks,
   huntArea,
+  areaChapter,
+  huntRewardRate,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, snapNames, TRIAL_AREAS } from '../data';
+import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, NAVI_DATA, SE, snapNames, TRIAL_AREAS } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -699,7 +701,8 @@ export class ExploreScene extends Phaser.Scene {
         win: { key: 'Explore', data: this.back({ won: enemyId }) },
         lose: { key: 'Explore', data: this.back({ lost: true }) },
         // 狩り（段階43）：同じ砂嵐と何度戦っても落とす物が変わるよう、狩りの戦闘の回数でシードをずらす
-        ...(this.hunting ? { hunt: true, seedShift: nextHuntCount() } : {}),
+        // 段階49：前の章の区画なら、星の砂と経験値は半分
+        ...(this.hunting ? { hunt: true, seedShift: nextHuntCount(), rewardRate: huntRewardRate(areaChapter(SLICE_FLOW, this.area.id), storyLineup().chapter, HUNT_OLD_AREA_RATE) } : {}),
       },
     };
     const cam = this.cameras.main;

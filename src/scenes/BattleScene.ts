@@ -87,6 +87,8 @@ export interface BattleSceneData {
     hunt?: boolean;
     /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
     seedShift?: number;
+    /** 星の砂と武器の経験値の割合（段階49。狩りで前の章の区画なら半分。書かなければ全部） */
+    rewardRate?: number;
   };
 }
 
@@ -1389,9 +1391,9 @@ export class BattleScene extends Phaser.Scene {
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });
       return;
     }
-    // 狩りの星の砂は半分（切り上げ。段階49。狩りをした人ほど先の章が楽になりすぎないように。docs/design/economy.md の 2.）
-    const full = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
-    const gained = enc.hunt ? Math.ceil(full / 2) : full;
+    // 狩りで前の章の区画なら、星の砂と経験値は半分（星の砂は切り上げ。段階49。格下の砂嵐からは伸びにくい。docs/design/economy.md の 2.）
+    const rate = enc.rewardRate ?? 1;
+    const gained = Math.ceil(battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS) * rate);
     // 勝利のアイテム（ポーションや、逃げる敵のデモテープなど）は1回目だけ。狩りではもらえない（段階43）
     const prize = enc.hunt ? undefined : def.item;
     run.growth = { ...run.growth, points: run.growth.points + gained };
@@ -1408,6 +1410,7 @@ export class BattleScene extends Phaser.Scene {
       actions: result.actionCounts,
       colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
       items: [...result.drops, ...(prize ? [prize] : [])],
+      expRate: rate,
     });
     // 区画のボスのスナップ（段階41）
     const snaps = enc.hunt ? [] : (def.snaps ?? []);

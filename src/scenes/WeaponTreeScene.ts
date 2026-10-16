@@ -10,14 +10,13 @@ import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/th
 import { maybeShowTip } from '../ui/tipPanel';
 import { describeCondition, describeDirection, describeEvolution, describeStyle, evolutionLine } from '../ui/weaponText';
 import { addButton, addText } from '../ui/widgets';
-import { hubLineup, lineupBase, run, weaponDataFor } from './run';
+import { hubLineup, lineupBase, run } from './run';
 
 // 進化ツリーの画面（段階42。docs/design/growth.md の 8-2・8-3）。
 // 上に元の武器、下へ枝分かれ。今の武器からの近さで見せるものを変える（次は全部、2段先は系統と手がかり、その先は影、一番先は言い伝え）。
 // ツリーはスマホの幅に収まらないので、枠の中をドラッグして上下左右に動かす（開いた時は今の武器を真ん中に）。節をタップすると下に説明
 
-/** 武器のデータ。画面を開く時に、章のレベルの上限で切った物にする（段階49） */
-let D = WEAPON_DATA;
+const D = WEAPON_DATA;
 
 /** ツリーの枠 */
 const FRAME_TOP = 66;
@@ -63,7 +62,6 @@ export class WeaponTreeScene extends Phaser.Scene {
   }
 
   create(): void {
-    D = weaponDataFor(hubLineup());
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     enterScreen(this);
     screenBg(this);

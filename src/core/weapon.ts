@@ -265,20 +265,6 @@ export function feedFragment(data: WeaponData, armory: ArmoryState, charId: stri
 }
 
 /** 経験値からレベル（1から） */
-/**
- * 章のレベルの上限で切った武器のデータ（段階49。docs/design/economy.md の 2.）。経験値の表を上限までにするので、
- * 経験値は貯まり続けたまま、レベル・吸わせ枠・進化の条件が上限で止まる。上限が上がると、貯めた分でレベルが上がる。cap がなければそのまま
- */
-export function capWeaponData(data: WeaponData, cap?: number): WeaponData {
-  if (cap === undefined || cap - 1 >= data.levelExp.length) return data;
-  return { ...data, levelExp: data.levelExp.slice(0, Math.max(0, cap - 1)) };
-}
-
-/** 武器のレベルの上限（経験値の表の長さ＋1） */
-export function maxWeaponLevel(data: WeaponData): number {
-  return data.levelExp.length + 1;
-}
-
 export function weaponLevel(data: WeaponData, exp: number): number {
   return 1 + data.levelExp.filter((need) => exp >= need).length;
 }
@@ -299,6 +285,8 @@ export interface BattleRecord {
   colorCells: Record<string, Record<PartColor, number>>;
   /** 手に入れた素材・通常アイテム */
   items: string[];
+  /** 経験値の割合（段階49。狩りで前の章の区画の砂嵐と戦った時は 0.5。書かなければ 1。切り捨て） */
+  expRate?: number;
 }
 
 /** 戦闘に勝った時：素材・アイテムを受け取り、経験値とギアの傾向を貯める */
@@ -308,7 +296,7 @@ export function recordVictory(armory: ArmoryState, record: BattleRecord): Armory
     const cells = record.colorCells[charId];
     const tendency = { ...w.tendency };
     if (cells) for (const c of Object.keys(tendency) as PartColor[]) tendency[c] += cells[c] ?? 0;
-    weapons[charId] = { ...w, exp: w.exp + (record.actions[charId] ?? 0), tendency };
+    weapons[charId] = { ...w, exp: w.exp + Math.floor((record.actions[charId] ?? 0) * (record.expRate ?? 1)), tendency };
   }
   return addItems({ ...armory, weapons }, record.items);
 }

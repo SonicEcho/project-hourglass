@@ -284,7 +284,9 @@ try {
   await tap('^時計屋$');
   await until('狩りの印', () => findText('^返した時間へ（狩り）$'));
   await tapAt(195, 660);
-  await tap('^1-1「金魚の名前」$');
+  // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
+  await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n星の砂と経験値は半分$'));
+  await tap('^1-1「金魚の名前」');
   await waitScene('Explore');
   await skipTips();
   await until('狩りの案内', () => findText('^狩り：素材を集める$'));

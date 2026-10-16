@@ -38,7 +38,7 @@ function materialOrder(D: WeaponData, armory: ArmoryState, owner: string): strin
 
 /**
  * 素材・欠片を使い、進化できれば進化させる。鍵の素材は、進化の条件に使う分だけ残す
- * （鍵になる素材は吸わせず、時分解もしない）。D は章のレベルの上限で切った武器のデータ（段階49。なければ上限なし）
+ * （鍵になる素材は吸わせず、時分解もしない）。D は武器のデータ（テストで差し替えられるように）
  */
 export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: number) => number, D: WeaponData = WEAPON_DATA): ArmoryState {
   let armory = armory0;

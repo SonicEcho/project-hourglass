@@ -15,7 +15,6 @@ import {
   createBattle,
   createGrowth,
   getBattleResult,
-  capWeaponData,
   getOpenError,
   lineupMembers,
   openableNodes,
@@ -24,7 +23,7 @@ import {
   vitalsAfter,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, GROWTH_MAP, NAVI_DATA, PART_BREAK_POINTS, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, WEAPON_LEVEL_CAPS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, GROWTH_MAP, NAVI_DATA, PART_BREAK_POINTS, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 import { autoUseArmory } from './autoArmory';
 import { autoPlay, lcg, smartPlay } from './autoBattle';
 import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
@@ -106,20 +105,19 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
   let weaponsBeforeBoss: AreaRunRecord['weaponsBeforeBoss'] = {};
   const battles = areaBattleOrder(areaId);
   const checkpointFrom = CHECKPOINT_FROM[areaId] ?? 0;
-  // 章の区切り（段階49）：星図の章の鍵と、武器のレベルの上限
+  // 章の区切り（段階49）：星図は、まだ来ていない章の区域を開けない
   const chapter = lineup.chapter ?? Infinity;
-  const weaponData = capWeaponData(WEAPON_DATA, lineup.chapter === undefined ? undefined : WEAPON_LEVEL_CAPS[lineup.chapter]);
   for (let i = 0; i < battles.length; i++) {
     const def = battles[i];
     // 宝箱は最初の戦闘の後に開ける
     if (i === 1) carry.armory = addItems(carry.armory, area.chests.flatMap((c) => c.items));
     carry.growth = spendPoints(carry.growth, members, pick, chapter);
-    carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick, weaponData);
+    carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick);
     if (navi) carry.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory), carry.navi);
     if (def.boss) {
       evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.path.length).length;
       weaponsBeforeBoss = Object.fromEntries(
-        members.map((c) => [c.id, { evolutions: carry.armory.weapons[c.id].path.length, level: weaponLevel(weaponData, carry.armory.weapons[c.id].exp) }]),
+        members.map((c) => [c.id, { evolutions: carry.armory.weapons[c.id].path.length, level: weaponLevel(WEAPON_DATA, carry.armory.weapons[c.id].exp) }]),
       );
     }
     const allies = grownParty(carry.growth, carry.armory, members, navi ? carry.navi : null);
