@@ -74,7 +74,7 @@ export const MENKO_NOISE: EnemyDef = {
 export const BICYCLE_LORD: EnemyDef = {
   id: 'bicycleLord',
   name: '自転車のぬし',
-  stats: { hp: 1300, atk: 28, mag: 30, def: 11, spd: 10 },
+  stats: { hp: 1200, atk: 26, mag: 30, def: 11, spd: 10 },
   weaknesses: [],
   resistances: [],
   parts: [
