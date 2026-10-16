@@ -791,6 +791,14 @@ Character: young Koji, the same man as the attached adult portrait but 28 years 
 Character: Masaru, Koji's father, a Japanese man in his 40s in the summer of 1998, a cheerful working dad watching his son's little league game. A face that resembles the attached portrait (his son as an adult), sun-tanned skin, short black hair, a faded polo shirt with a towel around his neck. No letters or logos.
 ```
 
+ペトラ（交換所の番人。段階52。20代後半・未来）：立ち絵の頭（`<表情>` は `a calm, businesslike expression with a faint polite smile`）の後に
+
+```
+Character: Petra, a woman in her late twenties who works at the trading counter of the Time Archive Bureau, an office of the far future. Neat dark navy-black hair tied in a single low ponytail, thin silver-rimmed glasses, calm intelligent eyes. A crisp white shirt with a dark navy vest, black sleeve covers on her forearms, and a small hourglass-shaped bureau badge on her chest. Tidy and rule-abiding, a quiet clerk who is secretly pleased when the numbers in her ledger add up. No text or letters on the badge.
+```
+
+（2026-10-16 に足した。表情違いは Gemini で、通常・笑顔・困り・驚き・真剣）
+
 ### 9. 2-2・2-3 と日常の背景
 
 パン屋の店内（7-A、8-B）：背景の頭の後に
