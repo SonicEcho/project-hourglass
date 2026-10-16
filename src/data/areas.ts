@@ -43,7 +43,7 @@ export const AREA_TALK_RANGE = 1;
  * 並びは出会う順の目安（広場 → 左右の参道 → 社への道 → 社の前）。数値の目安と測った結果は docs/design/battle.md の 13.
  */
 // 区画のボスの snaps は、勝った時に手に入るスナップ（段階41。宝箱の snaps・区画の returnSnaps と合わせて、アルバムの入れ替えに使う）
-// 星の砂（reward）・勝利のアイテム・スナップは、段階55で 1つの区画の目安（docs/design/economy.md の 8.）にそろえた：星の砂は部位破壊と合わせて約25（その章の区域の約半分）、消費アイテムは宝箱と合わせて3つ
+// 星の砂（reward）・勝利のアイテム・スナップは、段階55で 1つの区画の目安（docs/design/economy.md の 8.）にそろえた：星の砂は部位破壊と合わせて約25（その章の区域の約半分）。ただし 1-2 は約33、2-1 は約39（今の星図は 2-1 のぬしまでに開け切る前提で敵を合わせてあるため。3章で区域が広がる時に見直す）、消費アイテムは宝箱と合わせて3つ
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 3, koma: 1 },
   a11_storm2: { id: 'a11_storm2', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 3, item: ITEMS.ether.id, koma: 2 },
@@ -54,20 +54,20 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [GOLDFISH_BOWL_LORD], reward: 5, boss: true, koma: 2, snaps: ['heavyBlow'] },
   // 1-2 の商店街（段階37）。並びは出会う順（入口 → 駄菓子屋の手前 → 駄菓子屋と時計屋の間 → 時計屋の先 → 坂の手前）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。坂の手前の2戦は少し強い（ボスの手前の山）
-  a12_storm1: { id: 'a12_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE], reward: 3, koma: 1 },
-  a12_storm2: { id: 'a12_storm2', name: '砂嵐', enemies: [RAMUNE_NOISE, MENKO_NOISE], reward: 3, item: ITEMS.ether.id, koma: 2 },
-  a12_storm3: { id: 'a12_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE], reward: 3, koma: 2 },
-  a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 3, koma: 2 },
-  a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 4, koma: 2 },
-  a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 5, boss: true, koma: 2, snaps: ['breakArm'] },
+  a12_storm1: { id: 'a12_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE], reward: 4, koma: 1 },
+  a12_storm2: { id: 'a12_storm2', name: '砂嵐', enemies: [RAMUNE_NOISE, MENKO_NOISE], reward: 4, item: ITEMS.ether.id, koma: 2 },
+  a12_storm3: { id: 'a12_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE], reward: 5, koma: 2 },
+  a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 5, koma: 2 },
+  a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 5, koma: 2 },
+  a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 6, boss: true, koma: 2, snaps: ['breakArm'] },
   // 2-1 の町工場（段階39。段階38では 1-2 の砂嵐で代わりにしていた）。並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。工場の中の砂嵐は少し強い（ボスの手前の山）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
-  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [GEAR_NOISE, SCREW_NOISE], reward: 3, koma: 1 },
-  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], reward: 3, koma: 2 },
-  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE], reward: 3, koma: 2 },
-  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 3, item: ITEMS.hiPotion.id, koma: 2 },
-  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 4, koma: 2 },
-  a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 5, boss: true, koma: 2, snaps: ['heavyBlow'] },
+  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [GEAR_NOISE, SCREW_NOISE], reward: 5, koma: 1 },
+  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], reward: 5, koma: 2 },
+  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE], reward: 6, koma: 2 },
+  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 6, item: ITEMS.hiPotion.id, koma: 2 },
+  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, koma: 2 },
+  a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 7, boss: true, koma: 2, snaps: ['heavyBlow'] },
   // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。並びは出会う順（校門 → 中庭の下 → 中庭の上 → お化け屋敷の教室 → 渡り廊下の番人）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。番人は少し強い（×1.3。ボスの手前の山）。
   // 駐輪場の逃げる敵はコマを持たない寄り道で、勝つとレアの素材「ラストチャイムのデモテープ」
