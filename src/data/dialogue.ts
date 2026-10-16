@@ -221,7 +221,7 @@ export const CAST: Record<string, CastMember> = {
     tint: SEPIA_TINT,
   },
   // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
-  // 写しのけんた・だいち・さきは絵がまだない（写しのけんたの絵が届いたら portrait と tint を足す）
+  // 写しのけんたは笑顔の絵だけある（2026-10-17。ほかの表情は笑顔で代わりに出す）。だいち・さきは絵がまだない
   けんた: {
     portrait: 'portrait.kenta',
     ...young(['笑顔', '苦笑い', '考える', 'さみしげ', '泣き笑い', '照れ', '大笑い'], { 笑顔: 'smile' }, '笑顔'),
@@ -229,7 +229,14 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 330, wave: 'square' },
   },
-  写しのけんた: { faces: names('笑顔', '驚き', '泣き笑い'), firstFace: '笑顔', color: 0x8a90a0, voice: { pitch: 420, wave: 'square' } },
+  写しのけんた: {
+    portrait: 'portrait.past_kenta',
+    ...young(['笑顔', '驚き', '泣き笑い'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0x8a90a0,
+    height: 440,
+    voice: { pitch: 420, wave: 'square' },
+    tint: SEPIA_TINT,
+  },
   だいち: { faces: names('笑顔'), firstFace: '笑顔', color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
   さき: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
   // 2-3 の人たちと、カイ・ノア（段階40）。こうじと写しの2人は絵がまだない（色の札）。カイは余裕、ノアは通常・悲しいの絵がある
@@ -316,16 +323,17 @@ export const BACKDROPS: Record<string, Backdrop> = {
   white: { title: '白', top: 0xf4f4f0, bottom: 0xdcdcd6 },
   shrine_approach: { title: '夕暮れの神社の参道', top: 0x3a3060, bottom: 0xd07a4a, image: 'bg.shrine_approach', ambient: 'lanterns' },
   shrine_stalls: { title: '参道（屋台の並び）', top: 0x2e2a58, bottom: 0xc0603a, image: 'bg.shrine_approach', ambient: 'lanterns', ambienceSe: SE.crowd },
-  goldfish_stall: { title: '金魚すくいの屋台', top: 0x2a3a60, bottom: 0x3a8ab0, ambient: 'lanterns', ambienceSe: SE.crowd },
-  shooting_stall: { title: '射的の屋台', top: 0x3a2a50, bottom: 0xb05a3a, ambient: 'lanterns', ambienceSe: SE.crowd },
-  shrine_steps: { title: '神社の石段の上', top: 0x1a1e40, bottom: 0x6a4a6a, ambient: 'stars' },
-  shrine_hill: { title: '神社の裏の高台（夜）', top: 0x0a0e24, bottom: 0x2a2a50, ambient: 'stars' },
-  home_kitchen: { title: '施設の台所（朝）', top: 0xf0e2c0, bottom: 0xb8a080 },
-  home_kitchen_evening: { title: '施設の台所（夕方）', top: 0xe0a070, bottom: 0x8a6050 },
+  goldfish_stall: { title: '金魚すくいの屋台', top: 0x2a3a60, bottom: 0x3a8ab0, image: 'bg.goldfish_stall', ambient: 'lanterns', ambienceSe: SE.crowd },
+  shooting_stall: { title: '射的の屋台', top: 0x3a2a50, bottom: 0xb05a3a, image: 'bg.shooting_stall', ambient: 'lanterns', ambienceSe: SE.crowd },
+  shrine_steps: { title: '神社の石段の上', top: 0x1a1e40, bottom: 0x6a4a6a, image: 'bg.shrine_steps', ambient: 'stars' },
+  shrine_hill: { title: '神社の裏の高台（夜）', top: 0x0a0e24, bottom: 0x2a2a50, image: 'bg.shrine_hill', ambient: 'stars' },
+  home_kitchen: { title: '施設の台所（朝）', top: 0xf0e2c0, bottom: 0xb8a080, image: 'bg.home_kitchen' },
+  // 夕方は朝の絵に色をかけて使い回す（2026-10-17）
+  home_kitchen_evening: { title: '施設の台所（夕方）', top: 0xe0a070, bottom: 0x8a6050, image: 'bg.home_kitchen', tint: 0xf0b088 },
   classroom: { title: '教室', top: 0xd8e4ec, bottom: 0x9aa8a0, image: 'bg.classroom' },
-  rooftop: { title: '学校の屋上', top: 0x7ab0e0, bottom: 0xe0b080 },
+  rooftop: { title: '学校の屋上', top: 0x7ab0e0, bottom: 0xe0b080, image: 'bg.rooftop' },
   shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80, image: 'bg.shopping_street' },
-  convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8 },
+  convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8, image: 'bg.convenience_store' },
   // 段階35（M2 の昼の日常）。絵が届くまで仮の色
   river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a },
   riverside_ground: { title: '河川敷のグラウンド', top: 0x9ac0e0, bottom: 0xa08a5a, image: 'bg.riverside_1998', tint: 0xd8d0c0 },
