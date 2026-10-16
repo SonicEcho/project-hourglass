@@ -46,7 +46,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BARK_CAST, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
@@ -551,12 +551,13 @@ export class BattleScene extends Phaser.Scene {
     const faceW = 150;
     if (id) {
       const src = this.textures.get(id).getSourceImage();
-      // 顔のあたり（立ち絵の幅の 22〜78%、高さの 15% から）を帯の高さに合わせて切り出す
-      const cw = src.width * 0.56;
+      // 顔のあたりを帯の高さに合わせて切り出す（範囲は仲間ごと。BARK_FACE_CROP）
+      const crop = BARK_FACE_CROP[bark.allyId] ?? BARK_FACE_CROP.default;
+      const cw = src.width * crop.w;
       const scale = faceW / cw;
       const ch = (h - 4) / scale;
-      const sx = src.width * 0.22;
-      const sy = src.height * 0.15;
+      const sx = src.width * crop.x;
+      const sy = src.height * crop.y;
       const img = this.add.image(-sx * scale, -h / 2 + 2 - sy * scale, id).setOrigin(0).setScale(scale).setCrop(sx, sy, cw, ch);
       band.add(img);
     } else band.add(addText(this, faceW / 2, 0, bark.name, { size: 22, bold: true, align: 'center' }).setOrigin(0.5));
