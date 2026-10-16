@@ -6,15 +6,15 @@ const AREA_IDS = ['a11', 'a12', 'a21', 'a22', 'a23'];
 const battlesOf = (id: string) => [...AREAS[id].enemies.map((e) => AREA_BATTLES[e.battle]), AREA_BATTLES[AREAS[id].boss.battle]];
 
 describe('1つの区画で入る量（段階55）', () => {
-  it('星の砂：部位破壊と合わせて、その章の区域の約3分の1（12〜18）', () => {
+  it('星の砂：部位破壊と合わせて、その章の区域の約半分（20〜28）', () => {
     const region: Record<number, number> = {};
     for (const n of GROWTH_MAP.nodes) region[n.chapter ?? 1] = (region[n.chapter ?? 1] ?? 0) + (GROWTH_COST[n.kind as keyof typeof GROWTH_COST] ?? 0);
     for (const id of AREA_IDS) {
       const battles = battlesOf(id);
       const parts = battles.flatMap((b) => b.enemies).reduce((n, e) => n + (e.parts?.length ?? 0), 0);
       const sand = battles.reduce((n, b) => n + b.reward, 0) + parts * PART_BREAK_POINTS;
-      expect(sand, id).toBeGreaterThanOrEqual(12);
-      expect(sand, id).toBeLessThanOrEqual(18);
+      expect(sand, id).toBeGreaterThanOrEqual(20);
+      expect(sand, id).toBeLessThanOrEqual(28);
     }
     expect(region[1] + region[2]).toBe(72);
   });
