@@ -1,0 +1,129 @@
+import Phaser from 'phaser';
+import { GAME_HEIGHT, GAME_WIDTH } from '../config';
+import { areaChapter, hasSpare, huntableAreas, huntRewardRate, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW } from '../data';
+import { playBgm, stopAmbience } from '../audio/sound';
+import { drawBackdrop } from '../ui/backdrop';
+import { addWindow, enterScreen, popIn } from '../ui/skin';
+import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { addButton, addText } from '../ui/widgets';
+import type { DailyData } from './DailyScene';
+import type { ExploreData } from './ExploreScene';
+import { currentEvent, run, setHubReturn, startHunt, storyLineup } from './run';
+
+// レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
+// 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）を1つの画面から開く。交換所（段階52）と落とし物の棚（段階53）の場所もここ。
+// 日も昼の回数も使わない。拠点にいることはセーブしない（閉じたら昼の日常から）
+
+/** 育成の画面から拠点へ戻る時の戻り先（育成の画面の戻るボタンと見出しに使う） */
+const BACK_TO_HUB = { key: 'Hub', data: {}, label: 'レストピアへ戻る', place: 'レストピア（蔵書の棚）' };
+
+export class HubScene extends Phaser.Scene {
+  private overlay?: Phaser.GameObjects.Container;
+
+  constructor() {
+    super('Hub');
+  }
+
+  create(): void {
+    this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+    enterScreen(this);
+    this.overlay = undefined;
+    // 育成の画面から戻ってきた（または昼から来た）ので、育成の戻り先は忘れる
+    setHubReturn(null);
+    stopAmbience();
+    playBgm(this, BGM.library);
+    const root = this.add.container(0, 0);
+    drawBackdrop(this, root, BACKDROPS.library, 0, GAME_HEIGHT, false);
+    root.add(this.add.rectangle(0, 0, GAME_WIDTH, 96, 0x000000, 0.55).setOrigin(0));
+    root.add(addText(this, GAME_WIDTH / 2, 30, 'レストピア', { size: 20, bold: true }).setOrigin(0.5));
+    root.add(addText(this, GAME_WIDTH / 2, 62, '蔵書の棚　― 時間は進まない ―', { size: 12, color: COLORS.subText }).setOrigin(0.5));
+
+    const cx = GAME_WIDTH / 2;
+    const w = GAME_WIDTH - 60;
+    const strong = { size: 17, bold: true, fill: 0x2f4f3a, stroke: 0x6fe0a0, strokeWidth: 2 };
+    // 狩り
+    const hunts = huntableAreas(AREAS, run.returned);
+    addButton(this, root, cx, 190, w, 62, '返した時間へ（狩り）', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
+    // 育成（今の章で開いているものだけ）
+    const unlocks = storyLineup().unlocks;
+    const grow: [string, string][] = [];
+    if (unlocks.growth) grow.push(['星図', 'Growth']);
+    if (unlocks.navi) grow.push(['ムーブメント', 'Navi']);
+    if (unlocks.weapon) grow.push(['武器', 'Weapon']);
+    if (hasSpare(run.album)) grow.push(['アルバム', 'Album']);
+    const gap = 8;
+    const per = Math.min(3, grow.length);
+    const bw = (w - gap * (per - 1)) / Math.max(1, per);
+    grow.forEach(([label, key], i) => {
+      const row = Math.floor(i / per);
+      const col = i % per;
+      addButton(this, root, 30 + bw / 2 + col * (bw + gap), 290 + row * 64, bw, 54, label, { onTap: () => this.openGrowth(key) }, {
+        size: 15,
+        bold: true,
+        fill: 0x1e3a5a,
+        stroke: 0x6bc8ff,
+        strokeWidth: 2,
+      });
+    });
+    const below = 290 + Math.ceil(grow.length / Math.max(1, per)) * 64 + 30;
+    // 交換所と落とし物の棚（段階52・53で作る）
+    addButton(this, root, cx, below + 20, w, 54, '交換所（準備中）', {}, { size: 15, enabled: false });
+    addButton(this, root, cx, below + 84, w, 54, '落とし物の棚（準備中）', {}, { size: 15, enabled: false });
+    // 昼へ戻る
+    addButton(this, root, cx, 780, w, 56, '時計屋へ戻る', { onTap: () => this.leave() }, { size: 17, bold: true });
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+  }
+
+  /** 育成の画面を開く。閉じると拠点に戻る */
+  private openGrowth(key: string): void {
+    if (this.overlay) return;
+    setHubReturn(BACK_TO_HUB);
+    this.scene.start(key);
+  }
+
+  /** 昼の時計屋へ戻る（昼の日常の途中でなければ、物語の流れへ） */
+  private leave(): void {
+    run.hunt = null;
+    const data: DailyData = { event: run.event, place: 'clockshop', finished: undefined };
+    if (currentEvent().kind === 'daily') this.scene.start('Daily', data);
+    else this.scene.start('Flow', { done: false });
+  }
+
+  /** 狩りに入る区画を選ぶ（段階43。段階50で昼の時計屋からここへ移した）。前の章の区画は、星の砂と経験値が半分 */
+  private pickHunt(): void {
+    if (this.overlay) return;
+    const areas = huntableAreas(AREAS, run.returned);
+    const cx = GAME_WIDTH / 2;
+    const h = 150 + areas.length * 60;
+    const top = Math.round((GAME_HEIGHT - h) / 2);
+    const panel = this.add.container(0, 0).setDepth(50);
+    this.overlay = panel;
+    panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
+    panel.add(addWindow(this, cx - 165, top, 330, h));
+    panel.add(addText(this, cx, top + 30, 'どの時間で狩る？', { size: 17, bold: true }).setOrigin(0.5));
+    panel.add(addText(this, cx, top + 58, '砂嵐とぬしから素材を集める', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
+    const now = storyLineup().chapter;
+    areas.forEach((area, i) => {
+      const half = huntRewardRate(areaChapter(SLICE_FLOW, area.id), now, HUNT_OLD_AREA_RATE) < 1;
+      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, half ? `${area.name}\n星の砂と経験値は半分` : area.name, { onTap: () => this.enterHunt(area.id) }, { size: 13 });
+    });
+    addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', {
+      onTap: () => {
+        panel.destroy(true);
+        this.overlay = undefined;
+      },
+    }, { size: 14 });
+    popIn(this, panel);
+  }
+
+  /** 狩りに入る（入るたびに新しい中身。狩りの途中はセーブしない） */
+  private enterHunt(areaId: string): void {
+    const area = AREAS[areaId];
+    if (!area) return;
+    startHunt(startExplore(area));
+    const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.time.delayedCall(260, () => this.scene.start('Explore', data));
+  }
+}

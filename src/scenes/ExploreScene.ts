@@ -45,8 +45,7 @@ import { addButton, addText } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { currentEvent, currentParty, nextHuntCount, run, setExplore, setHubReturn, setHuntState, setStoryVars, storyLineup, storyLinkGauge } from './run';
-import type { DailyData } from './DailyScene';
+import { currentParty, nextHuntCount, run, setExplore, setHubReturn, setHuntState, setStoryVars, storyLineup, storyLinkGauge } from './run';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -55,7 +54,7 @@ import { notePlayBattle } from './playRecord';
 // 段階47：区画は部屋を出入口でつないだもの。出入口のマスに着くと、短く暗転して、つながった部屋の出入口の内側に出る（画面を開き直す）。
 // 敵の印は、動き方の種類ごとに1歩ずつ行き先を決める（core/explore.ts の enemyNext）
 // 段階43：狩り（hunt）の時は、返し終えた区画を狩りの区画（core/hunt.ts の huntArea）にして歩く。状態はセーブしない run.hunt に置く。
-// コマ・会話はなく、ぬしはいつでも挑めて、勝っても区画は終わらない。左上の「時計屋へ」で昼の時計屋に戻る
+// コマ・会話はなく、ぬしはいつでも挑めて、勝っても区画は終わらない。左上の「レストピアへ戻る」で拠点に戻る（段階50）
 
 const T = AREA_TILE;
 
@@ -400,7 +399,7 @@ export class ExploreScene extends Phaser.Scene {
         }).setOrigin(0.5, 0),
       );
     }
-    if (this.hunting) addButton(this, ui, 46, 32, 76, 44, '時計屋へ', { onTap: () => this.leaveHunt() }, { size: 13 });
+    if (this.hunting) addButton(this, ui, 46, 32, 76, 44, 'レストピア\nへ戻る', { onTap: () => this.leaveHunt() }, { size: 11 });
     else addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     if (isDebugEnabled(window.location.search)) {
       addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
@@ -613,14 +612,12 @@ export class ExploreScene extends Phaser.Scene {
     return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, ...extra };
   }
 
-  /** 狩りを終えて、昼の時計屋へ戻る（段階43）。昼の日常の途中でなければ、物語の流れへ */
+  /** 狩りを終えて、レストピアの拠点へ戻る（段階43。段階50から、昼の時計屋ではなく拠点へ） */
   private leaveHunt(): void {
     if (this.leaving) return;
     this.leaving = true;
     run.hunt = null;
-    const data: DailyData = { event: run.event, place: 'clockshop', finished: undefined };
-    if (currentEvent().kind === 'daily') this.scene.start('Daily', data);
-    else this.scene.start('Flow', { done: false });
+    this.scene.start('Hub');
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */

@@ -163,7 +163,7 @@ export class GrowthScene extends Phaser.Scene {
     this.root.add(addIcon(this, 'star', SIDE_PADDING + 9, 20, 18, COLORS.accent));
     this.root.add(addText(this, SIDE_PADDING + 24, 8, '星図', { size: 17, bold: true }));
     this.root.add(
-      addText(this, SIDE_PADDING, 32, back ? `${area?.name ?? ''}のチェックポイント` : `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
+      addText(this, SIDE_PADDING, 32, back ? (back.place ?? `${area?.name ?? ''}のチェックポイント`) : `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
         size: 11,
         color: COLORS.subText,
       }),
@@ -248,7 +248,7 @@ export class GrowthScene extends Phaser.Scene {
       792,
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
-      back ? '探索へ戻る' : next ? `${next.name}へ` : '結果へ',
+      back ? (back.label ?? '探索へ戻る') : next ? `${next.name}へ` : '結果へ',
       {
         onTap: () => {
           if (!back) {

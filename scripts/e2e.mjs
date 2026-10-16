@@ -269,7 +269,7 @@ try {
   await waitScene('Dialogue');
   await until('会話で縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
 
-  step('周回・狩り（段階43）：昼の時計屋から返した区画に入り、ぬしに勝っても続き、時計屋へ戻っても昼の回数は減らない');
+  step('レストピアの拠点（段階50）と狩り（段階43）：昼の時計屋から拠点に入り、星図を開いて戻り、返した区画で狩り、ぬしに勝っても続き、拠点から時計屋へ戻っても昼の回数は減らない');
   const skipTips = async () => {
     for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
       await tap('^わかった$');
@@ -282,8 +282,17 @@ try {
   await waitScene('Daily');
   await skipTips();
   await tap('^時計屋$');
-  await until('狩りの印', () => findText('^返した時間へ（狩り）$'));
+  await until('拠点の印', () => findText('^時計屋の奥へ（レストピア）$'));
   await tapAt(195, 660);
+  await waitScene('Hub');
+  await skipTips();
+  // 拠点から星図を開き、「レストピアへ戻る」で拠点に戻る
+  await tap('^星図$');
+  await waitScene('Growth');
+  await skipTips();
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
+  await tap('^返した時間へ（狩り）$');
   // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
   await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n星の砂と経験値は半分$'));
   await tap('^1-1「金魚の名前」');
@@ -302,7 +311,9 @@ try {
   await skipTips();
   await until('ぬしに勝っても狩りが続く', () => findText('^ぬしを倒した。'));
   if (await findText('^ぬし$')) throw new Error('倒したぬしがまだいる');
-  await tap('^時計屋へ$');
+  await tap('^レストピア\\nへ戻る$');
+  await waitScene('Hub');
+  await tap('^時計屋へ戻る$');
   await waitScene('Daily');
   await until('昼の回数が減っていない', () => findText('^昼に選べるのは、あと2回$'));
 

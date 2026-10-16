@@ -281,7 +281,7 @@ export class WeaponScene extends Phaser.Scene {
       setHubReturn(null);
       this.scene.start(back.key, back.data);
     };
-    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, back ? '探索へ戻る' : '星図へ戻る', { onTap: leave }, {
+    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, back ? (back.label ?? '探索へ戻る') : '星図へ戻る', { onTap: leave }, {
       size: 16,
       bold: true,
     });

@@ -332,6 +332,9 @@ export function currentNaviData(): NaviData {
 export interface SceneTarget {
   key: string;
   data: object;
+  /** 育成の画面の戻るボタンの名前と、見出しに出す今の場所（段階50。書かなければ探索のチェックポイント） */
+  label?: string;
+  place?: string;
 }
 
 /**

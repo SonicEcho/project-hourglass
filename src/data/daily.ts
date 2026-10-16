@@ -44,12 +44,12 @@ const main = (id: string, label: string, y = ROW1, after?: string): DailySpot =>
 const talk = (id: string, label: string, y = ROW1): DailySpot => ({ id, scene: id, label, mark: 'talk', x: 195, y });
 
 /**
- * 狩りの入口（段階43）：時計屋の「返した時間へ（狩り）」。返した区画が1つでもあれば、どの日の昼にも出る。
- * 昼に選べる回数は使わず、時間も進まない。押すと、狩りに入れる区画を選ぶ
+ * レストピアの拠点の入口（段階50。段階43の狩りの入口から替えた）：時計屋の「時計屋の奥へ（レストピア）」。
+ * 返した区画が1つでもあれば、どの日の昼にも出る。昼に選べる回数は使わず、時間も進まない。押すと拠点の画面（狩り・育成など）
  */
-export const HUNT_SPOT: { place: string; spot: DailySpot } = {
+export const HUB_SPOT: { place: string; spot: DailySpot } = {
   place: 'clockshop',
-  spot: { id: 'hunt', label: '返した時間へ（狩り）', mark: 'hunt', x: 195, y: 660 },
+  spot: { id: 'restopia', label: '時計屋の奥へ（レストピア）', mark: 'hub', x: 195, y: 660 },
 };
 
 /** 昼に選べる回数（段階35。docs/milestones/M2.md の「決まったこと」） */

@@ -1,23 +1,22 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { addParts, areaChapter, blockers, bondLevel, huntableAreas, huntRewardRate, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, startExplore, visitsFor } from '../core';
-import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUNT_OLD_AREA_RATE, HUNT_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { addParts, blockers, bondLevel, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
-import type { ExploreData } from './ExploreScene';
-import { run, setStoryVars, startHunt, storyLineup } from './run';
+import { run, setStoryVars } from './run';
 
 // 昼の日常（段階24）：地図から場所を選び、場所の絵に出ている印をタップして出来事を見る。
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
 // 見た印は、物語で覚えた値（run.vars）に入れてセーブする。日常を終えたら、物語の流れへ done で戻る。
 // 段階35：昼に選べる回数（絆の出来事と小話）と、相手ごとの絆の出来事。画面を開くたびに、今の値で日常を組み立てる（resolveHub）
 // 段階36：返した翌日に持ち主に会う出来事（RETURN_VISITS）も、返した記録から組み立てる
-// 段階43：返した区画があれば、時計屋に狩りの入口（HUNT_SPOT）。回数を使わず、区画を選んで探索の画面へ（狩り）
+// 段階50：返した区画があれば、時計屋にレストピアの拠点の入口（HUB_SPOT。段階43の狩りの入口から替えた）。回数を使わず、拠点の画面へ
 
 /** Phaser はデータを渡さずに開くと前のデータを使い回すので、この画面を開く時は必ず全部渡す（なければ undefined を書く） */
 export interface DailyData {
@@ -36,15 +35,15 @@ const MARK_STYLE: Record<SpotMark, { color: number; icon: string }> = {
   talk: { color: 0x5aa8ff, icon: '…' },
   stall: { color: 0xf0a040, icon: '★' },
   go: { color: 0xd9ae62, icon: '→' },
-  hunt: { color: 0x3f9a6a, icon: '狩' },
+  hub: { color: 0x7a5ad0, icon: '扉' },
 };
 
 /** 今の値で、その日の日常を組み立てる（絆の出来事と、返した翌日の出来事を足す） */
 function build(data: DailyHub): DailyHub {
   const visits = visitsFor(data, RETURN_VISITS, returnDays(SLICE_FLOW, run.event, run.returned));
-  // 狩りの入口（段階43）：返した区画が1つでもあれば。回数を決めていない日常（屋台めぐり・1日目・2日目）にも出す
-  const hunt = huntableAreas(AREAS, run.returned).length > 0 ? HUNT_SPOT : undefined;
-  return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits, hunt);
+  // レストピアの拠点の入口（段階50）：返した区画が1つでもあれば。回数を決めていない日常（2日目）にも出す
+  const hub = huntableAreas(AREAS, run.returned).length > 0 ? HUB_SPOT : undefined;
+  return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits, hub);
 }
 
 export class DailyScene extends Phaser.Scene {
@@ -128,7 +127,7 @@ export class DailyScene extends Phaser.Scene {
     const places = this.hub.places;
     this.header(root, 'どこへ行く？');
     for (const place of places) {
-      const open = place.spots.filter((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends && s.mark !== 'hunt');
+      const open = place.spots.filter((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends && s.mark !== 'hub');
       const fill = place.spots.some((s) => s.ends) ? 0x6a5420 : 0x30465c;
       const circle = this.add.circle(place.mapX, place.mapY, 46, fill).setStrokeStyle(3, COLORS.accent);
       root.add(circle);
@@ -186,8 +185,9 @@ export class DailyScene extends Phaser.Scene {
   }
 
   private tapSpot(place: DailyPlace, spot: DailySpot): void {
-    if (spot.mark === 'hunt') {
-      this.pickHunt();
+    if (spot.mark === 'hub') {
+      this.cameras.main.fadeOut(250, 0, 0, 0);
+      this.time.delayedCall(260, () => this.scene.start('Hub'));
       return;
     }
     const state = spotState(this.hub, run.vars, spot);
@@ -286,36 +286,6 @@ export class DailyScene extends Phaser.Scene {
       cx += t.width * 0.94 + r(4) * 1.5;
     });
     return { holder, width: cx - x };
-  }
-
-  /** 狩りに入る区画を選ぶ（段階43）。返し終えた区画の一覧 */
-  private pickHunt(): void {
-    const areas = huntableAreas(AREAS, run.returned);
-    const cx = GAME_WIDTH / 2;
-    const h = 150 + areas.length * 60;
-    const top = Math.round((GAME_HEIGHT - h) / 2);
-    const panel = this.add.container(0, 0).setDepth(50);
-    panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(this.add.rectangle(cx, top + h / 2, 330, h, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
-    panel.add(addText(this, cx, top + 30, 'どの時間で狩る？', { size: 17, bold: true }).setOrigin(0.5));
-    panel.add(addText(this, cx, top + 58, '昼の時間は進まない。砂嵐とぬしから素材を集める', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
-    // 前の章の区画は、星の砂と経験値が半分（段階49）
-    const now = storyLineup().chapter;
-    areas.forEach((area, i) => {
-      const half = huntRewardRate(areaChapter(SLICE_FLOW, area.id), now, HUNT_OLD_AREA_RATE) < 1;
-      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, half ? `${area.name}\n星の砂と経験値は半分` : area.name, { onTap: () => this.enterHunt(area.id) }, { size: 13 });
-    });
-    addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', { onTap: () => panel.destroy(true) }, { size: 14 });
-  }
-
-  /** 狩りに入る（入るたびに新しい中身。狩りの途中はセーブしない） */
-  private enterHunt(areaId: string): void {
-    const area = AREAS[areaId];
-    if (!area) return;
-    startHunt(startExplore(area));
-    const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
-    this.cameras.main.fadeOut(250, 0, 0, 0);
-    this.time.delayedCall(260, () => this.scene.start('Explore', data));
   }
 
   private confirm(text: string, onYes: () => void): void {

@@ -104,7 +104,7 @@ describe('周回・狩り（段階43）', () => {
     ]);
   });
 
-  it('日常の狩りの入口：時計屋に足す（場所がなければ町の地図から）。回数を使わず、いつも選べる', () => {
+  it('日常のレストピアの拠点の入口（段階43の狩りの入口から替えた）：時計屋に足す（場所がなければ町の地図から）。回数を使わず、いつも選べる', () => {
     const info = (id: string) => ({ id, name: id, backdrop: 'black', mapX: 0, mapY: 0 });
     const hub: DailyHub = {
       id: 'd3',
@@ -117,7 +117,7 @@ describe('周回・狩り（段階43）', () => {
       ],
     };
     const town = { school: info('school'), shop: info('shop'), clockshop: info('clockshop') };
-    const huntSpot = { place: 'clockshop', spot: { id: 'hunt', label: '狩り', mark: 'hunt' as const, x: 0, y: 0 } };
+    const huntSpot = { place: 'clockshop', spot: { id: 'hunt', label: '拠点', mark: 'hub' as const, x: 0, y: 0 } };
     const built = resolveHub(hub, {}, {}, town, [], huntSpot);
     expect(built.places.map((p) => p.id)).toEqual(['school', 'clockshop', 'shop']);
     const spot = allSpots(built).find((s) => s.id === 'hunt')!;
