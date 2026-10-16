@@ -7,6 +7,7 @@ import {
   createNavi,
   lineupAt,
   naviDataWithWeapons,
+  weaponLevel,
   applyGrowth,
   applyWeapons,
   battleReward,
@@ -52,6 +53,8 @@ export interface AreaRunRecord {
   links: number[];
   /** ボスの前までに進化した仲間の数（段階27b） */
   evolvedBeforeBoss: number;
+  /** ボスの前の、仲間ごとの進化の回数と武器のレベル（段階42） */
+  weaponsBeforeBoss: Record<string, { evolutions: number; level: number }>;
 }
 
 /** 区画の戦闘を出会う順に（敵の印の並び → ボス） */
@@ -99,16 +102,24 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
   const stages: StageRecord[] = [];
   const links: number[] = [];
   let evolvedBeforeBoss = 0;
+  let weaponsBeforeBoss: AreaRunRecord['weaponsBeforeBoss'] = {};
   const battles = areaBattleOrder(areaId);
   const checkpointFrom = CHECKPOINT_FROM[areaId] ?? 0;
+  // 章の区切り（段階49）：星図は、まだ来ていない章の区域を開けない
+  const chapter = lineup.chapter ?? Infinity;
   for (let i = 0; i < battles.length; i++) {
     const def = battles[i];
     // 宝箱は最初の戦闘の後に開ける
     if (i === 1) carry.armory = addItems(carry.armory, area.chests.flatMap((c) => c.items));
-    carry.growth = spendPoints(carry.growth, members, pick);
+    carry.growth = spendPoints(carry.growth, members, pick, chapter);
     carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick);
     if (navi) carry.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory), carry.navi);
-    if (def.boss) evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.evolvedTo).length;
+    if (def.boss) {
+      evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.path.length).length;
+      weaponsBeforeBoss = Object.fromEntries(
+        members.map((c) => [c.id, { evolutions: carry.armory.weapons[c.id].path.length, level: weaponLevel(WEAPON_DATA, carry.armory.weapons[c.id].exp) }]),
+      );
+    }
     const allies = grownParty(carry.growth, carry.armory, members, navi ? carry.navi : null);
     if (i >= checkpointFrom) vitals = undefined;
     let record: StageRecord = { attempts: MAX_ATTEMPTS, won: false, rounds: null };
@@ -129,9 +140,9 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
       break;
     }
     stages.push(record);
-    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss };
+    if (!record.won) return { seed, stages, cleared: false, links, evolvedBeforeBoss, weaponsBeforeBoss };
   }
-  return { seed, stages, cleared: true, links, evolvedBeforeBoss };
+  return { seed, stages, cleared: true, links, evolvedBeforeBoss, weaponsBeforeBoss };
 }
 
 function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[], navi: NaviState | null): CharacterDef[] {
@@ -141,17 +152,17 @@ function grownParty(growth: GrowthState, armory: ArmoryState, members: Character
 }
 
 /** 星図：パーティのでたらめな仲間の、開けられるでたらめなマスに、払えなくなるまで星の砂を使う */
-function spendPoints(growth0: GrowthState, members: CharacterDef[], pick: (n: number) => number): GrowthState {
+function spendPoints(growth0: GrowthState, members: CharacterDef[], pick: (n: number) => number, chapter = Infinity): GrowthState {
   let growth = growth0;
   for (let guard = 0; guard < 200; guard++) {
     const options = members.flatMap((c) =>
       openableNodes(GROWTH_MAP, growth, c.id)
-        .filter((n) => getOpenError(GROWTH_MAP, growth, c, n.id) === null)
+        .filter((n) => getOpenError(GROWTH_MAP, growth, c, n.id, chapter) === null)
         .map((n) => ({ c, id: n.id })),
     );
     if (options.length === 0) return growth;
     const o = options[pick(options.length)];
-    growth = openNode(GROWTH_MAP, growth, o.c, o.id);
+    growth = openNode(GROWTH_MAP, growth, o.c, o.id, chapter);
   }
   return growth;
 }

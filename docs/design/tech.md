@@ -96,6 +96,15 @@
 - リポジトリの Settings → Pages の Source は「GitHub Actions」
 - 公開URL：https://sonicecho.github.io/project-hourglass/
 
+## 8. 全画面（段階48）
+
+Android の Chrome は、ページが下へスクロールされたと判断するとアドレスバーの帯を隠す（画面はスクロールしないが、読み込みの途中になぞった時などに隠れ、隠れると帯の中のメニューも出せない）。決まった形で全画面にする方法を2つ持つ。
+
+- **ホーム画面のアイコンから開く**：`public/manifest.webmanifest`（`display: fullscreen`、`orientation: portrait`、`start_url` と `scope` は `./`）と、アイコン `public/icons/`（192・512、maskable の 512。タイトルの砂時計を夜の色の上に描いた絵。作り直しは `scripts/make_icons.mjs`）。`index.html` から読む。Service Worker は置かない（Chrome はなくてもホーム画面に置ける。オフラインで遊べるようにする時に考える）
+- **ゲームの中のボタン**：`src/ui/fullscreen.ts`。`document.documentElement` を Fullscreen API で全画面にし（Android の下のバーも隠す `navigationUI: 'hide'`）、できる端末では縦向きに固定する。タイトルの左上のボタンと、オプションの窓の「全画面」の行。ボタンの押した後の処理（次のフレーム）でも、Chrome は押してから少しの間は全画面を許す
+- 全画面にできないブラウザ（iPhone の Safari。`document.fullscreenEnabled` が false）と、ホーム画面のアイコンから開いた時（`display-mode: fullscreen` か `standalone` で、Fullscreen API の全画面ではない）は、ボタンも行も出さない
+- 全画面になる・やめると画面の大きさが変わるが、Phaser の Scale FIT が合わせ直す
+
 ## 決定の記録
 
 試作の経緯は `docs/SPEC.md` の「実装時の決定事項」。段階14以降で技術の決まりを変えたら、ここに日付・段階・理由を1〜2行で足す。
@@ -118,3 +127,4 @@
 - 段階15：素材台帳の正は `src/data/assets.ts`（クレジットの画面とテストが同じものを読む）。配布物に入るライブラリ（Phaser、eruda）も台帳に載せる（MIT は売り物でも使えるが、著作権表示が要る）
 - 段階12：`npm run measure` は、TypeScript のまま読み込むため Vite の `runnerImport` を使う（道具を増やさない）
 - 2026-10-10 段階32b 調整3：屋台めぐりの「けいかくひょう」に、子どもの手書き風の書体 Hachi Maru Pop（SIL OFL）を足した（はちまるポップ・よもぎ・Zen Kurenaido を見比べ、一番子どもの字らしいものにした）。かな・英数字と `src/data/daily.ts` の字だけに絞って 56KB（`hand.woff2`。`addText` の `hand`）。見出しの書体と一緒に起動の画面で読み込む
+- 2026-10-16 段階48：アドレスバーが勝手に隠れて Chrome のメニューを出せなくなる、と開発者から聞いた。ホーム画面に追加して全画面で開く形（manifest）と、ゲームの中の全画面のボタンを両方入れた（開発者と決めた）。manifest の `display` は、Android の下のバーも隠れる `fullscreen` にした（縦持ちのゲームで、画面を広く使うため）

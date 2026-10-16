@@ -235,6 +235,41 @@ describe('セーブ：古い版から直す', () => {
     expect(res.ok && res.save.run.album).toEqual(createAlbum(FOLDER));
   });
 
+  it('版10のセーブ（進化先が1つだった）は、進化先の1つ目の型を選んだことにして読む（段階42）', () => {
+    const res = parseEdited((raw) => {
+      raw.version = 10;
+      for (const w of Object.values(raw.run.armory.weapons) as Record<string, unknown>[]) {
+        delete w.path;
+        w.evolvedTo = null;
+      }
+      raw.run.armory.weapons.hero.evolvedTo = 'flameBlade';
+    });
+    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
+    expect(res.ok && res.save.run.armory.weapons.hero.path).toEqual([{ id: 'flameBlade', style: 0 }]);
+    expect(res.ok && res.save.run.armory.weapons.akari.path).toEqual([]);
+    expect(res.ok && 'evolvedTo' in res.save.run.armory.weapons.hero).toBe(false);
+  });
+
+  it('通った進化先は、親から順につながっている所まで残す（知らない型・飛ばした段・まだ作っていない先で切る。段階42）', () => {
+    const pathOf = (path: unknown) => {
+      const res = parseEdited((raw) => (raw.run.armory.weapons.hero.path = path));
+      return res.ok ? res.save.run.armory.weapons.hero.path : null;
+    };
+    expect(pathOf([{ id: 'flameBlade', style: 1 }, { id: 'crimsonBlade', style: 0 }])).toEqual([{ id: 'flameBlade', style: 1 }, { id: 'crimsonBlade', style: 0 }]);
+    expect(pathOf([{ id: 'flameBlade', style: 5 }])).toEqual([]);
+    expect(pathOf([{ id: 'crimsonBlade', style: 0 }])).toEqual([]);
+    expect(pathOf([{ id: 'flameBlade', style: 0 }, { id: 'glacierBlade', style: 0 }])).toEqual([{ id: 'flameBlade', style: 0 }]);
+    expect(
+      pathOf([
+        { id: 'flameBlade', style: 0 },
+        { id: 'crimsonBlade', style: 0 },
+        { id: 'blazeBlade', style: 0 },
+        { id: 'blazeBlade_1a', style: 0 },
+      ]),
+    ).toHaveLength(3);
+    expect(pathOf('broken')).toEqual([]);
+  });
+
   it('アルバム：知らないスナップは捨て、持っていない分・上限を超える分は外す。20枚ちょうどでなければ最初のアルバムに戻す（段階41）', () => {
     const res = parseEdited((raw) => {
       raw.run.album.owned.removed = 3;
@@ -298,16 +333,16 @@ describe('セーブ：今のデータに合わせて整える', () => {
 
   it('武器の進化で広がったマスに置いたギアは、そのまま残る', () => {
     const r = freshRun();
-    r.armory = { ...r.armory, weapons: { ...r.armory.weapons, hero: { ...r.armory.weapons.hero, evolvedTo: 'flameBlade' } } };
+    r.armory = { ...r.armory, weapons: { ...r.armory.weapons, hero: { ...r.armory.weapons.hero, path: [{ id: 'flameBlade', style: 0 }] } } };
     const raw = JSON.parse(serializeSave(r, AT));
     // 広がったブリッジの右端（4列目）に1マスのギア
     raw.run.navi.parts[0].placement = { charId: 'hero', col: 4, row: 1, rotation: 0 };
     const res = parseSave(JSON.stringify(raw), ctx);
     expect(res.ok && res.save.run.navi.parts[0].placement).toEqual({ charId: 'hero', col: 4, row: 1, rotation: 0 });
     // 進化先が今のデータにない時は進化前に戻り、そのギアは外れる
-    raw.run.armory.weapons.hero.evolvedTo = 'removedEvolution';
+    raw.run.armory.weapons.hero.path = [{ id: 'removedEvolution', style: 0 }];
     const res2 = parseSave(JSON.stringify(raw), ctx);
-    expect(res2.ok && res2.save.run.armory.weapons.hero.evolvedTo).toBeNull();
+    expect(res2.ok && res2.save.run.armory.weapons.hero.path).toEqual([]);
     expect(res2.ok && res2.save.run.navi.parts[0].placement).toBeNull();
   });
 
@@ -378,5 +413,21 @@ describe('セーブ：今のデータに合わせて整える', () => {
     if (!res.ok) return;
     expect(res.save.run.navi.parts.filter((p) => p.uid === 0).map((p) => p.partId)).toEqual(['hpMemory']);
     expect(res.save.run.navi.nextUid).toBe(START_NAVI_PARTS.length);
+  });
+});
+
+describe('星図の前の id（段階56）', () => {
+  it('格子の星図のマスの id で開けていたセーブは、同じ効果の星に付け替えて読む（駒は最後に開けた星）', () => {
+    const r = freshRun();
+    r.growth = { points: 5, opened: { hero: ['n8_3', 'n8_2', 'n7_2'], akari: ['n5_0', 'n4_0'], mio: ['n5_6', 'unknown'] } };
+    const loaded = parseSave(serializeSave(r, AT), ctx);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const opened = loaded.save.run.growth.opened;
+    expect(opened.hero.slice(0, 1)).toEqual(['altair']);
+    expect(opened.hero).toHaveLength(3);
+    expect(opened.hero.every((id) => GROWTH_MAP.nodes.some((n) => n.id === id))).toBe(true);
+    expect(opened.akari).toEqual(['vega', GROWTH_MAP.renamed!.n4_0]);
+    expect(opened.mio).toEqual(['sualocin']);
   });
 });

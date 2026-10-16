@@ -13,6 +13,8 @@ export interface Unlocks {
 export interface Lineup {
   members: string[];
   unlocks: Unlocks;
+  /** 物語の何章か（段階49。星図の章の鍵と、武器のレベルの上限に使う。試作の5戦は書かない＝制限なし） */
+  chapter?: number;
 }
 
 /** 仲間の一覧から、パーティにいる人だけを、パーティの並びの順に取り出す */

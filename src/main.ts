@@ -17,6 +17,7 @@ import { ProtoExploreScene } from './scenes/ProtoExploreScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
 import { WeaponScene } from './scenes/WeaponScene';
+import { WeaponTreeScene } from './scenes/WeaponTreeScene';
 import { AlbumScene } from './scenes/AlbumScene';
 import { ResultScene } from './scenes/ResultScene';
 import { allBattles, progressAt } from './core';
@@ -71,7 +72,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene],
+  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, WeaponTreeScene, AlbumScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene],
 });
 
 if (debug) {
@@ -103,7 +104,7 @@ if (debug) {
     openPrototype: (key, data = {}) => goTo(key, data),
     openDialogue: (data) => goTo('Dialogue', data),
     openFlow: () => goTo('Flow', { done: false }),
-    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined }),
+    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined }),
   });
   installTestHook(game);
 }

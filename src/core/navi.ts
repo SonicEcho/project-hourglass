@@ -194,9 +194,18 @@ export function claimRewardParts(navi: NaviState, candidates: string[], chosen: 
   return addParts(navi, chosen.map((i) => candidates[i]));
 }
 
-/** 盤を拡張する：ブリッジの行の右端に count マス足す（武器の進化で増える） */
-export function extendBoard(board: NaviBoardDef, count: number): NaviBoardDef {
+/**
+ * 盤を拡張する（武器の進化で増える）。row はブリッジの行の右端に count マス、
+ * column は一番下の行の右端のマスの下へ縦に count マス（段階42。型で形が変わる）
+ */
+export function extendBoard(board: NaviBoardDef, count: number, shape: 'row' | 'column' = 'row'): NaviBoardDef {
   if (count <= 0) return board;
+  if (shape === 'column') {
+    const bottom = Math.max(...board.cells.map(([, r]) => r));
+    const col = Math.max(...board.cells.filter(([, r]) => r === bottom).map(([c]) => c));
+    const added: Cell[] = Array.from({ length: count }, (_, i) => [col, bottom + 1 + i]);
+    return { ...board, rows: Math.max(board.rows, bottom + 1 + count), cells: [...board.cells, ...added] };
+  }
   const rowCells = board.cells.filter(([, r]) => r === board.commandRow).map(([c]) => c);
   const start = Math.max(-1, ...rowCells) + 1;
   const added: Cell[] = Array.from({ length: count }, (_, i) => [start + i, board.commandRow]);

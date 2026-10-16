@@ -30,3 +30,22 @@ export function itemSources(id: string): string[] {
   for (const a of Object.values(AREAS)) for (const c of a.chests) if (c.items.includes(id)) out.push(`${a.name}の宝箱`);
   return [...new Set(out)];
 }
+
+/**
+ * 素材の手がかり（段階42。進化ツリーの2段先に見せる。例：「1-2 の砂嵐が落とすらしい」「2-1 のぬしの体から取れるらしい」）。
+ * 区画の戦闘に出てこない素材は「どこかの砂嵐が落とすらしい」
+ */
+export function itemHint(id: string): string {
+  for (const [battleId, b] of Object.entries(AREA_BATTLES)) {
+    for (const e of b.enemies) {
+      const t = e.dropTable;
+      const fromBody = e.drops?.includes(id) || (e.parts ?? []).some((p) => p.drop === id);
+      const fromDrop = t?.common === id || t?.uncommon === id || t?.rare === id;
+      if (!fromBody && !fromDrop) continue;
+      const area = AREAS[battleId.split('_')[0]];
+      const where = area ? area.name.split('「')[0] : 'どこか';
+      return fromBody ? `${where} のぬしの体から取れるらしい` : `${where} の${t?.rare === id ? '砂嵐が、ごくまれに' : '砂嵐が'}落とすらしい`;
+    }
+  }
+  return 'どこかの砂嵐が落とすらしい';
+}

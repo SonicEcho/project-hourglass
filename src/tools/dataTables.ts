@@ -1,5 +1,5 @@
 import type { ActionDef, CardDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
-import { allBattles } from '../core';
+import { allBattles, evolutionTier, evolveLevelFor } from '../core';
 import {
   AREA_BATTLES,
   AREAS,
@@ -25,7 +25,7 @@ import {
 import { describeAction, formatWeight } from '../ui/describe';
 import { ELEMENT_LABEL, weightLabel } from '../ui/labels';
 import { describePart, PART_COLOR_LABEL, STAT_LABEL } from '../ui/naviText';
-import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, RARITY_LABEL } from '../ui/weaponText';
+import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, RARITY_LABEL } from '../ui/weaponText';
 
 // データの一覧表（段階17）。src/data から docs/data/ の Markdown を作る。手で書き換えない。
 // 作る命令は npm run data:tables。表が今のデータと同じかは tests/dataTables.test.ts が確かめる
@@ -185,7 +185,7 @@ function growthPage(): string {
   });
   return page('星図とムーブメント', '正は `src/data/growthMap.ts`・`src/data/navi.ts`。仕組みは `docs/design/growth.md`。', [
     [
-      `星図（${GROWTH_MAP.cols}×${GROWTH_MAP.rows}、${GROWTH_MAP.nodes.length}マス）`,
+      `星図（夏の大三角のまわりの星座。${GROWTH_MAP.nodes.length}個の星、${GROWTH_MAP.edges.length}本の道）`,
       [
         table(['マスの種類', '数', '費用（星の砂）'], kinds.map(([k, label, cost]) => [label, GROWTH_MAP.nodes.filter((n) => n.kind === k).length, cost])),
         '',
@@ -209,13 +209,30 @@ function growthPage(): string {
 function weaponsPage(): string {
   const D = WEAPON_DATA;
   const evolutions = Object.values(D.weapons).flatMap((w) =>
-    w.evolutions.map((e) => [w.name, charName(w.owner), e.name, [`Lv${D.evolveLevel}`, ...e.conditions.map((c) => describeCondition(c, D))].join('、'), describeEvolution(e, D.boardExtension)]),
+    w.evolutions
+      .filter((e) => !e.sealed)
+      .map((e) => [
+        w.name,
+        charName(w.owner),
+        `${'　'.repeat(evolutionTier(w, e.id) - 1)}${e.name}${e.detour ? '（寄り道）' : ''}`,
+        e.from ? (w.evolutions.find((f) => f.id === e.from)?.name ?? e.from) : w.name,
+        [`Lv${evolveLevelFor(D, evolutionTier(w, e.id))}`, ...e.conditions.map((c) => describeCondition(c, D))].join('、'),
+        describeEvolution(e),
+        (e.styles ?? []).map((s) => describeStyle(s, D.boardExtension)).join(' ／ '),
+      ]),
   );
   return page(
     '武器・素材・記憶の欠片',
     `正は \`src/data/weapons.ts\`。仕組みは \`docs/design/growth.md\`。経験値 ${D.levelExp.map((e, i) => `${e} で Lv${i + 2}`).join('、')}。属性値1につき、その属性のダメージ +${Math.round(D.elementRate * 100)}%。`,
     [
-      ['武器と進化先', table(['武器', '持ち主', '進化先', '条件', '効果'], evolutions)],
+      [
+        '武器と進化ツリー（段階42。4回目より先は、まだ作っていない先として影と言い伝えだけ）',
+        [
+          `進化に要るレベル：${D.evolveLevels.map((lv, i) => `${i + 1}回目 Lv${lv}`).join('、')}（より先は Lv${D.evolveLevels[D.evolveLevels.length - 1]}）。進化するたびに型を1つ選ぶ（型の効果は引き継ぐ）。`,
+          '',
+          table(['武器', '持ち主', '進化先', '進化元', '条件', '効果', '型（どちらか1つ）'], evolutions),
+        ].join('\n'),
+      ],
       [
         '素材・アイテム（段階27b：素材は直接吸わせる。吸わせ枠を1つ使う）',
         [

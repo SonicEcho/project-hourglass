@@ -43,6 +43,15 @@ const main = (id: string, label: string, y = ROW1, after?: string): DailySpot =>
 /** 小話 */
 const talk = (id: string, label: string, y = ROW1): DailySpot => ({ id, scene: id, label, mark: 'talk', x: 195, y });
 
+/**
+ * 狩りの入口（段階43）：時計屋の「返した時間へ（狩り）」。返した区画が1つでもあれば、どの日の昼にも出る。
+ * 昼に選べる回数は使わず、時間も進まない。押すと、狩りに入れる区画を選ぶ
+ */
+export const HUNT_SPOT: { place: string; spot: DailySpot } = {
+  place: 'clockshop',
+  spot: { id: 'hunt', label: '返した時間へ（狩り）', mark: 'hunt', x: 195, y: 660 },
+};
+
 /** 昼に選べる回数（段階35。docs/milestones/M2.md の「決まったこと」） */
 export const DAILY_PICKS = 2;
 

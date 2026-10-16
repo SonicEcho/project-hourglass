@@ -55,6 +55,7 @@
 | 47（M2） | 部屋をつなぐ探索と敵の動き（部屋 `rooms.ts`、つなぎ `links`・閉じた出入口、`passDoor`・`roomPositions`・`reachableCells`、全体の地図、敵の動き4種類 `enemyNext`・`ENEMY_MOVES`、セーブの版9、試しの区画 `TRIAL_AREAS`、配置の下絵 `scripts/room_sketch.mjs`） | — |
 | 39b（M2） | 2-2「最後の文化祭」を部屋をつなぐ形の最初の区画として作った（6部屋 `SCHOOL_*_LAYOUT`、番人で開く体育館、寄り道の駐輪場とお化け屋敷の教室）。平成の砂嵐4つと「アンプのぬし」（`schoolEnemies.ts`）、敵の大技「アンコール」（`encore`）、2-2 の素材、6-A（楽器店）・6-B・2-2 の会話・6-C・7-A の台本、2-2 の勝率の測定、部屋の絵の指示文と下絵（`docs/ART.md` の 6-3）。絵は届いてから | — |
 | 40（M2） | 2-3「最後の打席」（部屋をつなぐ6部屋 `RIVERSIDE_*_LAYOUT`、平成の砂嵐4つと「スコアボードのぬし」`riversideEnemies.ts`）、カイの負け戦（戦闘の打ち切り `cutoff`、物語の流れの戦闘の出来事 `battle`）、7-A〜8-C の台本で2章の終わりまで仮の画面がなくなった。なくなった出来事の付け替え（`RENAMED_EVENTS`）、2-3 の勝率の測定、部屋の絵の指示文と下絵（`docs/ART.md` の 6-4） | — |
+| 42（M2） | 武器の進化ツリー（進化先の親 `from`・型 `styles`・寄り道 `detour`・まだ作っていない先 `sealed` と言い伝え `legend`、武器の状態の `path`、見せ方 `evolutionVisibility`、ツリーの画面 `WeaponTreeScene`、型を選ぶ窓、鍵の手がかり `itemHint`、武器 Lv7 まで、セーブの版11、測定にボスの前の武器） | — |
 | 31b の仮（M1） | 仮の BGM：魔王魂の曲6つ（タイトル・日常・レストピア・返す場面・戦闘・ボス戦。`scripts/maou_bgm.py`）。大きさを −17.4 LUFS にそろえた。戦闘の画面で戦闘の曲に切り替え、BGM は初めて流す時に読む（`src/audio/sound.ts`） | — |
 | 46（M2） | 感情を伝える動き：戦闘中のひとこと（`src/core/bark.ts`・`src/data/barks.ts`）、立ち絵のまばたきと口パク（`PORTRAIT_PARTS`・`scripts/portrait_parts.py`）、動く1枚絵（`motes`・`glow`）、返す画面の記憶の再生（`AreaDef.memory`） | #77 |
 

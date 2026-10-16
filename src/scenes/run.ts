@@ -60,6 +60,11 @@ export const run: {
   returned: string[];
   /** 持っているスナップと、アルバムの中身（段階41） */
   album: AlbumState;
+  /**
+   * 狩りの途中の状態（段階43。返し終えた区画に入り直している時だけ）。セーブしない（閉じたら昼の日常から）。
+   * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）
+   */
+  hunt: { salt: number; state: ExploreState } | null;
 } = {
   active: false,
   seed: 0,
@@ -75,6 +80,7 @@ export const run: {
   linkGauge: null,
   returned: [],
   album: createAlbum(FOLDER),
+  hunt: null,
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -115,6 +121,7 @@ export function startNewRun(): void {
   run.linkGauge = null;
   run.returned = [];
   run.album = createAlbum(FOLDER);
+  run.hunt = null;
   saveRun();
 }
 
@@ -149,6 +156,29 @@ export function advanceEvent(): FlowEvent {
 /** 探索の状態を変えて保存する（段階25。null は探索を終えた） */
 export function setExplore(state: ExploreState | null): void {
   run.explore = state;
+  saveRun();
+}
+
+// ---- 周回・狩り（段階43） ----
+
+/** 狩りの戦闘の回数を覚える、物語で覚えた値の名前（戦闘のシードをずらす。セーブの形を変えないよう、物語の値に入れる） */
+const HUNT_COUNT_KEY = '狩り:回数';
+
+/** 狩りの戦闘の回数（入るたび・戦うたびに1つ進め、保存する）。進める前の数を返す */
+export function nextHuntCount(): number {
+  const n = Number(run.vars[HUNT_COUNT_KEY] ?? '0') || 0;
+  setStoryVars({ ...run.vars, [HUNT_COUNT_KEY]: String(n + 1) });
+  return n;
+}
+
+/** 狩りに入る（入るたびに新しい中身） */
+export function startHunt(state: ExploreState): void {
+  run.hunt = { salt: (run.seed + nextHuntCount() * 7919) >>> 0, state };
+}
+
+/** 狩りの途中の状態を変える（セーブしない。手に入れた素材などは saveRun で保存する） */
+export function setHuntState(state: ExploreState): void {
+  if (run.hunt) run.hunt = { ...run.hunt, state };
   saveRun();
 }
 
@@ -261,6 +291,7 @@ export function continueRun(): boolean {
   run.linkGauge = s.linkGauge;
   run.returned = s.returned;
   run.album = s.album;
+  run.hunt = null;
   run.active = true;
   lastWritten = null;
   saveRun();
@@ -337,6 +368,11 @@ export function storyLineup(): Lineup {
 /** 育成の画面で使うパーティ：探索から開いた時は物語の章のもの、それ以外は試作の5戦のもの */
 export function hubLineup(): Lineup {
   return hubReturn ? storyLineup() : PROTOTYPE_LINEUP;
+}
+
+/** その章で開けられる星図のマスの章（段階49。試作の5戦など、章のないパーティは制限なし） */
+export function growthChapter(lineup: Lineup): number {
+  return lineup.chapter ?? Infinity;
 }
 
 /** パーティにいる仲間（成長を反映しない、元のデータ） */

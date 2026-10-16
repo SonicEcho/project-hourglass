@@ -13,6 +13,9 @@ import { ITEMS } from './weapons';
 // 探索の区画（段階25）。地図の絵、歩ける場所の文字の地図、宝箱、敵の印、ボス、話せる人、途中の会話のきっかけ。
 // 位置はマス（列, 行）。1マスは 32（AREA_TILE）。歩ける場所の文字の地図は、段階18b の縁日の地図をそのまま使う
 
+/** 狩りで、前の章の区画の砂嵐と戦った時の星の砂と武器の経験値の割合（段階49。今の章の区画は全部） */
+export const HUNT_OLD_AREA_RATE = 0.5;
+
 /** 1マスの大きさ（地図の絵の上の大きさ） */
 export const AREA_TILE = 32;
 /** 仲間が1マス歩く時間（ミリ秒） */
@@ -105,6 +108,15 @@ export const AREAS: Record<string, AreaDef> = {
     // 返す画面で、すり切れた映像として流す景色（段階46d）
     memory: 'shrine_approach',
     // 金魚すくいとラムネの屋台の前
+    // 狩り（段階43）：採取の場所は、1回目の宝箱と浴衣の女の人の所。砂嵐は入るたびに縁日の4つの戦闘から選ぶ
+    hunt: {
+      gathers: [
+        { id: 'a11_gather_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
+        { id: 'a11_gather_ramune', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
+        { id: 'a11_gather_yukata', cell: [12, 22], items: [ITEMS.maskShard.id] },
+      ],
+      tables: { festival_grounds: ['a11_storm1', 'a11_storm2', 'a11_storm3', 'a11_storm4'] },
+    },
     chests: [
       { id: 'a11_chest_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },
       { id: 'a11_chest_ramune', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
@@ -175,6 +187,15 @@ export const AREAS: Record<string, AreaDef> = {
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['recover'],
     // 時計屋の手前の広い歩道と、坂の手前の右の歩道
+    // 狩り（段階43）：採取の場所は、1回目の宝箱と電器屋の子どもの所
+    hunt: {
+      gathers: [
+        { id: 'a12_gather_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id, ITEMS.phoneCord.id] },
+        { id: 'a12_gather_slope', cell: [16, 10], items: [ITEMS.tinSpring.id, ITEMS.menkoCard.id] },
+        { id: 'a12_gather_tv', cell: [9, 15], items: [ITEMS.phoneCord.id] },
+      ],
+      tables: { showa_street: ['a12_storm1', 'a12_storm2', 'a12_storm3', 'a12_storm4', 'a12_storm5'] },
+    },
     chests: [
       { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id, ITEMS.phoneCord.id, ITEMS.potion.id], snaps: ['heavyBlow'] },
       { id: 'a12_chest_slope', cell: [16, 10], items: [ITEMS.tinSpring.id, ITEMS.menkoCard.id, ITEMS.hiPotion.id], snaps: ['iceChip'] },
@@ -255,6 +276,15 @@ export const AREAS: Record<string, AreaDef> = {
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['joker'],
     // 銭湯の左の道の奥と、右の道の奥。ムーブメントのギアも入っている（段階38）
+    // 狩り（段階43）：採取の場所は、1回目の宝箱とラジオの所
+    hunt: {
+      gathers: [
+        { id: 'a21_gather_left', cell: [5, 12], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id] },
+        { id: 'a21_gather_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id] },
+        { id: 'a21_gather_radio', cell: [11, 27], items: [ITEMS.tubeGlass.id] },
+      ],
+      tables: { factory_alley: ['a21_storm1', 'a21_storm2', 'a21_storm3', 'a21_storm4', 'a21_storm5'] },
+    },
     chests: [
       { id: 'a21_chest_left', cell: [5, 12], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'], snaps: ['thunderChip'] },
       { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'], snaps: ['draw'] },
@@ -345,6 +375,19 @@ export const AREAS: Record<string, AreaDef> = {
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['joker'],
     // 中庭の右の模擬店の裏、駐輪場の奥、お化け屋敷の教室の奥。寄り道の2つにはムーブメントのギア
+    // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（渡り廊下）は出ないので、番人の戦闘は教室の表に入れる
+    hunt: {
+      gathers: [
+        { id: 'a22_gather_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id] },
+        { id: 'a22_gather_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id] },
+        { id: 'a22_gather_haunted', room: 'school_classroom', cell: [20, 4], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id] },
+      ],
+      tables: {
+        school_gate: ['a22_storm1', 'a22_storm1', 'a22_storm2'],
+        school_courtyard: ['a22_storm2', 'a22_storm3'],
+        school_classroom: ['a22_storm3', 'a22_storm4', 'a22_storm5'],
+      },
+    },
     chests: [
       { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id, ITEMS.potion.id], snaps: ['fireChip'] },
       { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id, ITEMS.ether.id], gears: ['iceBoost'], snaps: ['search'] },
