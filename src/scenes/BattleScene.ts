@@ -56,7 +56,7 @@ import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
 import type { Lineup } from '../core';
 import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
-import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
 /** 選んでいる行動の元 */
@@ -154,6 +154,11 @@ export class BattleScene extends Phaser.Scene {
     this.encounter = data.encounter;
     const areaBattle = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
     if (data.encounter && !areaBattle) throw new Error(`unknown area battle ${data.encounter.battle}`);
+    // 戦闘中の印（段階44）：閉じたら「つづきから」で、この戦闘の始めから続ける。記憶をたどる戦闘（セーブしない）と試作の5戦は書かない
+    if (data.encounter && !data.encounter.hunt) {
+      const target = (t: { key: string; data: object }) => ({ key: t.key, data: { ...t.data } as Record<string, unknown> });
+      setBattleMark({ battle: data.encounter.battle, win: target(data.encounter.win), lose: target(data.encounter.lose) });
+    }
     this.battle = areaBattle ?? battleAt(this.progress);
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id) + (data.encounter?.seedShift ?? 0) * 104729) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
@@ -1329,6 +1334,8 @@ export class BattleScene extends Phaser.Scene {
   /** 勝敗がついた時。戦闘1の勝利ならボス戦へ、それ以外は結果画面へ */
   private showEnd(): void {
     this.closeOverlay();
+    // 戦闘が終わったので、戦闘中の印を消す（段階44）
+    if (run.battle) setBattleMark(null);
     // ポーチ（段階51）：使った消費アイテムは、勝っても負けても減る
     const used = getBattleResult(this.state).pouchUsed;
     if (Object.keys(used).length > 0) {

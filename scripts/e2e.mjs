@@ -292,6 +292,27 @@ try {
   await until('ポーションを使った', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.pouch[0]?.used)) === 1, 20000);
   await winBattle();
 
+  step('戦闘の途中で閉じても、「つづきから」でその戦闘の始めから（段階44）');
+  // 前の戦闘の結果の窓から、探索へ戻ってから始める
+  await page.waitForTimeout(800);
+  for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
+    await tap('^わかった$');
+    await page.waitForTimeout(400);
+  }
+  await tap('^探索へ戻る$');
+  await until('戦闘の画面を抜けた', async () => !(await scenes()).includes('Battle'));
+  await page.waitForTimeout(500);
+  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm2', win: b, lose: b } }), back);
+  await waitScene('Battle');
+  await page.waitForTimeout(800);
+  await page.reload();
+  await waitScene('Title');
+  await until('「つづきから」の下に戦闘の途中', () => findText('（砂嵐の途中）'));
+  await tap('^つづきから$');
+  await waitScene('Battle');
+  if ((await page.evaluate(() => window.__restopia.scene('Battle').battle.id)) !== 'a11_storm2') throw new Error('別の戦闘に戻った');
+  await winBattle();
+
   step('レストピアの拠点（段階50）と記憶をたどる（段階43）・交換所（段階52）・落とし物（段階53）：昼の時計屋から拠点に入り、星図・交換所を開いて戻り、落とし物を受け、返した区画をたどって見つけ、ぬしに勝っても続き、落とし物を届け、拠点から時計屋へ戻っても昼の回数は減らない');
   const skipTips = async () => {
     for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
@@ -417,6 +438,7 @@ try {
 } catch (e) {
   failed = true;
   console.error(`通しの自動確認：失敗\n${e instanceof Error ? e.message : e}`);
+  if (errors.length > 0) console.error(`ページのエラー：\n${errors.slice(0, 5).join('\n')}`);
   await page.screenshot({ path: 'e2e-failure.png' }).catch(() => {});
 } finally {
   await browser.close();

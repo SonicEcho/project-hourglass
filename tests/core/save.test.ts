@@ -22,7 +22,7 @@ import {
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { AREAS, CARDS, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREA_BATTLES, AREAS, CARDS, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -36,6 +36,7 @@ const ctx: SaveContext = {
   areas: AREAS,
   cards: CARDS,
   initialAlbum: createAlbum(FOLDER),
+  battleIds: Object.keys(AREA_BATTLES),
 };
 
 const AT = new Date('2026-10-07T12:34:56Z');
@@ -55,6 +56,7 @@ function freshRun(): RunSnapshot {
     linkGauge: null,
     returned: [],
     album: createAlbum(FOLDER),
+    battle: null,
   };
 }
 
@@ -88,6 +90,22 @@ function parseEdited(edit: (raw: any) => void) {
 }
 
 describe('セーブ：保存して読む', () => {
+  it('戦闘中の印（段階44）を保存して読む。今のデータにない戦闘・形の違う物は捨てる。版11のセーブは戦闘中ではない', () => {
+    const mark = { battle: 'a11_storm1', win: { key: 'Explore', data: { area: 'a11', won: 'e1' } }, lose: { key: 'Explore', data: { area: 'a11', lost: true } } };
+    const r = { ...playedRun(), battle: mark };
+    const res = parseSave(serializeSave(r, AT), ctx);
+    expect(res.ok && res.save.run.battle).toEqual(mark);
+    const gone = parseEdited((raw) => (raw.run.battle = { ...mark, battle: 'nowhere' }));
+    expect(gone.ok && gone.save.run.battle).toBeNull();
+    const broken = parseEdited((raw) => (raw.run.battle = { battle: 'a11_storm1', win: 'Explore', lose: mark.lose }));
+    expect(broken.ok && broken.save.run.battle).toBeNull();
+    const old = parseEdited((raw) => {
+      raw.version = 11;
+      delete raw.run.battle;
+    });
+    expect(old.ok && old.save.run.battle).toBeNull();
+  });
+
   it('ポーチの消費アイテムを持てる数より多く持っていたら、読み込む時にそろえる（段階51）', () => {
     const res = parseEdited((raw) => {
       raw.run.armory.items.potion = 7;

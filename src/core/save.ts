@@ -20,7 +20,7 @@ import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -54,6 +54,15 @@ export interface RunSnapshot {
   returned: string[];
   /** 持っているスナップと、アルバムの中身（段階41。版10から） */
   album: AlbumState;
+  /** 戦闘中（段階44。版12から）：閉じたら、この戦闘の始めから続ける。戦闘の外では null */
+  battle: SavedBattle | null;
+}
+
+/** 戦闘中の印（段階44）：どの戦闘か（区画の戦闘の id）と、勝った時・負けた時に開く画面 */
+export interface SavedBattle {
+  battle: string;
+  win: { key: string; data: Record<string, unknown> };
+  lose: { key: string; data: Record<string, unknown> };
 }
 
 export interface SaveData {
@@ -81,6 +90,8 @@ export interface SaveContext {
   /** スナップ（id → 中身）と、最初の持ち物とアルバム（段階41） */
   cards: Record<string, CardDef>;
   initialAlbum: AlbumState;
+  /** 区画の戦闘の id（段階44。戦闘中の印を整える。書かなければ、戦闘中の印は捨てる） */
+  battleIds?: readonly string[];
 }
 
 /** ある版のセーブを、次の版の形に直す手順（キーは直す前の版の番号） */
@@ -123,6 +134,8 @@ export const MIGRATIONS: SaveMigrations = {
     }
     return { ...raw, run: { ...raw.run, armory: { ...raw.run.armory, weapons } } };
   },
+  // 版11 → 版12（段階44）：戦闘中の印（battle）を足した。前の版は戦闘中ではないとする
+  11: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, battle: null } } : raw),
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -192,7 +205,16 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     // 今の区画にないものと、重なりは捨てる
     returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
     album: sanitizeAlbum(raw.album, ctx.cards, ctx.initialAlbum),
+    battle: sanitizeBattle(raw.battle, ctx),
   };
+}
+
+/** 戦闘中の印：今のデータにない戦闘・形の違うものは捨てる（段階44） */
+function sanitizeBattle(raw: unknown, ctx: SaveContext): SavedBattle | null {
+  const target = (t: unknown): t is { key: string; data: Record<string, unknown> } => isObject(t) && typeof t.key === 'string' && isObject(t.data);
+  if (!isObject(raw) || typeof raw.battle !== 'string' || !ctx.battleIds?.includes(raw.battle)) return null;
+  if (!target(raw.win) || !target(raw.lose)) return null;
+  return { battle: raw.battle, win: { key: raw.win.key, data: { ...raw.win.data } }, lose: { key: raw.lose.key, data: { ...raw.lose.data } } };
 }
 
 /** 引き継ぐつながりゲージ：今の流れにない章・形の違うものは捨て、量は 0〜満タンにおさめる */
