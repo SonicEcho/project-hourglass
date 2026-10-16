@@ -3,12 +3,13 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { nextVolume } from '../core';
 import { getSettings, playSe, setSettings } from '../audio/sound';
 import { SE } from '../data';
+import { canToggleFullscreen, isFullscreen, toggleFullscreen } from './fullscreen';
 import { addWindow, fadeOutAndDestroy, popIn } from './skin';
 import { COLORS } from './theme';
 import { addButton, addText } from './widgets';
 
 // オプションの窓（段階32b 調整3）。タイトルと会話の画面で同じ窓を使う。
-// 上に音の設定（BGM・効果音・文字音・出力先）、下にその画面だけの項目（タイトルなら説明・遊んだ記録・クレジット）。
+// 上に全画面（できるブラウザだけ。段階48）と音の設定（BGM・効果音・文字音・出力先）、下にその画面だけの項目（タイトルなら説明・遊んだ記録・クレジット）。
 // 項目を足す時は、音の行（SOUND_ROWS）か、開く側から渡す links に足す
 
 /** 窓の下に並べる、ほかの画面を開く項目 */
@@ -57,15 +58,23 @@ const SOUND_ROWS: SoundRow[] = [
   },
 ];
 
+/** 全画面の行（段階48）。全画面になるのは少し後なので、窓は fullscreenchange で描き直す */
+const FULLSCREEN_ROW: SoundRow = {
+  label: '全画面',
+  value: () => (isFullscreen() ? '入' : '切'),
+  next: () => toggleFullscreen(),
+};
+
 const ROW_GAP = 58;
 const LINK_GAP = 56;
 
 /** オプションの窓を開く。閉じる時に onClose を呼ぶ */
 export function openOptions(scene: Phaser.Scene, opts: { links?: OptionsLink[]; depth?: number; onClose?: () => void } = {}): Phaser.GameObjects.Container {
   const links = opts.links ?? [];
+  const settingRows = [...(canToggleFullscreen() ? [FULLSCREEN_ROW] : []), ...SOUND_ROWS];
   const cx = GAME_WIDTH / 2;
   const w = 320;
-  const h = 96 + SOUND_ROWS.length * ROW_GAP + 34 + (links.length > 0 ? 16 + links.length * LINK_GAP : 0) + 70;
+  const h = 96 + settingRows.length * ROW_GAP + 34 + (links.length > 0 ? 16 + links.length * LINK_GAP : 0) + 70;
   const top = Math.round((GAME_HEIGHT - h) / 2);
   const panel = scene.add.container(0, 0).setDepth(opts.depth ?? 300);
   // 後ろのボタンを押せないよう、画面全体を覆う
@@ -78,7 +87,7 @@ export function openOptions(scene: Phaser.Scene, opts: { links?: OptionsLink[]; 
   const rowTop = top + 92;
   const draw = () => {
     rows.removeAll(true);
-    SOUND_ROWS.forEach((row, i) => {
+    settingRows.forEach((row, i) => {
       const y = rowTop + i * ROW_GAP;
       rows.add(addText(scene, cx - 130, y, row.label, { size: 15 }).setOrigin(0, 0.5));
       addButton(scene, rows, cx + 70, y, 130, 46, row.value(), {
@@ -90,7 +99,10 @@ export function openOptions(scene: Phaser.Scene, opts: { links?: OptionsLink[]; 
     });
   };
   draw();
-  let y = rowTop + (SOUND_ROWS.length - 1) * ROW_GAP + 44;
+  // 戻る操作で全画面をやめた時も、行の入・切を合わせる
+  document.addEventListener('fullscreenchange', draw);
+  panel.once(Phaser.GameObjects.Events.DESTROY, () => document.removeEventListener('fullscreenchange', draw));
+  let y = rowTop + (settingRows.length - 1) * ROW_GAP + 44;
   panel.add(addText(scene, cx, y, 'Bluetooth（無線）のイヤホンの時は、会話の文字の音を早めに鳴らす', { size: 11, color: COLORS.subText, align: 'center', wrap: 280 }).setOrigin(0.5));
   y += 34;
   if (links.length > 0) {

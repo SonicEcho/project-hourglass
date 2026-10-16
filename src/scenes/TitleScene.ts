@@ -12,6 +12,7 @@ import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, deleteSave, moveBrokenSave, readSave, startNewRun } from './run';
 import { enterScreen, fadeOutAndDestroy, screenBg } from '../ui/skin';
 import { openOptions } from '../ui/options';
+import { canToggleFullscreen, isFullscreen, onFullscreenChange, toggleFullscreen } from '../ui/fullscreen';
 import { notePlayStart, setPlayTracking } from './playRecord';
 
 /** 保存した日時を「10/7 21:05」の形にする */
@@ -101,6 +102,19 @@ export class TitleScene extends Phaser.Scene {
           ],
         }),
     }, { size: 13 });
+    // 左上に全画面のボタン（段階48）。ホーム画面のアイコンから開いた時と、全画面にできないブラウザでは出さない
+    if (canToggleFullscreen()) {
+      const fs = this.add.container(0, 0);
+      root.add(fs);
+      const drawFs = () => {
+        if (!fs.active) return;
+        fs.removeAll(true);
+        const full = isFullscreen();
+        addButton(this, fs, 72, 36, 124, 44, full ? '全画面をやめる' : '全画面', { onTap: () => toggleFullscreen() }, { size: 13 });
+      };
+      drawFs();
+      onFullscreenChange(this, drawFs);
+    }
     // スマホのブラウザは、最初に画面に触れるまで音を出せない。それまでは案内を出す（段階32b 調整3）
     if (this.sound.locked) {
       const hint = addText(this, cx, 500, '画面をタップすると音が出ます', { size: 14, color: COLORS.accentText }).setOrigin(0.5);
