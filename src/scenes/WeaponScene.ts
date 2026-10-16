@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { EvolutionDef, PartColor, WeaponParamKey, WeaponState } from '../core';
 import {
+  cappedPassives,
   absorbMaterial,
   canEvolveAny,
   evolutionChecks,
@@ -24,11 +25,11 @@ import { FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
+import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -281,7 +282,7 @@ export class WeaponScene extends Phaser.Scene {
       setHubReturn(null);
       this.scene.start(back.key, back.data);
     };
-    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, back ? '探索へ戻る' : '星図へ戻る', { onTap: leave }, {
+    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, back ? (back.label ?? '探索へ戻る') : '星図へ戻る', { onTap: leave }, {
       size: 16,
       bold: true,
     });
@@ -362,6 +363,16 @@ export class WeaponScene extends Phaser.Scene {
         color: w.absorbed >= slots ? COLORS.allyDamage : COLORS.text,
       }),
     );
+    // 割合の効果の上限（段階54）：武器・型・ギア・星図を合わせて上限に届いた効果（超えた分は効かない）
+    const grown = currentParty(hubLineup()).find((c) => c.id === this.charId);
+    const capped = grown ? cappedPassives(grown) : [];
+    if (capped.length > 0) {
+      const label = (c: (typeof capped)[number]): string =>
+        c.kind === 'elementBoost'
+          ? `${ELEMENT_LABEL[c.element!]} +${Math.round(c.value * 100)}%`
+          : ({ partBoost: `部位 +${Math.round(c.value * 100)}%`, comboBoost: `コンボ +${Math.round(c.value * 100)}%`, regen: `回復 ${Math.round(c.value * 100)}%`, batonBoost: `バトン ×${1.25 + c.value}`, mpSave: `MP消費 −${c.value}`, oneMoreDraw: `延長 +${c.value}枚` } as Record<string, string>)[c.kind];
+      this.root.add(addText(this, x0 + 10, CARD_TOP + 124, `上限：${capped.map(label).join('・')}（超えた分は効かない）`, { size: 10, bold: true, color: COLORS.accentText }));
+    }
     // 傾向（ムーブメントが閉じている間は出さない。段階26）
     if (!hubLineup().unlocks.navi) return;
     const t = tendencyOf(w);
@@ -445,7 +456,8 @@ export class WeaponScene extends Phaser.Scene {
 
   /** 下の段：「素材」（吸わせる・時分解）と「記憶の欠片」（吸わせる。枠を使わない）の2つのタブ（段階27b） */
   private drawInventory(): void {
-    const itemTotal = Object.values(run.armory.items).reduce((a, n) => a + n, 0);
+    // ポーチの消費アイテム（段階51）は素材の一覧に出さない（吸わせられず、時分解もできない）
+    const itemTotal = Object.entries(run.armory.items).reduce((a, [id, n]) => a + (D.items[id]?.kind === 'material' ? n : 0), 0);
     const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
     const tabW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
     (['items', 'fragments'] as const).forEach((tab, i) => {
@@ -474,7 +486,7 @@ export class WeaponScene extends Phaser.Scene {
 
     const isItems = this.tab === 'items';
     // 素材は持っているものだけ（多い時はページを切り替える）。記憶の欠片は4種類とも出す
-    const ids = isItems ? Object.keys(ITEMS).filter((id) => (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
+    const ids = isItems ? Object.keys(ITEMS).filter((id) => D.items[id]?.kind === 'material' && (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
     const recommended = isItems ? recommendedItems(this.weapon()) : new Set<string>();
     const cols = 4;
     const rows = 3;
@@ -643,7 +655,7 @@ function keyItems(w: WeaponState): Set<string> {
 function itemDetail(itemId: string): string {
   const it = D.items[itemId];
   return [
-    it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : '通常アイテム（今は戦闘で使えない。時分解して記憶の欠片にする）',
+    it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : 'ポーチの消費アイテム（戦闘の「その他」から使う）',
     it.kind === 'material' ? `吸わせると：${describeGains(it.gains)}（吸わせ枠を1つ使う）` : '',
     `時分解すると：${describeDecompose(D, it)}`,
     '',

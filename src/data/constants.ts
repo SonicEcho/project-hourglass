@@ -15,6 +15,21 @@ export const ALBUM_COPY_MAX = 4;
 export const ONE_MORE_DRAW = 1;
 /** 1ラウンドにチーム全体で使えるサポートスナップの枚数 */
 export const SUPPORT_PER_ROUND = 1;
+/**
+ * 割合の特性の上限（段階54。docs/design/economy.md の 9-2）。武器・型・ギア・星図を合わせた合計に効く。超えた分は効かない。
+ * elementBoost は属性ごと、batonBoost は BATON_MULTIPLIER に足す分（1.25 + 0.5 = 1.75 倍まで）、mpSave と oneMoreDraw は数
+ */
+export const PASSIVE_CAPS = { elementBoost: 0.8, partBoost: 1.0, comboBoost: 0.6, regen: 0.06, batonBoost: 0.5, mpSave: 2, oneMoreDraw: 2 } as const;
+
+/** 記憶の「薄れ」（段階57）：同じ記憶にその日入った回数ごとの、実入りの割合（濃い・少し薄い・薄い・かすか）。使い切ると、その日はもう入れない */
+export const MEMORY_FADE_RATES = [1, 0.6, 0.3, 0.1];
+/** 記憶の濃さの呼び名（MEMORY_FADE_RATES と同じ並び） */
+export const MEMORY_FADE_LABELS = ['濃い', '少し薄い', '薄い', 'かすか'];
+
+/** ポーチ（段階51）：1種類を持てる数 */
+export const POUCH_MAX = 3;
+/** ポーチ（段階51）：1つの戦闘で使える回数（計画で予約した分も数える） */
+export const POUCH_USES_PER_BATTLE = 3;
 
 /** ダメージの乱数幅 */
 export const RANDOM_MIN = 0.9;

@@ -83,7 +83,7 @@ export function checkHunt(area: HuntableArea, battles: Readonly<Record<string, u
     for (const b of table) if (!(b in battles)) errors.push(`${area.id}：部屋 ${room} の敵の表に、ない戦闘 ${b}`);
   }
   // 作った狩りの区画も、区画の決まりを満たす（採取の場所の隣に立てる、など）
-  errors.push(...checkArea(huntArea(area, 0)).map((e) => `狩り：${e}`));
+  errors.push(...checkArea(huntArea(area, 0)).map((e) => `記憶をたどる：${e}`));
   return errors;
 }
 

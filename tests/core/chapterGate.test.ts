@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GrowthState } from '../../src/core';
-import { areaChapter, chapterLocked, createArmory, createGrowth, getOpenError, huntRewardRate, openableNodes, openNode, recordVictory } from '../../src/core';
-import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_MAP, HERO, HUNT_OLD_AREA_RATE, PARTY, SLICE_FLOW, WEAPON_DATA } from '../../src/data';
+import { areaChapter, eventPassed, flowEvents, chapterLocked, createArmory, createGrowth, getOpenError, huntRewardRate, openableNodes, openNode, recordVictory } from '../../src/core';
+import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_MAP, HERO, HUB_SCENES, HUNT_OLD_AREA_RATE, PARTY, SCENES, SLICE_FLOW, WEAPON_DATA } from '../../src/data';
 
 // 章の区切り（段階49。docs/design/economy.md の 2.・7.）：星図の区域は章で広がる。狩りで前の章の区画は、星の砂と経験値が半分
 describe('星図の章の鍵（段階49）', () => {
@@ -53,5 +53,22 @@ describe('狩りの報酬の割合（段階49）', () => {
     expect(half.weapons.akari.exp).toBe(0);
     expect(half.items.maskShard).toBe(1);
     expect(recordVictory(a, { actions: { hero: 7 }, colorCells: {}, items: [] }).weapons.hero.exp).toBe(7);
+  });
+});
+
+describe('レストピアの拠点の会話（段階50）', () => {
+  it('物語の流れで、ある出来事を過ぎたか（今の出来事はまだ過ぎていない。知らない id は過ぎていない）', () => {
+    const ids = flowEvents(SLICE_FLOW).map((e) => e.id);
+    expect(eventPassed(SLICE_FLOW, ids[3], ids[2])).toBe(true);
+    expect(eventPassed(SLICE_FLOW, ids[3], ids[3])).toBe(false);
+    expect(eventPassed(SLICE_FLOW, ids[2], ids[3])).toBe(false);
+    expect(eventPassed(SLICE_FLOW, ids[2], 'nowhere')).toBe(false);
+  });
+
+  it('拠点の会話は台本にあり、条件の出来事は物語の流れにある', () => {
+    for (const h of HUB_SCENES) {
+      expect(SCENES.some((s) => s.id === h.scene), h.scene).toBe(true);
+      if (h.after) expect(flowEvents(SLICE_FLOW).some((e) => e.id === h.after), h.after).toBe(true);
+    }
   });
 });

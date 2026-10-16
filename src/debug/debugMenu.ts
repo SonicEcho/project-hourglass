@@ -1,7 +1,7 @@
 import { formatBattleLog } from './battleLog';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addItems, addKoma, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
-import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
+import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
 
@@ -52,6 +52,8 @@ export function installDebugMenu(nav: DebugNavigator): void {
   const close = () => {
     panel.style.display = 'none';
   };
+  // メニューの上で押した・離した操作を、下のゲームの画面へ通さない（「閉じる」を押すと、下のボタンまで押されていた。2026-10-16）
+  for (const type of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend']) panel.addEventListener(type, (e) => e.stopPropagation());
 
   const button = (label: string, onClick: () => void, enabled = true) => {
     const b = el('button', BUTTON_CSS + (enabled ? '' : 'opacity:0.4;'), label);
@@ -130,9 +132,24 @@ export function installDebugMenu(nav: DebugNavigator): void {
     panel.append(
       button('素材とアイテムを全種類2つずつもらう', () => {
         const ids = Object.keys(ITEMS);
-        run.armory = addItems(run.armory, [...ids, ...ids]);
+        run.armory = capItems(WEAPON_DATA, addItems(run.armory, [...ids, ...ids])).armory;
         nav.refreshGrowth();
         notify('素材とアイテムを全種類2つずつもらいました');
+      }),
+    );
+    panel.append(
+      // 段階51：ポーチの消費アイテムを、持てる数まで（次に始める戦闘から使える）
+      // 段階52：交換所で使う記憶の欠片
+      button('記憶の欠片を10個ずつもらう', () => {
+        run.armory = addFragments(run.armory, Object.keys(FRAGMENTS).flatMap((id) => Array.from({ length: 10 }, () => id)));
+        nav.refreshGrowth();
+        notify('記憶の欠片を4種類10個ずつもらいました');
+      }),
+    );
+    panel.append(
+      button('ポーチを満タンにする', () => {
+        run.armory = capItems(WEAPON_DATA, addItems(run.armory, POUCH_ORDER.flatMap((id) => Array.from({ length: POUCH_MAX }, () => id)))).armory;
+        notify(`ポーチを満タンにしました（1種類${POUCH_MAX}個。次に始める戦闘から使える）`);
       }),
     );
     panel.append(

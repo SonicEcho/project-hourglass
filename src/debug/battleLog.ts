@@ -32,7 +32,7 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
     case 'action':
       return `${e.extra ? '★追加行動 ' : ''}${names(s, e.actorIds)}：${e.name}`;
     case 'cancel':
-      return `${names(s, e.actorIds)}の行動は取り消し（${e.reason === 'dead' ? '先に倒れた' : 'MPが足りない'}）`;
+      return `${names(s, e.actorIds)}の行動は取り消し（${e.reason === 'dead' ? '先に倒れた' : e.reason === 'target' ? '使う相手が倒れた' : 'MPが足りない'}）`;
     case 'support':
       return `サポート：${e.name}${e.targetId ? `（${name(s, e.targetId)}）` : ''}`;
     case 'search':
@@ -45,6 +45,8 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
     }
     case 'heal':
       return `  ${name(s, e.targetId)}が${e.amount}回復（HP ${e.hpAfter}）`;
+    case 'mpRestore':
+      return `  ${name(s, e.targetId)}の MP が${e.amount}戻った（MP ${e.mpAfter}）`;
     case 'weaknessFound':
       return `  ${name(s, e.enemyId)}の弱点「${ELEMENT_LABEL[e.element]}」が判明`;
     case 'down':

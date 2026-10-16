@@ -12,6 +12,7 @@ import {
   isOffBalance,
   livingAllies,
   passBaton,
+  pouchLeft,
   resolveSearch,
   runUntilInput,
   setPlan,
@@ -162,13 +163,46 @@ export function smartExtra(s: BattleState, pick: (n: number) => number): { kind:
   return choice ? { kind: 'act', state: applyExtra(s, choice) } : { kind: 'decline', state: declineExtra(s) };
 }
 
-/** 戦闘を最後まで、弱点をねらう方針で遊ぶ。同じシードなら同じ展開になる */
-export function smartPlay(s0: BattleState, seed: number): BattleState {
+// ---- ポーチを使う方針（段階51。docs/design/economy.md の 5-1。使う方針と使わない方針の勝率を比べる測定用） ----
+
+/** HP がこの割合を切った仲間に、ポーションを使う */
+const POUCH_HP_RATIO = 0.3;
+
+/**
+ * ポーチの計画：HP が3割を切った仲間がいれば、まだ行動を決めていない仲間がポーション（減った HP が多ければハイポーション）を使う。
+ * 一番安い魔法・スキルの MP がない仲間は、自分にエーテルを使う。残りの仲間は決めないまま返す
+ */
+export function pouchPlan(s0: BattleState): BattleState {
+  let s = s0;
+  const free = () => livingAllies(s).filter((a) => !s.plans.some((p) => !p.done && p.actorIds.includes(a.uid)));
+  const has = (id: string, by: string) => pouchLeft(s, id, [by]).count > 0 && pouchLeft(s, id, [by]).uses > 0;
+  const healed = new Set<string>();
+  for (const hurt of livingAllies(s).filter((a) => a.hp < a.maxHp * POUCH_HP_RATIO).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)) {
+    const user = free()[0];
+    if (!user) break;
+    const id = hurt.maxHp - hurt.hp > 80 && has('hiPotion', user.uid) ? 'hiPotion' : has('potion', user.uid) ? 'potion' : has('hiPotion', user.uid) ? 'hiPotion' : undefined;
+    if (!id) break;
+    const action: PlayerAction = { type: 'item', itemId: id, target: { kind: 'ally', id: hurt.uid } };
+    if (getPlanError(s, user.uid, action) !== null) break;
+    s = setPlan(s, user.uid, action);
+    healed.add(hurt.uid);
+  }
+  for (const a of free()) {
+    const cheapest = Math.min(...a.skills.map((k) => k.mp));
+    if (!Number.isFinite(cheapest) || a.mp >= cheapest || !has('ether', a.uid)) continue;
+    const action: PlayerAction = { type: 'item', itemId: 'ether', target: { kind: 'ally', id: a.uid } };
+    if (getPlanError(s, a.uid, action) === null) s = setPlan(s, a.uid, action);
+  }
+  return s;
+}
+
+/** 戦闘を最後まで、弱点をねらう方針で遊ぶ（pouch なら、ポーチも使う）。同じシードなら同じ展開になる */
+export function smartPlay(s0: BattleState, seed: number, opts: { pouch?: boolean } = {}): BattleState {
   const pick = lcg(seed);
   let s = s0;
   for (let guard = 0; guard < 3000 && s.phase !== 'ended'; guard++) {
     if (s.phase === 'plan') {
-      s = runUntilInput(startExecution(smartPlan(s, pick)));
+      s = runUntilInput(startExecution(smartPlan(opts.pouch ? pouchPlan(s) : s, pick)));
     } else if (s.phase === 'extra') {
       const r = smartExtra(s, pick);
       s = r.kind === 'baton' ? r.state : runUntilInput(r.state);

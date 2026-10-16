@@ -269,7 +269,30 @@ try {
   await waitScene('Dialogue');
   await until('会話で縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
 
-  step('周回・狩り（段階43）：昼の時計屋から返した区画に入り、ぬしに勝っても続き、時計屋へ戻っても昼の回数は減らない');
+  step('ポーチ（段階51）：戦闘の「その他」からポーションを味方に使うと、残りが減る');
+  await debugButton('ポーチを満タンにする');
+  await closeDebugMenu();
+  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm1', win: b, lose: b } }), back);
+  await waitScene('Battle');
+  await page.waitForTimeout(800);
+  for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
+    await tap('^わかった$');
+    await page.waitForTimeout(400);
+  }
+  await tap('^その他$');
+  await tap('^ポーション\\n残り3$');
+  const allies = await page.evaluate(() => window.__restopia.scene('Battle').state.allies.length);
+  // 1人目（ハルト）の顔を2回タップして決める（仲間の列の真ん中）
+  await tapAt(390 / allies / 2, 414);
+  await page.waitForTimeout(300);
+  await tapAt(390 / allies / 2, 414);
+  await until('ポーションを予約した', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.plans.some((p) => p.action.type === 'item'))));
+  await debugButton('自動で1ラウンド戦う');
+  await closeDebugMenu();
+  await until('ポーションを使った', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.pouch[0]?.used)) === 1, 20000);
+  await winBattle();
+
+  step('レストピアの拠点（段階50）と記憶をたどる（段階43）・交換所（段階52）・落とし物（段階53）：昼の時計屋から拠点に入り、星図・交換所を開いて戻り、落とし物を受け、返した区画をたどって見つけ、ぬしに勝っても続き、落とし物を届け、拠点から時計屋へ戻っても昼の回数は減らない');
   const skipTips = async () => {
     for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
       await tap('^わかった$');
@@ -282,14 +305,76 @@ try {
   await waitScene('Daily');
   await skipTips();
   await tap('^時計屋$');
-  await until('狩りの印', () => findText('^返した時間へ（狩り）$'));
+  await until('拠点の印', () => findText('^時計屋の奥へ（レストピア）$'));
   await tapAt(195, 660);
+  // 初めて入ると、拠点の会話（自分たちの記憶の棚）を先に見る。デバッグ中は早送りで最後まで進む
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Hub'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Hub');
+  await skipTips();
+  // 拠点から星図を開き、「レストピアへ戻る」で拠点に戻る
+  await tap('^星図$');
+  await waitScene('Growth');
+  await skipTips();
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
+  // 交換所（段階52）：初めてはペトラの会話。ポーチが満タンならポーションは交換できず、ギアは欠片で1回だけ交換できる
+  await tap('^交換所$');
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Exchange'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Exchange');
+  await debugButton('記憶の欠片を10個ずつもらう');
+  await closeDebugMenu();
+  await tap('^ポーチ$');
+  await until('欠片が40', () => findText('^記憶の欠片 4\\d'));
+  // ポーションを持てる数まで交換してから、もう一度押すと満タンの案内
+  for (let i = 0; i < 3 && !(await findText('^ポーション　欠片 1\\n持っている 3/3$')); i++) {
+    await tap('^ポーション　欠片 1');
+    await tap('^交換する$');
+    await page.waitForTimeout(300);
+  }
+  await tap('^ポーション　欠片 1');
+  await until('満タンの案内', () => findText('ポーチがいっぱい'));
+  await tap('^ギア$');
+  await tap('^MPメモリ　欠片 10');
+  await tap('^交換する$');
+  await until('交換した印', () => findText('^MPメモリ　欠片 10\\n交換した$'));
+  await tap('^MPメモリ　欠片 10');
+  await until('2回目はできない', () => findText('もう交換した'));
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
+  // 落とし物（段階53）：初めては棚の会話。1-1 の「金魚のヘアピン」を受ける
+  await tap('^落とし物の棚$');
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Lost'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Lost');
+  await tap('^金魚のヘアピン');
+  await tap('^受ける$');
+  await until('受けた', () => findText('^金魚のヘアピン　→ ゆうまさん\\n記憶をたどって探す$'));
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
+  await tap('^記憶をたどる$');
   // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
-  await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n星の砂と経験値は半分$'));
+  await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n記憶は濃い・星の砂と経験値は半分$'));
   await tap('^1-1「金魚の名前」');
   await waitScene('Explore');
   await skipTips();
-  await until('狩りの案内', () => findText('^狩り：素材を集める$'));
+  await until('記憶をたどるの案内', () => findText('^記憶をたどる：素材を集める$'));
+  // 受けた探し物の光る所を拾う（光る所の隣まで歩くのと同じ処理）
+  await page.evaluate(() => window.__restopia.scene('Explore').openChestNow('lost:a11_hairpin'));
+  await until('落とし物を見つけた', () => findText('^落とし物を見つけた'));
   // 探索の画面の中から、ぬしとの戦闘を始める（ぬしの隣まで歩くのと同じ処理）
   await page.evaluate(() => window.__restopia.scene('Explore').startBattle('a11_boss', 'a11_boss'));
   await winBattle();
@@ -302,7 +387,28 @@ try {
   await skipTips();
   await until('ぬしに勝っても狩りが続く', () => findText('^ぬしを倒した。'));
   if (await findText('^ぬし$')) throw new Error('倒したぬしがまだいる');
-  await tap('^時計屋へ$');
+  await tap('^レストピア\\nへ戻る$');
+  await waitScene('Hub');
+  // 見つけた落とし物を、棚から届ける（ゆうまに会う会話の後、ごほうび）
+  await tap('^落とし物の棚$');
+  await waitScene('Lost');
+  await tap('^金魚のヘアピン');
+  await tap('^届ける$');
+  await waitScene('Dialogue');
+  await tap('^早送り$');
+  for (let i = 0; i < 40 && !(await scenes()).includes('Lost'); i++) {
+    await tapAt(195, 650);
+    await page.waitForTimeout(300);
+  }
+  await waitScene('Lost');
+  await until('届けた', () => findText('^届けた！'));
+  await tap('^レストピアへ戻る$');
+  await waitScene('Hub');
+  // 記憶の薄れ（段階57）：一度たどった 1-1 は、同じ日のうちは少し薄れている
+  await tap('^記憶をたどる$');
+  await until('1-1 が少し薄い', () => findText('^1-1「金魚の名前」\\n記憶が少し薄い（実入り6割）・星の砂と経験値は半分$'));
+  await tap('^やめる$');
+  await tap('^時計屋へ戻る$');
   await waitScene('Daily');
   await until('昼の回数が減っていない', () => findText('^昼に選べるのは、あと2回$'));
 

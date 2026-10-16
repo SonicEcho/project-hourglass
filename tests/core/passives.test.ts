@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleState, CharacterDef, PassiveEffect, PlayerAction } from '../../src/core';
-import { getRoundOrder, passBaton, previewAction, skillMpCost } from '../../src/core';
-import { CARDS, SKILLS } from '../../src/data';
+import { batonMultiplier, cappedPassives, getRoundOrder, oneMoreDrawCount, passBaton, passiveRate, passiveTotal, previewAction, skillMpCost } from '../../src/core';
+import { CARDS, PASSIVE_CAPS, SKILLS } from '../../src/data';
 import { ally, battle, enemy, eventsOf, execute, guard, planAll, withHand } from './helpers';
 
 // 特性（ムーブメントの効果ギアと狂い）が戦闘で効くこと
@@ -93,7 +93,9 @@ describe('特性：MP・先制', () => {
   it('MPセーブで魔法・スキルのMP消費が減る（最低1）', () => {
     const hero = { passives: [{ kind: 'mpSave', amount: 1 } as PassiveEffect] };
     expect(skillMpCost(hero, SKILLS.fire)).toBe(SKILLS.fire.mp - 1);
-    expect(skillMpCost({ passives: [{ kind: 'mpSave', amount: 99 }] }, SKILLS.fire)).toBe(1);
+    // 段階54：MP の消費を減らすのは −2 まで（上限）
+    expect(skillMpCost({ passives: [{ kind: 'mpSave', amount: 99 }] }, SKILLS.fire)).toBe(Math.max(1, SKILLS.fire.mp - 2));
+    expect(skillMpCost({ passives: [{ kind: 'mpSave', amount: 99 }] }, { ...SKILLS.fire, mp: 2 })).toBe(1);
     const s = execute(planAll(heroBattle([{ kind: 'mpSave', amount: 1 }]), { hero: fireOn('enemy0'), akari: guard }));
     expect(s.allies[0].mp).toBe(50 - (SKILLS.fire.mp - 1));
   });
@@ -133,5 +135,40 @@ describe('特性：ラウンドの始めのHP', () => {
     s.allies[0].hp = 100;
     s = execute(planAll(s, { hero: guard }));
     expect(s.allies[0].hp).toBe(100 - eventsOf(s, 'damage').reduce((sum, e) => sum + e.amount, 0) + 10);
+  });
+});
+
+describe('割合の特性の上限（段階54）', () => {
+  const many = (p: PassiveEffect, n: number) => ({ passives: Array.from({ length: n }, () => p) });
+  it('種類ごとの上限で止まる：属性 +80%（属性ごと）、部位 +100%、コンボ +60%、回復 6%、バトン +0.5（1.75倍）、延長 +2枚', () => {
+    expect(PASSIVE_CAPS).toEqual({ elementBoost: 0.8, partBoost: 1.0, comboBoost: 0.6, regen: 0.06, batonBoost: 0.5, mpSave: 2, oneMoreDraw: 2 });
+    const fire = many({ kind: 'elementBoost', element: 'fire', rate: 0.25 }, 5);
+    expect(passiveTotal(fire, 'elementBoost', 'fire')).toBeCloseTo(1.25);
+    expect(passiveRate(fire, 'elementBoost', 'fire')).toBe(0.8);
+    expect(passiveRate(fire, 'elementBoost', 'ice')).toBe(0);
+    expect(passiveRate(many({ kind: 'partBoost', rate: 0.5 }, 3), 'partBoost')).toBe(1);
+    expect(passiveRate(many({ kind: 'comboBoost', rate: 0.3 }, 3), 'comboBoost')).toBe(0.6);
+    expect(passiveRate(many({ kind: 'regen', rate: 0.03 }, 6), 'regen')).toBe(0.06);
+    expect(batonMultiplier(many({ kind: 'batonBoost', rate: 0.25 }, 4))).toBe(1.75);
+    expect(oneMoreDrawCount(many({ kind: 'oneMoreDraw', count: 1 }, 5))).toBe(1 + 2);
+    // 狂い（減る方）は止めない
+    expect(passiveRate(many({ kind: 'bug', rate: 0.05 }, 3), 'bug')).toBeCloseTo(0.15);
+  });
+
+  it('上限に届いた特性を返す（武器の画面に「上限」と出す）', () => {
+    const ally = { passives: [...many({ kind: 'elementBoost', element: 'fire', rate: 0.4 }, 2).passives, ...many({ kind: 'regen', rate: 0.03 }, 3).passives, { kind: 'regen', rate: 0 } as PassiveEffect] };
+    expect(cappedPassives(ally)).toEqual([
+      { kind: 'elementBoost', element: 'fire', value: 0.8 },
+      { kind: 'regen', value: 0.06 },
+    ]);
+    expect(cappedPassives({ passives: [] })).toEqual([]);
+  });
+
+  it('ラウンドの始めの回復は、最大 HP の 6% で止まる', () => {
+    const s = battle({ allies: [withPassives(ally('hero', { hp: 1000 }), many({ kind: 'regen', rate: 0.05 }, 4).passives)] });
+    const t = structuredClone(s);
+    t.allies[0].hp = 100;
+    const next = execute(planAll(t, { hero: guard }));
+    expect(eventsOf(next, 'passiveHp')[0]).toMatchObject({ source: 'regen', amount: 60 });
   });
 });

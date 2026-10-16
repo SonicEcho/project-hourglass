@@ -97,14 +97,14 @@ describe('周回・狩り（段階43）', () => {
       'h：部屋 inner の敵の表が空',
       'h：敵の表の部屋 attic がない',
       'h：部屋 attic の敵の表に、ない戦闘 b9',
-      '狩り：h：宝箱 g1 が通れないマス（0,0）にある',
-      '狩り：h：宝箱 g1 の隣に立てるマスがない',
-      '狩り：h：宝箱 g3 の部屋 nowhere がない',
-      '狩り：h：id が重なっている：g1',
+      '記憶をたどる：h：宝箱 g1 が通れないマス（0,0）にある',
+      '記憶をたどる：h：宝箱 g1 の隣に立てるマスがない',
+      '記憶をたどる：h：宝箱 g3 の部屋 nowhere がない',
+      '記憶をたどる：h：id が重なっている：g1',
     ]);
   });
 
-  it('日常の狩りの入口：時計屋に足す（場所がなければ町の地図から）。回数を使わず、いつも選べる', () => {
+  it('日常のレストピアの拠点の入口（段階43の狩りの入口から替えた）：時計屋に足す（場所がなければ町の地図から）。回数を使わず、いつも選べる', () => {
     const info = (id: string) => ({ id, name: id, backdrop: 'black', mapX: 0, mapY: 0 });
     const hub: DailyHub = {
       id: 'd3',
@@ -117,7 +117,7 @@ describe('周回・狩り（段階43）', () => {
       ],
     };
     const town = { school: info('school'), shop: info('shop'), clockshop: info('clockshop') };
-    const huntSpot = { place: 'clockshop', spot: { id: 'hunt', label: '狩り', mark: 'hunt' as const, x: 0, y: 0 } };
+    const huntSpot = { place: 'clockshop', spot: { id: 'hunt', label: '拠点', mark: 'hub' as const, x: 0, y: 0 } };
     const built = resolveHub(hub, {}, {}, town, [], huntSpot);
     expect(built.places.map((p) => p.id)).toEqual(['school', 'clockshop', 'shop']);
     const spot = allSpots(built).find((s) => s.id === 'hunt')!;

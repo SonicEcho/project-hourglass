@@ -7,12 +7,18 @@ import { WEAPON_DATA } from '../data';
 // 枠が余れば、上がる方が大きい素材も吸わせる。吸わせられずに残った素材は時分解し、記憶の欠片をでたらめな仲間に吸わせる。
 // 進化できれば、最初に条件を満たした進化先へ（型は1つ目。段階42：2回目・3回目も同じ。寄り道は目指さない）
 
+/** 目指してよい進化先（寄り道とまだ作っていない先は除く。prefer があれば、1回目はその進化先だけ。段階54の道ごとの測定） */
+function candidates(D: WeaponData, armory: ArmoryState, owner: string, prefer?: string) {
+  const w = armory.weapons[owner];
+  return nextEvolutions(D, w).filter((e) => !e.sealed && !e.detour && (!prefer || w.path.length > 0 || e.id === prefer));
+}
+
 /** 一番近い進化先の、条件の能力値（なければ空） */
-function targetParams(D: WeaponData, armory: ArmoryState, owner: string): WeaponParamKey[] {
+function targetParams(D: WeaponData, armory: ArmoryState, owner: string, prefer?: string): WeaponParamKey[] {
   const w = armory.weapons[owner];
   if (!w) return [];
   let best: { lack: number; params: WeaponParamKey[] } | null = null;
-  for (const evo of nextEvolutions(D, w).filter((e) => !e.sealed && !e.detour)) {
+  for (const evo of candidates(D, armory, owner, prefer)) {
     const conds = evo.conditions.flatMap((c) => (c.kind === 'param' ? [c] : []));
     if (conds.length === 0) continue;
     const lack = conds.reduce((sum, c) => sum + Math.max(0, c.min - w.params[c.param]), 0);
@@ -22,8 +28,8 @@ function targetParams(D: WeaponData, armory: ArmoryState, owner: string): Weapon
 }
 
 /** その仲間に吸わせる素材の順番（よい方から）。吸わせない方がよい素材は入れない */
-function materialOrder(D: WeaponData, armory: ArmoryState, owner: string): string[] {
-  const target = targetParams(D, armory, owner);
+function materialOrder(D: WeaponData, armory: ArmoryState, owner: string, prefer?: string): string[] {
+  const target = targetParams(D, armory, owner, prefer);
   const score = (id: string): number => {
     const g = D.items[id].gains;
     const total = Object.values(g).reduce((a, n) => a + (n ?? 0), 0);
@@ -38,16 +44,17 @@ function materialOrder(D: WeaponData, armory: ArmoryState, owner: string): strin
 
 /**
  * 素材・欠片を使い、進化できれば進化させる。鍵の素材は、進化の条件に使う分だけ残す
- * （鍵になる素材は吸わせず、時分解もしない）。D は武器のデータ（テストで差し替えられるように）
+ * （鍵になる素材は吸わせず、時分解もしない）。D は武器のデータ（テストで差し替えられるように）。
+ * prefer は仲間ごとの1回目の進化先（段階54。進化の道ごとの勝率を測る時。2回目からはその先の本道）
  */
-export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: number) => number, D: WeaponData = WEAPON_DATA): ArmoryState {
+export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: number) => number, D: WeaponData = WEAPON_DATA, prefer: Record<string, string> = {}): ArmoryState {
   let armory = armory0;
   const keys = new Set(Object.values(D.weapons).flatMap((w) => w.evolutions.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : [])))));
   // 吸わせる：仲間を順番に回して1つずつ
   for (let guard = 0; guard < 200; guard++) {
     let any = false;
     for (const owner of owners) {
-      const id = materialOrder(D, armory, owner).find((m) => !keys.has(m) && getAbsorbError(D, armory, owner, m) === null);
+      const id = materialOrder(D, armory, owner, prefer[owner]).find((m) => !keys.has(m) && getAbsorbError(D, armory, owner, m) === null);
       if (!id) continue;
       armory = absorbMaterial(D, armory, owner, id);
       any = true;
@@ -65,7 +72,7 @@ export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: 
   for (const owner of owners) {
     const w = armory.weapons[owner];
     if (!w) continue;
-    const evo = nextEvolutions(D, w).find((e) => !e.detour && getEvolveError(D, armory, owner, e.id) === null);
+    const evo = candidates(D, armory, owner, prefer[owner]).find((e) => getEvolveError(D, armory, owner, e.id) === null);
     if (evo) armory = evolveWeapon(D, armory, owner, evo.id);
   }
   return armory;

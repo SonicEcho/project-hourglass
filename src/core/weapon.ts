@@ -26,18 +26,20 @@ export interface FragmentDef {
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'part' | 'boss';
 
 /**
- * 素材（敵が落とす）と通常アイテム（勝利の報酬）。
+ * 素材（敵が落とす）と、ポーチの消費アイテム（勝利の報酬・宝箱。段階51）。
  * 段階27b：素材は武器に直接吸わせる（gains の分だけ能力値が上下する。吸わせ枠を1つ使う）。
- * 要らない素材・アイテムは時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）
+ * 要らない素材は時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）。消費アイテムは吸わせられず、時分解もできない
  */
 export interface ItemDef {
   id: string;
   name: string;
   kind: 'material' | 'item';
-  /** 吸わせた時の能力値の上がり下がり（素材だけ吸わせられる）。アイテムは時分解した時の欠片の種類を決めるだけ */
+  /** 吸わせた時の能力値の上がり下がり（素材だけ吸わせられる。消費アイテムは空） */
   gains: Partial<WeaponParams>;
   /** 素材の種類（アイテムにはない） */
   rarity?: ItemRarity;
+  /** 持てる数（ポーチの消費アイテム。段階51）。書かなければ上限なし */
+  max?: number;
 }
 
 /** 進化の条件（全部満たすと進化できる） */
@@ -178,6 +180,26 @@ export function addItems(armory: ArmoryState, ids: string[]): ArmoryState {
   return { ...armory, items };
 }
 
+/** 持てる数（ItemDef の max）を超えた分を捨てる（段階51。ポーチの消費アイテム）。捨てた id も返す（「ポーチがいっぱい」と出す用） */
+export function capItems(data: WeaponData, armory: ArmoryState): { armory: ArmoryState; overflow: string[] } {
+  const items = { ...armory.items };
+  const overflow: string[] = [];
+  for (const [id, n] of Object.entries(items)) {
+    const max = data.items[id]?.max;
+    if (max === undefined || n <= max) continue;
+    for (let i = max; i < n; i++) overflow.push(id);
+    items[id] = max;
+  }
+  return { armory: overflow.length > 0 ? { ...armory, items } : armory, overflow };
+}
+
+/** 戦闘で使った消費アイテムを減らす（段階51。BattleResult の pouchUsed） */
+export function spendItems(armory: ArmoryState, used: Record<string, number>): ArmoryState {
+  const items = { ...armory.items };
+  for (const [id, n] of Object.entries(used)) items[id] = Math.max(0, (items[id] ?? 0) - n);
+  return { ...armory, items };
+}
+
 /** 武器の吸わせ枠（今のレベルまでの合計） */
 export function weaponSlots(data: WeaponData, w: WeaponState): number {
   const lv = weaponLevel(data, w.exp);
@@ -226,6 +248,7 @@ export function decomposeFragment(data: WeaponData, itemId: string): string {
 /** 時分解できない理由。できるなら null */
 export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: string): string | null {
   if (!data.items[itemId]) return 'unknown item';
+  if (data.items[itemId].kind !== 'material') return 'only materials can be decomposed';
   if ((armory.items[itemId] ?? 0) < data.decomposeCost) return 'not enough items';
   return null;
 }

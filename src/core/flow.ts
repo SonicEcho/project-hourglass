@@ -50,6 +50,14 @@ export function flowEvents(flow: Flow): FlowEvent[] {
   return flow.flatMap((c) => c.events);
 }
 
+/** 今の出来事（currentId）が、ある出来事（id）より後か（段階50。拠点で、2-3 を持ち去られた後の会話を出すため）。どちらかが流れになければ false */
+export function eventPassed(flow: Flow, currentId: string, id: string): boolean {
+  const events = flowEvents(flow);
+  const now = events.findIndex((e) => e.id === currentId);
+  const at = events.findIndex((e) => e.id === id);
+  return now >= 0 && at >= 0 && now > at;
+}
+
 /** 最初の出来事の id */
 export function firstEventId(flow: Flow): string {
   const first = flowEvents(flow)[0];
