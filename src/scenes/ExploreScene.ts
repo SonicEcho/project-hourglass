@@ -36,13 +36,14 @@ import {
   huntArea,
   lostOfSpot,
   lostSpots,
+  thinItems,
   areaChapter,
   huntRewardRate,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -389,7 +390,13 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
     // コマ：あと何コマで返せるか（段階28）。狩りではコマはないので、狩りの案内（段階43）
     const left = komaLeft(area, this.state);
-    if (this.hunting) ui.add(addText(this, GAME_WIDTH / 2, 31, '記憶をたどる：素材を集める', { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
+    if (this.hunting) {
+      // その回の記憶の濃さ（段階57）
+      const fade = run.hunt?.fade ?? 1;
+      const level = MEMORY_FADE_RATES.indexOf(fade);
+      const label = fade < 1 ? `（${MEMORY_FADE_LABELS[level] ?? '薄い'}・${Math.round(fade * 10)}割）` : '';
+      ui.add(addText(this, GAME_WIDTH / 2, 31, `記憶をたどる：素材を集める${label}`, { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
+    }
     else ui.add(
       addText(this, GAME_WIDTH / 2, 31, left > 0 ? `コマ ${this.state.koma}/${area.komaNeed}（あと${left}つで返せる）` : `コマ ${this.state.koma}/${area.komaNeed}（そろった！）`, {
         size: 13,
@@ -648,8 +655,12 @@ export class ExploreScene extends Phaser.Scene {
       if (def?.findScene) this.openScene(def.findScene, this.back());
       return;
     }
+    // 記憶をたどる時の採取の場所は、記憶の薄れ（段階57）の割合の分だけ残る
+    const fade = this.hunting ? (run.hunt?.fade ?? 1) : 1;
+    const got = thinItems(r.chest.items, fade, (run.hunt?.salt ?? 0) + [...chestId].reduce((a, ch) => a + ch.charCodeAt(0), 0));
+    const lostByFade = r.chest.items.length - got.length;
     // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51。入らなかった分は捨てる）
-    const capped = capItems(WEAPON_DATA, addItems(run.armory, r.chest.items));
+    const capped = capItems(WEAPON_DATA, addItems(run.armory, got));
     run.armory = capped.armory;
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
@@ -663,7 +674,7 @@ export class ExploreScene extends Phaser.Scene {
     } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
-      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[summarize(r.chest.items), gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : '', capped.overflow.length > 0 ? `（ポーチがいっぱい：${summarize(capped.overflow)}は入らなかった）` : ''].filter(Boolean).join('　')}`,
+      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[got.length > 0 ? summarize(got) : '（記憶がかすれて、何も残っていなかった）', lostByFade > 0 && got.length > 0 ? `（記憶が薄れて、${lostByFade}つは砂に戻った）` : '', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : '', capped.overflow.length > 0 ? `（ポーチがいっぱい：${summarize(capped.overflow)}は入らなかった）` : ''].filter(Boolean).join('　')}`,
     );
     this.keep(this.state);
   }
@@ -724,7 +735,15 @@ export class ExploreScene extends Phaser.Scene {
         lose: { key: 'Explore', data: this.back({ lost: true }) },
         // 狩り（段階43）：同じ砂嵐と何度戦っても落とす物が変わるよう、狩りの戦闘の回数でシードをずらす
         // 段階49：前の章の区画なら、星の砂と経験値は半分
-        ...(this.hunting ? { hunt: true, seedShift: nextHuntCount(), rewardRate: huntRewardRate(areaChapter(SLICE_FLOW, this.area.id), storyLineup().chapter, HUNT_OLD_AREA_RATE) } : {}),
+        // 記憶の薄れ（段階57）：星の砂・経験値に割合をかけ（前の章の区画の半分と重ねる）、落とした素材も割合の分だけ残す
+        ...(this.hunting
+          ? {
+              hunt: true,
+              seedShift: nextHuntCount(),
+              rewardRate: huntRewardRate(areaChapter(SLICE_FLOW, this.area.id), storyLineup().chapter, HUNT_OLD_AREA_RATE) * (run.hunt?.fade ?? 1),
+              dropRate: run.hunt?.fade ?? 1,
+            }
+          : {}),
       },
     };
     const cam = this.cameras.main;

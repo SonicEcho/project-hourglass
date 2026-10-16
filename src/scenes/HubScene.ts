@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, eventPassed, hasSpare, huntableAreas, huntRewardRate, isSeen, markSeen, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, POUCH_MAX, POUCH_ORDER, SLICE_FLOW } from '../data';
+import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, hasSpare, huntableAreas, huntRewardRate, isSeen, markSeen, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, POUCH_MAX, POUCH_ORDER, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -132,11 +132,17 @@ export class HubScene extends Phaser.Scene {
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
     panel.add(addWindow(this, cx - 165, top, 330, h));
     panel.add(addText(this, cx, top + 30, 'どの記憶をたどる？', { size: 17, bold: true }).setOrigin(0.5));
-    panel.add(addText(this, cx, top + 58, '砂嵐とぬしから素材を集める', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
+    panel.add(addText(this, cx, top + 58, '砂嵐の名残とぬしから素材を集める\n同じ記憶を続けてたどると薄れる（1日で戻る）', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
     const now = storyLineup().chapter;
+    const today = dayAt(SLICE_FLOW, run.event);
     areas.forEach((area, i) => {
       const half = huntRewardRate(areaChapter(SLICE_FLOW, area.id), now, HUNT_OLD_AREA_RATE) < 1;
-      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, half ? `${area.name}\n星の砂と経験値は半分` : area.name, { onTap: () => this.enterHunt(area.id) }, { size: 13 });
+      // 記憶の濃さ（段階57）：同じ記憶を続けてたどるほど薄れ、使い切るとその日は入れない
+      const level = fadeLevel(run.vars, area.id, today);
+      const rate = fadeRate(MEMORY_FADE_RATES, level);
+      const fade = rate === null ? '今日はもう、かすれて見えない' : rate < 1 ? `記憶が${MEMORY_FADE_LABELS[level]}（実入り${Math.round(rate * 10)}割）` : '記憶は濃い';
+      const note = [fade, half && rate !== null ? '星の砂と経験値は半分' : ''].filter(Boolean).join('・');
+      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, `${area.name}\n${note}`, { onTap: () => this.enterHunt(area.id) }, { size: 12, enabled: rate !== null });
     });
     addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', {
       onTap: () => {
@@ -151,7 +157,11 @@ export class HubScene extends Phaser.Scene {
   private enterHunt(areaId: string): void {
     const area = AREAS[areaId];
     if (!area) return;
-    startHunt(startExplore(area));
+    // 記憶の薄れ（段階57）：入るたびに1段階薄れる（今日はもう入れなければ何もしない）
+    const fade = enterFade(run.vars, areaId, dayAt(SLICE_FLOW, run.event), MEMORY_FADE_RATES);
+    if (!fade) return;
+    setStoryVars(fade.vars);
+    startHunt(startExplore(area), fade.rate);
     const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
     this.cameras.main.fadeOut(250, 0, 0, 0);
     this.time.delayedCall(260, () => this.scene.start('Explore', data));

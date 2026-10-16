@@ -38,6 +38,7 @@ import {
   recordVictory,
   capItems,
   spendItems,
+  thinItems,
   weaponLevel,
   weaponName,
   keepVitals,
@@ -91,8 +92,10 @@ export interface BattleSceneData {
     hunt?: boolean;
     /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
     seedShift?: number;
-    /** 星の砂と武器の経験値の割合（段階49。狩りで前の章の区画なら半分。書かなければ全部） */
+    /** 星の砂と武器の経験値の割合（段階49。狩りで前の章の区画なら半分。段階57から記憶の薄れもかける。書かなければ全部） */
     rewardRate?: number;
+    /** 落とした素材が残る割合（段階57。記憶の薄れ。書かなければ全部残る） */
+    dropRate?: number;
   };
 }
 
@@ -1435,10 +1438,15 @@ export class BattleScene extends Phaser.Scene {
     // ギアの報酬は出さない（ギアは宝箱と出来事のごほうびで手に入る。段階38）。ムーブメントが閉じている間は、盤の色（傾向）も貯めない（段階26）
     const naviData = currentNaviData();
     const colorMembers = this.lineup.unlocks.navi ? lineupBase(this.lineup) : [];
+    // 記憶の薄れ（段階57）：落とした素材は、割合の分だけ残る（残りは砂に戻る）
+    const allDrops = this.state.log.flatMap((e) => (e.type === 'drop' ? [e] : []));
+    const keptIdx = new Set(thinItems(allDrops.map((_, i) => String(i)), enc.dropRate ?? 1, this.state.seed + 7));
+    const drops = allDrops.filter((_, i) => keptIdx.has(String(i)));
+    const faded = allDrops.length - drops.length;
     run.armory = recordVictory(run.armory, {
       actions: result.actionCounts,
       colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
-      items: [...result.drops, ...(prize ? [prize] : [])],
+      items: [...drops.map((d) => d.itemId), ...(prize ? [prize] : [])],
       expRate: rate,
     });
     // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51）
@@ -1449,12 +1457,11 @@ export class BattleScene extends Phaser.Scene {
     if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
     saveRun();
     // 落とした素材を種類ごとに（珍しい素材は ◆、レアは ★。段階27b）
-    const drops = this.state.log.flatMap((e) => (e.type === 'drop' ? [e] : []));
     const mark = (kind: string) => (kind === 'rare' ? '★' : kind === 'uncommon' || kind === 'part' ? '◆' : '');
     const counts = new Map<string, number>();
     for (const d of drops) counts.set(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`, (counts.get(`${mark(d.kind)}${WEAPON_DATA.items[d.itemId]?.name ?? d.itemId}`) ?? 0) + 1);
     const dropList = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
-    const dropText = `素材：${dropList || 'なし'}${prize ? `　アイテム：${summarizeItems([prize])}` : ''}${fullText(capped.overflow)}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
+    const dropText = `素材：${dropList || 'なし'}${faded > 0 ? `（記憶が薄れて、${faded}つは砂に戻った）` : ''}${prize ? `　アイテム：${summarizeItems([prize])}` : ''}${fullText(capped.overflow)}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
     if (drops.some((d) => d.kind === 'rare')) {
       const rare = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, '★ レア！', { size: 30, bold: true, color: COLORS.accentText }).setOrigin(0.5);
       rare.setStroke('#5a3a00', 6);

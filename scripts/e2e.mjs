@@ -361,7 +361,7 @@ try {
   await waitScene('Hub');
   await tap('^記憶をたどる$');
   // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
-  await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n星の砂と経験値は半分$'));
+  await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n記憶は濃い・星の砂と経験値は半分$'));
   await tap('^1-1「金魚の名前」');
   await waitScene('Explore');
   await skipTips();
@@ -398,6 +398,10 @@ try {
   await until('届けた', () => findText('^届けた！'));
   await tap('^レストピアへ戻る$');
   await waitScene('Hub');
+  // 記憶の薄れ（段階57）：一度たどった 1-1 は、同じ日のうちは少し薄れている
+  await tap('^記憶をたどる$');
+  await until('1-1 が少し薄い', () => findText('^1-1「金魚の名前」\\n記憶が少し薄い（実入り6割）・星の砂と経験値は半分$'));
+  await tap('^やめる$');
   await tap('^時計屋へ戻る$');
   await waitScene('Daily');
   await until('昼の回数が減っていない', () => findText('^昼に選べるのは、あと2回$'));

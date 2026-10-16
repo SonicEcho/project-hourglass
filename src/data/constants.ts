@@ -15,6 +15,11 @@ export const ALBUM_COPY_MAX = 4;
 export const ONE_MORE_DRAW = 1;
 /** 1ラウンドにチーム全体で使えるサポートスナップの枚数 */
 export const SUPPORT_PER_ROUND = 1;
+/** 記憶の「薄れ」（段階57）：同じ記憶にその日入った回数ごとの、実入りの割合（濃い・少し薄い・薄い・かすか）。使い切ると、その日はもう入れない */
+export const MEMORY_FADE_RATES = [1, 0.6, 0.3, 0.1];
+/** 記憶の濃さの呼び名（MEMORY_FADE_RATES と同じ並び） */
+export const MEMORY_FADE_LABELS = ['濃い', '少し薄い', '薄い', 'かすか'];
+
 /** ポーチ（段階51）：1種類を持てる数 */
 export const POUCH_MAX = 3;
 /** ポーチ（段階51）：1つの戦闘で使える回数（計画で予約した分も数える） */

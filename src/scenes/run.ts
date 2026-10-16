@@ -62,9 +62,9 @@ export const run: {
   album: AlbumState;
   /**
    * 狩りの途中の状態（段階43。返し終えた区画に入り直している時だけ）。セーブしない（閉じたら昼の日常から）。
-   * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）
+   * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）。fade は記憶の薄れ（段階57）による、その回の実入りの割合
    */
-  hunt: { salt: number; state: ExploreState } | null;
+  hunt: { salt: number; state: ExploreState; fade: number } | null;
 } = {
   active: false,
   seed: 0,
@@ -171,9 +171,9 @@ export function nextHuntCount(): number {
   return n;
 }
 
-/** 狩りに入る（入るたびに新しい中身） */
-export function startHunt(state: ExploreState): void {
-  run.hunt = { salt: (run.seed + nextHuntCount() * 7919) >>> 0, state };
+/** 狩りに入る（入るたびに新しい中身）。fade は記憶の薄れによる実入りの割合（段階57） */
+export function startHunt(state: ExploreState, fade = 1): void {
+  run.hunt = { salt: (run.seed + nextHuntCount() * 7919) >>> 0, state, fade };
 }
 
 /** 狩りの途中の状態を変える（セーブしない。手に入れた素材などは saveRun で保存する） */
