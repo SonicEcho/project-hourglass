@@ -50,6 +50,7 @@ export class PlayLogScene extends Phaser.Scene {
       `はじめから　${log.starts}回　　「つづく」まで　${log.finished}回`,
       `一番先：${titleOf(log.furthest)}`,
       `最後：${titleOf(log.last)}（${formatAt(log.lastAt)}）`,
+      `記憶をたどる ${log.counts.hunt}回・交換 ${log.counts.exchange}回・落とし物 ${log.counts.lost}個・ポーチ ${log.counts.pouch}個`,
       `記録を始めた日時：${formatAt(log.startedAt)}`,
     ];
     root.add(addText(this, 24, 62, lines.join('\n'), { size: 13, color: COLORS.subText, wrap: GAME_WIDTH - 48 }).setLineSpacing(4));

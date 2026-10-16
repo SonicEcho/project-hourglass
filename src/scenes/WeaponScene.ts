@@ -29,7 +29,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss }
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -273,7 +273,8 @@ export class WeaponScene extends Phaser.Scene {
     this.drawEvolutions();
     this.drawInventory();
     // 星図が閉じている時は、探索へ直接戻る（段階26）
-    const back = hubLineup().unlocks.growth ? null : getHubReturn();
+    // 拠点から開いた時は拠点へ戻る（段階45）
+    const back = hubBack() ?? (hubLineup().unlocks.growth ? null : getHubReturn());
     const leave = () => {
       if (!back) {
         this.scene.start('Growth');

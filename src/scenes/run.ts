@@ -363,6 +363,12 @@ export function setHubReturn(target: SceneTarget | null): void {
   hubReturn = target;
 }
 
+/** 拠点（レストピア）から開いた育成の画面なら、拠点へ戻る行き先（段階45。ムーブメント・武器・アルバムも、星図を通さず拠点へ戻す） */
+export function hubBack(): SceneTarget | null {
+  const back = getHubReturn();
+  return back?.key === 'Hub' ? back : null;
+}
+
 export function getHubReturn(): SceneTarget | null {
   return hubReturn;
 }

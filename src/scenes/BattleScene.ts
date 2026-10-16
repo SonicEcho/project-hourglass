@@ -54,6 +54,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
+import { notePlayCount } from './playRecord';
 import type { Lineup } from '../core';
 import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
@@ -1342,6 +1343,7 @@ export class BattleScene extends Phaser.Scene {
     if (Object.keys(used).length > 0) {
       run.armory = spendItems(run.armory, used);
       saveRun();
+      notePlayCount('pouch', Object.values(used).reduce((a, n) => a + n, 0));
     }
     const c = this.add.container(0, 0).setDepth(300);
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setInteractive();

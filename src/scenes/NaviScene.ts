@@ -9,7 +9,7 @@ import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePass
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, hubLineup, lineupBase, run, saveRun } from './run';
+import { currentNaviData, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -201,10 +201,21 @@ export class NaviScene extends Phaser.Scene {
       800,
       GAME_WIDTH - SIDE_PADDING * 2,
       52,
-      '星図へ戻る',
-      { onTap: () => this.scene.start('Growth') },
+      hubBack()?.label ?? '星図へ戻る',
+      { onTap: () => this.leave() },
       { size: 16, bold: true },
     );
+  }
+
+  /** 戻る：拠点から開いた時は拠点へ（段階45）、それ以外は星図へ */
+  private leave(): void {
+    const hub = hubBack();
+    if (!hub) {
+      this.scene.start('Growth');
+      return;
+    }
+    setHubReturn(null);
+    this.scene.start(hub.key, hub.data);
   }
 
   private drawTabs(): void {

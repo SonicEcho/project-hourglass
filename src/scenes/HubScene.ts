@@ -10,6 +10,7 @@ import { addButton, addText } from '../ui/widgets';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
+import { notePlayCount } from './playRecord';
 import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
@@ -163,6 +164,7 @@ export class HubScene extends Phaser.Scene {
     const fade = enterFade(run.vars, areaId, dayAt(SLICE_FLOW, run.event), MEMORY_FADE_RATES);
     if (!fade) return;
     setStoryVars(fade.vars);
+    notePlayCount('hunt');
     startHunt(startExplore(area), fade.rate);
     const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
     this.cameras.main.fadeOut(250, 0, 0, 0);

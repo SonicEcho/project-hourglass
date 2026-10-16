@@ -9,6 +9,7 @@ import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
+import { notePlayCount } from './playRecord';
 import { run, saveRun, setStoryVars, storyLineup } from './run';
 
 // 交換所（段階52。docs/design/economy.md の 5-2）：拠点の窓口で、記憶の欠片と品物を交換する。番人はペトラ（時間保管局の取引の窓口の係）。
@@ -122,7 +123,9 @@ export class ExchangeScene extends Phaser.Scene {
       root.add(addText(this, GAME_WIDTH / 2, 620, `${this.page + 1}/${pages}`, { size: 13, color: COLORS.subText }).setOrigin(0.5));
       addButton(this, root, GAME_WIDTH - 80, 620, 110, 44, '次へ', { onTap: () => this.turn(1) }, { size: 13, enabled: this.page < pages - 1 });
     }
-    root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+    // 台詞は絵の上でも読めるよう、暗い下地に（段階45）
+    root.add(this.add.rectangle(GAME_WIDTH / 2, 690, GAME_WIDTH - 24, 60, 0x0b0f22, 0.85).setRounded(8).setStrokeStyle(1, COLORS.border));
+    root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 44 }).setOrigin(0.5));
     addButton(this, root, GAME_WIDTH / 2, 780, GAME_WIDTH - 60, 56, 'レストピアへ戻る', { onTap: () => this.scene.start('Hub', { seen: undefined }) }, { size: 17, bold: true });
   }
 
@@ -163,6 +166,7 @@ export class ExchangeScene extends Phaser.Scene {
     if (r.vars !== run.vars) setStoryVars(r.vars);
     if (r.gear) run.navi = addParts(run.navi, [r.gear]);
     saveRun();
+    notePlayCount('exchange');
     playSe(this, SE.chest);
     this.message = `${EXCHANGE_KEEPER}「${goodName(g)}、確かに。……帳簿も合いました」`;
     this.render();
