@@ -56,8 +56,8 @@ export interface AreaRunRecord {
   links: number[];
   /** ボスの前までに進化した仲間の数（段階27b） */
   evolvedBeforeBoss: number;
-  /** ボスの前の、仲間ごとの進化の回数と武器のレベル（段階42） */
-  weaponsBeforeBoss: Record<string, { evolutions: number; level: number }>;
+  /** ボスの前の、仲間ごとの進化の回数と武器のレベル（段階42）。path は通った進化先の id（段階54） */
+  weaponsBeforeBoss: Record<string, { evolutions: number; level: number; path: string[] }>;
   /** この区画で使ったポーチの数（段階51。pouch の方針だけ） */
   pouchUsed: number;
 }
@@ -86,7 +86,7 @@ export function areaLineup(areaId: string): Lineup {
  * 区画を、出会う順にボスまで通す。prior に書いた区画を先に同じ方針で通し、その育ち具合（星図・武器・つながりゲージ）から始める（段階37。1-2 は 1-1 の後）。
  * 先の区画で負け切っても、そこまでの育ち具合で続ける
  */
-export function autoAreaRun(seed: number, policy: AreaPolicy, lineup?: Lineup, areaId = 'a11', prior: string[] = []): AreaRunRecord {
+export function autoAreaRun(seed: number, policy: AreaPolicy, lineup?: Lineup, areaId = 'a11', prior: string[] = [], prefer: Record<string, string> = {}): AreaRunRecord {
   const pick = lcg((seed * 7919 + 3) % 2147483648);
   const carry: Carry = {
     growth: createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS),
@@ -94,11 +94,11 @@ export function autoAreaRun(seed: number, policy: AreaPolicy, lineup?: Lineup, a
     navi: createNavi(START_NAVI_PARTS),
     gauge: 0,
   };
-  for (const id of prior) runArea(seed, policy, lineup ?? areaLineup(id), id, carry, pick);
-  return runArea(seed, policy, lineup ?? areaLineup(areaId), areaId, carry, pick);
+  for (const id of prior) runArea(seed, policy, lineup ?? areaLineup(id), id, carry, pick, prefer);
+  return runArea(seed, policy, lineup ?? areaLineup(areaId), areaId, carry, pick, prefer);
 }
 
-function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: string, carry: Carry, pick: (n: number) => number): AreaRunRecord {
+function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: string, carry: Carry, pick: (n: number) => number, prefer: Record<string, string> = {}): AreaRunRecord {
   const area = AREAS[areaId];
   const members = lineupMembers(PARTY, lineup);
   const navi = lineup.unlocks.navi;
@@ -118,12 +118,12 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
     // 宝箱は最初の戦闘の後に開ける
     if (i === 1) carry.armory = capItems(WEAPON_DATA, addItems(carry.armory, area.chests.flatMap((c) => c.items))).armory;
     carry.growth = spendPoints(carry.growth, members, pick, chapter);
-    carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick);
+    carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick, WEAPON_DATA, prefer);
     if (navi) carry.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory), carry.navi);
     if (def.boss) {
       evolvedBeforeBoss = members.filter((c) => carry.armory.weapons[c.id]?.path.length).length;
       weaponsBeforeBoss = Object.fromEntries(
-        members.map((c) => [c.id, { evolutions: carry.armory.weapons[c.id].path.length, level: weaponLevel(WEAPON_DATA, carry.armory.weapons[c.id].exp) }]),
+        members.map((c) => [c.id, { evolutions: carry.armory.weapons[c.id].path.length, level: weaponLevel(WEAPON_DATA, carry.armory.weapons[c.id].exp), path: carry.armory.weapons[c.id].path.map((p) => p.id) }]),
       );
     }
     const allies = grownParty(carry.growth, carry.armory, members, navi ? carry.navi : null);

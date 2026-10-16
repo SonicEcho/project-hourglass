@@ -10,6 +10,7 @@ import {
   MIN_DAMAGE,
   ONE_MORE_DRAW,
   PART_BODY_RATIO,
+  PASSIVE_CAPS,
   POUCH_USES_PER_BATTLE,
   RANDOM_MAX,
   RANDOM_MIN,
@@ -191,15 +192,29 @@ function passivesOf<K extends PassiveEffect['kind']>(ally: { passives?: PassiveE
   return (ally.passives ?? []).filter((p): p is PassiveOf<K> => p.kind === kind);
 }
 
-/** 割合の特性の合計（elementBoost は element を指定する） */
-export function passiveRate(
-  ally: { passives?: PassiveEffect[] },
-  kind: 'partBoost' | 'batonBoost' | 'comboBoost' | 'regen' | 'bug' | 'elementBoost',
-  element?: DamageType,
-): number {
+type RateKind = 'partBoost' | 'batonBoost' | 'comboBoost' | 'regen' | 'bug' | 'elementBoost';
+
+/** 割合の特性の、上限をかける前の合計（elementBoost は element を指定する） */
+export function passiveTotal(ally: { passives?: PassiveEffect[] }, kind: RateKind, element?: DamageType): number {
   return passivesOf(ally, kind)
     .filter((p) => p.kind !== 'elementBoost' || p.element === element)
     .reduce((sum, p) => sum + p.rate, 0);
+}
+
+/** 割合の特性の合計（段階54から、種類ごとの上限 PASSIVE_CAPS で止める。狂い（bug）は止めない） */
+export function passiveRate(ally: { passives?: PassiveEffect[] }, kind: RateKind, element?: DamageType): number {
+  const total = passiveTotal(ally, kind, element);
+  return kind === 'bug' ? total : Math.min(total, PASSIVE_CAPS[kind]);
+}
+
+/** 上限に届いた割合の特性（段階54。武器の画面に「上限」と出す）。value は上限の値 */
+export function cappedPassives(ally: { passives?: PassiveEffect[] }): { kind: keyof typeof PASSIVE_CAPS; element?: Element; value: number }[] {
+  const out: { kind: keyof typeof PASSIVE_CAPS; element?: Element; value: number }[] = [];
+  for (const el of ['fire', 'ice', 'thunder'] as Element[]) if (passiveTotal(ally, 'elementBoost', el) >= PASSIVE_CAPS.elementBoost) out.push({ kind: 'elementBoost', element: el, value: PASSIVE_CAPS.elementBoost });
+  for (const kind of ['partBoost', 'comboBoost', 'regen', 'batonBoost'] as const) if (passiveTotal(ally, kind) >= PASSIVE_CAPS[kind]) out.push({ kind, value: PASSIVE_CAPS[kind] });
+  if (passivesOf(ally, 'mpSave').reduce((sum, p) => sum + p.amount, 0) >= PASSIVE_CAPS.mpSave) out.push({ kind: 'mpSave', value: PASSIVE_CAPS.mpSave });
+  if (passivesOf(ally, 'oneMoreDraw').reduce((sum, p) => sum + p.count, 0) >= PASSIVE_CAPS.oneMoreDraw) out.push({ kind: 'oneMoreDraw', value: PASSIVE_CAPS.oneMoreDraw });
+  return out;
 }
 
 /** その仲間の通常攻撃（武器の進化で属性が乗ると、魔力で計算する属性の攻撃になる） */
@@ -214,13 +229,13 @@ export function basicAttackFor(ally: { attackElement?: Element }): ActionDef {
 
 /** 魔法・スキルのMP消費（MPセーブで減る。最低1） */
 export function skillMpCost(ally: { passives?: PassiveEffect[] }, skill: SkillDef): number {
-  const save = passivesOf(ally, 'mpSave').reduce((sum, p) => sum + p.amount, 0);
+  const save = Math.min(PASSIVE_CAPS.mpSave, passivesOf(ally, 'mpSave').reduce((sum, p) => sum + p.amount, 0));
   return save > 0 ? Math.max(1, skill.mp - save) : skill.mp;
 }
 
 /** 延長の時に引く枚数 */
 export function oneMoreDrawCount(ally: { passives?: PassiveEffect[] }): number {
-  return ONE_MORE_DRAW + passivesOf(ally, 'oneMoreDraw').reduce((sum, p) => sum + p.count, 0);
+  return ONE_MORE_DRAW + Math.min(PASSIVE_CAPS.oneMoreDraw, passivesOf(ally, 'oneMoreDraw').reduce((sum, p) => sum + p.count, 0));
 }
 
 /** バトンを受けた時の倍率 */

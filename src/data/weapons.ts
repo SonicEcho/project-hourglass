@@ -108,16 +108,16 @@ export type FragmentId = keyof typeof FRAGMENTS;
 
 /** 型（8-1c）。row はブリッジの行の右端に横へ、column は盤の下へ縦にマスが増える。どの進化先も、横と縦の型を1つずつ */
 const STYLES = {
-  /** 烈：その属性のダメージ +15%（横） */
-  fierce: (element: Element): EvolutionStyleDef => ({ name: '烈', passives: [{ kind: 'elementBoost', element, rate: 0.15 }], board: 'row' }),
+  /** 烈：その属性のダメージ +10%（横。段階54で +15% から下げた） */
+  fierce: (element: Element): EvolutionStyleDef => ({ name: '烈', passives: [{ kind: 'elementBoost', element, rate: 0.1 }], board: 'row' }),
   /** 剛：攻撃 +3（横） */
   might: { name: '剛', stats: { atk: 3 }, board: 'row' },
   /** 疾：速さ +2（横） */
   swift: { name: '疾', stats: { spd: 2 }, board: 'row' },
   /** 叡：魔力 +3（横） */
   sage: { name: '叡', stats: { mag: 3 }, board: 'row' },
-  /** 結：連携技 +15%（横） */
-  bond: { name: '結', passives: [{ kind: 'comboBoost', rate: 0.15 }], board: 'row' },
+  /** 結：コンボ +10%（横。段階54で +15% から下げた） */
+  bond: { name: '結', passives: [{ kind: 'comboBoost', rate: 0.1 }], board: 'row' },
   /** 灯：ラウンドの始めに HP 3% 回復（縦） */
   ember: { name: '灯', passives: [{ kind: 'regen', rate: 0.03 }], board: 'column' },
   /** 砕：部位へのダメージ +20%（縦） */
@@ -220,7 +220,7 @@ const rod: WeaponDef = {
       name: '癒しの杖',
       conditions: [param('ice', 3), param('fire', 3), key('cottonStick')],
       stats: { mp: 10 },
-      passives: [{ kind: 'regen', rate: 0.05 }],
+      passives: [{ kind: 'regen', rate: 0.03 }],
       styles: [STYLES.sage, STYLES.ember],
     },
     { id: 'flameRod', name: 'フレイムロッド', conditions: [param('fire', 6), key('maskString')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
@@ -232,7 +232,7 @@ const rod: WeaponDef = {
       from: 'healingRod',
       conditions: [param('ice', 8), param('fire', 8), key('rustyBell')],
       stats: { mp: 10, mag: 2 },
-      passives: [{ kind: 'regen', rate: 0.03 }],
+      passives: [{ kind: 'regen', rate: 0.01 }],
       styles: [STYLES.sage, STYLES.guard],
     },
     { id: 'heatRod', name: '陽炎の杖', from: 'flameRod', conditions: [param('fire', 12), key('beigoma')], attackElement: 'fire', stats: { mag: 4 }, styles: [STYLES.fierce('fire'), STYLES.guard] },
@@ -255,10 +255,10 @@ const rod: WeaponDef = {
       from: 'mercyRod',
       conditions: [param('ice', 12), param('fire', 12), key('lordGear')],
       stats: { mp: 12, mag: 3 },
-      passives: [{ kind: 'regen', rate: 0.03 }],
+      passives: [{ kind: 'regen', rate: 0.01 }],
       styles: [STYLES.bond, STYLES.baton],
     },
-    { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('fire', 12), param('thunder', 8), key('boomboxDial')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'regen', rate: 0.02 }], styles: [STYLES.sage, STYLES.first] },
+    { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('fire', 12), param('thunder', 8), key('boomboxDial')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'regen', rate: 0.01 }], styles: [STYLES.sage, STYLES.first] },
     { id: 'ringRod', name: '炎環の杖', from: 'heatRod', conditions: [param('fire', 18), key('glitterPen')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.ember] },
     ...beyond('moonRod', [['月の光で、なくした名前を照らしたという'], ['降る雪の一粒ずつに、誰かの声が入っていたという']]),
     ...beyond('blessRod', [['祈った人の数だけ、小さな花が咲いたという']]),

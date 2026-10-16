@@ -2,7 +2,7 @@ import { CAMPAIGN } from '../data';
 import type { AreaPolicy, AreaRunRecord } from './autoArea';
 import { areaBattleOrder, areaLineup, autoAreaRun } from './autoArea';
 import { lineupMembers } from '../core';
-import { PARTY } from '../data';
+import { PARTY, WEAPON_DATA } from '../data';
 import type { RunRecord } from './autoRun';
 import { autoRun, MAX_ATTEMPTS } from './autoRun';
 
@@ -147,5 +147,61 @@ export function formatAreaMeasure(m: AreaMeasureResult): string {
       .join('、')}`,
     '',
     '星図はでたらめ、素材は一番近い進化先へ向けて吸わせ、残りは時分解（鍵の素材は残す）、つながりゲージは戦闘をまたいで引き継ぐ',
+  ].join('\n');
+}
+
+// ---- 進化の道ごとの勝率（段階54。docs/design/economy.md の 9-2 の 5.） ----
+
+export interface PathMeasureRow {
+  charId: string;
+  /** 1回目の進化先（本道の入口） */
+  evolution: string;
+  runs: number;
+  /** ボスの前に、この道を通れた回数 */
+  took: number;
+  bossReached: number;
+  bossFirstTry: number;
+  cleared: number;
+}
+
+/**
+ * 仲間1人の1回目の進化先を決めて（ほかの仲間はいつもどおり）、区画を通す（弱点をねらう方針はぬしにほぼ勝つ区画があるので、でたらめな方針でも測る）。仲間ごと・1回目の本道ごとに、ぬしの勝率を出す。
+ * どの本道も勝率が ±5% に収まるのが目安（寄り道は測らない）
+ */
+export function measureEvolutionPaths(runs: number, seed: number, areaId = 'a23', policy: AreaPolicy = 'smart'): { area: string; runs: number; seed: number; policy: AreaPolicy; rows: PathMeasureRow[] } {
+  const prior = MEASURED_AREAS[areaId]?.prior ?? [];
+  const members = lineupMembers(PARTY, areaLineup(areaId));
+  const rows: PathMeasureRow[] = [];
+  const bossIndex = areaBattleOrder(areaId).length - 1;
+  for (const c of members) {
+    const weapon = Object.values(WEAPON_DATA.weapons).find((w) => w.owner === c.id);
+    if (!weapon) continue;
+    for (const evo of weapon.evolutions.filter((e) => !e.from && !e.detour && !e.sealed)) {
+      const records = Array.from({ length: runs }, (_, k) => autoAreaRun((seed + k * 10000) >>> 0, policy, undefined, areaId, prior, { [c.id]: evo.id }));
+      const reached = records.filter((r) => r.stages.length > bossIndex);
+      rows.push({
+        charId: c.id,
+        evolution: evo.id,
+        runs,
+        took: records.filter((r) => r.weaponsBeforeBoss[c.id]?.path[0] === evo.id).length,
+        bossReached: reached.length,
+        bossFirstTry: reached.filter((r) => r.stages[bossIndex].won && r.stages[bossIndex].attempts === 1).length,
+        cleared: records.filter((r) => r.cleared).length,
+      });
+    }
+  }
+  return { area: areaId, runs, seed, policy, rows };
+}
+
+export function formatPathMeasure(m: ReturnType<typeof measureEvolutionPaths>): string {
+  const name = (charId: string, id: string) => Object.values(WEAPON_DATA.weapons).find((w) => w.owner === charId)?.evolutions.find((e) => e.id === id)?.name ?? id;
+  return [
+    `## 進化の道ごとの勝率：${MEASURED_AREAS[m.area]?.title ?? m.area}（${m.runs}回ずつ、シード ${m.seed}〜、${POLICY_LABEL[m.policy].split('（')[0]}。1人の1回目の進化先を決め、ほかの仲間はいつもどおり）`,
+    '',
+    '| 仲間 | 1回目の進化先（本道） | この道を通れた割合 | ぬしの1回目の勝率 | 勝ち切り |',
+    '| --- | --- | ---: | ---: | ---: |',
+    ...m.rows.map((r) => `| ${PARTY.find((c) => c.id === r.charId)?.name ?? r.charId} | ${name(r.charId, r.evolution)} | ${pct(r.took, r.runs)} | ${pct(r.bossFirstTry, r.bossReached)} | ${pct(r.cleared, r.runs)} |`),
+    '',
+    '目安：どの本道も、ぬしの勝率が ±5% に収まる（docs/design/economy.md の 9-2）',
   ].join('\n');
 }

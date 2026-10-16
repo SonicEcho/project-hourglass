@@ -36,6 +36,9 @@ const text = [
   module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a23')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a23')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'pouch', 'a23')),
+  // 段階54：進化の道ごとの勝率（1人の1回目の進化先を決めて）。2-1 は弱点をねらう方針、2-3 はでたらめな方針（ねらう方針はほぼ勝つため）
+  module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a21', 'smart')),
+  module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a23', 'random')),
 ].join('\n\n');
 const took = `\n\n（${((Date.now() - started) / 1000).toFixed(1)}秒）\n`;
 console.log(text + took);

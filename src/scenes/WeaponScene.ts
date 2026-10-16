@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { EvolutionDef, PartColor, WeaponParamKey, WeaponState } from '../core';
 import {
+  cappedPassives,
   absorbMaterial,
   canEvolveAny,
   evolutionChecks,
@@ -24,11 +25,11 @@ import { FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, ELEMENT_COLOR, RENDER_SCALE, toCss } from '../ui/theme';
+import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -362,6 +363,16 @@ export class WeaponScene extends Phaser.Scene {
         color: w.absorbed >= slots ? COLORS.allyDamage : COLORS.text,
       }),
     );
+    // 割合の効果の上限（段階54）：武器・型・ギア・星図を合わせて上限に届いた効果（超えた分は効かない）
+    const grown = currentParty(hubLineup()).find((c) => c.id === this.charId);
+    const capped = grown ? cappedPassives(grown) : [];
+    if (capped.length > 0) {
+      const label = (c: (typeof capped)[number]): string =>
+        c.kind === 'elementBoost'
+          ? `${ELEMENT_LABEL[c.element!]} +${Math.round(c.value * 100)}%`
+          : ({ partBoost: `部位 +${Math.round(c.value * 100)}%`, comboBoost: `コンボ +${Math.round(c.value * 100)}%`, regen: `回復 ${Math.round(c.value * 100)}%`, batonBoost: `バトン ×${1.25 + c.value}`, mpSave: `MP消費 −${c.value}`, oneMoreDraw: `延長 +${c.value}枚` } as Record<string, string>)[c.kind];
+      this.root.add(addText(this, x0 + 10, CARD_TOP + 124, `上限：${capped.map(label).join('・')}（超えた分は効かない）`, { size: 10, bold: true, color: COLORS.accentText }));
+    }
     // 傾向（ムーブメントが閉じている間は出さない。段階26）
     if (!hubLineup().unlocks.navi) return;
     const t = tendencyOf(w);
