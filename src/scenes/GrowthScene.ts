@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
+import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -15,14 +15,23 @@ import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, h
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
-// 星図の画面（段階7）。縦持ち 390×844 に、マップ（7×9）と操作を1画面で収める
+// 星図の画面（段階7）。縦持ち 390×844 に、星図と操作を1画面で収める。
+// 段階56：星図は夏の大三角のまわりの本物の星座の形（src/data/growthMap.ts）。画面より大きいので、枠の中を指でずらして見る。
+// 星のタップ・長押し・ドラッグは、画面の入力で見分ける（星図は描き直しても、ずらした位置を覚えておく）
 
-const CELL = 48;
-const MAP_X = (GAME_WIDTH - CELL * GROWTH_MAP.cols) / 2;
-const MAP_Y = 58;
-const NODE_R = 17;
-/** 星図の夜空（段階32a 調整2）：星を置く高さの範囲、星の数、マスがきらめく間（ミリ秒） */
-const SKY = { top: 52, bottom: 490, stars: 70, twinkleMs: 1300 } as const;
+/** 星図を見せる枠（画面の座標） */
+const VIEW = { x: 0, y: 50, w: GAME_WIDTH, h: 440 } as const;
+/** 下の説明の枠と、キャラの切り替えの位置 */
+const INFO_TOP = VIEW.y + VIEW.h + 6;
+const TABS_TOP = INFO_TOP + 128;
+/** 星をタップしたと見なす近さ・ドラッグと見なす動き・長押しの時間 */
+const TAP_RANGE = 24;
+const DRAG_SLOP = 10;
+const LONG_PRESS_MS = 500;
+/** 出発点の星の大きさ（駒を並べる位置に使う） */
+const NODE_R = 12;
+/** 星図の夜空（段階32a 調整2）：またたく星の数、星がきらめく間（ミリ秒） */
+const SKY = { stars: 70, twinkleMs: 1300 } as const;
 
 const STAT_LABEL: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻撃', mag: '魔力', def: '防御', spd: '速さ' };
 const STAT_SHORT: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻', mag: '魔', def: '防', spd: '速' };
@@ -44,11 +53,10 @@ const SKILL_SHORT: Record<string, string> = {
   thundara: 'サンダラ',
   care: 'ケア',
   cure: 'ケアル',
-  doubleSlash: 'Wスラ',
+  doubleSlash: 'Wスラッシュ',
   inspiration: 'ひらめき',
 };
 
-const nodeCenter = (n: GrowthNodeDef) => ({ x: MAP_X + n.col * CELL + CELL / 2, y: MAP_Y + n.row * CELL + CELL / 2 });
 
 export class GrowthScene extends Phaser.Scene {
   private charId = 'hero';
@@ -60,6 +68,10 @@ export class GrowthScene extends Phaser.Scene {
   private overlay?: Phaser.GameObjects.Container;
   /** 勝利の報酬で選んでいるギアの候補の番号 */
   private rewardChosen: number[] = [];
+  /** 星図（枠の外は隠す。段階56） */
+  private mapLayer!: Phaser.GameObjects.Container;
+  /** 星図をずらした量（描き直しても覚えておく） */
+  private pan = { x: 0, y: 0 };
 
   constructor() {
     super('Growth');
@@ -79,6 +91,11 @@ export class GrowthScene extends Phaser.Scene {
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.noticeGrownMap();
+    // 星図の入れ物：枠の外は隠す。はじめは今のキャラの駒が見えるように
+    this.mapLayer = this.add.container(0, 0).setDepth(1);
+    this.mapLayer.setMask(this.make.graphics({}).fillRect(VIEW.x, VIEW.y, VIEW.w, VIEW.h).createGeometryMask());
+    this.centerOn(piecePosition(run.growth, this.charId));
+    this.setupMapInput();
     this.render();
     // ギアの報酬は試作の5戦だけ（ムーブメントが閉じている間は出さない）
     if (run.pendingReward !== null && hubLineup().unlocks.navi) this.showReward();
@@ -137,8 +154,6 @@ export class GrowthScene extends Phaser.Scene {
     const members = lineupBase(lineup);
     const party = currentParty(lineup);
     const back = getHubReturn();
-    const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
-
     this.root.add(screenBg(this));
 
     // 上：見出しと星の砂
@@ -160,42 +175,7 @@ export class GrowthScene extends Phaser.Scene {
     countText(this, pointsText, this.shownPoints ?? g.points, g.points, (v) => `${v}`);
     this.shownPoints = g.points;
 
-    // マップの道
-    const openable = new Set(openableNodes(GROWTH_MAP, g, this.charId).map((n) => n.id));
-    const lines = this.add.graphics();
-    for (const n of GROWTH_MAP.nodes) {
-      for (const nb of neighbors(GROWTH_MAP, n.id)) {
-        if (nb.id < n.id) continue;
-        // まだ章が来ていない区域への道は描かない（段階49）
-        if (chapterLocked(n, growthChapter(hubLineup())) || chapterLocked(nb, growthChapter(hubLineup()))) continue;
-        const both = isOpened(g, this.charId, n.id) && isOpened(g, this.charId, nb.id);
-        const a = nodeCenter(n);
-        const b = nodeCenter(nb);
-        // つながった道は、太い薄い光を下に敷いて、うっすら光って見せる（段階32a 調整2）
-        if (both) lines.lineStyle(12, color, 0.16).lineBetween(a.x, a.y, b.x, b.y);
-        lines.lineStyle(both ? 4 : 2, both ? color : 0x3a4670, both ? 1 : 0.8);
-        lines.lineBetween(a.x, a.y, b.x, b.y);
-      }
-    }
-    this.root.add(lines);
-
-    // マス
-    for (const n of GROWTH_MAP.nodes) this.drawNode(n, openable.has(n.id));
-
-    // 駒（今のキャラは大きく）。パーティにいない仲間の駒は出さない
-    members.forEach((c, i) => {
-      const p = nodeCenter(findNode(GROWTH_MAP, piecePosition(g, c.id))!);
-      const offset = [
-        { x: -NODE_R + 2, y: -NODE_R + 2 },
-        { x: NODE_R - 2, y: -NODE_R + 2 },
-        { x: 0, y: NODE_R - 1 },
-      ][i];
-      const current = c.id === this.charId;
-      const r = current ? 9 : 6;
-      const piece = this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff);
-      this.root.add(piece);
-      if (current) this.root.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
-    });
+    this.drawMap(members);
 
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
@@ -288,9 +268,8 @@ export class GrowthScene extends Phaser.Scene {
    * 画面を開いた時に1回だけ作る（マスを開けるたびの描き直しでは作り直さない）
    */
   private makeNightSky(): void {
-    const { top, bottom } = SKY;
     for (let i = 0; i < SKY.stars; i++) {
-      const star = this.add.circle(Phaser.Math.Between(4, GAME_WIDTH - 4), Phaser.Math.Between(top, bottom), Math.random() < 0.15 ? 1.4 : 0.8, 0xffffff, 0.2);
+      const star = this.add.circle(Phaser.Math.Between(4, GAME_WIDTH - 4), Phaser.Math.Between(VIEW.y, VIEW.y + VIEW.h), Math.random() < 0.15 ? 1.4 : 0.8, 0xffffff, 0.2);
       star.setDepth(-50);
       this.tweens.add({ targets: star, alpha: { from: 0.15, to: 0.85 }, duration: Phaser.Math.Between(900, 2600), delay: Phaser.Math.Between(0, 2000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
@@ -301,10 +280,13 @@ export class GrowthScene extends Phaser.Scene {
         const opened = GROWTH_MAP.nodes.filter((n) => isOpened(run.growth, this.charId, n.id));
         const n = opened[Math.floor(Math.random() * opened.length)];
         if (!n || this.overlay) return;
-        const { x, y } = nodeCenter(n);
+        // 星図の上の位置を画面の位置にする（枠の外の星はきらめかせない）
+        const x = n.x + this.mapLayer.x;
+        const y = n.y + this.mapLayer.y;
+        if (x < VIEW.x || x > VIEW.x + VIEW.w || y < VIEW.y || y > VIEW.y + VIEW.h) return;
         // 4つの角の光を、大きくしてから小さくする（形を描き直して動かす）
-        const gx = x + NODE_R * 0.55;
-        const gy = y - NODE_R * 0.55;
+        const gx = x + 6;
+        const gy = y - 6;
         const glint = this.add.graphics().setDepth(50);
         this.tweens.addCounter({
           from: 0,
@@ -323,57 +305,238 @@ export class GrowthScene extends Phaser.Scene {
     });
   }
 
-  private drawNode(n: GrowthNodeDef, openable: boolean): void {
+  /** 星図をずらした量を、範囲の中に収めて入れ物に反映する */
+  private applyPan(): void {
+    this.pan.x = Phaser.Math.Clamp(this.pan.x, Math.min(0, VIEW.w - GROWTH_MAP.width), 0);
+    this.pan.y = Phaser.Math.Clamp(this.pan.y, Math.min(0, VIEW.h - GROWTH_MAP.height), 0);
+    this.mapLayer.setPosition(VIEW.x + this.pan.x, VIEW.y + this.pan.y);
+  }
+
+  /** その星が枠の真ん中あたり（少し上）に来るように、ずらす */
+  private centerOn(nodeId: string): void {
+    const n = findNode(GROWTH_MAP, nodeId);
+    if (!n) return;
+    this.pan = { x: VIEW.w / 2 - n.x, y: VIEW.h * 0.55 - n.y };
+    this.applyPan();
+  }
+
+  /** 星図の上の指：ドラッグでずらす、タップで星を選ぶ、長押しで星の説明（段階56） */
+  private setupMapInput(): void {
+    let start: { x: number; y: number; px: number; py: number; at: number } | null = null;
+    let moved = false;
+    let longTimer: Phaser.Time.TimerEvent | undefined;
+    const inView = (p: Phaser.Input.Pointer) => {
+      const at = this.cameras.main.getWorldPoint(p.x, p.y);
+      return at.x >= VIEW.x && at.x <= VIEW.x + VIEW.w && at.y >= VIEW.y && at.y <= VIEW.y + VIEW.h ? at : null;
+    };
+    /** 指の位置に一番近い、見えている星（TAP_RANGE より遠ければ null） */
+    const starAt = (x: number, y: number) => {
+      const mx = x - this.mapLayer.x;
+      const my = y - this.mapLayer.y;
+      let best: GrowthNodeDef | null = null;
+      let bestD = TAP_RANGE;
+      for (const n of GROWTH_MAP.nodes) {
+        if (chapterLocked(n, growthChapter(hubLineup()))) continue;
+        const d = Math.hypot(n.x - mx, n.y - my);
+        if (d <= bestD) {
+          best = n;
+          bestD = d;
+        }
+      }
+      return best;
+    };
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      const at = inView(p);
+      if (!at || this.overlay || over.length > 0) return;
+      start = { x: at.x, y: at.y, px: this.pan.x, py: this.pan.y, at: this.time.now };
+      moved = false;
+      longTimer?.remove();
+      longTimer = this.time.delayedCall(LONG_PRESS_MS, () => {
+        if (!start || moved) return;
+        const n = starAt(start.x, start.y);
+        start = null;
+        if (n) this.showDetail(nodeTitle(n, this.base()), nodeDetail(n, this.base()));
+      });
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!start || !p.isDown) return;
+      const at = this.cameras.main.getWorldPoint(p.x, p.y);
+      const dx = at.x - start.x;
+      const dy = at.y - start.y;
+      if (!moved && Math.hypot(dx, dy) > DRAG_SLOP) moved = true;
+      if (!moved) return;
+      this.pan = { x: start.px + dx, y: start.py + dy };
+      this.applyPan();
+    });
+    this.input.on('pointerup', () => {
+      longTimer?.remove();
+      if (!start) return;
+      const was = start;
+      start = null;
+      if (moved) return;
+      const n = starAt(was.x, was.y);
+      if (n) this.tapNode(n.id);
+    });
+  }
+
+  /** 星図：天の川、星座の名前、道、星、駒（段階56。まだ章が来ていない区域は描かない） */
+  private drawMap(members: CharacterDef[]): void {
+    const layer = this.mapLayer;
+    layer.removeAll(true);
     const g = run.growth;
-    const { x, y } = nodeCenter(n);
+    const chapter = growthChapter(hubLineup());
+    const shown = (n: GrowthNodeDef) => !chapterLocked(n, chapter);
+    const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
+    const byId = new Map(GROWTH_MAP.nodes.map((n) => [n.id, n]));
+
+    // 星図の空（触れる範囲が分かるように、うっすら塗る）と、小さな飾りの星（いつも同じ並び）
+    layer.add(this.add.rectangle(0, 0, GROWTH_MAP.width, GROWTH_MAP.height, 0x0a0f2c, 0.35).setOrigin(0));
+    const deco = this.add.graphics();
+    for (let i = 0; i < 260; i++) {
+      const h = (k: number) => Math.abs(Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1;
+      deco.fillStyle(0xffffff, 0.15 + h(3) * 0.4).fillCircle(h(1) * GROWTH_MAP.width, h(2) * GROWTH_MAP.height, 0.5 + h(4) * 1.1);
+    }
+    layer.add(deco);
+    // 天の川：はくちょう座の背骨から、や座を通って、わし座の西へ（本物の位置）
+    const river = ['deneb', 'sadr', 'etaCyg', 'albireo', 'alphaSge', 'deltaAql', 'lambdaAql'].map((id) => byId.get(id)).filter((n): n is GrowthNodeDef => !!n);
+    // 道に沿って薄い円を重ね、ぼんやりした帯にする
+    const band = this.add.graphics();
+    for (let i = 0; i + 1 < river.length; i++) {
+      const [a, b] = [river[i], river[i + 1]];
+      const steps = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 6);
+      for (let k = 0; k < steps; k++) {
+        const t = k / steps;
+        const [x, y] = [a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t];
+        band.fillStyle(0x9fb8ff, 0.006).fillCircle(x, y, 84);
+        band.fillStyle(0x9fb8ff, 0.008).fillCircle(x, y, 60);
+        band.fillStyle(0xb8c8ff, 0.01).fillCircle(x, y, 36);
+      }
+    }
+    layer.add(band);
+
+    // 星座の名前（その星座の星が1つでも見えていれば）
+    for (const [con, c] of Object.entries(GROWTH_MAP.constellations ?? {})) {
+      if (!GROWTH_MAP.nodes.some((n) => n.con === con && shown(n))) continue;
+      layer.add(addText(this, c.x, c.y, c.name, { size: 12, color: '#c8d4ff' }).setOrigin(0.5).setAlpha(0.6).setLetterSpacing(3));
+    }
+
+    // 道：開けた道は今のキャラの色で光らせる。星座と星座をつなぐ橋は点線
+    const openable = new Set(openableNodes(GROWTH_MAP, g, this.charId).map((n) => n.id));
+    const lines = this.add.graphics();
+    for (const [ia, ib] of GROWTH_MAP.edges) {
+      const a = byId.get(ia);
+      const b = byId.get(ib);
+      if (!a || !b || !shown(a) || !shown(b)) continue;
+      const lit = isOpened(g, this.charId, a.id) && isOpened(g, this.charId, b.id);
+      if (lit) {
+        lines.lineStyle(10, color, 0.16).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(3, color, 1).lineBetween(a.x, a.y, b.x, b.y);
+      } else if (a.con !== b.con) dashedLine(lines, a.x, a.y, b.x, b.y, 0x9fb8e8, 0.5, 5, 4);
+      else lines.lineStyle(1.2, 0x9fb8e8, 0.45).lineBetween(a.x, a.y, b.x, b.y);
+    }
+    // 将来の星座へつなぐ場所：外へ向かう薄い点線と「？」
+    for (const f of GROWTH_FRONTIER) {
+      const n = byId.get(f.node);
+      if (!n || !shown(n)) continue;
+      const len = Math.hypot(f.dx, f.dy);
+      const [ex, ey] = [n.x + (f.dx / len) * 46, n.y + (f.dy / len) * 46];
+      dashedLine(lines, n.x, n.y, ex, ey, 0x9fb8e8, 0.4, 2, 5);
+      layer.add(addText(this, ex + (f.dx / len) * 9, ey + (f.dy / len) * 9, '？', { size: 12, color: '#c8d4ff' }).setOrigin(0.5).setAlpha(0.55));
+    }
+    layer.add(lines);
+
+    // 星
+    for (const n of GROWTH_MAP.nodes) if (shown(n)) this.drawStar(n, openable.has(n.id));
+
+    // 駒（今のキャラは大きく）。パーティにいない仲間の駒は出さない
+    members.forEach((c, i) => {
+      const p = byId.get(piecePosition(g, c.id))!;
+      // 星の右に、真ん中・下・上の順に（上と左は、星の名前や隣の星の文字と重なりやすい）
+      const offset = [
+        { x: NODE_R + 10, y: 0 },
+        { x: NODE_R + 10, y: 16 },
+        { x: NODE_R + 10, y: -16 },
+      ][i];
+      const current = c.id === this.charId;
+      const r = current ? 9 : 6;
+      layer.add(this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff));
+      if (current) layer.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
+    });
+  }
+
+  /** 星：能力値は色つきの光（大は輪つき）、魔法・スキルは金の四つ角の星、出発点は仲間の色の大きな星（段階56） */
+  private drawStar(n: GrowthNodeDef, openable: boolean): void {
+    const layer = this.mapLayer;
+    const g = run.growth;
+    const { x, y } = n;
     const opened = isOpened(g, this.charId, n.id);
     const selected = this.selected === n.id;
-    // まだ章が来ていないマス（段階49）は描かない（その章が来ると、星図が広がる）
-    if (chapterLocked(n, growthChapter(hubLineup()))) return;
-    const alpha = opened ? 1 : openable ? 0.75 : 0.28;
-    let shape: Phaser.GameObjects.Shape;
+    const alpha = opened ? 1 : openable ? 0.9 : 0.55;
+    let color = 0xffffff;
+    let r = 6;
     let label = '';
-    let labelSize = 10;
-    if (n.kind === 'skill') {
-      shape = this.add.rectangle(x, y, 26, 26, 0xd9a520, alpha).setAngle(45);
+    if (n.kind === 'start') {
+      color = ALLY_COLOR[n.owner] ?? COLORS.ally;
+      r = NODE_R;
+      label = PARTY.find((c) => c.id === n.owner)?.name ?? '';
+    } else if (n.kind === 'skill') {
+      color = 0xffd76a;
+      r = 10;
       label = SKILL_SHORT[n.skillId] ?? n.skillId;
-      labelSize = 8;
-    } else if (n.kind === 'start') {
-      shape = this.add.circle(x, y, NODE_R, ALLY_COLOR[n.owner] ?? COLORS.ally, alpha);
-      label = '出発';
-      labelSize = 9;
     } else {
-      shape = this.add.circle(x, y, n.kind === 'statBig' ? NODE_R : NODE_R - 3, STAT_COLOR[n.stat], alpha);
+      color = STAT_COLOR[n.stat];
+      r = n.kind === 'statBig' ? 8.5 : 6;
       label = `${STAT_SHORT[n.stat]}${n.amount}`;
-      labelSize = n.kind === 'statBig' ? 10 : 9;
     }
-    shape.setStrokeStyle(selected ? 4 : openable ? 3 : n.kind === 'statBig' ? 2 : 1, selected ? COLORS.select : openable ? COLORS.accent : n.kind === 'statBig' ? 0xffffff : COLORS.border);
-    this.root.add(shape);
-    this.root.add(
-      addText(this, x, y, label, { size: labelSize, bold: true, color: opened || openable ? '#101820' : '#9fb3c8', align: 'center' }).setOrigin(0.5),
+    const shape = this.add.graphics();
+    // まわりの光
+    shape.fillStyle(color, (opened ? 0.3 : 0.12) * alpha).fillCircle(x, y, r * 2.4);
+    shape.fillStyle(color, (opened ? 0.25 : 0.1) * alpha).fillCircle(x, y, r * 1.6);
+    if (n.kind === 'skill') {
+      const a = r * 1.5;
+      const w = r * 0.35;
+      shape.fillStyle(color, alpha).fillPoints(
+        [[x, y - a], [x + w, y - w], [x + a, y], [x + w, y + w], [x, y + a], [x - w, y + w], [x - a, y], [x - w, y - w]].map(([px, py]) => new Phaser.Math.Vector2(px, py)),
+        true,
+      );
+    } else {
+      shape.fillStyle(color, alpha).fillCircle(x, y, r);
+      shape.fillStyle(0xffffff, alpha).fillCircle(x, y, r * 0.45);
+    }
+    if (n.kind === 'statBig') shape.lineStyle(1, 0xffffff, 0.6 * alpha).strokeCircle(x, y, r + 3);
+    // 開けられる星は点線の輪、選んだ星は太い輪
+    if (openable && !selected) dashedCircle(shape, x, y, r + 7, COLORS.accent, 1, 16);
+    if (selected) shape.lineStyle(3, COLORS.select, 1).strokeCircle(x, y, r + 7);
+    layer.add(shape);
+    layer.add(
+      addText(this, x, y + r + 11, label, {
+        size: n.kind === 'start' || n.kind === 'skill' ? 11 : 10,
+        bold: opened || openable,
+        color: opened || openable ? '#e8eefc' : '#a9bbd0',
+      }).setOrigin(0.5).setAlpha(Math.max(0.7, alpha)),
     );
-    // 他のキャラが開けたマスに小さな印
+    // 有名な星の名前（小さく）
+    const name = GROWTH_STAR_NAMES[n.id];
+    if (name && n.name) {
+      const [dx, dy, side] = name;
+      layer.add(addText(this, x + dx, y + dy, n.name, { size: 9, color: '#c8d4ff' }).setOrigin(side === 'right' ? 1 : side === 'center' ? 0.5 : 0, 0.5).setAlpha(0.75));
+    }
+    // 他のキャラが開けた星に小さな印
     lineupBase(hubLineup()).forEach((c, i) => {
       if (c.id === this.charId || !isOpened(g, c.id, n.id)) return;
-      this.root.add(this.add.circle(x - 6 + i * 6, y + NODE_R + 3, 2.5, ALLY_COLOR[c.id] ?? COLORS.ally));
-    });
-    const hit = this.add.rectangle(x, y, CELL - 2, CELL - 2, 0xffffff, 0.001);
-    this.root.add(hit);
-    makePressable(hit, {
-      onTap: () => this.tapNode(n.id),
-      onLongPress: () => this.showDetail(nodeTitle(n, this.base()), nodeDetail(n, this.base())),
+      layer.add(this.add.circle(x - 6 + i * 6, y + r + 22, 2.5, ALLY_COLOR[c.id] ?? COLORS.ally));
     });
   }
 
   /** 選んだマスの説明と「開ける」ボタン */
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
-    const top = MAP_Y + CELL * GROWTH_MAP.rows + 6;
+    const top = INFO_TOP;
     const h = 120;
     this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       const lines = [
-        this.message || `${base.name}の駒を進める。黄色い枠のマス（開けられるマス）をタップ`,
+        this.message || `${base.name}の駒を進める。点線の輪の星（開けられる星）をタップ。星図は指でずらせる`,
         `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
         `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}　速さ ${grown.stats.spd}`,
       ];
@@ -408,7 +571,7 @@ export class GrowthScene extends Phaser.Scene {
 
   /** キャラの切り替え */
   private drawTabs(party: CharacterDef[]): void {
-    const top = MAP_Y + CELL * GROWTH_MAP.rows + 134;
+    const top = TABS_TOP;
     const n = party.length;
     const gap = 6;
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
@@ -431,6 +594,8 @@ export class GrowthScene extends Phaser.Scene {
           this.charId = c.id;
           this.selected = null;
           this.message = '';
+          // 切り替えたキャラの駒が見えるように
+          this.centerOn(piecePosition(run.growth, c.id));
           this.render();
         },
         onLongPress: () => this.showDetail(c.name, characterDetail(c, this.base(c.id))),
@@ -563,4 +728,26 @@ function characterDetail(c: CharacterDef, base: CharacterDef): string {
     '',
     `魔法・スキル：${c.skills.map((k) => k.name).join('、')}`,
   ].join('\n');
+}
+
+/** 点線（段階56。星座と星座をつなぐ橋、将来の星座への道） */
+function dashedLine(g: Phaser.GameObjects.Graphics, x1: number, y1: number, x2: number, y2: number, color: number, alpha: number, dash: number, gap: number): void {
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const [ux, uy] = [(x2 - x1) / len, (y2 - y1) / len];
+  g.lineStyle(1.2, color, alpha);
+  for (let d = 0; d < len; d += dash + gap) {
+    const e = Math.min(len, d + dash);
+    g.lineBetween(x1 + ux * d, y1 + uy * d, x1 + ux * e, y1 + uy * e);
+  }
+}
+
+/** 点線の輪（段階56。開けられる星） */
+function dashedCircle(g: Phaser.GameObjects.Graphics, x: number, y: number, r: number, color: number, alpha: number, pieces: number): void {
+  g.lineStyle(1.8, color, alpha);
+  const step = (Math.PI * 2) / pieces;
+  for (let i = 0; i < pieces; i++) {
+    g.beginPath();
+    g.arc(x, y, r, i * step, i * step + step * 0.55);
+    g.strokePath();
+  }
 }

@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { GrowthState } from '../../src/core';
 import { areaChapter, chapterLocked, createArmory, createGrowth, getOpenError, huntRewardRate, openableNodes, openNode, recordVictory } from '../../src/core';
-import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_CHAPTER_ROWS, GROWTH_MAP, HERO, HUNT_OLD_AREA_RATE, PARTY, SLICE_FLOW, WEAPON_DATA } from '../../src/data';
+import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_MAP, HERO, HUNT_OLD_AREA_RATE, PARTY, SLICE_FLOW, WEAPON_DATA } from '../../src/data';
 
 // 章の区切り（段階49。docs/design/economy.md の 2.・7.）：星図の区域は章で広がる。狩りで前の章の区画は、星の砂と経験値が半分
 describe('星図の章の鍵（段階49）', () => {
-  it('上の3行（17マス）は2章から。ほかはいつでも', () => {
+  it('はくちょう座（17の星）は2章の区域。ほかはいつでも（段階56）', () => {
     const locked = GROWTH_MAP.nodes.filter((n) => n.chapter !== undefined);
     expect(locked.length).toBe(17);
-    expect(locked.every((n) => n.row < 3 && n.chapter === 2)).toBe(true);
-    expect(GROWTH_CHAPTER_ROWS).toEqual([{ rows: 3, chapter: 2 }]);
+    expect(locked.every((n) => n.con === 'cyg' && n.chapter === 2)).toBe(true);
   });
 
   it('1章では開けられず、2章と章のない時（試作の5戦）は開けられる', () => {

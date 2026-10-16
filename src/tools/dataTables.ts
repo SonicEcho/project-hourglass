@@ -185,7 +185,7 @@ function growthPage(): string {
   });
   return page('星図とムーブメント', '正は `src/data/growthMap.ts`・`src/data/navi.ts`。仕組みは `docs/design/growth.md`。', [
     [
-      `星図（${GROWTH_MAP.cols}×${GROWTH_MAP.rows}、${GROWTH_MAP.nodes.length}マス）`,
+      `星図（夏の大三角のまわりの星座。${GROWTH_MAP.nodes.length}個の星、${GROWTH_MAP.edges.length}本の道）`,
       [
         table(['マスの種類', '数', '費用（星の砂）'], kinds.map(([k, label, cost]) => [label, GROWTH_MAP.nodes.filter((n) => n.kind === k).length, cost])),
         '',

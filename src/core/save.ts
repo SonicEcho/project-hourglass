@@ -7,7 +7,7 @@ import { dayAt, findEvent, firstEventId } from './flow';
 import type { ChapterGauge } from './lineup';
 import { LINK_GAUGE_MAX } from '../data/constants';
 import type { GrowthMap, GrowthState } from './growth';
-import { createGrowth } from './growth';
+import { createGrowth, renameNode } from './growth';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
 import { getPlaceError, placePart } from './navi';
 import type { Progress, Story } from './progress';
@@ -206,10 +206,12 @@ function sanitizeGrowth(raw: Record<string, unknown>, ctx: SaveContext): GrowthS
   if (!isInt(raw.points) || !isObject(raw.opened)) return null;
   const fresh = createGrowth(ctx.growthMap, ctx.characterIds, ctx.startPoints);
   const nodeIds = new Set(ctx.growthMap.nodes.map((n) => n.id));
+  // 段階56：格子の星図のマスの id は、同じ効果の星へ付け替える（セーブの版は変えない）
+  const rename = (id: unknown): unknown => (typeof id === 'string' ? renameNode(ctx.growthMap, id) : id);
   const opened: Record<string, string[]> = {};
   for (const id of ctx.characterIds) {
     const list = raw.opened[id];
-    const kept = Array.isArray(list) ? list.filter((n): n is string => typeof n === 'string' && nodeIds.has(n)) : [];
+    const kept = Array.isArray(list) ? list.map(rename).filter((n): n is string => typeof n === 'string' && nodeIds.has(n)) : [];
     // 出発点は必ず開いている
     opened[id] = kept.length > 0 ? [...new Set([...fresh.opened[id], ...kept])] : fresh.opened[id];
   }

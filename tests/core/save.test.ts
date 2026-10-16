@@ -415,3 +415,19 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res.save.run.navi.nextUid).toBe(START_NAVI_PARTS.length);
   });
 });
+
+describe('星図の前の id（段階56）', () => {
+  it('格子の星図のマスの id で開けていたセーブは、同じ効果の星に付け替えて読む（駒は最後に開けた星）', () => {
+    const r = freshRun();
+    r.growth = { points: 5, opened: { hero: ['n8_3', 'n8_2', 'n7_2'], akari: ['n5_0', 'n4_0'], mio: ['n5_6', 'unknown'] } };
+    const loaded = parseSave(serializeSave(r, AT), ctx);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const opened = loaded.save.run.growth.opened;
+    expect(opened.hero.slice(0, 1)).toEqual(['altair']);
+    expect(opened.hero).toHaveLength(3);
+    expect(opened.hero.every((id) => GROWTH_MAP.nodes.some((n) => n.id === id))).toBe(true);
+    expect(opened.akari).toEqual(['vega', GROWTH_MAP.renamed!.n4_0]);
+    expect(opened.mio).toEqual(['sualocin']);
+  });
+});
