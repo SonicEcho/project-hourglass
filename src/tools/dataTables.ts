@@ -178,10 +178,10 @@ function growthPage(): string {
     const shape: string[] = [];
     for (let r = 0; r < b.rows; r++) {
       let line = '';
-      for (let col = 0; col < b.cols; col++) line += b.cells.some(([x, y]) => x === col && y === r) ? (r === b.commandRow ? '◆' : '■') : '・';
+      for (let col = 0; col < b.cols; col++) line += b.cells.some(([x, y]) => x === col && y === r) ? (col === b.commandCol ? '◆' : '■') : '・';
       shape.push(line);
     }
-    return [c.name, `${b.cols}×${b.rows}`, b.cells.length, b.cells.filter(([, y]) => y === b.commandRow).length, shape.join('\n')];
+    return [c.name, `${b.cols}×${b.rows}`, b.cells.length, b.cells.filter(([x]) => x === b.commandCol).length, shape.join('\n')];
   });
   return page('星図とムーブメント', '正は `src/data/growthMap.ts`・`src/data/navi.ts`。仕組みは `docs/design/growth.md`。', [
     [

@@ -363,10 +363,10 @@ describe('セーブ：今のデータに合わせて整える', () => {
     const r = freshRun();
     r.armory = { ...r.armory, weapons: { ...r.armory.weapons, hero: { ...r.armory.weapons.hero, path: [{ id: 'flameBlade', style: 0 }] } } };
     const raw = JSON.parse(serializeSave(r, AT));
-    // 広がったブリッジの右端（4列目）に1マスのギア
-    raw.run.navi.parts[0].placement = { charId: 'hero', col: 4, row: 1, rotation: 0 };
+    // 広がったブリッジの下の端（5行目）に1マスのギア
+    raw.run.navi.parts[0].placement = { charId: 'hero', col: 1, row: 4, rotation: 0 };
     const res = parseSave(JSON.stringify(raw), ctx);
-    expect(res.ok && res.save.run.navi.parts[0].placement).toEqual({ charId: 'hero', col: 4, row: 1, rotation: 0 });
+    expect(res.ok && res.save.run.navi.parts[0].placement).toEqual({ charId: 'hero', col: 1, row: 4, rotation: 0 });
     // 進化先が今のデータにない時は進化前に戻り、そのギアは外れる
     raw.run.armory.weapons.hero.path = [{ id: 'removedEvolution', style: 0 }];
     const res2 = parseSave(JSON.stringify(raw), ctx);

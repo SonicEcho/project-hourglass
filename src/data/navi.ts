@@ -17,13 +17,13 @@ export const BUG_HP_RATE = 0.05;
 const part = <T extends NaviPartDef>(p: T): T => p;
 
 export const NAVI_PARTS = {
-  // 能力値ギア（どこでも効く）
-  hpMemory: part({ id: 'hpMemory', name: 'HPメモリ', color: 'red', cells: ONE, kind: 'stat', stats: { hp: 20 } }),
-  mpMemory: part({ id: 'mpMemory', name: 'MPメモリ', color: 'blue', cells: ONE, kind: 'stat', stats: { mp: 8 } }),
-  powerMemory: part({ id: 'powerMemory', name: 'パワーメモリ', color: 'red', cells: LINE2, kind: 'stat', stats: { atk: 3 } }),
-  magicMemory: part({ id: 'magicMemory', name: 'マジックメモリ', color: 'blue', cells: LINE2, kind: 'stat', stats: { mag: 3 } }),
-  guardMemory: part({ id: 'guardMemory', name: 'ガードメモリ', color: 'green', cells: LINE2, kind: 'stat', stats: { def: 2 } }),
-  speedMemory: part({ id: 'speedMemory', name: 'スピードメモリ', color: 'yellow', cells: L3, kind: 'stat', stats: { spd: 2 } }),
+  // 能力値ギア（どこでも効く）。名前は上がる能力値の呼び名＋歯車（2026-10-16 開発者と決めた。「○○メモリ」はナビカスらしさが残るため）
+  hpMemory: part({ id: 'hpMemory', name: 'HPの歯車', color: 'red', cells: ONE, kind: 'stat', stats: { hp: 20 } }),
+  mpMemory: part({ id: 'mpMemory', name: 'MPの歯車', color: 'blue', cells: ONE, kind: 'stat', stats: { mp: 8 } }),
+  powerMemory: part({ id: 'powerMemory', name: '攻撃の歯車', color: 'red', cells: LINE2, kind: 'stat', stats: { atk: 3 } }),
+  magicMemory: part({ id: 'magicMemory', name: '魔力の歯車', color: 'blue', cells: LINE2, kind: 'stat', stats: { mag: 3 } }),
+  guardMemory: part({ id: 'guardMemory', name: '防御の歯車', color: 'green', cells: LINE2, kind: 'stat', stats: { def: 2 } }),
+  speedMemory: part({ id: 'speedMemory', name: '速さの歯車', color: 'yellow', cells: L3, kind: 'stat', stats: { spd: 2 } }),
   // 効果ギア（ブリッジに乗っている時だけ効く）
   fireBoost: part({ id: 'fireBoost', name: 'ファイアブースト', color: 'red', cells: L3, kind: 'effect', effect: { kind: 'elementBoost', element: 'fire', rate: 0.25 } }),
   iceBoost: part({ id: 'iceBoost', name: 'アイスブースト', color: 'blue', cells: L3, kind: 'effect', effect: { kind: 'elementBoost', element: 'ice', rate: 0.25 } }),
@@ -39,11 +39,11 @@ export const NAVI_PARTS = {
 
 export type NaviPartId = keyof typeof NAVI_PARTS;
 
-const board = (layout: string[], commandRow: number): NaviBoardDef => ({
+const board = (layout: string[], commandCol: number): NaviBoardDef => ({
   cols: Math.max(...layout.map((l) => l.length)),
   rows: layout.length,
   cells: parseBoardCells(layout),
-  commandRow,
+  commandCol,
   bugEffect: { kind: 'bug', rate: BUG_HP_RATE },
 });
 
@@ -51,8 +51,8 @@ const board = (layout: string[], commandRow: number): NaviBoardDef => ({
 export const NAVI_BOARDS: Record<string, NaviBoardDef> = {
   // ハルト：癖のない正方形
   hero: board(['####', '####', '####', '####'], 1),
-  // あかり：横長。支援ギアを並べやすい
-  akari: board(['#####', '#####', '#####'], 1),
+  // あかり：縦長。ブリッジが長く、支援の効果ギアを並べやすい（2026-10-16 にブリッジを縦にした時、横長から替えた）
+  akari: board(['###', '###', '###', '###', '###'], 1),
   // みお：四隅が欠けた小さな盤（構想ノートでは未定なので仮）
   mio: board(['.##.', '####', '####', '.##.'], 1),
 };

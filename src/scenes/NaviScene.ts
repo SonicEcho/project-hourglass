@@ -250,7 +250,7 @@ export class NaviScene extends Phaser.Scene {
 
     // ブリッジ（光る帯）
     this.root.add(
-      this.add.rectangle(o.x - 6, o.y + b.commandRow * this.cell - 3, this.cell * b.cols + 12, this.cell + 6, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
+      this.add.rectangle(o.x + b.commandCol * this.cell - 3, o.y - 6, this.cell + 6, this.cell * b.rows + 12, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
     );
 
     // マス
@@ -259,7 +259,7 @@ export class NaviScene extends Phaser.Scene {
         if (!cellSet.has(key([col, row]))) continue;
         const x = o.x + col * this.cell;
         const y = o.y + row * this.cell;
-        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, row === b.commandRow ? 0x3a3a1e : COLORS.panel).setRounded(8).setOrigin(0);
+        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, col === b.commandCol ? 0x3a3a1e : COLORS.panel).setRounded(8).setOrigin(0);
         rect.setStrokeStyle(1, COLORS.border);
         this.root.add(rect);
         makePressable(rect, {

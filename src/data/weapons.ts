@@ -106,7 +106,7 @@ export type FragmentId = keyof typeof FRAGMENTS;
 // 1回目〜3回目の進化先と寄り道1本は作った。4回目より先は、まだ作っていない先（sealed。影と、一番先の言い伝えだけ見せる）。
 // 段の形は 3 → 3 → 4 → 5 → 5 → 6（本道）＋寄り道1。2回目の鍵は次の区画の珍しい素材、3回目の鍵はさらに先の区画の素材
 
-/** 型（8-1c）。row はブリッジの行の右端に横へ、column は盤の下へ縦にマスが増える。どの進化先も、横と縦の型を1つずつ */
+/** 型（8-1c）。row はブリッジ（縦の列）が下へ伸び、column は盤が右へ横に広がる。どの進化先も、2つの型を1つずつ */
 const STYLES = {
   /** 烈：その属性のダメージ +10%（横。段階54で +15% から下げた） */
   fierce: (element: Element): EvolutionStyleDef => ({ name: '烈', passives: [{ kind: 'elementBoost', element, rate: 0.1 }], board: 'row' }),
