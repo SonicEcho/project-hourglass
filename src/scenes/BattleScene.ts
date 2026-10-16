@@ -1389,7 +1389,9 @@ export class BattleScene extends Phaser.Scene {
       addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });
       return;
     }
-    const gained = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
+    // 狩りの星の砂は半分（切り上げ。段階49。狩りをした人ほど先の章が楽になりすぎないように。docs/design/economy.md の 2.）
+    const full = battleReward(def.reward, result.brokenParts.length, PART_BREAK_POINTS);
+    const gained = enc.hunt ? Math.ceil(full / 2) : full;
     // 勝利のアイテム（ポーションや、逃げる敵のデモテープなど）は1回目だけ。狩りではもらえない（段階43）
     const prize = enc.hunt ? undefined : def.item;
     run.growth = { ...run.growth, points: run.growth.points + gained };

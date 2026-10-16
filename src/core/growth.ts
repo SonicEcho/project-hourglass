@@ -5,10 +5,13 @@ import type { CharacterDef, SkillDef, Stats } from './types';
 
 export type StatKey = keyof Stats;
 
+/** マスの共通の形。chapter は、何章から開けられるか（段階49。書かなければいつでも。docs/design/economy.md の 2.） */
+type NodeBase = { id: string; col: number; row: number; chapter?: number };
+
 export type GrowthNodeDef =
-  | { id: string; col: number; row: number; kind: 'start'; owner: string }
-  | { id: string; col: number; row: number; kind: 'stat' | 'statBig'; stat: StatKey; amount: number }
-  | { id: string; col: number; row: number; kind: 'skill'; skillId: string };
+  | (NodeBase & { kind: 'start'; owner: string })
+  | (NodeBase & { kind: 'stat' | 'statBig'; stat: StatKey; amount: number })
+  | (NodeBase & { kind: 'skill'; skillId: string });
 
 export interface GrowthMap {
   cols: number;
@@ -96,18 +99,25 @@ export function openableNodes(map: GrowthMap, growth: GrowthState, charId: strin
   return [...out.values()];
 }
 
-/** マスを開けられない理由。開けられるなら null */
-export function getOpenError(map: GrowthMap, growth: GrowthState, base: CharacterDef, nodeId: string): string | null {
-  if (!findNode(map, nodeId)) return 'unknown node';
+/** まだ章が来ていなくて開けられないマスか（chapter は今の章。試作の5戦など、章のない時は Infinity） */
+export function chapterLocked(node: GrowthNodeDef, chapter: number): boolean {
+  return (node.chapter ?? 0) > chapter;
+}
+
+/** マスを開けられない理由。開けられるなら null。chapter は今の章（段階49。そのマスの章が来ていなければ開けられない） */
+export function getOpenError(map: GrowthMap, growth: GrowthState, base: CharacterDef, nodeId: string, chapter = Infinity): string | null {
+  const node = findNode(map, nodeId);
+  if (!node) return 'unknown node';
   if (isOpened(growth, base.id, nodeId)) return 'already opened';
   if (!openableNodes(map, growth, base.id).some((n) => n.id === nodeId)) return 'not next to an opened node';
+  if (chapterLocked(node, chapter)) return 'chapter locked';
   if (growth.points < nodeCost(map, growth, base, nodeId)) return 'not enough memory points';
   return null;
 }
 
 /** マスを開ける（星の砂を払い、駒がそこへ進む） */
-export function openNode(map: GrowthMap, growth: GrowthState, base: CharacterDef, nodeId: string): GrowthState {
-  const err = getOpenError(map, growth, base, nodeId);
+export function openNode(map: GrowthMap, growth: GrowthState, base: CharacterDef, nodeId: string, chapter = Infinity): GrowthState {
+  const err = getOpenError(map, growth, base, nodeId, chapter);
   if (err) throw new Error(err);
   const cost = nodeCost(map, growth, base, nodeId);
   return {

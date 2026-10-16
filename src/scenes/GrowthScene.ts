@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { canEvolveAny, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
+import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, GROWTH_MAP, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -11,7 +11,7 @@ import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { battleAt, currentNaviData, currentParty, getHubReturn, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, weaponDataFor } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -94,7 +94,7 @@ export class GrowthScene extends Phaser.Scene {
   }
 
   private tapNode(nodeId: string): void {
-    const err = getOpenError(GROWTH_MAP, run.growth, this.base(), nodeId);
+    const err = getOpenError(GROWTH_MAP, run.growth, this.base(), nodeId, growthChapter(hubLineup()));
     if (this.selected === nodeId && !err) {
       this.open(nodeId);
       return;
@@ -106,7 +106,7 @@ export class GrowthScene extends Phaser.Scene {
 
   private open(nodeId: string): void {
     const node = findNode(GROWTH_MAP, nodeId)!;
-    run.growth = openNode(GROWTH_MAP, run.growth, this.base(), nodeId);
+    run.growth = openNode(GROWTH_MAP, run.growth, this.base(), nodeId, growthChapter(hubLineup()));
     this.message = `${this.base().name}：${nodeTitle(node, this.base())}を開けた`;
     console.log('[growth]', this.charId, nodeId, `points=${run.growth.points}`);
     this.selected = null;
@@ -210,7 +210,7 @@ export class GrowthScene extends Phaser.Scene {
       subs.push((x, w, compact) => {
         const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
         const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
-        const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+        const evolvable = members.some((c) => canEvolveAny(weaponDataFor(lineup), run.armory, c.id));
         const stock = compact ? `素材${items}・欠片${fragments}` : `素材 ${items}・記憶の欠片 ${fragments}`;
         addButton(
           this,
@@ -309,11 +309,15 @@ export class GrowthScene extends Phaser.Scene {
     });
   }
 
-  private drawNode(n: GrowthNodeDef, openable: boolean): void {
+  private drawNode(n: GrowthNodeDef, openableNow: boolean): void {
+    let openable = openableNow;
     const g = run.growth;
     const { x, y } = nodeCenter(n);
     const opened = isOpened(g, this.charId, n.id);
     const selected = this.selected === n.id;
+    // まだ章が来ていないマス（段階49）は、開けられる隣でも暗いまま。下に「2章」と出す
+    const locked = !opened && chapterLocked(n, growthChapter(hubLineup()));
+    if (locked) openable = false;
     const alpha = opened ? 1 : openable ? 0.75 : 0.28;
     let shape: Phaser.GameObjects.Shape;
     let label = '';
@@ -341,6 +345,7 @@ export class GrowthScene extends Phaser.Scene {
       if (c.id === this.charId || !isOpened(g, c.id, n.id)) return;
       this.root.add(this.add.circle(x - 6 + i * 6, y + NODE_R + 3, 2.5, ALLY_COLOR[c.id] ?? COLORS.ally));
     });
+    if (locked) this.root.add(addText(this, x, y + NODE_R + 5, `${n.chapter}章`, { size: 8, bold: true, color: COLORS.subText }).setOrigin(0.5));
     const hit = this.add.rectangle(x, y, CELL - 2, CELL - 2, 0xffffff, 0.001);
     this.root.add(hit);
     makePressable(hit, {
@@ -365,11 +370,13 @@ export class GrowthScene extends Phaser.Scene {
       return;
     }
     const cost = nodeCost(GROWTH_MAP, run.growth, base, n.id);
-    const err = getOpenError(GROWTH_MAP, run.growth, base, n.id);
+    const err = getOpenError(GROWTH_MAP, run.growth, base, n.id, growthChapter(hubLineup()));
     const opened = isOpened(run.growth, base.id, n.id);
     const status = opened
       ? '開けた'
-      : err === 'not enough memory points'
+      : chapterLocked(n, growthChapter(hubLineup()))
+        ? `${n.chapter}章から開けられる`
+        : err === 'not enough memory points'
         ? `星の砂が足りない（${cost}pt）`
         : err
           ? 'まだ届かない（開けたマスの隣だけ開けられる）'

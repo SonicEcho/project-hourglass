@@ -265,6 +265,20 @@ export function feedFragment(data: WeaponData, armory: ArmoryState, charId: stri
 }
 
 /** 経験値からレベル（1から） */
+/**
+ * 章のレベルの上限で切った武器のデータ（段階49。docs/design/economy.md の 2.）。経験値の表を上限までにするので、
+ * 経験値は貯まり続けたまま、レベル・吸わせ枠・進化の条件が上限で止まる。上限が上がると、貯めた分でレベルが上がる。cap がなければそのまま
+ */
+export function capWeaponData(data: WeaponData, cap?: number): WeaponData {
+  if (cap === undefined || cap - 1 >= data.levelExp.length) return data;
+  return { ...data, levelExp: data.levelExp.slice(0, Math.max(0, cap - 1)) };
+}
+
+/** 武器のレベルの上限（経験値の表の長さ＋1） */
+export function maxWeaponLevel(data: WeaponData): number {
+  return data.levelExp.length + 1;
+}
+
 export function weaponLevel(data: WeaponData, exp: number): number {
   return 1 + data.levelExp.filter((need) => exp >= need).length;
 }

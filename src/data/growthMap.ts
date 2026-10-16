@@ -38,6 +38,14 @@ const SKILL_SLOTS: Record<string, string> = {
 
 const STARTS: Record<string, string> = { '@': 'hero', '&': 'akari', '%': 'mio' };
 
+/** 上から何行が、何章から開けられるか（段階49。上の3行＝大きな能力値と強い魔法の16マスは2章から。docs/design/economy.md の 7.） */
+export const GROWTH_CHAPTER_ROWS: { rows: number; chapter: number }[] = [{ rows: 3, chapter: 2 }];
+
+/** その行のマスが何章から開けられるか（書いていない行は、いつでも） */
+function chapterOfRow(row: number): number | undefined {
+  return GROWTH_CHAPTER_ROWS.filter((r) => row < r.rows).reduce<number | undefined>((c, r) => Math.max(c ?? 0, r.chapter), undefined);
+}
+
 /** 能力値マスの上がり幅（小）。大はこの2倍 */
 export const STAT_STEP: Record<StatKey, number> = { hp: 12, mp: 6, atk: 2, mag: 2, def: 1, spd: 1 };
 
@@ -58,15 +66,17 @@ function parseLayout(): GrowthNodeDef[] {
     [...line].forEach((ch, col) => {
       if (ch === '.') return;
       const id = `n${row}_${col}`;
+      const chapter = chapterOfRow(row);
+      const lock = chapter === undefined ? {} : { chapter };
       if (STARTS[ch]) {
-        nodes.push({ id, col, row, kind: 'start', owner: STARTS[ch] });
+        nodes.push({ id, col, row, ...lock, kind: 'start', owner: STARTS[ch] });
       } else if (SKILL_SLOTS[ch]) {
-        nodes.push({ id, col, row, kind: 'skill', skillId: SKILL_SLOTS[ch] });
+        nodes.push({ id, col, row, ...lock, kind: 'skill', skillId: SKILL_SLOTS[ch] });
       } else {
         const stat = STAT_CHARS[ch.toLowerCase()];
         if (!stat) throw new Error(`unknown growth map cell: ${ch}`);
         const big = ch !== ch.toLowerCase();
-        nodes.push({ id, col, row, kind: big ? 'statBig' : 'stat', stat, amount: STAT_STEP[stat] * (big ? 2 : 1) });
+        nodes.push({ id, col, row, ...lock, kind: big ? 'statBig' : 'stat', stat, amount: STAT_STEP[stat] * (big ? 2 : 1) });
       }
     });
   });

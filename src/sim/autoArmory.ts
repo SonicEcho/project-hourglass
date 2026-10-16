@@ -1,4 +1,4 @@
-import type { ArmoryState, WeaponParamKey } from '../core';
+import type { ArmoryState, WeaponData, WeaponParamKey } from '../core';
 import { absorbMaterial, evolveWeapon, feedFragment, fragmentItem, getAbsorbError, getEvolveError, getFragmentError, nextEvolutions } from '../core';
 import { WEAPON_DATA } from '../data';
 
@@ -7,10 +7,8 @@ import { WEAPON_DATA } from '../data';
 // 枠が余れば、上がる方が大きい素材も吸わせる。吸わせられずに残った素材は時分解し、記憶の欠片をでたらめな仲間に吸わせる。
 // 進化できれば、最初に条件を満たした進化先へ（型は1つ目。段階42：2回目・3回目も同じ。寄り道は目指さない）
 
-const D = WEAPON_DATA;
-
 /** 一番近い進化先の、条件の能力値（なければ空） */
-function targetParams(armory: ArmoryState, owner: string): WeaponParamKey[] {
+function targetParams(D: WeaponData, armory: ArmoryState, owner: string): WeaponParamKey[] {
   const w = armory.weapons[owner];
   if (!w) return [];
   let best: { lack: number; params: WeaponParamKey[] } | null = null;
@@ -24,8 +22,8 @@ function targetParams(armory: ArmoryState, owner: string): WeaponParamKey[] {
 }
 
 /** その仲間に吸わせる素材の順番（よい方から）。吸わせない方がよい素材は入れない */
-function materialOrder(armory: ArmoryState, owner: string): string[] {
-  const target = targetParams(armory, owner);
+function materialOrder(D: WeaponData, armory: ArmoryState, owner: string): string[] {
+  const target = targetParams(D, armory, owner);
   const score = (id: string): number => {
     const g = D.items[id].gains;
     const total = Object.values(g).reduce((a, n) => a + (n ?? 0), 0);
@@ -40,16 +38,16 @@ function materialOrder(armory: ArmoryState, owner: string): string[] {
 
 /**
  * 素材・欠片を使い、進化できれば進化させる。鍵の素材は、進化の条件に使う分だけ残す
- * （鍵になる素材は吸わせず、時分解もしない）
+ * （鍵になる素材は吸わせず、時分解もしない）。D は章のレベルの上限で切った武器のデータ（段階49。なければ上限なし）
  */
-export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: number) => number): ArmoryState {
+export function autoUseArmory(armory0: ArmoryState, owners: string[], pick: (n: number) => number, D: WeaponData = WEAPON_DATA): ArmoryState {
   let armory = armory0;
   const keys = new Set(Object.values(D.weapons).flatMap((w) => w.evolutions.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : [])))));
   // 吸わせる：仲間を順番に回して1つずつ
   for (let guard = 0; guard < 200; guard++) {
     let any = false;
     for (const owner of owners) {
-      const id = materialOrder(armory, owner).find((m) => !keys.has(m) && getAbsorbError(D, armory, owner, m) === null);
+      const id = materialOrder(D, armory, owner).find((m) => !keys.has(m) && getAbsorbError(D, armory, owner, m) === null);
       if (!id) continue;
       armory = absorbMaterial(D, armory, owner, id);
       any = true;
