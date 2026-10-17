@@ -3,6 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from './config';
 import { formatBuildInfo } from './debug/buildInfo';
 import { isDebugEnabled } from './debug/debugFlag';
 import { installDebugMenu } from './debug/debugMenu';
+import { installPlaytime } from './debug/playtime';
 import { loadEruda } from './debug/eruda';
 import { installTestHook } from './debug/testHook';
 import { BattleScene } from './scenes/BattleScene';
@@ -110,4 +111,6 @@ if (debug) {
     openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined }),
   });
   installTestHook(game);
+  // プレイ時間の記録（段階63）
+  installPlaytime(game);
 }

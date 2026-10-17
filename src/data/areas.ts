@@ -6,7 +6,7 @@ import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from '.
 import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
 import { BALL_NOISE, JUG_NOISE, KAI, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
-import { ROOMS } from './rooms';
+import { box, ROOMS } from './rooms';
 import { BGM } from './sounds';
 import { ITEMS } from './weapons';
 
@@ -52,8 +52,27 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm4: { id: 'a11_storm4', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.hiPotion.id, koma: 2 },
   // 右の奥の脇道の逃げる敵（段階59。コマなし。勝つとレアの素材。星の砂は少なめ）
   a11_runner: { id: 'a11_runner', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 3, item: ITEMS.natsuTail.id },
-  // ボスは最後のコマを抱えこんでいる（2つ。1-1 は合わせて9つで、返すのに8つ。1つ余る）
-  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [GOLDFISH_BOWL_LORD], reward: 8, boss: true, koma: 2, snaps: ['heavyBlow'] },
+  // 1-1 を3晩に分けた区画の戦闘（段階63。本番の量）。コマを持つのは8つ（晩ごとに 3・3・2）。ほかは素材と星の砂だけ。
+  // 晩が進むほど、組み合わせを強くする（3晩目は ×1.1〜1.2）
+  a11_n1_gate: { id: 'a11_n1_gate', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 3, koma: 1 },
+  a11_n1_chaser: { id: 'a11_n1_chaser', name: '砂嵐', enemies: [BALLOON_NOISE, GOLDFISH_NOISE], reward: 2 },
+  a11_n1_back: { id: 'a11_n1_back', name: '砂嵐', enemies: [MASK_NOISE, BALLOON_NOISE], reward: 2 },
+  a11_n1_road: { id: 'a11_n1_road', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 3, koma: 1 },
+  a11_n1_plaza: { id: 'a11_n1_plaza', name: '砂嵐', enemies: [BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
+  a11_n2_corridor: { id: 'a11_n2_corridor', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE], reward: 3, koma: 1 },
+  a11_n2_west1: { id: 'a11_n2_west1', name: '砂嵐', enemies: [COTTON_NOISE, BALLOON_NOISE, GOLDFISH_NOISE], reward: 2 },
+  a11_n2_west2: { id: 'a11_n2_west2', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE], reward: 4, item: ITEMS.hiPotion.id, koma: 1 },
+  a11_n2_east1: { id: 'a11_n2_east1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE, BALLOON_NOISE], reward: 2 },
+  a11_n2_east2: { id: 'a11_n2_east2', name: '砂嵐', enemies: [COTTON_NOISE, MASK_NOISE].map((e) => scaleEnemy(e, 1.1)), reward: 2 },
+  // 金魚すくいの屋台の前の番人（2晩目の山場）
+  a11_n2_guard: { id: 'a11_n2_guard', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 5, koma: 1 },
+  a11_n3_steps: { id: 'a11_n3_steps', name: '砂嵐', enemies: [COTTON_NOISE, MASK_NOISE, GOLDFISH_NOISE].map((e) => scaleEnemy(e, 1.1)), reward: 2 },
+  a11_n3_right: { id: 'a11_n3_right', name: '砂嵐', enemies: [BALLOON_NOISE, BALLOON_NOISE, MASK_NOISE].map((e) => scaleEnemy(e, 1.1)), reward: 2 },
+  a11_n3_woods1: { id: 'a11_n3_woods1', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, GOLDFISH_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 2 },
+  a11_n3_woods2: { id: 'a11_n3_woods2', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 4, koma: 1 },
+  // ボスは最後のコマを抱えこんでいる（段階63から1つ。1-1 は合わせて8つで、返すのに8つ）
+  // 段階63で、17戦を通ってから挑むようになったので ×1.15（でたらめな方針で1回目に勝てるのが3〜4割の目安）
+  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [scaleEnemy(GOLDFISH_BOWL_LORD, 1.15)], reward: 8, boss: true, koma: 1, snaps: ['heavyBlow'] },
   // 1-2 の商店街（段階37）。並びは出会う順（入口 → 駄菓子屋の手前 → 駄菓子屋と時計屋の間 → 時計屋の先 → 坂の手前）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。坂の手前の2戦は少し強い（ボスの手前の山）
   a12_storm1: { id: 'a12_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE], reward: 5, koma: 1 },
@@ -63,7 +82,8 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 7, koma: 2 },
   // 時計屋の手前の広い歩道の逃げる敵（段階59。コマなし。勝つとレアの素材。星の砂は少なめ）
   a12_runner: { id: 'a12_runner', name: '砂嵐', enemies: [RAMUNE_NOISE, RAMUNE_NOISE], reward: 3, item: ITEMS.sunsetMarble.id },
-  a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 10, boss: true, koma: 2, snaps: ['breakArm'] },
+  // 段階63で 1-1 が17戦になり、1-2 に入る時の仲間が強くなったので ×1.1
+  a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [scaleEnemy(BICYCLE_LORD, 1.1)], reward: 10, boss: true, koma: 2, snaps: ['breakArm'] },
   // 2-1 の町工場（段階39。段階38では 1-2 の砂嵐で代わりにしていた）。並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。工場の中の砂嵐は少し強い（ボスの手前の山）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
   a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [GEAR_NOISE, SCREW_NOISE], reward: 6, koma: 1 },
@@ -103,83 +123,107 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
 
 
 export const AREAS: Record<string, AreaDef> = {
-  // 1-1「金魚の名前」：平成の終わりの縁日
+  // 1-1「金魚の名前」：平成の終わりの縁日。段階63で、3晩に分けて入る区画に作り直した（脚本 docs/script/1-1_rework.md）。
+  // 1晩目「しぶしぶの兄」：参道の入口・屋台の裏・縁日の広場。2晩目「迷子」：広場の上の通りと、左右の屋台の裏通り・射的と金魚すくいの通り。
+  // 3晩目「ふたりで、なつまつり」：石段と社の前、社の裏の林。晩ごとのコマは 3・3・2（返すのに8つ。余りはない）
   a11: {
     id: 'a11',
     name: '1-1「金魚の名前」',
-    rooms: [ROOMS.festival_grounds],
+    rooms: [ROOMS.fest_gate, ROOMS.fest_backyard, ROOMS.festival_night, ROOMS.fest_west, ROOMS.fest_east, ROOMS.fest_woods],
+    links: [
+      { a: { room: 'fest_gate', side: 'top' }, b: { room: 'festival_night', side: 'bottom' } },
+      { a: { room: 'fest_gate', side: 'left' }, b: { room: 'fest_backyard', side: 'right' } },
+      { a: { room: 'festival_night', side: 'left' }, b: { room: 'fest_west', side: 'right' } },
+      { a: { room: 'festival_night', side: 'right' }, b: { room: 'fest_east', side: 'left' } },
+      { a: { room: 'festival_night', side: 'top' }, b: { room: 'fest_woods', side: 'bottom' } },
+    ],
     bgm: BGM.festival,
-    // 返すのに要るコマ（段階28。AREA_BATTLES の koma の合計は9）
+    // 返すのに要るコマ（段階28。AREA_BATTLES の koma の合計も8）
     komaNeed: 8,
     timeTitle: '金魚の名前',
     owner: 'ユウマ',
     // 返す画面で、すり切れた映像として流す景色（段階46d）
     memory: 'shrine_approach',
-    // 金魚すくいとラムネの屋台の前
-    // 狩り（段階43）：採取の場所は、1回目の宝箱と浴衣の女の人の所。砂嵐は入るたびに縁日の4つの戦闘から選ぶ
+    // 晩の区切り（段階63）：2晩目は広場のチェックポイントから、3晩目は石段の下のチェックポイントから
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'festival_night', cell: [11, 30] } }, { start: { room: 'festival_night', cell: [11, 17] } }],
+    // ノイズの壁（段階63）：広場の上（2晩目から開く）と、石段の下（3晩目から開く）
+    walls: [
+      { id: 'a11_wall_plaza', room: 'festival_night', cells: box(8, 15, 23, 24), opens: 2 },
+      { id: 'a11_wall_steps', room: 'festival_night', cells: box(10, 13, 18, 18), opens: 3 },
+    ],
+    // 狩り（段階43）：採取の場所は、1回目の宝箱と浴衣の女の人の所。砂嵐は入るたびに縁日の戦闘から選ぶ
     hunt: {
       gathers: [
-        { id: 'a11_gather_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
-        { id: 'a11_gather_ramune', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
-        { id: 'a11_gather_yukata', cell: [12, 22], items: [ITEMS.maskShard.id] },
+        { id: 'a11_gather_goldfish', room: 'festival_night', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
+        { id: 'a11_gather_ramune', room: 'festival_night', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
+        { id: 'a11_gather_yukata', room: 'festival_night', cell: [12, 22], items: [ITEMS.maskShard.id] },
+        { id: 'a11_gather_back', room: 'fest_backyard', cell: [2, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
       ],
-      tables: { festival_grounds: ['a11_storm1', 'a11_storm2', 'a11_storm3', 'a11_storm4'] },
+      tables: {
+        fest_gate: ['a11_n1_gate', 'a11_n1_chaser'],
+        festival_night: ['a11_n1_road', 'a11_n1_plaza', 'a11_n2_corridor', 'a11_n3_steps'],
+        fest_west: ['a11_n2_west1', 'a11_n2_west2'],
+        fest_east: ['a11_n2_east1', 'a11_n2_east2'],
+        fest_woods: ['a11_n3_woods1', 'a11_n3_woods2'],
+      },
     },
     chests: [
-      { id: 'a11_chest_goldfish', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },
-      { id: 'a11_chest_ramune', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
+      { id: 'a11_chest_goldfish', room: 'festival_night', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },
+      { id: 'a11_chest_ramune', room: 'festival_night', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
+      { id: 'a11_chest_back', room: 'fest_backyard', cell: [2, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
+      { id: 'a11_chest_west', room: 'fest_west', cell: [2, 2], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.balloonShard.id, ITEMS.ether.id] },
+      { id: 'a11_chest_woods', room: 'fest_woods', cell: [3, 2], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id, ITEMS.cottonThread.id] },
     ],
     enemies: [
-      {
-        id: 'a11_e_plaza',
-        patrol: [
-          [7, 32],
-          [16, 32],
-        ],
-        battle: 'a11_storm1',
-      },
-      // 左の屋台の前：近づくと追ってくる（段階59。最初の広場の敵は見回りのまま）
-      {
-        id: 'a11_e_left',
-        move: 'chase',
-        patrol: [
-          [8, 21],
-          [8, 24],
-        ],
-        battle: 'a11_storm2',
-      },
-      {
-        id: 'a11_e_right',
-        patrol: [
-          [15, 21],
-          [15, 24],
-        ],
-        battle: 'a11_storm3',
-      },
-      {
-        id: 'a11_e_path',
-        patrol: [
-          [17, 16],
-          [22, 16],
-        ],
-        battle: 'a11_storm4',
-      },
-      // 右の奥の脇道の逃げる敵（段階59）
-      { id: 'a11_e_runner', move: 'flee', patrol: [[19, 18]], battle: 'a11_runner' },
+      // ---- 1晩目 ----
+      { id: 'a11_e_gate', room: 'fest_gate', patrol: [[6, 7], [17, 7]], battle: 'a11_n1_gate' },
+      { id: 'a11_e_gate_chase', room: 'fest_gate', move: 'chase', patrol: [[18, 11], [18, 16]], battle: 'a11_n1_chaser' },
+      { id: 'a11_e_back', room: 'fest_backyard', patrol: [[3, 12], [20, 12]], battle: 'a11_n1_back' },
+      // 屋台の裏の逃げる敵（寄り道。コマなし、レアの素材。段階59）
+      { id: 'a11_e_runner', room: 'fest_backyard', move: 'flee', patrol: [[13, 17]], battle: 'a11_runner' },
+      { id: 'a11_e_road', room: 'festival_night', patrol: [[10, 38], [13, 38]], battle: 'a11_n1_road' },
+      { id: 'a11_e_plaza', room: 'festival_night', move: 'chase', patrol: [[7, 32], [16, 32]], battle: 'a11_n1_plaza' },
+      // ---- 2晩目 ----
+      { id: 'a11_e_corridor', room: 'festival_night', night: 2, patrol: [[8, 21], [15, 21]], battle: 'a11_n2_corridor' },
+      { id: 'a11_e_west1', room: 'fest_west', night: 2, move: 'chase', patrol: [[7, 7], [16, 7]], battle: 'a11_n2_west1' },
+      { id: 'a11_e_west2', room: 'fest_west', night: 2, patrol: [[3, 16], [20, 16]], battle: 'a11_n2_west2' },
+      { id: 'a11_e_east1', room: 'fest_east', night: 2, patrol: [[4, 2], [16, 2]], battle: 'a11_n2_east1' },
+      { id: 'a11_e_east2', room: 'fest_east', night: 2, move: 'chase', patrol: [[10, 15], [20, 15]], battle: 'a11_n2_east2' },
+      // 金魚すくいの屋台の前の番人（2晩目の山場。戦う前の会話）
+      { id: 'a11_e_guard', room: 'fest_east', night: 2, move: 'guard', patrol: [[18, 21]], battle: 'a11_n2_guard', scene: 'a11_guard' },
+      // ---- 3晩目 ----
+      { id: 'a11_e_steps', room: 'festival_night', night: 3, patrol: [[10, 13], [7, 16]], battle: 'a11_n3_steps' },
+      { id: 'a11_e_right', room: 'festival_night', night: 3, move: 'chase', patrol: [[14, 16], [22, 16]], battle: 'a11_n3_right' },
+      { id: 'a11_e_woods1', room: 'fest_woods', night: 3, move: 'chase', patrol: [[4, 8], [9, 8]], battle: 'a11_n3_woods1' },
+      { id: 'a11_e_woods2', room: 'fest_woods', night: 3, patrol: [[12, 8], [20, 8]], battle: 'a11_n3_woods2' },
     ],
     // 社の前
-    boss: { id: 'a11_boss', cell: [12, 7], battle: 'a11_boss' },
-    // 写しの人々（同じ言葉をくり返している）
+    boss: { id: 'a11_boss', room: 'festival_night', cell: [12, 7], battle: 'a11_boss' },
+    // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階63）
     talkers: [
-      { id: 'a11_voice_goldfish', cell: [10, 31], scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん' },
-      { id: 'a11_voice_cotton', cell: [13, 31], scene: 'a11_voice_cotton', label: 'わたあめ屋' },
-      { id: 'a11_voice_yukata', cell: [12, 22], scene: 'a11_voice_yukata', label: '浴衣の女の人' },
+      { id: 'a11_voice_goldfish', room: 'festival_night', cell: [9, 27], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん' },
+      { id: 'a11_voice_cotton', room: 'festival_night', cell: [14, 27], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋' },
+      { id: 'a11_voice_yukata', room: 'festival_night', cell: [12, 34], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人' },
+      { id: 'a11_voice2_goldfish', room: 'fest_east', cell: [16, 20], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん' },
+      { id: 'a11_voice2_cotton', room: 'fest_west', cell: [4, 11], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋' },
+      { id: 'a11_voice2_yukata', room: 'festival_night', cell: [12, 22], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人' },
+      { id: 'a11_voice3_goldfish', room: 'festival_night', cell: [8, 9], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん' },
+      { id: 'a11_voice3_cotton', room: 'festival_night', cell: [11, 11], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋' },
+      { id: 'a11_voice3_yukata', room: 'festival_night', cell: [15, 9], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人' },
     ],
+    // コマが戻るたびに、過去の場面が1つずつ進む（段階63）
     triggers: [
-      { on: 'wins', count: 1, scene: 'a11_first_koma' },
+      { on: 'koma', count: 1, scene: 'a11_first_koma' },
       { on: 'checkpoint', scene: 'a11_checkpoint' },
-      // あとコマが3つ以下になった時（台本の「あと{komaLeft}つ」に本当の数が入る。段階28）
-      { on: 'komaLeft', left: 3, scene: 'a11_three_left' },
+      { on: 'koma', count: 2, scene: 'a11_koma2' },
+      { on: 'koma', count: 3, scene: 'a11_koma3' },
+      { on: 'room', room: 'fest_east', night: 2, scene: 'a11_riku_trace' },
+      { on: 'koma', count: 4, scene: 'a11_koma4' },
+      { on: 'koma', count: 5, scene: 'a11_koma5' },
+      { on: 'koma', count: 6, scene: 'a11_koma6' },
+      { on: 'koma', count: 7, scene: 'a11_koma7' },
+      // あとコマが1つの時（台本の「あと{komaLeft}つ」に本当の数が入る。段階28）
+      { on: 'komaLeft', left: 1, scene: 'a11_one_left' },
       { on: 'boss', scene: 'a11_boss' },
       { on: 'cleared', scene: 'a11_last_koma' },
     ],

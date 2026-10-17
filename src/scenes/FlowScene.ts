@@ -64,7 +64,7 @@ export class FlowScene extends Phaser.Scene {
         this.scene.start('Daily', { event: event.id });
         return;
       case 'explore':
-        this.scene.start('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined, hunt: undefined });
+        this.scene.start('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined, hunt: undefined, night: event.night });
         return;
       case 'return':
         this.scene.start('Return', { area: event.area });

@@ -29,7 +29,8 @@ export const v1BattleId = (stage: number): string => `battle${stage + 1}`;
 
 /** 版7までの「つづく」（M1 の終わり）の出来事の id と、版8でその続きにあたる出来事の id（段階34） */
 export const V7_END_EVENT = 'to_be_continued';
-export const V7_END_NEXT = 'day3';
+// 段階63で 1-1 を3日に広げたので、M1 の終わりの続き（1-2 の前）は4日目の扉
+export const V7_END_NEXT = 'day4';
 
 /** 周回の状態のうち、セーブするもの */
 export interface RunSnapshot {
@@ -112,7 +113,7 @@ export const MIGRATIONS: SaveMigrations = {
   // 版6 → 版7（段階28）：返した時間（returned）を足す。探索の状態のコマは、整える時に0で補う
   6: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, returned: [] } } : raw),
   // 版7 → 版8（段階34）：流れを2章の終わりまで伸ばし、「つづく」の出来事が M1 の終わりから2章の終わり（ch2_end）に替わった。
-  // M1 の「つづく」にいたセーブは、その続きの3日目の扉から始める
+  // M1 の「つづく」にいたセーブは、その続きの扉から始める（段階63から4日目）
   7: (raw) => (isObject(raw.run) && raw.run.event === V7_END_EVENT ? { ...raw, run: { ...raw.run, event: V7_END_NEXT } } : raw),
   // 版8 → 版9（段階47）：区画が部屋をつないだ形になり、探索の状態に今いる部屋（room・checkpointRoom・visited）を足した。
   // 前の版の探索の途中は、部屋が1つの区画として、整える時に最初の部屋で補う

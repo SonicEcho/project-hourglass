@@ -161,8 +161,10 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 520, wave: 'triangle' },
   },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
-  写しのゆうま: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
+  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
+  // ゆうまの妹（今18歳。段階63の 1-1 の書き直し）。立ち絵はまだない（色の札）
+  ひなの: { faces: names('通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'), firstFace: '通常', color: 0xc08aa0, voice: { pitch: 620, wave: 'triangle' } },
+  写しのゆうま: { faces: names('笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
   写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
   // M2（段階35）。みおは笑顔の絵だけある（2026-10-13。ほかの表情は Gemini で作るまで笑顔で代わりに出す）。ふみは全部の表情の絵がある（2026-10-11）
   みお: {
@@ -273,7 +275,13 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   金魚すくいのおじさん: { pitch: 260, wave: 'sawtooth' },
   わたあめ屋: { pitch: 280, wave: 'sawtooth' },
   浴衣の女の人: { pitch: 640, wave: 'sine' },
-  ひなの: { pitch: 620, wave: 'triangle' },
+  りくの母: { pitch: 470, wave: 'triangle' },
+  クラスの男子: { pitch: 320, wave: 'square' },
+  クラスの女子: { pitch: 600, wave: 'triangle' },
+  母親: { pitch: 480, wave: 'triangle' },
+  屋台のおばさん: { pitch: 470, wave: 'triangle' },
+  射的の客の子: { pitch: 760, wave: 'square' },
+  少女: { pitch: 640, wave: 'triangle' },
   // 1-2 の写しの人々（段階37）
   八百屋: { pitch: 250, wave: 'sawtooth' },
   駄菓子屋のおばあちゃん: { pitch: 480, wave: 'triangle' },

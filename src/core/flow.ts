@@ -33,6 +33,8 @@ export interface FlowEvent {
   area?: string;
   /** battle の時：戦う区画の戦闘の id（段階40） */
   battle?: string;
+  /** explore の時：晩に分けた区画の、何晩目か（段階63） */
+  night?: number;
 }
 
 export interface FlowChapter {

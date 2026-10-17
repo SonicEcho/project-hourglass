@@ -51,7 +51,8 @@ export function huntArea(area: HuntableArea, salt: number): AreaDef {
       return table && table.length > 0 ? { ...e, battle: pick(table) } : e;
     });
   const chests: AreaChest[] = area.hunt.gathers.map((g) => ({ id: g.id, ...(g.room ? { room: g.room } : {}), cell: g.cell, items: g.items }));
-  const { hunt: _, ...rest } = area;
+  // 晩に分けた区画（段階63）も、記憶をたどる時は壁のない1つの区画（どの晩の敵も出る）
+  const { hunt: _, nights: _n, walls: _w, ...rest } = area;
   return {
     ...rest,
     links: (area.links ?? []).map(({ opensWhen: _, ...link }) => link),

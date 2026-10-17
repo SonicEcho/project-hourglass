@@ -236,19 +236,19 @@ describe('セーブ：古い版から直す', () => {
     expect(kept.ok && kept.save.run.returned).toEqual(['a11']);
   });
 
-  it('版7のセーブで M1 の「つづく」にいたものは、3日目の扉から続く。ほかの出来事はそのまま（段階34）', () => {
+  it('版7のセーブで M1 の「つづく」にいたものは、4日目の扉から続く。ほかの出来事はそのまま（段階34。段階63で1-1を3日に広げた）', () => {
     const res = parseEdited((raw) => {
       raw.version = 7;
       raw.run.event = 'to_be_continued';
     });
     expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    expect(res.ok && res.save.run.event).toBe('day3');
-    expect(res.ok && res.save.run.progress.day).toBe(3);
+    expect(res.ok && res.save.run.event).toBe('day4');
+    expect(res.ok && res.save.run.progress.day).toBe(4);
     const kept = parseEdited((raw) => {
       raw.version = 7;
-      raw.run.event = 'd2_noa';
+      raw.run.event = 'd2_classroom';
     });
-    expect(kept.ok && kept.save.run.event).toBe('d2_noa');
+    expect(kept.ok && kept.save.run.event).toBe('d2_classroom');
     // 版8では、M1 の「つづく」は知らない出来事なので最初から
     const v8 = parseEdited((raw) => (raw.run.event = 'to_be_continued'));
     expect(v8.ok && v8.save.run.event).toBe('prologue_open');
@@ -404,20 +404,24 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res.ok && res.save.run.event).toBe('d1_clockshop');
     expect(res.ok && res.save.run.progress.day).toBe(1);
     expect(res.ok && res.save.run.vars).toEqual({ goldfish: 'あかね', prize: 'robot' });
-    const res2 = parseEdited((raw) => (raw.run.event = 'd2_noa'));
+    const res2 = parseEdited((raw) => (raw.run.event = 'd2_classroom'));
     expect(res2.ok && res2.save.run.progress.day).toBe(2);
+    // 段階63：1-1 を3晩に分けた時になくなった出来事は、近い出来事から
+    const res5 = parseEdited((raw) => (raw.run.event = 'd2_noa'));
+    expect(res5.ok && res5.save.run.event).toBe('a11_night2_end');
     const res3 = parseEdited((raw) => (raw.run.event = 'removedEvent'));
     expect(res3.ok && res3.save.run.event).toBe('prologue_open');
     // なくなった出来事は、代わりの出来事から（段階40：仮の「2-3：返す」→ カイの会話）
     const res4 = parseEdited((raw) => (raw.run.event = 'a23_return'));
     expect(res4.ok && res4.save.run.event).toBe('d7_kai');
-    expect(res4.ok && res4.save.run.progress.day).toBe(7);
+    expect(res4.ok && res4.save.run.progress.day).toBe(8);
     expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
     expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
   });
 
   it('探索の状態を読み戻す。知らない区画なら、探索の途中ではないことにする', () => {
-    const explore = { area: 'a11', room: 'festival_grounds', cell: [11, 17], checkpoint: [11, 17], checkpointRoom: 'festival_grounds', visited: ['festival_grounds'], openedChests: ['a11_chest_goldfish'], defeated: ['a11_e_plaza'], seen: ['a11_first_koma'], cleared: false, koma: 3 };
+    // 部屋が1つの区画（1-2）で確かめる（1-1 は段階63から部屋が6つ）
+    const explore = { area: 'a12', room: 'showa_street', cell: [8, 29], checkpoint: [8, 29], checkpointRoom: 'showa_street', visited: ['showa_street'], openedChests: ['a12_chest_clock'], defeated: ['a12_e_gate'], seen: ['a12_first_koma'], cleared: false, koma: 3 };
     const res = parseEdited((raw) => (raw.run.explore = explore));
     expect(res.ok && res.save.run.explore).toEqual(explore);
     // 版8の探索の途中（部屋がない。段階47）は、部屋が1つの区画として最初の部屋にいたことにする

@@ -1,4 +1,5 @@
 import { formatBattleLog } from './battleLog';
+import { playtimeReport, resetPlaytime } from './playtime';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
 import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
@@ -65,6 +66,29 @@ export function installDebugMenu(nav: DebugNavigator): void {
   const notify = (msg: string) => {
     console.log(`[debug] ${msg}`);
     render(msg);
+  };
+
+  /** プレイ時間の記録の一覧。写す（クリップボードへ）・消す・戻る */
+  const showPlaytime = (note = '') => {
+    panel.replaceChildren();
+    panel.append(el('div', 'font:bold 16px sans-serif;color:#ffd84a;margin-bottom:8px;', 'プレイ時間の記録'));
+    if (note) panel.append(el('div', 'color:#6dff9e;margin-bottom:8px;', note));
+    const text = playtimeReport();
+    panel.append(
+      button('写す（クリップボードへ）', () => {
+        navigator.clipboard?.writeText(text).then(
+          () => showPlaytime('写しました'),
+          () => showPlaytime('写せませんでした。下の文を長押しして選んでください'),
+        );
+      }),
+      button('記録を消す（最初から数え直す）', () => {
+        if (!window.confirm('プレイ時間の記録を消しますか？')) return;
+        resetPlaytime();
+        showPlaytime('消しました');
+      }),
+      button('メニューへ戻る', () => render()),
+    );
+    panel.append(el('pre', 'white-space:pre-wrap;font:12px/1.6 monospace;color:#e8eef4;user-select:text;-webkit-user-select:text;', text));
   };
 
   const render = (note = '') => {
@@ -173,6 +197,10 @@ export function installDebugMenu(nav: DebugNavigator): void {
         nav.startBoss();
       }),
     );
+
+    // プレイ時間の記録（段階63）：どこが長く、どこが短いかを調べる
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', 'プレイ時間の記録（段階63。出来事・画面・場面ごと）'));
+    panel.append(button('プレイ時間の記録を見る', () => showPlaytime()));
 
     // 物語の流れ（段階23）：出来事を飛ばす・選んで飛ぶ
     const now = currentEvent();

@@ -199,7 +199,8 @@ describe('物語の流れ（段階23・34）', () => {
         expect(stormKoma, area.id).toBeLessThan(area.komaNeed);
         for (const b of Object.values(AREA_BATTLES)) for (const e of b.enemies) for (const d of e.drops ?? []) expect(d in ITEMS, `${e.id} ${d}`).toBe(true);
         for (const c of area.chests) for (const item of c.items) expect(item in ITEMS, `${c.id} ${item}`).toBe(true);
-        for (const scene of [...area.talkers.map((t) => t.scene), ...area.triggers.map((t) => t.scene)]) {
+        // 段階63：戦う前の会話（番人の前など）も
+        for (const scene of [...area.talkers.map((t) => t.scene), ...area.triggers.map((t) => t.scene), ...area.enemies.flatMap((x) => (x.scene ? [x.scene] : []))]) {
           expect(sceneIds.has(scene), `${area.id} ${scene}`).toBe(true);
           reachable.add(scene);
         }

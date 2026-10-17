@@ -614,8 +614,8 @@ export const SCRIPT_M2 = `
 @bg shopping_street
 @bgm daily
 @cast
-〈地の文〉りくが休んで、四日目の朝。
-〈地の文〉四日目になると、誰も、りくの話をしなくなった。それが、一番いやだった。
+〈地の文〉りくが休んで、五日目の朝。
+〈地の文〉五日目になると、誰も、りくの話をしなくなった。それが、一番いやだった。
 @se bell
 みお（声）「ツバメ号、全速力ー！ おはようございまーす！」
 八百屋（声）「おう、みおちゃん！ 今日の少年野球、頼んだぞ！」
@@ -896,7 +896,7 @@ export const SCRIPT_M2 = `
 @cast
 @bg black
 @fade in
-@caption 5日目　おわり
+@caption 6日目　おわり
 
 # d6_library 6日目：夕暮れ・調査ノート
 @bg clock_shop_back
@@ -1093,7 +1093,7 @@ export const SCRIPT_M2 = `
 @cast
 @bg black
 @fade in
-@caption 6日目　おわり
+@caption 7日目　おわり
 
 # d7_library 7日目：夕暮れ・蔵書の棚
 @bg clock_shop_back
@@ -1355,7 +1355,7 @@ export const SCRIPT_M2 = `
 @clock stop
 @bg black
 @fade in
-@caption 7日目　おわり
+@caption 8日目　おわり
 
 # d8_classroom 8日目：朝の教室
 @bg classroom
@@ -1649,7 +1649,7 @@ export const SCRIPT_M2 = `
 @cast
 @bg black
 @fade in
-@caption 3日目　おわり
+@caption 4日目　おわり
 
 # d4_evening 4日目：夕暮れ・1章の終わり
 @bg clock_shop
