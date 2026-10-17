@@ -56,6 +56,9 @@ export const HUB_SPOT: { place: string; spot: DailySpot } = {
  * 拠点に入った時に、まだ見ていなければ先に見せる会話（段階50）。after は、その出来事より後の時だけ。
  * 見たかどうかは、日常の印と同じく物語で覚えた値（見た:場面の id）に入れる
  */
+/** 拠点の入口を出す章（段階60。1章の終わりの会話で入口の脇の砂時計に気づき、2章の昼から入れる） */
+export const HUB_FROM_CHAPTER = 2;
+
 export const HUB_SCENES: { scene: string; after?: string }[] = [
   // 初めて拠点に入った時：自分たちの記憶の棚
   { scene: 'hub_intro' },

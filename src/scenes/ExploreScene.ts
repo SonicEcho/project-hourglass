@@ -378,9 +378,14 @@ export class ExploreScene extends Phaser.Scene {
     }
     world.add(this.player);
 
-    // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない
+    // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない。
+    // 動ける範囲は、地図の上と下に帯の高さの分だけ広げる（地図の上の端と下の端が、帯に隠れたままにならないように。段階58）
     const cam = this.cameras.main;
-    cam.setZoom(RENDER_SCALE).setBounds(0, 0, this.map.cols * T, this.map.rows * T).startFollow(this.player, true, 0.2, 0.2);
+    const bottomBand = vitalsBandHeight(currentParty(storyLineup()).length);
+    cam
+      .setZoom(RENDER_SCALE)
+      .setBounds(0, -TOP_BAND, this.map.cols * T, this.map.rows * T + TOP_BAND + bottomBand)
+      .startFollow(this.player, true, 0.2, 0.2);
     cam.centerOn(this.player.x, this.player.y);
     const uiCam = this.cameras.add(0, 0, cam.width, cam.height).setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     cam.ignore(ui);
@@ -422,7 +427,7 @@ export class ExploreScene extends Phaser.Scene {
       addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
     }
     // 案内は上の帯の下に（下に出すと、地図の下の端にいる仲間が隠れる）
-    ui.add(this.add.rectangle(0, 80, GAME_WIDTH, 52, 0x000000, 0.4).setOrigin(0));
+    ui.add(this.add.rectangle(0, 80, GAME_WIDTH, TOP_BAND - 80, 0x000000, 0.4).setOrigin(0));
     this.message = addText(this, GAME_WIDTH / 2, 106, '', { size: 14, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5);
     ui.add(this.message);
     this.hubButton = this.add.container(0, 0);
@@ -863,6 +868,9 @@ export class ExploreScene extends Phaser.Scene {
     this.messageTimer = this.time.delayedCall(2800, () => this.tweens.add({ targets: this.message, alpha: 0.4, duration: 300 }));
   }
 }
+
+/** 上の帯（区画の名前・コマ・連携技と、その下の案内）の高さ */
+const TOP_BAND = 132;
 
 /** 下の帯（仲間の HP・MP）の高さ。2人以上の時は2行で、下の端のビルド日時の分だけ高い */
 function vitalsBandHeight(members: number): number {

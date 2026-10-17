@@ -50,6 +50,8 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm3: { id: 'a11_storm3', name: '砂嵐', enemies: [BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], reward: 6, koma: 2 },
   // 社への道の砂嵐は少し強い（HP・攻撃・魔力 ×1.2。ボスの手前の山）
   a11_storm4: { id: 'a11_storm4', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 6, item: ITEMS.hiPotion.id, koma: 2 },
+  // 右の奥の脇道の逃げる敵（段階59。コマなし。勝つとレアの素材。星の砂は少なめ）
+  a11_runner: { id: 'a11_runner', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 3, item: ITEMS.natsuTail.id },
   // ボスは最後のコマを抱えこんでいる（2つ。1-1 は合わせて9つで、返すのに8つ。1つ余る）
   a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [GOLDFISH_BOWL_LORD], reward: 8, boss: true, koma: 2, snaps: ['heavyBlow'] },
   // 1-2 の商店街（段階37）。並びは出会う順（入口 → 駄菓子屋の手前 → 駄菓子屋と時計屋の間 → 時計屋の先 → 坂の手前）。
@@ -59,6 +61,8 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_storm3: { id: 'a12_storm3', name: '砂嵐', enemies: [PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE], reward: 6, koma: 2 },
   a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 7, koma: 2 },
   a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 7, koma: 2 },
+  // 時計屋の手前の広い歩道の逃げる敵（段階59。コマなし。勝つとレアの素材。星の砂は少なめ）
+  a12_runner: { id: 'a12_runner', name: '砂嵐', enemies: [RAMUNE_NOISE, RAMUNE_NOISE], reward: 3, item: ITEMS.sunsetMarble.id },
   a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [BICYCLE_LORD], reward: 10, boss: true, koma: 2, snaps: ['breakArm'] },
   // 2-1 の町工場（段階39。段階38では 1-2 の砂嵐で代わりにしていた）。並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。工場の中の砂嵐は少し強い（ボスの手前の山）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
@@ -134,8 +138,10 @@ export const AREAS: Record<string, AreaDef> = {
         ],
         battle: 'a11_storm1',
       },
+      // 左の屋台の前：近づくと追ってくる（段階59。最初の広場の敵は見回りのまま）
       {
         id: 'a11_e_left',
+        move: 'chase',
         patrol: [
           [8, 21],
           [8, 24],
@@ -158,6 +164,8 @@ export const AREAS: Record<string, AreaDef> = {
         ],
         battle: 'a11_storm4',
       },
+      // 右の奥の脇道の逃げる敵（段階59）
+      { id: 'a11_e_runner', move: 'flee', patrol: [[19, 18]], battle: 'a11_runner' },
     ],
     // 社の前
     boss: { id: 'a11_boss', cell: [12, 7], battle: 'a11_boss' },
@@ -221,8 +229,10 @@ export const AREAS: Record<string, AreaDef> = {
         ],
         battle: 'a12_storm2',
       },
+      // 駄菓子屋と時計屋の間、時計屋の先：近づくと追ってくる（段階59）
       {
         id: 'a12_e_middle',
+        move: 'chase',
         patrol: [
           [8, 26],
           [15, 26],
@@ -231,6 +241,7 @@ export const AREAS: Record<string, AreaDef> = {
       },
       {
         id: 'a12_e_upper',
+        move: 'chase',
         patrol: [
           [14, 18],
           [10, 18],
@@ -245,6 +256,8 @@ export const AREAS: Record<string, AreaDef> = {
         ],
         battle: 'a12_storm5',
       },
+      // 時計屋の手前の広い歩道の逃げる敵（段階59）
+      { id: 'a12_e_runner', move: 'flee', patrol: [[18, 31]], battle: 'a12_runner' },
     ],
     // 出口の坂の上
     boss: { id: 'a12_boss', cell: [12, 7], battle: 'a12_boss' },

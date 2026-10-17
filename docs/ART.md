@@ -874,6 +874,22 @@ A riverside little league baseball field on a bright summer afternoon in 1998, b
 A packed Japanese high school gymnasium during the school festival in autumn 2006. On the stage, a 17-year-old boy in an open black gakuran (keep his design as in the attached portrait) keeps singing into the microphone with his eyes closed, holding his electric guitar with one broken string curling loose. Behind him a girl on bass and a boy on drums smile and keep the rhythm. The audience claps along with raised hands, colorful stage lights and dust sparkling in the beams.
 ```
 
+### 11-2. 1枚絵：持ち物が武器に変わる瞬間（段階61。2026-10-17）
+
+開発者の感想（武器に変わるのが文章だけで想像しにくい）から。台帳の id は `cg.awaken_weapons`・`cg.mio_cards`、会話の `CGS` は `awaken_weapons`・`mio_cards`（今は色の仮の絵）。
+
+長針の剣と、金魚の灯籠の杖（1-1。ハルトとあかりの立ち絵を添付）：1枚絵の頭の後に
+
+```
+A summer shrine festival at dusk, broken by black-and-white TV static noise: parts of the stalls and lanterns are missing like torn film. In the foreground, a 17-year-old boy (keep his design as in the attached portrait) raises his left arm in surprise as his wristwatch bursts into golden light; the watch's long minute hand stretches out of the light and becomes a slender sword shaped like a clock's minute hand, with a small clock-face guard. Beside him, a 17-year-old girl (keep her design as in the attached portrait) holds her red goldfish hair clip as it glows and unfolds into a staff with a small glowing goldfish-shaped paper lantern hanging from its tip. Both look astonished. Golden sparks and grains of sand swirl around them. In the background, a shadowy creature made of goldfish and water balloons crawls out of the static.
+```
+
+光るトランプ（2-1。みおの立ち絵を添付）：1枚絵の頭の後に
+
+```
+A snowy factory alley in a Japanese town at winter dusk in 1969, sepia tones, partly broken by black-and-white TV static noise. A 12-year-old girl in a winter coat (keep her design as in the attached portrait) holds out her hand in surprise as a deck of playing cards bursts out of its small box in her coat pocket. The cards swirl around her in a ring, each card's edge glowing like a thin blade, and fan out in her hand. Among them, one hand-drawn joker card stands out. Warm golden light on her face, snowflakes and grains of sand in the air. No letters or numbers readable on the cards.
+```
+
 ### 12. 1-2 の残り
 
 昭和の商店街（1-2 の会話。夕焼け）：背景の頭の後に

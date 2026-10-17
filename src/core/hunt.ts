@@ -42,9 +42,11 @@ export function huntArea(area: HuntableArea, salt: number): AreaDef {
     rng = next;
     return list[Math.floor(v * list.length)];
   };
+  // 逃げる敵は、レアの素材の戦闘のまま（表から選び直さない。段階59）
   const enemies: AreaEnemy[] = area.enemies
     .filter((e) => e.move !== 'guard')
     .map((e) => {
+      if (e.move === 'flee') return e;
       const table = area.hunt.tables?.[e.room ?? startRoom(area)];
       return table && table.length > 0 ? { ...e, battle: pick(table) } : e;
     });

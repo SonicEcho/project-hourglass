@@ -2,14 +2,14 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
 import { addParts, blockers, bondLevel, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
-import { run, setStoryVars } from './run';
+import { run, setStoryVars, storyLineup } from './run';
 
 // 昼の日常（段階24）：地図から場所を選び、場所の絵に出ている印をタップして出来事を見る。
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
@@ -41,8 +41,8 @@ const MARK_STYLE: Record<SpotMark, { color: number; icon: string }> = {
 /** 今の値で、その日の日常を組み立てる（絆の出来事と、返した翌日の出来事を足す） */
 function build(data: DailyHub): DailyHub {
   const visits = visitsFor(data, RETURN_VISITS, returnDays(SLICE_FLOW, run.event, run.returned));
-  // レストピアの拠点の入口（段階50）：返した区画が1つでもあれば。回数を決めていない日常（2日目）にも出す
-  const hub = huntableAreas(AREAS, run.returned).length > 0 ? HUB_SPOT : undefined;
+  // レストピアの拠点の入口（段階50）：返した区画が1つでもあり、2章から（段階60。1章は物語に集中する）
+  const hub = (storyLineup().chapter ?? 1) >= HUB_FROM_CHAPTER && huntableAreas(AREAS, run.returned).length > 0 ? HUB_SPOT : undefined;
   return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits, hub);
 }
 
