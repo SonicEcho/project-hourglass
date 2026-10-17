@@ -49,8 +49,14 @@ interface InRoom {
   room?: string;
 }
 
+/** 晩に分けた区画（段階63）で、出る晩（night：何晩目から、until：何晩目まで。書かなければ、どの晩も） */
+export interface InNight {
+  night?: number;
+  until?: number;
+}
+
 /** 宝箱：開けると素材・アイテムが持ち物に入る。gears はムーブメントのギア（段階38。ギアは戦闘では落とさず、宝箱と出来事のごほうびで手に入る） */
-export interface AreaChest extends InRoom {
+export interface AreaChest extends InRoom, InNight {
   id: string;
   cell: GridCell;
   items: string[];
@@ -66,8 +72,10 @@ export interface AreaChest extends InRoom {
 export type EnemyMove = 'patrol' | 'chase' | 'guard' | 'flee';
 
 /** 敵の印：決まった道を行き来する。触れると戦闘（battle は区画の戦闘の id） */
-export interface AreaEnemy extends InRoom {
+export interface AreaEnemy extends InRoom, InNight {
   id: string;
+  /** 戦う前に見る会話（段階63。番人の前の会話など。1回だけ） */
+  scene?: string;
   /** 行き来する道の折り返しの点（最初の点から始まる。3点以上なら輪になる。番人は1点） */
   patrol: GridCell[];
   battle: string;
@@ -76,14 +84,14 @@ export interface AreaEnemy extends InRoom {
 }
 
 /** 区画の奥のボスの印（動かない） */
-export interface AreaBoss extends InRoom {
+export interface AreaBoss extends InRoom, InNight {
   id: string;
   cell: GridCell;
   battle: string;
 }
 
 /** 話せる人（写しの人々）。隣のマスに来るか、タップすると会話の場面 */
-export interface AreaTalker extends InRoom {
+export interface AreaTalker extends InRoom, InNight {
   id: string;
   cell: GridCell;
   scene: string;
@@ -91,10 +99,14 @@ export interface AreaTalker extends InRoom {
 }
 
 /** 探索の途中の会話のきっかけ（1回だけ）。gears を書くと、その会話を見た時にごほうびのギアが手に入る（段階38。2-1 でみおが拾った歯車など） */
-export type AreaTrigger = AreaTriggerKind & { gears?: string[] };
+export type AreaTrigger = AreaTriggerKind & { gears?: string[] } & InNight;
 type AreaTriggerKind =
   /** 敵に n 回勝った時。after を書くと、その会話を見た後だけ（段階37。1-2 の「時計屋の後の戦闘」） */
   | { on: 'wins'; count: number; scene: string; after?: string }
+  /** 集めたコマが count 個になった時（段階63。コマが戻るたびに、過去の場面が1つずつ進む） */
+  | { on: 'koma'; count: number; scene: string }
+  /** その部屋に初めて入った時（段階63） */
+  | { on: 'room'; room: string; scene: string }
   /** 返すのに要るコマの残りが left 以下になった時（まだそろっていない時。段階28） */
   | { on: 'komaLeft'; left: number; scene: string }
   /** チェックポイントに初めて着いた時。cell を書くと、そのチェックポイントだけ（段階37。チェックポイントが2つある区画。段階47：room はその部屋） */
@@ -128,6 +140,23 @@ export interface AreaDef {
   returnSnaps?: string[];
   /** 返し終えた後に入り直す、狩りの中身（段階43。core/hunt.ts） */
   hunt?: AreaHunt;
+  /** 晩に分けて入る区画（段階63）：晩ごとの区切り（1晩目から順に） */
+  nights?: AreaNight[];
+  /** ノイズの壁（段階63）：opens 晩目から開く。それより前の晩は、そのマスを通れない */
+  walls?: AreaWall[];
+}
+
+/** 晩の区切り（段階63）：コマが koma 個になると、その晩は終わる（最後の晩は書かなくてよい）。start は、その晩を始める所（1晩目は出発点） */
+export interface AreaNight {
+  koma?: number;
+  start?: { room?: string; cell: GridCell };
+}
+
+/** ノイズの壁（段階63）：持ち主が少し思い出すと薄れる、記憶の先をふさぐ壁 */
+export interface AreaWall extends InRoom {
+  id: string;
+  cells: GridCell[];
+  opens: number;
 }
 
 /** 探索の状態（セーブする） */
@@ -151,6 +180,8 @@ export interface ExploreState {
   cleared: boolean;
   /** 集めたコマの数（段階28） */
   koma: number;
+  /** 晩に分けた区画で、今いる晩（段階63。書いていなければ1晩目） */
+  night?: number;
   /**
    * 前の戦闘から持ち越す仲間の HP・MP（段階32b 調整3）。なければ全回復。
    * 区画の中の戦闘は、勝ったら残りを次の戦闘へ持ち越す。チェックポイントに着くと全回復、負けてチェックポイントへ戻る時も全回復
@@ -344,6 +375,8 @@ export function pendingTrigger(area: AreaDef, state: ExploreState, on: AreaTrigg
       if (t.on !== on || state.seen.includes(t.scene)) return false;
       if (t.on === 'wins') return wins >= t.count && (t.after === undefined || state.seen.includes(t.after));
       if (t.on === 'komaLeft') return left > 0 && left <= t.left;
+      if (t.on === 'koma') return state.koma >= t.count;
+      if (t.on === 'room') return state.room === t.room;
       if (t.on === 'checkpoint' && t.cell) return same(t.cell, state.cell) && (t.room ?? startRoom(area)) === state.room;
       return true;
     }) ?? null
@@ -480,7 +513,7 @@ export function normalizeExplore(area: AreaDef, raw: unknown): ExploreState | nu
   const cellOk = (v: unknown, room: string): v is GridCell =>
     Array.isArray(v) && v.length === 2 && v.every(Number.isInteger) && isWalkable(areaGrid(area, room), v as GridCell);
   const ids = (v: unknown, known: string[]): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && known.includes(x)) : []);
-  const scenes = area.triggers.map((t) => t.scene);
+  const scenes = [...area.triggers.map((t) => t.scene), ...area.enemies.flatMap((e) => (e.scene ? [e.scene] : []))];
   const room = roomOk(r.room) ? r.room : fresh.room;
   const here = cellOk(r.cell, room);
   const checkpointRoom = roomOk(r.checkpointRoom) ? r.checkpointRoom : fresh.checkpointRoom;
@@ -498,6 +531,7 @@ export function normalizeExplore(area: AreaDef, raw: unknown): ExploreState | nu
     seen: ids(r.seen, scenes),
     cleared: r.cleared === true,
     koma: Number.isInteger(r.koma) && (r.koma as number) > 0 ? (r.koma as number) : 0,
+    ...(Number.isInteger(r.night) && (r.night as number) > 1 ? { night: r.night as number } : {}),
     ...(normalizeVitals(r.vitals) ? { vitals: normalizeVitals(r.vitals) } : {}),
   };
 }
@@ -518,7 +552,7 @@ function normalizeVitals(raw: unknown): Record<string, Vitals> | undefined {
  * 出発点から歩いて行ける部屋とマス（段階47a）。閉じた出入口も、いつかは開くので通れるものとする。
  * 部屋の中を歩いて、出入口のマスに着いたら、つながった部屋の入口のマスから続ける
  */
-export function reachableCells(area: AreaDef): Record<string, Set<string>> {
+export function reachableCells(area: AreaDef, from?: { room: string; cell: GridCell }): Record<string, Set<string>> {
   const out: Record<string, Set<string>> = {};
   const key = (c: GridCell) => `${c[0]},${c[1]}`;
   const queue: { room: string; cell: GridCell }[] = [];
@@ -529,8 +563,8 @@ export function reachableCells(area: AreaDef): Record<string, Set<string>> {
     out[room].add(key(cell));
     queue.push({ room, cell });
   };
-  const start = cellsOf(area, 'S')[0];
-  if (start) visit(startRoom(area), start);
+  const start = from?.cell ?? cellsOf(area, 'S')[0];
+  if (start) visit(from?.room ?? startRoom(area), start);
   for (let i = 0; i < queue.length; i++) {
     const { room, cell } = queue[i];
     const map = areaGrid(area, room);
@@ -622,6 +656,103 @@ export function checkArea(area: AreaDef): string[] {
   for (const t of area.triggers) {
     if (t.on === 'checkpoint' && t.cell && !isCheckpoint(area, t.cell, t.room ?? startRoom(area))) errors.push(`${area.id}：会話 ${t.scene} のチェックポイント（${t.cell}）が P のマスではない`);
     if (t.on === 'wins' && t.after && !area.triggers.some((x) => x.scene === t.after)) errors.push(`${area.id}：会話 ${t.scene} の先に見る会話 ${t.after} がない`);
+    if (t.on === 'room' && !roomIds.includes(t.room)) errors.push(`${area.id}：会話 ${t.scene} の部屋 ${t.room} がない`);
   }
+  errors.push(...checkNights(area));
+  return errors;
+}
+
+// ---- 晩に分けた区画（段階63。docs/design/explore.md の 2-5） ----
+
+/** そのものが、その晩に出るか */
+export function inNight(thing: InNight, night: number): boolean {
+  return (thing.night ?? 1) <= night && night <= (thing.until ?? Infinity);
+}
+
+/** まだ開いていない壁（その部屋の） */
+export function closedWalls(area: AreaDef, night: number, room?: string): AreaWall[] {
+  return (area.walls ?? []).filter((w) => w.opens > night && (room === undefined || inRoom(area, w, room)));
+}
+
+/**
+ * その晩の区画：まだ開いていない壁のマスを通れなくし、その晩に出ないもの（宝箱・敵・話せる人・途中の会話）を除く。
+ * ボスは除かない（区画に1つあるので、出るかどうかは呼ぶ側が inNight で見る）。晩に分けていない区画は、そのまま
+ */
+export function nightArea(area: AreaDef, night: number): AreaDef {
+  if (!area.nights) return area;
+  const rooms = area.rooms.map((room) => {
+    const walls = closedWalls(area, night, room.id);
+    if (walls.length === 0) return room;
+    const rows = room.layout.map((l) => [...l]);
+    for (const w of walls) for (const [c, r] of w.cells) if (rows[r]?.[c] !== undefined) rows[r][c] = '#';
+    return { ...room, layout: rows.map((r) => r.join('')) };
+  });
+  return {
+    ...area,
+    rooms,
+    chests: area.chests.filter((x) => inNight(x, night)),
+    enemies: area.enemies.filter((x) => inNight(x, night)),
+    talkers: area.talkers.filter((x) => inNight(x, night)),
+    triggers: area.triggers.filter((x) => inNight(x, night)),
+  };
+}
+
+/** 今いる晩 */
+export function nightOf(state: ExploreState): number {
+  return state.night ?? 1;
+}
+
+/**
+ * 晩を始める：前の晩のまま来たら、その晩を始める所へ移り、そこを記録したチェックポイントにする（HP・MP は全回復）。
+ * もう始めていた晩（戦闘や会話から戻ってきた時）なら、そのまま
+ */
+export function startNight(area: AreaDef, state: ExploreState, night: number): ExploreState {
+  if (!area.nights || nightOf(state) >= night) return state;
+  const start = area.nights[night - 1]?.start;
+  const { vitals: _, ...rest } = state;
+  if (!start) return { ...rest, night };
+  const room = start.room ?? startRoom(area);
+  const visited = state.visited.includes(room) ? state.visited : [...state.visited, room];
+  return { ...rest, night, room, cell: start.cell, checkpoint: start.cell, checkpointRoom: room, visited };
+}
+
+/** その晩のコマがそろったか（最後の晩は、ぬしに勝つまで終わらない） */
+export function nightDone(area: AreaDef, state: ExploreState, night: number): boolean {
+  const n = area.nights?.[night - 1];
+  return !!area.nights && night < area.nights.length && n?.koma !== undefined && state.koma >= n.koma;
+}
+
+/**
+ * 晩に分けた区画の書き間違い：壁のマス・晩を始める所、晩ごとに、その晩の始める所から、その晩に出る敵・宝箱・話せる人へ歩けるか。
+ * 最後の晩は、ぬしまで歩けるか
+ */
+export function checkNights(area: AreaDef): string[] {
+  if (!area.nights) return [];
+  const errors: string[] = [];
+  const roomIds = area.rooms.map((r) => r.id);
+  for (const w of area.walls ?? []) {
+    const room = w.room ?? startRoom(area);
+    if (!roomIds.includes(room)) errors.push(`${area.id}：壁 ${w.id} の部屋 ${room} がない`);
+    else for (const c of w.cells) if (!isWalkable(parseGrid(roomOf(area, room).layout), c)) errors.push(`${area.id}：壁 ${w.id} のマス（${c}）が、もともと通れない`);
+  }
+  area.nights.forEach((n, i) => {
+    const night = i + 1;
+    const a = nightArea(area, night);
+    const from = n.start ? { room: n.start.room ?? startRoom(area), cell: n.start.cell } : { room: startRoom(area), cell: cellsOf(area, 'S')[0] };
+    if (!from.cell || !isWalkable(areaGrid(a, from.room), from.cell)) {
+      errors.push(`${area.id}：${night}晩目を始める所が通れない`);
+      return;
+    }
+    if (n.start && !isCheckpoint(area, n.start.cell, from.room)) errors.push(`${area.id}：${night}晩目を始める所が P のマスではない`);
+    const reach = reachableCells(a, from);
+    const ok = (thing: InRoom, cell: GridCell) => reach[thing.room ?? startRoom(area)]?.has(`${cell[0]},${cell[1]}`) ?? false;
+    const near = (thing: InRoom, cell: GridCell) =>
+      [cell, [cell[0], cell[1] - 1], [cell[0] + 1, cell[1]], [cell[0], cell[1] + 1], [cell[0] - 1, cell[1]]].some((c) => ok(thing, c as GridCell));
+    for (const e of a.enemies) if (!ok(e, e.patrol[0])) errors.push(`${area.id}：${night}晩目の敵 ${e.id} へ歩けない`);
+    for (const c of a.chests) if (!near(c, c.cell)) errors.push(`${area.id}：${night}晩目の宝箱 ${c.id} へ歩けない`);
+    for (const t of a.talkers) if (!near(t, t.cell)) errors.push(`${area.id}：${night}晩目の話せる人 ${t.id} へ歩けない`);
+    if (night === area.nights!.length && !near(area.boss, area.boss.cell)) errors.push(`${area.id}：最後の晩に、ぬしへ歩けない`);
+    if (night < area.nights!.length && n.koma === undefined) errors.push(`${area.id}：${night}晩目に、終わるコマの数がない`);
+  });
   return errors;
 }

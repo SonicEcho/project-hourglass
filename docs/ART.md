@@ -753,6 +753,26 @@ At the top, home plate in front of a tall backstop net, with the ends of the net
 
 （届いたら：台帳に `map.riverside_*` を書き、`src/data/rooms.ts` の 2-3 の部屋に `image` を足す）
 
+#### 6-5. 1-1 を3晩に分けた区画の部屋（段階63。2026-10-17）
+
+1-1 を3晩に分けて作り直した（`docs/design/explore.md` の 2-5）。縁日の広場と通りは今の地図の絵（`map.festival`）を使い、ほかの5部屋は絵が届くまでマス目で描いている。下絵は `docs/sketches/room_fest_*.png`（`scripts/room_sketch.mjs` で作った）。どれも、部屋の地図の頭（上の「部屋の地図の頭」。`Square 1:1 image (1024x1024).`）の後に、場所の文を1つ付け、最後に `Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings.` と地図の締めの文を付ける。今の縁日の地図を、絵柄の見本として添付する。
+
+| 部屋 | 下絵 | 台帳の id（届いたら） | 場所の文 |
+| --- | --- | --- | --- |
+| 参道の入口（出発点） | `room_fest_gate.png` | `map.fest_gate` | `Scene: the entrance approach of a small Japanese shrine festival at summer dusk in the late Heisei era, a red torii gate at the bottom, festival stalls with striped awnings and paper lanterns along both sides of the stone-paved approach. An opening at the center of the top edge and the center of the left edge.` |
+| 屋台の裏 | `room_fest_backyard.png` | `map.fest_backyard` | `Scene: the backyard behind festival stalls at summer dusk: stacked lantern boxes, a small generator, cables on the ground, plastic crates and a water tank, a narrow dead end at the top left. An opening at the center of the right edge.` |
+| 屋台の裏通り | `room_fest_west.png` | `map.fest_west` | `Scene: narrow back alleys winding between the rear sides of festival stalls at summer dusk, tarps, folding tables, coolers and stacked paper lanterns. An opening at the center of the right edge.` |
+| 射的と金魚すくいの通り | `room_fest_east.png` | `map.fest_east` | `Scene: a side street of a shrine festival at summer dusk: a shooting gallery stall at the top, a long winding path, and a goldfish-scooping stall with a wide blue water tank at the bottom right dead end. An opening at the center of the left edge.` |
+| 社の裏の林 | `room_fest_woods.png` | `map.fest_woods` | `Scene: a small grove behind a Japanese shrine on a summer night, a narrow dirt path winding between tall cedar trees, stone lanterns and moss, festival lights glowing faintly through the trees. An opening at the center of the bottom edge.` |
+
+縁日の地図（`map.festival`）の手直し（今の地図を付けて、編集として頼む。2-1 と同じ形）：左右の辺（行19〜22。絵の高さの真ん中、幅は絵の6分の1）と、上の辺の真ん中（列10〜13。幅は絵の6分の1）を、屋台の裏と社の裏へ抜ける道にする。
+
+ひなの（今。18歳。ゆうまの妹）：立ち絵の頭（`<表情>` は `a guarded, slightly sulky expression`）の後に。見本はあかりの笑顔の立ち絵（構図）
+
+```
+Character: Hinano, an 18-year-old Japanese high school senior from a neighboring town, the younger sister of a laid-back university student. Straight black hair to the shoulders with blunt bangs, sharp but kind eyes, a strong-willed, stubborn look. A summer school uniform (white short-sleeve blouse, navy ribbon), a school bag with a faded red goldfish keychain.
+```
+
 ### 7. 1枚絵：親方の背中（2-1-8）
 
 写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に

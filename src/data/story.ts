@@ -67,30 +67,47 @@ export const SLICE_FLOW: Flow = [
       talk('d1_clockshop', '1日目：夕暮れの時計屋'),
       talk('d1_library', '1日目：レストピアの蔵書の棚'),
       talk('a11_enter', '1-1：縁日に入る'),
-      // 縁日の探索（段階25。区画は areas.ts の AREAS。探索の途中の会話も、区画のきっかけから出す）
-      { id: 'a11_explore', kind: 'explore', title: '1-1「金魚の名前」：縁日の探索', area: 'a11' },
+      // 1-1 は3晩に分けて入る（段階63。脚本 docs/script/1-1_rework.md）。1晩目「しぶしぶの兄」
+      { id: 'a11_explore', kind: 'explore', title: '1-1「金魚の名前」：縁日の1晩目', area: 'a11', night: 1 },
+      talk('a11_night1_end', '1日目：夕暮れの時計屋に戻る'),
+      day(2),
+      talk('d2_classroom', '2日目：朝の教室'),
+      talk('d2_rooftop', '2日目：昼休みの屋上'),
+      // 2日目の昼（コンビニのゆうまは必ず見る。daily.ts の DAILY_HUBS）
+      { id: 'd2_free', kind: 'daily', title: '2日目：昼' },
+      talk('a11_night2_enter', '2日目：縁日の2晩目に入る'),
+      // 2晩目「迷子」
+      { id: 'a11_explore2', kind: 'explore', title: '1-1「金魚の名前」：縁日の2晩目', area: 'a11', night: 2 },
+      talk('a11_night2_end', '2日目：すれ違い'),
+      day(3),
+      talk('d3_home', '3日目：朝の施設'),
+      // 3日目の昼（ひなのに会うのは必ず見る）
+      { id: 'a11_day3_free', kind: 'daily', title: '3日目：昼' },
+      talk('d3_walk', '3日目：帰り道'),
+      talk('d3_yuma', '3日目：コンビニの前'),
+      talk('a11_night3_enter', '3日目：縁日の3晩目に入る'),
+      // 3晩目「ふたりで、なつまつり」
+      { id: 'a11_explore3', kind: 'explore', title: '1-1「金魚の名前」：縁日の3晩目', area: 'a11', night: 3 },
       // 時間を返す（段階28。集めたコマで、盗まれた時間を持ち主へ返す。画面は ReturnScene）
       { id: 'a11_return', kind: 'return', title: '1-1：時間を返す', area: 'a11' },
-      talk('d1_return', '1日目：時間を返す'),
-      { id: 'day2', kind: 'day', title: '2日目', day: 2 },
-      talk('d2_classroom', '2日目：朝の教室'),
-      // 2日目の昼（段階24。商店街のコンビニの場面は daily.ts の DAILY_HUBS）
-      { id: 'd2_free', kind: 'daily', title: '2日目：昼' },
-      talk('d2_noa', '2日目：すれ違い'),
+      talk('a11_returned', '3日目：時間を返した後'),
+      day(4),
+      talk('d4_yuma', '4日目：朝・ゆうまの電話'),
+      talk('d4_rooftop', '4日目：昼休みの屋上'),
       // ---- 1章の残り（段階34。脚本 docs/script/M2.md の 3日目・4日目） ----
-      day(3),
       // 3日目〜8日目の昼は、誰と過ごすか（段階35。場所と印は daily.ts の DAILY_HUBS、絆の出来事は BOND_EVENTS）
-      talk('d3_classroom', '3日目：朝の教室'),
-      { id: 'd3_free', kind: 'daily', title: '3日目：昼' },
-      talk('d3_library', '3日目：夕暮れ・蔵書の棚'),
+      // 段階63で 1-1 を3日に広げたので、1-2 は4日目（出来事の id はセーブが覚えるので、d3_… のまま）
+      talk('d3_classroom', '4日目：朝の教室'),
+      { id: 'd3_free', kind: 'daily', title: '4日目：昼' },
+      talk('d3_library', '4日目：夕暮れ・蔵書の棚'),
       // 1-2 の区画（段階37。areas.ts の AREAS の a12。探索の途中の会話は区画のきっかけから出す）
       talk('a12_enter', '1-2：商店街に入る'),
       { id: 'a12_explore', kind: 'explore', area: 'a12', title: '1-2「夕暮れの二人乗り」：商店街の探索' },
       { id: 'a12_return', kind: 'return', area: 'a12', title: '1-2：時間を返す' },
-      talk('d3_return', '3日目：時間を返す'),
-      day(4),
-      { id: 'd4_free', kind: 'daily', title: '4日目：昼' },
-      talk('d4_evening', '4日目：夕暮れ・1章の終わり'),
+      talk('d3_return', '4日目：時間を返す'),
+      day(5),
+      { id: 'd4_free', kind: 'daily', title: '5日目：昼' },
+      talk('d4_evening', '5日目：夕暮れ・1章の終わり'),
     ],
   },
   {
@@ -98,43 +115,45 @@ export const SLICE_FLOW: Flow = [
     name: '第2章「背中を押す声」',
     // みおを入れた3人と、ムーブメントの開放（段階38）。みおが仲間になるのは 5-C（d5_evening）で、それより前に戦闘はない
     lineup: CHAPTER2_LINEUP,
+    // 段階63で 1-1 を3日に広げたので、2章は6日目から（出来事の id は d5_… のまま）
     events: [
       talk('chapter2_title', '第2章'),
-      day(5),
-      talk('d5_morning', '5日目：朝の通学路'),
-      { id: 'd5_free', kind: 'daily', title: '5日目：昼' },
-      talk('d5_evening', '5日目：夕暮れ・みおの加入'),
+      day(6),
+      talk('d5_morning', '6日目：朝の通学路'),
+      { id: 'd5_free', kind: 'daily', title: '6日目：昼' },
+      talk('d5_evening', '6日目：夕暮れ・みおの加入'),
       // 2-1 の区画（段階38・39。areas.ts の AREAS の a21）。みおの武器（2-1-1）とムーブメントの開放（2-1-4）、町工場の砂嵐と「旋盤のぬし」
       talk('a21_enter', '2-1：路地に入る'),
       { id: 'a21_explore', kind: 'explore', area: 'a21', title: '2-1「親方の背中」：町工場の探索' },
       { id: 'a21_return', kind: 'return', area: 'a21', title: '2-1：時間を返す' },
-      talk('d5_return', '5日目：時間を返す'),
-      day(6),
-      { id: 'd6_free', kind: 'daily', title: '6日目：昼' },
-      talk('d6_library', '6日目：夕暮れ・調査ノート'),
+      talk('d5_return', '6日目：時間を返す'),
+      day(7),
+      { id: 'd6_free', kind: 'daily', title: '7日目：昼' },
+      talk('d6_library', '7日目：夕暮れ・調査ノート'),
       // 2-2 の区画（段階39b。areas.ts の AREAS の a22）。部屋をつなぐ形で作った最初の区画。体育館の「アンプのぬし」
       talk('a22_enter', '2-2：校門に入る'),
       { id: 'a22_explore', kind: 'explore', area: 'a22', title: '2-2「最後の文化祭」：高校の探索' },
       { id: 'a22_return', kind: 'return', area: 'a22', title: '2-2：時間を返す' },
-      talk('d6_return', '6日目：時間を返す'),
-      day(7),
-      { id: 'd7_free', kind: 'daily', title: '7日目：昼' },
-      talk('d7_library', '7日目：夕暮れ・蔵書の棚'),
+      talk('d6_return', '7日目：時間を返す'),
+      day(8),
+      { id: 'd7_free', kind: 'daily', title: '8日目：昼' },
+      talk('d7_library', '8日目：夕暮れ・蔵書の棚'),
       // 2-3 の区画（段階40。areas.ts の AREAS の a23）。ボスに勝ってコマがそろった後、返す直前にカイが現れる（負け戦）。2-3 は返せないので、返す出来事はない
       talk('a23_enter', '2-3：河川敷に入る'),
       { id: 'a23_explore', kind: 'explore', area: 'a23', title: '2-3「最後の打席」：河川敷の探索' },
-      talk('d7_kai', '7日目：返す直前にカイ'),
+      talk('d7_kai', '8日目：返す直前にカイ'),
       { id: 'a23_kai', kind: 'battle', battle: 'a23_kai', title: '2-3：カイとの戦い（負け戦）' },
-      talk('d7_taken', '7日目：持ち去られる'),
-      day(8),
-      talk('d8_classroom', '8日目：朝の教室'),
-      { id: 'd8_free', kind: 'daily', title: '8日目：昼' },
-      talk('d8_evening', '8日目：夕暮れ・2章の終わり'),
-      // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、3日目から続く
+      talk('d7_taken', '8日目：持ち去られる'),
+      day(9),
+      talk('d8_classroom', '9日目：朝の教室'),
+      { id: 'd8_free', kind: 'daily', title: '9日目：昼' },
+      talk('d8_evening', '9日目：夕暮れ・2章の終わり'),
+      // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、4日目から続く（段階63）
       { id: 'ch2_end', kind: 'end', title: 'つづく' },
     ],
   },
 ];
 
 /** なくなった出来事 → セーブを読む時に代わりに続ける出来事（段階40。仮の画面だった「2-3：返す直前にカイ」は、カイの会話から） */
-export const RENAMED_EVENTS: Record<string, string> = { a23_return: 'd7_kai' };
+// 段階63：1-1 を3晩に分けた時に、なくなった出来事（1日目の返す会話・2日目のすれ違い）は、近い出来事から続ける
+export const RENAMED_EVENTS: Record<string, string> = { a23_return: 'd7_kai', d1_return: 'a11_returned', d2_noa: 'a11_night2_end' };

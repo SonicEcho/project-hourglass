@@ -11,7 +11,7 @@ import { preview } from 'vite';
 
 const BATTLES = 5;
 /** 物語の流れの出来事の数の上限（無限に回らないように） */
-const MAX_EVENTS = 80;
+const MAX_EVENTS = 110;
 const step = (msg) => console.log(`- ${msg}`);
 
 const server = await preview({ preview: { port: 4173, strictPort: false }, logLevel: 'warn' });
@@ -143,7 +143,7 @@ try {
       await until('探索の地図の名前', () => findText('^1-1「金魚の名前」$'));
       await page.reload();
       await waitScene('Title');
-      await until('「つづきから」の下に探索の出来事', () => findText('縁日の探索'));
+      await until('「つづきから」の下に探索の出来事', () => findText('縁日の1晩目'));
       await tap('^つづきから$');
       await waitScene('Explore');
       await until('縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');

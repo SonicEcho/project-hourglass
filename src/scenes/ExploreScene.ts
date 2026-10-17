@@ -1,6 +1,11 @@
 import Phaser from 'phaser';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
+  closedWalls,
+  inNight,
+  nightArea,
+  nightDone,
+  startNight,
   gainSnaps,
   addParts,
   enemyNext,
@@ -75,6 +80,8 @@ export interface ExploreData {
   seen?: string;
   /** 狩り（段階43。返し終えた区画に入り直している） */
   hunt?: boolean;
+  /** 晩に分けた区画の、何晩目か（段階63。物語の流れの探索の出来事が決める） */
+  night?: number;
 }
 
 interface Enemy {
@@ -96,6 +103,8 @@ export class ExploreScene extends Phaser.Scene {
   private trial = false;
   /** 狩りの途中（段階43） */
   private hunting = false;
+  /** 晩に分けた区画の、何晩目か（段階63。晩に分けていない区画と狩りは 0） */
+  private night = 0;
   private map!: GridMap;
   private state!: ExploreState;
   private player!: Phaser.GameObjects.Container;
@@ -140,10 +149,14 @@ export class ExploreScene extends Phaser.Scene {
       return;
     }
     // 記憶をたどる時は、受けている探し物（落とし物。段階53）の光る所も置く
+    // 晩に分けた区画（段階63）：その晩の壁と、その晩に出るものだけ
+    this.night = !this.hunting && base.nights ? (data.night ?? 1) : 0;
     const area =
       this.hunting && hunt && base.hunt
         ? huntArea({ ...base, hunt: { ...base.hunt, gathers: [...base.hunt.gathers, ...lostSpots(LOST_ITEMS, run.vars, base.id)] } }, hunt.salt)
-        : base;
+        : this.night > 0
+          ? nightArea(base, this.night)
+          : base;
     this.area = area;
     this.trial = !AREAS[data.area];
     stopAmbience();
@@ -162,6 +175,8 @@ export class ExploreScene extends Phaser.Scene {
     this.pausedTweens = [];
 
     let state = this.hunting && hunt ? hunt.state : run.explore?.area === area.id ? run.explore : startExplore(area);
+    // 新しい晩なら、その晩を始める所から（段階63）
+    if (this.night > 0) state = startNight(base, state, this.night);
     let note = '';
     let komaGot = 0;
     // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
@@ -198,6 +213,12 @@ export class ExploreScene extends Phaser.Scene {
       this.startBattle(area.boss.battle, area.boss.id);
       return;
     }
+    // 戦う前の会話（番人の前など。段階63）を見たら、その敵と戦う
+    const before = data.seen ? area.enemies.find((e) => e.scene === data.seen && !state.defeated.includes(e.id)) : undefined;
+    if (before) {
+      this.startBattle(before.battle, before.id);
+      return;
+    }
     if (state.cleared && (!clearedTrigger || state.seen.includes(clearedTrigger.scene))) {
       this.finishArea();
       return;
@@ -206,9 +227,18 @@ export class ExploreScene extends Phaser.Scene {
     if (area.bgm) playBgm(this, area.bgm);
     // まだ見ていない途中の会話（勝った回数、ボスに勝った後）
     const pending =
-      (state.cleared ? pendingTrigger(area, state, 'cleared') : null) ?? pendingTrigger(area, state, 'wins') ?? pendingTrigger(area, state, 'komaLeft');
+      (state.cleared ? pendingTrigger(area, state, 'cleared') : null) ??
+      pendingTrigger(area, state, 'koma') ??
+      pendingTrigger(area, state, 'wins') ??
+      pendingTrigger(area, state, 'komaLeft') ??
+      pendingTrigger(area, state, 'room');
     if (pending) {
       this.openTrigger(pending);
+      return;
+    }
+    // その晩のコマがそろい、途中の会話も見終えたら、その晩は終わり（段階63）
+    if (this.night > 0 && nightDone(base, state, this.night)) {
+      this.finishArea();
       return;
     }
 
@@ -291,6 +321,22 @@ export class ExploreScene extends Phaser.Scene {
     // 宝箱のマスも通れない
     for (const c of area.chests) if (this.here(c)) gridView.fillStyle(0xff3030, 0.3).fillRect(c.cell[0] * T, c.cell[1] * T, T, T);
     world.add(gridView);
+    // ノイズの壁（段階63）：まだ開いていない壁のマスに、ざらざらした砂嵐をかける
+    if (this.night > 0) {
+      for (const w of closedWalls(area, this.night, room.id)) {
+        for (const [c, r] of w.cells) {
+          const noise = this.add.graphics();
+          for (let i = 0; i < 10; i++) {
+            const shade = 0x60 + Math.floor(Math.random() * 0x90);
+            noise.fillStyle((shade << 16) | (shade << 8) | shade, 0.85).fillRect(c * T + Math.random() * T * 0.8, r * T + Math.random() * T * 0.8, T * 0.3, T * 0.12);
+          }
+          const base = this.add.rectangle(c * T + T / 2, r * T + T / 2, T, T, 0x2a2a30, 0.75);
+          world.add(base);
+          world.add(noise);
+          this.tweens.add({ targets: noise, alpha: 0.35, yoyo: true, repeat: -1, duration: 160 + Math.random() * 200 });
+        }
+      }
+    }
 
     // チェックポイント（大きな提灯の手前）
     room.layout.forEach((line, r) =>
@@ -462,7 +508,10 @@ export class ExploreScene extends Phaser.Scene {
     for (const e of this.enemies) {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
         playSe(this, SE.encounter);
-        this.startBattle(e.battle, e.id);
+        // 戦う前の会話がある敵（番人の前など。段階63）は、会話を見てから戦う
+        const scene = this.area.enemies.find((x) => x.id === e.id)?.scene;
+        if (scene && !this.state.seen.includes(scene)) this.openScene(scene, this.back({ seen: scene }));
+        else this.startBattle(e.battle, e.id);
         return;
       }
     }
@@ -470,6 +519,11 @@ export class ExploreScene extends Phaser.Scene {
 
   /** タップしたマス：話せる人・ボスなら隣まで歩いてから。それ以外はそこまで歩く */
   private tapCell(cell: GridCell): void {
+    // ノイズの壁（段階63）
+    if (this.night > 0 && closedWalls(this.area, this.night, this.state.room).some((w) => w.cells.some((c) => c[0] === cell[0] && c[1] === cell[1]))) {
+      this.say('厚いノイズの壁で、ふさがっている。……持ち主が思い出さないと、この先へは行けない');
+      return;
+    }
     const talker = this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
     const chest = talker ? null : chestAt(this.area, this.state, cell);
@@ -620,7 +674,7 @@ export class ExploreScene extends Phaser.Scene {
 
   /** ボスの印が今の部屋にいるか（狩りでは、勝つとその回は消える） */
   private bossHere(): boolean {
-    return !this.state.cleared && enemyActive(this.state, this.area.boss.id) && this.here(this.area.boss);
+    return !this.state.cleared && enemyActive(this.state, this.area.boss.id) && this.here(this.area.boss) && (this.night === 0 || inNight(this.area.boss, this.night));
   }
 
   /** 探索の状態を覚える（狩りはセーブしない run.hunt に。段階43） */
@@ -631,7 +685,7 @@ export class ExploreScene extends Phaser.Scene {
 
   /** この画面を開き直す時のデータ（区画と、狩りかどうか） */
   private back(extra: Partial<ExploreData> = {}): ExploreData {
-    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, ...extra };
+    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, night: this.night || undefined, ...extra };
   }
 
   /** 狩りを終えて、レストピアの拠点へ戻る（段階43。段階50から、昼の時計屋ではなく拠点へ） */
@@ -770,6 +824,7 @@ export class ExploreScene extends Phaser.Scene {
       this.scene.start('Title');
       return;
     }
+    // 晩の終わり（段階63）も同じ：探索の状態を残して、物語の次の出来事へ（次の晩は startNight で始める所へ移る）
     setExplore(this.state);
     this.scene.start('Flow', { done: true });
   }
