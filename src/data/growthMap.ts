@@ -10,8 +10,8 @@ import type { GrowthMap, GrowthNodeDef, GrowthNodeEffect, StatKey } from '../cor
 // 星の効果：start:誰 / skill:魔法・スキルの id / 能力値は1文字（a 攻撃、h HP、m 魔力、p MP、d 防御、s 速さ。大文字は大）
 // 最後の列は、段階55までの格子の星図のマスの id（セーブを読む時に、この星へ付け替える）
 
-/** 能力値マスの上がり幅（小）。大はこの2倍。段階62で、値段と一緒に3倍にした（星図をゆっくり広げる。強さの伸びは同じ） */
-export const STAT_STEP: Record<StatKey, number> = { hp: 36, mp: 18, atk: 6, mag: 6, def: 3, spd: 3 };
+/** 能力値マスの上がり幅（小）。大はこの2倍。段階62で2倍にした（値段は3倍。星図をゆっくり広げる。前は章の終わりに区域が埋まって強さが頭打ちになっていたので、上がり幅は値段ほど上げない） */
+export const STAT_STEP: Record<StatKey, number> = { hp: 24, mp: 12, atk: 4, mag: 4, def: 2, spd: 2 };
 
 const STAT_CHARS: Record<string, StatKey> = { h: 'hp', p: 'mp', a: 'atk', m: 'mag', d: 'def', s: 'spd' };
 
