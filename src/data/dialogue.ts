@@ -411,6 +411,9 @@ export const CGS: Record<string, Backdrop> = {
   // 段階39b：2-2-7（2-2 の山場。2026-10-17 に絵が届いた）。スポットライトの光と、金の粒
   string_stage: { title: '1枚絵：弦が切れても歌うステージ', top: 0x1a1a30, bottom: 0xc08a50, image: 'cg.string_stage', ambient: 'motes', glow: { x: 0.5, y: 0.2, color: 0xfff0c0 } },
   // 段階40：2-3-7（代打の一打）と 7-C（切り取られるグラウンド。2章の山場）。絵が届くまで仮の色
+  // 段階61：持ち物が武器に変わる瞬間（1-1 のハルトとあかり、2-1 のみお）。絵が届くまで仮の色
+  awaken_weapons: { title: '1枚絵：長針の剣と、金魚の灯籠の杖', top: 0x2a3060, bottom: 0xe0a050, ambient: 'motes', glow: { x: 0.5, y: 0.45, color: 0xfff0c0 } },
+  mio_cards: { title: '1枚絵：光るトランプ', top: 0x3a2a40, bottom: 0xd0b070, ambient: 'motes', glow: { x: 0.5, y: 0.5, color: 0xfff4d0 } },
   pinch_hit: { title: '1枚絵：代打の一打', top: 0x6ab0e8, bottom: 0xc0a060, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
   cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, glow: { x: 0.5, y: 0.4, color: 0xe0f0ff } },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },

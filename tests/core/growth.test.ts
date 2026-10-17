@@ -15,7 +15,7 @@ import {
   piecePosition,
 } from '../../src/core';
 import type { GrowthState } from '../../src/core';
-import { AKARI, CAMPAIGN, GROWTH_COST, GROWTH_FRONTIER, GROWTH_MAP, HERO, MIO, PARTY, SKILLS, START_MEMORY_POINTS } from '../../src/data';
+import { AKARI, CAMPAIGN, GROWTH_COST, GROWTH_FRONTIER, GROWTH_MAP, HERO, MIO, PARTY, SKILLS, START_MEMORY_POINTS, STAT_STEP } from '../../src/data';
 
 const ids = PARTY.map((c) => c.id);
 const fresh = (points = 99): GrowthState => createGrowth(GROWTH_MAP, ids, points);
@@ -103,22 +103,23 @@ describe('星図', () => {
     expect(nodeCost(GROWTH_MAP, fresh(), HERO, 'vega')).toBe(GROWTH_COST.passThrough);
   });
 
-  it('能力値（小）は1pt、（大）は2pt', () => {
+  it('能力値（大）は（小）の2倍の値段', () => {
     const small = GROWTH_MAP.nodes.find((n) => n.kind === 'stat')!;
     const big = GROWTH_MAP.nodes.find((n) => n.kind === 'statBig')!;
-    expect(nodeCost(GROWTH_MAP, fresh(), HERO, small.id)).toBe(1);
-    expect(nodeCost(GROWTH_MAP, fresh(), HERO, big.id)).toBe(2);
+    expect(nodeCost(GROWTH_MAP, fresh(), HERO, small.id)).toBe(GROWTH_COST.stat);
+    expect(nodeCost(GROWTH_MAP, fresh(), HERO, big.id)).toBe(GROWTH_COST.statBig);
+    expect(GROWTH_COST.statBig).toBe(GROWTH_COST.stat * 2);
   });
 });
 
 describe('成長の反映', () => {
   it('開けた能力値マスの分だけ能力値が上がる', () => {
     let g = fresh();
-    g = openNode(GROWTH_MAP, g, AKARI, 'zetaLyr'); // 魔力+2
-    g = openNode(GROWTH_MAP, g, AKARI, 'deltaLyr'); // MP+6
+    g = openNode(GROWTH_MAP, g, AKARI, 'zetaLyr'); // 魔力（小）
+    g = openNode(GROWTH_MAP, g, AKARI, 'deltaLyr'); // MP（小）
     const [, akari] = applyGrowth(GROWTH_MAP, g, PARTY, SKILLS);
-    expect(akari.stats.mag).toBe(AKARI.stats.mag + 2);
-    expect(akari.stats.mp).toBe(AKARI.stats.mp + 6);
+    expect(akari.stats.mag).toBe(AKARI.stats.mag + STAT_STEP.mag);
+    expect(akari.stats.mp).toBe(AKARI.stats.mp + STAT_STEP.mp);
     // 他のキャラは変わらない
     expect(applyGrowth(GROWTH_MAP, g, PARTY, SKILLS)[0].stats).toEqual(HERO.stats);
   });

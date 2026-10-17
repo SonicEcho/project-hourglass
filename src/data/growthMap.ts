@@ -10,18 +10,18 @@ import type { GrowthMap, GrowthNodeDef, GrowthNodeEffect, StatKey } from '../cor
 // 星の効果：start:誰 / skill:魔法・スキルの id / 能力値は1文字（a 攻撃、h HP、m 魔力、p MP、d 防御、s 速さ。大文字は大）
 // 最後の列は、段階55までの格子の星図のマスの id（セーブを読む時に、この星へ付け替える）
 
-/** 能力値マスの上がり幅（小）。大はこの2倍 */
-export const STAT_STEP: Record<StatKey, number> = { hp: 12, mp: 6, atk: 2, mag: 2, def: 1, spd: 1 };
+/** 能力値マスの上がり幅（小）。大はこの2倍。段階62で、値段と一緒に3倍にした（星図をゆっくり広げる。強さの伸びは同じ） */
+export const STAT_STEP: Record<StatKey, number> = { hp: 36, mp: 18, atk: 6, mag: 6, def: 3, spd: 3 };
 
 const STAT_CHARS: Record<string, StatKey> = { h: 'hp', p: 'mp', a: 'atk', m: 'mag', d: 'def', s: 'spd' };
 
-/** マスを開けるのに必要な星の砂 */
+/** マスを開けるのに必要な星の砂（段階62で、1マスを重くした：小 1→3、大 2→6、スキル 3→8、通るだけ 1→3） */
 export const GROWTH_COST = {
-  stat: 1,
-  statBig: 2,
-  skill: 3,
+  stat: 3,
+  statBig: 6,
+  skill: 8,
   /** もう覚えている魔法・スキルのマスと、他のキャラの出発点は、通るだけ */
-  passThrough: 1,
+  passThrough: 3,
 };
 
 /** [id, 星の名前, 星座, 赤経（時）, 赤緯（度）, 何章の区域か, 効果, 前のマスの id] */
@@ -184,7 +184,7 @@ function buildMap(): GrowthMap {
 
 export const GROWTH_MAP: GrowthMap = buildMap();
 
-/** 周回の始めに持っている星の砂 */
-export const START_MEMORY_POINTS = 3;
+/** 周回の始めに持っている星の砂（段階62で 3→8。最初の魔法・スキルを1つ開けられる） */
+export const START_MEMORY_POINTS = 8;
 /** 部位を1つ壊すごとにもらえる星の砂 */
 export const PART_BREAK_POINTS = 2;

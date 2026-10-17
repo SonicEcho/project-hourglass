@@ -68,6 +68,14 @@ describe('周回・狩り（段階43）', () => {
     expect(picks).toEqual(new Set(['b2', 'b3', 'bg']));
   });
 
+  it('逃げる敵は、表を書いた部屋でもレアの素材の戦闘のまま（段階59）', () => {
+    const runner = { id: 'r', room: 'inner', patrol: [[2, 4]] as [number, number][], battle: 'br', move: 'flee' as const };
+    for (let salt = 0; salt < 20; salt++) {
+      const area = huntArea({ ...base, enemies: [...base.enemies, runner] }, salt);
+      expect(area.enemies.find((e) => e.id === 'r')?.battle).toBe('br');
+    }
+  });
+
   it('入れる区画は、返した区画のうち狩りの中身を書いたものだけ（区画の並びの順）', () => {
     const { hunt: _, ...noHunt } = base;
     const areas: Record<string, AreaDef> = { a: { ...base, id: 'a' }, b: { ...noHunt, id: 'b' }, c: { ...base, id: 'c' } };
