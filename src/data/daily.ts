@@ -76,13 +76,13 @@ export const DAILY_PICKS = 2;
 export const BOND_EVENTS: Record<string, BondEvent[]> = {
   akari: [
     { id: 'd1_rooftop', title: 'シャッター、ハルトが言って', label: '屋上へ（あかり）', from: 1, place: 'school', x: 195, y: 330 },
-    { id: 'bond_akari2', title: '消せない写真', label: '屋上へ（あかり）', from: 4, place: 'school', x: 195, y: ROW1 },
-    { id: 'bond_akari3', title: 'りくのいない帰り道', label: '帰り道（あかり）', from: 5, place: 'river_path', x: 195, y: ROW1 },
-    { id: 'bond_akari4', title: '最初の五分', label: '施設の居間（あかり）', from: 6, place: 'home', x: 195, y: ROW1 },
+    { id: 'bond_akari2', title: '消せない写真', label: '屋上へ（あかり）', from: 5, place: 'school', x: 195, y: ROW1 },
+    { id: 'bond_akari3', title: 'りくのいない帰り道', label: '帰り道（あかり）', from: 7, place: 'river_path', x: 195, y: ROW1 },
+    { id: 'bond_akari4', title: '最初の五分', label: '施設の居間（あかり）', from: 8, place: 'home', x: 195, y: ROW1 },
   ],
   mio: [
-    { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 7, place: 'riverside', x: 195, y: ROW1 },
-    { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 8, place: 'convenience', x: 195, y: ROW1 },
+    { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 9, place: 'riverside', x: 195, y: ROW1 },
+    { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 10, place: 'convenience', x: 195, y: ROW1 },
   ],
 };
 
@@ -92,11 +92,10 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
  */
 export const RETURN_VISITS: ReturnVisit[] = [
   // 1-1 の翌日のゆうまの電話は、段階63から物語の流れの会話（4日目の朝の d4_yuma。docs/script/1-1_rework.md の 4-A）
-  // 1-2 の翌日（5日目）：ふみさんが、来る日じゃないのに店に来る（4-A）
-  { area: 'a12', id: 'd4_fumi', label: '来る日じゃないのに', place: 'clockshop', x: 195, y: ROW1 },
-  // 2-1 の翌日（7日目）：いさむの工場（6-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
+  // 1-2 の翌日のふみさんは、段階66から物語の流れの会話（7日目の朝の d4_fumi。docs/script/1-2_rework.md の 7-A）
+  // 2-1 の翌日（9日目）：いさむの工場（6-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
   { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
-  // 2-2 の翌日（8日目）：閉店後の楽器店で、けんたたち3人（7-A。段階39b）
+  // 2-2 の翌日（10日目）：閉店後の楽器店で、けんたたち3人（7-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
 ];
 
@@ -177,28 +176,41 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 4,
     picks: DAILY_PICKS,
     partners: ['akari'],
-    places: [at('school', talk('d3_talk', '教室（小話）', ROW2)), at('clockshop', main('d3_fumi', '常連のふみさん'), toDusk('d3_to_dusk'))],
+    places: [at('clockshop', main('d3_fumi', '店番（ふみさん）'), toDusk('d3_to_dusk'))],
+  },
+  // 5日目の昼（段階66。5-B・5-C）。電器屋のしげるさんは必ず見る。見たら、帰り道へ（ふみさんの家の前の会話の後、夕暮れの商店街へ）
+  a12_day5_free: {
+    id: 'a12_day5_free',
+    time: '5日目　放課後',
+    day: 5,
+    picks: DAILY_PICKS,
+    partners: ['akari'],
+    places: [
+      at('school', talk('d3_talk', '教室（小話）', ROW2)),
+      at('street', main('d5_shigeru', '電器屋のしげるさん')),
+      at('river_path', { id: 'a12_d5_home', label: '帰り道へ（夕方になる）', mark: 'go', x: 195, y: ROW_GO, ends: true, confirm: '帰り道へ行くと、夕方になります。\n行きますか？' }),
+    ],
   },
   d4_free: {
     id: 'd4_free',
-    time: '5日目　放課後',
-    day: 5,
+    time: '7日目　放課後',
+    day: 7,
     picks: DAILY_PICKS,
     partners: ['akari'],
     places: [at('convenience', talk('d4_talk', 'コンビニ（小話）', ROW2)), at('clockshop', toDusk('d4_to_dusk'))],
   },
   d5_free: {
     id: 'd5_free',
-    time: '6日目　放課後',
-    day: 6,
+    time: '8日目　放課後',
+    day: 8,
     picks: DAILY_PICKS,
     partners: ['akari'],
     places: [at('school', talk('d5_talk', '教室（小話）', ROW2)), at('clockshop', main('d5_isamu', '最後の納品'), toDusk('d5_to_dusk'))],
   },
   d6_free: {
     id: 'd6_free',
-    time: '7日目　放課後',
-    day: 7,
+    time: '9日目　放課後',
+    day: 9,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -208,8 +220,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
   },
   d7_free: {
     id: 'd7_free',
-    time: '8日目　放課後',
-    day: 8,
+    time: '10日目　放課後',
+    day: 10,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -219,8 +231,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
   },
   d8_free: {
     id: 'd8_free',
-    time: '9日目　土曜の昼',
-    day: 9,
+    time: '11日目　土曜の昼',
+    day: 11,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
