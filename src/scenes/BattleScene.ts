@@ -6,6 +6,7 @@ import type { ActionDef, ActionPreview, AllyUnit, Bark, BarkMemory, BattleState,
 import {
   advance,
   applyExtra,
+  autoAllowed,
   battleReward,
   batonTargets,
   chargingAction,
@@ -56,6 +57,7 @@ import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
 import { notePlayCount } from './playRecord';
 import type { Lineup } from '../core';
+import { debugAutoStory } from '../debug/debugFlag';
 import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
@@ -288,9 +290,10 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  /** オートを使える戦闘か。ボス戦では使えない */
+  /** オートを使える戦闘か。ボス戦と、物語の1回目の探索の戦闘では使えない（段階64。デバッグで切り替えられる） */
   private autoAvailable(): boolean {
-    return !this.battle.boss;
+    const kind = !this.encounter ? 'trial' : this.encounter.hunt ? 'hunt' : 'story';
+    return autoAllowed({ boss: !!this.battle.boss, kind, debugStory: debugAutoStory() });
   }
 
   /** オートの作戦を選ぶ画面。選ぶと覚えて、すぐオートで進める */

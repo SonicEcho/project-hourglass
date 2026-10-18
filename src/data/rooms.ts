@@ -711,6 +711,12 @@ const FESTIVAL_NIGHT_LAYOUT = setCells(carve(PROTO_FESTIVAL_LAYOUT, [...box(0, 7
   [14, 29, '.'],
 ]);
 
+/**
+ * 1-2 の商店街（段階66。3晩に分けて入る。地図の絵は今の商店街の絵 map.showa_street）。坂の手前にチェックポイント（3晩目を始める所）。
+ * 左右の通り（行19〜22）と、上の坂の先へ出入口を開けた（絵はその所が店のまま。絵は後で頼む）
+ */
+const SHOWA_NIGHT_LAYOUT = setCells(carve(SHOWA_STREET_LAYOUT, [...box(0, 8, 19, 22), ...box(16, 23, 19, 22), ...box(10, 13, 0, 4)]), [[12, 13, 'P']]);
+
 export const ROOMS = {
   // 1-1・1-2・2-1 の部屋（段階47で、部屋が1つだけの区画として移した。2-1 は後から左右の辺を開けて、寄り道の部屋を2つつないだ）
   festival_grounds: { id: 'festival_grounds', layout: PROTO_FESTIVAL_LAYOUT, image: 'map.festival', era: 'heisei_late', exits: [] },
@@ -726,6 +732,11 @@ export const ROOMS = {
   fest_west: { id: 'fest_west', layout: FEST_WEST_LAYOUT, era: 'heisei_late', exits: ['right'] },
   fest_east: { id: 'fest_east', layout: FEST_EAST_LAYOUT, era: 'heisei_late', exits: ['left'] },
   fest_woods: { id: 'fest_woods', layout: FEST_WOODS_LAYOUT, era: 'heisei_late', exits: ['bottom'] },
+  // 1-2 の部屋（段階66。3晩に分けて入る）。寄り道の3部屋は、地図の絵が届くまで 1-1 の部屋と同じ形の文字の地図で描く
+  showa_night: { id: 'showa_night', layout: SHOWA_NIGHT_LAYOUT, image: 'map.showa_street', era: 'showa_late', exits: ['left', 'right', 'top'] },
+  showa_alley: { id: 'showa_alley', layout: FEST_WEST_LAYOUT, era: 'showa_late', exits: ['right'] },
+  showa_lane: { id: 'showa_lane', layout: FEST_EAST_LAYOUT, era: 'showa_late', exits: ['left'] },
+  showa_hill: { id: 'showa_hill', layout: FEST_WOODS_LAYOUT, era: 'showa_late', exits: ['bottom'] },
   // 2-2 の高校の部屋（段階39b。平成の半ば）。地図の絵が届いたら台帳に書いて image を足す（id は map.school_gate など）
   school_gate: { id: 'school_gate', layout: SCHOOL_GATE_LAYOUT, era: 'heisei_mid', exits: ['top'] },
   school_courtyard: { id: 'school_courtyard', layout: SCHOOL_COURTYARD_LAYOUT, era: 'heisei_mid', exits: ['bottom', 'top', 'left'] },

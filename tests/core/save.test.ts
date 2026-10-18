@@ -414,14 +414,14 @@ describe('セーブ：今のデータに合わせて整える', () => {
     // なくなった出来事は、代わりの出来事から（段階40：仮の「2-3：返す」→ カイの会話）
     const res4 = parseEdited((raw) => (raw.run.event = 'a23_return'));
     expect(res4.ok && res4.save.run.event).toBe('d7_kai');
-    expect(res4.ok && res4.save.run.progress.day).toBe(8);
+    expect(res4.ok && res4.save.run.progress.day).toBe(10);
     expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
     expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
   });
 
   it('探索の状態を読み戻す。知らない区画なら、探索の途中ではないことにする', () => {
-    // 部屋が1つの区画（1-2）で確かめる（1-1 は段階63から部屋が6つ）
-    const explore = { area: 'a12', room: 'showa_street', cell: [8, 29], checkpoint: [8, 29], checkpointRoom: 'showa_street', visited: ['showa_street'], openedChests: ['a12_chest_clock'], defeated: ['a12_e_gate'], seen: ['a12_first_koma'], cleared: false, koma: 3 };
+    // 1-2 の最初の部屋で確かめる（版8の探索の途中は、最初の部屋にいたことにする。段階66から 1-2 は部屋が4つ）
+    const explore = { area: 'a12', room: 'showa_night', cell: [8, 29], checkpoint: [8, 29], checkpointRoom: 'showa_night', visited: ['showa_night'], openedChests: ['a12_chest_clock'], defeated: ['a12_e_gate'], seen: ['a12_first_koma'], cleared: false, koma: 3 };
     const res = parseEdited((raw) => (raw.run.explore = explore));
     expect(res.ok && res.save.run.explore).toEqual(explore);
     // 版8の探索の途中（部屋がない。段階47）は、部屋が1つの区画として最初の部屋にいたことにする

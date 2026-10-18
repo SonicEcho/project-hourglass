@@ -98,3 +98,13 @@ export function huntRewardRate(areaChapter: number | undefined, nowChapter: numb
   if (areaChapter === undefined || nowChapter === undefined) return 1;
   return areaChapter < nowChapter ? oldRate : 1;
 }
+
+/**
+ * 戦闘でオートを出してよいか（段階64。開発者と決めた）：物語の1回目の探索では出さない（初めての敵は自分で読んで戦う）。
+ * 記憶をたどる時（くり返しの素材集め）と、試作の戦闘では出す。ボス戦は、どれでも出さない。
+ * debugStory はデバッグの時の切り替え（物語の探索でも出す）
+ */
+export function autoAllowed(o: { boss: boolean; kind: 'trial' | 'story' | 'hunt'; debugStory?: boolean }): boolean {
+  if (o.boss) return false;
+  return o.kind !== 'story' || o.debugStory === true;
+}

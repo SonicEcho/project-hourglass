@@ -39,6 +39,15 @@ export function scaleEnemy(enemy: EnemyDef, rate: number): EnemyDef {
   };
 }
 
+/** 敵の HP（と部位の HP）だけを rate 倍にする（段階65。攻撃の強さは変えずに、戦闘を長く・手応えのあるものにする） */
+export function toughenEnemy(enemy: EnemyDef, rate: number): EnemyDef {
+  return {
+    ...enemy,
+    stats: { ...enemy.stats, hp: Math.round(enemy.stats.hp * rate) },
+    parts: enemy.parts?.map((p) => ({ ...p, hp: Math.round(p.hp * rate) })),
+  };
+}
+
 export interface CampaignBattle {
   /** 変わらない名前。セーブはこの名前で覚える（段階13） */
   id: string;

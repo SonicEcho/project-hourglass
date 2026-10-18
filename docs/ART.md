@@ -773,6 +773,16 @@ At the top, home plate in front of a tall backstop net, with the ends of the net
 Character: Hinano, an 18-year-old Japanese high school senior from a neighboring town, the younger sister of a laid-back university student. Straight black hair to the shoulders with blunt bangs, sharp but kind eyes, a strong-willed, stubborn look. A summer school uniform (white short-sleeve blouse, navy ribbon), a school bag with a faded red goldfish keychain.
 ```
 
+#### 6-6. 1-2 を3晩に分けた区画の部屋と、しげる（段階66。2026-10-18）
+
+1-2 も3晩に分けて作り直した。商店街の地図（`map.showa_street`）の左右（行19〜22）と上の辺の真ん中（列10〜13）を開ける手直し（2-1・1-1 と同じ、今の地図を付けた編集）と、寄り道の部屋3つ（左の路地裏、右の電器屋の裏通り、坂の上の先。今は 1-1 の部屋と同じ形の文字の地図。絵を頼む時に、部屋ごとの文字の地図と下絵を作る）。
+
+しげる（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a friendly, slightly nostalgic smile`）の後に。見本はあかりの笑顔の立ち絵（構図）
+
+```
+Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.
+```
+
 ### 7. 1枚絵：親方の背中（2-1-8）
 
 写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に
