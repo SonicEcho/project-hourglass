@@ -1,6 +1,7 @@
 import type { AreaDef, EnemyMove, EnemyTuning } from '../core/explore';
 import type { CampaignBattle } from './campaign';
-import { scaleEnemy } from './campaign';
+import { scaleEnemy, toughenEnemy } from './campaign';
+import type { EnemyDef } from '../core/types';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
@@ -44,6 +45,10 @@ export const AREA_TALK_RANGE = 1;
  */
 // 区画のボスの snaps は、勝った時に手に入るスナップ（段階41。宝箱の snaps・区画の returnSnaps と合わせて、アルバムの入れ替えに使う）
 // 勝利のアイテム・スナップは、段階55で 1つの区画の目安（docs/design/economy.md の 8.）にそろえた：消費アイテムは宝箱と合わせて3つ、スナップは宝箱とぬしで1〜3枚。星の砂（reward）は元のまま（星図は仲間ごとに開けるので、パーティ全体で目安どおりだった）
+/** 1-1 の砂嵐の HP の倍率（段階65。オートなしで、ふつうの戦闘が3〜4ラウンド・1〜3分になるように）。1晩目は、まだ仲間が育っていないので軽く */
+export const A11_STORM_HP = { night1: 1.4, later: 1.8 };
+const tough = (list: EnemyDef[], rate = A11_STORM_HP.later) => list.map((e) => toughenEnemy(e, rate));
+
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
   a11_storm2: { id: 'a11_storm2', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 5, item: ITEMS.ether.id, koma: 2 },
@@ -54,25 +59,25 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_runner: { id: 'a11_runner', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 3, item: ITEMS.natsuTail.id },
   // 1-1 を3晩に分けた区画の戦闘（段階63。本番の量）。コマを持つのは8つ（晩ごとに 3・3・2）。ほかは素材と星の砂だけ。
   // 晩が進むほど、組み合わせを強くする（3晩目は ×1.1〜1.2）
-  a11_n1_gate: { id: 'a11_n1_gate', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 3, koma: 1 },
-  a11_n1_chaser: { id: 'a11_n1_chaser', name: '砂嵐', enemies: [BALLOON_NOISE, GOLDFISH_NOISE], reward: 2 },
-  a11_n1_back: { id: 'a11_n1_back', name: '砂嵐', enemies: [MASK_NOISE, BALLOON_NOISE], reward: 2 },
-  a11_n1_road: { id: 'a11_n1_road', name: '砂嵐', enemies: [GOLDFISH_NOISE, BALLOON_NOISE], reward: 3, koma: 1 },
-  a11_n1_plaza: { id: 'a11_n1_plaza', name: '砂嵐', enemies: [BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
-  a11_n2_corridor: { id: 'a11_n2_corridor', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE], reward: 3, koma: 1 },
-  a11_n2_west1: { id: 'a11_n2_west1', name: '砂嵐', enemies: [COTTON_NOISE, BALLOON_NOISE, GOLDFISH_NOISE], reward: 2 },
-  a11_n2_west2: { id: 'a11_n2_west2', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE], reward: 4, item: ITEMS.hiPotion.id, koma: 1 },
-  a11_n2_east1: { id: 'a11_n2_east1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE, BALLOON_NOISE], reward: 2 },
-  a11_n2_east2: { id: 'a11_n2_east2', name: '砂嵐', enemies: [COTTON_NOISE, MASK_NOISE].map((e) => scaleEnemy(e, 1.1)), reward: 2 },
+  a11_n1_gate: { id: 'a11_n1_gate', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a11_n1_chaser: { id: 'a11_n1_chaser', name: '砂嵐', enemies: tough([BALLOON_NOISE, GOLDFISH_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a11_n1_back: { id: 'a11_n1_back', name: '砂嵐', enemies: tough([BALLOON_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a11_n1_road: { id: 'a11_n1_road', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, BALLOON_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a11_n1_plaza: { id: 'a11_n1_plaza', name: '砂嵐', enemies: tough([BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
+  a11_n2_corridor: { id: 'a11_n2_corridor', name: '砂嵐', enemies: tough([MASK_NOISE, COTTON_NOISE, GOLDFISH_NOISE]), reward: 3, koma: 1 },
+  a11_n2_west1: { id: 'a11_n2_west1', name: '砂嵐', enemies: tough([COTTON_NOISE, BALLOON_NOISE, GOLDFISH_NOISE]), reward: 2 },
+  a11_n2_west2: { id: 'a11_n2_west2', name: '砂嵐', enemies: tough([MASK_NOISE, COTTON_NOISE, BALLOON_NOISE]), reward: 4, item: ITEMS.hiPotion.id, koma: 1 },
+  a11_n2_east1: { id: 'a11_n2_east1', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, GOLDFISH_NOISE, BALLOON_NOISE]), reward: 2 },
+  a11_n2_east2: { id: 'a11_n2_east2', name: '砂嵐', enemies: tough([COTTON_NOISE, MASK_NOISE].map((e) => scaleEnemy(e, 1.1))), reward: 2 },
   // 金魚すくいの屋台の前の番人（2晩目の山場）
-  a11_n2_guard: { id: 'a11_n2_guard', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 5, koma: 1 },
-  a11_n3_steps: { id: 'a11_n3_steps', name: '砂嵐', enemies: [COTTON_NOISE, MASK_NOISE, GOLDFISH_NOISE].map((e) => scaleEnemy(e, 1.1)), reward: 2 },
-  a11_n3_right: { id: 'a11_n3_right', name: '砂嵐', enemies: [BALLOON_NOISE, BALLOON_NOISE, MASK_NOISE].map((e) => scaleEnemy(e, 1.1)), reward: 2 },
-  a11_n3_woods1: { id: 'a11_n3_woods1', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, GOLDFISH_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 2 },
-  a11_n3_woods2: { id: 'a11_n3_woods2', name: '砂嵐', enemies: [MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 4, koma: 1 },
+  a11_n2_guard: { id: 'a11_n2_guard', name: '砂嵐', enemies: tough([MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
+  a11_n3_steps: { id: 'a11_n3_steps', name: '砂嵐', enemies: tough([COTTON_NOISE, MASK_NOISE, GOLDFISH_NOISE].map((e) => scaleEnemy(e, 1.1))), reward: 2 },
+  a11_n3_right: { id: 'a11_n3_right', name: '砂嵐', enemies: tough([BALLOON_NOISE, BALLOON_NOISE, MASK_NOISE].map((e) => scaleEnemy(e, 1.1))), reward: 2 },
+  a11_n3_woods1: { id: 'a11_n3_woods1', name: '砂嵐', enemies: tough([MASK_NOISE, COTTON_NOISE, GOLDFISH_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 2 },
+  a11_n3_woods2: { id: 'a11_n3_woods2', name: '砂嵐', enemies: tough([MASK_NOISE, COTTON_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 4, koma: 1 },
   // ボスは最後のコマを抱えこんでいる（段階63から1つ。1-1 は合わせて8つで、返すのに8つ）
-  // 段階63で、17戦を通ってから挑むようになったので ×1.15（でたらめな方針で1回目に勝てるのが3〜4割の目安）
-  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [scaleEnemy(GOLDFISH_BOWL_LORD, 1.15)], reward: 8, boss: true, koma: 1, snaps: ['heavyBlow'] },
+  // 段階63で、17戦を通ってから挑むようになったので強めた。段階65：攻撃は元のまま、HP を1.5倍（じっくり戦う山場。でたらめな方針で1回目に勝てるのが3〜4割の目安）
+  a11_boss: { id: 'a11_boss', name: '金魚鉢のぬし', enemies: [toughenEnemy(GOLDFISH_BOWL_LORD, 1.5)], reward: 8, boss: true, koma: 1, snaps: ['heavyBlow'] },
   // 1-2 の商店街（段階37）。並びは出会う順（入口 → 駄菓子屋の手前 → 駄菓子屋と時計屋の間 → 時計屋の先 → 坂の手前）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。坂の手前の2戦は少し強い（ボスの手前の山）
   a12_storm1: { id: 'a12_storm1', name: '砂嵐', enemies: [TIN_NOISE, PHONE_NOISE], reward: 5, koma: 1 },
