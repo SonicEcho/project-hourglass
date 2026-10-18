@@ -152,7 +152,11 @@ try {
     } else if ((await scenes()).includes('Return')) {
       // 時間を返す画面（段階28）：「返す」→ 演出 →「次へ」
       await tap('^返す$');
-      await tap('^次へ$');
+      // 記憶の再生はタップで早送りできる。CI の遅い環境では画面の時間がゆっくり進み、15秒では「次へ」が出ないことがある（2026-10-18）
+      await page.waitForTimeout(600);
+      await tapAt(195, 400);
+      const next = await until('「^次へ$」が出る（返す演出の後）', () => findText('^次へ$'), 45000);
+      await tapAt(next.x, next.y);
       sawReturn = true;
     } else if ((await scenes()).includes('Battle')) {
       // 物語の戦闘（段階40。カイの負け戦）：ラウンドを進めると打ち切りの窓が出て、「次へ」で話の続きへ
