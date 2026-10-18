@@ -158,6 +158,9 @@ try {
       const next = await until('「^次へ$」が出る（返す演出の後）', () => findText('^次へ$'), 45000);
       await tapAt(next.x, next.y);
       sawReturn = true;
+    } else if ((await scenes()).includes('Battle') && (await page.evaluate(() => window.__restopia.scene('Battle').battle?.id)) !== 'a23_kai') {
+      // 探索の敵に追いつかれて始まった戦闘（段階59から追ってくる敵がいる。探索を飛ばす前に、遅い環境では追いつかれることがある）：次の出来事へ飛ばす
+      await debugButton('次の出来事へ飛ばす');
     } else if ((await scenes()).includes('Battle')) {
       // 物語の戦闘（段階40。カイの負け戦）：ラウンドを進めると打ち切りの窓が出て、「次へ」で話の続きへ
       for (let round = 0; round < 12 && !(await findText('^次へ$')); round++) {
