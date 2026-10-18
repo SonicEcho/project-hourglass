@@ -1,5 +1,6 @@
 import { formatBattleLog } from './battleLog';
 import { playtimeReport, resetPlaytime } from './playtime';
+import { debugAutoStory, setDebugAutoStory } from './debugFlag';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
 import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
@@ -195,6 +196,15 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button('ボス戦（戦闘5）から始める（育成はそのまま）', () => {
         close();
         nav.startBoss();
+      }),
+    );
+
+    // オート（段階64）：物語の1回目の探索ではオートを出さない。デバッグの時だけ出せる
+    const autoStory = debugAutoStory();
+    panel.append(
+      button(`物語の探索でもオートを出す：${autoStory ? '入' : '切'}（次の戦闘から）`, () => {
+        setDebugAutoStory(!autoStory);
+        render(`物語の探索でもオートを出す：${autoStory ? '切' : '入'}にしました`);
       }),
     );
 
