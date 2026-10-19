@@ -38,6 +38,10 @@ export const SE = {
   noise: 'se.noise',
   hangUp: 'se.hang_up',
   doorOpen: 'se.door_open',
+  // 段階68：持ち物が武器に変わる・光る（玄関のチャイムを使っていた所）と、自転車のベル（扉のベルで代わりにしていた所）
+  awaken: 'se.awaken',
+  sparkle: 'se.sparkle',
+  bicycleBell: 'se.bicycle_bell',
 } as const;
 
 /**

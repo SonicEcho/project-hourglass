@@ -545,6 +545,9 @@ export const SCRIPT_SE: Record<string, string | null> = {
   noise: SE.noise,
   hang_up: SE.hangUp,
   door_open: SE.doorOpen,
+  awaken: SE.awaken,
+  sparkle: SE.sparkle,
+  bicycle_bell: SE.bicycleBell,
 };
 
 /**
