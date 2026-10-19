@@ -508,10 +508,13 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   festival: BGM.festival,
   library: BGM.library,
   return: BGM.return,
-  // 段階73：しんみり・不穏な日常の曲（りくの休み、帰り道、ふみさんの家、電話）と、昭和の商店街の記憶の曲（1-2）。
-  // 曲が届くまでの代わり：somber は無音（null は曲を止める）、showa はレストピアの曲。届いたら BGM の id に替えるだけ（docs/ART.md の 6.）
-  somber: null,
-  showa: BGM.library,
+  // 段階73：しんみり・不穏な日常の曲と、昭和の商店街の記憶の曲（1-2）。段階75 で曲が届いた。しんみりは2曲に分けた：
+  // somber は教室で聞く知らせ（ピアノとチェロ）、uneasy は帰り道・家の前・電話（ぼんやりしたエレピ）
+  somber: BGM.somber,
+  uneasy: BGM.uneasy,
+  showa: BGM.showa,
+  // 段階75：夕暮れの時計屋（メインテーマを弦とセレスタで）
+  dusk: BGM.dusk,
 };
 
 /**

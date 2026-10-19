@@ -93,6 +93,14 @@ export const BGM = {
   return: 'bgm.return',
   battle: 'bgm.battle',
   boss: 'bgm.boss',
+  // 段階75：しんみり（教室の知らせ・帰り道や電話）、昭和の商店街の記憶（1-2）、夕暮れの時計屋、2-1 の町工場、2-2 の文化祭、カイとの戦い
+  somber: 'bgm.somber',
+  uneasy: 'bgm.uneasy',
+  showa: 'bgm.showa',
+  dusk: 'bgm.dusk',
+  factory: 'bgm.factory',
+  cultureFestival: 'bgm.culture_festival',
+  kai: 'bgm.kai',
 } as const;
 
 /**
@@ -112,6 +120,14 @@ export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
   [BGM.festival]: { start: 31.300499, end: 108.875011 },
   [BGM.battle]: { start: 23.359274, end: 56.955986 },
   [BGM.boss]: { start: 97.29161, end: 161.5222 },
+  // 段階75（2026-10-19）
+  [BGM.somber]: { start: 41.935238, end: 97.068662 },
+  [BGM.uneasy]: { start: 65.851791, end: 112.819501 },
+  [BGM.showa]: { start: 49.179864, end: 178.397642 },
+  [BGM.dusk]: { start: 55.449252, end: 136.002902 },
+  [BGM.factory]: { start: 26.935147, end: 72.079751 },
+  [BGM.cultureFestival]: { start: 19.272562, end: 93.281542 },
+  [BGM.kai]: { start: 20.57288, end: 53.588345 },
 };
 
 /**

@@ -1,9 +1,10 @@
 """Suno で作った曲を、ゲームの BGM に切り出す（2026-10-13。開発者が Suno の有料の版（Pro）で作った曲）。
 
-使い方: python3 scripts/suno_bgm.py <Suno から落とした mp3 のフォルダ> public/assets/bgm
-  （numpy と ffmpeg が要る。mp3 は Suno の曲の名前のまま落とす）
+使い方: python3 scripts/suno_bgm.py <Suno から落とした mp3 のフォルダ> public/assets/bgm [曲の名前 ...]
+  （numpy と ffmpeg が要る。mp3 は Suno の曲の名前のまま落とす。曲の名前を並べると、その曲だけを書き出す）
 
 切り方は scripts/maou_bgm.py と同じ2つ。書き出した後に表示する値を src/data/sounds.ts の BGM_LOOPS に、version と bytes を台帳（src/data/assets.ts）に書く。
+- S・E は scripts/suno_loop.py で探す（2026-10-19 から。それまでの曲は、同じ考え方でその場で探した）
 - loop：Suno の曲は同じ部分がそっくり繰り返すわけではないので、拍ごとの音の特徴（和音・音色・大きさ）が前後16拍で一番よく似た2点 S・E を探した
   （テンポの差が1%未満の所だけ。拍を合わせた後、波形が一番そろう位置にサンプル単位で寄せた）。鳴り始めの少し前から E までを流し、
   その後ろに [S, S+1秒) の写しを足す。E の直前 60ms は、戻り先 S の直前の音へなめらかに移す。くり返すのは S〜E
@@ -38,6 +39,21 @@ SONGS = [
     ('AttackAndStrike', 'suno_battle.mp3', 'loop', 1030144, 2511759),
     # ボス戦（1-1）：97.3秒 → 161.5秒（約64秒）
     ('FirstCombat', 'suno_boss_1_1.mp3', 'loop', 4290560, 7123129),
+    # 段階75（2026-10-19）。S・E は scripts/suno_loop.py（テンポのはっきりした曲は @bpm を付けて小節の区切りに限った）
+    # しんみり・教室の知らせ：41.9秒 → 97.1秒（約55秒）
+    ('TheEmptySeat', 'suno_somber.mp3', 'loop', 1849344, 4280728),
+    # しんみり・帰り道や電話：65.9秒 → 112.8秒（約47秒）
+    ('OnMyWayHome', 'suno_uneasy.mp3', 'loop', 2904064, 4975340),
+    # 昭和の商店街の記憶（1-2。日常の曲 ArcadeAfternoon を Cover した）：49.2秒 → 178.4秒（48小節。約129秒）
+    ('Arcade1988', 'suno_showa.mp3', 'loop', 2168832, 7867336),
+    # 夕暮れの時計屋（メインテーマ Paper Umbrella を Cover した）：55.4秒 → 136.0秒（約81秒）
+    ('GoldenHourTicking', 'suno_dusk.mp3', 'loop', 2445312, 5997728),
+    # 2-1 の町工場（昭和44年の冬）：26.9秒 → 72.1秒（16小節。約45秒）
+    ('LegacyOfMachine', 'suno_factory.mp3', 'loop', 1187840, 3178717),
+    # 2-2 の文化祭（平成18年の秋）：19.3秒 → 93.3秒（38小節。約74秒）
+    ('CultureFestival', 'suno_culture_festival.mp3', 'loop', 849920, 4113716),
+    # カイとの負け戦（2-3）：20.6秒 → 53.6秒（20小節。約33秒。だんだん大きくなる曲なので、--min 28 で探した）
+    ('KaiGlitchBattle', 'suno_kai.mp3', 'loop', 907264, 2363246),
     # 2026-10-13 の最初の版のボス戦（Paper Umbrella を Cover した和風メタル。81.2秒 → 170.2秒）は、ラスボスの候補として残し、ゲームからは外した
 ]
 
@@ -64,8 +80,11 @@ def offset(x):
     return len(m) - int(np.argmax(m[::-1] > 1e-3))
 
 
+only = set(sys.argv[3:])
 result = {}
 for name, fname, mode, s, e in SONGS:
+    if only and name not in only:
+        continue
     x = decode(f'{src}/{name}.mp3')
     if mode == 'loop':
         a = max(0, onset(x) - int(0.3 * SR))

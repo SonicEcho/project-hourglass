@@ -1720,7 +1720,7 @@ export const SCRIPT_M2 = `
 
 # d5_fumi_house 5日目：帰り道・ふみさんの家の前
 @bg river_path
-@bgm somber
+@bgm uneasy
 @cast ハルト あかり
 あかり〔心配〕「……あれ、ふみさんの家？」
 〈地の文〉古い一軒家の前に、段ボールが積んであった。門には、引っ越しのお知らせの紙。
@@ -1861,7 +1861,7 @@ export const SCRIPT_M2 = `
 
 # d6_fumi_call 6日目：朝・ふみさんからの電話
 @bg clock_shop_day
-@bgm somber
+@bgm uneasy
 @clock tick many
 @cast ハルト
 @se phone
@@ -1984,7 +1984,7 @@ export const SCRIPT_M2 = `
 
 # d4_evening 7日目：夕暮れ・1章の終わり
 @bg clock_shop
-@bgm title
+@bgm dusk
 @clock tick many
 @cast ハルト あかり
 〈地の文〉店じまいの片付けをしながら、壁の時計を一つずつ見ていく。
