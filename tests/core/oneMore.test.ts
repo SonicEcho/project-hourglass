@@ -154,8 +154,8 @@ describe('バトンタッチ', () => {
     expect(s.extra).toMatchObject({ actorId: 'akari', boost: true, chain: ['hero', 'akari'] });
     s.allies[2].hp = 10;
     s = applyExtra(s, { type: 'skill', skillId: 'care', target: { kind: 'ally', id: 'mio' } });
-    // 50 × 20 ÷ 20 = 50 → ×1.25 = 62
-    expect(eventsOf(s, 'heal')[0].amount).toBe(62);
+    // 45 × 20 ÷ 20 = 45 → ×1.25 = 56（段階71でケアの回復を 50→45 にした）
+    expect(eventsOf(s, 'heal')[0].amount).toBe(56);
   });
 
   it('渡してきた仲間には渡し返せない', () => {

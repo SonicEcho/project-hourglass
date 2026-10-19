@@ -57,7 +57,7 @@ function detailOf(scene: Phaser.Scene): string {
 }
 
 function currentLabel(game: Phaser.Game): PlaytimeLabel | null {
-  const active = game.scene.getScenes(true);
+  const active = game.scene.getScenes(true).filter((s) => s.scene.key !== 'Preload');
   const scene = PRIORITY.map((key) => active.find((x) => x.scene.key === key)).find(Boolean) ?? active[0];
   if (!scene) return null;
   return { event: run.active ? run.event : '（物語の外）', scene: scene.scene.key, detail: detailOf(scene) };

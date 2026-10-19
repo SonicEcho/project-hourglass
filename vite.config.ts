@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process';
+import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
 // GitHub Pages のサブパス（https://<user>.github.io/project-hourglass/）で動かすため
@@ -20,6 +21,26 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     __COMMIT_ID__: JSON.stringify(shortCommitId()),
   },
+  plugins: [
+    // 端末にしまう（段階70。docs/design/tech.md の 7.）：一度開いたら、ゲーム全部を裏で端末にしまい、2回目からすぐ起動し、オフラインでも遊べる。
+    // 新しい版を公開した後は、変わったファイルだけを読み直し、次に開いた時から新しい版になる
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'script-defer',
+      // ホーム画面に追加するための設定ファイルは public/manifest.webmanifest（自分で書いたもの）を使う
+      manifest: false,
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,webp,png,svg,mp3,woff2,webmanifest}'],
+        // まばたき・口パクの元の絵（画面では使わない）は、しまわない
+        globIgnores: ['**/*_src.webp'],
+        // BGM は1曲2MB ほど
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        // BGM は版の印（?v=）を付けて読むので、その印は無視して同じファイルとみなす。?debug=1 などで開いた時も、しまったページを出す
+        ignoreURLParametersMatching: [/^v$/, /^debug$/, /^seed$/],
+        cleanupOutdatedCaches: true,
+      },
+    }),
+  ],
   build: {
     // Phaser 本体が大きいため警告の閾値を上げる
     chunkSizeWarningLimit: 2000,

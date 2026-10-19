@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
-import { addImageOr } from '../assets/loader';
+import { addImageOr, background } from '../assets/loader';
 import { addButton, addText } from '../ui/widgets';
 import { playBgm, playSand, stopAmbience } from '../audio/sound';
 import { prepareBgm } from '../audio/bgmStore';
@@ -233,7 +233,8 @@ export class TitleScene extends Phaser.Scene {
    * 取れなかった時は「もう一度」と「曲なしで進む」（曲なしで進んだら、流す時にその場で読む）
    */
   private waitBgm(job: BgmJob, go: () => void): void {
-    if (job.state === 'ok') {
+    // 裏で読んでいる絵（段階69）も、読み終えるまで待つ
+    if (job.state === 'ok' && background.done) {
       go();
       return;
     }
@@ -252,6 +253,14 @@ export class TitleScene extends Phaser.Scene {
     const buttons = this.add.container(0, 0);
     layer.add(buttons);
     const show = () => {
+      // 絵を読み終えるまでは、絵の進み具合（段階69）
+      if (!background.done) {
+        title.setText('絵を読み込んでいます');
+        bar.width = barW * (background.total > 0 ? Math.min(1, background.loaded / background.total) : 0);
+        amount.setText(`${background.loaded} / ${background.total}`);
+        return;
+      }
+      title.setText('曲を読み込んでいます');
       if (job.total > 0) {
         bar.width = barW * Math.min(1, job.loaded / job.total);
         amount.setText(`${mb(job.loaded)} / ${mb(job.total)}MB`);
@@ -263,7 +272,7 @@ export class TitleScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (job.state !== 'error') show();
-        if (job.state === 'ok') {
+        if (job.state === 'ok' && background.done) {
           timer.remove();
           cam.fadeOut(200, 0, 0, 0);
           cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, go);
@@ -281,9 +290,10 @@ export class TitleScene extends Phaser.Scene {
           }, { size: 16, bold: true });
           addButton(this, buttons, cx, 606, 220, 52, '曲なしで進む', {
             onTap: () => {
-              timer.remove();
+              // 曲は流す時にその場で読む。絵（段階69）は読み終えるまで待ってから進む
+              buttons.removeAll(true);
               this.input.enabled = false;
-              go();
+              job.state = 'ok';
             },
           }, { size: 15 });
         }

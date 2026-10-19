@@ -57,7 +57,8 @@ export function installTestHook(game: Phaser.Game): void {
     bgm: () => currentBgm(),
     bgmHead: () => bgmFromHead(),
     start: (key, data) => {
-      for (const s of game.scene.getScenes(true)) s.scene.stop();
+      // 裏で読み込んでいる画面（段階69）は止めない
+      for (const s of game.scene.getScenes(true)) if (s.scene.key !== 'Preload') s.scene.stop();
       game.scene.start(key, data);
     },
     scene: (key) => game.scene.getScene(key) ?? null,
