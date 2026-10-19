@@ -1102,8 +1102,8 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 | --- | --- | --- | --- | --- | --- |
 | みお | 10歳（小学4年）・今 | 3人目の仲間（2章の 5-C で加入）。商店街の「助っ人」で、少年野球にも祭りにも顔を出す。武器は切り札のトランプ（呼び名は「ジョーカーズ」） | 元気で声が大きく、いつも走っている。何にでも名前をつける。2年前の夏、遊びに誘った友だちを事故で亡くしたが、その日の楽しかった時間は盗まれていて、事故のことしか覚えていない（本人は気づいていない。7章で回収）。1〜6章は明るい子として過ごす | 明るい茶色のショート、横に小さな結び（橙の髪ゴム）、大きな茶色の目、丸いほお、少し日焼けした鼻。黄色の無地のTシャツ、紺の半ズボン、右手首に白と橙のリストバンド、ひざに絆創膏、赤いスニーカー。立ち絵の高さは 360（子どもの3人と同じ） | 通常・笑顔・大笑い・驚き・むっ・真剣・泣き笑い・照れ・考える・心配・悔しい・困り笑い |
 | カイ | 20歳くらい・未来 | 時間保管局のアーカイバー。ハルトが消えた後「一番のアーカイバー」と呼ばれる。2-3 で負け戦の相手になり、時間を持ち去る。後半は味方につく | 傲慢で皮肉屋、冷たく、人を見下す。その裏で、越えられなかった「消えた天才」（ハルト）をずっと追ってきたライバル。戦い方は「切り取る」（音はカメラのシャッター） | 灰色がかった金髪のオールバック（前髪を1〜2本垂らす、横は短い）、細く鋭い鋼色の灰色の目（ハルトに似せない。5-3 の 2.）。ノアと同じ白い詰め襟のロングコート（青緑の細い線）を前を開けてだらしなく着る、黒いハイネック、黒いズボン、白いブーツ、砂時計の留め具はベルトに。武器は四角い枠の形の刃「フレーム」 | 余裕・見下す・通常・真剣 |
-| ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 寝ぐせの残る黒い短髪、眠たげな目、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札） | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
-| 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影。短い黒髪、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
+| ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 明るいアッシュブラウンに染めた少し長めの髪を、うなじで小さく結ぶ（前髪は目にかけない）、垂れ目、左目の下に泣きぼくろ、左耳に小さな銀のピアス、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札）。2026-10-19：黒髪で前髪が目にかかる最初の絵がハルトに似たので替えた | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
+| 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影（垂れ目と左目の下の泣きぼくろ）。短い黒髪（染めるのは大学から）、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
 | 写しのひなの | 小学1年・同じ縁日 | ゆうまの妹。金魚に「なつ」と「まつり」と名付ける | 甘えん坊で、兄のあとを追いかける | ゆうまに似た目、短い二つ結び、薄い桃色の浴衣（朝顔の柄。子どものあかりの「白地に赤い金魚」と重ならないように） | 笑顔・泣き |
 | いさむ | 75歳・今 | 2-1 の持ち主。みおの祖父で、小さな町工場の歯車職人 | 口数が少なく頑固だが、目は優しい | 小柄でやせている、白髪の短髪、細い丸眼鏡、深いしわ。色あせた作業着の上に古い茶色のカーディガン | 通常・笑顔・考える・さみしげ・泣き笑い |
 | 写しのいさむ | 18歳・昭和44年（1969年）の冬 | 町工場の見習い。親方の源三に「いい仕事だ」と言われる日 | ひたむきで不器用 | 坊主に近い短髪、寒さで赤いほお、油で汚れた灰色の作業着。みおに似た目 | 真剣・驚き・泣き笑い・通常 |
@@ -1148,16 +1148,16 @@ M1 の残り（18・19）は、今は絵なしや色の加工で通せている�
 
 ### M1 の残りの指示文（2026-10-11 に足した。頭は 5-3 の共通部分）
 
-**ゆうま**：立ち絵の頭（`<表情>` は `a tired, laid-back expression with sleepy half-lidded eyes, but kind`）の後に
+**ゆうま**：立ち絵の頭（`<表情>` は `a relaxed, easygoing half-smile with sleepy droopy eyes, but kind`）の後に。ハルトに似ないよう、2026-10-19 に髪と目元を替えた（ハルトの立ち絵も添付して最後の1文で比べさせる）
 
 ```
-Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and a little sleepy-looking, but kind and friendly. Messy short black hair with a bit of bed head, sleepy eyes, clean-shaven. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text.
+Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and easygoing, but kind and friendly. Hair dyed a light ash-brown, grown a little long, loosely tied back in a small low ponytail at the nape, with a few loose strands framing his face and the forehead mostly visible (no heavy bangs over the eyes). Gentle droopy eyes (tareme) with light brown irises, a small beauty mark under his left eye, a small silver stud earring in his left ear, clean-shaven, a slightly lanky build. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text. He must look clearly different from the attached black-haired boy with messy bangs.
 ```
 
 **写しのゆうま**：ゆうまの立ち絵も添付。立ち絵の頭（`<表情>` は `a bright, big-brotherly grin`）の後に
 
 ```
-Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same face features so he is clearly the same person, with childlike proportions. Short black hair, a plain navy summer yukata.
+Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same gentle droopy eyes and the small beauty mark under his left eye so he is clearly the same person, with childlike proportions. Natural black short hair (he dyes it only later), a plain navy summer yukata.
 ```
 
 **写しのひなの**：写しのゆうまの立ち絵も添付。立ち絵の頭（`<表情>` は `a big happy smile`）の後に
@@ -1267,7 +1267,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 | 1 | 子どものあかり | むっ・驚き・大笑い・照れ・悲しい・デジャヴ | 笑顔（`young_akari_smile`） | `soft chestnut-brown short bob, a small red goldfish hair clip on the left, white summer yukata with small red goldfish, childlike proportions` |
 | 2 | 子どものりく | 通常・驚き・にやり・あせり・照れ | 得意げ（`young_riku_proud`） | `short spiky dark-brown hair, a small bandage on his cheek, navy jinbei with a simple white pattern, childlike proportions` |
 | 3 | 子どものハルト | 驚き・照れ・困り | 通常（`young_hero_normal`） | `messy short black hair with one sand-gold strand in the bangs, amber eyes, white T-shirt and an open navy zip hoodie, childlike proportions` |
-| 4 | ゆうま | 笑顔・考える・泣き笑い・苦笑い・驚き | 通常（ChatGPT の 11 ができてから） | `messy short black hair with a bit of bed head, sleepy eyes, vertically striped convenience store shirt and a plain apron` |
+| 4 | ゆうま | 笑顔・考える・泣き笑い・苦笑い・驚き | 通常（ChatGPT の 11 ができてから） | `light ash-brown hair tied back in a small low ponytail, droopy eyes, a small beauty mark under his left eye, a small silver stud earring, vertically striped convenience store shirt and a plain apron` |
 | 5 | 写しのひなの | 泣き | 笑顔（ChatGPT の 12 ができてから） | `short black hair in two small pigtails, pale pink yukata with a morning glory pattern, childlike proportions` |
 
 | 表情 | `<表情>` |
