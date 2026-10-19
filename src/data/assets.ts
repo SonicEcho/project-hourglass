@@ -422,6 +422,7 @@ const enemyHead = (era: string, few = false) =>
   `It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (${era}). Eerie but not gory, readable as a small silhouette on a phone screen. ` +
   (few ? "Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance. " : '');
 const SHOWA_COLORS = 'sepia, faded green and orange';
+const HEISEI_COLORS = 'bright pastel and light blue';
 /** 白い背景を抜いた敵の絵の設定（rembg は砂とノイズの体を背景とみなして消すので、白を抜く道具を使った） */
 const ENEMY_CUT = '元の絵は 1254×1254。白い背景は scripts/cutout_white.py（広い白を抜き、小さな白い光りは残す）で抜き、640×640 に縮めた。見本の絵：ブリキノイズ';
 
@@ -1377,6 +1378,89 @@ export const ASSETS: AssetEntry[] = [
     '見本の絵：今の 2-1 の地図（絵柄の見本）と、下絵 docs/sketches/room_bath_alley.png。元の絵は 1254×1254。1024×1024（24×24マス）に縮めて WebP にした。絵は下絵どおりではないので、歩ける場所の文字の地図は絵に合わせて書いた（rooms.ts の BATH_ALLEY_LAYOUT）',
     'M2 の 2-1 の寄り道の部屋（docs/ART.md の 6-2）。2-1 の路地の右の辺につながる。追ってくる砂嵐と宝箱',
     '2026-10-17',
+  ),
+  // 1-1 の人たちと敵（2026-10-19。docs/ART.md の 6-7 の作る順番の 1〜3。ゆうまは、最初の絵がハルトに似たので髪と目元を替えて作り直した）
+  chatgptPortrait(
+    'yuma',
+    'ゆうま',
+    'smile',
+    '笑顔',
+    portraitHead('a relaxed, easygoing half-smile with sleepy droopy eyes, but kind') +
+      'Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and easygoing, but kind and friendly. Hair dyed a light ash-brown, grown a little long, loosely tied back in a small low ponytail at the nape, with a few loose strands framing his face and the forehead mostly visible (no heavy bangs over the eyes). Gentle droopy eyes (tareme) with light brown irises, a small beauty mark under his left eye, a small silver stud earring in his left ear, clean-shaven, a slightly lanky build. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text. He must look clearly different from the attached black-haired boy with messy bangs.',
+    'あかりの笑顔の立ち絵（構図の見本）と、ハルトの立ち絵（似せないため）',
+    '1-1 の持ち主（docs/ART.md の 6-7 の 2）。口を開けた笑顔で出てきたので、笑顔の絵にした（ほかの表情は、絵が届くまで笑顔で代わりに出す）',
+    '2026-10-19',
+  ),
+  chatgptPortrait(
+    'past_yuma',
+    '写しのゆうま',
+    'smile',
+    '笑顔',
+    portraitHead('a bright, big-brotherly grin', 'the little girl in the yukata, with the same childlike proportions') +
+      'Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same gentle droopy eyes and the small beauty mark under his left eye so he is clearly the same person, with childlike proportions. Natural black short hair (he dyes it only later), a plain navy summer yukata.',
+    'ゆうまの立ち絵と、子どものあかりの笑顔の立ち絵（構図の見本）',
+    '1-1 の写し（docs/ART.md の 6-7 の 3）',
+    '2026-10-19',
+  ),
+  chatgptPortrait(
+    'past_hinano',
+    '写しのひなの',
+    'smile',
+    '笑顔',
+    portraitHead('a big happy smile', 'the little girl in the yukata, with the same childlike proportions') +
+      "Character: young Hinano, the 7-year-old little sister of the attached boy, at a summer shrine festival. Eyes that resemble her brother's, round cheeks, childlike proportions. Short black hair in two small pigtails. A pale pink summer yukata with a morning glory pattern and a yellow obi sash (no goldfish pattern).",
+    '写しのゆうまの立ち絵と、子どものあかりの笑顔の立ち絵（構図の見本）',
+    '1-1 の写し（docs/ART.md の 6-7 の 3）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.goldfish_noise',
+    '敵の絵（金魚ノイズ）',
+    'assets/enemies/goldfish_noise.webp',
+    enemyHead(HEISEI_COLORS, true) + 'Body: a big red goldfish swimming in the air, trailing torn festival water bags and splashes, its fins fraying into static',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.balloon_noise',
+    '敵の絵（水風船ノイズ）',
+    'assets/enemies/balloon_noise.webp',
+    enemyHead(HEISEI_COLORS, true) +
+      'Body: a bunch of bouncing festival water balloons (yo-yo balloons) on rubber strings, wobbling and splashing, each balloon round with simple colorful stripes',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.mask_noise',
+    '敵の絵（お面ノイズ）',
+    'assets/enemies/mask_noise.webp',
+    enemyHead(HEISEI_COLORS, true) +
+      'Body: a cluster of three festival character masks (a plain white fox mask, a red oni mask and a round-face mask, no famous characters) stacked like a totem, glaring',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.cotton_noise',
+    '敵の絵（わたあめノイズ）',
+    'assets/enemies/cotton_noise.webp',
+    enemyHead(HEISEI_COLORS, true) + 'Body: a fluffy cloud of pink cotton candy on a wooden stick, sticky strands reaching out like arms',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.goldfish_bowl_boss',
+    '敵の絵（金魚鉢のぬし）',
+    'assets/enemies/goldfish_bowl_boss.webp',
+    enemyHead(HEISEI_COLORS, true) +
+      'A large boss monster, filling most of the image. ' +
+      'Body: a giant round glass goldfish bowl with swirling water inside and many goldfish circling, two arms made of paper goldfish scoops (poi), water overflowing as waves',
+    ENEMY_CUT,
+    '1-1 のボス（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
   ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait(

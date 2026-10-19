@@ -161,13 +161,34 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 520, wave: 'triangle' },
   },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
+  // 1-1 の人たち（2026-10-19）。ゆうまと写しの2人は笑顔の絵だけある（ほかの表情は、絵が届くまで笑顔で代わりに出す）。写しはセピアをかける
+  ゆうま: {
+    portrait: 'portrait.yuma',
+    ...young(['笑顔', '通常', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0x8a7a5a,
+    height: 450,
+    voice: { pitch: 290, wave: 'square' },
+  },
   // 電器屋の主人（今45歳。段階66の 1-2 の書き直し。昭和63年の「電器屋の子ども」）。立ち絵はまだない（色の札）
   しげる: { faces: names('笑顔', '驚き', '苦笑い', '通常', 'さみしげ', '考える'), firstFace: '笑顔', color: 0x7a8aa0, voice: { pitch: 300, wave: 'square' } },
   // ゆうまの妹（今18歳。段階63の 1-1 の書き直し）。立ち絵はまだない（色の札）
   ひなの: { faces: names('通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'), firstFace: '通常', color: 0xc08aa0, voice: { pitch: 620, wave: 'triangle' } },
-  写しのゆうま: { faces: names('笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
-  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
+  写しのゆうま: {
+    portrait: 'portrait.past_yuma',
+    ...young(['笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0x9aa0b0,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 540, wave: 'square' },
+    tint: SEPIA_TINT,
+  },
+  写しのひなの: {
+    portrait: 'portrait.past_hinano',
+    ...young(['笑顔', '泣き'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0xb0a0b8,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 700, wave: 'square' },
+    tint: SEPIA_TINT,
+  },
   // M2（段階35）。みおは笑顔の絵だけある（2026-10-13。ほかの表情は Gemini で作るまで笑顔で代わりに出す）。ふみは全部の表情の絵がある（2026-10-11）
   みお: {
     portrait: 'portrait.mio',
