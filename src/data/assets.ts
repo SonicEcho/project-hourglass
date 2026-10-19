@@ -1546,11 +1546,73 @@ export const ASSETS: AssetEntry[] = [
     '写しのきよし',
     'shy',
     '照れ',
-    'short cropped black hair, sun-tanned face, faded navy work jacket over a white undershirt',
-    'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile',
+    'short cropped black hair, sun-tanned face, stern brows, faded navy work jacket over a white undershirt',
+    'gruffly hiding his embarrassment: face turned slightly away and eyes looking off to the side, mouth pressed into a stubborn straight line, brows slightly drawn together as if annoyed, no smile and no teeth showing. Only a faint blush on the cheeks and reddened ear tips give away that he is embarrassed. A quiet, awkward middle-aged man who is bad at showing his feelings.',
     '通常',
-    'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける',
+    'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける。2026-10-19 に作り直した（最初の照れは歯を見せて大きく赤くなり、口数の少ない頑固な人に合わなかった）',
   ),
+  // 1-1 の人たちの表情違い（2026-10-19。docs/ART.md の 6-7 の Gemini の 1〜3）
+  ...(
+    [
+      ['normal', '通常', 'relaxed and a little sleepy, droopy half-lidded eyes, mouth closed in a faint lazy smile'],
+      ['thinking', '考える', 'thoughtful, eyes looking up and aside, mouth slightly pursed'],
+      ['wry', '苦笑い', 'a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled'],
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'],
+      ['teary', '泣き笑い', 'smiling through tears, eyes wet and slightly narrowed, a trembling smile'],
+      ['lonely', 'さみしげ', 'quietly lonely, a faint sad smile, eyes looking down'],
+      ['serious', '真剣', 'serious and focused, mouth firmly closed, brows set, eyes steady and determined'],
+    ] as const
+  ).map(
+    ([face, title, expression]): AssetEntry => ({
+      ...geminiFace(
+        'yuma',
+        'ゆうま',
+        face,
+        title,
+        'light ash-brown hair tied back in a small low ponytail, droopy eyes, a small beauty mark under his left eye, a small silver stud earring, vertically striped convenience store shirt and a navy apron with a blank name tag',
+        expression,
+        '笑顔',
+        '1-1 の持ち主',
+      ),
+      acquiredAt: '2026-10-19',
+    }),
+  ),
+  ...(
+    [
+      ['normal', '通常', 'relaxed and natural, mouth closed'],
+      ['shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile'],
+      ['pout', 'ふくれ', 'sulking, cheeks puffed, frowning a little, eyes looking aside'],
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'],
+      ['angry', '怒り', 'an irritated little boy snapping at someone, brows sharply drawn together, mouth open as if shouting, cheeks slightly flushed'],
+    ] as const
+  ).map(
+    ([face, title, expression]): AssetEntry => ({
+      ...geminiFace(
+        'past_yuma',
+        '写しのゆうま',
+        face,
+        title,
+        'short black hair, droopy eyes, a small beauty mark under his left eye, navy striped summer yukata, childlike proportions',
+        expression,
+        '笑顔',
+        '1-1 の写し。ノイズとセピアの加工はゲームの側でかける',
+      ),
+      acquiredAt: '2026-10-19',
+    }),
+  ),
+  {
+    ...geminiFace(
+      'past_hinano',
+      '写しのひなの',
+      'cry',
+      '泣き',
+      'short dark hair in two small pigtails with pink flower hair ties, pale pink yukata with a morning glory pattern and a yellow obi, childlike proportions',
+      'crying like a hurt little child, tears running down her cheeks, eyes squeezed half shut, mouth open and trembling, brows drawn up in sadness',
+      '笑顔',
+      '1-1 の写し。ノイズとセピアの加工はゲームの側でかける',
+    ),
+    acquiredAt: '2026-10-19',
+  },
   // りくの口パクの元の絵（2026-10-11。docs/ART.md の 5-4）。表情ごとに、口だけ開けた絵。会話には出さず、口のまわりだけ切り抜く
   ...(['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] as const).map(
     (f): AssetEntry => ({

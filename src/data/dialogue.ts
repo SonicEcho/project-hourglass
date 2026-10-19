@@ -161,10 +161,14 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 520, wave: 'triangle' },
   },
-  // 1-1 の人たち（2026-10-19）。ゆうまと写しの2人は笑顔の絵だけある（ほかの表情は、絵が届くまで笑顔で代わりに出す）。写しはセピアをかける
+  // 1-1 の人たち（2026-10-19）。ゆうまと写しの2人は、台本で使う表情がそろった。写しはセピアをかける
   ゆうま: {
     portrait: 'portrait.yuma',
-    ...young(['笑顔', '通常', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'], { 笑顔: 'smile' }, '笑顔'),
+    ...young(
+      ['笑顔', '通常', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'],
+      { 笑顔: 'smile', 通常: 'normal', 考える: 'thinking', 泣き笑い: 'teary', 苦笑い: 'wry', 驚き: 'surprised', 真剣: 'serious', さみしげ: 'lonely' },
+      '通常',
+    ),
     color: 0x8a7a5a,
     height: 450,
     voice: { pitch: 290, wave: 'square' },
@@ -175,7 +179,7 @@ export const CAST: Record<string, CastMember> = {
   ひなの: { faces: names('通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'), firstFace: '通常', color: 0xc08aa0, voice: { pitch: 620, wave: 'triangle' } },
   写しのゆうま: {
     portrait: 'portrait.past_yuma',
-    ...young(['笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'], { 笑顔: 'smile' }, '笑顔'),
+    ...young(['笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'], { 笑顔: 'smile', ふくれ: 'pout', 怒り: 'angry', 驚き: 'surprised', 通常: 'normal', 照れ: 'shy' }, '笑顔'),
     color: 0x9aa0b0,
     height: YOUNG_HEIGHT,
     voice: { pitch: 540, wave: 'square' },
@@ -183,7 +187,7 @@ export const CAST: Record<string, CastMember> = {
   },
   写しのひなの: {
     portrait: 'portrait.past_hinano',
-    ...young(['笑顔', '泣き'], { 笑顔: 'smile' }, '笑顔'),
+    ...young(['笑顔', '泣き'], { 笑顔: 'smile', 泣き: 'cry' }, '笑顔'),
     color: 0xb0a0b8,
     height: YOUNG_HEIGHT,
     voice: { pitch: 700, wave: 'square' },
