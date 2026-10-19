@@ -212,6 +212,28 @@ export function installDebugMenu(nav: DebugNavigator): void {
     panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', 'プレイ時間の記録（段階63。出来事・画面・場面ごと）'));
     panel.append(button('プレイ時間の記録を見る', () => showPlaytime()));
 
+    // 端末にしまった物（段階70）：Service Worker が動いているかと、しまったファイルの数。困った時は全部消して取り直す
+    panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', '端末にしまった物（段階70。オフラインで遊ぶため）'));
+    panel.append(
+      button('しまった状態を見る', () => {
+        void (async () => {
+          const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
+          const sw = regs[0] ? (regs[0].active ? '動いている' : 'しまっている途中') : 'なし';
+          const names = typeof caches === 'undefined' ? [] : await caches.keys();
+          let files = 0;
+          for (const n of names) files += (await (await caches.open(n)).keys()).length;
+          notify(`Service Worker：${sw}　しまった物：${files}個（${names.join('、') || 'なし'}）`);
+        })();
+      }),
+      button('しまった物を全部消す（次に開いた時に取り直す）', () => {
+        void (async () => {
+          for (const r of (await navigator.serviceWorker?.getRegistrations()) ?? []) await r.unregister();
+          if (typeof caches !== 'undefined') for (const n of await caches.keys()) await caches.delete(n);
+          notify('しまった物を消しました。ページを開き直すと取り直します（セーブは消えません）');
+        })();
+      }),
+    );
+
     // 物語の流れ（段階23）：出来事を飛ばす・選んで飛ぶ
     const now = currentEvent();
     panel.append(el('div', 'margin-top:12px;color:#9fb3c8;', `物語の流れ（段階23）：今は「${now.title}」（${now.id}・${run.progress.day}日目）`));
