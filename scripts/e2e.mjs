@@ -38,7 +38,8 @@ async function until(what, fn, timeout = 15000) {
 
 const findText = (pattern) => page.evaluate((p) => window.__restopia.findText(p), pattern);
 const scenes = () => page.evaluate(() => window.__restopia?.scenes() ?? []);
-const waitScene = (key) => until(`画面「${key}」`, async () => (await scenes()).includes(key));
+// タイトルは、ページを開き直した直後に、台帳の絵をまとめて読み込んでから出る（立ち絵が増えて、遅い環境では15秒を超える。2026-10-19）
+const waitScene = (key) => until(`画面「${key}」`, async () => (await scenes()).includes(key), key === 'Title' ? 60000 : undefined);
 
 /** 390×844 の座標を、ページの座標にしてタップする */
 async function tapAt(x, y) {
