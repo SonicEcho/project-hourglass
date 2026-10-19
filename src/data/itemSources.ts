@@ -19,7 +19,7 @@ export function itemSources(id: string): string[] {
   const pct = (n: number) => `${Math.round(n * 100)}%`;
   for (const e of knownEnemies()) {
     const t = e.dropTable;
-    if (t?.common === id) out.push(`${e.name}（いつも）`);
+    if (t?.common === id) out.push(`${e.name}（いつもの ${pct(DROP_RATES.normal.common)}）`);
     if (t?.uncommon === id) out.push(`${e.name}（珍しい ${pct(DROP_RATES.normal.uncommon)}）`);
     if (t?.rare === id) out.push(`${e.name}（レア ${pct(DROP_RATES.normal.rare)}）`);
     if (e.drops?.includes(id)) out.push(`${e.name}（必ず）`);
