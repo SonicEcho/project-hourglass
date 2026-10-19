@@ -26,7 +26,7 @@ import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss } from '../ui/theme';
-import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, RARITY_LABEL } from '../ui/weaponText';
+import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
@@ -51,6 +51,8 @@ export class WeaponScene extends Phaser.Scene {
   private charId = 'hero';
   /** 下の段のタブ */
   private tab: 'items' | 'fragments' = 'items';
+  /** 素材の絞り込み（段階72）：選んだ能力値を上げる素材だけを、上げ幅の大きい順に並べる。null なら全部 */
+  private filter: WeaponParamKey | null = null;
   /** 素材の一覧のページ（多い時） */
   private page = 0;
   /** 選んでいる素材・アイテム、または記憶の欠片 */
@@ -460,10 +462,11 @@ export class WeaponScene extends Phaser.Scene {
     // ポーチの消費アイテム（段階51）は素材の一覧に出さない（吸わせられず、時分解もできない）
     const itemTotal = Object.entries(run.armory.items).reduce((a, [id, n]) => a + (D.items[id]?.kind === 'material' ? n : 0), 0);
     const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
-    const tabW = (GAME_WIDTH - SIDE_PADDING * 2 - 6) / 2;
+    // タブは左に寄せ、右に素材の絞り込み（攻・火・氷・雷。段階72）を並べる
+    const tabW = 96;
     (['items', 'fragments'] as const).forEach((tab, i) => {
       const active = this.tab === tab;
-      const label = tab === 'items' ? `素材（${itemTotal}）` : `記憶の欠片（${fragTotal}）`;
+      const label = tab === 'items' ? `素材（${itemTotal}）` : `欠片（${fragTotal}）`;
       addButton(
         this,
         this.root,
@@ -486,8 +489,31 @@ export class WeaponScene extends Phaser.Scene {
     });
 
     const isItems = this.tab === 'items';
+    if (isItems) {
+      const chipW = 38;
+      const chipX = SIDE_PADDING + tabW * 2 + 6 + 8;
+      (['atk', 'fire', 'ice', 'thunder'] as const).forEach((k, i) => {
+        const on = this.filter === k;
+        addButton(this, this.root, chipX + chipW / 2 + i * (chipW + 4), FRAG_TOP + 15, chipW, 30, PARAM_SHORT[k], {
+          onTap: () => {
+            this.filter = on ? null : k;
+            this.selected = null;
+            this.page = 0;
+            this.message = '';
+            this.render();
+          },
+        }, { fill: on ? PARAM_COLOR[k] : COLORS.panel, stroke: PARAM_COLOR[k], strokeWidth: on ? 2 : 1, size: 13, bold: true });
+      });
+    }
     // 素材は持っているものだけ（多い時はページを切り替える）。記憶の欠片は4種類とも出す
-    const ids = isItems ? Object.keys(ITEMS).filter((id) => D.items[id]?.kind === 'material' && (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
+    // 絞り込み（段階72）：その能力値を上げる素材だけを、上げ幅の大きい順（同じなら数の多い順）に
+    const filter = isItems ? this.filter : null;
+    const owned = isItems ? Object.keys(ITEMS).filter((id) => D.items[id]?.kind === 'material' && (run.armory.items[id] ?? 0) > 0) : Object.keys(FRAGMENTS);
+    const ids = filter
+      ? owned
+          .filter((id) => (D.items[id].gains[filter] ?? 0) > 0)
+          .sort((a, b) => (D.items[b].gains[filter] ?? 0) - (D.items[a].gains[filter] ?? 0) || (run.armory.items[b] ?? 0) - (run.armory.items[a] ?? 0))
+      : owned;
     const recommended = isItems ? recommendedItems(this.weapon()) : new Set<string>();
     const cols = 4;
     const rows = 3;
@@ -498,7 +524,8 @@ export class WeaponScene extends Phaser.Scene {
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (cols - 1)) / cols;
     const h = 46;
     if (isItems && ids.length === 0) {
-      this.root.add(addText(this, SIDE_PADDING + 4, FRAG_TOP + 44, '素材を持っていない。砂嵐を倒すと落とす', { size: 12, color: COLORS.subText }));
+      const none = filter ? `${PARAM_LABEL[filter]}を上げる素材を持っていない。もう一度押すと全部に戻る` : '素材を持っていない。砂嵐を倒すと落とす';
+      this.root.add(addText(this, SIDE_PADDING + 4, FRAG_TOP + 44, none, { size: 12, color: COLORS.subText }));
     }
     ids.slice(this.page * perPage, (this.page + 1) * perPage).forEach((id, i) => {
       const n = (isItems ? run.armory.items[id] : run.armory.fragments[id]) ?? 0;
@@ -523,7 +550,13 @@ export class WeaponScene extends Phaser.Scene {
       this.root.add(addText(this, x + w - 4, y + 2, `×${n}`, { size: 12, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
       this.root.add(addText(this, x + 4, y + 18, name, { size: 10, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
       const sub = it ? (it.kind === 'material' ? describeGains(it.gains, true) : 'アイテム') : describeFragment(D.fragments[id]);
-      this.root.add(addText(this, x + 4, y + 31, sub, { size: 10, color: COLORS.subText, wrap: w - 6 }));
+      if (filter && it) {
+        // 絞り込んでいる能力値の上げ幅を、その色で先に出す（段階72）
+        const rest = describeGains(Object.fromEntries(Object.entries(it.gains).filter(([k]) => k !== filter)), true);
+        const head = addText(this, x + 4, y + 30, `${PARAM_SHORT[filter]}+${it.gains[filter]}`, { size: 11, bold: true, color: toCss(PARAM_COLOR[filter]) });
+        this.root.add(head);
+        this.root.add(addText(this, x + 8 + head.width, y + 31, rest, { size: 10, color: COLORS.subText }));
+      } else this.root.add(addText(this, x + 4, y + 31, sub, { size: 10, color: COLORS.subText, wrap: w - 6 }));
       makePressable(rect, {
         onTap: () => {
           this.selected = selected ? null : id;
@@ -548,7 +581,7 @@ export class WeaponScene extends Phaser.Scene {
     const top = FRAG_TOP + 36 + rows * (h + gap) + (pages > 1 ? 28 : 4);
     let text = this.message;
     if (!text) {
-      if (!sel) text = isItems ? '素材を選ぶと、吸わせた時の変化が出る。★は進化先に近づく素材。長押しで詳細' : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
+      if (!sel) text = isItems ? '素材を選ぶと、吸わせた時の変化が出る。★は進化先に近づく素材。攻・火・氷・雷で絞れる' : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
       else if (isItems) {
         const it = D.items[sel];
         if (it.kind !== 'material') text = `${it.name}：吸わせられない（${describeDecompose(D, it)}）`;
