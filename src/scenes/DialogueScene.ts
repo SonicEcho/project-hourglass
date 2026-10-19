@@ -839,7 +839,9 @@ export class DialogueScene extends Phaser.Scene {
       if (eyes) {
         const blinkOnce = (then: () => void) => {
           if (!obj.active) return;
-          if (this.skip || !fits(parts?.blink)) return then();
+          if (this.skip || !parts?.blink || !fits(parts.blink)) return then();
+          // 表情ごとに別の差分の絵がある時は、今の表情の絵に替える（基本の1枚と表情違いで絵の大きさが違う人。2026-10-19）
+          if (eyes.texture.key !== partFor(parts.blink)) eyes.setTexture(partFor(parts.blink));
           eyes.setVisible(true);
           this.time.delayedCall(BLINK.closedMs, () => {
             if (!obj.active) return;

@@ -141,6 +141,7 @@ describe('敵の絵（段階37）', () => {
 });
 
 describe('物語の流れ（段階23・34）', () => {
+  // 台本を全部たどるので、ほかのテストと同時に流すと5秒を少し超えることがある（2026-10-19。時間の上限を20秒に）
   it('書き間違いがなく、会話の出来事と日常の印の場面は台本にあり、通しで見る場面は全部どこかで読める', async () => {
     const { AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, ITEMS, RETURN_VISITS, SCENES, M1_SCENE_ORDER, SLICE_FLOW, TOWN } = await import('../src/data');
     const { checkArea, checkBonds, checkDailyHub, checkFlow, checkVisits, flowEvents, isPlaceholder, returnDays, visitsFor } = await import('../src/core');
@@ -218,7 +219,7 @@ describe('物語の流れ（段階23・34）', () => {
     // 返した翌日の出来事（段階36）：書き間違いがなく、どれも返した次の日の昼に出る
     expect(checkVisits(RETURN_VISITS, TOWN)).toEqual([]);
     for (const v of RETURN_VISITS) expect(shownVisits.has(v.id), v.id).toBe(true);
-  });
+  }, 20000);
 });
 
 describe('部屋と試しの区画（段階47）', () => {

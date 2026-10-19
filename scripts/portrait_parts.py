@@ -39,7 +39,24 @@ PARTS = {
     "hero_blink": ("hero_blink_src", (290, 290, 580, 362), 5, 1.0),
     # りくの閉じた目：Gemini で「通常」から目を閉じた絵（riku_blink_src。笑った目になった）。眉の下から頬の上まで
     "riku_blink": ("riku_blink_src", (265, 246, 585, 330), 5, 1.0),
+    # 1-1・1-2 の人たち（2026-10-19）。Gemini で「通常」から目だけ閉じた絵・口だけ開けた絵（<人>_blink_src・<人>_talk_src。843×1264）
+    "yuma_blink": ("yuma_blink_src", (290, 255, 538, 340), 5, 1.0),
+    "yuma_talk": ("yuma_talk_src", (360, 382, 500, 470), 6, 1.0),
+    "fumi_blink": ("fumi_blink_src", (272, 300, 578, 404), 5, 1.0),
+    "fumi_talk": ("fumi_talk_src", (372, 442, 504, 524), 6, 1.0),
+    # 子りくは顔が傾いていて、左右の目の高さが違うので、目ごとに楕円を分けた
+    "young_riku_blink": ("young_riku_blink_src", [(250, 340, 396, 486), (418, 288, 590, 444)], 6, 1.0),
+    "young_riku_talk": ("young_riku_talk_src", (366, 490, 520, 575), 6, 1.0),
+    "past_yuma_blink": ("past_yuma_blink_src", (266, 292, 554, 410), 5, 1.0),
+    "past_yuma_talk": ("past_yuma_talk_src", (370, 450, 486, 512), 6, 1.0),
+    "past_kiyoshi_blink": ("past_kiyoshi_blink_src", (287, 268, 543, 345), 5, 1.0),
+    "past_kiyoshi_talk": ("past_kiyoshi_talk_src", (350, 418, 500, 482), 6, 1.0),
 }
+
+# 基本の1枚（ChatGPT。1024×1536）に重ねる分：Gemini の絵（843×1264）から作った差分を、基本の1枚の大きさに広げたものも作る（<名前>_l）。
+# 差分の絵は重ねる表情の絵と同じ大きさでないと、位置がずれる（会話の画面は、差分を表情の絵と同じ倍率で出すため）
+LARGE = {"yuma_blink", "fumi_blink", "fumi_talk", "young_riku_blink", "past_yuma_blink", "past_kiyoshi_blink", "past_kiyoshi_talk"}
+LARGE_SIZE = (1024, 1536)
 
 
 def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, int, int, int]], feather: int, squash: float) -> None:
@@ -64,6 +81,9 @@ def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, i
     OUT.mkdir(exist_ok=True)
     out.save(OUT / f"{name}.webp", quality=88, method=6)
     print(f"{name}.webp ← {src}")
+    if name in LARGE:
+        out.resize(LARGE_SIZE, Image.LANCZOS).save(OUT / f"{name}_l.webp", quality=88, method=6)
+        print(f"{name}_l.webp ← {src}（{LARGE_SIZE[0]}×{LARGE_SIZE[1]} に広げた）")
 
 
 if __name__ == "__main__":

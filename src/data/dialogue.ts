@@ -111,7 +111,35 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
       byFace: Object.fromEntries(RIKU_TALK_FACES.map((f) => [f, `portrait.part.riku_talk_${f}`])),
     },
   },
+  // 1-1・1-2 の人たち（2026-10-19）。差分は Gemini の表情の絵（843×1264）の大きさ。基本の1枚（ChatGPT。1024×1536）には _l を重ねる。
+  // 目を閉じた表情・口を開けた表情、顔の傾きが大きく違う表情には重ねない
+  ゆうま: {
+    blink: { ...partsOf('yuma_blink', ['normal', 'thinking', 'wry', 'surprised', 'teary', 'lonely', 'serious', 'smile']), byFace: { smile: 'portrait.part.yuma_blink_l' } },
+    talk: partsOf('yuma_talk', ['normal', 'thinking', 'lonely', 'serious']),
+  },
+  ふみ: {
+    blink: { ...partsOf('fumi_blink', ['normal', 'smile', 'surprised', 'teary', 'lonely', 'thinking']), byFace: { normal: 'portrait.part.fumi_blink_l' } },
+    talk: { ...partsOf('fumi_talk', ['normal', 'lonely', 'thinking']), byFace: { normal: 'portrait.part.fumi_talk_l' } },
+  },
+  // 子どものりくの閉じた目は笑った目なので、眉を寄せた真剣には重ねない
+  子りく: {
+    blink: { ...partsOf('young_riku_blink', ['normal', 'proud', 'surprised', 'smirk', 'shy', 'flustered']), byFace: { proud: 'portrait.part.young_riku_blink_l' } },
+    talk: partsOf('young_riku_talk', ['normal', 'serious']),
+  },
+  写しのゆうま: {
+    blink: { ...partsOf('past_yuma_blink', ['normal', 'shy', 'pout', 'surprised', 'smile']), byFace: { smile: 'portrait.part.past_yuma_blink_l' } },
+    talk: partsOf('past_yuma_talk', ['normal', 'shy', 'pout']),
+  },
+  写しのきよし: {
+    blink: { ...partsOf('past_kiyoshi_blink', ['normal', 'shy']), byFace: { normal: 'portrait.part.past_kiyoshi_blink_l' } },
+    talk: { ...partsOf('past_kiyoshi_talk', ['normal', 'shy']), byFace: { normal: 'portrait.part.past_kiyoshi_talk_l' } },
+  },
 };
+
+/** まばたき・口パクの差分（台帳の portrait.part.<file>）と、重ねる表情 */
+function partsOf(file: string, faces: string[]): PortraitPart {
+  return { image: `portrait.part.${file}`, faces };
+}
 
 /** まばたきの間（ミリ秒）：次のまばたきまで min〜max、閉じている時間、2回続ける割合。口パク：開け閉めの間 */
 export const BLINK = { minMs: 2200, maxMs: 5400, closedMs: 110, doubleRate: 0.25 };

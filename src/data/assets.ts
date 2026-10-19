@@ -1669,6 +1669,31 @@ export const ASSETS: AssetEntry[] = [
     acquiredAt: '2026-10-11',
     notes: '会話には出さない（起動の時も読み込まない）。目のまわりだけを切り抜いて、まばたきの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
   })),
+  // 1-1・1-2 の人たちのまばたき・口パクの元の絵（2026-10-19。docs/ART.md の 5-4）。Gemini で「通常」から目だけ閉じた絵・口だけ開けた絵
+  ...(
+    [
+      ['yuma', 'ゆうま'],
+      ['fumi', 'ふみ'],
+      ['young_riku', '子どものりく'],
+      ['past_yuma', '写しのゆうま'],
+      ['past_kiyoshi', '写しのきよし'],
+    ] as const
+  ).flatMap(([who, name]) =>
+    (
+      [
+        ['blink_src', '目を閉じた絵。まばたきの元', BLINK_SRC_PROMPT, '目'],
+        ['talk_src', '口を開けた絵。口パクの元', TALK_SRC_PROMPT, '口'],
+      ] as const
+    ).map(([face, title, prompt, part]): AssetEntry => {
+      const base = geminiFace(who, name, face, title, '', '', '通常', '');
+      return {
+        ...base,
+        source: { ...base.source, prompt } as AssetEntry['source'],
+        acquiredAt: '2026-10-19',
+        notes: `会話には出さない（起動の時も読み込まない）。${part}のまわりだけを切り抜いて、差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md`,
+      };
+    }),
+  ),
 ];
 
 /**
@@ -1684,6 +1709,22 @@ const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
   ),
   ['hero_blink', 'portrait.hero.blink_src', 'ハルトの閉じた目（まばたき）'],
   ['riku_blink', 'portrait.riku.blink_src', 'りくの閉じた目（まばたき）'],
+  // 1-1・1-2 の人たち（2026-10-19）。_l は基本の1枚（1024×1536）に重ねる大きさに広げたもの
+  ...(
+    [
+      ['yuma', 'ゆうま', ['blink', 'blink_l', 'talk']],
+      ['fumi', 'ふみ', ['blink', 'blink_l', 'talk', 'talk_l']],
+      ['young_riku', '子どものりく', ['blink', 'blink_l', 'talk']],
+      ['past_yuma', '写しのゆうま', ['blink', 'blink_l', 'talk']],
+      ['past_kiyoshi', '写しのきよし', ['blink', 'blink_l', 'talk', 'talk_l']],
+    ] as const
+  ).flatMap(([who, name, files]) =>
+    files.map((f): [string, string, string] => [
+      `${who}_${f}`,
+      `portrait.${who}.${f.startsWith('blink') ? 'blink' : 'talk'}_src`,
+      `${name}の${f.startsWith('blink') ? '閉じた目（まばたき）' : '開いた口（口パク）'}${f.endsWith('_l') ? '（基本の1枚の大きさ）' : ''}`,
+    ]),
+  ),
 ];
 for (const [file, from, title] of PORTRAIT_PART_FILES) {
   const src = ASSETS.find((a) => a.id === from);
@@ -1693,7 +1734,8 @@ for (const [file, from, title] of PORTRAIT_PART_FILES) {
     id: `portrait.part.${file}`,
     title,
     file: `assets/portraits/parts/${file}.webp`,
-    acquiredAt: '2026-10-11',
+    // 2026-10-19 からの差分は、元の絵を入れた日
+    acquiredAt: src.acquiredAt > '2026-10-11' ? src.acquiredAt : '2026-10-11',
     notes: `${src.title}から切り抜いた（scripts/portrait_parts.py。段階46b）。${src.notes ?? ''}`,
   });
 }
