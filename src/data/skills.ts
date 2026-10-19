@@ -10,7 +10,8 @@ export const SKILLS = {
     target: 'enemy',
     effects: [{ kind: 'damage', type: 'physical', power: 30, partMultiplier: 2 }],
   },
-  care: { id: 'care', name: 'ケア', mp: 5, weight: 0.8, target: 'ally', effects: [{ kind: 'heal', power: 50 }] },
+  // 段階71：ケアは「軽い回復」（回復は小さいが、重さが軽くラウンドの早い順番で動く。敵より先に間に合う）、ケアルは「重い回復」（遅いが大きく回復する）
+  care: { id: 'care', name: 'ケア', mp: 4, weight: 0.4, target: 'ally', effects: [{ kind: 'heal', power: 45 }] },
   careAll: { id: 'careAll', name: 'ケアオール', mp: 12, weight: 1.2, target: 'allies', effects: [{ kind: 'heal', power: 30 }] },
   ice: { id: 'ice', name: 'アイス', mp: 6, weight: 1.0, target: 'enemy', effects: [{ kind: 'damage', type: 'ice', power: 40 }] },
   thunder: { id: 'thunder', name: 'サンダー', mp: 6, weight: 1.0, target: 'enemy', effects: [{ kind: 'damage', type: 'thunder', power: 40 }] },
@@ -31,6 +32,6 @@ export const SKILLS = {
       { kind: 'damage', type: 'physical', power: 30 },
     ],
   },
-  cure: { id: 'cure', name: 'ケアル', mp: 10, weight: 0.8, target: 'ally', effects: [{ kind: 'heal', power: 80 }] },
+  cure: { id: 'cure', name: 'ケアル', mp: 10, weight: 1.0, target: 'ally', effects: [{ kind: 'heal', power: 90 }] },
   inspiration: { id: 'inspiration', name: 'ひらめき', mp: 4, weight: 0.5, target: 'self', effects: [{ kind: 'draw', count: 2 }] },
 } satisfies Record<string, SkillDef>;
