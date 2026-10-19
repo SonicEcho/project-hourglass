@@ -785,10 +785,10 @@ Character: Hinano, an 18-year-old Japanese high school senior from a neighboring
 | 右の電器屋の裏通り | `room_showa_lane.png` | `map.showa_lane` | `Scene: a winding back lane behind an old electronics shop at summer dusk in 1988: discarded CRT televisions and radios stacked by the back door, tangled antenna cables, a small storage shed, potted plants, and a dead end with a little vacant lot at the bottom right. An opening at the center of the left edge.` |
 | 坂の上の先 | `room_showa_hill.png` | `map.showa_hill` | `Scene: the top of a gentle slope above a small Japanese town at summer sunset in 1988: a narrow paved road winding between old houses with tiled roofs and stone walls, utility poles with wires, a small bus stop bench and a vending machine, the evening sun glowing over the rooftops. An opening at the center of the bottom edge.` |
 
-しげる（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a friendly, slightly nostalgic smile`）の後に。見本はあかりの笑顔の立ち絵（構図）
+しげる（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a broad, cheerful, chatty grin with the mouth open as if greeting a regular customer, eyes crinkled with laugh lines, looking straight at the viewer with easy confidence (not shy, no blush, not looking away)`）の後に。見本はあかりの笑顔の立ち絵（構図）。2026-10-19：最初の表情（`a friendly, slightly nostalgic smile`）では照れたような顔になり、よくしゃべる性格に合わなかったので替えた
 
 ```
-Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.
+Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, warm eyes with laugh lines, a sturdy, good-natured face, a work apron over a plain polo shirt, a pencil and a small screwdriver tucked in the apron pocket. Outgoing and talkative, a neighborhood fixture who loves chatting with everyone and has known the street since he was a child.
 ```
 
 #### 6-7. 1-1・1-2 の完成度を上げる絵（2026-10-19。作る順番）
