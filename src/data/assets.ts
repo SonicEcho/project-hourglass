@@ -1669,7 +1669,7 @@ export const ASSETS: AssetEntry[] = [
     acquiredAt: '2026-10-11',
     notes: '会話には出さない（起動の時も読み込まない）。目のまわりだけを切り抜いて、まばたきの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
   })),
-  // 1-1・1-2 の人たちのまばたき・口パクの元の絵（2026-10-19。docs/ART.md の 5-4）。Gemini で「通常」から目だけ閉じた絵・口だけ開けた絵
+  // 1章の人たちと、けんた・カイのまばたき・口パクの元の絵（2026-10-19。docs/ART.md の 5-4）。Gemini で、その人の基本の絵から目だけ閉じた絵・口だけ開けた絵
   ...(
     [
       ['yuma', 'ゆうま'],
@@ -1677,14 +1677,20 @@ export const ASSETS: AssetEntry[] = [
       ['young_riku', '子どものりく'],
       ['past_yuma', '写しのゆうま'],
       ['past_kiyoshi', '写しのきよし'],
+      ['young_akari', '子どものあかり'],
+      ['young_hero', '子どものハルト'],
+      ['past_fumi', '写しのふみ'],
+      ['past_hinano', '写しのひなの', 'blink'],
+      ['kenta', 'けんた'],
+      ['kai', 'カイ', 'blink'],
     ] as const
-  ).flatMap(([who, name]) =>
+  ).flatMap(([who, name, only]: readonly [string, string, string?]) =>
     (
       [
         ['blink_src', '目を閉じた絵。まばたきの元', BLINK_SRC_PROMPT, '目'],
         ['talk_src', '口を開けた絵。口パクの元', TALK_SRC_PROMPT, '口'],
       ] as const
-    ).map(([face, title, prompt, part]): AssetEntry => {
+    ).filter(([face]) => !only || face.startsWith(only)).map(([face, title, prompt, part]): AssetEntry => {
       const base = geminiFace(who, name, face, title, '', '', '通常', '');
       return {
         ...base,
@@ -1717,6 +1723,12 @@ const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
       ['young_riku', '子どものりく', ['blink', 'blink_l', 'talk']],
       ['past_yuma', '写しのゆうま', ['blink', 'blink_l', 'talk']],
       ['past_kiyoshi', '写しのきよし', ['blink', 'blink_l', 'talk', 'talk_l']],
+      ['young_akari', '子どものあかり', ['blink', 'blink_l', 'talk']],
+      ['young_hero', '子どものハルト', ['blink', 'blink_l', 'talk', 'talk_l']],
+      ['past_fumi', '写しのふみ', ['blink', 'blink_l', 'talk']],
+      ['past_hinano', '写しのひなの', ['blink_l']],
+      ['kenta', 'けんた', ['blink_l', 'talk_l']],
+      ['kai', 'カイ', ['blink_l']],
     ] as const
   ).flatMap(([who, name, files]) =>
     files.map((f): [string, string, string] => [

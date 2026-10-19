@@ -111,7 +111,7 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
       byFace: Object.fromEntries(RIKU_TALK_FACES.map((f) => [f, `portrait.part.riku_talk_${f}`])),
     },
   },
-  // 1-1・1-2 の人たち（2026-10-19）。差分は Gemini の表情の絵（843×1264）の大きさ。基本の1枚（ChatGPT。1024×1536）には _l を重ねる。
+  // 1章の人たちと、けんた・カイ（2026-10-19）。差分は Gemini の表情の絵（843×1264）の大きさ。基本の1枚（ChatGPT。1024×1536）には _l を重ねる。
   // 目を閉じた表情・口を開けた表情、顔の傾きが大きく違う表情には重ねない
   ゆうま: {
     blink: { ...partsOf('yuma_blink', ['normal', 'thinking', 'wry', 'surprised', 'teary', 'lonely', 'serious', 'smile']), byFace: { smile: 'portrait.part.yuma_blink_l' } },
@@ -134,6 +134,22 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
     blink: { ...partsOf('past_kiyoshi_blink', ['normal', 'shy']), byFace: { normal: 'portrait.part.past_kiyoshi_blink_l' } },
     talk: { ...partsOf('past_kiyoshi_talk', ['normal', 'shy']), byFace: { normal: 'portrait.part.past_kiyoshi_talk_l' } },
   },
+  子あかり: {
+    blink: { ...partsOf('young_akari_blink', ['smile', 'worried', 'pout', 'surprised', 'sad', 'dejavu']), byFace: { smile: 'portrait.part.young_akari_blink_l' } },
+    talk: partsOf('young_akari_talk', ['sad', 'pout']),
+  },
+  子ハルト: {
+    blink: { ...partsOf('young_hero_blink', ['normal', 'smile', 'surprised', 'shy']), byFace: { normal: 'portrait.part.young_hero_blink_l' } },
+    talk: { ...partsOf('young_hero_talk', ['normal', 'smile', 'shy']), byFace: { normal: 'portrait.part.young_hero_talk_l' } },
+  },
+  写しのふみ: {
+    blink: { ...partsOf('past_fumi_blink', ['smile', 'shy', 'surprised', 'teary']), byFace: { smile: 'portrait.part.past_fumi_blink_l' } },
+    talk: partsOf('past_fumi_talk', ['shy']),
+  },
+  // 基本の1枚（ChatGPT）しか絵のない人は、基本の1枚の大きさの差分だけ
+  写しのひなの: { blink: partsOf('past_hinano_blink_l', ['smile']) },
+  けんた: { blink: partsOf('kenta_blink_l', ['smile']), talk: partsOf('kenta_talk_l', ['smile']) },
+  カイ: { blink: partsOf('kai_blink_l', ['smug']) },
 };
 
 /** まばたき・口パクの差分（台帳の portrait.part.<file>）と、重ねる表情 */
