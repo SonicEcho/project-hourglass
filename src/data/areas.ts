@@ -262,8 +262,8 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'showa_night', side: 'right' }, b: { room: 'showa_lane', side: 'left' } },
       { a: { room: 'showa_night', side: 'top' }, b: { room: 'showa_hill', side: 'bottom' } },
     ],
-    // 昭和の商店街の探索の曲が届くまで、日常の曲（商店街のシティポップ）
-    bgm: BGM.daily,
+    // 記憶の中の曲（段階73）：昭和の商店街の記憶の曲が届くまで、レストピアの曲で代わりにする（台本の showa と同じ）
+    bgm: BGM.library,
     komaNeed: 10,
     timeTitle: '夕暮れの二人乗り',
     owner: 'フミ',

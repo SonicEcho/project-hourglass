@@ -1407,5 +1407,12 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
   - 大きさは、全曲を −17.4 LUFS にそろえた（2026-10-11 に決めた大きさ）
   - それまでの仮の BGM：2026-10-11 から魔王魂の曲（①ピアノ41、②アコースティック39、④ファンタジー12、⑤ファンタジー03、⑥オーケストラ14、⑦ピアノ24。CC BY 4.0、クレジット「音楽：魔王魂」が要った。規約の控えは `docs/licenses/maoudamashii.md`、切り出しは `scripts/maou_bgm.py`）と、自作の仮の縁日の曲（`scripts/placeholder_bgm.py`）。2026-10-13 にすべて Suno の曲に替え、クレジットの「音楽：魔王魂」もなくなった
   - 大きさの決め方（2026-10-11、開発者から「タイトルだけ小さく、他は大きい」）：魔王魂の曲は聞こえ方の大きさ（ラウドネス）が最大16dB 違ったので、全曲を −17.4 LUFS（タイトルを上げても音が割れない上限）にそろえた
+- **足りない曲（段階73。2026-10-19、開発者が「場面に合わない曲がある」と感じた）**：重い知らせ・しんみりした場面でも日常の曲が流れ、1-2 の記憶の中（昭和の商店街）も日常の曲だった。2曲を足す。届くまでは、台本の `somber` は無音、`showa` と 1-2 の区画はレストピアの曲で代わりにしている（`src/data/dialogue.ts` の `SCRIPT_BGM`、`src/data/areas.ts` の a12）。届いたら、そこを新しい曲の id に替えるだけ
+
+| 番号 | 曲 | 使う所 | 作り方 | 指示文（Style of Music） | Exclude styles |
+| --- | --- | --- | --- | --- | --- |
+| ⑧ | しんみり・不穏な日常（`somber`） | りくが休みだと知らされる教室（2日目・5日目）、帰り道、ふみさんの家の前、ゆうま・ふみさんの電話 | 新しく作る | `quiet melancholic slice-of-life underscore, soft felt piano and warm cello, sparse slow chords with gentle silences, a missing friend and an empty seat in a summer classroom, uneasy but tender, D minor, 66 bpm, simple repeating motif, background music under dialogue, steady dynamics, loop-friendly, instrumental` | `drums, vocals, epic, orchestral build-up, EDM` |
+| ⑨ | 昭和の商店街の記憶（`showa`。1-2 の探索と記憶の場面） | 1-2 の区画、1-2 に入る所 | ② 日常（Arcade Afternoon）を Cover して、Style だけ替える（今の商店街の曲が、30年前の記憶として聞こえるように） | `the same shopping street theme remembered from the summer of 1988, played back like a worn cassette tape, slightly detuned and wobbly, warm analog synth and soft electric piano, gentle acoustic guitar, light shuffle rhythm, bittersweet and dreamy, a little mysterious, looping exploration music, steady dynamics, instrumental` | `vocals, heavy drums, distorted guitar, EDM` |
+
 - 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦、①b）と実際に使った指示文（Exclude styles も）と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
 

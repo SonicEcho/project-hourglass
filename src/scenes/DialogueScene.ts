@@ -338,7 +338,8 @@ export class DialogueScene extends Phaser.Scene {
   /** この先の台本で流す曲を、先に音に解いておく（曲が替わる時に待たないように） */
   private warmNextBgm(pos: ScriptPos): void {
     const name = nextBgm(this.scenes, pos, this.queue);
-    if (name && SCRIPT_BGM[name]) warmBgm(this, SCRIPT_BGM[name]);
+    const id = name ? SCRIPT_BGM[name] : null;
+    if (id) warmBgm(this, id);
   }
 
   /** 演出の命令を1つ行う。時間がかかるものは終わるまで待つ */
@@ -351,7 +352,7 @@ export class DialogueScene extends Phaser.Scene {
         if (this.bgImage && !this.skip && !viewedBackdrops.has(this.bgImage)) this.hideForView();
         return;
       case 'bgm':
-        if (a === 'stop') stopBgm();
+        if (a === 'stop' || SCRIPT_BGM[a] === null) stopBgm();
         else if (SCRIPT_BGM[a]) playBgm(this, SCRIPT_BGM[a]);
         return;
       case 'se': {

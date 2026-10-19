@@ -501,13 +501,17 @@ export const CGS: Record<string, Backdrop> = {
 /**
  * 台本の BGM の名前 → 台帳の id。2026-10-13 から、どの曲も開発者が Suno で作った曲（docs/ART.md の 6.）
  */
-export const SCRIPT_BGM: Record<string, string> = {
+export const SCRIPT_BGM: Record<string, string | null> = {
   title: BGM.title,
   daily: BGM.daily,
   prologue: BGM.prologue,
   festival: BGM.festival,
   library: BGM.library,
   return: BGM.return,
+  // 段階73：しんみり・不穏な日常の曲（りくの休み、帰り道、ふみさんの家、電話）と、昭和の商店街の記憶の曲（1-2）。
+  // 曲が届くまでの代わり：somber は無音（null は曲を止める）、showa はレストピアの曲。届いたら BGM の id に替えるだけ（docs/ART.md の 6.）
+  somber: null,
+  showa: BGM.library,
 };
 
 /**
