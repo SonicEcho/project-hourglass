@@ -12,13 +12,22 @@ const failed = new Set<string>();
 
 export { assetUrl, isBgm } from './paths';
 
-/** 台帳の画像・SVG・効果音を、起動の画面の preload で読み込む */
-export function queueAssets(scene: Phaser.Scene, assets: AssetEntry[] = ASSETS): void {
+/**
+ * 起動の画面で読む素材か（段階69）：タイトルで使う SVG と効果音だけ。
+ * 立ち絵・背景・地図・1枚絵・敵の絵（ほとんどの重さ）は、タイトルを出した後に裏で読む（PreloadScene）
+ */
+export function isBootAsset(a: AssetEntry): boolean {
+  return a.kind !== 'image';
+}
+
+/** 台帳の画像・SVG・効果音を、その画面の loader に積む（which で選んだものだけ） */
+export function queueAssets(scene: Phaser.Scene, which: (a: AssetEntry) => boolean = () => true, assets: AssetEntry[] = ASSETS): void {
   scene.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
     failed.add(file.key);
     console.warn(`[assets] 読み込めなかった：${file.key}（${file.url}）。図形で代わりに描く`);
   });
   for (const a of assets) {
+    if (!which(a)) continue;
     // id が _src で終わる絵は、差分を切り抜く元の絵（scripts/portrait_parts.py）。画面では使わないので読み込まない
     if (!a.file || a.id.endsWith('_src')) continue;
     if (a.kind === 'image') scene.load.image(a.id, assetUrl(a));
@@ -51,3 +60,8 @@ export function addImageOr<T extends Phaser.GameObjects.GameObject>(
   if (entry?.kind === 'svg') img.setScale(1 / RENDER_SCALE);
   return img;
 }
+
+// ---- 裏での読み込み（段階69） ----
+
+/** 裏で読む素材の進み具合（PreloadScene が書く。まだ始まっていなければ total 0） */
+export const background = { loaded: 0, total: 0, done: false };

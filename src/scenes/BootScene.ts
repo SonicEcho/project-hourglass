@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { queueAssets } from '../assets/loader';
+import { isBootAsset, queueAssets } from '../assets/loader';
 import { loadHeadingFont } from '../assets/fonts';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addText } from '../ui/widgets';
@@ -9,7 +9,7 @@ const BAR_W = 240;
 const BAR_H = 8;
 
 /**
- * 起動の画面（段階15）：台帳の素材を読み込んでからタイトルへ。読み込めない素材があっても進む。
+ * 起動の画面（段階15）：タイトルで使う素材を読み込んでからタイトルへ（段階69から、ほかの素材はタイトルの後に裏で読む）。読み込めない素材があっても進む。
  * 読み込んでいる間は、進み具合のバーを出す（段階20）。見出しの書体も待つ（段階32a）
  */
 export class BootScene extends Phaser.Scene {
@@ -25,12 +25,16 @@ export class BootScene extends Phaser.Scene {
     this.add.rectangle(cx, cy, BAR_W, BAR_H, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border);
     const fill = this.add.rectangle(cx - BAR_W / 2, cy, 0, BAR_H, COLORS.accent).setOrigin(0, 0.5);
     this.load.on(Phaser.Loader.Events.PROGRESS, (v: number) => fill.setSize(BAR_W * v, BAR_H));
-    queueAssets(this);
+    // タイトルで使う素材だけ（段階69。残りはタイトルを出した後に PreloadScene が裏で読む）
+    queueAssets(this, isBootAsset);
     void loadHeadingFont();
   }
 
   create(): void {
     // 見出しの書体が読み込まれてからタイトルへ（段階32a。遅い時は3秒で進む）
-    void loadHeadingFont().then(() => this.scene.start('Title'));
+    void loadHeadingFont().then(() => {
+      this.scene.launch('Preload');
+      this.scene.start('Title');
+    });
   }
 }

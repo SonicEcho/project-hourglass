@@ -8,6 +8,7 @@ import { loadEruda } from './debug/eruda';
 import { installTestHook } from './debug/testHook';
 import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
+import { PreloadScene } from './scenes/PreloadScene';
 import { CreditsScene } from './scenes/CreditsScene';
 import { DialogueScene } from './scenes/DialogueScene';
 import { FlowScene } from './scenes/FlowScene';
@@ -76,13 +77,14 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, WeaponTreeScene, AlbumScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, ExchangeScene, LostScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, WeaponTreeScene, AlbumScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, ExchangeScene, LostScene],
 });
 
 if (debug) {
   /** 今動いている画面から、別の画面に切り替える */
   const goTo = (key: string, data: object) => {
-    const current = game.scene.getScenes(true)[0];
+    // 裏で読み込んでいる画面（段階69）は除く
+    const current = game.scene.getScenes(true).find((s) => s.scene.key !== 'Preload');
     if (current) current.scene.start(key, data);
     else game.scene.start(key, data);
   };
