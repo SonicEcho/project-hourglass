@@ -825,6 +825,23 @@ export const ASSETS: AssetEntry[] = [
     'Character: young Riku, 7 years old. A mischievous little leader, a proud confident grin showing his teeth. Short dark-brown hair, a little spiky and messy (not yet styled). Bright lively brown eyes, a small bandage on his cheek. A navy blue jinbei (Japanese summer festival outfit) with a simple white pattern.',
     'りくの笑顔の立ち絵',
   ),
+  // 子どもの3人の表情の残り（2026-10-19。docs/ART.md の 6-7 の Gemini の 6。プロローグの台本で使う表情）
+  ...(
+    [
+      ['hero', 'ハルト', 'surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised', '通常'],
+      ['hero', 'ハルト', 'shy', '照れ', 'embarrassed and quietly happy, light blush on the cheeks, eyes looking down and aside, a tiny shy smile with the mouth closed, a quiet child who is not used to being included', '通常'],
+      ['akari', 'あかり', 'laugh', '大笑い', 'laughing happily with the mouth wide open, eyes closed', '笑顔'],
+      ['akari', 'あかり', 'pout', 'むっ', 'pouting, cheeks puffed, frowning a little', '笑顔'],
+      ['akari', 'あかり', 'surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised', '笑顔'],
+      ['akari', 'あかり', 'dejavu', 'デジャヴ', 'a puzzled, faraway look as if she has seen this moment before, eyes slightly unfocused and gazing past the viewer, lips slightly parted, a faint wondering frown', '笑顔'],
+      ['akari', 'あかり', 'sad', '悲しい', 'sad and quiet, eyes looking down, mouth closed, brows slightly lowered, holding back tears', '笑顔'],
+      ['riku', 'りく', 'flustered', 'あせり', 'flustered and caught off guard, eyes darting aside, an awkward forced grin, eyebrows raised, a boy whose plan just went wrong', '得意げ'],
+      ['riku', 'りく', 'smirk', 'にやり', 'a mischievous smirk, one corner of the mouth raised, eyes narrowed playfully, like a boy hiding a fun secret', '得意げ'],
+      ['riku', 'りく', 'normal', '通常', 'relaxed and natural, mouth closed, a lively, confident look in the eyes', '得意げ'],
+      ['riku', 'りく', 'surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised', '得意げ'],
+      ['riku', 'りく', 'shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward grin, rubbing it off as if it is nothing', '得意げ'],
+    ] as const
+  ).map(([who, name, face, title, expression, base]): AssetEntry => ({ ...youngFace(who, name, face, title, expression, base), acquiredAt: '2026-10-19' })),
   youngFace('hero', 'ハルト', 'smile', '笑顔', 'a small, shy but happy smile with the mouth closed, eyes soft, a child who is just starting to open up', '通常'),
   youngFace('akari', 'あかり', 'worried', '心配', 'gently worried, eyebrows raised in a troubled way, mouth slightly open, eyes looking at someone with concern', '笑顔'),
   youngFace('riku', 'りく', 'smile', '笑顔', 'a big, bright, carefree open-mouthed smile, eyes happily narrowed', '得意げ'),
