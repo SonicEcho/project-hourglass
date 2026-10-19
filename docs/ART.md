@@ -821,6 +821,7 @@ Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned el
 | 4 | ひなの | むっ・驚き・泣き笑い・困り・さみしげ・微笑み |
 | 5 | しげる | 驚き・さみしげ・考える・苦笑い・通常 |
 | 6 | 子どもの3人（プロローグ） | 5-6 の Gemini の 1〜3 |
+| 7 | 写しのきよし | 照れの作り直し（2026-10-19。5-3 の 14 の表の下の文。1-2 の山場の2行で使う） |
 
 ### 7. 1枚絵：親方の背中（2-1-8）
 
@@ -1051,7 +1052,7 @@ Expression: <表情>
 | むっ | `pouting, cheeks puffed, frowning a little` | みお |
 | 真剣 | `serious and focused, mouth firmly closed, brows set, eyes steady and determined` | みお、カイ、写しのいさむ |
 | 泣き笑い | `smiling through tears, eyes wet and slightly narrowed, a trembling smile` | みお、ふみ、写しのふみ、いさむ、写しのいさむ、けんた、写しのけんた、写しのこうじ、あかり |
-| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しのふみ、写しのきよし、けんた |
+| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しのふみ、けんた（写しのきよしは下の別の文） |
 | 考える | `thoughtful, eyes looking up and aside, mouth slightly pursed` | みお、ふみ、いさむ、こうじ、けんた、あかり |
 | 心配 | `gently worried, eyebrows raised in a troubled way, mouth slightly open` | みお |
 | 悔しい | `frustrated and regretful, biting the lip, brows drawn together, eyes glistening` | みお、ハルト |
@@ -1062,6 +1063,8 @@ Expression: <表情>
 | 見下す | `looking down on someone with cold, narrowed eyes, chin slightly raised, a faint sneer` | カイ |
 | 悲しい | `sad and quiet, eyes looking down, mouth closed, brows slightly lowered` | ノア |
 | 怒り | `angry, brows sharply drawn together, teeth clenched, eyes blazing` | ハルト |
+
+写しのきよしの照れ（2026-10-19 に作り直す。上の照れの文では歯を見せて大きく赤くなり、口数が少なく頑固で気持ちを出すのが下手な人に合わなかった。照れを隠して、ぶっきらぼうに目をそらす顔にする）：`gruffly hiding his embarrassment: face turned slightly away and eyes looking off to the side, mouth pressed into a stubborn straight line, brows slightly drawn together as if annoyed, no smile and no teeth showing. Only a faint blush on the cheeks and reddened ear tips give away that he is embarrassed. A quiet, awkward middle-aged man who is bad at showing his feelings.`
 
 （ハルト・あかりは 5-2 の頭の文を使う。表情の名前は台本の〔 〕と同じにする）
 
