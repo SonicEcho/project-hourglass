@@ -777,11 +777,50 @@ Character: Hinano, an 18-year-old Japanese high school senior from a neighboring
 
 1-2 も3晩に分けて作り直した。商店街の地図（`map.showa_street`）の左右（行19〜22）と上の辺の真ん中（列10〜13）を開ける手直し（2-1・1-1 と同じ、今の地図を付けた編集）と、寄り道の部屋3つ（左の路地裏、右の電器屋の裏通り、坂の上の先。今は 1-1 の部屋と同じ形の文字の地図。絵を頼む時に、部屋ごとの文字の地図と下絵を作る）。
 
+寄り道の3部屋は、今は 1-1 の部屋と同じ形の文字の地図なので、下絵も同じ形（`docs/sketches/room_showa_*.png`。2026-10-19 に作った）。頼み方は 6-5 と同じ（部屋の地図の頭、`Square 1:1 image (1024x1024).`、場所の文、下絵に従う文と地図の締めの文。今の商店街の地図を絵柄の見本として添付）。時代は昭和の終わり（1988年の夏の夕暮れ）
+
+| 部屋 | 下絵 | 台帳の id（届いたら） | 場所の文 |
+| --- | --- | --- | --- |
+| 左の路地裏 | `room_showa_alley.png` | `map.showa_alley` | `Scene: narrow back alleys behind the shops of a small Japanese shopping street at summer dusk in 1988: wooden fences, stacked beer crates and empty ramune bottles, old bicycles, laundry poles, a stray cat on a wall. An opening at the center of the right edge.` |
+| 右の電器屋の裏通り | `room_showa_lane.png` | `map.showa_lane` | `Scene: a winding back lane behind an old electronics shop at summer dusk in 1988: discarded CRT televisions and radios stacked by the back door, tangled antenna cables, a small storage shed, potted plants, and a dead end with a little vacant lot at the bottom right. An opening at the center of the left edge.` |
+| 坂の上の先 | `room_showa_hill.png` | `map.showa_hill` | `Scene: the top of a gentle slope above a small Japanese town at summer sunset in 1988: a narrow paved road winding between old houses with tiled roofs and stone walls, utility poles with wires, a small bus stop bench and a vending machine, the evening sun glowing over the rooftops. An opening at the center of the bottom edge.` |
+
 しげる（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a friendly, slightly nostalgic smile`）の後に。見本はあかりの笑顔の立ち絵（構図）
 
 ```
 Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.
 ```
+
+#### 6-7. 1-1・1-2 の完成度を上げる絵（2026-10-19。作る順番）
+
+1-1・1-2 を3晩の形に作り直した台本（`docs/script/1-1_rework.md`・`1-2_rework.md`）で、まだ絵のない物。台本と台帳を照らし合わせて集めた（2026-10-19）。5-6 の残りと、6-5・6-6・11-2 をまとめて、1章を遊ぶ時に目に入る長さの順に並べた。（ ）は 1-1・1-2 の台本での台詞の数
+
+**ChatGPT**
+
+| 順 | 絵 | 指示文 | 添付する見本 |
+| --- | --- | --- | --- |
+| 1 | 敵：1-1 の砂嵐4つ（金魚・水風船・お面・わたあめノイズ）と金魚鉢のぬし。1-1 の17戦すべてで出る（今はゲームの側で描いた仮の姿。探索の地図の上では赤いひし形） | 5-6 の 13（5-5 の「1-1 の敵の `Body:`」） | ブリキノイズ |
+| 2 | ゆうま（通常）の基本の1枚（47） | 5-5 の「ゆうま」 | あかり（笑顔） |
+| 3 | 写しのゆうま（笑顔）（28）、写しのひなの（笑顔）（20） | 5-5 の「写しのゆうま」「写しのひなの」 | ゆうま、子どものあかり（構図）。ひなのは写しのゆうまも |
+| 4 | ひなの（通常）（24） | 6-5 | あかり（笑顔） |
+| 5 | しげる（笑顔）（17） | 6-6 | あかり（笑顔） |
+| 6 | 1枚絵：長針の剣と金魚の灯籠の杖（1-1 の1晩目の頭） | 11-2 | ハルト・あかりの立ち絵 |
+| 7 | 1枚絵：高台で花火を見る3人の後ろ姿（プロローグの終わり） | 5-5 の「M1 の残りの指示文」 | 子どもの3人の立ち絵 |
+| 8 | 1枚絵：金魚の写真（1日目の屋上） | 同上 | 子どものあかり（笑顔） |
+| 9 | 地図：1-1 の5部屋と、縁日の地図の手直し（出入口を開ける） | 6-5 | 今の縁日の地図と下絵 |
+| 10 | 地図：1-2 の3部屋と、商店街の地図の手直し | 6-6 | 今の商店街の地図と下絵 |
+| 11 | 1枚絵：白い街（1日目の朝の夢。短い） | 5-5 | なし |
+
+**Gemini（表情違い。基本の1枚ができてから）**
+
+| 順 | 人 | 足りない表情（多い順） |
+| --- | --- | --- |
+| 1 | ゆうま | 笑顔（17）・考える（8）・苦笑い・驚き・泣き笑い・さみしげ・真剣 |
+| 2 | 写しのひなの | 泣き（5） |
+| 3 | 写しのゆうま | 驚き・怒り・ふくれ・照れ・通常 |
+| 4 | ひなの | むっ・驚き・泣き笑い・困り・さみしげ・微笑み |
+| 5 | しげる | 驚き・さみしげ・考える・苦笑い・通常 |
+| 6 | 子どもの3人（プロローグ） | 5-6 の Gemini の 1〜3 |
 
 ### 7. 1枚絵：親方の背中（2-1-8）
 
@@ -1261,7 +1300,6 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 
 | 絵 | つなぐ所 | 段階 |
 | --- | --- | --- |
-| 川沿いの帰り道（`bg.riverside_path`） | 会話の背景 `river_path`（4日目のあかり3。今は色だけ） | 1章の昼の出来事の台本を入れる時 |
 | 時計屋の店内（昼）（`bg.clock_shop_day`） | 3日目・4日目の時計屋（今は夕暮れの絵） | 36 |
 | 昭和の商店街の背景・地図、夕焼けの二人乗り、1-2 の敵5つ | 1-2 の区画 | 37 |
 

@@ -345,7 +345,7 @@ export const BACKDROPS: Record<string, Backdrop> = {
   shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80, image: 'bg.shopping_street' },
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8, image: 'bg.convenience_store' },
   // 段階35（M2 の昼の日常）。絵が届くまで仮の色
-  river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a },
+  river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a, image: 'bg.riverside_path' },
   riverside_ground: { title: '河川敷のグラウンド', top: 0x9ac0e0, bottom: 0xa08a5a, image: 'bg.riverside_1998', tint: 0xd8d0c0 },
   home_tv_dark: { title: '施設の居間（テレビの光だけ）', top: 0x101828, bottom: 0x2a3a5a },
   clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
