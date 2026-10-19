@@ -472,7 +472,7 @@ export const SCRIPT_M1 = `
 あかり〔驚き〕「な、なにあれ……！」
 @shake
 〈地の文〉左の手首が、急に熱くなった。腕時計の文字盤から、光があふれ出す。
-@se chime
+@se awaken
 @fade white
 @cast
 @cg awaken_weapons
