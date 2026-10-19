@@ -160,7 +160,7 @@ const sword: WeaponDef = {
     {
       id: 'flameBlade',
       name: 'フレイムブレード',
-      conditions: [param('fire', 6), key('maskString')],
+      conditions: [param('fire', 12), key('maskString')],
       attackElement: 'fire',
       stats: { atk: 3 },
       styles: [STYLES.fierce('fire'), STYLES.ember],
@@ -168,7 +168,7 @@ const sword: WeaponDef = {
     {
       id: 'breakEdge',
       name: 'ブレイクエッジ',
-      conditions: [param('atk', 6), key('balloonRubber')],
+      conditions: [param('atk', 12), key('balloonRubber')],
       stats: { atk: 4 },
       passives: [{ kind: 'partBoost', rate: 0.3 }],
       styles: [STYLES.might, STYLES.shatter],
@@ -176,15 +176,15 @@ const sword: WeaponDef = {
     {
       id: 'frostBlade',
       name: 'フロストブレード',
-      conditions: [param('ice', 6), key('goldfishFin')],
+      conditions: [param('ice', 12), key('goldfishFin')],
       attackElement: 'ice',
       stats: { atk: 3 },
       styles: [STYLES.fierce('ice'), STYLES.guard],
     },
     // 2回目（鍵は 1-2 の珍しい素材・部位）
-    { id: 'crimsonBlade', name: '紅蓮の刃', from: 'flameBlade', conditions: [param('fire', 12), key('beigoma')], attackElement: 'fire', stats: { atk: 4 }, styles: [STYLES.might, STYLES.ember] },
-    { id: 'crushEdge', name: 'クラッシュエッジ', from: 'breakEdge', conditions: [param('atk', 12), key('tinKey')], stats: { atk: 5 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.swift, STYLES.shatter] },
-    { id: 'glacierBlade', name: '氷河の刃', from: 'frostBlade', conditions: [param('ice', 12), key('phoneBell')], attackElement: 'ice', stats: { atk: 4, def: 1 }, styles: [STYLES.might, STYLES.guard] },
+    { id: 'crimsonBlade', name: '紅蓮の刃', from: 'flameBlade', conditions: [param('fire', 24), key('beigoma')], attackElement: 'fire', stats: { atk: 4 }, styles: [STYLES.might, STYLES.ember] },
+    { id: 'crushEdge', name: 'クラッシュエッジ', from: 'breakEdge', conditions: [param('atk', 24), key('tinKey')], stats: { atk: 5 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.swift, STYLES.shatter] },
+    { id: 'glacierBlade', name: '氷河の刃', from: 'frostBlade', conditions: [param('ice', 24), key('phoneBell')], attackElement: 'ice', stats: { atk: 4, def: 1 }, styles: [STYLES.might, STYLES.guard] },
     // 寄り道：ブレイクエッジから。雷を低いままにして、刃こぼれを抱えたまま先手を取る剣
     {
       id: 'strayEdge',
@@ -197,10 +197,10 @@ const sword: WeaponDef = {
       styles: [STYLES.swift, STYLES.guard],
     },
     // 3回目（鍵は 2-1・2-2 の素材）
-    { id: 'blazeBlade', name: '煌炎の剣', from: 'crimsonBlade', conditions: [param('fire', 18), key('glitterPen')], attackElement: 'fire', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.first] },
-    { id: 'sunsetBlade', name: '落陽の剣', from: 'crimsonBlade', conditions: [param('fire', 12), param('atk', 12), key('brokenBelt')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.shatter] },
-    { id: 'grandEdge', name: 'グランドエッジ', from: 'crushEdge', conditions: [param('atk', 18), key('tempoSpring')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.first] },
-    { id: 'auroraBlade', name: '極光の剣', from: 'glacierBlade', conditions: [param('ice', 18), key('ringtoneChip')], attackElement: 'ice', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
+    { id: 'blazeBlade', name: '煌炎の剣', from: 'crimsonBlade', conditions: [param('fire', 36), key('glitterPen')], attackElement: 'fire', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.first] },
+    { id: 'sunsetBlade', name: '落陽の剣', from: 'crimsonBlade', conditions: [param('fire', 24), param('atk', 24), key('brokenBelt')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.shatter] },
+    { id: 'grandEdge', name: 'グランドエッジ', from: 'crushEdge', conditions: [param('atk', 36), key('tempoSpring')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.first] },
+    { id: 'auroraBlade', name: '極光の剣', from: 'glacierBlade', conditions: [param('ice', 36), key('ringtoneChip')], attackElement: 'ice', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
     // 4回目より先（まだ作っていない）
     ...beyond('blazeBlade', [['夜明けの色を、刃に閉じこめたという'], ['燃えつきた祭りの灯を、もう一度ともしたという']]),
     ...beyond('sunsetBlade', [['沈む日を斬って、一日を一刻だけ伸ばしたという']]),
@@ -214,28 +214,28 @@ const rod: WeaponDef = {
   name: '祈りの杖',
   owner: 'akari',
   evolutions: [
-    { id: 'iceRod', name: 'アイスロッド', conditions: [param('ice', 6), key('goldfishFin')], attackElement: 'ice', stats: { mag: 3 }, styles: [STYLES.fierce('ice'), STYLES.calm] },
+    { id: 'iceRod', name: 'アイスロッド', conditions: [param('ice', 12), key('goldfishFin')], attackElement: 'ice', stats: { mag: 3 }, styles: [STYLES.fierce('ice'), STYLES.calm] },
     {
       id: 'healingRod',
       name: '癒しの杖',
-      conditions: [param('ice', 3), param('fire', 3), key('cottonStick')],
+      conditions: [param('ice', 6), param('fire', 6), key('cottonStick')],
       stats: { mp: 10 },
       passives: [{ kind: 'regen', rate: 0.03 }],
       styles: [STYLES.sage, STYLES.ember],
     },
-    { id: 'flameRod', name: 'フレイムロッド', conditions: [param('fire', 6), key('maskString')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'flameRod', name: 'フレイムロッド', conditions: [param('fire', 12), key('maskString')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
     // 2回目
-    { id: 'sleetRod', name: '氷雨の杖', from: 'iceRod', conditions: [param('ice', 12), key('ramuneMarble')], attackElement: 'ice', stats: { mag: 4 }, styles: [STYLES.sage, STYLES.calm] },
+    { id: 'sleetRod', name: '氷雨の杖', from: 'iceRod', conditions: [param('ice', 24), key('ramuneMarble')], attackElement: 'ice', stats: { mag: 4 }, styles: [STYLES.sage, STYLES.calm] },
     {
       id: 'mercyRod',
       name: '慈雨の杖',
       from: 'healingRod',
-      conditions: [param('ice', 8), param('fire', 8), key('rustyBell')],
+      conditions: [param('ice', 16), param('fire', 16), key('rustyBell')],
       stats: { mp: 10, mag: 2 },
       passives: [{ kind: 'regen', rate: 0.01 }],
       styles: [STYLES.sage, STYLES.guard],
     },
-    { id: 'heatRod', name: '陽炎の杖', from: 'flameRod', conditions: [param('fire', 12), key('beigoma')], attackElement: 'fire', stats: { mag: 4 }, styles: [STYLES.fierce('fire'), STYLES.guard] },
+    { id: 'heatRod', name: '陽炎の杖', from: 'flameRod', conditions: [param('fire', 24), key('beigoma')], attackElement: 'fire', stats: { mag: 4 }, styles: [STYLES.fierce('fire'), STYLES.guard] },
     // 寄り道：アイスロッドから。火を低いままにして、少ない力で長く祈り続ける杖
     {
       id: 'dewRod',
@@ -248,18 +248,18 @@ const rod: WeaponDef = {
       styles: [STYLES.sage, STYLES.ember],
     },
     // 3回目
-    { id: 'moonRod', name: '雪月の杖', from: 'sleetRod', conditions: [param('ice', 18), key('abacusFrame')], attackElement: 'ice', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
+    { id: 'moonRod', name: '雪月の杖', from: 'sleetRod', conditions: [param('ice', 36), key('abacusFrame')], attackElement: 'ice', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
     {
       id: 'blessRod',
       name: '祝福の杖',
       from: 'mercyRod',
-      conditions: [param('ice', 12), param('fire', 12), key('lordGear')],
+      conditions: [param('ice', 24), param('fire', 24), key('lordGear')],
       stats: { mp: 12, mag: 3 },
       passives: [{ kind: 'regen', rate: 0.01 }],
       styles: [STYLES.bond, STYLES.baton],
     },
-    { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('fire', 12), param('thunder', 8), key('boomboxDial')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'regen', rate: 0.01 }], styles: [STYLES.sage, STYLES.first] },
-    { id: 'ringRod', name: '炎環の杖', from: 'heatRod', conditions: [param('fire', 18), key('glitterPen')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.ember] },
+    { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('fire', 24), param('thunder', 16), key('boomboxDial')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'regen', rate: 0.01 }], styles: [STYLES.sage, STYLES.first] },
+    { id: 'ringRod', name: '炎環の杖', from: 'heatRod', conditions: [param('fire', 36), key('glitterPen')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.ember] },
     ...beyond('moonRod', [['月の光で、なくした名前を照らしたという'], ['降る雪の一粒ずつに、誰かの声が入っていたという']]),
     ...beyond('blessRod', [['祈った人の数だけ、小さな花が咲いたという']]),
     ...beyond('sunnyRod', [['冬の日なたを、そのまま持ち歩いたという', '日が落ちても、手のひらだけは温かかったという']]),
@@ -274,7 +274,7 @@ const cards: WeaponDef = {
   owner: 'mio',
   evolutions: [
     // 1回目（段階39）：鍵は 2-1 の雑魚の珍しい素材。トリックカードは、ムーブメントの開いた2章から加わるので、ギアの傾向のまま（はめ方で目指す進化先）
-    { id: 'thunderCards', name: 'サンダーカード', conditions: [param('thunder', 6), key('filament')], attackElement: 'thunder', stats: { spd: 2 }, styles: [STYLES.fierce('thunder'), STYLES.first] },
+    { id: 'thunderCards', name: 'サンダーカード', conditions: [param('thunder', 12), key('filament')], attackElement: 'thunder', stats: { spd: 2 }, styles: [STYLES.fierce('thunder'), STYLES.first] },
     {
       id: 'trickCards',
       name: 'トリックカード',
@@ -283,9 +283,9 @@ const cards: WeaponDef = {
       passives: [{ kind: 'oneMoreDraw', count: 1 }],
       styles: [STYLES.bond, STYLES.baton],
     },
-    { id: 'flameCards', name: 'フレイムカード', conditions: [param('fire', 6), key('brassBolt')], attackElement: 'fire', stats: { spd: 1 }, styles: [STYLES.fierce('fire'), STYLES.first] },
+    { id: 'flameCards', name: 'フレイムカード', conditions: [param('fire', 12), key('brassBolt')], attackElement: 'fire', stats: { spd: 1 }, styles: [STYLES.fierce('fire'), STYLES.first] },
     // 2回目（鍵は 2-2 の素材）
-    { id: 'boltCards', name: '稲妻のカード', from: 'thunderCards', conditions: [param('thunder', 12), key('boomboxDial')], attackElement: 'thunder', stats: { spd: 3, atk: 2 }, styles: [STYLES.might, STYLES.first] },
+    { id: 'boltCards', name: '稲妻のカード', from: 'thunderCards', conditions: [param('thunder', 24), key('boomboxDial')], attackElement: 'thunder', stats: { spd: 3, atk: 2 }, styles: [STYLES.might, STYLES.first] },
     {
       id: 'mirageCards',
       name: '幻のカード',
@@ -295,7 +295,7 @@ const cards: WeaponDef = {
       passives: [{ kind: 'comboBoost', rate: 0.2 }],
       styles: [STYLES.bond, STYLES.first],
     },
-    { id: 'sparkCards', name: '火花のカード', from: 'flameCards', conditions: [param('fire', 12), key('glitterPen')], attackElement: 'fire', stats: { spd: 2, atk: 2 }, styles: [STYLES.might, STYLES.ember] },
+    { id: 'sparkCards', name: '火花のカード', from: 'flameCards', conditions: [param('fire', 24), key('glitterPen')], attackElement: 'fire', stats: { spd: 2, atk: 2 }, styles: [STYLES.might, STYLES.ember] },
     // 寄り道：サンダーカードから。火を低いままにして、仲間につなぐことだけを考えるカード
     {
       id: 'oldMaidCards',
@@ -311,12 +311,12 @@ const cards: WeaponDef = {
       styles: [STYLES.swift, STYLES.guard],
     },
     // 3回目（鍵は 2-3 の素材）
-    { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 18), key('cheerBand')], attackElement: 'thunder', stats: { spd: 3, atk: 3 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.baton] },
+    { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 36), key('cheerBand')], attackElement: 'thunder', stats: { spd: 3, atk: 3 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.baton] },
     {
       id: 'magicianCards',
       name: '奇術師のカード',
       from: 'mirageCards',
-      conditions: [{ kind: 'tendency', color: 'yellow' }, param('thunder', 10), key('scorePlate')],
+      conditions: [{ kind: 'tendency', color: 'yellow' }, param('thunder', 20), key('scorePlate')],
       stats: { spd: 3 },
       passives: [{ kind: 'batonBoost', rate: 0.25 }],
       styles: [STYLES.swift, STYLES.baton],
@@ -325,12 +325,12 @@ const cards: WeaponDef = {
       id: 'jesterCards',
       name: '道化のカード',
       from: 'mirageCards',
-      conditions: [{ kind: 'tendency', color: 'yellow' }, param('atk', 12), key('autographBall')],
+      conditions: [{ kind: 'tendency', color: 'yellow' }, param('atk', 24), key('autographBall')],
       stats: { atk: 4, spd: 2 },
       passives: [{ kind: 'comboBoost', rate: 0.2 }],
       styles: [STYLES.might, STYLES.shatter],
     },
-    { id: 'fireworkCards', name: '花火のカード', from: 'sparkCards', conditions: [param('fire', 18), key('buttonCell')], attackElement: 'fire', stats: { spd: 2, atk: 3 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.shatter] },
+    { id: 'fireworkCards', name: '花火のカード', from: 'sparkCards', conditions: [param('fire', 36), key('buttonCell')], attackElement: 'fire', stats: { spd: 2, atk: 3 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.shatter] },
     ...beyond('raijinCards', [['雷を一枚のカードにして、空へ返したという'], ['鳴りやんだ拍手を、もう一度呼んだという']]),
     ...beyond('magicianCards', [['引いたカードが、いつも見たい景色だったという']]),
     ...beyond('jesterCards', [['笑わせたあとで、そっと忘れ物を返したという', 'ばらまいたカードが、町じゅうの灯になったという']]),

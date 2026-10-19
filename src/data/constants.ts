@@ -56,12 +56,14 @@ export const LINK_GAUGE_MAX = 100;
 export const LINK_GAUGE_GAIN = { weak: 12, down: 10, baton: 10, partBreak: 20, hurt: 4 } as const;
 
 /**
- * 敵の落とし物の確率（段階27b）。倒すと1つ。残りはいつもの素材。
- * 体勢が崩れた敵（ダウン中・立ち上がったばかり）を倒すと、珍しい素材とレアが出やすい
+ * 敵の落とし物の確率（段階27b）。倒すと、この確率で表から1つ。残りは何も落とさない。
+ * 体勢が崩れた敵（ダウン中・立ち上がったばかり）を倒すと、珍しい素材とレアが出やすい。
+ * 段階74：1章を3晩の形にして敵が約90体になり、素材が余ったので、いつもの素材だけを減らした（いつもの 75%・30% → 25%・35%。
+ * 進化の鍵になる珍しい素材とレアは今のまま。落とすのは、ふつう半分、体勢を崩すと4分の3）
  */
 export const DROP_RATES = {
-  normal: { uncommon: 0.2, rare: 0.05 },
-  offBalance: { uncommon: 0.3, rare: 0.1 },
+  normal: { common: 0.25, uncommon: 0.2, rare: 0.05 },
+  offBalance: { common: 0.35, uncommon: 0.3, rare: 0.1 },
 } as const;
 
 /** 部位を狙った時に本体に入るダメージの割合 */

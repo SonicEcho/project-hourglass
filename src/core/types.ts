@@ -157,7 +157,7 @@ export interface PartDef {
   revealsWeakness?: Element[];
 }
 
-/** 敵の落とし物の表（段階27b）。倒すと1つ、確率で選ぶ（確率は constants.ts の DROP_RATES） */
+/** 敵の落とし物の表（段階27b）。倒すと確率で1つ選ぶ。何も落とさないこともある（確率は constants.ts の DROP_RATES） */
 export interface DropTable {
   common: string;
   uncommon?: string;

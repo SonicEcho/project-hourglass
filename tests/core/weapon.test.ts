@@ -191,8 +191,8 @@ describe('武器：経験値とレベル', () => {
 });
 
 describe('武器：進化（能力値＋鍵の素材。段階27b）', () => {
-  /** ハルトの火を6にして、Lv3 にする（お面のひも3つ） */
-  const fire6 = () => withExp(absorbMany(createArmory(D), 'hero', ['maskString', 'maskString', 'maskString']), 'hero', 20);
+  /** ハルトの火を12にして、Lv3 にする（お面のひも6つ。段階74で進化の能力値を2倍にした） */
+  const fire6 = () => withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 20);
 
   it('Lv3、能力値、鍵の素材がそろうと進化でき、鍵を1つ使う', () => {
     let a = fire6();
@@ -245,7 +245,7 @@ describe('武器：キャラへの反映', () => {
   });
 
   it('進化先の能力値・特性・通常攻撃の属性が付く', () => {
-    let a = addItems(withExp(absorbMany(createArmory(D), 'akari', ['maskString', 'maskString', 'maskString']), 'akari', 20), ['maskString']);
+    let a = addItems(withExp(absorbMany(createArmory(D), 'akari', Array<string>(6).fill('maskString')), 'akari', 20), ['maskString']);
     a = evolveWeapon(D, a, 'akari', 'flameRod');
     const akari = applyWeapons(D, a, PARTY).find((c) => c.id === 'akari')!;
     expect(akari.attackElement).toBe('fire');
@@ -258,7 +258,7 @@ describe('武器：キャラへの反映', () => {
   });
 
   it('ブリッジが伸びる型で進化すると、ムーブメントのブリッジ（縦の列）が下に2マス伸びる', () => {
-    let a = addItems(withExp(absorbMany(createArmory(D), 'hero', ['maskString', 'maskString', 'maskString']), 'hero', 20), ['maskString']);
+    let a = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 20), ['maskString']);
     a = evolveWeapon(D, a, 'hero', 'flameBlade');
     const data = naviDataWithWeapons(NAVI_DATA, D, a);
     const board = data.boards.hero;
@@ -329,7 +329,7 @@ describe('武器：進化ツリー（段階42）', () => {
   /** ハルトの武器を、レベル・素材をそろえて道どおりに進化させる */
   const evolveAlong = (steps: [string, number][], extra: string[] = []): ArmoryState => {
     let a = withExp(createArmory(D), 'hero', 999);
-    a = absorbMany(a, 'hero', [...Array<string>(9).fill('maskString'), ...extra]);
+    a = absorbMany(a, 'hero', [...Array<string>(18).fill('maskString'), ...extra]);
     for (const [id, style] of steps) {
       const evo = D.weapons.recordSword.evolutions.find((e) => e.id === id)!;
       a = addItems(a, evo.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : [])));
@@ -387,7 +387,7 @@ describe('武器：進化ツリー（段階42）', () => {
   });
 
   it('型は選べ、知らない型では進化できない。まだ作っていない先には進化できない', () => {
-    const base = addItems(withExp(absorbMany(createArmory(D), 'hero', ['maskString', 'maskString', 'maskString']), 'hero', 999), ['maskString']);
+    const base = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 999), ['maskString']);
     expect(getEvolveError(D, base, 'hero', 'flameBlade', 2)).toBe('unknown style');
     expect(getEvolveError(D, base, 'hero', 'flameBlade', 1)).toBeNull();
     const a = evolveAlong([['flameBlade', 0], ['crimsonBlade', 0], ['blazeBlade', 0]], Array<string>(9).fill('expoTicket'));
@@ -399,8 +399,8 @@ describe('武器：進化ツリー（段階42）', () => {
   it('通った進化先と型の能力値・特性は全部足し、通常攻撃の属性は一番新しいもの', () => {
     const a = evolveAlong([['flameBlade', 1], ['crimsonBlade', 0]]);
     const [hero] = applyWeapons(D, a, [PARTY[0]]);
-    // 攻撃：吸わせた素材（お面のひも 9つで +18）＋ フレイムブレード 3 ＋ 紅蓮の刃 4 ＋ 剛 3
-    expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 18 + 3 + 4 + 3);
+    // 攻撃：吸わせた素材（お面のひも 18個で +36）＋ フレイムブレード 3 ＋ 紅蓮の刃 4 ＋ 剛 3
+    expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 36 + 3 + 4 + 3);
     // 灯（フレイムブレードの型）の再生
     expect(hero.passives).toContainEqual({ kind: 'regen', rate: 0.03 });
     expect(hero.attackElement).toBe('fire');
@@ -419,11 +419,11 @@ describe('武器：進化ツリー（段階42）', () => {
   });
 
   it('寄り道は、能力値を低いままにする条件', () => {
-    let a = withExp(absorbMany(createArmory(D), 'hero', ['balloonRubber', 'balloonRubber', 'balloonRubber']), 'hero', 999);
+    let a = withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('balloonRubber')), 'hero', 999);
     a = evolveWeapon(D, addItems(a, ['balloonRubber']), 'hero', 'breakEdge');
     a = addItems(a, ['bentSpoke']);
-    // 水風船のゴム3つで雷が3なので、雷2以下の寄り道には進めない
-    expect(a.weapons.hero.params.thunder).toBe(3);
+    // 水風船のゴム6つで雷が6なので、雷2以下の寄り道には進めない
+    expect(a.weapons.hero.params.thunder).toBe(6);
     expect(getEvolveError(D, a, 'hero', 'strayEdge')).toBe('conditions are not met');
     const low = { ...a, weapons: { ...a.weapons, hero: { ...a.weapons.hero, params: { ...a.weapons.hero.params, thunder: 2 } } } };
     expect(getEvolveError(D, low, 'hero', 'strayEdge')).toBeNull();

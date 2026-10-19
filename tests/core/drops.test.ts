@@ -15,25 +15,31 @@ function killOne(seed: number, offBalance = false): BattleState {
 }
 
 describe('敵の落とし物（段階27b）', () => {
-  it('倒すと、表から1つ落とす。同じシードなら同じものになる', () => {
-    const s = killOne(1);
+  it('倒すと、表から1つ落とす（落とさないこともある）。同じシードなら同じものになる', () => {
+    // 段階74：何も落とさないこともあるので、落とすシードを選ぶ
+    let seed = 1;
+    while (eventsOf(killOne(seed), 'drop').length === 0) seed++;
+    const s = killOne(seed);
     const drops = eventsOf(s, 'drop');
     expect(drops).toHaveLength(1);
     expect(Object.values(table)).toContain(drops[0].itemId);
     expect(getBattleResult(s).drops).toEqual([drops[0].itemId]);
-    expect(eventsOf(killOne(1), 'drop')).toEqual(drops);
+    expect(eventsOf(killOne(seed), 'drop')).toEqual(drops);
   });
 
-  it('確率はおよそ いつも75%・珍しい20%・レア5%。体勢が崩れた敵を倒すと、珍しい素材とレアが出やすい', () => {
+  it('確率はおよそ いつも25%・珍しい20%・レア5%・なし50%（段階74）。体勢が崩れた敵を倒すと、落としやすく、珍しい素材とレアが出やすい', () => {
     const count = (off: boolean) => {
-      const n = { common: 0, uncommon: 0, rare: 0 } as Record<string, number>;
-      for (let seed = 1; seed <= 2000; seed++) n[eventsOf(killOne(seed, off), 'drop')[0].kind]++;
+      const n = { common: 0, uncommon: 0, rare: 0, none: 0 } as Record<string, number>;
+      for (let seed = 1; seed <= 2000; seed++) n[eventsOf(killOne(seed, off), 'drop')[0]?.kind ?? 'none']++;
       return n;
     };
     const normal = count(false);
     const off = count(true);
     expect(normal.rare / 2000).toBeCloseTo(DROP_RATES.normal.rare, 1);
     expect(normal.uncommon / 2000).toBeCloseTo(DROP_RATES.normal.uncommon, 1);
+    expect(normal.common / 2000).toBeCloseTo(DROP_RATES.normal.common, 1);
+    expect(normal.none / 2000).toBeCloseTo(0.5, 1);
+    expect(off.none).toBeLessThan(normal.none);
     expect(off.rare).toBeGreaterThan(normal.rare);
     expect(off.uncommon).toBeGreaterThan(normal.uncommon);
   });

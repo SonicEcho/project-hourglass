@@ -1207,7 +1207,7 @@ function dropItem(s: BattleState, enemy: EnemyUnit, itemId: string, kind: DropKi
   s.log.push({ type: 'drop', enemyId: enemy.uid, itemId, kind });
 }
 
-/** 倒した時の落とし物：必ず落とすもの、と表から1つ（段階27b） */
+/** 倒した時の落とし物：必ず落とすもの、と表から確率で1つ（段階27b。段階74から、何も落とさないこともある） */
 function dropOnDefeat(s: BattleState, enemy: EnemyUnit, offBalance: boolean): void {
   for (const id of enemy.drops) dropItem(s, enemy, id, 'fixed');
   const t = enemy.dropTable;
@@ -1216,7 +1216,8 @@ function dropOnDefeat(s: BattleState, enemy: EnemyUnit, offBalance: boolean): vo
   const r = random(s);
   if (t.rare && r < rates.rare) dropItem(s, enemy, t.rare, 'rare');
   else if (t.uncommon && r < rates.rare + rates.uncommon) dropItem(s, enemy, t.uncommon, 'uncommon');
-  else dropItem(s, enemy, t.common, 'common');
+  // 段階74：残りの一部だけ、いつもの素材（ほかは何も落とさない）
+  else if (r < rates.rare + rates.uncommon + rates.common) dropItem(s, enemy, t.common, 'common');
 }
 
 function damageAlly(s: BattleState, enemy: EnemyUnit, action: EnemyActionDef, ally: AllyUnit): void {

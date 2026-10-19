@@ -1428,7 +1428,7 @@ export const SCRIPT_M2 = `
 
 # d3_classroom 5日目：朝の教室
 @bg classroom
-@bgm daily
+@bgm somber
 @cast
 担任（声）「……りくは、今日も休みだ」
 〈地の文〉昨日と同じ言葉。教室のざわめきは、昨日より小さかった。
@@ -1478,7 +1478,7 @@ export const SCRIPT_M2 = `
 
 # a12_enter 1-2：商店街に入る
 @bg showa_street
-@bgm daily
+@bgm showa
 @fade in
 @cast ハルト あかり
 〈地の文〉気がつくと、夕焼けの商店街に立っていた。
@@ -1720,7 +1720,7 @@ export const SCRIPT_M2 = `
 
 # d5_fumi_house 5日目：帰り道・ふみさんの家の前
 @bg river_path
-@bgm daily
+@bgm somber
 @cast ハルト あかり
 あかり〔心配〕「……あれ、ふみさんの家？」
 〈地の文〉古い一軒家の前に、段ボールが積んであった。門には、引っ越しのお知らせの紙。
@@ -1861,7 +1861,7 @@ export const SCRIPT_M2 = `
 
 # d6_fumi_call 6日目：朝・ふみさんからの電話
 @bg clock_shop_day
-@bgm daily
+@bgm somber
 @clock tick many
 @cast ハルト
 @se phone

@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
 import { addParts, blockers, bondLevel, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { AREAS, BACKDROPS, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { AREAS, BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { startAmbience, stopAmbience } from '../audio/sound';
+import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
 import { run, setStoryVars, storyLineup } from './run';
@@ -59,6 +59,8 @@ export class DailyScene extends Phaser.Scene {
     this.eventId = data.event;
     const data0 = DAILY_HUBS[data.event];
     if (!data0) throw new Error(`no daily hub ${data.event}`);
+    // 町の昼（何日目かがある日常）は日常の曲。重い場面を無音や別の曲にした後でも、昼に戻ると日常の曲になる（段階73）。屋台めぐりはプロローグの曲のまま
+    if (data0.day !== undefined) playBgm(this, BGM.daily);
     let gearNote = '';
     if (data.finished) {
       const hub = build(data0);

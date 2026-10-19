@@ -606,7 +606,7 @@ export const SCRIPT_M1 = `
 
 # d2_classroom 2日目：朝の教室
 @bg classroom
-@bgm daily
+@bgm somber
 @cast ハルト あかり
 担任（声）「……りく。……りくは、休みだ」
 担任（声）「家にも帰ってないそうだ。何か知ってる者は、先生に言うように」
@@ -912,7 +912,7 @@ export const SCRIPT_M1 = `
 
 # d3_walk 3日目：帰り道・間に合わせたい
 @bg river_path
-@bgm daily
+@bgm somber
 @cast ハルト あかり
 あかり〔心配〕「……ねえ、ハルト。ゆうまさんが名前を忘れたのって、時間を盗まれたから、だよね」
 ハルト〔通常〕「……たぶんな」
@@ -1072,7 +1072,7 @@ export const SCRIPT_M1 = `
 
 # d4_yuma 4日目：朝・ゆうまの電話
 @bg shopping_street
-@bgm daily
+@bgm somber
 @cast ゆうま
 〈地の文〉朝。コンビニの前で、ゆうまさんがスマホを耳に当てていた。俺たちは、少し離れた所で足を止めた。
 ゆうま〔考える〕「……もしもし。ひなの？ ……うん、俺」
