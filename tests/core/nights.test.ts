@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AreaDef } from '../../src/core';
-import { areaGrid, checkArea, checkNights, closedWalls, inNight, isWalkable, nightArea, nightDone, normalizeExplore, pendingTrigger, startExplore, startNight } from '../../src/core';
+import { areaGrid, checkArea, checkNights, closedWalls, inNight, isWalkable, nightArea, nightDone, nightExit, nightGoal, normalizeExplore, pendingTrigger, startExplore, startNight } from '../../src/core';
 
 // 晩に分けた区画（段階63。docs/design/explore.md の 2-5）：1つの部屋を壁で3つに区切り、晩ごとに奥へ進む
 const layout = [
@@ -35,7 +35,8 @@ const area: AreaDef = {
     { on: 'room', room: 'r', scene: 'room_r', night: 2 },
   ],
   komaNeed: 3,
-  nights: [{ koma: 1 }, { koma: 2, start: { cell: [4, 5] } }, { start: { cell: [4, 2] } }],
+  // 帰り口（段階67）：1晩目は壁の手前、2晩目は2晩目を始めた所（書かなければ次の晩を始める所だが、まだ壁の向こう）
+  nights: [{ koma: 1, exit: { cell: [4, 7] } }, { koma: 2, start: { cell: [4, 5] }, exit: { cell: [4, 5] } }, { start: { cell: [4, 2] } }],
   walls: [
     { id: 'w1', cells: [1, 2, 3, 4, 5, 6, 7, 8].map((c): [number, number] => [c, 6]), opens: 2 },
     { id: 'w2', cells: [1, 2, 3, 4, 5, 6, 7, 8].map((c): [number, number] => [c, 3]), opens: 3 },
@@ -87,6 +88,25 @@ describe('晩に分けた区画（段階63）', () => {
     expect(nightDone(area, { ...s, koma: 1 }, 1)).toBe(true);
     expect(nightDone(area, { ...s, koma: 1 }, 2)).toBe(false);
     expect(nightDone(area, { ...s, koma: 3 }, 3)).toBe(false);
+  });
+
+  it('今夜の目標（段階67）：今夜集めるコマの数と、今夜もう集めた数。最後の晩は、ぬしの分まで', () => {
+    const s = startExplore(area);
+    expect(nightGoal(area, s, 1)).toEqual({ have: 0, need: 1, last: false });
+    expect(nightGoal(area, { ...s, koma: 1 }, 1)).toEqual({ have: 1, need: 1, last: false });
+    expect(nightGoal(area, { ...s, koma: 1 }, 2)).toEqual({ have: 0, need: 1, last: false });
+    expect(nightGoal(area, { ...s, koma: 2 }, 2)).toEqual({ have: 1, need: 1, last: false });
+    expect(nightGoal(area, { ...s, koma: 2 }, 3)).toEqual({ have: 0, need: 1, last: true });
+  });
+
+  it('今夜の帰り口（段階67）：晩の exit、なければ次の晩を始める所。最後の晩にはない', () => {
+    expect(nightExit(area, 1)).toEqual({ room: 'r', cell: [4, 7] });
+    expect(nightExit(area, 2)).toEqual({ room: 'r', cell: [4, 5] });
+    expect(nightExit(area, 3)).toBeNull();
+    const plain: AreaDef = { ...area, nights: [{ koma: 1 }, { koma: 2, start: { cell: [4, 5] } }, { start: { cell: [4, 2] } }] };
+    expect(nightExit(plain, 1)).toEqual({ room: 'r', cell: [4, 5] });
+    // 次の晩を始める所が、まだ壁の向こう：その晩のうちに帰り口へ歩けない
+    expect(checkNights(plain).filter((e) => e.includes('帰り口'))).toHaveLength(2);
   });
 
   it('途中の会話のきっかけ：コマが n 個になった時、部屋に初めて入った時', () => {
