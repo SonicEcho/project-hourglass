@@ -364,7 +364,7 @@ export const SCRIPT_M1 = `
 
 # d1_clockshop 1日目：夕暮れの時計屋
 @bg clock_shop
-@bgm stop
+@bgm dusk
 @clock tick many
 @cast ハルト
 〈地の文〉商店街の外れの、古い時計屋。俺のアルバイト先だ。
@@ -376,6 +376,7 @@ export const SCRIPT_M1 = `
 あかり〔心配〕「……ねえ。りくに送った写真、既読がつかないんだけど」
 ハルト〔通常〕「調べ物に夢中なんだろ」
 @clock stop
+@bgm stop
 @wait 1400
 @mono on
 @zoom 1.08
@@ -912,7 +913,7 @@ export const SCRIPT_M1 = `
 
 # d3_walk 3日目：帰り道・間に合わせたい
 @bg river_path
-@bgm somber
+@bgm uneasy
 @cast ハルト あかり
 あかり〔心配〕「……ねえ、ハルト。ゆうまさんが名前を忘れたのって、時間を盗まれたから、だよね」
 ハルト〔通常〕「……たぶんな」
@@ -1072,7 +1073,7 @@ export const SCRIPT_M1 = `
 
 # d4_yuma 4日目：朝・ゆうまの電話
 @bg shopping_street
-@bgm somber
+@bgm uneasy
 @cast ゆうま
 〈地の文〉朝。コンビニの前で、ゆうまさんがスマホを耳に当てていた。俺たちは、少し離れた所で足を止めた。
 ゆうま〔考える〕「……もしもし。ひなの？ ……うん、俺」

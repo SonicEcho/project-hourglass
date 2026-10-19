@@ -140,6 +140,11 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5 } },
 };
 
+/** 戦いごとの曲（段階75）。書かなければ、ボスはボス戦の曲、ほかはふだんの戦闘の曲 */
+export const BATTLE_BGM: Partial<Record<string, string>> = {
+  a23_kai: BGM.kai,
+};
+
 
 
 
@@ -262,8 +267,8 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'showa_night', side: 'right' }, b: { room: 'showa_lane', side: 'left' } },
       { a: { room: 'showa_night', side: 'top' }, b: { room: 'showa_hill', side: 'bottom' } },
     ],
-    // 記憶の中の曲（段階73）：昭和の商店街の記憶の曲が届くまで、レストピアの曲で代わりにする（台本の showa と同じ）
-    bgm: BGM.library,
+    // 記憶の中の曲（段階73。段階75 で曲が届いた）：昭和の商店街の記憶の曲（台本の showa と同じ）
+    bgm: BGM.showa,
     komaNeed: 10,
     timeTitle: '夕暮れの二人乗り',
     owner: 'フミ',
@@ -359,8 +364,8 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'factory_alley', side: 'left' }, b: { room: 'factory_yard', side: 'right' } },
       { a: { room: 'factory_alley', side: 'right' }, b: { room: 'bath_alley', side: 'left' } },
     ],
-    // 昭和の町工場の探索の曲が届くまで、日常の曲
-    bgm: BGM.daily,
+    // 昭和44年の町工場の曲（段階75）
+    bgm: BGM.factory,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
     komaNeed: 10,
     timeTitle: '親方の背中',
@@ -473,8 +478,8 @@ export const AREAS: Record<string, AreaDef> = {
       // 体育館への扉は、渡り廊下の番人を倒すと開く
       { a: { room: 'school_corridor', side: 'top' }, b: { room: 'school_gym', side: 'bottom' }, opensWhen: 'a22_e_stage' },
     ],
-    // 平成の文化祭の探索の曲が届くまで、日常の曲
-    bgm: BGM.daily,
+    // 平成18年の文化祭の曲（段階75）
+    bgm: BGM.cultureFestival,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
     komaNeed: 10,
     timeTitle: '最後の文化祭',
