@@ -422,6 +422,7 @@ const enemyHead = (era: string, few = false) =>
   `It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (${era}). Eerie but not gory, readable as a small silhouette on a phone screen. ` +
   (few ? "Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance. " : '');
 const SHOWA_COLORS = 'sepia, faded green and orange';
+const HEISEI_COLORS = 'bright pastel and light blue';
 /** 白い背景を抜いた敵の絵の設定（rembg は砂とノイズの体を背景とみなして消すので、白を抜く道具を使った） */
 const ENEMY_CUT = '元の絵は 1254×1254。白い背景は scripts/cutout_white.py（広い白を抜き、小さな白い光りは残す）で抜き、640×640 に縮めた。見本の絵：ブリキノイズ';
 
@@ -824,6 +825,23 @@ export const ASSETS: AssetEntry[] = [
     'Character: young Riku, 7 years old. A mischievous little leader, a proud confident grin showing his teeth. Short dark-brown hair, a little spiky and messy (not yet styled). Bright lively brown eyes, a small bandage on his cheek. A navy blue jinbei (Japanese summer festival outfit) with a simple white pattern.',
     'りくの笑顔の立ち絵',
   ),
+  // 子どもの3人の表情の残り（2026-10-19。docs/ART.md の 6-7 の Gemini の 6。プロローグの台本で使う表情）
+  ...(
+    [
+      ['hero', 'ハルト', 'surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised', '通常'],
+      ['hero', 'ハルト', 'shy', '照れ', 'embarrassed and quietly happy, light blush on the cheeks, eyes looking down and aside, a tiny shy smile with the mouth closed, a quiet child who is not used to being included', '通常'],
+      ['akari', 'あかり', 'laugh', '大笑い', 'laughing happily with the mouth wide open, eyes closed', '笑顔'],
+      ['akari', 'あかり', 'pout', 'むっ', 'pouting, cheeks puffed, frowning a little', '笑顔'],
+      ['akari', 'あかり', 'surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised', '笑顔'],
+      ['akari', 'あかり', 'dejavu', 'デジャヴ', 'a puzzled, faraway look as if she has seen this moment before, eyes slightly unfocused and gazing past the viewer, lips slightly parted, a faint wondering frown', '笑顔'],
+      ['akari', 'あかり', 'sad', '悲しい', 'sad and quiet, eyes looking down, mouth closed, brows slightly lowered, holding back tears', '笑顔'],
+      ['riku', 'りく', 'flustered', 'あせり', 'flustered and caught off guard, eyes darting aside, an awkward forced grin, eyebrows raised, a boy whose plan just went wrong', '得意げ'],
+      ['riku', 'りく', 'smirk', 'にやり', 'a mischievous smirk, one corner of the mouth raised, eyes narrowed playfully, like a boy hiding a fun secret', '得意げ'],
+      ['riku', 'りく', 'normal', '通常', 'relaxed and natural, mouth closed, a lively, confident look in the eyes', '得意げ'],
+      ['riku', 'りく', 'surprised', '驚き', 'surprised, eyes wide open, mouth slightly open, eyebrows raised', '得意げ'],
+      ['riku', 'りく', 'shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward grin, rubbing it off as if it is nothing', '得意げ'],
+    ] as const
+  ).map(([who, name, face, title, expression, base]): AssetEntry => ({ ...youngFace(who, name, face, title, expression, base), acquiredAt: '2026-10-19' })),
   youngFace('hero', 'ハルト', 'smile', '笑顔', 'a small, shy but happy smile with the mouth closed, eyes soft, a child who is just starting to open up', '通常'),
   youngFace('akari', 'あかり', 'worried', '心配', 'gently worried, eyebrows raised in a troubled way, mouth slightly open, eyes looking at someone with concern', '笑顔'),
   youngFace('riku', 'りく', 'smile', '笑顔', 'a big, bright, carefree open-mouthed smile, eyes happily narrowed', '得意げ'),
@@ -1378,6 +1396,89 @@ export const ASSETS: AssetEntry[] = [
     'M2 の 2-1 の寄り道の部屋（docs/ART.md の 6-2）。2-1 の路地の右の辺につながる。追ってくる砂嵐と宝箱',
     '2026-10-17',
   ),
+  // 1-1 の人たちと敵（2026-10-19。docs/ART.md の 6-7 の作る順番の 1〜3。ゆうまは、最初の絵がハルトに似たので髪と目元を替えて作り直した）
+  chatgptPortrait(
+    'yuma',
+    'ゆうま',
+    'smile',
+    '笑顔',
+    portraitHead('a relaxed, easygoing half-smile with sleepy droopy eyes, but kind') +
+      'Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and easygoing, but kind and friendly. Hair dyed a light ash-brown, grown a little long, loosely tied back in a small low ponytail at the nape, with a few loose strands framing his face and the forehead mostly visible (no heavy bangs over the eyes). Gentle droopy eyes (tareme) with light brown irises, a small beauty mark under his left eye, a small silver stud earring in his left ear, clean-shaven, a slightly lanky build. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text. He must look clearly different from the attached black-haired boy with messy bangs.',
+    'あかりの笑顔の立ち絵（構図の見本）と、ハルトの立ち絵（似せないため）',
+    '1-1 の持ち主（docs/ART.md の 6-7 の 2）。口を開けた笑顔で出てきたので、笑顔の絵にした（ほかの表情は、絵が届くまで笑顔で代わりに出す）',
+    '2026-10-19',
+  ),
+  chatgptPortrait(
+    'past_yuma',
+    '写しのゆうま',
+    'smile',
+    '笑顔',
+    portraitHead('a bright, big-brotherly grin', 'the little girl in the yukata, with the same childlike proportions') +
+      'Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same gentle droopy eyes and the small beauty mark under his left eye so he is clearly the same person, with childlike proportions. Natural black short hair (he dyes it only later), a plain navy summer yukata.',
+    'ゆうまの立ち絵と、子どものあかりの笑顔の立ち絵（構図の見本）',
+    '1-1 の写し（docs/ART.md の 6-7 の 3）',
+    '2026-10-19',
+  ),
+  chatgptPortrait(
+    'past_hinano',
+    '写しのひなの',
+    'smile',
+    '笑顔',
+    portraitHead('a big happy smile', 'the little girl in the yukata, with the same childlike proportions') +
+      "Character: young Hinano, the 7-year-old little sister of the attached boy, at a summer shrine festival. Eyes that resemble her brother's, round cheeks, childlike proportions. Short black hair in two small pigtails. A pale pink summer yukata with a morning glory pattern and a yellow obi sash (no goldfish pattern).",
+    '写しのゆうまの立ち絵と、子どものあかりの笑顔の立ち絵（構図の見本）',
+    '1-1 の写し（docs/ART.md の 6-7 の 3）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.goldfish_noise',
+    '敵の絵（金魚ノイズ）',
+    'assets/enemies/goldfish_noise.webp',
+    enemyHead(HEISEI_COLORS, true) + 'Body: a big red goldfish swimming in the air, trailing torn festival water bags and splashes, its fins fraying into static',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.balloon_noise',
+    '敵の絵（水風船ノイズ）',
+    'assets/enemies/balloon_noise.webp',
+    enemyHead(HEISEI_COLORS, true) +
+      'Body: a bunch of bouncing festival water balloons (yo-yo balloons) on rubber strings, wobbling and splashing, each balloon round with simple colorful stripes',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.mask_noise',
+    '敵の絵（お面ノイズ）',
+    'assets/enemies/mask_noise.webp',
+    enemyHead(HEISEI_COLORS, true) +
+      'Body: a cluster of three festival character masks (a plain white fox mask, a red oni mask and a round-face mask, no famous characters) stacked like a totem, glaring',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.cotton_noise',
+    '敵の絵（わたあめノイズ）',
+    'assets/enemies/cotton_noise.webp',
+    enemyHead(HEISEI_COLORS, true) + 'Body: a fluffy cloud of pink cotton candy on a wooden stick, sticky strands reaching out like arms',
+    ENEMY_CUT,
+    '1-1 の砂嵐（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
+  chatgptArt(
+    'enemy.goldfish_bowl_boss',
+    '敵の絵（金魚鉢のぬし）',
+    'assets/enemies/goldfish_bowl_boss.webp',
+    enemyHead(HEISEI_COLORS, true) +
+      'A large boss monster, filling most of the image. ' +
+      'Body: a giant round glass goldfish bowl with swirling water inside and many goldfish circling, two arms made of paper goldfish scoops (poi), water overflowing as waves',
+    ENEMY_CUT,
+    '1-1 のボス（docs/ART.md の 6-7 の 1）',
+    '2026-10-19',
+  ),
   akariPortrait('laugh', '大笑い', 'laughing happily with open mouth, eyes closed', 'Gemini で作った笑顔の立ち絵'),
   akariPortrait(
     'worried',
@@ -1462,11 +1563,73 @@ export const ASSETS: AssetEntry[] = [
     '写しのきよし',
     'shy',
     '照れ',
-    'short cropped black hair, sun-tanned face, faded navy work jacket over a white undershirt',
-    'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile',
+    'short cropped black hair, sun-tanned face, stern brows, faded navy work jacket over a white undershirt',
+    'gruffly hiding his embarrassment: face turned slightly away and eyes looking off to the side, mouth pressed into a stubborn straight line, brows slightly drawn together as if annoyed, no smile and no teeth showing. Only a faint blush on the cheeks and reddened ear tips give away that he is embarrassed. A quiet, awkward middle-aged man who is bad at showing his feelings.',
     '通常',
-    'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける',
+    'M2 の 1-2 の写し（昭和63年の夏）。ノイズとセピアの加工はゲームの側でかける。2026-10-19 に作り直した（最初の照れは歯を見せて大きく赤くなり、口数の少ない頑固な人に合わなかった）',
   ),
+  // 1-1 の人たちの表情違い（2026-10-19。docs/ART.md の 6-7 の Gemini の 1〜3）
+  ...(
+    [
+      ['normal', '通常', 'relaxed and a little sleepy, droopy half-lidded eyes, mouth closed in a faint lazy smile'],
+      ['thinking', '考える', 'thoughtful, eyes looking up and aside, mouth slightly pursed'],
+      ['wry', '苦笑い', 'a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled'],
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'],
+      ['teary', '泣き笑い', 'smiling through tears, eyes wet and slightly narrowed, a trembling smile'],
+      ['lonely', 'さみしげ', 'quietly lonely, a faint sad smile, eyes looking down'],
+      ['serious', '真剣', 'serious and focused, mouth firmly closed, brows set, eyes steady and determined'],
+    ] as const
+  ).map(
+    ([face, title, expression]): AssetEntry => ({
+      ...geminiFace(
+        'yuma',
+        'ゆうま',
+        face,
+        title,
+        'light ash-brown hair tied back in a small low ponytail, droopy eyes, a small beauty mark under his left eye, a small silver stud earring, vertically striped convenience store shirt and a navy apron with a blank name tag',
+        expression,
+        '笑顔',
+        '1-1 の持ち主',
+      ),
+      acquiredAt: '2026-10-19',
+    }),
+  ),
+  ...(
+    [
+      ['normal', '通常', 'relaxed and natural, mouth closed'],
+      ['shy', '照れ', 'embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile'],
+      ['pout', 'ふくれ', 'sulking, cheeks puffed, frowning a little, eyes looking aside'],
+      ['surprised', '驚き', 'surprised, eyes wide open, mouth slightly open'],
+      ['angry', '怒り', 'an irritated little boy snapping at someone, brows sharply drawn together, mouth open as if shouting, cheeks slightly flushed'],
+    ] as const
+  ).map(
+    ([face, title, expression]): AssetEntry => ({
+      ...geminiFace(
+        'past_yuma',
+        '写しのゆうま',
+        face,
+        title,
+        'short black hair, droopy eyes, a small beauty mark under his left eye, navy striped summer yukata, childlike proportions',
+        expression,
+        '笑顔',
+        '1-1 の写し。ノイズとセピアの加工はゲームの側でかける',
+      ),
+      acquiredAt: '2026-10-19',
+    }),
+  ),
+  {
+    ...geminiFace(
+      'past_hinano',
+      '写しのひなの',
+      'cry',
+      '泣き',
+      'short dark hair in two small pigtails with pink flower hair ties, pale pink yukata with a morning glory pattern and a yellow obi, childlike proportions',
+      'crying like a hurt little child, tears running down her cheeks, eyes squeezed half shut, mouth open and trembling, brows drawn up in sadness',
+      '笑顔',
+      '1-1 の写し。ノイズとセピアの加工はゲームの側でかける',
+    ),
+    acquiredAt: '2026-10-19',
+  },
   // りくの口パクの元の絵（2026-10-11。docs/ART.md の 5-4）。表情ごとに、口だけ開けた絵。会話には出さず、口のまわりだけ切り抜く
   ...(['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'] as const).map(
     (f): AssetEntry => ({
@@ -1506,6 +1669,37 @@ export const ASSETS: AssetEntry[] = [
     acquiredAt: '2026-10-11',
     notes: '会話には出さない（起動の時も読み込まない）。目のまわりだけを切り抜いて、まばたきの差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md',
   })),
+  // 1章の人たちと、けんた・カイのまばたき・口パクの元の絵（2026-10-19。docs/ART.md の 5-4）。Gemini で、その人の基本の絵から目だけ閉じた絵・口だけ開けた絵
+  ...(
+    [
+      ['yuma', 'ゆうま'],
+      ['fumi', 'ふみ'],
+      ['young_riku', '子どものりく'],
+      ['past_yuma', '写しのゆうま'],
+      ['past_kiyoshi', '写しのきよし'],
+      ['young_akari', '子どものあかり'],
+      ['young_hero', '子どものハルト'],
+      ['past_fumi', '写しのふみ'],
+      ['past_hinano', '写しのひなの', 'blink'],
+      ['kenta', 'けんた'],
+      ['kai', 'カイ', 'blink'],
+    ] as const
+  ).flatMap(([who, name, only]: readonly [string, string, string?]) =>
+    (
+      [
+        ['blink_src', '目を閉じた絵。まばたきの元', BLINK_SRC_PROMPT, '目'],
+        ['talk_src', '口を開けた絵。口パクの元', TALK_SRC_PROMPT, '口'],
+      ] as const
+    ).filter(([face]) => !only || face.startsWith(only)).map(([face, title, prompt, part]): AssetEntry => {
+      const base = geminiFace(who, name, face, title, '', '', '通常', '');
+      return {
+        ...base,
+        source: { ...base.source, prompt } as AssetEntry['source'],
+        acquiredAt: '2026-10-19',
+        notes: `会話には出さない（起動の時も読み込まない）。${part}のまわりだけを切り抜いて、差分にする（scripts/portrait_parts.py）。ChatGPT の規約の控えは docs/licenses/ai-openai.md`,
+      };
+    }),
+  ),
 ];
 
 /**
@@ -1521,6 +1715,28 @@ const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
   ),
   ['hero_blink', 'portrait.hero.blink_src', 'ハルトの閉じた目（まばたき）'],
   ['riku_blink', 'portrait.riku.blink_src', 'りくの閉じた目（まばたき）'],
+  // 1-1・1-2 の人たち（2026-10-19）。_l は基本の1枚（1024×1536）に重ねる大きさに広げたもの
+  ...(
+    [
+      ['yuma', 'ゆうま', ['blink', 'blink_l', 'talk']],
+      ['fumi', 'ふみ', ['blink', 'blink_l', 'talk', 'talk_l']],
+      ['young_riku', '子どものりく', ['blink', 'blink_l', 'talk']],
+      ['past_yuma', '写しのゆうま', ['blink', 'blink_l', 'talk']],
+      ['past_kiyoshi', '写しのきよし', ['blink', 'blink_l', 'talk', 'talk_l']],
+      ['young_akari', '子どものあかり', ['blink', 'blink_l', 'talk']],
+      ['young_hero', '子どものハルト', ['blink', 'blink_l', 'talk', 'talk_l']],
+      ['past_fumi', '写しのふみ', ['blink', 'blink_l', 'talk']],
+      ['past_hinano', '写しのひなの', ['blink_l']],
+      ['kenta', 'けんた', ['blink_l', 'talk_l']],
+      ['kai', 'カイ', ['blink_l']],
+    ] as const
+  ).flatMap(([who, name, files]) =>
+    files.map((f): [string, string, string] => [
+      `${who}_${f}`,
+      `portrait.${who}.${f.startsWith('blink') ? 'blink' : 'talk'}_src`,
+      `${name}の${f.startsWith('blink') ? '閉じた目（まばたき）' : '開いた口（口パク）'}${f.endsWith('_l') ? '（基本の1枚の大きさ）' : ''}`,
+    ]),
+  ),
 ];
 for (const [file, from, title] of PORTRAIT_PART_FILES) {
   const src = ASSETS.find((a) => a.id === from);
@@ -1530,7 +1746,8 @@ for (const [file, from, title] of PORTRAIT_PART_FILES) {
     id: `portrait.part.${file}`,
     title,
     file: `assets/portraits/parts/${file}.webp`,
-    acquiredAt: '2026-10-11',
+    // 2026-10-19 からの差分は、元の絵を入れた日
+    acquiredAt: src.acquiredAt > '2026-10-11' ? src.acquiredAt : '2026-10-11',
     notes: `${src.title}から切り抜いた（scripts/portrait_parts.py。段階46b）。${src.notes ?? ''}`,
   });
 }

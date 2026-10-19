@@ -150,6 +150,8 @@ export interface AreaDef {
 export interface AreaNight {
   koma?: number;
   start?: { room?: string; cell: GridCell };
+  /** 今夜の帰り口（段階67）。書かなければ、次の晩を始める所 */
+  exit?: { room?: string; cell: GridCell };
 }
 
 /** ノイズの壁（段階63）：持ち主が少し思い出すと薄れる、記憶の先をふさぐ壁 */
@@ -722,6 +724,27 @@ export function nightDone(area: AreaDef, state: ExploreState, night: number): bo
   return !!area.nights && night < area.nights.length && n?.koma !== undefined && state.koma >= n.koma;
 }
 
+/** 今夜の目標（段階67）：今夜集めるコマの数と、今夜もう集めた数。最後の晩は、区画を返すまでの残り（ぬしの分も入る） */
+export function nightGoal(area: AreaDef, state: ExploreState, night: number): { have: number; need: number; last: boolean } {
+  const nights = area.nights ?? [];
+  const last = night >= nights.length;
+  const before = night > 1 ? (nights[night - 2]?.koma ?? 0) : 0;
+  const until = last ? area.komaNeed : (nights[night - 1]?.koma ?? area.komaNeed);
+  return { have: Math.max(0, Math.min(state.koma, until) - before), need: until - before, last };
+}
+
+/**
+ * 今夜の帰り口（段階67）：今夜のコマがそろった後、ここから時計屋へ帰って晩を終える。
+ * 晩の exit。書いていなければ次の晩を始める所（チェックポイント）、それもなければ出発点。最後の晩にはない
+ */
+export function nightExit(area: AreaDef, night: number): { room: string; cell: GridCell } | null {
+  if (!area.nights || night >= area.nights.length) return null;
+  const start = area.nights[night - 1]?.exit ?? area.nights[night]?.start;
+  if (start) return { room: start.room ?? startRoom(area), cell: start.cell };
+  const s = cellsOf(area, 'S')[0];
+  return s ? { room: startRoom(area), cell: s } : null;
+}
+
 /**
  * 晩に分けた区画の書き間違い：壁のマス・晩を始める所、晩ごとに、その晩の始める所から、その晩に出る敵・宝箱・話せる人へ歩けるか。
  * 最後の晩は、ぬしまで歩けるか
@@ -753,6 +776,9 @@ export function checkNights(area: AreaDef): string[] {
     for (const t of a.talkers) if (!near(t, t.cell)) errors.push(`${area.id}：${night}晩目の話せる人 ${t.id} へ歩けない`);
     if (night === area.nights!.length && !near(area.boss, area.boss.cell)) errors.push(`${area.id}：最後の晩に、ぬしへ歩けない`);
     if (night < area.nights!.length && n.koma === undefined) errors.push(`${area.id}：${night}晩目に、終わるコマの数がない`);
+    // 帰り口（段階67）：その晩のうちに歩いて行けるか
+    const exit = nightExit(area, night);
+    if (exit && !reach[exit.room]?.has(`${exit.cell[0]},${exit.cell[1]}`)) errors.push(`${area.id}：${night}晩目の帰り口へ歩けない`);
   });
   return errors;
 }

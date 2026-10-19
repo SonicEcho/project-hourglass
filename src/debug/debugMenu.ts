@@ -2,7 +2,7 @@ import { formatBattleLog } from './battleLog';
 import { playtimeReport, resetPlaytime } from './playtime';
 import { debugAutoStory, setDebugAutoStory } from './debugFlag';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
-import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent } from '../core';
+import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
 import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, M1_SCENE_ORDER, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { clearReadLog } from '../scenes/DialogueScene';
 import { advanceEvent, currentEvent, deleteSave, getActiveBattle, readSave, readSaveText, run, setEvent, setExplore } from '../scenes/run';
@@ -269,6 +269,19 @@ export function installDebugMenu(nav: DebugNavigator): void {
           nav.openExplore(exArea.id);
         }),
       );
+      // 晩に分けた区画（段階67）：今夜のコマをそろえて、帰り口（光る砂時計）へ移る
+      const night = ex.night ?? 1;
+      const exit = nightExit(exArea, night);
+      const need = exArea.nights?.[night - 1]?.koma;
+      if (exit && need !== undefined) {
+        panel.append(
+          button(`探索：${night}晩目のコマをそろえて、帰り口へ移る`, () => {
+            close();
+            setExplore({ ...ex, koma: Math.max(ex.koma, need), room: exit.room, cell: exit.cell, visited: ex.visited.includes(exit.room) ? ex.visited : [...ex.visited, exit.room] });
+            nav.openExplore(exArea.id);
+          }),
+        );
+      }
     }
 
     // 部屋をつなぐ探索と敵の動き（段階47）：今ある地図の絵3枚を部屋としてつなぎ、4種類の動きの敵を置いた区画

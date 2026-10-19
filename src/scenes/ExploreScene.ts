@@ -5,6 +5,8 @@ import {
   inNight,
   nightArea,
   nightDone,
+  nightExit,
+  nightGoal,
   startNight,
   gainSnaps,
   addParts,
@@ -236,11 +238,7 @@ export class ExploreScene extends Phaser.Scene {
       this.openTrigger(pending);
       return;
     }
-    // その晩のコマがそろい、途中の会話も見終えたら、その晩は終わり（段階63）
-    if (this.night > 0 && nightDone(base, state, this.night)) {
-      this.finishArea();
-      return;
-    }
+    // その晩のコマがそろい、途中の会話も見終えても、自動では終わらない。帰り口（光る砂時計）から自分で帰る（段階67）
 
     this.draw();
     // 戦闘に入った時にすぐ曲が変わるよう、戦闘の曲を先に読んでおく
@@ -249,10 +247,12 @@ export class ExploreScene extends Phaser.Scene {
     this.say(
       note ||
         (data.won
-          ? `${data.won === area.boss.id ? 'ぬし' : '砂嵐'}を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${left > 0 ? `あと${left}つで返せる` : 'そろった'}）` : ''}`
+          ? `${data.won === area.boss.id ? 'ぬし' : '砂嵐'}を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${this.komaNote()}）` : this.hunting || data.won === area.boss.id ? '' : '（コマは持っていなかった）'}`
           : this.hunting
             ? '記憶をたどる：砂嵐の名残とぬしから素材を集める。光る所をタップすると素材を拾える'
-            : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
+            : this.night > 0
+              ? this.nightGuide()
+              : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
@@ -391,6 +391,17 @@ export class ExploreScene extends Phaser.Scene {
       world.add(boss);
       this.tweens.add({ targets: boss, scale: awake ? 1.1 : 1.04, yoyo: true, repeat: -1, duration: awake ? 800 : 1600 });
     }
+    // 帰り口（段階67）：今夜のコマがそろったら、次の晩を始めるチェックポイントに光る砂時計
+    const exit = this.nightOver() ? nightExit(area, this.night) : null;
+    if (exit && exit.room === room.id) {
+      const [ec, er] = exit.cell;
+      const glow = this.add.circle(ec * T + T / 2, er * T + T / 2, T * 0.9, 0xffd84a, 0.35);
+      world.add(glow);
+      this.tweens.add({ targets: glow, alpha: 0.1, scale: 1.5, yoyo: true, repeat: -1, duration: 900 });
+      const mark = this.komaMark(ec * T + T / 2, er * T + T / 2 - T * 0.2, 2.2);
+      world.add(mark);
+      this.tweens.add({ targets: mark, y: mark.y - 5, yoyo: true, repeat: -1, duration: 800 });
+    }
     // タップした所の印
     this.marker = this.add.circle(0, 0, 6, 0xffd84a, 0.8).setVisible(false);
     world.add(this.marker);
@@ -400,6 +411,8 @@ export class ExploreScene extends Phaser.Scene {
       const move = e.move ?? 'patrol';
       const route = e.patrol.length >= 2 ? patrolRoute(this.map, e.patrol) : [e.patrol[0]];
       const sprite = this.enemySprite(e.battle, move, route[0]);
+      // コマを持つ砂嵐の印（段階67。物語の探索だけ。狩りではコマは手に入らない）
+      if (!this.hunting && (AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
       world.add(sprite);
       const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route) };
       if (move === 'chase') {
@@ -448,7 +461,20 @@ export class ExploreScene extends Phaser.Scene {
       const label = fade < 1 ? `（${MEMORY_FADE_LABELS[level] ?? '薄い'}・${Math.round(fade * 10)}割）` : '';
       ui.add(addText(this, GAME_WIDTH / 2, 31, `記憶をたどる：素材を集める${label}`, { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     }
-    else ui.add(
+    else if (this.night > 0) {
+      // 晩に分けた区画（段階67）：今夜の目標（何晩目と、今夜のコマ）
+      const goal = nightGoal(area, this.state, this.night);
+      const done = this.nightOver();
+      // 左右のボタンの間に入る長さ（16字ほど）にする。くわしくは下の案内で
+      const rest = goal.last ? (left > this.bossKoma() ? '最後はぬし' : 'あとは、ぬし') : done ? 'そろった！' : `今夜あと${goal.need - goal.have}つ`;
+      ui.add(
+        addText(this, GAME_WIDTH / 2, 31, `${this.night}晩目　コマ ${goal.have}/${goal.need}（${rest}）`, {
+          size: 13,
+          bold: true,
+          color: done || left <= this.bossKoma() ? COLORS.accentText : COLORS.text,
+        }).setOrigin(0.5, 0),
+      );
+    } else ui.add(
       addText(this, GAME_WIDTH / 2, 31, left > 0 ? `コマ ${this.state.koma}/${area.komaNeed}（あと${left}つで返せる）` : `コマ ${this.state.koma}/${area.komaNeed}（そろった！）`, {
         size: 13,
         bold: true,
@@ -520,8 +546,10 @@ export class ExploreScene extends Phaser.Scene {
   /** タップしたマス：話せる人・ボスなら隣まで歩いてから。それ以外はそこまで歩く */
   private tapCell(cell: GridCell): void {
     // ノイズの壁（段階63）
-    if (this.night > 0 && closedWalls(this.area, this.night, this.state.room).some((w) => w.cells.some((c) => c[0] === cell[0] && c[1] === cell[1]))) {
-      this.say('厚いノイズの壁で、ふさがっている。……持ち主が思い出さないと、この先へは行けない');
+    const wall = this.night > 0 ? closedWalls(this.area, this.night, this.state.room).find((w) => w.cells.some((c) => c[0] === cell[0] && c[1] === cell[1])) : undefined;
+    if (wall) {
+      // 何晩目に開くかも言う（段階67）
+      this.say(`厚いノイズの壁で、ふさがっている\n……${wall.opens}晩目、持ち主がもう少し思い出せば、ほどけそう`);
       return;
     }
     const talker = this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
@@ -609,6 +637,7 @@ export class ExploreScene extends Phaser.Scene {
       this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
       if (r.event.healed) this.refreshVitals();
     }
+    if (this.atExit(cell)) this.say('光る砂時計：今夜はここまで\n下のボタンで時計屋へ帰る');
     this.keep(this.state);
     if (r.event.type === 'checkpoint') {
       const t = pendingTrigger(this.area, this.state, 'checkpoint');
@@ -744,8 +773,20 @@ export class ExploreScene extends Phaser.Scene {
     this.hubButton.removeAll(true);
     const unlocks = storyLineup().unlocks;
     const target = unlocks.growth ? 'Growth' : unlocks.weapon ? 'Weapon' : null;
-    if (!target || this.walking || this.route.length > 0 || !isCheckpoint(this.area, this.state.cell, this.state.room)) return;
-    addButton(this, this.hubButton, GAME_WIDTH / 2, GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyLineup()).length), 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
+    if (this.walking || this.route.length > 0) return;
+    const y = GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyLineup()).length);
+    // 帰り口（段階67）に立っている：時計屋へ帰って、今夜を終える
+    if (this.atExit(this.state.cell)) {
+      addButton(this, this.hubButton, GAME_WIDTH / 2, target ? y - 70 : y, 240, 60, '時計屋へ帰る\n（今夜はおわり）', { onTap: () => this.finishArea() }, {
+        size: 16,
+        bold: true,
+        fill: 0x5a4a1e,
+        stroke: 0xffd84a,
+        strokeWidth: 2,
+      });
+    }
+    if (!target || !isCheckpoint(this.area, this.state.cell, this.state.room)) return;
+    addButton(this, this.hubButton, GAME_WIDTH / 2, y, 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
       size: 17,
       bold: true,
       fill: 0x1e3a5a,
@@ -846,6 +887,51 @@ export class ExploreScene extends Phaser.Scene {
     this.time.delayedCall(240, () => this.scene.restart(data));
   }
 
+  /** 晩に分けた区画で、今夜のコマがそろったか（段階67。最後の晩は、ぬしに勝つまで終わらない） */
+  private nightOver(): boolean {
+    return this.night > 0 && nightDone(this.area, this.state, this.night);
+  }
+
+  /** 帰り口（段階67）のマスか */
+  private atExit(cell: GridCell): boolean {
+    const exit = this.nightOver() ? nightExit(this.area, this.night) : null;
+    return !!exit && exit.room === this.state.room && exit.cell[0] === cell[0] && exit.cell[1] === cell[1];
+  }
+
+  /** 晩の始めの案内（段階67）：今夜の目標と、コマを持つ敵の印 */
+  private nightGuide(): string {
+    if (this.nightOver()) {
+      const exit = nightExit(this.area, this.night);
+      const where = exit && exit.room !== this.state.room ? '（右上の地図の、金色の縁の部屋）' : '';
+      return `今夜のコマはそろった\n光る砂時計${where}まで歩くと、時計屋へ帰れる`;
+    }
+    const goal = nightGoal(this.area, this.state, this.night);
+    const mark = '金色の砂時計の印の砂嵐が、コマを持っている';
+    if (goal.last) return `${this.night}晩目（最後の晩）：コマを集めて、ぬしを起こそう\n${mark}`;
+    return `${this.night}晩目：今夜はコマを${goal.need - goal.have}つ集める\n${mark}`;
+  }
+
+  /** コマを手に入れた時の、残りの言い方 */
+  private komaNote(): string {
+    const left = komaLeft(this.area, this.state);
+    if (this.night === 0) return left > 0 ? `あと${left}つで返せる` : 'そろった';
+    const goal = nightGoal(this.area, this.state, this.night);
+    if (this.nightOver()) return '今夜の分がそろった。光る砂時計から帰れる';
+    if (goal.last) return left > this.bossKoma() ? `あと${left}つで返せる` : 'あとは、ぬし';
+    return `今夜 ${goal.have}/${goal.need}`;
+  }
+
+  /** 金色の小さな砂時計（コマを持つ敵の印と、帰り口。段階67） */
+  private komaMark(x: number, y: number, scale = 1): Phaser.GameObjects.Graphics {
+    const w = 7 * scale;
+    const h = 9 * scale;
+    const g = this.add.graphics({ x, y });
+    g.fillStyle(0xffd84a, 1).lineStyle(Math.max(1.5, scale), 0x5a3a00, 1);
+    g.fillTriangle(-w, -h, w, -h, 0, 0).strokeTriangle(-w, -h, w, -h, 0, 0);
+    g.fillTriangle(-w, h, w, h, 0, 0).strokeTriangle(-w, h, w, h, 0, 0);
+    return g;
+  }
+
   /** 閉じた出入口の手がかり（開ける印が敵なら「◯◯の番人を倒すと開く」） */
   private lockHint(opensWhen: string | undefined): string {
     if (opensWhen === this.area.boss.id) return 'ぬしを倒すと開く';
@@ -908,10 +994,13 @@ export class ExploreScene extends Phaser.Scene {
       g.lineBetween(x1, y1, x2, y2);
     }
     box.add(g);
+    // 帰り口（段階67）のある部屋は、金色の縁
+    const exitRoom = this.nightOver() ? nightExit(this.area, this.night)?.room : undefined;
     for (const id of seen) {
       const [x, y] = at(id);
       const now = id === this.state.room;
-      box.add(this.add.rectangle(x, y, w, h, now ? 0xffd84a : 0x3a4a5a).setStrokeStyle(1, now ? 0xffffff : 0x8a9aaa));
+      const exit = id === exitRoom;
+      box.add(this.add.rectangle(x, y, w, h, now ? 0xffd84a : 0x3a4a5a).setStrokeStyle(exit ? 3 : 1, exit ? 0xffb020 : now ? 0xffffff : 0x8a9aaa));
     }
     return box;
   }

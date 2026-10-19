@@ -111,7 +111,51 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
       byFace: Object.fromEntries(RIKU_TALK_FACES.map((f) => [f, `portrait.part.riku_talk_${f}`])),
     },
   },
+  // 1章の人たちと、けんた・カイ（2026-10-19）。差分は Gemini の表情の絵（843×1264）の大きさ。基本の1枚（ChatGPT。1024×1536）には _l を重ねる。
+  // 目を閉じた表情・口を開けた表情、顔の傾きが大きく違う表情には重ねない
+  ゆうま: {
+    blink: { ...partsOf('yuma_blink', ['normal', 'thinking', 'wry', 'surprised', 'teary', 'lonely', 'serious', 'smile']), byFace: { smile: 'portrait.part.yuma_blink_l' } },
+    talk: partsOf('yuma_talk', ['normal', 'thinking', 'lonely', 'serious']),
+  },
+  ふみ: {
+    blink: { ...partsOf('fumi_blink', ['normal', 'smile', 'surprised', 'teary', 'lonely', 'thinking']), byFace: { normal: 'portrait.part.fumi_blink_l' } },
+    talk: { ...partsOf('fumi_talk', ['normal', 'lonely', 'thinking']), byFace: { normal: 'portrait.part.fumi_talk_l' } },
+  },
+  // 子どものりくの閉じた目は笑った目なので、眉を寄せた真剣には重ねない
+  子りく: {
+    blink: { ...partsOf('young_riku_blink', ['normal', 'proud', 'surprised', 'smirk', 'shy', 'flustered']), byFace: { proud: 'portrait.part.young_riku_blink_l' } },
+    talk: partsOf('young_riku_talk', ['normal', 'serious']),
+  },
+  写しのゆうま: {
+    blink: { ...partsOf('past_yuma_blink', ['normal', 'shy', 'pout', 'surprised', 'smile']), byFace: { smile: 'portrait.part.past_yuma_blink_l' } },
+    talk: partsOf('past_yuma_talk', ['normal', 'shy', 'pout']),
+  },
+  写しのきよし: {
+    blink: { ...partsOf('past_kiyoshi_blink', ['normal', 'shy']), byFace: { normal: 'portrait.part.past_kiyoshi_blink_l' } },
+    talk: { ...partsOf('past_kiyoshi_talk', ['normal', 'shy']), byFace: { normal: 'portrait.part.past_kiyoshi_talk_l' } },
+  },
+  子あかり: {
+    blink: { ...partsOf('young_akari_blink', ['smile', 'worried', 'pout', 'surprised', 'sad', 'dejavu']), byFace: { smile: 'portrait.part.young_akari_blink_l' } },
+    talk: partsOf('young_akari_talk', ['sad', 'pout']),
+  },
+  子ハルト: {
+    blink: { ...partsOf('young_hero_blink', ['normal', 'smile', 'surprised', 'shy']), byFace: { normal: 'portrait.part.young_hero_blink_l' } },
+    talk: { ...partsOf('young_hero_talk', ['normal', 'smile', 'shy']), byFace: { normal: 'portrait.part.young_hero_talk_l' } },
+  },
+  写しのふみ: {
+    blink: { ...partsOf('past_fumi_blink', ['smile', 'shy', 'surprised', 'teary']), byFace: { smile: 'portrait.part.past_fumi_blink_l' } },
+    talk: partsOf('past_fumi_talk', ['shy']),
+  },
+  // 基本の1枚（ChatGPT）しか絵のない人は、基本の1枚の大きさの差分だけ
+  写しのひなの: { blink: partsOf('past_hinano_blink_l', ['smile']) },
+  けんた: { blink: partsOf('kenta_blink_l', ['smile']), talk: partsOf('kenta_talk_l', ['smile']) },
+  カイ: { blink: partsOf('kai_blink_l', ['smug']) },
 };
+
+/** まばたき・口パクの差分（台帳の portrait.part.<file>）と、重ねる表情 */
+function partsOf(file: string, faces: string[]): PortraitPart {
+  return { image: `portrait.part.${file}`, faces };
+}
 
 /** まばたきの間（ミリ秒）：次のまばたきまで min〜max、閉じている時間、2回続ける割合。口パク：開け閉めの間 */
 export const BLINK = { minMs: 2200, maxMs: 5400, closedMs: 110, doubleRate: 0.25 };
@@ -138,17 +182,17 @@ export const CAST: Record<string, CastMember> = {
   ハルト: { portrait: 'portrait.hero', faces: HERO_FACES, firstFace: '通常', color: 0x4a7fb5, height: 450, voice: { pitch: 300, wave: 'sawtooth' } },
   あかり: { portrait: 'portrait.akari', faces: AKARI_FACES, firstFace: '笑顔', color: 0xd06b8a, height: 450, voice: { pitch: 600, wave: 'triangle' } },
   りく: { portrait: 'portrait.riku', faces: RIKU_FACES, height: 450, firstFace: '通常', color: 0x6a9a4a, voice: { pitch: 370, wave: 'square' } },
-  子ハルト: { portrait: 'portrait.young_hero', ...young(['通常', '笑顔', '驚き', '照れ', '困り'], { 通常: 'normal', 笑顔: 'smile' }, '通常'), color: 0x4a7fb5, height: YOUNG_HEIGHT, voice: { pitch: 440, wave: 'sawtooth' } },
+  子ハルト: { portrait: 'portrait.young_hero', ...young(['通常', '笑顔', '驚き', '照れ', '困り'], { 通常: 'normal', 笑顔: 'smile', 驚き: 'surprised', 照れ: 'shy' }, '通常'), color: 0x4a7fb5, height: YOUNG_HEIGHT, voice: { pitch: 440, wave: 'sawtooth' } },
   子あかり: {
     portrait: 'portrait.young_akari',
-    ...young(['笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'], { 笑顔: 'smile', 心配: 'worried' }, '笑顔'),
+    ...young(['笑顔', 'むっ', '心配', 'デジャヴ', '驚き', '大笑い', '照れ', '悲しい'], { 笑顔: 'smile', 心配: 'worried', 大笑い: 'laugh', むっ: 'pout', 驚き: 'surprised', デジャヴ: 'dejavu', 悲しい: 'sad' }, '笑顔'),
     color: 0xd06b8a,
     height: YOUNG_HEIGHT,
     voice: { pitch: 760, wave: 'triangle' },
   },
   子りく: {
     portrait: 'portrait.young_riku',
-    ...young(['通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'], { 得意げ: 'proud', 笑顔: 'smile', 真剣: 'serious' }, '得意げ'),
+    ...young(['通常', '得意げ', '笑顔', 'あせり', '驚き', 'にやり', '照れ', '真剣'], { 得意げ: 'proud', 笑顔: 'smile', 真剣: 'serious', 通常: 'normal', あせり: 'flustered', 驚き: 'surprised', にやり: 'smirk', 照れ: 'shy' }, '得意げ'),
     color: 0x6a9a4a,
     height: YOUNG_HEIGHT,
     voice: { pitch: 500, wave: 'square' },
@@ -161,13 +205,38 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 520, wave: 'triangle' },
   },
-  ゆうま: { faces: names('通常', '笑顔', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 290, wave: 'square' } },
+  // 1-1 の人たち（2026-10-19）。ゆうまと写しの2人は、台本で使う表情がそろった。写しはセピアをかける
+  ゆうま: {
+    portrait: 'portrait.yuma',
+    ...young(
+      ['笑顔', '通常', '考える', '泣き笑い', '苦笑い', '驚き', '真剣', 'さみしげ'],
+      { 笑顔: 'smile', 通常: 'normal', 考える: 'thinking', 泣き笑い: 'teary', 苦笑い: 'wry', 驚き: 'surprised', 真剣: 'serious', さみしげ: 'lonely' },
+      '通常',
+    ),
+    color: 0x8a7a5a,
+    height: 450,
+    voice: { pitch: 290, wave: 'square' },
+  },
   // 電器屋の主人（今45歳。段階66の 1-2 の書き直し。昭和63年の「電器屋の子ども」）。立ち絵はまだない（色の札）
   しげる: { faces: names('笑顔', '驚き', '苦笑い', '通常', 'さみしげ', '考える'), firstFace: '笑顔', color: 0x7a8aa0, voice: { pitch: 300, wave: 'square' } },
   // ゆうまの妹（今18歳。段階63の 1-1 の書き直し）。立ち絵はまだない（色の札）
   ひなの: { faces: names('通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'), firstFace: '通常', color: 0xc08aa0, voice: { pitch: 620, wave: 'triangle' } },
-  写しのゆうま: { faces: names('笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'), firstFace: '笑顔', color: 0x9aa0b0, voice: { pitch: 540, wave: 'square' } },
-  写しのひなの: { faces: names('笑顔', '泣き'), firstFace: '笑顔', color: 0xb0a0b8, voice: { pitch: 700, wave: 'square' } },
+  写しのゆうま: {
+    portrait: 'portrait.past_yuma',
+    ...young(['笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'], { 笑顔: 'smile', ふくれ: 'pout', 怒り: 'angry', 驚き: 'surprised', 通常: 'normal', 照れ: 'shy' }, '笑顔'),
+    color: 0x9aa0b0,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 540, wave: 'square' },
+    tint: SEPIA_TINT,
+  },
+  写しのひなの: {
+    portrait: 'portrait.past_hinano',
+    ...young(['笑顔', '泣き'], { 笑顔: 'smile', 泣き: 'cry' }, '笑顔'),
+    color: 0xb0a0b8,
+    height: YOUNG_HEIGHT,
+    voice: { pitch: 700, wave: 'square' },
+    tint: SEPIA_TINT,
+  },
   // M2（段階35）。みおは笑顔の絵だけある（2026-10-13。ほかの表情は Gemini で作るまで笑顔で代わりに出す）。ふみは全部の表情の絵がある（2026-10-11）
   みお: {
     portrait: 'portrait.mio',
@@ -345,7 +414,7 @@ export const BACKDROPS: Record<string, Backdrop> = {
   shopping_street: { title: '商店街', top: 0xa8c8e0, bottom: 0xb09a80, image: 'bg.shopping_street' },
   convenience_store: { title: 'コンビニの店内', top: 0xf0f4f4, bottom: 0xc0c8c8, image: 'bg.convenience_store' },
   // 段階35（M2 の昼の日常）。絵が届くまで仮の色
-  river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a },
+  river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a, image: 'bg.riverside_path' },
   riverside_ground: { title: '河川敷のグラウンド', top: 0x9ac0e0, bottom: 0xa08a5a, image: 'bg.riverside_1998', tint: 0xd8d0c0 },
   home_tv_dark: { title: '施設の居間（テレビの光だけ）', top: 0x101828, bottom: 0x2a3a5a },
   clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },

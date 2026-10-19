@@ -777,11 +777,51 @@ Character: Hinano, an 18-year-old Japanese high school senior from a neighboring
 
 1-2 も3晩に分けて作り直した。商店街の地図（`map.showa_street`）の左右（行19〜22）と上の辺の真ん中（列10〜13）を開ける手直し（2-1・1-1 と同じ、今の地図を付けた編集）と、寄り道の部屋3つ（左の路地裏、右の電器屋の裏通り、坂の上の先。今は 1-1 の部屋と同じ形の文字の地図。絵を頼む時に、部屋ごとの文字の地図と下絵を作る）。
 
+寄り道の3部屋は、今は 1-1 の部屋と同じ形の文字の地図なので、下絵も同じ形（`docs/sketches/room_showa_*.png`。2026-10-19 に作った）。頼み方は 6-5 と同じ（部屋の地図の頭、`Square 1:1 image (1024x1024).`、場所の文、下絵に従う文と地図の締めの文。今の商店街の地図を絵柄の見本として添付）。時代は昭和の終わり（1988年の夏の夕暮れ）
+
+| 部屋 | 下絵 | 台帳の id（届いたら） | 場所の文 |
+| --- | --- | --- | --- |
+| 左の路地裏 | `room_showa_alley.png` | `map.showa_alley` | `Scene: narrow back alleys behind the shops of a small Japanese shopping street at summer dusk in 1988: wooden fences, stacked beer crates and empty ramune bottles, old bicycles, laundry poles, a stray cat on a wall. An opening at the center of the right edge.` |
+| 右の電器屋の裏通り | `room_showa_lane.png` | `map.showa_lane` | `Scene: a winding back lane behind an old electronics shop at summer dusk in 1988: discarded CRT televisions and radios stacked by the back door, tangled antenna cables, a small storage shed, potted plants, and a dead end with a little vacant lot at the bottom right. An opening at the center of the left edge.` |
+| 坂の上の先 | `room_showa_hill.png` | `map.showa_hill` | `Scene: the top of a gentle slope above a small Japanese town at summer sunset in 1988: a narrow paved road winding between old houses with tiled roofs and stone walls, utility poles with wires, a small bus stop bench and a vending machine, the evening sun glowing over the rooftops. An opening at the center of the bottom edge.` |
+
 しげる（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a friendly, slightly nostalgic smile`）の後に。見本はあかりの笑顔の立ち絵（構図）
 
 ```
 Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.
 ```
+
+#### 6-7. 1-1・1-2 の完成度を上げる絵（2026-10-19。作る順番）
+
+1-1・1-2 を3晩の形に作り直した台本（`docs/script/1-1_rework.md`・`1-2_rework.md`）で、まだ絵のない物。台本と台帳を照らし合わせて集めた（2026-10-19）。5-6 の残りと、6-5・6-6・11-2 をまとめて、1章を遊ぶ時に目に入る長さの順に並べた。（ ）は 1-1・1-2 の台本での台詞の数
+
+**ChatGPT**
+
+| 順 | 絵 | 指示文 | 添付する見本 |
+| --- | --- | --- | --- |
+| 1 | 敵：1-1 の砂嵐4つ（金魚・水風船・お面・わたあめノイズ）と金魚鉢のぬし（済。2026-10-19。`enemy.goldfish_noise` など） | 5-6 の 13（5-5 の「1-1 の敵の `Body:`」） | ブリキノイズ |
+| 2 | ゆうまの基本の1枚（47）（済。2026-10-19。口を開けた笑顔で出てきたので笑顔の絵 `portrait.yuma.smile`。最初の絵はハルトに似たので、髪と目元を替えて作り直した） | 5-5 の「ゆうま」 | あかり（笑顔） |
+| 3 | 写しのゆうま（笑顔）（28）、写しのひなの（笑顔）（20）（済。2026-10-19） | 5-5 の「写しのゆうま」「写しのひなの」 | ゆうま、子どものあかり（構図）。ひなのは写しのゆうまも |
+| 4 | ひなの（通常）（24） | 6-5 | あかり（笑顔） |
+| 5 | しげる（笑顔）（17） | 6-6 | あかり（笑顔） |
+| 6 | 1枚絵：長針の剣と金魚の灯籠の杖（1-1 の1晩目の頭） | 11-2 | ハルト・あかりの立ち絵 |
+| 7 | 1枚絵：高台で花火を見る3人の後ろ姿（プロローグの終わり） | 5-5 の「M1 の残りの指示文」 | 子どもの3人の立ち絵 |
+| 8 | 1枚絵：金魚の写真（1日目の屋上） | 同上 | 子どものあかり（笑顔） |
+| 9 | 地図：1-1 の5部屋と、縁日の地図の手直し（出入口を開ける） | 6-5 | 今の縁日の地図と下絵 |
+| 10 | 地図：1-2 の3部屋と、商店街の地図の手直し | 6-6 | 今の商店街の地図と下絵 |
+| 11 | 1枚絵：白い街（1日目の朝の夢。短い） | 5-5 | なし |
+
+**Gemini（表情違い。基本の1枚ができてから）**
+
+| 順 | 人 | 足りない表情（多い順） |
+| --- | --- | --- |
+| 1 | ゆうま | 通常（6。だるそう）・考える（8）・苦笑い・驚き・泣き笑い・さみしげ・真剣（基本の1枚は笑顔）（済。2026-10-19） |
+| 2 | 写しのひなの | 泣き（5）（済。2026-10-19） |
+| 3 | 写しのゆうま | 驚き・怒り・ふくれ・照れ・通常（済。2026-10-19） |
+| 4 | ひなの | むっ・驚き・泣き笑い・困り・さみしげ・微笑み |
+| 5 | しげる | 驚き・さみしげ・考える・苦笑い・通常 |
+| 6 | 子どもの3人（プロローグ） | 5-6 の Gemini の 1〜3（済。2026-10-19。子りくの照れとあせりは似た顔になった） |
+| 7 | 写しのきよし | 照れの作り直し（2026-10-19。5-3 の 14 の表の下の文。1-2 の山場の2行で使う）（済。2026-10-19） |
 
 ### 7. 1枚絵：親方の背中（2-1-8）
 
@@ -1012,7 +1052,7 @@ Expression: <表情>
 | むっ | `pouting, cheeks puffed, frowning a little` | みお |
 | 真剣 | `serious and focused, mouth firmly closed, brows set, eyes steady and determined` | みお、カイ、写しのいさむ |
 | 泣き笑い | `smiling through tears, eyes wet and slightly narrowed, a trembling smile` | みお、ふみ、写しのふみ、いさむ、写しのいさむ、けんた、写しのけんた、写しのこうじ、あかり |
-| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しのふみ、写しのきよし、けんた |
+| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しのふみ、けんた（写しのきよしは下の別の文） |
 | 考える | `thoughtful, eyes looking up and aside, mouth slightly pursed` | みお、ふみ、いさむ、こうじ、けんた、あかり |
 | 心配 | `gently worried, eyebrows raised in a troubled way, mouth slightly open` | みお |
 | 悔しい | `frustrated and regretful, biting the lip, brows drawn together, eyes glistening` | みお、ハルト |
@@ -1023,6 +1063,8 @@ Expression: <表情>
 | 見下す | `looking down on someone with cold, narrowed eyes, chin slightly raised, a faint sneer` | カイ |
 | 悲しい | `sad and quiet, eyes looking down, mouth closed, brows slightly lowered` | ノア |
 | 怒り | `angry, brows sharply drawn together, teeth clenched, eyes blazing` | ハルト |
+
+写しのきよしの照れ（2026-10-19 に作り直す。上の照れの文では歯を見せて大きく赤くなり、口数が少なく頑固で気持ちを出すのが下手な人に合わなかった。照れを隠して、ぶっきらぼうに目をそらす顔にする）：`gruffly hiding his embarrassment: face turned slightly away and eyes looking off to the side, mouth pressed into a stubborn straight line, brows slightly drawn together as if annoyed, no smile and no teeth showing. Only a faint blush on the cheeks and reddened ear tips give away that he is embarrassed. A quiet, awkward middle-aged man who is bad at showing his feelings.`
 
 （ハルト・あかりは 5-2 の頭の文を使う。表情の名前は台本の〔 〕と同じにする）
 
@@ -1038,6 +1080,7 @@ Expression: <表情>
 | りくの開いた口 | 表情ごとに、Gemini でその表情から口だけ開けた絵（`riku_talk_<表情>_src`。下の指示文） | 済（2026-10-11。はじめは「驚き」の口を全部の表情に重ねたが、顔の傾きが違う表情で口の線や鼻がずれたので、表情ごとに作り直した） |
 | ハルトの閉じた目 | 目を閉じた絵（Gemini で作った `hero_blink_src`） | 済（2026-10-11。全部の表情に重ねる） |
 | りくの閉じた目 | 目を閉じた絵（Gemini で作った `riku_blink_src`。笑った目になった） | 済（2026-10-11。眉が上がった絵なので、眉の形が違う真剣・あせり・悲しいには重ねない） |
+| ゆうま・ふみ・子どものりく・写しのゆうま・写しのきよし・子どものあかり・子どものハルト・写しのふみの閉じた目と開いた口、写しのひなの・カイの閉じた目、けんたの閉じた目と開いた口 | それぞれ「通常」から Gemini で目だけ閉じた絵・口だけ開けた絵（`<人>_blink_src`・`<人>_talk_src`） | 済（2026-10-19。差分は Gemini の表情の絵（843×1264）の大きさで切り抜き、ChatGPT の基本の1枚（1024×1536）に重ねる分は `_l` として広げた。子どものりくは顔が傾いているので目ごとに楕円を分けた。口は口を閉じた表情だけに重ねる） |
 
 **口だけ開けた絵**（Gemini。その表情の絵を見本として渡す。1つの口をどの表情にも重ねるとずれる人だけ、表情ごとに作る。できた絵を `<人>_talk_<表情>_src.webp` として portraits に入れ、`scripts/portrait_parts.py` に口の範囲を足して切り抜き、`PORTRAIT_PARTS` の `byFace` に足す。id が `_src` で終わる絵は、起動の時に読み込まない）
 
@@ -1063,8 +1106,8 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 | --- | --- | --- | --- | --- | --- |
 | みお | 10歳（小学4年）・今 | 3人目の仲間（2章の 5-C で加入）。商店街の「助っ人」で、少年野球にも祭りにも顔を出す。武器は切り札のトランプ（呼び名は「ジョーカーズ」） | 元気で声が大きく、いつも走っている。何にでも名前をつける。2年前の夏、遊びに誘った友だちを事故で亡くしたが、その日の楽しかった時間は盗まれていて、事故のことしか覚えていない（本人は気づいていない。7章で回収）。1〜6章は明るい子として過ごす | 明るい茶色のショート、横に小さな結び（橙の髪ゴム）、大きな茶色の目、丸いほお、少し日焼けした鼻。黄色の無地のTシャツ、紺の半ズボン、右手首に白と橙のリストバンド、ひざに絆創膏、赤いスニーカー。立ち絵の高さは 360（子どもの3人と同じ） | 通常・笑顔・大笑い・驚き・むっ・真剣・泣き笑い・照れ・考える・心配・悔しい・困り笑い |
 | カイ | 20歳くらい・未来 | 時間保管局のアーカイバー。ハルトが消えた後「一番のアーカイバー」と呼ばれる。2-3 で負け戦の相手になり、時間を持ち去る。後半は味方につく | 傲慢で皮肉屋、冷たく、人を見下す。その裏で、越えられなかった「消えた天才」（ハルト）をずっと追ってきたライバル。戦い方は「切り取る」（音はカメラのシャッター） | 灰色がかった金髪のオールバック（前髪を1〜2本垂らす、横は短い）、細く鋭い鋼色の灰色の目（ハルトに似せない。5-3 の 2.）。ノアと同じ白い詰め襟のロングコート（青緑の細い線）を前を開けてだらしなく着る、黒いハイネック、黒いズボン、白いブーツ、砂時計の留め具はベルトに。武器は四角い枠の形の刃「フレーム」 | 余裕・見下す・通常・真剣 |
-| ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 寝ぐせの残る黒い短髪、眠たげな目、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札） | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
-| 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影。短い黒髪、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
+| ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 明るいアッシュブラウンに染めた少し長めの髪を、うなじで小さく結ぶ（前髪は目にかけない）、垂れ目、左目の下に泣きぼくろ、左耳に小さな銀のピアス、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札）。2026-10-19：黒髪で前髪が目にかかる最初の絵がハルトに似たので替えた | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
+| 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影（垂れ目と左目の下の泣きぼくろ）。短い黒髪（染めるのは大学から）、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
 | 写しのひなの | 小学1年・同じ縁日 | ゆうまの妹。金魚に「なつ」と「まつり」と名付ける | 甘えん坊で、兄のあとを追いかける | ゆうまに似た目、短い二つ結び、薄い桃色の浴衣（朝顔の柄。子どものあかりの「白地に赤い金魚」と重ならないように） | 笑顔・泣き |
 | いさむ | 75歳・今 | 2-1 の持ち主。みおの祖父で、小さな町工場の歯車職人 | 口数が少なく頑固だが、目は優しい | 小柄でやせている、白髪の短髪、細い丸眼鏡、深いしわ。色あせた作業着の上に古い茶色のカーディガン | 通常・笑顔・考える・さみしげ・泣き笑い |
 | 写しのいさむ | 18歳・昭和44年（1969年）の冬 | 町工場の見習い。親方の源三に「いい仕事だ」と言われる日 | ひたむきで不器用 | 坊主に近い短髪、寒さで赤いほお、油で汚れた灰色の作業着。みおに似た目 | 真剣・驚き・泣き笑い・通常 |
@@ -1109,16 +1152,16 @@ M1 の残り（18・19）は、今は絵なしや色の加工で通せている�
 
 ### M1 の残りの指示文（2026-10-11 に足した。頭は 5-3 の共通部分）
 
-**ゆうま**：立ち絵の頭（`<表情>` は `a tired, laid-back expression with sleepy half-lidded eyes, but kind`）の後に
+**ゆうま**：立ち絵の頭（`<表情>` は `a relaxed, easygoing half-smile with sleepy droopy eyes, but kind`）の後に。ハルトに似ないよう、2026-10-19 に髪と目元を替えた（ハルトの立ち絵も添付して最後の1文で比べさせる）
 
 ```
-Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and a little sleepy-looking, but kind and friendly. Messy short black hair with a bit of bed head, sleepy eyes, clean-shaven. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text.
+Character: Yuma, a 21-year-old Japanese university student working part-time at a convenience store on a shopping street in a quiet regional town. Laid-back and easygoing, but kind and friendly. Hair dyed a light ash-brown, grown a little long, loosely tied back in a small low ponytail at the nape, with a few loose strands framing his face and the forehead mostly visible (no heavy bangs over the eyes). Gentle droopy eyes (tareme) with light brown irises, a small beauty mark under his left eye, a small silver stud earring in his left ear, clean-shaven, a slightly lanky build. A generic convenience store uniform: a vertically striped short-sleeve shirt and a plain apron with no logo, a name tag with no readable text. He must look clearly different from the attached black-haired boy with messy bangs.
 ```
 
 **写しのゆうま**：ゆうまの立ち絵も添付。立ち絵の頭（`<表情>` は `a bright, big-brotherly grin`）の後に
 
 ```
-Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same face features so he is clearly the same person, with childlike proportions. Short black hair, a plain navy summer yukata.
+Character: young Yuma, the same person as the attached adult portrait but about 11 years earlier: a 10-year-old boy (4th grade) at a summer shrine festival. Keep the same gentle droopy eyes and the small beauty mark under his left eye so he is clearly the same person, with childlike proportions. Natural black short hair (he dyes it only later), a plain navy summer yukata.
 ```
 
 **写しのひなの**：写しのゆうまの立ち絵も添付。立ち絵の頭（`<表情>` は `a big happy smile`）の後に
@@ -1228,7 +1271,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 | 1 | 子どものあかり | むっ・驚き・大笑い・照れ・悲しい・デジャヴ | 笑顔（`young_akari_smile`） | `soft chestnut-brown short bob, a small red goldfish hair clip on the left, white summer yukata with small red goldfish, childlike proportions` |
 | 2 | 子どものりく | 通常・驚き・にやり・あせり・照れ | 得意げ（`young_riku_proud`） | `short spiky dark-brown hair, a small bandage on his cheek, navy jinbei with a simple white pattern, childlike proportions` |
 | 3 | 子どものハルト | 驚き・照れ・困り | 通常（`young_hero_normal`） | `messy short black hair with one sand-gold strand in the bangs, amber eyes, white T-shirt and an open navy zip hoodie, childlike proportions` |
-| 4 | ゆうま | 笑顔・考える・泣き笑い・苦笑い・驚き | 通常（ChatGPT の 11 ができてから） | `messy short black hair with a bit of bed head, sleepy eyes, vertically striped convenience store shirt and a plain apron` |
+| 4 | ゆうま | 笑顔・考える・泣き笑い・苦笑い・驚き | 通常（ChatGPT の 11 ができてから） | `light ash-brown hair tied back in a small low ponytail, droopy eyes, a small beauty mark under his left eye, a small silver stud earring, vertically striped convenience store shirt and a plain apron` |
 | 5 | 写しのひなの | 泣き | 笑顔（ChatGPT の 12 ができてから） | `short black hair in two small pigtails, pale pink yukata with a morning glory pattern, childlike proportions` |
 
 | 表情 | `<表情>` |
@@ -1261,7 +1304,6 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 
 | 絵 | つなぐ所 | 段階 |
 | --- | --- | --- |
-| 川沿いの帰り道（`bg.riverside_path`） | 会話の背景 `river_path`（4日目のあかり3。今は色だけ） | 1章の昼の出来事の台本を入れる時 |
 | 時計屋の店内（昼）（`bg.clock_shop_day`） | 3日目・4日目の時計屋（今は夕暮れの絵） | 36 |
 | 昭和の商店街の背景・地図、夕焼けの二人乗り、1-2 の敵5つ | 1-2 の区画 | 37 |
 
