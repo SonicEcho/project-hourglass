@@ -1259,6 +1259,95 @@ export const ASSETS: AssetEntry[] = [
     'M2 の 2-1 の会話（docs/ART.md の 5-3 の 5）',
     '2026-10-13',
   ),
+  // 1章・2章の1枚絵と、ひなの・しげるの立ち絵（2026-10-20。docs/ART.md の 5-3 の 3.・5-5・6-5・6-6・11-2）
+  chatgptArt(
+    'cg.awaken_weapons',
+    '1枚絵（長針の剣と、金魚の灯籠の杖）',
+    'assets/cg/awaken_weapons.webp',
+    CG_HEAD +
+      "A summer shrine festival at dusk, broken by black-and-white TV static noise: parts of the stalls and lanterns are missing like torn film. In the foreground, a 17-year-old boy (keep his design as in the attached portrait) raises his left arm in surprise as his wristwatch bursts into golden light; the watch's long minute hand stretches out of the light and becomes a slender sword shaped like a clock's minute hand, with a small clock-face guard. Beside him, a 17-year-old girl (keep her design as in the attached portrait) holds her red goldfish hair clip as it glows and unfolds into a staff with a small glowing goldfish-shaped paper lantern hanging from its tip. Both look astonished. Golden sparks and grains of sand swirl around them. In the background, a shadowy creature made of goldfish and water balloons crawls out of the static. " +
+      CG_TAIL,
+    '見本の絵：ハルト・あかりの立ち絵。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    '1-1 で持ち物が武器に変わる瞬間（docs/ART.md の 11-2）',
+    '2026-10-20',
+  ),
+  chatgptArt(
+    'cg.mio_cards',
+    '1枚絵（光るトランプ）',
+    'assets/cg/mio_cards.webp',
+    CG_HEAD +
+      "A snowy factory alley in a Japanese town at winter dusk in 1969, sepia tones, partly broken by black-and-white TV static noise. A 12-year-old girl in a winter coat (keep her design as in the attached portrait) holds out her hand in surprise as a deck of playing cards bursts out of its small box in her coat pocket. The cards swirl around her in a ring, each card's edge glowing like a thin blade, and fan out in her hand. Among them, one hand-drawn joker card stands out. Warm golden light on her face, snowflakes and grains of sand in the air. No letters or numbers readable on the cards. " +
+      CG_TAIL,
+    '見本の絵：みおの立ち絵。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    '2-1 でみおのトランプが武器に変わる瞬間（docs/ART.md の 11-2）',
+    '2026-10-20',
+  ),
+  chatgptArt(
+    'cg.cut_ground',
+    '1枚絵（四角い枠に切り取られるグラウンド）',
+    'assets/cg/cut_ground.webp',
+    CG_HEAD +
+      'A late 1990s Japanese riverside little league baseball field on a bright summer afternoon, pastel sky. A glowing rectangular frame of white light slices across the whole scene like a camera viewfinder; inside the frame the field, players and cheering parents are frozen and drained of color, as if being cut out like a photograph. On top of the backstop stands Kai, a young man in an open white long coat with thin blue-green lines (keep his design as in the attached portrait), holding a square frame-shaped blade, a tiny hourglass forming in his other hand with the frozen field inside it. In the foreground, a high school boy and a high school girl and a small 10-year-old girl (keep their designs exactly as in the attached reference portraits) reach out too late. Grains of golden sand scatter. ' +
+      CG_TAIL,
+    '見本の絵：ハルト・あかり・みお・カイの立ち絵。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    '2-3 でカイに持ち去られる場面（2章の山場。docs/ART.md の 5-3 の 3.）',
+    '2026-10-20',
+  ),
+  chatgptArt(
+    'cg.fireworks',
+    '1枚絵（高台で花火を見る3人の後ろ姿）',
+    'assets/cg/fireworks.webp',
+    CG_HEAD +
+      'A small grassy hill behind a Japanese shrine on a summer night. Three 7-year-old children seen from behind, sitting side by side on the grass, looking up at big colorful fireworks blooming in the deep indigo sky over a quiet town (keep their designs exactly as in the attached portraits): a quiet boy with black hair and one sand-gold strand in a navy hoodie on the left, a girl with a chestnut bob and a red goldfish hair clip in a white yukata with red goldfish in the middle, a spiky-haired boy in a navy jinbei on the right pointing at the sky. Three small white fox masks pushed up on the backs of their heads. The light of the fireworks colors their backs. Nostalgic, a moment that should never end. ' +
+      CG_TAIL,
+    '見本の絵：子どものハルト・あかり・りくの立ち絵。元の絵は 940×1672。720×1280 に縮めて WebP にした',
+    'プロローグの終わり（P-5。docs/ART.md の 5-5）',
+    '2026-10-20',
+  ),
+  chatgptArt(
+    'cg.photo_goldfish',
+    '写真（浴衣の小さなあかりと、金魚の袋ふたつ）',
+    'assets/cg/photo_goldfish.webp',
+    CG_HEAD +
+      'An old, slightly faded snapshot photo taken about ten years ago at a shrine festival at night, warm and a little blurry like a phone photo. A 7-year-old girl with a chestnut bob and a red goldfish hair clip, in a white yukata with small red goldfish (keep her design as in the attached portrait), smiling proudly at the camera and holding up two small plastic bags of water, each with one red goldfish, one in each hand. Paper lanterns blurred in the background. Square 1:1 image instead of 9:16. ' +
+      CG_TAIL,
+    '見本の絵：子どものあかりの立ち絵。元の絵は正方形 1254×1254。画面いっぱいに出すと左右が切れるので、同じ絵をぼかした縦長の台紙（720×1280）の真ん中に、白い縁を付けて少し傾けて置いた',
+    'あかりのスマホの古い写真（1-D。docs/ART.md の 5-5）',
+    '2026-10-20',
+  ),
+  chatgptArt(
+    'cg.white_city',
+    '1枚絵（白い街・夢）',
+    'assets/cg/white_city.webp',
+    BG_HEAD +
+      'A dreamlike, hazy vision of a pure white futuristic city: smooth white towers and bridges with thin blue-green light lines, empty and silent, no people, soft overexposed light as if seen through fog, edges fading into white. Cold, lonely and beautiful, like a half-forgotten memory. Eye-level camera, a long empty white street leading into the distance. ' +
+      BG_TAIL,
+    '見本の絵なし。元の絵は 941×1672。720×1280 に縮めて WebP にした',
+    '1日目の朝の夢（1-A。docs/ART.md の 5-5）',
+    '2026-10-20',
+  ),
+  chatgptPortrait(
+    'hinano',
+    'ひなの',
+    'normal',
+    '通常',
+    portraitHead('a guarded, slightly sulky expression') +
+      'Character: Hinano, an 18-year-old Japanese high school senior from a neighboring town, the younger sister of a laid-back university student. Straight black hair to the shoulders with blunt bangs, sharp but kind eyes, a strong-willed, stubborn look. A summer school uniform (white short-sleeve blouse, navy ribbon), a school bag with a faded red goldfish keychain.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    '1-1 のゆうまの妹（今。docs/ART.md の 6-5）。ほかの表情は、Gemini で作るまでこの絵で代わりに出す',
+    '2026-10-20',
+  ),
+  chatgptPortrait(
+    'shigeru',
+    'しげる',
+    'smile',
+    '笑顔',
+    portraitHead('a friendly, slightly nostalgic smile') +
+      'Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.',
+    'あかりの笑顔の立ち絵（構図の見本）',
+    '1-2 の電器屋の主人（docs/ART.md の 6-6）。ほかの表情は、Gemini で作るまでこの絵で代わりに出す',
+    '2026-10-20',
+  ),
   chatgptArt(
     'cg.master_back',
     '1枚絵（親方の背中）',
