@@ -81,8 +81,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari4', title: '最初の五分', label: '施設の居間（あかり）', from: 8, place: 'home', x: 195, y: ROW1 },
   ],
   mio: [
-    { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 9, place: 'riverside', x: 195, y: ROW1 },
-    { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 10, place: 'convenience', x: 195, y: ROW1 },
+    { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 11, place: 'riverside', x: 195, y: ROW1 },
+    { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 13, place: 'convenience', x: 195, y: ROW1 },
   ],
 };
 
@@ -93,9 +93,9 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
 export const RETURN_VISITS: ReturnVisit[] = [
   // 1-1 の翌日のゆうまの電話は、段階63から物語の流れの会話（4日目の朝の d4_yuma。docs/script/1-1_rework.md の 4-A）
   // 1-2 の翌日のふみさんは、段階66から物語の流れの会話（7日目の朝の d4_fumi。docs/script/1-2_rework.md の 7-A）
-  // 2-1 の翌日（9日目）：いさむの工場（6-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
+  // 2-1 の翌日（11日目。段階78）：いさむの工場（docs/script/2-1_rework.md の 11-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
   { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
-  // 2-2 の翌日（10日目）：閉店後の楽器店で、けんたたち3人（7-A。段階39b）
+  // 2-2 の翌日（13日目）：閉店後の楽器店で、けんたたち3人（7-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
 ];
 
@@ -207,21 +207,50 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari'],
     places: [at('school', talk('d5_talk', '教室（小話）', ROW2)), at('clockshop', main('d5_isamu', '最後の納品'), toDusk('d5_to_dusk'))],
   },
-  d6_free: {
-    id: 'd6_free',
+  // 9日目の昼（段階78。docs/script/2-1_rework.md の 9-A・9-B）。工場の片付けと、その後の松の湯のすみさんは必ず見る
+  a21_day9_free: {
+    id: 'a21_day9_free',
     time: '9日目　放課後',
     day: 9,
     picks: DAILY_PICKS,
-    partners: ['akari', 'mio'],
+    partners: ['akari'],
     places: [
-      at('music_shop', main('d6_kenta', '楽器店のけんた', ROW1, 'd6_isamu')),
-      at('clockshop', talk('d6_talk', '店の中（小話）'), toDusk('d6_to_dusk')),
+      at('factory', main('d9_factory', '工場の片付け')),
+      at('street', main('d9_sumi', '松の湯のすみさん', ROW1, 'd9_factory')),
+      at('clockshop', toDusk('a21_d9_to_dusk')),
     ],
+  },
+  // 10日目の昼（段階78。10-B）。工場のいさむさんは必ず見る（みおは町内会の手伝いで遅れる）
+  a21_day10_free: {
+    id: 'a21_day10_free',
+    time: '10日目　放課後',
+    day: 10,
+    picks: DAILY_PICKS,
+    partners: ['akari'],
+    places: [at('factory', main('d10_isamu', 'いさむさん')), at('clockshop', toDusk('a21_d10_to_dusk'))],
+  },
+  // 11日目（段階78。話の間の日）：2-1 を返した翌日のいさむの工場（RETURN_VISITS）。夕暮れは蔵書の棚で、夜は記憶に入らない
+  d6_free: {
+    id: 'd6_free',
+    time: '11日目　放課後',
+    day: 11,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [at('clockshop', talk('d6_talk', '店の中（小話）'), toDusk('d6_to_dusk'))],
+  },
+  // 12日目：楽器店のけんたは必ず見る（2-2 の書き直しまでは、今の中身のまま）
+  d12_free: {
+    id: 'd12_free',
+    time: '12日目　放課後',
+    day: 12,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [at('music_shop', main('d6_kenta', '楽器店のけんた')), at('clockshop', toDusk('d12_to_dusk'))],
   },
   d7_free: {
     id: 'd7_free',
-    time: '10日目　放課後',
-    day: 10,
+    time: '13日目　放課後',
+    day: 13,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -231,8 +260,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
   },
   d8_free: {
     id: 'd8_free',
-    time: '11日目　土曜の昼',
-    day: 11,
+    time: '14日目　土曜の昼',
+    day: 14,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [

@@ -106,17 +106,30 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_runner: { id: 'a12_runner', name: '砂嵐', enemies: [RAMUNE_NOISE, RAMUNE_NOISE], reward: 3, item: ITEMS.sunsetMarble.id },
   // 段階63で 1-1 が17戦になり、1-2 に入る時の仲間が強くなったので強めた。段階66：攻撃は元のまま、HP 1.3倍（1.5倍では、ねらう方針で11ラウンドかかって長すぎた）。コマは1つ
   a12_boss: { id: 'a12_boss', name: '自転車のぬし', enemies: [toughenEnemy(BICYCLE_LORD, 1.3)], reward: 10, boss: true, koma: 1, snaps: ['breakArm'] },
-  // 2-1 の町工場（段階39。段階38では 1-2 の砂嵐で代わりにしていた）。並びは出会う順（路地の入口 → 路地の上 → 銭湯の左 → 銭湯の右 → 工場の中）。
-  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。工場の中の砂嵐は少し強い（ボスの手前の山）。ギアは落とさない（宝箱と出来事のごほうび。段階38）
-  a21_storm1: { id: 'a21_storm1', name: '砂嵐', enemies: [GEAR_NOISE, SCREW_NOISE], reward: 6, koma: 1 },
-  a21_storm2: { id: 'a21_storm2', name: '砂嵐', enemies: [TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], reward: 6, koma: 2 },
-  a21_storm3: { id: 'a21_storm3', name: '砂嵐', enemies: [ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE], reward: 7, koma: 2 },
-  a21_storm4: { id: 'a21_storm4', name: '砂嵐', enemies: [GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE], reward: 7, item: ITEMS.hiPotion.id, koma: 2 },
-  a21_storm5: { id: 'a21_storm5', name: '砂嵐', enemies: [SCREW_NOISE, GEAR_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 8, koma: 2 },
+  // 2-1 の町工場（段階39）。段階78で、3晩に分けて入る区画に作り直した（脚本 docs/script/2-1_rework.md）。並びは出会う順。
+  // 1晩目は路地の入口から銭湯の前と銭湯の裏、2晩目は雪の資材置き場と左右の道から工場の門（番人）、3晩目は工場の門の先と工場の中。
+  // コマは晩ごとに 3・3・3＋ぬし（返すのに10）。1-1・1-2 と同じく、攻撃の強さは変えずに HP を上げる（1晩目は 1.4倍、ほかは 1.8倍。段階65）。
+  // 星の砂は1戦あたりを減らし、区画の合計は前（8戦）と同じくらい。ギアは落とさない（宝箱と出来事のごほうび。段階38）
+  a21_n1_gate: { id: 'a21_n1_gate', name: '砂嵐', enemies: tough([GEAR_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a21_n1_lower: { id: 'a21_n1_lower', name: '砂嵐', enemies: tough([SCREW_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a21_n1_road: { id: 'a21_n1_road', name: '砂嵐', enemies: tough([TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a21_n1_plaza: { id: 'a21_n1_plaza', name: '砂嵐', enemies: tough([GEAR_NOISE, TUBE_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
+  a21_n1_bath1: { id: 'a21_n1_bath1', name: '砂嵐', enemies: tough([TUBE_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a21_n2_yard1: { id: 'a21_n2_yard1', name: '砂嵐', enemies: tough([ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE]), reward: 3, koma: 1 },
+  a21_n2_yard2: { id: 'a21_n2_yard2', name: '砂嵐', enemies: tough([GEAR_NOISE, GEAR_NOISE, TUBE_NOISE]), reward: 2 },
+  a21_n2_left: { id: 'a21_n2_left', name: '砂嵐', enemies: tough([GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE]), reward: 4, item: ITEMS.hiPotion.id, koma: 1 },
+  a21_n2_right: { id: 'a21_n2_right', name: '砂嵐', enemies: tough([SCREW_NOISE, SCREW_NOISE, ABACUS_NOISE]), reward: 2 },
+  // 工場の門の番人（2晩目の山場。戦う前の会話）。そろばんノイズの守りの固い番人
+  a21_n2_guard: { id: 'a21_n2_guard', name: '砂嵐', enemies: tough([ABACUS_NOISE, SCREW_NOISE, GEAR_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
+  a21_n3_top: { id: 'a21_n3_top', name: '砂嵐', enemies: tough([TUBE_NOISE, ABACUS_NOISE, GEAR_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
+  a21_n3_corner: { id: 'a21_n3_corner', name: '砂嵐', enemies: tough([SCREW_NOISE, GEAR_NOISE, TUBE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
+  a21_n3_steps: { id: 'a21_n3_steps', name: '砂嵐', enemies: tough([ABACUS_NOISE, GEAR_NOISE, SCREW_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4, koma: 1 },
+  a21_n3_inner: { id: 'a21_n3_inner', name: '砂嵐', enemies: tough([GEAR_NOISE, TUBE_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 2 },
   // 2-1 の寄り道の部屋（地図の絵の手直しと一緒に。2026-10-17）：コマなし。資材置き場の逃げる敵はレアの素材「万博のきっぷ」、銭湯の裏の追ってくる敵は真鍮のボルト（消費アイテムは区画で2〜3つのままにする。economy.md の 3.）
-  a21_runner: { id: 'a21_runner', name: '砂嵐', enemies: [GEAR_NOISE, TUBE_NOISE, GEAR_NOISE], reward: 6, item: ITEMS.expoTicket.id },
-  a21_alley: { id: 'a21_alley', name: '砂嵐', enemies: [SCREW_NOISE, ABACUS_NOISE, SCREW_NOISE], reward: 7, item: ITEMS.brassBolt.id },
-  a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [LATHE_LORD], reward: 10, boss: true, koma: 2, snaps: ['heavyBlow'] },
+  a21_runner: { id: 'a21_runner', name: '砂嵐', enemies: [GEAR_NOISE, TUBE_NOISE, GEAR_NOISE], reward: 3, item: ITEMS.expoTicket.id },
+  a21_alley: { id: 'a21_alley', name: '砂嵐', enemies: tough([SCREW_NOISE, ABACUS_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 3, item: ITEMS.brassBolt.id },
+  // 1-2 のぬしと同じく、攻撃は元のまま HP 1.3倍。コマは1つ
+  a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [toughenEnemy(LATHE_LORD, 1.3)], reward: 10, boss: true, koma: 1, snaps: ['heavyBlow'] },
   // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。並びは出会う順（校門 → 中庭の下 → 中庭の上 → お化け屋敷の教室 → 渡り廊下の番人）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。番人は少し強い（×1.3。ボスの手前の山）。
   // 駐輪場の逃げる敵はコマを持たない寄り道で、勝つとレアの素材「ラストチャイムのデモテープ」
@@ -354,7 +367,9 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'cleared', scene: 'a12_last_koma' },
     ],
   },
-  // 2-1「親方の背中」：昭和44年の冬の町工場の路地（段階38。みおの初めての戦闘とムーブメントの開放。段階39で敵とボス、返す場面）
+  // 2-1「親方の背中」：昭和44年の冬の町工場の路地（段階38。みおの初めての戦闘とムーブメントの開放。段階39で敵とボス、返す場面）。
+  // 段階78で、3晩に分けて入る区画に作り直した（脚本 docs/script/2-1_rework.md）。1晩目「今日はお前がやれ」：路地の入口から銭湯の前と、銭湯の裏。
+  // 2晩目「欠けた歯」：雪の資材置き場と、左右の道から工場の門。3晩目「いい仕事だ」：工場の中。晩ごとのコマは 3・3・3＋ぬし（返すのに10）
   a21: {
     id: 'a21',
     name: '2-1「親方の背中」',
@@ -366,14 +381,19 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     // 昭和44年の町工場の曲（段階75）
     bgm: BGM.factory,
-    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
     komaNeed: 10,
     timeTitle: '親方の背中',
     owner: 'イサム',
     memory: 'factory_alley',
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['joker'],
-    // 資材置き場の左上の行き止まり（寄り道の部屋を足した時に、銭湯の左の道の奥から移した）、銭湯の右の道の奥、銭湯の裏の路地の行き止まり。ムーブメントのギアも入っている（段階38）
+    // 晩の区切り（段階78）：2晩目は銭湯の前の長いすから、3晩目は工場の門から
+    nights: [{ koma: 3 }, { koma: 6, start: { cell: [9, 21] } }, { start: { cell: [15, 11] } }],
+    // ノイズの壁：資材置き場への出入口と、銭湯の左右の道（2晩目から開く）。工場の中への入口（3晩目から開く）
+    walls: [
+      { id: 'a21_wall_yard', cells: [...box(0, 1, 19, 22), ...box(5, 6, 17, 18), ...box(19, 19, 17, 18)], opens: 2 },
+      { id: 'a21_wall_factory', cells: box(10, 13, 8, 9), opens: 3 },
+    ],
     // 狩り（段階43）：採取の場所は、1回目の宝箱とラジオの所
     hunt: {
       gathers: [
@@ -382,84 +402,68 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a21_gather_radio', cell: [11, 27], items: [ITEMS.tubeGlass.id] },
         { id: 'a21_gather_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.rustyScrew.id, ITEMS.filament.id] },
       ],
-      tables: { factory_alley: ['a21_storm1', 'a21_storm2', 'a21_storm3', 'a21_storm4', 'a21_storm5'] },
+      tables: {
+        factory_alley: ['a21_n1_gate', 'a21_n1_road', 'a21_n1_plaza', 'a21_n2_left', 'a21_n3_top'],
+        factory_yard: ['a21_n2_yard1', 'a21_n2_yard2'],
+        bath_alley: ['a21_n1_bath1', 'a21_alley'],
+      },
     },
+    // 資材置き場の左上の行き止まり、銭湯の右の道の奥、銭湯の裏の路地の行き止まり。ムーブメントのギアも入っている（段階38）
     chests: [
-      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'], snaps: ['thunderChip'] },
-      { id: 'a21_chest_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'], snaps: ['draw'] },
+      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], night: 2, items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'], snaps: ['thunderChip'] },
+      { id: 'a21_chest_right', cell: [19, 12], night: 2, items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'], snaps: ['draw'] },
       { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id, ITEMS.filament.id, ITEMS.abacusFrame.id] },
     ],
     enemies: [
-      {
-        id: 'a21_e_lower',
-        patrol: [
-          [11, 33],
-          [13, 33],
-          [13, 30],
-          [11, 30],
-        ],
-        battle: 'a21_storm1',
-      },
-      {
-        id: 'a21_e_upper',
-        patrol: [
-          [13, 25],
-          [11, 25],
-        ],
-        battle: 'a21_storm2',
-      },
-      {
-        id: 'a21_e_left',
-        patrol: [
-          [6, 19],
-          [6, 14],
-        ],
-        battle: 'a21_storm3',
-      },
-      {
-        id: 'a21_e_right',
-        patrol: [
-          [19, 14],
-          [19, 19],
-        ],
-        battle: 'a21_storm4',
-      },
-      {
-        id: 'a21_e_yard',
-        patrol: [
-          [9, 7],
-          [14, 7],
-        ],
-        battle: 'a21_storm5',
-      },
-      // 資材置き場の逃げる敵（寄り道。コマなし、レアの素材）
-      { id: 'a21_e_runner', room: 'factory_yard', move: 'flee', patrol: [[12, 11]], battle: 'a21_runner' },
+      // ---- 1晩目（路地の入口から銭湯の前と、銭湯の裏） ----
+      { id: 'a21_e_gate', patrol: [[11, 38], [13, 38]], battle: 'a21_n1_gate' },
+      { id: 'a21_e_lower', patrol: [[11, 31], [13, 31], [13, 28], [11, 28]], battle: 'a21_n1_lower' },
+      { id: 'a21_e_road', patrol: [[13, 25], [11, 25]], battle: 'a21_n1_road' },
+      { id: 'a21_e_plaza', patrol: [[15, 21], [20, 21]], battle: 'a21_n1_plaza' },
+      { id: 'a21_e_bath1', room: 'bath_alley', patrol: [[8, 3], [17, 3]], battle: 'a21_n1_bath1' },
       // 銭湯の裏の路地：右の細い通りで、近づくと追ってくる（寄り道。コマなし）
-      {
-        id: 'a21_e_alley',
-        room: 'bath_alley',
-        move: 'chase',
-        patrol: [
-          [18, 6],
-          [18, 16],
-        ],
-        battle: 'a21_alley',
-      },
+      { id: 'a21_e_alley', room: 'bath_alley', move: 'chase', patrol: [[18, 6], [18, 16]], battle: 'a21_alley' },
+      // ---- 2晩目（雪の資材置き場と、左右の道から工場の門） ----
+      { id: 'a21_e_yard1', room: 'factory_yard', night: 2, patrol: [[13, 7], [18, 7]], battle: 'a21_n2_yard1' },
+      // 資材置き場の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a21_e_runner', room: 'factory_yard', night: 2, move: 'flee', patrol: [[12, 11]], battle: 'a21_runner' },
+      { id: 'a21_e_yard2', room: 'factory_yard', night: 2, move: 'chase', patrol: [[6, 17], [11, 17]], battle: 'a21_n2_yard2' },
+      { id: 'a21_e_left', night: 2, patrol: [[6, 16], [6, 12]], battle: 'a21_n2_left' },
+      { id: 'a21_e_right', night: 2, patrol: [[19, 13], [19, 15]], battle: 'a21_n2_right' },
+      // 工場の門の番人（2晩目の山場。戦う前の会話）
+      { id: 'a21_e_guard', night: 2, until: 2, move: 'guard', patrol: [[10, 11]], battle: 'a21_n2_guard', scene: 'a21_guard' },
+      // ---- 3晩目（工場の門の先と、工場の中） ----
+      { id: 'a21_e_top', night: 3, patrol: [[6, 10], [9, 10]], battle: 'a21_n3_top' },
+      { id: 'a21_e_corner', night: 3, move: 'chase', patrol: [[6, 14], [6, 17]], battle: 'a21_n3_corner' },
+      { id: 'a21_e_steps', night: 3, patrol: [[11, 9], [12, 9]], battle: 'a21_n3_steps' },
+      { id: 'a21_e_inner', night: 3, patrol: [[9, 7], [14, 7]], battle: 'a21_n3_inner' },
     ],
     // 工場の中、旋盤の前
     boss: { id: 'a21_boss', cell: [11, 5], battle: 'a21_boss' },
+    // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階78）
     talkers: [
-      { id: 'a21_voice_bath', cell: [14, 19], scene: 'a21_voice_bath', label: '銭湯のおかみさん' },
-      { id: 'a21_voice_senior', cell: [7, 11], scene: 'a21_voice_senior', label: '先輩の職人' },
+      { id: 'a21_voice_bath', cell: [14, 19], until: 1, scene: 'a21_voice_bath', label: '銭湯の娘' },
+      { id: 'a21_voice_senior', cell: [4, 21], until: 1, scene: 'a21_voice_senior', label: '先輩の職人' },
       { id: 'a21_voice_radio', cell: [11, 27], scene: 'a21_voice_radio', label: 'ラジオ' },
-      { id: 'a21_voice_kid', cell: [14, 37], scene: 'a21_voice_kid', label: '八百屋の子ども' },
+      { id: 'a21_voice_kid', cell: [14, 37], until: 2, scene: 'a21_voice_kid', label: '八百屋の子ども' },
+      { id: 'a21_voice2_senior', cell: [7, 11], night: 2, scene: 'a21_voice2_senior', label: '先輩の職人' },
+      // 雪景色の四角い穴（2-1-14。カイの「切り取る」の前触れ）
+      { id: 'a21_square_hole', room: 'factory_yard', cell: [8, 4], night: 2, until: 2, scene: 'a21_square_hole', label: '四角い穴' },
     ],
+    // コマが戻るたびに、過去の場面が1つずつ進む（段階78）
     triggers: [
-      { on: 'wins', count: 1, scene: 'a21_first_koma' },
-      // ムーブメントの開放（2-1-4）。みおが拾った歯車を、ごほうびのギアとして渡す
+      { on: 'koma', count: 1, scene: 'a21_first_koma' },
+      // ムーブメントの開放（2-1-3）。みおが拾った歯車を、ごほうびのギアとして渡す
       { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint', gears: ['speedMemory'] },
+      { on: 'koma', count: 2, scene: 'a21_koma2' },
+      { on: 'koma', count: 3, scene: 'a21_koma3' },
+      { on: 'koma', count: 4, scene: 'a21_koma4' },
+      { on: 'koma', count: 5, scene: 'a21_koma5' },
       { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
-      { on: 'komaLeft', left: 3, scene: 'a21_three_left' },
+      { on: 'koma', count: 6, scene: 'a21_koma6' },
+      { on: 'koma', count: 7, scene: 'a21_koma7' },
+      // あとコマが1つの時（台本の「あと{komaLeft}つ」に本当の数が入る。段階28）
+      { on: 'komaLeft', left: 1, scene: 'a21_one_left' },
       { on: 'boss', scene: 'a21_boss' },
       { on: 'cleared', scene: 'a21_last_koma' },
     ],

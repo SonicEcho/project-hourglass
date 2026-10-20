@@ -791,6 +791,17 @@ Character: Hinano, an 18-year-old Japanese high school senior from a neighboring
 Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.
 ```
 
+#### 6-6b. 2-1 を3晩に分けた区画で足した人と場所（段階78。2026-10-20）
+
+2-1 の書き直し（`docs/script/2-1_rework.md`）で、まだ絵のない物。今は色の札と、ほかの背景で代わりにしている。頼む時に指示文を書く
+
+| 物 | 使う所 | 今の代わり |
+| --- | --- | --- |
+| すみの立ち絵（今77歳。源三の娘、銭湯「松の湯」の女将。小柄、手ぬぐい、割烹着） | 9日目の松の湯、11日目の工場 | 色の札 |
+| 写しのすみの立ち絵（昭和44年、22歳。番台の娘。頭に手ぬぐい。セピア） | 1晩目の銭湯の前 | 色の札 |
+| 写しのとしおの立ち絵（昭和44年、25歳くらいの職人。口は悪いが面倒見がいい。台詞はほとんど声だけ） | 2晩目・3晩目のかけらの中 | 声だけ |
+| 背景「銭湯の番台（今）」 | 9日目の松の湯 | 商店街の背景 |
+
 #### 6-7. 1-1・1-2 の完成度を上げる絵（2026-10-19。作る順番）
 
 1-1・1-2 を3晩の形に作り直した台本（`docs/script/1-1_rework.md`・`1-2_rework.md`）で、まだ絵のない物。台本と台帳を照らし合わせて集めた（2026-10-19）。5-6 の残りと、6-5・6-6・11-2 をまとめて、1章を遊ぶ時に目に入る長さの順に並べた。（ ）は 1-1・1-2 の台本での台詞の数

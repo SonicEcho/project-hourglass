@@ -272,7 +272,7 @@ export const CAST: Record<string, CastMember> = {
   // 2-1 の人たち（段階38）。基本の1枚だけある（2026-10-13。ほかの表情は、絵が届くまで基本の絵で代わりに出す）。写しはセピアをかける
   いさむ: {
     portrait: 'portrait.isamu',
-    ...young(['通常', '笑顔', '考える', 'さみしげ', '泣き笑い'], { 通常: 'normal' }, '通常'),
+    ...young(['通常', '笑顔', '考える', 'さみしげ', '泣き笑い', '驚き'], { 通常: 'normal' }, '通常'),
     color: 0x7a6a50,
     height: 420,
     voice: { pitch: 250, wave: 'sawtooth' },
@@ -293,6 +293,11 @@ export const CAST: Record<string, CastMember> = {
     voice: { pitch: 255, wave: 'sawtooth' },
     tint: SEPIA_TINT,
   },
+  // 段階78（2-1 の書き直し。docs/script/2-1_rework.md）：源三の娘すみ（今77歳。銭湯「松の湯」の女将）と、昭和44年の写しのすみ（22歳）・先輩の職人としお。
+  // 立ち絵はまだない（色の札）。写しはセピアをかける
+  すみ: { faces: names('笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'), firstFace: '笑顔', color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
+  写しのすみ: { faces: names('笑顔'), firstFace: '笑顔', color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しのとしお: { faces: names('通常'), firstFace: '通常', color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
   // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
   // 写しのけんたは笑顔の絵だけある（2026-10-17。ほかの表情は笑顔で代わりに出す）。だいち・さきは絵がまだない
   けんた: {
@@ -513,6 +518,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   somber: BGM.somber,
   uneasy: BGM.uneasy,
   showa: BGM.showa,
+  // 段階78：2-1 の町工場（区画の曲と同じ。晩に入る会話で流す）
+  factory: BGM.factory,
   // 段階75：夕暮れの時計屋（メインテーマを弦とセレスタで）。時計屋で落ち着いて話す場面（ふみさんの店番・お茶菓子）で流す。
   // 時計が止まる場面（1日目の店じまい、1章の終わり）はすぐ曲が止まって合わなかった（2026-10-20、開発者の確認）
   dusk: BGM.dusk,

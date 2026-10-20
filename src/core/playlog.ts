@@ -166,11 +166,14 @@ export interface PlayLogSection {
 
 /**
  * 出来事ごとの行を、日ごと・区画ごとにまとめる（段階34。出来事が増えて1画面に入らなくなったため）。
- * 最初の日の前はプロローグ（最初の章の名前）、日が変わる出来事から次の日の行。探索の出来事は、それぞれ1行にする。
+ * 最初の日の前はプロローグ（最初の章の名前）、日が変わる出来事から次の日の行。探索の出来事は、区画ごとに1行にする
+ * （段階78：晩に分けた区画の2晩目・3晩目は、1晩目の行に足す。題は1晩目の出来事の題）。
  * 日の行は、その日の探索以外の出来事を合わせたもの
  */
 export function playLogSections(rows: PlayLogRow[], flow: Flow): PlayLogSection[] {
   const kinds = new Map(flowEvents(flow).map((e) => [e.id, e.kind]));
+  const areas = new Map(flowEvents(flow).map((e) => [e.id, e.area]));
+  const byArea = new Map<string, PlayLogSection>();
   const out: PlayLogSection[] = [];
   const make = (title: string, explore: boolean): PlayLogSection => ({ title, explore, ms: 0, wins: 0, losses: 0, reached: false, ids: [] });
   let day: PlayLogSection = make(flow[0]?.name ?? '', false);
@@ -183,8 +186,14 @@ export function playLogSections(rows: PlayLogRow[], flow: Flow): PlayLogSection[
       out.push(day);
       into = day;
     } else if (kind === 'explore') {
-      into = make(r.title, true);
-      out.push(into);
+      const area = areas.get(r.id);
+      const same = area !== undefined ? byArea.get(area) : undefined;
+      if (same) into = same;
+      else {
+        into = make(r.title, true);
+        out.push(into);
+        if (area !== undefined) byArea.set(area, into);
+      }
     }
     into.ms += r.ms;
     into.wins += r.wins;
