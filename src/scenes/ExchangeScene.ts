@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { ExchangeGood } from '../core';
-import { addParts, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen } from '../core';
-import { BACKDROPS, BGM, EXCHANGE_GOODS, EXCHANGE_KEEPER, FRAGMENTS, NAVI_PARTS, SE, WEAPON_DATA } from '../data';
+import { addParts, eventPassed, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen } from '../core';
+import { BACKDROPS, BGM, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -15,7 +15,7 @@ import { run, saveRun, setStoryVars, storyLineup } from './run';
 // 交換所（段階52。docs/design/economy.md の 5-2）：拠点の窓口で、記憶の欠片と品物を交換する。番人はペトラ（時間保管局の取引の窓口の係）。
 // 初めて開いた時は、ペトラの会話（exchange_intro）を先に見る。日も昼の回数も使わない
 
-const INTRO = 'exchange_intro';
+const INTRO = EXCHANGE_INTRO.scene;
 type Tab = 'pouch' | 'material' | 'gear';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'pouch', label: 'ポーチ' },
@@ -62,7 +62,9 @@ export class ExchangeScene extends Phaser.Scene {
     this.overlay = undefined;
     if (data.seen) setStoryVars(markSeen(run.vars, data.seen));
     if (!isSeen(run.vars, INTRO)) {
-      const talk: DialogueData = { scene: INTRO, vars: run.vars, seed: run.seed, next: { key: 'Exchange', data: { seen: INTRO } }, onVars: (vars) => setStoryVars(vars) };
+      // カイに会う前なら、カイの話をしない会話（段階80）。どちらを見ても、見た印は INTRO
+      const scene = eventPassed(SLICE_FLOW, run.event, EXCHANGE_INTRO.after) ? INTRO : EXCHANGE_INTRO.early;
+      const talk: DialogueData = { scene, vars: run.vars, seed: run.seed, next: { key: 'Exchange', data: { seen: INTRO } }, onVars: (vars) => setStoryVars(vars) };
       this.scene.start('Dialogue', talk);
       return;
     }

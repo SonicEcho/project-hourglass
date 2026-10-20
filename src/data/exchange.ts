@@ -10,6 +10,12 @@ import { ITEMS } from './weapons';
 /** 交換所の番人の名前（時間保管局の取引の窓口の係。2026-10-16 開発者と決めた） */
 export const EXCHANGE_KEEPER = 'ペトラ';
 
+/**
+ * 交換所を初めて開いた時の会話（段階52）。見たかどうかは scene の id で覚える（1回だけ）。
+ * 段階80：拠点は2章の昼から入れるので、カイに会う（after の出来事を過ぎる）前に開いた時は、カイの話をしない early の会話にする
+ */
+export const EXCHANGE_INTRO = { scene: 'exchange_intro', early: 'exchange_intro_early', after: 'd7_kai' } as const;
+
 /** 区画の砂嵐が落とす「いつもの」素材（区画の敵の印の戦闘から。出てくる順、同じ物は1回） */
 export function areaCommonItems(areaId: string): string[] {
   const area = AREAS[areaId];

@@ -222,6 +222,21 @@ describe('物語の流れ（段階23・34）', () => {
   }, 20000);
 });
 
+describe('交換所の最初の会話（段階80）', () => {
+  it('カイに会う前と後の2つの会話が台本にあり、分かれ目の出来事は物語の流れにある。会う前の会話にはカイの名前が出ない', async () => {
+    const { EXCHANGE_INTRO, SCENES, SLICE_FLOW } = await import('../src/data');
+    const { flowEvents } = await import('../src/core');
+    const ids = new Set(SCENES.map((s) => s.id));
+    expect(ids.has(EXCHANGE_INTRO.scene)).toBe(true);
+    expect(ids.has(EXCHANGE_INTRO.early)).toBe(true);
+    expect(flowEvents(SLICE_FLOW).some((e) => e.id === EXCHANGE_INTRO.after)).toBe(true);
+    const early = SCENES.find((s) => s.id === EXCHANGE_INTRO.early)!;
+    // 台詞と地の文だけを見る（「アーカイバー」の中の「カイ」は除く）
+    const text = early.steps.map((st) => ('text' in st ? `${st.speaker ?? ''}${st.text}` : '')).join('').replaceAll('アーカイバー', '');
+    expect(text).not.toContain('カイ');
+  });
+});
+
 describe('部屋と試しの区画（段階47）', () => {
   it('部屋の一覧に書き間違いがなく、試しの区画は区画の決まりを満たし、戦闘と絵がある', async () => {
     const { AREA_BATTLES, ASSETS, ENEMY_MOVES, ROOMS, TRIAL_AREAS } = await import('../src/data');
