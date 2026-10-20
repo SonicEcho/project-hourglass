@@ -581,8 +581,8 @@ export const AREAS: Record<string, AreaDef> = {
       // ダイヤモンドへは、売店の上の番人を倒すと入れる
       { a: { room: 'riverside_stand', side: 'top' }, b: { room: 'riverside_diamond', side: 'bottom' }, opensWhen: 'a23_e_gate' },
     ],
-    // 平成の夏の河川敷の探索の曲が届くまで、日常の曲
-    bgm: BGM.daily,
+    // 平成10年の夏の河川敷の曲（段階75）
+    bgm: BGM.riverside,
     // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）。返す前にカイに持ち去られる
     komaNeed: 10,
     timeTitle: '最後の打席',

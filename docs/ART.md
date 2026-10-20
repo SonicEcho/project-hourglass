@@ -1408,12 +1408,12 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
 | ①b | 夕暮れの時計屋（`dusk`。2026-10-19） | Golden Hour Ticking（Paper Umbrella の Cover。弦とセレスタ） | 使う | 55.4秒 → 136.0秒（1周 約81秒） |
 | ⑩ | 昭和44年の町工場（2-1。2026-10-19） | Legacy Of Machine | 使わない | 26.9秒 → 72.1秒（1周 16小節、約45秒） |
 | ⑪ | 平成18年の文化祭（2-2。2026-10-19） | Culture Festival | 使わない | 19.3秒 → 93.3秒（1周 38小節、約74秒） |
+| ⑫ | 平成10年の河川敷（2-3。2026-10-20） | Riverside Baseball Game（ギターと口笛） | 使わない | 68.2秒 → 109.0秒（1周 17小節、約41秒） |
 | ⑬ | カイとの戦い（2-3 の負け戦。2026-10-19） | Kai Glitch Battle（ふだんの戦闘の曲と同じ系統の新しい曲。Cover ではない） | 使わない | 20.6秒 → 53.6秒（1周 20小節、約33秒） |
 
 - 2026-10-19 に届いたのに、まだ入れていない曲（mp3 は開発者の Suno にある）：
   - ⑧c 決意の曲（Leaving For Tomorrow。On My Way Home を Cover した、明るく盛り上がるポップロック）：使う場面を台本で決めてから入れる
   - ⑬b カイとの再戦（Cuts From Time。Paper Umbrella の Cover）：再戦の場面（3章より後）ができてから入れる
-  - ⑫ 河川敷（2-3）：作り直し中（最初の文で壮大になった）
 - 2026-10-19 からのくり返し区間は、`scripts/suno_loop.py` で探した（前後8秒の和音・音色・大きさが一番似た2点。つなぎ目の前後2秒の大きさの差が1.5dB まで。拍のはっきりした曲は、1周を小節の区切りに限った）
 
   - くり返し区間は、拍ごとの音の特徴（和音・音色・大きさ）が前後16拍で一番よく似た2点（テンポの差が1%未満、小節の頭どうし）を探し、つなぎ目の前後でリズムの規則正しさと音量が元の曲と変わらないことを確かめた
@@ -1429,7 +1429,7 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
 | ①b | 夕暮れの時計屋（`dusk`。前から予定していた曲） | 1日目の夕暮れの時計屋、晩に入る前の時計屋の奥、1章の終わり | Paper Umbrella（歌ありの原曲）を Cover（2026-10-19。タイトル曲 NoTitle を元にすると、旋律が消えるか、ピアノごと元の曲のままになった。原曲から作ると、旋律だけが共通になる） | `gentle instrumental variation of the theme, string quartet and soft celesta, harp arpeggios, a quiet old clock shop at sunset, soft clock ticking, golden evening light, nostalgic and calm with a little sadness, 72 bpm, background music under dialogue, steady dynamics, instrumental` | `vocals, piano, drums, big climax, fade out` |
 | ⑩ | 昭和44年の冬の町工場の記憶（2-1） | 2-1 の区画（段階75 で入れた） | 新しく作る | `a snowy winter evening in a small Japanese machine workshop in 1969, remembered like an old 8mm film, warm sepia mood, gentle accordion and soft brass, plucked strings and quiet metallic percussion like turning gears, a stubborn master and his young apprentice, hardworking and warm with quiet sadness, A minor, 84 bpm, looping exploration music, steady dynamics, instrumental` | `vocals, distorted guitar, EDM, heavy drums` |
 | ⑪ | 平成18年の文化祭の記憶（2-2） | 2-2 の区画（段階75 で入れた） | 新しく作る | `a high school culture festival in autumn 2006, remembered like a faded camcorder video, nostalgic J-rock band sound with clean electric guitar arpeggios, warm bass and light drums, hallways full of laughter, a band that will break up after graduation, youthful and bittersweet, E major, 120 bpm, looping exploration music, steady dynamics, instrumental` | `vocals, metal, screaming, EDM` |
-| ⑫ | 平成10年の夏の河川敷の記憶（2-3） | 2-3 の区画（今は日常の曲で代わり） | 新しく作る | `small and laid-back summer afternoon tune, a riverside baseball field in 1998, remembered like a sun-faded photograph, just acoustic guitar strumming, light whistling melody, simple bass and soft brushed snare, lo-fi warm tape sound, relaxed and a little nostalgic, D major, 96 bpm, looping exploration music, steady dynamics, instrumental`（最初の文は brass や父と子の話が入っていて、壮大になった） | `vocals, EDM, heavy drums, distorted guitar, brass, orchestral, epic, cinematic, anthemic, big climax` |
+| ⑫ | 平成10年の夏の河川敷の記憶（2-3） | 2-3 の区画（2026-10-20 に入れた） | 新しく作る | `small and laid-back summer afternoon tune, a riverside baseball field in 1998, remembered like a sun-faded photograph, just acoustic guitar strumming, light whistling melody, simple bass and soft brushed snare, lo-fi warm tape sound, relaxed and a little nostalgic, D major, 96 bpm, looping exploration music, steady dynamics, instrumental`（最初の文は brass や父と子の話が入っていて、壮大になった） | `vocals, EDM, heavy drums, distorted guitar, brass, orchestral, epic, cinematic, anthemic, big climax` |
 | ⑬ | カイ（負け戦。2-3 の終わり） | カイとの戦闘（段階75 で、Cover でない Kai Glitch Battle を入れた。この Cover（Cuts From Time）は再戦に取っておく） | ① タイトルを Cover（主人公の旋律を、ライバルが冷たく弾き直す） | `cold and arrogant rival battle theme built on the main theme motif, tense string ostinato, sharp piano stabs, camera-shutter-like percussion clicks, dark electronic pulse, a brilliant rival who cuts memories out of time, menacing but elegant, G minor, 150 bpm, battle music, steady intensity, loop-friendly, instrumental` | `vocals, cheerful, festival, fade out` |
 
 - 渡し方：フェードアウトのない、作ったままの mp3 を、番号（①〜⑦、①b）と実際に使った指示文（Exclude styles も）と一緒に渡す（台帳に書くため）。ダウンロードした日に Suno の規約の画面の控えを取る。くり返しのつなぎ目は Claude が曲を調べて `BGM_LOOPS` に書く
