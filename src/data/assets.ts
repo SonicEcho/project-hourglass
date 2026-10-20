@@ -760,6 +760,17 @@ export const ASSETS: AssetEntry[] = [
     undefined,
     '2026-10-19',
   ),
+  sunoBgm(
+    'bgm.riverside',
+    '平成10年の河川敷（2-3）',
+    'suno_riverside.mp3',
+    'small and laid-back summer afternoon tune, a riverside baseball field in 1998, remembered like a sun-faded photograph, just acoustic guitar strumming, light whistling melody, simple bass and soft brushed snare, lo-fi warm tape sound, relaxed and a little nostalgic, D major, 96 bpm, looping exploration music, steady dynamics, instrumental',
+    SUNO_LOOP_EDIT,
+    '2010e06c0f79',
+    1321005,
+    undefined,
+    '2026-10-20',
+  ),
   {
     id: 'map.festival',
     kind: 'image',

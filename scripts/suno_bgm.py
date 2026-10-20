@@ -54,6 +54,8 @@ SONGS = [
     ('CultureFestival', 'suno_culture_festival.mp3', 'loop', 849920, 4113716),
     # カイとの負け戦（2-3）：20.6秒 → 53.6秒（20小節。約33秒。だんだん大きくなる曲なので、--min 28 で探した）
     ('KaiGlitchBattle', 'suno_kai.mp3', 'loop', 907264, 2363246),
+    # 2-3 の河川敷（平成10年の夏。2026-10-20）：68.2秒 → 109.0秒（17小節。約41秒）
+    ('RiversideBaseballGame', 'suno_riverside.mp3', 'loop', 3008512, 4807758),
     # 2026-10-13 の最初の版のボス戦（Paper Umbrella を Cover した和風メタル。81.2秒 → 170.2秒）は、ラスボスの候補として残し、ゲームからは外した
 ]
 
