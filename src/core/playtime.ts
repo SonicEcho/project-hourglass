@@ -92,6 +92,7 @@ const SCENE_NAMES: Record<string, string> = {
   Hub: '拠点',
   Exchange: '交換所',
   Lost: '落とし物',
+  TalkArchive: '町の小話',
   Title: 'タイトル',
   Result: '結果',
 };

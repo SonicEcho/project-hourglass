@@ -37,6 +37,8 @@ export const SCRIPT_COMMANDS = [
   'wait',
   /** 値を覚える（@set 名前 値） */
   'set',
+  /** 覚えた値が合えば、行き先の印へ飛ぶ（@if 名前 値 行き先。段階82。♥が一番多い仲間で台詞を変える時など） */
+  'if',
   /** 章の扉などの大きな文字（@caption 文。タップで次へ） */
   'caption',
   /** 題字（@logo 題名　副題。全角の空白の前が題名、後が副題。金の線と砂の演出で出す。タップで次へ。段階32b 調整3） */
@@ -231,6 +233,7 @@ function parseStep(line: string, src: number): ScriptStep | null {
     }
     if (!(SCRIPT_COMMANDS as readonly string[]).includes(name)) throw new ScriptError(src, `知らない命令「@${name}」`);
     if (name === 'caption' || name === 'note' || name === 'logo') return textLine(name, null, cmd[2], src);
+    if (name === 'if' && args.length !== 3) throw new ScriptError(src, '@if は「@if 名前 値 行き先」と書く');
     return { kind: 'command', name: name as ScriptCommandName, args, src };
   }
   const talk = RE_TALK.exec(line);
@@ -259,7 +262,14 @@ export function checkScript(scenes: ScriptScene[]): string[] {
   const errors: string[] = [];
   for (const scene of scenes) {
     for (const step of scene.steps) {
-      const targets = step.kind === 'jump' ? [step.target] : step.kind === 'choice' ? step.options.map((o) => o.target) : [];
+      const targets =
+        step.kind === 'jump'
+          ? [step.target]
+          : step.kind === 'choice'
+            ? step.options.map((o) => o.target)
+            : step.kind === 'command' && step.name === 'if'
+              ? [step.args[2]]
+              : [];
       for (const t of targets) {
         if (!(t in scene.labels)) errors.push(`${scene.id}（${step.src}行目）：行き先「${t}」がない`);
       }
@@ -338,7 +348,10 @@ export function runScript(scenes: ScriptScene[], pos: ScriptPos, vars: ScriptVar
     }
     if (step.kind === 'command') {
       if (step.name === 'set') next = { ...next, [step.args[0]]: step.args.slice(1).join(' ') };
-      else commands.push(step);
+      else if (step.name === 'if') {
+        i = next[step.args[0]] === step.args[1] ? labelIndex(scene, step.args[2]) : i + 1;
+        continue;
+      } else commands.push(step);
       i++;
       continue;
     }

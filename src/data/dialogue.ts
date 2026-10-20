@@ -314,7 +314,7 @@ export const CAST: Record<string, CastMember> = {
   // 写しのけんたは笑顔の絵だけある（2026-10-17。ほかの表情は笑顔で代わりに出す）。だいち・さきは絵がまだない
   けんた: {
     portrait: 'portrait.kenta',
-    ...young(['笑顔', '苦笑い', '考える', 'さみしげ', '泣き笑い', '照れ', '大笑い'], { 笑顔: 'smile' }, '笑顔'),
+    ...young(['笑顔', '苦笑い', '考える', 'さみしげ', '泣き笑い', '照れ', '大笑い', '驚き'], { 笑顔: 'smile' }, '笑顔'),
     color: 0x6a5a4a,
     height: 440,
     voice: { pitch: 330, wave: 'square' },
@@ -328,7 +328,7 @@ export const CAST: Record<string, CastMember> = {
     tint: SEPIA_TINT,
   },
   だいち: { faces: names('笑顔'), firstFace: '笑顔', color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
-  さき: { faces: names('笑顔'), firstFace: '笑顔', color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
+  さき: { faces: names('笑顔', '驚き', '苦笑い', '考える', '微笑み', 'さみしげ'), firstFace: '笑顔', color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
   // 2-3 の人たちと、カイ・ノア（段階40）。こうじと写しの2人は絵がまだない（色の札）。カイは余裕、ノアは通常・悲しいの絵がある
   こうじ: {
     portrait: 'portrait.koji',
@@ -535,6 +535,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   // 段階75：夕暮れの時計屋（メインテーマを弦とセレスタで）。時計屋で落ち着いて話す場面（ふみさんの店番・お茶菓子）で流す。
   // 時計が止まる場面（1日目の店じまい、1章の終わり）はすぐ曲が止まって合わなかった（2026-10-20、開発者の確認）
   dusk: BGM.dusk,
+  // 段階82：2-2 の文化祭の校舎（区画の曲と同じ。晩に入る会話・夜の終わりで流す）
+  cultureFestival: BGM.cultureFestival,
 };
 
 /**

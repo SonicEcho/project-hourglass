@@ -212,3 +212,30 @@ describe('この先で流す BGM（2026-10-11）', () => {
     expect(nextBgm(scenes, { scene: 'b', index: 2 })).toBeNull();
   });
 });
+
+describe('@if：覚えた値が合えば行き先へ飛ぶ（段階82）', () => {
+  const scenes = parseScript(`# s テスト
+@if 絆の一番 みお mio
+あかり「あかりの台詞」
+-> end
+* mio
+みお「みおの台詞」
+* end
+ハルト「おわり」
+`);
+
+  it('値が合えば飛び、合わなければ次の行へ', () => {
+    expect(checkScript(scenes)).toEqual([]);
+    const a = runScript(scenes, { scene: 's', index: 0 }, { 絆の一番: 'あかり' });
+    expect(a.stop.type === 'line' && a.stop.line.speaker).toBe('あかり');
+    const m = runScript(scenes, { scene: 's', index: 0 }, { 絆の一番: 'みお' });
+    expect(m.stop.type === 'line' && m.stop.line.speaker).toBe('みお');
+    const none = runScript(scenes, { scene: 's', index: 0 }, {});
+    expect(none.stop.type === 'line' && none.stop.line.speaker).toBe('あかり');
+  });
+
+  it('書き方の間違いと、ない行き先を知らせる', () => {
+    expect(() => parseScript('# s テスト\n@if 絆の一番 みお\n')).toThrow();
+    expect(checkScript(parseScript('# s テスト\n@if 絆の一番 みお nowhere\nあかり「a」\n'))).toHaveLength(1);
+  });
+});

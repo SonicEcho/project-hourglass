@@ -11,7 +11,7 @@ import { preview } from 'vite';
 
 const BATTLES = 5;
 /** 物語の流れの出来事の数の上限（無限に回らないように） */
-const MAX_EVENTS = 110;
+const MAX_EVENTS = 160;
 const step = (msg) => console.log(`- ${msg}`);
 
 const server = await preview({ preview: { port: 4173, strictPort: false }, logLevel: 'warn' });

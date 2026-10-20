@@ -130,16 +130,29 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a21_alley: { id: 'a21_alley', name: '砂嵐', enemies: tough([SCREW_NOISE, ABACUS_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 3, item: ITEMS.brassBolt.id },
   // 1-2 のぬしと同じく、攻撃は元のまま HP 1.3倍。コマは1つ
   a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [toughenEnemy(LATHE_LORD, 1.3)], reward: 10, boss: true, koma: 1, snaps: ['heavyBlow'] },
-  // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。並びは出会う順（校門 → 中庭の下 → 中庭の上 → お化け屋敷の教室 → 渡り廊下の番人）。
-  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10。1つ余る）。番人は少し強い（×1.3。ボスの手前の山）。
+  // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。段階82で、3晩に分けて入る区画に作り直した（脚本 docs/script/2-2_rework.md）。並びは出会う順。
+  // 1晩目は校門・中庭・駐輪場、2晩目は渡り廊下・お化け屋敷の教室と番人、3晩目は渡り廊下の上と体育館。コマは晩ごとに 3・3・3＋ぬし（返すのに10）。
+  // 2-1 と同じく、攻撃の強さは変えずに HP を上げる（1晩目は 1.4倍、ほかは 1.8倍。段階65）。星の砂は1戦あたりを減らし、区画の合計は前と同じくらい
+  a22_n1_gate: { id: 'a22_n1_gate', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a22_n1_gate2: { id: 'a22_n1_gate2', name: '砂嵐', enemies: tough([STICKER_NOISE, BOOMBOX_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a22_n1_stalls: { id: 'a22_n1_stalls', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, FLIP_PHONE_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a22_n1_west: { id: 'a22_n1_west', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, FLIP_PHONE_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a22_n1_upper: { id: 'a22_n1_upper', name: '砂嵐', enemies: tough([METRONOME_NOISE, STICKER_NOISE, BOOMBOX_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a22_n1_bikes: { id: 'a22_n1_bikes', name: '砂嵐', enemies: tough([STICKER_NOISE, METRONOME_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a22_n2_hall: { id: 'a22_n2_hall', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, METRONOME_NOISE, BOOMBOX_NOISE]), reward: 3, koma: 1 },
+  a22_n2_east: { id: 'a22_n2_east', name: '砂嵐', enemies: tough([STICKER_NOISE, STICKER_NOISE, FLIP_PHONE_NOISE]), reward: 2 },
+  a22_n2_haunted: { id: 'a22_n2_haunted', name: '砂嵐', enemies: tough([METRONOME_NOISE, BOOMBOX_NOISE, STICKER_NOISE]), reward: 4, koma: 1 },
+  a22_n2_room: { id: 'a22_n2_room', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, BOOMBOX_NOISE, METRONOME_NOISE]), reward: 2 },
+  // 渡り廊下の上の番人（2晩目の山場。戦う前の会話）。メトロノームのように同じ速さで鳴り続ける
+  a22_n2_guard: { id: 'a22_n2_guard', name: '砂嵐', enemies: tough([METRONOME_NOISE, BOOMBOX_NOISE, FLIP_PHONE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
+  a22_n3_hall: { id: 'a22_n3_hall', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, STICKER_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
+  a22_n3_floor1: { id: 'a22_n3_floor1', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, METRONOME_NOISE, STICKER_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 4, koma: 1 },
+  a22_n3_floor2: { id: 'a22_n3_floor2', name: '砂嵐', enemies: tough([METRONOME_NOISE, FLIP_PHONE_NOISE, BOOMBOX_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4, koma: 1 },
+  a22_n3_front: { id: 'a22_n3_front', name: '砂嵐', enemies: tough([STICKER_NOISE, BOOMBOX_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 2 },
   // 駐輪場の逃げる敵はコマを持たない寄り道で、勝つとレアの素材「ラストチャイムのデモテープ」
-  a22_storm1: { id: 'a22_storm1', name: '砂嵐', enemies: [FLIP_PHONE_NOISE, STICKER_NOISE], reward: 6, koma: 1 },
-  a22_storm2: { id: 'a22_storm2', name: '砂嵐', enemies: [BOOMBOX_NOISE, FLIP_PHONE_NOISE, STICKER_NOISE], reward: 7, koma: 2 },
-  a22_storm3: { id: 'a22_storm3', name: '砂嵐', enemies: [METRONOME_NOISE, STICKER_NOISE, BOOMBOX_NOISE], reward: 7, koma: 2 },
-  a22_storm4: { id: 'a22_storm4', name: '砂嵐', enemies: [FLIP_PHONE_NOISE, METRONOME_NOISE, BOOMBOX_NOISE], reward: 8, koma: 2 },
-  a22_storm5: { id: 'a22_storm5', name: '砂嵐', enemies: [METRONOME_NOISE, BOOMBOX_NOISE, FLIP_PHONE_NOISE].map((e) => scaleEnemy(e, 1.3)), reward: 8, koma: 2 },
-  a22_runner: { id: 'a22_runner', name: '砂嵐', enemies: [STICKER_NOISE, STICKER_NOISE, STICKER_NOISE], reward: 6, item: ITEMS.demoTape.id },
-  a22_boss: { id: 'a22_boss', name: 'アンプのぬし', enemies: [AMP_LORD], reward: 11, boss: true, koma: 2, snaps: ['encore'] },
+  a22_runner: { id: 'a22_runner', name: '砂嵐', enemies: [STICKER_NOISE, STICKER_NOISE, STICKER_NOISE], reward: 3, item: ITEMS.demoTape.id },
+  // 2-1 のぬしと同じく、攻撃は元のまま HP 1.3倍。コマは1つ
+  a22_boss: { id: 'a22_boss', name: 'アンプのぬし', enemies: [toughenEnemy(AMP_LORD, 1.3)], reward: 10, boss: true, koma: 1, snaps: ['encore'] },
   // 2-3 の河川敷のグラウンド（段階40。部屋をつなぐ形）。並びは出会う順（土手の道 → ベンチの前 → 川べりの逃げる敵 → ベンチの裏の上 → 用具小屋の裏 → 売店の番人）。
   // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10）。番人は ×1.15。川べりの逃げる敵はコマなしで、勝つとレアの素材「最後のスコアブック」
   a23_storm1: { id: 'a23_storm1', name: '砂嵐', enemies: [BALL_NOISE, PET_NOISE], reward: 7, koma: 1 },
@@ -479,18 +492,24 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'school_courtyard', side: 'left' }, b: { room: 'school_bikes', side: 'right' } },
       { a: { room: 'school_courtyard', side: 'top' }, b: { room: 'school_corridor', side: 'bottom' } },
       { a: { room: 'school_corridor', side: 'right' }, b: { room: 'school_classroom', side: 'left' } },
-      // 体育館への扉は、渡り廊下の番人を倒すと開く
+      // 体育館への扉は、渡り廊下の番人を倒すと開く（段階82：さらに、3晩目まではノイズの壁でふさがっている）
       { a: { room: 'school_corridor', side: 'top' }, b: { room: 'school_gym', side: 'bottom' }, opensWhen: 'a22_e_stage' },
     ],
     // 平成18年の文化祭の曲（段階75）
     bgm: BGM.cultureFestival,
-    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）
     komaNeed: 10,
     timeTitle: '最後の文化祭',
     owner: 'ケンタ',
     memory: 'school_festival',
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['joker'],
+    // 晩の区切り（段階82）：2晩目は中庭のベンチ（チェックポイント）から、3晩目は音楽室の前の廊下から
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'school_courtyard', cell: [9, 23] } }, { start: { room: 'school_corridor', cell: [5, 8] } }],
+    // ノイズの壁：中庭から渡り廊下への出入口（2晩目から開く）と、渡り廊下から体育館への出入口（3晩目から開く）
+    walls: [
+      { id: 'a22_wall_corridor', room: 'school_courtyard', cells: box(10, 13, 0, 1), opens: 2 },
+      { id: 'a22_wall_gym', room: 'school_corridor', cells: box(10, 13, 0, 1), opens: 3 },
+    ],
     // 中庭の右の模擬店の裏、駐輪場の奥、お化け屋敷の教室の奥。寄り道の2つにはムーブメントのギア
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（渡り廊下）は出ないので、番人の戦闘は教室の表に入れる
     hunt: {
@@ -500,73 +519,68 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a22_gather_haunted', room: 'school_classroom', cell: [20, 4], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id] },
       ],
       tables: {
-        school_gate: ['a22_storm1', 'a22_storm1', 'a22_storm2'],
-        school_courtyard: ['a22_storm2', 'a22_storm3'],
-        school_classroom: ['a22_storm3', 'a22_storm4', 'a22_storm5'],
+        school_gate: ['a22_n1_gate', 'a22_n1_gate2'],
+        school_courtyard: ['a22_n1_stalls', 'a22_n1_upper', 'a22_n1_west'],
+        school_bikes: ['a22_n1_bikes'],
+        school_corridor: ['a22_n2_hall', 'a22_n2_east', 'a22_n3_hall'],
+        school_classroom: ['a22_n2_haunted', 'a22_n2_room', 'a22_n2_guard'],
+        school_gym: ['a22_n3_floor1', 'a22_n3_floor2', 'a22_n3_front'],
       },
     },
     chests: [
       { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id, ITEMS.potion.id], snaps: ['fireChip'] },
       { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id, ITEMS.ether.id], gears: ['iceBoost'], snaps: ['search'] },
-      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], items: [ITEMS.glitterPen.id, ITEMS.ringtoneChip.id, ITEMS.hiPotion.id], gears: ['comboBoost'] },
+      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], night: 2, items: [ITEMS.glitterPen.id, ITEMS.ringtoneChip.id, ITEMS.hiPotion.id], gears: ['comboBoost'] },
     ],
     enemies: [
-      {
-        id: 'a22_e_gate',
-        patrol: [
-          [5, 12],
-          [18, 12],
-        ],
-        battle: 'a22_storm1',
-      },
-      {
-        id: 'a22_e_stalls',
-        room: 'school_courtyard',
-        patrol: [
-          [6, 35],
-          [17, 35],
-        ],
-        battle: 'a22_storm2',
-      },
+      // ---- 1晩目（校門・中庭・駐輪場） ----
+      { id: 'a22_e_gate', patrol: [[5, 12], [18, 12]], battle: 'a22_n1_gate' },
+      { id: 'a22_e_gate2', patrol: [[6, 17], [17, 17]], battle: 'a22_n1_gate2' },
+      { id: 'a22_e_stalls', room: 'school_courtyard', patrol: [[6, 35], [17, 35]], battle: 'a22_n1_stalls' },
+      { id: 'a22_e_west', room: 'school_courtyard', patrol: [[3, 17], [10, 17]], battle: 'a22_n1_west' },
+      // 中庭の上の模擬店の通り：近づくと追ってくる
+      { id: 'a22_e_upper', room: 'school_courtyard', move: 'chase', patrol: [[7, 13], [16, 13]], battle: 'a22_n1_upper' },
       // 駐輪場の逃げる敵（寄り道。コマなし、レアの素材）
       { id: 'a22_e_runner', room: 'school_bikes', move: 'flee', patrol: [[8, 16]], battle: 'a22_runner' },
-      // 中庭の上の模擬店の通り：近づくと追ってくる
-      {
-        id: 'a22_e_upper',
-        room: 'school_courtyard',
-        move: 'chase',
-        patrol: [
-          [7, 13],
-          [16, 13],
-        ],
-        battle: 'a22_storm3',
-      },
+      { id: 'a22_e_bikes', room: 'school_bikes', patrol: [[4, 6], [17, 6]], battle: 'a22_n1_bikes' },
+      // ---- 2晩目（渡り廊下・お化け屋敷の教室） ----
+      { id: 'a22_e_hall', room: 'school_corridor', night: 2, patrol: [[5, 15], [18, 15]], battle: 'a22_n2_hall' },
+      { id: 'a22_e_east', room: 'school_corridor', night: 2, patrol: [[16, 11], [22, 11]], battle: 'a22_n2_east' },
       // お化け屋敷の教室：暗幕の迷路で追ってくる
-      {
-        id: 'a22_e_haunted',
-        room: 'school_classroom',
-        move: 'chase',
-        patrol: [
-          [10, 6],
-          [10, 17],
-        ],
-        battle: 'a22_storm4',
-      },
-      // 渡り廊下の番人：倒すと体育館への扉が開く
-      { id: 'a22_e_stage', room: 'school_corridor', move: 'guard', patrol: [[11, 3]], battle: 'a22_storm5' },
+      { id: 'a22_e_haunted', room: 'school_classroom', night: 2, move: 'chase', patrol: [[10, 6], [10, 17]], battle: 'a22_n2_haunted' },
+      { id: 'a22_e_room', room: 'school_classroom', night: 2, patrol: [[17, 5], [20, 5]], battle: 'a22_n2_room' },
+      // 渡り廊下の上の番人：倒すと体育館への扉が開く（3晩目から。戦う前の会話）
+      { id: 'a22_e_stage', room: 'school_corridor', night: 2, until: 2, move: 'guard', patrol: [[11, 3]], battle: 'a22_n2_guard', scene: 'a22_guard' },
+      // ---- 3晩目（渡り廊下の上と体育館） ----
+      { id: 'a22_e_hall3', room: 'school_corridor', night: 3, patrol: [[10, 6], [13, 6]], battle: 'a22_n3_hall' },
+      { id: 'a22_e_floor1', room: 'school_gym', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a22_n3_floor1' },
+      { id: 'a22_e_floor2', room: 'school_gym', night: 3, move: 'chase', patrol: [[5, 10], [18, 10]], battle: 'a22_n3_floor2' },
+      { id: 'a22_e_front', room: 'school_gym', night: 3, patrol: [[7, 6], [10, 6]], battle: 'a22_n3_front' },
     ],
     // 体育館のステージ
     boss: { id: 'a22_boss', room: 'school_gym', cell: [11, 4], battle: 'a22_boss' },
+    // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階82）
     talkers: [
-      { id: 'a22_voice_committee', cell: [6, 18], scene: 'a22_voice_committee', label: '実行委員' },
-      { id: 'a22_voice_stall', room: 'school_courtyard', cell: [6, 28], scene: 'a22_voice_stall', label: '模擬店の生徒' },
-      { id: 'a22_voice_classmate', room: 'school_corridor', cell: [19, 16], scene: 'a22_voice_classmate', label: 'クラスメイト' },
-      { id: 'a22_voice_teacher', room: 'school_corridor', cell: [7, 6], scene: 'a22_voice_teacher', label: '音楽の先生' },
+      { id: 'a22_voice_committee', cell: [6, 18], until: 1, scene: 'a22_voice_committee', label: '実行委員' },
+      { id: 'a22_voice_stall', room: 'school_courtyard', cell: [6, 28], until: 1, scene: 'a22_voice_stall', label: '模擬店の生徒' },
+      { id: 'a22_voice_classmate', room: 'school_courtyard', cell: [16, 24], until: 2, scene: 'a22_voice_classmate', label: 'クラスメイト' },
+      { id: 'a22_voice_teacher', room: 'school_corridor', cell: [7, 6], night: 2, scene: 'a22_voice_teacher', label: '音楽の先生' },
+      { id: 'a22_voice2_committee', room: 'school_corridor', cell: [19, 13], night: 2, until: 2, scene: 'a22_voice2_committee', label: '実行委員' },
+      // お化け屋敷の教室の入口（2-2-12。緩める）
+      { id: 'a22_haunted', room: 'school_classroom', cell: [3, 12], night: 2, until: 2, scene: 'a22_haunted', label: 'お化け屋敷' },
     ],
+    // コマが戻るたびに、過去の場面が1つずつ進む（段階82）
     triggers: [
+      { on: 'koma', count: 1, scene: 'a22_first_koma' },
       { on: 'checkpoint', room: 'school_courtyard', cell: [9, 23], scene: 'a22_checkpoint' },
+      { on: 'koma', count: 2, scene: 'a22_koma2' },
+      { on: 'koma', count: 3, scene: 'a22_koma3' },
+      { on: 'koma', count: 4, scene: 'a22_koma4' },
+      { on: 'koma', count: 5, scene: 'a22_koma5' },
       { on: 'checkpoint', room: 'school_corridor', cell: [5, 8], scene: 'a22_music_room' },
-      { on: 'komaLeft', left: 3, scene: 'a22_three_left' },
+      { on: 'koma', count: 6, scene: 'a22_koma6' },
+      { on: 'koma', count: 7, scene: 'a22_koma7' },
+      { on: 'komaLeft', left: 1, scene: 'a22_one_left' },
       { on: 'boss', scene: 'a22_boss' },
       { on: 'cleared', scene: 'a22_last_koma' },
     ],
