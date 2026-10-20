@@ -217,10 +217,22 @@ export const CAST: Record<string, CastMember> = {
     height: 450,
     voice: { pitch: 290, wave: 'square' },
   },
-  // 電器屋の主人（今45歳。段階66の 1-2 の書き直し。昭和63年の「電器屋の子ども」）。立ち絵はまだない（色の札）
-  しげる: { faces: names('笑顔', '驚き', '苦笑い', '通常', 'さみしげ', '考える'), firstFace: '笑顔', color: 0x7a8aa0, voice: { pitch: 300, wave: 'square' } },
-  // ゆうまの妹（今18歳。段階63の 1-1 の書き直し）。立ち絵はまだない（色の札）
-  ひなの: { faces: names('通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'), firstFace: '通常', color: 0xc08aa0, voice: { pitch: 620, wave: 'triangle' } },
+  // 電器屋の主人（今45歳。段階66の 1-2 の書き直し。昭和63年の「電器屋の子ども」）。笑顔の絵だけある（2026-10-20。ほかの表情は笑顔で代わりに出す）
+  しげる: {
+    portrait: 'portrait.shigeru',
+    ...young(['笑顔', '驚き', '苦笑い', '通常', 'さみしげ', '考える'], { 笑顔: 'smile' }, '笑顔'),
+    color: 0x7a8aa0,
+    height: 450,
+    voice: { pitch: 300, wave: 'square' },
+  },
+  // ゆうまの妹（今18歳。段階63の 1-1 の書き直し）。通常（少しむっとした顔）の絵だけある（2026-10-20。ほかの表情は通常で代わりに出す）
+  ひなの: {
+    portrait: 'portrait.hinano',
+    ...young(['通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'], { 通常: 'normal' }, '通常'),
+    color: 0xc08aa0,
+    height: 440,
+    voice: { pitch: 620, wave: 'triangle' },
+  },
   写しのゆうま: {
     portrait: 'portrait.past_yuma',
     ...young(['笑顔', 'ふくれ', '怒り', '驚き', '通常', '照れ'], { 笑顔: 'smile', ふくれ: 'pout', 怒り: 'angry', 驚き: 'surprised', 通常: 'normal', 照れ: 'shy' }, '笑顔'),
@@ -485,21 +497,21 @@ export const FACE_EMOTES: Record<string, Emote> = {
 
 /** 1枚絵（なければ色と名前で仮に描く） */
 export const CGS: Record<string, Backdrop> = {
-  white_city: { title: '1枚絵：白い街（夢）', top: 0xffffff, bottom: 0xd8e0e8, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
-  fireworks: { title: '1枚絵：高台で花火を見る3人の後ろ姿', top: 0x0a0e30, bottom: 0x40305a, ambient: 'stars', glow: { x: 0.5, y: 0.25, color: 0xffb070 } },
-  photo_goldfish: { title: '写真：浴衣の小さなあかりが、金魚の袋をふたつ提げている', top: 0x3a3060, bottom: 0xd07a4a },
+  white_city: { title: '1枚絵：白い街（夢）', top: 0xffffff, bottom: 0xd8e0e8, image: 'cg.white_city', ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
+  fireworks: { title: '1枚絵：高台で花火を見る3人の後ろ姿', top: 0x0a0e30, bottom: 0x40305a, image: 'cg.fireworks', ambient: 'stars', glow: { x: 0.5, y: 0.25, color: 0xffb070 } },
+  photo_goldfish: { title: '写真：浴衣の小さなあかりが、金魚の袋をふたつ提げている', top: 0x3a3060, bottom: 0xd07a4a, image: 'cg.photo_goldfish' },
   // 段階37：1-2-9（1章の山場）。夕日の光と、金の粒
   tandem_bicycle: { title: '1枚絵：夕焼けの坂を下る二人乗り', top: 0xe0a060, bottom: 0x7a4a30, image: 'cg.tandem_bicycle', ambient: 'motes', glow: { x: 0.7, y: 0.25, color: 0xffc070 } },
   // 段階39：2-1-8（2-1 の山場）。裸電球の光と、金の粒
   master_back: { title: '1枚絵：振り返らずに歩いていく親方の背中', top: 0x3a2a1a, bottom: 0x7a5a3a, image: 'cg.master_back', ambient: 'motes', glow: { x: 0.5, y: 0.15, color: 0xffd08a } },
   // 段階39b：2-2-7（2-2 の山場。2026-10-17 に絵が届いた）。スポットライトの光と、金の粒
   string_stage: { title: '1枚絵：弦が切れても歌うステージ', top: 0x1a1a30, bottom: 0xc08a50, image: 'cg.string_stage', ambient: 'motes', glow: { x: 0.5, y: 0.2, color: 0xfff0c0 } },
-  // 段階40：2-3-7（代打の一打）と 7-C（切り取られるグラウンド。2章の山場）。絵が届くまで仮の色
-  // 段階61：持ち物が武器に変わる瞬間（1-1 のハルトとあかり、2-1 のみお）。絵が届くまで仮の色
-  awaken_weapons: { title: '1枚絵：長針の剣と、金魚の灯籠の杖', top: 0x2a3060, bottom: 0xe0a050, ambient: 'motes', glow: { x: 0.5, y: 0.45, color: 0xfff0c0 } },
-  mio_cards: { title: '1枚絵：光るトランプ', top: 0x3a2a40, bottom: 0xd0b070, ambient: 'motes', glow: { x: 0.5, y: 0.5, color: 0xfff4d0 } },
+  // 段階40：2-3-7（代打の一打）と 7-C（切り取られるグラウンド。2章の山場）。代打の一打は絵が届くまで仮の色
+  // 段階61：持ち物が武器に変わる瞬間（1-1 のハルトとあかり、2-1 のみお）。2026-10-20 に絵が届いた。白い街・花火・金魚の写真・切り取られるグラウンドも同じ日
+  awaken_weapons: { title: '1枚絵：長針の剣と、金魚の灯籠の杖', top: 0x2a3060, bottom: 0xe0a050, image: 'cg.awaken_weapons', ambient: 'motes', glow: { x: 0.5, y: 0.45, color: 0xfff0c0 } },
+  mio_cards: { title: '1枚絵：光るトランプ', top: 0x3a2a40, bottom: 0xd0b070, image: 'cg.mio_cards', ambient: 'motes', glow: { x: 0.5, y: 0.5, color: 0xfff4d0 } },
   pinch_hit: { title: '1枚絵：代打の一打', top: 0x6ab0e8, bottom: 0xc0a060, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
-  cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, glow: { x: 0.5, y: 0.4, color: 0xe0f0ff } },
+  cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, image: 'cg.cut_ground', glow: { x: 0.5, y: 0.4, color: 0xe0f0ff } },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
 };
 
