@@ -26,7 +26,8 @@ export default defineConfig({
     // 新しい版を公開した後は、変わったファイルだけを読み直し、次に開いた時から新しい版になる
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'script-defer',
+      // 登録は src/assets/serviceWorker.ts で自分でする（段階76。開いた時と裏から戻った時に、新しい版があるかを確かめるため）
+      injectRegister: false,
       // ホーム画面に追加するための設定ファイルは public/manifest.webmanifest（自分で書いたもの）を使う
       manifest: false,
       workbox: {

@@ -32,6 +32,7 @@ import { notePlayInput, tickPlayRecord } from './scenes/playRecord';
 import { PlayLogScene } from './scenes/PlayLogScene';
 import { TitleScene } from './scenes/TitleScene';
 import { RENDER_SCALE } from './ui/theme';
+import { installServiceWorker } from './assets/serviceWorker';
 
 const debug = isDebugEnabled(window.location.search);
 
@@ -47,6 +48,7 @@ if (debug) {
 }
 
 initRunFromUrl();
+installServiceWorker();
 
 // ブラウザが裏に回った時（アプリの切り替え、タブを閉じる）も保存する。戦闘中なら、その戦闘の前の状態が保存される
 document.addEventListener('visibilitychange', () => {
