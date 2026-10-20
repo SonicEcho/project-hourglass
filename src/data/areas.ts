@@ -27,13 +27,13 @@ export const AREA_ENEMY_STEP_MS = 420;
 export const AREA_GRACE_MS = 1800;
 /**
  * 敵の動き方ごとの数値（段階47b）。stepMs は1マス進む時間（仲間は AREA_STEP_MS）。追ってくる敵は仲間より遅いので逃げ切れる。
- * 逃げる敵は仲間と同じくらい速いので、行き止まりに追いこんで捕まえる
+ * 逃げる敵は、段階79で仲間より少し遅くした（まっすぐ追いかけると追いつける。前は仲間とほぼ同じ速さで、行き止まりに追いこまないと捕まらなかった）
  */
 export const ENEMY_MOVES = {
   patrol: { stepMs: AREA_ENEMY_STEP_MS, notice: 0, giveUp: 0 },
   chase: { stepMs: AREA_ENEMY_STEP_MS, notice: 4, giveUp: 7 },
   guard: { stepMs: 0, notice: 0, giveUp: 0 },
-  flee: { stepMs: 150, notice: 4, giveUp: 0 },
+  flee: { stepMs: 200, notice: 4, giveUp: 0 },
 } satisfies Record<EnemyMove, EnemyTuning & { stepMs: number }>;
 /** 話せる人に、この距離（マス）まで近づくと話す */
 export const AREA_TALK_RANGE = 1;
