@@ -1,4 +1,4 @@
-import type { BondEvent, DailyHub, DailyPlace, DailyPlaceInfo, DailySpot, ReturnVisit } from '../core/daily';
+import type { BondEvent, BondPoints, DailyHub, DailyPlace, DailyPlaceInfo, DailySpot, ReturnVisit } from '../core/daily';
 
 // 昼の日常（段階24）。物語の流れ（story.ts の SLICE_FLOW）の daily の出来事ごとに、場所と印を書く。
 // 印の id は、会話の場面がある時は場面の id と同じにする（見たかどうかを、この id でセーブに覚える）。
@@ -40,8 +40,22 @@ const toDusk = (id: string, label = '時計屋の奥へ（夕暮れになる）'
 });
 /** 必ず見る出来事（after：先に見ておく印。段階36の「工場の後に楽器店」） */
 const main = (id: string, label: string, y = ROW1, after?: string): DailySpot => ({ id, scene: id, label, mark: 'main', x: 195, y, required: true, after });
-/** 小話 */
-const talk = (id: string, label: string, y = ROW1): DailySpot => ({ id, scene: id, label, mark: 'talk', x: 195, y });
+/** 絆の相手の名前（地図の下の「絆」と、小話の印の名前に出す） */
+export const BOND_PARTNER_NAMES: Record<string, string> = { akari: 'あかり', mio: 'みお' };
+
+/**
+ * 小話（where は場所の中の所。with は話の中心の仲間。段階83：その日に見た時だけ、その仲間の♥を半分足す。印の名前に相手を出す）。
+ * どちらとも言えない話（二人とも少しずつ、仲間が出ない）には with を書かない
+ */
+const talk = (id: string, where: string, y = ROW1, partner?: string): DailySpot => ({
+  id,
+  scene: id,
+  label: partner ? `${where}（小話・${BOND_PARTNER_NAMES[partner]}）` : `${where}（小話）`,
+  mark: 'talk',
+  x: 195,
+  y,
+  ...(partner ? { with: partner } : {}),
+});
 
 /**
  * レストピアの拠点の入口（段階50。段階43の狩りの入口から替えた）：時計屋の「時計屋の奥へ（レストピア）」。
@@ -65,6 +79,9 @@ export const HUB_SCENES: { scene: string; after?: string }[] = [
   // 2-3「最後の打席」を持ち去られた後：取り返してから入ると決める
   { scene: 'hub_taken', after: 'd7_taken' },
 ];
+
+/** 絆の点の重み（段階83。docs/design/daily.md の 4-2）：絆の出来事1つで2点（♥1つ）、その日に見た小話1つで1点（♥半分） */
+export const BOND_POINTS: BondPoints = { event: 2, talk: 1 };
 
 /** 昼に選べる回数（段階35。docs/milestones/M2.md の「決まったこと」） */
 export const DAILY_PICKS = 2;
@@ -103,8 +120,6 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
 ];
 
-/** 絆の相手の名前（地図の下の「絆」に出す） */
-export const BOND_PARTNER_NAMES: Record<string, string> = { akari: 'あかり', mio: 'みお' };
 
 export const DAILY_HUBS: Record<string, DailyHub> = {
   // プロローグの屋台めぐり（docs/script/M1.md の P-3）。4つ全部回ると、石段の上へ
@@ -138,7 +153,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     picks: DAILY_PICKS,
     partners: ['akari'],
     places: [
-      at('home', { id: 'd1_home', scene: 'd1_home', label: '台所（小話）', mark: 'talk', x: 195, y: 360 }),
+      at('home', talk('d1_home', '台所', 360, 'akari')),
       at('clockshop', {
         id: 'd1_to_dusk',
         label: 'アルバイトへ（夕暮れになる）',
@@ -190,7 +205,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     picks: DAILY_PICKS,
     partners: ['akari'],
     places: [
-      at('school', talk('d3_talk', '教室（小話）', ROW2)),
+      at('school', talk('d3_talk', '教室', ROW2, 'akari')),
       at('street', main('d5_shigeru', '電器屋のしげるさん')),
       at('river_path', { id: 'a12_d5_home', label: '帰り道へ（夕方になる）', mark: 'go', x: 195, y: ROW_GO, ends: true, confirm: '帰り道へ行くと、夕方になります。\n行きますか？' }),
     ],
@@ -201,7 +216,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 7,
     picks: DAILY_PICKS,
     partners: ['akari'],
-    places: [at('convenience', talk('d4_talk', 'コンビニ（小話）', ROW2)), at('clockshop', toDusk('d4_to_dusk'))],
+    places: [at('convenience', talk('d4_talk', 'コンビニ', ROW2, 'akari')), at('clockshop', toDusk('d4_to_dusk'))],
   },
   d5_free: {
     id: 'd5_free',
@@ -209,7 +224,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 8,
     picks: DAILY_PICKS,
     partners: ['akari'],
-    places: [at('school', talk('d5_talk', '教室（小話）', ROW2)), at('clockshop', main('d5_isamu', '最後の納品'), toDusk('d5_to_dusk'))],
+    places: [at('school', talk('d5_talk', '教室', ROW2, 'akari')), at('clockshop', main('d5_isamu', '最後の納品'), toDusk('d5_to_dusk'))],
   },
   // 9日目の昼（段階78。docs/script/2-1_rework.md の 9-A・9-B）。工場の片付けと、その後の松の湯のすみさんは必ず見る
   a21_day9_free: {
@@ -222,8 +237,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     places: [
       at('factory', main('d9_factory', '工場の片付け')),
       at('street', main('d9_sumi', '松の湯のすみさん', ROW1, 'd9_factory')),
-      at('home', talk('d9_talk_snow', '台所（小話）', ROW2)),
-      at('clockshop', talk('d9_talk_memo', '店の中（小話）'), toDusk('a21_d9_to_dusk')),
+      at('home', talk('d9_talk_snow', '台所', ROW2, 'akari')),
+      at('clockshop', talk('d9_talk_memo', '店の中'), toDusk('a21_d9_to_dusk')),
     ],
   },
   // 10日目の昼（段階78。10-B）。工場のいさむさんは必ず見る（みおは町内会の手伝いで遅れる）
@@ -235,9 +250,9 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari', 'mio'],
     places: [
       at('factory', main('d10_isamu', 'いさむさん')),
-      at('street', talk('d10_talk_radio', '電器屋の前（小話）', ROW2)),
-      at('home', talk('d10_talk_erai', '台所（小話）', ROW2)),
-      at('convenience', talk('d10_talk_yuma', 'レジ（小話）', ROW2)),
+      at('street', talk('d10_talk_radio', '電器屋の前', ROW2, 'akari')),
+      at('home', talk('d10_talk_erai', '台所', ROW2, 'akari')),
+      at('convenience', talk('d10_talk_yuma', 'レジ', ROW2)),
       at('clockshop', toDusk('a21_d10_to_dusk')),
     ],
   },
@@ -248,7 +263,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 11,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
-    places: [at('clockshop', talk('d6_talk', '店の中（小話）'), talk('d11_talk_nebosuke', '店の奥（小話）', ROW2), toDusk('d6_to_dusk'))],
+    places: [at('clockshop', talk('d6_talk', '店の中', ROW1, 'mio'), talk('d11_talk_nebosuke', '店の奥', ROW2, 'mio'), toDusk('d6_to_dusk'))],
   },
   // 12日目（段階82。docs/script/2-2_rework.md の 12-A）：楽器店のけんたは必ず見る。夕暮れの後、2-2 の1晩目
   d12_free: {
@@ -259,7 +274,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari', 'mio'],
     places: [
       at('music_shop', main('d6_kenta', '楽器店のけんた')),
-      at('school', talk('d12_talk_rumor', '廊下（小話）', ROW2)),
+      at('school', talk('d12_talk_rumor', '廊下', ROW2, 'akari')),
       at('clockshop', toDusk('d12_to_dusk')),
     ],
   },
@@ -272,8 +287,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari', 'mio'],
     places: [
       at('river_path', main('d13_saki', '病院の帰り道')),
-      at('school', talk('d13_talk_seat', '教室（小話）', ROW2)),
-      at('street', talk('d13_talk_poster', '掲示板（小話）', ROW2)),
+      at('school', talk('d13_talk_seat', '教室', ROW2, 'akari')),
+      at('street', talk('d13_talk_poster', '掲示板', ROW2, 'mio')),
       at('clockshop', toDusk('a22_d13_to_dusk')),
     ],
   },
@@ -286,8 +301,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari', 'mio'],
     places: [
       at('music_shop', main('d14_kenta', '売約済み')),
-      at('home', talk('d14_talk_tickets', '居間（小話）', ROW2)),
-      at('clockshop', talk('d14_talk_letter', '店の中（小話）'), toDusk('a22_d14_to_dusk')),
+      at('home', talk('d14_talk_tickets', '居間', ROW2, 'akari')),
+      at('clockshop', talk('d14_talk_letter', '店の中'), toDusk('a22_d14_to_dusk')),
     ],
   },
   // 15日目（段階82。話の間の日）：2-2 を返した翌日のけんたたち（RETURN_VISITS）。夕暮れは交換所のペトラで、夜は記憶に入らない
@@ -298,8 +313,8 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
-      at('street', talk('d15_talk_takoyaki', '屋台（小話）', ROW2)),
-      at('clockshop', talk('d7_talk', '店の中（小話）'), toDusk('d15_to_dusk')),
+      at('street', talk('d15_talk_takoyaki', '屋台', ROW2, 'mio')),
+      at('clockshop', talk('d7_talk', '店の中', ROW1, 'mio'), toDusk('d15_to_dusk')),
     ],
   },
   // 16日目（段階82で13日目から移した）：パン屋の親子は必ず見る。夕暮れの後、2-3
@@ -319,7 +334,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari', 'mio'],
     places: [
       at('bakery', main('d8_bakery', '知っているのに')),
-      at('home', talk('d8_talk', '台所（小話）', ROW2)),
+      at('home', talk('d8_talk', '台所', ROW2, 'mio')),
       at('clockshop', toDusk('d8_to_dusk')),
     ],
   },

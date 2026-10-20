@@ -40,6 +40,8 @@ export interface DailySpot {
   after?: string;
   /** 見た時にもらえるごほうびのギア（段階39。返した翌日に持ち主がくれる物など） */
   gears?: string[];
+  /** 小話の相手（段階83。話の中心の仲間。その日に見た時だけ、この仲間の♥を半分足す） */
+  with?: string;
 }
 
 export interface DailyPlace {
@@ -127,6 +129,15 @@ export function isSeen(vars: Record<string, string>, spotId: string): boolean {
   return vars[seenKey(spotId)] === '1';
 }
 
+/** 後から「町の小話」で見たことを覚える値の名前（段階83。その日に見た時と分ける。♥に数えない） */
+export function archivedKey(spotId: string): string {
+  return `記録:${spotId}`;
+}
+
+export function markArchived(vars: Record<string, string>, spotId: string): Record<string, string> {
+  return { ...vars, [archivedKey(spotId)]: '1' };
+}
+
 /** 見たことを覚えた、新しい値の一覧 */
 export function markSeen(vars: Record<string, string>, spotId: string): Record<string, string> {
   return { ...vars, [seenKey(spotId)]: '1' };
@@ -195,14 +206,48 @@ export function bondLevel(vars: Record<string, string>, events: readonly BondEve
   return events.filter((e) => isSeen(vars, e.id)).length;
 }
 
+/** 絆の点の重み（段階83）：絆の出来事1つと、その日に見た小話1つ。♥1つは event 点 */
+export interface BondPoints {
+  event: number;
+  talk: number;
+}
+
 /**
- * ♥が一番多い相手（段階82。会話の始めに台本へ渡し、台詞を変える）。同じ数なら、相手の並び（bonds のキーの順）の先。相手がいなければ null
+ * 絆の点（段階83）：見た絆の出来事と、その日に見た小話（相手がこの仲間）。
+ * 「町の小話」で後から見た小話は、別の値（archivedKey）で覚えるので数えない
  */
-export function topBondPartner(vars: Record<string, string>, bonds: Readonly<Record<string, readonly BondEvent[]>>): string | null {
+export function bondPoints(
+  vars: Record<string, string>,
+  partner: string,
+  bonds: Readonly<Record<string, readonly BondEvent[]>>,
+  hubs: Readonly<Record<string, DailyHub>>,
+  points: BondPoints,
+): number {
+  const talks = Object.values(hubs)
+    .flatMap(allSpots)
+    .filter((s) => s.mark === 'talk' && s.with === partner && isSeen(vars, s.id)).length;
+  return bondLevel(vars, bonds[partner] ?? []) * points.event + talks * points.talk;
+}
+
+/** 絆の点を♥で書く（♥1つは event 点。足りない分があれば♡を1つ。0 は ―） */
+export function heartText(n: number, points: BondPoints): string {
+  return '♥'.repeat(Math.floor(n / points.event)) + (n % points.event > 0 ? '♡' : '') || '―';
+}
+
+/**
+ * ♥が一番多い相手（段階82。会話の始めに台本へ渡し、台詞を変える）。段階83から、その日に見た小話の♥も含めて比べる。
+ * 同じ数なら、相手の並び（bonds のキーの順）の先。相手がいなければ null
+ */
+export function topBondPartner(
+  vars: Record<string, string>,
+  bonds: Readonly<Record<string, readonly BondEvent[]>>,
+  hubs: Readonly<Record<string, DailyHub>>,
+  points: BondPoints,
+): string | null {
   let best: string | null = null;
   let level = -1;
-  for (const [partner, events] of Object.entries(bonds)) {
-    const n = bondLevel(vars, events);
+  for (const partner of Object.keys(bonds)) {
+    const n = bondPoints(vars, partner, bonds, hubs, points);
     if (n > level) {
       best = partner;
       level = n;
@@ -223,7 +268,8 @@ export interface ArchivedTalk {
 
 /**
  * 町の小話の棚（段階82）：過ぎた日（passed がその日の日常の id で真）の小話を、日の順に並べる。
- * 見逃した小話を後から見るため（周回して遊ぶ前提ではないので、取りこぼしをなくす）。見た小話も並べる（見直せる）
+ * 見逃した小話を後から見るため（周回して遊ぶ前提ではないので、取りこぼしをなくす）。見た小話も並べる（見直せる）。
+ * seen は、その日に見たか、ここで後から見たか（段階83）
  */
 export function talkArchive(hubs: Readonly<Record<string, DailyHub>>, vars: Record<string, string>, passed: (hubId: string) => boolean): ArchivedTalk[] {
   const out: ArchivedTalk[] = [];
@@ -231,7 +277,7 @@ export function talkArchive(hubs: Readonly<Record<string, DailyHub>>, vars: Reco
     if (hub.day === undefined || !passed(hub.id)) continue;
     for (const spot of allSpots(hub)) {
       if (spot.mark !== 'talk' || !spot.scene) continue;
-      out.push({ id: spot.id, scene: spot.scene, label: spot.label, day: hub.day, seen: isSeen(vars, spot.id) });
+      out.push({ id: spot.id, scene: spot.scene, label: spot.label, day: hub.day, seen: isSeen(vars, spot.id) || vars[archivedKey(spot.id)] === '1' });
     }
   }
   return out.sort((a, b) => a.day - b.day);
@@ -318,6 +364,8 @@ export function checkDailyHub(hub: DailyHub): string[] {
     if (seen.has(s.id)) errors.push(`${hub.id}：同じ名前の印が2つある：${s.id}`);
     seen.add(s.id);
     if (!s.scene && !s.ends) errors.push(`${hub.id}：場面も終わりもない印：${s.id}`);
+    // 小話の相手（段階83）は、その日に会える仲間
+    if (s.with && (s.mark !== 'talk' || !(hub.partners ?? []).includes(s.with))) errors.push(`${hub.id}：小話の相手がその日の仲間でない：${s.id} ${s.with}`);
   }
   const canEnd = spots.some((s) => s.ends) || (hub.finishWhenRequiredSeen && spots.some((s) => s.required));
   if (!canEnd) errors.push(`${hub.id}：日常を終える印がない`);
