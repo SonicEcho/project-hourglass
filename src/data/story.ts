@@ -131,7 +131,8 @@ export const SLICE_FLOW: Flow = [
     // みおを入れた3人と、ムーブメントの開放（段階38）。みおが仲間になるのは 5-C（d5_evening）で、それより前に戦闘はない
     lineup: CHAPTER2_LINEUP,
     // 段階63・66で 1-1・1-2 を3晩に広げたので、2章は8日目から（出来事の id は d5_… のまま）。
-    // 段階78：2-1 を3晩に分けて入る形にし（脚本 docs/script/2-1_rework.md）、8〜11日目にした。2-2・2-3 と2章の終わりは、中身は今のまま12〜14日目にずらした
+    // 段階78：2-1 を3晩に分けて入る形にし（脚本 docs/script/2-1_rework.md）、8〜11日目にした。2-2・2-3 と2章の終わりは、中身は今のまま12〜14日目にずらした。
+    // 段階82：2-2 を3晩に分け（12〜14日目）、返した翌日（15日目）を足した。2-3 は16日目、2章の終わりは17日目
     events: [
       talk('chapter2_title', '第2章'),
       day(8),
@@ -165,24 +166,43 @@ export const SLICE_FLOW: Flow = [
       day(12),
       { id: 'd12_free', kind: 'daily', title: '12日目：昼' },
       talk('d12_library', '12日目：夕暮れ・蔵書の棚'),
-      // 2-2 の区画（段階39b。areas.ts の AREAS の a22）。部屋をつなぐ形で作った最初の区画。体育館の「アンプのぬし」
+      // 2-2 の区画（段階39b。areas.ts の AREAS の a22）。段階82 で3晩に分けた（脚本 docs/script/2-2_rework.md）。
+      // 第1夜「朝の音楽室」（校門・中庭・駐輪場）
       talk('a22_enter', '2-2：校門に入る'),
-      { id: 'a22_explore', kind: 'explore', area: 'a22', title: '2-2「最後の文化祭」：高校の探索' },
-      { id: 'a22_return', kind: 'return', area: 'a22', title: '2-2：時間を返す' },
-      talk('d6_return', '12日目：時間を返す'),
+      { id: 'a22_explore', kind: 'explore', area: 'a22', night: 1, title: '2-2「最後の文化祭」：高校の1晩目' },
+      talk('a22_night1_end', '12日目：夕暮れの時計屋に戻る'),
       day(13),
-      { id: 'd7_free', kind: 'daily', title: '13日目：昼' },
-      talk('d7_library', '13日目：夕暮れ・蔵書の棚'),
+      // 13日目の昼（病院の帰り道のさきは必ず見る）
+      { id: 'a22_day13_free', kind: 'daily', title: '13日目：昼' },
+      talk('a22_night2_enter', '13日目：高校の2晩目に入る'),
+      // 第2夜「ひどい一言」（渡り廊下・お化け屋敷の教室・番人）
+      { id: 'a22_explore2', kind: 'explore', area: 'a22', night: 2, title: '2-2「最後の文化祭」：高校の2晩目' },
+      talk('a22_night2_end', '13日目：夕暮れの時計屋に戻る'),
+      day(14),
+      // 14日目の昼（楽器店のけんたは必ず見る）
+      { id: 'a22_day14_free', kind: 'daily', title: '14日目：昼' },
+      talk('a22_night3_enter', '14日目：高校の3晩目に入る'),
+      // 第3夜「最後の曲」（体育館の「アンプのぬし」）
+      { id: 'a22_explore3', kind: 'explore', area: 'a22', night: 3, title: '2-2「最後の文化祭」：高校の3晩目' },
+      { id: 'a22_return', kind: 'return', area: 'a22', title: '2-2：時間を返す' },
+      talk('d6_return', '14日目：時間を返す'),
+      day(15),
+      // 2-2 を返した翌日（けんたの楽器店は、返した翌日の印。daily.ts の RETURN_VISITS）。夜は記憶に入らない（話の間の日）
+      { id: 'd15_free', kind: 'daily', title: '15日目：昼' },
+      talk('d15_petra', '15日目：夕暮れ・交換所の窓口'),
+      day(16),
+      { id: 'd7_free', kind: 'daily', title: '16日目：昼' },
+      talk('d7_library', '16日目：夕暮れ・蔵書の棚'),
       // 2-3 の区画（段階40。areas.ts の AREAS の a23）。ボスに勝ってコマがそろった後、返す直前にカイが現れる（負け戦）。2-3 は返せないので、返す出来事はない
       talk('a23_enter', '2-3：河川敷に入る'),
       { id: 'a23_explore', kind: 'explore', area: 'a23', title: '2-3「最後の打席」：河川敷の探索' },
-      talk('d7_kai', '13日目：返す直前にカイ'),
+      talk('d7_kai', '16日目：返す直前にカイ'),
       { id: 'a23_kai', kind: 'battle', battle: 'a23_kai', title: '2-3：カイとの戦い（負け戦）' },
-      talk('d7_taken', '13日目：持ち去られる'),
-      day(14),
-      talk('d8_classroom', '14日目：朝の教室'),
-      { id: 'd8_free', kind: 'daily', title: '14日目：昼' },
-      talk('d8_evening', '14日目：夕暮れ・2章の終わり'),
+      talk('d7_taken', '16日目：持ち去られる'),
+      day(17),
+      talk('d8_classroom', '17日目：朝の教室'),
+      { id: 'd8_free', kind: 'daily', title: '17日目：昼' },
+      talk('d8_evening', '17日目：夕暮れ・2章の終わり'),
       // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、4日目から続く（段階63）
       { id: 'ch2_end', kind: 'end', title: 'つづく' },
     ],

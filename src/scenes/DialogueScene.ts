@@ -3,9 +3,9 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm, warmBgm } from '../audio/sound';
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
-import { chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog } from '../core';
+import { chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog, topBondPartner } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } from '../data';
-import { BACKDROPS, BG_VIEW_MS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -15,6 +15,9 @@ import { drawBackdrop } from '../ui/backdrop';
 import { addButton, addText } from '../ui/widgets';
 import { openOptions } from '../ui/options';
 import { fadeOutAndDestroy } from '../ui/skin';
+
+/** 台本で読む「♥の一番多い相手」の値の名前（段階82） */
+const BOND_TOP = '絆の一番';
 
 /** 文字送りの速さ（1文字あたりのミリ秒）。語りの文はゆっくり */
 const CHAR_MS = 35;
@@ -304,7 +307,11 @@ export class DialogueScene extends Phaser.Scene {
   private async proceed(): Promise<void> {
     this.busy = true;
     this.waitTimer?.remove();
-    const r = runScript(this.scenes, this.pos, this.vars);
+    // 絆の一番（段階82。docs/design/daily.md の 4-2）：♥の一番多い相手の名前。台本の @if と {絆の一番} で読む。覚えた値には入れない
+    const partner = topBondPartner(this.vars, BOND_EVENTS);
+    const r0 = runScript(this.scenes, this.pos, { ...this.vars, [BOND_TOP]: partner ? BOND_PARTNER_NAMES[partner] : '' });
+    const { [BOND_TOP]: _top, ...vars } = r0.vars;
+    const r = { ...r0, vars };
     if (JSON.stringify(r.vars) !== JSON.stringify(this.vars)) this.onVars?.(r.vars);
     this.vars = r.vars;
     const imageBefore = this.bgImage;

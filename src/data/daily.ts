@@ -79,10 +79,14 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari2', title: '消せない写真', label: '屋上へ（あかり）', from: 5, place: 'school', x: 195, y: ROW1 },
     { id: 'bond_akari3', title: 'りくのいない帰り道', label: '帰り道（あかり）', from: 7, place: 'river_path', x: 195, y: ROW1 },
     { id: 'bond_akari4', title: '最初の五分', label: '施設の居間（あかり）', from: 8, place: 'home', x: 195, y: ROW1 },
+    // 段階82（docs/script/2-2_rework.md の 4.）
+    { id: 'bond_akari5', title: '出し物、決まらない', label: '教室（あかり）', from: 12, place: 'school', x: 195, y: ROW1 },
   ],
+  // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
-    { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 11, place: 'riverside', x: 195, y: ROW1 },
-    { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 13, place: 'convenience', x: 195, y: ROW1 },
+    { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 9, place: 'riverside', x: 195, y: ROW1 },
+    { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 11, place: 'convenience', x: 195, y: ROW1 },
+    { id: 'bond_mio3', title: '弟子入り一日目', label: '工場（みお）', from: 12, place: 'factory', x: 195, y: ROW1 },
   ],
 };
 
@@ -95,7 +99,7 @@ export const RETURN_VISITS: ReturnVisit[] = [
   // 1-2 の翌日のふみさんは、段階66から物語の流れの会話（7日目の朝の d4_fumi。docs/script/1-2_rework.md の 7-A）
   // 2-1 の翌日（11日目。段階78）：いさむの工場（docs/script/2-1_rework.md の 11-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
   { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
-  // 2-2 の翌日（13日目）：閉店後の楽器店で、けんたたち3人（7-A。段階39b）
+  // 2-2 の翌日（15日目。段階82）：閉店後の楽器店で、けんたたち3人（docs/script/2-2_rework.md の 15-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
 ];
 
@@ -213,11 +217,13 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     time: '9日目　放課後',
     day: 9,
     picks: DAILY_PICKS,
-    partners: ['akari'],
+    // 段階82：みお1と小話を足した（docs/script/2-2_rework.md の「2-1 の日に足す選べる話」）。小話はその日だけ
+    partners: ['akari', 'mio'],
     places: [
       at('factory', main('d9_factory', '工場の片付け')),
       at('street', main('d9_sumi', '松の湯のすみさん', ROW1, 'd9_factory')),
-      at('clockshop', toDusk('a21_d9_to_dusk')),
+      at('home', talk('d9_talk_snow', '台所（小話）', ROW2)),
+      at('clockshop', talk('d9_talk_memo', '店の中（小話）'), toDusk('a21_d9_to_dusk')),
     ],
   },
   // 10日目の昼（段階78。10-B）。工場のいさむさんは必ず見る（みおは町内会の手伝いで遅れる）
@@ -226,8 +232,14 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     time: '10日目　放課後',
     day: 10,
     picks: DAILY_PICKS,
-    partners: ['akari'],
-    places: [at('factory', main('d10_isamu', 'いさむさん')), at('clockshop', toDusk('a21_d10_to_dusk'))],
+    partners: ['akari', 'mio'],
+    places: [
+      at('factory', main('d10_isamu', 'いさむさん')),
+      at('street', talk('d10_talk_radio', '電器屋の前（小話）', ROW2)),
+      at('home', talk('d10_talk_erai', '台所（小話）', ROW2)),
+      at('convenience', talk('d10_talk_yuma', 'レジ（小話）', ROW2)),
+      at('clockshop', toDusk('a21_d10_to_dusk')),
+    ],
   },
   // 11日目（段階78。話の間の日）：2-1 を返した翌日のいさむの工場（RETURN_VISITS）。夕暮れは蔵書の棚で、夜は記憶に入らない
   d6_free: {
@@ -236,32 +248,73 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 11,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
-    places: [at('clockshop', talk('d6_talk', '店の中（小話）'), toDusk('d6_to_dusk'))],
+    places: [at('clockshop', talk('d6_talk', '店の中（小話）'), talk('d11_talk_nebosuke', '店の奥（小話）', ROW2), toDusk('d6_to_dusk'))],
   },
-  // 12日目：楽器店のけんたは必ず見る（2-2 の書き直しまでは、今の中身のまま）
+  // 12日目（段階82。docs/script/2-2_rework.md の 12-A）：楽器店のけんたは必ず見る。夕暮れの後、2-2 の1晩目
   d12_free: {
     id: 'd12_free',
     time: '12日目　放課後',
     day: 12,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
-    places: [at('music_shop', main('d6_kenta', '楽器店のけんた')), at('clockshop', toDusk('d12_to_dusk'))],
+    places: [
+      at('music_shop', main('d6_kenta', '楽器店のけんた')),
+      at('school', talk('d12_talk_rumor', '廊下（小話）', ROW2)),
+      at('clockshop', toDusk('d12_to_dusk')),
+    ],
   },
-  d7_free: {
-    id: 'd7_free',
+  // 13日目（13-A）：病院の帰り道のさきは必ず見る。夕暮れの後、2晩目
+  a22_day13_free: {
+    id: 'a22_day13_free',
     time: '13日目　放課後',
     day: 13,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
-      at('bakery', main('d7_bakery', 'パン屋の親子', ROW1, 'd7_kenta')),
-      at('clockshop', talk('d7_talk', '店の中（小話）'), toDusk('d7_to_dusk')),
+      at('river_path', main('d13_saki', '病院の帰り道')),
+      at('school', talk('d13_talk_seat', '教室（小話）', ROW2)),
+      at('street', talk('d13_talk_poster', '掲示板（小話）', ROW2)),
+      at('clockshop', toDusk('a22_d13_to_dusk')),
     ],
+  },
+  // 14日目（14-A）：楽器店のけんたの本音は必ず見る。夕暮れの後、3晩目
+  a22_day14_free: {
+    id: 'a22_day14_free',
+    time: '14日目　放課後',
+    day: 14,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('music_shop', main('d14_kenta', '売約済み')),
+      at('home', talk('d14_talk_tickets', '居間（小話）', ROW2)),
+      at('clockshop', talk('d14_talk_letter', '店の中（小話）'), toDusk('a22_d14_to_dusk')),
+    ],
+  },
+  // 15日目（段階82。話の間の日）：2-2 を返した翌日のけんたたち（RETURN_VISITS）。夕暮れは交換所のペトラで、夜は記憶に入らない
+  d15_free: {
+    id: 'd15_free',
+    time: '15日目　土曜の昼',
+    day: 15,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('street', talk('d15_talk_takoyaki', '屋台（小話）', ROW2)),
+      at('clockshop', talk('d7_talk', '店の中（小話）'), toDusk('d15_to_dusk')),
+    ],
+  },
+  // 16日目（段階82で13日目から移した）：パン屋の親子は必ず見る。夕暮れの後、2-3
+  d7_free: {
+    id: 'd7_free',
+    time: '16日目　放課後',
+    day: 16,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [at('bakery', main('d7_bakery', 'パン屋の親子')), at('clockshop', toDusk('d7_to_dusk'))],
   },
   d8_free: {
     id: 'd8_free',
-    time: '14日目　土曜の昼',
-    day: 14,
+    time: '17日目　放課後',
+    day: 17,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [

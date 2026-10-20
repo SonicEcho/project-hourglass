@@ -11,6 +11,7 @@ import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
 import { notePlayCount } from './playRecord';
+import { archivedTalks } from './TalkArchiveScene';
 import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
@@ -91,6 +92,12 @@ export class HubScene extends Phaser.Scene {
     // 交換所（段階52）と落とし物の棚（段階53）
     addButton(this, root, cx, below + 20, w, 54, '交換所', { onTap: () => this.openExchange() }, { size: 15, bold: true, fill: 0x24384a, stroke: 0x6bc8ff, strokeWidth: 2 });
     addButton(this, root, cx, below + 84, w, 54, '落とし物の棚', { onTap: () => this.openLost() }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+    // 町の小話（段階82）：過ぎた日の小話を後から見る。過ぎた日の小話がある時だけ
+    const talks = archivedTalks();
+    if (talks.length > 0) {
+      const unseen = talks.filter((t) => !t.seen).length;
+      addButton(this, root, cx, below + 148, w, 54, unseen > 0 ? `町の小話（まだ ${unseen}）` : '町の小話', { onTap: () => this.openTalks() }, { size: 15, bold: true, fill: 0x3a2a4a, stroke: 0xc8a0ff, strokeWidth: 2 });
+    }
     // 昼へ戻る
     addButton(this, root, cx, 780, w, 56, '時計屋へ戻る', { onTap: () => this.leave() }, { size: 17, bold: true });
     this.cameras.main.fadeIn(250, 0, 0, 0);
@@ -113,6 +120,12 @@ export class HubScene extends Phaser.Scene {
   private openLost(): void {
     if (this.overlay) return;
     this.scene.start('Lost', { seen: undefined, got: undefined });
+  }
+
+  /** 町の小話を開く（段階82） */
+  private openTalks(): void {
+    if (this.overlay) return;
+    this.scene.start('TalkArchive', { seen: undefined, page: 0 });
   }
 
   /** 昼の時計屋へ戻る（昼の日常の途中でなければ、物語の流れへ） */

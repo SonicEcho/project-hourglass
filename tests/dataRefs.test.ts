@@ -470,20 +470,23 @@ describe('台本（段階22。M1・M2）', () => {
     const { chooseOption, runScript } = await import('../src/core');
     for (const scene of SCENES) {
       const seen = new Set<number>();
-      const visit = (pos: { scene: string; index: number }, depth: number) => {
+      // @if（段階82）で分かれる所は、その値の時も読む
+      const varsList: Record<string, string>[] = [{}];
+      for (const step of scene.steps) if (step.kind === 'command' && step.name === 'if') varsList.push({ [step.args[0]]: step.args[1] });
+      const visit = (pos: { scene: string; index: number }, depth: number, vars: Record<string, string>) => {
         expect(depth, scene.id).toBeLessThan(50);
         for (;;) {
-          const r = runScript(SCENES, pos, {});
+          const r = runScript(SCENES, pos, vars);
           if (r.stop.type === 'end') return;
           if (r.stop.type === 'choice') {
-            r.stop.choice.options.forEach((_, i) => visit(chooseOption(SCENES, r.pos, i), depth + 1));
+            r.stop.choice.options.forEach((_, i) => visit(chooseOption(SCENES, r.pos, i), depth + 1, vars));
             return;
           }
           seen.add(r.stop.line.src);
           pos = r.pos;
         }
       };
-      visit({ scene: scene.id, index: 0 }, 0);
+      for (const vars of varsList) visit({ scene: scene.id, index: 0 }, 0, vars);
       for (const step of scene.steps) if (step.kind === 'line') expect(seen.has(step.src), `${scene.id}（${step.src}行目）`).toBe(true);
     }
   });

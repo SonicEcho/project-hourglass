@@ -5,8 +5,8 @@ import {
   blockers,
   bondLevel,
   checkBonds,
-  checkVisits,
   checkDailyHub,
+  checkVisits,
   finishesAfter,
   isSeen,
   markSeen,
@@ -18,6 +18,8 @@ import {
   seenKey,
   spotGears,
   spotState,
+  talkArchive,
+  topBondPartner,
   usesPick,
   visitsFor,
 } from '../../src/core';
@@ -274,5 +276,42 @@ describe('返した翌日に持ち主に会う（段階36）', () => {
       { area: 'a', id: 'x', label: '', place: 'street', x: 0, y: 0 },
     ];
     expect(checkVisits(bad, TOWN_T)).toEqual(['町の地図にない場所：x nowhere', '同じ id の返した翌日の出来事が2つある：x', '同じ区画の返した翌日の出来事が2つある：a']);
+  });
+});
+
+describe('♥が一番多い相手と、町の小話の棚（段階82）', () => {
+  const bonds: Record<string, BondEvent[]> = {
+    akari: [
+      { id: 'a1', title: '', label: '', from: 1, place: 'p', x: 0, y: 0 },
+      { id: 'a2', title: '', label: '', from: 1, place: 'p', x: 0, y: 0 },
+    ],
+    mio: [
+      { id: 'm1', title: '', label: '', from: 1, place: 'p', x: 0, y: 0 },
+      { id: 'm2', title: '', label: '', from: 1, place: 'p', x: 0, y: 0 },
+    ],
+  };
+
+  it('♥が一番多い相手。同じ数なら、並びの先の相手', () => {
+    expect(topBondPartner({}, bonds)).toBe('akari');
+    expect(topBondPartner(markSeen({}, 'm1'), bonds)).toBe('mio');
+    expect(topBondPartner(markSeen(markSeen({}, 'm1'), 'a1'), bonds)).toBe('akari');
+    expect(topBondPartner({}, {})).toBeNull();
+  });
+
+  it('過ぎた日の小話だけを、日の順に並べる。見たかどうかも付ける。絆と必ず見る出来事は並べない', () => {
+    const spot = (id: string, mark: 'talk' | 'main' | 'bond' | 'go') => ({ id, scene: id, label: id, mark, x: 0, y: 0 });
+    const hubs: Record<string, DailyHub> = {
+      d2: { id: 'd2', time: '', day: 2, places: [{ id: 'p', name: '', backdrop: 'b', mapX: 0, mapY: 0, spots: [spot('t2', 'talk'), spot('m2', 'main')] }] },
+      d1: { id: 'd1', time: '', day: 1, places: [{ id: 'p', name: '', backdrop: 'b', mapX: 0, mapY: 0, spots: [spot('t1', 'talk'), spot('t1b', 'talk')] }] },
+      d3: { id: 'd3', time: '', day: 3, places: [{ id: 'p', name: '', backdrop: 'b', mapX: 0, mapY: 0, spots: [spot('t3', 'talk')] }] },
+      stalls: { id: 'stalls', time: '', places: [{ id: 'p', name: '', backdrop: 'b', mapX: 0, mapY: 0, spots: [spot('s', 'talk')] }] },
+    };
+    const passed = (id: string) => id !== 'd3';
+    const list = talkArchive(hubs, markSeen({}, 't1b'), passed);
+    expect(list.map((t) => [t.id, t.day, t.seen])).toEqual([
+      ['t1', 1, false],
+      ['t1b', 1, true],
+      ['t2', 2, false],
+    ]);
   });
 });

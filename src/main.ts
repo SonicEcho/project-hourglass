@@ -24,6 +24,7 @@ import { AlbumScene } from './scenes/AlbumScene';
 import { HubScene } from './scenes/HubScene';
 import { ExchangeScene } from './scenes/ExchangeScene';
 import { LostScene } from './scenes/LostScene';
+import { TalkArchiveScene } from './scenes/TalkArchiveScene';
 import { ResultScene } from './scenes/ResultScene';
 import { allBattles, progressAt } from './core';
 import { STORY } from './data';
@@ -79,7 +80,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, WeaponTreeScene, AlbumScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, ExchangeScene, LostScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, WeaponTreeScene, AlbumScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, ExchangeScene, LostScene, TalkArchiveScene],
 });
 
 if (debug) {

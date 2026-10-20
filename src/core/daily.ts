@@ -195,6 +195,48 @@ export function bondLevel(vars: Record<string, string>, events: readonly BondEve
   return events.filter((e) => isSeen(vars, e.id)).length;
 }
 
+/**
+ * ♥が一番多い相手（段階82。会話の始めに台本へ渡し、台詞を変える）。同じ数なら、相手の並び（bonds のキーの順）の先。相手がいなければ null
+ */
+export function topBondPartner(vars: Record<string, string>, bonds: Readonly<Record<string, readonly BondEvent[]>>): string | null {
+  let best: string | null = null;
+  let level = -1;
+  for (const [partner, events] of Object.entries(bonds)) {
+    const n = bondLevel(vars, events);
+    if (n > level) {
+      best = partner;
+      level = n;
+    }
+  }
+  return best;
+}
+
+/** 町の小話の棚（段階82）に並べる1つ */
+export interface ArchivedTalk {
+  /** 小話の印（見たかどうかもこの id で覚える） */
+  id: string;
+  scene: string;
+  label: string;
+  day: number;
+  seen: boolean;
+}
+
+/**
+ * 町の小話の棚（段階82）：過ぎた日（passed がその日の日常の id で真）の小話を、日の順に並べる。
+ * 見逃した小話を後から見るため（周回して遊ぶ前提ではないので、取りこぼしをなくす）。見た小話も並べる（見直せる）
+ */
+export function talkArchive(hubs: Readonly<Record<string, DailyHub>>, vars: Record<string, string>, passed: (hubId: string) => boolean): ArchivedTalk[] {
+  const out: ArchivedTalk[] = [];
+  for (const hub of Object.values(hubs)) {
+    if (hub.day === undefined || !passed(hub.id)) continue;
+    for (const spot of allSpots(hub)) {
+      if (spot.mark !== 'talk' || !spot.scene) continue;
+      out.push({ id: spot.id, scene: spot.scene, label: spot.label, day: hub.day, seen: isSeen(vars, spot.id) });
+    }
+  }
+  return out.sort((a, b) => a.day - b.day);
+}
+
 // ---- 返した翌日に持ち主に会う（段階36） ----
 
 /** その日に出る、返した翌日の出来事（returnDays：区画の id → 返した日。flow.ts の returnDays） */
