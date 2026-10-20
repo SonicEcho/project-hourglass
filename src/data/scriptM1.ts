@@ -364,7 +364,7 @@ export const SCRIPT_M1 = `
 
 # d1_clockshop 1日目：夕暮れの時計屋
 @bg clock_shop
-@bgm dusk
+@bgm stop
 @clock tick many
 @cast ハルト
 〈地の文〉商店街の外れの、古い時計屋。俺のアルバイト先だ。
@@ -376,7 +376,6 @@ export const SCRIPT_M1 = `
 あかり〔心配〕「……ねえ。りくに送った写真、既読がつかないんだけど」
 ハルト〔通常〕「調べ物に夢中なんだろ」
 @clock stop
-@bgm stop
 @wait 1400
 @mono on
 @zoom 1.08
