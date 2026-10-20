@@ -133,6 +133,35 @@ describe('遊んだ記録（段階32b）', () => {
     expect(secs[1].ids).toEqual(['d1', 'b', 'c']);
   });
 
+  it('晩に分けた区画は、晩ごとの探索を1行にまとめる（段階78）', () => {
+    const f: Flow = [
+      { id: 'p', name: 'プロローグ', events: [{ id: 'a', kind: 'dialogue', title: 'A' }] },
+      {
+        id: 'c1',
+        name: '1章',
+        events: [
+          { id: 'd1', kind: 'day', title: '1日目', day: 1 },
+          { id: 'x1', kind: 'explore', title: '区画：1晩目', area: 'z', night: 1 },
+          { id: 'd2', kind: 'day', title: '2日目', day: 2 },
+          { id: 'x2', kind: 'explore', title: '区画：2晩目', area: 'z', night: 2 },
+          { id: 'y', kind: 'explore', title: 'ほかの区画', area: 'w' },
+        ],
+      },
+    ];
+    let log = createPlayLog(t0);
+    log = addPlayTime(addPlayTime(log, 'x1', 4000, t0), 'x2', 6000, t0);
+    log = recordPlayBattle(recordPlayBattle(log, 'x1', true), 'x2', true);
+    const secs = playLogSections(summarizePlayLog(log, f).rows, f);
+    expect(secs.map((s) => [s.title, s.explore, s.ms, s.wins])).toEqual([
+      ['プロローグ', false, 0, 0],
+      ['1日目', false, 0, 0],
+      ['区画：1晩目', true, 10000, 2],
+      ['2日目', false, 0, 0],
+      ['ほかの区画', true, 0, 0],
+    ]);
+    expect(secs[2].ids).toEqual(['x1', 'x2']);
+  });
+
   it('今の流れは、まとめた行なら記録の画面の1画面に入る数（段階34）', () => {
     const rows = summarizePlayLog(createPlayLog(t0), SLICE_FLOW).rows;
     expect(playLogSections(rows, SLICE_FLOW).length).toBeLessThanOrEqual(24);

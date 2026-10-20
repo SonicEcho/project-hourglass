@@ -130,39 +130,59 @@ export const SLICE_FLOW: Flow = [
     name: '第2章「背中を押す声」',
     // みおを入れた3人と、ムーブメントの開放（段階38）。みおが仲間になるのは 5-C（d5_evening）で、それより前に戦闘はない
     lineup: CHAPTER2_LINEUP,
-    // 段階63・66で 1-1・1-2 を3晩に広げたので、2章は8日目から（出来事の id は d5_… のまま）
+    // 段階63・66で 1-1・1-2 を3晩に広げたので、2章は8日目から（出来事の id は d5_… のまま）。
+    // 段階78：2-1 を3晩に分けて入る形にし（脚本 docs/script/2-1_rework.md）、8〜11日目にした。2-2・2-3 と2章の終わりは、中身は今のまま12〜14日目にずらした
     events: [
       talk('chapter2_title', '第2章'),
       day(8),
       talk('d5_morning', '8日目：朝の通学路'),
       { id: 'd5_free', kind: 'daily', title: '8日目：昼' },
       talk('d5_evening', '8日目：夕暮れ・みおの加入'),
-      // 2-1 の区画（段階38・39。areas.ts の AREAS の a21）。みおの武器（2-1-1）とムーブメントの開放（2-1-4）、町工場の砂嵐と「旋盤のぬし」
+      // 2-1 の区画（段階38・39。areas.ts の AREAS の a21）。みおの武器とムーブメントの開放、町工場の砂嵐と「旋盤のぬし」。1晩目「今日はお前がやれ」
       talk('a21_enter', '2-1：路地に入る'),
-      { id: 'a21_explore', kind: 'explore', area: 'a21', title: '2-1「親方の背中」：町工場の探索' },
-      { id: 'a21_return', kind: 'return', area: 'a21', title: '2-1：時間を返す' },
-      talk('d5_return', '8日目：時間を返す'),
+      { id: 'a21_explore', kind: 'explore', area: 'a21', night: 1, title: '2-1「親方の背中」：町工場の1晩目' },
+      talk('a21_night1_end', '8日目：夕暮れの時計屋に戻る'),
       day(9),
-      { id: 'd6_free', kind: 'daily', title: '9日目：昼' },
-      talk('d6_library', '9日目：夕暮れ・調査ノート'),
+      // 9日目の昼（工場の片付けと、松の湯のすみさんは必ず見る）
+      { id: 'a21_day9_free', kind: 'daily', title: '9日目：昼' },
+      talk('a21_night2_enter', '9日目：町工場の2晩目に入る'),
+      // 2晩目「欠けた歯」
+      { id: 'a21_explore2', kind: 'explore', area: 'a21', night: 2, title: '2-1「親方の背中」：町工場の2晩目' },
+      talk('a21_night2_end', '9日目：夕暮れの時計屋に戻る'),
+      day(10),
+      talk('d10_rooftop', '10日目：昼休みの屋上'),
+      // 10日目の昼（いさむの本音は必ず見る）
+      { id: 'a21_day10_free', kind: 'daily', title: '10日目：昼' },
+      talk('a21_night3_enter', '10日目：町工場の3晩目に入る'),
+      // 3晩目「いい仕事だ」
+      { id: 'a21_explore3', kind: 'explore', area: 'a21', night: 3, title: '2-1「親方の背中」：町工場の3晩目' },
+      { id: 'a21_return', kind: 'return', area: 'a21', title: '2-1：時間を返す' },
+      talk('d5_return', '10日目：時間を返す'),
+      day(11),
+      // 2-1 を返した翌日（いさむの工場は、返した翌日の印。daily.ts の RETURN_VISITS）。夜は記憶に入らない（話の間の日）
+      { id: 'd6_free', kind: 'daily', title: '11日目：昼' },
+      talk('d6_library', '11日目：夕暮れ・調査ノート'),
+      day(12),
+      { id: 'd12_free', kind: 'daily', title: '12日目：昼' },
+      talk('d12_library', '12日目：夕暮れ・蔵書の棚'),
       // 2-2 の区画（段階39b。areas.ts の AREAS の a22）。部屋をつなぐ形で作った最初の区画。体育館の「アンプのぬし」
       talk('a22_enter', '2-2：校門に入る'),
       { id: 'a22_explore', kind: 'explore', area: 'a22', title: '2-2「最後の文化祭」：高校の探索' },
       { id: 'a22_return', kind: 'return', area: 'a22', title: '2-2：時間を返す' },
-      talk('d6_return', '9日目：時間を返す'),
-      day(10),
-      { id: 'd7_free', kind: 'daily', title: '10日目：昼' },
-      talk('d7_library', '10日目：夕暮れ・蔵書の棚'),
+      talk('d6_return', '12日目：時間を返す'),
+      day(13),
+      { id: 'd7_free', kind: 'daily', title: '13日目：昼' },
+      talk('d7_library', '13日目：夕暮れ・蔵書の棚'),
       // 2-3 の区画（段階40。areas.ts の AREAS の a23）。ボスに勝ってコマがそろった後、返す直前にカイが現れる（負け戦）。2-3 は返せないので、返す出来事はない
       talk('a23_enter', '2-3：河川敷に入る'),
       { id: 'a23_explore', kind: 'explore', area: 'a23', title: '2-3「最後の打席」：河川敷の探索' },
-      talk('d7_kai', '10日目：返す直前にカイ'),
+      talk('d7_kai', '13日目：返す直前にカイ'),
       { id: 'a23_kai', kind: 'battle', battle: 'a23_kai', title: '2-3：カイとの戦い（負け戦）' },
-      talk('d7_taken', '10日目：持ち去られる'),
-      day(11),
-      talk('d8_classroom', '11日目：朝の教室'),
-      { id: 'd8_free', kind: 'daily', title: '11日目：昼' },
-      talk('d8_evening', '11日目：夕暮れ・2章の終わり'),
+      talk('d7_taken', '13日目：持ち去られる'),
+      day(14),
+      talk('d8_classroom', '14日目：朝の教室'),
+      { id: 'd8_free', kind: 'daily', title: '14日目：昼' },
+      talk('d8_evening', '14日目：夕暮れ・2章の終わり'),
       // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、4日目から続く（段階63）
       { id: 'ch2_end', kind: 'end', title: 'つづく' },
     ],
