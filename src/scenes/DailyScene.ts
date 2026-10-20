@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { addParts, blockers, bondLevel, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { AREAS, BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { addParts, allSpots, blockers, bondPoints, heartText, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { AREAS, BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -145,8 +145,11 @@ export class DailyScene extends Phaser.Scene {
     const left = requiredLeft(this.hub, run.vars);
     const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
     if (this.hub.picks !== undefined) lines.push(`♥と…は、1日に${this.hub.picks}回まで。！は回数を使わない`);
+    // 段階83：相手のいる小話は、その日に見ると♥が半分増える
+    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…（小話）も、相手の♥が半分増える');
     // 絆の深さ（段階35）：会える相手ごとに、見た絆の出来事の数
-    const bonds = (this.hub.partners ?? []).map((p) => `${BOND_PARTNER_NAMES[p] ?? p} ${'♥'.repeat(bondLevel(run.vars, BOND_EVENTS[p] ?? [])) || '―'}`);
+    // 段階83：その日に見た小話の♥（半分）も数える。半分は♡
+    const bonds = (this.hub.partners ?? []).map((p) => `${BOND_PARTNER_NAMES[p] ?? p} ${heartText(bondPoints(run.vars, p, BOND_EVENTS, DAILY_HUBS, BOND_POINTS), BOND_POINTS)}`);
     if (bonds.length > 0) lines.push(`絆　${bonds.join('　')}`);
     root.add(addText(this, GAME_WIDTH / 2, 740, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
   }

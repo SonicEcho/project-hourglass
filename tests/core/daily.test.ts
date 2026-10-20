@@ -4,11 +4,14 @@ import {
   allSpots,
   blockers,
   bondLevel,
+  bondPoints,
   checkBonds,
   checkDailyHub,
   checkVisits,
   finishesAfter,
+  heartText,
   isSeen,
+  markArchived,
   markSeen,
   markVisited,
   metKey,
@@ -291,11 +294,64 @@ describe('♥が一番多い相手と、町の小話の棚（段階82）', () =>
     ],
   };
 
+  const points = { event: 2, talk: 1 };
+  const talkHubs: Record<string, DailyHub> = {
+    d1: {
+      id: 'd1',
+      time: '',
+      day: 1,
+      partners: ['akari', 'mio'],
+      places: [
+        {
+          id: 'p',
+          name: '',
+          backdrop: 'b',
+          mapX: 0,
+          mapY: 0,
+          spots: [
+            { id: 'tm1', scene: 'tm1', label: '', mark: 'talk', x: 0, y: 0, with: 'mio' },
+            { id: 'tm2', scene: 'tm2', label: '', mark: 'talk', x: 0, y: 0, with: 'mio' },
+            { id: 'tn', scene: 'tn', label: '', mark: 'talk', x: 0, y: 0 },
+          ],
+        },
+      ],
+    },
+  };
+
   it('♥が一番多い相手。同じ数なら、並びの先の相手', () => {
-    expect(topBondPartner({}, bonds)).toBe('akari');
-    expect(topBondPartner(markSeen({}, 'm1'), bonds)).toBe('mio');
-    expect(topBondPartner(markSeen(markSeen({}, 'm1'), 'a1'), bonds)).toBe('akari');
-    expect(topBondPartner({}, {})).toBeNull();
+    expect(topBondPartner({}, bonds, {}, points)).toBe('akari');
+    expect(topBondPartner(markSeen({}, 'm1'), bonds, {}, points)).toBe('mio');
+    expect(topBondPartner(markSeen(markSeen({}, 'm1'), 'a1'), bonds, {}, points)).toBe('akari');
+    expect(topBondPartner({}, {}, {}, points)).toBeNull();
+  });
+
+  it('段階83：その日に見た小話は、相手の♥を半分足す。後から「町の小話」で見た小話は数えない', () => {
+    const vars = markSeen(markSeen(markSeen({}, 'a1'), 'tm1'), 'tn');
+    expect(bondPoints(vars, 'akari', bonds, talkHubs, points)).toBe(2);
+    expect(bondPoints(vars, 'mio', bonds, talkHubs, points)).toBe(1);
+    expect(topBondPartner(vars, bonds, talkHubs, points)).toBe('akari');
+    // 小話2つで、絆の出来事1つと同じ。同じ数なら並びの先
+    expect(topBondPartner(markSeen(vars, 'tm2'), bonds, talkHubs, points)).toBe('akari');
+    expect(topBondPartner(markSeen(markSeen(vars, 'tm2'), 'm1'), bonds, talkHubs, points)).toBe('mio');
+    // 後から見た記録は数えないが、棚では見たことになる
+    const later = markArchived(vars, 'tm2');
+    expect(bondPoints(later, 'mio', bonds, talkHubs, points)).toBe(1);
+    expect(talkArchive(talkHubs, later, () => true).map((t) => t.seen)).toEqual([true, true, true]);
+    expect(talkArchive(talkHubs, {}, () => true).map((t) => t.seen)).toEqual([false, false, false]);
+  });
+
+  it('♥の書き方：♥1つは絆の出来事1つ。半分は♡。0 は ―', () => {
+    expect(heartText(0, points)).toBe('―');
+    expect(heartText(1, points)).toBe('♡');
+    expect(heartText(4, points)).toBe('♥♥');
+    expect(heartText(5, points)).toBe('♥♥♡');
+  });
+
+  it('小話の相手は、その日に会える仲間の小話にだけ書ける', () => {
+    const mine = (e: string) => e.includes('小話の相手');
+    expect(checkDailyHub(talkHubs.d1).filter(mine)).toEqual([]);
+    const bad: DailyHub = { ...talkHubs.d1, partners: ['akari'] };
+    expect(checkDailyHub(bad).filter(mine)).toEqual(['d1：小話の相手がその日の仲間でない：tm1 mio', 'd1：小話の相手がその日の仲間でない：tm2 mio']);
   });
 
   it('過ぎた日の小話だけを、日の順に並べる。見たかどうかも付ける。絆と必ず見る出来事は並べない', () => {

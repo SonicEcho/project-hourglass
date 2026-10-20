@@ -5,7 +5,7 @@ import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playT
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog, topBondPartner } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } from '../data';
-import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -308,7 +308,7 @@ export class DialogueScene extends Phaser.Scene {
     this.busy = true;
     this.waitTimer?.remove();
     // 絆の一番（段階82。docs/design/daily.md の 4-2）：♥の一番多い相手の名前。台本の @if と {絆の一番} で読む。覚えた値には入れない
-    const partner = topBondPartner(this.vars, BOND_EVENTS);
+    const partner = topBondPartner(this.vars, BOND_EVENTS, DAILY_HUBS, BOND_POINTS);
     const r0 = runScript(this.scenes, this.pos, { ...this.vars, [BOND_TOP]: partner ? BOND_PARTNER_NAMES[partner] : '' });
     const { [BOND_TOP]: _top, ...vars } = r0.vars;
     const r = { ...r0, vars };
