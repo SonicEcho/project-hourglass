@@ -513,7 +513,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   somber: BGM.somber,
   uneasy: BGM.uneasy,
   showa: BGM.showa,
-  // 段階75：夕暮れの時計屋（メインテーマを弦とセレスタで）
+  // 段階75：夕暮れの時計屋（メインテーマを弦とセレスタで）。時計屋で落ち着いて話す場面（ふみさんの店番・お茶菓子）で流す。
+  // 時計が止まる場面（1日目の店じまい、1章の終わり）はすぐ曲が止まって合わなかった（2026-10-20、開発者の確認）
   dusk: BGM.dusk,
 };
 

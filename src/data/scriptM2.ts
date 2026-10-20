@@ -16,7 +16,7 @@ export const SCRIPT_M2 = `
 
 # d3_fumi 4日目：店番・ふみさん
 @bg clock_shop_day
-@bgm daily
+@bgm dusk
 @clock tick many
 @cast ハルト
 〈地の文〉放課後、店番をしていると、扉のベルが鳴った。
@@ -544,7 +544,7 @@ export const SCRIPT_M2 = `
 
 # d7_talk 小話：ふみさんのお茶菓子
 @bg clock_shop
-@bgm daily
+@bgm dusk
 @se bell
 @cast ハルト ふみ あかり
 ふみ〔笑顔〕「こんにちは。……約束どおり、おしゃべりしに来たわよ」
@@ -1984,7 +1984,7 @@ export const SCRIPT_M2 = `
 
 # d4_evening 7日目：夕暮れ・1章の終わり
 @bg clock_shop
-@bgm dusk
+@bgm title
 @clock tick many
 @cast ハルト あかり
 〈地の文〉店じまいの片付けをしながら、壁の時計を一つずつ見ていく。
