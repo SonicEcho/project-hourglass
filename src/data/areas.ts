@@ -190,7 +190,10 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5 } },
 };
 
-/** 戦いごとの曲（段階75）。書かなければ、ボスはボス戦の曲、ほかはふだんの戦闘の曲 */
+/**
+ * 戦いごとの曲（段階75）。書かなければ、ボスはボス戦の曲、ほかはふだんの戦闘の曲。
+ * カイとの戦いは、負け戦も再戦も、どれもカイの戦闘曲（テーマ曲として一貫させる。段階86。開発者の考え）
+ */
 export const BATTLE_BGM: Partial<Record<string, string>> = {
   a23_kai: BGM.kai,
   a23x_kai_patrol: BGM.kai,
@@ -724,8 +727,8 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'archive_reading', side: 'right' }, b: { room: 'archive_vault', side: 'left' } },
       { a: { room: 'archive_reading', side: 'top' }, b: { room: 'archive_stacks', side: 'bottom' } },
     ],
-    // 決意の曲（Leaving For Tomorrow）は、mp3 が届くまで蔵書の棚の曲で代わり（docs/ART.md の 6.）
-    bgm: BGM.library,
+    // 決意の曲（Leaving For Tomorrow。段階86）
+    bgm: BGM.resolve,
     komaNeed: 0,
     goal: { band: '目当て：奥の棚の砂時計', guide: 'ビー玉が鳴る方へ。いちばん奥の棚の砂時計を取り返す\nカイに見つかると、チェックポイントへ戻される' },
     chests: [{ id: 'a23x_chest_vault', room: 'archive_vault', cell: [14, 19], items: [ITEMS.hiPotion.id, ITEMS.ether.id] }],

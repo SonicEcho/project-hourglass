@@ -771,6 +771,18 @@ export const ASSETS: AssetEntry[] = [
     undefined,
     '2026-10-20',
   ),
+  // 段階86：決意の曲（2-3 の4晩目、保管局の奥の書庫の探索）。指示文は控えていない（届いた時の説明は docs/ART.md の曲の表の決意の曲）
+  sunoBgm(
+    'bgm.resolve',
+    '決意の曲（2-3 の4晩目）',
+    'suno_resolve.mp3',
+    '（指示文は控えていない。On My Way Home を Cover した、明るく盛り上がるポップロック）',
+    SUNO_LOOP_EDIT,
+    'a23e71602ff4',
+    1369279,
+    'On My Way Home（しんみり・帰り道の曲）',
+    '2026-10-21',
+  ),
   {
     id: 'map.festival',
     kind: 'image',

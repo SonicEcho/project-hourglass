@@ -3530,7 +3530,7 @@ export const SCRIPT_M2 = `
 
 # a23x_enter 2-3：保管局の奥の書庫に入る
 @bg library
-@bgm library
+@bgm resolve
 @cast ハルト あかり みお
 〈地の文〉天井の見えない書庫。棚が、どこまでも続いている。
 〈地の文〉棚の砂時計は、どれも、ひびひとつない。きれいに並んで、ラベルが貼ってある。

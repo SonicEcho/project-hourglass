@@ -56,6 +56,8 @@ SONGS = [
     ('KaiGlitchBattle', 'suno_kai.mp3', 'loop', 907264, 2363246),
     # 2-3 の河川敷（平成10年の夏。2026-10-20）：68.2秒 → 109.0秒（17小節。約41秒）
     ('RiversideBaseballGame', 'suno_riverside.mp3', 'loop', 3008512, 4807758),
+    # 決意の曲（2-3 の4晩目、保管局の奥の書庫の探索。On My Way Home を Cover したポップロック。2026-10-21）：40.4秒 → 113.0秒（40小節。約73秒）
+    ('LeavingForTomorrow', 'suno_resolve.mp3', 'loop', 1781760, 4984989),
     # 2026-10-13 の最初の版のボス戦（Paper Umbrella を Cover した和風メタル。81.2秒 → 170.2秒）は、ラスボスの候補として残し、ゲームからは外した
 ]
 
