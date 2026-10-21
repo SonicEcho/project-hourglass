@@ -31,6 +31,8 @@ export interface FlowEvent {
   note?: string;
   /** explore・return の時：探索する区画・時間を返す区画（data の AREAS の id）。仮の画面でも書いておく（段階36：返した翌日の場面に使う） */
   area?: string;
+  /** explore の時：遊んだ記録の画面で、この区画の行にまとめる（段階85。2-3 の4晩目の書庫は、2-3 の行に足す） */
+  logArea?: string;
   /** battle の時：戦う区画の戦闘の id（段階40） */
   battle?: string;
   /** explore の時：晩に分けた区画の、何晩目か（段階63） */

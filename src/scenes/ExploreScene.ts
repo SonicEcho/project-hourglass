@@ -252,7 +252,7 @@ export class ExploreScene extends Phaser.Scene {
             ? '記憶をたどる：砂嵐の名残とぬしから素材を集める。光る所をタップすると素材を拾える'
             : this.night > 0
               ? this.nightGuide()
-              : 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘'),
+              : (area.goal?.guide ?? 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘')),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
@@ -382,7 +382,7 @@ export class ExploreScene extends Phaser.Scene {
       // コマがそろうまでは眠っている（暗く、ゆっくり息をする。段階32b 調整3）
       const awake = this.bossReady();
       boss.add(this.add.circle(0, 0, T * 0.75, awake ? 0x8a4fbf : 0x4a3a60).setStrokeStyle(2, awake ? 0xffffff : 0x8a80a0));
-      boss.add(addText(this, 0, 0, 'ぬし', { size: 13, bold: true, color: awake ? COLORS.text : COLORS.subText }).setOrigin(0.5));
+      boss.add(addText(this, 0, 0, area.boss.label ?? 'ぬし', { size: 13, bold: true, color: awake ? COLORS.text : COLORS.subText }).setOrigin(0.5));
       if (!awake) {
         const z = addText(this, T * 0.6, -T * 0.8, 'z z', { size: 12, bold: true, color: COLORS.subText }).setOrigin(0.5);
         boss.add(z);
@@ -474,6 +474,9 @@ export class ExploreScene extends Phaser.Scene {
           color: done || left <= this.bossKoma() ? COLORS.accentText : COLORS.text,
         }).setOrigin(0.5, 0),
       );
+    } else if (area.goal) {
+      // コマのいらない区画（段階85。書庫）：目当てだけを出す
+      ui.add(addText(this, GAME_WIDTH / 2, 31, area.goal.band, { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
     } else ui.add(
       addText(this, GAME_WIDTH / 2, 31, left > 0 ? `コマ ${this.state.koma}/${area.komaNeed}（あと${left}つで返せる）` : `コマ ${this.state.koma}/${area.komaNeed}（そろった！）`, {
         size: 13,

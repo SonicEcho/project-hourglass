@@ -339,6 +339,8 @@ export const CAST: Record<string, CastMember> = {
   },
   写しのこうじ: { faces: names('通常', '驚き', '泣き笑い'), firstFace: '通常', color: 0x8aa0c0, voice: { pitch: 640, wave: 'square' } },
   写しのまさる: { faces: names('笑顔'), firstFace: '笑顔', color: 0x7a8a6a, voice: { pitch: 280, wave: 'sawtooth' } },
+  // 段階85：こうじの父（今70歳。パン屋の先代）。立ち絵はまだない（色の札）。声が大きい
+  まさる: { faces: names('笑顔', '通常', '驚き', '苦笑い', 'さみしげ'), firstFace: '笑顔', color: 0x8a7a5a, voice: { pitch: 260, wave: 'sawtooth' } },
   カイ: {
     portrait: 'portrait.kai',
     ...young(['余裕', '見下す', '通常'], { 余裕: 'smug' }, '余裕'),
@@ -381,6 +383,12 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   銭湯のおかみさん: { pitch: 500, wave: 'triangle' },
   先輩の職人: { pitch: 280, wave: 'sawtooth' },
   八百屋の子ども: { pitch: 740, wave: 'square' },
+  // 2-3 の声だけの人（段階85）
+  そうた: { pitch: 700, wave: 'square' },
+  チームの子: { pitch: 760, wave: 'square' },
+  監督: { pitch: 290, wave: 'sawtooth' },
+  売店のおばちゃん: { pitch: 480, wave: 'triangle' },
+  相手チームの子: { pitch: 740, wave: 'square' },
   '？？？': { pitch: 700, wave: 'sine' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
@@ -537,6 +545,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   dusk: BGM.dusk,
   // 段階82：2-2 の文化祭の校舎（区画の曲と同じ。晩に入る会話・夜の終わりで流す）
   cultureFestival: BGM.cultureFestival,
+  // 段階85：2-3 の河川敷（区画の曲と同じ。晩に入る会話で流す）
+  riverside: BGM.riverside,
 };
 
 /**

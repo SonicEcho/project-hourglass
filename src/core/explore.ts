@@ -88,6 +88,8 @@ export interface AreaBoss extends InRoom, InNight {
   id: string;
   cell: GridCell;
   battle: string;
+  /** 印に書く名前（段階85。書かなければ「ぬし」。2-3 の4晩目の書庫は、取り返す棚の「砂時計」） */
+  label?: string;
 }
 
 /** 話せる人（写しの人々）。隣のマスに来るか、タップすると会話の場面 */
@@ -142,6 +144,8 @@ export interface AreaDef {
   hunt?: AreaHunt;
   /** 晩に分けて入る区画（段階63）：晩ごとの区切り（1晩目から順に） */
   nights?: AreaNight[];
+  /** コマのいらない区画（段階85。2-3 の4晩目の書庫）の目当て：上の帯（goal.band）と、入った時の案内（goal.guide） */
+  goal?: { band: string; guide: string };
   /** ノイズの壁（段階63）：opens 晩目から開く。それより前の晩は、そのマスを通れない */
   walls?: AreaWall[];
 }
@@ -654,7 +658,8 @@ export function checkArea(area: AreaDef): string[] {
   for (const room of area.rooms) if (!reach[room.id]) errors.push(`${area.id}：部屋 ${room.id} へ行けない`);
   const bossRoom = area.boss.room ?? startRoom(area);
   if (cellsOf(area, 'S').length > 0 && !reach[bossRoom]?.has(`${area.boss.cell[0]},${area.boss.cell[1]}`)) errors.push(`${area.id}：出発点からボスまで歩けない`);
-  if (!(Number.isInteger(area.komaNeed) && area.komaNeed >= 1)) errors.push(`${area.id}：返すのに要るコマの数がない`);
+  // コマのいらない区画（段階85。2-3 の4晩目の書庫は取り返すのが目当て）は 0。返す時間のある区画は1つ以上
+  if (!(Number.isInteger(area.komaNeed) && area.komaNeed >= (area.timeTitle ? 1 : 0))) errors.push(`${area.id}：返すのに要るコマの数がない`);
   for (const t of area.triggers) {
     if (t.on === 'checkpoint' && t.cell && !isCheckpoint(area, t.cell, t.room ?? startRoom(area))) errors.push(`${area.id}：会話 ${t.scene} のチェックポイント（${t.cell}）が P のマスではない`);
     if (t.on === 'wins' && t.after && !area.triggers.some((x) => x.scene === t.after)) errors.push(`${area.id}：会話 ${t.scene} の先に見る会話 ${t.after} がない`);

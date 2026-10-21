@@ -35,6 +35,7 @@ const GEAR_GOODS: ExchangeGood[] = [
 /** 交換所に並ぶ品物（ポーチ → 素材（区画の順）→ ギア） */
 export const EXCHANGE_GOODS: ExchangeGood[] = [
   ...POUCH_ORDER.map((id): ExchangeGood => ({ id: `pouch_${id}`, kind: 'item', ref: id, price: POUCH_PRICE[id] })),
-  ...Object.keys(AREAS).flatMap((areaId) => areaCommonItems(areaId).map((id): ExchangeGood => ({ id: `mat_${id}`, kind: 'item', ref: id, price: 1, area: areaId }))),
+  // 返す時間のある区画だけ（段階85：2-3 の4晩目の書庫は、ほかの区画の砂嵐を混ぜて使うので、並べない）
+  ...Object.keys(AREAS).filter((areaId) => AREAS[areaId].timeTitle).flatMap((areaId) => areaCommonItems(areaId).map((id): ExchangeGood => ({ id: `mat_${id}`, kind: 'item', ref: id, price: 1, area: areaId }))),
   ...GEAR_GOODS,
 ];

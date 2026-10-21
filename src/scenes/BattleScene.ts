@@ -1425,6 +1425,12 @@ export class BattleScene extends Phaser.Scene {
   private showEncounterEnd(c: Phaser.GameObjects.Container, win: boolean, result: ReturnType<typeof getBattleResult>): void {
     const enc = this.encounter!;
     const def = this.battle;
+    if (this.state.outcome === 'cutoff' && def.cutoffBack) {
+      // 見つかったら戻される負け戦（段階85。書庫を見回るカイ）：負けた時と同じく、チェックポイントへ
+      c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, `${this.state.enemies[0]?.name ?? ''}に見つかった。\n最後に記録したチェックポイントへ戻される`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });
+      return;
+    }
     if (this.state.outcome === 'cutoff') {
       // 負け戦（段階40）：手が届かないまま終わる。報酬はなく、そのまま話の続きへ
       c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, `${this.state.enemies[0]?.name ?? ''}の動きが、見えない……`, { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5));

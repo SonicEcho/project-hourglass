@@ -132,7 +132,8 @@ export const SLICE_FLOW: Flow = [
     lineup: CHAPTER2_LINEUP,
     // 段階63・66で 1-1・1-2 を3晩に広げたので、2章は8日目から（出来事の id は d5_… のまま）。
     // 段階78：2-1 を3晩に分けて入る形にし（脚本 docs/script/2-1_rework.md）、8〜11日目にした。2-2・2-3 と2章の終わりは、中身は今のまま12〜14日目にずらした。
-    // 段階82：2-2 を3晩に分け（12〜14日目）、返した翌日（15日目）を足した。2-3 は16日目、2章の終わりは17日目
+    // 段階82：2-2 を3晩に分け（12〜14日目）、返した翌日（15日目）を足した。
+    // 段階85：2-3 を3晩に分け（16〜18日目）、4晩目に書庫から取り返して返す（19日目）。返した翌日の20日目が2章の終わり
     events: [
       talk('chapter2_title', '第2章'),
       day(8),
@@ -191,24 +192,48 @@ export const SLICE_FLOW: Flow = [
       { id: 'd15_free', kind: 'daily', title: '15日目：昼' },
       talk('d15_petra', '15日目：夕暮れ・交換所の窓口'),
       day(16),
+      // 2-3 の区画（段階40。areas.ts の AREAS の a23）。段階85 で3晩＋取り返す4晩目に分けた（脚本 docs/script/2-3_rework.md）。
+      // 16日目（日曜）の昼：パン屋のこうじとそうたは必ず見る。第1夜「ベンチも試合のうち」
       { id: 'd7_free', kind: 'daily', title: '16日目：昼' },
       talk('d7_library', '16日目：夕暮れ・蔵書の棚'),
-      // 2-3 の区画（段階40。areas.ts の AREAS の a23）。ボスに勝ってコマがそろった後、返す直前にカイが現れる（負け戦）。2-3 は返せないので、返す出来事はない
       talk('a23_enter', '2-3：河川敷に入る'),
-      { id: 'a23_explore', kind: 'explore', area: 'a23', title: '2-3「最後の打席」：河川敷の探索' },
-      talk('d7_kai', '16日目：返す直前にカイ'),
-      { id: 'a23_kai', kind: 'battle', battle: 'a23_kai', title: '2-3：カイとの戦い（負け戦）' },
-      talk('d7_taken', '16日目：持ち去られる'),
+      { id: 'a23_explore', kind: 'explore', area: 'a23', night: 1, title: '2-3「最後の打席」：河川敷の1晩目' },
+      talk('a23_night1_end', '16日目：夕暮れの時計屋に戻る'),
       day(17),
-      talk('d8_classroom', '17日目：朝の教室'),
-      { id: 'd8_free', kind: 'daily', title: '17日目：昼' },
-      talk('d8_evening', '17日目：夕暮れ・2章の終わり'),
+      // 17日目の昼（河川敷のまさるさんは必ず見る）。第2夜「来んなよ」
+      { id: 'a23_day17_free', kind: 'daily', title: '17日目：昼' },
+      talk('a23_night2_enter', '17日目：河川敷の2晩目に入る'),
+      { id: 'a23_explore2', kind: 'explore', area: 'a23', night: 2, title: '2-3「最後の打席」：河川敷の2晩目' },
+      talk('a23_night2_end', '17日目：夕暮れの時計屋に戻る'),
+      day(18),
+      // 18日目の昼（こうじさんの本音は必ず見る）。第3夜「お前なら打てる」。ぬしに勝ってコマがそろった後、返す直前にカイが現れる（負け戦）
+      { id: 'a23_day18_free', kind: 'daily', title: '18日目：昼' },
+      talk('a23_night3_enter', '18日目：河川敷の3晩目に入る'),
+      { id: 'a23_explore3', kind: 'explore', area: 'a23', night: 3, title: '2-3「最後の打席」：河川敷の3晩目' },
+      talk('d7_kai', '18日目：返す直前にカイ'),
+      { id: 'a23_kai', kind: 'battle', battle: 'a23_kai', title: '2-3：カイとの戦い（負け戦）' },
+      talk('d7_taken', '18日目：持ち去られる'),
+      day(19),
+      talk('d8_classroom', '19日目：朝の教室'),
+      // 19日目の昼（パン屋のこうじさんと、河川敷のまさるさんは必ず見る）。夕暮れに交換所のペトラが通用口を開ける
+      { id: 'd8_free', kind: 'daily', title: '19日目：昼' },
+      talk('d19_petra', '19日目：夕暮れ・交換所の窓口'),
+      // 第4夜「取り返す」：保管局の奥の書庫（areas.ts の a23x）。カイから逃げきって、棚の砂時計を取り返す
+      talk('a23x_enter', '2-3：保管局の奥の書庫に入る'),
+      { id: 'a23x_explore', kind: 'explore', area: 'a23x', logArea: 'a23', title: '2-3「最後の打席」：保管局の奥の書庫' },
+      talk('a23_shelf', '19日目：正しい棚に戻す'),
+      { id: 'a23_return', kind: 'return', area: 'a23', title: '2-3：時間を返す' },
+      talk('d19_return', '19日目：時間を返す'),
+      day(20),
+      // 20日目（祝日）：返した翌日のこうじさん（daily.ts の RETURN_VISITS）。夕暮れに2章の終わり
+      { id: 'd20_free', kind: 'daily', title: '20日目：昼' },
+      talk('d8_evening', '20日目：夕暮れ・2章の終わり'),
       // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、4日目から続く（段階63）
       { id: 'ch2_end', kind: 'end', title: 'つづく' },
     ],
   },
 ];
 
-/** なくなった出来事 → セーブを読む時に代わりに続ける出来事（段階40。仮の画面だった「2-3：返す直前にカイ」は、カイの会話から） */
+/** なくなった出来事 → セーブを読む時に代わりに続ける出来事（段階40。仮の画面だった「2-3：返す」は、段階85 で本当の返す出来事になったので、付け替えを外した） */
 // 段階63：1-1 を3晩に分けた時に、なくなった出来事（1日目の返す会話・2日目のすれ違い）は、近い出来事から続ける
-export const RENAMED_EVENTS: Record<string, string> = { a23_return: 'd7_kai', d1_return: 'a11_returned', d2_noa: 'a11_night2_end' };
+export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end' };

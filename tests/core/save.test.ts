@@ -411,11 +411,15 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res5.ok && res5.save.run.event).toBe('a11_night2_end');
     const res3 = parseEdited((raw) => (raw.run.event = 'removedEvent'));
     expect(res3.ok && res3.save.run.event).toBe('prologue_open');
-    // なくなった出来事は、代わりの出来事から（段階40：仮の「2-3：返す」→ カイの会話）
-    const res4 = parseEdited((raw) => (raw.run.event = 'a23_return'));
-    expect(res4.ok && res4.save.run.event).toBe('d7_kai');
-    // 段階78：2-1 を3晩にして、2-3 は13日目になった。段階82：2-2 も3晩にして、16日目になった
-    expect(res4.ok && res4.save.run.progress.day).toBe(16);
+    // なくなった出来事は、代わりの出来事から（段階63：1-1 の「1日目の返す会話」→ 返した後の会話）
+    const res4 = parseEdited((raw) => (raw.run.event = 'd1_return'));
+    expect(res4.ok && res4.save.run.event).toBe('a11_returned');
+    // 何日目は出来事に合わせる（段階85：2-3 のカイは18日目、返すのは19日目）
+    const res6 = parseEdited((raw) => (raw.run.event = 'd7_kai'));
+    expect(res6.ok && res6.save.run.progress.day).toBe(18);
+    const res7 = parseEdited((raw) => (raw.run.event = 'a23_return'));
+    expect(res7.ok && res7.save.run.event).toBe('a23_return');
+    expect(res7.ok && res7.save.run.progress.day).toBe(19);
     expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
     expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
   });

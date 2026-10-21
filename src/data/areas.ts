@@ -153,22 +153,48 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a22_runner: { id: 'a22_runner', name: '砂嵐', enemies: [STICKER_NOISE, STICKER_NOISE, STICKER_NOISE], reward: 3, item: ITEMS.demoTape.id },
   // 2-1 のぬしと同じく、攻撃は元のまま HP 1.3倍。コマは1つ
   a22_boss: { id: 'a22_boss', name: 'アンプのぬし', enemies: [toughenEnemy(AMP_LORD, 1.3)], reward: 10, boss: true, koma: 1, snaps: ['encore'] },
-  // 2-3 の河川敷のグラウンド（段階40。部屋をつなぐ形）。並びは出会う順（土手の道 → ベンチの前 → 川べりの逃げる敵 → ベンチの裏の上 → 用具小屋の裏 → 売店の番人）。
-  // 砂嵐は5戦でコマ9つ、ボスが2つ（合わせて11、返すのに10）。番人は ×1.15。川べりの逃げる敵はコマなしで、勝つとレアの素材「最後のスコアブック」
-  a23_storm1: { id: 'a23_storm1', name: '砂嵐', enemies: [BALL_NOISE, PET_NOISE], reward: 7, koma: 1 },
-  a23_storm2: { id: 'a23_storm2', name: '砂嵐', enemies: [MEGAPHONE_NOISE, BALL_NOISE, JUG_NOISE], reward: 7, koma: 2 },
-  a23_runner: { id: 'a23_runner', name: '砂嵐', enemies: [PET_NOISE, PET_NOISE, PET_NOISE], reward: 7, item: ITEMS.scorebook.id },
-  a23_storm3: { id: 'a23_storm3', name: '砂嵐', enemies: [JUG_NOISE, PET_NOISE, MEGAPHONE_NOISE], reward: 8, koma: 2 },
-  a23_storm4: { id: 'a23_storm4', name: '砂嵐', enemies: [BALL_NOISE, MEGAPHONE_NOISE, PET_NOISE], reward: 8, koma: 2 },
-  a23_storm5: { id: 'a23_storm5', name: '砂嵐', enemies: [JUG_NOISE, BALL_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15)), reward: 9, koma: 2 },
-  a23_boss: { id: 'a23_boss', name: 'スコアボードのぬし', enemies: [SCOREBOARD_LORD], reward: 12, boss: true, koma: 2, snaps: ['pinchHitter'] },
+  // 2-3 の河川敷のグラウンド（段階40。部屋をつなぐ形）。段階85 で3晩に分けた（脚本 docs/script/2-3_rework.md）。2-2 と同じく、晩ごとに 3・3・3＋ぬし（返すのに10）。
+  // 1晩目は土手の道・ベンチの裏の木陰・川べり、2晩目は売店のテント・用具小屋の裏と番人、3晩目はダイヤモンド。川べりの逃げる敵はコマなしで、勝つとレアの素材「最後のスコアブック」。
+  // 2-3 の砂嵐は元が軽い（2-2 と同じ倍率では1〜3ラウンドで終わった）ので、晩ごとに ×1.15・×1.3・×1.45〜1.5 を重ねた
+  a23_n1_slope: { id: 'a23_n1_slope', name: '砂嵐', enemies: tough([BALL_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2, koma: 1 },
+  a23_n1_levee: { id: 'a23_n1_levee', name: '砂嵐', enemies: tough([PET_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2 },
+  a23_n1_bench: { id: 'a23_n1_bench', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, BALL_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 3, koma: 1 },
+  a23_n1_shade: { id: 'a23_n1_shade', name: '砂嵐', enemies: tough([JUG_NOISE, PET_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 3, koma: 1 },
+  a23_n1_bank: { id: 'a23_n1_bank', name: '砂嵐', enemies: tough([BALL_NOISE, BALL_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2 },
+  a23_runner: { id: 'a23_runner', name: '砂嵐', enemies: [PET_NOISE, PET_NOISE, PET_NOISE], reward: 3, item: ITEMS.scorebook.id },
+  a23_n2_stand: { id: 'a23_n2_stand', name: '砂嵐', enemies: tough([BALL_NOISE, MEGAPHONE_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3, koma: 1 },
+  a23_n2_west: { id: 'a23_n2_west', name: '砂嵐', enemies: tough([JUG_NOISE, JUG_NOISE, BALL_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 2 },
+  a23_n2_shed: { id: 'a23_n2_shed', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, PET_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 4, koma: 1 },
+  a23_n2_shed2: { id: 'a23_n2_shed2', name: '砂嵐', enemies: tough([PET_NOISE, BALL_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 2 },
+  // 売店の上の番人（2晩目の山場。戦う前の会話）。「あと一人」をくり返す
+  a23_n2_guard: { id: 'a23_n2_guard', name: '砂嵐', enemies: tough([JUG_NOISE, BALL_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.45))), reward: 5, koma: 1 },
+  a23_n3_stand: { id: 'a23_n3_stand', name: '砂嵐', enemies: tough([BALL_NOISE, PET_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.45))), reward: 3, koma: 1 },
+  a23_n3_field1: { id: 'a23_n3_field1', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, JUG_NOISE, BALL_NOISE].map((e) => scaleEnemy(e, 1.45))), reward: 4, koma: 1 },
+  a23_n3_field2: { id: 'a23_n3_field2', name: '砂嵐', enemies: tough([PET_NOISE, MEGAPHONE_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.5))), reward: 4, koma: 1 },
+  a23_n3_front: { id: 'a23_n3_front', name: '砂嵐', enemies: tough([JUG_NOISE, BALL_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.5))), reward: 2 },
+  // 攻撃は元のまま HP 1.7倍（2-1・2-2 は 1.3倍。元の HP が低く、1.3倍では2-2 のぬしの7割ほどのラウンドで終わった。2章の山場なので2-2 と同じくらいに）。コマは1つ
+  a23_boss: { id: 'a23_boss', name: 'スコアボードのぬし', enemies: [toughenEnemy(SCOREBOARD_LORD, 1.7)], reward: 10, boss: true, koma: 1, snaps: ['pinchHitter'] },
   // 返す直前のカイ（段階40。負け戦）。4ラウンド目の終わりか、カイの HP が半分を切った所で打ち切る。報酬はない（物語の流れの battle の出来事から始める）
   a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5 } },
+  // 2-3 の4晩目：保管局の奥の書庫（段階85）。しまわれた色々な時代の蔵書から漏れた砂嵐（1章〜2-2 の砂嵐を混ぜる）。コマはない（取り返すのが目当て）
+  a23x_corridor: { id: 'a23x_corridor', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, MASK_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3 },
+  a23x_alcove: { id: 'a23x_alcove', name: '砂嵐', enemies: tough([TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3 },
+  a23x_reading1: { id: 'a23x_reading1', name: '砂嵐', enemies: tough([GEAR_NOISE, SCREW_NOISE, TUBE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 4 },
+  a23x_reading2: { id: 'a23x_reading2', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, STICKER_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 4 },
+  a23x_vault: { id: 'a23x_vault', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, GEAR_NOISE, BOOMBOX_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4, item: ITEMS.hiPotion.id },
+  a23x_stacks1: { id: 'a23x_stacks1', name: '砂嵐', enemies: tough([RAMUNE_NOISE, ABACUS_NOISE, STICKER_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4 },
+  a23x_stacks2: { id: 'a23x_stacks2', name: '砂嵐', enemies: tough([MASK_NOISE, TUBE_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4 },
+  // 書庫を見回るカイ（段階85）：見つかると短い負け戦。打ち切ったら、チェックポイントへ戻される（cutoffBack）。報酬はない
+  a23x_kai_patrol: { id: 'a23x_kai_patrol', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 2, enemyHpRatio: 0.5 }, cutoffBack: true },
+  // 棚の砂時計を手に取った後のカイ（段階85）：決まったラウンドを耐えると、逃げきる（区画の奥の印の戦闘。打ち切りで区画を終える）
+  a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5 } },
 };
 
 /** 戦いごとの曲（段階75）。書かなければ、ボスはボス戦の曲、ほかはふだんの戦闘の曲 */
 export const BATTLE_BGM: Partial<Record<string, string>> = {
   a23_kai: BGM.kai,
+  a23x_kai_patrol: BGM.kai,
+  a23x_kai: BGM.kai,
 };
 
 
@@ -585,8 +611,9 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'cleared', scene: 'a22_last_koma' },
     ],
   },
-  // 2-3「最後の打席」：平成10年の夏の河川敷のグラウンド（段階40）。ボスに勝ってコマがそろった後、返す直前にカイに持ち去られる（物語の流れの a23_kai）。
-  // 土手の道 → ベンチの裏の木陰（右に寄り道の川べり）→ 売店のテント（左に用具小屋の裏）→ 番人を倒すと開くダイヤモンド
+  // 2-3「最後の打席」：平成10年の夏の河川敷のグラウンド（段階40）。段階85 で3晩に分けた。3晩目にぬしに勝ってコマがそろった後、返す直前にカイに持ち去られる（物語の流れの a23_kai）。
+  // 取り返すのは4晩目の書庫（a23x）で、返すのはこの区画（物語の流れの a23_return）。
+  // 土手の道 → ベンチの裏の木陰（右に寄り道の川べり）→ 売店のテント（左に寄り道の用具小屋の裏）→ 番人を倒すと開くダイヤモンド
   a23: {
     id: 'a23',
     name: '2-3「最後の打席」',
@@ -596,80 +623,131 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'riverside_bench', side: 'right' }, b: { room: 'riverside_bank', side: 'left' } },
       { a: { room: 'riverside_bench', side: 'top' }, b: { room: 'riverside_stand', side: 'bottom' } },
       { a: { room: 'riverside_stand', side: 'left' }, b: { room: 'riverside_shed', side: 'right' } },
-      // ダイヤモンドへは、売店の上の番人を倒すと入れる
+      // ダイヤモンドへは、売店の上の番人を倒すと入れる（壁は3晩目から開く）
       { a: { room: 'riverside_stand', side: 'top' }, b: { room: 'riverside_diamond', side: 'bottom' }, opensWhen: 'a23_e_gate' },
     ],
     // 平成10年の夏の河川敷の曲（段階75）
     bgm: BGM.riverside,
-    // 返すのに要るコマ（AREA_BATTLES の koma の合計は11）。返す前にカイに持ち去られる
     komaNeed: 10,
     timeTitle: '最後の打席',
     owner: 'コウジ',
     memory: 'riverside_1998',
+    // 晩の区切り（段階85）：2晩目はベンチの裏の木陰、3晩目は売店のテント（どちらもチェックポイント）から
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'riverside_bench', cell: [9, 21] } }, { start: { room: 'riverside_stand', cell: [12, 14] } }],
+    // ノイズの壁：ベンチの裏から売店への出入口（2晩目から開く）と、売店からダイヤモンドへの出入口（3晩目から開く）
+    walls: [
+      { id: 'a23_wall_stand', room: 'riverside_bench', cells: box(10, 13, 0, 1), opens: 2 },
+      { id: 'a23_wall_diamond', room: 'riverside_stand', cells: box(10, 13, 0, 1), opens: 3 },
+    ],
+    // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（売店の上）は出ないので、番人の戦闘は売店の表に入れる
+    hunt: {
+      gathers: [
+        { id: 'a23_gather_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id] },
+        { id: 'a23_gather_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id] },
+        { id: 'a23_gather_shed', room: 'riverside_shed', cell: [4, 4], items: [ITEMS.ballSeam.id, ITEMS.petEgg.id] },
+      ],
+      tables: {
+        riverside_levee: ['a23_n1_slope', 'a23_n1_levee'],
+        riverside_bench: ['a23_n1_bench', 'a23_n1_shade'],
+        riverside_bank: ['a23_n1_bank'],
+        riverside_stand: ['a23_n2_stand', 'a23_n2_west', 'a23_n2_guard', 'a23_n3_stand'],
+        riverside_shed: ['a23_n2_shed', 'a23_n2_shed2'],
+        riverside_diamond: ['a23_n3_field1', 'a23_n3_field2', 'a23_n3_front'],
+      },
+    },
     chests: [
       { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id, ITEMS.potion.id] },
       { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id, ITEMS.ether.id], gears: ['startDash'], snaps: ['iceChip'] },
-      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [4, 4], items: [ITEMS.autographBall.id, ITEMS.cheerBand.id, ITEMS.hiPotion.id], gears: ['breaker'], snaps: ['wideShot'] },
+      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [4, 4], night: 2, items: [ITEMS.autographBall.id, ITEMS.cheerBand.id, ITEMS.hiPotion.id], gears: ['breaker'], snaps: ['wideShot'] },
     ],
     enemies: [
-      {
-        id: 'a23_e_slope',
-        patrol: [
-          [17, 15],
-          [17, 8],
-        ],
-        battle: 'a23_storm1',
-      },
-      {
-        id: 'a23_e_bench',
-        room: 'riverside_bench',
-        patrol: [
-          [5, 33],
-          [18, 33],
-        ],
-        battle: 'a23_storm2',
-      },
+      // ---- 1晩目（土手の道・ベンチの裏の木陰・川べり） ----
+      { id: 'a23_e_slope', patrol: [[17, 15], [17, 8]], battle: 'a23_n1_slope' },
+      { id: 'a23_e_levee', patrol: [[12, 4], [19, 4]], battle: 'a23_n1_levee' },
+      { id: 'a23_e_bench', room: 'riverside_bench', patrol: [[5, 33], [18, 33]], battle: 'a23_n1_bench' },
+      // ベンチの裏の上：近づくと追ってくる
+      { id: 'a23_e_shade', room: 'riverside_bench', move: 'chase', patrol: [[8, 9], [15, 9]], battle: 'a23_n1_shade' },
+      { id: 'a23_e_bank', room: 'riverside_bank', patrol: [[5, 19], [16, 19]], battle: 'a23_n1_bank' },
       // 川べりの逃げる敵（寄り道。コマなし、レアの素材）
       { id: 'a23_e_runner', room: 'riverside_bank', move: 'flee', patrol: [[10, 16]], battle: 'a23_runner' },
-      // ベンチの裏の上：近づくと追ってくる
-      {
-        id: 'a23_e_shade',
-        room: 'riverside_bench',
-        move: 'chase',
-        patrol: [
-          [8, 9],
-          [15, 9],
-        ],
-        battle: 'a23_storm3',
-      },
+      // ---- 2晩目（売店のテント・用具小屋の裏） ----
+      { id: 'a23_e_stand', room: 'riverside_stand', night: 2, patrol: [[4, 8], [18, 8]], battle: 'a23_n2_stand' },
+      { id: 'a23_e_west', room: 'riverside_stand', night: 2, patrol: [[1, 12], [11, 12]], battle: 'a23_n2_west' },
       // 用具小屋の裏：追ってくる
-      {
-        id: 'a23_e_shed',
-        room: 'riverside_shed',
-        move: 'chase',
-        patrol: [
-          [10, 6],
-          [10, 18],
-        ],
-        battle: 'a23_storm4',
-      },
-      // 売店の上の番人：倒すとダイヤモンドへの道が開く
-      { id: 'a23_e_gate', room: 'riverside_stand', move: 'guard', patrol: [[11, 5]], battle: 'a23_storm5' },
+      { id: 'a23_e_shed', room: 'riverside_shed', night: 2, move: 'chase', patrol: [[10, 6], [10, 18]], battle: 'a23_n2_shed' },
+      { id: 'a23_e_shed2', room: 'riverside_shed', night: 2, patrol: [[5, 6], [5, 18]], battle: 'a23_n2_shed2' },
+      // 売店の上の番人：倒すとダイヤモンドへの道が開く（3晩目から。戦う前の会話）
+      { id: 'a23_e_gate', room: 'riverside_stand', night: 2, until: 2, move: 'guard', patrol: [[11, 5]], battle: 'a23_n2_guard', scene: 'a23_guard' },
+      // ---- 3晩目（売店のテントとダイヤモンド） ----
+      { id: 'a23_e_stand3', room: 'riverside_stand', night: 3, patrol: [[16, 16], [20, 16]], battle: 'a23_n3_stand' },
+      { id: 'a23_e_field1', room: 'riverside_diamond', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a23_n3_field1' },
+      { id: 'a23_e_field2', room: 'riverside_diamond', night: 3, move: 'chase', patrol: [[5, 11], [18, 11]], battle: 'a23_n3_field2' },
+      { id: 'a23_e_front', room: 'riverside_diamond', night: 3, patrol: [[4, 9], [8, 9]], battle: 'a23_n3_front' },
     ],
     // ホームベースの前
     boss: { id: 'a23_boss', room: 'riverside_diamond', cell: [11, 6], battle: 'a23_boss' },
+    // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階85）
     talkers: [
-      { id: 'a23_voice_kid', cell: [7, 13], scene: 'a23_voice_kid', label: 'スタンドの子ども' },
-      { id: 'a23_voice_coach', room: 'riverside_bench', cell: [5, 28], scene: 'a23_voice_coach', label: '監督' },
-      { id: 'a23_voice_shop', room: 'riverside_stand', cell: [18, 13], scene: 'a23_voice_shop', label: '売店のおばちゃん' },
-      { id: 'a23_voice_rival', room: 'riverside_stand', cell: [4, 16], scene: 'a23_voice_rival', label: '相手チームの子' },
+      { id: 'a23_voice_team', cell: [7, 13], until: 1, scene: 'a23_voice_team', label: 'チームの子' },
+      { id: 'a23_voice_coach', room: 'riverside_bench', cell: [5, 28], until: 1, scene: 'a23_voice_coach', label: '監督' },
+      { id: 'a23_voice_coach2', room: 'riverside_bench', cell: [5, 28], night: 2, scene: 'a23_voice_coach2', label: '監督' },
+      { id: 'a23_voice_shop', room: 'riverside_stand', cell: [18, 13], night: 2, scene: 'a23_voice_shop', label: '売店のおばちゃん' },
+      { id: 'a23_voice_rival', room: 'riverside_stand', cell: [4, 16], night: 2, scene: 'a23_voice_rival', label: '相手チームの子' },
+      { id: 'a23_voice_kid', room: 'riverside_stand', cell: [16, 9], night: 2, scene: 'a23_voice_kid', label: 'スタンドの子ども' },
     ],
+    // コマが戻るたびに、過去の場面が1つずつ進む（段階85）
     triggers: [
+      { on: 'koma', count: 1, scene: 'a23_first_koma' },
       { on: 'checkpoint', room: 'riverside_bench', cell: [9, 21], scene: 'a23_checkpoint' },
+      { on: 'koma', count: 2, scene: 'a23_koma2' },
+      { on: 'koma', count: 3, scene: 'a23_koma3' },
+      { on: 'koma', count: 4, scene: 'a23_koma4' },
       { on: 'checkpoint', room: 'riverside_stand', cell: [12, 14], scene: 'a23_stand' },
-      { on: 'komaLeft', left: 3, scene: 'a23_three_left' },
+      { on: 'koma', count: 5, scene: 'a23_koma5' },
+      { on: 'koma', count: 6, scene: 'a23_koma6' },
+      { on: 'koma', count: 7, scene: 'a23_koma7' },
+      { on: 'komaLeft', left: 1, scene: 'a23_one_left' },
       { on: 'boss', scene: 'a23_boss' },
       { on: 'cleared', scene: 'a23_last_koma' },
+    ],
+  },
+  // 2-3 の4晩目「取り返す」：保管局の奥の書庫（段階85。docs/script/2-3_rework.md の 3.）。交換所の窓口の奥の通用口から入る。
+  // 通用口の廊下 → 閲覧室（チェックポイント。右に寄り道の黒い扉の部屋）→ 奥の書庫（いちばん奥の棚に「最後の打席」の砂時計）。
+  // カイが見回っていて、見つかると短い負け戦の後、チェックポイントに戻される。カイを倒す道はない。コマは要らない。
+  // 棚の砂時計（区画の奥の印）に触れると、カイとの負け戦（決まったラウンドを耐える）の後に逃げきって、区画を終える
+  a23x: {
+    id: 'a23x',
+    name: '2-3「最後の打席」：保管局の奥の書庫',
+    rooms: [ROOMS.archive_corridor, ROOMS.archive_reading, ROOMS.archive_vault, ROOMS.archive_stacks],
+    links: [
+      { a: { room: 'archive_corridor', side: 'top' }, b: { room: 'archive_reading', side: 'bottom' } },
+      { a: { room: 'archive_reading', side: 'right' }, b: { room: 'archive_vault', side: 'left' } },
+      { a: { room: 'archive_reading', side: 'top' }, b: { room: 'archive_stacks', side: 'bottom' } },
+    ],
+    // 決意の曲（Leaving For Tomorrow）は、mp3 が届くまで蔵書の棚の曲で代わり（docs/ART.md の 6.）
+    bgm: BGM.library,
+    komaNeed: 0,
+    goal: { band: '目当て：奥の棚の砂時計', guide: 'ビー玉が鳴る方へ。いちばん奥の棚の砂時計を取り返す\nカイに見つかると、チェックポイントへ戻される' },
+    chests: [{ id: 'a23x_chest_vault', room: 'archive_vault', cell: [14, 19], items: [ITEMS.hiPotion.id, ITEMS.ether.id] }],
+    enemies: [
+      { id: 'a23x_e_corridor', patrol: [[9, 6], [14, 6]], battle: 'a23x_corridor' },
+      { id: 'a23x_e_alcove', patrol: [[4, 10], [4, 14]], battle: 'a23x_alcove' },
+      { id: 'a23x_e_reading1', room: 'archive_reading', patrol: [[5, 22], [18, 22]], battle: 'a23x_reading1' },
+      { id: 'a23x_e_reading2', room: 'archive_reading', patrol: [[5, 3], [18, 3]], battle: 'a23x_reading2' },
+      { id: 'a23x_e_vault', room: 'archive_vault', move: 'chase', patrol: [[7, 7], [7, 16]], battle: 'a23x_vault' },
+      { id: 'a23x_e_stacks1', room: 'archive_stacks', patrol: [[5, 20], [18, 20]], battle: 'a23x_stacks1' },
+      { id: 'a23x_e_stacks2', room: 'archive_stacks', patrol: [[5, 8], [18, 8]], battle: 'a23x_stacks2' },
+      // 見回るカイ（閲覧室と奥の書庫）。近づくと追ってくる。見つかると、チェックポイントへ戻される。最初に見つかった時だけ、カイのひとこと
+      { id: 'a23x_e_kai1', room: 'archive_reading', move: 'chase', patrol: [[5, 9], [18, 9]], battle: 'a23x_kai_patrol', scene: 'a23x_kai_seen' },
+      { id: 'a23x_e_kai2', room: 'archive_stacks', move: 'chase', patrol: [[5, 16], [18, 16]], battle: 'a23x_kai_patrol', scene: 'a23x_kai_seen' },
+    ],
+    // いちばん奥の棚の「最後の打席」の砂時計。触れると、カイとの負け戦
+    boss: { id: 'a23x_shelf', room: 'archive_stacks', cell: [11, 3], battle: 'a23x_kai', label: '砂時計' },
+    talkers: [{ id: 'a23x_door', room: 'archive_vault', cell: [14, 4], scene: 'a23x_door', label: '黒い扉' }],
+    triggers: [
+      { on: 'checkpoint', room: 'archive_reading', cell: [12, 14], scene: 'a23x_reading' },
+      { on: 'boss', scene: 'a23x_found' },
+      { on: 'cleared', scene: 'a23x_escape' },
     ],
   },
 };
