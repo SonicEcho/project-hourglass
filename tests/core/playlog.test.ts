@@ -164,7 +164,8 @@ describe('遊んだ記録（段階32b）', () => {
 
   it('今の流れは、まとめた行なら記録の画面の1画面に入る数（段階34）', () => {
     const rows = summarizePlayLog(createPlayLog(t0), SLICE_FLOW).rows;
-    expect(playLogSections(rows, SLICE_FLOW).length).toBeLessThanOrEqual(24);
+    // 段階85：2章が20日になったので、行の高さを詰めて26行まで入るようにした（PlayLogScene の ROW_H）
+    expect(playLogSections(rows, SLICE_FLOW).length).toBeLessThanOrEqual(26);
   });
 });
 

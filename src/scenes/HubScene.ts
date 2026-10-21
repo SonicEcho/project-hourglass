@@ -33,7 +33,12 @@ export class HubScene extends Phaser.Scene {
     this.overlay = undefined;
     // 拠点の会話（段階50）：見終えて戻ってきたら覚える。まだ見ていない会話があれば、先に見る
     if (data.seen) setStoryVars(markSeen(run.vars, data.seen));
-    const pending = HUB_SCENES.find((h) => !isSeen(run.vars, h.scene) && (!h.after || eventPassed(SLICE_FLOW, run.event, h.after)));
+    const pending = HUB_SCENES.find(
+      (h) =>
+        !isSeen(run.vars, h.scene) &&
+        (!h.after || eventPassed(SLICE_FLOW, run.event, h.after)) &&
+        (!h.before || (!eventPassed(SLICE_FLOW, run.event, h.before) && run.event !== h.before)),
+    );
     if (pending) {
       const talk: DialogueData = {
         scene: pending.scene,

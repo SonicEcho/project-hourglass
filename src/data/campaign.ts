@@ -62,6 +62,8 @@ export interface CampaignBattle {
   boss?: boolean;
   /** 負け戦（段階40）：決まったラウンドか、敵の HP の割合で打ち切る（勝ちも全滅もない） */
   cutoff?: BattleCutoff;
+  /** 負け戦を打ち切ったら、探索では負けた時と同じくチェックポイントへ戻る（段階85。2-3 の4晩目の書庫を見回るカイ。書かなければ、打ち切りは話の続きへ） */
+  cutoffBack?: boolean;
   /** 勝った時に選べるギアの候補（段階8。この中から NAVI_REWARD_PICKS 個） */
   naviReward?: NaviPartId[];
   /** 勝った時に手に入るスナップ（区画のボス。段階41） */

@@ -197,7 +197,9 @@ describe('物語の流れ（段階23・34）', () => {
         // コマ（段階28）：全部集めると返すのに足り、雑魚戦だけでは足りない（最後のコマはボスから）
         const stormKoma = area.enemies.reduce((n, x) => n + (AREA_BATTLES[x.battle]?.koma ?? 0), 0);
         expect(stormKoma + (AREA_BATTLES[area.boss.battle]?.koma ?? 0), area.id).toBeGreaterThanOrEqual(area.komaNeed);
-        expect(stormKoma, area.id).toBeLessThan(area.komaNeed);
+        // ぬしの分を残す（段階85：コマのいらない書庫は、どの戦闘もコマを持たない）
+        if (area.komaNeed > 0) expect(stormKoma, area.id).toBeLessThan(area.komaNeed);
+        else expect(stormKoma, area.id).toBe(0);
         for (const b of Object.values(AREA_BATTLES)) for (const e of b.enemies) for (const d of e.drops ?? []) expect(d in ITEMS, `${e.id} ${d}`).toBe(true);
         for (const c of area.chests) for (const item of c.items) expect(item in ITEMS, `${c.id} ${item}`).toBe(true);
         // 段階63：戦う前の会話（番人の前など）も
@@ -316,7 +318,7 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(storms + boss).toBeGreaterThanOrEqual(area.komaNeed);
   });
 
-  it('2-3（段階40）は部屋をつなぐ形で、ダイヤモンドへは番人を倒すと入れる。返す出来事の代わりに、カイの負け戦（物語の戦闘）が続く', async () => {
+  it('2-3（段階40）は部屋をつなぐ形で、ダイヤモンドへは番人を倒すと入れる。3晩目の後にカイの負け戦（物語の戦闘）、4晩目の書庫で取り返して返す（段階85）', async () => {
     const { AREAS, AREA_BATTLES, SLICE_FLOW } = await import('../src/data');
     const { flowEvents, reachableCells } = await import('../src/core');
     const area = AREAS.a23;
@@ -326,9 +328,16 @@ describe('パーティと育成の開放（段階26）', () => {
     const events = flowEvents(SLICE_FLOW);
     // 物語の戦闘は区画の戦闘を指し、打ち切り（負け戦）がある
     for (const e of events.filter((x) => x.kind === 'battle')) expect(AREA_BATTLES[e.battle ?? '']?.cutoff, e.id).toBeDefined();
-    const i = events.findIndex((e) => e.id === 'a23_explore');
+    const i = events.findIndex((e) => e.id === 'a23_explore3');
     expect(events.slice(i + 1, i + 4).map((e) => e.kind)).toEqual(['dialogue', 'battle', 'dialogue']);
-    expect(events.some((e) => e.kind === 'return' && e.area === 'a23')).toBe(false);
+    // 段階85：4晩目の書庫（a23x）の後に、2-3 を返す
+    const x = events.findIndex((e) => e.id === 'a23x_explore');
+    expect(x).toBeGreaterThan(i);
+    expect(events.slice(x + 1).find((e) => e.kind === 'return')?.area).toBe('a23');
+    // 書庫の4部屋はつながり、見回るカイは打ち切るとチェックポイントへ戻る
+    expect(Object.keys(reachableCells(AREAS.a23x)).sort()).toEqual(AREAS.a23x.rooms.map((r) => r.id).sort());
+    expect(AREA_BATTLES.a23x_kai_patrol.cutoffBack).toBe(true);
+    expect(AREA_BATTLES[AREAS.a23x.boss.battle].cutoff).toBeDefined();
     // 2章の終わりまで、仮の画面はない
     const { isPlaceholder } = await import('../src/core');
     expect(events.filter((e) => isPlaceholder(e)).map((e) => e.id)).toEqual([]);
@@ -517,11 +526,11 @@ describe('探索の試作の地図（段階16・18b）', () => {
 });
 
 describe('周回・狩り（段階43）', () => {
-  it('返す区画（1-1〜2-2）に狩りの中身があり、書き間違いがない。素材はある物、2-3 は返さないので狩りはない', async () => {
+  it('返す区画（1-1〜2-3）に狩りの中身があり、書き間違いがない。素材はある物（段階85：2-3 も返すので狩りがある。4晩目の書庫は狩りがない）', async () => {
     const { AREA_BATTLES, AREAS, ITEMS } = await import('../src/data');
     const { checkHunt, huntableAreas } = await import('../src/core');
     const hunts = huntableAreas(AREAS, Object.keys(AREAS));
-    expect(hunts.map((a) => a.id)).toEqual(['a11', 'a12', 'a21', 'a22']);
+    expect(hunts.map((a) => a.id)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23']);
     for (const area of hunts) {
       expect(checkHunt(area, AREA_BATTLES), area.id).toEqual([]);
       for (const g of area.hunt.gathers) for (const item of g.items) expect(item in ITEMS, `${g.id} ${item}`).toBe(true);

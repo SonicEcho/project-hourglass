@@ -73,11 +73,12 @@ export const HUB_SPOT: { place: string; spot: DailySpot } = {
 /** 拠点の入口を出す章（段階60。1章の終わりの会話で入口の脇の砂時計に気づき、2章の昼から入れる） */
 export const HUB_FROM_CHAPTER = 2;
 
-export const HUB_SCENES: { scene: string; after?: string }[] = [
+// 段階85：before は、その出来事より前の時だけ（取り返して返した後は、持ち去られた後の会話を出さない）
+export const HUB_SCENES: { scene: string; after?: string; before?: string }[] = [
   // 初めて拠点に入った時：自分たちの記憶の棚
   { scene: 'hub_intro' },
   // 2-3「最後の打席」を持ち去られた後：取り返してから入ると決める
-  { scene: 'hub_taken', after: 'd7_taken' },
+  { scene: 'hub_taken', after: 'd7_taken', before: 'a23_return' },
 ];
 
 /** 絆の点の重み（段階83。docs/design/daily.md の 4-2）：絆の出来事1つで2点（♥1つ）、その日に見た小話1つで1点（♥半分） */
@@ -98,12 +99,15 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari4', title: '最初の五分', label: '施設の居間（あかり）', from: 8, place: 'home', x: 195, y: ROW1 },
     // 段階82（docs/script/2-2_rework.md の 4.）
     { id: 'bond_akari5', title: '出し物、決まらない', label: '教室（あかり）', from: 12, place: 'school', x: 195, y: ROW1 },
+    // 段階85（docs/script/2-3_rework.md の 4.）
+    { id: 'bond_akari6', title: '時計の博物館', label: '教室（あかり）', from: 17, place: 'school', x: 195, y: ROW1 },
   ],
   // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
     { id: 'bond_mio1', title: '助っ人のみお', label: 'グラウンド（みお）', from: 9, place: 'riverside', x: 195, y: ROW1 },
     { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 11, place: 'convenience', x: 195, y: ROW1 },
     { id: 'bond_mio3', title: '弟子入り一日目', label: '工場（みお）', from: 12, place: 'factory', x: 195, y: ROW1 },
+    { id: 'bond_mio4', title: '素振りの相手', label: 'グラウンド（みお）', from: 16, place: 'riverside', x: 195, y: ROW1 },
   ],
 };
 
@@ -118,6 +122,8 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
   // 2-2 の翌日（15日目。段階82）：閉店後の楽器店で、けんたたち3人（docs/script/2-2_rework.md の 15-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
+  // 2-3 の翌日（20日目。段階85）：祝日の河川敷で、そうたの準決勝（docs/script/2-3_rework.md の 20-A）。河川敷の上の段は、みおの絆の出来事
+  { area: 'a23', id: 'd20_koji', label: 'そうたの準決勝', place: 'riverside', x: 195, y: ROW2 },
 ];
 
 
@@ -317,25 +323,72 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', talk('d7_talk', '店の中', ROW1, 'mio'), toDusk('d15_to_dusk')),
     ],
   },
-  // 16日目（段階82で13日目から移した）：パン屋の親子は必ず見る。夕暮れの後、2-3
+  // 16日目（日曜。段階85。docs/script/2-3_rework.md の 16-A）：パン屋のこうじさんとそうたは必ず見る。夕暮れの後、2-3 の1晩目
   d7_free: {
     id: 'd7_free',
-    time: '16日目　放課後',
+    time: '16日目　日曜の昼',
     day: 16,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
-    places: [at('bakery', main('d7_bakery', 'パン屋の親子')), at('clockshop', toDusk('d7_to_dusk'))],
+    places: [
+      at('bakery', main('d7_bakery', 'パン屋の親子')),
+      at('home', talk('d16_talk_laundry', '物干し', ROW2, 'akari')),
+      at('clockshop', talk('d16_talk_sunday', '店の中'), toDusk('d7_to_dusk')),
+    ],
   },
-  d8_free: {
-    id: 'd8_free',
+  // 17日目（17-A・17-B）：河川敷のまさるさんと、その後のパン屋の前は必ず見る。河川敷の上の段は、みおの絆の出来事
+  a23_day17_free: {
+    id: 'a23_day17_free',
     time: '17日目　放課後',
     day: 17,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
+      at('riverside', main('d17_masaru', 'スタンドの声', ROW2)),
+      at('street', main('d17_koji_front', 'パン屋の前', ROW1, 'd17_masaru'), talk('d17_talk_melon', '紙袋', ROW2, 'mio')),
+      at('school', talk('d17_talk_three', '教室', ROW2, 'akari')),
+      at('clockshop', toDusk('a23_d17_to_dusk')),
+    ],
+  },
+  // 18日目（18-A）：閉店後のパン屋のこうじさんの本音は必ず見る。夕暮れの後、3晩目
+  a23_day18_free: {
+    id: 'a23_day18_free',
+    time: '18日目　放課後',
+    day: 18,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('bakery', main('d18_koji', '言えない言葉')),
+      at('convenience', talk('d18_talk_ramune', 'レジ', ROW2)),
+      at('street', talk('d18_talk_bet', '信号の前', ROW2, 'mio')),
+      at('clockshop', toDusk('a23_d18_to_dusk')),
+    ],
+  },
+  // 19日目（段階85。19-B・19-C）：持ち去られた翌日。パン屋のこうじさんと、その後の河川敷のまさるさんは必ず見る。夕暮れにペトラの通用口から4晩目
+  d8_free: {
+    id: 'd8_free',
+    time: '19日目　放課後',
+    day: 19,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
       at('bakery', main('d8_bakery', '知っているのに')),
+      at('riverside', main('d19_masaru', 'ビー玉', ROW2, 'd8_bakery')),
       at('home', talk('d8_talk', '台所', ROW2, 'mio')),
-      at('clockshop', toDusk('d8_to_dusk')),
+      at('clockshop', talk('d19_talk_plan', '店の奥'), toDusk('d8_to_dusk')),
+    ],
+  },
+  // 20日目（祝日。段階85）：2-3 を返した翌日のそうたの準決勝（RETURN_VISITS）。夕暮れに2章の終わり
+  d20_free: {
+    id: 'd20_free',
+    time: '20日目　祝日の昼',
+    day: 20,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('convenience', talk('d20_talk_holiday', 'レジ', ROW2)),
+      at('school', talk('d20_talk_prep', '教室', ROW2, 'akari')),
+      at('clockshop', toDusk('d20_to_dusk')),
     ],
   },
 };

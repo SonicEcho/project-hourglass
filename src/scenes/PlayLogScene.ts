@@ -25,7 +25,8 @@ function formatAt(iso: string | null): string {
 const titleOf = (id: string | null): string => (id ? findEvent(SLICE_FLOW, id)?.title ?? '—' : '—');
 
 const ROW_TOP = 214;
-const ROW_H = 23;
+// 行の高さ（段階85：2章が20日になり、26行が1画面に入るよう 23 から詰めた）
+const ROW_H = 20;
 
 export class PlayLogScene extends Phaser.Scene {
   constructor() {
