@@ -547,6 +547,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   cultureFestival: BGM.cultureFestival,
   // 段階85：2-3 の河川敷（区画の曲と同じ。晩に入る会話で流す）
   riverside: BGM.riverside,
+  // 段階86：決意の曲（書庫に入る会話から流す）
+  resolve: BGM.resolve,
 };
 
 /**

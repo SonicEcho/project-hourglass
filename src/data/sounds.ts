@@ -102,6 +102,8 @@ export const BGM = {
   cultureFestival: 'bgm.culture_festival',
   kai: 'bgm.kai',
   riverside: 'bgm.riverside',
+  // 段階86：決意の曲（2-3 の4晩目、保管局の奥の書庫）
+  resolve: 'bgm.resolve',
 } as const;
 
 /**
@@ -130,6 +132,8 @@ export const BGM_LOOPS: Record<string, { start: number; end: number }> = {
   [BGM.cultureFestival]: { start: 19.272562, end: 93.281542 },
   [BGM.kai]: { start: 20.57288, end: 53.588345 },
   [BGM.riverside]: { start: 68.220227, end: 109.019456 },
+  // 段階86（2026-10-21。40小節）
+  [BGM.resolve]: { start: 40.402721, end: 113.038299 },
 };
 
 /**
