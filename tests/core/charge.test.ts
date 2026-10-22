@@ -120,6 +120,8 @@ describe('アンコール（段階39b。2-2 のアンプのぬし）', () => {
     s.enemies[0].parts[1].hp = 1;
     s = execute(planAll(s, { hero: attackOn('enemy0', 'horn') }));
     expect(s.enemies[0].parts[1].broken).toBe(true);
+    // 部位を壊すとよろけて延長になる（段階89）。追加行動は見送る
+    s = runUntilInput(declineExtra(s));
     for (let i = 0; i < 4; i++) {
       const before = s.log.length;
       s = execute(planAll(s, { hero: guard }));
