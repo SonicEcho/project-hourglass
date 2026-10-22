@@ -1,4 +1,5 @@
 import type { GrowthMap, GrowthNodeDef, GrowthNodeEffect, StatKey } from '../core/growth';
+import type { StarValues } from '../core/recommend';
 
 // 星図（段階7。段階56で、本物の星座の形にした。docs/milestones/M2.md の段階56の詳細、見本は docs/sketches/starmap_*）。数値はすべて仮。
 //
@@ -199,6 +200,12 @@ function buildMap(): GrowthMap {
 }
 
 export const GROWTH_MAP: GrowthMap = buildMap();
+
+/**
+ * 星図の「おすすめの道」（段階100）：星の価値。価値 ÷ そこまで開けるのに要る星の砂 が一番大きい星を目指す。
+ * まだ覚えていない魔法・スキル ＞ 大きな能力値 ＞ 能力値。その仲間の星座（出発点のある星座）の星は home 倍
+ */
+export const GROWTH_RECOMMEND: StarValues = { stat: 3, statBig: 7, skill: 10, home: 1.5 };
 
 /** 周回の始めに持っている星の砂（段階62で 3→8。最初の魔法・スキルを1つ開けられる） */
 export const START_MEMORY_POINTS = 8;

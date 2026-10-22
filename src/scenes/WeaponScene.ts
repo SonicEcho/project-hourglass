@@ -13,7 +13,10 @@ import {
   getEvolveError,
   getFeedError,
   getFragmentError,
+  nearestEvolution,
   nextEvolutions,
+  recommendMaterials,
+  upcomingKeys,
   paramsAfter,
   tendencyOf,
   weaponLevel,
@@ -457,6 +460,20 @@ export class WeaponScene extends Phaser.Scene {
     });
   }
 
+  /** 一番近い進化先で、条件の能力値がまだ足りない時だけ、その進化先（段階100） */
+  private nearLack(): ReturnType<typeof nearestEvolution> {
+    const w = this.weapon();
+    const near = nearestEvolution(D, run.armory, this.charId);
+    return near && near.evolution.conditions.some((c) => c.kind === 'param' && w.params[c.param] < c.min) ? near : null;
+  }
+
+  /** 素材のおすすめの説明（段階100）：一番よい素材と、勧める理由 */
+  private adviceText(best: string): string {
+    const near = this.nearLack();
+    const why = near ? `${near.evolution.name}の${near.params.map((k) => PARAM_LABEL[k]).join('・')}へ` : '上がる合計が大きい';
+    return `★おすすめ：${D.items[best].name}（${why}）`;
+  }
+
   /** 下の段：「素材」（吸わせる・時分解）と「記憶の欠片」（吸わせる。枠を使わない）の2つのタブ（段階27b） */
   private drawInventory(): void {
     // ポーチの消費アイテム（段階51）は素材の一覧に出さない（吸わせられず、時分解もできない）
@@ -514,7 +531,16 @@ export class WeaponScene extends Phaser.Scene {
           .filter((id) => (D.items[id].gains[filter] ?? 0) > 0)
           .sort((a, b) => (D.items[b].gains[filter] ?? 0) - (D.items[a].gains[filter] ?? 0) || (run.armory.items[b] ?? 0) - (run.armory.items[a] ?? 0))
       : owned;
-    const recommended = isItems ? recommendedItems(this.weapon()) : new Set<string>();
+    // おすすめ（段階100。選び方は core/recommend.ts）：一番近い進化先に近づく素材に★、一番よいものは金の枠。
+    // これから使う進化の鍵の素材（誰の武器でも）は勧めない。絞り込んでいない時は、★の素材を先頭に並べる
+    // 進化先の能力値が足りない時の★は、その能力値を上げる素材だけ（上がる合計だけで勧めた素材には付けない）
+    const near = this.nearLack();
+    const recList = (isItems ? recommendMaterials(D, run.armory, this.charId, undefined, upcomingKeys(D, run.armory)) : []).filter(
+      (id) => !near || near.params.some((k) => (D.items[id].gains[k] ?? 0) > 0),
+    );
+    const recommended = new Set(recList);
+    const rank = (id: string): number => (recommended.has(id) ? recList.indexOf(id) : recList.length);
+    if (!filter) ids.sort((a, b) => rank(a) - rank(b));
     const cols = 4;
     const rows = 3;
     const perPage = cols * rows;
@@ -538,7 +564,8 @@ export class WeaponScene extends Phaser.Scene {
       const selected = this.selected === id;
       this.itemSpots.set(id, { x: x + w / 2, y: y + h / 2, color });
       const rect = this.add.rectangle(x, y, w, h, n > 0 ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(selected ? 3 : it?.rarity === 'rare' ? 2 : 1, selected ? COLORS.select : n > 0 ? color : COLORS.border);
+      const best = recList[0] === id;
+      rect.setStrokeStyle(selected ? 3 : best || it?.rarity === 'rare' ? 2 : 1, selected ? COLORS.select : best ? COLORS.accent : n > 0 ? color : COLORS.border);
       this.root.add(rect);
       const alpha = n > 0 ? 1 : 0.3;
       if (!it) this.root.add(this.add.star(x + 10, y + 10, 4, 3.5, 8, color, alpha));
@@ -581,7 +608,7 @@ export class WeaponScene extends Phaser.Scene {
     const top = FRAG_TOP + 36 + rows * (h + gap) + (pages > 1 ? 28 : 4);
     let text = this.message;
     if (!text) {
-      if (!sel) text = isItems ? '素材を選ぶと、吸わせた時の変化が出る。★は進化先に近づく素材。攻・火・氷・雷で絞れる' : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
+      if (!sel) text = isItems ? (recList.length > 0 ? this.adviceText(recList[0]) : '素材を選ぶと、吸わせた時の変化が出る。攻・火・氷・雷で絞れる') : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
       else if (isItems) {
         const it = D.items[sel];
         if (it.kind !== 'material') text = `${it.name}：吸わせられない（${describeDecompose(D, it)}）`;
@@ -660,26 +687,6 @@ function gainColor(gains: Partial<Record<WeaponParamKey, number>>): number {
  * おすすめの素材（★）：まだ進化していなければ、能力値の条件に一番近い進化先を選び、その足りない能力値を上げて、
  * 条件の能力値を下げない素材（段階27b）
  */
-function recommendedItems(w: WeaponState): Set<string> {
-  const out = new Set<string>();
-  let best: { lack: number; params: WeaponParamKey[] } | null = null;
-  for (const evo of nextEvolutions(D, w).filter((e) => !e.sealed && !e.detour)) {
-    const conds = evo.conditions.filter((c) => c.kind === 'param');
-    if (conds.length === 0) continue;
-    const lack = conds.reduce((sum, c) => sum + Math.max(0, c.min - w.params[c.param]), 0);
-    if (lack === 0) continue;
-    if (!best || lack < best.lack) best = { lack, params: conds.map((c) => c.param) };
-  }
-  if (!best) return out;
-  for (const it of Object.values(D.items)) {
-    if (it.kind !== 'material' || (run.armory.items[it.id] ?? 0) <= 0) continue;
-    const helps = best.params.some((k) => (it.gains[k] ?? 0) > 0);
-    const hurts = best.params.some((k) => (it.gains[k] ?? 0) < 0);
-    if (helps && !hurts) out.add(it.id);
-  }
-  return out;
-}
-
 /** その武器の、これから先の進化の鍵になる素材（段階42：次の進化先だけでなく、今の武器から行ける先の全部） */
 function keyItems(w: WeaponState): Set<string> {
   const ahead = D.weapons[w.defId].evolutions.filter((e) => !['passed', 'unreachable'].includes(evolutionVisibility(D, w, e.id)));
