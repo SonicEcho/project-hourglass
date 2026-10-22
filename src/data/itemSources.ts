@@ -6,10 +6,10 @@ import { STORY } from './story';
 
 // 素材・アイテムの手に入れ方（段階27b）。武器の画面（進化の鍵がどこで手に入るか）と、データの一覧表で使う
 
-/** 区画と試作の周回に出てくる敵（同じ名前は1回） */
+/** 区画と試作の周回に出てくる敵（同じ名前は1回。段階96 の本気のカイは、負け戦のカイと同じ名前なので、名前と id の組で数える） */
 export function knownEnemies(): EnemyDef[] {
   const seen = new Map<string, EnemyDef>();
-  for (const b of [...Object.values(AREA_BATTLES), ...allBattles(STORY)]) for (const e of b.enemies) if (!seen.has(e.name)) seen.set(e.name, e);
+  for (const b of [...Object.values(AREA_BATTLES), ...allBattles(STORY)]) for (const e of b.enemies) if (!seen.has(`${e.name}:${e.id}`)) seen.set(`${e.name}:${e.id}`, e);
   return [...seen.values()];
 }
 

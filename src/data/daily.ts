@@ -108,6 +108,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari7', title: 'お弁当対決', label: '屋上へ（あかり）', from: 21, place: 'school', x: 195, y: ROW2 },
     // 段階94（docs/script/3-2.md の 4.）
     { id: 'bond_akari8', title: 'いつもの場所', label: '商店街の角（あかり）', from: 27, place: 'street', x: 195, y: ROW2 },
+    // 段階96（docs/script/3-kai.md の 4.）
+    { id: 'bond_akari9', title: '目覚まし三つ', label: '屋上へ（あかり）', from: 31, place: 'school', x: 195, y: ROW2 },
   ],
   // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
@@ -119,11 +121,15 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_mio5', title: '宿題、三分', label: '作業台（みお）', from: 21, place: 'clockshop', x: 195, y: ROW2 },
     // 段階94（docs/script/3-2.md の 4.）。商店街の下の段はあかり8なので、もう一つ下
     { id: 'bond_mio6', title: '大食い大会', label: '福引のテントの横（みお）', from: 27, place: 'street', x: 195, y: 640 },
+    // 段階96（docs/script/3-kai.md の 4.）
+    { id: 'bond_mio7', title: 'ハヤテ号', label: '駐輪場（みお）', from: 31, place: 'street', x: 195, y: 640 },
   ],
   // 段階94：小夜子（26日目に今の町へ出た後。27日目から）。時計屋の奥の入口の部屋と、商店街
   sayoko: [
     { id: 'bond_sayoko1', title: 'はじめての昨日', label: '入口の部屋（小夜子）', from: 27, place: 'clockshop', x: 195, y: 385 },
     { id: 'bond_sayoko2', title: '試着室', label: '洋服屋の前（小夜子）', from: 29, place: 'street', x: 195, y: 560 },
+    // 段階96（docs/script/3-kai.md の 4.）。32日目の雨の店先
+    { id: 'bond_sayoko3', title: '雨の日', label: '店先（小夜子）', from: 32, place: 'clockshop', x: 195, y: 385 },
   ],
 };
 
@@ -542,6 +548,33 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('music_shop', talk('d30_talk_song', '店の奥', ROW2, 'mio')),
       at('convenience', talk('d30_talk_hinano', 'レジ', ROW2)),
       at('clockshop', toDusk('d30_to_dusk')),
+    ],
+  },
+  // ---- カイへのリベンジとノアの口論、3章の終わり（段階96。docs/script/3-kai.md の 4.） ----
+  // 31日目（月曜）：昼は選べる話だけ。夕暮れの後、祭りの夜（カイ）
+  d31_free: {
+    id: 'd31_free',
+    time: '31日目　月曜の放課後',
+    day: 31,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('bakery', talk('d31_talk_bread', '店先', ROW1, 'mio')),
+      at('street', talk('d31_talk_fumi', '店先', ROW1, 'akari')),
+      at('clockshop', toDusk('d31_to_dusk')),
+    ],
+  },
+  // 32日目（火曜。雨）：昼は選べる話だけ。夕暮れに3章の終わり
+  d32_free: {
+    id: 'd32_free',
+    time: '32日目　火曜の放課後（雨）',
+    day: 32,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('factory', talk('d32_talk_isamu', '作業場', ROW1, 'mio')),
+      at('care_home', talk('d32_talk_care', '窓辺', ROW2)),
+      at('clockshop', toDusk('d32_to_dusk')),
     ],
   },
 };

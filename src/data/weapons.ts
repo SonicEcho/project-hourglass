@@ -117,6 +117,9 @@ export const ITEMS = {
   alarmLamp: { id: 'alarmLamp', name: '警報機の赤い灯', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
   barrierArm: { id: 'barrierArm', name: '遮断機の竿', kind: 'material', rarity: 'part', gains: { atk: 3 } },
   lordSignal: { id: 'lordSignal', name: 'ぬしの警報灯', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
+  // ---- 3章のカイのリベンジ（段階96） ----
+  frameShard: { id: 'frameShard', name: '枠のかけら', kind: 'material', rarity: 'part', gains: { thunder: 2, atk: 2 } },
+  burntFilm: { id: 'burntFilm', name: '焼けたフィルム', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
   // ---- 大正の祭りの夜（段階91b） ----
   lanternPaper: { id: 'lanternPaper', name: '提灯の和紙', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
   lanternFrame: { id: 'lanternFrame', name: '提灯の骨', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },

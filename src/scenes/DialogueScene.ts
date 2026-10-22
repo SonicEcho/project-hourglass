@@ -546,8 +546,17 @@ export class DialogueScene extends Phaser.Scene {
       stars: { speed: 0, lifespan: 3200, scale: { min: 0.6, max: 1.4 }, tint: [0xffffff, 0xcfe0ff], frequency: 180 },
       dust: { speedY: { min: 4, max: 12 }, speedX: { min: -5, max: 5 }, lifespan: 6000, scale: { min: 0.6, max: 1.2 }, tint: [0xd9ae62, 0xb08a3a], frequency: 220 },
       motes: { speedY: { min: -22, max: -8 }, speedX: { min: -4, max: 4 }, lifespan: 6500, scale: { min: 0.8, max: 2 }, tint: [0xffd98c, 0xffe8b0, 0xf2c45a], frequency: 110, blendMode: Phaser.BlendModes.ADD },
+      // 段階96：雨（速く斜めに落ちる、青白い細かい粒）
+      rain: { speedY: { min: 420, max: 520 }, speedX: { min: -50, max: -40 }, lifespan: 1400, scale: { min: 1.0, max: 1.6 }, rotate: 6, tint: [0xe0ecff, 0xc0d0e8], frequency: 10 },
     };
-    const emitter = this.add.particles(0, 0, 'dialogue-sand', {
+    // 雨（段階96）は、点ではなく細長い線の粒にする
+    if (kind === 'rain' && !this.textures.exists('dialogue-rain')) {
+      const g = this.make.graphics({}, false);
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 1, 10);
+      g.generateTexture('dialogue-rain', 1, 10);
+      g.destroy();
+    }
+    const emitter = this.add.particles(0, 0, kind === 'rain' ? 'dialogue-rain' : 'dialogue-sand', {
       ...configs[kind],
       emitZone: { type: 'random', source: area } as Phaser.Types.GameObjects.Particles.EmitZoneData,
       alpha: { onUpdate: twinkle },

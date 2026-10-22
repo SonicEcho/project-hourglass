@@ -143,6 +143,11 @@ export interface EnemyActionDef {
    * まだ大技を放っていない時と、その大技が部位破壊で封じられた時は選ばない。target・type・power は使わない
    */
   encore?: boolean;
+  /**
+   * 露出（段階96。3章のカイ）：攻撃の後、まだ誰にも割り当てていない手札を1枚、その戦闘から消す（捨て札にも山札にも戻らない）。
+   * 割り当てていない手札がなければ、消さない
+   */
+  erasesCard?: boolean;
 }
 
 export interface PartDef {
@@ -392,6 +397,8 @@ export type LogEvent =
   /** アンコール（段階41）：name はもう一度使ったスナップ。このラウンドにまだスナップが使われていなければ null（不発） */
   | { type: 'encore'; actorId: string; name: string | null }
   | { type: 'reshuffle'; count: number }
+  /** 敵の露出で、手札のスナップが1枚、その戦闘から消えた（段階96） */
+  | { type: 'cardErased'; enemyId: string; cardUid: number; name: string }
   | { type: 'battleEnd'; outcome: Exclude<Outcome, 'ongoing'> };
 
 export interface BattleState {

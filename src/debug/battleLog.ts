@@ -87,6 +87,8 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `  アンコール（${name(s, e.actorId)}）：${e.name ? `${e.name}をもう一度` : '不発（このラウンドにまだスナップが使われていない）'}`;
     case 'reshuffle':
       return `  捨て札${e.count}枚をシャッフルして山札へ`;
+    case 'cardErased':
+      return `  ${name(s, e.enemyId)}の露出で、手札の${e.name}がこの戦闘から消えた`;
     case 'battleEnd':
       return `戦闘終了：${e.outcome === 'victory' ? '勝利' : e.outcome === 'cutoff' ? '打ち切り（負け戦）' : '敗北'}`;
   }

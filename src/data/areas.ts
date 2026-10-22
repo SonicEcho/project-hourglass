@@ -5,7 +5,7 @@ import type { EnemyDef } from '../core/types';
 import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_NOISE } from './festivalEnemies';
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
-import { BALL_NOISE, JUG_NOISE, KAI, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
+import { BALL_NOISE, JUG_NOISE, KAI, KAI_REVENGE, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
 import { CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE, YAGURA_LORD } from './taishoEnemies';
 import { COIL_NOISE, FAN_NOISE, POSTBOX_NOISE, RADIO_NOISE, TABLE_NOISE, TRAIN_LORD } from './villageEnemies';
 import { CROSSING_LORD, DIPLOMA_NOISE, EARPHONE_NOISE, SELFIE_NOISE, TAPIOCA_NOISE, YOSEGAKI_NOISE } from './gradEnemies';
@@ -56,6 +56,8 @@ export const A31_SCALE = { n1: 1.3, n2: 1.4, n3: 1.55, guard: 1.2, boss: 1.4 };
 /** 大正の祭りの夜の砂嵐の強さ（段階91b）：1晩目・1晩目の終わり・2晩目の攻撃の倍率と、ぬしの HP の倍率 */
 export const A3S_SCALE = { n1: 1.4, end: 1.5, n2: 1.45, boss: 1.75 };
 /** 3-2 の砂嵐の強さ（段階94）：晩ごとの攻撃の倍率（scaleEnemy）と、番人・ぬしの HP の倍率（toughenEnemy） */
+/** 祭りの夜（カイ）の砂嵐の攻撃の倍率と、本気のカイの HP の倍率（段階96） */
+export const A3K_SCALE = { storm: 1.55, kai: 1.7 };
 export const A32_SCALE = { n1: 1.5, n2: 1.5, n3: 1.6, guard: 1.25, boss: 2.1 };
 
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
@@ -247,6 +249,12 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a32_n3_street2: { id: 'a32_n3_street2', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, EARPHONE_NOISE, TAPIOCA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 2 },
   a32_n3_cross1: { id: 'a32_n3_cross1', name: '砂嵐', enemies: tough([EARPHONE_NOISE, TAPIOCA_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 4, koma: 1 },
   a32_n3_cross2: { id: 'a32_n3_cross2', name: '砂嵐', enemies: tough([SELFIE_NOISE, DIPLOMA_NOISE, TAPIOCA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 4, koma: 1 },
+  // ---- 祭りの夜（カイ。段階96。docs/script/3-kai.md）。カイの枠で切り取られかけた景色から湧く砂嵐と、本気のカイ（勝てる戦い） ----
+  a3k_torii: { id: 'a3k_torii', name: '砂嵐', enemies: tough([LANTERN_NOISE, PINWHEEL_NOISE, CANDY_NOISE].map((e) => scaleEnemy(e, A3K_SCALE.storm))), reward: 3 },
+  a3k_torii2: { id: 'a3k_torii2', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3K_SCALE.storm))), reward: 3 },
+  a3k_stalls: { id: 'a3k_stalls', name: '砂嵐', enemies: tough([CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE].map((e) => scaleEnemy(e, A3K_SCALE.storm))), reward: 3, item: ITEMS.hiPotion.id },
+  a3k_yagura: { id: 'a3k_yagura', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, CANDY_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3K_SCALE.storm))), reward: 4 },
+  a3k_kai: { id: 'a3k_kai', name: 'カイ', enemies: [toughenEnemy(KAI_REVENGE, A3K_SCALE.kai)], reward: 12, boss: true, snaps: ['encore'] },
   a32_boss: { id: 'a32_boss', name: '踏切のぬし', enemies: [toughenEnemy(CROSSING_LORD, A32_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['wideShot'] },
 };
 
@@ -258,6 +266,7 @@ export const BATTLE_BGM: Partial<Record<string, string>> = {
   a23_kai: BGM.kai,
   a23x_kai_patrol: BGM.kai,
   a23x_kai: BGM.kai,
+  a3k_kai: BGM.kai,
 };
 
 
@@ -1015,6 +1024,41 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'komaLeft', left: 1, scene: 'a32_one_left' },
       { on: 'boss', scene: 'a32_boss' },
       { on: 'cleared', scene: 'a32_last_koma' },
+    ],
+  },
+  // 祭りの夜（カイ。段階96。docs/script/3-kai.md）。カイの枠で、祭りの人々が台詞の途中で止まっている。コマはない。
+  // 鳥居と参道 → 屋台の通り → やぐらの広場。やぐらの裏の暗がり（区画の奥の印）で、本気のカイと戦う（勝てる戦い）
+  a3k: {
+    id: 'a3k',
+    name: '祭りの夜（カイ）',
+    rooms: [ROOMS.matsuri_torii, ROOMS.matsuri_stalls, ROOMS.matsuri_yagura1],
+    links: [
+      { a: { room: 'matsuri_torii', side: 'top' }, b: { room: 'matsuri_stalls', side: 'bottom' } },
+      { a: { room: 'matsuri_stalls', side: 'top' }, b: { room: 'matsuri_yagura1', side: 'bottom' } },
+    ],
+    // 祭囃子は、カイの枠で途中で止まっている（不穏な曲で代わり）
+    bgm: BGM.uneasy,
+    komaNeed: 0,
+    goal: { band: '目当て：やぐらの裏の暗がり', guide: 'カイの枠は光を写す。小夜子が、提灯の届かない暗がりへ案内する' },
+    partyFixed: ['sayoko'],
+    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.candyStick.id, ITEMS.lanternPaper.id, ITEMS.ether.id], gears: ['comboBoost'] }],
+    enemies: [
+      { id: 'a3k_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3k_torii' },
+      { id: 'a3k_e_torii2', move: 'chase', patrol: [[4, 11], [19, 11]], battle: 'a3k_torii2' },
+      { id: 'a3k_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3k_stalls' },
+      { id: 'a3k_e_yagura', room: 'matsuri_yagura1', patrol: [[4, 16], [19, 16]], battle: 'a3k_yagura' },
+    ],
+    // やぐらの裏の暗がりに来るカイ
+    boss: { id: 'a3k_kai', room: 'matsuri_yagura1', cell: [6, 9], battle: 'a3k_kai', label: 'やぐらの裏' },
+    talkers: [
+      { id: 'a3k_voice_pinwheel', cell: [16, 17], scene: 'a3k_voice_pinwheel', label: '風車の子ども' },
+      { id: 'a3k_voice_kuji', room: 'matsuri_stalls', cell: [12, 16], scene: 'a3k_voice_kuji', label: 'くじ引きの屋台' },
+      { id: 'a3k_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3k_voice_ondo', label: '音頭取り' },
+    ],
+    triggers: [
+      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3k_stalls' },
+      { on: 'boss', scene: 'a3k_dark' },
+      { on: 'cleared', scene: 'a3k_fireworks' },
     ],
   },
   // 大正の祭りの夜（段階91b。docs/script/3-matsuri.md）。小夜子の夜は、まだ返さない。コマはない。2晩とも同じ夜（写しの台詞もまったく同じ）。

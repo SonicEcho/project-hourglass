@@ -749,6 +749,12 @@ export class BattleScene extends Phaser.Scene {
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
         return true;
       }
+      case 'cardErased': {
+        // 露出（段階96）：手札のスナップが1枚、この戦闘から消えた
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y + 30, `${e.name}が消えた`, COLORS.allyDamage, 16);
+        return true;
+      }
       case 'encore': {
         // アンコール（段階41）：もう一度使うスナップの名前。まだ誰も使っていなければ不発
         const p = unitPosition(s, e.actorId);

@@ -14,6 +14,8 @@ export const ENEMY_ART: Record<string, string> = {
   goldfishBowlLord: 'enemy.goldfish_bowl_boss',
   // 段階40：2-3 の負け戦のカイ
   kai: 'enemy.kai',
+  // 段階96：本気のカイ（3章のリベンジ）も同じ絵
+  kaiRevenge: 'enemy.kai',
 };
 
 /**
@@ -23,4 +25,6 @@ export const ENEMY_ART: Record<string, string> = {
 export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: number, side?: 'left' | 'right']>> = {
   goldfishBowlLord: { poiArm: [0.13, 0.66], bowl: [0.47, 0.42] },
   bicycleLord: { frontWheel: [0.24, 0.5], bell: [0.3, 0.14] },
+  // 段階96：本気のカイの枠の刃（絵の左上で掲げている四角い枠の、左下の角）
+  kaiRevenge: { frameBlade: [0.3, 0.2, 'left'] },
 };

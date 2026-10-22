@@ -436,7 +436,7 @@ export const BLIP_EVERY = 2;
 
 /** 背景に流す空気（提灯の灯り、星、舞う砂） */
 /** 背景・1枚絵に流す粒（motes：金の粒がゆっくり昇ってまたたく。段階46c） */
-export type Ambient = 'lanterns' | 'stars' | 'dust' | 'motes';
+export type Ambient = 'lanterns' | 'stars' | 'dust' | 'motes' | 'rain';
 
 /** 背景。image は台帳の id（なければ上から下への色の帯と名前で仮に描く） */
 export interface Backdrop {
@@ -510,6 +510,11 @@ export const BACKDROPS: Record<string, Backdrop> = {
   grad_2019: { title: '平成31年3月、卒業式の帰り道（昼）', top: 0xc8e0f0, bottom: 0xb0b8a0 },
   grad_dusk: { title: '平成31年3月、夕暮れの踏切', top: 0xf0a070, bottom: 0x4a3a4a, ambient: 'dust' },
   crossing_now: { title: '駅の近くの踏切（今の夕方の前）', top: 0xe8c8a0, bottom: 0x5a5a62 },
+  // 段階96：32日目の雨（今の絵に、灰色をかけて雨の粒を降らせる）
+  classroom_rain: { title: '教室（雨の朝）', top: 0x9aa4b0, bottom: 0x6a7470, image: 'bg.classroom', tint: 0x8890a0, ambient: 'rain' },
+  clock_shop_rain: { title: '時計屋の店内（雨）', top: 0x707880, bottom: 0x3a3a40, image: 'bg.clock_shop', tint: 0x7a8290, ambient: 'rain' },
+  factory_rain: { title: '町工場の中（今・雨）', top: 0x6a6e70, bottom: 0x3a3a3a, image: 'bg.factory_1969', tint: 0x7a7e84, ambient: 'rain' },
+  care_home_rain: { title: 'ひだまり荘の部屋（窓辺・雨）', top: 0xb8c0c8, bottom: 0x8a8a88, ambient: 'rain' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
@@ -594,6 +599,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   riverside: BGM.riverside,
   // 段階86：決意の曲（書庫に入る会話から流す）
   resolve: BGM.resolve,
+  // 段階96：カイの戦闘曲（3章のリベンジ。蔵書の棚にカイが現れた所と、やぐらの裏で戦う前から流す）
+  kai: BGM.kai,
 };
 
 /**
