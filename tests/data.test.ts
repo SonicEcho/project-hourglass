@@ -16,8 +16,8 @@ describe('データ定義', () => {
     expect(FOLDER.reduce((n, f) => n + f.count, 0)).toBe(20);
   });
 
-  it('仲間はハルト・あかり・みおの3人', () => {
-    expect(PARTY.map((c) => c.name)).toEqual(['ハルト', 'あかり', 'みお']);
+  it('仲間はハルト・あかり・みお・小夜子の4人（段階91a で小夜子が加わった）', () => {
+    expect(PARTY.map((c) => c.name)).toEqual(['ハルト', 'あかり', 'みお', '小夜子']);
   });
 
   it('戦闘1は雑魚3体、戦闘2はボス1体', () => {

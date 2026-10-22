@@ -102,6 +102,19 @@ export const ITEMS = {
   chimneySoot: { id: 'chimneySoot', name: '煙突のすす', kind: 'material', rarity: 'part', gains: { thunder: 2, fire: 2 } },
   trainWheel: { id: 'trainWheel', name: '汽車の車輪', kind: 'material', rarity: 'part', gains: { atk: 3 } },
   lordWhistle: { id: 'lordWhistle', name: 'ぬしの汽笛', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
+  // ---- 大正の祭りの夜（段階91b） ----
+  lanternPaper: { id: 'lanternPaper', name: '提灯の和紙', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
+  lanternFrame: { id: 'lanternFrame', name: '提灯の骨', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
+  pinwheelBlade: { id: 'pinwheelBlade', name: '風車の羽根', kind: 'material', rarity: 'common', gains: { atk: 2, thunder: 1 } },
+  pinwheelStick: { id: 'pinwheelStick', name: '風車の竹ひご', kind: 'material', rarity: 'uncommon', gains: { atk: 3, ice: -1 } },
+  candyStick: { id: 'candyStick', name: '飴の棒', kind: 'material', rarity: 'common', gains: { fire: 2, ice: 1 } },
+  candyCrane: { id: 'candyCrane', name: '飴細工の鶴', kind: 'material', rarity: 'uncommon', gains: { fire: 3, thunder: -1 } },
+  recordNeedle: { id: 'recordNeedle', name: '蓄音機の針', kind: 'material', rarity: 'common', gains: { thunder: 2, fire: 1 } },
+  phonographHorn: { id: 'phonographHorn', name: '蓄音機のラッパ', kind: 'material', rarity: 'uncommon', gains: { thunder: 3, atk: -1 } },
+  oldRecord: { id: 'oldRecord', name: '百年前のレコード', kind: 'material', rarity: 'rare', gains: { fire: 3, ice: 2, thunder: 3 } },
+  drumSkin: { id: 'drumSkin', name: '太鼓の皮', kind: 'material', rarity: 'part', gains: { atk: 3 } },
+  lanternRope: { id: 'lanternRope', name: '提灯の綱', kind: 'material', rarity: 'part', gains: { ice: 2, fire: 2 } },
+  lordFan: { id: 'lordFan', name: 'ぬしの団扇', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
   // ---- 試作の5戦の敵の素材（デバッグメニューの「試作の5戦」） ----
   slimeJelly: { id: 'slimeJelly', name: 'スライムゼリー', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
   frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', rarity: 'common', gains: { thunder: 2, ice: 1 } },
@@ -353,8 +366,54 @@ const cards: WeaponDef = {
   ],
 };
 
+// 小夜子の武器（段階91a。docs/script/3-matsuri.md）：月の簪が変わる薙刀「月影」。3章の途中から加わるので、Lv5 から始める（startExp）。
+// 鍵は、1回目が 3-1 の村の珍しい素材、2回目が 3-1 の部位・番人の素材、3回目が 3-1 のレア・ぬしの素材（3章から加わるので、ほかの仲間より先の区画の素材にはしない）
+const naginata: WeaponDef = {
+  id: 'moonNaginata',
+  name: '月影',
+  owner: 'sayoko',
+  startExp: 26,
+  evolutions: [
+    {
+      id: 'crescentNaginata',
+      name: '三日月',
+      conditions: [param('atk', 12), key('radioEarphone')],
+      stats: { atk: 4 },
+      passives: [{ kind: 'partBoost', rate: 0.3 }],
+      styles: [STYLES.might, STYLES.shatter],
+    },
+    { id: 'heatNaginata', name: '陽炎の薙刀', conditions: [param('fire', 12), key('teacup')], attackElement: 'fire', stats: { atk: 3 }, styles: [STYLES.fierce('fire'), STYLES.first] },
+    { id: 'frostNaginata', name: '霜月の薙刀', conditions: [param('ice', 12), key('coilStand')], attackElement: 'ice', stats: { atk: 3 }, styles: [STYLES.fierce('ice'), STYLES.guard] },
+    // 2回目
+    { id: 'fullMoonNaginata', name: '満月', from: 'crescentNaginata', conditions: [param('atk', 24), key('trainWheel')], stats: { atk: 5 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.first] },
+    { id: 'lanternNaginata', name: '灯籠の薙刀', from: 'heatNaginata', conditions: [param('fire', 24), key('chimneySoot')], attackElement: 'fire', stats: { atk: 4 }, styles: [STYLES.fierce('fire'), STYLES.ember] },
+    { id: 'frostMoonNaginata', name: '霜夜の薙刀', from: 'frostNaginata', conditions: [param('ice', 24), key('postLetter')], attackElement: 'ice', stats: { atk: 4, def: 1 }, styles: [STYLES.might, STYLES.guard] },
+    // 寄り道：三日月から。雷を低いままにして、誰より先に踏みこむ薙刀
+    {
+      id: 'hazyMoonNaginata',
+      name: '朧月',
+      from: 'crescentNaginata',
+      detour: true,
+      conditions: [{ kind: 'paramMax', param: 'thunder', max: 2 }, key('tableLeg')],
+      stats: { atk: 3, spd: 3 },
+      passives: [{ kind: 'startDash' }],
+      styles: [STYLES.swift, STYLES.guard],
+    },
+    // 3回目
+    { id: 'harvestMoonNaginata', name: '名月', from: 'fullMoonNaginata', conditions: [param('atk', 36), key('lordWhistle')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.shatter] },
+    { id: 'moonlitNaginata', name: '月下の薙刀', from: 'fullMoonNaginata', conditions: [param('atk', 24), param('fire', 16), key('fanTimer')], stats: { atk: 5, spd: 1 }, passives: [{ kind: 'startDash' }], styles: [STYLES.swift, STYLES.first] },
+    { id: 'eveNaginata', name: '宵宮の薙刀', from: 'lanternNaginata', conditions: [param('fire', 36), key('payEnvelope')], attackElement: 'fire', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.first] },
+    { id: 'snowMoonNaginata', name: '雪月花', from: 'frostMoonNaginata', conditions: [param('ice', 36), key('oldTicket')], attackElement: 'ice', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
+    // 4回目より先（まだ作っていない）
+    ...beyond('harvestMoonNaginata', [['欠けない月の下で、百の夜を一度に終わらせたという'], ['月を斬って、ふたつの夜に分けたという']]),
+    ...beyond('moonlitNaginata', [['月の影だけを踏んで、誰にも気づかれずに歩いたという']]),
+    ...beyond('eveNaginata', [['祭りの灯をひとつずつ、持ち主の家へ届けたという', '消えた提灯に、もう一度だけ火をともしたという']]),
+    ...beyond('snowMoonNaginata', [['冷えた夜の端を、そっと縫い合わせたという']]),
+  ],
+};
+
 export const WEAPON_DATA: WeaponData = {
-  weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards },
+  weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards, [naginata.id]: naginata },
   fragments: FRAGMENTS,
   items: ITEMS,
   // 経験値 4 で Lv2、8 で Lv3（1人が戦闘1回で行動するのは3回前後なので、だいたい戦闘3つで Lv3）。

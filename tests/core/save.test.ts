@@ -57,6 +57,7 @@ function freshRun(): RunSnapshot {
     returned: [],
     album: createAlbum(FOLDER),
     battle: null,
+    party: [],
   };
 }
 
@@ -104,6 +105,19 @@ describe('セーブ：保存して読む', () => {
       delete raw.run.battle;
     });
     expect(old.ok && old.save.run.battle).toBeNull();
+  });
+
+  it('選んだ戦闘の並び（段階91a）を保存して読む。知らない仲間と重なりは捨てる。版12のセーブは選んでいない', () => {
+    const r = { ...playedRun(), party: ['hero', 'mio'] };
+    const res = parseSave(serializeSave(r, AT), ctx);
+    expect(res.ok && res.save.run.party).toEqual(['hero', 'mio']);
+    const odd = parseEdited((raw) => (raw.run.party = ['mio', 'nobody', 'mio', 3]));
+    expect(odd.ok && odd.save.run.party).toEqual(['mio']);
+    const old = parseEdited((raw) => {
+      raw.version = 12;
+      delete raw.run.party;
+    });
+    expect(old.ok && old.save.run.party).toEqual([]);
   });
 
   it('ポーチの消費アイテムを持てる数より多く持っていたら、読み込む時にそろえる（段階51）', () => {

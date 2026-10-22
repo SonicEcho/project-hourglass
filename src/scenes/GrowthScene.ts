@@ -11,7 +11,7 @@ import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
+import { battleAt, canChooseParty, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -233,6 +233,18 @@ export class GrowthScene extends Phaser.Scene {
           bold: true,
         });
         if (!compact) this.root.add(addIcon(this, 'support', x - w / 2 + 18, 733, 16, 0xa98be0));
+      });
+    }
+    // 戦闘の並び（段階91a）：探索のチェックポイントから開いた時で、仲間が戦闘に出られる人数より多い時だけ
+    if (back && canChooseParty()) {
+      subs.push((x, w, compact) => {
+        addButton(this, this.root, x, 733, w, 44, compact ? '並び' : '並び\n戦闘に出る仲間', { onTap: () => this.scene.start('Party') }, {
+          fill: 0x2a3a2a,
+          stroke: 0x8ad08a,
+          strokeWidth: 2,
+          size: compact ? 11 : 12,
+          bold: true,
+        });
       });
     }
     // 1つだけなら横いっぱいに

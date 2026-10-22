@@ -148,6 +148,8 @@ export interface AreaDef {
   goal?: { band: string; guide: string };
   /** ノイズの壁（段階63）：opens 晩目から開く。それより前の晩は、そのマスを通れない */
   walls?: AreaWall[];
+  /** この区画で、並びから外せない仲間（段階91a。祭りの夜の2晩目の小夜子） */
+  partyFixed?: string[];
 }
 
 /** 晩の区切り（段階63）：コマが koma 個になると、その晩は終わる（最後の晩は書かなくてよい）。start は、その晩を始める所（1晩目は出発点） */

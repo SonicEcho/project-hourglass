@@ -55,6 +55,8 @@ export const NAVI_BOARDS: Record<string, NaviBoardDef> = {
   akari: board(['###', '###', '###', '###', '###'], 1),
   // みお：四隅が欠けた小さな盤（構想ノートでは未定なので仮）
   mio: board(['.##.', '####', '####', '.##.'], 1),
+  // 小夜子（段階91a）：斜めに長い盤（薙刀の形。仮）
+  sayoko: board(['##..', '###.', '.###', '..##'], 1),
 };
 
 export const NAVI_DATA: NaviData = { parts: NAVI_PARTS, boards: NAVI_BOARDS };

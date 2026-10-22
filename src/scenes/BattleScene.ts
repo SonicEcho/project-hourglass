@@ -59,7 +59,7 @@ import { notePlayCount } from './playRecord';
 import type { Lineup } from '../core';
 import { debugAutoStory } from '../debug/debugFlag';
 import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
-import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyLineup, storyLinkGauge } from './run';
+import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyBattleLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
 /** 選んでいる行動の元 */
@@ -167,7 +167,7 @@ export class BattleScene extends Phaser.Scene {
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
     // 戦闘の曲（戦いごとの曲があればそれ、ボスはボス戦の曲）。探索に戻ると、探索の画面が区画の曲に戻す
     playBgm(this, BATTLE_BGM[this.battle.id] ?? (this.battle.boss ? BGM.boss : BGM.battle));
-    this.lineup = areaBattle ? storyLineup() : PROTOTYPE_LINEUP;
+    this.lineup = areaBattle ? storyBattleLineup() : PROTOTYPE_LINEUP;
     // 星図の成長を反映した仲間で戦う。試作の5戦は、毎戦闘 HP と MP が全回復した状態で始まる。
     // 探索から来た戦闘は、区画の中の前の戦闘で残った HP・MP から始まる（段階32b 調整3。チェックポイントで全回復）
     const vitals = areaBattle ? (data.encounter?.hunt ? run.hunt?.state.vitals : run.explore?.vitals) : undefined;

@@ -93,7 +93,7 @@ export class TitleScene extends Phaser.Scene {
     // 戦闘の途中から続ける（段階44）
     const battle = (data: BattleSceneData) => this.leave(glow, fall, ui, () => this.scene.start('Battle', data));
     root = ui;
-    root.add(addText(this, cx, 432, '試作版（第3章の 3-1 まで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
+    root.add(addText(this, cx, 432, '試作版（第3章の祭りの夜まで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3）
     addButton(this, root, GAME_WIDTH - 66, 36, 112, 44, 'オプション', {
       onTap: () =>

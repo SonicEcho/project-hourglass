@@ -13,6 +13,7 @@ import {
   weaponLevel,
   applyGrowth,
   applyWeapons,
+  battleLineup,
   battleReward,
   createArmory,
   createBattle,
@@ -43,7 +44,7 @@ import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
  * チェックポイントより先の戦闘（この番目から）。1-1 は社への道の砂嵐とボス（地図の P は、広場と左右の参道の砂嵐の先）。
  * 1-2 は駄菓子屋の前（P）の先の砂嵐から（段階37）。2-2 は中庭のベンチ（P）の先の、駐輪場の逃げる敵から（段階39b）。2-3 もベンチの裏（P）の先の、川べりの逃げる敵から（段階40）。チェックポイントの先では、育成のために寄る（全回復する）ものとする
  */
-const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2, a22: 2, a23: 2, a31: 2 };
+const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2, a22: 2, a23: 2, a31: 2, a3s1: 2, a3s2: 3 };
 
 /** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay）、pouch（smart に、ポーチを使うのを足す。段階51） */
 export type AreaPolicy = 'random' | 'smart' | 'pouch';
@@ -79,7 +80,8 @@ interface Carry {
 /** 区画を探索する章のパーティ（物語の流れで、その区画の探索の出来事がある章。段階39） */
 export function areaLineup(areaId: string): Lineup {
   const event = SLICE_FLOW.flatMap((c) => c.events).find((e) => e.kind === 'explore' && e.area === areaId);
-  return event ? lineupAt(SLICE_FLOW, event.id, CHAPTER1_LINEUP) : CHAPTER1_LINEUP;
+  // 段階91：戦闘に出る人数より仲間が多い時は、区画で外せない仲間と、並びの順の先頭から選ぶ（遊ぶ人が並びを選ばなかった時と同じ）
+  return battleLineup(event ? lineupAt(SLICE_FLOW, event.id, CHAPTER1_LINEUP) : CHAPTER1_LINEUP, [], AREAS[areaId]?.partyFixed ?? []);
 }
 
 /**

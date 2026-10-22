@@ -44,6 +44,8 @@ export interface FlowChapter {
   name: string;
   /** この章で戦う仲間と、開けている育成（段階26）。なければ前の章と同じ */
   lineup?: Lineup;
+  /** 章の途中で仲間が変わる所（段階91a。3章の小夜子の加入）：from の出来事から、lineup に替わる */
+  lineupChanges?: { from: string; lineup: Lineup }[];
   events: FlowEvent[];
 }
 
@@ -91,6 +93,16 @@ export function areaChapter(flow: Flow, areaId: string): number | undefined {
 /** その出来事の時のパーティ（章の lineup。なければ前の章のもの。どこにもなければ fallback） */
 export function lineupAt(flow: Flow, id: string, fallback: Lineup): Lineup {
   const i = flow.findIndex((c) => c.events.some((e) => e.id === id));
+  // 章の途中の切り替え（段階91a）：その出来事より前の、最後の切り替え
+  if (i >= 0 && flow[i].lineupChanges) {
+    const at = flow[i].events.findIndex((e) => e.id === id);
+    let changed: Lineup | undefined;
+    for (const ch of flow[i].lineupChanges!) {
+      const from = flow[i].events.findIndex((e) => e.id === ch.from);
+      if (from >= 0 && from <= at) changed = ch.lineup;
+    }
+    if (changed) return changed;
+  }
   for (let j = i; j >= 0; j--) {
     const l = flow[j].lineup;
     if (l) return l;
@@ -194,6 +206,7 @@ export function checkFlow(flow: Flow): string[] {
     if (isPlaceholder(e) && !e.note) errors.push(`仮の画面に案内がない：${e.id}`);
     if (e.kind === 'battle' && !e.battle) errors.push(`戦闘の出来事に戦闘の id がない：${e.id}`);
   }
+  for (const c of flow) for (const ch of c.lineupChanges ?? []) if (!c.events.some((e) => e.id === ch.from)) errors.push(`仲間の切り替えの出来事が章にない：${ch.from}`);
   const last = all[all.length - 1];
   if (last && last.kind !== 'end') errors.push('最後の出来事が「つづく」ではない');
   return errors;

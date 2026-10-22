@@ -34,4 +34,8 @@ export const SKILLS = {
   },
   cure: { id: 'cure', name: 'ケアル', mp: 10, weight: 1.0, target: 'ally', effects: [{ kind: 'heal', power: 90 }] },
   inspiration: { id: 'inspiration', name: 'ひらめき', mp: 4, weight: 0.5, target: 'self', effects: [{ kind: 'draw', count: 2 }] },
+  // ---- 小夜子が最初から持つ技（段階91a。物理と部位破壊が得意。docs/CONCEPT.md の仲間の表） ----
+  // 兜割り：部位を狙うと部位に3倍（ブレイクスラッシュの2倍より重い）。月払い：薙刀で敵全体を払う
+  kabutoWari: { id: 'kabutoWari', name: '兜割り', mp: 6, weight: 1.3, target: 'enemy', effects: [{ kind: 'damage', type: 'physical', power: 32, partMultiplier: 3 }] },
+  tsukiBarai: { id: 'tsukiBarai', name: '月払い', mp: 10, weight: 1.3, target: 'enemies', effects: [{ kind: 'damage', type: 'physical', power: 26 }] },
 } satisfies Record<string, SkillDef>;

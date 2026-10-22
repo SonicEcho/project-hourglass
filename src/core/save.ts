@@ -20,7 +20,7 @@ import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -57,6 +57,8 @@ export interface RunSnapshot {
   album: AlbumState;
   /** 戦闘中（段階44。版12から）：閉じたら、この戦闘の始めから続ける。戦闘の外では null */
   battle: SavedBattle | null;
+  /** 遊ぶ人が選んだ戦闘の並び（段階91a。版13から）。空なら章の並びのまま */
+  party: string[];
 }
 
 /** 戦闘中の印（段階44）：どの戦闘か（区画の戦闘の id）と、勝った時・負けた時に開く画面 */
@@ -137,6 +139,8 @@ export const MIGRATIONS: SaveMigrations = {
   },
   // 版11 → 版12（段階44）：戦闘中の印（battle）を足した。前の版は戦闘中ではないとする
   11: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, battle: null } } : raw),
+  // 版12 → 版13（段階91a）：選んだ戦闘の並び（party）を足した。前の版は選んでいない
+  12: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, party: [] } } : raw),
 };
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
@@ -207,6 +211,8 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
     album: sanitizeAlbum(raw.album, ctx.cards, ctx.initialAlbum),
     battle: sanitizeBattle(raw.battle, ctx),
+    // 知らない仲間と、重なりは捨てる（段階91a）
+    party: Array.isArray(raw.party) ? [...new Set(raw.party.filter((x): x is string => typeof x === 'string' && ctx.characterIds.includes(x)))] : [],
   };
 }
 

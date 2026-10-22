@@ -12,7 +12,7 @@ import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
 import { notePlayCount } from './playRecord';
 import { archivedTalks } from './TalkArchiveScene';
-import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
+import { canChooseParty, currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
 // 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）もここ。
@@ -79,6 +79,8 @@ export class HubScene extends Phaser.Scene {
     if (unlocks.navi) grow.push(['ムーブメント', 'Navi']);
     if (unlocks.weapon) grow.push(['武器', 'Weapon']);
     if (hasSpare(run.album)) grow.push(['アルバム', 'Album']);
+    // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
+    if (canChooseParty()) grow.push(['並び', 'Party']);
     const gap = 8;
     const per = Math.min(3, grow.length);
     const bw = (w - gap * (per - 1)) / Math.max(1, per);
