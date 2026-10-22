@@ -112,4 +112,28 @@ export const KAI: EnemyDef = {
   ai: { type: 'random' },
 };
 
+/**
+ * 本気のカイ（段階96。3章のリベンジ。docs/script/3-kai.md の 3. の案A）。負け戦ではなく、勝てる戦い（打ち切りなし）。
+ * - 枠の刃：壊すと大技「シャッター」（全体・ため）を封じ、弱点「雷」が見える
+ * - 露出：攻撃の後、まだ誰にも割り当てていない手札を1枚、その戦闘から消す（erasesCard）
+ * 絵は負け戦のカイと同じ（enemyArt.ts）。名前も同じ「カイ」なので、id は別にする
+ */
+export const KAI_REVENGE: EnemyDef = {
+  id: 'kaiRevenge',
+  name: 'カイ',
+  stats: { hp: 3600, atk: 50, mag: 50, def: 16, spd: 30 },
+  weaknesses: [],
+  resistances: [],
+  parts: [{ id: 'frameBlade', name: '枠の刃', hp: 440, material: '枠のかけら', drop: 'frameShard', revealsWeakness: ['thunder'] }],
+  actions: [
+    { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 48, weight: 1.0 },
+    { id: 'frameRain', name: 'フレームの雨', target: 'allies', type: 'magic', power: 32, weight: 1.0 },
+    { id: 'expose', name: '露出', target: 'ally', type: 'magic', power: 30, weight: 1.0, erasesCard: true },
+    { id: 'shutter', name: 'シャッター', target: 'allies', type: 'magic', power: 52, weight: 1.0, charge: true, requiresPart: 'frameBlade' },
+  ],
+  ai: { type: 'boss', lowHpRatio: 0.5, allTargetInterval: 2 },
+  // 倒すと必ず「焼けたフィルム」。枠の刃を壊すと「枠のかけら」も必ず落とす
+  drops: ['burntFilm'],
+};
+
 export const RIVERSIDE_NOISES: EnemyDef[] = [BALL_NOISE, MEGAPHONE_NOISE, JUG_NOISE, PET_NOISE];

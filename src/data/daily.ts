@@ -44,7 +44,7 @@ const toDusk = (id: string, label = '時計屋の奥へ（夕暮れになる）'
 /** 必ず見る出来事（after：先に見ておく印。段階36の「工場の後に楽器店」） */
 const main = (id: string, label: string, y = ROW1, after?: string): DailySpot => ({ id, scene: id, label, mark: 'main', x: 195, y, required: true, after });
 /** 絆の相手の名前（地図の下の「絆」と、小話の印の名前に出す） */
-export const BOND_PARTNER_NAMES: Record<string, string> = { akari: 'あかり', mio: 'みお' };
+export const BOND_PARTNER_NAMES: Record<string, string> = { akari: 'あかり', mio: 'みお', sayoko: '小夜子' };
 
 /**
  * 小話（where は場所の中の所。with は話の中心の仲間。段階83：その日に見た時だけ、その仲間の♥を半分足す。印の名前に相手を出す）。
@@ -106,6 +106,10 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari6', title: '時計の博物館', label: '教室（あかり）', from: 17, place: 'school', x: 195, y: ROW1 },
     // 段階88（docs/script/3-1.md の 4.）。22日目の学校は文化祭の印が並ぶので、下の段
     { id: 'bond_akari7', title: 'お弁当対決', label: '屋上へ（あかり）', from: 21, place: 'school', x: 195, y: ROW2 },
+    // 段階94（docs/script/3-2.md の 4.）
+    { id: 'bond_akari8', title: 'いつもの場所', label: '商店街の角（あかり）', from: 27, place: 'street', x: 195, y: ROW2 },
+    // 段階96（docs/script/3-kai.md の 4.）
+    { id: 'bond_akari9', title: '目覚まし三つ', label: '屋上へ（あかり）', from: 31, place: 'school', x: 195, y: ROW2 },
   ],
   // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
@@ -115,6 +119,17 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_mio4', title: '素振りの相手', label: 'グラウンド（みお）', from: 16, place: 'riverside', x: 195, y: ROW1 },
     // 段階88（docs/script/3-1.md の 4.）
     { id: 'bond_mio5', title: '宿題、三分', label: '作業台（みお）', from: 21, place: 'clockshop', x: 195, y: ROW2 },
+    // 段階94（docs/script/3-2.md の 4.）。商店街の下の段はあかり8なので、もう一つ下
+    { id: 'bond_mio6', title: '大食い大会', label: '福引のテントの横（みお）', from: 27, place: 'street', x: 195, y: 640 },
+    // 段階96（docs/script/3-kai.md の 4.）
+    { id: 'bond_mio7', title: 'ハヤテ号', label: '駐輪場（みお）', from: 31, place: 'street', x: 195, y: 640 },
+  ],
+  // 段階94：小夜子（26日目に今の町へ出た後。27日目から）。時計屋の奥の入口の部屋と、商店街
+  sayoko: [
+    { id: 'bond_sayoko1', title: 'はじめての昨日', label: '入口の部屋（小夜子）', from: 27, place: 'clockshop', x: 195, y: 385 },
+    { id: 'bond_sayoko2', title: '試着室', label: '洋服屋の前（小夜子）', from: 29, place: 'street', x: 195, y: 560 },
+    // 段階96（docs/script/3-kai.md の 4.）。32日目の雨の店先
+    { id: 'bond_sayoko3', title: '雨の日', label: '店先（小夜子）', from: 32, place: 'clockshop', x: 195, y: 385 },
   ],
 };
 
@@ -133,6 +148,8 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a23', id: 'd20_koji', label: 'そうたの準決勝', place: 'riverside', x: 195, y: ROW2 },
   // 3-1 の翌日（24日目。段階88）：町の駅で、ちよさんがのぼるさんを見送る（docs/script/3-1.md の 24-A）
   { area: 'a31', id: 'd24_chiyo', label: '駅の見送り', place: 'station', x: 195, y: ROW1 },
+  // 3-2 の翌日（30日目。段階94）：店長が彫った時計を持って、駅の近くの踏切で、しおりさんがとうやさんを見送る（docs/script/3-2.md の 30-A・30-B）
+  { area: 'a32', id: 'd30_shiori', label: '駅の近くの踏切', place: 'station', x: 195, y: ROW1 },
 ];
 
 
@@ -479,6 +496,85 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', main('d26_sayoko', 'はじめての今'), main('d26_noboru', '店の電話', ROW2, 'd26_sayoko'), toDusk('d26_to_dusk')),
       at('school', talk('d26_talk_name', '教室', ROW2, 'akari')),
       at('street', talk('d26_talk_kuji', '福引のテント', ROW2, 'mio')),
+    ],
+  },
+  // ---- 3-2（段階94。docs/script/3-2.md の 4.）。27日目から、昼の「誰と過ごすか」に小夜子が加わる ----
+  // 27日目（木曜）：商店街の緩める話と、その後の時計屋のしおりさんは必ず見る。夕暮れの後、3-2 の1晩目
+  d27_free: {
+    id: 'd27_free',
+    time: '27日目　木曜の放課後',
+    day: 27,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('street', main('d27_relax', 'カタカナ語しりとり')),
+      at('clockshop', main('d27_shiori', '刻めない字', ROW1, 'd27_relax'), toDusk('d27_to_dusk')),
+    ],
+  },
+  // 28日目（金曜）：楽器店のとうやさんと、その後の時計屋の前のしおりさんは必ず見る。夕暮れの後、2晩目
+  a32_day28_free: {
+    id: 'a32_day28_free',
+    time: '28日目　金曜の放課後',
+    day: 28,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('music_shop', main('d28_toya', '預けるギター')),
+      at('street', main('d28_shiori', '時計屋の前', ROW1, 'd28_toya'), talk('d28_talk_earphone', 'アーケード', 560, 'sayoko')),
+      at('riverside', talk('d28_talk_button', 'グラウンド', ROW2, 'mio')),
+      at('clockshop', toDusk('a32_d28_to_dusk')),
+    ],
+  },
+  // 29日目（土曜）：川沿いの道のしおりさんの本音は必ず見る。夕暮れの後、3晩目
+  a32_day29_free: {
+    id: 'a32_day29_free',
+    time: '29日目　土曜の昼',
+    day: 29,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('river_path', main('d29_shiori', 'ベンチのしおりさん')),
+      at('clockshop', talk('d29_talk_engrave', '作業台', ROW1, 'akari'), toDusk('a32_d29_to_dusk')),
+    ],
+  },
+  // 30日目（日曜）：3-2 を返した翌日の踏切のしおりさん（RETURN_VISITS）。夕暮れに、言えなかったこと
+  d30_free: {
+    id: 'd30_free',
+    time: '30日目　日曜の昼',
+    day: 30,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('music_shop', talk('d30_talk_song', '店の奥', ROW2, 'mio')),
+      at('convenience', talk('d30_talk_hinano', 'レジ', ROW2)),
+      at('clockshop', toDusk('d30_to_dusk')),
+    ],
+  },
+  // ---- カイへのリベンジとノアの口論、3章の終わり（段階96。docs/script/3-kai.md の 4.） ----
+  // 31日目（月曜）：昼は選べる話だけ。夕暮れの後、祭りの夜（カイ）
+  d31_free: {
+    id: 'd31_free',
+    time: '31日目　月曜の放課後',
+    day: 31,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('bakery', talk('d31_talk_bread', '店先', ROW1, 'mio')),
+      at('street', talk('d31_talk_fumi', '店先', ROW1, 'akari')),
+      at('clockshop', toDusk('d31_to_dusk')),
+    ],
+  },
+  // 32日目（火曜。雨）：昼は選べる話だけ。夕暮れに3章の終わり
+  d32_free: {
+    id: 'd32_free',
+    time: '32日目　火曜の放課後（雨）',
+    day: 32,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [
+      at('factory', talk('d32_talk_isamu', '作業場', ROW1, 'mio')),
+      at('care_home', talk('d32_talk_care', '窓辺', ROW2)),
+      at('clockshop', toDusk('d32_to_dusk')),
     ],
   },
 };

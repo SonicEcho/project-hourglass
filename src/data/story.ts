@@ -293,8 +293,51 @@ export const SLICE_FLOW: Flow = [
       // 26日目（水曜）：小夜子と今の町を歩くのと、のぼるさんの電話は必ず見る
       { id: 'd26_free', kind: 'daily', title: '26日目：昼' },
       talk('d26_evening', '26日目：夕暮れ・また明日'),
-      // 今の流れの終わり（段階88。2章の終わりの ch2_end から替えた。2章の終わりにいたセーブは、3章の扉から続く。RENAMED_EVENTS）
-      { id: 'ch3_end', kind: 'end', title: 'つづく' },
+      // 段階94：3-2「言えなかった卒業式」を3晩で（脚本 docs/script/3-2.md）。27〜30日目。並びは4人から3人（小夜子が加わった後の形）
+      day(27),
+      // 27日目（木曜）：商店街の緩める話（しりとりと海水浴計画）と、時計屋のしおりさんは必ず見る。第1夜「校門」
+      { id: 'd27_free', kind: 'daily', title: '27日目：昼' },
+      talk('d27_library', '27日目：夕暮れ・蔵書の棚'),
+      // 3-2 の区画（areas.ts の a32）
+      talk('a32_enter', '3-2：校門の坂に入る'),
+      { id: 'a32_explore', kind: 'explore', area: 'a32', night: 1, title: '3-2「言えなかった卒業式」：帰り道の1晩目' },
+      talk('a32_night1_end', '27日目：蔵書の棚に戻る'),
+      day(28),
+      // 28日目（金曜）：楽器店のとうやさんと、その後の時計屋の前のしおりさんは必ず見る。第2夜「片耳ずつ」
+      { id: 'a32_day28_free', kind: 'daily', title: '28日目：昼' },
+      talk('a32_night2_enter', '28日目：帰り道の2晩目に入る'),
+      { id: 'a32_explore2', kind: 'explore', area: 'a32', night: 2, title: '3-2「言えなかった卒業式」：帰り道の2晩目' },
+      talk('a32_night2_end', '28日目：時計屋に戻る'),
+      day(29),
+      // 29日目（土曜）：川沿いの道のしおりさんの本音は必ず見る。第3夜「踏切」
+      { id: 'a32_day29_free', kind: 'daily', title: '29日目：昼' },
+      talk('a32_night3_enter', '29日目：帰り道の3晩目に入る'),
+      { id: 'a32_explore3', kind: 'explore', area: 'a32', night: 3, title: '3-2「言えなかった卒業式」：帰り道の3晩目' },
+      { id: 'a32_return', kind: 'return', area: 'a32', title: '3-2：時間を返す' },
+      talk('d29_return', '29日目：時間を返す'),
+      day(30),
+      // 30日目（日曜）：3-2 を返した翌日の踏切のしおりさん（daily.ts の RETURN_VISITS）。夕暮れに、言えなかったこと
+      { id: 'd30_free', kind: 'daily', title: '30日目：昼' },
+      talk('d30_evening', '30日目：夕暮れ・言えなかったこと'),
+      // 段階96：カイへのリベンジとノアの口論、3章の終わり（脚本 docs/script/3-kai.md）。31〜32日目
+      day(31),
+      talk('d31_classroom', '31日目：三回目'),
+      // 31日目（月曜）：昼は選べる話だけ。夕暮れの蔵書の棚で、カイが小夜子を枠に入れている
+      { id: 'd31_free', kind: 'daily', title: '31日目：昼' },
+      talk('d31_library', '31日目：夕暮れ・棚から逃げた蔵書'),
+      // 祭りの夜（カイ）。areas.ts の a3k。やぐらの裏の暗がりで、本気のカイと戦う（勝てる戦い）
+      talk('a3k_enter', '祭りの夜（カイ）：止まった祭り'),
+      { id: 'a3k_explore', kind: 'explore', area: 'a3k', title: '祭りの夜（カイ）「露出オーバー」' },
+      talk('a3k_noa', '31日目：ノアとの口論'),
+      talk('a3k_noa_alone', '31日目：ノアひとり'),
+      talk('d31_return', '31日目：時計屋の奥に戻る'),
+      day(32),
+      talk('d32_classroom', '32日目：雨の教室'),
+      // 32日目（火曜）：昼は選べる話だけ。夕暮れに3章の終わり
+      { id: 'd32_free', kind: 'daily', title: '32日目：昼' },
+      talk('d32_evening', '32日目：夕暮れ・3章の終わり'),
+      // 今の流れの終わり（段階96。30日目の後の ch3_end_d30 から替えた。30日目の「つづく」にいたセーブは、31日目から続く。RENAMED_EVENTS）
+      { id: 'ch3_end_d32', kind: 'end', title: 'つづく' },
     ],
   },
 ];
@@ -302,4 +345,6 @@ export const SLICE_FLOW: Flow = [
 /** なくなった出来事 → セーブを読む時に代わりに続ける出来事（段階40。仮の画面だった「2-3：返す」は、段階85 で本当の返す出来事になったので、付け替えを外した） */
 // 段階63：1-1 を3晩に分けた時に、なくなった出来事（1日目の返す会話・2日目のすれ違い）は、近い出来事から続ける
 // 段階88：流れの終わり（つづく）を2章の終わりから3章の 3-1 の後へ伸ばした。2章の終わりの「つづく」にいたセーブは、3章の扉から続く
-export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title' };
+// 段階94：流れの終わりを26日目の後から 3-2 の後（30日目）へ伸ばした。26日目の「つづく」にいたセーブは、27日目から続く
+// 段階96：流れの終わりを3章の終わり（32日目）の後へ伸ばした。30日目の「つづく」にいたセーブは、31日目から続く
+export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title', ch3_end: 'day27', ch3_end_d30: 'day31' };

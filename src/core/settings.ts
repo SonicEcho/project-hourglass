@@ -15,7 +15,11 @@ export interface Settings {
   battleSpeed: BattleSpeed;
   /** 雑魚戦のオートの作戦（段階29。src/sim/tactics.ts の id） */
   autoTactic: string;
+  /** 物語の探索の雑魚戦で、オートを出す時（段階105）：won は一度勝った敵の組み合わせから、always は初めての敵から */
+  storyAuto: StoryAuto;
 }
+
+export type StoryAuto = 'won' | 'always';
 
 export type BattleSpeed = 1 | 2 | 3;
 
@@ -29,7 +33,7 @@ export type AudioOut = 'speaker' | 'wireless';
 /** 選べる音量の段階 */
 export const VOLUME_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 1, autoTactic: 'auto' };
+export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 1, autoTactic: 'auto', storyAuto: 'won' };
 
 /** 0〜1 の段階のうち、一番近いものにそろえる。数でなければ fallback */
 function toStep(v: unknown, fallback: number): number {
@@ -54,6 +58,7 @@ export function parseSettings(text: string | null): Settings {
     audioOut: o.audioOut === 'wireless' ? 'wireless' : 'speaker',
     battleSpeed: o.battleSpeed === 2 || o.battleSpeed === 3 ? o.battleSpeed : 1,
     autoTactic: typeof o.autoTactic === 'string' && o.autoTactic !== '' ? o.autoTactic : DEFAULT_SETTINGS.autoTactic,
+    storyAuto: o.storyAuto === 'always' ? 'always' : 'won',
   };
 }
 

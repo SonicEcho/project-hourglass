@@ -801,6 +801,17 @@ function enemyAttack(s: BattleState, e: EnemyUnit, action: EnemyActionDef): void
   s.log.push({ type: 'action', actorIds: [e.uid], actionId: action.id, name: action.name, extra: false });
   const targets = action.target === 'ally' ? [randomPick(s, livingAllies(s))] : livingAllies(s);
   for (const t of targets) damageAlly(s, e, action, t);
+  if (action.erasesCard) eraseCard(s, e);
+}
+
+/** 露出（段階96）：まだ誰にも割り当てていない手札を1枚、その戦闘から消す。仲間が全員倒れていたら、何もしない */
+function eraseCard(s: BattleState, e: EnemyUnit): void {
+  if (livingAllies(s).length === 0) return;
+  const pool = availableHand(s);
+  if (pool.length === 0) return;
+  const card = randomPick(s, pool);
+  s.hand = s.hand.filter((c) => c.uid !== card.uid);
+  s.log.push({ type: 'cardErased', enemyId: e.uid, cardUid: card.uid, name: card.card.name });
 }
 
 /** 力をためている大技 */

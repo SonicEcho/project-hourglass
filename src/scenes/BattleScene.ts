@@ -58,7 +58,8 @@ import type { ResultSceneData } from './ResultScene';
 import { notePlayCount } from './playRecord';
 import type { Lineup } from '../core';
 import { debugAutoStory } from '../debug/debugFlag';
-import { albumDeck, battleTipTriggers, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
+import { albumDeck, battleTipTriggers, formationKey, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
+import { markFormationWon, wonFormations } from '../save/autoWon';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyBattleLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 
@@ -290,10 +291,19 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  /** オートを使える戦闘か。ボス戦と、物語の1回目の探索の戦闘では使えない（段階64。デバッグで切り替えられる） */
+  /**
+   * オートを使える戦闘か。ボス戦では使えない。物語の探索では、一度勝った敵の組み合わせから（段階105。設定の「オート（物語）」が
+   * 「いつでも」なら初めての敵でも）。デバッグで切り替えられる（段階64）
+   */
   private autoAvailable(): boolean {
     const kind = !this.encounter ? 'trial' : this.encounter.hunt ? 'hunt' : 'story';
-    return autoAllowed({ boss: !!this.battle.boss, kind, debugStory: debugAutoStory() });
+    const wonBefore = wonFormations().includes(this.formation());
+    return autoAllowed({ boss: !!this.battle.boss, kind, debugStory: debugAutoStory(), storyAuto: getSettings().storyAuto, wonBefore });
+  }
+
+  /** この戦闘の敵の組み合わせの印（段階105） */
+  private formation(): string {
+    return formationKey(this.battle.enemies.map((e) => e.id));
   }
 
   /** オートの作戦を選ぶ画面。選ぶと覚えて、すぐオートで進める */
@@ -737,6 +747,12 @@ export class BattleScene extends Phaser.Scene {
       case 'standUp': {
         const p = unitPosition(s, e.enemyId);
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
+        return true;
+      }
+      case 'cardErased': {
+        // 露出（段階96）：手札のスナップが1枚、この戦闘から消えた
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y + 30, `${e.name}が消えた`, COLORS.allyDamage, 16);
         return true;
       }
       case 'encore': {
@@ -1388,6 +1404,8 @@ export class BattleScene extends Phaser.Scene {
     c.add([shade, title]);
     const result = getBattleResult(this.state);
     const def = this.battle;
+    // 探索の雑魚戦に勝ったら、その敵の組み合わせを覚える（次に会った時から、物語の探索でもオートを出す。段階105）
+    if (win && this.encounter && !def.boss) markFormationWon(this.formation());
     if (this.encounter) {
       this.showEncounterEnd(c, win, result);
       this.overlay = c;
