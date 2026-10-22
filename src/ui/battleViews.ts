@@ -363,17 +363,128 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
   });
 }
 
-/** ひびの線（印の中心からの、半径に対する割合の折れ線）。段階が上がるほど増える */
+/** ひびの線（部位の中心からの、ずらし。マスは画面の点）。ボスの絵の上に、ガラスが割れたように走る（段階89 の調整1） */
 const CRACKS: [number, number][][] = [
-  [[-0.1, -0.85], [0.08, -0.35], [-0.12, 0.05], [0.1, 0.5], [0.0, 0.85]],
-  [[0.08, -0.35], [0.55, -0.45], [0.8, -0.1]],
-  [[-0.12, 0.05], [-0.55, 0.2], [-0.7, 0.55]],
-  [[0.1, 0.5], [0.5, 0.45], [0.62, 0.72]],
+  [[0, 0], [6, -9], [4, -18], [11, -27], [9, -36]],
+  [[0, 0], [-9, -4], [-17, 1], [-26, -3]],
+  [[0, 0], [8, 7], [15, 6], [22, 14], [30, 13]],
+  [[0, 0], [-5, 9], [-12, 14], [-14, 24]],
+  [[4, -18], [13, -16], [19, -21]],
+  [[-17, 1], [-21, 9]],
 ];
+/** 照準の色：ふだんは金、選んだ部位は赤、壊れた跡は灰 */
+const RETICLE = { gold: 0xf2c45a, select: COLORS.select, broken: 0x8a8090 };
+
+/** ひびの線を描く（stage 1 はひび、2 は割れかけ）。光る縁を下に重ね、割れかけは中心が赤く光る */
+function drawCracks(scene: Phaser.Scene, root: Phaser.GameObjects.Container, x: number, y: number, stage: 1 | 2): void {
+  const count = stage === 1 ? 2 : CRACKS.length;
+  const scale = stage === 1 ? 0.65 : 1;
+  const g = scene.add.graphics();
+  const lines = CRACKS.slice(0, count).map((path) => path.map(([dx, dy]) => new Phaser.Math.Vector2(x + dx * scale, y + dy * scale)));
+  if (stage === 2) g.fillStyle(0xff7a3a, 0.35).fillCircle(x, y, 9).fillStyle(0xffb070, 0.6).fillCircle(x, y, 4);
+  g.lineStyle(stage === 1 ? 4 : 5, stage === 1 ? 0xffe0a0 : 0xff9a5a, 0.35);
+  for (const pts of lines) g.strokePoints(pts, false);
+  g.lineStyle(stage === 1 ? 1.4 : 2, 0xfff6e0, 0.95);
+  for (const pts of lines) g.strokePoints(pts, false);
+  root.add(g);
+}
+
+/** 部位の名前の札：照準の右上（side が left なら左上）へ細い線で引き出す */
+function drawPartTag(scene: Phaser.Scene, root: Phaser.GameObjects.Container, x: number, y: number, text: string, color: number, side: 'left' | 'right'): void {
+  const dir = side === 'left' ? -1 : 1;
+  const label = addText(scene, 0, 0, text, { size: 11, bold: true, color: '#f3e2b8' });
+  const w = label.width + 14;
+  const ex = x + dir * 34;
+  const ey = y - 30;
+  // 札が画面の外に出ないように
+  const left = Phaser.Math.Clamp(dir > 0 ? ex + 8 : ex - 8 - w, 4, GAME_WIDTH - 4 - w);
+  const g = scene.add.graphics();
+  g.lineStyle(1, color, 0.85).strokePoints([new Phaser.Math.Vector2(x + dir * 20, y - 14), new Phaser.Math.Vector2(ex, ey), new Phaser.Math.Vector2(ex + dir * 8, ey)], false);
+  g.fillStyle(0x0a0e1c, 0.8).fillRoundedRect(left, ey - 10, w, 19, 3);
+  g.lineStyle(0.8, color, 0.6).strokeRoundedRect(left, ey - 10, w, 19, 3);
+  root.add(g);
+  label.setPosition(left + w / 2, ey).setOrigin(0.5);
+  root.add(label);
+}
+
+/** 時計の文字盤の照準（金の輪、点線の内輪、目盛り12本、中心の点）。狙える時は目盛りがゆっくり回り、輪が明るくなったり暗くなったりする */
+function drawReticle(scene: Phaser.Scene, root: Phaser.GameObjects.Container, x: number, y: number, selected: boolean, live: boolean): void {
+  const color = selected ? RETICLE.select : RETICLE.gold;
+  const r = selected ? 16 : 19;
+  const halo = scene.add.circle(x, y, 27, color, 0.1);
+  const ring = scene.add.graphics();
+  ring.fillStyle(0x080c18, 0.3).fillCircle(x, y, r);
+  ring.lineStyle(1.6, color, 1).strokeCircle(x, y, r);
+  // 点線の内輪
+  ring.lineStyle(0.8, color, 0.55);
+  for (let k = 0; k < 16; k++) {
+    const a0 = (Math.PI * 2 * k) / 16;
+    ring.beginPath().arc(x, y, r - 6, a0, a0 + Math.PI / 24).strokePath();
+  }
+  ring.fillStyle(color, 1).fillCircle(x, y, 2);
+  // 目盛り（照準の中心で回すため、目盛りだけ別の絵にして、その中心に置く）
+  const ticks = scene.add.graphics({ x, y });
+  for (let k = 0; k < 12; k++) {
+    const a = (Math.PI * 2 * k) / 12;
+    const long = k % 3 === 0;
+    const r1 = 19;
+    const r2 = long ? 25 : 22.5;
+    ticks.lineStyle(long ? 1.8 : 1, color, 1).lineBetween(r1 * Math.sin(a), -r1 * Math.cos(a), r2 * Math.sin(a), -r2 * Math.cos(a));
+  }
+  ticks.setAngle(selected ? 0 : 15);
+  root.add([halo, ring, ticks]);
+  // 選んだ部位：四隅に照準の角
+  if (selected) {
+    const corners = scene.add.graphics();
+    corners.lineStyle(2, color, 1);
+    for (const t of [Math.PI / 4, (Math.PI * 3) / 4, (Math.PI * 5) / 4, (Math.PI * 7) / 4]) {
+      const cx = x + 29 * Math.cos(t);
+      const cy = y + 29 * Math.sin(t);
+      const ax = -5 * Math.cos(t);
+      const ay = -5 * Math.sin(t);
+      corners.strokePoints([new Phaser.Math.Vector2(cx + ax + 4 * Math.sin(t), cy + ay - 4 * Math.cos(t)), new Phaser.Math.Vector2(cx, cy), new Phaser.Math.Vector2(cx + ax - 4 * Math.sin(t), cy + ay + 4 * Math.cos(t))], false);
+    }
+    root.add(corners);
+  }
+  if (live) {
+    // 画面を描き直すと消える絵なので、消える時に動きも止める
+    const spin = scene.tweens.add({ targets: ticks, angle: ticks.angle + 360, duration: 12000, repeat: -1 });
+    const pulse = scene.tweens.add({ targets: [halo, ring], alpha: 0.55, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    ticks.once(Phaser.GameObjects.Events.DESTROY, () => spin.remove());
+    ring.once(Phaser.GameObjects.Events.DESTROY, () => pulse.remove());
+  }
+}
+
+/** 壊れた部位の跡：輪が砕けて暗い穴、欠けた破片、そこから砂がこぼれ続ける */
+function drawBrokenPart(scene: Phaser.Scene, root: Phaser.GameObjects.Container, x: number, y: number): void {
+  const g = scene.add.graphics();
+  g.fillStyle(0x10131c, 0.45).fillCircle(x, y, 23);
+  g.fillStyle(0x080a12, 0.7).fillCircle(x, y, 17);
+  g.fillStyle(0x05070c, 0.85).fillCircle(x, y, 11);
+  // 砕けた輪（ところどころ欠けた弧）
+  g.lineStyle(1.4, 0x7a7060, 1);
+  for (const a0 of [20, 140, 250]) g.beginPath().arc(x, y, 19, Phaser.Math.DegToRad(a0 - 90), Phaser.Math.DegToRad(a0 - 20)).strokePath();
+  // 欠けた破片
+  g.fillStyle(0x3a3340, 1).lineStyle(0.6, 0x8a8090, 1);
+  for (const [px, py] of [[-8, -6], [7, -9], [2, 8], [-10, 6]] as const) {
+    const pts = [new Phaser.Math.Vector2(x + px, y + py), new Phaser.Math.Vector2(x + px + 4, y + py - 3), new Phaser.Math.Vector2(x + px + 7, y + py + 1), new Phaser.Math.Vector2(x + px + 2, y + py + 3)];
+    g.fillPoints(pts, true).strokePoints(pts, true);
+  }
+  // こぼれた砂の山
+  g.fillStyle(0xd8b46a, 0.5).fillEllipse(x, y + 62, 22, 6);
+  root.add(g);
+  // 落ち続ける砂の粒
+  for (let k = 0; k < 10; k++) {
+    const grain = scene.add.circle(x + ((k % 3) - 1) * 1.6, y + 14, 1.8 - (k % 3) * 0.3, 0xe0c080, 0.95);
+    root.add(grain);
+    const fall = scene.tweens.add({ targets: grain, y: y + 60, alpha: 0.15, duration: 1100, delay: k * 110, repeat: -1, ease: 'Quad.easeIn' });
+    grain.once(Phaser.GameObjects.Events.DESTROY, () => fall.remove());
+  }
+}
 
 /**
- * ボスの部位（段階89）：体の上のその部位の所に、丸い印を出す。HP の数字とバーは出さず、ひびの段階だけを見せる。
- * 印をタップすると、その部位を狙う。壊れた部位は、暗い欠けた跡になる（狙えない）
+ * ボスの部位（段階89。段階89 の調整1で、時計の文字盤の照準に）：体の上のその部位の所に照準を出す。HP の数字とバーは出さず、
+ * ひびはボスの絵の上に走る線で見せる。照準をタップすると、その部位を狙う。壊れた部位は、暗い穴と、こぼれ続ける砂の跡になる（狙えない）
  */
 function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers, enemy: EnemyUnit): void {
   const g = enemyGeometry(vm.state, 0);
@@ -384,26 +495,17 @@ function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: 
     const targetable = usable && vm.interactive && vm.scope === 'enemy';
     const sel = vm.selectedTarget;
     const selected = sel?.kind === 'enemy' && sel.id === enemy.uid && sel.partId === part.id;
-    const r = PART_SPOT_R;
-    // 印の円：無傷は明るい金、ひびが進むほど赤く。壊れた所は暗い穴
-    const fill = stage === 3 ? 0x0b0f16 : stage === 2 ? 0x8a2a1a : stage === 1 ? 0x7a5a20 : 0x4a4020;
-    const spot = scene.add.circle(x, y, r, fill, stage === 3 ? 0.85 : 0.55);
-    spot.setStrokeStyle(selected ? 4 : targetable ? 3 : 2, selected ? COLORS.select : stage === 3 ? 0x3a4250 : targetable ? COLORS.accent : 0xe0c070);
-    root.add(spot);
-    // ひびの線（壊れた所は、砕けた跡として全部の線を暗く）
-    const lines = stage === 3 ? CRACKS.length : stage === 0 ? 0 : stage === 1 ? 1 : 3;
-    if (lines > 0) {
-      const crack = scene.add.graphics();
-      crack.lineStyle(stage === 3 ? 2 : 2.5, stage === 3 ? 0x5a6270 : 0xfff0d0, 0.95);
-      for (const path of CRACKS.slice(0, lines)) crack.strokePoints(path.map(([px, py]) => new Phaser.Math.Vector2(x + px * r, y + py * r)), false);
-      root.add(crack);
+    const side = ENEMY_PART_SPOTS[enemy.defId]?.[part.id]?.[2] ?? 'right';
+    if (stage === 3) {
+      drawBrokenPart(scene, root, x, y);
+      drawPartTag(scene, root, x, y, `${part.name}（破壊）`, RETICLE.broken, side);
+    } else {
+      if (stage > 0) drawCracks(scene, root, x, y, stage as 1 | 2);
+      drawReticle(scene, root, x, y, selected, targetable && !selected);
+      drawPartTag(scene, root, x, y, part.name, selected ? RETICLE.select : RETICLE.gold, side);
     }
-    if (stage === 0 && usable) root.add(scene.add.circle(x - r * 0.3, y - r * 0.35, r * 0.28, 0xffffff, 0.25));
-    const name = addText(scene, x, y + r + 2, part.name, { size: 11, bold: true, color: usable ? COLORS.text : COLORS.dimText }).setOrigin(0.5, 0);
-    name.setStroke('#0b1018', 3);
-    root.add(name);
-    // 印は丸より少し大きくタップできる（指で押しやすく）
-    const hit = scene.add.circle(x, y, Math.max(r + 6, MIN_TAP / 2), 0xffffff, 0.001);
+    // 照準は少し大きくタップできる（指で押しやすく）
+    const hit = scene.add.circle(x, y, Math.max(PART_SPOT_R + 8, MIN_TAP / 2), 0xffffff, 0.001);
     root.add(hit);
     makePressable(hit, {
       onTap: vm.interactive && usable ? () => h.tapEnemy(enemy.uid, part.id) : undefined,
