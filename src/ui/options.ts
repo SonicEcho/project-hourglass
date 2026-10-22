@@ -58,6 +58,16 @@ const SOUND_ROWS: SoundRow[] = [
   },
 ];
 
+/**
+ * 物語の探索の雑魚戦のオート（段階105）：一度勝った敵の組み合わせから出すか、初めての敵から出すか。
+ * 記憶をたどる時はいつでも、ボス戦はどちらでも出さない。音の行の前に置く（最後の行の下には、出力先の注意書きが付くため）
+ */
+const AUTO_ROW: SoundRow = {
+  label: 'オート（物語）',
+  value: () => (getSettings().storyAuto === 'always' ? 'いつでも' : '勝った敵から'),
+  next: () => setSettings({ ...getSettings(), storyAuto: getSettings().storyAuto === 'always' ? 'won' : 'always' }),
+};
+
 /** 全画面の行（段階48）。全画面になるのは少し後なので、窓は fullscreenchange で描き直す */
 const FULLSCREEN_ROW: SoundRow = {
   label: '全画面',
@@ -71,7 +81,7 @@ const LINK_GAP = 56;
 /** オプションの窓を開く。閉じる時に onClose を呼ぶ */
 export function openOptions(scene: Phaser.Scene, opts: { links?: OptionsLink[]; depth?: number; onClose?: () => void } = {}): Phaser.GameObjects.Container {
   const links = opts.links ?? [];
-  const settingRows = [...(canToggleFullscreen() ? [FULLSCREEN_ROW] : []), ...SOUND_ROWS];
+  const settingRows = [...(canToggleFullscreen() ? [FULLSCREEN_ROW] : []), AUTO_ROW, ...SOUND_ROWS];
   const cx = GAME_WIDTH / 2;
   const w = 320;
   const h = 96 + settingRows.length * ROW_GAP + 34 + (links.length > 0 ? 16 + links.length * LINK_GAP : 0) + 70;

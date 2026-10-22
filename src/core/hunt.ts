@@ -5,6 +5,7 @@ import type { GridCell } from './grid';
 import { checkArea, isCheckpoint, startRoom } from './explore';
 import { isWalkable, parseGrid } from './grid';
 import { nextRandom } from './rng';
+import type { StoryAuto } from './settings';
 
 /** 採取の場所：タップすると素材が手に入る（入るたびに1回ずつ。宝箱の代わり） */
 export interface AreaGather {
@@ -100,11 +101,18 @@ export function huntRewardRate(areaChapter: number | undefined, nowChapter: numb
 }
 
 /**
- * 戦闘でオートを出してよいか（段階64。開発者と決めた）：物語の1回目の探索では出さない（初めての敵は自分で読んで戦う）。
- * 記憶をたどる時（くり返しの素材集め）と、試作の戦闘では出す。ボス戦は、どれでも出さない。
+ * 戦闘でオートを出してよいか（段階64。開発者と決めた。段階105で物語の探索にも広げた）。
+ * 物語の探索では、一度勝った敵の組み合わせ（wonBefore）から出す（初めての敵は自分で読んで戦う）。設定の storyAuto が always なら、初めての敵でも出す。
+ * 記憶をたどる時（くり返しの素材集め）と、試作の戦闘では、いつでも出す。ボス戦は、どれでも出さない。
  * debugStory はデバッグの時の切り替え（物語の探索でも出す）
  */
-export function autoAllowed(o: { boss: boolean; kind: 'trial' | 'story' | 'hunt'; debugStory?: boolean }): boolean {
+export function autoAllowed(o: { boss: boolean; kind: 'trial' | 'story' | 'hunt'; debugStory?: boolean; storyAuto?: StoryAuto; wonBefore?: boolean }): boolean {
   if (o.boss) return false;
-  return o.kind !== 'story' || o.debugStory === true;
+  if (o.kind !== 'story') return true;
+  return o.debugStory === true || o.storyAuto === 'always' || o.wonBefore === true;
+}
+
+/** 敵の組み合わせの印（段階105）。並び順によらず、同じ敵の顔ぶれなら同じ（晩ごとの強さの倍率では id は変わらない） */
+export function formationKey(enemyIds: readonly string[]): string {
+  return [...enemyIds].sort().join('+');
 }
