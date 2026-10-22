@@ -1120,6 +1120,21 @@ export function isOffBalance(enemy: EnemyUnit): boolean {
 }
 
 /** 弱点を突いた時にダウンするか（ダウン中と、立ち上がってまだ行動していない敵はダウンしない） */
+/** 敵をダウンさせる（弱点を突いた時と、部位を壊した時。段階89） */
+function downEnemy(ctx: EffectContext, enemy: EnemyUnit, by?: 'part'): void {
+  const s = ctx.s;
+  enemy.down = true;
+  ctx.downed = true;
+  if (!ctx.link && !by) gainLinkGauge(s, LINK_GAUGE_GAIN.down);
+  s.log.push(by ? { type: 'down', enemyId: enemy.uid, by } : { type: 'down', enemyId: enemy.uid });
+  if (enemy.charging) {
+    // ダウンさせると、ためが解ける。崩された敵は怒り、立ち上がった次の行動ではためずに攻撃する
+    enemy.charging = null;
+    enemy.enraged = true;
+    s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'down' });
+  }
+}
+
 export function canBeDowned(enemy: EnemyUnit): boolean {
   return isAlive(enemy) && !enemy.down && !enemy.standUpGuard;
 }
@@ -1170,18 +1185,7 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
   if (affinity === 'weak' && type !== 'magic') {
     revealWeakness(s, enemy, type);
     if (!ctx.link) gainLinkGauge(s, LINK_GAUGE_GAIN.weak);
-    if (canBeDowned(enemy)) {
-      enemy.down = true;
-      ctx.downed = true;
-      if (!ctx.link) gainLinkGauge(s, LINK_GAUGE_GAIN.down);
-      s.log.push({ type: 'down', enemyId: enemy.uid });
-      if (enemy.charging) {
-        // ダウンさせると、ためが解ける。崩された敵は怒り、立ち上がった次の行動ではためずに攻撃する
-        enemy.charging = null;
-        enemy.enraged = true;
-        s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'down' });
-      }
-    }
+    if (canBeDowned(enemy)) downEnemy(ctx, enemy);
   }
   if (part && part.hp === 0 && !part.broken) {
     part.broken = true;
@@ -1194,6 +1198,9 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
     }
     for (const el of part.revealsWeakness) revealWeakness(s, enemy, el);
     if (part.drop) dropItem(s, enemy, part.drop, 'part');
+    // 部位を壊されると、よろける（段階89。弱点のダウンと同じ：割り込み・延長・体勢崩れ。倒した時はダウンしない）。
+    // つながりゲージは部位破壊の分だけ（ダウンの分は足さない）
+    if (canBeDowned(enemy)) downEnemy(ctx, enemy, 'part');
   }
   if (!isAlive(enemy)) {
     enemy.down = false;

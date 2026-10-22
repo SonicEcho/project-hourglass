@@ -366,7 +366,8 @@ export type LogEvent =
   /** MP が戻った（ポーチのエーテル。段階51） */
   | { type: 'mpRestore'; sourceId: string; targetId: string; amount: number; mpAfter: number }
   | { type: 'weaknessFound'; enemyId: string; element: Element }
-  | { type: 'down'; enemyId: string }
+  /** ダウンした。by が 'part' の時は、部位を壊されてよろけた（段階89） */
+  | { type: 'down'; enemyId: string; by?: 'part' }
   | { type: 'standUp'; enemyId: string }
   /** ためを崩されて怒った敵が、ためずに攻撃する（この後に action が続く） */
   | { type: 'enraged'; enemyId: string }

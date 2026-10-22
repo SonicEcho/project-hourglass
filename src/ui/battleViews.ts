@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, CARD_NAME_LINES, CARDS, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_PART_SPOTS, CARD_NAME_LINES, CARDS, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -182,15 +182,18 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
 }
 
 // ② 敵
-/** 敵1体ごとの配置。部位を持つ敵が1体だけ（ボス）の時は、本体を大きく、部位を下に並べる */
+/**
+ * 敵1体ごとの配置。部位を持つ敵が1体だけ（ボス）の時は、本体を大きく出し、部位はその体の上に印で出す
+ * （段階89。前は部位を絵の下にパネルで並べていて、ボスと小さい敵2体の3対1に見えた）
+ */
 function enemyGeometry(s: BattleState, i: number) {
   const n = s.enemies.length;
   const withParts = n === 1 && s.enemies[0].parts.length > 0;
   return {
     cx: columnX(i, n),
     colW: GAME_WIDTH / n,
-    bodyY: withParts ? LAYOUT.enemies.y + 98 : LAYOUT.enemies.y + 120,
-    radius: withParts ? 52 : 42,
+    bodyY: withParts ? BOSS_ART_BOTTOM - BOSS_ART_SIZE / 2 : LAYOUT.enemies.y + 120,
+    radius: withParts ? 74 : 42,
     withParts,
     // 敵の絵の大きさと中心の高さ。ボス（部位あり）は、名前と HP を絵の足もとに重ねて、部位の列の上いっぱいに大きく出す（2026-10-15、開発者の指摘で大きくした）
     artSize: withParts ? BOSS_ART_SIZE : 0,
@@ -198,15 +201,25 @@ function enemyGeometry(s: BattleState, i: number) {
   };
 }
 
-const PART_ROW_Y = LAYOUT.enemies.y + LAYOUT.enemies.h - 30;
-const PART_H = 50;
-/** ボスの絵の一辺と、絵の下の端（部位の列の少し上） */
-const BOSS_ART_SIZE = 214;
-const BOSS_ART_BOTTOM = PART_ROW_Y - PART_H / 2 - 6;
+/** ボスの絵の一辺と、絵の下の端（段階89：部位の列をやめたので、敵の場所の下いっぱいまで大きくした） */
+const BOSS_ART_SIZE = 250;
+const BOSS_ART_BOTTOM = LAYOUT.enemies.y + LAYOUT.enemies.h - 6;
+/** 部位の印の半径（直径がタップできる大きさ） */
+const PART_SPOT_R = 22;
 
-function partX(index: number, count: number): number {
-  const w = (GAME_WIDTH - SIDE_PADDING * 2) / count;
-  return SIDE_PADDING + w * index + w / 2;
+/** 部位の印の位置（段階89）。絵の中の割合（ENEMY_PART_SPOTS）を、ボスの絵の四角の上の座標にする。書いていない部位は体の上のほうに横に並べる */
+function partSpot(enemy: EnemyUnit, index: number, cx: number): { x: number; y: number } {
+  const part = enemy.parts[index];
+  const n = enemy.parts.length;
+  const [fx, fy] = ENEMY_PART_SPOTS[enemy.defId]?.[part.id] ?? [0.5 + (index - (n - 1) / 2) * 0.34, 0.4];
+  return { x: cx + (fx - 0.5) * BOSS_ART_SIZE, y: BOSS_ART_BOTTOM - BOSS_ART_SIZE + fy * BOSS_ART_SIZE };
+}
+
+/** 部位のひびの段階（段階89）：0 無傷・1 ひび・2 割れかけ・3 破壊。HP の数字は見せず、この段階だけで見せる */
+export function crackStage(part: PartState): 0 | 1 | 2 | 3 {
+  if (part.broken || part.hp <= 0) return 3;
+  const r = part.hp / part.maxHp;
+  return r > 2 / 3 ? 0 : r > 1 / 3 ? 1 : 2;
 }
 
 /** 画面上の各キャラ（と部位）の位置（演出の文字を出す場所） */
@@ -216,7 +229,7 @@ export function unitPosition(s: BattleState, id: string, partId?: string): { x: 
     const g = enemyGeometry(s, ei);
     const parts = s.enemies[ei].parts;
     const pi = partId === undefined ? -1 : parts.findIndex((p) => p.id === partId);
-    if (g.withParts && pi >= 0) return { x: partX(pi, parts.length), y: PART_ROW_Y };
+    if (g.withParts && pi >= 0) return partSpot(s.enemies[ei], pi, g.cx);
     return { x: g.cx, y: g.bodyY };
   }
   const ai = s.allies.findIndex((a) => a.uid === id);
@@ -280,9 +293,9 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       root.add(addText(scene, weakX, LAYOUT.enemies.y + 40, '弱点', { size: 10, color: COLORS.subText }).setOrigin(0.5));
     }
 
-    // 本体をタップする領域（ボスは部位の列を除く）
+    // 本体をタップする領域（ボスの部位の印は、この上に重ねる）
     const hitTop = LAYOUT.enemies.y + 4;
-    const hitBottom = g.withParts ? PART_ROW_Y - PART_H / 2 - 4 : LAYOUT.enemies.y + LAYOUT.enemies.h - 4;
+    const hitBottom = LAYOUT.enemies.y + LAYOUT.enemies.h - 4;
     const hit = scene.add.rectangle(cx, (hitTop + hitBottom) / 2, colW - 4, hitBottom - hitTop, 0xffffff, 0.001);
     root.add(hit);
     makePressable(hit, {
@@ -315,11 +328,13 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       // 丸い体の、左上の照り（敵の絵がない敵の図形を、少し立体に見せる）
       if (alive) root.add(scene.add.ellipse(cx - radius * 0.32, bodyY - radius * 0.38, radius * 0.7, radius * 0.45, 0xffffff, 0.18));
     }
+    // ボスの DOWN・体勢崩れは、部位の印と重ならないよう、絵の上のほうに出す（段階89）
+    const stateY = g.withParts ? BOSS_ART_BOTTOM - BOSS_ART_SIZE + 34 : bodyY;
     if (enemy.down && alive) {
-      root.add(addText(scene, cx, bodyY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
+      root.add(addText(scene, cx, stateY, 'DOWN', { size: 18, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
     } else if (enemy.standUpGuard && alive) {
       // 立ち上がったばかりで、まだ動いていない（体勢が崩れている。連携技が2倍で当たる）
-      root.add(addText(scene, cx, bodyY, '体勢崩れ', { size: 14, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
+      root.add(addText(scene, cx, stateY, '体勢崩れ', { size: 14, bold: true, color: COLORS.weak }).setOrigin(0.5).setAngle(-12));
     }
     if (!alive) root.add(addText(scene, cx, bodyY, '撃破', { size: 14, color: COLORS.dimText }).setOrigin(0.5));
     // 大技の予告：力をためている
@@ -348,28 +363,50 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
   });
 }
 
+/** ひびの線（印の中心からの、半径に対する割合の折れ線）。段階が上がるほど増える */
+const CRACKS: [number, number][][] = [
+  [[-0.1, -0.85], [0.08, -0.35], [-0.12, 0.05], [0.1, 0.5], [0.0, 0.85]],
+  [[0.08, -0.35], [0.55, -0.45], [0.8, -0.1]],
+  [[-0.12, 0.05], [-0.55, 0.2], [-0.7, 0.55]],
+  [[0.1, 0.5], [0.5, 0.45], [0.62, 0.72]],
+];
+
+/**
+ * ボスの部位（段階89）：体の上のその部位の所に、丸い印を出す。HP の数字とバーは出さず、ひびの段階だけを見せる。
+ * 印をタップすると、その部位を狙う。壊れた部位は、暗い欠けた跡になる（狙えない）
+ */
 function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers, enemy: EnemyUnit): void {
-  const count = enemy.parts.length;
-  const w = (GAME_WIDTH - SIDE_PADDING * 2) / count - 6;
+  const g = enemyGeometry(vm.state, 0);
   enemy.parts.forEach((part, i) => {
-    const x = partX(i, count);
-    const usable = !part.broken && enemy.hp > 0;
+    const { x, y } = partSpot(enemy, i, g.cx);
+    const stage = crackStage(part);
+    const usable = stage < 3 && enemy.hp > 0;
     const targetable = usable && vm.interactive && vm.scope === 'enemy';
     const sel = vm.selectedTarget;
     const selected = sel?.kind === 'enemy' && sel.id === enemy.uid && sel.partId === part.id;
-    const rect = scene.add.rectangle(x, PART_ROW_Y, w, PART_H, usable ? COLORS.panel : 0x161d25).setRounded(8);
-    rect.setStrokeStyle(selected ? 4 : targetable ? 2 : 1, selected ? COLORS.select : targetable ? COLORS.accent : COLORS.border);
-    root.add(rect);
-    const left = x - w / 2 + 8;
-    root.add(addText(scene, left, PART_ROW_Y - 19, `部位：${part.name}`, { size: 12, bold: true, color: usable ? COLORS.text : COLORS.dimText }));
-    if (part.broken) {
-      root.add(addText(scene, x + w / 2 - 8, PART_ROW_Y - 18, '破壊', { size: 12, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
-    } else {
-      root.add(addText(scene, x + w / 2 - 8, PART_ROW_Y - 18, `${part.hp}/${part.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(1, 0));
+    const r = PART_SPOT_R;
+    // 印の円：無傷は明るい金、ひびが進むほど赤く。壊れた所は暗い穴
+    const fill = stage === 3 ? 0x0b0f16 : stage === 2 ? 0x8a2a1a : stage === 1 ? 0x7a5a20 : 0x4a4020;
+    const spot = scene.add.circle(x, y, r, fill, stage === 3 ? 0.85 : 0.55);
+    spot.setStrokeStyle(selected ? 4 : targetable ? 3 : 2, selected ? COLORS.select : stage === 3 ? 0x3a4250 : targetable ? COLORS.accent : 0xe0c070);
+    root.add(spot);
+    // ひびの線（壊れた所は、砕けた跡として全部の線を暗く）
+    const lines = stage === 3 ? CRACKS.length : stage === 0 ? 0 : stage === 1 ? 1 : 3;
+    if (lines > 0) {
+      const crack = scene.add.graphics();
+      crack.lineStyle(stage === 3 ? 2 : 2.5, stage === 3 ? 0x5a6270 : 0xfff0d0, 0.95);
+      for (const path of CRACKS.slice(0, lines)) crack.strokePoints(path.map(([px, py]) => new Phaser.Math.Vector2(x + px * r, y + py * r)), false);
+      root.add(crack);
     }
-    addBar(scene, root, left, PART_ROW_Y + 12, w - 16, 7, part.hp / part.maxHp, 0xe0a040);
-    makePressable(rect, {
-      onTap: vm.interactive ? () => h.tapEnemy(enemy.uid, part.id) : undefined,
+    if (stage === 0 && usable) root.add(scene.add.circle(x - r * 0.3, y - r * 0.35, r * 0.28, 0xffffff, 0.25));
+    const name = addText(scene, x, y + r + 2, part.name, { size: 11, bold: true, color: usable ? COLORS.text : COLORS.dimText }).setOrigin(0.5, 0);
+    name.setStroke('#0b1018', 3);
+    root.add(name);
+    // 印は丸より少し大きくタップできる（指で押しやすく）
+    const hit = scene.add.circle(x, y, Math.max(r + 6, MIN_TAP / 2), 0xffffff, 0.001);
+    root.add(hit);
+    makePressable(hit, {
+      onTap: vm.interactive && usable ? () => h.tapEnemy(enemy.uid, part.id) : undefined,
       onLongPress: () => h.detail(`${enemy.name}の${part.name}`, partDetail(enemy, part)),
     });
   });
@@ -958,8 +995,8 @@ function enemyDetail(e: EnemyUnit): string {
 function partDetail(e: EnemyUnit, p: PartState): string {
   const sealed = e.actions.filter((a) => a.requiresPart === p.id).map((a) => `「${a.name}」`);
   const lines = [
-    p.broken ? '破壊済み' : `HP ${p.hp}/${p.maxHp}`,
-    'タップして攻撃すると、部位HPに全額、本体HPに半分のダメージ',
+    ['無傷', 'ひびが入っている', '今にも割れそう', '壊れた'][crackStage(p)],
+    'この印をタップして攻撃すると、部位に全部、本体に半分のダメージ。壊すと、ぬしがよろける（ダウン）',
   ];
   if (sealed.length > 0) lines.push(`破壊すると${sealed.join('、')}が使えなくなる`);
   lines.push(`破壊すると素材「${p.material}」が手に入る（表示のみ）`);

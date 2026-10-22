@@ -204,6 +204,18 @@ export function playLogSections(rows: PlayLogRow[], flow: Flow): PlayLogSection[
   return out.filter((sec) => sec.ids.length > 0);
 }
 
+/**
+ * 記録の表を、1画面に入る行数ずつの頁に分ける（段階88。3章に入って、まとめた行が1画面に入らなくなった）。
+ * 最初に見せる頁は、今いる出来事（last）の行がある頁（なければ最初の頁）
+ */
+export function playLogPages(sections: PlayLogSection[], perPage: number, last: string | null): { pages: PlayLogSection[][]; start: number } {
+  const pages: PlayLogSection[][] = [];
+  for (let i = 0; i < sections.length; i += perPage) pages.push(sections.slice(i, i + perPage));
+  if (pages.length === 0) pages.push([]);
+  const at = last === null ? -1 : sections.findIndex((s) => s.ids.includes(last));
+  return { pages, start: at < 0 ? 0 : Math.floor(at / perPage) };
+}
+
 /** 時間を「12:05」（分:秒）の形にする。1時間を超えたら「1:02:05」 */
 export function formatPlayTime(ms: number): string {
   const s = Math.floor(Math.max(0, ms) / 1000);

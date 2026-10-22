@@ -18,6 +18,9 @@ export const TOWN: Record<string, DailyPlaceInfo> = {
   bakery: { id: 'bakery', name: 'パン屋', backdrop: 'bakery', mapX: 305, mapY: 460 },
   convenience: { id: 'convenience', name: 'コンビニ', backdrop: 'convenience_store', mapX: 85, mapY: 590 },
   clockshop: { id: 'clockshop', name: '時計屋', backdrop: 'clock_shop', mapX: 305, mapY: 590 },
+  // 段階88（3-1）：ひだまり荘と、町の駅
+  care_home: { id: 'care_home', name: 'ひだまり荘', backdrop: 'care_home', mapX: 195, mapY: 330 },
+  station: { id: 'station', name: '駅', backdrop: 'station_now', mapX: 195, mapY: 590 },
 };
 
 /** 町の地図の場所に、印を置く */
@@ -101,6 +104,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari5', title: '出し物、決まらない', label: '教室（あかり）', from: 12, place: 'school', x: 195, y: ROW1 },
     // 段階85（docs/script/2-3_rework.md の 4.）
     { id: 'bond_akari6', title: '時計の博物館', label: '教室（あかり）', from: 17, place: 'school', x: 195, y: ROW1 },
+    // 段階88（docs/script/3-1.md の 4.）。22日目の学校は文化祭の印が並ぶので、下の段
+    { id: 'bond_akari7', title: 'お弁当対決', label: '屋上へ（あかり）', from: 21, place: 'school', x: 195, y: ROW2 },
   ],
   // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
@@ -108,6 +113,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_mio2', title: 'あとで一緒に食べよう', label: 'コンビニ（みお）', from: 11, place: 'convenience', x: 195, y: ROW1 },
     { id: 'bond_mio3', title: '弟子入り一日目', label: '工場（みお）', from: 12, place: 'factory', x: 195, y: ROW1 },
     { id: 'bond_mio4', title: '素振りの相手', label: 'グラウンド（みお）', from: 16, place: 'riverside', x: 195, y: ROW1 },
+    // 段階88（docs/script/3-1.md の 4.）
+    { id: 'bond_mio5', title: '宿題、三分', label: '作業台（みお）', from: 21, place: 'clockshop', x: 195, y: ROW2 },
   ],
 };
 
@@ -124,6 +131,8 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
   // 2-3 の翌日（20日目。段階85）：祝日の河川敷で、そうたの準決勝（docs/script/2-3_rework.md の 20-A）。河川敷の上の段は、みおの絆の出来事
   { area: 'a23', id: 'd20_koji', label: 'そうたの準決勝', place: 'riverside', x: 195, y: ROW2 },
+  // 3-1 の翌日（24日目。段階88）：町の駅で、ちよさんがのぼるさんを見送る（docs/script/3-1.md の 24-A）
+  { area: 'a31', id: 'd24_chiyo', label: '駅の見送り', place: 'station', x: 195, y: ROW1 },
 ];
 
 
@@ -389,6 +398,59 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('convenience', talk('d20_talk_holiday', 'レジ', ROW2)),
       at('school', talk('d20_talk_prep', '教室', ROW2, 'akari')),
       at('clockshop', toDusk('d20_to_dusk')),
+    ],
+  },
+  // ---- 3章（段階88。docs/script/3-1.md の 4.） ----
+  // 21日目（金曜）：時計屋のちよさんとのぼるさんは必ず見る。夕暮れの後、3-1 の1晩目
+  d21_free: {
+    id: 'd21_free',
+    time: '21日目　金曜の放課後',
+    day: 21,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('clockshop', main('d21_chiyo', '止まった腕時計'), toDusk('d21_to_dusk')),
+      at('home', talk('d21_talk_care', '台所', ROW2, 'akari')),
+    ],
+  },
+  // 22日目（土曜）：文化祭。時計の博物館と、その後の中庭ののぼるさんは必ず見る。学校の印は文化祭の分だけ並ぶので、位置をずらす
+  a31_day22_free: {
+    id: 'a31_day22_free',
+    time: '22日目　文化祭',
+    day: 22,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('school', main('d22_museum', '時計の博物館', 230), main('d22_noboru', '中庭のベンチ', 350, 'd22_museum'), talk('d22_talk_callout', '廊下', 590, 'akari'), talk('d22_talk_yakisoba', '模擬店', 670, 'mio')),
+      at('home', talk('d22_talk_riku', '台所', ROW2, 'akari')),
+      at('clockshop', talk('d22_talk_memo', '店の奥'), toDusk('a31_d22_to_dusk')),
+    ],
+  },
+  // 23日目（日曜）：ひだまり荘のちよさんの本音は必ず見る。夕暮れの後、3晩目
+  a31_day23_free: {
+    id: 'a31_day23_free',
+    time: '23日目　日曜の昼',
+    day: 23,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('care_home', main('d23_chiyo', '八時の窓')),
+      at('street', talk('d23_talk_sunday', '花屋の前', ROW2)),
+      at('convenience', talk('d23_talk_yuma', 'レジ', ROW2)),
+      at('clockshop', talk('d23_talk_names', '店の中', ROW1, 'mio'), toDusk('a31_d23_to_dusk')),
+    ],
+  },
+  // 24日目（月曜）：3-1 を返した翌日の駅のちよさん（RETURN_VISITS）。夕暮れに祭囃子の棚
+  d24_free: {
+    id: 'd24_free',
+    time: '24日目　月曜の放課後',
+    day: 24,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('riverside', talk('d24_talk_eight', 'グラウンド', ROW2, 'mio')),
+      at('street', talk('d24_talk_fumi', '店先', ROW2, 'akari')),
+      at('clockshop', toDusk('d24_to_dusk')),
     ],
   },
 };

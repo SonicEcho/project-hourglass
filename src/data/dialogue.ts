@@ -341,6 +341,12 @@ export const CAST: Record<string, CastMember> = {
   写しのまさる: { faces: names('笑顔'), firstFace: '笑顔', color: 0x7a8a6a, voice: { pitch: 280, wave: 'sawtooth' } },
   // 段階85：こうじの父（今70歳。パン屋の先代）。立ち絵はまだない（色の札）。声が大きい
   まさる: { faces: names('笑顔', '通常', '驚き', '苦笑い', 'さみしげ'), firstFace: '笑顔', color: 0x8a7a5a, voice: { pitch: 260, wave: 'sawtooth' } },
+  // 段階88（3-1。docs/script/3-1.md の 2.）：ひだまり荘のちよ（今75歳）と弟ののぼる（今68歳）、昭和41年の写しの3人。立ち絵はまだない（色の札）。写しはセピア
+  ちよ: { faces: names('微笑み', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '悲しい', '泣き笑い', '笑顔', '真剣'), firstFace: '微笑み', color: 0xa08aa8, voice: { pitch: 470, wave: 'triangle' } },
+  のぼる: { faces: names('笑顔', '通常', '苦笑い', '困り笑い', '考える', 'さみしげ', '照れ', '驚き', '泣き笑い'), firstFace: '笑顔', color: 0x8a6a4a, voice: { pitch: 280, wave: 'sawtooth' } },
+  写しのちよ: { faces: names('笑顔', '通常', '真剣', 'むっ', '驚き', '泣き', '泣き笑い'), firstFace: '笑顔', color: 0xc0b0c8, voice: { pitch: 660, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しの菊: { faces: names('通常', '泣き笑い'), firstFace: '通常', color: 0x7a6a5a, voice: { pitch: 420, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しののぼる: { faces: names('笑顔'), firstFace: '笑顔', color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
   カイ: {
     portrait: 'portrait.kai',
     ...young(['余裕', '見下す', '通常'], { 余裕: 'smug' }, '余裕'),
@@ -389,6 +395,11 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   監督: { pitch: 290, wave: 'sawtooth' },
   売店のおばちゃん: { pitch: 480, wave: 'triangle' },
   相手チームの子: { pitch: 740, wave: 'square' },
+  // 3-1 の声だけの人（段階88）
+  介護士の人: { pitch: 580, wave: 'triangle' },
+  駅員: { pitch: 300, wave: 'sawtooth' },
+  村のおばあさん: { pitch: 460, wave: 'triangle' },
+  となりのおじさん: { pitch: 260, wave: 'sawtooth' },
   '？？？': { pitch: 700, wave: 'sine' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
@@ -465,6 +476,12 @@ export const BACKDROPS: Record<string, Backdrop> = {
   riverside_1998: { title: '平成の夏の河川敷のグラウンド', top: 0x8ac8f0, bottom: 0x9ab070, image: 'bg.riverside_1998' },
   library_bridge: { title: 'レストピアの高い所（棚と棚をつなぐ細い橋）', top: 0x080c20, bottom: 0x2a2a3a, image: 'bg.library', tint: 0x7080a8, ambient: 'dust' },
   bakery: { title: '商店街のパン屋（昼）', top: 0xf0d8b0, bottom: 0x9a6a40, image: 'bg.bakery', ambient: 'dust' },
+  // 段階88：3-1 の昭和41年の夏の山あいの村（昼と、夕暮れの駅）、ひだまり荘の部屋、今の駅のホーム、文化祭の中庭。絵が届くまで仮の色
+  village_1966: { title: '昭和41年の夏、山あいの村（昼）', top: 0x9ad0f0, bottom: 0x7aa060 },
+  village_dusk: { title: '昭和41年の夏、村の駅（夕暮れ）', top: 0xe09060, bottom: 0x4a3a40, ambient: 'dust' },
+  care_home: { title: 'ひだまり荘の部屋（窓辺）', top: 0xf0e8d8, bottom: 0xb0a088 },
+  station_now: { title: '町の駅のホーム（夕方の前）', top: 0xd8c8b0, bottom: 0x6a6a70 },
+  school_fair: { title: '文化祭の学校の中庭', top: 0xb0d8f0, bottom: 0xd8c0a0, ambienceSe: SE.crowd },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */

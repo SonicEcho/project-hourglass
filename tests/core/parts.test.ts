@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   attackStatOf,
+  declineExtra,
   calcDamage,
   chooseEnemyAction,
   getBattleResult,
@@ -15,7 +16,7 @@ import {
 } from '../../src/core';
 import type { BattleState, PlayerAction } from '../../src/core';
 import { DISTORTED_BEAST, SKILLS } from '../../src/data';
-import { ally, attackOn, battle, eventsOf, execute, planAll } from './helpers';
+import { ally, attackOn, battle, eventsOf, execute, guard, planAll } from './helpers';
 
 /** ハルト1人とボス（遅い）。ハルトが先に動く */
 function bossBattle(): BattleState {
@@ -76,17 +77,42 @@ describe('部位破壊', () => {
     for (let i = 0; i < 100; i++) expect(chooseEnemyAction(sim, sim.enemies[0]).id).not.toBe('slam');
   });
 
-  it('角を壊すと「歪みの咆哮」が使えなくなり、弱点「雷」が露出する', () => {
+  it('角を壊すと「歪みの咆哮」が使えなくなり、弱点「雷」が露出する。壊すとよろけて（ダウン）延長（段階89）', () => {
     const s0 = bossBattle();
     s0.enemies[0].parts[1].hp = 1;
-    let s = heroActs(s0, attackOn('enemy0', 'horn'));
+    const s = heroActs(s0, attackOn('enemy0', 'horn'));
     expect(usableEnemyActions(s.enemies[0]).map((a) => a.id)).toEqual(['sweep', 'slam']);
     expect(s.enemies[0].knownWeaknesses).toEqual(['thunder']);
-    // 次のラウンド、露出した弱点を突くとダウンして延長
-    s = runUntilInput(s);
+    expect(s.enemies[0].down).toBe(true);
+    expect(s.phase).toBe('extra');
+    expect(eventsOf(s, 'down')).toEqual([{ type: 'down', enemyId: 'enemy0', by: 'part' }]);
+  });
+
+  it('露出した弱点を突くとダウンして延長（よろけから立ち上がって、もう一度動いた後）', () => {
+    const s0 = bossBattle();
+    s0.enemies[0].parts[1].hp = 1;
+    let s = runUntilInput(declineExtra(heroActs(s0, attackOn('enemy0', 'horn'))));
+    s = execute(planAll(s, { hero: guard }));
+    expect(s.enemies[0].down).toBe(false);
     s = execute(planAll(s, { hero: { type: 'skill', skillId: 'thunder', target: { kind: 'enemy', id: 'enemy0' } } }));
     expect(s.phase).toBe('extra');
     expect(s.enemies[0].down).toBe(true);
+  });
+
+  it('部位を壊しても、ダウン中・立ち上がったばかりの敵はよろけない。倒した時もダウンしない（段階89）', () => {
+    const s0 = bossBattle();
+    s0.enemies[0].parts[1].hp = 1;
+    s0.enemies[0].standUpGuard = true;
+    const s = heroActs(s0, attackOn('enemy0', 'horn'));
+    expect(s.enemies[0].parts[1].broken).toBe(true);
+    expect(s.enemies[0].down).toBe(false);
+    expect(eventsOf(s, 'down')).toEqual([]);
+    const s1 = bossBattle();
+    s1.enemies[0].parts[1].hp = 1;
+    s1.enemies[0].hp = 1;
+    const t = heroActs(s1, attackOn('enemy0', 'horn'));
+    expect(t.enemies[0].hp).toBe(0);
+    expect(t.enemies[0].down).toBe(false);
   });
 
   it('壊れた部位は狙えない。実行までに壊れていたら本体に当たる', () => {

@@ -687,8 +687,19 @@ export class BattleScene extends Phaser.Scene {
         this.bigText('Extend!');
         return true;
       case 'partBreak': {
+        // 段階89：壊れた所から破片が飛び、画面が揺れる。壊れた所は、絵の上に欠けた跡として残る（battleViews の drawParts）
         const p = unitPosition(s, e.enemyId, e.partId);
-        this.popup(p.x, p.y - 10, '部位破壊！', COLORS.weak, 18);
+        const name = s.enemies.find((x) => x.uid === e.enemyId)?.parts.find((x) => x.id === e.partId)?.name ?? '';
+        this.shards(p.x, p.y);
+        if (!this.skipping) this.cameras.main.shake(220, 0.01);
+        this.popup(p.x, p.y - 10, `${name}を破壊！`, COLORS.weak, 18);
+        return true;
+      }
+      case 'down': {
+        // 部位を壊されて、よろけた（段階89）。弱点のダウンは、敵の上の DOWN で見せる
+        if (e.by !== 'part') return false;
+        const p = unitPosition(s, e.enemyId);
+        this.popup(p.x, p.y - 60, 'よろけた！', COLORS.weak, 22);
         return true;
       }
       case 'weaknessFound': {
@@ -794,6 +805,20 @@ export class BattleScene extends Phaser.Scene {
       },
       onComplete: () => ring.active && ring.destroy(),
     });
+  }
+
+  /** 部位が壊れた所から、破片が飛び散って落ちる（段階89） */
+  private shards(x: number, y: number): void {
+    if (this.skipping) return;
+    for (let k = 0; k < 12; k++) {
+      const a = (Math.PI * 2 * k) / 12 + (k % 3) * 0.2;
+      const d = 34 + (k % 4) * 12;
+      const size = 4 + (k % 3) * 3;
+      const piece = this.add.rectangle(x, y, size, size * 0.7, k % 2 ? 0xe8d8b0 : 0xb08a3a).setAngle(k * 37);
+      this.fxLayer.add(piece);
+      this.tweens.add({ targets: piece, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6 + 40, angle: piece.angle + 180, alpha: 0, duration: 700, ease: 'Cubic.easeOut', onComplete: () => piece.active && piece.destroy() });
+    }
+    this.impact(x, y, 0xffe0a0);
   }
 
   private bigText(text: string): void {
@@ -999,7 +1024,9 @@ export class BattleScene extends Phaser.Scene {
       const tag = t.affinity === 'weak' ? ' WEAK' : t.affinity === 'resist' ? ' 耐性' : '';
       if (t.partId !== undefined && unit?.side === 'enemy') {
         const part = unit.parts.find((x) => x.id === t.partId);
-        return `${part?.name ?? ''} ${range(t.partMin!, t.partMax!)}／本体 ${range(t.min, t.max)}${tag}`;
+        // 段階89：部位の HP は見せないので、割れるかどうかを添える
+        const breaks = part && !part.broken ? (t.partMin! >= part.hp ? '（割れる！）' : t.partMax! >= part.hp ? '（割れるかも）' : '') : '';
+        return `${part?.name ?? ''} ${range(t.partMin!, t.partMax!)}${breaks}／本体 ${range(t.min, t.max)}${tag}`;
       }
       return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : t.kind === 'mp' ? 'MP回復' : ''}${range(t.min, t.max)}${tag}`;
     });
