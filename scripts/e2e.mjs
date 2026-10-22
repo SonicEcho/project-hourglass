@@ -39,7 +39,9 @@ async function until(what, fn, timeout = 15000) {
 const findText = (pattern) => page.evaluate((p) => window.__restopia.findText(p), pattern);
 const scenes = () => page.evaluate(() => window.__restopia?.scenes() ?? []);
 // タイトルは、ページを開き直した直後に、台帳の絵をまとめて読み込んでから出る（立ち絵が増えて、遅い環境では15秒を超える。2026-10-19）
-const waitScene = (key) => until(`画面「${key}」`, async () => (await scenes()).includes(key), key === 'Title' ? 60000 : undefined);
+// タイトルが出るまでと、最初の「はじめる」の後（絵を全部読み終えるまで「絵を読み込んでいます」で待つ。段階69）は長く待つ。
+// 「はじめる」から会話まで、手元でも 9〜18 秒かかり、15 秒では CI で間に合わないことがあった（2026-10-22）
+const waitScene = (key, timeout) => until(`画面「${key}」`, async () => (await scenes()).includes(key), timeout ?? (key === 'Title' ? 60000 : undefined));
 
 /** 390×844 の座標を、ページの座標にしてタップする */
 async function tapAt(x, y) {
@@ -110,7 +112,7 @@ try {
   await page.goto(`${base}?debug=1&seed=1`);
   await waitScene('Title');
   await tap('^はじめる$');
-  await waitScene('Dialogue');
+  await waitScene('Dialogue', 60000);
   // BGM は初めて流す時に読むので、少し待つ（2026-10-11）
   await until('タイトルの BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.title');
   // 「はじめる」で曲を全部ダウンロードして端末にしまう（2026-10-11）
