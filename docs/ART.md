@@ -1273,6 +1273,18 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 | わたあめノイズ | `a fluffy cloud of pink cotton candy on a wooden stick, sticky strands reaching out like arms` |
 | 金魚鉢のぬし（ボス） | `a giant round glass goldfish bowl with swirling water inside and many goldfish circling, two arms made of paper goldfish scoops (poi), water overflowing as waves` |
 
+## 5-5b. 絵の順番の入れ替え（2026-10-22。レビューの F1・F4）
+
+レビューで、遊ぶ人が最初に歩く 1-1 の縁日の入口の部屋（`fest_gate`）が、絵のない文字の地図だと分かった（2-1 の雪の町工場の地図と差が目立つ）。最初の30分の見た目を優先して、地図の絵は次の順に頼む（下の 5-6 や 5-5 の順番より先）。
+
+1. 1-1 の縁日の入口 `fest_gate`
+2. 1-1 の残りの4部屋（`fest_backyard`・`fest_west`・`fest_east`・`fest_woods`）
+3. 1-2 の寄り道の3部屋（`showa_alley`・`showa_lane`・`showa_hill`）
+4. 昼の「どこへ行く？」に敷く、町の見下ろしの地図（商店街・学校・時計屋・川。指示文はこれから書く）
+
+- 絵が届くまで、文字の地図に時代の色と小物（提灯の灯りなど）を重ねる仮の見た目を作る（4章の前の段階。`docs/milestones/M3_review.md` の F1）
+- 昼の地図は、町の地図の絵が届くまで、行き先の丸を大きくして地図を小さく寄せる（F4）
+
 ## 5-6. 1章で足りない絵の一覧（2026-10-15）
 
 1章（プロローグ、1日目〜4日目、1-1、1-2）で、まだ絵がない物を全部集めた。台本（`src/data/scriptM1.ts`、`docs/script/M1.md` の 5.、`docs/script/M2.md` の 5.）、会話の人の表情（`src/data/dialogue.ts` の `CAST`）、会話の背景と1枚絵（同じく `BACKDROPS`・`CGS`）、戦闘の敵（`src/data/enemies.ts`）を、台帳（`src/data/assets.ts`）と見比べた。今は、絵のない表情は基本の1枚で、絵のない背景・1枚絵は色と名前で代わりに出している。
