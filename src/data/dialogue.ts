@@ -348,6 +348,11 @@ export const CAST: Record<string, CastMember> = {
   写しの菊: { faces: names('通常', '泣き笑い'), firstFace: '通常', color: 0x7a6a5a, voice: { pitch: 420, wave: 'triangle' }, tint: SEPIA_TINT },
   写しののぼる: { faces: names('笑顔'), firstFace: '笑顔', color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
   // 段階91（祭りの夜。docs/script/3-matsuri.md の 2.）：大正十年の夏祭りに百年いる少女。4人目の仲間。立ち絵はまだない（色の札）
+  // 段階94（3-2。docs/script/3-2.md の 2.）：町の印刷会社の一年目のしおり（今22歳）と、同級生のとうや（今22歳）、平成31年3月の写しの2人。立ち絵はまだない（色の札）。写しはセピア
+  しおり: { faces: names('笑顔', '困り', '困り笑い', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '微笑み', '大笑い', 'あせり'), firstFace: '笑顔', color: 0x7a90b8, voice: { pitch: 540, wave: 'triangle' } },
+  とうや: { faces: names('笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'), firstFace: '笑顔', color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
+  写しのしおり: { faces: names('むっ', '笑顔', '通常', '真剣'), firstFace: '笑顔', color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しのとうや: { faces: names('笑顔', '通常'), firstFace: '笑顔', color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
   小夜子: { faces: names('微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'), firstFace: '微笑み', color: 0xc0485a, voice: { pitch: 560, wave: 'sine' } },
   カイ: {
     portrait: 'portrait.kai',
@@ -410,6 +415,12 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   飴細工の職人: { pitch: 260, wave: 'sawtooth' },
   風車の子ども: { pitch: 740, wave: 'square' },
   音頭取り: { pitch: 320, wave: 'square' },
+  // 3-2 の声だけの人（段階94）
+  写しの友だち: { pitch: 660, wave: 'triangle' },
+  写しの先生: { pitch: 300, wave: 'sawtooth' },
+  写しの後輩: { pitch: 700, wave: 'square' },
+  コンビニの店員: { pitch: 520, wave: 'triangle' },
+  八百屋のおじさん: { pitch: 270, wave: 'sawtooth' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
 /**
@@ -495,6 +506,10 @@ export const BACKDROPS: Record<string, Backdrop> = {
   taisho_festival: { title: '大正十年の夏祭り（夜）', top: 0x1a1a3a, bottom: 0xb04a3a, ambient: 'lanterns', ambienceSe: SE.crowd },
   taisho_edge: { title: '祭りの夜の端（砂の落ちる縁）', top: 0x0a0a1a, bottom: 0x3a2a3a, ambient: 'dust' },
   shrine_now: { title: '町の神社（今の昼）', top: 0xb8d8e8, bottom: 0x9a8a6a },
+  // 段階94：3-2 の平成31年3月の町（卒業式の帰り道の昼と、夕暮れの踏切）、今の駅の近くの踏切。絵が届くまで仮の色
+  grad_2019: { title: '平成31年3月、卒業式の帰り道（昼）', top: 0xc8e0f0, bottom: 0xb0b8a0 },
+  grad_dusk: { title: '平成31年3月、夕暮れの踏切', top: 0xf0a070, bottom: 0x4a3a4a, ambient: 'dust' },
+  crossing_now: { title: '駅の近くの踏切（今の夕方の前）', top: 0xe8c8a0, bottom: 0x5a5a62 },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */

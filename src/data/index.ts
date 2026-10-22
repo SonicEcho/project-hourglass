@@ -12,6 +12,7 @@ export * from './schoolEnemies';
 export * from './riversideEnemies';
 export * from './villageEnemies';
 export * from './taishoEnemies';
+export * from './gradEnemies';
 export * from './enemyArt';
 export * from './encounters';
 export * from './growthMap';

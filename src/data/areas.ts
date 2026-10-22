@@ -8,6 +8,7 @@ import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOI
 import { BALL_NOISE, JUG_NOISE, KAI, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
 import { CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE, YAGURA_LORD } from './taishoEnemies';
 import { COIL_NOISE, FAN_NOISE, POSTBOX_NOISE, RADIO_NOISE, TABLE_NOISE, TRAIN_LORD } from './villageEnemies';
+import { CROSSING_LORD, DIPLOMA_NOISE, EARPHONE_NOISE, SELFIE_NOISE, TAPIOCA_NOISE, YOSEGAKI_NOISE } from './gradEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { box, ROOMS } from './rooms';
 import { BGM } from './sounds';
@@ -54,6 +55,8 @@ const tough = (list: EnemyDef[], rate = A11_STORM_HP.later) => list.map((e) => t
 export const A31_SCALE = { n1: 1.3, n2: 1.4, n3: 1.55, guard: 1.2, boss: 1.4 };
 /** 大正の祭りの夜の砂嵐の強さ（段階91b）：1晩目・1晩目の終わり・2晩目の攻撃の倍率と、ぬしの HP の倍率 */
 export const A3S_SCALE = { n1: 1.4, end: 1.5, n2: 1.45, boss: 1.75 };
+/** 3-2 の砂嵐の強さ（段階94）：晩ごとの攻撃の倍率（scaleEnemy）と、番人・ぬしの HP の倍率（toughenEnemy） */
+export const A32_SCALE = { n1: 1.5, n2: 1.5, n3: 1.6, guard: 1.25, boss: 2.1 };
 
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
@@ -227,6 +230,24 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a3s2_edge: { id: 'a3s2_edge', name: '砂嵐', enemies: tough([CANDY_NOISE, CANDY_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
   a3s2_edge2: { id: 'a3s2_edge2', name: '砂嵐', enemies: tough([LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
   a3s2_boss: { id: 'a3s2_boss', name: 'やぐらのぬし', enemies: [toughenEnemy(YAGURA_LORD, A3S_SCALE.boss)], reward: 10, boss: true, snaps: ['breakArm'] },
+  // ---- 3-2「言えなかった卒業式」（段階94。gradEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし。3晩目の踏切の部屋は、敵を2つに減らした（レビューの D1） ----
+  a32_n1_gate: { id: 'a32_n1_gate', name: '砂嵐', enemies: tough([EARPHONE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
+  a32_n1_slope: { id: 'a32_n1_slope', name: '砂嵐', enemies: tough([SELFIE_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 2 },
+  a32_n1_tree: { id: 'a32_n1_tree', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, EARPHONE_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
+  a32_n1_bus: { id: 'a32_n1_bus', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, SELFIE_NOISE, EARPHONE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
+  a32_n1_gym: { id: 'a32_n1_gym', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 2 },
+  a32_runner: { id: 'a32_runner', name: '砂嵐', enemies: [SELFIE_NOISE, SELFIE_NOISE, SELFIE_NOISE], reward: 3, item: ITEMS.lostTicket.id },
+  a32_n2_arcade: { id: 'a32_n2_arcade', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, EARPHONE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2))), reward: 3, koma: 1 },
+  a32_n2_shops: { id: 'a32_n2_shops', name: '砂嵐', enemies: tough([SELFIE_NOISE, SELFIE_NOISE, TAPIOCA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2))), reward: 2 },
+  a32_n2_levee: { id: 'a32_n2_levee', name: '砂嵐', enemies: tough([EARPHONE_NOISE, DIPLOMA_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2))), reward: 4, koma: 1 },
+  a32_n2_levee2: { id: 'a32_n2_levee2', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, TAPIOCA_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2))), reward: 2 },
+  // 商店街の端の番人：倒すと夕暮れの踏切への道が開く（3晩目から）
+  a32_n2_guard: { id: 'a32_n2_guard', name: '寄せ書きの色紙ノイズ', enemies: [toughenEnemy(YOSEGAKI_NOISE, A32_SCALE.guard), ...tough([DIPLOMA_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2)))], reward: 5, koma: 1 },
+  a32_n3_street: { id: 'a32_n3_street', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, SELFIE_NOISE, EARPHONE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 3, koma: 1 },
+  a32_n3_street2: { id: 'a32_n3_street2', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, EARPHONE_NOISE, TAPIOCA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 2 },
+  a32_n3_cross1: { id: 'a32_n3_cross1', name: '砂嵐', enemies: tough([EARPHONE_NOISE, TAPIOCA_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 4, koma: 1 },
+  a32_n3_cross2: { id: 'a32_n3_cross2', name: '砂嵐', enemies: tough([SELFIE_NOISE, DIPLOMA_NOISE, TAPIOCA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n3))), reward: 4, koma: 1 },
+  a32_boss: { id: 'a32_boss', name: '踏切のぬし', enemies: [toughenEnemy(CROSSING_LORD, A32_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['wideShot'] },
 };
 
 /**
@@ -892,6 +913,108 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'komaLeft', left: 1, scene: 'a31_one_left' },
       { on: 'boss', scene: 'a31_boss' },
       { on: 'cleared', scene: 'a31_last_koma' },
+    ],
+  },
+  // 3-2「言えなかった卒業式」（段階94。docs/script/3-2.md）。平成31年3月、卒業式の帰り道。3晩に分けて入る。
+  // 校門の坂（右に体育館の裏）→ 七年前の商店街（右に川の土手）→ 夕暮れの踏切
+  a32: {
+    id: 'a32',
+    name: '3-2「言えなかった卒業式」',
+    rooms: [ROOMS.grad_slope, ROOMS.grad_gym_back, ROOMS.grad_street, ROOMS.grad_levee, ROOMS.grad_crossing],
+    links: [
+      { a: { room: 'grad_slope', side: 'right' }, b: { room: 'grad_gym_back', side: 'left' } },
+      { a: { room: 'grad_slope', side: 'top' }, b: { room: 'grad_street', side: 'bottom' } },
+      { a: { room: 'grad_street', side: 'right' }, b: { room: 'grad_levee', side: 'left' } },
+      // 夕暮れの踏切へは、商店街の端の番人を倒すと入れる（壁は3晩目から開く）
+      { a: { room: 'grad_street', side: 'top' }, b: { room: 'grad_crossing', side: 'bottom' }, opensWhen: 'a32_e_guard' },
+    ],
+    // 平成の終わりの春の曲が届くまで、2-2 の高校の曲で代わり（docs/script/3-2.md の 6.）
+    bgm: BGM.cultureFestival,
+    komaNeed: 10,
+    timeTitle: '言えなかった卒業式',
+    owner: 'シオリ',
+    memory: 'grad_2019',
+    // 晩の区切り：2晩目は坂の途中のバス停、3晩目は商店街の端（どちらもチェックポイント）から
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'grad_slope', cell: [11, 16] } }, { start: { room: 'grad_street', cell: [11, 9] } }],
+    // ノイズの壁：校門の坂から商店街への出入口（2晩目から開く）と、商店街から踏切への出入口（3晩目から開く）
+    walls: [
+      { id: 'a32_wall_street', room: 'grad_slope', cells: box(10, 13, 0, 1), opens: 2 },
+      { id: 'a32_wall_crossing', room: 'grad_street', cells: box(10, 13, 0, 1), opens: 3 },
+    ],
+    // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘は商店街の表に入れる
+    hunt: {
+      gathers: [
+        { id: 'a32_gather_slope', room: 'grad_slope', cell: [17, 30], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id] },
+        { id: 'a32_gather_gym', room: 'grad_gym_back', cell: [5, 4], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id] },
+        { id: 'a32_gather_levee', room: 'grad_levee', cell: [5, 5], items: [ITEMS.earphoneCord.id, ITEMS.diplomaCap.id] },
+      ],
+      tables: {
+        grad_slope: ['a32_n1_gate', 'a32_n1_slope', 'a32_n1_tree', 'a32_n1_bus'],
+        grad_gym_back: ['a32_n1_gym'],
+        grad_street: ['a32_n2_arcade', 'a32_n2_shops', 'a32_n2_guard', 'a32_n3_street', 'a32_n3_street2'],
+        grad_levee: ['a32_n2_levee', 'a32_n2_levee2'],
+        grad_crossing: ['a32_n3_cross1', 'a32_n3_cross2'],
+      },
+    },
+    chests: [
+      { id: 'a32_chest_slope', room: 'grad_slope', cell: [17, 30], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id, ITEMS.potion.id] },
+      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [5, 4], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id, ITEMS.ether.id], gears: ['iceBoost'], snaps: ['fireChip'] },
+      { id: 'a32_chest_levee', room: 'grad_levee', cell: [5, 5], night: 2, items: [ITEMS.thickStraw.id, ITEMS.flowerRibbon.id, ITEMS.hiPotion.id], gears: ['startDash'], snaps: ['joker'] },
+    ],
+    enemies: [
+      // ---- 1晩目（校門の坂・体育館の裏） ----
+      { id: 'a32_e_gate', patrol: [[7, 34], [17, 34]], battle: 'a32_n1_gate' },
+      { id: 'a32_e_slope', patrol: [[7, 24], [17, 24]], battle: 'a32_n1_slope' },
+      // 坂の並木：近づくと追ってくる
+      { id: 'a32_e_tree', move: 'chase', patrol: [[7, 11], [16, 11]], battle: 'a32_n1_tree' },
+      { id: 'a32_e_bus', patrol: [[8, 5], [15, 5]], battle: 'a32_n1_bus' },
+      { id: 'a32_e_gym', room: 'grad_gym_back', patrol: [[5, 19], [16, 19]], battle: 'a32_n1_gym' },
+      // 体育館の裏の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a32_e_runner', room: 'grad_gym_back', move: 'flee', patrol: [[12, 9]], battle: 'a32_runner' },
+      // ---- 2晩目（七年前の商店街・川の土手） ----
+      { id: 'a32_e_arcade', room: 'grad_street', night: 2, patrol: [[5, 35], [18, 35]], battle: 'a32_n2_arcade' },
+      { id: 'a32_e_shops', room: 'grad_street', night: 2, patrol: [[5, 23], [18, 23]], battle: 'a32_n2_shops' },
+      // 川の土手：追ってくる
+      { id: 'a32_e_levee', room: 'grad_levee', night: 2, move: 'chase', patrol: [[14, 5], [14, 19]], battle: 'a32_n2_levee' },
+      { id: 'a32_e_levee2', room: 'grad_levee', night: 2, patrol: [[5, 15], [5, 19]], battle: 'a32_n2_levee2' },
+      // 商店街の端の番人：倒すと夕暮れの踏切への道が開く（3晩目から。戦う前の会話）
+      { id: 'a32_e_guard', room: 'grad_street', night: 2, until: 2, move: 'guard', patrol: [[11, 5]], battle: 'a32_n2_guard', scene: 'a32_guard' },
+      // ---- 3晩目（商店街と夕暮れの踏切。踏切の部屋は、ぬしの手前の敵を2つに減らした） ----
+      { id: 'a32_e_street3', room: 'grad_street', night: 3, patrol: [[5, 29], [18, 29]], battle: 'a32_n3_street' },
+      { id: 'a32_e_street3b', room: 'grad_street', night: 3, patrol: [[5, 16], [18, 16]], battle: 'a32_n3_street2' },
+      { id: 'a32_e_cross1', room: 'grad_crossing', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a32_n3_cross1' },
+      { id: 'a32_e_cross2', room: 'grad_crossing', night: 3, move: 'chase', patrol: [[5, 12], [18, 12]], battle: 'a32_n3_cross2' },
+    ],
+    // 上がらない遮断機
+    boss: { id: 'a32_boss', room: 'grad_crossing', cell: [11, 5], battle: 'a32_boss' },
+    // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む
+    talkers: [
+      { id: 'a32_voice_friend', cell: [9, 36], until: 1, scene: 'a32_voice_friend', label: '友だち' },
+      { id: 'a32_voice_teacher', cell: [16, 28], until: 1, scene: 'a32_voice_teacher', label: '先生' },
+      { id: 'a32_voice_junior', cell: [15, 20], until: 1, scene: 'a32_voice_junior', label: '後輩' },
+      { id: 'a32_voice2_junior', cell: [15, 20], night: 2, until: 2, scene: 'a32_voice2_junior', label: '後輩' },
+      { id: 'a32_voice2_clerk', room: 'grad_street', cell: [5, 30], night: 2, until: 2, scene: 'a32_voice2_clerk', label: 'コンビニの店員' },
+      { id: 'a32_voice2_grocer', room: 'grad_street', cell: [18, 30], night: 2, until: 2, scene: 'a32_voice2_grocer', label: '八百屋のおじさん' },
+      { id: 'a32_voice2_fumi', room: 'grad_street', cell: [5, 16], night: 2, until: 2, scene: 'a32_voice2_fumi', label: '着物の人' },
+      // 七年前の時計屋のショーウィンドウ（奥の柱時計だけ、今の時刻を指している）
+      { id: 'a32_clock', room: 'grad_street', cell: [18, 24], night: 2, scene: 'a32_clock', label: '時計屋' },
+      { id: 'a32_voice3_grocer', room: 'grad_street', cell: [18, 30], night: 3, scene: 'a32_voice3_grocer', label: '八百屋のおじさん' },
+    ],
+    // コマが戻るたびに、過去の場面が1つずつ進む
+    triggers: [
+      { on: 'koma', count: 1, scene: 'a32_first_koma' },
+      { on: 'checkpoint', room: 'grad_slope', cell: [11, 16], scene: 'a32_checkpoint' },
+      { on: 'room', room: 'grad_gym_back', scene: 'a32_gym' },
+      { on: 'koma', count: 2, scene: 'a32_koma2' },
+      { on: 'koma', count: 3, scene: 'a32_koma3' },
+      { on: 'koma', count: 4, scene: 'a32_koma4' },
+      { on: 'koma', count: 5, scene: 'a32_koma5' },
+      { on: 'koma', count: 6, scene: 'a32_koma6' },
+      { on: 'koma', count: 7, scene: 'a32_koma7' },
+      { on: 'koma', count: 8, scene: 'a32_koma8' },
+      { on: 'komaLeft', left: 1, scene: 'a32_one_left' },
+      { on: 'boss', scene: 'a32_boss' },
+      { on: 'cleared', scene: 'a32_last_koma' },
     ],
   },
   // 大正の祭りの夜（段階91b。docs/script/3-matsuri.md）。小夜子の夜は、まだ返さない。コマはない。2晩とも同じ夜（写しの台詞もまったく同じ）。

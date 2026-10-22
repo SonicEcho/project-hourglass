@@ -11,4 +11,5 @@ export const PRESET_SEEDS: PresetSeeds = {
   a31: { low: 19, normal: 13 },
   a3s1: { low: 19, normal: 11 },
   a3s2: { low: 22, normal: 15 },
+  a32: { low: 15, normal: 25 },
 };
