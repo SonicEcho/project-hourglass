@@ -547,7 +547,8 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a21_e_top', night: 3, patrol: [[6, 10], [9, 10]], battle: 'a21_n3_top' },
       { id: 'a21_e_corner', night: 3, move: 'chase', patrol: [[6, 14], [6, 17]], battle: 'a21_n3_corner' },
       { id: 'a21_e_steps', night: 3, patrol: [[11, 9], [12, 9]], battle: 'a21_n3_steps' },
-      { id: 'a21_e_inner', night: 3, patrol: [[9, 7], [14, 7]], battle: 'a21_n3_inner' },
+      // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
+      { id: 'a21_e_inner', night: 3, patrol: [[17, 20], [22, 20]], battle: 'a21_n3_inner' },
     ],
     // 工場の中、旋盤の前
     boss: { id: 'a21_boss', cell: [11, 5], battle: 'a21_boss' },
@@ -653,7 +654,8 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a22_e_hall3', room: 'school_corridor', night: 3, patrol: [[10, 6], [13, 6]], battle: 'a22_n3_hall' },
       { id: 'a22_e_floor1', room: 'school_gym', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a22_n3_floor1' },
       { id: 'a22_e_floor2', room: 'school_gym', night: 3, move: 'chase', patrol: [[5, 10], [18, 10]], battle: 'a22_n3_floor2' },
-      { id: 'a22_e_front', room: 'school_gym', night: 3, patrol: [[7, 6], [10, 6]], battle: 'a22_n3_front' },
+      // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
+      { id: 'a22_e_front', room: 'school_corridor', night: 3, patrol: [[6, 17], [15, 17]], battle: 'a22_n3_front' },
     ],
     // 体育館のステージ
     boss: { id: 'a22_boss', room: 'school_gym', cell: [11, 4], battle: 'a22_boss' },
@@ -754,7 +756,8 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a23_e_stand3', room: 'riverside_stand', night: 3, patrol: [[16, 16], [20, 16]], battle: 'a23_n3_stand' },
       { id: 'a23_e_field1', room: 'riverside_diamond', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a23_n3_field1' },
       { id: 'a23_e_field2', room: 'riverside_diamond', night: 3, move: 'chase', patrol: [[5, 11], [18, 11]], battle: 'a23_n3_field2' },
-      { id: 'a23_e_front', room: 'riverside_diamond', night: 3, patrol: [[4, 9], [8, 9]], battle: 'a23_n3_front' },
+      // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
+      { id: 'a23_e_front', room: 'riverside_stand', night: 3, patrol: [[4, 17], [10, 17]], battle: 'a23_n3_front' },
     ],
     // ホームベースの前
     boss: { id: 'a23_boss', room: 'riverside_diamond', cell: [11, 6], battle: 'a23_boss' },
@@ -892,7 +895,8 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a31_e_yard3', room: 'village_house', night: 3, patrol: [[16, 16], [20, 16]], battle: 'a31_n3_yard' },
       { id: 'a31_e_platform1', room: 'village_platform', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a31_n3_platform1' },
       { id: 'a31_e_platform2', room: 'village_platform', night: 3, move: 'chase', patrol: [[5, 11], [18, 11]], battle: 'a31_n3_platform2' },
-      { id: 'a31_e_front', room: 'village_platform', night: 3, patrol: [[4, 8], [8, 8]], battle: 'a31_n3_front' },
+      // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
+      { id: 'a31_e_front', room: 'village_house', night: 3, patrol: [[4, 17], [10, 17]], battle: 'a31_n3_front' },
     ],
     // ホームに止まっている汽車
     boss: { id: 'a31_boss', room: 'village_platform', cell: [11, 5], battle: 'a31_boss' },
