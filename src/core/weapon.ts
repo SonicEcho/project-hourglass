@@ -106,6 +106,8 @@ export interface WeaponDef {
   /** 持ち主のキャラ */
   owner: string;
   evolutions: EvolutionDef[];
+  /** 始めの経験値（段階91a。物語の途中から加わる仲間の武器を、途中のレベルから始める） */
+  startExp?: number;
 }
 
 export interface WeaponData {
@@ -159,7 +161,7 @@ export function createArmory(data: WeaponData): ArmoryState {
     weapons[w.owner] = {
       defId: w.id,
       params: { atk: 0, fire: 0, ice: 0, thunder: 0 },
-      exp: 0,
+      exp: w.startExp ?? 0,
       tendency: { red: 0, blue: 0, green: 0, yellow: 0 },
       path: [],
       absorbed: 0,

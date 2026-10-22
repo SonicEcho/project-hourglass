@@ -5,10 +5,10 @@ import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_MAP, HERO, HUB_SCENES, 
 
 // 章の区切り（段階49。docs/design/economy.md の 2.・7.）：星図の区域は章で広がる。狩りで前の章の区画は、星の砂と経験値が半分
 describe('星図の章の鍵（段階49）', () => {
-  it('はくちょう座（17の星）は2章の区域。ほかはいつでも（段階56）', () => {
+  it('はくちょう座（17の星）は2章、ヘルクレス座（11の星。段階91a）は3章の区域。ほかはいつでも（段階56）', () => {
     const locked = GROWTH_MAP.nodes.filter((n) => n.chapter !== undefined);
-    expect(locked.length).toBe(17);
-    expect(locked.every((n) => n.con === 'cyg' && n.chapter === 2)).toBe(true);
+    expect(locked.length).toBe(28);
+    expect(locked.every((n) => (n.con === 'cyg' && n.chapter === 2) || (n.con === 'her' && n.chapter === 3))).toBe(true);
   });
 
   it('1章では開けられず、2章と章のない時（試作の5戦）は開けられる', () => {

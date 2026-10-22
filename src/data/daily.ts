@@ -453,4 +453,32 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', toDusk('d24_to_dusk')),
     ],
   },
+  // ---- 祭りの夜（段階91。docs/script/3-matsuri.md の 4.） ----
+  // 25日目（火曜）：町の神社の宮司さんは必ず見る（神社は町の地図に場所を足す空きがないので、商店街の中に置く）。夕暮れに祭りの夜の2晩目
+  d25_free: {
+    id: 'd25_free',
+    time: '25日目　火曜の放課後',
+    day: 25,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('street', main('d25_shrine', '町の神社'), talk('d25_talk_geta', '下駄の音', ROW2, 'mio')),
+      at('school', talk('d25_talk_eight', '教室', ROW2, 'akari')),
+      at('care_home', talk('d25_talk_window', '窓辺', ROW2)),
+      at('clockshop', toDusk('d25_to_dusk')),
+    ],
+  },
+  // 26日目（水曜）：小夜子と今の町を歩くのと、その後ののぼるさんの電話は必ず見る。夕暮れに、また明日
+  d26_free: {
+    id: 'd26_free',
+    time: '26日目　水曜の放課後',
+    day: 26,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('clockshop', main('d26_sayoko', 'はじめての今'), main('d26_noboru', '店の電話', ROW2, 'd26_sayoko'), toDusk('d26_to_dusk')),
+      at('school', talk('d26_talk_name', '教室', ROW2, 'akari')),
+      at('street', talk('d26_talk_kuji', '福引のテント', ROW2, 'mio')),
+    ],
+  },
 };

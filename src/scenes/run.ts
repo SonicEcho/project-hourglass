@@ -14,6 +14,7 @@ import {
   chapterOfEvent,
   firstEventId,
   gaugeInChapter,
+  battleLineup,
   lineupAt,
   lineupMembers,
   moveToEvent,
@@ -67,6 +68,8 @@ export const run: {
   hunt: { salt: number; state: ExploreState; fade: number } | null;
   /** 戦闘中の印（段階44）：閉じたら「つづきから」でこの戦闘の始めから。戦闘の外では null */
   battle: SavedBattle | null;
+  /** 遊ぶ人が選んだ戦闘の並び（段階91a。空なら章の並びのまま） */
+  party: string[];
 } = {
   active: false,
   seed: 0,
@@ -84,6 +87,7 @@ export const run: {
   album: createAlbum(FOLDER),
   hunt: null,
   battle: null,
+  party: [],
 };
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -126,6 +130,7 @@ export function startNewRun(): void {
   run.album = createAlbum(FOLDER);
   run.hunt = null;
   run.battle = null;
+  run.party = [];
   saveRun();
 }
 
@@ -243,6 +248,7 @@ function snapshot(): RunSnapshot {
     returned: run.returned,
     album: run.album,
     battle: run.battle,
+    party: run.party,
   };
 }
 
@@ -287,6 +293,46 @@ export function deleteSave(): void {
   lastWritten = null;
 }
 
+/**
+ * 育ち具合で飛ぶ前のセーブ（段階92）。デバッグで飛ぶと今のセーブが上書きされるので、飛ぶ前に1つ取っておく。
+ * もう取ってある時は上書きしない（何度飛んでも、最初の本番のセーブに戻れるように）
+ */
+const BEFORE_JUMP_KEY = 'restopia.save.beforeJump';
+
+export function backupBeforeJump(): void {
+  if (storage.read(BEFORE_JUMP_KEY) !== null) return;
+  const text = storage.read(SAVE_KEY);
+  if (text !== null) storage.write(BEFORE_JUMP_KEY, text);
+}
+
+/** 取ってある飛ぶ前のセーブの一言（何日目・出来事・保存した日時）。なければ null */
+export function beforeJumpInfo(): string | null {
+  const text = storage.read(BEFORE_JUMP_KEY);
+  if (text === null) return null;
+  const r = parseSave(text, saveContext());
+  if (!r.ok) return '読めないセーブ';
+  const e = findEvent(SLICE_FLOW, r.save.run.event);
+  const at = new Date(r.save.savedAt);
+  const when = Number.isNaN(at.getTime()) ? '' : `　${at.getMonth() + 1}/${at.getDate()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+  return `${r.save.run.progress.day}日目「${e?.title ?? r.save.run.event}」${when}`;
+}
+
+/** 飛ぶ前のセーブを、今のセーブに戻す（戻した後はページを開き直して「つづきから」）。取ってなければ false */
+export function restoreBeforeJump(): boolean {
+  const text = storage.read(BEFORE_JUMP_KEY);
+  if (text === null) return false;
+  run.active = false;
+  storage.write(SAVE_KEY, text);
+  storage.remove(BEFORE_JUMP_KEY);
+  lastWritten = null;
+  return true;
+}
+
+/** 飛ぶ前のセーブを捨てる（今の状態を本番にする時） */
+export function forgetBeforeJump(): void {
+  storage.remove(BEFORE_JUMP_KEY);
+}
+
 /** セーブから続ける。読めたら true。URL の ?seed= がある時は、そのシードを優先する */
 export function continueRun(): boolean {
   const r = readSave();
@@ -306,6 +352,7 @@ export function continueRun(): boolean {
   run.returned = s.returned;
   run.album = s.album;
   run.battle = s.battle;
+  run.party = s.party;
   run.hunt = null;
   run.active = true;
   lastWritten = null;
@@ -387,6 +434,35 @@ export function setStoryLinkGauge(value: number): void {
 /** 物語の今の章のパーティ（ハルトとあかり、など） */
 export function storyLineup(): Lineup {
   return lineupAt(SLICE_FLOW, run.event, CHAPTER1_LINEUP);
+}
+
+/** 探索している区画で、並びから外せない仲間（段階91a。祭りの夜の2晩目の小夜子） */
+function nightFixed(): string[] {
+  const ex = run.explore;
+  return ex ? (AREAS[ex.area]?.partyFixed ?? []) : [];
+}
+
+/** 物語の今の戦闘に出るパーティ（段階91a）：章の仲間から、遊ぶ人が選んだ並び（run.party）で size 人を出す */
+export function storyBattleLineup(): Lineup {
+  return battleLineup(storyLineup(), run.party, nightFixed());
+}
+
+/** 戦闘の並びを選び直して保存する（段階91a。並びの窓から） */
+export function setParty(ids: string[]): void {
+  run.party = [...ids];
+  saveRun();
+}
+
+/** 並びを選べるか（段階91a）：物語の今の章で、仲間が戦闘に出られる人数より多い時 */
+export function canChooseParty(): boolean {
+  const l = storyLineup();
+  return l.size !== undefined && l.size < l.members.length;
+}
+
+/** 今の並び（選んだもの。外せない仲間を含めて整えたもの）と、外せない仲間 */
+export function partyChoice(): { lineup: Lineup; chosen: string[]; fixed: string[] } {
+  const lineup = storyLineup();
+  return { lineup, chosen: storyBattleLineup().members, fixed: [...(lineup.fixed ?? []), ...nightFixed()] };
 }
 
 /** 育成の画面で使うパーティ：探索から開いた時は物語の章のもの、それ以外は試作の5戦のもの */

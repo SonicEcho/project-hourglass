@@ -15,6 +15,34 @@ export interface Lineup {
   unlocks: Unlocks;
   /** 物語の何章か（段階49。星図の章の鍵と、武器のレベルの上限に使う。試作の5戦は書かない＝制限なし） */
   chapter?: number;
+  /**
+   * 戦闘に出る人数（段階91a）。書かなければ members の全員。members の方が多い時は、遊ぶ人が「並び」で選ぶ（chooseParty）。
+   * 選ばなかった仲間も、星図・武器・ムーブメントは育てられる（育成の画面は members の全員）
+   */
+  size?: number;
+  /** 並びから外せない仲間（段階91a。ハルトなど） */
+  fixed?: string[];
+}
+
+/**
+ * 戦闘に出る仲間の並び（段階91a）。chosen は遊ぶ人が選んだ並び（セーブの party）、extraFixed は物語でその時だけ外せない仲間（晩の fixed）。
+ * 外せない仲間を先に（members の順で）、残りを chosen の順で入れ、size に届かなければ members の順で足す
+ */
+export function chooseParty(lineup: Lineup, chosen: readonly string[], extraFixed: readonly string[] = []): string[] {
+  const size = Math.min(lineup.size ?? lineup.members.length, lineup.members.length);
+  const fixedIds = new Set([...(lineup.fixed ?? []), ...extraFixed]);
+  const out = lineup.members.filter((id) => fixedIds.has(id)).slice(0, size);
+  for (const id of [...chosen, ...lineup.members]) {
+    if (out.length >= size) break;
+    if (lineup.members.includes(id) && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+/** 戦闘に出るパーティ（段階91a）：members を chooseParty の並びにしたもの。size がなければ、そのまま */
+export function battleLineup(lineup: Lineup, chosen: readonly string[], extraFixed: readonly string[] = []): Lineup {
+  if (lineup.size === undefined || lineup.size >= lineup.members.length) return lineup;
+  return { ...lineup, members: chooseParty(lineup, chosen, extraFixed) };
 }
 
 /** 仲間の一覧から、パーティにいる人だけを、パーティの並びの順に取り出す */

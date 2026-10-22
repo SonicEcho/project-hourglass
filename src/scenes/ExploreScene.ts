@@ -57,7 +57,7 @@ import { addButton, addText } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { currentParty, nextHuntCount, run, setExplore, setHubReturn, setHuntState, setStoryVars, storyLineup, storyLinkGauge } from './run';
+import { currentParty, nextHuntCount, run, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup, storyLinkGauge } from './run';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -440,7 +440,7 @@ export class ExploreScene extends Phaser.Scene {
     // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない。
     // 動ける範囲は、地図の上と下に帯の高さの分だけ広げる（地図の上の端と下の端が、帯に隠れたままにならないように。段階58）
     const cam = this.cameras.main;
-    const bottomBand = vitalsBandHeight(currentParty(storyLineup()).length);
+    const bottomBand = vitalsBandHeight(currentParty(storyBattleLineup()).length);
     cam
       .setZoom(RENDER_SCALE)
       .setBounds(0, -TOP_BAND, this.map.cols * T, this.map.rows * T + TOP_BAND + bottomBand)
@@ -485,7 +485,7 @@ export class ExploreScene extends Phaser.Scene {
       }).setOrigin(0.5, 0),
     );
     // 章の中で引き継いでいる、連携技のつながりゲージ（段階26の調整3）
-    if (usableLinks(LINKS, storyLineup().members).length > 0) {
+    if (usableLinks(LINKS, storyBattleLineup().members).length > 0) {
       const g = storyLinkGauge();
       const full = g >= LINK_GAUGE_MAX;
       ui.add(
@@ -510,7 +510,7 @@ export class ExploreScene extends Phaser.Scene {
     this.updateHubButton();
     // 仲間の今の HP・MP（区画の中では戦闘をまたいで持ち越す。段階32b 調整3）
     // 仲間ごとの列に名前と HP・MP の2行で出す（段階38で3人の時、段階47で2人の時も。1行だと左右がはみ出していた）
-    const members = currentParty(storyLineup());
+    const members = currentParty(storyBattleLineup());
     const band = vitalsBandHeight(members.length);
     ui.add(this.add.rectangle(0, GAME_HEIGHT - band, GAME_WIDTH, band, 0x000000, 0.55).setOrigin(0));
     // 下の端のビルド日時と右下の設定のボタンにかからないよう、その上と左に並べる
@@ -683,7 +683,7 @@ export class ExploreScene extends Phaser.Scene {
   /** 下の帯の、仲間の今の HP・MP（全回復の時は薄い色） */
   private refreshVitals(): void {
     const vitals = this.state.vitals;
-    const members = currentParty(storyLineup());
+    const members = currentParty(storyBattleLineup());
     const lines = members.map((c) => {
       const v = vitals?.[c.id];
       const hp = `${Math.min(v?.hp ?? c.stats.hp, c.stats.hp)}/${c.stats.hp}`;
@@ -777,7 +777,7 @@ export class ExploreScene extends Phaser.Scene {
     const unlocks = storyLineup().unlocks;
     const target = unlocks.growth ? 'Growth' : unlocks.weapon ? 'Weapon' : null;
     if (this.walking || this.route.length > 0) return;
-    const y = GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyLineup()).length);
+    const y = GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyBattleLineup()).length);
     // 帰り口（段階67）に立っている：時計屋へ帰って、今夜を終える
     if (this.atExit(this.state.cell)) {
       addButton(this, this.hubButton, GAME_WIDTH / 2, target ? y - 70 : y, 240, 60, '時計屋へ帰る\n（今夜はおわり）', { onTap: () => this.finishArea() }, {

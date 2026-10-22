@@ -40,6 +40,11 @@ const text = [
   module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a31')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a31')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'pouch', 'a31')),
+  // 段階91：大正の祭りの夜（1晩目は3-1 の後から、2晩目は小夜子を入れた3人）
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a3s1')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a3s1')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a3s2')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a3s2')),
   // 段階54：進化の道ごとの勝率（1人の1回目の進化先を決めて）。2-1 は弱点をねらう方針、2-3 はでたらめな方針（ねらう方針はほぼ勝つため）
   module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a21', 'smart')),
   module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a23', 'random')),

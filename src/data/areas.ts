@@ -6,6 +6,7 @@ import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_N
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
 import { BALL_NOISE, JUG_NOISE, KAI, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
+import { CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE, YAGURA_LORD } from './taishoEnemies';
 import { COIL_NOISE, FAN_NOISE, POSTBOX_NOISE, RADIO_NOISE, TABLE_NOISE, TRAIN_LORD } from './villageEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { box, ROOMS } from './rooms';
@@ -51,6 +52,8 @@ export const A11_STORM_HP = { night1: 1.4, later: 1.8 };
 const tough = (list: EnemyDef[], rate = A11_STORM_HP.later) => list.map((e) => toughenEnemy(e, rate));
 /** 3-1 の砂嵐の強さ（段階88）：晩ごとの攻撃の倍率（scaleEnemy）と、番人・ぬしの HP の倍率（toughenEnemy） */
 export const A31_SCALE = { n1: 1.3, n2: 1.4, n3: 1.55, guard: 1.2, boss: 1.4 };
+/** 大正の祭りの夜の砂嵐の強さ（段階91b）：1晩目・1晩目の終わり・2晩目の攻撃の倍率と、ぬしの HP の倍率 */
+export const A3S_SCALE = { n1: 1.4, end: 1.5, n2: 1.45, boss: 1.75 };
 
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
@@ -209,6 +212,21 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a31_n3_platform2: { id: 'a31_n3_platform2', name: '砂嵐', enemies: tough([FAN_NOISE, RADIO_NOISE, TABLE_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 4, koma: 1 },
   a31_n3_front: { id: 'a31_n3_front', name: '砂嵐', enemies: tough([COIL_NOISE, FAN_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 2 },
   a31_boss: { id: 'a31_boss', name: '汽車のぬし', enemies: [toughenEnemy(TRAIN_LORD, A31_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['quickStep'] },
+  // ---- 大正の祭りの夜（段階91b。taishoEnemies.ts）。コマはない（返す話ではない）。1晩目は3人、2晩目は小夜子が入る ----
+  a3s1_torii: { id: 'a3s1_torii', name: '砂嵐', enemies: tough([LANTERN_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
+  a3s1_torii2: { id: 'a3s1_torii2', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, PINWHEEL_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 2 },
+  a3s1_stalls: { id: 'a3s1_stalls', name: '砂嵐', enemies: tough([CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3, item: ITEMS.potion.id },
+  a3s1_stalls2: { id: 'a3s1_stalls2', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, PINWHEEL_NOISE, CANDY_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
+  a3s1_yagura: { id: 'a3s1_yagura', name: '砂嵐', enemies: tough([LANTERN_NOISE, CANDY_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
+  // 1晩目の終わり：花火の前に、やぐらの影から湧く砂嵐（区画の奥の印。勝つと夜が巻き戻る）
+  a3s1_end: { id: 'a3s1_end', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, LANTERN_NOISE, CANDY_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.end))), reward: 5, snaps: ['iceChip'] },
+  a3s2_torii: { id: 'a3s2_torii', name: '砂嵐', enemies: tough([LANTERN_NOISE, PINWHEEL_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 3 },
+  a3s2_stalls: { id: 'a3s2_stalls', name: '砂嵐', enemies: tough([CANDY_NOISE, PHONOGRAPH_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 3 },
+  a3s2_stalls2: { id: 'a3s2_stalls2', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, CANDY_NOISE, PHONOGRAPH_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 3, item: ITEMS.hiPotion.id },
+  a3s2_yagura: { id: 'a3s2_yagura', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, LANTERN_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
+  a3s2_edge: { id: 'a3s2_edge', name: '砂嵐', enemies: tough([CANDY_NOISE, CANDY_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
+  a3s2_edge2: { id: 'a3s2_edge2', name: '砂嵐', enemies: tough([LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
+  a3s2_boss: { id: 'a3s2_boss', name: 'やぐらのぬし', enemies: [toughenEnemy(YAGURA_LORD, A3S_SCALE.boss)], reward: 10, boss: true, snaps: ['breakArm'] },
 };
 
 /**
@@ -874,6 +892,81 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'komaLeft', left: 1, scene: 'a31_one_left' },
       { on: 'boss', scene: 'a31_boss' },
       { on: 'cleared', scene: 'a31_last_koma' },
+    ],
+  },
+  // 大正の祭りの夜（段階91b。docs/script/3-matsuri.md）。小夜子の夜は、まだ返さない。コマはない。2晩とも同じ夜（写しの台詞もまったく同じ）。
+  // 1晩目：鳥居と参道 → 屋台の通り → やぐらの広場。やぐらの横の小夜子（区画の奥の印）で、花火の前の砂嵐と戦い、夜が巻き戻る
+  a3s1: {
+    id: 'a3s1',
+    name: '大正の祭りの夜',
+    rooms: [ROOMS.matsuri_torii, ROOMS.matsuri_stalls, ROOMS.matsuri_yagura1],
+    links: [
+      { a: { room: 'matsuri_torii', side: 'top' }, b: { room: 'matsuri_stalls', side: 'bottom' } },
+      { a: { room: 'matsuri_stalls', side: 'top' }, b: { room: 'matsuri_yagura1', side: 'bottom' } },
+    ],
+    // 大正の祭りの夜の曲が届くまで、プロローグの祭りの曲で代わり
+    bgm: BGM.prologue,
+    komaNeed: 0,
+    goal: { band: '目当て：やぐらの広場', guide: '小夜子についていく。花火は、やぐらの広場から見るのが一番きれいらしい' },
+    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.lanternPaper.id, ITEMS.candyStick.id, ITEMS.ether.id], gears: ['hpMemory'] }],
+    enemies: [
+      { id: 'a3s1_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3s1_torii' },
+      { id: 'a3s1_e_torii2', patrol: [[4, 11], [19, 11]], battle: 'a3s1_torii2' },
+      { id: 'a3s1_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3s1_stalls' },
+      { id: 'a3s1_e_stalls2', room: 'matsuri_stalls', move: 'chase', patrol: [[8, 20], [15, 20]], battle: 'a3s1_stalls2' },
+      { id: 'a3s1_e_yagura', room: 'matsuri_yagura1', patrol: [[4, 16], [19, 16]], battle: 'a3s1_yagura' },
+    ],
+    // やぐらの柵にもたれる小夜子。触れると、花火の前に砂嵐が湧く
+    boss: { id: 'a3s1_sayoko', room: 'matsuri_yagura1', cell: [6, 9], battle: 'a3s1_end', label: '小夜子' },
+    talkers: [
+      { id: 'a3s_voice_goldfish', cell: [12, 9], scene: 'a3s_voice_goldfish', label: '金魚売り' },
+      { id: 'a3s_voice_pinwheel', cell: [16, 17], scene: 'a3s_voice_pinwheel', label: '風車の子ども' },
+      { id: 'a3s_voice_candy', room: 'matsuri_stalls', cell: [12, 16], scene: 'a3s_voice_candy', label: '飴細工の職人' },
+      { id: 'a3s_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3s_voice_ondo', label: '音頭取り' },
+    ],
+    triggers: [
+      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3s_stalls' },
+      { on: 'room', room: 'matsuri_yagura1', scene: 'a3s_dejavu' },
+      { on: 'boss', scene: 'a3s_yagura' },
+      { on: 'cleared', scene: 'a3s_rewind' },
+    ],
+  },
+  // 2晩目：昨日とまったく同じ夜。小夜子が並びに入る（外せない）。夜の端のやぐらのぬしを倒すと、百年ぶりに花火を最後まで見る
+  a3s2: {
+    id: 'a3s2',
+    name: '大正の祭りの夜（2晩目）',
+    rooms: [ROOMS.matsuri_torii, ROOMS.matsuri_stalls, ROOMS.matsuri_yagura, ROOMS.matsuri_edge],
+    links: [
+      { a: { room: 'matsuri_torii', side: 'top' }, b: { room: 'matsuri_stalls', side: 'bottom' } },
+      { a: { room: 'matsuri_stalls', side: 'top' }, b: { room: 'matsuri_yagura', side: 'bottom' } },
+      { a: { room: 'matsuri_yagura', side: 'top' }, b: { room: 'matsuri_edge', side: 'bottom' } },
+    ],
+    bgm: BGM.prologue,
+    komaNeed: 0,
+    goal: { band: '目当て：夜の端', guide: '昨日とまったく同じ夜。小夜子と一緒に、やぐらの先の夜の端へ' },
+    partyFixed: ['sayoko'],
+    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [5, 6], items: [ITEMS.recordNeedle.id, ITEMS.pinwheelBlade.id, ITEMS.hiPotion.id], gears: ['guardMemory'], snaps: ['recover'] }],
+    enemies: [
+      { id: 'a3s2_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3s2_torii' },
+      { id: 'a3s2_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3s2_stalls' },
+      { id: 'a3s2_e_stalls2', room: 'matsuri_stalls', move: 'chase', patrol: [[8, 20], [15, 20]], battle: 'a3s2_stalls2' },
+      { id: 'a3s2_e_yagura', room: 'matsuri_yagura', move: 'chase', patrol: [[4, 5], [19, 5]], battle: 'a3s2_yagura' },
+      { id: 'a3s2_e_edge', room: 'matsuri_edge', patrol: [[4, 14], [19, 14]], battle: 'a3s2_edge' },
+      { id: 'a3s2_e_edge2', room: 'matsuri_edge', patrol: [[4, 10], [19, 10]], battle: 'a3s2_edge2' },
+    ],
+    boss: { id: 'a3s2_boss', room: 'matsuri_edge', cell: [11, 5], battle: 'a3s2_boss' },
+    talkers: [
+      { id: 'a3s_voice_goldfish', cell: [12, 9], scene: 'a3s_voice_goldfish', label: '金魚売り' },
+      { id: 'a3s_voice_pinwheel', cell: [16, 17], scene: 'a3s_voice_pinwheel', label: '風車の子ども' },
+      { id: 'a3s_voice_candy', room: 'matsuri_stalls', cell: [12, 16], scene: 'a3s_voice_candy', label: '飴細工の職人' },
+      { id: 'a3s_voice_ondo', room: 'matsuri_yagura', cell: [17, 13], scene: 'a3s_voice_ondo', label: '音頭取り' },
+    ],
+    triggers: [
+      { on: 'room', room: 'matsuri_stalls', scene: 'a3s_kuji' },
+      { on: 'checkpoint', room: 'matsuri_yagura', cell: [12, 14], scene: 'a3s_hundred' },
+      { on: 'room', room: 'matsuri_edge', scene: 'a3s_riku_page' },
+      { on: 'boss', scene: 'a3s_edge' },
+      { on: 'cleared', scene: 'a3s_fireworks' },
     ],
   },
 };

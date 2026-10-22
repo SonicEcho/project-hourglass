@@ -39,7 +39,9 @@ async function until(what, fn, timeout = 15000) {
 const findText = (pattern) => page.evaluate((p) => window.__restopia.findText(p), pattern);
 const scenes = () => page.evaluate(() => window.__restopia?.scenes() ?? []);
 // タイトルは、ページを開き直した直後に、台帳の絵をまとめて読み込んでから出る（立ち絵が増えて、遅い環境では15秒を超える。2026-10-19）
-const waitScene = (key) => until(`画面「${key}」`, async () => (await scenes()).includes(key), key === 'Title' ? 60000 : undefined);
+// タイトルが出るまでと、最初の「はじめる」の後（絵を全部読み終えるまで「絵を読み込んでいます」で待つ。段階69）は長く待つ。
+// 「はじめる」から会話まで、手元でも 9〜18 秒かかり、15 秒では CI で間に合わないことがあった（2026-10-22）
+const waitScene = (key, timeout) => until(`画面「${key}」`, async () => (await scenes()).includes(key), timeout ?? (key === 'Title' ? 60000 : undefined));
 
 /** 390×844 の座標を、ページの座標にしてタップする */
 async function tapAt(x, y) {
@@ -57,6 +59,8 @@ async function tap(pattern) {
 /** デバッグメニューを開いて、ボタンを押す（index は同じ文字のボタンが複数ある時の何番目か） */
 async function debugButton(label, index = 0) {
   await page.getByText('DBG', { exact: true }).click();
+  // あまり使わないボタンは、折りたたんだ見出しの中にある（段階92）
+  await page.evaluate(() => document.querySelectorAll('details').forEach((d) => (d.open = true)));
   await page.locator('button', { hasText: label }).nth(index).click();
 }
 async function closeDebugMenu() {
@@ -108,7 +112,7 @@ try {
   await page.goto(`${base}?debug=1&seed=1`);
   await waitScene('Title');
   await tap('^はじめる$');
-  await waitScene('Dialogue');
+  await waitScene('Dialogue', 60000);
   // BGM は初めて流す時に読むので、少し待つ（2026-10-11）
   await until('タイトルの BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.title');
   // 「はじめる」で曲を全部ダウンロードして端末にしまう（2026-10-11）
@@ -329,7 +333,8 @@ try {
     }
   };
   await page.getByText('DBG', { exact: true }).click();
-  await page.locator('select', { has: page.locator('option[value="d6_free"]') }).selectOption('d6_free');
+  await page.locator('#debug-event').selectOption('d6_free');
+  await page.locator('#debug-tier').selectOption('keep');
   await page.locator('button', { hasText: 'の出来事へ飛ぶ' }).click();
   await waitScene('Daily');
   await skipTips();
@@ -440,6 +445,30 @@ try {
   await tap('^時計屋へ戻る$');
   await waitScene('Daily');
   await until('昼の回数が減っていない', () => findText('^昼に選べるのは、あと2回$'));
+
+  step('確認を楽にする（段階92）：育ち具合で飛び、メモを書き、飛ぶ前のセーブに戻す');
+  page.on('dialog', (d) => void d.accept());
+  // 飛ぶ前のセーブは、最初に飛んだ時の1つだけ取っておく（何度飛んでも、本番のセーブに戻れる）。この確認の前にも飛んでいるので、それに戻る
+  const dayBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('restopia.save.beforeJump') ?? localStorage.getItem('restopia.save.auto')).run.progress.day);
+  await page.getByText('DBG', { exact: true }).click();
+  await page.locator('#debug-event').selectOption('a3s_enter');
+  await page.locator('#debug-tier').selectOption('normal');
+  await page.locator('button', { hasText: 'の出来事へ飛ぶ' }).click();
+  await page.getByText(/^育ち具合：ふつう（7区画を通した/).waitFor({ timeout: 60000 });
+  const jumped = await page.evaluate(() => JSON.parse(localStorage.getItem('restopia.save.auto')).run);
+  if (jumped.event !== 'a3s_enter' || (jumped.armory.weapons.hero.path?.length ?? 0) < 2) throw new Error(`育ち具合で飛べていない（${jumped.event}）`);
+  await page.getByText('メモ', { exact: true }).click();
+  await page.getByText('手応え', { exact: true }).click();
+  await page.locator('#memo-text').fill('通しの自動確認のメモ');
+  await page.getByText('書いて閉じる', { exact: true }).click();
+  const memos = await page.evaluate(() => JSON.parse(localStorage.getItem('restopia.memos')));
+  if (memos.length !== 1 || memos[0].kind !== '手応え' || memos[0].place.event !== 'a3s_enter') throw new Error(`メモが残っていない：${JSON.stringify(memos)}`);
+  await page.getByText('DBG', { exact: true }).click();
+  await page.locator('button', { hasText: '飛ぶ前のセーブに戻す' }).click();
+  await waitScene('Title');
+  const restored = await page.evaluate(() => JSON.parse(localStorage.getItem('restopia.save.auto')).run.progress.day);
+  if (restored !== dayBefore) throw new Error(`飛ぶ前のセーブに戻っていない（${restored}日目。飛ぶ前は${dayBefore}日目）`);
+  if (await page.evaluate(() => localStorage.getItem('restopia.save.beforeJump')) !== null) throw new Error('戻した後も、飛ぶ前のセーブが残っている');
 
   if (errors.length > 0) throw new Error(errors.join('\n'));
   console.log('通しの自動確認：成功');

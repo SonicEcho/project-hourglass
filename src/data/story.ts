@@ -4,7 +4,7 @@ import type { Story } from '../core/progress';
 import { V1_AREA_ID, V1_CHAPTER_ID } from '../core/save';
 import type { CampaignBattle } from './campaign';
 import { CAMPAIGN } from './campaign';
-import { AKARI, HERO, MIO } from './characters';
+import { AKARI, HERO, MIO, SAYOKO } from './characters';
 
 // 物語の章 → 区画 → 戦闘（段階13）。今は試作の1章・1区画に、今までの5戦だけ。
 // 章・区画・戦闘の id はセーブが覚えるので、名前を変えても id は変えない
@@ -34,6 +34,17 @@ export const CHAPTER2_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], u
 
 /** 3章（段階88）：3-1 までは2章と同じ3人（小夜子の加入と、その後の戦闘の人数は段階89・90 で決める） */
 export const CHAPTER3_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true }, chapter: 3 };
+/**
+ * 小夜子が加わった後の3章（段階91。祭りの夜の2晩目から）。仲間は4人で、戦闘に出るのは3人。ハルトは外せない（docs/design/battle.md の決定の記録）。
+ * 誰が出るかは、探索のチェックポイントの星図と、拠点の「並び」で選ぶ（PartyScene）
+ */
+export const CHAPTER3_SAYOKO_LINEUP: Lineup = {
+  members: [HERO.id, AKARI.id, MIO.id, SAYOKO.id],
+  size: 3,
+  fixed: [HERO.id],
+  unlocks: { growth: true, navi: true, weapon: true },
+  chapter: 3,
+};
 
 // ---- 物語の流れ（段階23）：プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 →（段階34）3日目〜8日目 → 2章の終わりの「つづく」 ----
 // 会話の出来事の id は、台本（scriptM1.ts・scriptM2.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
@@ -237,6 +248,8 @@ export const SLICE_FLOW: Flow = [
     id: 'ch3',
     name: '第3章「さよならの言い方」',
     lineup: CHAPTER3_LINEUP,
+    // 段階91：祭りの夜の2晩目に入る所で、小夜子が加わる
+    lineupChanges: [{ from: 'a3s_night2_enter', lineup: CHAPTER3_SAYOKO_LINEUP }],
     // 段階88：3-1「はじめての仕送り」を3晩で（脚本 docs/script/3-1.md）。21〜24日目。24日目の夕暮れに、大正の祭りの夜の入口まで
     events: [
       talk('chapter3_title', '第3章'),
@@ -266,6 +279,20 @@ export const SLICE_FLOW: Flow = [
       // 24日目（月曜）：3-1 を返した翌日の駅のちよさん（daily.ts の RETURN_VISITS）。夕暮れに祭囃子の棚
       { id: 'd24_free', kind: 'daily', title: '24日目：昼' },
       talk('d24_evening', '24日目：夕暮れ・祭囃子'),
+      // 段階91：大正の祭りの夜を2晩で（脚本 docs/script/3-matsuri.md）。1晩目は小夜子と歩いて、花火の前に夜が巻き戻る（areas.ts の a3s1）
+      talk('a3s_enter', '祭りの夜：題のすり切れた棚'),
+      { id: 'a3s_explore', kind: 'explore', area: 'a3s1', logArea: 'a3s', title: '祭りの夜「提灯の下の少女」：1晩目' },
+      talk('a3s_night1_end', '24日目：時計屋の奥に戻る'),
+      day(25),
+      // 25日目（火曜）：町の神社の宮司さんは必ず見る。夕暮れに祭りの夜の2晩目（小夜子が加わる。areas.ts の a3s2）
+      { id: 'd25_free', kind: 'daily', title: '25日目：昼' },
+      talk('a3s_night2_enter', '25日目：祭りの夜の2晩目に入る'),
+      { id: 'a3s_explore2', kind: 'explore', area: 'a3s2', logArea: 'a3s', title: '祭りの夜「百回目の夏」：2晩目' },
+      talk('a3s_night2_end', '25日目：時計屋の奥に戻る'),
+      day(26),
+      // 26日目（水曜）：小夜子と今の町を歩くのと、のぼるさんの電話は必ず見る
+      { id: 'd26_free', kind: 'daily', title: '26日目：昼' },
+      talk('d26_evening', '26日目：夕暮れ・また明日'),
       // 今の流れの終わり（段階88。2章の終わりの ch2_end から替えた。2章の終わりにいたセーブは、3章の扉から続く。RENAMED_EVENTS）
       { id: 'ch3_end', kind: 'end', title: 'つづく' },
     ],

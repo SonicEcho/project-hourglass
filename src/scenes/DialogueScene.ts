@@ -125,6 +125,8 @@ const viewedBackdrops = new Set<string>();
 export class DialogueScene extends Phaser.Scene {
   private scenes: ScriptScene[] = SCENES;
   private pos!: ScriptPos;
+  /** 今出ている台詞（段階92。デバッグのメモに場所として添える） */
+  private shownLine: { scene: string; line: number; text: string } | null = null;
   private vars: ScriptVars = {};
   private queue: string[] = [];
   private nextScreen?: DialogueData['next'];
@@ -204,6 +206,7 @@ export class DialogueScene extends Phaser.Scene {
     if (data.fadeInMs) this.cameras.main.fadeIn(data.fadeInMs, 0, 0, 0);
     this.debug = isDebugEnabled(window.location.search);
     this.pos = { scene: data.scene, index: 0 };
+    this.shownLine = null;
     this.vars = { ...(data.vars ?? {}) };
     this.queue = [...(data.queue ?? [])];
     this.nextScreen = data.next;
@@ -336,10 +339,16 @@ export class DialogueScene extends Phaser.Scene {
       this.showToast('まだ読んでいない所で止まりました');
     }
     markRead(r.stop.key);
+    this.shownLine = { scene: r.pos.scene, line: r.stop.line.src, text: r.stop.text };
     if (this.fadedOut) await this.fade('in');
     if (this.bgImage && this.bgImage !== imageBefore) await this.viewBackdrop(this.bgImage);
     else this.restoreAfterView();
     this.showLine(r.stop.line, r.stop.text);
+  }
+
+  /** 今出ている台詞の場面と、台本の文字の何行目か（段階92。デバッグのメモ） */
+  memoLine(): { scene: string; line: number; text: string } | null {
+    return this.shownLine;
   }
 
   /** この先の台本で流す曲を、先に音に解いておく（曲が替わる時に待たないように） */

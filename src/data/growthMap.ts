@@ -82,6 +82,19 @@ const STARS: StarRow[] = [
   ['xiCyg', 'はくちょう座ξ', 'cyg', 21.082, 43.93, 2, 'D', 'n2_2'],
   ['rhoCyg', 'はくちょう座ρ', 'cyg', 21.566, 45.59, 2, 'S', 'n0_6'],
   ['omiCyg', 'はくちょう座ο', 'cyg', 20.227, 46.74, 2, 'p', 'n2_0'],
+  // ---- ヘルクレス座（段階91a。3章の区域。小夜子の出発点はπ。こと座κから、θを通ってつながる）。最後の列は、前のマスがないので空 ----
+  ['piHer', 'ヘルクレス座π', 'her', 17.251, 36.81, 3, 'start:sayoko', ''],
+  ['etaHer', 'ヘルクレス座η', 'her', 16.715, 38.92, 3, 'a', ''],
+  ['zetaHer', 'ヘルクレス座ζ', 'her', 16.688, 31.6, 3, 'h', ''],
+  ['epsHer', 'ヘルクレス座ε', 'her', 17.005, 30.93, 3, 'A', ''],
+  // ρ はπに近すぎるので、少しずらした（タップできるように）
+  ['rhoHer', 'ヘルクレス座ρ', 'her', 17.62, 39.6, 3, 'd', ''],
+  ['thetaHer', 'ヘルクレス座θ', 'her', 17.937, 37.25, 3, 's', ''],
+  ['iotaHer', 'ヘルクレス座ι', 'her', 17.657, 46.01, 3, 'S', ''],
+  ['deltaHer', 'ヘルクレス座δ', 'her', 17.251, 24.84, 3, 'H', ''],
+  ['muHer', 'ヘルクレス座μ', 'her', 17.774, 27.72, 3, 'P', ''],
+  ['betaHer', 'ヘルクレス座β', 'her', 16.503, 21.49, 3, 'skill:doubleSlash', ''],
+  ['alphaHer', 'ラス・アルゲティ', 'her', 17.244, 14.39, 3, 'M', ''],
 ];
 
 /** 道（星-星） */
@@ -93,6 +106,9 @@ const LINKS: string[] = [
   'etaDel-rotanev', 'kappaDel-epsDel', 'thetaAql-kappaDel', 'albireo-phiCyg', 'phiCyg-etaCyg', 'etaCyg-sadr', 'sadr-deneb', 'sadr-deltaCyg',
   'deltaCyg-thetaCyg', 'thetaCyg-iotaCyg', 'iotaCyg-kappaCyg', 'sadr-gienah', 'gienah-zetaCyg', 'gienah-c41', 'deneb-nuCyg', 'nuCyg-xiCyg',
   'xiCyg-rhoCyg', 'zetaCyg-tauCyg', 'tauCyg-nuCyg', 'deltaCyg-omiCyg', 'omiCyg-deneb', 'albireo-anser', 'deltaCyg-thetaLyr',
+  // ヘルクレス座（段階91a）：要の四角（π・η・ζ・ε）と、こと座κへの道
+  'kappaLyr-thetaHer', 'thetaHer-rhoHer', 'rhoHer-piHer', 'thetaHer-iotaHer', 'piHer-etaHer', 'etaHer-zetaHer', 'zetaHer-epsHer', 'epsHer-piHer',
+  'zetaHer-betaHer', 'epsHer-deltaHer', 'deltaHer-muHer', 'deltaHer-alphaHer',
 ];
 
 /** 星座の名前と、名前を出す場所（その星からのずれ） */
@@ -103,10 +119,11 @@ const CONSTELLATIONS: Record<string, { name: string; label: [string, number, num
   sge: { name: 'や座', label: ['gammaSge', 30, -26] },
   del: { name: 'いるか座', label: ['sualocin', -10, -44] },
   cyg: { name: 'はくちょう座', label: ['kappaCyg', 0, -34] },
+  her: { name: 'ヘルクレス座', label: ['etaHer', 0, -40] },
 };
 
 /** 星座ごとの広げ方（小さな星座ほど大きく） */
-const SPREAD: Record<string, number> = { aql: 1.5, lyr: 1.7, vul: 1, sge: 2.3, del: 2.5, cyg: 1 };
+const SPREAD: Record<string, number> = { aql: 1.5, lyr: 1.7, vul: 1, sge: 2.3, del: 2.5, cyg: 1, her: 1.2 };
 /** 1度あたりの大きさ（星図は画面より大きく、指でずらして見る） */
 const PX_PER_DEG = 13;
 /** 星図のまわりの余白（将来の星座への「？」の分） */
@@ -117,7 +134,6 @@ const SKY_CENTER = { ra: 20.0, dec: 24 };
 /** 将来の星座へつなぐ場所（行き止まりのまま）。外へ向かう向きと、その先の星座 */
 export const GROWTH_FRONTIER: { node: string; dx: number; dy: number; name: string }[] = [
   { node: 'lambdaAql', dx: 0.2, dy: 1, name: 'たて座・いて座' },
-  { node: 'kappaLyr', dx: 1, dy: -0.15, name: 'ヘルクレス座' },
   { node: 'rhoCyg', dx: -1, dy: -0.3, name: 'ケフェウス座' },
   { node: 'kappaCyg', dx: 0.25, dy: -1, name: 'りゅう座' },
 ];
@@ -177,7 +193,7 @@ function buildMap(): GrowthMap {
     nodes,
     edges: LINKS.map((l) => l.split('-') as [string, string]),
     costs: GROWTH_COST,
-    renamed: Object.fromEntries(STARS.map((s) => [s[7], s[0]])),
+    renamed: Object.fromEntries(STARS.filter((s) => s[7] !== '').map((s) => [s[7], s[0]])),
     constellations,
   };
 }

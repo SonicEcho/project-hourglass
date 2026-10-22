@@ -347,6 +347,8 @@ export const CAST: Record<string, CastMember> = {
   写しのちよ: { faces: names('笑顔', '通常', '真剣', 'むっ', '驚き', '泣き', '泣き笑い'), firstFace: '笑顔', color: 0xc0b0c8, voice: { pitch: 660, wave: 'triangle' }, tint: SEPIA_TINT },
   写しの菊: { faces: names('通常', '泣き笑い'), firstFace: '通常', color: 0x7a6a5a, voice: { pitch: 420, wave: 'triangle' }, tint: SEPIA_TINT },
   写しののぼる: { faces: names('笑顔'), firstFace: '笑顔', color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
+  // 段階91（祭りの夜。docs/script/3-matsuri.md の 2.）：大正十年の夏祭りに百年いる少女。4人目の仲間。立ち絵はまだない（色の札）
+  小夜子: { faces: names('微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'), firstFace: '微笑み', color: 0xc0485a, voice: { pitch: 560, wave: 'sine' } },
   カイ: {
     portrait: 'portrait.kai',
     ...young(['余裕', '見下す', '通常'], { 余裕: 'smug' }, '余裕'),
@@ -401,6 +403,13 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   村のおばあさん: { pitch: 460, wave: 'triangle' },
   となりのおじさん: { pitch: 260, wave: 'sawtooth' },
   '？？？': { pitch: 700, wave: 'sine' },
+  // 祭りの夜・25日目の声だけの人（段階91）
+  宮司さん: { pitch: 270, wave: 'sawtooth' },
+  くじ引きの屋台の主人: { pitch: 280, wave: 'sawtooth' },
+  金魚売り: { pitch: 300, wave: 'sawtooth' },
+  飴細工の職人: { pitch: 260, wave: 'sawtooth' },
+  風車の子ども: { pitch: 740, wave: 'square' },
+  音頭取り: { pitch: 320, wave: 'square' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
 /**
@@ -482,6 +491,10 @@ export const BACKDROPS: Record<string, Backdrop> = {
   care_home: { title: 'ひだまり荘の部屋（窓辺）', top: 0xf0e8d8, bottom: 0xb0a088 },
   station_now: { title: '町の駅のホーム（夕方の前）', top: 0xd8c8b0, bottom: 0x6a6a70 },
   school_fair: { title: '文化祭の学校の中庭', top: 0xb0d8f0, bottom: 0xd8c0a0, ambienceSe: SE.crowd },
+  // 段階91：祭りの夜（大正十年の夏祭り。参道と、夜の端）と、今の町の神社（昼）。絵が届くまで仮の色
+  taisho_festival: { title: '大正十年の夏祭り（夜）', top: 0x1a1a3a, bottom: 0xb04a3a, ambient: 'lanterns', ambienceSe: SE.crowd },
+  taisho_edge: { title: '祭りの夜の端（砂の落ちる縁）', top: 0x0a0a1a, bottom: 0x3a2a3a, ambient: 'dust' },
+  shrine_now: { title: '町の神社（今の昼）', top: 0xb8d8e8, bottom: 0x9a8a6a },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */

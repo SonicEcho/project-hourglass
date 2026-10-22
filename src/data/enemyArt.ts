@@ -17,10 +17,10 @@ export const ENEMY_ART: Record<string, string> = {
 };
 
 /**
- * ぬしの部位の印を置く所（段階89）：ボスの絵（正方形）の中の位置を、幅・高さに対する割合で。
+ * ぬしの部位の印を置く所（段階89）：ボスの絵（正方形）の中の位置を、幅・高さに対する割合で。3つめは名前の札を出す向き（書かなければ右）。
  * ここにないぬし（絵がまだない）は、丸い体の上のほうに部位を横に並べる
  */
-export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: number]>> = {
+export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: number, side?: 'left' | 'right']>> = {
   goldfishBowlLord: { poiArm: [0.13, 0.66], bowl: [0.47, 0.42] },
   bicycleLord: { frontWheel: [0.24, 0.5], bell: [0.3, 0.14] },
 };
