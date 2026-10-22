@@ -293,6 +293,46 @@ export function deleteSave(): void {
   lastWritten = null;
 }
 
+/**
+ * 育ち具合で飛ぶ前のセーブ（段階92）。デバッグで飛ぶと今のセーブが上書きされるので、飛ぶ前に1つ取っておく。
+ * もう取ってある時は上書きしない（何度飛んでも、最初の本番のセーブに戻れるように）
+ */
+const BEFORE_JUMP_KEY = 'restopia.save.beforeJump';
+
+export function backupBeforeJump(): void {
+  if (storage.read(BEFORE_JUMP_KEY) !== null) return;
+  const text = storage.read(SAVE_KEY);
+  if (text !== null) storage.write(BEFORE_JUMP_KEY, text);
+}
+
+/** 取ってある飛ぶ前のセーブの一言（何日目・出来事・保存した日時）。なければ null */
+export function beforeJumpInfo(): string | null {
+  const text = storage.read(BEFORE_JUMP_KEY);
+  if (text === null) return null;
+  const r = parseSave(text, saveContext());
+  if (!r.ok) return '読めないセーブ';
+  const e = findEvent(SLICE_FLOW, r.save.run.event);
+  const at = new Date(r.save.savedAt);
+  const when = Number.isNaN(at.getTime()) ? '' : `　${at.getMonth() + 1}/${at.getDate()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+  return `${r.save.run.progress.day}日目「${e?.title ?? r.save.run.event}」${when}`;
+}
+
+/** 飛ぶ前のセーブを、今のセーブに戻す（戻した後はページを開き直して「つづきから」）。取ってなければ false */
+export function restoreBeforeJump(): boolean {
+  const text = storage.read(BEFORE_JUMP_KEY);
+  if (text === null) return false;
+  run.active = false;
+  storage.write(SAVE_KEY, text);
+  storage.remove(BEFORE_JUMP_KEY);
+  lastWritten = null;
+  return true;
+}
+
+/** 飛ぶ前のセーブを捨てる（今の状態を本番にする時） */
+export function forgetBeforeJump(): void {
+  storage.remove(BEFORE_JUMP_KEY);
+}
+
 /** セーブから続ける。読めたら true。URL の ?seed= がある時は、そのシードを優先する */
 export function continueRun(): boolean {
   const r = readSave();

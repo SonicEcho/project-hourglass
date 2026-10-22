@@ -6,6 +6,8 @@ import { installDebugMenu } from './debug/debugMenu';
 import { installPlaytime } from './debug/playtime';
 import { loadEruda } from './debug/eruda';
 import { installTestHook } from './debug/testHook';
+import { installMemoPanel } from './debug/memoPanel';
+import type { MemoPlace } from './debug/memos';
 import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
 import { PreloadScene } from './scenes/PreloadScene';
@@ -27,9 +29,9 @@ import { ExchangeScene } from './scenes/ExchangeScene';
 import { LostScene } from './scenes/LostScene';
 import { TalkArchiveScene } from './scenes/TalkArchiveScene';
 import { ResultScene } from './scenes/ResultScene';
-import { allBattles, progressAt } from './core';
-import { STORY } from './data';
-import { initRunFromUrl, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { findEvent } from './core';
+import { SLICE_FLOW } from './data';
+import { getActiveBattle, initRunFromUrl, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
 import { notePlayInput, tickPlayRecord } from './scenes/playRecord';
 import { PlayLogScene } from './scenes/PlayLogScene';
 import { TitleScene } from './scenes/TitleScene';
@@ -93,11 +95,6 @@ if (debug) {
     else game.scene.start(key, data);
   };
   installDebugMenu({
-    startBoss: () => {
-      // 最後の戦闘（ボス）。日はそのまま
-      run.progress = progressAt(STORY, allBattles(STORY).length - 1, run.progress.day);
-      goTo('Battle', { progress: run.progress });
-    },
     restartRun: () => {
       startNewRun();
       setHubReturn(null);
@@ -115,6 +112,30 @@ if (debug) {
     openDialogue: (data) => goTo('Dialogue', data),
     openFlow: () => goTo('Flow', { done: false }),
     openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined }),
+  });
+  // その場のメモ（段階92）：書いた時の場所を集める
+  installMemoPanel(() => {
+    const keys = game.scene.getScenes(true).map((sc) => sc.scene.key).filter((k) => k !== 'Preload');
+    const place: MemoPlace = { screen: keys.join('・'), build: formatBuildInfo(__BUILD_TIME__, __COMMIT_ID__) };
+    if (run.active) {
+      place.day = run.progress.day;
+      place.event = run.event;
+      place.eventTitle = findEvent(SLICE_FLOW, run.event)?.title;
+    }
+    if (keys.includes('Dialogue')) {
+      const line = (game.scene.getScene('Dialogue') as DialogueScene).memoLine();
+      if (line) Object.assign(place, line);
+    }
+    const battle = keys.includes('Battle') ? getActiveBattle()?.getState() : undefined;
+    if (battle) {
+      place.battle = battle.enemies.map((e) => e.name).join('・');
+      place.round = battle.round;
+    }
+    if (keys.includes('Explore') && run.explore) {
+      place.area = run.explore.area;
+      place.room = run.explore.room;
+    }
+    return place;
   });
   installTestHook(game);
   // プレイ時間の記録（段階63）

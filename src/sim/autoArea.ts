@@ -20,6 +20,7 @@ import {
   createGrowth,
   getBattleResult,
   getOpenError,
+  nodeCost,
   lineupMembers,
   openableNodes,
   openNode,
@@ -70,7 +71,7 @@ export function areaBattleOrder(areaId = 'a11'): CampaignBattle[] {
 }
 
 /** 区画をまたいで引き継ぐもの（星図・武器・ムーブメント・つながりゲージ） */
-interface Carry {
+export interface Carry {
   growth: GrowthState;
   armory: ArmoryState;
   navi: NaviState;
@@ -89,18 +90,58 @@ export function areaLineup(areaId: string): Lineup {
  * 先の区画で負け切っても、そこまでの育ち具合で続ける
  */
 export function autoAreaRun(seed: number, policy: AreaPolicy, lineup?: Lineup, areaId = 'a11', prior: string[] = [], prefer: Record<string, string> = {}): AreaRunRecord {
-  const pick = lcg((seed * 7919 + 3) % 2147483648);
-  const carry: Carry = {
+  const pick = areaPick(seed);
+  const carry = newCarry();
+  for (const id of prior) runArea(seed, policy, lineup ?? areaLineup(id), id, carry, pick, prefer);
+  return runArea(seed, policy, lineup ?? areaLineup(areaId), areaId, carry, pick, prefer);
+}
+
+const areaPick = (seed: number) => lcg((seed * 7919 + 3) % 2147483648);
+
+/** 始めの育ち具合（星図・武器・ムーブメントは初め、つながりゲージは0） */
+export function newCarry(): Carry {
+  return {
     growth: createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS),
     armory: createArmory(WEAPON_DATA),
     navi: createNavi(START_NAVI_PARTS),
     gauge: 0,
   };
-  for (const id of prior) runArea(seed, policy, lineup ?? areaLineup(id), id, carry, pick, prefer);
-  return runArea(seed, policy, lineup ?? areaLineup(areaId), areaId, carry, pick, prefer);
 }
 
-function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: string, carry: Carry, pick: (n: number) => number, prefer: Record<string, string> = {}): AreaRunRecord {
+/**
+ * 星図の伸ばし方（段階92）：random は測定と同じでたらめ、even は仲間ごとに順に、開けられる中で一番安い星から開く（確認用の素直な伸ばし方）
+ */
+export type StarPolicy = 'random' | 'even';
+
+/**
+ * 区画を順に通して、育ち具合を返す（段階92。デバッグの「育ち具合で飛ぶ」）。afterArea は区画を1つ通すたびに呼ぶ。
+ * 同じシード・同じ区画の並びなら、いつも同じ育ち具合になる
+ */
+export function runAreasCarry(seed: number, policy: AreaPolicy, areas: string[], stars: StarPolicy, afterArea?: (areaId: string, carry: Carry) => void): Carry {
+  const pick = areaPick(seed);
+  const carry = newCarry();
+  for (const id of areas) {
+    runArea(seed, policy, areaLineup(id), id, carry, pick, {}, stars);
+    afterArea?.(id, carry);
+  }
+  return carry;
+}
+
+/** 区画をもう一度通して育てる（段階92。やり込みの段の「狩り」の代わり。シードをずらす） */
+export function rerunArea(seed: number, policy: AreaPolicy, areaId: string, carry: Carry, stars: StarPolicy): void {
+  runArea((seed + 777) >>> 0, policy, areaLineup(areaId), areaId, carry, areaPick(seed + 777), {}, stars);
+}
+
+function runArea(
+  seed: number,
+  policy: AreaPolicy,
+  lineup: Lineup,
+  areaId: string,
+  carry: Carry,
+  pick: (n: number) => number,
+  prefer: Record<string, string> = {},
+  stars: StarPolicy = 'random',
+): AreaRunRecord {
   const area = AREAS[areaId];
   const members = lineupMembers(PARTY, lineup);
   const navi = lineup.unlocks.navi;
@@ -119,7 +160,7 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
     const def = battles[i];
     // 宝箱は最初の戦闘の後に開ける
     if (i === 1) carry.armory = capItems(WEAPON_DATA, addItems(carry.armory, area.chests.flatMap((c) => c.items))).armory;
-    carry.growth = spendPoints(carry.growth, members, pick, chapter);
+    carry.growth = stars === 'even' ? spendPointsEven(carry.growth, members, chapter) : spendPoints(carry.growth, members, pick, chapter);
     carry.armory = autoUseArmory(carry.armory, members.map((c) => c.id), pick, WEAPON_DATA, prefer);
     if (navi) carry.navi = arrangeNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, carry.armory), carry.navi);
     if (def.boss) {
@@ -158,10 +199,30 @@ function runArea(seed: number, policy: AreaPolicy, lineup: Lineup, areaId: strin
   return { seed, stages, cleared: true, links, evolvedBeforeBoss, weaponsBeforeBoss, pouchUsed };
 }
 
-function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[], navi: NaviState | null): CharacterDef[] {
+export function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[], navi: NaviState | null): CharacterDef[] {
   const grown = applyGrowth(GROWTH_MAP, growth, members, SKILLS);
   const withNavi = navi ? applyNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, armory), navi, grown) : grown;
   return applyWeapons(WEAPON_DATA, armory, withNavi);
+}
+
+/** 星図（段階92。確認用）：仲間ごとに順に、開けられる中で一番安い星（同じなら星図の並びの先）を、払えなくなるまで開く */
+function spendPointsEven(growth0: GrowthState, members: CharacterDef[], chapter = Infinity): GrowthState {
+  let growth = growth0;
+  let turn = 0;
+  for (let guard = 0; guard < 400; guard++) {
+    let opened = false;
+    for (let k = 0; k < members.length && !opened; k++) {
+      const c = members[(turn + k) % members.length];
+      const options = openableNodes(GROWTH_MAP, growth, c.id).filter((n) => getOpenError(GROWTH_MAP, growth, c, n.id, chapter) === null);
+      if (options.length === 0) continue;
+      const best = options.reduce((a, n) => (nodeCost(GROWTH_MAP, growth, c, n.id) < nodeCost(GROWTH_MAP, growth, c, a.id) ? n : a));
+      growth = openNode(GROWTH_MAP, growth, c, best.id, chapter);
+      turn = (turn + k + 1) % members.length;
+      opened = true;
+    }
+    if (!opened) return growth;
+  }
+  return growth;
 }
 
 /** 星図：パーティのでたらめな仲間の、開けられるでたらめなマスに、払えなくなるまで星の砂を使う */
