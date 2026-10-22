@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { Cell, CharacterDef, OwnedPart, Placement, Rotation } from '../core';
-import { arrangeBoards, boardParts, boardPassives, boardStats, findBugs, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
+import { boardParts, boardPassives, boardStats, findBugs, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { BUG_HP_RATE, PARTY } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
@@ -38,8 +38,6 @@ export class NaviScene extends Phaser.Scene {
   /** 仮置きの位置（影） */
   private ghost: { col: number; row: number } | null = null;
   private message = '';
-  /** おまかせを1回押した時から、もう一度押すと決まる時まで（段階100） */
-  private autoArmedUntil = 0;
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
   private cell = MAX_CELL;
@@ -53,7 +51,6 @@ export class NaviScene extends Phaser.Scene {
     enterScreen(this);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
-    this.autoArmedUntil = 0;
     this.clearSelection();
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
@@ -160,28 +157,6 @@ export class NaviScene extends Phaser.Scene {
     this.render();
   }
 
-  /**
-   * おまかせ（段階100）：並びの仲間の盤のギアを、狂いなし・効果ギアはブリッジに乗せて並べ直す。
-   * 今の並べ方が崩れるので、2回押して決める（1回目から4秒の間）
-   */
-  private autoArrange(): void {
-    if (this.time.now >= this.autoArmedUntil) {
-      this.autoArmedUntil = this.time.now + 4000;
-      this.message = '並びの仲間のギアを全部並べ直す。もう一度押すと決める';
-      this.time.delayedCall(4100, () => this.scene.isActive() && this.render());
-      this.render();
-      return;
-    }
-    this.autoArmedUntil = 0;
-    const ids = lineupBase(hubLineup()).map((c) => c.id);
-    run.navi = arrangeBoards(currentNaviData(), run.navi, ids);
-    const left = run.navi.parts.filter((p) => !p.placement).length;
-    this.message = `おまかせで並べた（狂いなし）${left > 0 ? `。入りきらないギアが${left}つ` : ''}`;
-    console.log('[navi] auto', ids.join(','));
-    this.clearSelection();
-    this.render();
-  }
-
   private remove(): void {
     const sel = this.selectedPart();
     if (!sel?.placement) return;
@@ -219,21 +194,12 @@ export class NaviScene extends Phaser.Scene {
     this.drawStatus();
     this.drawInfo();
     this.drawList();
-    // おまかせ（段階100）と、戻る
-    const autoW = 110;
-    const armed = this.time.now < this.autoArmedUntil;
-    addButton(this, this.root, SIDE_PADDING + autoW / 2, 800, autoW, 52, armed ? 'もう一度で\n決める' : 'おまかせ', { onTap: () => this.autoArrange() }, {
-      size: armed ? 13 : 15,
-      bold: true,
-      ...(armed ? { fill: 0x5a4a10, stroke: COLORS.accent } : {}),
-    });
-    const backW = GAME_WIDTH - SIDE_PADDING * 2 - autoW - 8;
     addButton(
       this,
       this.root,
-      GAME_WIDTH - SIDE_PADDING - backW / 2,
+      GAME_WIDTH / 2,
       800,
-      backW,
+      GAME_WIDTH - SIDE_PADDING * 2,
       52,
       hubBack()?.label ?? '星図へ戻る',
       { onTap: () => this.leave() },

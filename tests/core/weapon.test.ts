@@ -257,21 +257,40 @@ describe('武器：キャラへの反映', () => {
     expect(hero.attackElement).toBeUndefined();
   });
 
-  it('ブリッジが伸びる型で進化すると、ムーブメントのブリッジ（縦の列）が下に2マス伸びる', () => {
+  it('ブリッジが伸びる型で進化すると、盤のすぐ下に、ブリッジの真下から2マス増える（段階100b）', () => {
     let a = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 20), ['maskString']);
     a = evolveWeapon(D, a, 'hero', 'flameBlade');
     const data = naviDataWithWeapons(NAVI_DATA, D, a);
     const board = data.boards.hero;
-    expect(board.rows).toBe(NAVI_DATA.boards.hero.rows + 2);
+    expect(board.rows).toBe(NAVI_DATA.boards.hero.rows + 1);
     expect(board.cells.length).toBe(NAVI_DATA.boards.hero.cells.length + 2);
-    expect(board.cells.filter(([c]) => c === board.commandCol)).toHaveLength(6);
+    expect(board.cells.filter(([c]) => c === board.commandCol)).toHaveLength(5);
+    expect(board.cells.slice(-2)).toEqual([[1, 4], [2, 4]]);
     // 進化していないキャラの盤は変わらない
     expect(data.boards.akari).toBe(NAVI_DATA.boards.akari);
   });
 
-  it('盤の拡張は、ブリッジの列の一番下の続きに足す', () => {
-    const b = extendBoard(NAVI_DATA.boards.mio, 2);
-    expect(b.cells.slice(-2)).toEqual([[1, 4], [1, 5]]);
+  it('盤の拡張（段階100b）：新しい行は、ブリッジから近い順に埋め、そろうと次の行へ。1マス幅のしっぽにならない', () => {
+    let b = NAVI_DATA.boards.hero;
+    for (let k = 0; k < 3; k++) b = extendBoard(b, 2);
+    // 4マスの行が1つそろい、次の行の2マス
+    expect(b.cells.slice(-6)).toEqual([[1, 4], [2, 4], [0, 4], [3, 4], [1, 5], [2, 5]]);
+    expect(b.rows).toBe(6);
+  });
+
+  it('盤の拡張（段階100b）：新しいマスは、すでにある盤のマスに接する所だけ（四隅の欠けた盤でも離れたマスを作らない）', () => {
+    for (const shape of ['row', 'column'] as const) {
+      for (const base of Object.values(NAVI_DATA.boards)) {
+        let b = base;
+        for (let k = 0; k < 4; k++) b = extendBoard(b, 2, shape);
+        expect(b.cells.length).toBe(base.cells.length + 8);
+        for (const [c, r] of b.cells.slice(base.cells.length)) {
+          const touches = b.cells.some(([x, y]) => Math.abs(x - c) + Math.abs(y - r) === 1);
+          expect(touches, `${shape} ${c},${r}`).toBe(true);
+        }
+        expect(new Set(b.cells.map(([c, r]) => `${c},${r}`)).size).toBe(b.cells.length);
+      }
+    }
   });
 });
 
@@ -406,16 +425,17 @@ describe('武器：進化ツリー（段階42）', () => {
     expect(hero.attackElement).toBe('fire');
   });
 
-  it('型の形で盤が広がる：ブリッジが伸びる型は下へ、盤が広がる型は一番右の列の一番下の右へ', () => {
+  it('型の形で盤が広がる：ブリッジが伸びる型は下の行へ、盤が広がる型は右の列へ（上から。段階100b）', () => {
     const a = evolveAlong([['flameBlade', 0], ['crimsonBlade', 1]]);
     const board = naviDataWithWeapons(NAVI_DATA, D, a).boards.hero;
     const base = NAVI_DATA.boards.hero;
     expect(board.cells.length).toBe(base.cells.length + 4);
-    expect(board.cols).toBe(base.cols + 2);
-    expect(board.rows).toBe(base.rows + 2);
-    expect(board.cells.slice(-2)).toEqual([[4, 3], [5, 3]]);
+    expect(board.cols).toBe(base.cols + 1);
+    expect(board.rows).toBe(base.rows + 1);
+    expect(board.cells.slice(-2)).toEqual([[4, 0], [4, 1]]);
+    // みおの盤は四隅が欠けているので、右の列は、欠けていない行（1・2行目）の隣から
     const b = extendBoard(NAVI_DATA.boards.mio, 2, 'column');
-    expect(b.cells.slice(-2)).toEqual([[4, 2], [5, 2]]);
+    expect(b.cells.slice(-2)).toEqual([[4, 1], [4, 2]]);
   });
 
   it('寄り道は、能力値を低いままにする条件', () => {
@@ -456,7 +476,7 @@ describe('武器：進化ツリー（段階42）', () => {
     expect(describeDirection(find('magicianCards'))).toBe('雷↑↑ 傾向 黄');
     expect(describeDirection(find('strayEdge'))).toBe('雷↓');
     expect(describeCondition({ kind: 'paramMax', param: 'thunder', max: 2 })).toBe('雷 2以下');
-    expect(describeStyle(find('flameBlade').styles![1], 2)).toBe('灯：ラウンドの始めに最大HPの3%を回復。盤の右に横に2マス増える');
+    expect(describeStyle(find('flameBlade').styles![1], 2)).toBe('灯：ラウンドの始めに最大HPの3%を回復。盤の右に2マス増える');
     expect(describeStyle(find('flameBlade').styles![1], 0)).toBe('灯：ラウンドの始めに最大HPの3%を回復');
     expect(itemHint('beigoma')).toBe('1-2 の砂嵐が落とすらしい');
     expect(itemHint('brokenBelt')).toBe('2-1 のぬしの体から取れるらしい');

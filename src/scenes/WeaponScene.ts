@@ -467,13 +467,6 @@ export class WeaponScene extends Phaser.Scene {
     return near && near.evolution.conditions.some((c) => c.kind === 'param' && w.params[c.param] < c.min) ? near : null;
   }
 
-  /** 素材のおすすめの説明（段階100）：一番よい素材と、勧める理由 */
-  private adviceText(best: string): string {
-    const near = this.nearLack();
-    const why = near ? `${near.evolution.name}の${near.params.map((k) => PARAM_LABEL[k]).join('・')}へ` : '上がる合計が大きい';
-    return `★おすすめ：${D.items[best].name}（${why}）`;
-  }
-
   /** 下の段：「素材」（吸わせる・時分解）と「記憶の欠片」（吸わせる。枠を使わない）の2つのタブ（段階27b） */
   private drawInventory(): void {
     // ポーチの消費アイテム（段階51）は素材の一覧に出さない（吸わせられず、時分解もできない）
@@ -608,7 +601,7 @@ export class WeaponScene extends Phaser.Scene {
     const top = FRAG_TOP + 36 + rows * (h + gap) + (pages > 1 ? 28 : 4);
     let text = this.message;
     if (!text) {
-      if (!sel) text = isItems ? (recList.length > 0 ? this.adviceText(recList[0]) : '素材を選ぶと、吸わせた時の変化が出る。攻・火・氷・雷で絞れる') : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
+      if (!sel) text = isItems ? '素材を選ぶと、吸わせた時の変化が出る。★は進化先に近づく素材。攻・火・氷・雷で絞れる' : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
       else if (isItems) {
         const it = D.items[sel];
         if (it.kind !== 'material') text = `${it.name}：吸わせられない（${describeDecompose(D, it)}）`;
