@@ -1,17 +1,20 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { findEvent, formatPlayTime, playLogSections, summarizePlayLog } from '../core';
+import { findEvent, formatPlayTime, playLogPages, playLogSections, summarizePlayLog } from '../core';
 import { SLICE_FLOW } from '../data';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { addWindow, enterScreen, screenBg } from '../ui/skin';
 import { playRecord, resetPlayRecord, setPlayTracking } from './playRecord';
 
-// 遊んだ記録の画面（段階32b）。試遊した人に、この画面のスクリーンショットを送ってもらう。全部を1画面に入れる
+// 遊んだ記録の画面（段階32b）。試遊した人に、この画面のスクリーンショットを送ってもらう。
+// 段階88：日・区画の表が1画面に入らなくなったので、PAGE_ROWS 行ずつの頁に分けて「前の頁・次の頁」で切り替える
 
 export interface PlayLogData {
   /** 戻る画面（タイトル、または「つづく」の流れの画面） */
   back: 'Title' | 'Flow';
+  /** 見せる頁（頁を切り替えた時。なければ今いる出来事の頁） */
+  page?: number;
 }
 
 /** 日時を「10/9 21:05」の形にする */
@@ -27,6 +30,8 @@ const titleOf = (id: string | null): string => (id ? findEvent(SLICE_FLOW, id)?.
 const ROW_TOP = 214;
 // 行の高さ（段階85：2章が20日になり、26行が1画面に入るよう 23 から詰めた）
 const ROW_H = 20;
+/** 1頁の行数（段階88） */
+const PAGE_ROWS = 24;
 
 export class PlayLogScene extends Phaser.Scene {
   constructor() {
@@ -57,8 +62,10 @@ export class PlayLogScene extends Phaser.Scene {
     root.add(addText(this, 24, 62, lines.join('\n'), { size: 13, color: COLORS.subText, wrap: GAME_WIDTH - 48 }).setLineSpacing(4));
 
     // 日ごと・区画ごとの表（流れの順。段階34で、出来事ごとからまとめた行にした）
-    const rows = playLogSections(sum.rows, SLICE_FLOW);
-    root.add(addWindow(this, 12, ROW_TOP - 34, GAME_WIDTH - 24, rows.length * ROW_H + 44));
+    const paged = playLogPages(playLogSections(sum.rows, SLICE_FLOW), PAGE_ROWS, log.last);
+    const page = Math.min(Math.max(data?.page ?? paged.start, 0), paged.pages.length - 1);
+    const rows = paged.pages[page];
+    root.add(addWindow(this, 12, ROW_TOP - 34, GAME_WIDTH - 24, PAGE_ROWS * ROW_H + 44));
     const colTime = GAME_WIDTH - 104;
     const colBattle = GAME_WIDTH - 30;
     root.add(addText(this, 26, ROW_TOP - 24, '日・区画', { size: 11, color: COLORS.dimText }));
@@ -77,8 +84,16 @@ export class PlayLogScene extends Phaser.Scene {
       root.add(addText(this, colBattle, y, battles, { size: 12, color: r.losses > 0 ? COLORS.allyDamage : color }).setOrigin(1, 0));
     });
 
+    // 頁が2つ以上ある時：前の頁・次の頁（段階88）
+    const py = ROW_TOP + PAGE_ROWS * ROW_H + 30;
+    if (paged.pages.length > 1) {
+      root.add(addText(this, cx, py, `${page + 1} / ${paged.pages.length}`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
+      if (page > 0) addButton(this, root, cx - 104, py, 120, 34, '前の頁', { onTap: () => this.scene.restart({ back, page: page - 1 }) }, { size: 13 });
+      if (page < paged.pages.length - 1) addButton(this, root, cx + 104, py, 120, 34, '次の頁', { onTap: () => this.scene.restart({ back, page: page + 1 }) }, { size: 13 });
+    }
+
     // 下のボタン：戻る、記録を消す（2回押し）
-    const by = ROW_TOP + rows.length * ROW_H + 56;
+    const by = py + 54;
     addButton(this, root, cx - 84, by, 150, 48, '戻る', {
       onTap: () => this.scene.start(back, back === 'Flow' ? { done: false } : {}),
     }, { size: 16 });

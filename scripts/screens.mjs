@@ -107,7 +107,9 @@ try {
   });
   await page.goto(`${base}?debug=1&seed=1`);
   await waitScene('Title');
-  await tap('^記録$');
+  // 記録はオプションの窓の中（段階32b 調整3）
+  await tap('^オプション$');
+  await tap('^遊んだ記録$');
   await waitScene('PlayLog');
   await shot('8-playlog');
 

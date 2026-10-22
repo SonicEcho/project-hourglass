@@ -10,6 +10,7 @@ export * from './showaEnemies';
 export * from './factoryEnemies';
 export * from './schoolEnemies';
 export * from './riversideEnemies';
+export * from './villageEnemies';
 export * from './enemyArt';
 export * from './encounters';
 export * from './growthMap';

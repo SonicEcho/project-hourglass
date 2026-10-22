@@ -139,7 +139,7 @@ export class FlowScene extends Phaser.Scene {
     });
   }
 
-  /** 流れの終わり（段階34から、2章の終わり） */
+  /** 流れの終わり（段階34から2章の終わり、段階88から3章の 3-1 の後） */
   private showEnd(): void {
     const cx = GAME_WIDTH / 2;
     const root = this.add.container(0, 0);

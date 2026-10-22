@@ -6,6 +6,7 @@ import { BALLOON_NOISE, COTTON_NOISE, GOLDFISH_BOWL_LORD, GOLDFISH_NOISE, MASK_N
 import { ABACUS_NOISE, GEAR_NOISE, LATHE_LORD, SCREW_NOISE, TUBE_NOISE } from './factoryEnemies';
 import { AMP_LORD, BOOMBOX_NOISE, FLIP_PHONE_NOISE, METRONOME_NOISE, STICKER_NOISE } from './schoolEnemies';
 import { BALL_NOISE, JUG_NOISE, KAI, MEGAPHONE_NOISE, PET_NOISE, SCOREBOARD_LORD } from './riversideEnemies';
+import { COIL_NOISE, FAN_NOISE, POSTBOX_NOISE, RADIO_NOISE, TABLE_NOISE, TRAIN_LORD } from './villageEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { box, ROOMS } from './rooms';
 import { BGM } from './sounds';
@@ -48,6 +49,8 @@ export const AREA_TALK_RANGE = 1;
 /** 1-1 の砂嵐の HP の倍率（段階65。オートなしで、ふつうの戦闘が3〜4ラウンド・1〜3分になるように）。1晩目は、まだ仲間が育っていないので軽く */
 export const A11_STORM_HP = { night1: 1.4, later: 1.8 };
 const tough = (list: EnemyDef[], rate = A11_STORM_HP.later) => list.map((e) => toughenEnemy(e, rate));
+/** 3-1 の砂嵐の強さ（段階88）：晩ごとの攻撃の倍率（scaleEnemy）と、番人・ぬしの HP の倍率（toughenEnemy） */
+export const A31_SCALE = { n1: 1.3, n2: 1.4, n3: 1.55, guard: 1.2, boss: 1.4 };
 
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
@@ -188,6 +191,24 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a23x_kai_patrol: { id: 'a23x_kai_patrol', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 2, enemyHpRatio: 0.5 }, cutoffBack: true },
   // 棚の砂時計を手に取った後のカイ（段階85）：決まったラウンドを耐えると、逃げきる（区画の奥の印の戦闘。打ち切りで区画を終える）
   a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5 } },
+  // ---- 3-1「はじめての仕送り」：昭和41年の夏の村（段階88。villageEnemies.ts）。晩ごとに少しずつ強める（数値は npm run measure の「3-1」で測った） ----
+  a31_n1_station: { id: 'a31_n1_station', name: '砂嵐', enemies: tough([FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
+  a31_n1_square: { id: 'a31_n1_square', name: '砂嵐', enemies: tough([COIL_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
+  a31_n1_paddy: { id: 'a31_n1_paddy', name: '砂嵐', enemies: tough([RADIO_NOISE, FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
+  a31_n1_ridge: { id: 'a31_n1_ridge', name: '砂嵐', enemies: tough([FAN_NOISE, RADIO_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
+  a31_n1_shrine: { id: 'a31_n1_shrine', name: '砂嵐', enemies: tough([TABLE_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
+  a31_runner: { id: 'a31_runner', name: '砂嵐', enemies: [FAN_NOISE, FAN_NOISE, FAN_NOISE], reward: 3, item: ITEMS.oldTicket.id },
+  a31_n2_yard: { id: 'a31_n2_yard', name: '砂嵐', enemies: tough([TABLE_NOISE, RADIO_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 3, koma: 1 },
+  a31_n2_east: { id: 'a31_n2_east', name: '砂嵐', enemies: tough([FAN_NOISE, FAN_NOISE, TABLE_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 2 },
+  a31_n2_river: { id: 'a31_n2_river', name: '砂嵐', enemies: tough([RADIO_NOISE, COIL_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 4, koma: 1 },
+  a31_n2_river2: { id: 'a31_n2_river2', name: '砂嵐', enemies: tough([COIL_NOISE, TABLE_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 2 },
+  // 実家の門の番人（倒すと夕暮れの駅への道が開く。3晩目から）
+  a31_n2_guard: { id: 'a31_n2_guard', name: '郵便ポストノイズ', enemies: [toughenEnemy(POSTBOX_NOISE, A31_SCALE.guard), ...tough([COIL_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2)))], reward: 5, koma: 1 },
+  a31_n3_yard: { id: 'a31_n3_yard', name: '砂嵐', enemies: tough([TABLE_NOISE, FAN_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 3, koma: 1 },
+  a31_n3_platform1: { id: 'a31_n3_platform1', name: '砂嵐', enemies: tough([RADIO_NOISE, TABLE_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 4, koma: 1 },
+  a31_n3_platform2: { id: 'a31_n3_platform2', name: '砂嵐', enemies: tough([FAN_NOISE, RADIO_NOISE, TABLE_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 4, koma: 1 },
+  a31_n3_front: { id: 'a31_n3_front', name: '砂嵐', enemies: tough([COIL_NOISE, FAN_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 2 },
+  a31_boss: { id: 'a31_boss', name: '汽車のぬし', enemies: [toughenEnemy(TRAIN_LORD, A31_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['quickStep'] },
 };
 
 /**
@@ -751,6 +772,108 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'checkpoint', room: 'archive_reading', cell: [12, 14], scene: 'a23x_reading' },
       { on: 'boss', scene: 'a23x_found' },
       { on: 'cleared', scene: 'a23x_escape' },
+    ],
+  },
+  // 3-1「はじめての仕送り」：昭和41年の夏、お盆の山あいの村（段階88。docs/script/3-1.md の 3.）。3晩に分けて入る。
+  // 駅前 → 田んぼ道（右に寄り道の鎮守の森の石段）→ 実家の庭（右に寄り道の川べり）→ 番人を倒すと開く夕暮れの駅のホーム
+  a31: {
+    id: 'a31',
+    name: '3-1「はじめての仕送り」',
+    rooms: [ROOMS.village_station, ROOMS.village_paddy, ROOMS.village_shrine, ROOMS.village_house, ROOMS.village_river, ROOMS.village_platform],
+    links: [
+      { a: { room: 'village_station', side: 'top' }, b: { room: 'village_paddy', side: 'bottom' } },
+      { a: { room: 'village_paddy', side: 'right' }, b: { room: 'village_shrine', side: 'left' } },
+      { a: { room: 'village_paddy', side: 'top' }, b: { room: 'village_house', side: 'bottom' } },
+      { a: { room: 'village_house', side: 'right' }, b: { room: 'village_river', side: 'left' } },
+      // 夕暮れの駅のホームへは、実家の門の番人を倒すと入れる（壁は3晩目から開く）
+      { a: { room: 'village_house', side: 'top' }, b: { room: 'village_platform', side: 'bottom' }, opensWhen: 'a31_e_gate' },
+    ],
+    // 昭和の村の夏の曲が届くまで、昭和の商店街の曲で代わり（docs/script/3-1.md の 6.）
+    bgm: BGM.showa,
+    komaNeed: 10,
+    timeTitle: 'はじめての仕送り',
+    owner: 'チヨ',
+    memory: 'village_1966',
+    // 晩の区切り：2晩目は田んぼ道のお地蔵さん、3晩目は実家の縁側の前（どちらもチェックポイント）から
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'village_paddy', cell: [9, 21] } }, { start: { room: 'village_house', cell: [12, 14] } }],
+    // ノイズの壁：田んぼ道から実家の庭への出入口（2晩目から開く）と、実家の庭から駅のホームへの出入口（3晩目から開く）
+    walls: [
+      { id: 'a31_wall_house', room: 'village_paddy', cells: box(10, 13, 0, 1), opens: 2 },
+      { id: 'a31_wall_platform', room: 'village_house', cells: box(10, 13, 0, 1), opens: 3 },
+    ],
+    // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（実家の門）は出ないので、番人の戦闘は実家の庭の表に入れる
+    hunt: {
+      gathers: [
+        { id: 'a31_gather_paddy', room: 'village_paddy', cell: [19, 15], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id] },
+        { id: 'a31_gather_shrine', room: 'village_shrine', cell: [16, 4], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id] },
+        { id: 'a31_gather_river', room: 'village_river', cell: [5, 4], items: [ITEMS.coilAsh.id, ITEMS.radioDial.id] },
+      ],
+      tables: {
+        village_station: ['a31_n1_station', 'a31_n1_square'],
+        village_paddy: ['a31_n1_paddy', 'a31_n1_ridge'],
+        village_shrine: ['a31_n1_shrine'],
+        village_house: ['a31_n2_yard', 'a31_n2_east', 'a31_n2_guard', 'a31_n3_yard'],
+        village_river: ['a31_n2_river', 'a31_n2_river2'],
+        village_platform: ['a31_n3_platform1', 'a31_n3_platform2', 'a31_n3_front'],
+      },
+    },
+    chests: [
+      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [19, 15], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id, ITEMS.potion.id] },
+      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 4], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id, ITEMS.ether.id], gears: ['fireBoost'], snaps: ['thunderChip'] },
+      { id: 'a31_chest_river', room: 'village_river', cell: [5, 4], night: 2, items: [ITEMS.teacup.id, ITEMS.radioEarphone.id, ITEMS.hiPotion.id], gears: ['oneMoreDraw'], snaps: ['recover'] },
+    ],
+    enemies: [
+      // ---- 1晩目（駅前・田んぼ道・鎮守の森の石段） ----
+      { id: 'a31_e_station', patrol: [[5, 16], [18, 16]], battle: 'a31_n1_station' },
+      { id: 'a31_e_square', patrol: [[4, 9], [19, 9]], battle: 'a31_n1_square' },
+      { id: 'a31_e_paddy', room: 'village_paddy', patrol: [[5, 33], [18, 33]], battle: 'a31_n1_paddy' },
+      // 田んぼ道の上のあぜ：近づくと追ってくる
+      { id: 'a31_e_ridge', room: 'village_paddy', move: 'chase', patrol: [[8, 6], [15, 6]], battle: 'a31_n1_ridge' },
+      { id: 'a31_e_shrine', room: 'village_shrine', patrol: [[5, 19], [16, 19]], battle: 'a31_n1_shrine' },
+      // 石段の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a31_e_runner', room: 'village_shrine', move: 'flee', patrol: [[10, 16]], battle: 'a31_runner' },
+      // ---- 2晩目（実家の庭・川べり） ----
+      { id: 'a31_e_yard', room: 'village_house', night: 2, patrol: [[4, 8], [18, 8]], battle: 'a31_n2_yard' },
+      { id: 'a31_e_east', room: 'village_house', night: 2, patrol: [[12, 12], [22, 12]], battle: 'a31_n2_east' },
+      // 川べり：追ってくる
+      { id: 'a31_e_river', room: 'village_river', night: 2, move: 'chase', patrol: [[14, 6], [14, 18]], battle: 'a31_n2_river' },
+      { id: 'a31_e_river2', room: 'village_river', night: 2, patrol: [[5, 9], [5, 18]], battle: 'a31_n2_river2' },
+      // 実家の門の番人：倒すと夕暮れの駅への道が開く（3晩目から。戦う前の会話）
+      { id: 'a31_e_gate', room: 'village_house', night: 2, until: 2, move: 'guard', patrol: [[11, 5]], battle: 'a31_n2_guard', scene: 'a31_guard' },
+      // ---- 3晩目（実家の庭と夕暮れの駅のホーム） ----
+      { id: 'a31_e_yard3', room: 'village_house', night: 3, patrol: [[16, 16], [20, 16]], battle: 'a31_n3_yard' },
+      { id: 'a31_e_platform1', room: 'village_platform', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a31_n3_platform1' },
+      { id: 'a31_e_platform2', room: 'village_platform', night: 3, move: 'chase', patrol: [[5, 11], [18, 11]], battle: 'a31_n3_platform2' },
+      { id: 'a31_e_front', room: 'village_platform', night: 3, patrol: [[4, 8], [8, 8]], battle: 'a31_n3_front' },
+    ],
+    // ホームに止まっている汽車
+    boss: { id: 'a31_boss', room: 'village_platform', cell: [11, 5], battle: 'a31_boss' },
+    // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む
+    talkers: [
+      { id: 'a31_board', cell: [4, 7], scene: 'a31_board', label: '伝言板' },
+      { id: 'a31_voice_staff', cell: [9, 15], until: 1, scene: 'a31_voice_staff', label: '駅員' },
+      { id: 'a31_voice_granny', cell: [16, 6], until: 1, scene: 'a31_voice_granny', label: '村のおばあさん' },
+      { id: 'a31_voice_noboru', room: 'village_paddy', cell: [5, 28], until: 1, scene: 'a31_voice_noboru', label: '小さな男の子' },
+      { id: 'a31_voice2_noboru', room: 'village_house', cell: [18, 13], night: 2, until: 2, scene: 'a31_voice2_noboru', label: '小さな男の子' },
+      { id: 'a31_voice2_neighbor', room: 'village_house', cell: [4, 16], night: 2, until: 2, scene: 'a31_voice2_neighbor', label: 'となりのおじさん' },
+      { id: 'a31_voice2_kiku', room: 'village_house', cell: [16, 9], night: 2, until: 2, scene: 'a31_voice2_kiku', label: '台所の声' },
+      { id: 'a31_voice3_staff', room: 'village_platform', cell: [18, 14], night: 3, scene: 'a31_voice3_staff', label: '駅員' },
+      { id: 'a31_voice3_noboru', room: 'village_house', cell: [18, 13], night: 3, scene: 'a31_voice3_noboru', label: '小さな男の子' },
+    ],
+    // コマが戻るたびに、過去の場面が1つずつ進む
+    triggers: [
+      { on: 'koma', count: 1, scene: 'a31_first_koma' },
+      { on: 'checkpoint', room: 'village_paddy', cell: [9, 21], scene: 'a31_checkpoint' },
+      { on: 'koma', count: 2, scene: 'a31_koma2' },
+      { on: 'koma', count: 3, scene: 'a31_koma3' },
+      { on: 'koma', count: 4, scene: 'a31_koma4' },
+      { on: 'koma', count: 5, scene: 'a31_koma5' },
+      { on: 'koma', count: 6, scene: 'a31_koma6' },
+      { on: 'koma', count: 7, scene: 'a31_koma7' },
+      { on: 'koma', count: 8, scene: 'a31_koma8' },
+      { on: 'komaLeft', left: 1, scene: 'a31_one_left' },
+      { on: 'boss', scene: 'a31_boss' },
+      { on: 'cleared', scene: 'a31_last_koma' },
     ],
   },
 };

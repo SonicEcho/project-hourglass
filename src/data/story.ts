@@ -32,6 +32,9 @@ export const CHAPTER1_LINEUP: Lineup = { members: [HERO.id, AKARI.id], unlocks: 
 /** 2章（段階38）：みおが加わって3人。ムーブメントも開ける（どの育成も、探索のチェックポイントから開く。初めて開けるのは 2-1 の銭湯の前） */
 export const CHAPTER2_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true }, chapter: 2 };
 
+/** 3章（段階88）：3-1 までは2章と同じ3人（小夜子の加入と、その後の戦闘の人数は段階89・90 で決める） */
+export const CHAPTER3_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true }, chapter: 3 };
+
 // ---- 物語の流れ（段階23）：プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 →（段階34）3日目〜8日目 → 2章の終わりの「つづく」 ----
 // 会話の出来事の id は、台本（scriptM1.ts・scriptM2.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
 // 昼の日常は日常の画面（段階24）、探索は探索の画面（段階25）、時間を返すのは返す画面（段階28）。
@@ -228,12 +231,48 @@ export const SLICE_FLOW: Flow = [
       // 20日目（祝日）：返した翌日のこうじさん（daily.ts の RETURN_VISITS）。夕暮れに2章の終わり
       { id: 'd20_free', kind: 'daily', title: '20日目：昼' },
       talk('d8_evening', '20日目：夕暮れ・2章の終わり'),
-      // 2章の終わり（段階34）。M1 の「つづく」（to_be_continued）から替えた。版7のセーブで M1 の「つづく」にいたものは、4日目から続く（段階63）
-      { id: 'ch2_end', kind: 'end', title: 'つづく' },
+    ],
+  },
+  {
+    id: 'ch3',
+    name: '第3章「さよならの言い方」',
+    lineup: CHAPTER3_LINEUP,
+    // 段階88：3-1「はじめての仕送り」を3晩で（脚本 docs/script/3-1.md）。21〜24日目。24日目の夕暮れに、大正の祭りの夜の入口まで
+    events: [
+      talk('chapter3_title', '第3章'),
+      day(21),
+      talk('d21_classroom', '21日目：文化祭の前の日'),
+      // 21日目（金曜）の昼：時計屋のちよさんとのぼるさんは必ず見る（daily.ts の DAILY_HUBS）。第1夜「ただいま」
+      { id: 'd21_free', kind: 'daily', title: '21日目：昼' },
+      talk('d21_library', '21日目：夕暮れ・蔵書の棚'),
+      // 3-1 の区画（areas.ts の a31）
+      talk('a31_enter', '3-1：村に着く'),
+      { id: 'a31_explore', kind: 'explore', area: 'a31', night: 1, title: '3-1「はじめての仕送り」：村の1晩目' },
+      talk('a31_night1_end', '21日目：蔵書の棚に戻る'),
+      day(22),
+      // 22日目（土曜）：文化祭の時計の博物館と、その後の中庭ののぼるさんは必ず見る。第2夜「ひびの手」
+      { id: 'a31_day22_free', kind: 'daily', title: '22日目：文化祭' },
+      talk('a31_night2_enter', '22日目：村の2晩目に入る'),
+      { id: 'a31_explore2', kind: 'explore', area: 'a31', night: 2, title: '3-1「はじめての仕送り」：村の2晩目' },
+      talk('a31_night2_end', '22日目：蔵書の棚・赤い鼻緒'),
+      day(23),
+      // 23日目（日曜）：ひだまり荘のちよさんの本音は必ず見る。第3夜「八時の約束」
+      { id: 'a31_day23_free', kind: 'daily', title: '23日目：昼' },
+      talk('a31_night3_enter', '23日目：村の3晩目に入る'),
+      { id: 'a31_explore3', kind: 'explore', area: 'a31', night: 3, title: '3-1「はじめての仕送り」：村の3晩目' },
+      { id: 'a31_return', kind: 'return', area: 'a31', title: '3-1：時間を返す' },
+      talk('d23_return', '23日目：時間を返す'),
+      day(24),
+      // 24日目（月曜）：3-1 を返した翌日の駅のちよさん（daily.ts の RETURN_VISITS）。夕暮れに祭囃子の棚
+      { id: 'd24_free', kind: 'daily', title: '24日目：昼' },
+      talk('d24_evening', '24日目：夕暮れ・祭囃子'),
+      // 今の流れの終わり（段階88。2章の終わりの ch2_end から替えた。2章の終わりにいたセーブは、3章の扉から続く。RENAMED_EVENTS）
+      { id: 'ch3_end', kind: 'end', title: 'つづく' },
     ],
   },
 ];
 
 /** なくなった出来事 → セーブを読む時に代わりに続ける出来事（段階40。仮の画面だった「2-3：返す」は、段階85 で本当の返す出来事になったので、付け替えを外した） */
 // 段階63：1-1 を3晩に分けた時に、なくなった出来事（1日目の返す会話・2日目のすれ違い）は、近い出来事から続ける
-export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end' };
+// 段階88：流れの終わり（つづく）を2章の終わりから3章の 3-1 の後へ伸ばした。2章の終わりの「つづく」にいたセーブは、3章の扉から続く
+export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title' };

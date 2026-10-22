@@ -7,6 +7,7 @@ import {
   enterPlayEvent,
   formatPlayTime,
   parsePlayLog,
+  playLogPages,
   playLogSections,
   PLAY_TICK_MAX_MS,
   recordPlayBattle,
@@ -164,8 +165,21 @@ describe('遊んだ記録（段階32b）', () => {
 
   it('今の流れは、まとめた行なら記録の画面の1画面に入る数（段階34）', () => {
     const rows = summarizePlayLog(createPlayLog(t0), SLICE_FLOW).rows;
-    // 段階85：2章が20日になったので、行の高さを詰めて26行まで入るようにした（PlayLogScene の ROW_H）
-    expect(playLogSections(rows, SLICE_FLOW).length).toBeLessThanOrEqual(26);
+    // 段階85：2章が20日になったので、行の高さを詰めて26行まで入るようにした（PlayLogScene の ROW_H）。
+    // 段階88：3章で入らなくなったので、24行ずつの頁に分けた（PlayLogScene の PAGE_ROWS）。頁は多すぎない
+    const secs = playLogSections(rows, SLICE_FLOW);
+    const { pages } = playLogPages(secs, 24, null);
+    expect(pages.flat()).toEqual(secs);
+    expect(pages.every((p) => p.length <= 24)).toBe(true);
+    expect(pages.length).toBeLessThanOrEqual(3);
+  });
+
+  it('記録の頁：最初に見せるのは、今いる出来事の行がある頁（段階88）', () => {
+    const secs = [{ ids: ['a'] }, { ids: ['b'] }, { ids: ['c', 'd'] }].map((x) => ({ title: '', explore: false, ms: 0, wins: 0, losses: 0, reached: true, ...x }));
+    expect(playLogPages(secs, 2, 'd').start).toBe(1);
+    expect(playLogPages(secs, 2, 'a').start).toBe(0);
+    expect(playLogPages(secs, 2, null).start).toBe(0);
+    expect(playLogPages([], 2, null).pages).toEqual([[]]);
   });
 });
 

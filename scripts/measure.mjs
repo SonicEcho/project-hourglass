@@ -36,6 +36,10 @@ const text = [
   module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a23')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a23')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'pouch', 'a23')),
+  // 段階88：3-1 の昭和41年の村（1-1〜2-3 を通した後から）
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a31')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a31')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'pouch', 'a31')),
   // 段階54：進化の道ごとの勝率（1人の1回目の進化先を決めて）。2-1 は弱点をねらう方針、2-3 はでたらめな方針（ねらう方針はほぼ勝つため）
   module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a21', 'smart')),
   module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a23', 'random')),
