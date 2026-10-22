@@ -29,14 +29,19 @@ export interface DailyData {
 }
 
 /** 印の色と、中に書く字 */
-const MARK_STYLE: Record<SpotMark, { color: number; icon: string }> = {
-  main: { color: 0xe0563e, icon: '！' },
-  bond: { color: 0xe07aa0, icon: '♥' },
-  talk: { color: 0x5aa8ff, icon: '…' },
-  stall: { color: 0xf0a040, icon: '★' },
-  go: { color: 0xd9ae62, icon: '→' },
-  hub: { color: 0x7a5ad0, icon: '扉' },
+// word は記号に添える短い言葉（段階98。レビューの E3：記号だけでは意味が分かりにくかった）
+const MARK_STYLE: Record<SpotMark, { color: number; icon: string; word: string }> = {
+  main: { color: 0xe0563e, icon: '！', word: '必ず見る' },
+  bond: { color: 0xe07aa0, icon: '♥', word: '絆' },
+  talk: { color: 0x5aa8ff, icon: '…', word: '小話' },
+  stall: { color: 0xf0a040, icon: '★', word: '屋台' },
+  go: { color: 0xd9ae62, icon: '→', word: '夕暮れへ' },
+  hub: { color: 0x7a5ad0, icon: '扉', word: '拠点' },
 };
+/** 「保存しました」を出した昼（段階98。同じ昼の中で場所を行き来するたびには出さない） */
+let savedNoticeFor: string | null = null;
+/** 地図の場所の丸の大きさ（段階98。レビューの F4 で 46 から大きくした） */
+const PLACE_RADIUS = 52;
 
 /** 今の値で、その日の日常を組み立てる（絆の出来事と、返した翌日の出来事を足す） */
 function build(data: DailyHub): DailyHub {
@@ -87,6 +92,9 @@ export class DailyScene extends Phaser.Scene {
     else this.showMap();
     this.cameras.main.fadeIn(250, 0, 0, 0);
     if (gearNote) this.toast(gearNote);
+    // 段階98（レビューの D2）：その日の昼に初めて入った時だけ、保存したことを小さく知らせる（ここでやめても、この昼から始められる）
+    else if (data0.day !== undefined && savedNoticeFor !== data.event) this.toast('保存しました（ここでやめても、この昼から始められる）');
+    savedNoticeFor = data.event;
   }
 
   /** 日常を終えて、物語の次の出来事へ */
@@ -131,20 +139,23 @@ export class DailyScene extends Phaser.Scene {
     for (const place of places) {
       const open = place.spots.filter((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends && s.mark !== 'hub');
       const fill = place.spots.some((s) => s.ends) ? 0x6a5420 : 0x30465c;
-      const circle = this.add.circle(place.mapX, place.mapY, 46, fill).setStrokeStyle(3, COLORS.accent);
+      const circle = this.add.circle(place.mapX, place.mapY, PLACE_RADIUS, fill).setStrokeStyle(3, COLORS.accent);
       root.add(circle);
-      root.add(addText(this, place.mapX, place.mapY, place.name, { size: 16, bold: true }).setOrigin(0.5));
+      root.add(addText(this, place.mapX, place.mapY, place.name, { size: 17, bold: true }).setOrigin(0.5));
       makePressable(circle, { onTap: () => this.reopen(place.id) });
       open.forEach((s, i) => {
         const st = MARK_STYLE[s.mark];
-        const bx = place.mapX + 34 + i * 22;
-        root.add(this.add.circle(bx, place.mapY - 38, 13, st.color).setStrokeStyle(2, 0xffffff));
-        root.add(addText(this, bx, place.mapY - 38, st.icon, { size: 13, bold: true }).setOrigin(0.5));
+        const bx = place.mapX + 38 + i * 22;
+        root.add(this.add.circle(bx, place.mapY - 42, 13, st.color).setStrokeStyle(2, 0xffffff));
+        root.add(addText(this, bx, place.mapY - 42, st.icon, { size: 13, bold: true }).setOrigin(0.5));
       });
+      // 丸の下に、見られる出来事の種類を言葉で（段階98。「絆・小話」など）
+      const words = [...new Set(open.map((s) => MARK_STYLE[s.mark].word))];
+      if (words.length > 0) root.add(addText(this, place.mapX, place.mapY + PLACE_RADIUS + 12, words.join('・'), { size: 11, color: COLORS.accentText }).setOrigin(0.5));
     }
     const left = requiredLeft(this.hub, run.vars);
     const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
-    if (this.hub.picks !== undefined) lines.push(`♥と…は、1日に${this.hub.picks}回まで。！は回数を使わない`);
+    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！は数えない`);
     // 段階83：相手のいる小話は、その日に見ると♥が半分増える
     if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…（小話）も、相手の♥が半分増える');
     // 絆の深さ（段階35）：会える相手ごとに、見た絆の出来事の数
@@ -178,6 +189,8 @@ export class DailyScene extends Phaser.Scene {
     const circle = this.add.circle(0, 0, 30, color).setStrokeStyle(3, state === 'open' ? 0xffffff : 0x8090a0);
     holder.add(circle);
     holder.add(addText(this, 0, 0, state === 'seen' ? '✓' : st.icon, { size: 22, bold: true }).setOrigin(0.5));
+    // 記号の上に、出来事の種類を言葉で（段階98）
+    holder.add(addText(this, 0, -44, st.word, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(0.5));
     const label = addText(this, 0, 46, spot.label, { size: 14, bold: true, align: 'center', wrap: 300 }).setOrigin(0.5);
     holder.add(this.add.rectangle(0, 46, label.width + 16, label.height + 8, 0x000000, 0.6));
     holder.add(label);

@@ -15,6 +15,7 @@ import { drawBackdrop } from '../ui/backdrop';
 import { addButton, addText } from '../ui/widgets';
 import { openOptions } from '../ui/options';
 import { fadeOutAndDestroy } from '../ui/skin';
+import { maybeShowTip } from '../ui/tipPanel';
 
 /** 台本で読む「♥の一番多い相手」の値の名前（段階82） */
 const BOND_TOP = '絆の一番';
@@ -1066,6 +1067,8 @@ export class DialogueScene extends Phaser.Scene {
       this.caption.setText(text).setAlpha(0);
       this.tweens.add({ targets: this.caption, alpha: 1, duration: this.skip ? 50 : 600 });
       this.finishTyping();
+      // 一日の区切り（段階98。レビューの D2）：「○日目　おわり」「第○章　おわり」が初めて出た時に、ここでやめてよいことを知らせる
+      if (/おわり$/.test(text)) this.time.delayedCall(700, () => maybeShowTip(this, ['day_end']));
       return;
     }
     // 全文で先に折り返しを決めてから1文字ずつ出す（途中の文で折り返すと、行の終わりの文字が一瞬はみ出して見えるため）

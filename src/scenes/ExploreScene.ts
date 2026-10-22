@@ -53,7 +53,7 @@ import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/s
 import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
-import { addButton, addText } from '../ui/widgets';
+import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
@@ -130,6 +130,10 @@ export class ExploreScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Arc;
   private message!: Phaser.GameObjects.Text;
   private messageTimer?: Phaser.Time.TimerEvent;
+  /** 案内が消えた後に、帯に出す「もう一度見る」（段階98） */
+  private messageHint?: Phaser.GameObjects.Text;
+  /** 最後に出した案内（帯をタップすると、もう一度出す） */
+  private lastMessage = '';
   /** チェックポイントに立っている時だけ出す、育成の画面への入口（段階26） */
   private hubButton!: Phaser.GameObjects.Container;
   /** 下の帯の、仲間の今の HP・MP（段階32b 調整3） */
@@ -450,7 +454,8 @@ export class ExploreScene extends Phaser.Scene {
     cam.ignore(ui);
     uiCam.ignore(world);
 
-    ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.55).setOrigin(0));
+    // 上の帯は、地図の絵が透けて文字が読みにくくならないよう、濃くする（段階98。レビューの F3）
+    ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.8).setOrigin(0));
     ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
     // コマ：あと何コマで返せるか（段階28）。狩りではコマはないので、狩りの案内（段階43）
     const left = komaLeft(area, this.state);
@@ -501,8 +506,13 @@ export class ExploreScene extends Phaser.Scene {
     if (isDebugEnabled(window.location.search)) {
       addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
     }
-    // 案内は上の帯の下に（下に出すと、地図の下の端にいる仲間が隠れる）
-    ui.add(this.add.rectangle(0, 80, GAME_WIDTH, TOP_BAND - 80, 0x000000, 0.4).setOrigin(0));
+    // 案内は上の帯の下に（下に出すと、地図の下の端にいる仲間が隠れる）。
+    // 段階98（レビューの F3）：帯を濃くし、案内は数秒で消す。帯をタップすると、もう一度出す（帯のタップでは歩かない）
+    const messageBand = this.add.rectangle(0, 80, GAME_WIDTH, TOP_BAND - 80, 0x000000, 0.8).setOrigin(0);
+    ui.add(messageBand);
+    makePressable(messageBand, { onTap: () => this.say(this.lastMessage) });
+    this.messageHint = addText(this, GAME_WIDTH / 2, 106, '案内をもう一度見る（タップ）', { size: 11, color: COLORS.subText }).setOrigin(0.5).setAlpha(0);
+    ui.add(this.messageHint);
     this.message = addText(this, GAME_WIDTH / 2, 106, '', { size: 14, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5);
     ui.add(this.message);
     this.hubButton = this.add.container(0, 0);
@@ -1010,9 +1020,15 @@ export class ExploreScene extends Phaser.Scene {
 
   private say(text: string): void {
     if (!this.message) return;
+    this.lastMessage = text;
     this.message.setText(text).setAlpha(1);
+    this.messageHint?.setAlpha(0);
     this.messageTimer?.remove();
-    this.messageTimer = this.time.delayedCall(2800, () => this.tweens.add({ targets: this.message, alpha: 0.4, duration: 300 }));
+    // 段階98：5秒で消し、帯に「もう一度見る」を出す（前は 2.8秒で薄くするだけで、地図の絵と重なって読みにくかった）
+    this.messageTimer = this.time.delayedCall(5000, () => {
+      this.tweens.add({ targets: this.message, alpha: 0, duration: 400 });
+      if (this.messageHint) this.tweens.add({ targets: this.messageHint, alpha: 0.8, duration: 400 });
+    });
   }
 }
 
