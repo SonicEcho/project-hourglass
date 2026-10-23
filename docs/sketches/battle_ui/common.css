@@ -1,0 +1,7 @@
+/* 戦闘の画面のイメージ（段階101）。作り込まない見本。390×844 で撮る */
+@font-face { font-family: 'Heading'; src: url('../../../public/assets/fonts/heading.woff2'); }
+@font-face { font-family: 'Hand'; src: url('../../../public/assets/fonts/hand.woff2'); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 390px; height: 844px; overflow: hidden; }
+body { font-family: 'Heading', 'IPAGothic', sans-serif; color: #eef2ff; position: relative; background: #0b1020; }
+.abs { position: absolute; }

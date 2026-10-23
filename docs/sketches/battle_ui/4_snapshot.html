@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+  body { background: #2a1f18; color: #3a2a20; }
+  /* 上：記憶の中（敵） */
+  .bg { inset: 0 0 auto 0; height: 430px; background: url('../../../public/assets/backgrounds/riverside_1998.webp') center 35% / cover; filter: sepia(.55) brightness(.7) contrast(1.05); }
+  .grain { inset: 0 0 auto 0; height: 430px; background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(40,20,10,.75) 95%); }
+  .enemy { left: 70px; top: 60px; width: 250px; height: 270px; background: url('../../../public/assets/enemies/kai.webp') center / contain no-repeat; filter: drop-shadow(0 0 14px rgba(255,240,200,.5)); }
+  .date { right: 14px; top: 16px; font-family: 'Hand', 'IPAGothic'; font-size: 16px; color: #ffcf8a; text-shadow: 0 1px 2px #000; transform: rotate(4deg); }
+  .ename { left: 0; right: 0; top: 332px; text-align: center; color: #fff4e0; font-size: 15px; letter-spacing: 3px; text-shadow: 0 2px 3px #000; }
+  .ehp { left: 100px; right: 100px; top: 356px; height: 8px; background: #0006; border-radius: 4px; border: 1px solid #fff4e088; }
+  .ehp i { display: block; height: 100%; background: #e8735a; border-radius: 4px; }
+  .order { left: 12px; top: 14px; font-family: 'Hand', 'IPAGothic'; font-size: 13px; color: #fff4e0; text-shadow: 0 1px 2px #000; line-height: 1.5; }
+  /* 下：机の上のアルバム（紙） */
+  .desk { left: 0; right: 0; top: 400px; bottom: 0; background:
+      repeating-linear-gradient(0deg, transparent 0 27px, #c9b8a033 27px 28px),
+      linear-gradient(180deg, #f3e9d6, #e8dcc4); border-top: 3px solid #b89a6a; box-shadow: 0 -10px 20px rgba(0,0,0,.5); }
+  /* 仲間：プリクラの帯 */
+  .party { left: 10px; right: 10px; top: 418px; display: flex; gap: 8px; }
+  .pal { flex: 1; background: #fff; padding: 4px 4px 6px; box-shadow: 0 2px 4px rgba(0,0,0,.3); transform: rotate(var(--r)); }
+  .pal .ph { height: 64px; background-size: 120%; background-position: 50% 14%; }
+  .pal .nm { font-family: 'Hand', 'IPAGothic'; font-size: 14px; margin-top: 3px; display: flex; justify-content: space-between; }
+  .pal .nm small { font-size: 10px; color: #6a5a4a; }
+  .pal .bar { height: 5px; background: #e6d8c0; margin-top: 2px; } .pal .bar i { display: block; height: 100%; background: #6cbf7a; }
+  .pal.on { outline: 3px solid #e8735a; }
+  .tape { position: absolute; width: 44px; height: 14px; background: rgba(255,200,120,.65); left: 50%; margin-left: -22px; top: -8px; transform: rotate(-4deg); }
+  .hint { left: 0; right: 0; top: 540px; text-align: center; font-family: 'Hand', 'IPAGothic'; font-size: 14px; color: #7a5a3a; }
+  /* 手札：インスタント写真 */
+  .snap { position: absolute; width: 74px; height: 124px; background: #fffdf6; padding: 5px 5px 0; box-shadow: 0 4px 8px rgba(0,0,0,.35); transform: rotate(var(--r)); }
+  .snap .ph { height: 66px; background-size: cover; background-position: center; position: relative; }
+  .snap .el { position: absolute; right: -6px; top: -6px; width: 26px; height: 26px; border-radius: 50%; background: var(--c); color: #fff; font-size: 11px; display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); font-weight: bold; }
+  .snap .nm { font-family: 'Hand', 'IPAGothic'; font-size: 12px; text-align: center; margin-top: 4px; line-height: 1.15; color: #2a2a3a; }
+  .snap .wt { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 8px; color: #8a7a6a; }
+  .snap.sel { box-shadow: 0 0 0 3px #e8735a, 0 8px 14px rgba(0,0,0,.4); }
+  /* 付せんのボタン */
+  .note { position: absolute; display: grid; place-items: center; text-align: center; font-family: 'Hand', 'IPAGothic'; box-shadow: 0 3px 5px rgba(0,0,0,.3); }
+  .n1 { left: 14px; bottom: 26px; width: 92px; height: 66px; background: #b9e0f5; transform: rotate(-3deg); font-size: 15px; }
+  .n2 { left: 118px; bottom: 30px; width: 92px; height: 66px; background: #ffe58a; transform: rotate(2deg); font-size: 14px; }
+  .go { right: 14px; bottom: 22px; width: 150px; height: 76px; background: #e8735a; color: #fff; transform: rotate(-2deg); font-size: 22px; border-radius: 4px; }
+  .go small { display: block; font-size: 11px; }
+  .tag { right: 8px; bottom: 4px; font-size: 9px; color: #8a7a6a; }
+</style></head><body>
+<div class="abs bg"></div><div class="abs grain"></div>
+<div class="abs order">① ハルト<br>② カイ<br>③ あかり<br>④ みお</div>
+<div class="abs date">'98.7.26 河川敷</div>
+<div class="abs enemy"></div>
+<div class="abs ename">カ イ</div>
+<div class="abs ehp"><i style="width:100%"></i></div>
+<div class="abs desk"></div>
+<div class="abs party">
+  <div class="pal on" style="--r:-2deg;position:relative"><span class="tape"></span><div class="ph" style="background-image:url('../../../public/assets/portraits/hero_determined.webp')"></div><div class="nm">ハルト<small>MP96</small></div><div class="bar"><i style="width:100%"></i></div></div>
+  <div class="pal" style="--r:1.5deg;position:relative"><span class="tape"></span><div class="ph" style="background-image:url('../../../public/assets/portraits/akari_serious.webp')"></div><div class="nm">あかり<small>MP128</small></div><div class="bar"><i style="width:100%"></i></div></div>
+  <div class="pal" style="--r:-1deg;position:relative"><span class="tape"></span><div class="ph" style="background-image:url('../../../public/assets/portraits/mio_smile.webp');background-size:100% auto;background-position:50% 10%"></div><div class="nm">みお<small>MP60</small></div><div class="bar"><i style="width:70%"></i></div></div>
+</div>
+<div class="abs hint">ハルトに使わせる写真（スナップ）を選ぶ</div>
+<div class="snap" style="--r:-6deg;--c:#4aa8e8;left:8px;top:578px"><div class="ph" style="background-image:url('../../../public/assets/cg/white_city.webp')"><span class="el">氷</span></div><div class="nm">アイス<br>ニードル</div><div class="wt">ふつう</div></div>
+<div class="snap" style="--r:3deg;--c:#8a96a8;left:83px;top:588px"><div class="ph" style="background-image:url('../../../public/assets/cg/cut_ground.webp')"><span class="el">物</span></div><div class="nm">ソード</div><div class="wt">ふつう</div></div>
+<div class="snap sel" style="--r:-2deg;--c:#a98be0;left:158px;top:568px"><div class="ph" style="background-image:url('../../../public/assets/cg/photo_goldfish.webp')"><span class="el">✦</span></div><div class="nm">サーチ</div><div class="wt">その場で使う</div></div>
+<div class="snap" style="--r:4deg;--c:#a98be0;left:233px;top:586px"><div class="ph" style="background-image:url('../../../public/assets/cg/mio_cards.webp')"><span class="el">✦</span></div><div class="nm">ドロー</div><div class="wt">その場で使う</div></div>
+<div class="snap" style="--r:-4deg;--c:#8a96a8;left:306px;top:578px"><div class="ph" style="background-image:url('../../../public/assets/cg/awaken_weapons.webp')"><span class="el">物</span></div><div class="nm">ヘビー<br>ブロウ</div><div class="wt">とても重い</div></div>
+<div class="note n1">魔法・<br>スキル</div>
+<div class="note n2">連携技<br>94%</div>
+<div class="note go">シャッター<small>（実行）</small></div>
+<div class="abs tag">案4 スナップ（イメージ）</div>
+</body></html>
