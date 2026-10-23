@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+  body { background: #0b0b0e; }
+  .bg { inset: 0 0 auto 0; height: 420px; background: url('../../../public/assets/backgrounds/riverside_1998.webp') center 25% / cover; filter: brightness(.45) contrast(1.15) saturate(.7); }
+  .enemy { left: 70px; top: 26px; width: 270px; height: 310px; background: url('../../../public/assets/enemies/kai.webp') center / contain no-repeat; filter: drop-shadow(0 0 10px #ff2d55); }
+  .rec { left: 14px; top: 14px; font-size: 12px; color: #ff2d55; font-weight: bold; letter-spacing: 2px; } .rec::before { content: '●'; margin-right: 4px; }
+  .round { right: 14px; top: 10px; font-size: 13px; font-weight: 900; font-style: italic; letter-spacing: 2px; }
+  .round b { font-size: 34px; color: #fff; text-shadow: 2px 2px 0 #ff2d55; }
+  .ename { right: 14px; top: 286px; font-size: 24px; font-weight: 900; font-style: italic; transform: skewX(-12deg); text-shadow: 3px 3px 0 #ff2d55; }
+  .ehp { right: 14px; top: 320px; width: 170px; height: 10px; background: #000; border: 2px solid #fff; transform: skewX(-20deg); } .ehp i { display: block; height: 100%; width: 100%; background: #ff2d55; }
+  .intent { left: 14px; top: 306px; font-size: 11px; background: #fff; color: #000; padding: 2px 10px; transform: skewX(-12deg); font-weight: bold; }
+  /* 横のフィルム */
+  .film { left: 0; right: 0; top: 352px; height: 112px; background: #111; border-top: 2px solid #fff; border-bottom: 2px solid #fff; }
+  .holes { position: absolute; left: 0; right: 0; height: 9px; background: repeating-linear-gradient(90deg, transparent 0 7px, #e8e0d0 7px 16px, transparent 16px 22px); }
+  .holes.t { top: 5px; } .holes.bt { bottom: 5px; }
+  .frames { position: absolute; left: 8px; right: 8px; top: 18px; bottom: 18px; display: flex; gap: 6px; }
+  .fr { flex: 1; background: #2b2420; position: relative; overflow: hidden; transform: skewX(-8deg); }
+  .fr .ph { position: absolute; inset: 0; background-size: cover; background-position: center; }
+  .fr .lb { position: absolute; left: 0; right: 0; bottom: 0; background: #000c; font-size: 10px; text-align: center; padding: 2px 0; font-weight: bold; }
+  .fr .n { position: absolute; left: 6px; top: 0; font-size: 14px; font-weight: 900; font-style: italic; color: #fff; text-shadow: 2px 2px 0 #ff2d55; }
+  .fr .who { position: absolute; right: 4px; top: 4px; width: 20px; height: 20px; border-radius: 50%; background-size: 230%; background-position: 50% 10%; border: 2px solid #fff; }
+  .fr.foe .ph { background: repeating-linear-gradient(45deg, #5a0c1c 0 6px, #3a0812 6px 12px); }
+  .fr.now { box-shadow: inset 0 0 0 3px #ff2d55; background: #ff2d5522; }
+  .fr.empty { display: grid; place-items: center; font-size: 11px; font-weight: bold; color: #fff9; }
+  /* 斜めの帯の中のカットイン */
+  .party { left: 6px; right: 6px; top: 478px; height: 96px; display: flex; gap: 6px; }
+  .tab { flex: 1; transform: skewX(-12deg); background: #000d; border: 2px solid #ffffff55; border-bottom: 5px solid var(--c); position: relative; overflow: hidden; padding: 6px 8px; font-size: 11px; font-weight: bold; }
+  .tab .f { position: absolute; right: -4px; bottom: 0; width: 56px; height: 84px; background-size: cover; background-position: 50% 0; transform: skewX(12deg); opacity: .5; }
+  .tab .bar { height: 4px; background: #333; margin-top: 4px; width: 70%; } .tab .bar i { display: block; height: 100%; background: #4cd07d; }
+  .tab .mp { font-size: 9px; color: #7fb6ff; margin-top: 2px; }
+  .tab.on { flex: 1.9; background: #fff; color: #000; border-color: #fff; box-shadow: 4px 4px 0 #ff2d55; }
+  .tab.on .f { width: 96px; height: 120px; right: -6px; opacity: 1; }
+  .tab.on .nm { font-size: 22px; font-style: italic; font-weight: 900; }
+  .tab.on .go { font-size: 10px; color: #ff2d55; margin-top: 2px; }
+  .pa { width: 116px; height: 24px; transform: skewX(-15deg); background: #000d; border-left: 5px solid var(--c); padding: 2px 10px; font-size: 10px; font-weight: bold; }
+  .pa .bar { height: 3px; margin-top: 2px; background: #333; } .pa .bar i { display: block; height: 100%; background: #4cd07d; width: var(--hp); }
+  .pa.on { background: #fff; color: #000; }
+  /* 手札 */
+  .hand { left: 6px; right: 6px; top: 588px; height: 182px; }
+  .card { position: absolute; bottom: 0; width: 72px; height: 156px; background: #fff; color: #000; border: 3px solid #000; box-shadow: 4px 4px 0 var(--c); transform: skewX(-8deg); padding: 3px; }
+  .card .ph { height: 84px; background-size: cover; background-position: center; }
+  .card .el { position: absolute; left: 3px; top: 3px; font-size: 9px; color: #fff; background: var(--c); padding: 1px 4px; font-weight: bold; }
+  .card .nm { font-size: 12px; font-weight: 900; text-align: center; margin-top: 4px; line-height: 1.15; }
+  .card .wt { position: absolute; bottom: 3px; left: 0; right: 0; font-size: 8px; text-align: center; color: #555; }
+  .card.sel { bottom: 16px; box-shadow: 4px 4px 0 var(--c), 0 0 0 3px #ff2d55; }
+  .cmd { left: 0; right: 0; bottom: 0; height: 64px; background: #000; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-top: 3px solid #fff; }
+  .btn { flex: 1; height: 44px; transform: skewX(-15deg); background: #222; border: 2px solid #fff; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+  .btn.go { flex: 1.3; background: #ff2d55; font-size: 16px; }
+  .btn.go::before { content: '●'; margin-right: 6px; }
+  .btn.link { background: linear-gradient(90deg, #ffd700 94%, #333 94%); color: #000; }
+  .tag { left: 14px; top: 34px; font-size: 9px; color: #fff7; }
+</style></head><body>
+<div class="abs bg"></div>
+<div class="abs enemy"></div>
+<div class="abs rec">REC 1998.07.26</div>
+<div class="abs round">ROUND <b>01</b></div>
+<div class="abs intent">次の手 ⚡ 力をためる</div>
+<div class="abs ename">KAI カイ</div>
+<div class="abs ehp"><i></i></div>
+<div class="abs film"><div class="holes t"></div><div class="holes bt"></div>
+  <div class="frames">
+    <div class="fr"><div class="ph" style="background-image:url('../../../public/assets/cg/white_city.webp')"></div><span class="n">01</span><span class="who" style="background-image:url('../../../public/assets/portraits/hero_determined.webp')"></span><div class="lb">アイスニードル</div></div>
+    <div class="fr foe"><div class="ph"></div><span class="n">02</span><div class="lb">カイ ⚡ためる</div></div>
+    <div class="fr empty now"><span class="n">03</span>あかり</div>
+    <div class="fr empty"><span class="n">04</span>みお</div>
+  </div>
+</div>
+<div class="abs party">
+  <div class="tab" style="--c:#4aa8e8"><div class="f" style="background-image:url('../../../public/assets/portraits/hero_determined.webp')"></div>ハルト<div class="bar"><i style="width:100%"></i></div><div class="mp">MP 96</div></div>
+  <div class="tab on" style="--c:#ff8fb1"><div class="f" style="background-image:url('../../../public/assets/portraits/akari_serious.webp')"></div><div class="nm">あかり</div><div class="bar"><i style="width:100%"></i></div><div class="go">03のコマを選ぶ ▶</div></div>
+  <div class="tab" style="--c:#ffb347"><div class="f" style="background-image:url('../../../public/assets/portraits/mio_smile.webp');background-size:150%;background-position:50% 10%"></div>みお<div class="bar"><i style="width:70%"></i></div><div class="mp">MP 60</div></div>
+</div>
+<div class="abs hand">
+  <div class="card" style="--c:#8a96a8;left:4px"><div class="ph" style="background-image:url('../../../public/assets/cg/cut_ground.webp')"></div><span class="el">物理</span><div class="nm">ソード</div><div class="wt">■■□□</div></div>
+  <div class="card sel" style="--c:#4cd07d;left:80px"><div class="ph" style="background-image:url('../../../public/assets/cg/tandem_bicycle.webp')"></div><span class="el">回復</span><div class="nm">リカバー</div><div class="wt">■■□□</div></div>
+  <div class="card" style="--c:#a98be0;left:156px"><div class="ph" style="background-image:url('../../../public/assets/cg/photo_goldfish.webp')"></div><span class="el">サポート</span><div class="nm">サーチ</div><div class="wt">その場で使う</div></div>
+  <div class="card" style="--c:#a98be0;left:232px"><div class="ph" style="background-image:url('../../../public/assets/cg/mio_cards.webp')"></div><span class="el">サポート</span><div class="nm">ドロー</div><div class="wt">その場で使う</div></div>
+  <div class="card" style="--c:#8a96a8;left:308px"><div class="ph" style="background-image:url('../../../public/assets/cg/awaken_weapons.webp')"></div><span class="el">物理</span><div class="nm">ヘビー<br>ブロウ</div><div class="wt">■■■■</div></div>
+</div>
+<div class="abs cmd"><div class="btn">魔法・スキル</div><div class="btn link">連携技 94%</div><div class="btn go">REC</div></div>
+<div class="abs tag">案15 仲間のタブ（イメージ）</div>
+</body></html>
