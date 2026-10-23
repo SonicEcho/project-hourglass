@@ -589,8 +589,39 @@ function drawAllies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
 // ④ 手札
 const COMBO_STRIP_H = 26;
 
+/**
+ * 段階101：戦闘の画面の見本（`?debug=1&battleUi=a`・`b`・`c`。付けなければ今のまま）。段階102 で選んだ案だけを残す。
+ * a：言葉と字（並びは今のまま）／b：使える時だけ出す（コンボの帯・バトンタッチ）／c：b ＋下のボタンの段を低くして手札を大きく
+ */
+type BattleUi = 'now' | 'a' | 'b' | 'c';
+const BATTLE_UI: BattleUi = (() => {
+  if (typeof window === 'undefined') return 'now';
+  const q = new URLSearchParams(window.location.search);
+  const v = q.get('battleUi');
+  return q.get('debug') === '1' && (v === 'a' || v === 'b' || v === 'c') ? v : 'now';
+})();
+/** 案c で、下のボタンの段から手札へ回す高さ */
+const COMMAND_SHRINK = BATTLE_UI === 'c' ? 40 : 0;
+function handArea(): { y: number; h: number } {
+  return { y: LAYOUT.hand.y, h: LAYOUT.hand.h + COMMAND_SHRINK };
+}
+function commandArea(): { y: number; h: number } {
+  return { y: LAYOUT.commands.y + COMMAND_SHRINK, h: LAYOUT.commands.h - COMMAND_SHRINK };
+}
+/** 手札の名前の字の大きさ（長い名前は1小さく） */
+const CARD_NAME_SIZE = BATTLE_UI === 'c' ? 16 : BATTLE_UI === 'a' || BATTLE_UI === 'b' ? 14 : 12;
+
+/** 手札の上の帯に出す、使えるコンボと、あと1枚でそろうコンボ */
+function comboEntries(vm: ViewModel) {
+  return vm.state.combos
+    .map((c) => ({ combo: c, ...comboProgress(c, vm.pool) }))
+    .filter((e) => e.have === e.need || (e.have > 0 && e.need - e.have === 1))
+    .sort((a, b) => b.have / b.need - a.have / a.need)
+    .slice(0, 3);
+}
+
 function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
-  const { y, h: height } = LAYOUT.hand;
+  const { y, h: height } = handArea();
   const s = vm.state;
   const hand = s.hand;
   root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 10, color: COLORS.subText }));
@@ -598,7 +629,9 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   const rule = addText(scene, GAME_WIDTH - SIDE_PADDING, y + 2, supportText, { size: 10, color: s.supportUsed ? COLORS.dimText : COLORS.subText }).setOrigin(1, 0);
   root.add(rule);
   makePressable(rule, { onLongPress: () => h.detail('手札のルール', HAND_RULE_TEXT) });
-  drawComboStrip(scene, root, vm, h, y + 16);
+  // 案b・c：そろいそうなコンボがない時は帯を出さず、その分だけ手札を高くする
+  const strip = !(BATTLE_UI === 'b' || BATTLE_UI === 'c') || comboEntries(vm).length > 0;
+  if (strip) drawComboStrip(scene, root, vm, h, y + 16);
 
   // 使えるコンボの材料になっているスナップ
   const comboUids = new Set(availableCombos(s, vm.pool).flatMap((c) => (comboCards(c, vm.pool) ?? []).map((x) => x.uid)));
@@ -606,7 +639,7 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   const n = Math.max(5, hand.length);
   const gap = 4;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-  const top = y + 18 + COMBO_STRIP_H;
+  const top = y + 18 + (strip ? COMBO_STRIP_H : 0);
   const cardH = height - (top - y) - 2;
   hand.forEach((card, i) => {
     const x = SIDE_PADDING + i * (w + gap) + w / 2;
@@ -624,17 +657,15 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
 /** 手札の上の帯：使えるコンボと、あと1枚でそろうコンボ */
 function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers, y: number): void {
   const s = vm.state;
-  const entries = s.combos
-    .map((c) => ({ combo: c, ...comboProgress(c, vm.pool) }))
-    .filter((e) => e.have === e.need || (e.have > 0 && e.need - e.have === 1))
-    .sort((a, b) => b.have / b.need - a.have / a.need)
-    .slice(0, 3);
+  const entries = comboEntries(vm);
   const cy = y + COMBO_STRIP_H / 2;
   const strip = scene.add.rectangle(GAME_WIDTH / 2, cy, GAME_WIDTH - SIDE_PADDING * 2, COMBO_STRIP_H, 0x0b1118).setRounded(8).setStrokeStyle(1, 0x2a3b4e);
   root.add(strip);
   makePressable(strip, { onLongPress: () => h.detail('コンボ一覧', comboListText(s, vm.pool)) });
   if (entries.length === 0) {
-    root.add(addText(scene, GAME_WIDTH / 2, cy, 'コンボ：スナップの組み合わせで大技（ここを長押しで一覧）', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
+    // 案a：何もない時は字を出さず、細い線だけ（長押しの一覧はそのまま）
+    if (BATTLE_UI === 'a') strip.setFillStyle(0x0b1118, 0).setStrokeStyle(1, 0x2a3b4e, 0.6).setSize(GAME_WIDTH - SIDE_PADDING * 2, 4);
+    else root.add(addText(scene, GAME_WIDTH / 2, cy, 'コンボ：スナップの組み合わせで大技（ここを長押しで一覧）', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
     return;
   }
   const gap = 4;
@@ -738,13 +769,14 @@ function drawCard(
   root.add(
     // 長い名前は言葉の切れ目で2行に分ける（段階32b。data の CARD_NAME_LINES）
     CARD_NAME_LINES[def.id]
-      ? addText(scene, x, yy - 6, CARD_NAME_LINES[def.id] ?? '', { size: 12, bold: true, align: 'center', color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5).setLineSpacing(2)
-      : addText(scene, x, yy - 6, def.name, { size: def.name.length > 5 ? 11 : 12, bold: true, align: 'center', wrap: w - 4, color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5),
+      ? addText(scene, x, yy - 6, CARD_NAME_LINES[def.id] ?? '', { size: CARD_NAME_SIZE, bold: true, align: 'center', color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5).setLineSpacing(2)
+      : addText(scene, x, yy - 6, def.name, { size: def.name.length > 5 ? CARD_NAME_SIZE - 1 : CARD_NAME_SIZE, bold: true, align: 'center', wrap: w - 4, color: dim ? COLORS.dimText : COLORS.text }).setOrigin(0.5),
   );
   if (o.reservedBy) {
     root.add(addText(scene, x, yy + hgt / 2 - 18, `${o.reservedBy}が使う`, { size: 10, bold: true, color: COLORS.accentText, align: 'center', wrap: w - 2 }).setOrigin(0.5));
   } else if (def.support) {
-    root.add(addText(scene, x, yy + hgt / 2 - 18, '行動枠なし', { size: 10, color: COLORS.subText }).setOrigin(0.5));
+    // 段階101 の見本では、意味の分かる言葉に（計画の途中で、その場で使う札）
+    root.add(addText(scene, x, yy + hgt / 2 - 18, BATTLE_UI === 'now' ? '行動枠なし' : 'その場で使う', { size: 10, color: COLORS.subText }).setOrigin(0.5));
   } else {
     root.add(addText(scene, x, yy + hgt / 2 - 24, weightLabel(def.weight), { size: 11, color: COLORS.subText }).setOrigin(0.5));
     drawWeightGauge(scene, root, x, yy + hgt / 2 - 10, def.weight);
@@ -805,7 +837,7 @@ const HAND_RULE_TEXT = [
 const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS).map((c) => [c.id, c.name]));
 
 function panelBackground(scene: Phaser.Scene, root: Phaser.GameObjects.Container, title: string): void {
-  const { y, h: height } = LAYOUT.hand;
+  const { y, h: height } = handArea();
   root.add(scene.add.rectangle(SIDE_PADDING, y, GAME_WIDTH - SIDE_PADDING * 2, height, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
   root.add(addText(scene, SIDE_PADDING + 8, y + 4, title, { size: 11, color: COLORS.subText }));
 }
@@ -818,7 +850,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   const pageText = layout.pages > 1 ? `　${layout.page + 1}/${layout.pages}ページ` : '';
   panelBackground(scene, root, `魔法・スキル（${actor?.name ?? ''}　MP ${actor?.mp ?? 0}）${pageText}`);
   if (!actor) return;
-  const { y } = LAYOUT.hand;
+  const { y } = handArea();
   for (const slot of layout.slots) {
     const cx = left + slot.x + slot.w / 2;
     const cy = y + slot.y + slot.h / 2;
@@ -852,7 +884,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
 
 function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   panelBackground(scene, root, 'その他');
-  const { y } = LAYOUT.hand;
+  const { y } = handArea();
   const left = SIDE_PADDING + 8;
   const width = GAME_WIDTH - SIDE_PADDING * 2 - 16;
   const gap = 5;
@@ -900,7 +932,7 @@ function cardGrid(
   onTap: (uid: number) => void,
   h: ViewHandlers,
 ): void {
-  const { y } = LAYOUT.hand;
+  const { y } = handArea();
   const cols = 4;
   const gap = 4;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - 16 - gap * (cols - 1)) / cols;
@@ -936,7 +968,7 @@ function drawSearchPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container
 
 // ⑤ コマンド
 function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
-  const { y, h: height } = LAYOUT.commands;
+  const { y, h: height } = commandArea();
   const s = vm.state;
   const canAct = !!vm.actor && vm.interactive && !s.searchChoice;
   const batonOk = canAct && s.phase === 'extra' && batonTargets(s).length > 0;
@@ -947,15 +979,17 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
   const linkOk = canAct && s.phase === 'plan' && ready && mine.length > 0;
   const gaugePct = Math.round((s.linkGauge / LINK_GAUGE_MAX) * 100);
   const linkLabel = s.links.length === 0 ? '連携技' : linkOk && link ? `連携技\n${link.name}${mine.length > 1 ? ' ⇄' : ''}` : ready ? '連携技\n準備OK' : `連携技\nつながり ${gaugePct}%`;
-  const n = 4;
-  const gap = 6;
-  const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-  const items: { kind: 'skills' | 'baton' | 'link' | 'other'; label: string; enabled: boolean; lit?: boolean; active: boolean }[] = [
+  const all: { kind: 'skills' | 'baton' | 'link' | 'other'; label: string; enabled: boolean; lit?: boolean; active: boolean }[] = [
     { kind: 'skills', label: '魔法・\nスキル', enabled: canAct, active: vm.panel === 'skills' },
     { kind: 'baton', label: 'バトン\nタッチ', enabled: batonOk, lit: batonOk, active: vm.batonMode },
     { kind: 'link', label: linkLabel, enabled: linkOk, lit: linkOk, active: !!vm.selectedLinkId },
     { kind: 'other', label: 'その他', enabled: canAct, active: vm.panel === 'other' },
   ];
+  // 案b・c：バトンタッチは追加行動の時だけ出す
+  const items = BATTLE_UI === 'b' || BATTLE_UI === 'c' ? all.filter((it) => it.kind !== 'baton' || s.phase === 'extra') : all;
+  const n = items.length;
+  const gap = 6;
+  const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
   items.forEach((item, i) => {
     const x = SIDE_PADDING + i * (w + gap) + w / 2;
     addButton(
@@ -984,9 +1018,10 @@ function drawCommands(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
   });
   if (s.links.length > 0) {
     // つながりゲージ：連携技のボタンの下の端に、貯まった分だけ光る帯
-    const x = SIDE_PADDING + 2 * (w + gap) + 6;
+    const x = SIDE_PADDING + items.findIndex((it) => it.kind === 'link') * (w + gap) + 6;
     const bw = w - 12;
-    const by = y + height - 18;
+    // 案c はボタンが低いので、帯をボタンの下の端へ寄せる（字に重ならないように）
+    const by = y + height - (BATTLE_UI === 'c' ? 13 : 18);
     root.add(scene.add.rectangle(x, by, bw, 5, 0x000000, 0.5).setOrigin(0, 0.5));
     if (gaugePct > 0) root.add(scene.add.rectangle(x, by, bw * (gaugePct / 100), 5, ready ? COLORS.accent : 0xff9a5a).setOrigin(0, 0.5));
   }
