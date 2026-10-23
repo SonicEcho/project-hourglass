@@ -365,8 +365,10 @@ try {
     await page.waitForTimeout(300);
   }
   await waitScene('Exchange');
-  // 段階100c：交換所を初めて開くと、ペトラから時分解を教わり、武器の画面に時分解が出る（説明の窓も出る）
-  await until('時分解の説明', () => findText('^時分解と記憶の欠片$'));
+  // 段階100c：交換所を初めて開くと、ペトラから時分解を教わり、武器の画面に時分解が出る（セーブの物語の変数に覚える）。
+  // ここまでの育ち具合を引き継いでいるので、先に吸わせ枠がいっぱいになって出ていることもある。その時は説明の窓は出ない
+  await until('時分解が出た印', () => page.evaluate(() => (localStorage.getItem('restopia.save.auto') ?? '').includes('"武器:時分解":"1"')));
+  await page.waitForTimeout(800);
   await skipTips();
   await debugButton('記憶の欠片を10個ずつもらう');
   await closeDebugMenu();
