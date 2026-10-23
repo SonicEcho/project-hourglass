@@ -25,7 +25,7 @@ import {
   weaponSlots,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
+import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
@@ -89,7 +89,7 @@ export class WeaponScene extends Phaser.Scene {
 
   /**
    * 時分解を出すか（段階100c）：どれかの武器の吸わせ枠が初めていっぱいになったら、物語の変数に覚えて、その後はずっと出す
-   * （1章では枠が埋まらず、時分解を使う理由がないため）。初めて出た時は説明の窓も出す
+   * （1章では枠が埋まらず、時分解を使う理由がないため）。初めて出た時は説明の窓も出す。交換所を初めて開いた時にも覚える（ExchangeScene）
    */
   private updateDecompose(): void {
     if (run.vars[DECOMPOSE_VAR]) {
@@ -711,9 +711,6 @@ function keyItems(w: WeaponState): Set<string> {
   const ahead = D.weapons[w.defId].evolutions.filter((e) => !['passed', 'unreachable'].includes(evolutionVisibility(D, w, e.id)));
   return new Set(ahead.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []))));
 }
-
-/** 時分解を出したことを覚える物語の変数（段階100c） */
-const DECOMPOSE_VAR = '武器:時分解';
 
 /** 素材の長押しの説明。時分解がまだ出ていなければ（段階100c）、時分解の行は出さない */
 function itemDetail(itemId: string, decompose: boolean): string {

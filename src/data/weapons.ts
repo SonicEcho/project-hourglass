@@ -447,3 +447,9 @@ export const WEAPON_DATA: WeaponData = {
   decomposeCost: 2,
   fragmentFor: { atk: FRAGMENTS.courage.id, fire: FRAGMENTS.elation.id, ice: FRAGMENTS.relief.id, thunder: FRAGMENTS.wonder.id },
 };
+
+/**
+ * 時分解を出したことを覚える物語の変数（段階100c）。武器の画面の時分解は、どれかの武器の吸わせ枠が初めていっぱいになった時か、
+ * 交換所を初めて開いた時（ペトラが時分解を教える）の、早い方から出す
+ */
+export const DECOMPOSE_VAR = '武器:時分解';

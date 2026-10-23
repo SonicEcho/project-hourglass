@@ -2,11 +2,12 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { ExchangeGood } from '../core';
 import { addParts, eventPassed, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen } from '../core';
-import { BACKDROPS, BGM, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { BACKDROPS, BGM, DECOMPOSE_VAR, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { maybeShowTip } from '../ui/tipPanel';
 import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
 import { notePlayCount } from './playRecord';
@@ -76,6 +77,11 @@ export class ExchangeScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.render();
     this.cameras.main.fadeIn(250, 0, 0, 0);
+    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す（それまでは、吸わせ枠が初めていっぱいになるまで出さない）
+    if (!run.vars[DECOMPOSE_VAR]) {
+      setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
+      this.time.delayedCall(400, () => maybeShowTip(this, ['growth_decompose']));
+    }
   }
 
   private goods(): ExchangeGood[] {
