@@ -58,7 +58,7 @@
 ## 5. 自動対戦の測定
 
 - `npm run measure`（`-- --runs 200 --seed 1` で回数とシード）。結果は戦闘ごとの「1回目で勝てた割合」「平均ラウンド」「平均やり直し」の表。同じ回数・シードなら同じ結果。200周で約20秒（1-1 の表を含めて約30秒）
-- GitHub Actions の「Measure」（`.github/workflows/measure.yml`）：`main` への push と手での実行で回り、結果は Summary に出る。公開とは別
+- GitHub Actions の「Measure」（`.github/workflows/measure.yml`）：`main` への push と手での実行で回り、結果は Summary に出る。公開とは別。push では60回、手で回す時の初期値は200回。90分で止める
 - 自動の方針（`src/sim/`）
 
 | 場面 | 方針 |
@@ -149,3 +149,4 @@ Android の Chrome は、ページが下へスクロールされたと判断す�
 - 段階12：`npm run measure` は、TypeScript のまま読み込むため Vite の `runnerImport` を使う（道具を増やさない）
 - 2026-10-10 段階32b 調整3：屋台めぐりの「けいかくひょう」に、子どもの手書き風の書体 Hachi Maru Pop（SIL OFL）を足した（はちまるポップ・よもぎ・Zen Kurenaido を見比べ、一番子どもの字らしいものにした）。かな・英数字と `src/data/daily.ts` の字だけに絞って 56KB（`hand.woff2`。`addText` の `hand`）。見出しの書体と一緒に起動の画面で読み込む
 - 2026-10-16 段階48：アドレスバーが勝手に隠れて Chrome のメニューを出せなくなる、と開発者から聞いた。ホーム画面に追加して全画面で開く形（manifest）と、ゲームの中の全画面のボタンを両方入れた（開発者と決めた）。manifest の `display` は、Android の下のバーも隠れる `fullscreen` にした（縦持ちのゲームで、画面を広く使うため）
+- 2026-10-23：Measure を、main への push では60回にし、90分の上限を付けた（3章の区画が増えて200回だと1時間半を超え、#130 のマージの時に作業用の機械が途中で落ちて×になったため。公開には響いていない）。設計書の数値を決める時の測定も60回なので、push の結果をそのまま見比べられる
