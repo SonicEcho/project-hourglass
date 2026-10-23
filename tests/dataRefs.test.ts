@@ -298,6 +298,28 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(AREAS.a21.triggers.find((t) => t.scene === 'a21_checkpoint')?.gears?.length).toBeGreaterThan(0);
   });
 
+  it('段階99：晩に分けた区画の最後の晩、コマを持たない砂嵐は、ぬしの近く（同じ部屋で8マス以内）にいない（決め所の会話の前に戦闘を強いない）', async () => {
+    const { AREAS, AREA_BATTLES } = await import('../src/data');
+    const checked: string[] = [];
+    for (const area of Object.values(AREAS)) {
+      const last = area.nights?.length ?? 0;
+      if (last < 2) continue;
+      const first = area.rooms[0].id;
+      const bossRoom = area.boss.room ?? first;
+      const [bx, by] = area.boss.cell;
+      const near = area.enemies.filter(
+        (e) =>
+          (e.night ?? 1) === last &&
+          (AREA_BATTLES[e.battle].koma ?? 0) === 0 &&
+          (e.room ?? first) === bossRoom &&
+          e.patrol.some(([x, y]) => Math.abs(x - bx) + Math.abs(y - by) < 8),
+      );
+      expect(near.map((e) => e.id), area.id).toEqual([]);
+      checked.push(area.id);
+    }
+    expect(checked).toEqual(expect.arrayContaining(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32']));
+  });
+
   it('2-2（段階39b）は部屋をつなぐ形：6部屋すべてに行け、体育館へは渡り廊下の番人を倒すと入れる。コマを持つ砂嵐は、ボスを起こすのにちょうど足りる', async () => {
     const { AREAS, AREA_BATTLES } = await import('../src/data');
     const { passDoor, startExplore, exitCells, roomOf, reachableCells } = await import('../src/core');

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { CardDef } from '../core';
-import { addToAlbum, countOf, getAddError, isAlbumComplete, removeFromAlbum } from '../core';
+import { addToAlbum, countOf, getAddError, isAlbumComplete, recommendAlbum, removeFromAlbum } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALBUM_COPY_MAX, ALBUM_SIZE, CARDS } from '../data';
+import { ALBUM_COPY_MAX, ALBUM_RECOMMEND, ALBUM_SIZE, CARDS } from '../data';
 import { snapLook } from '../ui/battleViews';
 import { describeAction } from '../ui/describe';
 import { addIcon } from '../ui/icons';
@@ -31,6 +31,8 @@ export class AlbumScene extends Phaser.Scene {
   private root!: Phaser.GameObjects.Container;
   private selected: string | null = null;
   private message = '';
+  /** message が注意ではなく、やったことの知らせか（段階100。おまかせ） */
+  private messageOk = false;
   private page = 0;
 
   constructor() {
@@ -54,6 +56,7 @@ export class AlbumScene extends Phaser.Scene {
   }
 
   private insert(id: string): void {
+    this.messageOk = false;
     const err = getAddError(run.album, id);
     if (err) {
       this.message =
@@ -67,6 +70,16 @@ export class AlbumScene extends Phaser.Scene {
       this.message = '';
     }
     this.selected = id;
+    this.render();
+  }
+
+  /** おまかせ（段階100）：持っているスナップから、コンボを組める形の20枚に入れ直す */
+  private recommend(): void {
+    const next = recommendAlbum(run.album, ALBUM_RECOMMEND);
+    this.message = JSON.stringify(next.album) === JSON.stringify(run.album.album) ? 'もう、おまかせと同じ組み方' : 'おまかせで組んだ（コンボを組める形）';
+    this.messageOk = true;
+    run.album = next;
+    this.selected = null;
     this.render();
   }
 
@@ -119,16 +132,19 @@ export class AlbumScene extends Phaser.Scene {
       : ['名前をタップすると、スナップの説明が出る', '宝箱・ボス・時間を返した時に、新しいスナップが手に入る'];
     this.root.add(addText(this, SIDE_PADDING + 10, detailY + 8, lines.join('\n'), { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
     if (this.message) {
-      this.root.add(addText(this, GAME_WIDTH / 2, detailY + DETAIL_H - 14, this.message, { size: 12, bold: true, color: COLORS.allyDamage }).setOrigin(0.5));
+      this.root.add(addText(this, GAME_WIDTH / 2, detailY + DETAIL_H - 14, this.message, { size: 12, bold: true, color: this.messageOk ? COLORS.accentText : COLORS.allyDamage }).setOrigin(0.5));
     }
 
-    // 下：星図へ戻る（ちょうど ALBUM_SIZE 枚の時だけ）
+    // 下：おまかせ（段階100）と、星図へ戻る（ちょうど ALBUM_SIZE 枚の時だけ）
+    const autoW = 110;
+    addButton(this, this.root, SIDE_PADDING + autoW / 2, 800, autoW, 52, 'おまかせ', { onTap: () => this.recommend() }, { size: 15, bold: true });
+    const backW = GAME_WIDTH - SIDE_PADDING * 2 - autoW - 8;
     addButton(
       this,
       this.root,
-      GAME_WIDTH / 2,
+      GAME_WIDTH - SIDE_PADDING - backW / 2,
       800,
-      GAME_WIDTH - SIDE_PADDING * 2,
+      backW,
       52,
       complete ? (hubBack()?.label ?? '星図へ戻る') : `あと${ALBUM_SIZE - total}枚入れると戻れる`,
       {

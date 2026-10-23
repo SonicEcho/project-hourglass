@@ -75,3 +75,22 @@ export function snapNames(ids: string[]): string {
   for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
   return [...counts].map(([id, n]) => `${(CARDS as Record<string, CardDef>)[id]?.name ?? id}${n > 1 ? `×${n}` : ''}`).join('、');
 }
+
+/**
+ * アルバムの「おまかせ」（段階100）：この順に、書いた枚数まで入れる（全部持っていれば、ちょうど20枚）。
+ * コンボ（3属性・ソード3枚・ブレイクアーム2枚・リカバー2枚）を組める形を先に、強いスナップを厚く。
+ * 足りなければ、この順に上限まで足し、それでも足りなければ持っている順に足す
+ */
+export const ALBUM_RECOMMEND: [string, number][] = [
+  ['heavyBlow', 2],
+  ['fireChip', 2],
+  ['iceChip', 2],
+  ['thunderChip', 2],
+  ['breakArm', 2],
+  ['recover', 2],
+  ['joker', 2],
+  ['sword', 3],
+  ['wideShot', 1],
+  ['pinchHitter', 1],
+  ['quickStep', 1],
+];

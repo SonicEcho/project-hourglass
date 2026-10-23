@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import type { CharacterDef, GrowthNodeDef, StatKey } from '../core';
-import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, nodeCost, openableNodes, openNode, piecePosition, spareSnaps } from '../core';
+import type { CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
+import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar, spareSnaps } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
+import { AREAS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -120,6 +120,21 @@ export class GrowthScene extends Phaser.Scene {
 
   private base(id = this.charId): CharacterDef {
     return PARTY.find((c) => c.id === id)!;
+  }
+
+  /** 今の仲間のおすすめの道（段階100。開けるのは遊ぶ人が「開ける」を押した時だけ） */
+  private advice(): StarAdvice | null {
+    return recommendStar(GROWTH_MAP, run.growth, this.base(), GROWTH_RECOMMEND, growthChapter(hubLineup()));
+  }
+
+  /** おすすめの道の、次に開ける星を選んで、そこへ寄せる */
+  private showAdvice(): void {
+    const next = this.advice()?.path[0];
+    if (!next) return;
+    this.selected = next;
+    this.message = '';
+    this.render();
+    this.centerOn(next);
   }
 
   private tapNode(nodeId: string): void {
@@ -457,8 +472,26 @@ export class GrowthScene extends Phaser.Scene {
     }
     layer.add(lines);
 
+    // おすすめの道（段階100）：開けた星から目指す星まで、金色の点線で光らせる
+    const advice = this.advice();
+    if (advice) {
+      const from = neighbors(GROWTH_MAP, advice.path[0]).find((nb) => isOpened(g, this.charId, nb.id));
+      const route = [...(from ? [from.id] : []), ...advice.path].map((id) => byId.get(id)!);
+      const glow = this.add.graphics();
+      for (let i = 0; i + 1 < route.length; i++) {
+        const [a, b] = [route[i], route[i + 1]];
+        glow.lineStyle(8, 0xffd76a, 0.14).lineBetween(a.x, a.y, b.x, b.y);
+        dashedLine(glow, a.x, a.y, b.x, b.y, 0xffd76a, 0.95, 6, 4);
+      }
+      layer.add(glow);
+    }
+
     // 星
     for (const n of GROWTH_MAP.nodes) if (shown(n)) this.drawStar(n, openable.has(n.id));
+    if (advice) {
+      const next = byId.get(advice.path[0])!;
+      layer.add(addText(this, next.x, next.y - 30, 'おすすめ', { size: 10, bold: true, color: '#ffd76a' }).setOrigin(0.5));
+    }
 
     // 駒（今のキャラは大きく）。パーティにいない仲間の駒は出さない
     members.forEach((c, i) => {
@@ -547,12 +580,25 @@ export class GrowthScene extends Phaser.Scene {
     this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
+      // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
+      const advice = this.advice();
       const lines = [
         this.message || `${base.name}の駒を進める。点線の輪の星（開けられる星）をタップ。星図は指でずらせる`,
-        `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
+        advice
+          ? `おすすめ：${nodeTitle(advice.target, base)}（金の道・あと${advice.cost}pt）`
+          : `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
         `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}　速さ ${grown.stats.spd}`,
       ];
-      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
+      const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
+      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW }));
+      if (advice) {
+        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, {
+          fill: 0x5a4a10,
+          stroke: 0xffd76a,
+          size: 13,
+          bold: true,
+        });
+      }
       return;
     }
     const cost = nodeCost(GROWTH_MAP, run.growth, base, n.id);
@@ -565,9 +611,10 @@ export class GrowthScene extends Phaser.Scene {
         : err
           ? 'まだ届かない（開けたマスの隣だけ開けられる）'
           : `${cost}pt で開けられる`;
+    const onAdvice = this.advice()?.path.includes(n.id) && !opened;
     this.root.add(addText(this, SIDE_PADDING + 10, top + 8, nodeTitle(n, base), { size: 15, bold: true, color: COLORS.accentText }));
     this.root.add(addText(this, SIDE_PADDING + 10, top + 32, nodeDetail(n, base), { size: 11, wrap: GAME_WIDTH - 150 }));
-    this.root.add(addText(this, SIDE_PADDING + 10, top + h - 22, status, { size: 11, color: COLORS.subText }));
+    this.root.add(addText(this, SIDE_PADDING + 10, top + h - 22, onAdvice ? `${status}（おすすめの道）` : status, { size: 11, color: onAdvice ? '#ffd76a' : COLORS.subText }));
     addButton(
       this,
       this.root,

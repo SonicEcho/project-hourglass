@@ -1,9 +1,10 @@
-import type { ArmoryState, CharacterDef, GrowthState, NaviData, NaviState, Placement, Rotation } from '../core';
+import type { ArmoryState, CharacterDef, GrowthState, NaviData, NaviState } from '../core';
 import {
   advance,
   applyGrowth,
   applyNavi,
   applyWeapons,
+  arrangeBoards,
   battleNumber,
   battleReward,
   boardColorCells,
@@ -12,16 +13,12 @@ import {
   createBattle,
   createGrowth,
   createNavi,
-  findBugs,
   getBattleResult,
   getOpenError,
-  getPlaceError,
-  isPartActive,
   naviDataWithWeapons,
   openableNodes,
   openNode,
   placeOf,
-  placePart,
   recordVictory,
   removePart,
   startProgress,
@@ -131,41 +128,9 @@ function spendPoints(st: AutoRunState, pick: (n: number) => number): void {
  * 効果ギアはブリッジに乗る場所を優先し、狂いを作る場所には置かない。どこにも置けないギアは外したまま
  */
 export function arrangeNavi(data: NaviData, navi0: NaviState): NaviState {
-  let navi: NaviState = navi0.parts.reduce((n, p) => removePart(n, p.uid), navi0);
-  const order = [...navi.parts].sort((a, b) => data.parts[b.partId].cells.length - data.parts[a.partId].cells.length || a.uid - b.uid);
-  const chars = PARTY.map((c) => c.id);
-  let turn = 0;
-  for (const part of order) {
-    const isEffect = data.parts[part.partId].kind === 'effect';
-    for (let k = 0; k < chars.length; k++) {
-      const charId = chars[(turn + k) % chars.length];
-      const spot = bestSpot(data, navi, part.uid, charId, isEffect);
-      if (!spot) continue;
-      navi = placePart(data, navi, part.uid, spot);
-      turn = (turn + k + 1) % chars.length;
-      break;
-    }
-  }
-  return navi;
-}
-
-function bestSpot(data: NaviData, navi: NaviState, uid: number, charId: string, isEffect: boolean): Placement | null {
-  const board = data.boards[charId];
-  let fallback: Placement | null = null;
-  for (const rotation of [0, 1, 2, 3] as Rotation[]) {
-    for (let row = 0; row < board.rows; row++) {
-      for (let col = 0; col < board.cols; col++) {
-        const p: Placement = { charId, col, row, rotation };
-        if (getPlaceError(data, navi, uid, p)) continue;
-        const next = placePart(data, navi, uid, p);
-        if (findBugs(data, next, charId).length > 0) continue;
-        if (!isEffect) return p;
-        if (isPartActive(data, next.parts.find((x) => x.uid === uid)!)) return p;
-        fallback ??= p;
-      }
-    }
-  }
-  return fallback;
+  // 段階100：並べ方は画面の「おまかせ」と同じ core/recommend.ts。ここでは全部のギアを外してから並べる
+  const navi = navi0.parts.reduce((n, p) => removePart(n, p.uid), navi0);
+  return arrangeBoards(data, navi, PARTY.map((c) => c.id));
 }
 
 /** 勝った時の受け取り（画面の BattleScene と同じ順番） */

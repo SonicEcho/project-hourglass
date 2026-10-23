@@ -27,6 +27,9 @@ export interface NaviBoardDef {
   commandCol: number;
   /** 狂い1つにつき付く特性（キャラごとに差し替えられるようにしておく） */
   bugEffect: PassiveEffect;
+  /** 進化で埋めている途中の行・列（段階100b。extendBoard が使う） */
+  growRow?: number;
+  growCol?: number;
 }
 
 export interface Placement {
@@ -196,21 +199,34 @@ export function claimRewardParts(navi: NaviState, candidates: string[], chosen: 
 
 /**
  * 盤を拡張する（武器の進化で増える。段階42。型で形が変わる）。
- * row（ブリッジが伸びる型）はブリッジの列の下の端に count マス、column（盤が広がる型）は一番右の列の一番下のマスの右へ横に count マス
- * （2026-10-16 にブリッジを縦にした時、前の「ブリッジの行が右へ」「盤の下へ縦に」から読み替えた）
+ * 段階100b：盤ができるだけ四角に広がるよう、row（ブリッジが伸びる型）は盤のすぐ下の新しい行を、ブリッジの列から近い順に（同じなら右から）埋め、
+ * column（盤が広がる型）は盤のすぐ右の新しい列を、上から埋める。count マスずつ足し、行・列がそろうと次の行・列へ。
+ * 埋めている途中の行・列は growRow・growCol に覚える（盤の形から作り直せるので、セーブはしない）。
+ * 前は、どちらの型も1マス幅の「しっぽ」（ブリッジの下へ縦、右下から横）で、まっすぐなギアしか入らなかった
  */
 export function extendBoard(board: NaviBoardDef, count: number, shape: 'row' | 'column' = 'row'): NaviBoardDef {
-  if (count <= 0) return board;
-  if (shape === 'column') {
-    const right = Math.max(...board.cells.map(([c]) => c));
-    const row = Math.max(...board.cells.filter(([c]) => c === right).map(([, r]) => r));
-    const added: Cell[] = Array.from({ length: count }, (_, i) => [right + 1 + i, row]);
-    return { ...board, cols: Math.max(board.cols, right + 1 + count), cells: [...board.cells, ...added] };
+  let b = board;
+  const has = (c: number, r: number) => b.cells.some(([x, y]) => x === c && y === r);
+  // 新しいマスは、すでにある盤のマスに接する所だけ（盤から離れたマスを作らない）
+  const rowSpots = (row: number) =>
+    Array.from({ length: b.cols }, (_, c) => c)
+      .filter((c) => has(c, row - 1))
+      .sort((x, y) => Math.abs(x - b.commandCol) - Math.abs(y - b.commandCol) || y - x);
+  const colSpots = (col: number) => Array.from({ length: b.rows }, (_, r) => r).filter((r) => has(col - 1, r));
+  for (let k = 0; k < count; k++) {
+    if (shape === 'row') {
+      let row = b.growRow ?? -1;
+      if (row < 0 || rowSpots(row).every((c) => has(c, row))) row = Math.max(...b.cells.map(([, r]) => r)) + 1;
+      const col = rowSpots(row).find((c) => !has(c, row))!;
+      b = { ...b, rows: Math.max(b.rows, row + 1), cells: [...b.cells, [col, row]], growRow: row };
+    } else {
+      let col = b.growCol ?? -1;
+      if (col < 0 || colSpots(col).every((r) => has(col, r))) col = Math.max(...b.cells.map(([c]) => c)) + 1;
+      const row = colSpots(col).find((r) => !has(col, r))!;
+      b = { ...b, cols: Math.max(b.cols, col + 1), cells: [...b.cells, [col, row]], growCol: col };
+    }
   }
-  const colCells = board.cells.filter(([c]) => c === board.commandCol).map(([, r]) => r);
-  const start = Math.max(-1, ...colCells) + 1;
-  const added: Cell[] = Array.from({ length: count }, (_, i) => [board.commandCol, start + i]);
-  return { ...board, rows: Math.max(board.rows, start + count), cells: [...board.cells, ...added] };
+  return b;
 }
 
 /** そのキャラの盤にはまっているギアの、色ごとのマス数 */

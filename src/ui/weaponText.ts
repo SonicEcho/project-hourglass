@@ -47,11 +47,11 @@ export function describeEvolution(evo: EvolutionDef): string {
   return parts.join('。');
 }
 
-/** 型の効果（段階42。boardExtension が0なら、盤のことは書かない） */
+/** 型の効果（段階42。boardExtension が0なら、盤のことは書かない。段階100b：盤は下の行・右の列へ四角に広がる） */
 export function describeStyle(style: EvolutionStyleDef, boardExtension: number): string {
   const parts: string[] = [...summarizePassives(style.passives ?? [])];
   for (const [k, v] of Object.entries(style.stats ?? {})) parts.push(`${STAT_LABEL[k as keyof typeof STAT_LABEL]} +${v}`);
-  if (boardExtension > 0) parts.push(style.board === 'row' ? `ブリッジが下に${boardExtension}マス伸びる` : `盤の右に横に${boardExtension}マス増える`);
+  if (boardExtension > 0) parts.push(style.board === 'row' ? `盤の下に${boardExtension}マス増える（ブリッジの下から）` : `盤の右に${boardExtension}マス増える`);
   return `${style.name}：${parts.join('。')}`;
 }
 
