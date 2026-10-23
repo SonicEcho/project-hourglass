@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+  body { background: #3a2418; color: #3a2a20; }
+  /* アルバムの表紙（ふち）と、上下の2ページ */
+  .cover { inset: 6px; border-radius: 10px; background: #6a2f2a; box-shadow: inset 0 0 0 3px #8a4a3a, 0 6px 20px #000; }
+  .page { left: 16px; right: 16px; background: repeating-linear-gradient(0deg, #f4ead6 0 3px, #f1e6d0 3px 6px); box-shadow: inset 0 0 18px rgba(120,80,40,.25); }
+  .p1 { top: 16px; height: 420px; border-radius: 6px 6px 2px 2px; }
+  .p2 { top: 444px; bottom: 16px; border-radius: 2px 2px 6px 6px; }
+  .spine { left: 16px; right: 16px; top: 434px; height: 12px; background: linear-gradient(#c9b89a, #8a7458, #c9b89a); }
+  .ring { width: 14px; height: 22px; top: 429px; border-radius: 7px; border: 3px solid #b0b8c0; background: transparent; }
+  /* 上のページ：敵の写真 */
+  .bigphoto { left: 40px; top: 40px; width: 310px; height: 300px; background: #fff; padding: 8px 8px 34px; box-shadow: 0 4px 10px rgba(0,0,0,.3); transform: rotate(-1.5deg); }
+  .bigphoto .in { width: 100%; height: 100%; background: url('../../../public/assets/enemies/kai.webp') center 40% / 92% no-repeat, url('../../../public/assets/backgrounds/riverside_1998.webp') center 30% / cover; filter: sepia(.25); }
+  .bigphoto .cap { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-family: 'Hand', 'IPAGothic'; font-size: 16px; }
+  .corner { position: absolute; width: 22px; height: 22px; background: #2a2a2a; clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .ehp { left: 80px; right: 80px; top: 360px; height: 10px; border-radius: 5px; border: 2px solid #6a4a3a; background: #fff; } .ehp i { display: block; height: 100%; width: 100%; background: #e8735a; border-radius: 3px; }
+  .memo { left: 262px; top: 286px; width: 104px; padding: 6px; background: #fff59a; font-family: 'Hand', 'IPAGothic'; font-size: 12px; transform: rotate(4deg); box-shadow: 0 2px 4px rgba(0,0,0,.25); line-height: 1.3; }
+  .order { left: 30px; top: 380px; font-family: 'Hand', 'IPAGothic'; font-size: 13px; color: #6a4a3a; }
+  /* 下のページ：仲間ごとの貼る枠 */
+  .slots { left: 26px; right: 26px; top: 460px; display: flex; gap: 10px; }
+  .slot { flex: 1; text-align: center; }
+  .slot .who { display: flex; align-items: center; gap: 4px; justify-content: center; font-family: 'Hand', 'IPAGothic'; font-size: 14px; }
+  .slot .who i { width: 26px; height: 26px; border-radius: 50%; background-size: 230%; background-position: 50% 10%; border: 2px solid var(--c); }
+  .slot .hp { height: 5px; margin: 3px 10px 0; background: #e2d6c0; } .slot .hp i { display: block; height: 100%; background: #6cbf7a; }
+  .slot .frame { margin: 6px auto 0; width: 84px; height: 94px; border: 2px dashed #b8a080; position: relative; display: grid; place-items: center; font-family: 'Hand', 'IPAGothic'; font-size: 12px; color: #a08a6a; }
+  .slot .frame.filled { border: none; background: #fff; padding: 4px 4px 18px; box-shadow: 0 2px 5px rgba(0,0,0,.3); transform: rotate(-2deg); }
+  .slot .frame.filled .ph { width: 100%; height: 100%; background-size: cover; background-position: center; }
+  .slot .frame.filled .t { position: absolute; bottom: 2px; left: 0; right: 0; font-size: 11px; color: #333; }
+  .slot.on .frame { border-color: #e8735a; color: #e8735a; background: #e8735a11; }
+  /* 下：持っている写真（手札） */
+  .hint { left: 0; right: 0; top: 600px; text-align: center; font-family: 'Hand', 'IPAGothic'; font-size: 13px; color: #8a6a4a; }
+  .hand { left: 22px; right: 22px; top: 628px; height: 104px; display: flex; gap: 6px; }
+  .snap { flex: 1; background: #fff; padding: 3px 3px 0; box-shadow: 0 2px 5px rgba(0,0,0,.3); transform: rotate(var(--r)); position: relative; }
+  .snap .ph { height: 54px; background-size: cover; background-position: center; }
+  .snap .el { position: absolute; right: -5px; top: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--c); color: #fff; font-size: 9px; display: grid; place-items: center; border: 2px solid #fff; font-weight: bold; }
+  .snap .nm { font-family: 'Hand', 'IPAGothic'; font-size: 11px; text-align: center; margin-top: 3px; line-height: 1.1; }
+  .snap.sel { outline: 3px solid #e8735a; transform: rotate(var(--r)) translateY(-6px); }
+  .foot { left: 22px; right: 22px; bottom: 28px; height: 44px; display: flex; gap: 8px; }
+  .tab { flex: 1; display: grid; place-items: center; font-family: 'Hand', 'IPAGothic'; font-size: 14px; border-radius: 4px 4px 0 0; box-shadow: 0 -2px 3px rgba(0,0,0,.15); }
+  .tag { right: 22px; top: 20px; font-size: 9px; color: #8a7a6a; }
+</style></head><body>
+<div class="abs cover"></div>
+<div class="abs page p1"></div><div class="abs page p2"></div>
+<div class="abs spine"></div>
+<div class="abs ring" style="left:90px"></div><div class="abs ring" style="left:188px"></div><div class="abs ring" style="left:286px"></div>
+<div class="abs bigphoto"><div class="in"></div><div class="cap">カイ　― 1998年 夏の河川敷 ―</div>
+  <span class="corner" style="left:-4px;top:-4px"></span><span class="corner" style="right:-4px;top:-4px;transform:scaleX(-1)"></span>
+  <span class="corner" style="left:-4px;bottom:-4px;transform:scaleY(-1)"></span><span class="corner" style="right:-4px;bottom:-4px;transform:scale(-1,-1)"></span></div>
+<div class="abs ehp"><i></i></div>
+<div class="abs memo">次の手：<br>⚡ 力をためてる！</div>
+<div class="abs order">順番：ハルト → カイ → あかり → みお</div>
+<div class="abs slots">
+  <div class="slot" style="--c:#4aa8e8"><div class="who"><i style="background-image:url('../../../public/assets/portraits/hero_determined.webp')"></i>ハルト</div><div class="hp"><i style="width:100%"></i></div>
+    <div class="frame filled"><div class="ph" style="background-image:url('../../../public/assets/cg/white_city.webp')"></div><div class="t">アイスニードル</div></div></div>
+  <div class="slot on" style="--c:#ff8fb1"><div class="who"><i style="background-image:url('../../../public/assets/portraits/akari_serious.webp')"></i>あかり</div><div class="hp"><i style="width:100%"></i></div>
+    <div class="frame">ここに<br>貼る</div></div>
+  <div class="slot" style="--c:#ffb347"><div class="who"><i style="background-image:url('../../../public/assets/portraits/mio_smile.webp');background-size:130%;background-position:50% 14%"></i>みお</div><div class="hp"><i style="width:70%"></i></div>
+    <div class="frame">ここに<br>貼る</div></div>
+</div>
+<div class="abs hint">あかりの枠に貼る写真を選ぶ</div>
+<div class="abs hand">
+  <div class="snap" style="--r:-3deg;--c:#8a96a8"><div class="ph" style="background-image:url('../../../public/assets/cg/cut_ground.webp')"></div><span class="el">物</span><div class="nm">ソード</div></div>
+  <div class="snap sel" style="--r:2deg;--c:#4cd07d"><div class="ph" style="background-image:url('../../../public/assets/cg/tandem_bicycle.webp')"></div><span class="el">癒</span><div class="nm">リカバー</div></div>
+  <div class="snap" style="--r:-2deg;--c:#a98be0"><div class="ph" style="background-image:url('../../../public/assets/cg/photo_goldfish.webp')"></div><span class="el">✦</span><div class="nm">サーチ</div></div>
+  <div class="snap" style="--r:3deg;--c:#a98be0"><div class="ph" style="background-image:url('../../../public/assets/cg/mio_cards.webp')"></div><span class="el">✦</span><div class="nm">ドロー</div></div>
+  <div class="snap" style="--r:-1deg;--c:#8a96a8"><div class="ph" style="background-image:url('../../../public/assets/cg/awaken_weapons.webp')"></div><span class="el">物</span><div class="nm">ヘビー<br>ブロウ</div></div>
+</div>
+<div class="abs foot"><div class="tab" style="background:#b9e0f5">魔法・スキル</div><div class="tab" style="background:#ffe58a">連携技 94%</div><div class="tab" style="background:#e8735a;color:#fff;flex:1.3">ページをめくる</div></div>
+<div class="abs tag">案8 見開きアルバム（イメージ）</div>
+</body></html>
