@@ -365,6 +365,9 @@ try {
     await page.waitForTimeout(300);
   }
   await waitScene('Exchange');
+  // 段階100c：交換所を初めて開くと、ペトラから時分解を教わり、武器の画面に時分解が出る（説明の窓も出る）
+  await until('時分解の説明', () => findText('^時分解と記憶の欠片$'));
+  await skipTips();
   await debugButton('記憶の欠片を10個ずつもらう');
   await closeDebugMenu();
   await tap('^ポーチ$');
