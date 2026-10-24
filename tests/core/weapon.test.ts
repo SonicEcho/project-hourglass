@@ -258,15 +258,16 @@ describe('武器：キャラへの反映', () => {
     expect(hero.attackElement).toBeUndefined();
   });
 
-  it('ブリッジが伸びる型で進化すると、盤のすぐ下に、ブリッジの真下から2マス増える（段階100b）', () => {
+  it('ブリッジが伸びる型で進化すると、盤のすぐ下に、ブリッジの真下から1マス増える（段階100b。段階111 から1マス）', () => {
     let a = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 20), ['maskString']);
     a = evolveWeapon(D, a, 'hero', 'flameBlade');
     const data = naviDataWithWeapons(NAVI_DATA, D, a);
     const board = data.boards.hero;
     expect(board.rows).toBe(NAVI_DATA.boards.hero.rows + 1);
-    expect(board.cells.length).toBe(NAVI_DATA.boards.hero.cells.length + 2);
+    expect(D.boardExtension).toBe(1);
+    expect(board.cells.length).toBe(NAVI_DATA.boards.hero.cells.length + 1);
     expect(board.cells.filter(([c]) => c === board.commandCol)).toHaveLength(5);
-    expect(board.cells.slice(-2)).toEqual([[1, 4], [2, 4]]);
+    expect(board.cells.slice(-1)).toEqual([[1, 4]]);
     // 進化していないキャラの盤は変わらない
     expect(data.boards.akari).toBe(NAVI_DATA.boards.akari);
   });
@@ -430,10 +431,10 @@ describe('武器：進化ツリー（段階42）', () => {
     const a = evolveAlong([['flameBlade', 0], ['crimsonBlade', 1]]);
     const board = naviDataWithWeapons(NAVI_DATA, D, a).boards.hero;
     const base = NAVI_DATA.boards.hero;
-    expect(board.cells.length).toBe(base.cells.length + 4);
+    expect(board.cells.length).toBe(base.cells.length + 2);
     expect(board.cols).toBe(base.cols + 1);
     expect(board.rows).toBe(base.rows + 1);
-    expect(board.cells.slice(-2)).toEqual([[4, 0], [4, 1]]);
+    expect(board.cells.slice(-1)).toEqual([[4, 0]]);
     // みおの盤は四隅が欠けているので、右の列は、欠けていない行（1・2行目）の隣から
     const b = extendBoard(NAVI_DATA.boards.mio, 2, 'column');
     expect(b.cells.slice(-2)).toEqual([[4, 1], [4, 2]]);
