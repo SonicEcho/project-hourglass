@@ -54,7 +54,7 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
     case 'standUp':
       return `${name(s, e.enemyId)}は立ち上がった（行動できない）`;
     case 'charge':
-      return `${name(s, e.enemyId)}は力をためている（次の行動で${e.name}）`;
+      return `${name(s, e.enemyId)}は力をためている（次の行動で${e.name}${e.targetId ? `→${name(s, e.targetId)}` : ''}）`;
     case 'chargeBroken':
       return `  ${name(s, e.enemyId)}のためが解けた（${e.reason === 'down' ? 'ダウン' : '部位破壊で封じた'}）`;
     case 'enraged':
@@ -87,6 +87,10 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `  アンコール（${name(s, e.actorId)}）：${e.name ? `${e.name}をもう一度` : '不発（このラウンドにまだスナップが使われていない）'}`;
     case 'reshuffle':
       return `  捨て札${e.count}枚をシャッフルして山札へ`;
+    case 'frameCut':
+      return `  ${name(s, e.enemyId)}の切り取りで、${e.allyIds.map((id) => name(s, id)).join('と')}のこのラウンドの行動が抜かれた`;
+    case 'frameRestored':
+      return `  部位を壊して、${e.allyIds.map((id) => name(s, id)).join('と')}の行動が戻った`;
     case 'cardErased':
       return `  ${name(s, e.enemyId)}の露出で、手札の${e.name}がこの戦闘から消えた`;
     case 'battleEnd':

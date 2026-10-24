@@ -102,6 +102,8 @@ export function createBattle(setup: BattleSetup): BattleState {
     down: false,
     standUpGuard: false,
     charging: null,
+    chargeTarget: null,
+    cutPlan: null,
     lastBigMove: null,
     enraged: false,
     actions: clone(def.actions),
@@ -334,6 +336,8 @@ function startRound(s: BattleState): void {
 
 function endRound(s: BattleState): void {
   for (const u of [...s.allies, ...s.enemies]) u.guarding = false;
+  // 切り取られた行動は、そのラウンドの中で戻せなければ失われる（段階107）
+  for (const e of s.enemies) e.cutPlan = null;
   s.log.push({ type: 'roundEnd', round: s.round });
   // 負け戦は、決まったラウンドの終わりで打ち切る（段階40）
   if (s.cutoff && s.round >= s.cutoff.rounds) {
@@ -622,6 +626,8 @@ export interface OrderEntry {
   tentative: boolean;
   guard: boolean;
   precede: boolean;
+  /** 切り取りを放つ敵（段階107。一番前に動く） */
+  cut?: boolean;
 }
 
 /** その行動で先に動くか：連携技、クイックステップを受けた仲間、先に動くスナップ（ピンチヒッター。段階41） */
@@ -674,9 +680,11 @@ export function getRoundOrder(s: BattleState, preview?: { allyId: string; action
     });
   }
   for (const enemy of livingEnemies(s)) {
+    // 切り取りをためている敵は、一番前（防御より前）に動く（段階107）
+    const cut = !enemy.down && !!chargingAction(enemy)?.cutsFrame;
     keyed.push({
-      key: { tier: 2, speed: actionSpeed(enemy.spd, DEFAULT_ACTION_WEIGHT), side: 'enemy', spd: enemy.spd, index: index++ },
-      entry: { kind: 'enemy', ids: [enemy.uid], tentative: false, guard: false, precede: false },
+      key: { tier: cut ? -1 : 2, speed: actionSpeed(enemy.spd, DEFAULT_ACTION_WEIGHT), side: 'enemy', spd: enemy.spd, index: index++ },
+      entry: { kind: 'enemy', ids: [enemy.uid], tentative: false, guard: false, precede: false, cut },
     });
   }
   keyed.sort((a, b) => compareOrder(a.key, b.key));
@@ -684,7 +692,10 @@ export function getRoundOrder(s: BattleState, preview?: { allyId: string; action
 }
 
 function queueToEntry(s: BattleState, q: QueueEntry): OrderEntry {
-  if (q.kind === 'enemy') return { kind: 'enemy', ids: [q.enemyId], tentative: false, guard: false, precede: false };
+  if (q.kind === 'enemy') {
+    const e = findEnemy(s, q.enemyId);
+    return { kind: 'enemy', ids: [q.enemyId], tentative: false, guard: false, precede: false, cut: !!e && !e.down && !!chargingAction(e)?.cutsFrame };
+  }
   const plan = s.plans[q.planIndex];
   return {
     kind: 'ally',
@@ -766,12 +777,14 @@ function runEnemy(s: BattleState, enemyId: string): void {
   if (e.charging) {
     // ためていた大技を放つ（封じられていたら不発）
     const charged = usableEnemyActions(e).find((a) => a.id === e.charging);
+    const target = e.chargeTarget;
     e.charging = null;
+    e.chargeTarget = null;
     if (!charged) {
       s.log.push({ type: 'chargeBroken', enemyId: e.uid, reason: 'sealed' });
       return;
     }
-    enemyAttack(s, e, charged);
+    enemyAttack(s, e, charged, target);
     return;
   }
   // 使える行動が残っていなければ何もしない
@@ -790,18 +803,37 @@ function runEnemy(s: BattleState, enemyId: string): void {
   if (action.charge) {
     // 大技は、まず力をためる（このラウンドは攻撃しない）
     e.charging = action.id;
-    s.log.push({ type: 'charge', enemyId: e.uid, actionId: action.id, name: action.name });
+    // 切り取り（段階107）は、ためた時にねらう仲間を決める（帯で予告する）
+    e.chargeTarget = action.cutsFrame ? randomPick(s, livingAllies(s)).uid : null;
+    s.log.push({ type: 'charge', enemyId: e.uid, actionId: action.id, name: action.name, ...(e.chargeTarget ? { targetId: e.chargeTarget } : {}) });
     return;
   }
   enemyAttack(s, e, action);
 }
 
-function enemyAttack(s: BattleState, e: EnemyUnit, action: EnemyActionDef): void {
+function enemyAttack(s: BattleState, e: EnemyUnit, action: EnemyActionDef, targetId: string | null = null): void {
   if (action.charge) e.lastBigMove = action.id;
   s.log.push({ type: 'action', actorIds: [e.uid], actionId: action.id, name: action.name, extra: false });
-  const targets = action.target === 'ally' ? [randomPick(s, livingAllies(s))] : livingAllies(s);
+  // ためた時に決めた相手（切り取り）が倒れていたら、ほかの生きている仲間をねらう
+  const fixed = targetId ? livingAllies(s).find((a) => a.uid === targetId) : undefined;
+  const targets = action.target === 'ally' ? [fixed ?? randomPick(s, livingAllies(s))] : livingAllies(s);
   for (const t of targets) damageAlly(s, e, action, t);
   if (action.erasesCard) eraseCard(s, e);
+  if (action.cutsFrame && action.target === 'ally') cutFrame(s, e, targets[0]);
+}
+
+/**
+ * 切り取り（段階107）：相手のまだ動いていない行動を、このラウンドの順番待ちから抜く（連携技なら2人とも）。
+ * 相手が倒れた・もう動いた時は、何もしない。抜いた行動は敵が預かり、そのラウンドの中で部位を壊すと戻る
+ */
+function cutFrame(s: BattleState, e: EnemyUnit, target: AllyUnit): void {
+  if (!isAlive(target)) return;
+  const planIndex = s.plans.findIndex((p) => !p.done && p.actorIds.includes(target.uid));
+  if (planIndex < 0 || !s.queue.some((q) => q.kind === 'ally' && q.planIndex === planIndex)) return;
+  s.queue = s.queue.filter((q) => !(q.kind === 'ally' && q.planIndex === planIndex));
+  const allyIds = [...s.plans[planIndex].actorIds];
+  e.cutPlan = { planIndex, allyIds };
+  s.log.push({ type: 'frameCut', enemyId: e.uid, allyIds });
 }
 
 /** 露出（段階96）：まだ誰にも割り当てていない手札を1枚、その戦闘から消す。仲間が全員倒れていたら、何もしない */
@@ -1141,6 +1173,7 @@ function downEnemy(ctx: EffectContext, enemy: EnemyUnit, by?: 'part'): void {
   if (enemy.charging) {
     // ダウンさせると、ためが解ける。崩された敵は怒り、立ち上がった次の行動ではためずに攻撃する
     enemy.charging = null;
+    enemy.chargeTarget = null;
     enemy.enraged = true;
     s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'down' });
   }
@@ -1205,7 +1238,14 @@ function damageEnemy(ctx: EffectContext, enemy: EnemyUnit, effect: DamageEffect,
     if (enemy.charging && enemy.actions.find((a) => a.id === enemy.charging)?.requiresPart === part.id) {
       // ためていた大技を使う部位が壊れた
       enemy.charging = null;
+      enemy.chargeTarget = null;
       s.log.push({ type: 'chargeBroken', enemyId: enemy.uid, reason: 'sealed' });
+    }
+    // 切り取りに使う部位が壊れたら、そのラウンドに切り取った行動を順番待ちの一番前に戻す（段階107）
+    if (enemy.cutPlan && enemy.actions.find((a) => a.cutsFrame)?.requiresPart === part.id) {
+      s.queue.unshift({ kind: 'ally', planIndex: enemy.cutPlan.planIndex });
+      s.log.push({ type: 'frameRestored', enemyId: enemy.uid, allyIds: enemy.cutPlan.allyIds });
+      enemy.cutPlan = null;
     }
     for (const el of part.revealsWeakness) revealWeakness(s, enemy, el);
     if (part.drop) dropItem(s, enemy, part.drop, 'part');

@@ -105,7 +105,8 @@ export const KAI: EnemyDef = {
   weaknesses: [],
   resistances: [],
   actions: [
-    { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 46, weight: 1.0 },
+    // 切り取り（段階107）：ためてねらいを予告し、次のラウンドは一番前に動いて、その仲間のそのラウンドの行動を抜く
+    { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 46, weight: 1.0, charge: true, cutsFrame: true },
     { id: 'frameRain', name: 'フレームの雨', target: 'allies', type: 'magic', power: 30, weight: 1.0 },
     { id: 'shutter', name: 'シャッター', target: 'allies', type: 'magic', power: 44, weight: 1.0, charge: true },
   ],
@@ -126,7 +127,8 @@ export const KAI_REVENGE: EnemyDef = {
   resistances: [],
   parts: [{ id: 'frameBlade', name: '枠の刃', hp: 440, material: '枠のかけら', drop: 'frameShard', revealsWeakness: ['thunder'] }],
   actions: [
-    { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 48, weight: 1.0 },
+    // 切り取り（段階107）：枠の刃を壊すと使えなくなり、そのラウンドに抜いた行動も戻る
+    { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 48, weight: 1.0, charge: true, cutsFrame: true, requiresPart: 'frameBlade' },
     { id: 'frameRain', name: 'フレームの雨', target: 'allies', type: 'magic', power: 32, weight: 1.0 },
     { id: 'expose', name: '露出', target: 'ally', type: 'magic', power: 30, weight: 1.0, erasesCard: true },
     { id: 'shutter', name: 'シャッター', target: 'allies', type: 'magic', power: 52, weight: 1.0, charge: true, requiresPart: 'frameBlade' },

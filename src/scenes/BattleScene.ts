@@ -48,7 +48,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
 import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
-import { actorLinks, chargeCounterText, drawBattle, FILM_SKILL_ROWS, FILM_UI, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { actorLinks, chargeCounterText, drawBattle, FILM_SKILL_ROWS, FILM_UI, filmFrameRect, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { FILM_LAYOUT, LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
 import { hasImage } from '../assets/loader';
@@ -450,7 +450,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.busy || !isPlanComplete(this.state)) return;
     const plans = this.planInfo(this.state);
     this.state = startExecution(this.state);
-    if (FILM_UI) this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [] };
+    if (FILM_UI) this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [], cut: [] };
     void this.runExecution();
   }
 
@@ -763,6 +763,7 @@ export class BattleScene extends Phaser.Scene {
     if (e.type === 'standUp') return `${findUnit(s, e.enemyId)?.name ?? ''}は立ち上がった（行動できない）`;
     if (e.type === 'baton') return `${findUnit(s, e.fromId)?.name}から${findUnit(s, e.toId)?.name}へバトンタッチ！`;
     if (e.type === 'cancel') return `${names(e.actorIds)}は行動できなかった`;
+    if (e.type === 'charge' && e.targetId) return `${findUnit(s, e.enemyId)?.name ?? ''}は${findUnit(s, e.targetId)?.name ?? ''}をねらっている…（次のラウンドの最初に${e.name}！）`;
     if (e.type === 'charge') return `${findUnit(s, e.enemyId)?.name ?? ''}は力をためている…（次の行動で${e.name}！）`;
     if (e.type === 'chargeBroken') return `${findUnit(s, e.enemyId)?.name ?? ''}のためが解けた！`;
     return '';
@@ -867,6 +868,22 @@ export class BattleScene extends Phaser.Scene {
       case 'standUp': {
         const p = unitPosition(s, e.enemyId);
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
+        return true;
+      }
+      case 'frameCut': {
+        // 切り取り（段階107）：仲間のこのラウンドの行動が抜かれた
+        if (this.film) this.film.cut = [...this.film.cut, ...e.allyIds];
+        if (FILM_UI) this.filmCut(s, e.enemyId, e.allyIds);
+        else {
+          const p = unitPosition(s, e.allyIds[0]);
+          this.popup(p.x, p.y - 20, '切り取られた！', '#9fdcff', 18);
+        }
+        return true;
+      }
+      case 'frameRestored': {
+        if (this.film) this.film.cut = this.film.cut.filter((id) => !e.allyIds.includes(id));
+        const p = unitPosition(s, e.allyIds[0]);
+        this.popup(p.x, p.y - 20, '行動が戻った！', COLORS.heal, 18);
         return true;
       }
       case 'cardErased': {
@@ -975,6 +992,42 @@ export class BattleScene extends Phaser.Scene {
     const sub = addText(this, GAME_WIDTH / 2, y + h + 14, `${name}：弱点でダウン！ 1枚引いて、もう一度`, { size: 13, bold: true }).setOrigin(0.5);
     this.fxLayer.add(this.add.rectangle(GAME_WIDTH / 2, y + h + 14, sub.width + 24, 24, 0x000000).setStrokeStyle(1, 0xff2d55));
     this.fxLayer.add(sub);
+  }
+
+  /**
+   * 新しい画面の切り取り（段階107）：フィルムのコマを白い枠が囲み、斜めの光で切れ、「CUT!」。
+   * コマを写し取った絵が白黒になって、カイの方へ吸い込まれる。コマの穴は、描き直した時に battleViews が描く
+   */
+  private filmCut(s: BattleState, enemyId: string, allyIds: string[]): void {
+    if (this.skipping || !this.film) return;
+    const order = this.film.order;
+    const i = order.findIndex((o) => o.ids.some((id) => allyIds.includes(id)));
+    if (i < 0) return;
+    const r = filmFrameRect(order.length, i);
+    this.fxLayer.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.45).setOrigin(0));
+    this.render();
+    // 切れたコマ：白い縁の白黒のコマに「✂」と、決めていた行動
+    const cx = r.x + r.w / 2;
+    const cy = r.y + r.h / 2;
+    const piece = this.add.container(cx, cy);
+    piece.add(this.add.graphics().fillStyle(0x3a3a3a, 1).fillRect(-r.w / 2, -r.h / 2, r.w, r.h).lineStyle(3, 0xffffff, 1).strokeRect(-r.w / 2, -r.h / 2, r.w, r.h));
+    const label = this.film.labels[allyIds[0]] ?? findUnit(s, allyIds[0])?.name ?? '';
+    piece.add(addText(this, 0, -8, '✂', { size: 20, bold: true, color: '#9fdcff' }).setOrigin(0.5));
+    piece.add(addText(this, 0, r.h / 2 - 12, label, { size: 10, bold: true, color: '#dddddd', align: 'center', wrap: r.w - 8 }).setOrigin(0.5));
+    this.fxLayer.add(piece);
+    // ファインダー（白い枠）と、斜めの光
+    const vf = this.add.graphics().lineStyle(3, 0xffffff, 1).strokeRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12);
+    this.fxLayer.add(vf);
+    const slash = this.add.rectangle(cx, cy, r.w * 2.2, 4, 0xffffff).setAngle(-24).setScale(0, 1);
+    this.fxLayer.add(slash);
+    this.tweens.add({ targets: slash, scaleX: 1, duration: 140, ease: 'Cubic.easeOut' });
+    const cut = addText(this, cx + 40, r.y - 46, 'CUT!', { size: 44, bold: true }).setOrigin(0.5).setAngle(-10);
+    cut.setFontStyle('bold italic').setShadow(3, 3, '#9fdcff', 0, false, true).setStroke('#000000', 6);
+    this.fxLayer.add(cut);
+    // 切れたコマは、カイの方へ吸い込まれる
+    const to = unitPosition(s, enemyId);
+    this.tweens.add({ targets: piece, x: to.x, y: to.y, scale: 0.3, angle: -18, alpha: 0.25, delay: 260, duration: 520, ease: 'Cubic.easeIn' });
+    this.tweens.add({ targets: vf, alpha: 0, delay: 260, duration: 300 });
   }
 
   private bigText(text: string): void {

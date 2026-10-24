@@ -88,6 +88,8 @@ export interface FilmPlayback {
   cursor: number;
   /** 今動いている人 */
   actorIds: string[];
+  /** このラウンドに切り取られた仲間（段階107。フィルムのコマを穴にする） */
+  cut: string[];
 }
 
 export interface ViewHandlers {
@@ -371,7 +373,9 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     // 大技の予告：力をためている
     const charged = alive ? chargingAction(enemy) : undefined;
     if (charged) {
-      const label = `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
+      // 切り取り（段階107）は、ねらう仲間の名前も出す
+      const aim = charged.cutsFrame && enemy.chargeTarget ? findUnit(vm.state, enemy.chargeTarget)?.name : undefined;
+      const label = charged.cutsFrame ? `ため：✂ ${charged.name}${aim ? ` → ${aim}` : ''}` : `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
       const ty = bodyY - radius - 12;
       const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
       root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
@@ -1391,6 +1395,8 @@ export function chargeCounterText(e: EnemyUnit): string {
   if (e.knownWeaknesses.length > 0) ways.push(`弱点（${e.knownWeaknesses.map((w) => ELEMENT_LABEL[w]).join('・')}）でダウンさせる`);
   const part = a.requiresPart ? e.parts.find((p) => p.id === a.requiresPart && !p.broken) : undefined;
   if (part) ways.push(`${part.name}を壊す`);
+  // 切り取り（段階107）は次のラウンドの一番前に来るので、このラウンドのうちに止める。防御は止め方にならない
+  if (a.cutsFrame) return ways.length > 0 ? `止め方（このラウンドのうちに）：${ways.join('／')}` : '止め方：なし（次のラウンドの最初に切り取られる）';
   ways.push('防御でしのぐ');
   return `止め方：${ways.join('／')}`;
 }
@@ -1588,6 +1594,9 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
   const fh = height - 32;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
   const executing = s.phase === 'execute' || s.phase === 'extra';
+  // 切り取り（段階107）：ためている敵がねらう仲間（予告）と、このラウンドに切り取られた仲間
+  const cutAim = new Set(livingEnemiesOf(s).filter((e) => chargingAction(e)?.cutsFrame && e.chargeTarget).map((e) => e.chargeTarget!));
+  const cutDone = new Set(pb?.cut ?? []);
   order.forEach((entry, i) => {
     const units = entry.ids.map((id) => findUnit(s, id)).filter((u): u is NonNullable<typeof u> => !!u);
     if (units.length === 0) return;
@@ -1600,7 +1609,7 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const enemy = unit.side === 'enemy';
     const fill = enemy ? 0x3a0812 : 0x2b2420;
     const frame = skewBox(scene, fx, fy, w, fh, fill, entry.tentative && !isActor ? 0.55 : 1,
-      isActor ? { width: 3, color: FILM_RED } : isCurrent ? { width: 3, color: 0xffd700 } : { width: 1, color: 0x000000 });
+      isActor ? { width: 3, color: FILM_RED } : isCurrent ? { width: 3, color: 0xffd700 } : entry.cut ? { width: 3, color: CUT_BLUE } : { width: 1, color: 0x000000 });
     root.add(frame);
     const cx = fx + w / 2;
     // 決めた行動がスナップ（コンボ）なら、その札の写真を薄く入れる（段階102b）
@@ -1628,7 +1637,9 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const label = isActor
       ? '▶ 選んでいる'
       : enemy
-        ? `${unit.name}${charging ? ' ⚡大技' : ''}`
+        ? entry.cut
+          ? `✂ ${unit.name}`
+          : `${unit.name}${charging ? ' ⚡大技' : ''}`
         : plan
           ? `${tag ? `${tag} ` : ''}${plan}`
           : entry.tentative
@@ -1638,6 +1649,9 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const shown = label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
     root.add(skewBox(scene, fx, fy + fh - 18, w, 18, isActor ? FILM_RED : 0x000000, isActor ? 1 : 0.8));
     root.add(addText(scene, cx, fy + fh - 9, shown, { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+    // 切り取り（段階107）：切り取られたコマは穴に、ねらわれているコマはファインダーの角で囲む
+    if (!enemy && entry.ids.some((id) => cutDone.has(id))) drawCutHole(scene, root, fx, fy, w, fh);
+    else if (!enemy && entry.ids.some((id) => cutAim.has(id))) drawCutAim(scene, root, fx, fy, w, fh);
     // 済んだコマは暗く、今のコマは真ん中に「▶」（段階102c）
     if (done) root.add(skewBox(scene, fx, fy, w, fh, 0x000000, 0.55));
     if (pb && isCurrent) {
@@ -1674,6 +1688,50 @@ function drawExtendFrame(scene: Phaser.Scene, root: Phaser.GameObjects.Container
   root.add(slantText(scene, fx + w - 4, fy + 1, '+1', 14, '#ffd700', '#000000').setOrigin(1, 0));
   root.add(skewBox(scene, fx, fy + fh - 18, w, 18, FILM_RED, 1));
   root.add(addText(scene, cx, fy + fh - 9, s.extra?.boost ? '▶ バトンで選ぶ' : '▶ 延長で選ぶ', { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+}
+
+/** 切り取り（段階107）の色：カイの枠の光 */
+const CUT_BLUE = 0x9fdcff;
+
+function livingEnemiesOf(s: BattleState): EnemyUnit[] {
+  return s.enemies.filter((e) => e.hp > 0);
+}
+
+/** 切り取りでねらわれているコマ：白いファインダーの角と「✂ 切り取り予告」 */
+function drawCutAim(scene: Phaser.Scene, root: Phaser.GameObjects.Container, fx: number, fy: number, w: number, fh: number): void {
+  const g = scene.add.graphics().lineStyle(3, 0xffffff, 1);
+  const L = 14;
+  const x0 = fx - 3;
+  const y0 = fy - 3;
+  const x1 = fx + w + 3;
+  const y1 = fy + fh + 3;
+  g.lineBetween(x0, y0, x0 + L, y0).lineBetween(x0, y0, x0, y0 + L);
+  g.lineBetween(x1, y0, x1 - L, y0).lineBetween(x1, y0, x1, y0 + L);
+  g.lineBetween(x0, y1, x0 + L, y1).lineBetween(x0, y1, x0, y1 - L);
+  g.lineBetween(x1, y1, x1 - L, y1).lineBetween(x1, y1, x1, y1 - L);
+  root.add(skewBox(scene, fx, fy, w, fh, CUT_BLUE, 0.12));
+  root.add(g);
+  const tag = addText(scene, fx + w / 2, fy - 2, '✂ 切り取り予告', { size: 10, bold: true, color: '#101010' }).setOrigin(0.5);
+  root.add(scene.add.rectangle(fx + w / 2, fy - 2, tag.width + 12, 15, CUT_BLUE));
+  root.add(tag);
+}
+
+/** 切り取られたコマ：黒い穴と白い切り口、「✂ 切り取られた」 */
+function drawCutHole(scene: Phaser.Scene, root: Phaser.GameObjects.Container, fx: number, fy: number, w: number, fh: number): void {
+  root.add(skewBox(scene, fx, fy, w, fh, 0x050505, 0.95, { width: 2, color: 0xffffff, alpha: 0.9 }));
+  const g = scene.add.graphics().lineStyle(1, 0xffffff, 0.12);
+  for (let k = -fh; k < w; k += 10) g.lineBetween(fx + k, fy + fh, fx + k + fh, fy);
+  root.add(g);
+  root.add(addText(scene, fx + w / 2, fy + fh / 2 - 8, '✂ 切り取られた', { size: 11, bold: true, color: toCss(CUT_BLUE) }).setOrigin(0.5));
+  root.add(addText(scene, fx + w / 2, fy + fh / 2 + 9, '行動できない', { size: 10, bold: true }).setOrigin(0.5));
+}
+
+/** フィルムの n コマのうち i 番目の位置（段階107。切り取りの演出で使う） */
+export function filmFrameRect(n: number, i: number): { x: number; y: number; w: number; h: number } {
+  const { y, h } = FILM_LAYOUT.film;
+  const gap = 6;
+  const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (Math.max(1, n) - 1)) / Math.max(1, n);
+  return { x: SIDE_PADDING + i * (w + gap), y: y + 16, w, h: h - 32 };
 }
 
 /** フィルムの穴の間かく */
@@ -1731,6 +1789,15 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const nameText = addText(scene, x + SKEW + 4, y + 5, ally.name, { size: 12, bold: true, color: playing ? '#101010' : alive ? toCss(color) : COLORS.dimText });
     root.add(nameText);
     if (playing) root.add(slantText(scene, nameText.x + nameText.width + 8, y + 6, '▶ 行動中', 10, '#b07800', ''));
+    // 切り取り（段階107）：ねらわれている／このラウンドに切り取られた
+    const cutNow = (vm.playback?.cut ?? []).includes(ally.uid);
+    const aimed = !cutNow && s.enemies.some((e) => e.hp > 0 && chargingAction(e)?.cutsFrame && e.chargeTarget === ally.uid);
+    if (cutNow || aimed) {
+      const badge = slantText(scene, nameText.x + nameText.width + 12, y + 6, cutNow ? '✂ 行動を失った' : '✂ ねらわれている', 10, '#101010', '');
+      root.add(scene.add.rectangle(badge.x - 4, y + 5, badge.width + 8, 15, CUT_BLUE).setOrigin(0));
+      root.add(badge);
+      if (cutNow) root.add(skewBox(scene, x, y, w, height, 0x000000, 0.45));
+    }
     // 延長・バトンの追加行動を選んでいる仲間（段階102e）
     if (s.phase === 'extra' && isActor) {
       const badge = slantText(scene, nameText.x + nameText.width + 12, y + 6, s.extra?.boost ? 'BATON' : 'EXTEND', 10, '#ffffff', '');

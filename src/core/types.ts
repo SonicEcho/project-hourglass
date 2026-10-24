@@ -148,6 +148,11 @@ export interface EnemyActionDef {
    * 割り当てていない手札がなければ、消さない
    */
   erasesCard?: boolean;
+  /**
+   * 切り取り（段階107。カイ）：charge と一緒に使う。ためた時にねらう仲間を決め、次のラウンドは一番前（防御より前）に動く。
+   * 放つと、ねらった仲間のそのラウンドの行動を順番待ちから抜く（連携技なら2人とも）。そのラウンドの中で requiresPart の部位を壊すと、抜いた行動が順番待ちの一番前に戻る
+   */
+  cutsFrame?: boolean;
 }
 
 export interface PartDef {
@@ -286,6 +291,10 @@ export interface EnemyUnit extends UnitBase {
   standUpGuard: boolean;
   /** 力をためている大技の id（次の自分の行動で放つ）。ダウンや部位破壊で解ける */
   charging: string | null;
+  /** ためている切り取りでねらう仲間（段階107。切り取りでない大技は null） */
+  chargeTarget: string | null;
+  /** 切り取りで抜いた仲間の行動（段階107）。そのラウンドの中で部位を壊すと戻る。ラウンドの終わりに消える */
+  cutPlan: { planIndex: number; allyIds: string[] } | null;
   /** 最後に放った大技の id（アンコールでもう一度放つ。段階39b） */
   lastBigMove: string | null;
   /**
@@ -377,7 +386,10 @@ export type LogEvent =
   /** ためを崩されて怒った敵が、ためずに攻撃する（この後に action が続く） */
   | { type: 'enraged'; enemyId: string }
   /** 敵が大技の力をためた（次の自分の行動で放つ） */
-  | { type: 'charge'; enemyId: string; actionId: string; name: string }
+  | { type: 'charge'; enemyId: string; actionId: string; name: string; targetId?: string }
+  /** 切り取り（段階107）：仲間のそのラウンドの行動を抜いた／部位を壊して戻した */
+  | { type: 'frameCut'; enemyId: string; allyIds: string[] }
+  | { type: 'frameRestored'; enemyId: string; allyIds: string[] }
   /** ためが解けた（ダウンした、または部位が壊れて大技が封じられた） */
   | { type: 'chargeBroken'; enemyId: string; reason: 'down' | 'sealed' }
   | { type: 'oneMore'; actorId: string }
