@@ -57,9 +57,9 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
 import { notePlayCount } from './playRecord';
-import type { Lineup } from '../core';
+import type { BattleSpeed, Lineup } from '../core';
 import { debugAutoStory } from '../debug/debugFlag';
-import { albumDeck, battleTipTriggers, formationKey, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
+import { albumDeck, battleSpeedFor, battleTipTriggers, formationKey, gainSnaps, NEW_BARK_MEMORY, nextBattleSpeed, pickBarks } from '../core';
 import { markFormationWon, wonFormations } from '../save/autoWon';
 import { battleAt, battleSeed, currentNaviData, currentParty, finishRun, lineupBase, run, saveRun, setActiveBattle, setBattleMark, setStoryLinkGauge, storyBattleLineup, storyLinkGauge } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
@@ -278,16 +278,28 @@ export class BattleScene extends Phaser.Scene {
 
   /** 設定の速さで、演出の時間（待ち・動き）を縮める */
   private applySpeed(): void {
-    const speed = getSettings().battleSpeed;
+    const speed = this.speed();
     this.time.timeScale = speed;
     this.tweens.timeScale = speed;
   }
 
+  /** この戦闘の速さ（段階109）：ボス戦は1倍、狩りは設定の速さ（2・3倍）、それ以外は2倍 */
+  private speed(): BattleSpeed {
+    const kind = this.battle.boss ? 'boss' : this.encounter?.hunt ? 'hunt' : 'normal';
+    return battleSpeedFor(kind, getSettings().battleSpeed);
+  }
+
   private toggleSpeed(): void {
+    if (!this.speedChangeable()) return;
     const settings = getSettings();
     setSettings({ ...settings, battleSpeed: nextBattleSpeed(settings.battleSpeed) });
     this.applySpeed();
     this.render();
+  }
+
+  /** 早送りを切り替えられるか（狩りの戦闘だけ。ボスの狩りは1倍に固定） */
+  private speedChangeable(): boolean {
+    return !!this.encounter?.hunt && !this.battle.boss;
   }
 
   /** 操作を待つ時に、今の場面の初めての説明があれば出す（段階30。オート中は出さない） */
@@ -1575,7 +1587,8 @@ export class BattleScene extends Phaser.Scene {
       planComplete: isPlanComplete(s),
       interactive,
       autoAvailable: this.autoAvailable(),
-      speed: getSettings().battleSpeed,
+      speed: this.speed(),
+      speedChangeable: this.speedChangeable(),
       autoName: TACTICS.find((t) => t.id === this.auto)?.name ?? '',
     };
     drawBattle(this, this.root, vm, this.handlers());

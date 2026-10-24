@@ -73,6 +73,8 @@ export interface ViewModel {
   autoAvailable: boolean;
   /** 演出の速さ（1・2・3倍） */
   speed: number;
+  /** 早送りを切り替えられるか（段階109：狩りの戦闘だけ。ボス戦は1倍、それ以外は2倍に固定） */
+  speedChangeable: boolean;
   /** オート中の作戦の名前 */
   autoName: string;
 }
@@ -1355,16 +1357,19 @@ function drawFooter(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm:
     const left = vm.state.allies.filter((a) => a.hp > 0 && !vm.planLabels[a.uid]).length;
     const gap = 6;
     const autoW = vm.autoAvailable ? 76 : 0;
-    const speedW = 56;
-    const execW = GAME_WIDTH - SIDE_PADDING * 2 - speedW - gap - (autoW ? autoW + gap : 0);
+    // 早送りのボタンは、速さを選べる狩りの戦闘だけ（段階109）
+    const speedW = vm.speedChangeable ? 56 : 0;
+    const execW = GAME_WIDTH - SIDE_PADDING * 2 - (speedW ? speedW + gap : 0) - (autoW ? autoW + gap : 0);
     let x = SIDE_PADDING;
     const cy = y + height / 2;
     if (autoW) {
       addButton(scene, root, x + autoW / 2, cy, autoW, height - 12, 'オート', { onTap: () => h.openAuto() }, { enabled: vm.interactive, size: 15, bold: true });
       x += autoW + gap;
     }
-    addButton(scene, root, x + speedW / 2, cy, speedW, height - 12, `×${vm.speed}`, { onTap: () => h.toggleSpeed() }, { enabled: vm.interactive, size: 15, bold: true });
-    x += speedW + gap;
+    if (speedW) {
+      addButton(scene, root, x + speedW / 2, cy, speedW, height - 12, `×${vm.speed}`, { onTap: () => h.toggleSpeed() }, { enabled: vm.interactive, size: 15, bold: true });
+      x += speedW + gap;
+    }
     addButton(
       scene,
       root,
@@ -1542,10 +1547,14 @@ function drawFilmHeader(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   if (vm.footer !== 'execute') return;
   const bw = 54;
   const bh = 30;
-  let x = GAME_WIDTH - SIDE_PADDING - bw;
-  filmButton(scene, root, x, y + 7, bw, bh, `×${vm.speed}`, { onTap: () => h.toggleSpeed() }, { enabled: vm.interactive, size: 14 });
+  let x = GAME_WIDTH - SIDE_PADDING;
+  // 早送りのボタンは、速さを選べる狩りの戦闘だけ（段階109）
+  if (vm.speedChangeable) {
+    x -= bw;
+    filmButton(scene, root, x, y + 7, bw, bh, `×${vm.speed}`, { onTap: () => h.toggleSpeed() }, { enabled: vm.interactive, size: 14 });
+  }
   if (vm.autoAvailable) {
-    x -= 74 + 6;
+    x -= 74 + (vm.speedChangeable ? 6 : 0);
     filmButton(scene, root, x, y + 7, 74, bh, 'オート', { onTap: () => h.openAuto() }, { enabled: vm.interactive, size: 14 });
   }
 }

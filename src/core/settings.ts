@@ -23,9 +23,19 @@ export type StoryAuto = 'won' | 'always';
 
 export type BattleSpeed = 1 | 2 | 3;
 
-/** 早送りを次の速さへ（×3 の次は ×1） */
+/** 狩りの戦闘の早送りを切り替える（段階109：×2 と ×3 だけ。×1 はなくした） */
 export function nextBattleSpeed(v: BattleSpeed): BattleSpeed {
-  return v === 1 ? 2 : v === 2 ? 3 : 1;
+  return v === 3 ? 2 : 3;
+}
+
+/**
+ * 戦闘の速さ（段階109。テストプレイのメモ 15・16。手で戦う時もオートの時も同じ）：
+ * ボス戦は ×1 に固定（早送りのボタンを出さない）。狩りは設定の速さ（×2 か ×3）。それ以外は ×2 に固定
+ */
+export function battleSpeedFor(kind: 'boss' | 'hunt' | 'normal', setting: BattleSpeed): BattleSpeed {
+  if (kind === 'boss') return 1;
+  if (kind === 'hunt') return setting === 3 ? 3 : 2;
+  return 2;
 }
 
 export type AudioOut = 'speaker' | 'wireless';
@@ -33,7 +43,7 @@ export type AudioOut = 'speaker' | 'wireless';
 /** 選べる音量の段階 */
 export const VOLUME_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 1, autoTactic: 'auto', storyAuto: 'won' };
+export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 2, autoTactic: 'auto', storyAuto: 'won' };
 
 /** 0〜1 の段階のうち、一番近いものにそろえる。数でなければ fallback */
 function toStep(v: unknown, fallback: number): number {
@@ -56,7 +66,8 @@ export function parseSettings(text: string | null): Settings {
     seVolume: toStep(o.seVolume, DEFAULT_SETTINGS.seVolume),
     typeSound: typeof o.typeSound === 'boolean' ? o.typeSound : DEFAULT_SETTINGS.typeSound,
     audioOut: o.audioOut === 'wireless' ? 'wireless' : 'speaker',
-    battleSpeed: o.battleSpeed === 2 || o.battleSpeed === 3 ? o.battleSpeed : 1,
+    // 狩りの早送りの設定（段階109：×2 か ×3。前の ×1 は ×2 として読む）
+    battleSpeed: o.battleSpeed === 3 ? 3 : 2,
     autoTactic: typeof o.autoTactic === 'string' && o.autoTactic !== '' ? o.autoTactic : DEFAULT_SETTINGS.autoTactic,
     storyAuto: o.storyAuto === 'always' ? 'always' : 'won',
   };
