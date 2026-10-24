@@ -284,10 +284,10 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.timeScale = speed;
   }
 
-  /** この戦闘の速さ（段階109）：ボス戦は1倍、狩りは設定の速さ（2・3倍）、それ以外は2倍 */
+  /** この戦闘の速さ（段階109・109b）：手で戦う時は1倍。オートの時は、ボス戦は1倍、狩りは設定の速さ（2・3倍）、それ以外は2倍 */
   private speed(): BattleSpeed {
     const kind = this.battle.boss ? 'boss' : this.encounter?.hunt ? 'hunt' : 'normal';
-    return battleSpeedFor(kind, getSettings().battleSpeed);
+    return battleSpeedFor(kind, getSettings().battleSpeed, !!this.auto);
   }
 
   private toggleSpeed(): void {
@@ -298,9 +298,9 @@ export class BattleScene extends Phaser.Scene {
     this.render();
   }
 
-  /** 早送りを切り替えられるか（狩りの戦闘だけ。ボスの狩りは1倍に固定） */
+  /** 早送りを切り替えられるか（狩りの戦闘をオートで進めている時だけ。ボスの狩りは1倍に固定） */
   private speedChangeable(): boolean {
-    return !!this.encounter?.hunt && !this.battle.boss;
+    return !!this.auto && !!this.encounter?.hunt && !this.battle.boss;
   }
 
   /** 操作を待つ時に、今の場面の初めての説明があれば出す（段階30。オート中は出さない） */
@@ -364,6 +364,7 @@ export class BattleScene extends Phaser.Scene {
     if (!this.autoAvailable() || this.busy) return;
     setSettings({ ...getSettings(), autoTactic: tactic });
     this.auto = tactic;
+    this.applySpeed();
     this.clearSelection();
     this.message = this.idleMessage();
     this.render();
@@ -374,6 +375,7 @@ export class BattleScene extends Phaser.Scene {
   private stopAuto(): void {
     if (!this.auto) return;
     this.auto = null;
+    this.applySpeed();
     if (!this.busy) {
       this.message = this.idleMessage();
       this.render();
