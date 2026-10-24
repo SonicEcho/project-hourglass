@@ -1381,6 +1381,68 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 | 時計屋の店内（昼）（`bg.clock_shop_day`） | 3日目・4日目の時計屋（今は夕暮れの絵） | 36 |
 | 昭和の商店街の背景・地図、夕焼けの二人乗り、1-2 の敵5つ | 1-2 の区画 | 37 |
 
+## 5-7. スナップの写真（段階106。2026-10-24）
+
+新しい戦闘の画面（段階102b）で、手札のスナップが写真のカードになった。今は1枚絵と背景から仮に切り抜いている（`src/data/cards.ts` の `CARD_ART`）。正式な写真は、次の決まりで作る。
+
+### 方針（開発者と決めた）
+
+スナップは「時間を切り取った写真」（`docs/NAMING.md`）。技そのもの（炎の玉など）の絵ではなく、**その技を思わせる、誰かの大事な一瞬の写真**にする。物語とつなぐため、手に入れ方で写る人を分ける。
+
+1. **最初のアルバムの11種：ハルトとあかりの日常の一瞬**。手札は二人の思い出。時間を取り戻す物語の主人公たち自身とつながる
+2. **物語で手に入る種類**：
+   - **時間を返した持ち主の、一番大事な瞬間**（「持ち主の想いがスナップになる」という今の決まりと同じ。`docs/design/battle.md` の 2.）。写真を見ると、どこで誰を助けたかを思い出せる
+   - **追加の仲間の写真**（みお・小夜子・早瀬・りく・ノア）。ハルトとあかりだけにしない。構想ノートの「固有スナップ」に当たる。仲間ひとりにつき少なくとも1種、その仲間が加わる章か、その仲間の話で手に入るようにする
+3. 同じ種類でも手に入れた場所で絵柄が変わる形は、後で考える（持っている札ごとに出どころを覚えるデータと、絵の数が増えるため）
+
+いま足りないこと：今の14種のうち、仲間の写真はみお（ジョーカー）だけ。小夜子・早瀬・りく・ノアの写真は、その仲間が加わる章で新しいスナップの種類と一緒に決める（新しい種類の効き目は `docs/design/battle.md` で決める。小夜子は3章の大正の祭りが先）。
+
+### 共通の決まり
+
+- 時代は物語に合わせる（1998年の夏の町・学校・河原。持ち主の写真は、その区画の時代）
+- 人は後ろ姿・横顔・手元・小さく、のどれか。顔を大きく写さない（立ち絵とずれにくく、仮の絵と差し替えても違和感が出にくい）。それでも、人を描く時は立ち絵を見本に付ける（1枚絵と同じ）
+- 属性は、写っている物と色で示す：物理は灰色と金属、火は暖かい赤とオレンジ、氷は青白い、雷は暗い空と黄色い光、回復は緑と柔らかい光、サポートは紫がかった夕暮れ
+- インスタント写真らしく、少し色あせて光がにじんだ感じ。白い枠はゲームの側で付けるので、絵に枠は描かない
+- 主題は真ん中に置く（手札では写真の真ん中の横長の所、コンボの札では真ん中の縦長の所だけが見える）
+- 字は入れない
+
+### 写真の頭（毎回、先頭に付ける）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A candid snapshot, like a slightly faded instant photo of a precious everyday moment. Square 1:1 image. The main subject is in the center of the image; the outer edges are simple, because the image will be cropped tightly. Do not draw a photo border or frame. People are shown from behind, from the side, or small in the scene; no large close-up faces.
+```
+
+（最後に、毎回 `Absolutely no letters or text anywhere.` を付ける。ハルトとあかり・仲間・持ち主が写る時は、その人の立ち絵を添付し、`Keep their designs exactly as in the attached reference portraits.` を足す）
+
+### 14枚の場面
+
+| スナップ | 区分 | 写るもの | 場面（指示文の本文） |
+| --- | --- | --- | --- |
+| ソード | ① | ハルト・あかり | `Late 1990s Japan, a riverside embankment at sunset. A high school boy playfully holds up a long tree branch like a sword, striking a heroic pose; a high school girl beside him laughs. Silver-grey and gold light on the branch.` |
+| ヘビーブロウ | ① | ハルト・あかり | `A high school classroom after school, preparing for the culture festival. The boy swings a big wooden mallet to nail a large plywood sign together while the girl steadies the board, wood shavings flying. Heavy grey tools in the foreground.` |
+| ファイアボール | ① | ハルト・あかり | `A summer festival night in late 1990s Japan. The boy and the girl in yukata, seen from behind, look up at a huge red and orange firework blooming in the dark sky.` |
+| アイスニードル | ① | あかり | `A cold winter morning. The girl, seen from the side, draws a small picture with her fingertip on a frosted window; icicles hang outside, pale blue light everywhere.` |
+| サンダーボルト | ① | ハルト・あかり | `A sudden summer evening shower. The boy and the girl take shelter under the eaves of an old candy shop, seen from behind; a bright yellow lightning bolt lights up the dark sky in the distance.` |
+| ワイドショット | ① | ハルト・あかり | `A shooting gallery stall at a summer festival. The girl aims a cork gun at a row of prizes while the boy watches beside her, seen from behind; warm lantern light.` |
+| リカバー | ① | ハルト・あかり | `A quiet summer afternoon on a wooden veranda of an old Japanese house. The girl offers the boy a slice of watermelon; soft green garden light and wind chimes.` |
+| クイックステップ | ① | ハルト・あかり | `A school sports day relay race. The moment the boy passes the baton to the girl, both mid-stride, seen from the side, motion lines and dust; violet-tinted late afternoon sky.` |
+| サーチ | ① | ハルト・あかり | `A quiet school library. The boy and the girl lean over one old book together, the girl holding a magnifying glass over a page; dust motes glowing in violet evening light.` |
+| ブレイクアーム | ① | ハルト・あかり | `A narrow alley at dusk. The boy and the girl crouch beside an old bicycle and fix its broken chain together, a small grey toolbox open beside them.` |
+| ドロー | ① | ハルト・あかり | `An empty classroom after school. Playing cards are spread out across two pushed-together desks; the boy and the girl's hands reach for the cards, faces out of frame. Violet evening light.` |
+| ジョーカー | ② 仲間 | みお | `A small 10-year-old girl with a confident grin, seen from the side, shows off a card trick, fanning playing cards and holding up the joker card toward the viewer; the card's face shows only a simple jester pattern. Soft golden light.` |
+| アンコール | ② 持ち主（2-2） | けんた・さき | `A high school culture festival stage in the gym. A boy keeps singing into the microphone even though a guitar string has snapped, a girl playing beside him, seen from the side; a single spotlight and a few cheering hands in the foreground.`（1枚絵 `cg.string_stage` の構図に合わせる） |
+| ピンチヒッター | ② 持ち主（2-3） | こうじと父 | `A late 1990s riverside little league baseball field. A boy in a baseball uniform steps into the batter's box as a pinch hitter, seen from behind; in the stands, his father cups his hands and shouts. Bright summer afternoon.` |
+
+### 作る順番
+
+1. ① の11種（最初の戦闘から手札に来る。目に入る時間が一番長い）。ファイアボール・リカバー・ソードから（今の仮の絵と比べやすい）
+2. ② の3種
+3. 小夜子・早瀬・りく・ノアの写真は、その仲間の章で新しいスナップの種類を決めてから、この表に足す
+
+絵が届いたら、台帳（`src/data/assets.ts`）に `snap.<スナップの id>` で足し、`CARD_ART` の絵をそれに替える（切り抜く中心は、写真の真ん中なので 0.5・0.5 にする）。
+
 ## 6. 音
 
 BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各サイトの規約を調べた（公式ページを読めたものは「公式」、読めなかったものは解説サイトから）。
