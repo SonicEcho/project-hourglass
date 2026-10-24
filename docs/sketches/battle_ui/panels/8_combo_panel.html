@@ -1,0 +1,20 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="../common.css"><link rel="stylesheet" href="panels.css"><style>
+.panel { left: 8px; right: 8px; top: 556px; height: 204px; background: #000e; border: 2px solid #fff9; border-top: 3px solid #ffd700; }
+.head { left: 18px; top: 562px; font-size: 13px; color: #ffd700; }
+.row { left: 18px; right: 18px; height: 58px; transform: skewX(-10deg); border: 2px solid #fff; display: flex; align-items: center; gap: 4px; padding: 0 12px; font-weight: 900; font-style: italic; }
+.row.ready { top: 588px; background: #ffd700; color: #000; border-color: #000; box-shadow: 4px 4px 0 #ff2d55; }
+.row.wait { top: 654px; background: #161616; color: #ccd; }
+.mini { width: 30px; height: 40px; background: #fff; padding: 2px; border: 1px solid #000; }
+.mini i { display: block; width: 100%; height: 100%; background-size: cover; background-position: center; }
+.mini.empty { background: transparent; border: 2px dashed #ff8fb1; }
+.row b { margin-left: 8px; font-size: 16px; } .row small { margin-left: auto; font-size: 10px; }
+.cbtn { left: 302px; top: 718px; background: #ffd700; color: #000; border: 2px solid #000; width: 78px; height: 34px; transform: skewX(-12deg); display: grid; place-items: center; font-size: 12px; box-shadow: 3px 3px 0 #ff2d55; }
+</style></head><body>
+<div class="abs cover"></div>
+<div class="abs panel"></div>
+<div class="abs head slant">COMBO　手札でそろう大技</div>
+<div class="abs row ready"><span class="mini"><i style="background-image:url('../../../../public/assets/cg/awaken_weapons.webp')"></i></span><span class="mini"><i style="background-image:url('../../../../public/assets/cg/awaken_weapons.webp')"></i></span><span class="mini"><i style="background-image:url('../../../../public/assets/cg/awaken_weapons.webp')"></i></span><b>★トリプルソード</b><small>物理の大技・3回</small></div>
+<div class="abs row wait"><span class="mini"><i style="background-image:url('../../../../public/assets/cg/tandem_bicycle.webp')"></i></span><span class="mini empty"></span><b>ヒールサークル</b><small style="color:#ff8fb1">あと1枚：リカバー</small></div>
+<div class="abs cbtn slant">手札へ戻る</div>
+<div class="abs tag">C4 COMBO の一覧：手札の右上の「COMBO ★1」を押すと開く（ふだんは帯を出さない）</div>
+</body></html>
