@@ -47,10 +47,11 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, FILM_UI, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
+import { hasImage } from '../assets/loader';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
@@ -528,7 +529,8 @@ export class BattleScene extends Phaser.Scene {
       this.message = this.describeHeadline(prev, act);
       if (this.film) this.advanceFilm(act);
       this.render(prev);
-      if (link) await this.linkCutIn(prev, link, barks.link);
+      if (link && FILM_UI) await this.filmLinkCutIn(prev, link, barks.link);
+      else if (link) await this.linkCutIn(prev, link, barks.link);
       else if (combo) await this.comboCutIn(combo);
       else {
         // 新しい画面は、手札の上の字幕で見せる（段階102c）
@@ -630,6 +632,96 @@ export class BattleScene extends Phaser.Scene {
       this.cameras.main.shake(260, 0.012);
     }
     c.destroy(true);
+  }
+
+  /**
+   * 新しい画面の連携技のカットイン（段階102d）：画面を斜めに2つに分けて、上の帯に1人目、下の帯に2人目の立ち絵を大きく。
+   * 真ん中の黒い箱に技名。かけ合いの台詞があれば名前の下に吹き出しで出し、立ち絵もその表情にする
+   */
+  private async filmLinkCutIn(s: BattleState, link: LinkDef, barks: Bark[] = []): Promise<void> {
+    if (this.skipping) return;
+    const c = this.add.container(0, 0);
+    this.fxLayer.add(c);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0));
+    const rad = Phaser.Math.DegToRad(-12);
+    const bandH = 320;
+    const bandW = GAME_WIDTH + 260;
+    const centers = [GAME_HEIGHT / 2 - bandH / 2 - 8, GAME_HEIGHT / 2 + bandH / 2 + 8];
+    // 帯の中の点（帯の真ん中からの位置）を、画面の座標にする
+    const at = (cy: number, lx: number, ly: number) => new Phaser.Math.Vector2(GAME_WIDTH / 2 + lx * Math.cos(rad) - ly * Math.sin(rad), cy + lx * Math.sin(rad) + ly * Math.cos(rad));
+    const masks: Phaser.GameObjects.Graphics[] = [];
+    link.members.slice(0, 2).forEach((id, i) => {
+      const unit = findUnit(s, id);
+      const defId = unit && 'defId' in unit ? unit.defId : id;
+      const color = ALLY_COLOR[defId] ?? COLORS.ally;
+      const cy = centers[i];
+      const corners = [at(cy, -bandW / 2, -bandH / 2), at(cy, bandW / 2, -bandH / 2), at(cy, bandW / 2, bandH / 2), at(cy, -bandW / 2, bandH / 2)];
+      // 帯の中身（色・斜線・立ち絵）はまとめて帯の形で切る
+      const mask = this.make.graphics({}, false).fillStyle(0xffffff).fillPoints(corners, true);
+      masks.push(mask);
+      const inner = this.add.container(0, 0);
+      inner.setMask(mask.createGeometryMask());
+      c.add(inner);
+      inner.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, color).setOrigin(0));
+      const lines = this.add.graphics().lineStyle(2, 0xffffff, 0.14);
+      for (let x = -200; x < GAME_WIDTH + 200; x += 22) lines.lineBetween(x, cy - bandH, x + 60, cy + bandH);
+      inner.add(lines);
+      // 立ち絵：上は右、下は左に置き、横から滑り込む
+      const bark = barks.find((b) => b.allyId === defId);
+      const barkId = bark ? portraitImageId(this, BARK_CAST[defId] ?? '', bark.face) : '';
+      const pid = barkId || ALLY_FACE[defId];
+      if (pid && hasImage(this, pid)) {
+        const img = this.add.image(0, 0, pid).setOrigin(0.5, 0);
+        img.setScale((bandH * 1.45) / img.height);
+        const px = i === 0 ? GAME_WIDTH * 0.66 : GAME_WIDTH * 0.34;
+        img.setPosition(px + (i === 0 ? 90 : -90), cy - bandH / 2 - 30).setAlpha(0);
+        inner.add(img);
+        this.tweens.add({ targets: img, x: px, alpha: 1, duration: 280, delay: i * 160, ease: 'Cubic.easeOut' });
+      }
+      const edge = this.add.graphics().lineStyle(10, 0x000000).strokePoints(corners, true).lineStyle(4, 0xffffff).strokePoints(corners, true);
+      c.add(edge);
+      // 名前（斜めの字）と、かけ合いの台詞
+      const np = i === 0 ? at(cy, -GAME_WIDTH / 2 + 30, -bandH / 2 + 58) : at(cy, GAME_WIDTH / 2 - 30, bandH / 2 - 58);
+      const name = addText(this, np.x, np.y, unit?.name ?? id, { size: 26, bold: true }).setOrigin(i === 0 ? 0 : 1, 0.5).setAngle(-12);
+      name.setFontStyle('bold italic').setShadow(3, 3, '#000000', 0, false, true);
+      c.add(name);
+      if (bark) {
+        const bp = i === 0 ? at(cy, -GAME_WIDTH / 2 + 34, -bandH / 2 + 104) : at(cy, GAME_WIDTH / 2 - 34, bandH / 2 - 104);
+        const t = addText(this, 0, 0, bark.text, { size: 14, bold: true, color: '#101010', wrap: 190 });
+        const box = this.add.container(bp.x, bp.y).setAngle(-12);
+        const bw = t.width + 20;
+        const bh = t.height + 12;
+        box.add(this.add.rectangle(i === 0 ? 0 : -bw, -bh / 2, bw, bh, 0xffffff).setOrigin(0).setStrokeStyle(3, 0x000000));
+        t.setPosition(i === 0 ? 10 : -bw + 10, -bh / 2 + 6);
+        box.add(t);
+        box.setAlpha(0);
+        c.add(box);
+        this.tweens.add({ targets: box, alpha: 1, duration: 160, delay: 300 + i * 420 });
+      }
+    });
+    // 真ん中の技名
+    const title = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setAngle(-8);
+    const label = addText(this, 0, 0, link.name, { size: 34, bold: true });
+    label.setFontStyle('bold italic').setShadow(4, 4, '#ff2d55', 0, false, true).setOrigin(0.5);
+    const boxW = Math.max(240, label.width + 48);
+    title.add(this.add.rectangle(0, 4, boxW, 66, 0x000000).setStrokeStyle(2, 0xffffff, 0.5));
+    title.add(label);
+    const tag = addText(this, -boxW / 2 + 12, -46, 'L I N K   A T T A C K', { size: 13, bold: true, color: '#ffd700' });
+    tag.setFontStyle('bold italic').setShadow(2, 2, '#000000', 0, false, true);
+    title.add(tag);
+    title.setScale(2.2).setAlpha(0);
+    c.add(title);
+    const talk = barks.length > 0 ? 900 : 0;
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 420 + talk, duration: 280, ease: 'Back.easeOut' });
+    await this.wait(1250 + talk);
+    if (!this.skipping) {
+      const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0);
+      this.fxLayer.add(flash);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 300 });
+      this.cameras.main.shake(260, 0.012);
+    }
+    c.destroy(true);
+    for (const m of masks) m.destroy();
   }
 
   /** コンボのカットイン：金色の帯に技名 */
