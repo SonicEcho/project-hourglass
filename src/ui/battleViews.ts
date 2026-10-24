@@ -42,6 +42,8 @@ export interface ViewModel {
   planLabels: Record<string, string>;
   /** 仲間ごとの、決めた行動に使う札（スナップ・コンボの1枚目）の id。新しい画面のフィルムのコマに写真を入れる（段階102b） */
   planCards: Record<string, string>;
+  /** 新しい画面の再生中（段階102c）。実行を始めた時の行動順など。計画中は undefined */
+  playback?: FilmPlayback;
   /** 選んでいる行動の対象範囲（選んでいなければ null） */
   scope: TargetScope | null;
   selectedCardUid?: number;
@@ -71,6 +73,19 @@ export interface ViewModel {
   speed: number;
   /** オート中の作戦の名前 */
   autoName: string;
+}
+
+/** 新しい画面の再生中の覚え（段階102c） */
+export interface FilmPlayback {
+  /** 実行を始めた時の行動順 */
+  order: OrderEntry[];
+  /** 実行を始めた時の、仲間ごとの行動の短い説明と使う札 */
+  labels: Record<string, string>;
+  cards: Record<string, string>;
+  /** 今再生しているコマ（まだなら -1） */
+  cursor: number;
+  /** 今動いている人 */
+  actorIds: string[];
 }
 
 export interface ViewHandlers {
@@ -1237,7 +1252,8 @@ function drawFilmBattle(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   drawStage(scene, root);
   drawEnemies(scene, root, vm, h);
   drawFilmHeader(scene, root, vm, h);
-  drawFilmMessage(scene, root, vm);
+  // 再生中（段階102c）は、状況の帯の代わりに手札の上の字幕で見せる
+  if (!isPlaying(vm)) drawFilmMessage(scene, root, vm);
   drawFilmStrip(scene, root, vm, h);
   drawFilmTabs(scene, root, vm, h);
   if (vm.panel === 'skills') drawSkillPanel(scene, root, vm, h);
@@ -1245,7 +1261,30 @@ function drawFilmBattle(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   else if (vm.panel === 'discard') drawDiscardPanel(scene, root, vm, h);
   else if (vm.panel === 'search') drawSearchPanel(scene, root, vm, h);
   else drawHand(scene, root, vm, h);
+  if (isPlaying(vm)) drawFilmSubtitle(scene, root, vm);
   drawFilmButtons(scene, root, vm, h);
+}
+
+/** 新しい画面で、実行の演出を見せている最中か（段階102c。追加行動を選んでいる間は違う） */
+function isPlaying(vm: ViewModel): boolean {
+  return !!vm.playback && !vm.interactive && vm.state.phase !== 'ended';
+}
+
+/** 再生中の字幕（段階102c）：手札を薄くして、その上に「PLAY 02 / 04」と、何が起きたか */
+function drawFilmSubtitle(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel): void {
+  const { y, h: height } = FILM_LAYOUT.hand;
+  const pb = vm.playback!;
+  root.add(scene.add.rectangle(0, y, GAME_WIDTH, height, 0x05060a, 0.62).setOrigin(0));
+  const bh = 92;
+  const by = y + (height - bh) / 2;
+  root.add(skewBox(scene, SIDE_PADDING, by, GAME_WIDTH - SIDE_PADDING * 2, bh, 0x000000, 0.92, { width: 2, color: 0xffffff }));
+  root.add(scene.add.rectangle(SIDE_PADDING + SKEW / 2, by + 2, 6, bh - 4, 0xffd700).setOrigin(0));
+  const total = pb.order.length;
+  if (pb.cursor >= 0 && total > 0) {
+    const n = (v: number) => String(v).padStart(2, '0');
+    root.add(slantText(scene, SIDE_PADDING + 24, by + 10, `PLAY ${n(Math.min(pb.cursor + 1, total))} / ${n(total)}`, 12, '#ffd700', ''));
+  }
+  root.add(addText(scene, SIDE_PADDING + 24, by + 32, vm.message, { size: 15, bold: true, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 44 }).setLineSpacing(4));
 }
 
 /** 上の帯：● REC と ROUND、右にオート（雑魚戦だけ）と早送り */
@@ -1294,20 +1333,24 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     root.add(scene.add.rectangle(hx, y + 5, 9, 7, 0xe8e0d0, 0.85).setOrigin(0));
     root.add(scene.add.rectangle(hx, y + height - 12, 9, 7, 0xe8e0d0, 0.85).setOrigin(0));
   }
-  const n = Math.max(1, vm.order.length);
+  // 再生中（段階102c）は、実行を始めた時の行動順のまま並べ、済んだコマを暗く、今のコマを金の縁にする
+  const pb = vm.playback;
+  const order = pb?.order ?? vm.order;
+  const n = Math.max(1, order.length);
   const gap = 6;
   const x0 = SIDE_PADDING;
   const fy = y + 16;
   const fh = height - 32;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
   const executing = s.phase === 'execute' || s.phase === 'extra';
-  vm.order.forEach((entry, i) => {
+  order.forEach((entry, i) => {
     const units = entry.ids.map((id) => findUnit(s, id)).filter((u): u is NonNullable<typeof u> => !!u);
     if (units.length === 0) return;
     const unit = units[0];
     const fx = x0 + i * (w + gap);
     const isActor = !executing && !!vm.actor && entry.ids.includes(vm.actor.uid);
-    const isCurrent = executing && i === 0;
+    const isCurrent = pb ? i === pb.cursor : executing && i === 0;
+    const done = !!pb && i < pb.cursor;
     const enemy = unit.side === 'enemy';
     const fill = enemy ? 0x3a0812 : 0x2b2420;
     const frame = skewBox(scene, fx, fy, w, fh, fill, entry.tentative && !isActor ? 0.55 : 1,
@@ -1315,7 +1358,7 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     root.add(frame);
     const cx = fx + w / 2;
     // 決めた行動がスナップ（コンボ）なら、その札の写真を薄く入れる（段階102b）
-    const planCard = !enemy && !isActor ? vm.planCards[unit.uid] : undefined;
+    const planCard = !enemy && !isActor ? (pb?.cards ?? vm.planCards)[unit.uid] : undefined;
     const art = planCard ? CARD_ART[planCard as keyof typeof CARD_ART] : undefined;
     if (art && hasImage(scene, art.asset)) {
       const pts = skewPoints(fx, fy, w, fh, SKEW);
@@ -1334,7 +1377,7 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     root.add(slantText(scene, fx + SKEW + 2, fy + 1, String(i + 1).padStart(2, '0'), 14));
     // 下の札：決めた行動。今の番は「▶ 選んでいる」
     const charging = enemy && !!(unit as EnemyUnit).charging;
-    const plan = !enemy ? vm.planLabels[unit.uid] : undefined;
+    const plan = !enemy ? (pb?.labels ?? vm.planLabels)[unit.uid] : undefined;
     const tag = entry.guard ? '防御' : entry.precede ? '先制' : '';
     const label = isActor
       ? '▶ 選んでいる'
@@ -1349,6 +1392,9 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const shown = label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
     root.add(skewBox(scene, fx, fy + fh - 18, w, 18, isActor ? FILM_RED : 0x000000, isActor ? 1 : 0.8));
     root.add(addText(scene, cx, fy + fh - 9, shown, { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+    // 済んだコマは暗く、今のコマは真ん中に「▶」（段階102c）
+    if (done) root.add(skewBox(scene, fx, fy, w, fh, 0x000000, 0.55));
+    if (pb && isCurrent) root.add(slantText(scene, cx, fy + fh / 2 - 8, '▶', 26, '#ffd700', '#000000').setOrigin(0.5));
     const hit = scene.add.rectangle(cx, fy + fh / 2, w, fh, 0xffffff, 0.001);
     root.add(hit);
     makePressable(hit, {
@@ -1366,22 +1412,31 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
   const s = vm.state;
   const n = s.allies.length;
   const gap = 6;
-  const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
+  // 再生中（段階102c）は、動いている仲間のタブを広げて白くする
+  const acting = new Set(isPlaying(vm) ? vm.playback!.actorIds : []);
+  const weights = s.allies.map((a) => (acting.has(a.uid) ? 1.8 : 1));
+  const unitW = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / weights.reduce((a, b) => a + b, 0);
+  let nextX = SIDE_PADDING;
   const batonIds = new Set(batonTargets(s).map((a) => a.uid));
   s.allies.forEach((ally, i) => {
-    const x = SIDE_PADDING + i * (w + gap);
+    const w = weights[i] * unitW;
+    const x = nextX;
+    nextX += w + gap;
+    const playing = acting.has(ally.uid);
     const alive = ally.hp > 0;
     const color = ALLY_COLOR[ally.defId] ?? COLORS.ally;
     const isActor = vm.actor?.uid === ally.uid;
     const targetable = vm.interactive && ((vm.scope === 'ally' && alive) || (vm.batonMode && batonIds.has(ally.uid)));
     const selected = vm.selectedTarget?.kind === 'ally' && vm.selectedTarget.id === ally.uid;
     const stroke = selected ? { width: 3, color: COLORS.select } : targetable ? { width: 2, color: COLORS.accent } : isActor ? { width: 2, color } : { width: 1, color: 0xffffff, alpha: 0.35 };
-    root.add(skewBox(scene, x, y, w, height, 0x000000, alive ? 0.85 : 0.6, stroke));
+    root.add(skewBox(scene, x, y, w, height, playing ? 0xffffff : 0x000000, alive ? (playing ? 1 : 0.85) : 0.6, playing ? { width: 3, color: 0xffd700 } : stroke));
     root.add(scene.add.rectangle(x, y + height - 4, w - SKEW, 4, color, alive ? 1 : 0.4).setOrigin(0));
     // 顔は右に薄く
     const faceId = ALLY_FACE[ally.defId];
     if (faceId && hasImage(scene, faceId)) root.add(faceImage(scene, faceId, x + w - 24, y + height / 2 - 2, 20, FACE_CROPS[ally.defId]).setAlpha(alive ? (isActor ? 0.9 : 0.5) : 0.2));
-    root.add(addText(scene, x + SKEW + 4, y + 5, ally.name, { size: 12, bold: true, color: alive ? toCss(color) : COLORS.dimText }));
+    const nameText = addText(scene, x + SKEW + 4, y + 5, ally.name, { size: 12, bold: true, color: playing ? '#101010' : alive ? toCss(color) : COLORS.dimText });
+    root.add(nameText);
+    if (playing) root.add(slantText(scene, nameText.x + nameText.width + 8, y + 6, '▶ 行動中', 10, '#b07800', ''));
     const status = [s.phase === 'extra' && isActor ? (s.extra?.boost ? 'バトン' : '追加') : '', s.precedeIds.includes(ally.uid) ? '先制' : '', ally.guarding ? '防御' : '', alive ? '' : '不能']
       .filter(Boolean)
       .join(' ');
@@ -1390,7 +1445,7 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
     const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
     addBar(scene, root, x + SKEW + 4, y + 24, barW, 5, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / ally.maxHp);
-    const hpText = addText(scene, x + SKEW + 4, y + 31, `${ally.hp}`, { size: 10, bold: true, color: COLORS.text });
+    const hpText = addText(scene, x + SKEW + 4, y + 31, `${ally.hp}`, { size: 10, bold: true, color: playing ? '#101010' : COLORS.text });
     root.add(hpText);
     countText(scene, hpText, hpFrom, ally.hp, (v) => `${v}`);
     const mpText = addText(scene, x + SKEW + 4 + barW, y + 31, `MP ${ally.mp}`, { size: 10, color: toCss(COLORS.mp) }).setOrigin(1, 0);
@@ -1429,8 +1484,13 @@ function drawFilmButtons(scene: Phaser.Scene, root: Phaser.GameObjects.Container
     x += k * unit + gap;
   }
   const wOf = (i: number) => ws[i] * unit;
-  filmButton(scene, root, xs[0], by, wOf(0), bh, '魔法・スキル', { onTap: () => h.tapCommand('skills') }, { enabled: canAct, active: vm.panel === 'skills', size: 11 });
-  filmButton(scene, root, xs[1], by, wOf(1), bh, 'その他', { onTap: () => h.tapCommand('other') }, { enabled: canAct, active: vm.panel === 'other' });
+  if (isPlaying(vm)) {
+    // 再生中（段階102c）：どこをタップしても早送りになる（今のまま）。その案内と今の速さ
+    filmButton(scene, root, xs[0], by, wOf(0) + gap + wOf(1), bh, `▶▶ 早送り　×${vm.speed}`, {}, { size: 14 });
+  } else {
+    filmButton(scene, root, xs[0], by, wOf(0), bh, '魔法・スキル', { onTap: () => h.tapCommand('skills') }, { enabled: canAct, active: vm.panel === 'skills', size: 11 });
+    filmButton(scene, root, xs[1], by, wOf(1), bh, 'その他', { onTap: () => h.tapCommand('other') }, { enabled: canAct, active: vm.panel === 'other' });
+  }
   if (vm.footer === 'select') {
     filmButton(scene, root, xs[2], by, wOf(2), bh, 'キャンセル', { onTap: () => h.cancel() }, { size: 12 });
     filmButton(scene, root, xs[3], by, wOf(3), bh, '決定', { onTap: () => h.confirm() }, { enabled: vm.canConfirm, fill: 0x2f6b3f, size: 16 });
@@ -1464,7 +1524,7 @@ function drawFilmButtons(scene: Phaser.Scene, root: Phaser.GameObjects.Container
       fill: FILM_RED,
       size: vm.planComplete ? 17 : 12,
     });
-  } else filmButton(scene, root, xs[3], by, wOf(3), bh, '再生中', {}, { enabled: false });
+  } else filmButton(scene, root, xs[3], by, wOf(3), bh, '■ 再生中', {}, { enabled: false });
 }
 
 /** 平行四辺形の4つの角（上の辺を右へ skew だけずらす）。左上が (x, y) */

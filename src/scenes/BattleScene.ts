@@ -48,7 +48,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
 import { AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
-import { actorLinks, chargeCounterText, drawBattle, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { actorLinks, chargeCounterText, drawBattle, FILM_UI, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
@@ -137,6 +137,8 @@ export class BattleScene extends Phaser.Scene {
   private barkMemory: BarkMemory = NEW_BARK_MEMORY;
   /** 連携技・コンボの演出中（数値を大きく、画面を揺らす） */
   private special = false;
+  /** 新しい画面の再生中（段階102c）：実行を始めた時の行動順と決めた行動、今どのコマを再生しているか。計画に戻ると消す */
+  private film?: FilmPlayback;
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
   /** オートの作戦（オート中だけ。段階29） */
   private auto: Tactic | null = null;
@@ -254,6 +256,7 @@ export class BattleScene extends Phaser.Scene {
   private finishPlayerStep(): void {
     this.busy = false;
     this.skipping = false;
+    if (this.state.phase !== 'extra') this.film = undefined;
     if (this.state.phase === 'ended') {
       this.render();
       this.showEnd();
@@ -427,6 +430,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.busy = false;
     this.skipping = false;
+    if (this.state.phase !== 'extra') this.film = undefined;
     if (this.state.phase === 'ended') {
       this.render();
       this.showEnd();
@@ -441,7 +445,9 @@ export class BattleScene extends Phaser.Scene {
 
   private startRound(): void {
     if (this.busy || !isPlanComplete(this.state)) return;
+    const plans = this.planInfo(this.state);
     this.state = startExecution(this.state);
+    if (FILM_UI) this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [] };
     void this.runExecution();
   }
 
@@ -520,11 +526,13 @@ export class BattleScene extends Phaser.Scene {
     this.barkMemory = barks.memory;
     if (act) {
       this.message = this.describeHeadline(prev, act);
+      if (this.film) this.advanceFilm(act);
       this.render(prev);
       if (link) await this.linkCutIn(prev, link, barks.link);
       else if (combo) await this.comboCutIn(combo);
       else {
-        this.banner(this.message);
+        // 新しい画面は、手札の上の字幕で見せる（段階102c）
+        if (!this.film) this.banner(this.message);
         await this.wait(FX.banner);
       }
     }
@@ -641,6 +649,18 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 120, duration: 220, ease: 'Back.easeOut' });
     await this.wait(850);
     c.destroy(true);
+  }
+
+  /** 新しい画面の再生中（段階102c）：動いた人のコマを、今のコマから先へ探して進める。見つからなければ（追加行動など）コマは動かさない */
+  private advanceFilm(e: LogEvent): void {
+    const film = this.film;
+    if (!film) return;
+    const ids =
+      e.type === 'action' || e.type === 'cancel' ? e.actorIds : e.type === 'baton' ? [e.toId] : e.type === 'standUp' || e.type === 'charge' || e.type === 'chargeBroken' ? [e.enemyId] : [];
+    film.actorIds = ids;
+    const from = Math.max(0, film.cursor);
+    const i = film.order.findIndex((o, k) => k >= from && o.ids.some((id) => ids.includes(id)));
+    if (i >= 0) film.cursor = i;
   }
 
   private describeHeadline(s: BattleState, e: LogEvent): string {
@@ -1278,6 +1298,22 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- 描画 ----
 
+  /** まだ済んでいない計画：確保しているスナップ（uid → 仲間の名前）、仲間ごとの行動の短い説明と、使う札の id */
+  private planInfo(s: BattleState): { reservedBy: Map<number, string>; planLabels: Record<string, string>; planCards: Record<string, string> } {
+    const reservedBy = new Map<number, string>();
+    const planLabels: Record<string, string> = {};
+    const planCards: Record<string, string> = {};
+    for (const p of s.plans) {
+      if (p.done) continue;
+      const first = p.cardUids.length > 0 ? [...s.hand, ...s.discard].find((c) => c.uid === p.cardUids[0]) : undefined;
+      if (first) for (const id of p.actorIds) planCards[id] = first.card.id;
+      const names = p.actorIds.map((id) => findUnit(s, id)?.name ?? '').join('と');
+      for (const uid of p.cardUids) reservedBy.set(uid, names);
+      for (const id of p.actorIds) planLabels[id] = this.planLabel(p.action, p.actorIds[0]);
+    }
+    return { reservedBy, planLabels, planCards };
+  }
+
   private render(s: BattleState = this.state): void {
     this.root.removeAll(true);
     const sel = this.selection;
@@ -1298,17 +1334,7 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
-    const reservedBy = new Map<number, string>();
-    const planLabels: Record<string, string> = {};
-    const planCards: Record<string, string> = {};
-    for (const p of s.plans) {
-      if (p.done) continue;
-      const first = p.cardUids.length > 0 ? [...s.hand, ...s.discard].find((c) => c.uid === p.cardUids[0]) : undefined;
-      if (first) for (const id of p.actorIds) planCards[id] = first.card.id;
-      const names = p.actorIds.map((id) => findUnit(s, id)?.name ?? '').join('と');
-      for (const uid of p.cardUids) reservedBy.set(uid, names);
-      for (const id of p.actorIds) planLabels[id] = this.planLabel(p.action, p.actorIds[0]);
-    }
+    const { reservedBy, planLabels, planCards } = this.planInfo(s);
 
     const footer: FooterMode = this.auto && s.phase !== 'ended' ? 'auto' : !interactive ? 'none' : sel ? 'select' : s.phase === 'plan' && !s.searchChoice ? 'execute' : 'none';
     const vm: ViewModel = {
@@ -1320,6 +1346,7 @@ export class BattleScene extends Phaser.Scene {
       reservedBy,
       planLabels,
       planCards,
+      playback: this.film,
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,
