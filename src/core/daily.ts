@@ -230,6 +230,14 @@ export function bondPoints(
 }
 
 /** 絆の点を♥で書く（♥1つは event 点。足りない分があれば♡を1つ。0 は ―） */
+/**
+ * 絆の段と帯（段階110。テストプレイのメモ 29：♥が増えると見づらいので、段と短い帯で見せる）。
+ * 段は絆の出来事の分（♥の数）、帯は次の段までの割合（その日に見た小話の分。半分なら 0.5）
+ */
+export function bondGauge(n: number, points: BondPoints): { level: number; progress: number } {
+  return { level: Math.floor(n / points.event), progress: (n % points.event) / points.event };
+}
+
 export function heartText(n: number, points: BondPoints): string {
   return '♥'.repeat(Math.floor(n / points.event)) + (n % points.event > 0 ? '♡' : '') || '―';
 }
