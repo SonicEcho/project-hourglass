@@ -1300,8 +1300,11 @@ export class BattleScene extends Phaser.Scene {
 
     const reservedBy = new Map<number, string>();
     const planLabels: Record<string, string> = {};
+    const planCards: Record<string, string> = {};
     for (const p of s.plans) {
       if (p.done) continue;
+      const first = p.cardUids.length > 0 ? [...s.hand, ...s.discard].find((c) => c.uid === p.cardUids[0]) : undefined;
+      if (first) for (const id of p.actorIds) planCards[id] = first.card.id;
       const names = p.actorIds.map((id) => findUnit(s, id)?.name ?? '').join('と');
       for (const uid of p.cardUids) reservedBy.set(uid, names);
       for (const id of p.actorIds) planLabels[id] = this.planLabel(p.action, p.actorIds[0]);
@@ -1316,6 +1319,7 @@ export class BattleScene extends Phaser.Scene {
       pool: interactive ? this.pool(s) : [],
       reservedBy,
       planLabels,
+      planCards,
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,

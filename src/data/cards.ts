@@ -49,6 +49,27 @@ export const CARD_NAME_LINES: Partial<Record<string, string>> = {
   pinchHitter: 'ピンチ\nヒッター',
 };
 
+/**
+ * 写真のカードの絵（段階102b。新しい戦闘の画面）。台帳（assets.ts）の画像の id と、切り抜く中心（絵の幅・高さに対する割合）。
+ * 今は仮に、今ある1枚絵と背景から選んでいる。正式な札の絵は後で docs/ART.md に頼む
+ */
+export const CARD_ART: Record<keyof typeof CARDS, { asset: string; x: number; y: number }> = {
+  sword: { asset: 'cg.awaken_weapons', x: 0.3, y: 0.3 },
+  heavyBlow: { asset: 'cg.cut_ground', x: 0.5, y: 0.25 },
+  fireChip: { asset: 'cg.fireworks', x: 0.5, y: 0.2 },
+  iceChip: { asset: 'cg.white_city', x: 0.5, y: 0.35 },
+  thunderChip: { asset: 'cg.string_stage', x: 0.5, y: 0.2 },
+  wideShot: { asset: 'bg.shooting_stall', x: 0.5, y: 0.4 },
+  recover: { asset: 'cg.tandem_bicycle', x: 0.45, y: 0.4 },
+  quickStep: { asset: 'bg.riverside_path', x: 0.5, y: 0.45 },
+  search: { asset: 'bg.library', x: 0.5, y: 0.4 },
+  breakArm: { asset: 'bg.factory_1969', x: 0.5, y: 0.5 },
+  draw: { asset: 'cg.mio_cards', x: 0.5, y: 0.35 },
+  joker: { asset: 'cg.noa_passing', x: 0.62, y: 0.3 },
+  encore: { asset: 'bg.school_gym', x: 0.5, y: 0.35 },
+  pinchHitter: { asset: 'bg.riverside_1998', x: 0.5, y: 0.55 },
+};
+
 /** アルバム（パーティ共通の山札）20枚の構成 */
 export const FOLDER: { card: CardDef; count: number }[] = [
   { card: CARDS.sword, count: 3 },
