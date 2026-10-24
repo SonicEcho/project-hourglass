@@ -32,3 +32,22 @@ export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: numb
   // 段階96：本気のカイの枠の刃（絵の左上で掲げている四角い枠の、左下の角）
   kaiRevenge: { frameBlade: [0.3, 0.2, 'left'] },
 };
+
+/**
+ * 敵の固有技のカットイン（段階107c）：重要なキャラの専用の特殊技を放つ時に、その人の立ち絵を斜めの帯に大きく出す。
+ * 敵の id → 技の id → 出し方。cast と face は会話の立ち絵（`CAST`）の名前と表情。line はカットインの台詞（なければ出さない）
+ */
+export interface EnemyCutIn {
+  cast: string;
+  face: string;
+  tag: string;
+  color: number;
+  line?: string;
+}
+
+const KAI_FRAME_CUT: EnemyCutIn = { cast: 'カイ', face: '余裕', tag: 'F R A M E   C U T', color: 0x9fdcff, line: 'その一コマ、もらうぞ' };
+
+export const ENEMY_CUT_INS: Record<string, Record<string, EnemyCutIn>> = {
+  kai: { frameCut: KAI_FRAME_CUT },
+  kaiRevenge: { frameCut: KAI_FRAME_CUT },
+};

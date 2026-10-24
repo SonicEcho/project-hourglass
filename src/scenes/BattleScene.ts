@@ -47,12 +47,12 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, ENEMY_CUT_INS, type EnemyCutIn, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, FILM_SKILL_ROWS, FILM_UI, filmFrameRect, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { FILM_LAYOUT, LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
 import { hasImage } from '../assets/loader';
-import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
+import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import type { ResultSceneData } from './ResultScene';
@@ -548,8 +548,12 @@ export class BattleScene extends Phaser.Scene {
       this.message = this.describeHeadline(prev, act);
       if (this.film) this.advanceFilm(act);
       this.render(prev);
+      // 敵の固有技（カイの切り取りなど。段階107c）は、その人のカットインを出す
+      const actor = act.type === 'action' ? prev.enemies.find((e) => e.uid === act.actorIds[0]) : undefined;
+      const enemyCutIn = actor && act.type === 'action' ? ENEMY_CUT_INS[actor.defId]?.[act.actionId] : undefined;
       if (link && FILM_UI) await this.filmLinkCutIn(prev, link, barks.link);
       else if (link) await this.linkCutIn(prev, link, barks.link);
+      else if (enemyCutIn && act.type === 'action') await this.enemyCutIn(actor?.name ?? '', act.name, enemyCutIn);
       else if (combo) await this.comboCutIn(combo);
       else {
         // 新しい画面は、手札の上の字幕で見せる（段階102c）
@@ -742,6 +746,76 @@ export class BattleScene extends Phaser.Scene {
     }
     c.destroy(true);
     for (const m of masks) m.destroy();
+  }
+
+  /**
+   * 敵の固有技のカットイン（段階107c）：連携技のカットインと同じ斜めの帯を1本だけ、敵の色で。
+   * 立ち絵は右から滑り込み、名前・台詞・技名を出す
+   */
+  private async enemyCutIn(name: string, actionName: string, def: EnemyCutIn): Promise<void> {
+    if (this.skipping) return;
+    const c = this.add.container(0, 0);
+    this.fxLayer.add(c);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0));
+    const rad = Phaser.Math.DegToRad(-12);
+    const bandH = 380;
+    const bandW = GAME_WIDTH + 260;
+    const cy = GAME_HEIGHT / 2 - 40;
+    const at = (lx: number, ly: number) => new Phaser.Math.Vector2(GAME_WIDTH / 2 + lx * Math.cos(rad) - ly * Math.sin(rad), cy + lx * Math.sin(rad) + ly * Math.cos(rad));
+    const corners = [at(-bandW / 2, -bandH / 2), at(bandW / 2, -bandH / 2), at(bandW / 2, bandH / 2), at(-bandW / 2, bandH / 2)];
+    const mask = this.make.graphics({}, false).fillStyle(0xffffff).fillPoints(corners, true);
+    const inner = this.add.container(0, 0);
+    inner.setMask(mask.createGeometryMask());
+    c.add(inner);
+    // 帯は暗い色に、敵の色の斜線と光
+    inner.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b1626).setOrigin(0));
+    const lines = this.add.graphics().lineStyle(2, def.color, 0.22);
+    for (let x = -200; x < GAME_WIDTH + 200; x += 22) lines.lineBetween(x, cy - bandH, x + 60, cy + bandH);
+    inner.add(lines);
+    const pid = portraitImageId(this, def.cast, def.face);
+    if (pid && hasImage(this, pid)) {
+      const img = this.add.image(0, 0, pid).setOrigin(0.5, 0);
+      img.setScale((bandH * 1.65) / img.height);
+      const px = GAME_WIDTH * 0.62;
+      img.setPosition(px + 110, cy - bandH / 2 - 20).setAlpha(0);
+      inner.add(img);
+      this.tweens.add({ targets: img, x: px, alpha: 1, duration: 320, ease: 'Cubic.easeOut' });
+    }
+    const edge = this.add.graphics().lineStyle(10, 0x000000).strokePoints(corners, true).lineStyle(4, def.color).strokePoints(corners, true);
+    c.add(edge);
+    const np = at(-GAME_WIDTH / 2 + 30, -bandH / 2 + 58);
+    const label = addText(this, np.x, np.y, name, { size: 28, bold: true }).setOrigin(0, 0.5).setAngle(-12);
+    label.setFontStyle('bold italic').setShadow(3, 3, '#000000', 0, false, true);
+    c.add(label);
+    if (def.line) {
+      const bp = at(-GAME_WIDTH / 2 + 34, -bandH / 2 + 106);
+      const t = addText(this, 0, 0, def.line, { size: 14, bold: true, color: '#101010', wrap: 190 });
+      const box = this.add.container(bp.x, bp.y).setAngle(-12);
+      const bw = t.width + 20;
+      const bh = t.height + 12;
+      box.add(this.add.rectangle(0, -bh / 2, bw, bh, 0xffffff).setOrigin(0).setStrokeStyle(3, 0x000000));
+      t.setPosition(10, -bh / 2 + 6);
+      box.add(t);
+      box.setAlpha(0);
+      c.add(box);
+      this.tweens.add({ targets: box, alpha: 1, duration: 160, delay: 300 });
+    }
+    // 帯の下に技名
+    const title = this.add.container(GAME_WIDTH / 2, cy + bandH / 2 + 30).setAngle(-8);
+    const tl = addText(this, 0, 0, actionName, { size: 34, bold: true });
+    tl.setFontStyle('bold italic').setShadow(4, 4, toCss(def.color), 0, false, true).setOrigin(0.5);
+    const boxW = Math.max(220, tl.width + 48);
+    title.add(this.add.rectangle(0, 4, boxW, 66, 0x000000).setStrokeStyle(2, def.color, 0.8));
+    title.add(tl);
+    const tag = addText(this, -boxW / 2 + 12, -46, def.tag, { size: 13, bold: true, color: toCss(def.color) });
+    tag.setFontStyle('bold italic').setShadow(2, 2, '#000000', 0, false, true);
+    title.add(tag);
+    title.setScale(2.2).setAlpha(0);
+    c.add(title);
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 420, duration: 280, ease: 'Back.easeOut' });
+    await this.wait(1500);
+    c.destroy(true);
+    mask.destroy();
   }
 
   /** コンボのカットイン：金色の帯に技名 */
