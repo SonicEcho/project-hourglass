@@ -1,0 +1,16 @@
+/* 段階102e のやり直し：魔法・スキルの一覧とコンボの帯のイメージ。本物の画面（base.png）の手札の所だけを差し替える。作り込まない見本 */
+body { background: url('base.png') 0 0 / 390px 844px no-repeat; }
+.cover { left: 0; right: 0; top: 556px; height: 204px; background: linear-gradient(#161931, #2b2135); }
+.tag { left: 8px; top: 50px; font-size: 11px; font-weight: bold; background: #000c; border-left: 4px solid #ff2d55; padding: 3px 8px; }
+.note { font-size: 10px; color: #ffd700; font-weight: bold; background: #000c; padding: 2px 8px; }
+.slant { font-weight: 900; font-style: italic; }
+/* 写真のカード（今の手札と同じ） */
+.pc { position: absolute; width: 70px; height: 112px; background: #fff; border: 3px solid #000; box-shadow: 4px 4px 0 var(--c); padding: 4px; color: #101010; }
+.pc .ph { height: 46px; background-size: cover; background-position: center; }
+.pc .el { position: absolute; left: 4px; top: 4px; font-size: 9px; color: #fff; background: var(--c); padding: 1px 4px; font-weight: bold; }
+.pc .nm { font-size: 13px; font-weight: 900; text-align: center; margin-top: 6px; line-height: 1.15; }
+.pc .wt { position: absolute; bottom: 4px; left: 0; right: 0; font-size: 9px; text-align: center; color: #555; font-weight: bold; }
+.pc.dim { filter: grayscale(.6) brightness(.6); }
+.pc .use { position: absolute; left: 2px; right: 2px; bottom: 3px; background: #000; color: #ffd700; font-size: 9px; text-align: center; font-weight: bold; }
+/* 押している下のボタン（魔法・スキル） */
+.on1 { left: 10px; top: 772px; width: 80px; height: 42px; border: 3px solid #ff2d55; transform: skewX(-12deg); }

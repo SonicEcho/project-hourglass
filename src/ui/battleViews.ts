@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -10,7 +10,7 @@ import { columnX, FILM_LAYOUT, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
 import { skillPanelLayout } from './skillLayout';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, STAGE, toCss } from './theme';
 import { hasImage } from '../assets/loader';
-import { addBar, addButton, addText, makePressable } from './widgets';
+import { addBar, addButton, addText, type ButtonOptions, makePressable } from './widgets';
 import { countText, screenBg } from './skin';
 import { addIcon, type IconKind } from './icons';
 
@@ -40,6 +40,8 @@ export interface ViewModel {
   reservedBy: Map<number, string>;
   /** 仲間ごとの、決めた行動の短い説明 */
   planLabels: Record<string, string>;
+  /** 延長で引いた札（段階102e。新しい画面で NEW の印を付ける） */
+  newCardUids: number[];
   /** 仲間ごとの、決めた行動に使う札（スナップ・コンボの1枚目）の id。新しい画面のフィルムのコマに写真を入れる（段階102b） */
   planCards: Record<string, string>;
   /** 新しい画面の再生中（段階102c）。実行を始めた時の行動順など。計画中は undefined */
@@ -86,6 +88,8 @@ export interface FilmPlayback {
   cursor: number;
   /** 今動いている人 */
   actorIds: string[];
+  /** このラウンドに切り取られた仲間（段階107。フィルムのコマを穴にする） */
+  cut: string[];
 }
 
 export interface ViewHandlers {
@@ -97,8 +101,10 @@ export interface ViewHandlers {
   tapSkill(id: string): void;
   /** ポーチの消費アイテムを選ぶ（段階51） */
   tapItem(itemId: string): void;
-  /** 魔法・スキルの一覧の次のページ */
+  /** 魔法・スキルの一覧の次のページ（新しい画面では1行下へ送る） */
   nextSkillPage(): void;
+  /** 新しい画面の魔法・スキルの一覧を1行上へ戻す（段階102e） */
+  prevSkillPage(): void;
   tapBasic(kind: 'attack' | 'guard' | 'decline'): void;
   tapDiscard(uid: number): void;
   tapSearch(uid: number): void;
@@ -367,7 +373,9 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     // 大技の予告：力をためている
     const charged = alive ? chargingAction(enemy) : undefined;
     if (charged) {
-      const label = `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
+      // 切り取り（段階107）は、ねらう仲間の名前も出す
+      const aim = charged.cutsFrame && enemy.chargeTarget ? findUnit(vm.state, enemy.chargeTarget)?.name : undefined;
+      const label = charged.cutsFrame ? `ため：✂ ${charged.name}${aim ? ` → ${aim}` : ''}` : `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
       const ty = bodyY - radius - 12;
       const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
       root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
@@ -658,7 +666,7 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   const poolUids = new Set(vm.pool.map((c) => c.uid));
   if (FILM_UI) {
     // 写真のカード（段階102b）：大きさは枚数で変えず、入りきらない時は重ねる。選んだカードは一番上に
-    const top = y + 18 + (strip ? COMBO_STRIP_H : 0);
+    const top = y + 18 + (strip ? FILM_COMBO_H : 0);
     const areaW = GAME_WIDTH - SIDE_PADDING * 2;
     const cardW = Math.floor((areaW - PHOTO_CARD_GAP * (HAND_SIZE - 1)) / HAND_SIZE);
     const cardH = Math.min(Math.round(cardW * PHOTO_CARD_TALL), height - (top - y) - 8);
@@ -666,8 +674,10 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
     const cy = top + (height - (top - y)) / 2;
     const isSelected = (c: CardInstance) => vm.selectedCardUid === c.uid || vm.comboCardUids.includes(c.uid);
     const order = hand.map((_, i) => i).sort((a, b) => Number(isSelected(hand[a])) - Number(isSelected(hand[b])));
+    const picking = !!vm.selectedComboId && vm.comboCardUids.length > 0;
     for (const i of order) {
       const card = hand[i];
+      const pick = picking && vm.comboCardUids.includes(card.uid);
       drawCard(scene, root, card, xs[i], cy, cardW, cardH, {
         selected: isSelected(card),
         inCombo: comboUids.has(card.uid),
@@ -675,7 +685,17 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
         interactive: vm.interactive,
         actor: vm.actor,
         h,
+        comboPick: pick,
+        faded: picking && !pick,
+        isNew: vm.newCardUids.includes(card.uid),
       });
+    }
+    // コンボを選んだ時だけ、使う札を金のテープでつなぐ（段階102e）
+    if (picking) {
+      const px = hand.map((c, i) => (vm.comboCardUids.includes(c.uid) ? xs[i] : NaN)).filter((v) => !isNaN(v));
+      const ty = cy - cardH / 2 - CARD_LIFT - 9;
+      root.add(scene.add.rectangle(Math.min(...px), ty, Math.max(...px) - Math.min(...px), 5, 0xffd700).setOrigin(0, 0.5));
+      for (const x of px) root.add(scene.add.rectangle(x, ty, 3, 9, 0xffd700).setOrigin(0.5, 0));
     }
     return;
   }
@@ -702,6 +722,10 @@ function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   const s = vm.state;
   const entries = comboEntries(vm);
   const cy = y + COMBO_STRIP_H / 2;
+  if (FILM_UI) {
+    drawFilmComboStrip(scene, root, vm, h, y, entries);
+    return;
+  }
   const strip = scene.add.rectangle(GAME_WIDTH / 2, cy, GAME_WIDTH - SIDE_PADDING * 2, COMBO_STRIP_H, 0x0b1118).setRounded(8).setStrokeStyle(1, 0x2a3b4e);
   root.add(strip);
   makePressable(strip, { onLongPress: () => h.detail('コンボ一覧', comboListText(s, vm.pool)) });
@@ -723,6 +747,71 @@ function drawComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
     makePressable(chip, {
       onTap: ready && vm.interactive ? () => h.tapCombo(e.combo.id) : undefined,
       onLongPress: () => h.detail(e.combo.name, comboDetail(e.combo, vm.actor)),
+    });
+  });
+}
+
+/** 新しい画面のコンボの札の高さ（段階102e。ミニ写真が入る） */
+const FILM_COMBO_H = 46;
+
+/** コンボに要る札ごとに、今の手札で足りているか（手札の札は1枚ずつしか数えない） */
+function comboSlots(combo: ComboDef, pool: CardInstance[]): { id: string; have: boolean }[] {
+  const rest = [...pool];
+  return combo.cards.map((id) => {
+    const i = rest.findIndex((c) => c.card.id === id);
+    if (i >= 0) rest.splice(i, 1);
+    return { id, have: i >= 0 };
+  });
+}
+
+/**
+ * 新しい画面のコンボの札（段階102e）：要る札を小さな写真で並べ、足りない所は点線の枠。
+ * そろったコンボは金の札（タップで選ぶ）、あと1枚の物は黒の札。幅の都合で2つまで（長押しで一覧）
+ */
+function drawFilmComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers, y: number, entries: ReturnType<typeof comboEntries>): void {
+  const s = vm.state;
+  const shown = entries.slice(0, 2);
+  const gap = 8;
+  const bh = FILM_COMBO_H - 6;
+  const by = y + 2;
+  const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap) / 2;
+  shown.forEach((e, i) => {
+    const ready = e.have === e.need;
+    const x = SIDE_PADDING + i * (w + gap);
+    const selected = vm.selectedComboId === e.combo.id;
+    if (ready) root.add(skewBox(scene, x + 3, by + 3, w, bh, selected ? FILM_RED : 0x000000, 1));
+    root.add(skewBox(scene, x, by, w, bh, ready ? 0xffd700 : 0x000000, ready ? 1 : 0.85, { width: selected ? 3 : 1.5, color: selected ? FILM_RED : ready ? 0x000000 : 0xffffff, alpha: ready || selected ? 1 : 0.5 }));
+    // 要る札の小さな写真（足りない所は点線の枠に「?」）
+    let mx = x + SKEW + 6;
+    for (const slot of comboSlots(e.combo, vm.pool)) {
+      const mw = 20;
+      const mh = 28;
+      const my = by + (bh - mh) / 2;
+      const art = CARD_ART[slot.id as keyof typeof CARD_ART];
+      if (slot.have) {
+        root.add(scene.add.rectangle(mx, my, mw, mh, 0xffffff).setOrigin(0).setStrokeStyle(1, 0x000000));
+        if (art && hasImage(scene, art.asset)) root.add(photoCrop(scene, art.asset, mx + 2, my + 2, mw - 4, mh - 4, art));
+      } else {
+        root.add(scene.add.rectangle(mx, my, mw, mh).setOrigin(0).setStrokeStyle(2, 0xff8fb1, 0.9));
+        root.add(addText(scene, mx + mw / 2, my + mh / 2, '?', { size: 12, bold: true, color: '#ff8fb1' }).setOrigin(0.5));
+      }
+      mx += mw + 3;
+    }
+    // 名前は言葉の切れ目で2行に（COMBO_NAME_LINES）。そろった物は★、あと1枚の物は右上にピンクの小札
+    const tx = mx + 4;
+    const name = COMBO_NAME_LINES[e.combo.id] ?? e.combo.name;
+    if (ready) root.add(addText(scene, tx, by + bh / 2, '★', { size: 12, bold: true, color: '#101010' }).setOrigin(0, 0.5));
+    root.add(addText(scene, ready ? tx + 14 : tx, by + bh / 2, name, { size: 12, bold: true, color: ready ? '#101010' : COLORS.text }).setOrigin(0, 0.5).setLineSpacing(1));
+    if (!ready) {
+      const more = addText(scene, x + w - SKEW - 8, by + bh - 9, 'あと1枚', { size: 11, bold: true, color: '#101010' }).setOrigin(1, 0.5);
+      root.add(scene.add.rectangle(more.x + 4, by + bh - 9, more.width + 8, 16, 0xff8fb1).setOrigin(1, 0.5));
+      root.add(more);
+    }
+    const hit = scene.add.rectangle(x + w / 2, by + bh / 2, w, Math.max(bh, MIN_TAP), 0xffffff, 0.001);
+    root.add(hit);
+    makePressable(hit, {
+      onTap: ready && vm.interactive ? () => h.tapCombo(e.combo.id) : undefined,
+      onLongPress: () => h.detail(e.combo.name, `${comboDetail(e.combo, vm.actor)}\n\n${comboListText(s, vm.pool)}`),
     });
   });
 }
@@ -768,6 +857,10 @@ interface CardOptions {
   interactive: boolean;
   actor?: AllyUnit;
   h: ViewHandlers;
+  /** 新しい画面（段階102e）：選んだコンボの材料（金で浮かせる）、コンボを選んでいる間のほかの札（薄く）、延長で引いた札（NEW） */
+  comboPick?: boolean;
+  faded?: boolean;
+  isNew?: boolean;
 }
 
 /** 選んだカードが浮き上がる高さ（段階32a 調整1） */
@@ -889,11 +982,159 @@ const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS
 
 function panelBackground(scene: Phaser.Scene, root: Phaser.GameObjects.Container, title: string): void {
   const { y, h: height } = handArea();
+  if (FILM_UI) {
+    // 新しい画面（段階102e）：黒い箱に、赤い線と斜めの見出し
+    root.add(scene.add.rectangle(SIDE_PADDING, y, GAME_WIDTH - SIDE_PADDING * 2, height, 0x000000, 0.88).setOrigin(0).setStrokeStyle(2, 0xffffff, 0.6));
+    root.add(scene.add.rectangle(SIDE_PADDING, y, GAME_WIDTH - SIDE_PADDING * 2, 3, FILM_RED).setOrigin(0));
+    root.add(slantText(scene, SIDE_PADDING + 10, y + 5, title, 11, '#ffffff', ''));
+    return;
+  }
   root.add(scene.add.rectangle(SIDE_PADDING, y, GAME_WIDTH - SIDE_PADDING * 2, height, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
   root.add(addText(scene, SIDE_PADDING + 8, y + 4, title, { size: 11, color: COLORS.subText }));
 }
 
+/** 一覧のボタンの見た目の追加（新しい画面だけ。段階102e）：左の属性の色の線と、札の小さな写真 */
+type PanelButtonOptions = ButtonOptions & { accent?: number; art?: { asset: string; x: number; y: number } };
+
+/** 一覧のボタン。新しい画面（段階102e）では斜めの黒いボタン（白の縁、選んだ物は赤の縁）。いつもの画面は今までのボタン */
+function panelButton(
+  scene: Phaser.Scene,
+  root: Phaser.GameObjects.Container,
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  label: string,
+  handlers: { onTap?: () => void; onLongPress?: () => void },
+  o: PanelButtonOptions = {},
+): void {
+  if (!FILM_UI) {
+    addButton(scene, root, cx, cy, w, h, label, handlers, o);
+    return;
+  }
+  const enabled = o.enabled ?? true;
+  const selected = (o.strokeWidth ?? 1) >= 3;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  root.add(skewBox(scene, x, y, w, h, selected ? 0x3a0812 : 0x161616, enabled ? 1 : 0.5, { width: selected ? 3 : 1.5, color: selected ? FILM_RED : 0xffffff, alpha: enabled ? 0.85 : 0.3 }));
+  let textX = cx;
+  let textW = w - 18;
+  if (o.accent !== undefined) root.add(scene.add.rectangle(x + SKEW / 2 + 5, cy, 4, h - 12, o.accent, enabled ? 1 : 0.4));
+  if (o.art && hasImage(scene, o.art.asset)) {
+    const ph = h - 10;
+    const img = photoCrop(scene, o.art.asset, x + SKEW / 2 + 11, y + 5, ph, ph, o.art);
+    if (!enabled) img.setAlpha(0.5);
+    root.add(img);
+    textX += (ph + 6) / 2;
+    textW -= ph + 6;
+  }
+  const t = addText(scene, textX, cy, label, { size: o.size ?? 13, bold: true, align: 'center', wrap: textW, color: enabled ? (o.textColor ?? '#ffffff') : COLORS.dimText }).setOrigin(0.5);
+  t.setFontStyle('bold italic');
+  root.add(t);
+  const hit = scene.add.rectangle(cx, cy, w, Math.max(h, MIN_TAP), 0xffffff, 0.001);
+  root.add(hit);
+  makePressable(hit, { onTap: enabled ? handlers.onTap : undefined, onLongPress: handlers.onLongPress });
+}
+
+/** 新しい画面の技の一覧で、一度に見せる数（段階102e） */
+export const FILM_SKILL_ROWS = 6;
+
+/** 技の対象の短い説明（新しい画面の技の一覧。段階102e） */
+function targetLabel(def: ActionDef): string {
+  if (def.target === 'enemy') return '敵1体';
+  if (def.target === 'enemies') return '敵全体';
+  if (def.target === 'ally') return '1人';
+  if (def.target === 'allies') return '全員';
+  const e = def.effects[0];
+  if (e?.kind === 'draw') return `${e.count}枚引く`;
+  if (e?.kind === 'redraw') return '引き直す';
+  if (e?.kind === 'retrieve') return '捨て札から';
+  return '自分';
+}
+
+/**
+ * 新しい画面の魔法・スキルの一覧（段階102e）：後ろに選んでいる人の顔を薄く、技は1行に名前・対象・MP・重さ。
+ * 6つまで一度に見せ、それより多い時は上下になぞって送る（vm.skillPage が一番上の行）
+ */
+function drawFilmSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
+  const actor = vm.actor;
+  const { y, h: height } = handArea();
+  panelBackground(scene, root, '');
+  if (!actor) return;
+  const faceId = ALLY_FACE[actor.defId];
+  if (faceId && hasImage(scene, faceId)) {
+    const pw = 200;
+    const img = photoCrop(scene, faceId, GAME_WIDTH - SIDE_PADDING - pw - 2, y + 3, pw, height - 6, { x: 0.5, y: 0.25 });
+    root.add(img.setAlpha(0.22));
+  }
+  root.add(addText(scene, SIDE_PADDING + 10, y + 6, `${actor.name}の技`, { size: 13, bold: true }));
+  root.add(addText(scene, SIDE_PADDING + 10 + actor.name.length * 13 + 34, y + 6, `MP ${actor.mp}`, { size: 13, bold: true, color: toCss(COLORS.mp) }));
+  const skills = actor.skills;
+  const rows = FILM_SKILL_ROWS;
+  const top = Math.max(0, Math.min(vm.skillPage, skills.length - rows));
+  const rowH = 29;
+  const gap = 3;
+  const listY = y + 26;
+  const left = SIDE_PADDING + 6;
+  const w = GAME_WIDTH - SIDE_PADDING * 2 - 16;
+  skills.slice(top, top + rows).forEach((skill, i) => {
+    const ry = listY + i * (rowH + gap);
+    const cost = skillMpCost(actor, skill);
+    const enough = actor.mp >= cost;
+    const enabled = enough && vm.interactive;
+    const selected = vm.selectedSkillId === skill.id;
+    // 帯は属性の色（火は赤、氷は水色、回復は緑…）。選んだ帯は白に赤の縁
+    const tint = cardColor(skill);
+    if (selected) root.add(skewBox(scene, left + 4, ry + 4, w, rowH, FILM_RED, 1));
+    root.add(skewBox(scene, left, ry, w, rowH, selected ? 0xffffff : 0x000000, enough ? (selected ? 1 : 0.85) : 0.5));
+    if (!selected) root.add(skewBox(scene, left, ry, w, rowH, tint, enough ? 0.42 : 0.15));
+    root.add(skewBox(scene, left, ry, w, rowH, 0x000000, 0, { width: selected ? 2.5 : 1.5, color: selected ? FILM_RED : tint, alpha: enough ? 0.95 : 0.3 }));
+    const cy = ry + rowH / 2;
+    const ink = selected ? '#101010' : enough ? COLORS.text : COLORS.dimText;
+    const sub = selected ? '#333333' : enough ? COLORS.subText : COLORS.dimText;
+    root.add(scene.add.rectangle(left + SKEW + 6, cy, 5, 18, cardColor(skill), enough ? 1 : 0.4));
+    const name = addText(scene, left + SKEW + 16, cy, skill.name, { size: 14, bold: true, color: ink }).setOrigin(0, 0.5);
+    root.add(name);
+    root.add(addText(scene, name.x + name.width + 10, cy, enough ? targetLabel(skill) : 'MP が足りない', { size: 11, bold: true, color: sub }).setOrigin(0, 0.5));
+    root.add(addText(scene, left + w - 62, cy, `MP ${cost}`, { size: 12, bold: true, color: selected ? '#1a5fb0' : enough ? toCss(COLORS.mp) : COLORS.dimText }).setOrigin(1, 0.5));
+    root.add(addText(scene, left + w - 14, cy, weightLabel(skill.weight), { size: 12, color: sub }).setOrigin(1, 0.5));
+    const hit = scene.add.rectangle(left + w / 2, cy, w, rowH, 0xffffff, 0.001);
+    root.add(hit);
+    makePressable(hit, {
+      onTap: enabled ? () => h.tapSkill(skill.id) : undefined,
+      onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
+    });
+  });
+  if (skills.length <= rows) return;
+  // 6つより多い時：右の細い線で今の場所を示し、上下になぞって送る
+  const trackH = rows * (rowH + gap) - gap;
+  root.add(scene.add.rectangle(GAME_WIDTH - SIDE_PADDING - 5, listY, 3, trackH, 0xffffff, 0.2).setOrigin(0.5, 0));
+  const thumbH = (trackH * rows) / skills.length;
+  root.add(scene.add.rectangle(GAME_WIDTH - SIDE_PADDING - 5, listY + ((trackH - thumbH) * top) / (skills.length - rows), 3, thumbH, 0xffffff).setOrigin(0.5, 0));
+  const more = top + rows < skills.length;
+  root.add(addText(scene, GAME_WIDTH - SIDE_PADDING - 12, y + 6, more ? '▼ なぞって下へ' : '▲ なぞって上へ', { size: 11, bold: true, color: '#ffd700' }).setOrigin(1, 0));
+  const onUp = (p: Phaser.Input.Pointer) => {
+    // ポインタの down・up の位置は描く倍率のままなので、カメラで画面の座標に直す
+    const cam = scene.cameras.main;
+    const downY = cam.getWorldPoint(p.downX, p.downY).y;
+    const upY = cam.getWorldPoint(p.upX, p.upY).y;
+    if (!vm.interactive || downY < listY || downY > listY + trackH) return;
+    const dy = upY - downY;
+    if (dy < -24) h.nextSkillPage();
+    else if (dy > 24) h.prevSkillPage();
+  };
+  scene.input.on('pointerup', onUp);
+  // 描き直しで一覧が消えたら、なぞる受け付けもやめる
+  const anchor = scene.add.rectangle(0, 0, 1, 1, 0, 0);
+  root.add(anchor);
+  anchor.once(Phaser.GameObjects.Events.DESTROY, () => scene.input.off('pointerup', onUp));
+}
+
 function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
+  if (FILM_UI) {
+    drawFilmSkillPanel(scene, root, vm, h);
+    return;
+  }
   const actor = vm.actor;
   const left = SIDE_PADDING + 8;
   const width = GAME_WIDTH - SIDE_PADDING * 2 - 16;
@@ -906,7 +1147,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
     const cx = left + slot.x + slot.w / 2;
     const cy = y + slot.y + slot.h / 2;
     if (slot.index < 0) {
-      addButton(scene, root, cx, cy, slot.w, slot.h, `次のページ ▶\n（${layout.page + 1}/${layout.pages}）`, { onTap: () => h.nextSkillPage() }, { enabled: vm.interactive, size: 12 });
+      panelButton(scene, root, cx, cy, slot.w, slot.h, `次のページ ▶\n（${layout.page + 1}/${layout.pages}）`, { onTap: () => h.nextSkillPage() }, { enabled: vm.interactive, size: 12 });
       continue;
     }
     const skill = actor.skills[slot.index];
@@ -916,7 +1157,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
     const type = mainDamageType(skill);
     const info = `MP${cost}　${type ? `${ELEMENT_LABEL[type]}　` : ''}${weightLabel(skill.weight)}`;
     const label = layout.cols === 1 ? `${skill.name}　${info}` : `${skill.name}\n${info}`;
-    addButton(
+    panelButton(
       scene,
       root,
       cx,
@@ -928,7 +1169,7 @@ function drawSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
         onTap: () => h.tapSkill(skill.id),
         onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
       },
-      { enabled: enough && vm.interactive, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: layout.cols === 1 ? 13 : 12 },
+      { enabled: enough && vm.interactive, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: layout.cols === 1 ? 13 : 12, accent: cardColor(skill) },
     );
   }
 }
@@ -949,7 +1190,7 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   const bw = (width - gap * (basics.length - 1)) / basics.length;
   const rowH = 44;
   basics.forEach((b, i) => {
-    addButton(scene, root, left + bw / 2 + i * (bw + gap), y + 24 + rowH / 2, bw, rowH, b.label, { onTap: () => h.tapBasic(b.kind), onLongPress: () => h.detail(b.title, b.detail) }, { enabled: vm.interactive, size: 12 });
+    panelButton(scene, root, left + bw / 2 + i * (bw + gap), y + 24 + rowH / 2, bw, rowH, b.label, { onTap: () => h.tapBasic(b.kind), onLongPress: () => h.detail(b.title, b.detail) }, { enabled: vm.interactive, size: 12 });
   });
   // 2段目：ポーチ（段階51）。残りの数と、この戦闘で使える残りの回数
   const top = y + 24 + rowH + 8;
@@ -962,7 +1203,7 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   pouch.forEach((p, i) => {
     const left2 = pouchLeft(vm.state, p.item.id, except);
     const selected = vm.selectedItemId === p.item.id;
-    addButton(
+    panelButton(
       scene,
       root,
       left + pw / 2 + i * (pw + gap),
@@ -984,25 +1225,26 @@ function cardGrid(
   h: ViewHandlers,
 ): void {
   const { y } = handArea();
-  const cols = 4;
-  const gap = 4;
+  // 新しい画面（段階102e）は札に小さな写真を付けるので、3列にして名前を2行に分ける
+  const cols = FILM_UI ? 3 : 4;
+  const gap = FILM_UI ? 6 : 4;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - 16 - gap * (cols - 1)) / cols;
-  const rowH = 44;
+  const rowH = FILM_UI ? 48 : 44;
   cards.forEach((card, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = SIDE_PADDING + 8 + col * (w + gap) + w / 2;
     const cy = y + 24 + rowH / 2 + row * (rowH + 3);
-    addButton(
+    panelButton(
       scene,
       root,
       x,
       cy,
       w,
       rowH,
-      card.card.name,
+      FILM_UI ? (CARD_NAME_LINES[card.card.id] ?? card.card.name) : card.card.name,
       { onTap: () => onTap(card.uid), onLongPress: () => h.detail(card.card.name, card.card.support ? supportText(card.card) : describeAction(card.card)) },
-      { stroke: cardColor(card.card), size: 11 },
+      { stroke: cardColor(card.card), size: 11, accent: cardColor(card.card), art: CARD_ART[card.card.id as keyof typeof CARD_ART] },
     );
   });
 }
@@ -1153,6 +1395,8 @@ export function chargeCounterText(e: EnemyUnit): string {
   if (e.knownWeaknesses.length > 0) ways.push(`弱点（${e.knownWeaknesses.map((w) => ELEMENT_LABEL[w]).join('・')}）でダウンさせる`);
   const part = a.requiresPart ? e.parts.find((p) => p.id === a.requiresPart && !p.broken) : undefined;
   if (part) ways.push(`${part.name}を壊す`);
+  // 切り取り（段階107）は次のラウンドの一番前に来るので、このラウンドのうちに止める。防御は止め方にならない
+  if (a.cutsFrame) return ways.length > 0 ? `止め方（このラウンドのうちに）：${ways.join('／')}` : '止め方：なし（次のラウンドの最初に切り取られる）';
   ways.push('防御でしのぐ');
   return `止め方：${ways.join('／')}`;
 }
@@ -1328,33 +1572,44 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
   root.add(scene.add.rectangle(0, y, GAME_WIDTH, height, 0x111111).setOrigin(0));
   root.add(scene.add.rectangle(0, y, GAME_WIDTH, 2, 0xffffff).setOrigin(0));
   root.add(scene.add.rectangle(0, y + height - 2, GAME_WIDTH, 2, 0xffffff).setOrigin(0));
-  // フィルムの穴
-  for (let hx = 6; hx < GAME_WIDTH; hx += 22) {
-    root.add(scene.add.rectangle(hx, y + 5, 9, 7, 0xe8e0d0, 0.85).setOrigin(0));
-    root.add(scene.add.rectangle(hx, y + height - 12, 9, 7, 0xe8e0d0, 0.85).setOrigin(0));
+  // フィルムの穴：右から左へ流れ続ける（段階102e。再生中は速く）。描き直しても途切れないよう、時刻から位置を決める
+  const holes = scene.add.container(0, 0);
+  for (let hx = 6; hx < GAME_WIDTH + HOLE_STEP; hx += HOLE_STEP) {
+    holes.add(scene.add.rectangle(hx, y + 5, 9, 7, 0xe8e0d0, 0.85).setOrigin(0));
+    holes.add(scene.add.rectangle(hx, y + height - 12, 9, 7, 0xe8e0d0, 0.85).setOrigin(0));
   }
+  root.add(holes);
+  const period = isPlaying(vm) ? 240 : 1600;
+  const start = -((scene.time.now % period) / period) * HOLE_STEP;
+  loopTween(scene, holes, { x: { from: start, to: start - HOLE_STEP }, duration: period });
   // 再生中（段階102c）は、実行を始めた時の行動順のまま並べ、済んだコマを暗く、今のコマを金の縁にする
   const pb = vm.playback;
   const order = pb?.order ?? vm.order;
-  const n = Math.max(1, order.length);
+  // 延長・バトンの追加行動を選んでいる間は、今のコマの後ろに「+1」のコマを差し込む（段階102e）
+  const extendAt = pb && s.phase === 'extra' && s.extra ? Math.max(0, pb.cursor) : -1;
+  const n = Math.max(1, order.length + (extendAt >= 0 ? 1 : 0));
   const gap = 6;
   const x0 = SIDE_PADDING;
   const fy = y + 16;
   const fh = height - 32;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
   const executing = s.phase === 'execute' || s.phase === 'extra';
+  // 切り取り（段階107）：ためている敵がねらう仲間（予告）と、このラウンドに切り取られた仲間
+  const cutAim = new Set(livingEnemiesOf(s).filter((e) => chargingAction(e)?.cutsFrame && e.chargeTarget).map((e) => e.chargeTarget!));
+  const cutDone = new Set(pb?.cut ?? []);
   order.forEach((entry, i) => {
     const units = entry.ids.map((id) => findUnit(s, id)).filter((u): u is NonNullable<typeof u> => !!u);
     if (units.length === 0) return;
     const unit = units[0];
-    const fx = x0 + i * (w + gap);
+    const fx = x0 + (extendAt >= 0 && i > extendAt ? i + 1 : i) * (w + gap);
+    if (i === extendAt) drawExtendFrame(scene, root, s, fx + w + gap, fy, w, fh, i + 1);
     const isActor = !executing && !!vm.actor && entry.ids.includes(vm.actor.uid);
     const isCurrent = pb ? i === pb.cursor : executing && i === 0;
     const done = !!pb && i < pb.cursor;
     const enemy = unit.side === 'enemy';
     const fill = enemy ? 0x3a0812 : 0x2b2420;
     const frame = skewBox(scene, fx, fy, w, fh, fill, entry.tentative && !isActor ? 0.55 : 1,
-      isActor ? { width: 3, color: FILM_RED } : isCurrent ? { width: 3, color: 0xffd700 } : { width: 1, color: 0x000000 });
+      isActor ? { width: 3, color: FILM_RED } : isCurrent ? { width: 3, color: 0xffd700 } : entry.cut ? { width: 3, color: CUT_BLUE } : { width: 1, color: 0x000000 });
     root.add(frame);
     const cx = fx + w / 2;
     // 決めた行動がスナップ（コンボ）なら、その札の写真を薄く入れる（段階102b）
@@ -1382,7 +1637,9 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const label = isActor
       ? '▶ 選んでいる'
       : enemy
-        ? `${unit.name}${charging ? ' ⚡大技' : ''}`
+        ? entry.cut
+          ? `✂ ${unit.name}`
+          : `${unit.name}${charging ? ' ⚡大技' : ''}`
         : plan
           ? `${tag ? `${tag} ` : ''}${plan}`
           : entry.tentative
@@ -1392,9 +1649,15 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const shown = label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
     root.add(skewBox(scene, fx, fy + fh - 18, w, 18, isActor ? FILM_RED : 0x000000, isActor ? 1 : 0.8));
     root.add(addText(scene, cx, fy + fh - 9, shown, { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+    // 切り取り（段階107）：切り取られたコマは穴に、ねらわれているコマはファインダーの角で囲む
+    if (!enemy && entry.ids.some((id) => cutDone.has(id))) drawCutHole(scene, root, fx, fy, w, fh);
+    else if (!enemy && entry.ids.some((id) => cutAim.has(id))) drawCutAim(scene, root, fx, fy, w, fh);
     // 済んだコマは暗く、今のコマは真ん中に「▶」（段階102c）
     if (done) root.add(skewBox(scene, fx, fy, w, fh, 0x000000, 0.55));
-    if (pb && isCurrent) root.add(slantText(scene, cx, fy + fh / 2 - 8, '▶', 26, '#ffd700', '#000000').setOrigin(0.5));
+    if (pb && isCurrent) {
+      root.add(slantText(scene, cx, fy + fh / 2 - 8, '▶', 26, '#ffd700', '#000000').setOrigin(0.5));
+      if (isPlaying(vm)) drawFramePlaying(scene, root, fx, fy, w, fh);
+    }
     const hit = scene.add.rectangle(cx, fy + fh / 2, w, fh, 0xffffff, 0.001);
     root.add(hit);
     makePressable(hit, {
@@ -1404,6 +1667,95 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
       },
     });
   });
+}
+
+/** 延長で差し込む「+1」のコマ（段階102e）：赤い縁に顔と「▶ 延長で選ぶ」、両わきに継ぎ目の白いテープ */
+function drawExtendFrame(scene: Phaser.Scene, root: Phaser.GameObjects.Container, s: BattleState, fx: number, fy: number, w: number, fh: number, num: number): void {
+  const ally = s.allies.find((a) => a.uid === s.extra?.actorId);
+  if (!ally) return;
+  root.add(skewBox(scene, fx, fy, w, fh, 0x3a0812, 1, { width: 3, color: FILM_RED }));
+  for (const tx of [fx - 5, fx + w - 2]) {
+    for (let ty = fy - 10; ty < fy + fh + 10; ty += 12) root.add(scene.add.rectangle(tx, ty, 6, 6, 0xffffff, 0.55).setOrigin(0));
+  }
+  const cx = fx + w / 2;
+  const faceId = ALLY_FACE[ally.defId];
+  if (faceId && hasImage(scene, faceId)) {
+    const r = Math.min(w, fh) / 2 - 8;
+    root.add(faceImage(scene, faceId, cx, fy + fh / 2 - 6, r, FACE_CROPS[ally.defId]));
+    root.add(scene.add.circle(cx, fy + fh / 2 - 6, r).setStrokeStyle(2, 0xffffff));
+  }
+  root.add(slantText(scene, fx + SKEW + 2, fy + 1, `${String(num).padStart(2, '0')}+`, 14));
+  root.add(slantText(scene, fx + w - 4, fy + 1, '+1', 14, '#ffd700', '#000000').setOrigin(1, 0));
+  root.add(skewBox(scene, fx, fy + fh - 18, w, 18, FILM_RED, 1));
+  root.add(addText(scene, cx, fy + fh - 9, s.extra?.boost ? '▶ バトンで選ぶ' : '▶ 延長で選ぶ', { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+}
+
+/** 切り取り（段階107）の色：カイの枠の光 */
+const CUT_BLUE = 0x9fdcff;
+
+function livingEnemiesOf(s: BattleState): EnemyUnit[] {
+  return s.enemies.filter((e) => e.hp > 0);
+}
+
+/** 切り取りでねらわれているコマ：白いファインダーの角と「✂ 切り取り予告」 */
+function drawCutAim(scene: Phaser.Scene, root: Phaser.GameObjects.Container, fx: number, fy: number, w: number, fh: number): void {
+  const g = scene.add.graphics().lineStyle(3, 0xffffff, 1);
+  const L = 14;
+  const x0 = fx - 3;
+  const y0 = fy - 3;
+  const x1 = fx + w + 3;
+  const y1 = fy + fh + 3;
+  g.lineBetween(x0, y0, x0 + L, y0).lineBetween(x0, y0, x0, y0 + L);
+  g.lineBetween(x1, y0, x1 - L, y0).lineBetween(x1, y0, x1, y0 + L);
+  g.lineBetween(x0, y1, x0 + L, y1).lineBetween(x0, y1, x0, y1 - L);
+  g.lineBetween(x1, y1, x1 - L, y1).lineBetween(x1, y1, x1, y1 - L);
+  root.add(skewBox(scene, fx, fy, w, fh, CUT_BLUE, 0.12));
+  root.add(g);
+  const tag = addText(scene, fx + w / 2, fy - 2, '✂ 切り取り予告', { size: 10, bold: true, color: '#101010' }).setOrigin(0.5);
+  root.add(scene.add.rectangle(fx + w / 2, fy - 2, tag.width + 12, 15, CUT_BLUE));
+  root.add(tag);
+}
+
+/** 切り取られたコマ：黒い穴と白い切り口、「✂ 切り取られた」 */
+function drawCutHole(scene: Phaser.Scene, root: Phaser.GameObjects.Container, fx: number, fy: number, w: number, fh: number): void {
+  root.add(skewBox(scene, fx, fy, w, fh, 0x050505, 0.95, { width: 2, color: 0xffffff, alpha: 0.9 }));
+  const g = scene.add.graphics().lineStyle(1, 0xffffff, 0.12);
+  for (let k = -fh; k < w; k += 10) g.lineBetween(fx + k, fy + fh, fx + k + fh, fy);
+  root.add(g);
+  root.add(addText(scene, fx + w / 2, fy + fh / 2 - 8, '✂ 切り取られた', { size: 11, bold: true, color: toCss(CUT_BLUE) }).setOrigin(0.5));
+  root.add(addText(scene, fx + w / 2, fy + fh / 2 + 9, '行動できない', { size: 10, bold: true }).setOrigin(0.5));
+}
+
+/** フィルムの n コマのうち i 番目の位置（段階107。切り取りの演出で使う） */
+export function filmFrameRect(n: number, i: number): { x: number; y: number; w: number; h: number } {
+  const { y, h } = FILM_LAYOUT.film;
+  const gap = 6;
+  const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (Math.max(1, n) - 1)) / Math.max(1, n);
+  return { x: SIDE_PADDING + i * (w + gap), y: y + 16, w, h: h - 32 };
+}
+
+/** フィルムの穴の間かく */
+const HOLE_STEP = 22;
+
+/** くり返す動き。目の物が消えたら止める（画面を描き直すたびに作り直すため） */
+function loopTween(scene: Phaser.Scene, target: Phaser.GameObjects.GameObject, config: Omit<Phaser.Types.Tweens.TweenBuilderConfig, 'targets'>): void {
+  const tween = scene.tweens.add({ targets: target, repeat: -1, ease: 'Linear', ...config });
+  target.once(Phaser.GameObjects.Events.DESTROY, () => tween.remove());
+}
+
+/** 再生中の今のコマ（段階102e）：映写の光のちらつき、上から下へ走る線、点滅する「● PLAY」 */
+function drawFramePlaying(scene: Phaser.Scene, root: Phaser.GameObjects.Container, fx: number, fy: number, w: number, fh: number): void {
+  const light = skewBox(scene, fx, fy, w, fh, 0xfff4d0, 1);
+  light.setAlpha(0.06);
+  root.add(light);
+  loopTween(scene, light, { alpha: { from: 0.04, to: 0.2 }, duration: 110, yoyo: true });
+  const line = scene.add.rectangle(fx + SKEW / 2 + 2, fy, w - SKEW - 4, 2, 0xffffff, 0.55).setOrigin(0);
+  root.add(line);
+  loopTween(scene, line, { y: { from: fy + 2, to: fy + fh - 20 }, duration: 650 });
+  const rec = addText(scene, fx + SKEW + 4, fy + 20, '● PLAY', { size: 10, bold: true, color: toCss(FILM_RED) });
+  rec.setShadow(1, 1, '#000000', 0, false, true);
+  root.add(rec);
+  loopTween(scene, rec, { alpha: { from: 1, to: 0.15 }, duration: 380, yoyo: true });
 }
 
 /** 仲間のタブ（斜め）：HP・MP と顔。今の番は仲間の色の縁、ねらえる時は金の縁 */
@@ -1437,7 +1789,22 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const nameText = addText(scene, x + SKEW + 4, y + 5, ally.name, { size: 12, bold: true, color: playing ? '#101010' : alive ? toCss(color) : COLORS.dimText });
     root.add(nameText);
     if (playing) root.add(slantText(scene, nameText.x + nameText.width + 8, y + 6, '▶ 行動中', 10, '#b07800', ''));
-    const status = [s.phase === 'extra' && isActor ? (s.extra?.boost ? 'バトン' : '追加') : '', s.precedeIds.includes(ally.uid) ? '先制' : '', ally.guarding ? '防御' : '', alive ? '' : '不能']
+    // 切り取り（段階107）：ねらわれている／このラウンドに切り取られた
+    const cutNow = (vm.playback?.cut ?? []).includes(ally.uid);
+    const aimed = !cutNow && s.enemies.some((e) => e.hp > 0 && chargingAction(e)?.cutsFrame && e.chargeTarget === ally.uid);
+    if (cutNow || aimed) {
+      const badge = slantText(scene, nameText.x + nameText.width + 12, y + 6, cutNow ? '✂ 行動を失った' : '✂ ねらわれている', 10, '#101010', '');
+      root.add(scene.add.rectangle(badge.x - 4, y + 5, badge.width + 8, 15, CUT_BLUE).setOrigin(0));
+      root.add(badge);
+      if (cutNow) root.add(skewBox(scene, x, y, w, height, 0x000000, 0.45));
+    }
+    // 延長・バトンの追加行動を選んでいる仲間（段階102e）
+    if (s.phase === 'extra' && isActor) {
+      const badge = slantText(scene, nameText.x + nameText.width + 12, y + 6, s.extra?.boost ? 'BATON' : 'EXTEND', 10, '#ffffff', '');
+      root.add(scene.add.rectangle(badge.x - 4, y + 5, badge.width + 8, 15, FILM_RED).setOrigin(0));
+      root.add(badge);
+    }
+    const status = [s.precedeIds.includes(ally.uid) ? '先制' : '', ally.guarding ? '防御' : '', alive ? '' : '不能']
       .filter(Boolean)
       .join(' ');
     if (status) root.add(addText(scene, x + w - 50, y + 5, status, { size: 9, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
@@ -1498,7 +1865,7 @@ function drawFilmButtons(scene: Phaser.Scene, root: Phaser.GameObjects.Container
   }
   if (s.phase === 'extra') {
     const batonOk = canAct && batonTargets(s).length > 0;
-    filmButton(scene, root, xs[2], by, wOf(2), bh, 'バトン\nタッチ', { onTap: () => h.tapCommand('baton') }, { enabled: batonOk, fill: batonOk ? 0x5a4a10 : 0x222222, active: vm.batonMode, size: 12 });
+    filmButton(scene, root, xs[2], by, wOf(2), bh, 'バトン\nタッチ', { onTap: () => h.tapCommand('baton') }, { enabled: batonOk, fill: batonOk ? 0xffd700 : 0x222222, textColor: batonOk ? '#101010' : COLORS.text, active: vm.batonMode, size: 12 });
     filmButton(scene, root, xs[3], by, wOf(3), bh, '見送る', { onTap: () => h.tapBasic('decline') }, { enabled: canAct });
     return;
   }
@@ -1588,10 +1955,15 @@ function drawPhotoCard(
   const angle = o.selected ? 0 : (((card.uid * 37) % 7) - 3) * 0.5;
   const c = scene.add.container(x, o.selected ? cy - CARD_LIFT : cy).setAngle(angle);
   root.add(c);
+  if (o.faded) c.setAlpha(0.4);
   const L = -w / 2;
   const T = -hgt / 2;
-  c.add(scene.add.rectangle(4, 4, w, hgt, o.selected ? FILM_RED : color, dim ? 0.3 : 1));
-  c.add(scene.add.rectangle(0, 0, w, hgt, dim ? 0x8c8c8c : 0xffffff).setStrokeStyle(3, o.selected ? FILM_RED : 0x000000));
+  // そろったコンボの札は金に光る（段階102e）。選んだコンボの材料は金の縁で浮かせる
+  const gold = (o.inCombo && !dim) || o.comboPick;
+  if (gold) c.add(scene.add.rectangle(0, 0, w + 10, hgt + 10, 0xffd700, 0.35));
+  const edge = o.comboPick ? 0xffd700 : o.selected ? FILM_RED : 0x000000;
+  c.add(scene.add.rectangle(4, 4, w, hgt, gold ? 0xffd700 : o.selected ? FILM_RED : color, dim ? 0.3 : 1));
+  c.add(scene.add.rectangle(0, 0, w, hgt, dim ? 0x8c8c8c : 0xffffff).setStrokeStyle(3, edge));
   // 写真
   const inset = 6;
   const pw = w - inset * 2;
@@ -1613,11 +1985,10 @@ function drawPhotoCard(
   c.add(addIcon(scene, iconKind, L + inset + 8, T + inset + 7.5, 10, 0xffffff, dim ? 0.5 : 1));
   tag.setPosition(L + inset + 15, T + inset + 7.5).setOrigin(0, 0.5);
   c.add(tag);
-  if (o.inCombo && !dim) {
-    const bx = L + inset + pw - 9;
-    const by = T + inset + 9;
-    c.add(scene.add.circle(bx, by, 8, COLORS.accent).setStrokeStyle(2, 0x000000));
-    c.add(addText(scene, bx, by, 'C', { size: 10, bold: true, color: '#101820' }).setOrigin(0.5));
+  if (o.isNew) {
+    const tag = addText(scene, L + w - 4, T - 6, 'NEW', { size: 10, bold: true, color: '#101010' }).setOrigin(1, 0.5);
+    c.add(scene.add.rectangle(tag.x - tag.width / 2, T - 6, tag.width + 10, 15, 0xffd700).setStrokeStyle(1, 0x000000).setAngle(-6));
+    c.add(tag.setAngle(-6));
   }
   // 名前（黒の太字）
   const footY = hgt / 2 - 13;

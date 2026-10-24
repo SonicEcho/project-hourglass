@@ -1,0 +1,36 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="../common.css"><link rel="stylesheet" href="panels.css"><style>
+.dim { left: 0; right: 0; top: 0; height: 364px; background: #0008; } .dim2 { left: 0; right: 0; top: 470px; bottom: 0; background: #0008; }
+.film { left: 0; right: 0; top: 364px; height: 106px; background: #111; border-top: 2px solid #fff; border-bottom: 2px solid #fff; overflow: hidden; }
+.holes { position: absolute; left: 0; right: 0; height: 7px; background: repeating-linear-gradient(90deg, transparent 0 6px, #e8e0d0 6px 15px, transparent 15px 22px); }
+.holes.t { top: 5px; } .holes.bt { bottom: 5px; }
+.fr { position: absolute; top: 16px; height: 74px; transform: skewX(-8deg); background: #2b2420; overflow: hidden; }
+.fr .ph { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.fr .n { position: absolute; left: 8px; top: 0; font-size: 14px; font-weight: 900; font-style: italic; text-shadow: 2px 2px 0 #ff2d55; }
+.fr .lb { position: absolute; left: 0; right: 0; bottom: 0; background: #000c; font-size: 11px; font-weight: 900; text-align: center; padding: 2px 0; }
+.fr.done { filter: brightness(.45); }
+.fr.ext { top: 8px; height: 90px; background: #3a0812; box-shadow: inset 0 0 0 3px #ff2d55, 0 0 18px #ff2d55; }
+.fr .face { position: absolute; left: 50%; top: 8px; width: 50px; height: 50px; margin-left: -25px; border-radius: 50%; border: 2px solid #fff; background: url('../../../../public/assets/portraits/hero_determined.webp') 50% 12% / 230%; }
+.splice { position: absolute; top: 0; width: 14px; height: 106px; background: repeating-linear-gradient(0deg, #fff9 0 6px, #fff4 6px 12px); }
+.slide { position: absolute; top: 46px; font-size: 18px; color: #fff; opacity: .7; }
+.big { left: 0; right: 0; top: 262px; text-align: center; font-size: 40px; font-weight: 900; font-style: italic; color: #fff; text-shadow: 3px 3px 0 #ff2d55, 5px 5px 0 #000; }
+.sub { left: 0; right: 0; top: 478px; text-align: center; font-size: 13px; font-weight: 900; }
+.sub span { background: #000; border: 1px solid #ff2d55; padding: 3px 12px; }
+.down { left: 236px; top: 150px; background: #ff2d55; color: #fff; font-size: 26px; font-weight: 900; font-style: italic; padding: 2px 16px; transform: skewX(-12deg); }
+.time { right: 10px; top: 540px; font-size: 11px; color: #ffd700; background: #000c; padding: 2px 8px; }
+</style></head><body>
+<div class="abs dim"></div><div class="abs dim2"></div>
+<div class="abs down">DOWN</div>
+<div class="abs film"><div class="holes t"></div><div class="holes bt"></div>
+  <div class="fr done" style="left:-30px;width:84px"><div class="ph" style="background:#3a0812"></div><span class="n">01</span><div class="lb">カイ</div></div>
+  <div class="fr done" style="left:60px;width:84px"><div class="ph" style="background-image:url('../../../../public/assets/cg/white_city.webp')"></div><span class="n">02</span><div class="lb">アイスニードル</div></div>
+  <div class="splice" style="left:150px"></div>
+  <div class="fr ext" style="left:168px;width:110px"><span class="n">+1</span><div class="face"></div><div class="lb" style="background:#ff2d55">EXTEND</div></div>
+  <div class="splice" style="left:284px"></div>
+  <div class="fr" style="left:304px;width:84px"><div class="ph" style="background-image:url('../../../../public/assets/cg/tandem_bicycle.webp')"></div><span class="n">03</span><div class="lb">リカバー</div></div>
+  <span class="slide" style="left:296px">▶</span>
+</div>
+<div class="abs big">Extend!</div>
+<div class="abs sub"><span>ハルト：弱点でダウン！ 1枚引いて、もう一度</span></div>
+<div class="abs time">0.5秒ほど・早送り中は出さない</div>
+<div class="abs tag">直し④：延長の瞬間。フィルムの切れ目に「+1」のコマが継ぎ足され、後ろのコマが右へ押される</div>
+</body></html>

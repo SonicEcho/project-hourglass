@@ -43,3 +43,13 @@ export const COMBOS: ComboDef[] = [
     effects: [{ kind: 'heal', power: 45 }],
   },
 ];
+
+/**
+ * コンボの名前を2行で出す時の、行の分け方（段階102e。新しい戦闘の画面のコンボの札）。改行を除くと名前と同じにする（テストが確かめる）
+ */
+export const COMBO_NAME_LINES: Record<string, string> = {
+  elementBurst: 'エレメント\nバースト',
+  tripleSword: 'トリプル\nソード',
+  breakCrush: 'ブレイク\nクラッシュ',
+  healCircle: 'ヒール\nサークル',
+};

@@ -47,10 +47,11 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
-import { actorLinks, chargeCounterText, drawBattle, FILM_UI, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
-import { LAYOUT } from '../ui/layout';
+import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { actorLinks, chargeCounterText, drawBattle, FILM_SKILL_ROWS, FILM_UI, filmFrameRect, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { FILM_LAYOUT, LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
+import { hasImage } from '../assets/loader';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip, seenTips } from '../ui/tipPanel';
@@ -139,6 +140,8 @@ export class BattleScene extends Phaser.Scene {
   private special = false;
   /** 新しい画面の再生中（段階102c）：実行を始めた時の行動順と決めた行動、今どのコマを再生しているか。計画に戻ると消す */
   private film?: FilmPlayback;
+  /** 延長で引いた札（段階102e。追加行動を選んでいる間、NEW の印を付ける） */
+  private newCards: number[] = [];
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
   /** オートの作戦（オート中だけ。段階29） */
   private auto: Tactic | null = null;
@@ -447,7 +450,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.busy || !isPlanComplete(this.state)) return;
     const plans = this.planInfo(this.state);
     this.state = startExecution(this.state);
-    if (FILM_UI) this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [] };
+    if (FILM_UI) this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [], cut: [] };
     void this.runExecution();
   }
 
@@ -528,7 +531,8 @@ export class BattleScene extends Phaser.Scene {
       this.message = this.describeHeadline(prev, act);
       if (this.film) this.advanceFilm(act);
       this.render(prev);
-      if (link) await this.linkCutIn(prev, link, barks.link);
+      if (link && FILM_UI) await this.filmLinkCutIn(prev, link, barks.link);
+      else if (link) await this.linkCutIn(prev, link, barks.link);
       else if (combo) await this.comboCutIn(combo);
       else {
         // 新しい画面は、手札の上の字幕で見せる（段階102c）
@@ -632,6 +636,96 @@ export class BattleScene extends Phaser.Scene {
     c.destroy(true);
   }
 
+  /**
+   * 新しい画面の連携技のカットイン（段階102d）：画面を斜めに2つに分けて、上の帯に1人目、下の帯に2人目の立ち絵を大きく。
+   * 真ん中の黒い箱に技名。かけ合いの台詞があれば名前の下に吹き出しで出し、立ち絵もその表情にする
+   */
+  private async filmLinkCutIn(s: BattleState, link: LinkDef, barks: Bark[] = []): Promise<void> {
+    if (this.skipping) return;
+    const c = this.add.container(0, 0);
+    this.fxLayer.add(c);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0));
+    const rad = Phaser.Math.DegToRad(-12);
+    const bandH = 320;
+    const bandW = GAME_WIDTH + 260;
+    const centers = [GAME_HEIGHT / 2 - bandH / 2 - 8, GAME_HEIGHT / 2 + bandH / 2 + 8];
+    // 帯の中の点（帯の真ん中からの位置）を、画面の座標にする
+    const at = (cy: number, lx: number, ly: number) => new Phaser.Math.Vector2(GAME_WIDTH / 2 + lx * Math.cos(rad) - ly * Math.sin(rad), cy + lx * Math.sin(rad) + ly * Math.cos(rad));
+    const masks: Phaser.GameObjects.Graphics[] = [];
+    link.members.slice(0, 2).forEach((id, i) => {
+      const unit = findUnit(s, id);
+      const defId = unit && 'defId' in unit ? unit.defId : id;
+      const color = ALLY_COLOR[defId] ?? COLORS.ally;
+      const cy = centers[i];
+      const corners = [at(cy, -bandW / 2, -bandH / 2), at(cy, bandW / 2, -bandH / 2), at(cy, bandW / 2, bandH / 2), at(cy, -bandW / 2, bandH / 2)];
+      // 帯の中身（色・斜線・立ち絵）はまとめて帯の形で切る
+      const mask = this.make.graphics({}, false).fillStyle(0xffffff).fillPoints(corners, true);
+      masks.push(mask);
+      const inner = this.add.container(0, 0);
+      inner.setMask(mask.createGeometryMask());
+      c.add(inner);
+      inner.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, color).setOrigin(0));
+      const lines = this.add.graphics().lineStyle(2, 0xffffff, 0.14);
+      for (let x = -200; x < GAME_WIDTH + 200; x += 22) lines.lineBetween(x, cy - bandH, x + 60, cy + bandH);
+      inner.add(lines);
+      // 立ち絵：上は右、下は左に置き、横から滑り込む
+      const bark = barks.find((b) => b.allyId === defId);
+      const barkId = bark ? portraitImageId(this, BARK_CAST[defId] ?? '', bark.face) : '';
+      const pid = barkId || ALLY_FACE[defId];
+      if (pid && hasImage(this, pid)) {
+        const img = this.add.image(0, 0, pid).setOrigin(0.5, 0);
+        img.setScale((bandH * 1.45) / img.height);
+        const px = i === 0 ? GAME_WIDTH * 0.66 : GAME_WIDTH * 0.34;
+        img.setPosition(px + (i === 0 ? 90 : -90), cy - bandH / 2 - 30).setAlpha(0);
+        inner.add(img);
+        this.tweens.add({ targets: img, x: px, alpha: 1, duration: 280, delay: i * 160, ease: 'Cubic.easeOut' });
+      }
+      const edge = this.add.graphics().lineStyle(10, 0x000000).strokePoints(corners, true).lineStyle(4, 0xffffff).strokePoints(corners, true);
+      c.add(edge);
+      // 名前（斜めの字）と、かけ合いの台詞
+      const np = i === 0 ? at(cy, -GAME_WIDTH / 2 + 30, -bandH / 2 + 58) : at(cy, GAME_WIDTH / 2 - 30, bandH / 2 - 58);
+      const name = addText(this, np.x, np.y, unit?.name ?? id, { size: 26, bold: true }).setOrigin(i === 0 ? 0 : 1, 0.5).setAngle(-12);
+      name.setFontStyle('bold italic').setShadow(3, 3, '#000000', 0, false, true);
+      c.add(name);
+      if (bark) {
+        const bp = i === 0 ? at(cy, -GAME_WIDTH / 2 + 34, -bandH / 2 + 104) : at(cy, GAME_WIDTH / 2 - 34, bandH / 2 - 104);
+        const t = addText(this, 0, 0, bark.text, { size: 14, bold: true, color: '#101010', wrap: 190 });
+        const box = this.add.container(bp.x, bp.y).setAngle(-12);
+        const bw = t.width + 20;
+        const bh = t.height + 12;
+        box.add(this.add.rectangle(i === 0 ? 0 : -bw, -bh / 2, bw, bh, 0xffffff).setOrigin(0).setStrokeStyle(3, 0x000000));
+        t.setPosition(i === 0 ? 10 : -bw + 10, -bh / 2 + 6);
+        box.add(t);
+        box.setAlpha(0);
+        c.add(box);
+        this.tweens.add({ targets: box, alpha: 1, duration: 160, delay: 300 + i * 420 });
+      }
+    });
+    // 真ん中の技名
+    const title = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setAngle(-8);
+    const label = addText(this, 0, 0, link.name, { size: 34, bold: true });
+    label.setFontStyle('bold italic').setShadow(4, 4, '#ff2d55', 0, false, true).setOrigin(0.5);
+    const boxW = Math.max(240, label.width + 48);
+    title.add(this.add.rectangle(0, 4, boxW, 66, 0x000000).setStrokeStyle(2, 0xffffff, 0.5));
+    title.add(label);
+    const tag = addText(this, -boxW / 2 + 12, -46, 'L I N K   A T T A C K', { size: 13, bold: true, color: '#ffd700' });
+    tag.setFontStyle('bold italic').setShadow(2, 2, '#000000', 0, false, true);
+    title.add(tag);
+    title.setScale(2.2).setAlpha(0);
+    c.add(title);
+    const talk = barks.length > 0 ? 900 : 0;
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 420 + talk, duration: 280, ease: 'Back.easeOut' });
+    await this.wait(1250 + talk);
+    if (!this.skipping) {
+      const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0);
+      this.fxLayer.add(flash);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 300 });
+      this.cameras.main.shake(260, 0.012);
+    }
+    c.destroy(true);
+    for (const m of masks) m.destroy();
+  }
+
   /** コンボのカットイン：金色の帯に技名 */
   private async comboCutIn(combo: ComboDef): Promise<void> {
     if (this.skipping) return;
@@ -669,6 +763,7 @@ export class BattleScene extends Phaser.Scene {
     if (e.type === 'standUp') return `${findUnit(s, e.enemyId)?.name ?? ''}は立ち上がった（行動できない）`;
     if (e.type === 'baton') return `${findUnit(s, e.fromId)?.name}から${findUnit(s, e.toId)?.name}へバトンタッチ！`;
     if (e.type === 'cancel') return `${names(e.actorIds)}は行動できなかった`;
+    if (e.type === 'charge' && e.targetId) return `${findUnit(s, e.enemyId)?.name ?? ''}は${findUnit(s, e.targetId)?.name ?? ''}をねらっている…（次のラウンドの最初に${e.name}！）`;
     if (e.type === 'charge') return `${findUnit(s, e.enemyId)?.name ?? ''}は力をためている…（次の行動で${e.name}！）`;
     if (e.type === 'chargeBroken') return `${findUnit(s, e.enemyId)?.name ?? ''}のためが解けた！`;
     return '';
@@ -713,9 +808,15 @@ export class BattleScene extends Phaser.Scene {
         else this.popup(p.x, p.y, `+${e.amount}`, COLORS.heal, 20);
         return true;
       }
-      case 'oneMore':
-        this.bigText('Extend!');
+      case 'oneMore': {
+        // 延長で引いた札を覚えておく（すぐ後の draw の記録）
+        const i = s.log.indexOf(e);
+        const drew = i >= 0 ? s.log.slice(i + 1).find((x) => x.type === 'draw') : undefined;
+        this.newCards = drew?.type === 'draw' ? drew.cardUids : [];
+        if (FILM_UI) this.filmExtend(s, e.actorId);
+        else this.bigText('Extend!');
         return true;
+      }
       case 'partBreak': {
         // 段階89：壊れた所から破片が飛び、画面が揺れる。壊れた所は、絵の上に欠けた跡として残る（battleViews の drawParts）
         const p = unitPosition(s, e.enemyId, e.partId);
@@ -767,6 +868,22 @@ export class BattleScene extends Phaser.Scene {
       case 'standUp': {
         const p = unitPosition(s, e.enemyId);
         this.popup(p.x, p.y, '立ち上がった', COLORS.subText, 14);
+        return true;
+      }
+      case 'frameCut': {
+        // 切り取り（段階107）：仲間のこのラウンドの行動が抜かれた
+        if (this.film) this.film.cut = [...this.film.cut, ...e.allyIds];
+        if (FILM_UI) this.filmCut(s, e.enemyId, e.allyIds);
+        else {
+          const p = unitPosition(s, e.allyIds[0]);
+          this.popup(p.x, p.y - 20, '切り取られた！', '#9fdcff', 18);
+        }
+        return true;
+      }
+      case 'frameRestored': {
+        if (this.film) this.film.cut = this.film.cut.filter((id) => !e.allyIds.includes(id));
+        const p = unitPosition(s, e.allyIds[0]);
+        this.popup(p.x, p.y - 20, '行動が戻った！', COLORS.heal, 18);
         return true;
       }
       case 'cardErased': {
@@ -855,6 +972,62 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: piece, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6 + 40, angle: piece.angle + 180, alpha: 0, duration: 700, ease: 'Cubic.easeOut', onComplete: () => piece.active && piece.destroy() });
     }
     this.impact(x, y, 0xffe0a0);
+  }
+
+  /**
+   * 新しい画面の延長の瞬間（段階102e）：フィルムが光り、その上に「Extend!」、下に誰がなぜか。0.5秒ほど。
+   * 「+1」のコマは、画面を描き直した時にフィルムに差し込まれている（battleViews の drawFilmStrip）
+   */
+  private filmExtend(s: BattleState, actorId: string): void {
+    if (this.skipping) return;
+    const { y, h } = FILM_LAYOUT.film;
+    const flash = this.add.rectangle(0, y, GAME_WIDTH, h, 0xffffff, 0.55).setOrigin(0);
+    this.fxLayer.add(flash);
+    this.tweens.add({ targets: flash, alpha: 0, duration: 380 });
+    const big = addText(this, GAME_WIDTH / 2, y - 62, 'Extend!', { size: 40, bold: true }).setOrigin(0.5);
+    big.setFontStyle('bold italic').setShadow(3, 3, '#ff2d55', 0, false, true).setStroke('#000000', 6).setScale(1.6).setAlpha(0);
+    this.fxLayer.add(big);
+    this.tweens.add({ targets: big, scale: 1, alpha: 1, duration: 180, ease: 'Back.easeOut' });
+    const name = findUnit(s, actorId)?.name ?? '';
+    const sub = addText(this, GAME_WIDTH / 2, y + h + 14, `${name}：弱点でダウン！ 1枚引いて、もう一度`, { size: 13, bold: true }).setOrigin(0.5);
+    this.fxLayer.add(this.add.rectangle(GAME_WIDTH / 2, y + h + 14, sub.width + 24, 24, 0x000000).setStrokeStyle(1, 0xff2d55));
+    this.fxLayer.add(sub);
+  }
+
+  /**
+   * 新しい画面の切り取り（段階107）：フィルムのコマを白い枠が囲み、斜めの光で切れ、「CUT!」。
+   * コマを写し取った絵が白黒になって、カイの方へ吸い込まれる。コマの穴は、描き直した時に battleViews が描く
+   */
+  private filmCut(s: BattleState, enemyId: string, allyIds: string[]): void {
+    if (this.skipping || !this.film) return;
+    const order = this.film.order;
+    const i = order.findIndex((o) => o.ids.some((id) => allyIds.includes(id)));
+    if (i < 0) return;
+    const r = filmFrameRect(order.length, i);
+    this.fxLayer.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.45).setOrigin(0));
+    this.render();
+    // 切れたコマ：白い縁の白黒のコマに「✂」と、決めていた行動
+    const cx = r.x + r.w / 2;
+    const cy = r.y + r.h / 2;
+    const piece = this.add.container(cx, cy);
+    piece.add(this.add.graphics().fillStyle(0x3a3a3a, 1).fillRect(-r.w / 2, -r.h / 2, r.w, r.h).lineStyle(3, 0xffffff, 1).strokeRect(-r.w / 2, -r.h / 2, r.w, r.h));
+    const label = this.film.labels[allyIds[0]] ?? findUnit(s, allyIds[0])?.name ?? '';
+    piece.add(addText(this, 0, -8, '✂', { size: 20, bold: true, color: '#9fdcff' }).setOrigin(0.5));
+    piece.add(addText(this, 0, r.h / 2 - 12, label, { size: 10, bold: true, color: '#dddddd', align: 'center', wrap: r.w - 8 }).setOrigin(0.5));
+    this.fxLayer.add(piece);
+    // ファインダー（白い枠）と、斜めの光
+    const vf = this.add.graphics().lineStyle(3, 0xffffff, 1).strokeRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12);
+    this.fxLayer.add(vf);
+    const slash = this.add.rectangle(cx, cy, r.w * 2.2, 4, 0xffffff).setAngle(-24).setScale(0, 1);
+    this.fxLayer.add(slash);
+    this.tweens.add({ targets: slash, scaleX: 1, duration: 140, ease: 'Cubic.easeOut' });
+    const cut = addText(this, cx + 40, r.y - 46, 'CUT!', { size: 44, bold: true }).setOrigin(0.5).setAngle(-10);
+    cut.setFontStyle('bold italic').setShadow(3, 3, '#9fdcff', 0, false, true).setStroke('#000000', 6);
+    this.fxLayer.add(cut);
+    // 切れたコマは、カイの方へ吸い込まれる
+    const to = unitPosition(s, enemyId);
+    this.tweens.add({ targets: piece, x: to.x, y: to.y, scale: 0.3, angle: -18, alpha: 0.25, delay: 260, duration: 520, ease: 'Cubic.easeIn' });
+    this.tweens.add({ targets: vf, alpha: 0, delay: 260, duration: 300 });
   }
 
   private bigText(text: string): void {
@@ -1204,9 +1377,18 @@ export class BattleScene extends Phaser.Scene {
       },
       tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
       nextSkillPage: () => {
+        const actor = this.actor(this.state);
+        const actorId = actor?.uid ?? '';
+        const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
+        // 新しい画面（段階102e）は1行ずつ送り、最後の行が見えたら止める
+        const next = FILM_UI ? Math.min(page + 1, Math.max(0, (actor?.skills.length ?? 0) - FILM_SKILL_ROWS)) : page + 1;
+        this.skillPage = { actorId, page: next };
+        this.render();
+      },
+      prevSkillPage: () => {
         const actorId = this.actor(this.state)?.uid ?? '';
         const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
-        this.skillPage = { actorId, page: page + 1 };
+        this.skillPage = { actorId, page: Math.max(0, page - 1) };
         this.render();
       },
       tapBasic: (kind) => {
@@ -1347,6 +1529,7 @@ export class BattleScene extends Phaser.Scene {
       planLabels,
       planCards,
       playback: this.film,
+      newCardUids: s.phase === 'extra' ? this.newCards : [],
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,

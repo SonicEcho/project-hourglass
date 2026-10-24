@@ -1,0 +1,11 @@
+/* 段階107：カイの「切り取り」でフィルムのコマを切る（イメージ）。本物の画面（kai_plan.png・kai_play.png）に重ねる。作り込まない見本 */
+.tag { left: 8px; top: 50px; font-size: 11px; font-weight: bold; background: #000c; border-left: 4px solid #ff2d55; padding: 3px 8px; max-width: 300px; }
+.slant { font-weight: 900; font-style: italic; }
+/* ファインダーの角 */
+.vf { position: absolute; border-color: #fff; border-style: solid; width: 18px; height: 18px; filter: drop-shadow(0 0 4px #9fdcff); }
+.vf.tl { border-width: 3px 0 0 3px; } .vf.tr { border-width: 3px 3px 0 0; } .vf.bl { border-width: 0 0 3px 3px; } .vf.br { border-width: 0 3px 3px 0; }
+.msg { left: 6px; right: 6px; top: 330px; height: 30px; background: #000; border: 1px solid #9fdcff; transform: skewX(-12deg); display: grid; place-items: center; font-size: 12px; font-weight: 900; }
+.sub { left: 8px; right: 8px; top: 604px; height: 92px; background: #000; border: 2px solid #fff; transform: skewX(-8deg); padding: 10px 26px; }
+.sub::before { content: ''; position: absolute; left: 4px; top: 2px; bottom: 2px; width: 6px; background: #ffd700; }
+.sub small { display: block; color: #ffd700; font-size: 12px; font-style: italic; font-weight: 900; }
+.sub b { display: block; font-size: 15px; margin-top: 6px; line-height: 1.5; }
