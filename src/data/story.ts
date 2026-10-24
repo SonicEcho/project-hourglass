@@ -31,6 +31,11 @@ export const CHAPTER1_LINEUP: Lineup = { members: [HERO.id, AKARI.id], unlocks: 
 
 /** 2章（段階38）：みおが加わって3人。ムーブメントも開ける（どの育成も、探索のチェックポイントから開く。初めて開けるのは 2-1 の銭湯の前） */
 export const CHAPTER2_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true }, chapter: 2 };
+/**
+ * 2章の始め（8日目の朝・昼。段階108。テストプレイのメモ 1・21）：みおが加わる 5-C（d5_evening）より前は、1章と同じ2人で、ムーブメントもまだ開かない。
+ * 8日目の昼に拠点（レストピア）を開けるようになったので、星図にみおが出て、ムーブメントのメニューが出ていた
+ */
+export const CHAPTER2_EARLY_LINEUP: Lineup = { members: [HERO.id, AKARI.id], unlocks: { growth: true, navi: false, weapon: true }, chapter: 2 };
 
 /** 3章（段階88）：3-1 までは2章と同じ3人（小夜子の加入と、その後の戦闘の人数は段階89・90 で決める） */
 export const CHAPTER3_LINEUP: Lineup = { members: [HERO.id, AKARI.id, MIO.id], unlocks: { growth: true, navi: true, weapon: true }, chapter: 3 };
@@ -142,8 +147,10 @@ export const SLICE_FLOW: Flow = [
   {
     id: 'ch2',
     name: '第2章「背中を押す声」',
-    // みおを入れた3人と、ムーブメントの開放（段階38）。みおが仲間になるのは 5-C（d5_evening）で、それより前に戦闘はない
-    lineup: CHAPTER2_LINEUP,
+    // みおを入れた3人と、ムーブメントの開放（段階38）。みおが仲間になるのは 5-C（d5_evening）で、それより前に戦闘はない。
+    // それより前（8日目の朝・昼）は2人で、ムーブメントも開かない（段階108）
+    lineup: CHAPTER2_EARLY_LINEUP,
+    lineupChanges: [{ from: 'd5_evening', lineup: CHAPTER2_LINEUP }],
     // 段階63・66で 1-1・1-2 を3晩に広げたので、2章は8日目から（出来事の id は d5_… のまま）。
     // 段階78：2-1 を3晩に分けて入る形にし（脚本 docs/script/2-1_rework.md）、8〜11日目にした。2-2・2-3 と2章の終わりは、中身は今のまま12〜14日目にずらした。
     // 段階82：2-2 を3晩に分け（12〜14日目）、返した翌日（15日目）を足した。

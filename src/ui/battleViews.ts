@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType } from './describe';
 import { weightLabel } from './labels';
@@ -215,7 +215,8 @@ function drawTurnOrder(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
  */
 function enemyGeometry(s: BattleState, i: number) {
   const n = s.enemies.length;
-  const withParts = n === 1 && s.enemies[0].parts.length > 0;
+  // 部位を持つボス1体と、部位がなくても大きく出す敵（ENEMY_ART_BIG）1体は、本体を大きく出す
+  const withParts = n === 1 && (s.enemies[0].parts.length > 0 || ENEMY_ART_BIG.includes(s.enemies[0].defId));
   return {
     cx: columnX(i, n),
     colW: GAME_WIDTH / n,

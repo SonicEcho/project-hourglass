@@ -239,3 +239,11 @@ describe('@if：覚えた値が合えば行き先へ飛ぶ（段階82）', () =>
     expect(checkScript(parseScript('# s テスト\n@if 絆の一番 みお nowhere\nあかり「a」\n'))).toHaveLength(1);
   });
 });
+
+describe('@cast の表情（段階108）', () => {
+  it('「名前〔表情〕」は名前と表情に分け、表情がなければ名前だけ', async () => {
+    const { castEntry } = await import('../../src/core');
+    expect(castEntry('あかり〔悲しい〕')).toEqual({ name: 'あかり', face: '悲しい' });
+    expect(castEntry('写しのゆうま')).toEqual({ name: '写しのゆうま' });
+  });
+});

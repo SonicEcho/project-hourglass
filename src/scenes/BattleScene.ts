@@ -132,6 +132,8 @@ export class BattleScene extends Phaser.Scene {
   private busy = false;
   private root!: Phaser.GameObjects.Container;
   private fxLayer!: Phaser.GameObjects.Container;
+  /** 技の名前の帯（バナー）。部位破壊の砂などの演出に隠れないよう、演出の層より上に置く（段階108。テストプレイのメモ 17） */
+  private bannerLayer!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
   private skipping = false;
   /** 戦闘中のひとことを出しすぎないための覚え（段階46a） */
@@ -201,6 +203,7 @@ export class BattleScene extends Phaser.Scene {
     this.planner = this.nextPlanner(null);
     this.root = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0).setDepth(100);
+    this.bannerLayer = this.add.container(0, 0).setDepth(150);
     setActiveBattle({
       progress: this.progress,
       getState: () => this.state,
@@ -429,6 +432,7 @@ export class BattleScene extends Phaser.Scene {
         this.banner(`ラウンド ${after.round}`);
         await this.wait(FX.round);
         this.fxLayer.removeAll(true);
+        this.bannerLayer.removeAll(true);
       }
     }
     this.busy = false;
@@ -549,6 +553,7 @@ export class BattleScene extends Phaser.Scene {
     if (barks.victory) await this.showBark(barks.victory);
     await this.wait(FX.settle);
     this.fxLayer.removeAll(true);
+    this.bannerLayer.removeAll(true);
     this.special = false;
   }
 
@@ -961,15 +966,37 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /** 部位が壊れた所から、破片が飛び散って落ちる（段階89） */
+  /** 部位が壊れた所から、砂がさらさらと流れ落ちる（段階108。テストプレイのメモ 18：前は大きなかけら12個で、チープに見えた） */
   private shards(x: number, y: number): void {
     if (this.skipping) return;
-    for (let k = 0; k < 12; k++) {
-      const a = (Math.PI * 2 * k) / 12 + (k % 3) * 0.2;
-      const d = 34 + (k % 4) * 12;
-      const size = 4 + (k % 3) * 3;
-      const piece = this.add.rectangle(x, y, size, size * 0.7, k % 2 ? 0xe8d8b0 : 0xb08a3a).setAngle(k * 37);
+    const sand = [0xf3e2b8, 0xe8d8b0, 0xd9ae62, 0xb08a3a, 0x8a6a2a];
+    for (let k = 0; k < 44; k++) {
+      // 決まった並びの「ばらつき」（乱数を使わず、毎回同じ見え方にする）
+      const r1 = ((k * 37) % 44) / 44;
+      const r2 = ((k * 53 + 11) % 44) / 44;
+      const size = 1.5 + r2 * 2.5;
+      const grain = this.add.circle(x + (r1 - 0.5) * 30, y + (r2 - 0.5) * 16, size, sand[k % sand.length], 0.95);
+      this.fxLayer.add(grain);
+      const dx = (r1 - 0.5) * 120;
+      const fall = 70 + r2 * 90;
+      this.tweens.add({
+        targets: grain,
+        x: grain.x + dx,
+        y: grain.y + fall,
+        alpha: 0,
+        scale: 0.4,
+        delay: r2 * 180,
+        duration: 650 + r1 * 450,
+        ease: 'Quad.easeIn',
+        onComplete: () => grain.active && grain.destroy(),
+      });
+    }
+    // 大きめのかけらを少しだけ（壊れた手応え）
+    for (let k = 0; k < 5; k++) {
+      const a = (Math.PI * 2 * k) / 5 + 0.4;
+      const piece = this.add.rectangle(x, y, 6, 4, k % 2 ? 0xe8d8b0 : 0xb08a3a).setAngle(k * 37);
       this.fxLayer.add(piece);
-      this.tweens.add({ targets: piece, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6 + 40, angle: piece.angle + 180, alpha: 0, duration: 700, ease: 'Cubic.easeOut', onComplete: () => piece.active && piece.destroy() });
+      this.tweens.add({ targets: piece, x: x + Math.cos(a) * 46, y: y + Math.sin(a) * 26 + 50, angle: piece.angle + 200, alpha: 0, duration: 700, ease: 'Cubic.easeOut', onComplete: () => piece.active && piece.destroy() });
     }
     this.impact(x, y, 0xffe0a0);
   }
@@ -1045,7 +1072,7 @@ export class BattleScene extends Phaser.Scene {
     const y = LAYOUT.message.y + LAYOUT.message.h / 2;
     const bg = this.add.rectangle(GAME_WIDTH / 2, y, GAME_WIDTH, LAYOUT.message.h, 0x000000, 1);
     const t = addText(this, GAME_WIDTH / 2, y, text, { size: 16, bold: true, align: 'center' }).setOrigin(0.5);
-    this.fxLayer.add([bg, t]);
+    this.bannerLayer.add([bg, t]);
   }
 
   /** 待つ。早送り中はすぐ終わる */
@@ -1066,6 +1093,7 @@ export class BattleScene extends Phaser.Scene {
     this.skipping = true;
     this.tweens.killAll();
     this.fxLayer.removeAll(true);
+    this.bannerLayer.removeAll(true);
     const pending = this.waits;
     this.waits = [];
     for (const w of pending) {

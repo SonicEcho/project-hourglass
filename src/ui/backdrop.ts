@@ -16,7 +16,10 @@ export function drawBackdrop(scene: Phaser.Scene, layer: Phaser.GameObjects.Cont
     const s = Math.max(GAME_WIDTH / img.width, h / img.height);
     const cw = GAME_WIDTH / s;
     const ch = h / s;
-    img.setScale(s).setCrop((img.width - cw) / 2, (img.height - ch) / 2, cw, ch);
+    // 上下を切る時は、focusY の高さを中心に残す（書かなければ真ん中）
+    const cy = Phaser.Math.Clamp((def.focusY ?? 0.5) * img.height - ch / 2, 0, img.height - ch);
+    const cx = (img.width - cw) / 2;
+    img.setScale(s).setCrop(cx, cy, cw, ch).setOrigin((cx + cw / 2) / img.width, (cy + ch / 2) / img.height);
     // 同じ絵を夜などに使い回す時は、色をかける
     if (def.tint !== undefined) img.setTint(def.tint);
     layer.add(img);

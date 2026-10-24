@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EnemyDef, NaviPartDef } from '../src/core';
-import { allBattles, CLOCK_ACTIONS, parseClockTime } from '../src/core';
+import { allBattles, castEntry, CLOCK_ACTIONS, parseClockTime } from '../src/core';
 import {
   BOSS_PART_REWARDS,
   CARDS,
@@ -273,9 +273,14 @@ describe('パーティと育成の開放（段階26）', () => {
   });
 
   it('2章（段階38）はみおが加わって3人で、ムーブメントも開く。みおが仲間になる 5-C より前の2章に戦闘はない', async () => {
-    const { CHAPTER1_LINEUP, CHAPTER2_LINEUP, SLICE_FLOW } = await import('../src/data');
+    const { CHAPTER1_LINEUP, CHAPTER2_EARLY_LINEUP, CHAPTER2_LINEUP, SLICE_FLOW } = await import('../src/data');
     const { lineupAt } = await import('../src/core');
-    expect(SLICE_FLOW.find((c) => c.id === 'ch2')?.lineup).toBe(CHAPTER2_LINEUP);
+    // みおが加わる 5-C（d5_evening）より前は2人で、ムーブメントも開かない（段階108）
+    expect(SLICE_FLOW.find((c) => c.id === 'ch2')?.lineup).toBe(CHAPTER2_EARLY_LINEUP);
+    expect(CHAPTER2_EARLY_LINEUP.members).toEqual(['hero', 'akari']);
+    expect(CHAPTER2_EARLY_LINEUP.unlocks.navi).toBe(false);
+    expect(lineupAt(SLICE_FLOW, 'd5_free', CHAPTER1_LINEUP)).toBe(CHAPTER2_EARLY_LINEUP);
+    expect(lineupAt(SLICE_FLOW, 'd5_evening', CHAPTER1_LINEUP)).toBe(CHAPTER2_LINEUP);
     expect(CHAPTER2_LINEUP.members).toEqual(['hero', 'akari', 'mio']);
     expect(CHAPTER2_LINEUP.unlocks).toEqual({ growth: true, navi: true, weapon: true });
     expect(lineupAt(SLICE_FLOW, 'a21_explore', CHAPTER1_LINEUP)).toBe(CHAPTER2_LINEUP);
@@ -287,8 +292,12 @@ describe('パーティと育成の開放（段階26）', () => {
   });
 
   it('ギア（段階38）は戦闘では落とさず、ムーブメントが開いている章の区画の、宝箱と会話のごほうびで手に入る', async () => {
-    const { AREAS, NAVI_PARTS, SLICE_FLOW } = await import('../src/data');
-    const naviAreas = new Set(SLICE_FLOW.filter((c) => c.lineup?.unlocks.navi).flatMap((c) => c.events.flatMap((e) => (e.kind === 'explore' && e.area ? [e.area] : []))));
+    const { AREAS, CHAPTER1_LINEUP, NAVI_PARTS, SLICE_FLOW } = await import('../src/data');
+    const { lineupAt } = await import('../src/core');
+    // 章の途中で並びが変わる（段階108：2章はみおが加わってからムーブメントが開く）ので、探索の出来事ごとにその時の並びで見る
+    const naviAreas = new Set(
+      SLICE_FLOW.flatMap((c) => c.events.flatMap((e) => (e.kind === 'explore' && e.area && lineupAt(SLICE_FLOW, e.id, CHAPTER1_LINEUP).unlocks.navi ? [e.area] : []))),
+    );
     for (const area of Object.values(AREAS)) {
       const gears = [...area.chests.flatMap((c) => c.gears ?? []), ...area.triggers.flatMap((t) => t.gears ?? [])];
       for (const g of gears) expect(NAVI_PARTS[g as keyof typeof NAVI_PARTS], `${area.id} ${g}`).toBeDefined();
@@ -453,7 +462,11 @@ describe('台本（段階22。M1・M2）', () => {
         if (step.name === 'se') expect(a in SCRIPT_SE, `${where} ${a}`).toBe(true);
         if (step.name === 'cast') {
           expect(step.args.length, where).toBeLessThanOrEqual(3);
-          for (const n of step.args) expect(n in CAST, `${where} ${n}`).toBe(true);
+          for (const arg of step.args) {
+            const { name: n, face } = castEntry(arg);
+            expect(n in CAST, `${where} ${n}`).toBe(true);
+            if (face) expect(face in CAST[n].faces || CAST[n].fallback?.[face] !== undefined, `${where} ${n}〔${face}〕`).toBe(true);
+          }
         }
         if (step.name === 'fade') expect(['out', 'in', 'white'], where).toContain(a);
         if (step.name === 'wait') expect(Number(a), where).toBeGreaterThan(0);

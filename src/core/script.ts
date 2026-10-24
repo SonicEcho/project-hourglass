@@ -152,6 +152,15 @@ export interface ScriptScene {
   labels: Record<string, number>;
 }
 
+/**
+ * @cast の1人分（段階108）：「あかり〔悲しい〕」のように、出てくる時の表情を添えられる。
+ * 書かなければ、その人の最初の表情（CAST の firstFace）で出る
+ */
+export function castEntry(arg: string): { name: string; face?: string } {
+  const m = /^(.+?)〔([^〕]+)〕$/.exec(arg);
+  return m ? { name: m[1], face: m[2] } : { name: arg };
+}
+
 /** 台本の書き間違い。何行目かを付けて知らせる */
 export class ScriptError extends Error {
   constructor(src: number, message: string) {

@@ -417,6 +417,9 @@ export function hubBack(): SceneTarget | null {
 }
 
 export function getHubReturn(): SceneTarget | null {
+  // 探索の途中なら、戻り先の覚えが消えていても（探索の画面を作り直した・ページを開き直した等）探索へ戻す。
+  // 試作の5戦の並び（みおを含む3人）が出ないようにする（段階108。テストプレイのメモ 1）
+  if (!hubReturn && run.explore) return { key: 'Explore', data: { area: run.explore.area } };
   return hubReturn;
 }
 
@@ -467,7 +470,7 @@ export function partyChoice(): { lineup: Lineup; chosen: string[]; fixed: string
 
 /** 育成の画面で使うパーティ：探索から開いた時は物語の章のもの、それ以外は試作の5戦のもの */
 export function hubLineup(): Lineup {
-  return hubReturn ? storyLineup() : PROTOTYPE_LINEUP;
+  return getHubReturn() ? storyLineup() : PROTOTYPE_LINEUP;
 }
 
 /** その章で開けられる星図のマスの章（段階49。試作の5戦など、章のないパーティは制限なし） */
