@@ -574,7 +574,7 @@ export const CGS: Record<string, Backdrop> = {
   mio_cards: { title: '1枚絵：光るトランプ', top: 0x3a2a40, bottom: 0xd0b070, image: 'cg.mio_cards', ambient: 'motes', glow: { x: 0.5, y: 0.5, color: 0xfff4d0 } },
   pinch_hit: { title: '1枚絵：代打の一打', top: 0x6ab0e8, bottom: 0xc0a060, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
   // 上の方にいるカイの顔が切れないよう、上寄りで切り抜く（段階108。テストプレイのメモ 33）。上のボタンと重ならないよう、上に黒い帯を足して下げる（段階107c）
-  cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, image: 'cg.cut_ground', glow: { x: 0.5, y: 0.4, color: 0xe0f0ff }, focusY: 0.36, topBand: 56 },
+  cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, image: 'cg.cut_ground', glow: { x: 0.5, y: 0.4, color: 0xe0f0ff }, focusY: 0.36, topBand: 30 },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
 };
 
