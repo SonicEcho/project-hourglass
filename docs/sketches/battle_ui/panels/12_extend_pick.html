@@ -1,0 +1,40 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="../common.css"><link rel="stylesheet" href="panels.css"><style>
+.msg { left: 6px; right: 6px; top: 330px; height: 30px; background: #000; border: 1px solid #ff2d55; transform: skewX(-12deg); display: grid; place-items: center; font-size: 12px; font-weight: 900; }
+.film { left: 0; right: 0; top: 364px; height: 106px; background: #111; border-top: 2px solid #fff; border-bottom: 2px solid #fff; }
+.holes { position: absolute; left: 0; right: 0; height: 7px; background: repeating-linear-gradient(90deg, transparent 0 6px, #e8e0d0 6px 15px, transparent 15px 22px); }
+.holes.t { top: 5px; } .holes.bt { bottom: 5px; }
+.fr { position: absolute; top: 16px; height: 74px; transform: skewX(-8deg); background: #2b2420; overflow: hidden; }
+.fr .ph { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.fr .n { position: absolute; left: 8px; top: 0; font-size: 14px; font-weight: 900; font-style: italic; text-shadow: 2px 2px 0 #ff2d55; }
+.fr .lb { position: absolute; left: 0; right: 0; bottom: 0; background: #000c; font-size: 10px; font-weight: 900; text-align: center; padding: 2px 0; }
+.fr.done { filter: brightness(.45); }
+.fr.ext { background: #3a0812; box-shadow: inset 0 0 0 3px #ff2d55; }
+.fr.ext .lb { background: #ff2d55; }
+.fr .face { position: absolute; left: 50%; top: 6px; width: 46px; height: 46px; margin-left: -23px; border-radius: 50%; border: 2px solid #fff; background: url('../../../../public/assets/portraits/hero_determined.webp') 50% 12% / 230%; }
+.plus { position: absolute; right: 4px; top: 2px; font-size: 16px; font-weight: 900; font-style: italic; color: #ffd700; text-shadow: 2px 2px 0 #000; }
+.tabs { left: 8px; right: 8px; top: 476px; height: 58px; display: flex; gap: 6px; }
+.tb { flex: 1; transform: skewX(-8deg); background: #000d; border: 1px solid #fff5; padding: 4px 12px; font-size: 12px; font-weight: 900; position: relative; }
+.tb.on { border: 3px solid #ff2d55; flex: 1.3; }
+.tb .ex { position: absolute; right: 6px; top: 4px; background: #ff2d55; font-size: 10px; padding: 0 6px; font-style: italic; }
+.tb .hp { height: 5px; background: #4cd07d; margin: 6px 0 4px; }
+.newc { position: absolute; left: -6px; top: -10px; background: #ffd700; color: #000; font-size: 10px; font-weight: 900; padding: 0 6px; border: 1px solid #000; transform: rotate(-8deg); }
+.newbar { left: 0; right: 0; top: 762px; height: 62px; background: #000; border-top: 3px solid #fff; display: flex; gap: 6px; padding: 10px 8px; }
+.newbar div { flex: 1; transform: skewX(-12deg); border: 2px solid #fff; display: grid; place-items: center; font-size: 12px; font-weight: 900; font-style: italic; background: #222; text-align: center; line-height: 1.1; }
+.newbar .bt { background: #ffd700; color: #000; }
+</style></head><body>
+<div class="abs cover" style="top:330px;height:430px"></div>
+<div class="abs msg">延長：ハルトの追加行動を選ぶ（1枚引いた）</div>
+<div class="abs film"><div class="holes t"></div><div class="holes bt"></div>
+  <div class="fr done" style="left:8px;width:84px"><div class="ph" style="background:#3a0812"></div><span class="n">01</span><div class="lb">カイ</div></div>
+  <div class="fr done" style="left:98px;width:84px"><div class="ph" style="background-image:url('../../../../public/assets/cg/white_city.webp')"></div><span class="n">02</span><div class="lb">アイスニードル</div></div>
+  <div class="fr ext" style="left:188px;width:104px"><span class="n">02+</span><span class="plus">+1</span><div class="face"></div><div class="lb">▶ 延長で選ぶ</div></div>
+  <div class="fr" style="left:298px;width:84px"><div class="ph" style="background-image:url('../../../../public/assets/cg/tandem_bicycle.webp')"></div><span class="n">03</span><div class="lb">リカバー</div></div>
+</div>
+<div class="abs tabs"><div class="tb on" style="color:#4aa8e8">ハルト<span class="ex">EXTEND</span><div class="hp"></div><span style="color:#fff;font-size:10px">144　MP 24</span></div><div class="tb" style="color:#ff8fb1">あかり<div class="hp"></div><span style="color:#fff;font-size:10px">120　MP 36</span></div></div>
+<div class="pc " style="--c:#8a96a8;left:12px;top:610px;transform:rotate(-1.5deg)"><div class="ph" style="background-image:url('../../../../public/assets/cg/awaken_weapons.webp')"></div><span class="el">物理</span><div class="nm">ソード</div><div class="wt">普通 ■■□□</div></div>
+<div class="pc dim" style="--c:#4cd07d;left:88px;top:610px;transform:rotate(1deg)"><div class="ph" style="background-image:url('../../../../public/assets/cg/tandem_bicycle.webp')"></div><span class="el">回復</span><div class="nm">リカバー</div><div class="wt">普通 ■■□□</div><span class="use">あかりが使う</span></div>
+<div class="pc " style="--c:#8a96a8;left:164px;top:610px;transform:rotate(-1deg)"><div class="ph" style="background-image:url('../../../../public/assets/cg/cut_ground.webp')"></div><span class="el">物理</span><div class="nm">ヘビー<br>ブロウ</div><div class="wt">超重い ■■■■</div></div>
+<div class="pc " style="--c:#ff7a45;left:240px;top:610px;transform:rotate(1.5deg)"><div class="ph" style="background-image:url('../../../../public/assets/cg/fireworks.webp')"></div><span class="el">火</span><div class="nm">ファイア<br>ボール</div><div class="wt">普通 ■■□□</div><span class="newc">NEW</span></div>
+<div class="abs newbar"><div>魔法・スキル</div><div>その他</div><div class="bt">バトン<br>タッチ</div><div>見送る</div></div>
+<div class="abs tag">延長②：フィルムの今のコマの後ろに「+1」のコマを差し込み、そこで選ぶ。引いた札に NEW</div>
+</body></html>
