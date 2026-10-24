@@ -3,7 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm, warmBgm } from '../audio/sound';
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
-import { chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog, topBondPartner } from '../core';
+import { castEntry, chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog, topBondPartner } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } from '../data';
 import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
@@ -34,7 +34,8 @@ const DIM_TINT = 0x707070;
 const mulTint = (a: number, b: number): number =>
   [16, 8, 0].reduce((acc, sh) => acc | (Math.round((((a >> sh) & 0xff) * ((b >> sh) & 0xff)) / 255) << sh), 0);
 /** 本文の折り返しの幅 */
-const BODY_WRAP = GAME_WIDTH - 68;
+// 折り返しの幅は17字（段階108）。禁則で句読点を2字までぶら下げても、枠の内側に収まる（tests/dialogueFit.test.ts）
+const BODY_WRAP = GAME_WIDTH - 68 - 17;
 /** 立ち絵の下の端（本文の枠の上の辺） */
 const STAGE_BOTTOM = 560;
 /** 背景・1枚絵を前の絵に重ねて替える時間、人が出入りする時間（ミリ秒） */
@@ -379,9 +380,13 @@ export class DialogueScene extends Phaser.Scene {
         else if (a === 'sand') playSand(this);
         return;
       }
-      case 'cast':
-        this.setCast(cmd.args);
+      case 'cast': {
+        // 「あかり〔悲しい〕」のように、出てくる時の表情を添えられる（段階108）
+        const entries = cmd.args.map(castEntry);
+        this.setCast(entries.map((e) => e.name));
+        for (const e of entries) if (e.face) this.actors.get(e.name)?.setFace(e.face);
         return;
+      }
       case 'fade':
         await this.fade(a as 'out' | 'in' | 'white');
         return;

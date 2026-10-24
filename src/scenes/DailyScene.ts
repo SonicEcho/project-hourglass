@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { addParts, allSpots, blockers, bondPoints, heartText, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { addParts, allSpots, blockers, bondGauge, bondPoints, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
 import { AREAS, BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
@@ -157,12 +157,31 @@ export class DailyScene extends Phaser.Scene {
     const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
     if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！は数えない`);
     // 段階83：相手のいる小話は、その日に見ると♥が半分増える
-    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…（小話）も、相手の♥が半分増える');
-    // 絆の深さ（段階35）：会える相手ごとに、見た絆の出来事の数
-    // 段階83：その日に見た小話の♥（半分）も数える。半分は♡
-    const bonds = (this.hub.partners ?? []).map((p) => `${BOND_PARTNER_NAMES[p] ?? p} ${heartText(bondPoints(run.vars, p, BOND_EVENTS, DAILY_HUBS, BOND_POINTS), BOND_POINTS)}`);
-    if (bonds.length > 0) lines.push(`絆　${bonds.join('　')}`);
-    root.add(addText(this, GAME_WIDTH / 2, 740, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
+    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…（小話）も、相手の絆の帯が半分進む');
+    root.add(addText(this, GAME_WIDTH / 2, 730, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
+    this.drawBonds(root, 790);
+  }
+
+  /**
+   * 絆の深さ（段階35。段階83 から、その日に見た小話の半分も数える）。段階110：♥を並べると増えた時に見づらいので、
+   * 相手ごとに「Lv」（絆の出来事の分）と、次の Lv までの短い帯（小話の半分）で見せる
+   */
+  private drawBonds(root: Phaser.GameObjects.Container, y: number): void {
+    const partners = this.hub.partners ?? [];
+    if (partners.length === 0) return;
+    const colW = Math.min(118, (GAME_WIDTH - 40) / partners.length);
+    const x0 = GAME_WIDTH / 2 - (colW * partners.length) / 2;
+    root.add(addText(this, x0 - 6, y, '絆', { size: 13, bold: true, color: toCss(MARK_STYLE.bond.color) }).setOrigin(1, 0.5));
+    partners.forEach((p, i) => {
+      const { level, progress } = bondGauge(bondPoints(run.vars, p, BOND_EVENTS, DAILY_HUBS, BOND_POINTS), BOND_POINTS);
+      const x = x0 + i * colW + 4;
+      const name = addText(this, x, y - 8, BOND_PARTNER_NAMES[p] ?? p, { size: 12, bold: true }).setOrigin(0, 0.5);
+      root.add(name);
+      root.add(addText(this, x + colW - 12, y - 8, `Lv${level}`, { size: 12, bold: true, color: COLORS.accentText }).setOrigin(1, 0.5));
+      const barW = colW - 16;
+      root.add(this.add.rectangle(x, y + 8, barW, 6, 0x2a3b4e).setOrigin(0, 0.5));
+      if (progress > 0) root.add(this.add.rectangle(x, y + 8, barW * progress, 6, MARK_STYLE.bond.color).setOrigin(0, 0.5));
+    });
   }
 
   /** 場所の絵と、そこに出ている印 */

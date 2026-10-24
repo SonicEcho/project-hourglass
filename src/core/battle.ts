@@ -119,6 +119,7 @@ export function createBattle(setup: BattleSetup): BattleState {
     })),
     ai: clone(def.ai),
     aiCounter: 0,
+    opening: def.opening ?? null,
     drops: [...(def.drops ?? [])],
     dropTable: def.dropTable ? { ...def.dropTable } : undefined,
     dropped: [],
@@ -352,7 +353,9 @@ function updateOutcome(s: BattleState): void {
   if (s.cutoff) {
     // 負け戦：敵の HP が決まった割合を切るか、どちらかが倒れ切ったら打ち切り（勝ちも全滅もない）
     const cutoff = s.cutoff;
-    const done = livingEnemies(s).length === 0 || livingAllies(s).length === 0 || s.enemies.some((e) => e.hp < e.maxHp * cutoff.enemyHpRatio);
+    // HP による打ち切りは afterRound のラウンドから（段階107b）
+    const hpCut = s.round >= (cutoff.afterRound ?? 1) && s.enemies.some((e) => e.hp < e.maxHp * cutoff.enemyHpRatio);
+    const done = livingEnemies(s).length === 0 || livingAllies(s).length === 0 || hpCut;
     if (done) endBattle(s, 'cutoff');
     return;
   }
@@ -854,6 +857,12 @@ export function chargingAction(enemy: EnemyUnit): EnemyActionDef | undefined {
 /** 敵の行動を選ぶ（s の乱数と aiCounter を進める） */
 export function chooseEnemyAction(s: BattleState, enemy: EnemyUnit): EnemyActionDef {
   const available = usableEnemyActions(enemy);
+  // 最初の行動を決めている敵（段階107b）：使えれば、乱数を使わずにそれを選ぶ
+  if (enemy.opening) {
+    const first = available.find((a) => a.id === enemy.opening);
+    enemy.opening = null;
+    if (first) return first;
+  }
   if (enemy.ai.type === 'boss' && enemy.hp < enemy.maxHp * enemy.ai.lowHpRatio) {
     const forceAll = enemy.aiCounter % enemy.ai.allTargetInterval === 0;
     enemy.aiCounter++;

@@ -18,12 +18,16 @@ export const ENEMY_ART: Record<string, string> = {
   kaiRevenge: 'enemy.kai',
 };
 
+/** 部位がなくても、1体で出る時はボスの大きさで描く敵（段階108。テストプレイのメモ 32：2-3 の負け戦のカイが小さかった） */
+export const ENEMY_ART_BIG: string[] = ['kai'];
+
 /**
  * ぬしの部位の印を置く所（段階89）：ボスの絵（正方形）の中の位置を、幅・高さに対する割合で。3つめは名前の札を出す向き（書かなければ右）。
  * ここにないぬし（絵がまだない）は、丸い体の上のほうに部位を横に並べる
  */
 export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: number, side?: 'left' | 'right']>> = {
-  goldfishBowlLord: { poiArm: [0.13, 0.66], bowl: [0.47, 0.42] },
+  // ポイの腕の札は、絵に重ならないよう左に出す（段階108。テストプレイのメモ 10）
+  goldfishBowlLord: { poiArm: [0.13, 0.66, 'left'], bowl: [0.47, 0.42] },
   bicycleLord: { frontWheel: [0.24, 0.5], bell: [0.3, 0.14] },
   // 段階96：本気のカイの枠の刃（絵の左上で掲げている四角い枠の、左下の角）
   kaiRevenge: { frameBlade: [0.3, 0.2, 'left'] },

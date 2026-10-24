@@ -186,7 +186,7 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 攻撃は元のまま HP 1.7倍（2-1・2-2 は 1.3倍。元の HP が低く、1.3倍では2-2 のぬしの7割ほどのラウンドで終わった。2章の山場なので2-2 と同じくらいに）。コマは1つ
   a23_boss: { id: 'a23_boss', name: 'スコアボードのぬし', enemies: [toughenEnemy(SCOREBOARD_LORD, 1.7)], reward: 10, boss: true, koma: 1, snaps: ['pinchHitter'] },
   // 返す直前のカイ（段階40。負け戦）。4ラウンド目の終わりか、カイの HP が半分を切った所で打ち切る。報酬はない（物語の流れの battle の出来事から始める）
-  a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5 } },
+  a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5, afterRound: 2 } },
   // 2-3 の4晩目：保管局の奥の書庫（段階85）。しまわれた色々な時代の蔵書から漏れた砂嵐（1章〜2-2 の砂嵐を混ぜる）。コマはない（取り返すのが目当て）
   a23x_corridor: { id: 'a23x_corridor', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, MASK_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3 },
   a23x_alcove: { id: 'a23x_alcove', name: '砂嵐', enemies: tough([TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3 },
@@ -196,9 +196,9 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a23x_stacks1: { id: 'a23x_stacks1', name: '砂嵐', enemies: tough([RAMUNE_NOISE, ABACUS_NOISE, STICKER_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4 },
   a23x_stacks2: { id: 'a23x_stacks2', name: '砂嵐', enemies: tough([MASK_NOISE, TUBE_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4 },
   // 書庫を見回るカイ（段階85）：見つかると短い負け戦。打ち切ったら、チェックポイントへ戻される（cutoffBack）。報酬はない
-  a23x_kai_patrol: { id: 'a23x_kai_patrol', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 2, enemyHpRatio: 0.5 }, cutoffBack: true },
+  a23x_kai_patrol: { id: 'a23x_kai_patrol', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 2, enemyHpRatio: 0.5, afterRound: 2 }, cutoffBack: true },
   // 棚の砂時計を手に取った後のカイ（段階85）：決まったラウンドを耐えると、逃げきる（区画の奥の印の戦闘。打ち切りで区画を終える）
-  a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5 } },
+  a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5, afterRound: 2 } },
   // ---- 3-1「はじめての仕送り」：昭和41年の夏の村（段階88。villageEnemies.ts）。晩ごとに少しずつ強める（数値は npm run measure の「3-1」で測った） ----
   a31_n1_station: { id: 'a31_n1_station', name: '砂嵐', enemies: tough([FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
   a31_n1_square: { id: 'a31_n1_square', name: '砂嵐', enemies: tough([COIL_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
@@ -231,7 +231,8 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a3s2_yagura: { id: 'a3s2_yagura', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, LANTERN_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
   a3s2_edge: { id: 'a3s2_edge', name: '砂嵐', enemies: tough([CANDY_NOISE, CANDY_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
   a3s2_edge2: { id: 'a3s2_edge2', name: '砂嵐', enemies: tough([LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 4 },
-  a3s2_boss: { id: 'a3s2_boss', name: 'やぐらのぬし', enemies: [toughenEnemy(YAGURA_LORD, A3S_SCALE.boss)], reward: 10, boss: true, snaps: ['breakArm'] },
+  // 段階113：祭りの夜の端の宝箱からあふれたリカバーを、ぬしの報酬に移した
+  a3s2_boss: { id: 'a3s2_boss', name: 'やぐらのぬし', enemies: [toughenEnemy(YAGURA_LORD, A3S_SCALE.boss)], reward: 10, boss: true, snaps: ['breakArm', 'recover'] },
   // ---- 3-2「言えなかった卒業式」（段階94。gradEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし。3晩目の踏切の部屋は、敵を2つに減らした（レビューの D1） ----
   a32_n1_gate: { id: 'a32_n1_gate', name: '砂嵐', enemies: tough([EARPHONE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
   a32_n1_slope: { id: 'a32_n1_slope', name: '砂嵐', enemies: tough([SELFIE_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 2 },
@@ -301,6 +302,9 @@ export const AREAS: Record<string, AreaDef> = {
     walls: [
       { id: 'a11_wall_plaza', room: 'festival_night', cells: box(8, 15, 23, 24), opens: 2 },
       { id: 'a11_wall_steps', room: 'festival_night', cells: box(10, 13, 18, 18), opens: 3 },
+      // 石段の前のチェックポイント（2晩目の帰り口）から、ぬしの広場へ上る2本の道を、3晩目まで閉じる（段階112。テストプレイのメモ 7：
+      // 2晩目に、右の抜け道からチェックポイントへ来て、そのままぬしの前まで行けてしまっていた）
+      { id: 'a11_wall_shrine', room: 'festival_night', cells: [[10, 13], [13, 13]], opens: 3 },
     ],
     // 狩り（段階43）：採取の場所は、1回目の宝箱と浴衣の女の人の所。砂嵐は入るたびに縁日の戦闘から選ぶ
     hunt: {
@@ -319,11 +323,11 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a11_chest_goldfish', room: 'festival_night', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id, ITEMS.potion.id] },
+      { id: 'a11_chest_goldfish', room: 'festival_night', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.potion.id] },
       { id: 'a11_chest_ramune', room: 'festival_night', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
       { id: 'a11_chest_back', room: 'fest_backyard', cell: [2, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
-      { id: 'a11_chest_west', room: 'fest_west', cell: [2, 2], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.balloonShard.id, ITEMS.ether.id] },
-      { id: 'a11_chest_woods', room: 'fest_woods', cell: [3, 2], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id, ITEMS.cottonThread.id] },
+      { id: 'a11_chest_west', room: 'fest_west', cell: [2, 2], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
+      { id: 'a11_chest_woods', room: 'fest_woods', cell: [3, 2], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
     ],
     enemies: [
       // ---- 1晩目 ----
@@ -422,9 +426,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id, ITEMS.phoneCord.id, ITEMS.potion.id], snaps: ['heavyBlow'] },
-      { id: 'a12_chest_alley', room: 'showa_alley', cell: [2, 2], night: 2, items: [ITEMS.tinSpring.id, ITEMS.menkoCard.id, ITEMS.hiPotion.id], snaps: ['iceChip'] },
-      { id: 'a12_chest_hill', room: 'showa_hill', cell: [3, 2], night: 3, items: [ITEMS.ramuneGlass.id, ITEMS.phoneCord.id, ITEMS.menkoCard.id] },
+      { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id], snaps: ['heavyBlow'] },
+      { id: 'a12_chest_alley', room: 'showa_alley', cell: [2, 2], night: 2, items: [ITEMS.tinSpring.id], snaps: ['iceChip'] },
+      { id: 'a12_chest_hill', room: 'showa_hill', cell: [3, 2], night: 3, items: [ITEMS.ramuneGlass.id, ITEMS.potion.id] },
     ],
     enemies: [
       // ---- 1晩目（入口から時計屋の前） ----
@@ -497,7 +501,8 @@ export const AREAS: Record<string, AreaDef> = {
     owner: 'イサム',
     memory: 'factory_alley',
     // 返した報酬のスナップ（段階41）
-    returnSnaps: ['joker'],
+    // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
+    returnSnaps: ['joker', 'draw'],
     // 晩の区切り（段階78）：2晩目は銭湯の前の長いすから、3晩目は工場の門から
     nights: [{ koma: 3 }, { koma: 6, start: { cell: [9, 21] } }, { start: { cell: [15, 11] } }],
     // ノイズの壁：資材置き場への出入口と、銭湯の左右の道（2晩目から開く）。工場の中への入口（3晩目から開く）
@@ -521,9 +526,9 @@ export const AREAS: Record<string, AreaDef> = {
     },
     // 資材置き場の左上の行き止まり、銭湯の右の道の奥、銭湯の裏の路地の行き止まり。ムーブメントのギアも入っている（段階38）
     chests: [
-      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], night: 2, items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id, ITEMS.potion.id], gears: ['thunderBoost'], snaps: ['thunderChip'] },
-      { id: 'a21_chest_right', cell: [19, 12], night: 2, items: [ITEMS.abacusBead.id, ITEMS.wornGear.id, ITEMS.ether.id], gears: ['firstAid'], snaps: ['draw'] },
-      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id, ITEMS.filament.id, ITEMS.abacusFrame.id] },
+      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], night: 2, items: [ITEMS.rustyScrew.id], gears: ['thunderBoost'] },
+      { id: 'a21_chest_right', cell: [19, 12], night: 2, items: [ITEMS.ether.id], gears: ['firstAid'] },
+      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id], snaps: ['thunderChip'] },
     ],
     enemies: [
       // ---- 1晩目（路地の入口から銭湯の前と、銭湯の裏） ----
@@ -601,7 +606,8 @@ export const AREAS: Record<string, AreaDef> = {
     owner: 'ケンタ',
     memory: 'school_festival',
     // 返した報酬のスナップ（段階41）
-    returnSnaps: ['joker'],
+    // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
+    returnSnaps: ['joker', 'search'],
     // 晩の区切り（段階82）：2晩目は中庭のベンチ（チェックポイント）から、3晩目は音楽室の前の廊下から
     nights: [{ koma: 3 }, { koma: 6, start: { room: 'school_courtyard', cell: [9, 23] } }, { start: { room: 'school_corridor', cell: [5, 8] } }],
     // ノイズの壁：中庭から渡り廊下への出入口（2晩目から開く）と、渡り廊下から体育館への出入口（3晩目から開く）
@@ -627,9 +633,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id, ITEMS.potion.id], snaps: ['fireChip'] },
-      { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id, ITEMS.ether.id], gears: ['iceBoost'], snaps: ['search'] },
-      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], night: 2, items: [ITEMS.glitterPen.id, ITEMS.ringtoneChip.id, ITEMS.hiPotion.id], gears: ['comboBoost'] },
+      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.potion.id], snaps: ['fireChip'] },
+      { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id], gears: ['iceBoost'] },
+      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['comboBoost'] },
     ],
     enemies: [
       // ---- 1晩目（校門・中庭・駐輪場） ----
@@ -691,6 +697,8 @@ export const AREAS: Record<string, AreaDef> = {
   a23: {
     id: 'a23',
     name: '2-3「最後の打席」',
+    // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
+    returnSnaps: ['wideShot'],
     rooms: [ROOMS.riverside_levee, ROOMS.riverside_bench, ROOMS.riverside_bank, ROOMS.riverside_stand, ROOMS.riverside_shed, ROOMS.riverside_diamond],
     links: [
       { a: { room: 'riverside_levee', side: 'top' }, b: { room: 'riverside_bench', side: 'bottom' } },
@@ -730,9 +738,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id, ITEMS.potion.id] },
-      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id, ITEMS.ether.id], gears: ['startDash'], snaps: ['iceChip'] },
-      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [4, 4], night: 2, items: [ITEMS.autographBall.id, ITEMS.cheerBand.id, ITEMS.hiPotion.id], gears: ['breaker'], snaps: ['wideShot'] },
+      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.potion.id], snaps: ['iceChip'] },
+      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id], gears: ['startDash'] },
+      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [4, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['breaker'] },
     ],
     enemies: [
       // ---- 1晩目（土手の道・ベンチの裏の木陰・川べり） ----
@@ -830,6 +838,8 @@ export const AREAS: Record<string, AreaDef> = {
   a31: {
     id: 'a31',
     name: '3-1「はじめての仕送り」',
+    // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
+    returnSnaps: ['recover'],
     rooms: [ROOMS.village_station, ROOMS.village_paddy, ROOMS.village_shrine, ROOMS.village_house, ROOMS.village_river, ROOMS.village_platform],
     links: [
       { a: { room: 'village_station', side: 'top' }, b: { room: 'village_paddy', side: 'bottom' } },
@@ -869,9 +879,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [19, 15], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id, ITEMS.potion.id] },
-      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 4], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id, ITEMS.ether.id], gears: ['fireBoost'], snaps: ['thunderChip'] },
-      { id: 'a31_chest_river', room: 'village_river', cell: [5, 4], night: 2, items: [ITEMS.teacup.id, ITEMS.radioEarphone.id, ITEMS.hiPotion.id], gears: ['oneMoreDraw'], snaps: ['recover'] },
+      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [19, 15], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
+      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 4], items: [ITEMS.radioDial.id], gears: ['fireBoost'] },
+      { id: 'a31_chest_river', room: 'village_river', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['oneMoreDraw'] },
     ],
     enemies: [
       // ---- 1晩目（駅前・田んぼ道・鎮守の森の石段） ----
@@ -933,6 +943,8 @@ export const AREAS: Record<string, AreaDef> = {
   a32: {
     id: 'a32',
     name: '3-2「言えなかった卒業式」',
+    // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
+    returnSnaps: ['joker'],
     rooms: [ROOMS.grad_slope, ROOMS.grad_gym_back, ROOMS.grad_street, ROOMS.grad_levee, ROOMS.grad_crossing],
     links: [
       { a: { room: 'grad_slope', side: 'right' }, b: { room: 'grad_gym_back', side: 'left' } },
@@ -970,9 +982,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a32_chest_slope', room: 'grad_slope', cell: [17, 30], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id, ITEMS.potion.id] },
-      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [5, 4], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id, ITEMS.ether.id], gears: ['iceBoost'], snaps: ['fireChip'] },
-      { id: 'a32_chest_levee', room: 'grad_levee', cell: [5, 5], night: 2, items: [ITEMS.thickStraw.id, ITEMS.flowerRibbon.id, ITEMS.hiPotion.id], gears: ['startDash'], snaps: ['joker'] },
+      { id: 'a32_chest_slope', room: 'grad_slope', cell: [17, 30], items: [ITEMS.potion.id], snaps: ['fireChip'] },
+      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [5, 4], items: [ITEMS.selfieGrip.id], gears: ['iceBoost'] },
+      { id: 'a32_chest_levee', room: 'grad_levee', cell: [5, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['startDash'] },
     ],
     enemies: [
       // ---- 1晩目（校門の坂・体育館の裏） ----
@@ -1045,7 +1057,7 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：やぐらの裏の暗がり', guide: 'カイの枠は光を写す。小夜子が、提灯の届かない暗がりへ案内する' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.candyStick.id, ITEMS.lanternPaper.id, ITEMS.ether.id], gears: ['comboBoost'] }],
+    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.candyStick.id], gears: ['comboBoost'] }],
     enemies: [
       { id: 'a3k_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3k_torii' },
       { id: 'a3k_e_torii2', move: 'chase', patrol: [[4, 11], [19, 11]], battle: 'a3k_torii2' },
@@ -1079,7 +1091,7 @@ export const AREAS: Record<string, AreaDef> = {
     bgm: BGM.prologue,
     komaNeed: 0,
     goal: { band: '目当て：やぐらの広場', guide: '小夜子についていく。花火は、やぐらの広場から見るのが一番きれいらしい' },
-    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.lanternPaper.id, ITEMS.candyStick.id, ITEMS.ether.id], gears: ['hpMemory'] }],
+    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.lanternPaper.id], gears: ['hpMemory'] }],
     enemies: [
       { id: 'a3s1_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3s1_torii' },
       { id: 'a3s1_e_torii2', patrol: [[4, 11], [19, 11]], battle: 'a3s1_torii2' },
@@ -1116,7 +1128,7 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：夜の端', guide: '昨日とまったく同じ夜。小夜子と一緒に、やぐらの先の夜の端へ' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [5, 6], items: [ITEMS.recordNeedle.id, ITEMS.pinwheelBlade.id, ITEMS.hiPotion.id], gears: ['guardMemory'], snaps: ['recover'] }],
+    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [5, 6], items: [ITEMS.recordNeedle.id], gears: ['guardMemory'] }],
     enemies: [
       { id: 'a3s2_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3s2_torii' },
       { id: 'a3s2_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3s2_stalls' },

@@ -16,7 +16,7 @@ export const SCRIPT_M2 = `
 // ---- 昼の日常（段階35）。絆の出来事（data/daily.ts の BOND_EVENTS）と小話。必ず見る出来事は、まだ仮（@note） ----
 
 # d3_fumi 4日目：店番・ふみさん
-@bg clock_shop_day
+@bg clock_shop
 @bgm dusk
 @clock tick many
 @cast ハルト
@@ -218,6 +218,7 @@ export const SCRIPT_M2 = `
 @bgm daily
 @clock tick many
 @cast ハルト あかり
+〈地の文〉昼下がり。あかりと店番をしていると、扉のベルが鳴った。
 @se bell
 @cast ハルト あかり みお
 みお〔笑顔〕「こんにちはー！ 歯車、届けに来ましたー！」
@@ -647,7 +648,7 @@ export const SCRIPT_M2 = `
 @bg classroom
 @bgm daily
 @cast ハルト あかり
-〈地の文〉放課後の教室。黒板に「出し物：？？？」。
+〈地の文〉放課後の教室。黒板には「？？？」とだけ。
 あかり〔困り笑い〕「……決まらない。うちのクラス、文化祭の出し物」
 ハルト〔通常〕「お化け屋敷か、喫茶店か、で割れてるんだろ」
 あかり〔むっ〕「わたしはどっちでもいいの。……いいんだけど」

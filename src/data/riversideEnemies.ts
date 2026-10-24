@@ -111,6 +111,8 @@ export const KAI: EnemyDef = {
     { id: 'shutter', name: 'シャッター', target: 'allies', type: 'magic', power: 44, weight: 1.0, charge: true },
   ],
   ai: { type: 'random' },
+  // 負け戦でも切り取りを見せるため、最初の行動で必ず切り取りをためる（段階107b）
+  opening: 'frameCut',
 };
 
 /**

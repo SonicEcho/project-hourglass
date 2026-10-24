@@ -9,6 +9,7 @@ import {
   checkDailyHub,
   checkVisits,
   finishesAfter,
+  bondGauge,
   heartText,
   isSeen,
   markArchived,
@@ -345,6 +346,13 @@ describe('♥が一番多い相手と、町の小話の棚（段階82）', () =>
     expect(heartText(1, points)).toBe('♡');
     expect(heartText(4, points)).toBe('♥♥');
     expect(heartText(5, points)).toBe('♥♥♡');
+  });
+
+  it('絆の段と帯（段階110）：段は絆の出来事の分、帯は小話の半分', () => {
+    expect(bondGauge(0, points)).toEqual({ level: 0, progress: 0 });
+    expect(bondGauge(1, points)).toEqual({ level: 0, progress: 0.5 });
+    expect(bondGauge(4, points)).toEqual({ level: 2, progress: 0 });
+    expect(bondGauge(5, points)).toEqual({ level: 2, progress: 0.5 });
   });
 
   it('小話の相手は、その日に会える仲間の小話にだけ書ける', () => {

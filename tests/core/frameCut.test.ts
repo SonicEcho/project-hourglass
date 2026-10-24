@@ -112,3 +112,34 @@ describe('切り取り（段階107）', () => {
     expect(eventsOf(s, 'frameCut', from)[0]?.allyIds).toEqual(['akari']);
   });
 });
+
+describe('負け戦で切り取りを見せる（段階107b）', () => {
+  const hit: EnemyActionDef = { id: 'hit', name: 'hit', target: 'ally', type: 'physical', power: 10, weight: 1.0 };
+  const noBlade: EnemyActionDef = { ...cut, requiresPart: undefined };
+
+  it('最初の行動を決めている敵は、乱数を使わずにそれを選ぶ（2回目からはふだんどおり）', () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const s0 = battle({ seed, allies: [ally('hero', { hp: 999 })], enemies: [enemy('kai', { spd: 50 }, { actions: [hit, noBlade], opening: 'frameCut' })] });
+      const s = execute(planAll(s0, { hero: guard }));
+      expect(eventsOf(s, 'charge')[0]?.actionId, `seed ${seed}`).toBe('frameCut');
+      expect(s.enemies[0].opening).toBeNull();
+    }
+  });
+
+  it('HP による打ち切りは afterRound のラウンドから（1ラウンド目に HP を削っても、2ラウンド目の切り取りまで続く）', () => {
+    const s0 = battle({
+      allies: [ally('hero', { spd: 1, hp: 999 })],
+      enemies: [enemy('kai', { spd: 50, hp: 100 }, { actions: [noBlade], opening: 'frameCut' })],
+      cutoff: { rounds: 4, enemyHpRatio: 0.99, afterRound: 2 },
+    });
+    const r1 = execute(planAll(s0, { hero: attackOn('enemy0') }));
+    // 1ラウンド目で打ち切りの線（99%）を下回っているが、倒れてはいない
+    expect(r1.enemies[0].hp).toBeLessThan(99);
+    expect(r1.enemies[0].hp).toBeGreaterThan(0);
+    expect(r1.outcome).toBe('ongoing');
+    expect(r1.round).toBe(2);
+    const r2 = execute(planAll(r1, { hero: attackOn('enemy0') }));
+    expect(eventsOf(r2, 'frameCut').length + eventsOf(r2, 'action').filter((e) => e.actionId === 'frameCut').length).toBeGreaterThan(0);
+    expect(r2.outcome).toBe('cutoff');
+  });
+});

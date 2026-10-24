@@ -440,7 +440,8 @@ export const WEAPON_DATA: WeaponData = {
   // 1回目は Lv3、2回目は Lv5、3回目より先は Lv7
   evolveLevels: [3, 5, 7],
   elementRate: 0.02,
-  boardExtension: 2,
+  // 進化1回で盤に足すマス（段階111。テストプレイのメモ 24：2マスでは増えすぎたので1マス）
+  boardExtension: 1,
   // 段階27b：吸わせ枠（累計）。Lv1 で6、Lv2 で12、Lv3 で18。段階42：Lv4 から1レベルで4つずつ
   slotsPerLevel: [6, 12, 18, 22, 26, 30, 34],
   // 時分解は、素材・アイテム2つで記憶の欠片1つ（要らない素材の整理。素材のまま吸わせる方が強い）
