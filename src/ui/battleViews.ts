@@ -1079,8 +1079,12 @@ function drawFilmSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Contai
     const enough = actor.mp >= cost;
     const enabled = enough && vm.interactive;
     const selected = vm.selectedSkillId === skill.id;
+    // 帯は属性の色（火は赤、氷は水色、回復は緑…）。選んだ帯は白に赤の縁
+    const tint = cardColor(skill);
     if (selected) root.add(skewBox(scene, left + 4, ry + 4, w, rowH, FILM_RED, 1));
-    root.add(skewBox(scene, left, ry, w, rowH, selected ? 0xffffff : 0x000000, enough ? (selected ? 1 : 0.82) : 0.5, { width: selected ? 2.5 : 1.5, color: selected ? FILM_RED : 0xffffff, alpha: enough ? 0.7 : 0.3 }));
+    root.add(skewBox(scene, left, ry, w, rowH, selected ? 0xffffff : 0x000000, enough ? (selected ? 1 : 0.85) : 0.5));
+    if (!selected) root.add(skewBox(scene, left, ry, w, rowH, tint, enough ? 0.42 : 0.15));
+    root.add(skewBox(scene, left, ry, w, rowH, 0x000000, 0, { width: selected ? 2.5 : 1.5, color: selected ? FILM_RED : tint, alpha: enough ? 0.95 : 0.3 }));
     const cy = ry + rowH / 2;
     const ink = selected ? '#101010' : enough ? COLORS.text : COLORS.dimText;
     const sub = selected ? '#333333' : enough ? COLORS.subText : COLORS.dimText;
