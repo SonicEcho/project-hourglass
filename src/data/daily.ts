@@ -144,11 +144,11 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
   // 2-2 の翌日（15日目。段階82）：閉店後の楽器店で、けんたたち3人（docs/script/2-2_rework.md の 15-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
-  // 2-3 の翌日（20日目。段階85）：祝日の河川敷で、そうたの準決勝（docs/script/2-3_rework.md の 20-A）。河川敷の上の段は、みおの絆の出来事
+  // 2-3 の翌日（21日目。段階85・103）：祝日の河川敷で、そうたの準決勝（docs/script/2-3_rework.md の 20-A）。河川敷の上の段は、みおの絆の出来事
   { area: 'a23', id: 'd20_koji', label: 'そうたの準決勝', place: 'riverside', x: 195, y: ROW2 },
-  // 3-1 の翌日（24日目。段階88）：町の駅で、ちよさんがのぼるさんを見送る（docs/script/3-1.md の 24-A）
+  // 3-1 の翌日（25日目。段階88。段階103 で日の数字が1つずれた）：町の駅で、ちよさんがのぼるさんを見送る（docs/script/3-1.md の 24-A）
   { area: 'a31', id: 'd24_chiyo', label: '駅の見送り', place: 'station', x: 195, y: ROW1 },
-  // 3-2 の翌日（30日目。段階94）：店長が彫った時計を持って、駅の近くの踏切で、しおりさんがとうやさんを見送る（docs/script/3-2.md の 30-A・30-B）
+  // 3-2 の翌日（31日目。段階94。段階103 で日の数字が1つずれた）：店長が彫った時計を持って、駅の近くの踏切で、しおりさんがとうやさんを見送る（docs/script/3-2.md の 30-A・30-B）
   { area: 'a32', id: 'd30_shiori', label: '駅の近くの踏切', place: 'station', x: 195, y: ROW1 },
 ];
 
@@ -340,7 +340,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
   // 15日目（段階82。話の間の日）：2-2 を返した翌日のけんたたち（RETURN_VISITS）。夕暮れは交換所のペトラで、夜は記憶に入らない
   d15_free: {
     id: 'd15_free',
-    time: '15日目　土曜の昼',
+    time: '15日目　金曜の放課後',
     day: 15,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
@@ -349,37 +349,36 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', talk('d7_talk', '店の中', ROW1, 'mio'), toDusk('d15_to_dusk')),
     ],
   },
-  // 16日目（日曜。段階85。docs/script/2-3_rework.md の 16-A）：パン屋のこうじさんとそうたは必ず見る。夕暮れの後、2-3 の1晩目
+  // 16日目（土曜。段階85。段階103 で日曜から土曜に。docs/script/2-3_rework.md の 16-A）：パン屋のこうじさんとそうたは必ず見る。夕暮れの後、2-3 の1晩目
   d7_free: {
     id: 'd7_free',
-    time: '16日目　日曜の昼',
+    time: '16日目　土曜の昼',
     day: 16,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
       at('bakery', main('d7_bakery', 'パン屋の親子')),
       at('home', talk('d16_talk_laundry', '物干し', ROW2, 'akari')),
-      at('clockshop', talk('d16_talk_sunday', '店の中'), toDusk('d7_to_dusk')),
+      at('clockshop', toDusk('d7_to_dusk')),
     ],
   },
-  // 17日目（17-A・17-B）：河川敷のまさるさんと、その後のパン屋の前は必ず見る。河川敷の上の段は、みおの絆の出来事
+  // 17日目（日曜。17-A・17-B）：河川敷のまさるさんと、その後のパン屋の前は必ず見る。河川敷の上の段は、みおの絆の出来事。段階103 で日曜になったので、日曜の時計屋の小話をここへ、教室の小話は18日目へ移した
   a23_day17_free: {
     id: 'a23_day17_free',
-    time: '17日目　放課後',
+    time: '17日目　日曜の昼',
     day: 17,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
       at('riverside', main('d17_masaru', 'スタンドの声', ROW2)),
       at('street', main('d17_koji_front', 'パン屋の前', ROW1, 'd17_masaru'), talk('d17_talk_melon', '紙袋', ROW2, 'mio')),
-      at('school', talk('d17_talk_three', '教室', ROW2, 'akari')),
-      at('clockshop', toDusk('a23_d17_to_dusk')),
+      at('clockshop', talk('d16_talk_sunday', '店の中'), toDusk('a23_d17_to_dusk')),
     ],
   },
   // 18日目（18-A）：閉店後のパン屋のこうじさんの本音は必ず見る。夕暮れの後、3晩目
   a23_day18_free: {
     id: 'a23_day18_free',
-    time: '18日目　放課後',
+    time: '18日目　月曜の放課後',
     day: 18,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
@@ -387,28 +386,40 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('bakery', main('d18_koji', '言えない言葉')),
       at('convenience', talk('d18_talk_ramune', 'レジ', ROW2)),
       at('street', talk('d18_talk_bet', '信号の前', ROW2, 'mio')),
+      at('school', talk('d17_talk_three', '教室', ROW2, 'akari')),
       at('clockshop', toDusk('a23_d18_to_dusk')),
     ],
   },
-  // 19日目（段階85。19-B・19-C）：持ち去られた翌日。パン屋のこうじさんと、その後の河川敷のまさるさんは必ず見る。夕暮れにペトラの通用口から4晩目
+  // 19日目（火曜。段階85・103。19-B）：持ち去られた翌日の「手が出せない日」。パン屋のこうじさんは必ず見る。夕暮れに棚へ行っても、書庫への道が分からない
   d8_free: {
     id: 'd8_free',
-    time: '19日目　放課後',
+    time: '19日目　火曜の放課後',
     day: 19,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
       at('bakery', main('d8_bakery', '知っているのに')),
-      at('riverside', main('d19_masaru', 'ビー玉', ROW2, 'd8_bakery')),
       at('home', talk('d8_talk', '台所', ROW2, 'mio')),
-      at('clockshop', talk('d19_talk_plan', '店の奥'), toDusk('d8_to_dusk')),
+      at('clockshop', toDusk('d8_to_dusk')),
     ],
   },
-  // 20日目（祝日。段階85）：2-3 を返した翌日のそうたの準決勝（RETURN_VISITS）。夕暮れに2章の終わり
+  // 20日目（水曜。段階103。19-C）：河川敷のまさるさんは必ず見る。夕暮れにペトラの通用口から4晩目
+  a23_day20_free: {
+    id: 'a23_day20_free',
+    time: '20日目　水曜の放課後',
+    day: 20,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio'],
+    places: [
+      at('riverside', main('d19_masaru', 'ビー玉', ROW2)),
+      at('clockshop', talk('d19_talk_plan', '店の奥'), toDusk('a23_d20_to_dusk')),
+    ],
+  },
+  // 21日目（木曜・祝日。段階85。段階103 で20日目から21日目へ）：2-3 を返した翌日のそうたの準決勝（RETURN_VISITS）。夕暮れに2章の終わり
   d20_free: {
     id: 'd20_free',
-    time: '20日目　祝日の昼',
-    day: 20,
+    time: '21日目　祝日の昼',
+    day: 21,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -418,11 +429,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     ],
   },
   // ---- 3章（段階88。docs/script/3-1.md の 4.） ----
-  // 21日目（金曜）：時計屋のちよさんとのぼるさんは必ず見る。夕暮れの後、3-1 の1晩目
+  // 22日目（金曜）：時計屋のちよさんとのぼるさんは必ず見る。夕暮れの後、3-1 の1晩目
   d21_free: {
     id: 'd21_free',
-    time: '21日目　金曜の放課後',
-    day: 21,
+    time: '22日目　金曜の放課後',
+    day: 22,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -430,11 +441,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('home', talk('d21_talk_care', '台所', ROW2, 'akari')),
     ],
   },
-  // 22日目（土曜）：文化祭。時計の博物館と、その後の中庭ののぼるさんは必ず見る。学校の印は文化祭の分だけ並ぶので、位置をずらす
+  // 23日目（土曜）：文化祭。時計の博物館と、その後の中庭ののぼるさんは必ず見る。学校の印は文化祭の分だけ並ぶので、位置をずらす
   a31_day22_free: {
     id: 'a31_day22_free',
-    time: '22日目　文化祭',
-    day: 22,
+    time: '23日目　文化祭',
+    day: 23,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -443,11 +454,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', talk('d22_talk_memo', '店の奥'), toDusk('a31_d22_to_dusk')),
     ],
   },
-  // 23日目（日曜）：ひだまり荘のちよさんの本音は必ず見る。夕暮れの後、3晩目
+  // 24日目（日曜）：ひだまり荘のちよさんの本音は必ず見る。夕暮れの後、3晩目
   a31_day23_free: {
     id: 'a31_day23_free',
-    time: '23日目　日曜の昼',
-    day: 23,
+    time: '24日目　日曜の昼',
+    day: 24,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -457,11 +468,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', talk('d23_talk_names', '店の中', ROW1, 'mio'), toDusk('a31_d23_to_dusk')),
     ],
   },
-  // 24日目（月曜）：3-1 を返した翌日の駅のちよさん（RETURN_VISITS）。夕暮れに祭囃子の棚
+  // 25日目（月曜）：3-1 を返した翌日の駅のちよさん（RETURN_VISITS）。夕暮れに祭囃子の棚
   d24_free: {
     id: 'd24_free',
-    time: '24日目　月曜の放課後',
-    day: 24,
+    time: '25日目　月曜の放課後',
+    day: 25,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -471,11 +482,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     ],
   },
   // ---- 祭りの夜（段階91。docs/script/3-matsuri.md の 4.） ----
-  // 25日目（火曜）：町の神社の宮司さんは必ず見る（神社は町の地図に場所を足す空きがないので、商店街の中に置く）。夕暮れに祭りの夜の2晩目
+  // 26日目（火曜）：町の神社の宮司さんは必ず見る（神社は町の地図に場所を足す空きがないので、商店街の中に置く）。夕暮れに祭りの夜の2晩目
   d25_free: {
     id: 'd25_free',
-    time: '25日目　火曜の放課後',
-    day: 25,
+    time: '26日目　火曜の放課後',
+    day: 26,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -485,11 +496,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', toDusk('d25_to_dusk')),
     ],
   },
-  // 26日目（水曜）：小夜子と今の町を歩くのと、その後ののぼるさんの電話は必ず見る。夕暮れに、また明日
+  // 27日目（水曜）：小夜子と今の町を歩くのと、その後ののぼるさんの電話は必ず見る。夕暮れに、また明日
   d26_free: {
     id: 'd26_free',
-    time: '26日目　水曜の放課後',
-    day: 26,
+    time: '27日目　水曜の放課後',
+    day: 27,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio'],
     places: [
@@ -498,12 +509,12 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('street', talk('d26_talk_kuji', '福引のテント', ROW2, 'mio')),
     ],
   },
-  // ---- 3-2（段階94。docs/script/3-2.md の 4.）。27日目から、昼の「誰と過ごすか」に小夜子が加わる ----
-  // 27日目（木曜）：商店街の緩める話と、その後の時計屋のしおりさんは必ず見る。夕暮れの後、3-2 の1晩目
+  // ---- 3-2（段階94。docs/script/3-2.md の 4.）。28日目から、昼の「誰と過ごすか」に小夜子が加わる ----
+  // 28日目（木曜）：商店街の緩める話と、その後の時計屋のしおりさんは必ず見る。夕暮れの後、3-2 の1晩目
   d27_free: {
     id: 'd27_free',
-    time: '27日目　木曜の放課後',
-    day: 27,
+    time: '28日目　木曜の放課後',
+    day: 28,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
     places: [
@@ -511,11 +522,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', main('d27_shiori', '刻めない字', ROW1, 'd27_relax'), toDusk('d27_to_dusk')),
     ],
   },
-  // 28日目（金曜）：楽器店のとうやさんと、その後の時計屋の前のしおりさんは必ず見る。夕暮れの後、2晩目
+  // 29日目（金曜）：楽器店のとうやさんと、その後の時計屋の前のしおりさんは必ず見る。夕暮れの後、2晩目
   a32_day28_free: {
     id: 'a32_day28_free',
-    time: '28日目　金曜の放課後',
-    day: 28,
+    time: '29日目　金曜の放課後',
+    day: 29,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
     places: [
@@ -525,11 +536,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', toDusk('a32_d28_to_dusk')),
     ],
   },
-  // 29日目（土曜）：川沿いの道のしおりさんの本音は必ず見る。夕暮れの後、3晩目
+  // 30日目（土曜）：川沿いの道のしおりさんの本音は必ず見る。夕暮れの後、3晩目
   a32_day29_free: {
     id: 'a32_day29_free',
-    time: '29日目　土曜の昼',
-    day: 29,
+    time: '30日目　土曜の昼',
+    day: 30,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
     places: [
@@ -537,11 +548,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', talk('d29_talk_engrave', '作業台', ROW1, 'akari'), toDusk('a32_d29_to_dusk')),
     ],
   },
-  // 30日目（日曜）：3-2 を返した翌日の踏切のしおりさん（RETURN_VISITS）。夕暮れに、言えなかったこと
+  // 31日目（日曜）：3-2 を返した翌日の踏切のしおりさん（RETURN_VISITS）。夕暮れに、言えなかったこと
   d30_free: {
     id: 'd30_free',
-    time: '30日目　日曜の昼',
-    day: 30,
+    time: '31日目　日曜の昼',
+    day: 31,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
     places: [
@@ -551,11 +562,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     ],
   },
   // ---- カイへのリベンジとノアの口論、3章の終わり（段階96。docs/script/3-kai.md の 4.） ----
-  // 31日目（月曜）：昼は選べる話だけ。夕暮れの後、祭りの夜（カイ）
+  // 32日目（月曜）：昼は選べる話だけ。夕暮れの後、祭りの夜（カイ）
   d31_free: {
     id: 'd31_free',
-    time: '31日目　月曜の放課後',
-    day: 31,
+    time: '32日目　月曜の放課後',
+    day: 32,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
     places: [
@@ -564,11 +575,11 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', toDusk('d31_to_dusk')),
     ],
   },
-  // 32日目（火曜。雨）：昼は選べる話だけ。夕暮れに3章の終わり
+  // 33日目（火曜。雨）：昼は選べる話だけ。夕暮れに3章の終わり
   d32_free: {
     id: 'd32_free',
-    time: '32日目　火曜の放課後（雨）',
-    day: 32,
+    time: '33日目　火曜の放課後（雨）',
+    day: 33,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
     places: [
