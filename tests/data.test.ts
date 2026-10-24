@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFolder, CARD_NAME_LINES, CARDS, DISTORTED_BEAST, ENCOUNTERS, FOLDER, PARTY } from '../src/data';
+import { ASSETS, buildFolder, CARD_ART, CARD_NAME_LINES, CARDS, DISTORTED_BEAST, ENCOUNTERS, FOLDER, PARTY } from '../src/data';
 
 describe('データ定義', () => {
   it('カードの名前の2行の分け方は、改行を除くと名前と同じで、2行まで（段階32b）', () => {
@@ -8,6 +8,15 @@ describe('データ定義', () => {
       expect(card, id).toBeDefined();
       expect(lines?.replace('\n', '')).toBe(card.name);
       expect(lines?.split('\n').length).toBe(2);
+    }
+  });
+
+  it('写真のカードの絵は、どの札にもあり、台帳の画像で、切り抜く中心は絵の中（段階102b）', () => {
+    for (const id of Object.keys(CARDS)) {
+      const art = (CARD_ART as Record<string, { asset: string; x: number; y: number }>)[id];
+      expect(art, id).toBeDefined();
+      expect(ASSETS.find((a) => a.id === art.asset)?.kind, `${id}：${art.asset}`).toBe('image');
+      for (const v of [art.x, art.y]) expect(v >= 0 && v <= 1, id).toBe(true);
     }
   });
 

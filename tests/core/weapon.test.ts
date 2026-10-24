@@ -13,6 +13,7 @@ import {
   canEvolveAny,
   evolutionTier,
   evolutionVisibility,
+  anySlotsFull,
   extendBoard,
   nextEvolutions,
   feedFragment,
@@ -481,5 +482,18 @@ describe('武器：進化ツリー（段階42）', () => {
     expect(itemHint('beigoma')).toBe('1-2 の砂嵐が落とすらしい');
     expect(itemHint('brokenBelt')).toBe('2-1 のぬしの体から取れるらしい');
     expect(itemHint('sunsetMarble')).toBe('1-2 の砂嵐が、ごくまれに落とすらしい');
+  });
+});
+
+describe('時分解を出すきっかけ（段階100c）', () => {
+  it('どれかの武器の吸わせ枠がいっぱいになると true。初めは false', () => {
+    const fresh = createArmory(D);
+    expect(anySlotsFull(D, fresh)).toBe(false);
+    const hero = fresh.weapons.hero;
+    const full = { ...fresh, weapons: { ...fresh.weapons, hero: { ...hero, absorbed: weaponSlots(D, hero) } } };
+    expect(anySlotsFull(D, full)).toBe(true);
+    // レベルが上がって枠が増えると、また空きができる（画面は、一度出た時分解を物語の変数に覚えて隠さない）
+    const grown = { ...full, weapons: { ...full.weapons, hero: { ...full.weapons.hero, exp: 999 } } };
+    expect(anySlotsFull(D, grown)).toBe(false);
   });
 });

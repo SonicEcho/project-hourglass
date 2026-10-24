@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+  body { background: #0c0a14; }
+  .bg { inset: 0; background: url('../../../public/assets/backgrounds/riverside_1998.webp') center 30% / cover; filter: brightness(.3) sepia(.3); }
+  /* 時計の文字盤：敵を囲む */
+  .dial { left: 25px; top: 40px; width: 340px; height: 340px; border-radius: 50%; border: 3px solid #d6b46a; background: radial-gradient(circle, rgba(20,16,30,.2) 55%, rgba(20,16,30,.85) 70%); box-shadow: 0 0 30px #d6b46a55, inset 0 0 30px #000; }
+  .tick { position: absolute; left: 50%; top: 50%; width: 2px; height: 14px; background: #d6b46a; transform-origin: 1px 0; }
+  .enemy { left: 85px; top: 90px; width: 220px; height: 220px; background: url('../../../public/assets/enemies/kai.webp') center / contain no-repeat; }
+  .hand1 { left: 194px; top: 120px; width: 3px; height: 90px; background: linear-gradient(#ffd76a, transparent); transform-origin: 50% 100%; transform: rotate(40deg); }
+  .ename { left: 0; right: 0; top: 318px; text-align: center; font-size: 13px; letter-spacing: 3px; color: #ffe6a8; }
+  .ehp { left: 135px; width: 120px; top: 338px; height: 6px; border-radius: 3px; background: #300; } .ehp i { display: block; height: 100%; background: #ff6b6b; border-radius: 3px; }
+  /* 文字盤の上の行動（時刻の位置に置く） */
+  .act { width: 58px; height: 58px; border-radius: 50%; border: 2px solid #fff; background-size: 220%; background-position: 50% 10%; box-shadow: 0 0 10px #000; }
+  .act b { position: absolute; left: -6px; top: -6px; width: 22px; height: 22px; border-radius: 50%; background: #ffd76a; color: #2a1800; font-size: 12px; display: grid; place-items: center; }
+  .act .cardtag { position: absolute; left: 50%; top: 56px; transform: translateX(-50%); white-space: nowrap; font-size: 10px; background: #000c; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--c); }
+  .act.foe { background: #8a2433; display: grid; place-items: center; font-size: 16px; }
+  .act.empty { border-style: dashed; opacity: .75; }
+  .title { left: 0; right: 0; top: 10px; text-align: center; font-size: 12px; color: #d6b46a; letter-spacing: 4px; }
+  /* 仲間：下の懐中時計の札 */
+  .party { left: 10px; right: 10px; top: 408px; display: flex; gap: 8px; }
+  .pa { flex: 1; height: 56px; border-radius: 28px; background: #1a1626ee; border: 1px solid #d6b46a66; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px; font-size: 11px; }
+  .pa .f { width: 46px; height: 46px; border-radius: 50%; background-size: 230%; background-position: 50% 10%; border: 2px solid var(--c); flex: none; }
+  .pa .hp { height: 4px; background: #333; margin-top: 3px; border-radius: 2px; } .pa .hp i { display: block; height: 100%; background: #4cd07d; border-radius: 2px; }
+  .pa.on { border-color: #ffd76a; box-shadow: 0 0 12px #ffd76a88; }
+  .hint { left: 0; right: 0; top: 476px; text-align: center; font-size: 11px; color: #ffe6a8; }
+  /* 手札：真鍮の枠の札 */
+  .hand { left: 8px; right: 8px; top: 500px; height: 190px; display: flex; gap: 6px; }
+  .card { flex: 1; border-radius: 8px; background: linear-gradient(180deg, #2a2236, #1a1524); border: 2px solid #b8945a; position: relative; box-shadow: inset 0 0 0 3px #1a1524, inset 0 0 0 4px #b8945a66; padding-top: 10px; }
+  .card .ring { width: 48px; height: 48px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle, var(--c), #0006); border: 2px solid #d6b46a; display: grid; place-items: center; font-size: 22px; }
+  .card .nm { font-size: 12px; font-weight: bold; text-align: center; margin-top: 8px; line-height: 1.2; }
+  .card .tx { font-size: 9px; text-align: center; color: #bfb3d0; margin-top: 4px; }
+  .card .time { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 10px; color: #ffd76a; }
+  .card.sel { border-color: #ffd76a; transform: translateY(-8px); box-shadow: 0 0 16px #ffd76a; }
+  .foot { left: 8px; right: 8px; bottom: 30px; height: 70px; display: flex; gap: 8px; align-items: center; }
+  .b { flex: 1; height: 56px; border-radius: 28px; background: #1a1626; border: 1px solid #b8945a; display: grid; place-items: center; font-size: 12px; text-align: center; }
+  .go { width: 120px; flex: none; height: 70px; border-radius: 35px; background: radial-gradient(circle at 40% 30%, #fff1c0, #c9963a 60%, #7a5418); color: #2a1800; font-size: 15px; font-weight: bold; display: grid; place-items: center; border: 2px solid #ffe6a8; }
+  .tag { right: 8px; bottom: 2px; font-size: 9px; color: #fff7; }
+</style></head><body>
+<div class="abs bg"></div>
+<div class="abs title">― ラウンド 1　時計の針を進める前に ―</div>
+<div class="abs dial" id="dial"></div>
+<div class="abs enemy"></div>
+<div class="abs hand1"></div>
+<div class="abs ename">カ イ</div><div class="abs ehp"><i style="width:100%"></i></div>
+<!-- 時刻の位置：1時・4時・8時・11時 -->
+<div class="abs act" style="left:240px;top:44px;background-image:url('../../../public/assets/portraits/hero_determined.webp');--c:#4aa8e8"><b>1</b><span class="cardtag">アイスニードル</span></div>
+<div class="abs act foe" style="left:286px;top:240px">カ<b>2</b><span class="cardtag" style="--c:#ff6b6b">⚡ 力をためる</span></div>
+<div class="abs act empty" style="left:50px;top:240px;background-image:url('../../../public/assets/portraits/akari_serious.webp')"><b>3</b><span class="cardtag">？</span></div>
+<div class="abs act empty" style="left:46px;top:60px;background-image:url('../../../public/assets/portraits/mio_smile.webp');background-size:130%;background-position:50% 14%"><b>4</b><span class="cardtag">？</span></div>
+<div class="abs party">
+  <div class="pa" style="--c:#4aa8e8"><div class="f" style="background-image:url('../../../public/assets/portraits/hero_determined.webp')"></div><div style="flex:1">ハルト<div class="hp"><i style="width:100%"></i></div><span style="font-size:9px;color:#7fb6ff">MP 96</span></div></div>
+  <div class="pa on" style="--c:#ff8fb1"><div class="f" style="background-image:url('../../../public/assets/portraits/akari_serious.webp')"></div><div style="flex:1">あかり<div class="hp"><i style="width:100%"></i></div><span style="font-size:9px;color:#7fb6ff">MP 128</span></div></div>
+  <div class="pa" style="--c:#ffb347"><div class="f" style="background-image:url('../../../public/assets/portraits/mio_smile.webp');background-size:130%;background-position:50% 14%"></div><div style="flex:1">みお<div class="hp"><i style="width:70%"></i></div><span style="font-size:9px;color:#7fb6ff">MP 60</span></div></div>
+</div>
+<div class="abs hint">あかりの行動：札を選ぶと、文字盤のどの時刻に入るか光る</div>
+<div class="abs hand">
+  <div class="card" style="--c:#8a96a8"><div class="ring">⚔</div><div class="nm">ソード</div><div class="tx">敵1体に物理</div><div class="time">⏱ 早い</div></div>
+  <div class="card sel" style="--c:#4cd07d"><div class="ring">✚</div><div class="nm">リカバー</div><div class="tx">仲間1人を回復</div><div class="time">⏱ 早い</div></div>
+  <div class="card" style="--c:#a98be0"><div class="ring">🔍</div><div class="nm">サーチ</div><div class="tx">山札から1枚</div><div class="time">その場で</div></div>
+  <div class="card" style="--c:#a98be0"><div class="ring">🂠</div><div class="nm">ドロー</div><div class="tx">2枚引く</div><div class="time">その場で</div></div>
+  <div class="card" style="--c:#8a96a8"><div class="ring">🔨</div><div class="nm">ヘビー<br>ブロウ</div><div class="tx">敵1体に物理</div><div class="time">⏱ 遅い</div></div>
+</div>
+<div class="abs foot"><div class="b">魔法・<br>スキル</div><div class="b">連携技<br><span style="color:#ffd76a">94%</span></div><div class="go">針を進める</div></div>
+<div class="abs tag">案7 時計盤（イメージ）</div>
+<script>
+  const d = document.getElementById('dial');
+  for (let i = 0; i < 12; i++) { const t = document.createElement('div'); t.className = 'tick'; t.style.transform = `rotate(${i * 30}deg) translateY(-168px)`; d.appendChild(t); }
+</script>
+</body></html>

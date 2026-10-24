@@ -3,6 +3,7 @@ import type { EvolutionDef, PartColor, WeaponParamKey, WeaponState } from '../co
 import {
   cappedPassives,
   absorbMaterial,
+  anySlotsFull,
   canEvolveAny,
   evolutionChecks,
   evolutionVisibility,
@@ -24,7 +25,7 @@ import {
   weaponSlots,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
+import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
@@ -32,7 +33,7 @@ import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss }
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -63,6 +64,8 @@ export class WeaponScene extends Phaser.Scene {
   /** 素材・欠片の並びの場所（吸わせる演出の出どころ。描くたびに覚え直す） */
   private itemSpots = new Map<string, { x: number; y: number; color: number }>();
   private message = '';
+  /** 時分解を出しているか（段階100c。どれかの武器の吸わせ枠が初めていっぱいになってから） */
+  private decompose = false;
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
 
@@ -81,7 +84,22 @@ export class WeaponScene extends Phaser.Scene {
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
-    maybeShowTip(this, ['growth_weapon']);
+    maybeShowTip(this, ['growth_weapon', ...(this.decompose ? ['growth_decompose'] : [])]);
+  }
+
+  /**
+   * 時分解を出すか（段階100c）：どれかの武器の吸わせ枠が初めていっぱいになったら、物語の変数に覚えて、その後はずっと出す
+   * （1章では枠が埋まらず、時分解を使う理由がないため）。初めて出た時は説明の窓も出す。交換所を初めて開いた時にも覚える（ExchangeScene）
+   */
+  private updateDecompose(): void {
+    if (run.vars[DECOMPOSE_VAR]) {
+      this.decompose = true;
+      return;
+    }
+    this.decompose = anySlotsFull(D, run.armory);
+    if (!this.decompose) return;
+    setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
+    if (this.root.list.length > 0) this.time.delayedCall(600, () => maybeShowTip(this, ['growth_decompose']));
   }
 
   /** デバッグメニューから記憶の欠片や経験値が変わった時に描き直す */
@@ -263,6 +281,7 @@ export class WeaponScene extends Phaser.Scene {
   // ---- 描画 ----
 
   private render(): void {
+    this.updateDecompose();
     // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
     saveRun();
     this.root.removeAll(true);
@@ -474,7 +493,10 @@ export class WeaponScene extends Phaser.Scene {
     const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
     // タブは左に寄せ、右に素材の絞り込み（攻・火・氷・雷。段階72）を並べる
     const tabW = 96;
-    (['items', 'fragments'] as const).forEach((tab, i) => {
+    // 段階100c：時分解が出るまでは、欠片のタブは欠片を持っている時だけ（時間を返した時にもらう欠片が見えなくならないように）
+    const tabs: ('items' | 'fragments')[] = this.decompose || fragTotal > 0 ? ['items', 'fragments'] : ['items'];
+    if (!tabs.includes(this.tab)) this.tab = 'items';
+    tabs.forEach((tab, i) => {
       const active = this.tab === tab;
       const label = tab === 'items' ? `素材（${itemTotal}）` : `欠片（${fragTotal}）`;
       addButton(
@@ -583,7 +605,7 @@ export class WeaponScene extends Phaser.Scene {
           this.message = '';
           this.render();
         },
-        onLongPress: () => (it ? this.showDetail(it.name, itemDetail(id)) : this.showDetail(D.fragments[id].name, fragmentDetail(id))),
+        onLongPress: () => (it ? this.showDetail(it.name, itemDetail(id, this.decompose)) : this.showDetail(D.fragments[id].name, fragmentDetail(id))),
       });
     });
     if (pages > 1) {
@@ -617,20 +639,24 @@ export class WeaponScene extends Phaser.Scene {
     if (isItems) {
       const absorbErr = sel ? getAbsorbError(D, run.armory, this.charId, sel) : 'none';
       const fragErr = sel ? getFragmentError(D, run.armory, sel) : 'none';
-      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW * 1.5 - 6, top + 22, btnW, 44, '吸わせる', { onTap: () => this.absorb() }, {
+      // 時分解が出るまでは、吸わせるを右の端に（段階100c）
+      const absorbX = this.decompose ? GAME_WIDTH - SIDE_PADDING - btnW * 1.5 - 6 : GAME_WIDTH - SIDE_PADDING - btnW / 2;
+      addButton(this, this.root, absorbX, top + 22, btnW, 44, '吸わせる', { onTap: () => this.absorb() }, {
         enabled: !absorbErr,
         fill: 0x2f6b3f,
         stroke: 0x6dff9e,
         size: 14,
         bold: true,
       });
-      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '時分解', { onTap: () => this.fragment() }, {
-        enabled: !fragErr,
-        fill: 0x3a2a5a,
-        stroke: 0xc58bff,
-        size: 14,
-        bold: true,
-      });
+      if (this.decompose) {
+        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '時分解', { onTap: () => this.fragment() }, {
+          enabled: !fragErr,
+          fill: 0x3a2a5a,
+          stroke: 0xc58bff,
+          size: 14,
+          bold: true,
+        });
+      }
     } else {
       const err = sel ? getFeedError(D, run.armory, this.charId, sel) : 'none';
       addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '吸わせる', { onTap: () => this.feed() }, {
@@ -686,12 +712,13 @@ function keyItems(w: WeaponState): Set<string> {
   return new Set(ahead.flatMap((e) => e.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []))));
 }
 
-function itemDetail(itemId: string): string {
+/** 素材の長押しの説明。時分解がまだ出ていなければ（段階100c）、時分解の行は出さない */
+function itemDetail(itemId: string, decompose: boolean): string {
   const it = D.items[itemId];
   return [
     it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : 'ポーチの消費アイテム（戦闘の「その他」から使う）',
     it.kind === 'material' ? `吸わせると：${describeGains(it.gains)}（吸わせ枠を1つ使う）` : '',
-    `時分解すると：${describeDecompose(D, it)}`,
+    decompose ? `時分解すると：${describeDecompose(D, it)}` : '',
     '',
     `手に入れ方：${itemSources(itemId).join('、') || '―'}`,
   ]

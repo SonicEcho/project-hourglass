@@ -208,6 +208,11 @@ export function weaponSlots(data: WeaponData, w: WeaponState): number {
   return data.slotsPerLevel[Math.min(lv, data.slotsPerLevel.length) - 1] ?? 0;
 }
 
+/** どれかの武器の吸わせ枠がいっぱいか（段階100c。時分解を出すきっかけ） */
+export function anySlotsFull(data: WeaponData, armory: ArmoryState): boolean {
+  return Object.values(armory.weapons).some((w) => w.absorbed >= weaponSlots(data, w));
+}
+
 /** 素材を吸わせた後の能力値（下がっても0より小さくならない）。プレビューにも使う */
 export function paramsAfter(params: WeaponParams, gains: Partial<WeaponParams>): WeaponParams {
   const next = { ...params };
