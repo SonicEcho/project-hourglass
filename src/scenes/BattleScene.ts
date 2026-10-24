@@ -48,8 +48,8 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
 import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
-import { actorLinks, chargeCounterText, drawBattle, FILM_UI, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
-import { LAYOUT } from '../ui/layout';
+import { actorLinks, chargeCounterText, drawBattle, FILM_SKILL_ROWS, FILM_UI, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { FILM_LAYOUT, LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
 import { hasImage } from '../assets/loader';
 import { ALLY_COLOR, COLORS, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
@@ -140,6 +140,8 @@ export class BattleScene extends Phaser.Scene {
   private special = false;
   /** 新しい画面の再生中（段階102c）：実行を始めた時の行動順と決めた行動、今どのコマを再生しているか。計画に戻ると消す */
   private film?: FilmPlayback;
+  /** 延長で引いた札（段階102e。追加行動を選んでいる間、NEW の印を付ける） */
+  private newCards: number[] = [];
   private waits: { timer: Phaser.Time.TimerEvent; resolve: () => void }[] = [];
   /** オートの作戦（オート中だけ。段階29） */
   private auto: Tactic | null = null;
@@ -805,9 +807,15 @@ export class BattleScene extends Phaser.Scene {
         else this.popup(p.x, p.y, `+${e.amount}`, COLORS.heal, 20);
         return true;
       }
-      case 'oneMore':
-        this.bigText('Extend!');
+      case 'oneMore': {
+        // 延長で引いた札を覚えておく（すぐ後の draw の記録）
+        const i = s.log.indexOf(e);
+        const drew = i >= 0 ? s.log.slice(i + 1).find((x) => x.type === 'draw') : undefined;
+        this.newCards = drew?.type === 'draw' ? drew.cardUids : [];
+        if (FILM_UI) this.filmExtend(s, e.actorId);
+        else this.bigText('Extend!');
         return true;
+      }
       case 'partBreak': {
         // 段階89：壊れた所から破片が飛び、画面が揺れる。壊れた所は、絵の上に欠けた跡として残る（battleViews の drawParts）
         const p = unitPosition(s, e.enemyId, e.partId);
@@ -947,6 +955,26 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: piece, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6 + 40, angle: piece.angle + 180, alpha: 0, duration: 700, ease: 'Cubic.easeOut', onComplete: () => piece.active && piece.destroy() });
     }
     this.impact(x, y, 0xffe0a0);
+  }
+
+  /**
+   * 新しい画面の延長の瞬間（段階102e）：フィルムが光り、その上に「Extend!」、下に誰がなぜか。0.5秒ほど。
+   * 「+1」のコマは、画面を描き直した時にフィルムに差し込まれている（battleViews の drawFilmStrip）
+   */
+  private filmExtend(s: BattleState, actorId: string): void {
+    if (this.skipping) return;
+    const { y, h } = FILM_LAYOUT.film;
+    const flash = this.add.rectangle(0, y, GAME_WIDTH, h, 0xffffff, 0.55).setOrigin(0);
+    this.fxLayer.add(flash);
+    this.tweens.add({ targets: flash, alpha: 0, duration: 380 });
+    const big = addText(this, GAME_WIDTH / 2, y - 62, 'Extend!', { size: 40, bold: true }).setOrigin(0.5);
+    big.setFontStyle('bold italic').setShadow(3, 3, '#ff2d55', 0, false, true).setStroke('#000000', 6).setScale(1.6).setAlpha(0);
+    this.fxLayer.add(big);
+    this.tweens.add({ targets: big, scale: 1, alpha: 1, duration: 180, ease: 'Back.easeOut' });
+    const name = findUnit(s, actorId)?.name ?? '';
+    const sub = addText(this, GAME_WIDTH / 2, y + h + 14, `${name}：弱点でダウン！ 1枚引いて、もう一度`, { size: 13, bold: true }).setOrigin(0.5);
+    this.fxLayer.add(this.add.rectangle(GAME_WIDTH / 2, y + h + 14, sub.width + 24, 24, 0x000000).setStrokeStyle(1, 0xff2d55));
+    this.fxLayer.add(sub);
   }
 
   private bigText(text: string): void {
@@ -1296,9 +1324,18 @@ export class BattleScene extends Phaser.Scene {
       },
       tapSkill: (id) => this.select({ source: 'skill', skillId: id }, true),
       nextSkillPage: () => {
+        const actor = this.actor(this.state);
+        const actorId = actor?.uid ?? '';
+        const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
+        // 新しい画面（段階102e）は1行ずつ送り、最後の行が見えたら止める
+        const next = FILM_UI ? Math.min(page + 1, Math.max(0, (actor?.skills.length ?? 0) - FILM_SKILL_ROWS)) : page + 1;
+        this.skillPage = { actorId, page: next };
+        this.render();
+      },
+      prevSkillPage: () => {
         const actorId = this.actor(this.state)?.uid ?? '';
         const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
-        this.skillPage = { actorId, page: page + 1 };
+        this.skillPage = { actorId, page: Math.max(0, page - 1) };
         this.render();
       },
       tapBasic: (kind) => {
@@ -1439,6 +1476,7 @@ export class BattleScene extends Phaser.Scene {
       planLabels,
       planCards,
       playback: this.film,
+      newCardUids: s.phase === 'extra' ? this.newCards : [],
       scope: interactive && sel && sel.pending.source !== 'baton' ? this.scopeOf(sel.pending) : null,
       selectedCardUid: sel?.pending.source === 'card' || sel?.pending.source === 'support' ? sel.pending.cardUid : undefined,
       selectedSkillId: sel?.pending.source === 'skill' ? sel.pending.skillId : undefined,

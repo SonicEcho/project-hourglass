@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ASSETS, buildFolder, CARD_ART, CARD_NAME_LINES, CARDS, DISTORTED_BEAST, ENCOUNTERS, FOLDER, PARTY } from '../src/data';
+import { ASSETS, buildFolder, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, COMBOS, DISTORTED_BEAST, ENCOUNTERS, FOLDER, PARTY } from '../src/data';
 
 describe('データ定義', () => {
   it('カードの名前の2行の分け方は、改行を除くと名前と同じで、2行まで（段階32b）', () => {
@@ -17,6 +17,15 @@ describe('データ定義', () => {
       expect(art, id).toBeDefined();
       expect(ASSETS.find((a) => a.id === art.asset)?.kind, `${id}：${art.asset}`).toBe('image');
       for (const v of [art.x, art.y]) expect(v >= 0 && v <= 1, id).toBe(true);
+    }
+  });
+
+  it('コンボの名前の2行の分け方は、どのコンボにもあり、改行を除くと名前と同じで、2行（段階102e）', () => {
+    for (const combo of COMBOS) {
+      const lines = COMBO_NAME_LINES[combo.id];
+      expect(lines, combo.id).toBeDefined();
+      expect(lines.replace('\n', '')).toBe(combo.name);
+      expect(lines.split('\n').length).toBe(2);
     }
   });
 
