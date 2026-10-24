@@ -271,6 +271,19 @@ function doorsOf(area: AreaDef, room: string): { link: RoomLink; from: RoomDoor;
   ]);
 }
 
+/**
+ * まだ入っていない部屋への出入口（段階112。テストプレイのメモ 6：ぬしの先に部屋があると気づきにくかった）。
+ * 開いていて、出入口のマスが通れる（その晩の壁でふさがっていない）ものだけ。area は、その晩の区画（nightArea）を渡す
+ */
+export function unvisitedDoors(area: AreaDef, state: ExploreState, room: string): { side: RoomSide; cells: GridCell[]; toRoom: string }[] {
+  // 今いる所から歩いて行ける出入口だけ（手前の壁で行けない出入口は出さない）
+  const reach = reachableCells(area, { room, cell: state.room === room ? state.cell : state.checkpoint })[room] ?? new Set<string>();
+  return doorsOf(area, room)
+    .filter((d) => !state.visited.includes(d.to.room) && linkOpen(d.link, state))
+    .map((d) => ({ side: d.from.side, cells: exitCells(roomOf(area, room), d.from.side), toRoom: d.to.room }))
+    .filter((d) => d.cells.some((c) => reach.has(`${c[0]},${c[1]}`)));
+}
+
 /** 閉じた出入口が開いているか（opensWhen の印を倒したか） */
 export function linkOpen(link: RoomLink, state: ExploreState): boolean {
   return link.opensWhen === undefined || state.defeated.includes(link.opensWhen);

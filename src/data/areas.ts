@@ -301,6 +301,9 @@ export const AREAS: Record<string, AreaDef> = {
     walls: [
       { id: 'a11_wall_plaza', room: 'festival_night', cells: box(8, 15, 23, 24), opens: 2 },
       { id: 'a11_wall_steps', room: 'festival_night', cells: box(10, 13, 18, 18), opens: 3 },
+      // 石段の前のチェックポイント（2晩目の帰り口）から、ぬしの広場へ上る2本の道を、3晩目まで閉じる（段階112。テストプレイのメモ 7：
+      // 2晩目に、右の抜け道からチェックポイントへ来て、そのままぬしの前まで行けてしまっていた）
+      { id: 'a11_wall_shrine', room: 'festival_night', cells: [[10, 13], [13, 13]], opens: 3 },
     ],
     // 狩り（段階43）：採取の場所は、1回目の宝箱と浴衣の女の人の所。砂嵐は入るたびに縁日の戦闘から選ぶ
     hunt: {

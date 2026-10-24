@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
+  unvisitedDoors,
   inNight,
   nightArea,
   nightDone,
@@ -50,7 +51,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -342,6 +343,26 @@ export class ExploreScene extends Phaser.Scene {
       }
     }
 
+    // まだ入っていない部屋への出入口（段階112）：光る矢印と、その部屋の名前。狩りでは出さない
+    if (!this.hunting) {
+      for (const door of unvisitedDoors(area, this.state, room.id)) {
+        const [dx, dy] = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[door.side];
+        const nx = door.cells.reduce((n, c) => n + c[0], 0) / door.cells.length;
+        const ny = door.cells.reduce((n, c) => n + c[1], 0) / door.cells.length;
+        // 出入口の1マス内側に置き、外へ向けて動かす
+        const ax = (nx - dx) * T + T / 2;
+        const ay = (ny - dy) * T + T / 2;
+        const arrow = this.add.container(ax, ay);
+        const tri = this.add.triangle(0, 0, 0, -T * 0.4, T * 0.45, T * 0.35, -T * 0.45, T * 0.35, 0xffe08a, 0.95).setStrokeStyle(2, 0x5a4a10);
+        tri.setAngle(door.side === 'top' ? 0 : door.side === 'bottom' ? 180 : door.side === 'left' ? -90 : 90);
+        arrow.add(tri);
+        const label = addText(this, -dx * T * 1.1, -dy * T * 1.1 + (dx !== 0 ? -T * 0.8 : 0), `${ROOM_NAMES[door.toRoom] ?? ''}へ`, { size: 11, bold: true, color: '#ffe08a' }).setOrigin(0.5);
+        label.setStroke('#000000', 3);
+        arrow.add(label);
+        world.add(arrow);
+        this.tweens.add({ targets: tri, x: dx * T * 0.3, y: dy * T * 0.3, alpha: 0.5, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
+      }
+    }
     // チェックポイント（大きな提灯の手前）
     room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
