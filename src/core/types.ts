@@ -192,6 +192,8 @@ export interface EnemyDef {
   actions: EnemyActionDef[];
   parts?: PartDef[];
   ai: EnemyAi;
+  /** 最初の行動に必ず選ぶ行動の id（段階107b。2-3 の負け戦のカイが、最初に切り取りをためて見せる）。使えなければふだんどおり */
+  opening?: string;
   /** 倒すと必ず落とす素材（段階9）の id */
   drops?: string[];
   /** 倒すと確率で落とす素材の表（段階27b） */
@@ -235,6 +237,8 @@ export interface PouchStock {
 export interface BattleCutoff {
   rounds: number;
   enemyHpRatio: number;
+  /** HP による打ち切りは、このラウンドから（段階107b。カイの切り取りを見せる前に終わらないように。書かなければ1ラウンド目から） */
+  afterRound?: number;
 }
 
 /** 戦闘をまたいで持ち越す HP・MP */
@@ -307,6 +311,8 @@ export interface EnemyUnit extends UnitBase {
   ai: EnemyAi;
   /** ボスの「n回に1回は全体攻撃」の数え上げ */
   aiCounter: number;
+  /** まだ使っていない最初の行動（EnemyDef の opening。使ったら null） */
+  opening: string | null;
   /** 倒すと必ず落とす素材の id */
   drops: string[];
   dropTable?: DropTable;

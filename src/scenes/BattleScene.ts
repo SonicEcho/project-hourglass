@@ -112,7 +112,8 @@ function textHash(text: string): number {
 }
 
 /** 演出の待ち時間（ミリ秒） */
-const FX = { banner: 550, popup: 260, settle: 380, round: 600 };
+// cut：カイの切り取りの演出の待ち（段階107b。前は popup と同じで、速すぎてほぼ見えなかった）
+const FX = { banner: 550, popup: 260, settle: 380, round: 600, cut: 1400 };
 
 export class BattleScene extends Phaser.Scene {
   private state!: BattleState;
@@ -559,7 +560,7 @@ export class BattleScene extends Phaser.Scene {
     this.state = next;
     this.render(next);
     for (const e of events) {
-      if (this.showEvent(next, e)) await this.wait(FX.popup);
+      if (this.showEvent(next, e)) await this.wait(e.type === 'frameCut' ? FX.cut : FX.popup);
     }
     if (barks.after) await this.showBark(barks.after);
     if (barks.victory) await this.showBark(barks.victory);
@@ -1060,7 +1061,8 @@ export class BattleScene extends Phaser.Scene {
     const slash = this.add.rectangle(cx, cy, r.w * 2.2, 4, 0xffffff).setAngle(-24).setScale(0, 1);
     this.fxLayer.add(slash);
     this.tweens.add({ targets: slash, scaleX: 1, duration: 140, ease: 'Cubic.easeOut' });
-    const cut = addText(this, cx + 40, r.y - 46, 'CUT!', { size: 44, bold: true }).setOrigin(0.5).setAngle(-10);
+    // 右端のコマでも画面に収まるように置く（段階107b）
+    const cut = addText(this, Phaser.Math.Clamp(cx + 40, 90, GAME_WIDTH - 90), r.y - 46, 'CUT!', { size: 44, bold: true }).setOrigin(0.5).setAngle(-10);
     cut.setFontStyle('bold italic').setShadow(3, 3, '#9fdcff', 0, false, true).setStroke('#000000', 6);
     this.fxLayer.add(cut);
     // 切れたコマは、カイの方へ吸い込まれる

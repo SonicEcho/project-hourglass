@@ -186,7 +186,7 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 攻撃は元のまま HP 1.7倍（2-1・2-2 は 1.3倍。元の HP が低く、1.3倍では2-2 のぬしの7割ほどのラウンドで終わった。2章の山場なので2-2 と同じくらいに）。コマは1つ
   a23_boss: { id: 'a23_boss', name: 'スコアボードのぬし', enemies: [toughenEnemy(SCOREBOARD_LORD, 1.7)], reward: 10, boss: true, koma: 1, snaps: ['pinchHitter'] },
   // 返す直前のカイ（段階40。負け戦）。4ラウンド目の終わりか、カイの HP が半分を切った所で打ち切る。報酬はない（物語の流れの battle の出来事から始める）
-  a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5 } },
+  a23_kai: { id: 'a23_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 4, enemyHpRatio: 0.5, afterRound: 2 } },
   // 2-3 の4晩目：保管局の奥の書庫（段階85）。しまわれた色々な時代の蔵書から漏れた砂嵐（1章〜2-2 の砂嵐を混ぜる）。コマはない（取り返すのが目当て）
   a23x_corridor: { id: 'a23x_corridor', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, MASK_NOISE, BALLOON_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3 },
   a23x_alcove: { id: 'a23x_alcove', name: '砂嵐', enemies: tough([TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3 },
@@ -196,9 +196,9 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a23x_stacks1: { id: 'a23x_stacks1', name: '砂嵐', enemies: tough([RAMUNE_NOISE, ABACUS_NOISE, STICKER_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4 },
   a23x_stacks2: { id: 'a23x_stacks2', name: '砂嵐', enemies: tough([MASK_NOISE, TUBE_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4 },
   // 書庫を見回るカイ（段階85）：見つかると短い負け戦。打ち切ったら、チェックポイントへ戻される（cutoffBack）。報酬はない
-  a23x_kai_patrol: { id: 'a23x_kai_patrol', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 2, enemyHpRatio: 0.5 }, cutoffBack: true },
+  a23x_kai_patrol: { id: 'a23x_kai_patrol', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 2, enemyHpRatio: 0.5, afterRound: 2 }, cutoffBack: true },
   // 棚の砂時計を手に取った後のカイ（段階85）：決まったラウンドを耐えると、逃げきる（区画の奥の印の戦闘。打ち切りで区画を終える）
-  a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5 } },
+  a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5, afterRound: 2 } },
   // ---- 3-1「はじめての仕送り」：昭和41年の夏の村（段階88。villageEnemies.ts）。晩ごとに少しずつ強める（数値は npm run measure の「3-1」で測った） ----
   a31_n1_station: { id: 'a31_n1_station', name: '砂嵐', enemies: tough([FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
   a31_n1_square: { id: 'a31_n1_square', name: '砂嵐', enemies: tough([COIL_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
