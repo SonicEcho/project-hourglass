@@ -29,11 +29,11 @@ export function nextBattleSpeed(v: BattleSpeed): BattleSpeed {
 }
 
 /**
- * 戦闘の速さ（段階109。テストプレイのメモ 15・16。手で戦う時もオートの時も同じ）：
- * ボス戦は ×1 に固定（早送りのボタンを出さない）。狩りは設定の速さ（×2 か ×3）。それ以外は ×2 に固定
+ * 戦闘の速さ（段階109・109b。テストプレイのメモ 15・16）：手で戦う時は ×1（段階109b。開発者が決め直した）。
+ * オートの時は、ボス戦は ×1 に固定（早送りのボタンを出さない）。狩りは設定の速さ（×2 か ×3）。それ以外は ×2 に固定
  */
-export function battleSpeedFor(kind: 'boss' | 'hunt' | 'normal', setting: BattleSpeed): BattleSpeed {
-  if (kind === 'boss') return 1;
+export function battleSpeedFor(kind: 'boss' | 'hunt' | 'normal', setting: BattleSpeed, auto: boolean): BattleSpeed {
+  if (!auto || kind === 'boss') return 1;
   if (kind === 'hunt') return setting === 3 ? 3 : 2;
   return 2;
 }

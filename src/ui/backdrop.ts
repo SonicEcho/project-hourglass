@@ -9,6 +9,11 @@ import { addText } from './widgets';
  * 絵があれば範囲を覆う大きさにして、はみ出した所は見せない。なければ色の帯と「（仮）名前」（label の時）
  */
 export function drawBackdrop(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, def: Backdrop, top: number, bottom: number, label: boolean): void {
+  if (def.topBand && def.image && hasImage(scene, def.image)) {
+    // 上に黒い帯を足して、絵を下げる（段階107c）
+    layer.add(scene.add.rectangle(0, top, GAME_WIDTH, def.topBand, 0x000000).setOrigin(0));
+    top += def.topBand;
+  }
   const h = bottom - top;
   if (def.image && hasImage(scene, def.image)) {
     const img = scene.add.image(GAME_WIDTH / 2, top + h / 2, def.image);

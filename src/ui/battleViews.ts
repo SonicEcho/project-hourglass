@@ -1721,8 +1721,11 @@ function drawCutAim(scene: Phaser.Scene, root: Phaser.GameObjects.Container, fx:
   g.lineBetween(x1, y1, x1 - L, y1).lineBetween(x1, y1, x1, y1 - L);
   root.add(skewBox(scene, fx, fy, w, fh, CUT_BLUE, 0.12));
   root.add(g);
-  const tag = addText(scene, fx + w / 2, fy - 2, '✂ 切り取り予告', { size: 10, bold: true, color: '#101010' }).setOrigin(0.5);
-  root.add(scene.add.rectangle(fx + w / 2, fy - 2, tag.width + 12, 15, CUT_BLUE));
+  // 札は画面の内に収める（段階107c。右端のコマでもはみ出さない）
+  const tag = addText(scene, 0, fy - 2, '✂ 切り取り予告', { size: 10, bold: true, color: '#101010' }).setOrigin(0.5);
+  const tx = Phaser.Math.Clamp(fx + w / 2, tag.width / 2 + 10, GAME_WIDTH - tag.width / 2 - 10);
+  tag.setX(tx);
+  root.add(scene.add.rectangle(tx, fy - 2, tag.width + 12, 15, CUT_BLUE));
   root.add(tag);
 }
 
@@ -1803,8 +1806,11 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const cutNow = (vm.playback?.cut ?? []).includes(ally.uid);
     const aimed = !cutNow && s.enemies.some((e) => e.hp > 0 && chargingAction(e)?.cutsFrame && e.chargeTarget === ally.uid);
     if (cutNow || aimed) {
+      // 名前の後ろに入りきらない時（右端のタブ）は、タブの上の縁に右寄せで札のように出す（段階107c）
       const badge = slantText(scene, nameText.x + nameText.width + 12, y + 6, cutNow ? '✂ 行動を失った' : '✂ ねらわれている', 10, '#101010', '');
-      root.add(scene.add.rectangle(badge.x - 4, y + 5, badge.width + 8, 15, CUT_BLUE).setOrigin(0));
+      const right = Math.min(x + w - 4, GAME_WIDTH - 6);
+      if (badge.x + badge.width + 4 > right) badge.setPosition(right - badge.width - 4, y - 9);
+      root.add(scene.add.rectangle(badge.x - 4, badge.y - 1, badge.width + 8, 15, CUT_BLUE).setOrigin(0));
       root.add(badge);
       if (cutNow) root.add(skewBox(scene, x, y, w, height, 0x000000, 0.45));
     }

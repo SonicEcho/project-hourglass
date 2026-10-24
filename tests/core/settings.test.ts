@@ -53,10 +53,12 @@ describe('設定（段階19）', () => {
     expect(parseSettings('{"autoTactic":"defend"}').autoTactic).toBe('defend');
   });
 
-  it('戦闘の速さ：ボス戦は1倍、狩りは設定の速さ、それ以外は2倍（段階109）', () => {
-    expect(battleSpeedFor('boss', 3)).toBe(1);
-    expect(battleSpeedFor('hunt', 3)).toBe(3);
-    expect(battleSpeedFor('hunt', 2)).toBe(2);
-    expect(battleSpeedFor('normal', 3)).toBe(2);
+  it('戦闘の速さ：手で戦う時は1倍。オートの時は、ボス戦は1倍、狩りは設定の速さ、それ以外は2倍（段階109・109b）', () => {
+    expect(battleSpeedFor('boss', 3, true)).toBe(1);
+    expect(battleSpeedFor('hunt', 3, true)).toBe(3);
+    expect(battleSpeedFor('hunt', 2, true)).toBe(2);
+    expect(battleSpeedFor('normal', 3, true)).toBe(2);
+    // 手で戦う時は、いつも1倍（段階109b）
+    for (const kind of ['boss', 'hunt', 'normal'] as const) expect(battleSpeedFor(kind, 3, false)).toBe(1);
   });
 });
