@@ -1443,6 +1443,10 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 
 絵が届いたら、台帳（`src/data/assets.ts`）に `snap.<スナップの id>` で足し、`CARD_ART` の絵をそれに替える（切り抜く中心は、写真の真ん中なので 0.5・0.5 にする）。
 
+## 5-7b. そのまま貼る一覧（2026-10-25）
+
+開発者が ChatGPT Plus にしたので、待っている絵（小夜子・3章と2章の残りの人・敵32体・部屋の地図39・背景14・1枚絵・スナップ14。全部で118枚）を、1枚ずつ頭の文までつないだ形で `docs/ART_QUEUE.md` にまとめた（`python3 scripts/art_queue.py` で作る）。部屋の配置の下絵は `docs/sketches/room_layouts/`。3章の人・敵・部屋・背景の指示文は、この一覧で初めて書いた（元の脚本の人物と、敵のデータの説明から）
+
 ## 5-8. テストプレイのメモの絵（段階115。2026-10-25）
 
 開発者がスマホで遊んだメモ（`docs/milestones/M3_playtest.md` の 4.）のうち、絵が要るもの。上から順に作る。絵が届いたら、つなぐ段階を M3 に足す。
