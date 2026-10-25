@@ -1452,7 +1452,7 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 | 1 | 8 | ひなの（今）の目を閉じた絵・口を開けた絵 | Gemini | まだ |
 | 2 | 3 | 昼の「どこへ行く？」に敷く、町の見下ろしの地図 | ChatGPT | まだ |
 | 3 | 25 | 探索の地図を歩く、2頭身のハルト（上下左右×3コマ） | ChatGPT | まだ（試し） |
-| ― | 35 | 探索のカイの印 | ― | 絵は作らず、動きを付けた（段階115。歩く向きに左右を返し、少し上下に揺らす。ほかの敵の印も同じ） |
+| 4 | 35 | 探索の地図を見回る、2頭身のカイ（上下左右×3コマ）。3. のハルトと同じ形 | ChatGPT | まだ（3. のハルトがうまくいってから） |
 | ― | 18 | 部位破壊の砂 | ― | 絵は要らない（段階108 で、細かい砂粒が流れ落ちる演出にした） |
 
 ### 1. ひなの（今）の目を閉じた絵・口を開けた絵
@@ -1503,6 +1503,25 @@ Soft cel shading, clear dark outline so it reads at a very small size. No shadow
 ```
 
 （切り分けは、白い背景を抜いてから、マス目どおりに12に切る。つなぐ時は、歩く向きの行を選び、1歩ごとに3コマを順に出す）
+
+### 4. 探索の地図を見回る、2頭身のカイ
+
+メモ 35（探索のカイの印が、ずっと同じポーズ）。今は、戦闘の全身の絵（`enemy.kai`）を小さくして、歩く向きに左右を返し、少し上下に揺らしている（段階115。絵が届くまでの間）。開発者が「それでもダサい」と言ったので、3. のハルトと同じ2頭身の歩く絵を作る。ハルトの絵ができてから、それを見本に添えて作る（絵柄と大きさをそろえる）。
+
+人の頭（5-3 の共通部分の絵柄の文）の後に：
+
+```
+A chibi sprite sheet for a top-down mobile RPG, the same young man as in the attached reference portrait (Kai: swept-back ash-blond hair with one or two loose strands over the forehead, sharp narrow steel-gray eyes, white high-collared long coat with thin blue-green lines worn open over a black high-neck inner top, black trousers, white boots). Match the art style, proportions and scale of the attached chibi sprite of the boy exactly. Super-deformed proportions, about two heads tall. A calm, arrogant patrolling walk: hands in his coat pockets, chin slightly up, the long coat swaying behind him.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size, the character centered in each cell at exactly the same scale.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: left foot forward, standing, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No weapon, no glowing effects, no shadow on the ground, no text, no grid lines.
+```
+
+（つなぐ時は、見回りの印を、歩く向きの行の3コマを順に出す形にする。追ってくる時は、コマを速く回す）
 
 ## 6. 音
 
