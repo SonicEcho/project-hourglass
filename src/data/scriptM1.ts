@@ -700,7 +700,7 @@ export const SCRIPT_M1 = `
 # a11_night2_enter 2日目：夕暮れ・縁日の2晩目
 @bg clock_shop_back
 @bgm stop
-@se door_open
+@se restopia
 @fade white
 @bg festival
 @bgm festival
@@ -952,7 +952,7 @@ export const SCRIPT_M1 = `
 @bgm stop
 〈地の文〉夕暮れ。時計屋の奥の扉の前で、二人は顔を見合わせた。
 @wait 500
-@se door_open
+@se restopia
 @fade white
 @bg festival
 @bgm festival

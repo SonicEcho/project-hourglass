@@ -103,7 +103,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -335,7 +335,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「店長は、いつもこうだ。顔を見たことのほうが少ない」
 あかり〔微笑み〕「直してくれるってことだよね。……行こ」
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg village_1966
@@ -546,7 +546,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg village_dusk
@@ -737,7 +737,7 @@ export const SCRIPT_M3 = `
 * bond_end
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1102,7 +1102,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1561,7 +1561,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1821,7 +1821,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg grad_2019
@@ -2034,7 +2034,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2470,7 +2470,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2729,7 +2729,7 @@ export const SCRIPT_M3 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library

@@ -30,6 +30,7 @@ export const SCRIPT_M2 = `
 〈地の文〉ふみさん。毎月、同じ日に来る、この店のいちばんの常連だ。
 〈地の文〉……今日は、来る日じゃない。
 ハルト〔通常〕「今月の日は、来週じゃ」
+@bgm fumi
 ふみ〔さみしげ〕「そうなの。来週はね、もう、この町にいないの」
 〈地の文〉ふみさんが、布の巾着から古い腕時計を出した。男物の、手巻きの時計だ。
 ふみ〔通常〕「隣の県の、娘のところへ越すのよ。この年で一人は心配だって、言われてね」
@@ -554,7 +555,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -586,7 +587,7 @@ export const SCRIPT_M2 = `
 みお〔笑顔〕「はい！ 差し入れ当番です！ 木曜、準決勝なんです！」
 ハルト〔通常〕「少年野球も、やってるのか」
 みお〔笑顔〕「外野です！ 肩なら、六年生にも負けません！」
-@se door_open
+@se bell
 〈地の文〉扉が勢いよく開いた。泥だらけのユニフォームの男の子。
 そうた（声）「父さん。木曜、準決勝。祝日だから、みんなの親、来るって」
 こうじ〔通常〕「……ああ。知ってる」
@@ -922,7 +923,7 @@ export const SCRIPT_M2 = `
 ハルト〔通常〕「……今日も行く」
 あかり〔真剣〕「うん」
 〈地の文〉柱時計の奥の壁に、砂の光の線が浮かぶ。触れると、扉が開いた。
-@se door_open
+@se restopia
 @se bell
 みお（声）「すみませーん！ さっき、傘を忘れ——」
 @cast ハルト あかり みお
@@ -1243,7 +1244,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。今日は、三人で扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg factory_alley
@@ -1438,7 +1439,7 @@ export const SCRIPT_M2 = `
 〈地の文〉みおは、いつもどおりの声だった。目だけが、少し赤かった。
 あかり〔微笑み〕「……行こっか。みおちゃん」
 みお〔真剣〕「はい。……今日で、返します」
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg factory_alley
@@ -1574,7 +1575,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。今日は、三人で扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1623,7 +1624,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1819,7 +1820,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg school_festival
@@ -1977,7 +1978,7 @@ export const SCRIPT_M2 = `
 @cast ハルト あかり みお
 みお〔真剣〕「今日で、返しましょう。土曜までに」
 あかり〔真剣〕「……うん。最後の曲まで、ちゃんと」
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg school_festival
@@ -2030,13 +2031,15 @@ export const SCRIPT_M2 = `
 @se drum
 〈地の文〉ドラムが、ひとりで同じリズムを刻みはじめる。ベースが重なる。
 写しのさき（声）「弦なんか、なくても歌えるでしょ！ 歌って！」
-@se crowd
+@se handclap
 〈地の文〉客席から、手拍子が起こる。少しずつ大きくなる。
 写しのけんた（声）「……っ、後ろのほう、聞こえるか！ サビ、一緒に！」
 （歌詞）♪ 帰りのチャイムが鳴っても　まだ帰らない
 〈地の文〉二番が来る。歌詞は、ない。けんたさんが、一瞬だけ黙った。
 写しのけんた（声）「……二番は、まだ、ない！ だから、もう一回、一番！」
-〈地の文〉客席が笑って、もう一回、同じサビを歌った。少しして、演奏が終わる。大きな拍手。
+〈地の文〉客席が笑って、もう一回、同じサビを歌った。少しして、演奏が終わる。
+@se applause
+〈地の文〉大きな拍手。
 @cg off
 〈地の文〉けんたさんが、マイクの前で、横のさきさんを見た。小さな声。
 写しのけんた（声）「……昼、ごめん」
@@ -2096,7 +2099,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2381,7 +2384,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2478,7 +2481,7 @@ export const SCRIPT_M2 = `
 @bg clock_shop_back
 @bgm stop
 @clock tick many
-@se door_open
+@se restopia
 @fade white
 @bg library
 @bgm library
@@ -2766,7 +2769,7 @@ export const SCRIPT_M2 = `
 # a12_night2_enter 5日目：商店街の2晩目に入る
 @bg clock_shop_back
 @bgm stop
-@se door_open
+@se restopia
 @fade white
 @bg showa_street
 @bgm daily
@@ -2912,7 +2915,7 @@ export const SCRIPT_M2 = `
 # a12_night3_enter 6日目：商店街の3晩目に入る
 @bg clock_shop_back
 @bgm stop
-@se door_open
+@se restopia
 @fade white
 @bg showa_street
 @bgm daily
@@ -3012,7 +3015,7 @@ export const SCRIPT_M2 = `
 あかり〔心配〕「りくが言ってたのと、同じ……」
 ハルト〔決意〕「りくは、これを追いかけてた。この先に、りくがいる」
 @bg clock_shop_back
-@se door_open
+@se restopia
 @fade white
 @bg library
 @bgm library
@@ -3363,7 +3366,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg riverside_1998
@@ -3496,7 +3499,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg riverside_1998
@@ -3561,7 +3564,7 @@ export const SCRIPT_M2 = `
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library

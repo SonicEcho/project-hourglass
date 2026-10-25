@@ -592,6 +592,7 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   // somber は教室で聞く知らせ（ピアノとチェロ）、uneasy は帰り道・家の前・電話（ぼんやりしたエレピ）
   somber: BGM.somber,
   uneasy: BGM.uneasy,
+  fumi: BGM.fumi,
   showa: BGM.showa,
   // 段階78：2-1 の町工場（区画の曲と同じ。晩に入る会話で流す）
   factory: BGM.factory,
@@ -646,6 +647,9 @@ export const SCRIPT_SE: Record<string, string | null> = {
   awaken: SE.awaken,
   sparkle: SE.sparkle,
   bicycle_bell: SE.bicycleBell,
+  restopia: SE.restopia,
+  handclap: SE.handclap,
+  applause: SE.applause,
 };
 
 /**
