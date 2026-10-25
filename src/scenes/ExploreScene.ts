@@ -988,6 +988,9 @@ export class ExploreScene extends Phaser.Scene {
       const img = this.add.image(0, 0, art);
       img.setScale((T * 1.1 * size) / Math.max(img.width, img.height));
       sprite.add(img);
+      // 同じポーズのまま止まって見えないよう、少し上下に揺らす（段階115。テストプレイのメモ 35）。歩く向きは stepEnemy で左右を返す
+      this.tweens.add({ targets: img, y: -T * 0.08, yoyo: true, repeat: -1, duration: 520 + Math.floor(Math.random() * 160), ease: 'Sine.easeInOut' });
+      sprite.setData('art', img);
     } else {
       sprite.add(this.add.rectangle(0, 0, T * 0.62 * size, T * 0.62 * size, COLORS.enemy).setAngle(45).setStrokeStyle(2, move === 'flee' ? 0xffe08a : 0xffffff));
     }
@@ -1003,6 +1006,10 @@ export class ExploreScene extends Phaser.Scene {
     e.mind = enemyNext(this.map, e.move, e.route, e.mind, player, tuning);
     e.alert?.setVisible(e.mind.chasing);
     const [c, r] = e.mind.cell;
+    // 歩く向きに絵を向ける（左へ歩く時は左右を返す。上下に歩く時は今の向きのまま）
+    const img = e.sprite.getData('art') as Phaser.GameObjects.Image | undefined;
+    const dx = c * T + T / 2 - e.sprite.x;
+    if (img && dx !== 0) img.setFlipX(dx < 0);
     this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: tuning.stepMs, onComplete: () => this.stepEnemy(e) });
   }
 

@@ -1443,6 +1443,67 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 
 絵が届いたら、台帳（`src/data/assets.ts`）に `snap.<スナップの id>` で足し、`CARD_ART` の絵をそれに替える（切り抜く中心は、写真の真ん中なので 0.5・0.5 にする）。
 
+## 5-8. テストプレイのメモの絵（段階115。2026-10-25）
+
+開発者がスマホで遊んだメモ（`docs/milestones/M3_playtest.md` の 4.）のうち、絵が要るもの。上から順に作る。絵が届いたら、つなぐ段階を M3 に足す。
+
+| 順 | メモ | 作る物 | 道具 | 状態 |
+| --- | --- | --- | --- | --- |
+| 1 | 8 | ひなの（今）の目を閉じた絵・口を開けた絵 | Gemini | まだ |
+| 2 | 3 | 昼の「どこへ行く？」に敷く、町の見下ろしの地図 | ChatGPT | まだ |
+| 3 | 25 | 探索の地図を歩く、2頭身のハルト（上下左右×3コマ） | ChatGPT | まだ（試し） |
+| ― | 35 | 探索のカイの印 | ― | 絵は作らず、動きを付けた（段階115。歩く向きに左右を返し、少し上下に揺らす。ほかの敵の印も同じ） |
+| ― | 18 | 部位破壊の砂 | ― | 絵は要らない（段階108 で、細かい砂粒が流れ落ちる演出にした） |
+
+### 1. ひなの（今）の目を閉じた絵・口を開けた絵
+
+5-4 の「目を閉じた絵」「口だけ開けた絵」の指示文のまま。ひなのの「通常」の絵（`portrait.hinano`）を見本として渡す。できた絵を `hinano_blink_src.webp`・`hinano_talk_src.webp` として portraits に入れる（`scripts/portrait_parts.py` に目と口の範囲を足して切り抜き、`src/data/dialogue.ts` の `PORTRAIT_PARTS` に「ひなの」を足す）。写しのひなのの口を開けた絵も、同じ指示文で「笑顔」から作る（`past_hinano_talk_src.webp`）。
+
+### 2. 昼の町の見下ろしの地図
+
+昼の画面は、町の11の場所を丸で並べている（`src/data/daily.ts` の `TOWN`）。地図の絵は、その丸の下に敷く。丸の位置に、その場所の建物が来るように描いてもらう（横3列・縦4段。画面 390×844 のうち、上下 120〜680 の範囲）。
+
+| 段（上から） | 左 | 真ん中 | 右 |
+| --- | --- | --- | --- |
+| 1 | 学校 | 川沿いの道 | 河川敷 |
+| 2 | 楽器店 | ひだまり荘（老人ホーム） | 施設（ハルトとあかりの家） |
+| 3 | 工場 | 商店街 | パン屋 |
+| 4 | コンビニ | 駅 | 時計屋 |
+
+地図の頭（5-3 の共通部分）の後に：
+
+```
+Scene: an overview map of a small, warm Japanese town in the present day, on a clear autumn afternoon, like a hand-painted guide map. The town spreads over the whole image; a river runs across the top part from left to right.
+Place these landmarks on a 3-column by 4-row layout, each one clearly separated with space around it (left / center / right):
+- Row 1 (top): a high school with a sports ground (left), a quiet path along the river with cherry trees (center), a riverside baseball field below the levee (right).
+- Row 2: a small musical instrument shop with a guitar in the window (left), a two-story care home with a sunny garden (center), a modest two-story children's home with laundry in the yard (right).
+- Row 3: an old small factory with a sawtooth roof (left), a covered shopping arcade street (center), a cozy bakery with an awning (right).
+- Row 4 (bottom): a convenience store (left), a small local train station with a platform (center), an old clock shop on a corner (right).
+Streets connect all landmarks. The center of each landmark should sit at the center of its cell, because round buttons will be placed on top of them.
+Keep each landmark building at most one quarter of the image width. Absolutely no letters or text anywhere: signs and banners are blank or have simple patterns only.
+```
+
+（できた絵は、地図の頭の「No people」を守っているか、丸の位置に建物が来ているかを確かめる。ずれていたら、丸の位置の下絵を付けて作り直す）
+
+### 3. 探索の地図を歩く、2頭身のハルト（試し）
+
+今は、探索の地図で、ハルトの立ち絵を小さくして動かしている。メモ 25 のとおり、上下左右を向いて歩く2頭身の絵にする。画像を作る道具は、同じ人を何コマも同じ大きさで並べるのが苦手なので、まず1枚で試す。うまくいかなければ、向きごとに1枚ずつ作る。
+
+人の頭（5-3 の共通部分の絵柄の文）の後に：
+
+```
+A chibi sprite sheet for a top-down mobile RPG, the same boy as in the attached reference portrait (Haruto: messy short black hair with ONE single sand-gold strand in the front bangs, warm amber eyes, white school dress shirt with a loose sand-gold necktie, open dark navy zip hoodie with dusk-orange lining, dark school trousers, sneakers). Super-deformed proportions, about two heads tall, big head, small body, cute but not babyish.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size, the character centered in each cell at exactly the same scale.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: left foot forward, standing, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No shadow on the ground, no text, no grid lines.
+```
+
+（切り分けは、白い背景を抜いてから、マス目どおりに12に切る。つなぐ時は、歩く向きの行を選び、1歩ごとに3コマを順に出す）
+
 ## 6. 音
 
 BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各サイトの規約を調べた（公式ページを読めたものは「公式」、読めなかったものは解説サイトから）。
