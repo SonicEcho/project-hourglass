@@ -80,3 +80,18 @@ export function exchange(
     ...(good.kind === 'gear' ? { gear: good.ref } : {}),
   };
 }
+
+/** 交換所の窓口の係との会話（段階116）。after の出来事を過ぎたら話せる。teaser は、話せる時に台詞の欄に出す一言 */
+export interface KeeperTalk {
+  scene: string;
+  after: string;
+  teaser: string;
+}
+
+/**
+ * 今話せる会話（段階116）：after の出来事を過ぎていて、まだ見ていない会話のうち、並びの最初の1つ。
+ * passed は「その出来事を過ぎたか」、seen は「その会話を見たか」
+ */
+export function nextKeeperTalk(talks: readonly KeeperTalk[], passed: (eventId: string) => boolean, seen: (scene: string) => boolean): KeeperTalk | undefined {
+  return talks.find((t) => passed(t.after) && !seen(t.scene));
+}
