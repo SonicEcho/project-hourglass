@@ -814,6 +814,17 @@ export const ASSETS: AssetEntry[] = [
     undefined,
     '2026-10-25',
   ),
+  sunoBgm(
+    'bgm.archive',
+    '保管局の奥の書庫（2-3 の4晩目）',
+    'suno_archive.mp3',
+    'sneaking through a vast silent archive of endless shelves filled with hourglasses, mysterious and tense but not horror, low cello pulse and pizzicato strings, soft celesta and glassy bell tones, distant clock ticking, a cold blue-white light, a powerful guardian patrolling somewhere nearby, E minor, 96 bpm, looping exploration music, steady dynamics, instrumental',
+    SUNO_WHOLE_EDIT,
+    '84581908a7dd',
+    1676165,
+    undefined,
+    '2026-10-25',
+  ),
   {
     id: 'map.festival',
     kind: 'image',

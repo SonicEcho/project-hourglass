@@ -807,8 +807,8 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'archive_reading', side: 'right' }, b: { room: 'archive_vault', side: 'left' } },
       { a: { room: 'archive_reading', side: 'top' }, b: { room: 'archive_stacks', side: 'bottom' } },
     ],
-    // 決意の曲（Leaving For Tomorrow。段階86）
-    bgm: BGM.resolve,
+    // 忍び込む曲（Guardian Of The Archive。段階114。前は段階86 の決意の曲）
+    bgm: BGM.archive,
     komaNeed: 0,
     goal: { band: '目当て：奥の棚の砂時計', guide: 'ビー玉が鳴る方へ。いちばん奥の棚の砂時計を取り返す\nカイに見つかると、チェックポイントへ戻される' },
     chests: [{ id: 'a23x_chest_vault', room: 'archive_vault', cell: [14, 19], items: [ITEMS.hiPotion.id, ITEMS.ether.id] }],

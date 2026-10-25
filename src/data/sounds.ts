@@ -113,6 +113,8 @@ export const BGM = {
   resolve: 'bgm.resolve',
   // 段階114：ふみさんの思い出（4日目の d3_fumi。ふみさんが越すと話す所から）
   fumi: 'bgm.fumi',
+  // 段階114：保管局の奥の書庫（2-3 の4晩目。前は決意の曲）
+  archive: 'bgm.archive',
 } as const;
 
 /**

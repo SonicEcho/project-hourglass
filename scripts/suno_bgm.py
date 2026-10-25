@@ -60,6 +60,8 @@ SONGS = [
     ('LeavingForTomorrow', 'suno_resolve.mp3', 'loop', 1781760, 4984989),
     # ふみさんの思い出（段階114。4日目の d3_fumi。2026-10-25）：よく似た2点が見つからなかった（score 0.81）ので全体をくり返す
     ('SunsetWatchmaker', 'suno_fumi.mp3', 'whole', None, None),
+    # 保管局の奥の書庫（段階114。2-3 の4晩目。2026-10-25）：よく似た2点が見つからなかった（score 0.88）ので全体をくり返す
+    ('GuardianOfTheArchive', 'suno_archive.mp3', 'whole', None, None),
     # 2026-10-13 の最初の版のボス戦（Paper Umbrella を Cover した和風メタル。81.2秒 → 170.2秒）は、ラスボスの候補として残し、ゲームからは外した
 ]
 

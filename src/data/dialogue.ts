@@ -593,6 +593,7 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   somber: BGM.somber,
   uneasy: BGM.uneasy,
   fumi: BGM.fumi,
+  archive: BGM.archive,
   showa: BGM.showa,
   // 段階78：2-1 の町工場（区画の曲と同じ。晩に入る会話で流す）
   factory: BGM.factory,
