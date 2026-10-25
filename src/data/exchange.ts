@@ -21,9 +21,9 @@ export const EXCHANGE_INTRO = { scene: 'exchange_intro', early: 'exchange_intro_
  * after の出来事を過ぎたら、交換所の台詞の欄に teaser と「話す」が出る。1つの会話は1回だけ（見た印は scene の id）
  */
 export const KEEPER_TALKS: KeeperTalk[] = [
-  { scene: 'petra_ledger', after: 'd15_petra', teaser: '……あと一行で、合いそうなんです' },
-  { scene: 'petra_matched', after: 'd19_return', teaser: '……帳簿の件で、少しだけ' },
-  { scene: 'petra_return_column', after: 'd23_return', teaser: '……ひとつ、伺ってもいいですか' },
+  { scene: 'petra_ledger', after: 'd15_petra', teaser: '少々お待ちください。今、数を合わせていますので' },
+  { scene: 'petra_matched', after: 'd19_return', teaser: '……『最後の打席』の欄の件で、ご報告が' },
+  { scene: 'petra_return_column', after: 'd23_return', teaser: '……あの。業務とは、関係のない質問なのですが' },
   { scene: 'petra_scold', after: 'd31_return', teaser: '……すみません、上が少し、ばたばたしていて' },
 ];
 
