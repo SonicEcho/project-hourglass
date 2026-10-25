@@ -1,11 +1,11 @@
 """そろった手拍子の効果音を作る（段階114。テストプレイのメモ 30：2-2 の最後のコマ。効果音ラボにそろった手拍子がなかった）。
 
-使い方: python3 scripts/make_handclap.py public/assets/se/handclap.mp3
-  （numpy と ffmpeg が要る。乱数の種を決めているので、毎回同じ音になる）
+使い方: python3 scripts/make_handclap.py <拍手単音の mp3> public/assets/se/handclap.mp3
+  （numpy と ffmpeg が要る。拍手単音はポケットサウンドの hakusyuone.mp3。乱数の種を決めているので、毎回同じ音になる）
 
-作り方：126 bpm の拍に、64人が少しずつ加わって手をたたく（1人ごとに高さ・大きさ・ずれを変える）。
-1回の手拍子は、柔らかく立ち上がる雑音を、1300Hz あたりと手のひらの厚み（280Hz あたり）で強め、3200Hz より上を落とす
-（最初の版は高い音が強く、カチカチして聞こえた。2026-10-25 開発者の確認）。全体はだんだん大きくなり、体育館の響きを足す
+作り方：本物の拍手1回の音（ポケットサウンド「拍手単音」）を、126 bpm の拍に、48人が少しずつ加わってたたく形に重ねる。
+1人ごとに、音の高さ（再生の速さ 0.85〜1.15 倍）・大きさ・こもり方（遠い人ほど高い音を落とす）・拍とのずれを変える。全体はだんだん大きくなる。
+最初の版（雑音から作った音）はカチカチし、次の版（雑音の音＋作った響き）は電子音のような響きが目立った（2026-10-25 開発者の確認）ので、本物の音を重ねる形にした。響きは足さない
 """
 import subprocess
 import sys
@@ -13,51 +13,57 @@ import sys
 import numpy as np
 
 SR = 44100
-rng = np.random.default_rng(5)
+rng = np.random.default_rng(7)
 
 
-def clap(bright):
-    n = int(SR * 0.16)
-    t = np.arange(n) / SR
-    env = np.clip(t / 0.0025, 0, 1) * np.exp(-t * rng.uniform(28, 40))
-    x = rng.standard_normal(n) * env
-    spec = np.fft.rfft(x)
-    f = np.fft.rfftfreq(n, 1 / SR)
-    w = np.exp(-((np.log(f + 1) - np.log(1300 * bright)) ** 2) / 0.7)
-    w += 0.35 * np.exp(-((np.log(f + 1) - np.log(280 * bright)) ** 2) / 0.15)
-    w *= 1 / (1 + (f / 3200) ** 4)
-    return np.fft.irfft(spec * w, n)
+def decode(path):
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 'f32le', '-ac', '1', '-ar', str(SR), '-'], capture_output=True, check=True).stdout
+    return np.frombuffer(raw, dtype=np.float32).copy()
 
 
-def main(path):
+def resample(x, rate):
+    idx = np.arange(0, len(x) - 1, rate)
+    return np.interp(idx, np.arange(len(x)), x)
+
+
+def soften(x, amount):
+    """遠い人ほど高い音を落とす（1次のローパス。amount 0〜0.85）"""
+    y = np.empty_like(x)
+    acc = 0.0
+    for i, v in enumerate(x):
+        acc = acc * amount + v * (1 - amount)
+        y[i] = acc
+    return y
+
+
+def main(src, path):
+    one = decode(src)
+    one = one[np.argmax(np.abs(one) > 0.02 * np.abs(one).max()):]
+    variants = [soften(resample(one, r), a) for r in (0.86, 0.93, 1.0, 1.07, 1.14) for a in (0.0, 0.45, 0.7)]
     dur = 9.0
-    out = np.zeros(int(SR * dur))
+    out = np.zeros(int(SR * dur) + SR)
     beat = 60 / 126
-    people = 64
+    people = 48
     for p in range(people):
         start = rng.uniform(0, 4.5) * (p / people)
-        gain = rng.uniform(0.4, 1.0)
-        bright = rng.uniform(0.75, 1.2)
-        lag = rng.normal(0, 0.02)
+        gain = rng.uniform(0.35, 1.0)
+        far = rng.integers(0, 3)
+        lag = rng.normal(0, 0.018)
         tb = 0.25
         while tb < dur - 0.3:
             if tb >= start:
-                c = clap(bright) * gain * rng.uniform(0.75, 1.1)
-                i = int((tb + lag + rng.normal(0, 0.012)) * SR)
-                if 0 <= i < len(out) - len(c):
-                    out[i:i + len(c)] += c
+                v = variants[rng.integers(0, 5) * 3 + far] * gain * rng.uniform(0.8, 1.1)
+                i = int((tb + lag + rng.normal(0, 0.01)) * SR)
+                if i >= 0:
+                    out[i:i + len(v)] += v[: len(out) - i]
             tb += beat
+    out = out[: int(SR * dur)]
     t = np.arange(len(out)) / SR
     out *= np.clip(0.3 + 0.7 * t / 5.5, 0, 1) * np.clip((dur - t) / 1.2, 0, 1)
-    rev = np.zeros_like(out)
-    for d in np.linspace(0.02, 0.6, 40):
-        k = int(d * SR)
-        rev[k:] += out[:-k] * 0.5 * np.exp(-d * 6) * rng.uniform(0.6, 1.0)
-    out = out + rev * 0.6
     out /= np.abs(out).max() * 1.15
     pcm = (out * 32767).astype(np.int16)
     subprocess.run(['ffmpeg', '-y', '-v', 'error', '-f', 's16le', '-ar', str(SR), '-ac', '1', '-i', '-', '-b:a', '96k', path], input=pcm.tobytes(), check=True)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2])
