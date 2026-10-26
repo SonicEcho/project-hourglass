@@ -47,12 +47,16 @@ import {
   thinItems,
   areaChapter,
   huntRewardRate,
+  applyMapEdits,
+  isEmptyMapEdits,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
 import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
+import { loadMapEdits } from '../debug/mapEdits';
+import { MapEditor } from './mapEditor';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
@@ -139,14 +143,24 @@ export class ExploreScene extends Phaser.Scene {
   private hubButton!: Phaser.GameObjects.Container;
   /** 下の帯の、仲間の今の HP・MP（段階32b 調整3） */
   private vitalsTexts: Phaser.GameObjects.Text[] = [];
+  /** 直しを重ねる前の区画（地図の調整。段階117） */
+  private rawArea!: AreaDef;
+  /** 画面の文字とボタンの入れ物 */
+  private ui?: Phaser.GameObjects.Container;
+  /** 地図の調整の途中（段階117。?debug=1 の時だけ） */
+  private editor: MapEditor | null = null;
 
   constructor() {
     super('Explore');
   }
 
   create(data: ExploreData): void {
-    const base = AREAS[data.area] ?? TRIAL_AREAS[data.area];
-    if (!base) throw new Error(`unknown area ${data.area}`);
+    const raw = AREAS[data.area] ?? TRIAL_AREAS[data.area];
+    if (!raw) throw new Error(`unknown area ${data.area}`);
+    // 地図の調整（段階117）：?debug=1 の時だけ、端末に覚えた直しを重ねる
+    this.rawArea = raw;
+    this.editor = null;
+    const base = isDebugEnabled(window.location.search) ? applyMapEdits(raw, loadMapEdits()) : raw;
     this.hunting = data.hunt === true;
     const hunt = run.hunt;
     if (this.hunting && (!hunt || !base.hunt)) {
@@ -302,6 +316,7 @@ export class ExploreScene extends Phaser.Scene {
     const world = this.add.container(0, 0);
     this.world = world;
     const ui = this.add.container(0, 0);
+    this.ui = ui;
     const room = this.room;
     if (room.image && hasImage(this, room.image)) {
       world.add(this.add.image(0, 0, room.image).setOrigin(0).setDisplaySize(this.map.cols * T, this.map.rows * T));
@@ -525,7 +540,9 @@ export class ExploreScene extends Phaser.Scene {
     if (this.hunting) addButton(this, ui, 46, 32, 76, 44, 'レストピア\nへ戻る', { onTap: () => this.leaveHunt() }, { size: 11 });
     else addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     if (isDebugEnabled(window.location.search)) {
-      addButton(this, ui, GAME_WIDTH - 46, 32, 76, 40, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
+      addButton(this, ui, GAME_WIDTH - 46, 28, 76, 34, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
+      // 地図の調整（段階117）。直しがあれば ＊ を付ける
+      addButton(this, ui, GAME_WIDTH - 46, 64, 76, 26, isEmptyMapEdits(loadMapEdits()) ? '地図直し' : '地図直し＊', { onTap: () => this.openEditor() }, { size: 11 });
     }
     // 案内は上の帯の下に（下に出すと、地図の下の端にいる仲間が隠れる）。
     // 段階98（レビューの F3）：帯を濃くし、案内は数秒で消す。帯をタップすると、もう一度出す（帯のタップでは歩かない）
@@ -555,7 +572,7 @@ export class ExploreScene extends Phaser.Scene {
     if (area.rooms.length > 1) ui.add(this.drawRoomMap());
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (over.length > 0 || this.leaving) return;
+      if (over.length > 0 || this.leaving || this.editor) return;
       if (p.getDistance() > 12) return; // ドラッグは無視
       const pt = p.positionToCamera(cam) as Phaser.Math.Vector2;
       this.tapCell([Math.floor(pt.x / T), Math.floor(pt.y / T)]);
@@ -563,7 +580,7 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (this.leaving || !this.player || this.tipOpen) return;
+    if (this.leaving || !this.player || this.tipOpen || this.editor) return;
     if (this.time.now < this.graceUntil) return;
     for (const e of this.enemies) {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
@@ -575,6 +592,32 @@ export class ExploreScene extends Phaser.Scene {
         return;
       }
     }
+  }
+
+  /** 地図の調整を始める（段階117）：歩くのと敵を止め、地図の上の物を隠して、マス目と道具を出す */
+  private openEditor(): void {
+    if (this.editor || this.leaving || !this.world || !this.ui || this.tipOpen) return;
+    this.route = [];
+    this.goal = null;
+    this.tweens.pauseAll();
+    this.world.list.forEach((o, i) => i > 0 && (o as Phaser.GameObjects.Image).setVisible(false));
+    this.editor = new MapEditor({
+      scene: this,
+      world: this.world,
+      ui: this.ui,
+      cam: this.cameras.main,
+      original: this.rawArea,
+      room: this.state.room,
+      edits: loadMapEdits(),
+      topBand: TOP_BAND,
+      bottomBand: vitalsBandHeight(currentParty(storyBattleLineup()).length),
+      say: (text) => this.say(text),
+      close: () => {
+        // 直した地図で開き直す（今いるマスが通れなくなっていても、タップすると近くの歩ける所へ歩く）
+        this.leaving = true;
+        this.scene.restart(this.back());
+      },
+    });
   }
 
   /** タップしたマス：話せる人・ボスなら隣まで歩いてから。それ以外はそこまで歩く */
