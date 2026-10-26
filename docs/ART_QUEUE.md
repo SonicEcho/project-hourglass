@@ -13,7 +13,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - A. 小夜子（ヒロイン）（2枚。済 2）
 - B. 3章の人（9枚。済 9）
 - C. 2章の残りの人（7枚。済 7）
-- D. 敵（32枚）
+- D. 敵（32枚。済 20）
 - E. 部屋の地図（39枚）
 - F. 会話の背景（14枚）
 - G. 1枚絵（1枚）
@@ -310,7 +310,7 @@ Character: Saki, a 37-year-old Japanese woman, the former bassist of a high scho
 
 毎回、ブリキノイズの絵（`public/assets/enemies/tin_noise.webp`）を絵柄の見本として添付する。白い背景のまま送ってくれればよい（抜くのは Claude が `scripts/cutout_white.py` で行う）。ぬしは、部位がはっきり見えるように頼んでいる
 
-### 19. 2-1 歯車ノイズ
+### 19. 2-1 歯車ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`gear_noise.png`
@@ -324,7 +324,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a lump of gears and mainsprings grinding against each other without meshing, charging forward
 ```
 
-### 20. 2-1 ネジノイズ
+### 20. 2-1 ネジノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`screw_noise.png`
@@ -338,7 +338,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a fast swarm of screws, nuts and bolts
 ```
 
-### 21. 2-1 真空管ノイズ
+### 21. 2-1 真空管ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`tube_noise.png`
@@ -352,7 +352,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: an old vacuum-tube radio collapsing into noise, glowing tubes crackling with electricity
 ```
 
-### 22. 2-1 そろばんノイズ
+### 22. 2-1 そろばんノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`abacus_noise.png`
@@ -366,7 +366,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a wooden abacus whose beads fly apart and float around it like a shield
 ```
 
-### 23. 2-1 旋盤のぬし（ボス）
+### 23. 2-1 旋盤のぬし（ボス）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`lathe_boss.png`
@@ -380,7 +380,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a vortex of an old lathe, leather belts and metal shavings, a tool post like a blade, a small glowing brass gear at its center
 ```
 
-### 24. 2-2 ガラケーノイズ
+### 24. 2-2 ガラケーノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`flip_phone_noise.png`
@@ -394,7 +394,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a flock of old flip phones with antennas, screens flashing and ringing
 ```
 
-### 25. 2-2 写真シールノイズ
+### 25. 2-2 写真シールノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`sticker_noise.png`
@@ -408,7 +408,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a swarm of small photo stickers peeling off and fluttering, decorated with sparkles and hearts (no faces, no letters)
 ```
 
-### 26. 2-2 ラジカセノイズ
+### 26. 2-2 ラジカセノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`boombox_noise.png`
@@ -422,7 +422,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a boombox with cassette tapes unspooling around it like ribbons, speakers blasting
 ```
 
-### 27. 2-2 メトロノームノイズ
+### 27. 2-2 メトロノームノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`metronome_noise.png`
@@ -436,7 +436,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a wooden metronome whose pendulum swings so fast it blurs
 ```
 
-### 28. 2-2 アンプのぬし（ボス）
+### 28. 2-2 アンプのぬし（ボス）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`amp_boss.png`
@@ -450,7 +450,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a tower of guitar amplifiers and speakers wrapped in tangled cables, one broken guitar string whipping around
 ```
 
-### 29. 2-3 ボールノイズ
+### 29. 2-3 ボールノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`ball_noise.png`
@@ -464,7 +464,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a fast swarm of baseballs with red stitches
 ```
 
-### 30. 2-3 電子ペットノイズ
+### 30. 2-3 電子ペットノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`pet_noise.png`
@@ -478,7 +478,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a small egg-shaped handheld digital pet toy with a tiny pixel creature on its screen (no logos)
 ```
 
-### 31. 2-3 メガホンノイズ
+### 31. 2-3 メガホンノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`megaphone_noise.png`
@@ -492,7 +492,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a cluster of plastic cheering megaphones whose cheers have turned into angry roars
 ```
 
-### 32. 2-3 水筒ノイズ
+### 32. 2-3 水筒ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`jug_noise.png`
@@ -506,7 +506,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a big sports water jug and ice water splashing around it
 ```
 
-### 33. 2-3 スコアボードのぬし（ボス）
+### 33. 2-3 スコアボードのぬし（ボス）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`scoreboard_boss.png`
@@ -520,7 +520,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a giant made of a wooden scoreboard, a backstop net and hundreds of megaphones, its score panels spinning endlessly (blank panels, no numbers)
 ```
 
-### 34. 3-1 扇風機ノイズ
+### 34. 3-1 扇風機ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`fan_noise.png`
@@ -534,7 +534,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: an old electric fan from the 1960s with chipped blades, spinning so fast it whips up wind
 ```
 
-### 35. 3-1 蚊取り線香ノイズ
+### 35. 3-1 蚊取り線香ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`coil_noise.png`
@@ -548,7 +548,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a large green mosquito coil smoldering in a pig-shaped ceramic holder, its smoke curling into a spiral body with glowing embers
 ```
 
-### 36. 3-1 トランジスタラジオノイズ
+### 36. 3-1 トランジスタラジオノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`radio_noise.png`
@@ -562,7 +562,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a small 1960s transistor radio with a round speaker grille and a tuning dial, its telescopic antenna whipping around, crackling static spilling out
 ```
 
-### 37. 3-1 ちゃぶ台ノイズ
+### 37. 3-1 ちゃぶ台ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`table_noise.png`
@@ -576,7 +576,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a round low wooden dining table (chabudai) with one broken leg, flipped on its side, teacups and rice bowls flying around it
 ```
 
-### 38. 3-1 郵便ポストノイズ（番人）
+### 38. 3-1 郵便ポストノイズ（番人）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`postbox_noise.png`

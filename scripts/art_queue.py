@@ -59,7 +59,7 @@ Follow the attached layout sketch exactly: light areas are walkable ground, dark
 ITEMS = []  # (章の見出し, [(番号, 名前, 添付, 保存名, 指示文, メモ)])
 
 # 届いてゲームに入れた絵（保存名）。一覧では見出しに「済」を付ける
-DONE = {'sayoko_sheet.png', 'sayoko_smile.png', 'chiyo_smile.png', 'noboru_smile.png', 'past_chiyo_smile.png', 'past_kiku_normal.png', 'past_noboru_smile.png', 'shiori_smile.png', 'toya_smile.png', 'past_shiori_smile.png', 'past_toya_smile.png', 'past_koji_normal.png', 'past_masaru_smile.png', 'masaru_smile.png', 'sumi_smile.png', 'past_sumi_smile.png', 'daichi_smile.png', 'saki_smile.png'}
+DONE = {'sayoko_sheet.png', 'sayoko_smile.png', 'chiyo_smile.png', 'noboru_smile.png', 'past_chiyo_smile.png', 'past_kiku_normal.png', 'past_noboru_smile.png', 'shiori_smile.png', 'toya_smile.png', 'past_shiori_smile.png', 'past_toya_smile.png', 'past_koji_normal.png', 'past_masaru_smile.png', 'masaru_smile.png', 'sumi_smile.png', 'past_sumi_smile.png', 'daichi_smile.png', 'saki_smile.png', 'gear_noise.png', 'screw_noise.png', 'tube_noise.png', 'abacus_noise.png', 'lathe_boss.png', 'flip_phone_noise.png', 'sticker_noise.png', 'boombox_noise.png', 'metronome_noise.png', 'amp_boss.png', 'ball_noise.png', 'pet_noise.png', 'megaphone_noise.png', 'jug_noise.png', 'scoreboard_boss.png', 'fan_noise.png', 'coil_noise.png', 'radio_noise.png', 'table_noise.png', 'postbox_noise.png'}
 
 
 def section(title, note=''):

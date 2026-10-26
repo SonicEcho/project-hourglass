@@ -16,6 +16,27 @@ export const ENEMY_ART: Record<string, string> = {
   kai: 'enemy.kai',
   // 段階96：本気のカイ（3章のリベンジ）も同じ絵
   kaiRevenge: 'enemy.kai',
+  // 2026-10-26：ChatGPT Plus で作った 2-1〜3-1 の敵（docs/ART_QUEUE.md の D）
+  gearNoise: 'enemy.gear_noise',
+  screwNoise: 'enemy.screw_noise',
+  tubeNoise: 'enemy.tube_noise',
+  abacusNoise: 'enemy.abacus_noise',
+  latheLord: 'enemy.lathe_boss',
+  flipPhoneNoise: 'enemy.flip_phone_noise',
+  stickerNoise: 'enemy.sticker_noise',
+  boomboxNoise: 'enemy.boombox_noise',
+  metronomeNoise: 'enemy.metronome_noise',
+  ampLord: 'enemy.amp_boss',
+  ballNoise: 'enemy.ball_noise',
+  petNoise: 'enemy.pet_noise',
+  megaphoneNoise: 'enemy.megaphone_noise',
+  jugNoise: 'enemy.jug_noise',
+  scoreboardLord: 'enemy.scoreboard_boss',
+  fanNoise: 'enemy.fan_noise',
+  coilNoise: 'enemy.coil_noise',
+  radioNoise: 'enemy.radio_noise',
+  tableNoise: 'enemy.table_noise',
+  postboxNoise: 'enemy.postbox_noise',
 };
 
 /** 部位がなくても、1体で出る時はボスの大きさで描く敵（段階108。テストプレイのメモ 32：2-3 の負け戦のカイが小さかった） */
@@ -31,6 +52,10 @@ export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: numb
   bicycleLord: { frontWheel: [0.24, 0.5], bell: [0.3, 0.14] },
   // 段階96：本気のカイの枠の刃（絵の左上で掲げている四角い枠の、左下の角）
   kaiRevenge: { frameBlade: [0.3, 0.2, 'left'] },
+  // 2026-10-26：届いた絵に合わせた（旋盤は右の刃物台と真ん中のベルト、アンプは真ん中の大きなスピーカーと左のコード、スコアボードは上の得点板と左のネット）
+  latheLord: { toolPost: [0.86, 0.6], belt: [0.42, 0.66, 'left'] },
+  ampLord: { speaker: [0.52, 0.3], cord: [0.14, 0.42, 'left'] },
+  scoreboardLord: { scoreboard: [0.6, 0.27], backstop: [0.24, 0.6, 'left'] },
 };
 
 /**
