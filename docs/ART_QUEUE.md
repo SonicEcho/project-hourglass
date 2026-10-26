@@ -14,7 +14,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - B. 3章の人（9枚。済 9）
 - C. 2章の残りの人（7枚。済 7）
 - D. 敵（32枚。済 32）
-- E. 部屋の地図（39枚）
+- E. 部屋の地図（39枚。済 19）
 - F. 会話の背景（14枚）
 - G. 1枚絵（1枚）
 - H. スナップの写真（14枚）
@@ -762,7 +762,7 @@ A large boss monster, filling most of the image. Body: a giant made of railroad 
 
 毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。下絵の明るい所が歩ける所。1-1 は縁日の地図、1-2 は商店街の地図、2-2 以降は、その区画で最初にできた部屋の絵を見本にする（なければ縁日の地図）
 
-### 51. 1-1 参道の入口
+### 51. 1-1 参道の入口（済）
 
 - 添付：`docs/sketches/room_layouts/room_fest_gate.png`、`public/assets/maps/festival.webp`
 - 保存名：`map_fest_gate.png`
@@ -776,7 +776,7 @@ An opening at the center of the top edge, one sixth of the image width wide, lea
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 52. 1-1 屋台の裏
+### 52. 1-1 屋台の裏（済）
 
 - 添付：`docs/sketches/room_layouts/room_fest_backyard.png`、`public/assets/maps/festival.webp`
 - 保存名：`map_fest_backyard.png`
@@ -790,7 +790,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 53. 1-1 屋台の裏通り
+### 53. 1-1 屋台の裏通り（済）
 
 - 添付：`docs/sketches/room_layouts/room_fest_west.png`、`public/assets/maps/festival.webp`
 - 保存名：`map_fest_west.png`
@@ -804,7 +804,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 54. 1-1 射的と金魚すくいの通り
+### 54. 1-1 射的と金魚すくいの通り（済）
 
 - 添付：`docs/sketches/room_layouts/room_fest_east.png`、`public/assets/maps/festival.webp`
 - 保存名：`map_fest_east.png`
@@ -818,7 +818,7 @@ An opening at the center of the left edge, one sixth of the image height wide, l
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 55. 1-1 社の裏の林
+### 55. 1-1 社の裏の林（済）
 
 - 添付：`docs/sketches/room_layouts/room_fest_woods.png`、`public/assets/maps/festival.webp`
 - 保存名：`map_fest_woods.png`
@@ -832,7 +832,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 56. 1-2 左の路地裏
+### 56. 1-2 左の路地裏（済）
 
 - 添付：`docs/sketches/room_layouts/room_showa_alley.png`、`public/assets/maps/showa_street.webp`
 - 保存名：`map_showa_alley.png`
@@ -846,7 +846,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 57. 1-2 右の電器屋の裏通り
+### 57. 1-2 右の電器屋の裏通り（済）
 
 - 添付：`docs/sketches/room_layouts/room_showa_lane.png`、`public/assets/maps/showa_street.webp`
 - 保存名：`map_showa_lane.png`
@@ -860,7 +860,7 @@ An opening at the center of the left edge, one sixth of the image height wide, l
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 58. 1-2 坂の上の先
+### 58. 1-2 坂の上の先（済）
 
 - 添付：`docs/sketches/room_layouts/room_showa_hill.png`、`public/assets/maps/showa_street.webp`
 - 保存名：`map_showa_hill.png`
@@ -889,7 +889,7 @@ An opening at the center of the top edge, one sixth of the image width wide, lea
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 60. 2-2 模擬店の中庭
+### 60. 2-2 模擬店の中庭（済）
 
 - 添付：`docs/sketches/room_layouts/room_school_courtyard.png`、`map_school_gate.png（上で作った絵）`
 - 保存名：`map_school_courtyard.png`
@@ -904,7 +904,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 61. 2-2 駐輪場
+### 61. 2-2 駐輪場（済）
 
 - 添付：`docs/sketches/room_layouts/room_school_bikes.png`、`map_school_gate.png`
 - 保存名：`map_school_bikes.png`
@@ -919,7 +919,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 62. 2-2 渡り廊下と音楽室の前
+### 62. 2-2 渡り廊下と音楽室の前（済）
 
 - 添付：`docs/sketches/room_layouts/room_school_corridor.png`、`map_school_gate.png`
 - 保存名：`map_school_corridor.png`
@@ -934,7 +934,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 63. 2-2 お化け屋敷の教室
+### 63. 2-2 お化け屋敷の教室（済）
 
 - 添付：`docs/sketches/room_layouts/room_school_classroom.png`、`map_school_gate.png`
 - 保存名：`map_school_classroom.png`
@@ -949,7 +949,7 @@ An opening at the center of the left edge, one sixth of the image height wide, l
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 64. 2-2 体育館
+### 64. 2-2 体育館（済）
 
 - 添付：`docs/sketches/room_layouts/room_school_gym.png`、`map_school_gate.png`
 - 保存名：`map_school_gym.png`
@@ -964,7 +964,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 65. 2-3 土手の道
+### 65. 2-3 土手の道（済）
 
 - 添付：`docs/sketches/room_layouts/room_riverside_levee.png`、`public/assets/maps/festival.webp`
 - 保存名：`map_riverside_levee.png`
@@ -979,7 +979,7 @@ An opening at the center of the top edge, one sixth of the image width wide, lea
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 66. 2-3 ベンチの裏の木陰
+### 66. 2-3 ベンチの裏の木陰（済）
 
 - 添付：`docs/sketches/room_layouts/room_riverside_bench.png`、`map_riverside_levee.png（上で作った絵）`
 - 保存名：`map_riverside_bench.png`
@@ -994,7 +994,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 67. 2-3 川べり
+### 67. 2-3 川べり（済）
 
 - 添付：`docs/sketches/room_layouts/room_riverside_bank.png`、`map_riverside_levee.png`
 - 保存名：`map_riverside_bank.png`
@@ -1009,7 +1009,7 @@ An opening at the center of the left edge, one sixth of the image height wide, l
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 68. 2-3 売店のテント
+### 68. 2-3 売店のテント（済）
 
 - 添付：`docs/sketches/room_layouts/room_riverside_stand.png`、`map_riverside_levee.png`
 - 保存名：`map_riverside_stand.png`
@@ -1024,7 +1024,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 69. 2-3 用具小屋の裏
+### 69. 2-3 用具小屋の裏（済）
 
 - 添付：`docs/sketches/room_layouts/room_riverside_shed.png`、`map_riverside_levee.png`
 - 保存名：`map_riverside_shed.png`
@@ -1039,7 +1039,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-### 70. 2-3 ダイヤモンド
+### 70. 2-3 ダイヤモンド（済）
 
 - 添付：`docs/sketches/room_layouts/room_riverside_diamond.png`、`map_riverside_levee.png`
 - 保存名：`map_riverside_diamond.png`
