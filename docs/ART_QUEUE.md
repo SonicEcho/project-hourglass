@@ -13,7 +13,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - A. 小夜子（ヒロイン）（2枚。済 2）
 - B. 3章の人（9枚。済 9）
 - C. 2章の残りの人（7枚。済 7）
-- D. 敵（32枚。済 20）
+- D. 敵（32枚。済 32）
 - E. 部屋の地図（39枚）
 - F. 会話の背景（14枚）
 - G. 1枚絵（1枚）
@@ -590,7 +590,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a classic red cylindrical Japanese post box, its shape crumbling, envelopes of money sent home spilling out of its slot like a tongue (blank envelopes, no letters)
 ```
 
-### 39. 3-1 汽車のぬし（ボス）
+### 39. 3-1 汽車のぬし（ボス）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`train_boss.png`
@@ -604,7 +604,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a huge black steam locomotive turning into a shadow of smoke and iron wheels, blocking a country station platform. Two clearly visible parts: a tall smokestack (chimney) at the upper left billowing thick black smoke, and big red-spoked iron driving wheels at the lower right
 ```
 
-### 40. 祭りの夜 提灯ノイズ
+### 40. 祭りの夜 提灯ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`lantern_noise.png`
@@ -618,7 +618,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a cluster of torn red paper lanterns, their flames flickering through the holes
 ```
 
-### 41. 祭りの夜 風車ノイズ
+### 41. 祭りの夜 風車ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`pinwheel_noise.png`
@@ -632,7 +632,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a bunch of colorful paper pinwheels on bamboo sticks, spinning endlessly into a whirlwind
 ```
 
-### 42. 祭りの夜 飴細工ノイズ
+### 42. 祭りの夜 飴細工ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`candy_noise.png`
@@ -646,7 +646,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a delicate amber candy sculpture of a crane, half melted and dripping, on a wooden stick
 ```
 
-### 43. 祭りの夜 蓄音機ノイズ
+### 43. 祭りの夜 蓄音機ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`phonograph_noise.png`
@@ -660,7 +660,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: an old gramophone with a large brass horn, a record spinning and skipping, musical notes made of sand pouring out (no letters)
 ```
 
-### 44. 祭りの夜 やぐらのぬし（ボス）
+### 44. 祭りの夜 やぐらのぬし（ボス）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`yagura_boss.png`
@@ -674,7 +674,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a giant tangle of a bon-odori festival tower (yagura), a big taiko drum and hundreds of paper lanterns, a hundred years of wear. Two clearly visible parts: a huge taiko drum at the upper center, and a thick rope strung with glowing lanterns across the lower right
 ```
 
-### 45. 3-2 イヤホンノイズ
+### 45. 3-2 イヤホンノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`earphone_noise.png`
@@ -688,7 +688,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a long tangle of white wired earphone cables coiling like snakes, two earbuds at the ends like heads
 ```
 
-### 46. 3-2 自撮り棒ノイズ
+### 46. 3-2 自撮り棒ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`selfie_noise.png`
@@ -702,7 +702,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: an extending selfie stick bending wildly, a smartphone with a cracked screen at its tip (blank screen, no logos)
 ```
 
-### 47. 3-2 タピオカノイズ
+### 47. 3-2 タピオカノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`tapioca_noise.png`
@@ -716,7 +716,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a big clear plastic cup of tapioca milk tea with a thick straw, wobbly black tapioca pearls bouncing out
 ```
 
-### 48. 3-2 卒業証書の筒ノイズ
+### 48. 3-2 卒業証書の筒ノイズ（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`diploma_noise.png`
@@ -730,7 +730,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a black cylindrical diploma tube with its lid popped off, white paper sheets pouring out like a storm (blank paper, no letters)
 ```
 
-### 49. 3-2 寄せ書きの色紙ノイズ（番人）
+### 49. 3-2 寄せ書きの色紙ノイズ（番人）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`yosegaki_noise.png`
@@ -744,7 +744,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: dozens of square autograph boards (shikishi) swirling and overlapping, covered in colorful doodles and hearts (no readable letters)
 ```
 
-### 50. 3-2 踏切のぬし（ボス）
+### 50. 3-2 踏切のぬし（ボス）（済）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`crossing_boss.png`

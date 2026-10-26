@@ -37,6 +37,18 @@ export const ENEMY_ART: Record<string, string> = {
   radioNoise: 'enemy.radio_noise',
   tableNoise: 'enemy.table_noise',
   postboxNoise: 'enemy.postbox_noise',
+  trainLord: 'enemy.train_boss',
+  lanternNoise: 'enemy.lantern_noise',
+  pinwheelNoise: 'enemy.pinwheel_noise',
+  candyNoise: 'enemy.candy_noise',
+  phonographNoise: 'enemy.phonograph_noise',
+  yaguraLord: 'enemy.yagura_boss',
+  earphoneNoise: 'enemy.earphone_noise',
+  selfieNoise: 'enemy.selfie_noise',
+  tapiocaNoise: 'enemy.tapioca_noise',
+  diplomaNoise: 'enemy.diploma_noise',
+  yosegakiNoise: 'enemy.yosegaki_noise',
+  crossingLord: 'enemy.crossing_boss',
 };
 
 /** 部位がなくても、1体で出る時はボスの大きさで描く敵（段階108。テストプレイのメモ 32：2-3 の負け戦のカイが小さかった） */
@@ -56,6 +68,9 @@ export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: numb
   latheLord: { toolPost: [0.86, 0.6], belt: [0.42, 0.66, 'left'] },
   ampLord: { speaker: [0.52, 0.3], cord: [0.14, 0.42, 'left'] },
   scoreboardLord: { scoreboard: [0.6, 0.27], backstop: [0.24, 0.6, 'left'] },
+  trainLord: { chimney: [0.3, 0.2], wheel: [0.62, 0.74] },
+  yaguraLord: { drum: [0.52, 0.22], lanternRope: [0.72, 0.64] },
+  crossingLord: { alarm: [0.55, 0.2], barrier: [0.12, 0.42, 'left'] },
 };
 
 /**
