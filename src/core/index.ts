@@ -18,6 +18,7 @@ export * from './flow';
 export * from './daily';
 export * from './minigame';
 export * from './explore';
+export * from './mapEdit';
 export * from './hunt';
 export * from './lineup';
 export * from './tips';

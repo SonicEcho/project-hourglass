@@ -294,10 +294,11 @@ try {
   await tap('^その他$');
   await tap('^ポーション\\n残り3$');
   const allies = await page.evaluate(() => window.__restopia.scene('Battle').state.allies.length);
-  // 1人目（ハルト）の顔を2回タップして決める（仲間の列の真ん中）
-  await tapAt(390 / allies / 2, 414);
+  // 1人目（ハルト）のタブを2回タップして決める（仲間のタブの真ん中。段階102f の画面）
+  const tabX = 8 + (390 - 16 - 6 * (allies - 1)) / allies / 2;
+  await tapAt(tabX, 476 + 58 / 2);
   await page.waitForTimeout(300);
-  await tapAt(390 / allies / 2, 414);
+  await tapAt(tabX, 476 + 58 / 2);
   await until('ポーションを予約した', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.plans.some((p) => p.action.type === 'item'))));
   await debugButton('自動で1ラウンド戦う');
   await closeDebugMenu();

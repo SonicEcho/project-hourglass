@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { ExchangeGood } from '../core';
-import { addParts, eventPassed, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen } from '../core';
-import { BACKDROPS, BGM, DECOMPOSE_VAR, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addParts, eventPassed, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen, nextKeeperTalk } from '../core';
+import { BACKDROPS, BGM, DECOMPOSE_VAR, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -133,8 +133,24 @@ export class ExchangeScene extends Phaser.Scene {
     }
     // 台詞は絵の上でも読めるよう、暗い下地に（段階45）
     root.add(this.add.rectangle(GAME_WIDTH / 2, 690, GAME_WIDTH - 24, 60, 0x0b0f22, 0.85).setRounded(8).setStrokeStyle(1, COLORS.border));
-    root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 44 }).setOrigin(0.5));
+    // 話せる会話がある時（段階116）は、ペトラの一言と「話す」。見なくても物語は進む
+    const talk = this.talk();
+    if (talk) {
+      root.add(addText(this, 24, 690, `${EXCHANGE_KEEPER}「${talk.teaser}」`, { size: 13, wrap: GAME_WIDTH - 150 }).setOrigin(0, 0.5));
+      addButton(this, root, GAME_WIDTH - 66, 690, 92, 44, '！ 話す', { onTap: () => this.startTalk(talk.scene) }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+    } else root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 44 }).setOrigin(0.5));
     addButton(this, root, GAME_WIDTH / 2, 780, GAME_WIDTH - 60, 56, 'レストピアへ戻る', { onTap: () => this.scene.start('Hub', { seen: undefined }) }, { size: 17, bold: true });
+  }
+
+  /** 今話せるペトラとの会話（段階116） */
+  private talk() {
+    return nextKeeperTalk(KEEPER_TALKS, (id) => eventPassed(SLICE_FLOW, run.event, id), (scene) => isSeen(run.vars, scene));
+  }
+
+  /** ペトラとの会話を見て、交換所に戻る（見た印は会話の id） */
+  private startTalk(scene: string): void {
+    const talk: DialogueData = { scene, vars: run.vars, seed: run.seed, next: { key: 'Exchange', data: { seen: scene } }, onVars: (vars) => setStoryVars(vars) };
+    this.scene.start('Dialogue', talk);
   }
 
   private turn(d: number): void {

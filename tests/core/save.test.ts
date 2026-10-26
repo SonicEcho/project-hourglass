@@ -428,12 +428,12 @@ describe('セーブ：今のデータに合わせて整える', () => {
     // なくなった出来事は、代わりの出来事から（段階63：1-1 の「1日目の返す会話」→ 返した後の会話）
     const res4 = parseEdited((raw) => (raw.run.event = 'd1_return'));
     expect(res4.ok && res4.save.run.event).toBe('a11_returned');
-    // 何日目は出来事に合わせる（段階85：2-3 のカイは18日目、返すのは19日目）
+    // 何日目は出来事に合わせる（段階85：2-3 のカイは18日目。段階103：返すのは20日目）
     const res6 = parseEdited((raw) => (raw.run.event = 'd7_kai'));
     expect(res6.ok && res6.save.run.progress.day).toBe(18);
     const res7 = parseEdited((raw) => (raw.run.event = 'a23_return'));
     expect(res7.ok && res7.save.run.event).toBe('a23_return');
-    expect(res7.ok && res7.save.run.progress.day).toBe(19);
+    expect(res7.ok && res7.save.run.progress.day).toBe(20);
     expect(parseEdited((raw) => delete raw.run.event).ok).toBe(false);
     expect(parseEdited((raw) => (raw.run.vars = 'x')).ok).toBe(false);
   });

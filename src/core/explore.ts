@@ -28,6 +28,11 @@ export interface RoomDef {
   era?: string;
   /** 使える出入口（文字の地図で、その辺の真ん中の4マスが通れること） */
   exits: RoomSide[];
+  /**
+   * 出入口を辺の真ん中からずらす時の、出入口の最初のマス（上下の辺は左から、左右の辺は上から数える）。書かなければ真ん中。
+   * 届いた地図の絵の道が、辺の真ん中から外れている時に使う（2026-10-26）
+   */
+  exitAt?: Partial<Record<RoomSide, number>>;
 }
 
 /** 部屋の出入口 */
@@ -244,10 +249,10 @@ function roomSize(room: RoomDef): GridCell {
   return [Math.max(0, ...room.layout.map((l) => l.length)), room.layout.length];
 }
 
-/** 出入口のマス（辺の真ん中の4マス。上下の辺は左から、左右の辺は上から） */
+/** 出入口のマス（辺の真ん中の4マス。exitAt があればそこから4マス。上下の辺は左から、左右の辺は上から） */
 export function exitCells(room: RoomDef, side: RoomSide): GridCell[] {
   const [cols, rows] = roomSize(room);
-  const from = (n: number) => Math.floor(n / 2) - EXIT_WIDTH / 2;
+  const from = (n: number) => room.exitAt?.[side] ?? Math.floor(n / 2) - EXIT_WIDTH / 2;
   return Array.from({ length: EXIT_WIDTH }, (_, i): GridCell => {
     if (side === 'top') return [from(cols) + i, 0];
     if (side === 'bottom') return [from(cols) + i, rows - 1];

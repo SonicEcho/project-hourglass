@@ -1307,7 +1307,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 3. 1-2 の寄り道の3部屋（`showa_alley`・`showa_lane`・`showa_hill`）
 4. 昼の「どこへ行く？」に敷く、町の見下ろしの地図（商店街・学校・時計屋・川。指示文はこれから書く）
 
-- 絵が届くまで、文字の地図に時代の色と小物（提灯の灯りなど）を重ねる仮の見た目を作る（4章の前の段階。`docs/milestones/M3_review.md` の F1）
+- 絵が届くまで、文字の地図に時代の色と小物（提灯の灯りなど）を重ねる仮の見た目を作る案は、やめた（2026-10-25。段階104。絵のない部屋は開発中に開発者が見るだけなので、文字の地図のままでよい。本番の地図は1枚の絵で頼む）
 - 昼の地図は、町の地図の絵が届くまで、行き先の丸を大きくして地図を小さく寄せる（F4）
 
 ## 5-6. 1章で足りない絵の一覧（2026-10-15）
@@ -1442,6 +1442,94 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 3. 小夜子・早瀬・りく・ノアの写真は、その仲間の章で新しいスナップの種類を決めてから、この表に足す
 
 絵が届いたら、台帳（`src/data/assets.ts`）に `snap.<スナップの id>` で足し、`CARD_ART` の絵をそれに替える（切り抜く中心は、写真の真ん中なので 0.5・0.5 にする）。
+
+## 5-7b. そのまま貼る一覧（2026-10-25）
+
+**小夜子の見た目（決まった。2026-10-26）**：一覧の A の設定画の文で、1回で決まった。長い黒髪（少し茶色がかる）を片側で編み込み、銀の三日月の簪（真珠の飾りが下がる）、赤みのある茶色の目、紺の浴衣に白い桔梗と蛍の光、紅の帯に白い組み紐、赤い鼻緒の下駄、赤い巾着。設定画はリポジトリに入れていない（開発者が持っている。表情違いや1枚絵を作る時に添付する）
+
+開発者が ChatGPT Plus にしたので、待っている絵（小夜子・3章と2章の残りの人・敵32体・部屋の地図39・背景14・1枚絵・スナップ14。全部で118枚）を、1枚ずつ頭の文までつないだ形で `docs/ART_QUEUE.md` にまとめた（`python3 scripts/art_queue.py` で作る）。部屋の配置の下絵は `docs/sketches/room_layouts/`。3章の人・敵・部屋・背景の指示文は、この一覧で初めて書いた（元の脚本の人物と、敵のデータの説明から）
+
+**部屋の地図（2026-10-26）**：一覧の E のうち、1-1 の5部屋・1-2 の3部屋・2-2 の5部屋（校門の前庭を除く）・2-3 の6部屋の地図が届いた。下絵どおりにはならなかったので、届いた絵の道に合わせて、歩ける場所の文字の地図（`src/data/rooms.ts` の `ART_<部屋>_LAYOUT`）を書き直し、敵・宝箱・会話の人などの位置もそこへ移した。道が辺の真ん中から外れている出入口は、`exitAt` でずらした（`docs/design/explore.md` の 決定の記録）。1-1 の4枚目（広場）は「屋台の裏通り」（`fest_west`）に使った。縁日の広場（`festival_night`）と 2-2 の校門の前庭（`school_gate`）は前の絵・マス目のまま。1-2 の商店街（`map.showa_street`）は、開発者が手直しした絵に差し替え、横道の位置に合わせて左右の出入口をずらした
+
+## 5-8. テストプレイのメモの絵（段階115。2026-10-25）
+
+開発者がスマホで遊んだメモ（`docs/milestones/M3_playtest.md` の 4.）のうち、絵が要るもの。上から順に作る。絵が届いたら、つなぐ段階を M3 に足す。
+
+| 順 | メモ | 作る物 | 道具 | 状態 |
+| --- | --- | --- | --- | --- |
+| 1 | 8 | ひなの（今）の目を閉じた絵・口を開けた絵 | Gemini | まだ |
+| 2 | 3 | 昼の「どこへ行く？」に敷く、町の見下ろしの地図 | ChatGPT | まだ |
+| 3 | 25 | 探索の地図を歩く、2頭身のハルト（上下左右×3コマ） | ChatGPT | まだ（試し） |
+| 4 | 35 | 探索の地図を見回る、2頭身のカイ（上下左右×3コマ）。3. のハルトと同じ形 | ChatGPT | まだ（3. のハルトがうまくいってから） |
+| ― | 18 | 部位破壊の砂 | ― | 絵は要らない（段階108 で、細かい砂粒が流れ落ちる演出にした） |
+
+### 1. ひなの（今）の目を閉じた絵・口を開けた絵
+
+5-4 の「目を閉じた絵」「口だけ開けた絵」の指示文のまま。ひなのの「通常」の絵（`portrait.hinano`）を見本として渡す。できた絵を `hinano_blink_src.webp`・`hinano_talk_src.webp` として portraits に入れる（`scripts/portrait_parts.py` に目と口の範囲を足して切り抜き、`src/data/dialogue.ts` の `PORTRAIT_PARTS` に「ひなの」を足す）。写しのひなのの口を開けた絵も、同じ指示文で「笑顔」から作る（`past_hinano_talk_src.webp`）。
+
+### 2. 昼の町の見下ろしの地図
+
+昼の画面は、町の11の場所を丸で並べている（`src/data/daily.ts` の `TOWN`）。地図の絵は、その丸の下に敷く。丸の位置に、その場所の建物が来るように描いてもらう（横3列・縦4段。画面 390×844 のうち、上下 120〜680 の範囲）。
+
+| 段（上から） | 左 | 真ん中 | 右 |
+| --- | --- | --- | --- |
+| 1 | 学校 | 川沿いの道 | 河川敷 |
+| 2 | 楽器店 | ひだまり荘（老人ホーム） | 施設（ハルトとあかりの家） |
+| 3 | 工場 | 商店街 | パン屋 |
+| 4 | コンビニ | 駅 | 時計屋 |
+
+地図の頭（5-3 の共通部分）の後に：
+
+```
+Scene: an overview map of a small, warm Japanese town in the present day, on a clear autumn afternoon, like a hand-painted guide map. The town spreads over the whole image; a river runs across the top part from left to right.
+Place these landmarks on a 3-column by 4-row layout, each one clearly separated with space around it (left / center / right):
+- Row 1 (top): a high school with a sports ground (left), a quiet path along the river with cherry trees (center), a riverside baseball field below the levee (right).
+- Row 2: a small musical instrument shop with a guitar in the window (left), a two-story care home with a sunny garden (center), a modest two-story children's home with laundry in the yard (right).
+- Row 3: an old small factory with a sawtooth roof (left), a covered shopping arcade street (center), a cozy bakery with an awning (right).
+- Row 4 (bottom): a convenience store (left), a small local train station with a platform (center), an old clock shop on a corner (right).
+Streets connect all landmarks. The center of each landmark should sit at the center of its cell, because round buttons will be placed on top of them.
+Keep each landmark building at most one quarter of the image width. Absolutely no letters or text anywhere: signs and banners are blank or have simple patterns only.
+```
+
+（できた絵は、地図の頭の「No people」を守っているか、丸の位置に建物が来ているかを確かめる。ずれていたら、丸の位置の下絵を付けて作り直す）
+
+### 3. 探索の地図を歩く、2頭身のハルト（試し）
+
+今は、探索の地図で、ハルトの立ち絵を小さくして動かしている。メモ 25 のとおり、上下左右を向いて歩く2頭身の絵にする。画像を作る道具は、同じ人を何コマも同じ大きさで並べるのが苦手なので、まず1枚で試す。うまくいかなければ、向きごとに1枚ずつ作る。
+
+人の頭（5-3 の共通部分の絵柄の文）の後に：
+
+```
+A chibi sprite sheet for a top-down mobile RPG, the same boy as in the attached reference portrait (Haruto: messy short black hair with ONE single sand-gold strand in the front bangs, warm amber eyes, white school dress shirt with a loose sand-gold necktie, open dark navy zip hoodie with dusk-orange lining, dark school trousers, sneakers). Super-deformed proportions, about two heads tall, big head, small body, cute but not babyish.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size, the character centered in each cell at exactly the same scale.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: left foot forward, standing, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No shadow on the ground, no text, no grid lines.
+```
+
+（切り分けは、白い背景を抜いてから、マス目どおりに12に切る。つなぐ時は、歩く向きの行を選び、1歩ごとに3コマを順に出す）
+
+### 4. 探索の地図を見回る、2頭身のカイ
+
+メモ 35（探索のカイの印が、ずっと同じポーズ）。今は、戦闘の全身の絵（`enemy.kai`）を小さくして、歩く向きに左右を返し、少し上下に揺らしている（段階115。絵が届くまでの間）。開発者が「それでもダサい」と言ったので、3. のハルトと同じ2頭身の歩く絵を作る。ハルトの絵ができてから、それを見本に添えて作る（絵柄と大きさをそろえる）。
+
+人の頭（5-3 の共通部分の絵柄の文）の後に：
+
+```
+A chibi sprite sheet for a top-down mobile RPG, the same young man as in the attached reference portrait (Kai: swept-back ash-blond hair with one or two loose strands over the forehead, sharp narrow steel-gray eyes, white high-collared long coat with thin blue-green lines worn open over a black high-neck inner top, black trousers, white boots). Match the art style, proportions and scale of the attached chibi sprite of the boy exactly. Super-deformed proportions, about two heads tall. A calm, arrogant patrolling walk: hands in his coat pockets, chin slightly up, the long coat swaying behind him.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size, the character centered in each cell at exactly the same scale.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: left foot forward, standing, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No weapon, no glowing effects, no shadow on the ground, no text, no grid lines.
+```
+
+（つなぐ時は、見回りの印を、歩く向きの行の3コマを順に出す形にする。追ってくる時は、コマを速く回す）
 
 ## 6. 音
 

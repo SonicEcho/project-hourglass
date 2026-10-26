@@ -10,14 +10,14 @@ export const SCRIPT_M3 = `
 @logo RESTOPIA　思い出だけの理想郷
 @caption 第3章　さよならの言い方
 
-// ---- 21日目（金曜）。3-1「はじめての仕送り」（docs/script/3-1.md の 4.） ----
+// ---- 22日目（金曜）。3-1「はじめての仕送り」（docs/script/3-1.md の 4.） ----
 
-# d21_classroom 21日目：文化祭の前の日
+# d21_classroom 22日目：文化祭の前の日
 @bg classroom
 @bgm daily
 @se murmur
 @cast ハルト あかり
-〈地の文〉二十一日目の朝。文化祭は、明日。
+〈地の文〉二十二日目の朝。文化祭は、明日。
 あかり〔笑顔〕「おはよ、ハルト。見て、地図、貼れたよ」
 〈地の文〉模造紙に、りくの字で、町の時計が三十八か所。あかりの字で、三十九か所目。
 〈地の文〉地図の横に、机が一つ。名札に「りく」。
@@ -34,7 +34,7 @@ export const SCRIPT_M3 = `
 あかり〔真剣〕「明日の時計の博物館、ぜんぶ、ちゃんと動いてるといいな」
 @clock stop
 
-# d21_chiyo 21日目：止まった腕時計
+# d21_chiyo 22日目：止まった腕時計
 @bg clock_shop_day
 @bgm daily
 @clock tick many
@@ -97,13 +97,13 @@ export const SCRIPT_M3 = `
 〈地の文〉みおは、そう言ってから、少しだけ、窓の外を見た。
 〈地の文〉作業台の上で、小さな金色の時計が、止まった針のまま、夕方の光を返していた。
 
-# d21_library 21日目：夕暮れ・蔵書の棚
+# d21_library 22日目：夕暮れ・蔵書の棚
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -235,7 +235,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「今夜は、ここまでだ」
 〈地の文〉帰り口の砂時計が、ぼんやり光っている。
 
-# a31_night1_end 21日目：蔵書の棚に戻る
+# a31_night1_end 22日目：蔵書の棚に戻る
 @bg library
 @bgm stop
 @cast ハルト あかり みお
@@ -251,11 +251,11 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 21日目　おわり
+@caption 22日目　おわり
 
-// ---- 22日目（土曜）。文化祭 ----
+// ---- 23日目（土曜）。文化祭 ----
 
-# d22_museum 22日目：時計の博物館
+# d22_museum 23日目：時計の博物館
 @bg classroom
 @bgm daily
 @se crowd
@@ -299,7 +299,7 @@ export const SCRIPT_M3 = `
 みお〔真剣〕「……お母さん、時計に、ちよさんの名前……」
 あかり〔微笑み〕「呼んでたんだね。毎日」
 
-# d22_noboru 22日目：縁側の八時
+# d22_noboru 23日目：縁側の八時
 @bg school_fair
 @cast ハルト のぼる
 のぼる〔笑顔〕「悪いね、呼び出して。姉ちゃんの前じゃ、言いにくくてな」
@@ -324,7 +324,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「直して、お返しします。月曜の夕方までに」
 のぼる〔笑顔〕「頼むね、時計屋さん」
 
-# a31_night2_enter 22日目：村の2晩目に入る
+# a31_night2_enter 23日目：村の2晩目に入る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
@@ -335,7 +335,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「店長は、いつもこうだ。顔を見たことのほうが少ない」
 あかり〔微笑み〕「直してくれるってことだよね。……行こ」
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg village_1966
@@ -447,7 +447,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「今夜は、ここまでだ」
 〈地の文〉帰り口の砂時計が、ぼんやり光っている。
 
-# a31_night2_end 22日目：蔵書の棚・赤い鼻緒
+# a31_night2_end 23日目：蔵書の棚・赤い鼻緒
 @bg library
 @bgm stop
 @cast ハルト あかり みお
@@ -469,11 +469,11 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 22日目　おわり
+@caption 23日目　おわり
 
-// ---- 23日目（日曜） ----
+// ---- 24日目（日曜） ----
 
-# d23_chiyo 23日目：八時の窓
+# d23_chiyo 24日目：八時の窓
 @bg clock_shop_back
 @bgm stop
 @clock tick many
@@ -540,13 +540,13 @@ export const SCRIPT_M3 = `
 ちよ〔微笑み〕「わたしね、八時になると、なぜか窓の外を見たくなるの。若い頃から、ずっと」
 ちよ〔微笑み〕「理由なんて、ないと思ってたけど」
 
-# a31_night3_enter 23日目：村の3晩目に入る
+# a31_night3_enter 24日目：村の3晩目に入る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg village_dusk
@@ -653,7 +653,7 @@ export const SCRIPT_M3 = `
 〈地の文〉コマがそろった（{komaHave}/{komaNeed}）。札の「返却」の文字が光った。
 ハルト〔通常〕「返そう。ちよさんに」
 
-# d23_return 23日目：時間を返す
+# d23_return 24日目：時間を返す
 @bg library
 @cast ハルト あかり みお
 〈地の文〉ひぐらしの声と、汽笛と、「八時、忘れんな」が、砂になって帰っていった。
@@ -671,11 +671,11 @@ export const SCRIPT_M3 = `
 @clock stop
 @bg black
 @fade in
-@caption 23日目　おわり
+@caption 24日目　おわり
 
-// ---- 24日目（月曜）。3-1 を返した翌日 ----
+// ---- 25日目（月曜）。3-1 を返した翌日 ----
 
-# d24_chiyo 24日目：顔、見とくよ
+# d24_chiyo 25日目：顔、見とくよ
 @bg station_now
 @bgm daily
 @cast ハルト ちよ みお
@@ -716,7 +716,7 @@ export const SCRIPT_M3 = `
 介護士の人（声）「……ちよさん、帰りに、空の見える窓のお部屋、空いてないか聞いてみましょうか」
 ちよ〔笑顔〕「……そうね。お願いしようかしら」
 
-# d24_evening 24日目：夕暮れ・祭囃子
+# d24_evening 25日目：夕暮れ・祭囃子
 @bg clock_shop_back
 @bgm stop
 @clock tick many
@@ -737,7 +737,7 @@ export const SCRIPT_M3 = `
 * bond_end
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -758,7 +758,7 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 
-// ---- 昼の選べる話（21〜24日目。docs/script/3-1.md の 4. の「昼の選べる話」） ----
+// ---- 昼の選べる話（22〜25日目。docs/script/3-1.md の 4. の「昼の選べる話」） ----
 
 # bond_akari7 絆の出来事（あかり7）：お弁当対決
 @bg rooftop
@@ -909,7 +909,7 @@ export const SCRIPT_M3 = `
 あかり〔微笑み〕「……決まった時刻があるって、いいですね」
 ふみ〔笑顔〕「いいわよ。毎日、ちゃんと、思い出せるもの」
 
-// ---- 大正の祭りの夜（段階91b。脚本 docs/script/3-matsuri.md）。24日目の夜〜26日目 ----
+// ---- 大正の祭りの夜（段階91b。脚本 docs/script/3-matsuri.md）。25日目の夜〜26日目 ----
 
 # a3s_enter 祭りの夜：題のすり切れた棚
 @bg library
@@ -1045,7 +1045,7 @@ export const SCRIPT_M3 = `
 @se sand
 〈地の文〉夜の端の方から、さらさらと、砂が落ちる音がした。
 
-# a3s_night1_end 24日目：時計屋の奥に戻る
+# a3s_night1_end 25日目：時計屋の奥に戻る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
@@ -1059,9 +1059,9 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 24日目　おわり
+@caption 25日目　おわり
 
-# d25_shrine 25日目：百年前の祭り
+# d25_shrine 26日目：百年前の祭り
 @bg shrine_now
 @bgm uneasy
 @cast ハルト あかり みお
@@ -1096,13 +1096,13 @@ export const SCRIPT_M3 = `
 あかり〔考える〕「じゃあ、あの夜の小夜子さんは……」
 ハルト〔通常〕「……今夜、聞く」
 
-# a3s_night2_enter 25日目：祭りの夜の2晩目に入る
+# a3s_night2_enter 26日目：祭りの夜の2晩目に入る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1258,7 +1258,7 @@ export const SCRIPT_M3 = `
 みお〔笑顔〕「明日、学校の後、迎えに来ます！ 決めた！」
 @fade white
 
-# a3s_night2_end 25日目：時計屋の奥に戻る
+# a3s_night2_end 26日目：時計屋の奥に戻る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
@@ -1278,9 +1278,9 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 25日目　おわり
+@caption 26日目　おわり
 
-# d26_sayoko 26日目：はじめての今
+# d26_sayoko 27日目：はじめての今
 @bg clock_shop_back
 @bgm daily
 @clock tick many
@@ -1328,7 +1328,7 @@ export const SCRIPT_M3 = `
 小夜子〔微笑み〕「昨日のお返事、少し、変えます。……眠る前に、もう少しだけ、起きていたくなりました」
 * awake_end
 
-# d26_noboru 26日目：のぼるさんの電話
+# d26_noboru 27日目：のぼるさんの電話
 @bg clock_shop_day
 @se phone
 @cast ハルト 小夜子
@@ -1342,7 +1342,7 @@ export const SCRIPT_M3 = `
 みお〔笑顔〕「離れてても、同じ時に同じほう向く約束です！」
 小夜子〔微笑み〕「まあ。……すてきな約束」
 
-# d26_evening 26日目：夕暮れ・また明日
+# d26_evening 27日目：夕暮れ・また明日
 @bg library
 @bgm library
 @cast 小夜子
@@ -1363,9 +1363,9 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 26日目　おわり
+@caption 27日目　おわり
 
-// ---- 昼の選べる話（25〜26日目。docs/script/3-matsuri.md の 4.） ----
+// ---- 昼の選べる話（26〜27日目。docs/script/3-matsuri.md の 4.） ----
 
 # d25_talk_eight 小話：八時、見た？
 @bg classroom
@@ -1413,9 +1413,9 @@ export const SCRIPT_M3 = `
 みお〔笑顔〕「じゃあ、せんぱいの勘で！ 一番いい瞬間が分かるって、あかりちゃんが言ってました！」
 〈地の文〉ガラガラを回す。……今だ、と思った時に、手を止めた。白い玉。
 みお〔大笑い〕「はずれ！ せんぱいの勘、はずれ！」
-// ---- 27日目（木曜）。3-2「言えなかった卒業式」（docs/script/3-2.md の 4.） ----
+// ---- 28日目（木曜）。3-2「言えなかった卒業式」（docs/script/3-2.md の 4.） ----
 
-# d27_relax 27日目：カタカナ語しりとりと、完璧な海水浴計画
+# d27_relax 28日目：カタカナ語しりとりと、完璧な海水浴計画
 @bg clock_shop_back
 @bgm daily
 @clock tick many
@@ -1487,7 +1487,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「りくに言ったら、怒る」
 小夜子〔笑顔〕「では、お会いした時に、言いましょう。必ず」
 
-# d27_shiori 27日目：刻めない字
+# d27_shiori 28日目：刻めない字
 @bg clock_shop
 @bgm daily
 @se bell
@@ -1555,13 +1555,13 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「本人が言うまで、俺たちが決めることじゃない」
 〈地の文〉作業台の上に、裏の空いた銀色の時計。何も彫っていない、平たい丸。
 
-# d27_library 27日目：夕暮れ・蔵書の棚
+# d27_library 28日目：夕暮れ・蔵書の棚
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -1721,7 +1721,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「今夜は、ここまでだ。続きは、明日」
 〈地の文〉帰り口の砂時計が、ぼんやり光っている。
 
-# a32_night1_end 27日目：蔵書の棚に戻る
+# a32_night1_end 28日目：蔵書の棚に戻る
 @bg library
 @bgm stop
 @cast あかり 小夜子
@@ -1741,11 +1741,11 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 27日目　おわり
+@caption 28日目　おわり
 
-// ---- 28日目（金曜） ----
+// ---- 29日目（金曜） ----
 
-# d28_toya 28日目：預けるギター
+# d28_toya 29日目：預けるギター
 @bg music_shop
 @bgm daily
 @cast ハルト けんた
@@ -1791,7 +1791,7 @@ export const SCRIPT_M3 = `
 〈地の文〉とうやさんが、ギターケースを、けんたさんに渡した。
 〈地の文〉ケースの内側に、古いイヤホンが一本、巻いて挟んであった。
 
-# d28_shiori 28日目：片っぽずつ
+# d28_shiori 29日目：片っぽずつ
 @bg shopping_street
 @bgm daily
 @cast しおり
@@ -1815,13 +1815,13 @@ export const SCRIPT_M3 = `
 みお〔真剣〕「思い出しかけてます！」
 ハルト〔決意〕「今夜、続きを見に行く」
 
-# a32_night2_enter 28日目：卒業式の帰り道の2晩目に入る
+# a32_night2_enter 29日目：卒業式の帰り道の2晩目に入る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg grad_2019
@@ -1952,7 +1952,7 @@ export const SCRIPT_M3 = `
 ハルト〔通常〕「明日だ。踏切の向こう」
 〈地の文〉帰り口の砂時計が、ぼんやり光っている。
 
-# a32_night2_end 28日目：時計屋に戻る
+# a32_night2_end 29日目：時計屋に戻る
 @bg clock_shop_night
 @bgm stop
 @cast みお あかり
@@ -1972,11 +1972,11 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 28日目　おわり
+@caption 29日目　おわり
 
-// ---- 29日目（土曜） ----
+// ---- 30日目（土曜） ----
 
-# d29_shiori 29日目：言ったのか、言わなかったのか
+# d29_shiori 30日目：言ったのか、言わなかったのか
 @bg river_path
 @bgm somber
 @cast しおり
@@ -2028,13 +2028,13 @@ export const SCRIPT_M3 = `
 みお〔困り笑い〕「顔に、書いてあります」
 しおり〔大笑い〕「書いてあったかあ。七年、消えないね、これ」
 
-# a32_night3_enter 29日目：卒業式の帰り道の3晩目に入る
+# a32_night3_enter 30日目：卒業式の帰り道の3晩目に入る
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2142,7 +2142,7 @@ export const SCRIPT_M3 = `
 〈地の文〉言わなかった。……それが、盗まれた三十分の、答えだった。
 〈地の文〉コマがそろった（{komaHave}/{komaNeed}）。札の「返却」の文字が光った。
 
-# d29_return 29日目：時間を返す
+# d29_return 30日目：時間を返す
 @bg library
 @cast
 〈地の文〉夕暮れの踏切が、金色の砂になって、上へ流れていく。
@@ -2171,11 +2171,11 @@ export const SCRIPT_M3 = `
 @clock stop
 @bg black
 @fade in
-@caption 29日目　おわり
+@caption 30日目　おわり
 
-// ---- 30日目（日曜）。3-2 を返した翌日 ----
+// ---- 31日目（日曜）。3-2 を返した翌日 ----
 
-# d30_shiori 30日目：なんでもない
+# d30_shiori 31日目：なんでもない
 @bg clock_shop_day
 @bgm daily
 @cast ハルト みお
@@ -2248,7 +2248,7 @@ export const SCRIPT_M3 = `
 〈地の文〉取り戻しても、言えなかった言葉は、言えないままだった。
 〈地の文〉それでも、しおりさんは、踏切の前で、ずっと笑っていた。
 
-# d30_evening 30日目：夕暮れ・言えなかったこと
+# d30_evening 31日目：夕暮れ・言えなかったこと
 @bg clock_shop_back
 @bgm stop
 @clock tick many
@@ -2287,9 +2287,9 @@ export const SCRIPT_M3 = `
 @fade out
 @bg black
 @fade in
-@caption 30日目　おわり
+@caption 31日目　おわり
 
-// ---- 昼の選べる話（27〜30日目。docs/script/3-2.md の 4. の「昼の選べる話」） ----
+// ---- 昼の選べる話（28〜31日目。docs/script/3-2.md の 4. の「昼の選べる話」） ----
 
 # bond_akari8 絆の出来事（あかり8）：いつもの場所
 @bg shopping_street
@@ -2441,14 +2441,14 @@ export const SCRIPT_M3 = `
 ゆうま〔苦笑い〕「『兄貴が心配だから』って。逆だろ、普通」
 ハルト〔通常〕「なつは」
 ゆうま〔笑顔〕「元気。すっごいじいさんだけど、まだ、えさ食べてる」
-// ---- 31日目（月曜）。カイへのリベンジとノアの口論（docs/script/3-kai.md の 4.） ----
+// ---- 32日目（月曜）。カイへのリベンジとノアの口論（docs/script/3-kai.md の 4.） ----
 
-# d31_classroom 31日目：三回目
+# d31_classroom 32日目：三回目
 @bg classroom
 @bgm daily
 @se murmur
 @cast ハルト あかり
-〈地の文〉三十一日目の朝。窓の外が、少し曇っている。
+〈地の文〉三十二日目の朝。窓の外が、少し曇っている。
 あかり〔笑顔〕「おはよ、ハルト。今日は、遅刻しなかったね」
 ハルト〔苦笑い〕「目覚まし、三つ鳴らした」
 あかり〔大笑い〕「三つ！」
@@ -2464,13 +2464,13 @@ export const SCRIPT_M3 = `
 ハルト〔決意〕「今夜も、蔵書の棚に行く。小夜子に、りくのことをもう少し聞きたい」
 @clock stop
 
-# d31_library 31日目：棚から逃げた蔵書
+# d31_library 32日目：棚から逃げた蔵書
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2682,7 +2682,7 @@ export const SCRIPT_M3 = `
 ノア〔悲しい〕「二人で見てた夕焼けは、もっと、長かった」
 @fade out
 
-# d31_return 31日目：時計屋の奥に戻る
+# d31_return 32日目：時計屋の奥に戻る
 @bg clock_shop_back
 @clock tick many
 @fade in
@@ -2698,15 +2698,15 @@ export const SCRIPT_M3 = `
 @cast
 @bg black
 @fade in
-@caption 31日目　おわり
+@caption 32日目　おわり
 
-// ---- 32日目（火曜）。3章の終わり ----
+// ---- 33日目（火曜）。3章の終わり ----
 
-# d32_classroom 32日目：雨の教室
+# d32_classroom 33日目：雨の教室
 @bg classroom_rain
 @bgm somber
 @cast ハルト あかり
-〈地の文〉三十二日目。朝から雨。
+〈地の文〉三十三日目。朝から雨。
 あかり〔考える〕「ねえ、ハルト。あの子……ノアって子。わたしのこと、嫌いなのかな」
 ハルト〔通常〕「会ったのは、二回目だろ。嫌うほど、知らない」
 あかり〔困り笑い〕「そうなんだけど。なんか、ずっと前から怒られてるみたいな顔だった」
@@ -2723,13 +2723,13 @@ export const SCRIPT_M3 = `
 ハルト〔決意〕「数えとく。りくのノートの続きに」
 @clock stop
 
-# d32_evening 32日目：夕暮れ・3章の終わり
+# d32_evening 33日目：夕暮れ・3章の終わり
 @bg clock_shop_back
 @bgm stop
 @clock tick many
 @cast ハルト あかり みお
 〈地の文〉柱時計の奥の壁に、砂の光の線。扉をくぐる。
-@se door_open
+@se restopia
 @fade white
 @clock stop
 @bg library
@@ -2790,7 +2790,7 @@ export const SCRIPT_M3 = `
 @fade in
 @caption 第3章　おわり
 
-// ---- 昼の選べる話（31〜32日目。docs/script/3-kai.md の 4. の「昼の選べる話」） ----
+// ---- 昼の選べる話（32〜33日目。docs/script/3-kai.md の 4. の「昼の選べる話」） ----
 
 # bond_akari9 絆の出来事（あかり9）：目覚まし三つ
 @bg rooftop
@@ -2878,6 +2878,45 @@ export const SCRIPT_M3 = `
 介護士の人（声）「あ、時計屋さん。最近ね、八時になると、窓辺にみんな集まるんです」
 介護士の人（声）「ちよさんが始めたら、お隣さんも、その隣も。雨でも、見るんですって」
 ちよ〔微笑み〕「雲の向こうは、おんなじ空ですもの」
+
+// ---- ペトラとの会話（段階116。テストプレイのメモ 31。docs/script/petra.md）。交換所で「話す」を押した時 ----
+
+# petra_return_column 交換所：返却の欄
+@bg library
+@bgm library
+@cast ハルト あかり ペトラ
+〈地の文〉帳簿のいちばん右に、細い欄がある。「返却」。ほとんどの行が、空いている。
+ペトラ〔通常〕「……あの。業務とは、関係のない質問なのですが」
+あかり〔驚き〕「え、はい」
+ペトラ〔困り〕「この『返却』の欄に、最近、印が増えています。書いた覚えは、ないのに」
+ペトラ〔通常〕「局ができてから、ずっと空いていた欄です。規則で、欄だけはあるんです」
+ハルト〔通常〕「（……俺たちが返した分だ）」
+ペトラ〔真剣〕「返すと、どうなるんですか。持ち主の方は」
+あかり〔微笑み〕「……笑うんです。思い出した顔で」
+ペトラ〔驚き〕「笑う……」
+ペトラ〔通常〕「窓口からは、見えないですね。それは」
+ペトラ〔笑顔〕「……一度、見てみたい気がします」
+ペトラ〔困り〕「……今のは、忘れてください。業務とは関係ありませんので」
+@end
+
+# petra_scold 交換所：叱ってください
+@bg library
+@bgm library
+@cast ハルト 小夜子 ペトラ
+〈地の文〉窓口の奥が、いつもより騒がしかった。紙の束を抱えた人影が、何度も行き来している。
+ペトラ〔困り〕「いらっしゃいませ。……すみません、上が少し、ばたばたしていて」
+ペトラ〔通常〕「一番の方が、現場で何かあったそうです。詳しいことは、こちらには下りてきませんが」
+ハルト〔通常〕「…………」
+小夜子〔微笑み〕「お疲れでございますね。帳簿のお方」
+ペトラ〔驚き〕「帳簿の……。はい。……帳簿の方です」
+〈地の文〉ペトラさんは、少し迷ってから、帳簿を閉じた。仕事の手を止めるのを、初めて見た。
+ペトラ〔真剣〕「あの。もし、ですけど」
+ペトラ〔真剣〕「わたしの帳簿が、どこかで、誰かを悲しませていたら」
+ペトラ〔通常〕「その時は、ちゃんと叱ってください。……規則ですので」
+ハルト〔通常〕「……叱るより、一緒に直します。帳簿」
+ペトラ〔驚き〕「一緒に、ですか」
+ペトラ〔笑顔〕「……それは、規則にはないですね。でも、合いそうな気がします」
+@end
 `;
 
 export const M3_SCENES = parseScript(SCRIPT_M3);

@@ -286,6 +286,13 @@ describe('部屋をつなぐ区画（段階47a）', () => {
     expect(exitCells(C, 'bottom')).toEqual([[2, 7], [3, 7], [4, 7], [5, 7]]);
   });
 
+  it('exitAt で出入口を辺の真ん中からずらせる（届いた地図の絵の道に合わせる。2026-10-26）', () => {
+    const shifted = { ...A, exitAt: { right: 0 } };
+    expect(exitCells(shifted, 'right')).toEqual([[7, 0], [7, 1], [7, 2], [7, 3]]);
+    expect(entryCells(shifted, 'right')).toEqual([[6, 0], [6, 1], [6, 2], [6, 3]]);
+    expect(exitCells(shifted, 'bottom')).toEqual(exitCells(A, 'bottom'));
+  });
+
   it('出入口のマスに着くと、つながった部屋の出入口の内側（同じ並び）に移り、入った部屋を覚える', () => {
     const s0 = startExplore(rooms3);
     expect(s0).toMatchObject({ room: 'A', checkpointRoom: 'A', visited: ['A'] });

@@ -1,4 +1,4 @@
-import type { ExchangeGood } from '../core/exchange';
+import type { ExchangeGood, KeeperTalk } from '../core/exchange';
 import { AREA_BATTLES, AREAS } from './areas';
 import { NAVI_PARTS } from './navi';
 import { POUCH_ORDER } from './pouch';
@@ -15,6 +15,17 @@ export const EXCHANGE_KEEPER = 'ペトラ';
  * 段階80：拠点は2章の昼から入れるので、カイに会う（after の出来事を過ぎる）前に開いた時は、カイの話をしない early の会話にする
  */
 export const EXCHANGE_INTRO = { scene: 'exchange_intro', early: 'exchange_intro_early', after: 'd7_kai' } as const;
+
+/**
+ * ペトラとの会話（段階116。テストプレイのメモ 31。台本の案は docs/script/petra.md）。章ごとに2つ。
+ * after の出来事を過ぎたら、交換所の台詞の欄に teaser と「話す」が出る。1つの会話は1回だけ（見た印は scene の id）
+ */
+export const KEEPER_TALKS: KeeperTalk[] = [
+  { scene: 'petra_ledger', after: 'd15_petra', teaser: '少々お待ちください。今、数を合わせていますので' },
+  { scene: 'petra_matched', after: 'd19_return', teaser: '……『最後の打席』の欄の件で、ご報告が' },
+  { scene: 'petra_return_column', after: 'd23_return', teaser: '……あの。業務とは、関係のない質問なのですが' },
+  { scene: 'petra_scold', after: 'd31_return', teaser: '……すみません、上が少し、ばたばたしていて' },
+];
 
 /** 区画の砂嵐が落とす「いつもの」素材（区画の敵の印の戦闘から。出てくる順、同じ物は1回） */
 export function areaCommonItems(areaId: string): string[] {

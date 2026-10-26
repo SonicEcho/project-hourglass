@@ -312,7 +312,7 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a11_gather_goldfish', room: 'festival_night', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
         { id: 'a11_gather_ramune', room: 'festival_night', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
         { id: 'a11_gather_yukata', room: 'festival_night', cell: [12, 22], items: [ITEMS.maskShard.id] },
-        { id: 'a11_gather_back', room: 'fest_backyard', cell: [2, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
+        { id: 'a11_gather_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
       ],
       tables: {
         fest_gate: ['a11_n1_gate', 'a11_n1_chaser'],
@@ -325,31 +325,31 @@ export const AREAS: Record<string, AreaDef> = {
     chests: [
       { id: 'a11_chest_goldfish', room: 'festival_night', cell: [9, 29], items: [ITEMS.goldfishScale.id, ITEMS.potion.id] },
       { id: 'a11_chest_ramune', room: 'festival_night', cell: [14, 29], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
-      { id: 'a11_chest_back', room: 'fest_backyard', cell: [2, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
-      { id: 'a11_chest_west', room: 'fest_west', cell: [2, 2], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
-      { id: 'a11_chest_woods', room: 'fest_woods', cell: [3, 2], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
+      { id: 'a11_chest_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
+      { id: 'a11_chest_west', room: 'fest_west', cell: [7, 5], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
+      { id: 'a11_chest_woods', room: 'fest_woods', cell: [4, 3], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
     ],
     enemies: [
       // ---- 1晩目 ----
-      { id: 'a11_e_gate', room: 'fest_gate', patrol: [[6, 7], [17, 7]], battle: 'a11_n1_gate' },
-      { id: 'a11_e_gate_chase', room: 'fest_gate', move: 'chase', patrol: [[18, 11], [18, 16]], battle: 'a11_n1_chaser' },
-      { id: 'a11_e_back', room: 'fest_backyard', patrol: [[3, 12], [20, 12]], battle: 'a11_n1_back' },
+      { id: 'a11_e_gate', room: 'fest_gate', patrol: [[6, 7], [16, 7]], battle: 'a11_n1_gate' },
+      { id: 'a11_e_gate_chase', room: 'fest_gate', move: 'chase', patrol: [[16, 11], [19, 16]], battle: 'a11_n1_chaser' },
+      { id: 'a11_e_back', room: 'fest_backyard', patrol: [[4, 12], [20, 12]], battle: 'a11_n1_back' },
       // 屋台の裏の逃げる敵（寄り道。コマなし、レアの素材。段階59）
-      { id: 'a11_e_runner', room: 'fest_backyard', move: 'flee', patrol: [[13, 17]], battle: 'a11_runner' },
+      { id: 'a11_e_runner', room: 'fest_backyard', move: 'flee', patrol: [[15, 15]], battle: 'a11_runner' },
       { id: 'a11_e_road', room: 'festival_night', patrol: [[10, 38], [13, 38]], battle: 'a11_n1_road' },
       { id: 'a11_e_plaza', room: 'festival_night', move: 'chase', patrol: [[7, 32], [16, 32]], battle: 'a11_n1_plaza' },
       // ---- 2晩目 ----
       { id: 'a11_e_corridor', room: 'festival_night', night: 2, patrol: [[8, 21], [15, 21]], battle: 'a11_n2_corridor' },
-      { id: 'a11_e_west1', room: 'fest_west', night: 2, move: 'chase', patrol: [[7, 7], [16, 7]], battle: 'a11_n2_west1' },
-      { id: 'a11_e_west2', room: 'fest_west', night: 2, patrol: [[3, 16], [20, 16]], battle: 'a11_n2_west2' },
-      { id: 'a11_e_east1', room: 'fest_east', night: 2, patrol: [[4, 2], [16, 2]], battle: 'a11_n2_east1' },
-      { id: 'a11_e_east2', room: 'fest_east', night: 2, move: 'chase', patrol: [[10, 15], [20, 15]], battle: 'a11_n2_east2' },
+      { id: 'a11_e_west1', room: 'fest_west', night: 2, move: 'chase', patrol: [[7, 11], [16, 11]], battle: 'a11_n2_west1' },
+      { id: 'a11_e_west2', room: 'fest_west', night: 2, patrol: [[7, 24], [17, 24]], battle: 'a11_n2_west2' },
+      { id: 'a11_e_east1', room: 'fest_east', night: 2, patrol: [[5, 4], [16, 4]], battle: 'a11_n2_east1' },
+      { id: 'a11_e_east2', room: 'fest_east', night: 2, move: 'chase', patrol: [[15, 15], [17, 15]], battle: 'a11_n2_east2' },
       // 金魚すくいの屋台の前の番人（2晩目の山場。戦う前の会話）
-      { id: 'a11_e_guard', room: 'fest_east', night: 2, move: 'guard', patrol: [[18, 21]], battle: 'a11_n2_guard', scene: 'a11_guard' },
+      { id: 'a11_e_guard', room: 'fest_east', night: 2, move: 'guard', patrol: [[17, 21]], battle: 'a11_n2_guard', scene: 'a11_guard' },
       // ---- 3晩目 ----
       { id: 'a11_e_steps', room: 'festival_night', night: 3, patrol: [[10, 13], [7, 16]], battle: 'a11_n3_steps' },
       { id: 'a11_e_right', room: 'festival_night', night: 3, move: 'chase', patrol: [[14, 16], [22, 16]], battle: 'a11_n3_right' },
-      { id: 'a11_e_woods1', room: 'fest_woods', night: 3, move: 'chase', patrol: [[4, 8], [9, 8]], battle: 'a11_n3_woods1' },
+      { id: 'a11_e_woods1', room: 'fest_woods', night: 3, move: 'chase', patrol: [[4, 8], [11, 8]], battle: 'a11_n3_woods1' },
       { id: 'a11_e_woods2', room: 'fest_woods', night: 3, patrol: [[12, 8], [20, 8]], battle: 'a11_n3_woods2' },
     ],
     // 社の前
@@ -360,7 +360,7 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a11_voice_cotton', room: 'festival_night', cell: [14, 27], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋' },
       { id: 'a11_voice_yukata', room: 'festival_night', cell: [12, 34], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人' },
       { id: 'a11_voice2_goldfish', room: 'fest_east', cell: [16, 20], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん' },
-      { id: 'a11_voice2_cotton', room: 'fest_west', cell: [4, 11], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋' },
+      { id: 'a11_voice2_cotton', room: 'fest_west', cell: [4, 17], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋' },
       { id: 'a11_voice2_yukata', room: 'festival_night', cell: [12, 22], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人' },
       { id: 'a11_voice3_goldfish', room: 'festival_night', cell: [8, 9], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん' },
       { id: 'a11_voice3_cotton', room: 'festival_night', cell: [11, 11], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋' },
@@ -416,7 +416,7 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a12_gather_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id, ITEMS.phoneCord.id] },
         { id: 'a12_gather_slope', cell: [16, 10], items: [ITEMS.tinSpring.id, ITEMS.menkoCard.id] },
         { id: 'a12_gather_tv', cell: [9, 15], items: [ITEMS.phoneCord.id] },
-        { id: 'a12_gather_alley', room: 'showa_alley', cell: [2, 2], items: [ITEMS.ramuneGlass.id, ITEMS.tinSpring.id] },
+        { id: 'a12_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.ramuneGlass.id, ITEMS.tinSpring.id] },
       ],
       tables: {
         showa_night: ['a12_n1_gate', 'a12_n1_lower', 'a12_n1_mid', 'a12_n2_upper', 'a12_n3_slope'],
@@ -427,8 +427,8 @@ export const AREAS: Record<string, AreaDef> = {
     },
     chests: [
       { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id], snaps: ['heavyBlow'] },
-      { id: 'a12_chest_alley', room: 'showa_alley', cell: [2, 2], night: 2, items: [ITEMS.tinSpring.id], snaps: ['iceChip'] },
-      { id: 'a12_chest_hill', room: 'showa_hill', cell: [3, 2], night: 3, items: [ITEMS.ramuneGlass.id, ITEMS.potion.id] },
+      { id: 'a12_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.tinSpring.id], snaps: ['iceChip'] },
+      { id: 'a12_chest_hill', room: 'showa_hill', cell: [5, 2], night: 3, items: [ITEMS.ramuneGlass.id, ITEMS.potion.id] },
     ],
     enemies: [
       // ---- 1晩目（入口から時計屋の前） ----
@@ -441,17 +441,17 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a12_e_runner', move: 'flee', patrol: [[18, 31]], battle: 'a12_runner' },
       // ---- 2晩目（時計屋の前から坂の手前、左右の路地） ----
       { id: 'a12_e_upper', night: 2, patrol: [[10, 19], [14, 19]], battle: 'a12_n2_upper' },
-      { id: 'a12_e_alley1', room: 'showa_alley', night: 2, move: 'chase', patrol: [[7, 7], [16, 7]], battle: 'a12_n2_alley1' },
-      { id: 'a12_e_alley2', room: 'showa_alley', night: 2, patrol: [[3, 16], [20, 16]], battle: 'a12_n2_alley2' },
-      { id: 'a12_e_lane1', room: 'showa_lane', night: 2, patrol: [[4, 2], [16, 2]], battle: 'a12_n2_lane1' },
-      { id: 'a12_e_lane2', room: 'showa_lane', night: 2, move: 'chase', patrol: [[10, 15], [20, 15]], battle: 'a12_n2_lane2' },
+      { id: 'a12_e_alley1', room: 'showa_alley', night: 2, move: 'chase', patrol: [[7, 7], [16, 9]], battle: 'a12_n2_alley1' },
+      { id: 'a12_e_alley2', room: 'showa_alley', night: 2, patrol: [[8, 16], [20, 11]], battle: 'a12_n2_alley2' },
+      { id: 'a12_e_lane1', room: 'showa_lane', night: 2, patrol: [[3, 2], [16, 8]], battle: 'a12_n2_lane1' },
+      { id: 'a12_e_lane2', room: 'showa_lane', night: 2, move: 'chase', patrol: [[10, 10], [20, 15]], battle: 'a12_n2_lane2' },
       // 電器屋の前の番人（2晩目の山場。戦う前の会話）
       { id: 'a12_e_guard', night: 2, move: 'guard', patrol: [[12, 16]], battle: 'a12_n2_guard', scene: 'a12_guard' },
       // ---- 3晩目（坂の上と、その先） ----
       { id: 'a12_e_slope', night: 3, patrol: [[10, 10], [15, 10]], battle: 'a12_n3_slope' },
       { id: 'a12_e_slope2', night: 3, move: 'chase', patrol: [[11, 6], [14, 6]], battle: 'a12_n3_slope2' },
-      { id: 'a12_e_hill1', room: 'showa_hill', night: 3, move: 'chase', patrol: [[4, 8], [9, 8]], battle: 'a12_n3_hill1' },
-      { id: 'a12_e_hill2', room: 'showa_hill', night: 3, patrol: [[12, 8], [20, 8]], battle: 'a12_n3_hill2' },
+      { id: 'a12_e_hill1', room: 'showa_hill', night: 3, move: 'chase', patrol: [[6, 8], [9, 8]], battle: 'a12_n3_hill1' },
+      { id: 'a12_e_hill2', room: 'showa_hill', night: 3, patrol: [[12, 8], [16, 9]], battle: 'a12_n3_hill2' },
     ],
     // 出口の坂の上
     boss: { id: 'a12_boss', cell: [12, 7], battle: 'a12_boss' },
@@ -463,7 +463,7 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a12_voice_tv', cell: [9, 15], night: 2, until: 2, scene: 'a12_voice_tv', label: '電器屋の子ども' },
       { id: 'a12_voice2_grocer', cell: [14, 20], night: 2, until: 2, scene: 'a12_voice2_grocer', label: '八百屋' },
       { id: 'a12_voice2_candy', room: 'showa_alley', cell: [4, 11], night: 2, until: 2, scene: 'a12_voice2_candy', label: '駄菓子屋のおばあちゃん' },
-      { id: 'a12_voice2_tobacco', room: 'showa_lane', cell: [16, 20], night: 2, until: 2, scene: 'a12_voice2_tobacco', label: 'たばこ屋' },
+      { id: 'a12_voice2_tobacco', room: 'showa_lane', cell: [17, 20], night: 2, until: 2, scene: 'a12_voice2_tobacco', label: 'たばこ屋' },
       { id: 'a12_voice3_grocer', cell: [11, 9], night: 3, scene: 'a12_voice3_grocer', label: '八百屋' },
       { id: 'a12_voice3_candy', cell: [15, 11], night: 3, scene: 'a12_voice3_candy', label: '駄菓子屋のおばあちゃん' },
     ],
@@ -609,7 +609,7 @@ export const AREAS: Record<string, AreaDef> = {
     // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
     returnSnaps: ['joker', 'search'],
     // 晩の区切り（段階82）：2晩目は中庭のベンチ（チェックポイント）から、3晩目は音楽室の前の廊下から
-    nights: [{ koma: 3 }, { koma: 6, start: { room: 'school_courtyard', cell: [9, 23] } }, { start: { room: 'school_corridor', cell: [5, 8] } }],
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'school_courtyard', cell: [9, 19] } }, { start: { room: 'school_corridor', cell: [5, 4] } }],
     // ノイズの壁：中庭から渡り廊下への出入口（2晩目から開く）と、渡り廊下から体育館への出入口（3晩目から開く）
     walls: [
       { id: 'a22_wall_corridor', room: 'school_courtyard', cells: box(10, 13, 0, 1), opens: 2 },
@@ -619,9 +619,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（渡り廊下）は出ないので、番人の戦闘は教室の表に入れる
     hunt: {
       gathers: [
-        { id: 'a22_gather_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id] },
+        { id: 'a22_gather_stall', room: 'school_courtyard', cell: [20, 17], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id] },
         { id: 'a22_gather_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id] },
-        { id: 'a22_gather_haunted', room: 'school_classroom', cell: [20, 4], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id] },
+        { id: 'a22_gather_haunted', room: 'school_classroom', cell: [19, 5], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id] },
       ],
       tables: {
         school_gate: ['a22_n1_gate', 'a22_n1_gate2'],
@@ -633,27 +633,27 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 24], items: [ITEMS.potion.id], snaps: ['fireChip'] },
+      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 17], items: [ITEMS.potion.id], snaps: ['fireChip'] },
       { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id], gears: ['iceBoost'] },
-      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [20, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['comboBoost'] },
+      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [19, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['comboBoost'] },
     ],
     enemies: [
       // ---- 1晩目（校門・中庭・駐輪場） ----
       { id: 'a22_e_gate', patrol: [[5, 12], [18, 12]], battle: 'a22_n1_gate' },
       { id: 'a22_e_gate2', patrol: [[6, 17], [17, 17]], battle: 'a22_n1_gate2' },
-      { id: 'a22_e_stalls', room: 'school_courtyard', patrol: [[6, 35], [17, 35]], battle: 'a22_n1_stalls' },
-      { id: 'a22_e_west', room: 'school_courtyard', patrol: [[3, 17], [10, 17]], battle: 'a22_n1_west' },
+      { id: 'a22_e_stalls', room: 'school_courtyard', patrol: [[8, 29], [16, 29]], battle: 'a22_n1_stalls' },
+      { id: 'a22_e_west', room: 'school_courtyard', patrol: [[3, 14], [9, 14]], battle: 'a22_n1_west' },
       // 中庭の上の模擬店の通り：近づくと追ってくる
-      { id: 'a22_e_upper', room: 'school_courtyard', move: 'chase', patrol: [[7, 13], [16, 13]], battle: 'a22_n1_upper' },
+      { id: 'a22_e_upper', room: 'school_courtyard', move: 'chase', patrol: [[8, 11], [17, 13]], battle: 'a22_n1_upper' },
       // 駐輪場の逃げる敵（寄り道。コマなし、レアの素材）
       { id: 'a22_e_runner', room: 'school_bikes', move: 'flee', patrol: [[8, 16]], battle: 'a22_runner' },
-      { id: 'a22_e_bikes', room: 'school_bikes', patrol: [[4, 6], [17, 6]], battle: 'a22_n1_bikes' },
+      { id: 'a22_e_bikes', room: 'school_bikes', patrol: [[3, 6], [18, 6]], battle: 'a22_n1_bikes' },
       // ---- 2晩目（渡り廊下・お化け屋敷の教室） ----
-      { id: 'a22_e_hall', room: 'school_corridor', night: 2, patrol: [[5, 15], [18, 15]], battle: 'a22_n2_hall' },
-      { id: 'a22_e_east', room: 'school_corridor', night: 2, patrol: [[16, 11], [22, 11]], battle: 'a22_n2_east' },
+      { id: 'a22_e_hall', room: 'school_corridor', night: 2, patrol: [[10, 15], [13, 15]], battle: 'a22_n2_hall' },
+      { id: 'a22_e_east', room: 'school_corridor', night: 2, patrol: [[16, 10], [21, 10]], battle: 'a22_n2_east' },
       // お化け屋敷の教室：暗幕の迷路で追ってくる
-      { id: 'a22_e_haunted', room: 'school_classroom', night: 2, move: 'chase', patrol: [[10, 6], [10, 17]], battle: 'a22_n2_haunted' },
-      { id: 'a22_e_room', room: 'school_classroom', night: 2, patrol: [[17, 5], [20, 5]], battle: 'a22_n2_room' },
+      { id: 'a22_e_haunted', room: 'school_classroom', night: 2, move: 'chase', patrol: [[10, 9], [11, 9]], battle: 'a22_n2_haunted' },
+      { id: 'a22_e_room', room: 'school_classroom', night: 2, patrol: [[19, 7], [19, 8]], battle: 'a22_n2_room' },
       // 渡り廊下の上の番人：倒すと体育館への扉が開く（3晩目から。戦う前の会話）
       { id: 'a22_e_stage', room: 'school_corridor', night: 2, until: 2, move: 'guard', patrol: [[11, 3]], battle: 'a22_n2_guard', scene: 'a22_guard' },
       // ---- 3晩目（渡り廊下の上と体育館） ----
@@ -661,29 +661,29 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a22_e_floor1', room: 'school_gym', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a22_n3_floor1' },
       { id: 'a22_e_floor2', room: 'school_gym', night: 3, move: 'chase', patrol: [[5, 10], [18, 10]], battle: 'a22_n3_floor2' },
       // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
-      { id: 'a22_e_front', room: 'school_corridor', night: 3, patrol: [[6, 17], [15, 17]], battle: 'a22_n3_front' },
+      { id: 'a22_e_front', room: 'school_corridor', night: 3, patrol: [[10, 17], [13, 17]], battle: 'a22_n3_front' },
     ],
     // 体育館のステージ
-    boss: { id: 'a22_boss', room: 'school_gym', cell: [11, 4], battle: 'a22_boss' },
+    boss: { id: 'a22_boss', room: 'school_gym', cell: [11, 7], battle: 'a22_boss' },
     // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階82）
     talkers: [
       { id: 'a22_voice_committee', cell: [6, 18], until: 1, scene: 'a22_voice_committee', label: '実行委員' },
-      { id: 'a22_voice_stall', room: 'school_courtyard', cell: [6, 28], until: 1, scene: 'a22_voice_stall', label: '模擬店の生徒' },
-      { id: 'a22_voice_classmate', room: 'school_courtyard', cell: [16, 24], until: 2, scene: 'a22_voice_classmate', label: 'クラスメイト' },
-      { id: 'a22_voice_teacher', room: 'school_corridor', cell: [7, 6], night: 2, scene: 'a22_voice_teacher', label: '音楽の先生' },
-      { id: 'a22_voice2_committee', room: 'school_corridor', cell: [19, 13], night: 2, until: 2, scene: 'a22_voice2_committee', label: '実行委員' },
+      { id: 'a22_voice_stall', room: 'school_courtyard', cell: [8, 23], until: 1, scene: 'a22_voice_stall', label: '模擬店の生徒' },
+      { id: 'a22_voice_classmate', room: 'school_courtyard', cell: [16, 20], until: 2, scene: 'a22_voice_classmate', label: 'クラスメイト' },
+      { id: 'a22_voice_teacher', room: 'school_corridor', cell: [7, 4], night: 2, scene: 'a22_voice_teacher', label: '音楽の先生' },
+      { id: 'a22_voice2_committee', room: 'school_corridor', cell: [19, 10], night: 2, until: 2, scene: 'a22_voice2_committee', label: '実行委員' },
       // お化け屋敷の教室の入口（2-2-12。緩める）
       { id: 'a22_haunted', room: 'school_classroom', cell: [3, 12], night: 2, until: 2, scene: 'a22_haunted', label: 'お化け屋敷' },
     ],
     // コマが戻るたびに、過去の場面が1つずつ進む（段階82）
     triggers: [
       { on: 'koma', count: 1, scene: 'a22_first_koma' },
-      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 23], scene: 'a22_checkpoint' },
+      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 19], scene: 'a22_checkpoint' },
       { on: 'koma', count: 2, scene: 'a22_koma2' },
       { on: 'koma', count: 3, scene: 'a22_koma3' },
       { on: 'koma', count: 4, scene: 'a22_koma4' },
       { on: 'koma', count: 5, scene: 'a22_koma5' },
-      { on: 'checkpoint', room: 'school_corridor', cell: [5, 8], scene: 'a22_music_room' },
+      { on: 'checkpoint', room: 'school_corridor', cell: [5, 4], scene: 'a22_music_room' },
       { on: 'koma', count: 6, scene: 'a22_koma6' },
       { on: 'koma', count: 7, scene: 'a22_koma7' },
       { on: 'komaLeft', left: 1, scene: 'a22_one_left' },
@@ -715,7 +715,7 @@ export const AREAS: Record<string, AreaDef> = {
     owner: 'コウジ',
     memory: 'riverside_1998',
     // 晩の区切り（段階85）：2晩目はベンチの裏の木陰、3晩目は売店のテント（どちらもチェックポイント）から
-    nights: [{ koma: 3 }, { koma: 6, start: { room: 'riverside_bench', cell: [9, 21] } }, { start: { room: 'riverside_stand', cell: [12, 14] } }],
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'riverside_bench', cell: [9, 18] } }, { start: { room: 'riverside_stand', cell: [12, 14] } }],
     // ノイズの壁：ベンチの裏から売店への出入口（2晩目から開く）と、売店からダイヤモンドへの出入口（3晩目から開く）
     walls: [
       { id: 'a23_wall_stand', room: 'riverside_bench', cells: box(10, 13, 0, 1), opens: 2 },
@@ -724,9 +724,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（売店の上）は出ないので、番人の戦闘は売店の表に入れる
     hunt: {
       gathers: [
-        { id: 'a23_gather_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id] },
+        { id: 'a23_gather_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id] },
         { id: 'a23_gather_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id] },
-        { id: 'a23_gather_shed', room: 'riverside_shed', cell: [4, 4], items: [ITEMS.ballSeam.id, ITEMS.petEgg.id] },
+        { id: 'a23_gather_shed', room: 'riverside_shed', cell: [6, 4], items: [ITEMS.ballSeam.id, ITEMS.petEgg.id] },
       ],
       tables: {
         riverside_levee: ['a23_n1_slope', 'a23_n1_levee'],
@@ -738,50 +738,50 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 15], items: [ITEMS.potion.id], snaps: ['iceChip'] },
+      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.potion.id], snaps: ['iceChip'] },
       { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id], gears: ['startDash'] },
-      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [4, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['breaker'] },
+      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [6, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['breaker'] },
     ],
     enemies: [
       // ---- 1晩目（土手の道・ベンチの裏の木陰・川べり） ----
-      { id: 'a23_e_slope', patrol: [[17, 15], [17, 8]], battle: 'a23_n1_slope' },
-      { id: 'a23_e_levee', patrol: [[12, 4], [19, 4]], battle: 'a23_n1_levee' },
-      { id: 'a23_e_bench', room: 'riverside_bench', patrol: [[5, 33], [18, 33]], battle: 'a23_n1_bench' },
+      { id: 'a23_e_slope', patrol: [[17, 15], [18, 8]], battle: 'a23_n1_slope' },
+      { id: 'a23_e_levee', patrol: [[12, 3], [19, 4]], battle: 'a23_n1_levee' },
+      { id: 'a23_e_bench', room: 'riverside_bench', patrol: [[5, 28], [18, 28]], battle: 'a23_n1_bench' },
       // ベンチの裏の上：近づくと追ってくる
-      { id: 'a23_e_shade', room: 'riverside_bench', move: 'chase', patrol: [[8, 9], [15, 9]], battle: 'a23_n1_shade' },
-      { id: 'a23_e_bank', room: 'riverside_bank', patrol: [[5, 19], [16, 19]], battle: 'a23_n1_bank' },
+      { id: 'a23_e_shade', room: 'riverside_bench', move: 'chase', patrol: [[7, 8], [18, 8]], battle: 'a23_n1_shade' },
+      { id: 'a23_e_bank', room: 'riverside_bank', patrol: [[8, 19], [13, 19]], battle: 'a23_n1_bank' },
       // 川べりの逃げる敵（寄り道。コマなし、レアの素材）
       { id: 'a23_e_runner', room: 'riverside_bank', move: 'flee', patrol: [[10, 16]], battle: 'a23_runner' },
       // ---- 2晩目（売店のテント・用具小屋の裏） ----
-      { id: 'a23_e_stand', room: 'riverside_stand', night: 2, patrol: [[4, 8], [18, 8]], battle: 'a23_n2_stand' },
-      { id: 'a23_e_west', room: 'riverside_stand', night: 2, patrol: [[1, 12], [11, 12]], battle: 'a23_n2_west' },
+      { id: 'a23_e_stand', room: 'riverside_stand', night: 2, patrol: [[5, 8], [18, 10]], battle: 'a23_n2_stand' },
+      { id: 'a23_e_west', room: 'riverside_stand', night: 2, patrol: [[2, 12], [11, 12]], battle: 'a23_n2_west' },
       // 用具小屋の裏：追ってくる
       { id: 'a23_e_shed', room: 'riverside_shed', night: 2, move: 'chase', patrol: [[10, 6], [10, 18]], battle: 'a23_n2_shed' },
-      { id: 'a23_e_shed2', room: 'riverside_shed', night: 2, patrol: [[5, 6], [5, 18]], battle: 'a23_n2_shed2' },
+      { id: 'a23_e_shed2', room: 'riverside_shed', night: 2, patrol: [[6, 6], [5, 18]], battle: 'a23_n2_shed2' },
       // 売店の上の番人：倒すとダイヤモンドへの道が開く（3晩目から。戦う前の会話）
       { id: 'a23_e_gate', room: 'riverside_stand', night: 2, until: 2, move: 'guard', patrol: [[11, 5]], battle: 'a23_n2_guard', scene: 'a23_guard' },
       // ---- 3晩目（売店のテントとダイヤモンド） ----
-      { id: 'a23_e_stand3', room: 'riverside_stand', night: 3, patrol: [[16, 16], [20, 16]], battle: 'a23_n3_stand' },
+      { id: 'a23_e_stand3', room: 'riverside_stand', night: 3, patrol: [[16, 16], [18, 16]], battle: 'a23_n3_stand' },
       { id: 'a23_e_field1', room: 'riverside_diamond', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a23_n3_field1' },
       { id: 'a23_e_field2', room: 'riverside_diamond', night: 3, move: 'chase', patrol: [[5, 11], [18, 11]], battle: 'a23_n3_field2' },
       // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
-      { id: 'a23_e_front', room: 'riverside_stand', night: 3, patrol: [[4, 17], [10, 17]], battle: 'a23_n3_front' },
+      { id: 'a23_e_front', room: 'riverside_stand', night: 3, patrol: [[7, 16], [10, 17]], battle: 'a23_n3_front' },
     ],
     // ホームベースの前
     boss: { id: 'a23_boss', room: 'riverside_diamond', cell: [11, 6], battle: 'a23_boss' },
     // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階85）
     talkers: [
-      { id: 'a23_voice_team', cell: [7, 13], until: 1, scene: 'a23_voice_team', label: 'チームの子' },
-      { id: 'a23_voice_coach', room: 'riverside_bench', cell: [5, 28], until: 1, scene: 'a23_voice_coach', label: '監督' },
-      { id: 'a23_voice_coach2', room: 'riverside_bench', cell: [5, 28], night: 2, scene: 'a23_voice_coach2', label: '監督' },
+      { id: 'a23_voice_team', cell: [7, 14], until: 1, scene: 'a23_voice_team', label: 'チームの子' },
+      { id: 'a23_voice_coach', room: 'riverside_bench', cell: [5, 26], until: 1, scene: 'a23_voice_coach', label: '監督' },
+      { id: 'a23_voice_coach2', room: 'riverside_bench', cell: [5, 20], night: 2, scene: 'a23_voice_coach2', label: '監督' },
       { id: 'a23_voice_shop', room: 'riverside_stand', cell: [18, 13], night: 2, scene: 'a23_voice_shop', label: '売店のおばちゃん' },
-      { id: 'a23_voice_rival', room: 'riverside_stand', cell: [4, 16], night: 2, scene: 'a23_voice_rival', label: '相手チームの子' },
-      { id: 'a23_voice_kid', room: 'riverside_stand', cell: [16, 9], night: 2, scene: 'a23_voice_kid', label: 'スタンドの子ども' },
+      { id: 'a23_voice_rival', room: 'riverside_stand', cell: [4, 13], night: 2, scene: 'a23_voice_rival', label: '相手チームの子' },
+      { id: 'a23_voice_kid', room: 'riverside_stand', cell: [16, 10], night: 2, scene: 'a23_voice_kid', label: 'スタンドの子ども' },
     ],
     // コマが戻るたびに、過去の場面が1つずつ進む（段階85）
     triggers: [
       { on: 'koma', count: 1, scene: 'a23_first_koma' },
-      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 21], scene: 'a23_checkpoint' },
+      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 18], scene: 'a23_checkpoint' },
       { on: 'koma', count: 2, scene: 'a23_koma2' },
       { on: 'koma', count: 3, scene: 'a23_koma3' },
       { on: 'koma', count: 4, scene: 'a23_koma4' },
@@ -807,8 +807,8 @@ export const AREAS: Record<string, AreaDef> = {
       { a: { room: 'archive_reading', side: 'right' }, b: { room: 'archive_vault', side: 'left' } },
       { a: { room: 'archive_reading', side: 'top' }, b: { room: 'archive_stacks', side: 'bottom' } },
     ],
-    // 決意の曲（Leaving For Tomorrow。段階86）
-    bgm: BGM.resolve,
+    // 忍び込む曲（Guardian Of The Archive。段階114。前は段階86 の決意の曲）
+    bgm: BGM.archive,
     komaNeed: 0,
     goal: { band: '目当て：奥の棚の砂時計', guide: 'ビー玉が鳴る方へ。いちばん奥の棚の砂時計を取り返す\nカイに見つかると、チェックポイントへ戻される' },
     chests: [{ id: 'a23x_chest_vault', room: 'archive_vault', cell: [14, 19], items: [ITEMS.hiPotion.id, ITEMS.ether.id] }],

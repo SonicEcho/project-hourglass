@@ -42,6 +42,10 @@ export const SE = {
   awaken: 'se.awaken',
   sparkle: 'se.sparkle',
   bicycleBell: 'se.bicycle_bell',
+  // 段階114：レストピアに切り替わる時（前は突風の扉の音）、2-2 のそろった手拍子と、演奏の後の歓声と拍手
+  restopia: 'se.restopia',
+  handclap: 'se.handclap',
+  applause: 'se.applause',
 } as const;
 
 /**
@@ -74,6 +78,9 @@ export const SE_GAIN: Partial<Record<string, number>> = {
   [SE.noise]: 0.55,
   [SE.hangUp]: 0.55,
   [SE.doorOpen]: 0.6,
+  [SE.restopia]: 0.6,
+  [SE.handclap]: 0.6,
+  [SE.applause]: 0.6,
 };
 
 /**
@@ -104,6 +111,10 @@ export const BGM = {
   riverside: 'bgm.riverside',
   // 段階86：決意の曲（2-3 の4晩目、保管局の奥の書庫）
   resolve: 'bgm.resolve',
+  // 段階114：ふみさんの思い出（4日目の d3_fumi。ふみさんが越すと話す所から）
+  fumi: 'bgm.fumi',
+  // 段階114：保管局の奥の書庫（2-3 の4晩目。前は決意の曲）
+  archive: 'bgm.archive',
 } as const;
 
 /**

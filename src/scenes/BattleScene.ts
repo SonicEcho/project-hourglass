@@ -48,7 +48,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
 import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, ENEMY_CUT_INS, type EnemyCutIn, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
-import { actorLinks, chargeCounterText, drawBattle, FILM_SKILL_ROWS, FILM_UI, filmFrameRect, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
+import { actorLinks, chargeCounterText, drawBattle, drawFilmAutoSpeed, FILM_SKILL_ROWS, filmFrameRect, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { FILM_LAYOUT, LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
 import { hasImage } from '../assets/loader';
@@ -469,7 +469,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.busy || !isPlanComplete(this.state)) return;
     const plans = this.planInfo(this.state);
     this.state = startExecution(this.state);
-    if (FILM_UI) this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [], cut: [] };
+    this.film = { order: getRoundOrder(this.state), labels: plans.planLabels, cards: plans.planCards, cursor: -1, actorIds: [], cut: [] };
     void this.runExecution();
   }
 
@@ -553,8 +553,7 @@ export class BattleScene extends Phaser.Scene {
       // 敵の固有技（カイの切り取りなど。段階107c）は、その人のカットインを出す
       const actor = act.type === 'action' ? prev.enemies.find((e) => e.uid === act.actorIds[0]) : undefined;
       const enemyCutIn = actor && act.type === 'action' ? ENEMY_CUT_INS[actor.defId]?.[act.actionId] : undefined;
-      if (link && FILM_UI) await this.filmLinkCutIn(prev, link, barks.link);
-      else if (link) await this.linkCutIn(prev, link, barks.link);
+      if (link) await this.filmLinkCutIn(prev, link, barks.link);
       else if (enemyCutIn && act.type === 'action') await this.enemyCutIn(actor?.name ?? '', act.name, enemyCutIn);
       else if (combo) await this.comboCutIn(combo);
       else {
@@ -615,49 +614,6 @@ export class BattleScene extends Phaser.Scene {
     const line = addText(this, faceW + 14, 8, bark.text, { size: 18, bold: true, wrap: GAME_WIDTH - faceW - 24 }).setOrigin(0, 0.5);
     line.setStroke('#000000', 4);
     band.add(line);
-  }
-
-  /** 連携技のカットイン：2人の帯が左右から入り、技名を大きく出す */
-  private async linkCutIn(s: BattleState, link: LinkDef, barks: Bark[] = []): Promise<void> {
-    if (this.skipping) return;
-    const c = this.add.container(0, 0);
-    this.fxLayer.add(c);
-    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75).setOrigin(0));
-    link.members.forEach((id, i) => {
-      const unit = findUnit(s, id);
-      const y = 250 + i * 90;
-      const band = this.add.container(i === 0 ? -GAME_WIDTH : GAME_WIDTH, y);
-      // 2人のかけ合い（段階46a）。台詞があれば顔とひとことの帯、なければ名前の帯
-      const bark = barks.find((b) => b.allyId === unit?.defId);
-      if (bark) this.drawBarkBand(band, bark, 80);
-      else {
-        band.add(this.add.rectangle(0, 0, GAME_WIDTH, 72, ALLY_COLOR[id] ?? COLORS.ally).setOrigin(0, 0.5));
-        const name = addText(this, GAME_WIDTH / 2, 0, unit?.name ?? id, { size: 30, bold: true, align: 'center' }).setOrigin(0.5);
-        name.setStroke('#000000', 5);
-        band.add(name);
-      }
-      c.add(band);
-      this.tweens.add({ targets: band, x: 0, duration: 260, delay: i * (bark ? 420 : 120), ease: 'Cubic.easeOut' });
-    });
-    const cross = addText(this, GAME_WIDTH / 2, 295, '×', { size: 28, bold: true, color: COLORS.accentText }).setOrigin(0.5);
-    cross.setAlpha(0);
-    c.add(cross);
-    this.tweens.add({ targets: cross, alpha: 1, delay: 380, duration: 120 });
-    const label = addText(this, GAME_WIDTH / 2, 410, '連携技', { size: 16, bold: true, color: COLORS.accentText }).setOrigin(0.5).setAlpha(0);
-    const title = addText(this, GAME_WIDTH / 2, 455, `${link.name}！`, { size: 40, bold: true, color: '#ffffff', align: 'center' }).setOrigin(0.5);
-    title.setStroke('#c08000', 8).setScale(2.4).setAlpha(0);
-    c.add([label, title]);
-    const talk = barks.length > 0 ? 700 : 0;
-    this.tweens.add({ targets: label, alpha: 1, delay: 450 + talk, duration: 150 });
-    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 450 + talk, duration: 280, ease: 'Back.easeOut' });
-    await this.wait(1150 + talk);
-    if (!this.skipping) {
-      const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0);
-      this.fxLayer.add(flash);
-      this.tweens.add({ targets: flash, alpha: 0, duration: 300 });
-      this.cameras.main.shake(260, 0.012);
-    }
-    c.destroy(true);
   }
 
   /**
@@ -907,8 +863,7 @@ export class BattleScene extends Phaser.Scene {
         const i = s.log.indexOf(e);
         const drew = i >= 0 ? s.log.slice(i + 1).find((x) => x.type === 'draw') : undefined;
         this.newCards = drew?.type === 'draw' ? drew.cardUids : [];
-        if (FILM_UI) this.filmExtend(s, e.actorId);
-        else this.bigText('Extend!');
+        this.filmExtend(s, e.actorId);
         return true;
       }
       case 'partBreak': {
@@ -967,11 +922,7 @@ export class BattleScene extends Phaser.Scene {
       case 'frameCut': {
         // 切り取り（段階107）：仲間のこのラウンドの行動が抜かれた
         if (this.film) this.film.cut = [...this.film.cut, ...e.allyIds];
-        if (FILM_UI) this.filmCut(s, e.enemyId, e.allyIds);
-        else {
-          const p = unitPosition(s, e.allyIds[0]);
-          this.popup(p.x, p.y - 20, '切り取られた！', '#9fdcff', 18);
-        }
+        this.filmCut(s, e.enemyId, e.allyIds);
         return true;
       }
       case 'frameRestored': {
@@ -1499,7 +1450,7 @@ export class BattleScene extends Phaser.Scene {
         const actorId = actor?.uid ?? '';
         const page = this.skillPage.actorId === actorId ? this.skillPage.page : 0;
         // 新しい画面（段階102e）は1行ずつ送り、最後の行が見えたら止める
-        const next = FILM_UI ? Math.min(page + 1, Math.max(0, (actor?.skills.length ?? 0) - FILM_SKILL_ROWS)) : page + 1;
+        const next = Math.min(page + 1, Math.max(0, (actor?.skills.length ?? 0) - FILM_SKILL_ROWS));
         this.skillPage = { actorId, page: next };
         this.render();
       },
@@ -1677,6 +1628,7 @@ export class BattleScene extends Phaser.Scene {
       this.root.add(blocker);
       blocker.setInteractive();
       blocker.on('pointerdown', () => (this.auto ? this.stopAuto() : this.skip()));
+      drawFilmAutoSpeed(this, this.root, vm, this.handlers());
     }
   }
 

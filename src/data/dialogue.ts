@@ -307,8 +307,8 @@ export const CAST: Record<string, CastMember> = {
   },
   // 段階78（2-1 の書き直し。docs/script/2-1_rework.md）：源三の娘すみ（今77歳。銭湯「松の湯」の女将）と、昭和44年の写しのすみ（22歳）・先輩の職人としお。
   // 立ち絵はまだない（色の札）。写しはセピアをかける
-  すみ: { faces: names('笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'), firstFace: '笑顔', color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
-  写しのすみ: { faces: names('笑顔'), firstFace: '笑顔', color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
+  すみ: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
+  写しのすみ: { portrait: 'portrait.past_sumi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
   写しのとしお: { faces: names('通常'), firstFace: '通常', color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
   // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
   // 写しのけんたは笑顔の絵だけある（2026-10-17。ほかの表情は笑顔で代わりに出す）。だいち・さきは絵がまだない
@@ -327,8 +327,8 @@ export const CAST: Record<string, CastMember> = {
     voice: { pitch: 420, wave: 'square' },
     tint: SEPIA_TINT,
   },
-  だいち: { faces: names('笑顔'), firstFace: '笑顔', color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
-  さき: { faces: names('笑顔', '驚き', '苦笑い', '考える', '微笑み', 'さみしげ'), firstFace: '笑顔', color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
+  だいち: { portrait: 'portrait.daichi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
+  さき: { portrait: 'portrait.saki', ...young(['笑顔', '驚き', '苦笑い', '考える', '微笑み', 'さみしげ'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
   // 2-3 の人たちと、カイ・ノア（段階40）。こうじと写しの2人は絵がまだない（色の札）。カイは余裕、ノアは通常・悲しいの絵がある
   こうじ: {
     portrait: 'portrait.koji',
@@ -337,23 +337,23 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 310, wave: 'square' },
   },
-  写しのこうじ: { faces: names('通常', '驚き', '泣き笑い'), firstFace: '通常', color: 0x8aa0c0, voice: { pitch: 640, wave: 'square' } },
-  写しのまさる: { faces: names('笑顔'), firstFace: '笑顔', color: 0x7a8a6a, voice: { pitch: 280, wave: 'sawtooth' } },
+  写しのこうじ: { portrait: 'portrait.past_koji', ...young(['通常', '驚き', '泣き笑い'], { 通常: 'normal' }, '通常'), height: YOUNG_HEIGHT, color: 0x8aa0c0, voice: { pitch: 640, wave: 'square' } },
+  写しのまさる: { portrait: 'portrait.past_masaru', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x7a8a6a, voice: { pitch: 280, wave: 'sawtooth' } },
   // 段階85：こうじの父（今70歳。パン屋の先代）。立ち絵はまだない（色の札）。声が大きい
-  まさる: { faces: names('笑顔', '通常', '驚き', '苦笑い', 'さみしげ'), firstFace: '笑顔', color: 0x8a7a5a, voice: { pitch: 260, wave: 'sawtooth' } },
+  まさる: { portrait: 'portrait.masaru', ...young(['笑顔', '通常', '驚き', '苦笑い', 'さみしげ'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x8a7a5a, voice: { pitch: 260, wave: 'sawtooth' } },
   // 段階88（3-1。docs/script/3-1.md の 2.）：ひだまり荘のちよ（今75歳）と弟ののぼる（今68歳）、昭和41年の写しの3人。立ち絵はまだない（色の札）。写しはセピア
-  ちよ: { faces: names('微笑み', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '悲しい', '泣き笑い', '笑顔', '真剣'), firstFace: '微笑み', color: 0xa08aa8, voice: { pitch: 470, wave: 'triangle' } },
-  のぼる: { faces: names('笑顔', '通常', '苦笑い', '困り笑い', '考える', 'さみしげ', '照れ', '驚き', '泣き笑い'), firstFace: '笑顔', color: 0x8a6a4a, voice: { pitch: 280, wave: 'sawtooth' } },
-  写しのちよ: { faces: names('笑顔', '通常', '真剣', 'むっ', '驚き', '泣き', '泣き笑い'), firstFace: '笑顔', color: 0xc0b0c8, voice: { pitch: 660, wave: 'triangle' }, tint: SEPIA_TINT },
-  写しの菊: { faces: names('通常', '泣き笑い'), firstFace: '通常', color: 0x7a6a5a, voice: { pitch: 420, wave: 'triangle' }, tint: SEPIA_TINT },
-  写しののぼる: { faces: names('笑顔'), firstFace: '笑顔', color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
+  ちよ: { portrait: 'portrait.chiyo', ...young(['微笑み', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '悲しい', '泣き笑い', '笑顔', '真剣'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa08aa8, voice: { pitch: 470, wave: 'triangle' } },
+  のぼる: { portrait: 'portrait.noboru', ...young(['笑顔', '通常', '苦笑い', '困り笑い', '考える', 'さみしげ', '照れ', '驚き', '泣き笑い'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x8a6a4a, voice: { pitch: 280, wave: 'sawtooth' } },
+  写しのちよ: { portrait: 'portrait.past_chiyo', ...young(['笑顔', '通常', '真剣', 'むっ', '驚き', '泣き', '泣き笑い'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xc0b0c8, voice: { pitch: 660, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しの菊: { portrait: 'portrait.past_kiku', ...young(['通常', '泣き笑い'], { 通常: 'normal' }, '通常'), height: 440, color: 0x7a6a5a, voice: { pitch: 420, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しののぼる: { portrait: 'portrait.past_noboru', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: YOUNG_HEIGHT, color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
   // 段階91（祭りの夜。docs/script/3-matsuri.md の 2.）：大正十年の夏祭りに百年いる少女。4人目の仲間。立ち絵はまだない（色の札）
   // 段階94（3-2。docs/script/3-2.md の 2.）：町の印刷会社の一年目のしおり（今22歳）と、同級生のとうや（今22歳）、平成31年3月の写しの2人。立ち絵はまだない（色の札）。写しはセピア
-  しおり: { faces: names('笑顔', '困り', '困り笑い', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '微笑み', '大笑い', 'あせり'), firstFace: '笑顔', color: 0x7a90b8, voice: { pitch: 540, wave: 'triangle' } },
-  とうや: { faces: names('笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'), firstFace: '笑顔', color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
-  写しのしおり: { faces: names('むっ', '笑顔', '通常', '真剣'), firstFace: '笑顔', color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
-  写しのとうや: { faces: names('笑顔', '通常'), firstFace: '笑顔', color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
-  小夜子: { faces: names('微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'), firstFace: '微笑み', color: 0xc0485a, voice: { pitch: 560, wave: 'sine' } },
+  しおり: { portrait: 'portrait.shiori', ...young(['笑顔', '困り', '困り笑い', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '微笑み', '大笑い', 'あせり'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x7a90b8, voice: { pitch: 540, wave: 'triangle' } },
+  とうや: { portrait: 'portrait.toya', ...young(['笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
+  写しのしおり: { portrait: 'portrait.past_shiori', ...young(['むっ', '笑顔', '通常', '真剣'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しのとうや: { portrait: 'portrait.past_toya', ...young(['笑顔', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
+  小夜子: { portrait: 'portrait.sayoko', ...young(['微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'], { 微笑み: 'smile' }, '微笑み'), height: 450, color: 0xc0485a, voice: { pitch: 560, wave: 'sine' } },
   カイ: {
     portrait: 'portrait.kai',
     ...young(['余裕', '見下す', '通常'], { 余裕: 'smug' }, '余裕'),
@@ -592,6 +592,8 @@ export const SCRIPT_BGM: Record<string, string | null> = {
   // somber は教室で聞く知らせ（ピアノとチェロ）、uneasy は帰り道・家の前・電話（ぼんやりしたエレピ）
   somber: BGM.somber,
   uneasy: BGM.uneasy,
+  fumi: BGM.fumi,
+  archive: BGM.archive,
   showa: BGM.showa,
   // 段階78：2-1 の町工場（区画の曲と同じ。晩に入る会話で流す）
   factory: BGM.factory,
@@ -646,6 +648,9 @@ export const SCRIPT_SE: Record<string, string | null> = {
   awaken: SE.awaken,
   sparkle: SE.sparkle,
   bicycle_bell: SE.bicycleBell,
+  restopia: SE.restopia,
+  handclap: SE.handclap,
+  applause: SE.applause,
 };
 
 /**
