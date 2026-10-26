@@ -58,6 +58,9 @@ Follow the attached layout sketch exactly: light areas are walkable ground, dark
 
 ITEMS = []  # (章の見出し, [(番号, 名前, 添付, 保存名, 指示文, メモ)])
 
+# 届いてゲームに入れた絵（保存名）。一覧では見出しに「済」を付ける
+DONE = {'sayoko_sheet.png', 'sayoko_smile.png', 'chiyo_smile.png', 'noboru_smile.png', 'past_chiyo_smile.png', 'past_kiku_normal.png', 'past_noboru_smile.png', 'shiori_smile.png', 'toya_smile.png', 'past_shiori_smile.png', 'past_toya_smile.png', 'past_koji_normal.png', 'past_masaru_smile.png', 'masaru_smile.png', 'sumi_smile.png', 'past_sumi_smile.png', 'daichi_smile.png', 'saki_smile.png'}
+
 
 def section(title, note=''):
     ITEMS.append((title, note, []))
@@ -295,13 +298,14 @@ def main():
     toc = []
     body = []
     for title, note, items in ITEMS:
-        toc.append(f'- {title}（{len(items)}枚）')
+        done = sum(1 for it in items if it[2] in DONE)
+        toc.append(f'- {title}（{len(items)}枚' + (f'。済 {done}' if done else '') + '）')
         body += [f'## {title}', '']
         if note:
             body += [note, '']
         for name, attach, save, prompt, memo in items:
             n += 1
-            body += [f'### {n}. {name}', '']
+            body += [f'### {n}. {name}' + ('（済）' if save in DONE else ''), '']
             body.append(f'- 添付：{"、".join(f"`{a}`" for a in attach) if attach else "なし"}')
             body.append(f'- 保存名：`{save}`')
             if memo:

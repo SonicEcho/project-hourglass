@@ -10,9 +10,9 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 
 全部で 118 枚。
 
-- A. 小夜子（ヒロイン）（2枚）
-- B. 3章の人（9枚）
-- C. 2章の残りの人（7枚）
+- A. 小夜子（ヒロイン）（2枚。済 2）
+- B. 3章の人（9枚。済 9）
+- C. 2章の残りの人（7枚。済 7）
 - D. 敵（32枚）
 - E. 部屋の地図（39枚）
 - F. 会話の背景（14枚）
@@ -23,7 +23,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 
 見た目はまだ決まっていない。下の設定画の文は、脚本（`docs/script/3-matsuri.md` の 2.：大正10年の夏、16歳、旧家の娘、浴衣に赤い鼻緒の下駄、月の形の簪）から書いたたたき台。設定画を見て、髪・浴衣の色・柄を決めてから、胸から上の1枚を作る
 
-### 1. 小夜子の設定画
+### 1. 小夜子の設定画（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`sayoko_sheet.png`
@@ -42,7 +42,7 @@ Additional views on the same sheet: back view, 4 facial expressions (gentle smil
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 2. 小夜子の胸から上の基本の1枚（微笑み）
+### 2. 小夜子の胸から上の基本の1枚（微笑み）（済）
 
 - 添付：`sayoko_sheet.png（上で決めた設定画）`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`sayoko_smile.png`
@@ -62,7 +62,7 @@ Character: Sayoko. Keep her design exactly as in the attached character sheet: l
 
 「写し」の人は、ゲームの中でセピアに色を付けるので、ふつうの色で作る。見本は構図をそろえるため（大人・中高生はあかりの笑顔、子どもは子どものあかり）
 
-### 3. ちよ（今75歳。ひだまり荘）
+### 3. ちよ（今75歳。ひだまり荘）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`chiyo_smile.png`
@@ -77,7 +77,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Chiyo, a 75-year-old Japanese woman living in a small care home in a quiet regional town. Elegant and polite, a warm but slightly lonely smile. Short soft white hair neatly permed, small gold-rimmed glasses, a pale lavender knitted cardigan over a cream blouse, a thin silver chain. She once worked in a Tokyo electronics factory at fifteen; her hands are small and careful.
 ```
 
-### 4. のぼる（今68歳。ちよの弟）
+### 4. のぼる（今68歳。ちよの弟）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`noboru_smile.png`
@@ -92,7 +92,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Noboru, a 68-year-old Japanese man from a mountain farming village, Chiyo's younger brother, visiting the town. Sun-tanned, weathered face, short gray crew-cut hair, kind crinkled eyes, a slightly gap-toothed grin. A faded checked work shirt with rolled sleeves under a plain gray vest. Laid-back and unhurried, a simple countryman.
 ```
 
-### 5. 写しのちよ（昭和41年、15歳）
+### 5. 写しのちよ（昭和41年、15歳）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`past_chiyo_smile.png`
@@ -107,7 +107,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: young Chiyo, a 15-year-old Japanese girl in the summer of 1966, coming home to her mountain village for the first time after starting factory work in Tokyo. Keep a face that could grow into a gentle, refined old woman. Black hair in two short braids, a crisp white short-sleeve blouse, a navy skirt. She acts cheerful and grown-up, but her eyes are a little homesick.
 ```
 
-### 6. 写しの菊（ちよとのぼるの母。昭和41年、40歳くらい）
+### 6. 写しの菊（ちよとのぼるの母。昭和41年、40歳くらい）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`past_kiku_normal.png`
@@ -122,7 +122,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Kiku, a Japanese farming woman around 40 in the summer of 1966, a widow who works her mountain fields alone. Sun-tanned skin, strong hands, black hair tied back tightly under a faded indigo cotton head scarf (tenugui), a dark indigo work kimono top with tied-back sleeves. Few words and blunt manners, but deep, steady eyes that care.
 ```
 
-### 7. 写しののぼる（昭和41年、8歳）
+### 7. 写しののぼる（昭和41年、8歳）（済）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`
 - 保存名：`past_noboru_smile.png`
@@ -137,7 +137,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: young Noboru, an 8-year-old Japanese village boy in the summer of 1966, overjoyed that his big sister is coming home. Very short buzz-cut black hair, sun-tanned skin, a scraped nose, a plain white sleeveless undershirt (running shirt) and a straw hat hanging on his back.
 ```
 
-### 8. しおり（今22歳。印刷会社の一年目）
+### 8. しおり（今22歳。印刷会社の一年目）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`shiori_smile.png`
@@ -152,7 +152,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Shiori, a 22-year-old Japanese woman in her first year at a small local printing company in a quiet regional town. Short neat dark-brown bob with one side tucked behind her ear, lively eyes, a talkative, quick face. A light beige cardigan over a white collared blouse, a plain staff lanyard (blank card, no letters).
 ```
 
-### 9. とうや（今22歳。鉄道の保線の仕事）
+### 9. とうや（今22歳。鉄道の保線の仕事）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`toya_smile.png`
@@ -167,7 +167,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Toya, a 22-year-old Japanese man who works on railway track maintenance. Slightly messy black hair, sleepy relaxed eyes, a gentle, laid-back face. A dark navy work jacket with a reflective stripe over a gray T-shirt, no logos. The kind of person who listens to the end before he speaks.
 ```
 
-### 10. 写しのしおり（平成31年3月、15歳）
+### 10. 写しのしおり（平成31年3月、15歳）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`past_shiori_smile.png`
@@ -182,7 +182,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: young Shiori, a 15-year-old Japanese middle school girl on her graduation day in March 2019, the same person as the 22-year-old office worker. Short dark-brown hair, a navy sailor-style school uniform with a red scarf, a small corsage of paper flowers with a ribbon pinned on her chest (graduation). Sharp-tongued to hide her shyness.
 ```
 
-### 11. 写しのとうや（平成31年3月、15歳）
+### 11. 写しのとうや（平成31年3月、15歳）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`past_toya_smile.png`
@@ -201,7 +201,7 @@ Character: young Toya, a 15-year-old Japanese middle school boy on his graduatio
 
 写しのこうじ・写しのまさるは、こうじの立ち絵も添付する（顔を似せるため）
 
-### 12. 写しのこうじ（平成10年、12歳）
+### 12. 写しのこうじ（平成10年、12歳）（済）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`、`public/assets/portraits/koji_smile.webp`
 - 保存名：`past_koji_normal.png`
@@ -216,7 +216,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: young Koji, the same man as the attached adult portrait but 28 years earlier: a 12-year-old boy on a little league baseball team in the summer of 1998, always on the bench. Keep the same face features so he is clearly the same person. Short black hair, a slightly dirty white baseball uniform with navy trim that is a little too big for him, a baseball cap. No letters or numbers on the uniform or cap.
 ```
 
-### 13. 写しのまさる（平成10年、40代。こうじの父）
+### 13. 写しのまさる（平成10年、40代。こうじの父）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`、`public/assets/portraits/koji_smile.webp`
 - 保存名：`past_masaru_smile.png`
@@ -231,7 +231,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Masaru, Koji's father, a Japanese man in his 40s in the summer of 1998, a cheerful working dad watching his son's little league game. A face that resembles the attached portrait (his son as an adult), sun-tanned skin, short black hair, a faded polo shirt with a towel around his neck. No letters or logos.
 ```
 
-### 14. まさる（今70歳くらい。こうじの父）
+### 14. まさる（今70歳くらい。こうじの父）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`、`past_masaru_smile.png（上で作った絵）`
 - 保存名：`masaru_smile.png`
@@ -246,7 +246,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Masaru, the same man as the attached portrait but about 28 years later: a Japanese man around 70, retired, who still comes to the riverside little league field every day with a plastic megaphone. Keep the same face features so he is clearly the same person. Short white hair, deep laugh lines, sun-tanned skin, a faded baseball cap pushed back, a light windbreaker. No letters or logos.
 ```
 
-### 15. すみ（今77歳。銭湯「松の湯」の女将）
+### 15. すみ（今77歳。銭湯「松の湯」の女将）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`sumi_smile.png`
@@ -261,7 +261,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Sumi, a 77-year-old Japanese woman who runs an old public bathhouse in a quiet regional town. Small and spry, gray hair tied in a low bun with a white hand towel (tenugui) over it, a white kappogi apron-smock over a dark kimono, bright energetic eyes.
 ```
 
-### 16. 写しのすみ（昭和44年、22歳。番台の娘）
+### 16. 写しのすみ（昭和44年、22歳。番台の娘）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`、`sumi_smile.png（上で作った絵）`
 - 保存名：`past_sumi_smile.png`
@@ -276,7 +276,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: young Sumi, the same woman as the attached portrait but 57 years earlier: a 22-year-old daughter of a public bathhouse in the winter of 1969. Keep the same face features so she is clearly the same person. Black hair tied back under a white hand towel, rosy cheeks from the cold, a simple striped kimono with a dark half-coat (hanten).
 ```
 
-### 17. だいち（今37歳。けんたのバンドのドラム）
+### 17. だいち（今37歳。けんたのバンドのドラム）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`、`public/assets/portraits/kenta_smile.webp`
 - 保存名：`daichi_smile.png`
@@ -291,7 +291,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Daichi, a 37-year-old Japanese salesman, the former drummer of a high school band. Short neat black hair, a broad friendly face, a dark gray business suit with a loosened tie. Same art style and framing as the attached portrait of his old bandmate.
 ```
 
-### 18. さき（今37歳。けんたのバンドのベース）
+### 18. さき（今37歳。けんたのバンドのベース）（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`、`public/assets/portraits/kenta_smile.webp`
 - 保存名：`saki_smile.png`
