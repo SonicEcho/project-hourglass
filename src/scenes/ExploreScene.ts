@@ -49,6 +49,8 @@ import {
   huntRewardRate,
   applyMapEdits,
   isEmptyMapEdits,
+  ROOF,
+  roofCells,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
@@ -149,6 +151,8 @@ export class ExploreScene extends Phaser.Scene {
   private ui?: Phaser.GameObjects.Container;
   /** 地図の調整の途中（段階117。?debug=1 の時だけ） */
   private editor: MapEditor | null = null;
+  /** 屋根や木の下（段階118）に重ねる、地図の絵の切り抜き */
+  private roof?: Phaser.GameObjects.Container;
 
   constructor() {
     super('Explore');
@@ -476,6 +480,9 @@ export class ExploreScene extends Phaser.Scene {
       this.player.add(addText(this, 0, 0, 'ハ', { size: 14, bold: true }).setOrigin(0.5));
     }
     world.add(this.player);
+    this.roof = this.drawRoof(room);
+    if (this.roof) world.add(this.roof);
+    this.updateRoof(this.state.cell, false);
 
     // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない。
     // 動ける範囲は、地図の上と下に帯の高さの分だけ広げる（地図の上の端と下の端が、帯に隠れたままにならないように。段階58）
@@ -594,6 +601,41 @@ export class ExploreScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * 屋根や木の下（段階118）：文字の地図の ^ のマスに、地図の絵の同じ所を切り抜いて、仲間と敵の上にもう一度重ねる
+   * （横に続くマスは1枚にまとめる）。絵のない部屋は暗い四角
+   */
+  private drawRoof(room: RoomDef): Phaser.GameObjects.Container | undefined {
+    const cells = roofCells(room);
+    if (cells.length === 0) return undefined;
+    const box = this.add.container(0, 0);
+    const [w, h] = [this.map.cols * T, this.map.rows * T];
+    const image = room.image && hasImage(this, room.image) ? room.image : null;
+    const src = image ? this.textures.get(image).getSourceImage() : null;
+    const [sx, sy] = src ? [src.width / w, src.height / h] : [1, 1];
+    const runs: [number, number, number][] = [];
+    for (const [c, r] of cells) {
+      const last = runs[runs.length - 1];
+      if (last && last[2] === r && last[1] === c - 1) last[1] = c;
+      else runs.push([c, c, r]);
+    }
+    for (const [c0, c1, r] of runs) {
+      if (image) box.add(this.add.image(0, 0, image).setOrigin(0).setDisplaySize(w, h).setCrop(c0 * T * sx, r * T * sy, (c1 - c0 + 1) * T * sx, T * sy));
+      else box.add(this.add.rectangle(c0 * T, r * T, (c1 - c0 + 1) * T, T, 0x0b1118, 0.85).setOrigin(0));
+    }
+    return box;
+  }
+
+  /** 仲間が屋根の下のマスにいる間は、重ねた絵を半分すかす（自分の位置が分かるように。段階118） */
+  private updateRoof(cell: GridCell, animate: boolean): void {
+    if (!this.roof) return;
+    const alpha = this.room.layout[cell[1]]?.[cell[0]] === ROOF ? 0.45 : 1;
+    if (this.roof.alpha === alpha) return;
+    this.tweens.killTweensOf(this.roof);
+    if (animate) this.tweens.add({ targets: this.roof, alpha, duration: 200 });
+    else this.roof.setAlpha(alpha);
+  }
+
   /** 地図の調整を始める（段階117）：歩くのと敵を止め、地図の上の物を隠して、マス目と道具を出す */
   private openEditor(): void {
     if (this.editor || this.leaving || !this.world || !this.ui || this.tipOpen) return;
@@ -676,6 +718,7 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.walking = true;
     this.nextCell = next;
+    this.updateRoof(next, true);
     const walk = this.tweens.add({
       targets: this.player,
       x: next[0] * T + T / 2,

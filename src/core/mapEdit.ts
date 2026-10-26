@@ -3,7 +3,7 @@
 // 「書き出し」の文（exportMapEdits）を開発の会話に貼り、Claude が src/data に入れる
 import type { GridCell } from './grid';
 import type { AreaDef, RoomDef, RoomSide } from './explore';
-import { EXIT_WIDTH, exitCells, entryCells, startRoom } from './explore';
+import { EXIT_WIDTH, ROOF, exitCells, entryCells, startRoom } from './explore';
 
 /** 部屋の直し：文字の地図の全部と、出入口の位置（辺ごとの最初のマス） */
 export interface RoomPatch {
@@ -151,11 +151,19 @@ function withCells(layout: string[], cells: GridCell[], ch: (old: string) => str
   return rows.map((r) => r.join(''));
 }
 
-/** マスを塗る：歩ける（# を . に）か、通れない（. を # に）。出発点 S とチェックポイント P はそのまま */
-export function paintCells(edits: MapEdits, original: RoomDef, cells: GridCell[], walkable: boolean): MapEdits {
+/** 塗り方：歩ける（# と屋根の下を . に）・通れない（# に）・屋根の下（段階118。歩ける ^ に） */
+export type PaintMode = 'open' | 'block' | 'roof';
+
+/** マスを塗る。出発点 S とチェックポイント P はそのまま */
+export function paintCells(edits: MapEdits, original: RoomDef, cells: GridCell[], mode: PaintMode): MapEdits {
   const room = patchRoom(original, edits);
-  const layout = withCells(room.layout, cells, (old) => (old === 'S' || old === 'P' ? old : walkable ? (old === '#' ? '.' : old) : '#'));
-  return setRoom(edits, original, { layout });
+  const to = (old: string): string => {
+    if (old === 'S' || old === 'P') return old;
+    if (mode === 'block') return '#';
+    if (mode === 'roof') return ROOF;
+    return old === '#' || old === ROOF ? '.' : old;
+  };
+  return setRoom(edits, original, { layout: withCells(room.layout, cells, to) });
 }
 
 /** S・P の記号を別のマスへ動かす（前のマスは歩ける所に。チェックポイントの会話も一緒に動かす） */

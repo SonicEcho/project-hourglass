@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { AreaDef, GridCell, MapEdits, PlacedThing, RoomDef } from '../core';
-import { applyMapEdits, checkArea, emptyMapEdits, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings } from '../core';
+import { ROOF, applyMapEdits, checkArea, emptyMapEdits, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings } from '../core';
 import { AREA_TILE, ROOM_NAMES } from '../data';
 import { saveMapEdits, showMapEditPanel } from '../debug/mapEdits';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
@@ -12,11 +12,12 @@ import { addButton, addText } from '../ui/widgets';
 
 const T = AREA_TILE;
 
-type Tool = 'look' | 'open' | 'block' | 'move' | 'exit';
+type Tool = 'look' | 'open' | 'block' | 'roof' | 'move' | 'exit';
 const TOOLS: [Tool, string][] = [
   ['look', '見る'],
   ['open', '歩ける'],
   ['block', '通れない'],
+  ['roof', '屋根'],
   ['move', '動かす'],
   ['exit', '出入口'],
 ];
@@ -120,7 +121,7 @@ export class MapEditor {
       this.dragFrom = { x: p.x, y: p.y, sx: this.host.cam.scrollX, sy: this.host.cam.scrollY };
       return;
     }
-    if (this.tool === 'open' || this.tool === 'block') {
+    if (this.tool === 'open' || this.tool === 'block' || this.tool === 'roof') {
       this.stroke = { before: this.edits, done: new Set() };
       this.paint(cell);
     }
@@ -147,7 +148,7 @@ export class MapEditor {
     if (this.stroke) {
       const before = this.stroke.before;
       this.stroke = null;
-      if (before !== this.edits) this.commit(before, this.tool === 'open' ? '歩ける所にした' : '通れない所にした');
+      if (before !== this.edits) this.commit(before, this.tool === 'open' ? '歩ける所にした' : this.tool === 'roof' ? '屋根の下にした' : '通れない所にした');
       return;
     }
     if (p.getDistance() > 12) return;
@@ -161,7 +162,8 @@ export class MapEditor {
     const key = `${cell[0]},${cell[1]}`;
     if (!this.stroke || this.stroke.done.has(key)) return;
     this.stroke.done.add(key);
-    this.edits = paintCells(this.edits, this.originalRoom, [cell], this.tool === 'open');
+    if (this.tool !== 'open' && this.tool !== 'block' && this.tool !== 'roof') return;
+    this.edits = paintCells(this.edits, this.originalRoom, [cell], this.tool);
     this.drawGrid();
   }
 
@@ -248,7 +250,9 @@ export class MapEditor {
     const room = this.room;
     room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
-        g.fillStyle(ch === '#' ? 0xff3030 : 0x40ff80, ch === '#' ? 0.3 : 0.08).fillRect(c * T, r * T, T, T);
+        // 屋根の下（段階118）は紫
+        if (ch === ROOF) g.fillStyle(0xb060ff, 0.35).fillRect(c * T, r * T, T, T);
+        else g.fillStyle(ch === '#' ? 0xff3030 : 0x40ff80, ch === '#' ? 0.3 : 0.08).fillRect(c * T, r * T, T, T);
         g.lineStyle(1, 0xffffff, 0.22).strokeRect(c * T, r * T, T, T);
       }),
     );
@@ -312,7 +316,7 @@ export class MapEditor {
     TOOLS.forEach(([tool, name], i) => {
       const on = this.tool === tool;
       addButton(scene, this.bar, 6 + w * i + w / 2, top + 26, w - 4, 40, name, { onTap: () => this.pick(tool) }, {
-        size: 13,
+        size: 12,
         fill: on ? 0x5a4a1e : COLORS.panelLight,
         stroke: on ? 0xffd84a : COLORS.border,
         strokeWidth: on ? 2 : 1,
@@ -336,7 +340,8 @@ export class MapEditor {
     this.drawMarks();
     const help: Record<Tool, string> = {
       look: '見る：なぞると地図が動く',
-      open: '歩ける：なぞったマスを歩ける所にする',
+      open: '歩ける：なぞったマスを歩ける所にする（屋根の下も外す）',
+      roof: '屋根：なぞったマスを、歩ける屋根や木の下にする（紫。歩くと絵の下に隠れる）',
       block: '通れない：なぞったマスを通れない所にする（S・P はそのまま）',
       move: '動かす：物をタップして選び、行き先をタップ（敵は見回りの道ごと動く）',
       exit: '出入口：出入口の辺の近くをタップすると、そこへずらす（青いマス）',
