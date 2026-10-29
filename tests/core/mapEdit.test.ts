@@ -21,6 +21,9 @@ import {
   setPatrol,
   addChest,
   removeChest,
+  paintRoofFine,
+  roofMask,
+  isShade,
 } from '../../src/core';
 
 // 段階117：地図の調整（スマホで部屋の歩ける場所・出入口・物の位置を直す）
@@ -77,6 +80,32 @@ describe('地図の調整', () => {
     edits = paintCells(edits, ROOM, [[0, 0], [2, 2]], 'open');
     expect(roofCells(patchRoom(ROOM, edits))).toEqual([]);
     expect(patchRoom(ROOM, edits).layout[0][0]).toBe('.');
+  });
+
+  it('細かい屋根（段階121）：小さな四角ごとに塗り・外し、元と同じになると直しから外れる', () => {
+    // マス (2,2) の左上の小さな四角と、その右の四角
+    let edits = paintRoofFine(emptyMapEdits(), ROOM, [[8, 8], [9, 8]], true);
+    let room = patchRoom(ROOM, edits);
+    expect(roofMask(room, 2, 2)).toBe(0b11);
+    expect(roofCells(room)).toEqual([[2, 2]]);
+    expect(room.roofFine).toEqual({ '2,2': '0003' });
+    // 全部屋根の ^ のマスの一部を外す
+    edits = paintCells(edits, ROOM, [[3, 3]], 'roof');
+    edits = paintRoofFine(edits, ROOM, [[15, 15]], false);
+    room = patchRoom(ROOM, edits);
+    expect(roofMask(room, 3, 3)).toBe(0xffff & ~(1 << 15));
+    // 歩けるで塗ると、そのマスの細かい屋根も外れる
+    edits = paintCells(edits, ROOM, [[2, 2], [3, 3]], 'open');
+    expect(isEmptyMapEdits(edits)).toBe(true);
+  });
+
+  it('陰（段階121）：: に塗ると歩けて、歩けるで塗ると外れる', () => {
+    let edits = paintCells(emptyMapEdits(), ROOM, [[2, 2]], 'shade');
+    const room = patchRoom(ROOM, edits);
+    expect(isShade(room, [2, 2])).toBe(true);
+    expect(isWalkable(parseGrid(room.layout), [2, 2])).toBe(true);
+    edits = paintCells(edits, ROOM, [[2, 2]], 'open');
+    expect(isEmptyMapEdits(edits)).toBe(true);
   });
 
   it('出入口をずらすと、辺と内側のマスが開き、前の辺のマスは閉じる', () => {

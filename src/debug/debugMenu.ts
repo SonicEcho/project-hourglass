@@ -3,7 +3,7 @@ import { playtimeReport, resetPlaytime } from './playtime';
 import { debugAutoStory, setDebugAutoStory } from './debugFlag';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
-import { AREA_BATTLES, AREAS, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, ROOM_NAMES, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
 import type { GrowthTier } from '../sim/presets';
 import { clearReadLog } from '../scenes/DialogueScene';
 import {
@@ -35,6 +35,8 @@ export interface DebugNavigator {
   openFlow(): void;
   /** 探索の画面を開き直す（段階25。今の探索の状態から） */
   openExplore(area: string): void;
+  /** 地図直しの試し歩き（段階121）：区画の、その晩の、その部屋を開いて、すぐ地図直しを出す（セーブしない） */
+  openMapTune(area: string, night: number | undefined, room: string): void;
 }
 
 const Z = 9000;
@@ -232,6 +234,45 @@ export function installDebugMenu(nav: DebugNavigator): void {
     } else {
       panel.append(el('div', 'color:#9fb3c8;font-size:12px;margin-top:6px;', '飛ぶと、飛ぶ前のセーブを1つ取っておき、ここから戻せます。気になったことは、画面左下の「メモ」へ'));
     }
+
+    // ---- 地図直し（段階121）：シナリオを進めずに、区画・晩・部屋を選んで開く ----
+    section('地図直し：区画と部屋を選んで開く');
+    const selectCss = 'display:block;width:100%;min-height:44px;margin:6px 0;font:14px sans-serif;';
+    const areaSelect = el('select', selectCss);
+    const nightSelect = el('select', selectCss);
+    const roomSelect = el('select', selectCss);
+    for (const a of Object.values(AREAS)) {
+      const o = el('option', '', a.name);
+      o.value = a.id;
+      areaSelect.append(o);
+    }
+    const fillRooms = () => {
+      const a = AREAS[areaSelect.value];
+      nightSelect.replaceChildren();
+      const nights = a?.nights?.length ?? 0;
+      for (let n = 1; n <= Math.max(1, nights); n++) {
+        const o = el('option', '', nights > 0 ? `${n}晩目` : '晩なし');
+        o.value = String(nights > 0 ? n : 0);
+        nightSelect.append(o);
+      }
+      roomSelect.replaceChildren();
+      for (const r of a?.rooms ?? []) {
+        const o = el('option', '', `${ROOM_NAMES[r.id] ?? r.id}（${r.id}${r.image ? '' : '・絵なし'}）`);
+        o.value = r.id;
+        roomSelect.append(o);
+      }
+    };
+    areaSelect.addEventListener('change', fillRooms);
+    fillRooms();
+    panel.append(
+      areaSelect,
+      nightSelect,
+      roomSelect,
+      button('↑ の部屋の地図直しを開く（セーブしない試し歩き）', () => {
+        close();
+        nav.openMapTune(areaSelect.value, Number(nightSelect.value) || undefined, roomSelect.value);
+      }, true, 'background:#3a2f5a;border-color:#b090ff;'),
+    );
 
     // ---- 戦闘中 ----
     if (battle && s) {

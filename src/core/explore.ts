@@ -33,6 +33,11 @@ export interface RoomDef {
    * 届いた地図の絵の道が、辺の真ん中から外れている時に使う（2026-10-26）
    */
   exitAt?: Partial<Record<RoomSide, number>>;
+  /**
+   * 細かい屋根（段階121）：マス（"列,行"）ごとに、1マスを縦横4つに割った16の小さな四角のどれを屋根にするか（16ビットを4桁の16進で。
+   * ビット i は、左から i % 4、上から i / 4 の小さな四角）。書いたマスは、文字の地図の ^ よりこちらが優先
+   */
+  roofFine?: Record<string, string>;
 }
 
 /**
@@ -41,11 +46,31 @@ export interface RoomDef {
  */
 export const ROOF = '^';
 
-/** 部屋の屋根の下のマス */
+/** 細かい屋根の割り方（1マスを縦横いくつに割るか。段階121） */
+export const ROOF_SPLIT = 4;
+/** 1マスが全部屋根の時の印 */
+export const ROOF_FULL = (1 << (ROOF_SPLIT * ROOF_SPLIT)) - 1;
+
+/** 陰（段階121）：文字の地図の : は歩けるマス。地面に木の影が落ちている所。上に重ねず、入った仲間と敵を少し暗くする */
+export const SHADE = ':';
+
+/** マスの屋根の形（16ビット。0 なら屋根なし。細かい屋根を書いたマスはそれ、なければ ^ のマスは全部） */
+export function roofMask(room: RoomDef, c: number, r: number): number {
+  const fine = room.roofFine?.[`${c},${r}`];
+  if (fine !== undefined) return parseInt(fine, 16) & ROOF_FULL;
+  return room.layout[r]?.[c] === ROOF ? ROOF_FULL : 0;
+}
+
+/** 部屋の、屋根が少しでもかかるマス */
 export function roofCells(room: RoomDef): GridCell[] {
   const out: GridCell[] = [];
-  room.layout.forEach((line, r) => [...line].forEach((ch, c) => ch === ROOF && out.push([c, r])));
+  room.layout.forEach((line, r) => [...line].forEach((_, c) => roofMask(room, c, r) !== 0 && out.push([c, r])));
   return out;
+}
+
+/** 陰のマスか */
+export function isShade(room: RoomDef, cell: GridCell): boolean {
+  return room.layout[cell[1]]?.[cell[0]] === SHADE;
 }
 
 /** 部屋の出入口 */

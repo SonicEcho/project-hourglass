@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { AreaDef, GridCell, MapEdits, PlacedThing, RoomDef } from '../core';
-import { ROOF, addChest, applyMapEdits, checkArea, emptyMapEdits, isWalkable, parseGrid, removeChest, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings, setPatrol } from '../core';
+import { ROOF_SPLIT, SHADE, addChest, paintRoofFine, roofMask, applyMapEdits, checkArea, emptyMapEdits, isWalkable, parseGrid, removeChest, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings, setPatrol } from '../core';
 import { AREA_TILE, ROOM_NAMES } from '../data';
 import { saveMapEdits, showMapEditPanel } from '../debug/mapEdits';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
@@ -12,19 +12,25 @@ import { addButton, addText } from '../ui/widgets';
 
 const T = AREA_TILE;
 
-type Tool = 'look' | 'open' | 'block' | 'roof' | 'move' | 'route' | 'chest' | 'exit';
+type Tool = 'look' | 'open' | 'block' | 'roof' | 'fineRoof' | 'shade' | 'move' | 'route' | 'chest' | 'exit';
 const TOOLS: [Tool, string][] = [
   ['look', '見る'],
   ['open', '歩ける'],
   ['block', '通れない'],
   ['roof', '屋根'],
+  ['fineRoof', '細屋根'],
+  ['shade', '陰'],
   ['move', '動かす'],
   ['route', '道'],
   ['chest', '宝箱'],
   ['exit', '出入口'],
 ];
-/** 道具の帯の高さ（段階120：道具8つと決める操作4つを、6つずつ2段に並べる） */
-const BAR_HEIGHT = 100;
+/** 道具の帯の高さ（段階121：道具10と決める操作5つを、6つずつ3段に並べる） */
+const BAR_HEIGHT = 148;
+/** なぞって塗る道具 */
+const PAINTS = ['open', 'block', 'roof', 'shade'] as const;
+type PaintTool = (typeof PAINTS)[number];
+const isPaint = (t: Tool): t is PaintTool => (PAINTS as readonly string[]).includes(t);
 /** マス目を描いておく画像の名前（段階120。前は図形で毎フレーム描いていて重かった） */
 const GRID_TEXTURE = 'mapEditGrid';
 /** 手を止めてから検査するまでの間（ミリ秒） */
@@ -78,7 +84,9 @@ export class MapEditor {
   private marks: Phaser.GameObjects.Container;
   private bar: Phaser.GameObjects.Container;
   /** なぞって塗っている途中（始めた時の直しと、塗ったマス） */
-  private stroke: { before: MapEdits; done: Set<string> } | null = null;
+  private stroke: { before: MapEdits; done: Set<string>; fineOn?: boolean; last?: GridCell } | null = null;
+  /** 地図を2倍に拡大しているか（段階121） */
+  private zoomed = false;
   private dragFrom: { x: number; y: number; sx: number; sy: number } | null = null;
   private readonly barTop: number;
   /** 後でする検査（段階120） */
@@ -132,6 +140,14 @@ export class MapEditor {
     return cell;
   }
 
+  /** 押した所の、細かい屋根の小さな四角（段階121。マスの列 × 4 + マスの中の位置） */
+  private subAt(p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): GridCell | null {
+    if (!this.cellAt(p, over)) return null;
+    const pt = p.positionToCamera(this.host.cam) as Phaser.Math.Vector2;
+    const q = T / ROOF_SPLIT;
+    return [Math.floor(pt.x / q), Math.floor(pt.y / q)];
+  }
+
   private down(p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
     const cell = this.cellAt(p, over);
     if (!cell) return;
@@ -139,9 +155,18 @@ export class MapEditor {
       this.dragFrom = { x: p.x, y: p.y, sx: this.host.cam.scrollX, sy: this.host.cam.scrollY };
       return;
     }
-    if (this.tool === 'open' || this.tool === 'block' || this.tool === 'roof') {
+    if (isPaint(this.tool)) {
       this.stroke = { before: this.edits, done: new Set() };
       this.paint(cell);
+    }
+    if (this.tool === 'fineRoof') {
+      // 最初に触れた小さな四角が屋根なら外していき、屋根でなければ塗っていく
+      const sub = this.subAt(p, over);
+      if (!sub) return;
+      const n = ROOF_SPLIT;
+      const bit = 1 << ((sub[1] % n) * n + (sub[0] % n));
+      this.stroke = { before: this.edits, done: new Set(), fineOn: (roofMask(this.room, Math.floor(sub[0] / n), Math.floor(sub[1] / n)) & bit) === 0 };
+      this.paintFine(sub);
     }
   }
 
@@ -152,9 +177,15 @@ export class MapEditor {
       cam.setScroll(this.dragFrom.sx - (p.x - this.dragFrom.x) / cam.zoom, this.dragFrom.sy - (p.y - this.dragFrom.y) / cam.zoom);
       return;
     }
+    // 指を速く動かすと間のマスを飛ばすので、前に塗った所から今の所までを線でつないで塗る（段階121）
+    if (this.stroke?.fineOn !== undefined) {
+      const sub = this.subAt(p, []);
+      if (sub) for (const q of between(this.stroke.last ?? sub, sub)) this.paintFine(q);
+      return;
+    }
     if (this.stroke) {
       const cell = this.cellAt(p, []);
-      if (cell) this.paint(cell);
+      if (cell) for (const q of between(this.stroke.last ?? cell, cell)) this.paint(q);
     }
   }
 
@@ -164,9 +195,21 @@ export class MapEditor {
       return;
     }
     if (this.stroke) {
-      const before = this.stroke.before;
+      const { before, fineOn } = this.stroke;
       this.stroke = null;
-      if (before !== this.edits) this.commit(before, this.tool === 'open' ? '歩ける所にした' : this.tool === 'roof' ? '屋根の下にした' : '通れない所にした');
+      const done: Record<Tool, string> = {
+        look: '',
+        open: '歩ける所にした',
+        block: '通れない所にした',
+        roof: '屋根の下にした',
+        fineRoof: fineOn ? '細かい屋根を塗った' : '細かい屋根を外した',
+        shade: '陰にした',
+        move: '',
+        route: '',
+        chest: '',
+        exit: '',
+      };
+      if (before !== this.edits) this.commit(before, done[this.tool]);
       return;
     }
     if (p.getDistance() > 12) return;
@@ -180,11 +223,35 @@ export class MapEditor {
 
   private paint(cell: GridCell): void {
     const key = `${cell[0]},${cell[1]}`;
-    if (!this.stroke || this.stroke.done.has(key)) return;
+    if (!this.stroke) return;
+    this.stroke.last = cell;
+    if (this.stroke.done.has(key)) return;
     this.stroke.done.add(key);
-    if (this.tool !== 'open' && this.tool !== 'block' && this.tool !== 'roof') return;
+    if (!isPaint(this.tool)) return;
     this.edits = paintCells(this.edits, this.originalRoom, [cell], this.tool);
     this.drawGrid([cell]);
+  }
+
+  /** 細かい屋根を1つ塗る・外す（段階121） */
+  private paintFine(sub: GridCell): void {
+    const key = `${sub[0]},${sub[1]}`;
+    if (!this.stroke || this.stroke.fineOn === undefined) return;
+    this.stroke.last = sub;
+    if (this.stroke.done.has(key)) return;
+    this.stroke.done.add(key);
+    this.edits = paintRoofFine(this.edits, this.originalRoom, [sub], this.stroke.fineOn);
+    this.drawGrid([[Math.floor(sub[0] / ROOF_SPLIT), Math.floor(sub[1] / ROOF_SPLIT)]]);
+  }
+
+  /** 地図を2倍に拡大する・戻す（段階121。細かい屋根を塗りやすく）。真ん中に見えている所を保つ */
+  private toggleZoom(): void {
+    const cam = this.host.cam;
+    const mid = cam.midPoint.clone();
+    this.zoomed = !this.zoomed;
+    cam.setZoom(RENDER_SCALE * (this.zoomed ? 2 : 1));
+    cam.centerOn(mid.x, mid.y);
+    this.drawBar();
+    this.host.say(this.zoomed ? '拡大した（もう一度押すと戻す）' : '拡大を戻した');
   }
 
   /** 動かす：物を選び、行き先をタップ。同じマスをもう一度タップすると、そのマスの次の物を選ぶ */
@@ -343,8 +410,16 @@ export class MapEditor {
       if (ch === undefined) continue;
       const [x, y] = [c * T, r * T];
       ctx.clearRect(x, y, T, T);
-      ctx.fillStyle = ch === ROOF ? 'rgba(176,96,255,0.35)' : ch === '#' ? 'rgba(255,48,48,0.3)' : 'rgba(64,255,128,0.08)';
+      // 屋根の下（段階118）は紫、陰（段階121）は濃い青。細かい屋根は小さな四角ごとに紫
+      ctx.fillStyle = ch === SHADE ? 'rgba(40,40,140,0.4)' : ch === '#' ? 'rgba(255,48,48,0.3)' : 'rgba(64,255,128,0.08)';
       ctx.fillRect(x, y, T, T);
+      const bits = roofMask(room, c, r);
+      if (bits) {
+        const n = ROOF_SPLIT;
+        const q = T / n;
+        ctx.fillStyle = 'rgba(176,96,255,0.45)';
+        for (let i = 0; i < n * n; i++) if (bits & (1 << i)) ctx.fillRect(x + (i % n) * q, y + Math.floor(i / n) * q, q, q);
+      }
       const k = `${c},${r}`;
       if (exits.has(k)) {
         ctx.fillStyle = 'rgba(58,138,255,0.55)';
@@ -424,6 +499,7 @@ export class MapEditor {
     this.bar.add(scene.add.rectangle(0, top, GAME_WIDTH, BAR_HEIGHT, 0x000000, 0.75).setOrigin(0).setInteractive());
     // 道具8つ（選んでいるものは金色）と、決める操作4つ（緑がかった色）を、6つずつ2段に
     const actions: [string, () => void][] = [
+      [this.zoomed ? '縮小' : '拡大', () => this.toggleZoom()],
       ['戻す', () => this.back()],
       ['部屋を元に', () => this.resetRoom()],
       ['書き出し', () => showMapEditPanel(this.edits, () => this.clearAll())],
@@ -456,7 +532,9 @@ export class MapEditor {
     this.drawMarks();
     const help: Record<Tool, string> = {
       look: '見る：なぞると地図が動く',
-      open: '歩ける：なぞったマスを歩ける所にする（屋根の下も外す）',
+      open: '歩ける：なぞったマスを歩ける所にする（屋根の下・陰も外す）',
+      fineRoof: '細屋根：1マスを16に割った細かさで屋根を塗る（最初に触れた所が屋根なら外していく）。「拡大」で塗りやすくなる',
+      shade: '陰：なぞったマスを、地面に影が落ちているだけの所にする（濃い青。上に重ねず、入ると少し暗くなる）',
       roof: '屋根：なぞったマスを、歩ける屋根や木の下にする（紫。歩くと絵の下に隠れる）',
       block: '通れない：なぞったマスを通れない所にする（S・P はそのまま）',
       move: '動かす：物をタップして選び、行き先をタップ（敵は見回りの道ごと動く）',
@@ -510,6 +588,13 @@ export class MapEditor {
     this.routing = null;
     this.commit(before, '直したものを全部消した');
   }
+}
+
+/** 2つのマスの間を、1マスずつたどった並び（両端を含む） */
+function between(a: GridCell, b: GridCell): GridCell[] {
+  const n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
+  if (n === 0) return [b];
+  return Array.from({ length: n + 1 }, (_, i): GridCell => [Math.round(a[0] + ((b[0] - a[0]) * i) / n), Math.round(a[1] + ((b[1] - a[1]) * i) / n)]);
 }
 
 function same(a: GridCell, b: GridCell): boolean {
