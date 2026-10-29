@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { AreaDef, GridCell, MapEdits, PlacedThing, RoomDef } from '../core';
-import { ROOF_SPLIT, SHADE, addChest, chestKeysInRoom, placeChestInOrder, paintRoofFine, roofMask, applyMapEdits, checkArea, emptyMapEdits, isWalkable, parseGrid, removeChest, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings, setPatrol } from '../core';
+import { ROOF_SPLIT, SHADE, addChest, moveChestTo, paintRoofFine, roofMask, applyMapEdits, checkArea, emptyMapEdits, isWalkable, parseGrid, removeChest, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings, setPatrol } from '../core';
 import { AREA_TILE, ROOM_NAMES } from '../data';
 import { saveMapEdits, showMapEditPanel } from '../debug/mapEdits';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
@@ -25,7 +25,7 @@ const TOOLS: [Tool, string][] = [
   ['chest', '宝箱'],
   ['exit', '出入口'],
 ];
-/** 道具の帯の高さ（段階121：道具10と決める操作5つを、6つずつ3段に並べる。段階122 で決める操作が6つに） */
+/** 道具の帯の高さ（段階121：道具10と決める操作5つを、6つずつ3段に並べる。段階123 で決める操作が6つに） */
 const BAR_HEIGHT = 148;
 /** なぞって塗る道具 */
 const PAINTS = ['open', 'block', 'roof', 'shade'] as const;
@@ -71,6 +71,8 @@ export interface MapEditorHost {
   say(text: string): void;
   /** 終わる：探索を開き直す */
   close(): void;
+  /** 全体地図で宝箱を置く画面を開く（段階123） */
+  openChestMap(): void;
 }
 
 export class MapEditor {
@@ -80,8 +82,6 @@ export class MapEditor {
   private selected: Selected | null = null;
   /** 見回りの道を引き直している敵と、折り返しの点（段階119）。fresh は、まだ点を足していない（最初の点で道を引き直す） */
   private routing: { thing: PlacedThing; points: GridCell[]; fresh: boolean } | null = null;
-  /** まとめて置き直すために持ち上げた宝箱の key（段階122。置く順。null なら持ち上げていない） */
-  private lifted: string[] | null = null;
   private grid: Phaser.Textures.CanvasTexture;
   private marks: Phaser.GameObjects.Container;
   private bar: Phaser.GameObjects.Container;
@@ -278,10 +278,13 @@ export class MapEditor {
       return;
     }
     const before = this.edits;
+    // 宝箱は、同じマスにあった採取の場所も一緒に動かす（段階123）
     this.edits =
-      sel.kind === 'thing'
-        ? moveThing(this.edits, this.host.original, sel.thing, cell)
-        : moveMark(this.edits, this.host.original, this.originalRoom, sel.cell, cell);
+      sel.kind === 'mark'
+        ? moveMark(this.edits, this.host.original, this.originalRoom, sel.cell, cell)
+        : sel.thing.kind === 'chest'
+          ? moveChestTo(this.edits, this.host.original, sel.thing.key, this.host.room, cell)
+          : moveThing(this.edits, this.host.original, sel.thing, cell);
     this.selected = null;
     this.commit(before, `${this.describe(sel)}を動かした`);
   }
@@ -318,19 +321,10 @@ export class MapEditor {
     this.commit(before, `道：折り返しの点 ${r.points.length - 1}つ`);
   }
 
-  /**
-   * 宝箱（段階120）：宝箱をタップすると消し、何もない歩けるマスをタップすると足す（中身は Claude が src/data に入れる時に決める）。
-   * まとめて置き直している間（段階122）は、歩けるマスをタップすると持ち上げた宝箱を順にそこへ移し、持ち上げた宝箱をタップすると元のマスに残す
-   */
+  /** 宝箱（段階120）：宝箱をタップすると消し、何もない歩けるマスをタップすると足す（中身は Claude が src/data に入れる時に決める） */
   private tapChest(cell: GridCell): void {
     const chest = placedThings(this.area, this.host.room).find((t) => t.kind === 'chest' && same(t.cell, cell));
     const before = this.edits;
-    if (chest && this.lifted?.includes(chest.key)) {
-      this.lifted = this.lifted.filter((k) => k !== chest.key);
-      this.drawMarks();
-      this.host.say(`宝箱（${chest.id}）は元のマスに残す。${this.liftedLeft()}`);
-      return;
-    }
     if (chest) {
       this.edits = removeChest(this.edits, chest);
       this.commit(before, `宝箱（${chest.id}）を消した`);
@@ -340,45 +334,8 @@ export class MapEditor {
       this.host.say('宝箱は歩けるマスに置く');
       return;
     }
-    if (this.lifted && this.lifted.length > 0) {
-      const placed = placeChestInOrder(this.edits, this.host.original, this.host.room, this.lifted, cell, this.host.night);
-      const id = this.lifted[0].split('/')[2];
-      this.edits = placed.edits;
-      this.lifted = placed.waiting;
-      this.commit(before, `宝箱（${id}）を置いた。${this.liftedLeft()}`);
-      return;
-    }
     this.edits = addChest(this.edits, this.host.original, this.host.room, cell, this.host.night);
     this.commit(before, `宝箱を足した${this.host.night > 0 ? `（${this.host.night}晩目から）` : ''}。中身は書き出しの後に決める`);
-  }
-
-  /** まとめて置く（段階122）：今の部屋の宝箱を全部持ち上げる。持ち上げている時に押すと、やめる（置かなかった宝箱は元のマスのまま） */
-  private toggleLift(): void {
-    if (this.lifted) {
-      this.lifted = null;
-      this.drawBar();
-      this.drawMarks();
-      this.host.say('まとめて置くのをやめた（置かなかった宝箱は元のマスのまま）');
-      return;
-    }
-    const keys = chestKeysInRoom(this.area, this.host.room);
-    this.tool = 'chest';
-    this.selected = null;
-    this.routing = null;
-    this.lifted = keys;
-    this.drawBar();
-    this.drawMarks();
-    this.host.say(
-      keys.length > 0
-        ? `この部屋の宝箱${keys.length}個を持ち上げた（薄い札）。置きたいマスを続けてタップすると、順にそこへ移る（中身はそのまま）。持ち上げた宝箱をタップすると元のマスに残す`
-        : 'この部屋に宝箱はない。歩けるマスをタップすると、新しい宝箱を足していける',
-    );
-  }
-
-  /** 持ち上げた宝箱の残り */
-  private liftedLeft(): string {
-    const n = this.lifted?.length ?? 0;
-    return n > 0 ? `残り${n}個（次をタップ）` : '持ち上げた宝箱は全部置いた（この後のタップは新しい宝箱を足す）';
   }
 
   /** 出入口：辺の近くをタップすると、そこへずらす */
@@ -507,10 +464,7 @@ export class MapEditor {
       offsets.set(k, n + 1);
       const mark = THING_MARKS[t.kind];
       const night = t.kind === 'start' || t.kind === 'exit' ? t.id : t.night ? String(t.night) : '';
-      const tag = this.label(t.cell[0], t.cell[1], mark.text + night, mark.color, n);
-      // 持ち上げている宝箱（段階122）は薄く
-      if (this.lifted?.includes(t.key)) tag.setAlpha(0.4);
-      this.marks.add(tag);
+      this.marks.add(this.label(t.cell[0], t.cell[1], mark.text + night, mark.color, n));
     }
     const sel = this.selected;
     if (sel) {
@@ -554,12 +508,12 @@ export class MapEditor {
       ['戻す', () => this.back()],
       ['部屋を元に', () => this.resetRoom()],
       ['書き出し', () => showMapEditPanel(this.edits, () => this.clearAll())],
-      [this.lifted ? 'まとめ終わる' : '宝箱まとめ', () => this.toggleLift()],
+      ['全体で宝箱', () => this.host.openChestMap()],
       ['終わる', () => this.host.close()],
     ];
     const buttons: { name: string; onTap: () => void; on: boolean; action: boolean }[] = [
       ...TOOLS.map(([tool, name]) => ({ name, onTap: () => this.pick(tool), on: this.tool === tool, action: false })),
-      ...actions.map(([name, onTap]) => ({ name, onTap, on: name === 'まとめ終わる', action: true })),
+      ...actions.map(([name, onTap]) => ({ name, onTap, on: false, action: true })),
     ];
     const perRow = 6;
     const w = (GAME_WIDTH - 12) / perRow;
@@ -580,7 +534,6 @@ export class MapEditor {
     this.tool = tool;
     this.selected = null;
     this.routing = null;
-    this.lifted = null;
     this.drawBar();
     this.drawMarks();
     const help: Record<Tool, string> = {
@@ -591,7 +544,7 @@ export class MapEditor {
       roof: '屋根：なぞったマスを、歩ける屋根や木の下にする（紫。歩くと絵の下に隠れる）',
       block: '通れない：なぞったマスを通れない所にする（S・P はそのまま）',
       move: '動かす：物をタップして選び、行き先をタップ（敵は見回りの道ごと動く）',
-      chest: '宝箱：何もない歩けるマスをタップすると足し、宝箱をタップすると消す（中身は書き出しの後に Claude が決める）。「宝箱まとめ」で部屋の宝箱を持ち上げ、続けてタップして置き直せる',
+      chest: '宝箱：何もない歩けるマスをタップすると足し、宝箱をタップすると消す（中身は書き出しの後に Claude が決める）。区画全体に置くなら「全体で宝箱」',
       route: '道：敵をタップして選び、見回りの折り返しの点を順にタップ（2点なら行き来、3点以上なら輪）。敵をもう一度タップで決める',
       exit: '出入口：出入口の辺の近くをタップすると、そこへずらす（青いマス）',
     };
@@ -607,8 +560,6 @@ export class MapEditor {
     this.edits = prev;
     this.selected = null;
     this.routing = null;
-    this.lifted = null;
-    this.drawBar();
     saveMapEdits(this.edits);
     this.redraw();
     this.check('1手前に戻した');
@@ -624,17 +575,17 @@ export class MapEditor {
     const patrols = Object.fromEntries(Object.entries(this.edits.patrols ?? {}).filter(([k]) => !inRoom.has(k)));
     const newChests = Object.fromEntries(Object.entries(this.edits.newChests ?? {}).filter(([, c]) => c.room !== this.host.room));
     const removedChests = (this.edits.removedChests ?? []).filter((k) => !inRoom.has(k));
+    const thingRooms = Object.fromEntries(Object.entries(this.edits.thingRooms ?? {}).filter(([k]) => !inRoom.has(k)));
     this.edits = {
       rooms,
       things,
       ...(Object.keys(patrols).length > 0 ? { patrols } : {}),
       ...(Object.keys(newChests).length > 0 ? { newChests } : {}),
       ...(removedChests.length > 0 ? { removedChests } : {}),
+      ...(Object.keys(thingRooms).length > 0 ? { thingRooms } : {}),
     };
     this.selected = null;
     this.routing = null;
-    this.lifted = null;
-    this.drawBar();
     this.commit(before, 'この部屋を元の地図に戻した');
   }
 
@@ -643,8 +594,6 @@ export class MapEditor {
     this.edits = emptyMapEdits();
     this.selected = null;
     this.routing = null;
-    this.lifted = null;
-    this.drawBar();
     this.commit(before, '直したものを全部消した');
   }
 }

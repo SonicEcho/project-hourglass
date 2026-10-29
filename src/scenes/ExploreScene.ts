@@ -697,6 +697,10 @@ export class ExploreScene extends Phaser.Scene {
         this.leaving = true;
         this.scene.restart(this.back());
       },
+      openChestMap: () => {
+        this.leaving = true;
+        this.scene.start('ChestMap', { area: this.rawArea.id, night: this.night, room: this.state.room });
+      },
     });
   }
 
