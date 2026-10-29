@@ -522,11 +522,12 @@ export function lineupBase(lineup: Lineup): CharacterDef[] {
 }
 
 /** 成長を反映した、パーティにいる仲間（星図 → ムーブメント → 武器の順に反映する。閉じている育成は反映しない） */
-export function currentParty(lineup: Lineup = PROTOTYPE_LINEUP): CharacterDef[] {
+export function currentParty(lineup: Lineup = PROTOTYPE_LINEUP, naviState: NaviState = run.navi): CharacterDef[] {
   const base = lineupBase(lineup);
   const u = lineup.unlocks;
   const grown = u.growth ? applyGrowth(GROWTH_MAP, run.growth, base, SKILLS) : base;
-  const navi = u.navi ? applyNavi(currentNaviData(), run.navi, grown) : grown;
+  // naviState：ムーブメントの画面で、仮置きした時の盤で計算する（段階126）
+  const navi = u.navi ? applyNavi(currentNaviData(), naviState, grown) : grown;
   return u.weapon ? applyWeapons(WEAPON_DATA, run.armory, navi) : navi;
 }
 

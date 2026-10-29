@@ -256,10 +256,15 @@ function passivePartMultiplier(user: AllyUnit, partMultiplier: number | undefine
   return (partMultiplier ?? 1) * (1 + passiveRate(user, 'partBoost'));
 }
 
+/** 狂いで、ラウンドの始めに減る HP（最大HP×狂いの割合の合計の切り捨て。段階126：ムーブメントの画面の予告も同じ計算を使う） */
+export function bugHpLoss(maxHp: number, passives: PassiveEffect[] | undefined): number {
+  return Math.floor(maxHp * passiveRate({ passives }, 'bug'));
+}
+
 /** ラウンドの始めの、特性によるHPの増減（狂いで減り、ファーストエイドで回復する） */
 function applyRoundStartPassives(s: BattleState): void {
   for (const a of livingAllies(s)) {
-    const loss = Math.floor(a.maxHp * passiveRate(a, 'bug'));
+    const loss = bugHpLoss(a.maxHp, a.passives);
     if (loss > 0) {
       const amount = Math.min(loss, a.hp - 1);
       a.hp -= amount;

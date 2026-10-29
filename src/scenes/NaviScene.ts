@@ -1,15 +1,15 @@
 import Phaser from 'phaser';
 import { maybeShowTip } from '../ui/tipPanel';
-import type { Cell, CharacterDef, OwnedPart, Placement, Rotation } from '../core';
-import { boardParts, boardPassives, boardStats, findBugs, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
+import type { Cell, CharacterDef, NaviState, OwnedPart, Placement, Rotation } from '../core';
+import { boardParts, boardPassives, boardStats, bugHpLoss, findBugs, passiveRate, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { BUG_HP_RATE, PARTY } from '../data';
+import { PARTY } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePassives } from '../ui/naviText';
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { currentNaviData, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
+import { currentNaviData, currentParty, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
 import { addIcon } from '../ui/icons';
 
@@ -22,6 +22,8 @@ import { addIcon } from '../ui/icons';
 const MAX_CELL = 56;
 const BOARD_TOP = 92;
 const BOARD_H = MAX_CELL * 4;
+/** 選んだギアの説明の窓の上の端 */
+const INFO_TOP = 392;
 const LIST_TOP = 520;
 const LIST_COLS = 4;
 /** 一覧の下の端（「戻る」ボタンの上） */
@@ -74,6 +76,17 @@ export class NaviScene extends Phaser.Scene {
 
   private ghostPlacement(): Placement | null {
     return this.ghost ? { charId: this.charId, col: this.ghost.col, row: this.ghost.row, rotation: this.rotation } : null;
+  }
+
+  /**
+   * 仮置きの影が置ける時、はめた後の盤（段階126。レビューの項目5：はめる前に、効く効果・狂いを見せる）。
+   * 置けない時・影がない時は null
+   */
+  private previewNavi(): NaviState | null {
+    const sel = this.selectedPart();
+    const ghost = this.ghostPlacement();
+    if (!sel || !ghost || getPlaceError(currentNaviData(), run.navi, sel.uid, ghost)) return null;
+    return placePart(currentNaviData(), run.navi, sel.uid, ghost);
   }
 
   private clearSelection(): void {
@@ -300,6 +313,11 @@ export class NaviScene extends Phaser.Scene {
           this.root.add(
             addText(this, x + this.cell / 2, y + this.cell / 2, PART_SHORT[def.id] ?? '', { size: 16, bold: true, color: active ? '#101820' : '#dddddd' }).setOrigin(0.5),
           );
+          // 段階126（レビューの項目35）：ブリッジの外で効かない効果ギアは、暗さだけでなく × の印でも分かるように
+          if (def.kind === 'effect' && !active) {
+            this.root.add(this.add.circle(x + this.cell - 11, y + 11, 8, 0x401010).setStrokeStyle(1, 0xff8a7a));
+            this.root.add(addText(this, x + this.cell - 11, y + 11, '×', { size: 11, bold: true, color: '#ff8a7a' }).setOrigin(0.5));
+          }
         }
       });
       // 同じギアのマスどうしをつなぐ（1つのギアだと分かるように）
@@ -310,12 +328,13 @@ export class NaviScene extends Phaser.Scene {
       }
     }
 
-    // 狂い：接している辺を赤く光らせる
+    // 狂い：接している辺を赤く光らせる。置ける影がある時は、はめた後の形で出す（段階126）
+    const nv = this.previewNavi() ?? run.navi;
     const g = this.add.graphics();
     g.lineStyle(5, 0xff3030, 1);
-    for (const [ua, ub] of findBugs(currentNaviData(), run.navi, this.charId)) {
-      const pa = run.navi.parts.find((p) => p.uid === ua)!;
-      const pb = run.navi.parts.find((p) => p.uid === ub)!;
+    for (const [ua, ub] of findBugs(currentNaviData(), nv, this.charId)) {
+      const pa = nv.parts.find((p) => p.uid === ua)!;
+      const pb = nv.parts.find((p) => p.uid === ub)!;
       const bCells = new Set(placedCells(currentNaviData().parts[pb.partId], pb.placement!).map(key));
       for (const [c, r] of placedCells(currentNaviData().parts[pa.partId], pa.placement!)) {
         const x = o.x + c * this.cell;
@@ -341,35 +360,68 @@ export class NaviScene extends Phaser.Scene {
         if (!this.board().cells.some((x) => key(x) === key([c, r]))) continue;
         makePressable(shadow, { onTap: () => this.tapCell(c, r) });
       }
+      // 段階126：効果ギアの影に、その位置で効くかを出す
+      const def = currentNaviData().parts[sel.partId];
+      const preview = this.previewNavi();
+      if (preview && def.kind === 'effect') {
+        const on = isPartActive(currentNaviData(), preview.parts.find((p) => p.uid === sel.uid)!);
+        const [c, r] = placedCells(def, ghost)[0];
+        const tag = addText(this, o.x + c * this.cell + this.cell / 2, o.y + r * this.cell + this.cell - 12, on ? '効く' : '効かない', {
+          size: 10,
+          bold: true,
+          color: on ? '#6dff9e' : '#ff8a7a',
+        }).setOrigin(0.5).setStroke('#0b1018', 3);
+        this.root.add(tag);
+      }
     }
   }
 
-  /** 盤の下：今の盤で効いている効果、能力値、狂い */
+  /**
+   * 盤の下：今の盤で効いている効果、能力値、効かない効果ギア、狂い。
+   * 段階126（レビューの項目5・35・36）：置ける影がある時は、はめた後の盤の結果を「置いた時」として出す。狂いは戦闘と同じ計算で HP の量も出す
+   */
   private drawStatus(): void {
-    const top = BOARD_TOP + BOARD_H + 8;
-    const passives = boardPassives(currentNaviData(), run.navi, this.charId);
+    const top = BOARD_TOP + BOARD_H + 6;
+    const preview = this.previewNavi();
+    const nv = preview ?? run.navi;
+    const data = currentNaviData();
+    const passives = boardPassives(data, nv, this.charId);
     const effects = summarizePassives(passives.filter((p) => p.kind !== 'bug'));
-    const bugs = passives.filter((p) => p.kind === 'bug').length;
-    const stats = Object.entries(boardStats(currentNaviData(), run.navi, this.charId)).map(([k, v]) => `${STAT_LABEL[k as keyof typeof STAT_LABEL]}+${v}`);
-    const lines = [
-      `能力値：${stats.length > 0 ? stats.join('　') : 'なし'}`,
-      `効果：${effects.length > 0 ? effects.join('／') : 'なし'}`,
-    ];
-    this.root.add(addText(this, SIDE_PADDING + 4, top, lines.join('\n'), { size: 11, color: COLORS.subText, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 8 }));
+    const bugs = findBugs(data, nv, this.charId).length;
+    const stats = Object.entries(boardStats(data, nv, this.charId)).map(([k, v]) => `${STAT_LABEL[k as keyof typeof STAT_LABEL]}+${v}`);
+    const idle = boardParts(nv, this.charId).filter((p) => data.parts[p.partId].kind === 'effect' && !isPartActive(data, p));
+    const lines: { text: string; color: string }[] = [];
+    lines.push({ text: `${preview ? '置いた時▶ ' : ''}能力値：${stats.length > 0 ? stats.join('　') : 'なし'}`, color: preview ? COLORS.accentText : COLORS.subText });
+    lines.push({ text: `効果：${effects.length > 0 ? effects.join('／') : 'なし'}`, color: COLORS.subText });
+    if (idle.length > 0) lines.push({ text: `効かない：${idle.map((p) => data.parts[p.partId].name).join('、')}（ブリッジの外）`, color: '#ffb070' });
     if (bugs > 0) {
-      this.root.add(
-        addText(this, SIDE_PADDING + 4, top + 36, `狂い×${bugs}：毎ラウンドの始めに最大HPの${Math.round(bugs * BUG_HP_RATE * 100)}%を失う`, {
-          size: 11,
-          color: '#ff8a7a',
-          wrap: GAME_WIDTH - SIDE_PADDING * 2 - 8,
-        }),
-      );
+      const ch = currentParty(hubLineup(), nv).find((c) => c.id === this.charId);
+      const maxHp = ch?.stats.hp ?? 0;
+      const loss = ch ? bugHpLoss(maxHp, ch.passives) : 0;
+      const rate = Math.round(passiveRate({ passives: ch?.passives }, 'bug') * 100);
+      lines.push({ text: `狂い×${bugs}：毎ラウンドの始めに HP−${loss}（最大HP ${maxHp}×${rate}%、切り捨て）`, color: '#ff8a7a' });
     }
+    // 説明の窓（drawInfo の top）の上に収める。収まらない時は字を1段小さくする
+    const draw = (size: number) => {
+      let y = top;
+      const texts = lines.map((l) => {
+        const t = addText(this, SIDE_PADDING + 4, y, l.text, { size, color: l.color, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 8, ja: true });
+        y += t.height;
+        return t;
+      });
+      return { texts, bottom: y };
+    };
+    let r = draw(11);
+    if (r.bottom > INFO_TOP - 2) {
+      r.texts.forEach((t) => t.destroy());
+      r = draw(10);
+    }
+    this.root.add(r.texts);
   }
 
   /** 選んだギアの説明と、回転・はめる・外す */
   private drawInfo(): void {
-    const top = 392;
+    const top = INFO_TOP;
     const h = 120;
     this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const sel = this.selectedPart();
