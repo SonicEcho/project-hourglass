@@ -810,24 +810,24 @@ export const AREAS: Record<string, AreaDef> = {
     bgm: BGM.archive,
     komaNeed: 0,
     goal: { band: '目当て：奥の棚の砂時計', guide: 'ビー玉が鳴る方へ。いちばん奥の棚の砂時計を取り返す\nカイに見つかると、チェックポイントへ戻される' },
-    chests: [{ id: 'a23x_chest_vault', room: 'archive_vault', cell: [14, 19], items: [ITEMS.hiPotion.id, ITEMS.ether.id] }],
+    chests: [{ id: 'a23x_chest_vault', room: 'archive_vault', cell: [17, 22], items: [ITEMS.hiPotion.id, ITEMS.ether.id] }],
     enemies: [
       { id: 'a23x_e_corridor', patrol: [[9, 6], [14, 6]], battle: 'a23x_corridor' },
-      { id: 'a23x_e_alcove', patrol: [[4, 10], [4, 14]], battle: 'a23x_alcove' },
-      { id: 'a23x_e_reading1', room: 'archive_reading', patrol: [[5, 22], [18, 22]], battle: 'a23x_reading1' },
-      { id: 'a23x_e_reading2', room: 'archive_reading', patrol: [[5, 3], [18, 3]], battle: 'a23x_reading2' },
+      { id: 'a23x_e_alcove', patrol: [[7, 12], [7, 21]], battle: 'a23x_alcove' },
+      { id: 'a23x_e_reading1', room: 'archive_reading', patrol: [[5, 29], [18, 29]], battle: 'a23x_reading1' },
+      { id: 'a23x_e_reading2', room: 'archive_reading', patrol: [[8, 5], [15, 5]], battle: 'a23x_reading2' },
       { id: 'a23x_e_vault', room: 'archive_vault', move: 'chase', patrol: [[7, 7], [7, 16]], battle: 'a23x_vault' },
-      { id: 'a23x_e_stacks1', room: 'archive_stacks', patrol: [[5, 20], [18, 20]], battle: 'a23x_stacks1' },
-      { id: 'a23x_e_stacks2', room: 'archive_stacks', patrol: [[5, 8], [18, 8]], battle: 'a23x_stacks2' },
+      { id: 'a23x_e_stacks1', room: 'archive_stacks', patrol: [[6, 12], [6, 30]], battle: 'a23x_stacks1' },
+      { id: 'a23x_e_stacks2', room: 'archive_stacks', patrol: [[4, 8], [19, 8]], battle: 'a23x_stacks2' },
       // 見回るカイ（閲覧室と奥の書庫）。近づくと追ってくる。見つかると、チェックポイントへ戻される。最初に見つかった時だけ、カイのひとこと
-      { id: 'a23x_e_kai1', room: 'archive_reading', move: 'chase', patrol: [[5, 9], [18, 9]], battle: 'a23x_kai_patrol', scene: 'a23x_kai_seen' },
-      { id: 'a23x_e_kai2', room: 'archive_stacks', move: 'chase', patrol: [[5, 16], [18, 16]], battle: 'a23x_kai_patrol', scene: 'a23x_kai_seen' },
+      { id: 'a23x_e_kai1', room: 'archive_reading', move: 'chase', patrol: [[2, 9], [21, 9]], battle: 'a23x_kai_patrol', scene: 'a23x_kai_seen' },
+      { id: 'a23x_e_kai2', room: 'archive_stacks', move: 'chase', patrol: [[17, 12], [17, 30]], battle: 'a23x_kai_patrol', scene: 'a23x_kai_seen' },
     ],
     // いちばん奥の棚の「最後の打席」の砂時計。触れると、カイとの負け戦
-    boss: { id: 'a23x_shelf', room: 'archive_stacks', cell: [11, 3], battle: 'a23x_kai', label: '砂時計' },
-    talkers: [{ id: 'a23x_door', room: 'archive_vault', cell: [14, 4], scene: 'a23x_door', label: '黒い扉' }],
+    boss: { id: 'a23x_shelf', room: 'archive_stacks', cell: [11, 7], battle: 'a23x_kai', label: '砂時計' },
+    talkers: [{ id: 'a23x_door', room: 'archive_vault', cell: [17, 5], scene: 'a23x_door', label: '黒い扉' }],
     triggers: [
-      { on: 'checkpoint', room: 'archive_reading', cell: [12, 14], scene: 'a23x_reading' },
+      { on: 'checkpoint', room: 'archive_reading', cell: [11, 17], scene: 'a23x_reading' },
       { on: 'boss', scene: 'a23x_found' },
       { on: 'cleared', scene: 'a23x_escape' },
     ],
@@ -855,7 +855,7 @@ export const AREAS: Record<string, AreaDef> = {
     owner: 'チヨ',
     memory: 'village_1966',
     // 晩の区切り：2晩目は田んぼ道のお地蔵さん、3晩目は実家の縁側の前（どちらもチェックポイント）から
-    nights: [{ koma: 3 }, { koma: 6, start: { room: 'village_paddy', cell: [9, 21] } }, { start: { room: 'village_house', cell: [12, 14] } }],
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'village_paddy', cell: [10, 14] } }, { start: { room: 'village_house', cell: [8, 9] } }],
     // ノイズの壁：田んぼ道から実家の庭への出入口（2晩目から開く）と、実家の庭から駅のホームへの出入口（3晩目から開く）
     walls: [
       { id: 'a31_wall_house', room: 'village_paddy', cells: box(10, 13, 0, 1), opens: 2 },
@@ -864,9 +864,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（実家の門）は出ないので、番人の戦闘は実家の庭の表に入れる
     hunt: {
       gathers: [
-        { id: 'a31_gather_paddy', room: 'village_paddy', cell: [19, 15], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id] },
-        { id: 'a31_gather_shrine', room: 'village_shrine', cell: [16, 4], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id] },
-        { id: 'a31_gather_river', room: 'village_river', cell: [5, 4], items: [ITEMS.coilAsh.id, ITEMS.radioDial.id] },
+        { id: 'a31_gather_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id] },
+        { id: 'a31_gather_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id] },
+        { id: 'a31_gather_river', room: 'village_river', cell: [13, 5], items: [ITEMS.coilAsh.id, ITEMS.radioDial.id] },
       ],
       tables: {
         village_station: ['a31_n1_station', 'a31_n1_square'],
@@ -878,53 +878,53 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [19, 15], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
-      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 4], items: [ITEMS.radioDial.id], gears: ['fireBoost'] },
-      { id: 'a31_chest_river', room: 'village_river', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['oneMoreDraw'] },
+      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
+      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id], gears: ['fireBoost'] },
+      { id: 'a31_chest_river', room: 'village_river', cell: [13, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['oneMoreDraw'] },
     ],
     enemies: [
       // ---- 1晩目（駅前・田んぼ道・鎮守の森の石段） ----
-      { id: 'a31_e_station', patrol: [[5, 16], [18, 16]], battle: 'a31_n1_station' },
-      { id: 'a31_e_square', patrol: [[4, 9], [19, 9]], battle: 'a31_n1_square' },
-      { id: 'a31_e_paddy', room: 'village_paddy', patrol: [[5, 33], [18, 33]], battle: 'a31_n1_paddy' },
+      { id: 'a31_e_station', patrol: [[5, 17], [19, 17]], battle: 'a31_n1_station' },
+      { id: 'a31_e_square', patrol: [[5, 8], [12, 8]], battle: 'a31_n1_square' },
+      { id: 'a31_e_paddy', room: 'village_paddy', patrol: [[10, 22], [12, 30]], battle: 'a31_n1_paddy' },
       // 田んぼ道の上のあぜ：近づくと追ってくる
-      { id: 'a31_e_ridge', room: 'village_paddy', move: 'chase', patrol: [[8, 6], [15, 6]], battle: 'a31_n1_ridge' },
-      { id: 'a31_e_shrine', room: 'village_shrine', patrol: [[5, 19], [16, 19]], battle: 'a31_n1_shrine' },
+      { id: 'a31_e_ridge', room: 'village_paddy', move: 'chase', patrol: [[10, 4], [12, 8]], battle: 'a31_n1_ridge' },
+      { id: 'a31_e_shrine', room: 'village_shrine', patrol: [[3, 10], [19, 10]], battle: 'a31_n1_shrine' },
       // 石段の逃げる敵（寄り道。コマなし、レアの素材）
-      { id: 'a31_e_runner', room: 'village_shrine', move: 'flee', patrol: [[10, 16]], battle: 'a31_runner' },
+      { id: 'a31_e_runner', room: 'village_shrine', move: 'flee', patrol: [[14, 18]], battle: 'a31_runner' },
       // ---- 2晩目（実家の庭・川べり） ----
-      { id: 'a31_e_yard', room: 'village_house', night: 2, patrol: [[4, 8], [18, 8]], battle: 'a31_n2_yard' },
-      { id: 'a31_e_east', room: 'village_house', night: 2, patrol: [[12, 12], [22, 12]], battle: 'a31_n2_east' },
+      { id: 'a31_e_yard', room: 'village_house', night: 2, patrol: [[4, 8], [13, 9]], battle: 'a31_n2_yard' },
+      { id: 'a31_e_east', room: 'village_house', night: 2, patrol: [[19, 10], [22, 9]], battle: 'a31_n2_east' },
       // 川べり：追ってくる
-      { id: 'a31_e_river', room: 'village_river', night: 2, move: 'chase', patrol: [[14, 6], [14, 18]], battle: 'a31_n2_river' },
-      { id: 'a31_e_river2', room: 'village_river', night: 2, patrol: [[5, 9], [5, 18]], battle: 'a31_n2_river2' },
+      { id: 'a31_e_river', room: 'village_river', night: 2, move: 'chase', patrol: [[17, 8], [16, 15]], battle: 'a31_n2_river' },
+      { id: 'a31_e_river2', room: 'village_river', night: 2, patrol: [[12, 13], [18, 14]], battle: 'a31_n2_river2' },
       // 実家の門の番人：倒すと夕暮れの駅への道が開く（3晩目から。戦う前の会話）
-      { id: 'a31_e_gate', room: 'village_house', night: 2, until: 2, move: 'guard', patrol: [[11, 5]], battle: 'a31_n2_guard', scene: 'a31_guard' },
+      { id: 'a31_e_gate', room: 'village_house', night: 2, until: 2, move: 'guard', patrol: [[12, 2]], battle: 'a31_n2_guard', scene: 'a31_guard' },
       // ---- 3晩目（実家の庭と夕暮れの駅のホーム） ----
-      { id: 'a31_e_yard3', room: 'village_house', night: 3, patrol: [[16, 16], [20, 16]], battle: 'a31_n3_yard' },
-      { id: 'a31_e_platform1', room: 'village_platform', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a31_n3_platform1' },
-      { id: 'a31_e_platform2', room: 'village_platform', night: 3, move: 'chase', patrol: [[5, 11], [18, 11]], battle: 'a31_n3_platform2' },
+      { id: 'a31_e_yard3', room: 'village_house', night: 3, patrol: [[15, 3], [21, 9]], battle: 'a31_n3_yard' },
+      { id: 'a31_e_platform1', room: 'village_platform', night: 3, patrol: [[5, 9], [21, 9]], battle: 'a31_n3_platform1' },
+      { id: 'a31_e_platform2', room: 'village_platform', night: 3, move: 'chase', patrol: [[10, 7], [18, 7]], battle: 'a31_n3_platform2' },
       // 段階99：コマを持たない砂嵐は、ぬしの前ではなく晩の始まりの近くに（決め所の会話の前に戦闘を強いない）
-      { id: 'a31_e_front', room: 'village_house', night: 3, patrol: [[4, 17], [10, 17]], battle: 'a31_n3_front' },
+      { id: 'a31_e_front', room: 'village_house', night: 3, patrol: [[11, 16], [12, 22]], battle: 'a31_n3_front' },
     ],
     // ホームに止まっている汽車
-    boss: { id: 'a31_boss', room: 'village_platform', cell: [11, 5], battle: 'a31_boss' },
+    boss: { id: 'a31_boss', room: 'village_platform', cell: [14, 6], battle: 'a31_boss' },
     // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む
     talkers: [
-      { id: 'a31_board', cell: [4, 7], scene: 'a31_board', label: '伝言板' },
-      { id: 'a31_voice_staff', cell: [9, 15], until: 1, scene: 'a31_voice_staff', label: '駅員' },
-      { id: 'a31_voice_granny', cell: [16, 6], until: 1, scene: 'a31_voice_granny', label: '村のおばあさん' },
-      { id: 'a31_voice_noboru', room: 'village_paddy', cell: [5, 28], until: 1, scene: 'a31_voice_noboru', label: '小さな男の子' },
-      { id: 'a31_voice2_noboru', room: 'village_house', cell: [18, 13], night: 2, until: 2, scene: 'a31_voice2_noboru', label: '小さな男の子' },
-      { id: 'a31_voice2_neighbor', room: 'village_house', cell: [4, 16], night: 2, until: 2, scene: 'a31_voice2_neighbor', label: 'となりのおじさん' },
-      { id: 'a31_voice2_kiku', room: 'village_house', cell: [16, 9], night: 2, until: 2, scene: 'a31_voice2_kiku', label: '台所の声' },
-      { id: 'a31_voice3_staff', room: 'village_platform', cell: [18, 14], night: 3, scene: 'a31_voice3_staff', label: '駅員' },
-      { id: 'a31_voice3_noboru', room: 'village_house', cell: [18, 13], night: 3, scene: 'a31_voice3_noboru', label: '小さな男の子' },
+      { id: 'a31_board', cell: [6, 15], scene: 'a31_board', label: '伝言板' },
+      { id: 'a31_voice_staff', cell: [15, 17], until: 1, scene: 'a31_voice_staff', label: '駅員' },
+      { id: 'a31_voice_granny', cell: [16, 4], until: 1, scene: 'a31_voice_granny', label: '村のおばあさん' },
+      { id: 'a31_voice_noboru', room: 'village_paddy', cell: [12, 26], until: 1, scene: 'a31_voice_noboru', label: '小さな男の子' },
+      { id: 'a31_voice2_noboru', room: 'village_house', cell: [20, 12], night: 2, until: 2, scene: 'a31_voice2_noboru', label: '小さな男の子' },
+      { id: 'a31_voice2_neighbor', room: 'village_house', cell: [5, 8], night: 2, until: 2, scene: 'a31_voice2_neighbor', label: 'となりのおじさん' },
+      { id: 'a31_voice2_kiku', room: 'village_house', cell: [12, 8], night: 2, until: 2, scene: 'a31_voice2_kiku', label: '台所の声' },
+      { id: 'a31_voice3_staff', room: 'village_platform', cell: [21, 10], night: 3, scene: 'a31_voice3_staff', label: '駅員' },
+      { id: 'a31_voice3_noboru', room: 'village_house', cell: [20, 12], night: 3, scene: 'a31_voice3_noboru', label: '小さな男の子' },
     ],
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a31_first_koma' },
-      { on: 'checkpoint', room: 'village_paddy', cell: [9, 21], scene: 'a31_checkpoint' },
+      { on: 'checkpoint', room: 'village_paddy', cell: [10, 14], scene: 'a31_checkpoint' },
       { on: 'koma', count: 2, scene: 'a31_koma2' },
       { on: 'koma', count: 3, scene: 'a31_koma3' },
       { on: 'koma', count: 4, scene: 'a31_koma4' },
@@ -959,18 +959,18 @@ export const AREAS: Record<string, AreaDef> = {
     owner: 'シオリ',
     memory: 'grad_2019',
     // 晩の区切り：2晩目は坂の途中のバス停、3晩目は商店街の端（どちらもチェックポイント）から
-    nights: [{ koma: 3 }, { koma: 6, start: { room: 'grad_slope', cell: [11, 16] } }, { start: { room: 'grad_street', cell: [11, 9] } }],
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'grad_slope', cell: [13, 16] } }, { start: { room: 'grad_street', cell: [10, 9] } }],
     // ノイズの壁：校門の坂から商店街への出入口（2晩目から開く）と、商店街から踏切への出入口（3晩目から開く）
     walls: [
-      { id: 'a32_wall_street', room: 'grad_slope', cells: box(10, 13, 0, 1), opens: 2 },
-      { id: 'a32_wall_crossing', room: 'grad_street', cells: box(10, 13, 0, 1), opens: 3 },
+      { id: 'a32_wall_street', room: 'grad_slope', cells: box(9, 12, 0, 1), opens: 2 },
+      { id: 'a32_wall_crossing', room: 'grad_street', cells: box(8, 11, 0, 1), opens: 3 },
     ],
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘は商店街の表に入れる
     hunt: {
       gathers: [
-        { id: 'a32_gather_slope', room: 'grad_slope', cell: [17, 30], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id] },
-        { id: 'a32_gather_gym', room: 'grad_gym_back', cell: [5, 4], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id] },
-        { id: 'a32_gather_levee', room: 'grad_levee', cell: [5, 5], items: [ITEMS.earphoneCord.id, ITEMS.diplomaCap.id] },
+        { id: 'a32_gather_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id] },
+        { id: 'a32_gather_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id] },
+        { id: 'a32_gather_levee', room: 'grad_levee', cell: [2, 2], items: [ITEMS.earphoneCord.id, ITEMS.diplomaCap.id] },
       ],
       tables: {
         grad_slope: ['a32_n1_gate', 'a32_n1_slope', 'a32_n1_tree', 'a32_n1_bus'],
@@ -981,53 +981,53 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a32_chest_slope', room: 'grad_slope', cell: [17, 30], items: [ITEMS.potion.id], snaps: ['fireChip'] },
-      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [5, 4], items: [ITEMS.selfieGrip.id], gears: ['iceBoost'] },
-      { id: 'a32_chest_levee', room: 'grad_levee', cell: [5, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['startDash'] },
+      { id: 'a32_chest_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.potion.id], snaps: ['fireChip'] },
+      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id], gears: ['iceBoost'] },
+      { id: 'a32_chest_levee', room: 'grad_levee', cell: [2, 2], night: 2, items: [ITEMS.hiPotion.id], gears: ['startDash'] },
     ],
     enemies: [
       // ---- 1晩目（校門の坂・体育館の裏） ----
-      { id: 'a32_e_gate', patrol: [[7, 34], [17, 34]], battle: 'a32_n1_gate' },
-      { id: 'a32_e_slope', patrol: [[7, 24], [17, 24]], battle: 'a32_n1_slope' },
+      { id: 'a32_e_gate', patrol: [[6, 35], [17, 35]], battle: 'a32_n1_gate' },
+      { id: 'a32_e_slope', patrol: [[8, 25], [16, 25]], battle: 'a32_n1_slope' },
       // 坂の並木：近づくと追ってくる
-      { id: 'a32_e_tree', move: 'chase', patrol: [[7, 11], [16, 11]], battle: 'a32_n1_tree' },
-      { id: 'a32_e_bus', patrol: [[8, 5], [15, 5]], battle: 'a32_n1_bus' },
-      { id: 'a32_e_gym', room: 'grad_gym_back', patrol: [[5, 19], [16, 19]], battle: 'a32_n1_gym' },
+      { id: 'a32_e_tree', move: 'chase', patrol: [[9, 11], [14, 11]], battle: 'a32_n1_tree' },
+      { id: 'a32_e_bus', patrol: [[9, 5], [12, 5]], battle: 'a32_n1_bus' },
+      { id: 'a32_e_gym', room: 'grad_gym_back', patrol: [[6, 18], [20, 18]], battle: 'a32_n1_gym' },
       // 体育館の裏の逃げる敵（寄り道。コマなし、レアの素材）
-      { id: 'a32_e_runner', room: 'grad_gym_back', move: 'flee', patrol: [[12, 9]], battle: 'a32_runner' },
+      { id: 'a32_e_runner', room: 'grad_gym_back', move: 'flee', patrol: [[12, 14]], battle: 'a32_runner' },
       // ---- 2晩目（七年前の商店街・川の土手） ----
-      { id: 'a32_e_arcade', room: 'grad_street', night: 2, patrol: [[5, 35], [18, 35]], battle: 'a32_n2_arcade' },
-      { id: 'a32_e_shops', room: 'grad_street', night: 2, patrol: [[5, 23], [18, 23]], battle: 'a32_n2_shops' },
+      { id: 'a32_e_arcade', room: 'grad_street', night: 2, patrol: [[7, 33], [12, 33]], battle: 'a32_n2_arcade' },
+      { id: 'a32_e_shops', room: 'grad_street', night: 2, patrol: [[7, 22], [13, 22]], battle: 'a32_n2_shops' },
       // 川の土手：追ってくる
-      { id: 'a32_e_levee', room: 'grad_levee', night: 2, move: 'chase', patrol: [[14, 5], [14, 19]], battle: 'a32_n2_levee' },
-      { id: 'a32_e_levee2', room: 'grad_levee', night: 2, patrol: [[5, 15], [5, 19]], battle: 'a32_n2_levee2' },
+      { id: 'a32_e_levee', room: 'grad_levee', night: 2, move: 'chase', patrol: [[15, 6], [16, 14]], battle: 'a32_n2_levee' },
+      { id: 'a32_e_levee2', room: 'grad_levee', night: 2, patrol: [[5, 13], [20, 13]], battle: 'a32_n2_levee2' },
       // 商店街の端の番人：倒すと夕暮れの踏切への道が開く（3晩目から。戦う前の会話）
-      { id: 'a32_e_guard', room: 'grad_street', night: 2, until: 2, move: 'guard', patrol: [[11, 5]], battle: 'a32_n2_guard', scene: 'a32_guard' },
+      { id: 'a32_e_guard', room: 'grad_street', night: 2, until: 2, move: 'guard', patrol: [[10, 4]], battle: 'a32_n2_guard', scene: 'a32_guard' },
       // ---- 3晩目（商店街と夕暮れの踏切。踏切の部屋は、ぬしの手前の敵を2つに減らした） ----
-      { id: 'a32_e_street3', room: 'grad_street', night: 3, patrol: [[5, 29], [18, 29]], battle: 'a32_n3_street' },
-      { id: 'a32_e_street3b', room: 'grad_street', night: 3, patrol: [[5, 16], [18, 16]], battle: 'a32_n3_street2' },
-      { id: 'a32_e_cross1', room: 'grad_crossing', night: 3, patrol: [[4, 16], [19, 16]], battle: 'a32_n3_cross1' },
-      { id: 'a32_e_cross2', room: 'grad_crossing', night: 3, move: 'chase', patrol: [[5, 12], [18, 12]], battle: 'a32_n3_cross2' },
+      { id: 'a32_e_street3', room: 'grad_street', night: 3, patrol: [[5, 28], [13, 28]], battle: 'a32_n3_street' },
+      { id: 'a32_e_street3b', room: 'grad_street', night: 3, patrol: [[7, 17], [13, 17]], battle: 'a32_n3_street2' },
+      { id: 'a32_e_cross1', room: 'grad_crossing', night: 3, patrol: [[10, 18], [14, 18]], battle: 'a32_n3_cross1' },
+      { id: 'a32_e_cross2', room: 'grad_crossing', night: 3, move: 'chase', patrol: [[8, 9], [19, 9]], battle: 'a32_n3_cross2' },
     ],
     // 上がらない遮断機
     boss: { id: 'a32_boss', room: 'grad_crossing', cell: [11, 5], battle: 'a32_boss' },
     // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む
     talkers: [
-      { id: 'a32_voice_friend', cell: [9, 36], until: 1, scene: 'a32_voice_friend', label: '友だち' },
-      { id: 'a32_voice_teacher', cell: [16, 28], until: 1, scene: 'a32_voice_teacher', label: '先生' },
-      { id: 'a32_voice_junior', cell: [15, 20], until: 1, scene: 'a32_voice_junior', label: '後輩' },
-      { id: 'a32_voice2_junior', cell: [15, 20], night: 2, until: 2, scene: 'a32_voice2_junior', label: '後輩' },
-      { id: 'a32_voice2_clerk', room: 'grad_street', cell: [5, 30], night: 2, until: 2, scene: 'a32_voice2_clerk', label: 'コンビニの店員' },
-      { id: 'a32_voice2_grocer', room: 'grad_street', cell: [18, 30], night: 2, until: 2, scene: 'a32_voice2_grocer', label: '八百屋のおじさん' },
-      { id: 'a32_voice2_fumi', room: 'grad_street', cell: [5, 16], night: 2, until: 2, scene: 'a32_voice2_fumi', label: '着物の人' },
+      { id: 'a32_voice_friend', cell: [7, 33], until: 1, scene: 'a32_voice_friend', label: '友だち' },
+      { id: 'a32_voice_teacher', cell: [14, 28], until: 1, scene: 'a32_voice_teacher', label: '先生' },
+      { id: 'a32_voice_junior', cell: [17, 20], until: 1, scene: 'a32_voice_junior', label: '後輩' },
+      { id: 'a32_voice2_junior', cell: [17, 20], night: 2, until: 2, scene: 'a32_voice2_junior', label: '後輩' },
+      { id: 'a32_voice2_clerk', room: 'grad_street', cell: [5, 26], night: 2, until: 2, scene: 'a32_voice2_clerk', label: 'コンビニの店員' },
+      { id: 'a32_voice2_grocer', room: 'grad_street', cell: [13, 30], night: 2, until: 2, scene: 'a32_voice2_grocer', label: '八百屋のおじさん' },
+      { id: 'a32_voice2_fumi', room: 'grad_street', cell: [3, 12], night: 2, until: 2, scene: 'a32_voice2_fumi', label: '着物の人' },
       // 七年前の時計屋のショーウィンドウ（奥の柱時計だけ、今の時刻を指している）
-      { id: 'a32_clock', room: 'grad_street', cell: [18, 24], night: 2, scene: 'a32_clock', label: '時計屋' },
-      { id: 'a32_voice3_grocer', room: 'grad_street', cell: [18, 30], night: 3, scene: 'a32_voice3_grocer', label: '八百屋のおじさん' },
+      { id: 'a32_clock', room: 'grad_street', cell: [13, 24], night: 2, scene: 'a32_clock', label: '時計屋' },
+      { id: 'a32_voice3_grocer', room: 'grad_street', cell: [13, 30], night: 3, scene: 'a32_voice3_grocer', label: '八百屋のおじさん' },
     ],
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a32_first_koma' },
-      { on: 'checkpoint', room: 'grad_slope', cell: [11, 16], scene: 'a32_checkpoint' },
+      { on: 'checkpoint', room: 'grad_slope', cell: [13, 16], scene: 'a32_checkpoint' },
       { on: 'room', room: 'grad_gym_back', scene: 'a32_gym' },
       { on: 'koma', count: 2, scene: 'a32_koma2' },
       { on: 'koma', count: 3, scene: 'a32_koma3' },
@@ -1056,18 +1056,18 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：やぐらの裏の暗がり', guide: 'カイの枠は光を写す。小夜子が、提灯の届かない暗がりへ案内する' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.candyStick.id], gears: ['comboBoost'] }],
+    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.candyStick.id], gears: ['comboBoost'] }],
     enemies: [
-      { id: 'a3k_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3k_torii' },
-      { id: 'a3k_e_torii2', move: 'chase', patrol: [[4, 11], [19, 11]], battle: 'a3k_torii2' },
-      { id: 'a3k_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3k_stalls' },
-      { id: 'a3k_e_yagura', room: 'matsuri_yagura1', patrol: [[4, 16], [19, 16]], battle: 'a3k_yagura' },
+      { id: 'a3k_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3k_torii' },
+      { id: 'a3k_e_torii2', move: 'chase', patrol: [[15, 7], [15, 13]], battle: 'a3k_torii2' },
+      { id: 'a3k_e_stalls', room: 'matsuri_stalls', patrol: [[8, 7], [15, 7]], battle: 'a3k_stalls' },
+      { id: 'a3k_e_yagura', room: 'matsuri_yagura1', patrol: [[6, 16], [17, 16]], battle: 'a3k_yagura' },
     ],
     // やぐらの裏の暗がりに来るカイ
     boss: { id: 'a3k_kai', room: 'matsuri_yagura1', cell: [6, 9], battle: 'a3k_kai', label: 'やぐらの裏' },
     talkers: [
-      { id: 'a3k_voice_pinwheel', cell: [16, 17], scene: 'a3k_voice_pinwheel', label: '風車の子ども' },
-      { id: 'a3k_voice_kuji', room: 'matsuri_stalls', cell: [12, 16], scene: 'a3k_voice_kuji', label: 'くじ引きの屋台' },
+      { id: 'a3k_voice_pinwheel', cell: [6, 6], scene: 'a3k_voice_pinwheel', label: '風車の子ども' },
+      { id: 'a3k_voice_kuji', room: 'matsuri_stalls', cell: [15, 13], scene: 'a3k_voice_kuji', label: 'くじ引きの屋台' },
       { id: 'a3k_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3k_voice_ondo', label: '音頭取り' },
     ],
     triggers: [
@@ -1090,20 +1090,20 @@ export const AREAS: Record<string, AreaDef> = {
     bgm: BGM.prologue,
     komaNeed: 0,
     goal: { band: '目当て：やぐらの広場', guide: '小夜子についていく。花火は、やぐらの広場から見るのが一番きれいらしい' },
-    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [4, 12], items: [ITEMS.lanternPaper.id], gears: ['hpMemory'] }],
+    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.lanternPaper.id], gears: ['hpMemory'] }],
     enemies: [
-      { id: 'a3s1_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3s1_torii' },
-      { id: 'a3s1_e_torii2', patrol: [[4, 11], [19, 11]], battle: 'a3s1_torii2' },
-      { id: 'a3s1_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3s1_stalls' },
-      { id: 'a3s1_e_stalls2', room: 'matsuri_stalls', move: 'chase', patrol: [[8, 20], [15, 20]], battle: 'a3s1_stalls2' },
-      { id: 'a3s1_e_yagura', room: 'matsuri_yagura1', patrol: [[4, 16], [19, 16]], battle: 'a3s1_yagura' },
+      { id: 'a3s1_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3s1_torii' },
+      { id: 'a3s1_e_torii2', patrol: [[15, 7], [15, 13]], battle: 'a3s1_torii2' },
+      { id: 'a3s1_e_stalls', room: 'matsuri_stalls', patrol: [[8, 7], [15, 7]], battle: 'a3s1_stalls' },
+      { id: 'a3s1_e_stalls2', room: 'matsuri_stalls', move: 'chase', patrol: [[9, 18], [14, 18]], battle: 'a3s1_stalls2' },
+      { id: 'a3s1_e_yagura', room: 'matsuri_yagura1', patrol: [[6, 16], [17, 16]], battle: 'a3s1_yagura' },
     ],
     // やぐらの柵にもたれる小夜子。触れると、花火の前に砂嵐が湧く
     boss: { id: 'a3s1_sayoko', room: 'matsuri_yagura1', cell: [6, 9], battle: 'a3s1_end', label: '小夜子' },
     talkers: [
-      { id: 'a3s_voice_goldfish', cell: [12, 9], scene: 'a3s_voice_goldfish', label: '金魚売り' },
-      { id: 'a3s_voice_pinwheel', cell: [16, 17], scene: 'a3s_voice_pinwheel', label: '風車の子ども' },
-      { id: 'a3s_voice_candy', room: 'matsuri_stalls', cell: [12, 16], scene: 'a3s_voice_candy', label: '飴細工の職人' },
+      { id: 'a3s_voice_goldfish', cell: [16, 4], scene: 'a3s_voice_goldfish', label: '金魚売り' },
+      { id: 'a3s_voice_pinwheel', cell: [6, 6], scene: 'a3s_voice_pinwheel', label: '風車の子ども' },
+      { id: 'a3s_voice_candy', room: 'matsuri_stalls', cell: [15, 13], scene: 'a3s_voice_candy', label: '飴細工の職人' },
       { id: 'a3s_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3s_voice_ondo', label: '音頭取り' },
     ],
     triggers: [
@@ -1127,20 +1127,20 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：夜の端', guide: '昨日とまったく同じ夜。小夜子と一緒に、やぐらの先の夜の端へ' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [5, 6], items: [ITEMS.recordNeedle.id], gears: ['guardMemory'] }],
+    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [2, 9], items: [ITEMS.recordNeedle.id], gears: ['guardMemory'] }],
     enemies: [
-      { id: 'a3s2_e_torii', patrol: [[5, 16], [18, 16]], battle: 'a3s2_torii' },
-      { id: 'a3s2_e_stalls', room: 'matsuri_stalls', patrol: [[4, 7], [19, 7]], battle: 'a3s2_stalls' },
-      { id: 'a3s2_e_stalls2', room: 'matsuri_stalls', move: 'chase', patrol: [[8, 20], [15, 20]], battle: 'a3s2_stalls2' },
-      { id: 'a3s2_e_yagura', room: 'matsuri_yagura', move: 'chase', patrol: [[4, 5], [19, 5]], battle: 'a3s2_yagura' },
-      { id: 'a3s2_e_edge', room: 'matsuri_edge', patrol: [[4, 14], [19, 14]], battle: 'a3s2_edge' },
-      { id: 'a3s2_e_edge2', room: 'matsuri_edge', patrol: [[4, 10], [19, 10]], battle: 'a3s2_edge2' },
+      { id: 'a3s2_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3s2_torii' },
+      { id: 'a3s2_e_stalls', room: 'matsuri_stalls', patrol: [[8, 7], [15, 7]], battle: 'a3s2_stalls' },
+      { id: 'a3s2_e_stalls2', room: 'matsuri_stalls', move: 'chase', patrol: [[9, 18], [14, 18]], battle: 'a3s2_stalls2' },
+      { id: 'a3s2_e_yagura', room: 'matsuri_yagura', move: 'chase', patrol: [[5, 4], [18, 4]], battle: 'a3s2_yagura' },
+      { id: 'a3s2_e_edge', room: 'matsuri_edge', patrol: [[7, 14], [18, 14]], battle: 'a3s2_edge' },
+      { id: 'a3s2_e_edge2', room: 'matsuri_edge', patrol: [[3, 11], [17, 11]], battle: 'a3s2_edge2' },
     ],
-    boss: { id: 'a3s2_boss', room: 'matsuri_edge', cell: [11, 5], battle: 'a3s2_boss' },
+    boss: { id: 'a3s2_boss', room: 'matsuri_edge', cell: [11, 8], battle: 'a3s2_boss' },
     talkers: [
-      { id: 'a3s_voice_goldfish', cell: [12, 9], scene: 'a3s_voice_goldfish', label: '金魚売り' },
-      { id: 'a3s_voice_pinwheel', cell: [16, 17], scene: 'a3s_voice_pinwheel', label: '風車の子ども' },
-      { id: 'a3s_voice_candy', room: 'matsuri_stalls', cell: [12, 16], scene: 'a3s_voice_candy', label: '飴細工の職人' },
+      { id: 'a3s_voice_goldfish', cell: [16, 4], scene: 'a3s_voice_goldfish', label: '金魚売り' },
+      { id: 'a3s_voice_pinwheel', cell: [6, 6], scene: 'a3s_voice_pinwheel', label: '風車の子ども' },
+      { id: 'a3s_voice_candy', room: 'matsuri_stalls', cell: [15, 13], scene: 'a3s_voice_candy', label: '飴細工の職人' },
       { id: 'a3s_voice_ondo', room: 'matsuri_yagura', cell: [17, 13], scene: 'a3s_voice_ondo', label: '音頭取り' },
     ],
     triggers: [

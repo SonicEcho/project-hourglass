@@ -325,6 +325,32 @@ export function removeChest(edits: MapEdits, thing: PlacedThing): MapEdits {
   return { ...edits, things, removedChests: [...(edits.removedChests ?? []), thing.key] };
 }
 
+/** その部屋に今ある宝箱の key（段階122。まとめて置き直す時に持ち上げる順。元の宝箱、足した宝箱の順） */
+export function chestKeysInRoom(area: AreaDef, room: string): string[] {
+  return placedThings(area, room)
+    .filter((t) => t.kind === 'chest')
+    .map((t) => t.key);
+}
+
+/**
+ * 宝箱をまとめて置き直す（段階122）：持ち上げた宝箱（waiting。key の並び）のうち、まだ部屋にある先頭のものを cell へ動かす（中身と id はそのまま）。
+ * 持ち上げた分がもうなければ、新しい宝箱を足す。残りの並びも返す
+ */
+export function placeChestInOrder(
+  edits: MapEdits,
+  original: AreaDef,
+  room: string,
+  waiting: string[],
+  cell: GridCell,
+  night = 0,
+): { edits: MapEdits; waiting: string[] } {
+  const chests = placedThings(applyMapEdits(original, edits), room).filter((t) => t.kind === 'chest');
+  const rest = waiting.filter((k) => chests.some((t) => t.key === k));
+  const next = chests.find((t) => t.key === rest[0]);
+  if (!next) return { edits: addChest(edits, original, room, cell, night), waiting: [] };
+  return { edits: moveThing(edits, original, next, cell), waiting: rest.slice(1) };
+}
+
 /** 開発の会話に貼る文（1行目は見出し、2行目から JSON） */
 export function exportMapEdits(edits: MapEdits): string {
   return `地図の調整（段階117）\n${JSON.stringify(edits, null, 1)}`;
