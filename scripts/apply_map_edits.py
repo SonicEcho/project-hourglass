@@ -5,6 +5,7 @@
 - rooms：rooms.ts の、その部屋の文字の地図の定数を、書き出しの文字の地図に置き換える（式で作っていた定数も、文字の並びにする）。exitAt は部屋の行に書く
 - things：areas.ts の、その区画の物の位置を書き換える（敵は見回りの道ごとずらす）
 - patrols：areas.ts の、敵の見回りの道を書き換える（段階119）
+- newChests・removedChests：宝箱を足す（中身は空。入れた後に決める）・消す（段階120）
 入れた後は npx vitest run で checkArea のテストを通すこと
 """
 import json
@@ -95,13 +96,36 @@ def apply_patrols(src, patrols):
     return src
 
 
+def apply_chests(src, new_chests, removed):
+    """宝箱の増減（段階120）：消した宝箱の行を外し、足した宝箱をその区画の chests の最後に足す（中身は空なので、入れた後に決める）"""
+    for key in removed:
+        _, _, tid = key.split('/')
+        m = re.search(rf"^ *\{{ id: '{tid}',[^\n]*\n", src, re.M)
+        if not m:
+            sys.exit(f'{key} が areas.ts にない')
+        src = src[: m.start()] + src[m.end():]
+    for key, c in new_chests.items():
+        area, _, tid = key.split('/')
+        a = re.search(rf"^  {area}: \{{\n", src, re.M)
+        if not a:
+            sys.exit(f'区画 {area} が areas.ts にない')
+        m = re.compile(r"^    chests: \[\n", re.M).search(src, a.end())
+        end = re.compile(r"^    \],\n", re.M).search(src, m.end())
+        night = f", night: {c['night']}" if c.get('night') else ''
+        line = f"      {{ id: '{tid}', room: '{c['room']}', cell: [{c['cell'][0]}, {c['cell'][1]}]{night}, items: [] }},\n"
+        src = src[: end.start()] + line + src[end.start():]
+        print(f'宝箱 {tid} を足した：中身（items）を決めること')
+    return src
+
+
 def main():
     edits = load(sys.argv[1])
     rooms = open(ROOMS, encoding='utf-8').read()
     open(ROOMS, 'w', encoding='utf-8').write(apply_rooms(rooms, edits.get('rooms', {})))
     areas = open(AREAS, encoding='utf-8').read()
     areas = apply_things(areas, edits.get('things', {}))
-    open(AREAS, 'w', encoding='utf-8').write(apply_patrols(areas, edits.get('patrols', {})))
+    areas = apply_patrols(areas, edits.get('patrols', {}))
+    open(AREAS, 'w', encoding='utf-8').write(apply_chests(areas, edits.get('newChests', {}), edits.get('removedChests', [])))
     print(f"部屋 {len(edits.get('rooms', {}))}・物 {len(edits.get('things', {}))}・敵の道 {len(edits.get('patrols', {}))} を入れた")
 
 

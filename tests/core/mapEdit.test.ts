@@ -19,6 +19,8 @@ import {
   patchRoom,
   placedThings,
   setPatrol,
+  addChest,
+  removeChest,
 } from '../../src/core';
 
 // 段階117：地図の調整（スマホで部屋の歩ける場所・出入口・物の位置を直す）
@@ -113,6 +115,26 @@ describe('地図の調整', () => {
     expect(parseMapEdits(exportMapEdits(edits))).toEqual(edits);
     edits = setPatrol(edits, AREA, enemy, [[2, 2], [5, 2]]);
     expect(isEmptyMapEdits(edits)).toBe(true);
+  });
+
+  it('宝箱を足す・消す（段階120）：足した宝箱は空で出て、動かせる。元の宝箱を消すと区画から外れる', () => {
+    let edits = addChest(emptyMapEdits(), AREA, 'r1', [3, 7], 2);
+    edits = addChest(edits, AREA, 'r1', [5, 7]);
+    let a = applyMapEdits(AREA, edits);
+    expect(a.chests.map((c) => c.id)).toEqual(['c1', 'ax_chest_new1', 'ax_chest_new2']);
+    expect(a.chests[1]).toEqual({ id: 'ax_chest_new1', room: 'r1', cell: [3, 7], items: [], night: 2 });
+    const added = placedThings(a, 'r1').find((t) => t.id === 'ax_chest_new2')!;
+    edits = moveThing(edits, AREA, added, [6, 7]);
+    expect(applyMapEdits(AREA, edits).chests[2].cell).toEqual([6, 7]);
+    edits = removeChest(edits, added);
+    const original = placedThings(AREA, 'r1').find((t) => t.id === 'c1')!;
+    edits = removeChest(moveThing(edits, AREA, original, [6, 6]), original);
+    a = applyMapEdits(AREA, edits);
+    expect(a.chests.map((c) => c.id)).toEqual(['ax_chest_new1']);
+    expect(edits.things).toEqual({});
+    expect(parseMapEdits(exportMapEdits(edits))).toEqual(edits);
+    // ほかの区画の足した宝箱は入らない
+    expect(applyMapEdits({ ...AREA, id: 'az' }, edits).chests.map((c) => c.id)).toEqual(['c1']);
   });
 
   it('宝箱・人・ぬし・採取・晩の始めと帰り口を動かせる', () => {
