@@ -590,7 +590,7 @@ export class GrowthScene extends Phaser.Scene {
         `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}　速さ ${grown.stats.spd}`,
       ];
       const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
-      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW }));
+      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
       if (advice) {
         addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, {
           fill: 0x5a4a10,
@@ -613,7 +613,7 @@ export class GrowthScene extends Phaser.Scene {
           : `${cost}pt で開けられる`;
     const onAdvice = this.advice()?.path.includes(n.id) && !opened;
     this.root.add(addText(this, SIDE_PADDING + 10, top + 8, nodeTitle(n, base), { size: 15, bold: true, color: COLORS.accentText }));
-    this.root.add(addText(this, SIDE_PADDING + 10, top + 32, nodeDetail(n, base), { size: 11, wrap: GAME_WIDTH - 150 }));
+    this.root.add(addText(this, SIDE_PADDING + 10, top + 32, nodeDetail(n, base), { size: 11, wrap: GAME_WIDTH - 150, ja: true }));
     this.root.add(addText(this, SIDE_PADDING + 10, top + h - 22, onAdvice ? `${status}（おすすめの道）` : status, { size: 11, color: onAdvice ? '#ffd76a' : COLORS.subText }));
     addButton(
       this,

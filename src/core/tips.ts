@@ -1,4 +1,4 @@
-import { availableCombos, batonTargets, linkReady, planPool } from './battle';
+import { availableCombos, batonTargets, chargingAction, linkReady, planPool } from './battle';
 import type { ExploreState } from './explore';
 import type { BattleState } from './types';
 
@@ -51,6 +51,8 @@ export function battleTipTriggers(s: BattleState, ctx: { autoAvailable: boolean 
   if (s.phase === 'extra' && batonTargets(s).length > 0) out.push('battle_baton');
   if (s.phase === 'plan' && s.allies.some((a) => a.hp > 0 && availableCombos(s, planPool(s, a.uid)).length > 0)) out.push('battle_combo');
   if (s.enemies.some((e) => e.hp > 0 && (e.parts.length > 0 || e.charging))) out.push('battle_boss');
+  // 切り取り（段階107）をためた時（段階125。レビューの項目6：ふつうの大技と止め方が違う）
+  if (s.enemies.some((e) => e.hp > 0 && chargingAction(e)?.cutsFrame)) out.push('battle_cut');
   if (s.phase === 'plan' && s.links.length > 0 && linkReady(s)) out.push('battle_link');
   if (s.phase === 'plan' && ctx.autoAvailable) out.push('battle_auto');
   // ポーチ（段階51。段階45で説明を足した）：ポーチに物がある時の計画

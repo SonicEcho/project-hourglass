@@ -3,7 +3,7 @@ import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef,
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
 import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
-import { describeAction, formatWeight, mainDamageType } from './describe';
+import { describeAction, formatWeight, mainDamageType, targetNote } from './describe';
 import { weightLabel } from './labels';
 import { summarizePassives } from './naviText';
 import { columnX, FILM_LAYOUT, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
@@ -712,8 +712,14 @@ function comboListText(s: BattleState, pool: CardInstance[]): string {
   ].join('\n');
 }
 
+/** 行動の説明に、相手が先に倒れた時のこと（段階125）を添える */
+function withTargetNote(def: ActionDef): string {
+  const note = targetNote(def);
+  return note ? `${describeAction(def)}\n${note}` : describeAction(def);
+}
+
 const HAND_RULE_TEXT = [
-  `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったスナップは次のラウンドに残る。`,
+  `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったスナップは次のラウンドに残る（残した分だけ、新しく引く枚数は減る）。`,
   '計画でスナップを仲間に割り当てると、そのスナップは他の仲間には使えない（スナップに「○○が使う」と出る）。',
   `延長になると、手札を${ONE_MORE_DRAW}枚引いてから追加行動を選べる。`,
   `ドロー・サーチ・クイックステップはサポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで）。`,
@@ -834,7 +840,7 @@ function drawFilmSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Contai
     root.add(hit);
     makePressable(hit, {
       onTap: enabled ? () => h.tapSkill(skill.id) : undefined,
-      onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
+      onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${withTargetNote(skill)}\n\n${weightHelp(skill.weight, actor)}`),
     });
   });
   if (skills.length <= rows) return;
@@ -903,7 +909,7 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
       pw,
       rowH,
       `${p.item.name}\n残り${left2.count}`,
-      { onTap: () => h.tapItem(p.item.id), onLongPress: () => h.detail(p.item.name, `${describeAction(p.item)}\n\n手番を1つ使う。1つの戦闘で使えるのは${vm.state.pouchUsesLeft + pouch.reduce((n, x) => n + x.used, 0)}回まで。倒れた仲間には使えない。`) },
+      { onTap: () => h.tapItem(p.item.id), onLongPress: () => h.detail(p.item.name, `${describeAction(p.item)}\n\n手番を1つ使う。1つの戦闘で使えるのは${vm.state.pouchUsesLeft + pouch.reduce((n, x) => n + x.used, 0)}回まで。倒れた仲間には使えない。使う相手がこの行動の番より前に倒れた時は、使わずに残る（回数も減らない）。`) },
       { enabled: vm.interactive && left2.count > 0 && left2.uses > 0, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: 11 },
     );
   });
@@ -935,7 +941,7 @@ function cardGrid(
       w,
       rowH,
       CARD_NAME_LINES[card.card.id] ?? card.card.name,
-      { onTap: () => onTap(card.uid), onLongPress: () => h.detail(card.card.name, card.card.support ? supportText(card.card) : describeAction(card.card)) },
+      { onTap: () => onTap(card.uid), onLongPress: () => h.detail(card.card.name, card.card.support ? supportText(card.card) : withTargetNote(card.card)) },
       { stroke: cardColor(card.card), size: 11, accent: cardColor(card.card), art: CARD_ART[card.card.id as keyof typeof CARD_ART] },
     );
   });

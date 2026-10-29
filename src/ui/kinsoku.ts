@@ -17,3 +17,25 @@ export function applyKinsoku(lines: string[]): string[] {
   }
   return out;
 }
+
+/**
+ * 日本語の文を幅に合わせて折り返す（段階125。レビューの項目27）。1文字ずつ詰め、英数字のまとまり（「8pt」「Lv5」など）は途中で切らない。
+ * 改行はそのまま残し、段落ごとに禁則（applyKinsoku）をかける。measure は文字の幅を測る関数（画面では Phaser の文字の幅）
+ */
+export function wrapJapanese(text: string, width: number, measure: (s: string) => number): string[] {
+  const out: string[] = [];
+  for (const para of text.split('\n')) {
+    const units = para.match(/[A-Za-z0-9.%+\-/]+|[\s\S]/gu) ?? [];
+    const lines: string[] = [];
+    let line = '';
+    for (const u of units) {
+      if (line !== '' && measure(line + u) > width) {
+        lines.push(line);
+        line = u === ' ' ? '' : u;
+      } else line += u;
+    }
+    lines.push(line);
+    out.push(...applyKinsoku(lines));
+  }
+  return out;
+}

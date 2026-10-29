@@ -160,9 +160,11 @@ export class DailyScene extends Phaser.Scene {
     }
     const left = requiredLeft(this.hub, run.vars);
     const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
-    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！は数えない`);
-    // 段階83：相手のいる小話は、その日に見ると♥が半分増える
-    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…（小話）も、相手の絆の帯が半分進む');
+    // 段階125（レビューの項目48）：拠点の扉も回数を使わない
+    const hasHub = allSpots(this.hub).some((s) => s.mark === 'hub');
+    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！${hasHub ? 'と扉' : ''}は数えない`);
+    // 段階83：相手のいる小話は、その日に見ると♥が半分増える。段階125（レビューの項目49）：後から拠点で読んでも増えないので「その日に見た時だけ」と書く
+    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…小話は、その日に見た時だけ絆の帯が半分進む');
     root.add(addText(this, GAME_WIDTH / 2, 730, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
     this.drawBonds(root, 790);
   }

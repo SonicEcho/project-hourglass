@@ -55,14 +55,22 @@ export function showTipPanel(scene: Phaser.Scene, tip: TipDef, onClose?: () => v
   return c;
 }
 
+/** 今出している説明の id（段階125。同じ説明の窓を重ねて出さない。窓が消えたら外す） */
+const showing = new Set<string>();
+
 /**
- * 今の場面に合う、まだ見ていない説明があれば1つ出して、見たことにする。出したら true（閉じた時に onClose）
+ * 今の場面に合う、まだ見ていない説明があれば1つ出す。出したら true（閉じた時に onClose）。
+ * 段階125（レビューの項目8）：「わかった」で閉じた時に見たことにする。窓を出したまま画面が変わったり、アプリを閉じたりした時は、次にまた出る
  */
 export function maybeShowTip(scene: Phaser.Scene, triggers: readonly string[], onClose?: () => void): boolean {
   const tip = nextTip(TIPS, seenTips(), triggers);
-  if (!tip) return false;
-  saveSeen(markTipSeen(seenTips(), tip.id));
+  if (!tip || showing.has(tip.id)) return false;
+  showing.add(tip.id);
   console.log(`[tip] ${tip.id}`);
-  showTipPanel(scene, tip, onClose);
+  const panel = showTipPanel(scene, tip, () => {
+    saveSeen(markTipSeen(seenTips(), tip.id));
+    onClose?.();
+  });
+  panel.once(Phaser.GameObjects.Events.DESTROY, () => showing.delete(tip.id));
   return true;
 }
