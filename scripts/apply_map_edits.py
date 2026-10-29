@@ -2,7 +2,7 @@
 """地図の調整（段階117）の書き出しの文を、src/data に入れる。
 
 使い方：python3 scripts/apply_map_edits.py 書き出しの文.txt
-- rooms：rooms.ts の、その部屋の文字の地図の定数を、書き出しの文字の地図に置き換える（式で作っていた定数も、文字の並びにする）。exitAt は部屋の行に書く
+- rooms：rooms.ts の、その部屋の文字の地図の定数を（roofFine は部屋の行に。段階121）、書き出しの文字の地図に置き換える（式で作っていた定数も、文字の並びにする）。exitAt は部屋の行に書く
 - things：areas.ts の、その区画の物の位置を書き換える（敵は見回りの道ごとずらす）
 - patrols：areas.ts の、敵の見回りの道を書き換える（段階119）
 - newChests・removedChests：宝箱を足す（中身は空。入れた後に決める）・消す（段階120）
@@ -40,7 +40,7 @@ def apply_rooms(src, rooms):
             end = re.compile(r'^\]\)?;[ \t]*$', re.M).search(src, d.end())
             if not end:
                 sys.exit(f'定数 {const} の終わりが見つからない')
-            new = layout_literal(const, patch['layout'], '2026-10-26 段階117：開発者が地図の調整で直した形')
+            new = layout_literal(const, patch['layout'], '段階117：開発者が地図の調整で直した形')
             src = src[: d.start()] + new + src[end.end():]
         if 'exitAt' in patch:
             line_now = re.search(rf"^  {rid}: \{{ id: '{rid}'.*$", src, re.M).group(0)
@@ -55,6 +55,19 @@ def apply_rooms(src, rooms):
                 new_line = line_now.replace(old.group(0), text)
             else:
                 new_line = re.sub(r' \},?$', lambda mm: f', {text}' + mm.group(0), line_now)
+            src = src.replace(line_now, new_line)
+        if 'roofFine' in patch:
+            # 細かい屋根（段階121）：部屋の行の roofFine を、書き出しの全部に置き換える（空なら外す）
+            line_now = re.search(rf"^  {rid}: \{{ id: '{rid}'.*$", src, re.M).group(0)
+            fine = patch['roofFine']
+            text = 'roofFine: { ' + ', '.join(f"'{k}': '{v}'" for k, v in sorted(fine.items())) + ' }' if fine else ''
+            old = re.search(r', roofFine: \{[^}]*\}', line_now)
+            if old:
+                new_line = line_now.replace(old.group(0), f', {text}' if text else '')
+            elif text:
+                new_line = re.sub(r' \},?$', lambda mm: f', {text}' + mm.group(0), line_now)
+            else:
+                new_line = line_now
             src = src.replace(line_now, new_line)
     return src
 

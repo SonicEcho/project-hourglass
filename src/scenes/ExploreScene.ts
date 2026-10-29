@@ -50,6 +50,10 @@ import {
   applyMapEdits,
   isEmptyMapEdits,
   roofCells,
+  entryCells,
+  roofMask,
+  isShade,
+  ROOF_SPLIT,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
@@ -90,6 +94,11 @@ export interface ExploreData {
   hunt?: boolean;
   /** 晩に分けた区画の、何晩目か（段階63。物語の流れの探索の出来事が決める） */
   night?: number;
+  /**
+   * 地図直しの試し歩き（段階121。デバッグメニューから区画・晩・部屋を選んで開く）：セーブに書かず、敵に触れても戦闘にならず、
+   * 人・宝箱・ぬし・チェックポイントにも反応しない。room・cell はいる所、edit は開いてすぐ地図直しを出すか
+   */
+  tune?: { room: string; cell?: GridCell; edit?: boolean };
 }
 
 interface Enemy {
@@ -148,10 +157,12 @@ export class ExploreScene extends Phaser.Scene {
   private rawArea!: AreaDef;
   /** 画面の文字とボタンの入れ物 */
   private ui?: Phaser.GameObjects.Container;
+  /** 地図直しの試し歩き（段階121） */
+  private tune: ExploreData['tune'] | null = null;
   /** 地図の調整の途中（段階117。?debug=1 の時だけ） */
   private editor: MapEditor | null = null;
   /** 屋根や木の下（段階118）に重ねる、地図の絵の切り抜き */
-  private roof?: Phaser.GameObjects.Container;
+  private roof?: Phaser.GameObjects.Image;
 
   constructor() {
     super('Explore');
@@ -183,6 +194,7 @@ export class ExploreScene extends Phaser.Scene {
           : base;
     this.area = area;
     this.trial = !AREAS[data.area];
+    this.tune = data.tune ?? null;
     stopAmbience();
     this.route = [];
     this.nextCell = null;
@@ -201,6 +213,11 @@ export class ExploreScene extends Phaser.Scene {
     let state = this.hunting && hunt ? hunt.state : run.explore?.area === area.id ? run.explore : startExplore(area);
     // 新しい晩なら、その晩を始める所から（段階63）
     if (this.night > 0) state = startNight(base, state, this.night);
+    // 地図直しの試し歩き（段階121）：選んだ部屋の、選んだマス（なければ S・P か、出入口の内側）から。全部の部屋に入ったことにする
+    if (this.tune) {
+      const room = roomOf(area, this.tune.room);
+      state = { ...startExplore(area), room: room.id, cell: this.tune.cell ?? tuneStart(room), visited: area.rooms.map((r) => r.id) };
+    }
     let note = '';
     let komaGot = 0;
     // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
@@ -229,6 +246,14 @@ export class ExploreScene extends Phaser.Scene {
     this.room = roomOf(area, state.room);
     this.map = areaGrid(area, state.room);
     this.keep(state);
+    if (this.tune) {
+      if (area.bgm) playBgm(this, area.bgm);
+      this.draw();
+      this.say('地図直しの試し歩き：セーブせず、敵・人・宝箱にも反応しない。出入口から隣の部屋へ移れる');
+      this.cameras.main.fadeIn(200, 0, 0, 0);
+      if (this.tune.edit) this.openEditor();
+      return;
+    }
 
     // 戻ってきた時の続き：ボスの前の会話を見たらボス戦、ボスの後の会話を見たら区画を出る
     const bossTrigger = area.triggers.find((t) => t.on === 'boss');
@@ -454,6 +479,7 @@ export class ExploreScene extends Phaser.Scene {
       const move = e.move ?? 'patrol';
       const route = e.patrol.length >= 2 ? patrolRoute(this.map, e.patrol) : [e.patrol[0]];
       const sprite = this.enemySprite(e.battle, move, route[0]);
+      this.shadeSprite(sprite, isShade(room, route[0]));
       // コマを持つ砂嵐の印（段階67。物語の探索だけ。狩りではコマは手に入らない）
       if (!this.hunting && (AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
       world.add(sprite);
@@ -479,6 +505,7 @@ export class ExploreScene extends Phaser.Scene {
       this.player.add(addText(this, 0, 0, 'ハ', { size: 14, bold: true }).setOrigin(0.5));
     }
     world.add(this.player);
+    this.shadeSprite(this.player, isShade(room, this.state.cell));
     this.roof = this.drawRoof(room);
     if (this.roof) world.add(this.roof);
 
@@ -585,7 +612,7 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (this.leaving || !this.player || this.tipOpen || this.editor) return;
+    if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune) return;
     if (this.time.now < this.graceUntil) return;
     for (const e of this.enemies) {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
@@ -600,28 +627,50 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   /**
-   * 屋根や木の下（段階118）：文字の地図の ^ のマスに、地図の絵の同じ所を切り抜いて、仲間と敵の上にもう一度重ねる
-   * （横に続くマスは1枚にまとめる）。真下にいてもすかさない（すかすと変に見えた。開発者の確認 2026-10-29）。絵のない部屋は暗い四角
+   * 屋根や木の下（段階118）：屋根のかかるマスの絵を切り抜いて、仲間と敵の上にもう一度重ねる。真下にいてもすかさない。
+   * 段階121：細かい屋根（1マスを縦横4つに割った形）に沿って切り抜き、縁は数ドットかけて少しずつすけさせる（マス目に合わない屋根や
+   * 木の葉が、四角く浮いて見えないように）。小さな四角1つを1ドットにした型紙をなめらかに引きのばして、地図の絵をくり抜く。
+   * 絵のない部屋は暗い色
    */
-  private drawRoof(room: RoomDef): Phaser.GameObjects.Container | undefined {
+  private drawRoof(room: RoomDef): Phaser.GameObjects.Image | undefined {
     const cells = roofCells(room);
     if (cells.length === 0) return undefined;
-    const box = this.add.container(0, 0);
+    const n = ROOF_SPLIT;
     const [w, h] = [this.map.cols * T, this.map.rows * T];
-    const image = room.image && hasImage(this, room.image) ? room.image : null;
-    const src = image ? this.textures.get(image).getSourceImage() : null;
-    const [sx, sy] = src ? [src.width / w, src.height / h] : [1, 1];
-    const runs: [number, number, number][] = [];
+    const mask = document.createElement('canvas');
+    mask.width = this.map.cols * n;
+    mask.height = this.map.rows * n;
+    const m = mask.getContext('2d');
+    if (!m) return undefined;
+    m.fillStyle = '#ffffff';
     for (const [c, r] of cells) {
-      const last = runs[runs.length - 1];
-      if (last && last[2] === r && last[1] === c - 1) last[1] = c;
-      else runs.push([c, c, r]);
+      const bits = roofMask(room, c, r);
+      for (let i = 0; i < n * n; i++) if (bits & (1 << i)) m.fillRect(c * n + (i % n), r * n + Math.floor(i / n), 1, 1);
     }
-    for (const [c0, c1, r] of runs) {
-      if (image) box.add(this.add.image(0, 0, image).setOrigin(0).setDisplaySize(w, h).setCrop(c0 * T * sx, r * T * sy, (c1 - c0 + 1) * T * sx, T * sy));
-      else box.add(this.add.rectangle(c0 * T, r * T, (c1 - c0 + 1) * T, T, 0x0b1118, 0.85).setOrigin(0));
+    if (this.textures.exists(ROOF_TEXTURE)) this.textures.remove(ROOF_TEXTURE);
+    const tex = this.textures.createCanvas(ROOF_TEXTURE, w, h);
+    if (!tex) return undefined;
+    const ctx = tex.context;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(mask, 0, 0, w, h);
+    ctx.globalCompositeOperation = 'source-in';
+    if (room.image && hasImage(this, room.image)) ctx.drawImage(this.textures.get(room.image).getSourceImage() as CanvasImageSource, 0, 0, w, h);
+    else {
+      ctx.fillStyle = 'rgba(11,17,24,0.85)';
+      ctx.fillRect(0, 0, w, h);
     }
-    return box;
+    ctx.globalCompositeOperation = 'source-over';
+    tex.refresh();
+    return this.add.image(0, 0, ROOF_TEXTURE).setOrigin(0);
+  }
+
+  /** 陰のマス（段階121）にいる仲間・敵の絵を少し暗くする（絵のない印は、そのまま） */
+  private shadeSprite(sprite: Phaser.GameObjects.Container, on: boolean): void {
+    for (const o of sprite.list) {
+      if (!(o instanceof Phaser.GameObjects.Image)) continue;
+      if (on) o.setTint(SHADE_TINT);
+      else o.clearTint();
+    }
   }
 
   /** 地図の調整を始める（段階117）：歩くのと敵を止め、地図の上の物を隠して、マス目と道具を出す */
@@ -660,10 +709,12 @@ export class ExploreScene extends Phaser.Scene {
       this.say(`厚いノイズの壁で、ふさがっている\n……${wall.opens}晩目、持ち主がもう少し思い出せば、ほどけそう`);
       return;
     }
-    const talker = this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
+    // 地図直しの試し歩き（段階121）では、歩くだけ
+    const plain = !!this.tune;
+    const talker = plain ? undefined : this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
-    const chest = talker ? null : chestAt(this.area, this.state, cell);
-    const boss = !talker && !chest && this.bossHere() && near(this.area.boss.cell, cell, 1);
+    const chest = talker || plain ? null : chestAt(this.area, this.state, cell);
+    const boss = !plain && !talker && !chest && this.bossHere() && near(this.area.boss.cell, cell, 1);
     const from = this.nextCell ?? this.state.cell;
     let target: GridCell | null;
     let path: GridCell[] | null;
@@ -707,6 +758,7 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.walking = true;
     this.nextCell = next;
+    this.shadeSprite(this.player, isShade(this.room, next));
     const walk = this.tweens.add({
       targets: this.player,
       x: next[0] * T + T / 2,
@@ -727,6 +779,14 @@ export class ExploreScene extends Phaser.Scene {
 
   /** マスに着いた：チェックポイント（宝箱は通っただけでは開かない） */
   private arriveAt(cell: GridCell): void {
+    if (this.tune) {
+      // 地図直しの試し歩き（段階121）：閉じた出入口も通れる（開ける印を全部倒したことにして通る）
+      const all = [...this.area.enemies.map((e) => e.id), this.area.boss.id];
+      const door = passDoor(this.area, { ...this.state, cell, defeated: all }, cell);
+      this.state = { ...this.state, cell };
+      if (door?.type === 'moved') this.changeRoom(door.state);
+      return;
+    }
     const r = arrive(this.area, this.state, cell);
     this.state = r.state;
     // 出入口（段階47a）：つながった部屋へ移る。閉じていれば止まる
@@ -816,13 +876,16 @@ export class ExploreScene extends Phaser.Scene {
 
   /** 探索の状態を覚える（狩りはセーブしない run.hunt に。段階43） */
   private keep(state: ExploreState): void {
+    // 地図直しの試し歩き（段階121）はセーブに書かない（いる所は開き直す時のデータで渡す）
+    if (this.tune) return;
     if (this.hunting) setHuntState(state);
     else setExplore(state);
   }
 
   /** この画面を開き直す時のデータ（区画と、狩りかどうか） */
   private back(extra: Partial<ExploreData> = {}): ExploreData {
-    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, night: this.night || undefined, ...extra };
+    const tune = this.tune ? { room: this.state.room, cell: this.state.cell } : undefined;
+    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, night: this.night || undefined, tune, ...extra };
   }
 
   /** 狩りを終えて、レストピアの拠点へ戻る（段階43。段階50から、昼の時計屋ではなく拠点へ） */
@@ -879,6 +942,7 @@ export class ExploreScene extends Phaser.Scene {
   private updateHubButton(): void {
     if (!this.hubButton) return;
     this.hubButton.removeAll(true);
+    if (this.tune) return;
     const unlocks = storyLineup().unlocks;
     const target = unlocks.growth ? 'Growth' : unlocks.weapon ? 'Weapon' : null;
     if (this.walking || this.route.length > 0) return;
@@ -1080,6 +1144,7 @@ export class ExploreScene extends Phaser.Scene {
     e.mind = enemyNext(this.map, e.move, e.route, e.mind, player, tuning);
     e.alert?.setVisible(e.mind.chasing);
     const [c, r] = e.mind.cell;
+    this.shadeSprite(e.sprite, isShade(this.room, e.mind.cell));
     // 歩く向きに絵を向ける（左へ歩く時は左右を返す。上下に歩く時は今の向きのまま）
     const img = e.sprite.getData('art') as Phaser.GameObjects.Image | undefined;
     const dx = c * T + T / 2 - e.sprite.x;
@@ -1134,6 +1199,11 @@ export class ExploreScene extends Phaser.Scene {
   }
 }
 
+/** 屋根を重ねる絵の名前（段階121。開くたびに作り直す） */
+const ROOF_TEXTURE = 'exploreRoof';
+/** 陰に入った仲間・敵の色（段階121） */
+const SHADE_TINT = 0x8088a0;
+
 /** 上の帯（区画の名前・コマ・連携技と、その下の案内）の高さ */
 const TOP_BAND = 132;
 
@@ -1148,6 +1218,16 @@ const VITALS_WIDTH = GAME_WIDTH - 56;
 function hubLabel(): string {
   const u = storyLineup().unlocks;
   return [u.growth && '星図', u.navi && 'ムーブメント', u.weapon && '武器'].filter(Boolean).join('・');
+}
+
+/** 地図直しの試し歩き（段階121）で、部屋に入って立つマス：S か P、なければ最初の出入口の内側、なければ最初の歩けるマス */
+function tuneStart(room: RoomDef): GridCell {
+  let found: GridCell | null = null;
+  room.layout.forEach((line, r) => [...line].forEach((ch, c) => !found && (ch === 'S' || ch === 'P') && (found = [c, r])));
+  if (found) return found;
+  if (room.exits[0]) return entryCells(room, room.exits[0])[1];
+  room.layout.forEach((line, r) => [...line].forEach((ch, c) => !found && ch !== '#' && (found = [c, r])));
+  return found ?? [0, 0];
 }
 
 /** 2つのマスが、range マス以内（縦横斜め）か */

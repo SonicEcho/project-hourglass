@@ -3,12 +3,14 @@
 // 「書き出し」の文（exportMapEdits）を開発の会話に貼り、Claude が src/data に入れる
 import type { GridCell } from './grid';
 import type { AreaDef, RoomDef, RoomSide } from './explore';
-import { EXIT_WIDTH, ROOF, exitCells, entryCells, startRoom } from './explore';
+import { EXIT_WIDTH, ROOF, ROOF_FULL, ROOF_SPLIT, SHADE, exitCells, entryCells, roofMask, startRoom } from './explore';
 
 /** 部屋の直し：文字の地図の全部と、出入口の位置（辺ごとの最初のマス） */
 export interface RoomPatch {
   layout?: string[];
   exitAt?: Partial<Record<RoomSide, number>>;
+  /** 細かい屋根の全部（段階121。RoomDef の roofFine） */
+  roofFine?: Record<string, string>;
 }
 
 /**
@@ -72,7 +74,12 @@ export function isEmptyMapEdits(edits: MapEdits): boolean {
 export function patchRoom(room: RoomDef, edits: MapEdits): RoomDef {
   const p = edits.rooms[room.id];
   if (!p) return room;
-  return { ...room, ...(p.layout ? { layout: p.layout } : {}), ...(p.exitAt ? { exitAt: { ...room.exitAt, ...p.exitAt } } : {}) };
+  return {
+    ...room,
+    ...(p.layout ? { layout: p.layout } : {}),
+    ...(p.exitAt ? { exitAt: { ...room.exitAt, ...p.exitAt } } : {}),
+    ...(p.roofFine ? { roofFine: p.roofFine } : {}),
+  };
 }
 
 /** 区画に直しを重ねる（部屋・敵・宝箱・話せる人・採取・ぬし・晩の始めと帰り口・チェックポイントの会話） */
@@ -178,6 +185,7 @@ export function setPatrol(edits: MapEdits, original: AreaDef, thing: PlacedThing
 function setRoom(edits: MapEdits, original: RoomDef, patch: RoomPatch): MapEdits {
   const next: RoomPatch = { ...edits.rooms[original.id], ...patch };
   if (next.layout && next.layout.join('\n') === original.layout.join('\n')) delete next.layout;
+  if (next.roofFine && JSON.stringify(sortKeys(next.roofFine)) === JSON.stringify(sortKeys(original.roofFine ?? {}))) delete next.roofFine;
   if (next.exitAt) {
     const exitAt = { ...next.exitAt };
     for (const side of Object.keys(exitAt) as RoomSide[]) if (exitAt[side] === exitFrom(original, side)) delete exitAt[side];
@@ -185,7 +193,7 @@ function setRoom(edits: MapEdits, original: RoomDef, patch: RoomPatch): MapEdits
     else next.exitAt = exitAt;
   }
   const rooms = { ...edits.rooms };
-  if (next.layout || next.exitAt) rooms[original.id] = next;
+  if (next.layout || next.exitAt || next.roofFine) rooms[original.id] = next;
   else delete rooms[original.id];
   return { ...edits, rooms };
 }
@@ -203,8 +211,8 @@ function withCells(layout: string[], cells: GridCell[], ch: (old: string) => str
   return rows.map((r) => r.join(''));
 }
 
-/** 塗り方：歩ける（# と屋根の下を . に）・通れない（# に）・屋根の下（段階118。歩ける ^ に） */
-export type PaintMode = 'open' | 'block' | 'roof';
+/** 塗り方：歩ける（#・屋根の下・陰を . に）・通れない（# に）・屋根の下（段階118。歩ける ^ に）・陰（段階121。歩ける : に） */
+export type PaintMode = 'open' | 'block' | 'roof' | 'shade';
 
 /** マスを塗る。出発点 S とチェックポイント P はそのまま */
 export function paintCells(edits: MapEdits, original: RoomDef, cells: GridCell[], mode: PaintMode): MapEdits {
@@ -213,9 +221,37 @@ export function paintCells(edits: MapEdits, original: RoomDef, cells: GridCell[]
     if (old === 'S' || old === 'P') return old;
     if (mode === 'block') return '#';
     if (mode === 'roof') return ROOF;
-    return old === '#' || old === ROOF ? '.' : old;
+    if (mode === 'shade') return SHADE;
+    return old === '#' || old === ROOF || old === SHADE ? '.' : old;
   };
-  return setRoom(edits, original, { layout: withCells(room.layout, cells, to) });
+  // 屋根・歩けるで塗ったマスは、細かい屋根を外す（マス全部を決め直したので）
+  const fine = { ...room.roofFine };
+  if (mode === 'roof' || mode === 'open') for (const [c, r] of cells) delete fine[`${c},${r}`];
+  return setRoom(edits, original, { layout: withCells(room.layout, cells, to), roofFine: fine });
+}
+
+/**
+ * 細かい屋根を塗る（段階121）。sub は小さな四角の位置（列・行。マスの列 × 4 + マスの中の左から何番目）。on が false なら外す。
+ * 全部屋根になったマスと、全部外れたマスも、細かい屋根として書く（文字の地図の ^ より優先）。元のマスと同じになったら書かない
+ */
+export function paintRoofFine(edits: MapEdits, original: RoomDef, subs: GridCell[], on: boolean): MapEdits {
+  const room = patchRoom(original, edits);
+  const fine = { ...room.roofFine };
+  for (const [sx, sy] of subs) {
+    const [c, r] = [Math.floor(sx / ROOF_SPLIT), Math.floor(sy / ROOF_SPLIT)];
+    if (room.layout[r]?.[c] === undefined) continue;
+    const bit = 1 << ((sy % ROOF_SPLIT) * ROOF_SPLIT + (sx % ROOF_SPLIT));
+    const before = roofMask({ ...room, roofFine: fine }, c, r);
+    const mask = on ? before | bit : before & ~bit;
+    const base = room.layout[r][c] === ROOF ? ROOF_FULL : 0;
+    if (mask === base) delete fine[`${c},${r}`];
+    else fine[`${c},${r}`] = mask.toString(16).padStart(4, '0');
+  }
+  return setRoom(edits, original, { roofFine: fine });
+}
+
+function sortKeys(o: Record<string, string>): [string, string][] {
+  return Object.entries(o).sort(([a], [b]) => (a < b ? -1 : 1));
 }
 
 /** S・P の記号を別のマスへ動かす（前のマスは歩ける所に。チェックポイントの会話も一緒に動かす） */
