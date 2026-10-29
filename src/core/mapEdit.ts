@@ -11,10 +11,14 @@ export interface RoomPatch {
   exitAt?: Partial<Record<RoomSide, number>>;
 }
 
-/** 直した中身。rooms は部屋の id ごと、things は thingKey ごとの新しいマス（敵は見回りの最初の点） */
+/**
+ * 直した中身。rooms は部屋の id ごと、things は thingKey ごとの新しいマス（敵は見回りの最初の点）。
+ * patrols は敵の見回りの道の引き直し（段階119。thingKey ごとの折り返しの点の全部。引き直した敵は things に書かない）
+ */
 export interface MapEdits {
   rooms: Record<string, RoomPatch>;
   things: Record<string, GridCell>;
+  patrols?: Record<string, GridCell[]>;
 }
 
 /** 動かせる物の種類。start・exit は晩の始め・帰り口（id は何晩目か）、trigger はチェックポイントの会話（id は場面） */
@@ -43,7 +47,7 @@ export function thingKey(areaId: string, kind: ThingKind, id: string): string {
 
 /** 直しが1つもないか */
 export function isEmptyMapEdits(edits: MapEdits): boolean {
-  return Object.keys(edits.rooms).length === 0 && Object.keys(edits.things).length === 0;
+  return Object.keys(edits.rooms).length === 0 && Object.keys(edits.things).length === 0 && Object.keys(edits.patrols ?? {}).length === 0;
 }
 
 /** 部屋に直しを重ねる */
@@ -65,6 +69,8 @@ export function applyMapEdits(area: AreaDef, edits: MapEdits): AreaDef {
     ...area,
     rooms: area.rooms.map((r) => patchRoom(r, edits)),
     enemies: area.enemies.map((e) => {
+      const route = edits.patrols?.[thingKey(area.id, 'enemy', e.id)];
+      if (route && route.length > 0) return { ...e, patrol: route };
       const c = at('enemy', e.id);
       if (!c) return e;
       const [dc, dr] = [c[0] - e.patrol[0][0], c[1] - e.patrol[0][1]];
@@ -113,13 +119,34 @@ export function placedThings(area: AreaDef, room: string): PlacedThing[] {
   return out;
 }
 
-/** 物を動かす（元の位置に戻した時は、直しから外す） */
+/** 物を動かす（元の位置に戻した時は、直しから外す）。見回りの道を引き直した敵は、引き直した道ごとずらす */
 export function moveThing(edits: MapEdits, original: AreaDef, thing: PlacedThing, cell: GridCell): MapEdits {
+  const route = thing.kind === 'enemy' ? edits.patrols?.[thing.key] : undefined;
+  if (route && route.length > 0) {
+    const [dc, dr] = [cell[0] - route[0][0], cell[1] - route[0][1]];
+    return setPatrol(edits, original, thing, route.map(([x, y]): GridCell => [x + dc, y + dr]));
+  }
   const base = placedThings(original, thing.room).find((t) => t.key === thing.key)?.cell;
   const things = { ...edits.things };
   if (base && base[0] === cell[0] && base[1] === cell[1]) delete things[thing.key];
   else things[thing.key] = [cell[0], cell[1]];
   return { ...edits, things };
+}
+
+/**
+ * 敵の見回りの道を引き直す（段階119）。route は折り返しの点の全部（最初の点が敵の立つ所。1点なら動かない、2点なら行き来、3点以上なら輪）。
+ * 元の道と同じなら直しから外す。引き直した敵の位置の直し（things）は、道の最初の点に含めるので外す
+ */
+export function setPatrol(edits: MapEdits, original: AreaDef, thing: PlacedThing, route: GridCell[]): MapEdits {
+  const base = original.enemies.find((e) => thingKey(original.id, 'enemy', e.id) === thing.key)?.patrol ?? [];
+  const patrols = { ...edits.patrols };
+  const things = { ...edits.things };
+  delete things[thing.key];
+  if (JSON.stringify(base) === JSON.stringify(route)) delete patrols[thing.key];
+  else patrols[thing.key] = route.map(([x, y]): GridCell => [x, y]);
+  const next: MapEdits = { ...edits, things, patrols };
+  if (Object.keys(patrols).length === 0) delete next.patrols;
+  return next;
 }
 
 /** 部屋の直しを1つ書き換える（元と同じになったら外す） */
@@ -227,7 +254,8 @@ export function parseMapEdits(text: string | null): MapEdits {
     const v = JSON.parse(json) as Partial<MapEdits>;
     const rooms = v.rooms && typeof v.rooms === 'object' ? v.rooms : {};
     const things = v.things && typeof v.things === 'object' ? v.things : {};
-    return { rooms, things };
+    const patrols = v.patrols && typeof v.patrols === 'object' ? v.patrols : null;
+    return patrols && Object.keys(patrols).length > 0 ? { rooms, things, patrols } : { rooms, things };
   } catch {
     return emptyMapEdits();
   }

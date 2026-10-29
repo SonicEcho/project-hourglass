@@ -4,6 +4,7 @@
 使い方：python3 scripts/apply_map_edits.py 書き出しの文.txt
 - rooms：rooms.ts の、その部屋の文字の地図の定数を、書き出しの文字の地図に置き換える（式で作っていた定数も、文字の並びにする）。exitAt は部屋の行に書く
 - things：areas.ts の、その区画の物の位置を書き換える（敵は見回りの道ごとずらす）
+- patrols：areas.ts の、敵の見回りの道を書き換える（段階119）
 入れた後は npx vitest run で checkArea のテストを通すこと
 """
 import json
@@ -82,13 +83,26 @@ def apply_things(src, things):
     return src
 
 
+def apply_patrols(src, patrols):
+    """敵の見回りの道の引き直し（段階119）：patrol を、書き出しの折り返しの点の全部に置き換える"""
+    for key, route in patrols.items():
+        _, _, tid = key.split('/')
+        m = re.search(rf"\{{ id: '{tid}'[^\n]*?patrol: (\[\[[^\n]*?\]\])", src)
+        if not m:
+            sys.exit(f'{key} が areas.ts にない')
+        new = '[' + ', '.join(f'[{x}, {y}]' for x, y in route) + ']'
+        src = src[: m.start(1)] + new + src[m.end(1):]
+    return src
+
+
 def main():
     edits = load(sys.argv[1])
     rooms = open(ROOMS, encoding='utf-8').read()
     open(ROOMS, 'w', encoding='utf-8').write(apply_rooms(rooms, edits.get('rooms', {})))
     areas = open(AREAS, encoding='utf-8').read()
-    open(AREAS, 'w', encoding='utf-8').write(apply_things(areas, edits.get('things', {})))
-    print(f"部屋 {len(edits.get('rooms', {}))}・物 {len(edits.get('things', {}))} を入れた")
+    areas = apply_things(areas, edits.get('things', {}))
+    open(AREAS, 'w', encoding='utf-8').write(apply_patrols(areas, edits.get('patrols', {})))
+    print(f"部屋 {len(edits.get('rooms', {}))}・物 {len(edits.get('things', {}))}・敵の道 {len(edits.get('patrols', {}))} を入れた")
 
 
 if __name__ == '__main__':

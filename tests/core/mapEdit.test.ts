@@ -18,6 +18,7 @@ import {
   parseMapEdits,
   patchRoom,
   placedThings,
+  setPatrol,
 } from '../../src/core';
 
 // 段階117：地図の調整（スマホで部屋の歩ける場所・出入口・物の位置を直す）
@@ -97,6 +98,20 @@ describe('地図の調整', () => {
     let edits = moveThing(emptyMapEdits(), AREA, enemy, [2, 5]);
     expect(applyMapEdits(AREA, edits).enemies[0].patrol).toEqual([[2, 5], [5, 5]]);
     edits = moveThing(edits, AREA, enemy, [2, 2]);
+    expect(isEmptyMapEdits(edits)).toBe(true);
+  });
+
+  it('敵の見回りの道を引き直す（段階119）：元の道と同じなら外れ、引き直した後に動かすと道ごとずれる', () => {
+    const enemy = placedThings(AREA, 'r1').find((t) => t.kind === 'enemy')!;
+    let edits = moveThing(emptyMapEdits(), AREA, enemy, [2, 5]);
+    edits = setPatrol(edits, AREA, { ...enemy, cell: [2, 5] }, [[2, 5], [6, 5], [6, 7]]);
+    expect(edits.things).toEqual({});
+    expect(applyMapEdits(AREA, edits).enemies[0].patrol).toEqual([[2, 5], [6, 5], [6, 7]]);
+    expect(checkArea(applyMapEdits(AREA, edits))).toEqual([]);
+    edits = moveThing(edits, AREA, enemy, [3, 5]);
+    expect(applyMapEdits(AREA, edits).enemies[0].patrol).toEqual([[3, 5], [7, 5], [7, 7]]);
+    expect(parseMapEdits(exportMapEdits(edits))).toEqual(edits);
+    edits = setPatrol(edits, AREA, enemy, [[2, 2], [5, 2]]);
     expect(isEmptyMapEdits(edits)).toBe(true);
   });
 
