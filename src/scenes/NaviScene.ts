@@ -30,6 +30,8 @@ const LIST_COLS = 4;
 const LIST_BOTTOM = 766;
 const CHIP_H = 50;
 const CHIP_GAP = 6;
+/** これだけ指が動いたら、タップではなく一覧をずらしたことにする */
+const DRAG_THRESHOLD = 8;
 
 const key = ([c, r]: Cell) => `${c},${r}`;
 
@@ -43,6 +45,15 @@ export class NaviScene extends Phaser.Scene {
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
   private cell = MAX_CELL;
+  /** 一覧をずらした量（段階127。描き直しても残す） */
+  private listScroll = 0;
+  private listLayer?: Phaser.GameObjects.Container;
+  private listBar?: Phaser.GameObjects.Rectangle;
+  private listMask?: Phaser.GameObjects.Graphics;
+  /** 一覧を指でずらし始めた所 */
+  private listDrag: { y: number; scroll: number } | null = null;
+  /** 今の指の押し下げで、一覧をずらしたか（ずらした時はギアを選ばない） */
+  private listDragged = false;
 
   constructor() {
     super('Navi');
@@ -54,6 +65,11 @@ export class NaviScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
     this.clearSelection();
+    this.listScroll = 0;
+    this.listMask = undefined;
+    this.listDrag = null;
+    this.listDragged = false;
+    this.setupListDrag();
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
@@ -471,34 +487,105 @@ export class NaviScene extends Phaser.Scene {
     addButton(this, this.root, bx, top + 100, 108, 34, '外す', { onTap: () => this.remove() }, { enabled: !!sel.placement, size: 13 });
   }
 
-  /** 持っているギアの一覧 */
+  /** 一覧の見える範囲（段階127。ギアが多い時は、この中を上下にずらす） */
+  private listView(): { top: number; bottom: number } {
+    return { top: LIST_TOP + 18, bottom: LIST_BOTTOM };
+  }
+
+  /** 一覧をずらせる最大の量 */
+  private maxListScroll(): number {
+    const rows = Math.max(1, Math.ceil(run.navi.parts.length / LIST_COLS));
+    const content = rows * (CHIP_H + CHIP_GAP) - CHIP_GAP;
+    const v = this.listView();
+    return Math.max(0, content - (v.bottom - v.top));
+  }
+
+  /**
+   * 持っているギアの一覧。
+   * 段階127（開発者の選んだ案B）：前はギアが多いと枠を詰めて形の絵を消していた。枠の大きさと形の絵はそのままにし、多い時は指で上下にずらす
+   */
   private drawList(): void {
     const parts = run.navi.parts;
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - CHIP_GAP * (LIST_COLS - 1)) / LIST_COLS;
-    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで詳細`, { size: 11, color: COLORS.subText }));
-    // 多い時は1つの高さを詰めて収める
-    const rows = Math.max(1, Math.ceil(parts.length / LIST_COLS));
-    const chipH = Math.min(CHIP_H, (LIST_BOTTOM - LIST_TOP - 18 - CHIP_GAP * (rows - 1)) / rows);
-    const compact = chipH < 40;
+    const v = this.listView();
+    const max = this.maxListScroll();
+    this.listScroll = Math.max(0, Math.min(this.listScroll, max));
+    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで詳細${max > 0 ? '・上下にずらせる' : ''}`, { size: 11, color: COLORS.subText }));
+    const layer = this.add.container(0, -this.listScroll);
+    this.root.add(layer);
+    this.listLayer = layer;
+    this.listMask?.destroy();
+    this.listMask = this.make.graphics({}).fillRect(0, v.top - 2, GAME_WIDTH, v.bottom - v.top + 4);
+    layer.setMask(this.listMask.createGeometryMask());
     parts.forEach((p, i) => {
       const def = currentNaviData().parts[p.partId];
       const x = SIDE_PADDING + (i % LIST_COLS) * (w + CHIP_GAP);
-      const y = LIST_TOP + 18 + Math.floor(i / LIST_COLS) * (chipH + CHIP_GAP);
+      const y = v.top + Math.floor(i / LIST_COLS) * (CHIP_H + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
-      const rect = this.add.rectangle(x, y, w, chipH, p.placement ? COLORS.panel : COLORS.panelLight).setRounded(8).setOrigin(0);
+      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? COLORS.panel : COLORS.panelLight).setRounded(8).setOrigin(0);
       rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : COLORS.border);
-      this.root.add(rect);
-      if (!compact) drawPartShape(this, this.root, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
-      this.root.add(addText(this, x + 4, y + chipH - 16, def.name, { size: 10, color: p.placement ? COLORS.subText : COLORS.text }));
+      layer.add(rect);
+      drawPartShape(this, layer, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
+      layer.add(addText(this, x + 4, y + CHIP_H - 16, def.name, { size: 10, color: p.placement ? COLORS.subText : COLORS.text }));
       if (p.placement) {
         const owner = p.placement.charId;
         const name = PARTY.find((c) => c.id === owner)?.name.slice(0, 1) ?? '';
-        const cy = compact ? y + chipH / 2 : y + 12;
-        this.root.add(this.add.circle(x + w - 11, cy, 9, ALLY_COLOR[owner] ?? COLORS.ally));
-        this.root.add(addText(this, x + w - 11, cy, name, { size: 10, bold: true }).setOrigin(0.5));
+        layer.add(this.add.circle(x + w - 11, y + 12, 9, ALLY_COLOR[owner] ?? COLORS.ally));
+        layer.add(addText(this, x + w - 11, y + 12, name, { size: 10, bold: true }).setOrigin(0.5));
       }
-      makePressable(rect, { onTap: () => this.tapChip(p), onLongPress: () => this.showPartDetail(p) });
+      // ずらした時と、見えていない所（一覧の外）を押した時は、選ばない
+      makePressable(rect, {
+        onTap: () => this.chipPressOk() && this.tapChip(p),
+        onLongPress: () => this.chipPressOk() && this.showPartDetail(p),
+      });
     });
+    // ずらせる時は、右の端に今どのあたりかの帯
+    this.listBar = undefined;
+    if (max > 0) {
+      const h = v.bottom - v.top;
+      const barH = Math.max(24, (h * h) / (h + max));
+      this.root.add(this.add.rectangle(GAME_WIDTH - 3, v.top, 3, h, 0xffffff, 0.08).setOrigin(0.5, 0));
+      this.listBar = this.add.rectangle(GAME_WIDTH - 3, v.top, 3, barH, COLORS.accent, 0.8).setOrigin(0.5, 0);
+      this.root.add(this.listBar);
+      this.moveListBar();
+    }
+  }
+
+  private moveListBar(): void {
+    if (!this.listBar) return;
+    const v = this.listView();
+    const max = this.maxListScroll();
+    this.listBar.y = v.top + (max > 0 ? (this.listScroll / max) * (v.bottom - v.top - this.listBar.height) : 0);
+  }
+
+  /** 一覧のギアを押してよいか（ずらしていない、かつ一覧の見える範囲の中） */
+  private chipPressOk(): boolean {
+    if (this.listDragged) return false;
+    const p = this.input.activePointer;
+    const y = this.cameras.main.getWorldPoint(p.x, p.y).y;
+    const v = this.listView();
+    return y >= v.top && y <= v.bottom;
+  }
+
+  /** 一覧を指で上下にずらす（段階127） */
+  private setupListDrag(): void {
+    const world = (p: Phaser.Input.Pointer) => this.cameras.main.getWorldPoint(p.x, p.y);
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      this.listDragged = false;
+      const y = world(p).y;
+      const v = this.listView();
+      this.listDrag = !this.overlay && y >= v.top && y <= v.bottom && this.maxListScroll() > 0 ? { y, scroll: this.listScroll } : null;
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!this.listDrag || !p.isDown) return;
+      const dy = world(p).y - this.listDrag.y;
+      if (!this.listDragged && Math.abs(dy) < DRAG_THRESHOLD) return;
+      this.listDragged = true;
+      this.listScroll = Math.max(0, Math.min(this.listDrag.scroll - dy, this.maxListScroll()));
+      if (this.listLayer) this.listLayer.y = -this.listScroll;
+      this.moveListBar();
+    });
+    this.input.on('pointerup', () => (this.listDrag = null));
   }
 
   private showPartDetail(p: OwnedPart): void {
