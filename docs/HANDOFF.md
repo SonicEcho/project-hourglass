@@ -112,7 +112,7 @@
 
 ## 確かめ方のコツ
 
-- `npx tsc --noEmit`、`npx vitest run`、`npm run build`、`npm run e2e`（通しの自動確認、約1分）がすべて通ってからコミットする
+- `npx tsc --noEmit`、`npx vitest run`、`npm run build` が通ってからコミットする。`npm run e2e`（通しの自動確認。クラウドの作業環境では約10分かかる）は、変更の種類で分ける（手元の `npm run e2e` は、画面の移り変わり・保存・物語の流れ・e2e が押すボタンの文字を変えた時だけ。文書だけ・1つの画面の見た目や文字だけの変更では回さず、その画面の写真で確かめ、push 後に GitHub Actions の e2e の結果を確かめる。2026-10-30 開発者と決めた）
 - `src/` に新しい漢字などを書いたら `python3 scripts/font-subset.py` で見出しの書体を作り直す（`pip install fonttools brotli`。忘れるとテストが失敗する）
 - 見た目を変えたら `node scripts/screens.mjs <フォルダ>`（`npm run build` の後）で主な画面を撮って見比べる
 - `src/data` を変えたら `npm run data:tables` で `docs/data/` の表を作り直す（忘れるとテストが失敗する）
