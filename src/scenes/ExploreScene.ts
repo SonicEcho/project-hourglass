@@ -49,7 +49,6 @@ import {
   huntRewardRate,
   applyMapEdits,
   isEmptyMapEdits,
-  ROOF,
   roofCells,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
@@ -482,7 +481,6 @@ export class ExploreScene extends Phaser.Scene {
     world.add(this.player);
     this.roof = this.drawRoof(room);
     if (this.roof) world.add(this.roof);
-    this.updateRoof(this.state.cell, false);
 
     // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない。
     // 動ける範囲は、地図の上と下に帯の高さの分だけ広げる（地図の上の端と下の端が、帯に隠れたままにならないように。段階58）
@@ -603,7 +601,7 @@ export class ExploreScene extends Phaser.Scene {
 
   /**
    * 屋根や木の下（段階118）：文字の地図の ^ のマスに、地図の絵の同じ所を切り抜いて、仲間と敵の上にもう一度重ねる
-   * （横に続くマスは1枚にまとめる）。絵のない部屋は暗い四角
+   * （横に続くマスは1枚にまとめる）。真下にいてもすかさない（すかすと変に見えた。開発者の確認 2026-10-29）。絵のない部屋は暗い四角
    */
   private drawRoof(room: RoomDef): Phaser.GameObjects.Container | undefined {
     const cells = roofCells(room);
@@ -626,16 +624,6 @@ export class ExploreScene extends Phaser.Scene {
     return box;
   }
 
-  /** 仲間が屋根の下のマスにいる間は、重ねた絵を半分すかす（自分の位置が分かるように。段階118） */
-  private updateRoof(cell: GridCell, animate: boolean): void {
-    if (!this.roof) return;
-    const alpha = this.room.layout[cell[1]]?.[cell[0]] === ROOF ? 0.45 : 1;
-    if (this.roof.alpha === alpha) return;
-    this.tweens.killTweensOf(this.roof);
-    if (animate) this.tweens.add({ targets: this.roof, alpha, duration: 200 });
-    else this.roof.setAlpha(alpha);
-  }
-
   /** 地図の調整を始める（段階117）：歩くのと敵を止め、地図の上の物を隠して、マス目と道具を出す */
   private openEditor(): void {
     if (this.editor || this.leaving || !this.world || !this.ui || this.tipOpen) return;
@@ -653,6 +641,7 @@ export class ExploreScene extends Phaser.Scene {
       edits: loadMapEdits(),
       topBand: TOP_BAND,
       bottomBand: vitalsBandHeight(currentParty(storyBattleLineup()).length),
+      night: this.night,
       say: (text) => this.say(text),
       close: () => {
         // 直した地図で開き直す（今いるマスが通れなくなっていても、タップすると近くの歩ける所へ歩く）
@@ -718,7 +707,6 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.walking = true;
     this.nextCell = next;
-    this.updateRoof(next, true);
     const walk = this.tweens.add({
       targets: this.player,
       x: next[0] * T + T / 2,

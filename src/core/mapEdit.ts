@@ -19,6 +19,18 @@ export interface MapEdits {
   rooms: Record<string, RoomPatch>;
   things: Record<string, GridCell>;
   patrols?: Record<string, GridCell[]>;
+  /** 足した宝箱（段階120。thingKey ごとの部屋・マス・出る晩。中身は Claude が src/data に入れる時に決める。調整の間は空） */
+  newChests?: Record<string, NewChest>;
+  /** 消した宝箱（段階120。元のデータの宝箱の thingKey） */
+  removedChests?: string[];
+}
+
+/** 地図の調整で足した宝箱 */
+export interface NewChest {
+  room: string;
+  cell: GridCell;
+  /** 何晩目から出るか（晩に分けた区画で、足した時の晩） */
+  night?: number;
 }
 
 /** 動かせる物の種類。start・exit は晩の始め・帰り口（id は何晩目か）、trigger はチェックポイントの会話（id は場面） */
@@ -47,7 +59,13 @@ export function thingKey(areaId: string, kind: ThingKind, id: string): string {
 
 /** 直しが1つもないか */
 export function isEmptyMapEdits(edits: MapEdits): boolean {
-  return Object.keys(edits.rooms).length === 0 && Object.keys(edits.things).length === 0 && Object.keys(edits.patrols ?? {}).length === 0;
+  return (
+    Object.keys(edits.rooms).length === 0 &&
+    Object.keys(edits.things).length === 0 &&
+    Object.keys(edits.patrols ?? {}).length === 0 &&
+    Object.keys(edits.newChests ?? {}).length === 0 &&
+    (edits.removedChests ?? []).length === 0
+  );
 }
 
 /** 部屋に直しを重ねる */
@@ -76,7 +94,12 @@ export function applyMapEdits(area: AreaDef, edits: MapEdits): AreaDef {
       const [dc, dr] = [c[0] - e.patrol[0][0], c[1] - e.patrol[0][1]];
       return { ...e, patrol: e.patrol.map(([x, y]): GridCell => [x + dc, y + dr]) };
     }),
-    chests: area.chests.map((x) => moved('chest', x)),
+    chests: [
+      ...area.chests.filter((x) => !edits.removedChests?.includes(thingKey(area.id, 'chest', x.id))).map((x) => moved('chest', x)),
+      ...Object.entries(edits.newChests ?? {})
+        .filter(([key]) => key.startsWith(`${area.id}/chest/`))
+        .map(([key, c]) => ({ id: key.split('/')[2], room: c.room, cell: c.cell, items: [], ...(c.night ? { night: c.night } : {}) })),
+    ],
     talkers: area.talkers.map((x) => moved('talker', x)),
     boss: moved('boss', area.boss),
     ...(area.hunt ? { hunt: { ...area.hunt, gathers: area.hunt.gathers.map((x) => moved('gather', x)) } } : {}),
@@ -121,6 +144,8 @@ export function placedThings(area: AreaDef, room: string): PlacedThing[] {
 
 /** 物を動かす（元の位置に戻した時は、直しから外す）。見回りの道を引き直した敵は、引き直した道ごとずらす */
 export function moveThing(edits: MapEdits, original: AreaDef, thing: PlacedThing, cell: GridCell): MapEdits {
+  const added = edits.newChests?.[thing.key];
+  if (added) return { ...edits, newChests: { ...edits.newChests, [thing.key]: { ...added, cell: [cell[0], cell[1]] } } };
   const route = thing.kind === 'enemy' ? edits.patrols?.[thing.key] : undefined;
   if (route && route.length > 0) {
     const [dc, dr] = [cell[0] - route[0][0], cell[1] - route[0][1]];
@@ -241,6 +266,29 @@ export function exitAtTap(room: RoomDef, cell: GridCell): { side: RoomSide; firs
   return { side, first: along - 1 };
 }
 
+/** 宝箱を足す（段階120）。id は「区画_chest_new番号」 */
+export function addChest(edits: MapEdits, area: AreaDef, room: string, cell: GridCell, night = 0): MapEdits {
+  const used = new Set([...area.chests.map((c) => c.id), ...Object.keys(edits.newChests ?? {}).map((k) => k.split('/')[2])]);
+  let n = 1;
+  while (used.has(`${area.id}_chest_new${n}`)) n++;
+  const key = thingKey(area.id, 'chest', `${area.id}_chest_new${n}`);
+  return { ...edits, newChests: { ...edits.newChests, [key]: { room, cell: [cell[0], cell[1]], ...(night > 0 ? { night } : {}) } } };
+}
+
+/** 宝箱を消す（段階120）。足した宝箱はなかったことにし、元の宝箱は消した印を付ける（動かした直しも外す） */
+export function removeChest(edits: MapEdits, thing: PlacedThing): MapEdits {
+  if (edits.newChests?.[thing.key]) {
+    const newChests = { ...edits.newChests };
+    delete newChests[thing.key];
+    const next: MapEdits = { ...edits, newChests };
+    if (Object.keys(newChests).length === 0) delete next.newChests;
+    return next;
+  }
+  const things = { ...edits.things };
+  delete things[thing.key];
+  return { ...edits, things, removedChests: [...(edits.removedChests ?? []), thing.key] };
+}
+
 /** 開発の会話に貼る文（1行目は見出し、2行目から JSON） */
 export function exportMapEdits(edits: MapEdits): string {
   return `地図の調整（段階117）\n${JSON.stringify(edits, null, 1)}`;
@@ -254,8 +302,11 @@ export function parseMapEdits(text: string | null): MapEdits {
     const v = JSON.parse(json) as Partial<MapEdits>;
     const rooms = v.rooms && typeof v.rooms === 'object' ? v.rooms : {};
     const things = v.things && typeof v.things === 'object' ? v.things : {};
-    const patrols = v.patrols && typeof v.patrols === 'object' ? v.patrols : null;
-    return patrols && Object.keys(patrols).length > 0 ? { rooms, things, patrols } : { rooms, things };
+    const out: MapEdits = { rooms, things };
+    if (v.patrols && typeof v.patrols === 'object' && Object.keys(v.patrols).length > 0) out.patrols = v.patrols;
+    if (v.newChests && typeof v.newChests === 'object' && Object.keys(v.newChests).length > 0) out.newChests = v.newChests;
+    if (Array.isArray(v.removedChests) && v.removedChests.length > 0) out.removedChests = v.removedChests;
+    return out;
   } catch {
     return emptyMapEdits();
   }

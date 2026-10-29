@@ -15,7 +15,7 @@ export const LOST_ITEMS: LostItemDef[] = [
     owner: 'ゆうま',
     text: '縁日の記憶。屋台の並びの外れで、何か小さな物が光っている。ひなのちゃんの髪に、同じ色があった気がする',
     kind: 'find',
-    spot: { room: 'festival_night', cell: [17, 14] },
+    spot: { room: 'festival_night', cell: [16, 12] },
     deliverScene: 'lost_a11_deliver',
     reward: { fragments: ['elation', 'elation', 'relief'], snaps: ['quickStep'] },
   },
