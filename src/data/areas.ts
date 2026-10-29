@@ -309,8 +309,8 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱と浴衣の女の人の所。砂嵐は入るたびに縁日の戦闘から選ぶ
     hunt: {
       gathers: [
-        { id: 'a11_gather_goldfish', room: 'festival_night', cell: [7, 30], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
-        { id: 'a11_gather_ramune', room: 'festival_night', cell: [17, 26], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
+        { id: 'a11_gather_goldfish', room: 'fest_east', cell: [13, 23], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
+        { id: 'a11_gather_ramune', room: 'festival_night', cell: [12, 8], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
         { id: 'a11_gather_yukata', room: 'festival_night', cell: [1, 17], items: [ITEMS.maskShard.id] },
         { id: 'a11_gather_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
       ],
@@ -322,11 +322,11 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a11_chest_goldfish', room: 'festival_night', cell: [7, 30], items: [ITEMS.goldfishScale.id, ITEMS.potion.id] },
+      { id: 'a11_chest_goldfish', room: 'fest_east', cell: [13, 23], items: [ITEMS.goldfishScale.id, ITEMS.potion.id] },
       { id: 'a11_chest_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
-      { id: 'a11_chest_west', room: 'festival_night', cell: [8, 17], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
+      { id: 'a11_chest_west', room: 'fest_backyard', cell: [6, 22], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
       { id: 'a11_chest_woods', room: 'fest_woods', cell: [4, 3], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
-      { id: 'a11_chest_new1', room: 'festival_night', cell: [17, 26], night: 3, items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
+      { id: 'a11_chest_new1', room: 'fest_woods', cell: [20, 6], night: 3, items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
       { id: 'a11_chest_new2', room: 'festival_night', cell: [1, 17], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
     ],
     enemies: [
