@@ -21,8 +21,13 @@ import {
   setPatrol,
   addChest,
   removeChest,
-  chestKeysInRoom,
+  chestKeys,
   placeChestInOrder,
+  moveChestTo,
+  linkedGather,
+  overviewLayout,
+  overviewCell,
+  OVERVIEW_GAP,
   paintRoofFine,
   roofMask,
   isShade,
@@ -168,27 +173,56 @@ describe('地図の調整', () => {
     expect(applyMapEdits({ ...AREA, id: 'az' }, edits).chests.map((c) => c.id)).toEqual(['c1']);
   });
 
-  it('宝箱をまとめて置き直す（段階122）：持ち上げた宝箱が、タップした順に中身のまま移り、置き終えたら新しい宝箱を足す', () => {
-    const area: AreaDef = { ...AREA, chests: [...AREA.chests, { id: 'c2', cell: [6, 3], items: ['potion'] }] };
-    let edits = addChest(emptyMapEdits(), area, 'r1', [3, 7]);
-    let waiting = chestKeysInRoom(applyMapEdits(area, edits), 'r1');
-    expect(waiting).toEqual(['ax/chest/c1', 'ax/chest/c2', 'ax/chest/ax_chest_new1']);
-    // 2つ目を先に消しても、次に置くのは残っている宝箱
-    edits = removeChest(edits, placedThings(area, 'r1').find((t) => t.id === 'c2')!);
-    ({ edits, waiting } = placeChestInOrder(edits, area, 'r1', waiting, [2, 4]));
-    expect(waiting).toEqual(['ax/chest/ax_chest_new1']);
-    ({ edits, waiting } = placeChestInOrder(edits, area, 'r1', waiting, [2, 5]));
+  // 段階123：全体地図で、区画のどの部屋へでも宝箱を置く
+  const AREA2: AreaDef = {
+    ...AREA,
+    rooms: [ROOM, ROOM2],
+    links: [{ a: { room: 'r1', side: 'left' }, b: { room: 'r2', side: 'left' } }],
+    chests: [...AREA.chests, { id: 'c2', room: 'r2', cell: [6, 3], items: ['potion'] }],
+    hunt: { gathers: [{ id: 'g1', cell: [6, 2], items: [] }, { id: 'g2', room: 'r2', cell: [8, 8], items: [] }] },
+  };
+
+  it('宝箱を別の部屋へ動かす（段階123）：中身と id はそのままで、同じマスの採取の場所も一緒に動く。元に戻すと直しから外れる', () => {
+    expect(linkedGather(AREA2, 'ax/chest/c1')).toBe('ax/gather/g1');
+    expect(linkedGather(AREA2, 'ax/chest/c2')).toBeUndefined();
+    let edits = moveChestTo(emptyMapEdits(), AREA2, 'ax/chest/c1', 'r2', [3, 4]);
+    expect(edits.thingRooms).toEqual({ 'ax/chest/c1': 'r2', 'ax/gather/g1': 'r2' });
+    const a = applyMapEdits(AREA2, edits);
+    expect(a.chests[0]).toEqual({ id: 'c1', cell: [3, 4], items: [], room: 'r2' });
+    expect(a.hunt!.gathers[0]).toEqual({ id: 'g1', cell: [3, 4], items: [], room: 'r2' });
+    expect(placedThings(a, 'r2').filter((t) => t.kind === 'chest').map((t) => t.id)).toEqual(['c1', 'c2']);
+    expect(parseMapEdits(exportMapEdits(edits))).toEqual(edits);
+    edits = moveChestTo(edits, AREA2, 'ax/chest/c1', 'r1', [6, 2]);
+    expect(isEmptyMapEdits(edits)).toBe(true);
+    // 足した宝箱は、newChests の部屋とマスが変わる
+    edits = addChest(emptyMapEdits(), AREA2, 'r1', [3, 7], 2);
+    edits = moveChestTo(edits, AREA2, 'ax/chest/ax_chest_new1', 'r2', [2, 2]);
+    expect(edits.newChests).toEqual({ 'ax/chest/ax_chest_new1': { room: 'r2', cell: [2, 2], night: 2 } });
+  });
+
+  it('持ち上げた宝箱を順に置く（段階122・123）：タップした部屋とマスへ順に移り、置き終えたら新しい宝箱を足す', () => {
+    let edits = emptyMapEdits();
+    let waiting = chestKeys(AREA2);
+    expect(waiting).toEqual(['ax/chest/c1', 'ax/chest/c2']);
+    // 先に消した宝箱は飛ばす
+    edits = removeChest(edits, placedThings(AREA2, 'r1').find((t) => t.id === 'c1')!);
+    ({ edits, waiting } = placeChestInOrder(edits, AREA2, waiting, 'r1', [2, 4]));
     expect(waiting).toEqual([]);
-    let a = applyMapEdits(area, edits);
-    expect(a.chests.map((c) => [c.id, c.cell])).toEqual([
-      ['c1', [2, 4]],
-      ['ax_chest_new1', [2, 5]],
-    ]);
-    // 持ち上げた分を置き終えた後は、新しい宝箱を足す（今の晩から）
-    ({ edits, waiting } = placeChestInOrder(edits, area, 'r1', waiting, [2, 6], 2));
-    a = applyMapEdits(area, edits);
-    expect(a.chests.map((c) => c.id)).toEqual(['c1', 'ax_chest_new1', 'ax_chest_new2']);
-    expect(a.chests[2]).toEqual({ id: 'ax_chest_new2', room: 'r1', cell: [2, 6], items: [], night: 2 });
+    let a = applyMapEdits(AREA2, edits);
+    expect(a.chests.map((c) => [c.id, c.room, c.cell])).toEqual([['c2', 'r1', [2, 4]]]);
+    ({ edits, waiting } = placeChestInOrder(edits, AREA2, waiting, 'r2', [2, 6], 2));
+    a = applyMapEdits(AREA2, edits);
+    expect(a.chests[1]).toEqual({ id: 'ax_chest_new1', room: 'r2', cell: [2, 6], items: [], night: 2 });
+  });
+
+  it('全体地図の並び（段階123）：部屋はつなぎの向きに並び、全体のマスから部屋とマスがわかる', () => {
+    const layout = overviewLayout(AREA2);
+    // r2 は r1 の左
+    expect(layout.offsets).toEqual({ r2: [0, 0], r1: [10 + OVERVIEW_GAP, 0] });
+    expect([layout.cols, layout.rows]).toEqual([20 + OVERVIEW_GAP, 10]);
+    expect(overviewCell(AREA2, layout, [3, 4])).toEqual({ room: 'r2', cell: [3, 4] });
+    expect(overviewCell(AREA2, layout, [10 + OVERVIEW_GAP + 1, 2])).toEqual({ room: 'r1', cell: [1, 2] });
+    expect(overviewCell(AREA2, layout, [10, 2])).toBeNull();
   });
 
   it('宝箱・人・ぬし・採取・晩の始めと帰り口を動かせる', () => {

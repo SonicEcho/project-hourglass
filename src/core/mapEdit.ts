@@ -3,7 +3,7 @@
 // 「書き出し」の文（exportMapEdits）を開発の会話に貼り、Claude が src/data に入れる
 import type { GridCell } from './grid';
 import type { AreaDef, RoomDef, RoomSide } from './explore';
-import { EXIT_WIDTH, ROOF, ROOF_FULL, ROOF_SPLIT, SHADE, exitCells, entryCells, roofMask, startRoom } from './explore';
+import { EXIT_WIDTH, ROOF, ROOF_FULL, ROOF_SPLIT, SHADE, exitCells, entryCells, roofMask, roomPositions, startRoom } from './explore';
 
 /** 部屋の直し：文字の地図の全部と、出入口の位置（辺ごとの最初のマス） */
 export interface RoomPatch {
@@ -25,6 +25,8 @@ export interface MapEdits {
   newChests?: Record<string, NewChest>;
   /** 消した宝箱（段階120。元のデータの宝箱の thingKey） */
   removedChests?: string[];
+  /** 別の部屋へ動かした宝箱・採取の部屋（段階123。元のデータの物の thingKey ごと。足した宝箱は newChests の room に書く） */
+  thingRooms?: Record<string, string>;
 }
 
 /** 地図の調整で足した宝箱 */
@@ -66,7 +68,8 @@ export function isEmptyMapEdits(edits: MapEdits): boolean {
     Object.keys(edits.things).length === 0 &&
     Object.keys(edits.patrols ?? {}).length === 0 &&
     Object.keys(edits.newChests ?? {}).length === 0 &&
-    (edits.removedChests ?? []).length === 0
+    (edits.removedChests ?? []).length === 0 &&
+    Object.keys(edits.thingRooms ?? {}).length === 0
   );
 }
 
@@ -86,9 +89,10 @@ export function patchRoom(room: RoomDef, edits: MapEdits): RoomDef {
 export function applyMapEdits(area: AreaDef, edits: MapEdits): AreaDef {
   if (isEmptyMapEdits(edits)) return area;
   const at = (kind: ThingKind, id: string): GridCell | undefined => edits.things[thingKey(area.id, kind, id)];
-  const moved = <T extends { id: string; cell: GridCell }>(kind: ThingKind, x: T): T => {
+  const moved = <T extends { id: string; cell: GridCell; room?: string }>(kind: ThingKind, x: T): T => {
     const c = at(kind, x.id);
-    return c ? { ...x, cell: c } : x;
+    const room = edits.thingRooms?.[thingKey(area.id, kind, x.id)];
+    return c || room ? { ...x, ...(c ? { cell: c } : {}), ...(room ? { room } : {}) } : x;
   };
   return {
     ...area,
@@ -325,30 +329,113 @@ export function removeChest(edits: MapEdits, thing: PlacedThing): MapEdits {
   return { ...edits, things, removedChests: [...(edits.removedChests ?? []), thing.key] };
 }
 
-/** その部屋に今ある宝箱の key（段階122。まとめて置き直す時に持ち上げる順。元の宝箱、足した宝箱の順） */
-export function chestKeysInRoom(area: AreaDef, room: string): string[] {
-  return placedThings(area, room)
+/** 区画の全部の部屋に置いた物（段階123。部屋の並びの順） */
+export function allPlacedThings(area: AreaDef): PlacedThing[] {
+  return area.rooms.flatMap((r) => placedThings(area, r.id));
+}
+
+/** 区画の宝箱の key（段階123。全体地図で全部持ち上げる時の順。部屋の並びの順に、元の宝箱、足した宝箱） */
+export function chestKeys(area: AreaDef): string[] {
+  return allPlacedThings(area)
     .filter((t) => t.kind === 'chest')
     .map((t) => t.key);
 }
 
+/** 元のデータで、その宝箱と同じ部屋の同じマスにある採取の場所（段階123。採取の場所は1回目の宝箱の所に置く決まり） */
+export function linkedGather(original: AreaDef, chestKey: string): string | undefined {
+  const all = allPlacedThings(original);
+  const chest = all.find((t) => t.key === chestKey && t.kind === 'chest');
+  if (!chest) return undefined;
+  return all.find((t) => t.kind === 'gather' && t.room === chest.room && t.cell[0] === chest.cell[0] && t.cell[1] === chest.cell[1])?.key;
+}
+
+/** 元のデータの物を、部屋とマスへ置く（元の部屋・マスに戻した時は直しから外す） */
+function placeAt(edits: MapEdits, original: AreaDef, key: string, room: string, cell: GridCell): MapEdits {
+  const base = allPlacedThings(original).find((t) => t.key === key);
+  if (!base) return edits;
+  const things = { ...edits.things };
+  const thingRooms = { ...edits.thingRooms };
+  if (base.cell[0] === cell[0] && base.cell[1] === cell[1] && base.room === room) delete things[key];
+  else things[key] = [cell[0], cell[1]];
+  if (base.room === room) delete thingRooms[key];
+  else thingRooms[key] = room;
+  const next: MapEdits = { ...edits, things, thingRooms };
+  if (Object.keys(thingRooms).length === 0) delete next.thingRooms;
+  return next;
+}
+
 /**
- * 宝箱をまとめて置き直す（段階122）：持ち上げた宝箱（waiting。key の並び）のうち、まだ部屋にある先頭のものを cell へ動かす（中身と id はそのまま）。
+ * 宝箱を、区画のどの部屋のどのマスへでも動かす（段階123。中身と id はそのまま）。
+ * 元の宝箱なら、同じマスにあった採取の場所も一緒に動かす（開発者が選んだ）
+ */
+export function moveChestTo(edits: MapEdits, original: AreaDef, chestKey: string, room: string, cell: GridCell): MapEdits {
+  const added = edits.newChests?.[chestKey];
+  if (added) return { ...edits, newChests: { ...edits.newChests, [chestKey]: { ...added, room, cell: [cell[0], cell[1]] } } };
+  const gather = linkedGather(original, chestKey);
+  const next = placeAt(edits, original, chestKey, room, cell);
+  return gather ? placeAt(next, original, gather, room, cell) : next;
+}
+
+/**
+ * 持ち上げた宝箱を順に置く（段階122・123）：持ち上げた宝箱（waiting。key の並び）のうち、まだ区画にある先頭のものを、その部屋のマスへ動かす。
  * 持ち上げた分がもうなければ、新しい宝箱を足す。残りの並びも返す
  */
 export function placeChestInOrder(
   edits: MapEdits,
   original: AreaDef,
-  room: string,
   waiting: string[],
+  room: string,
   cell: GridCell,
   night = 0,
 ): { edits: MapEdits; waiting: string[] } {
-  const chests = placedThings(applyMapEdits(original, edits), room).filter((t) => t.kind === 'chest');
-  const rest = waiting.filter((k) => chests.some((t) => t.key === k));
-  const next = chests.find((t) => t.key === rest[0]);
-  if (!next) return { edits: addChest(edits, original, room, cell, night), waiting: [] };
-  return { edits: moveThing(edits, original, next, cell), waiting: rest.slice(1) };
+  const now = chestKeys(applyMapEdits(original, edits));
+  const rest = waiting.filter((k) => now.includes(k));
+  if (rest.length === 0) return { edits: addChest(edits, original, room, cell, night), waiting: [] };
+  return { edits: moveChestTo(edits, original, rest[0], room, cell), waiting: rest.slice(1) };
+}
+
+/** 全体地図（段階123）：部屋ごとの左上のマス（全体地図の中の位置）と、全体の大きさ。部屋の並びは右上の小さな全体地図と同じ（roomPositions） */
+export interface OverviewLayout {
+  offsets: Record<string, GridCell>;
+  cols: number;
+  rows: number;
+}
+
+/** 全体地図の部屋の間のすきま（マス） */
+export const OVERVIEW_GAP = 2;
+
+export function overviewLayout(area: AreaDef): OverviewLayout {
+  const pos = roomPositions(area);
+  const size = (id: string): GridCell => {
+    const r = area.rooms.find((x) => x.id === id);
+    return [r?.layout[0]?.length ?? 0, r?.layout.length ?? 0];
+  };
+  const ids = Object.keys(pos);
+  const xs = [...new Set(ids.map((id) => pos[id][0]))].sort((a, b) => a - b);
+  const ys = [...new Set(ids.map((id) => pos[id][1]))].sort((a, b) => a - b);
+  const colW = xs.map((x) => Math.max(...ids.filter((id) => pos[id][0] === x).map((id) => size(id)[0])));
+  const rowH = ys.map((y) => Math.max(...ids.filter((id) => pos[id][1] === y).map((id) => size(id)[1])));
+  const start = (list: number[], i: number) => list.slice(0, i).reduce((a, b) => a + b + OVERVIEW_GAP, 0);
+  const offsets: Record<string, GridCell> = {};
+  for (const id of ids) {
+    const ci = xs.indexOf(pos[id][0]);
+    const ri = ys.indexOf(pos[id][1]);
+    const [w, h] = size(id);
+    // 列の幅・段の高さより小さい部屋は、真ん中に寄せる（つながった辺どうしが向き合うように）
+    offsets[id] = [start(colW, ci) + Math.floor((colW[ci] - w) / 2), start(rowH, ri) + Math.floor((rowH[ri] - h) / 2)];
+  }
+  return { offsets, cols: start(colW, colW.length) - OVERVIEW_GAP, rows: start(rowH, rowH.length) - OVERVIEW_GAP };
+}
+
+/** 全体地図のマスが、どの部屋のどのマスか（部屋の外なら null） */
+export function overviewCell(area: AreaDef, layout: OverviewLayout, at: GridCell): { room: string; cell: GridCell } | null {
+  for (const r of area.rooms) {
+    const o = layout.offsets[r.id];
+    if (!o) continue;
+    const cell: GridCell = [at[0] - o[0], at[1] - o[1]];
+    if (cell[0] >= 0 && cell[1] >= 0 && cell[1] < r.layout.length && cell[0] < (r.layout[0]?.length ?? 0)) return { room: r.id, cell };
+  }
+  return null;
 }
 
 /** 開発の会話に貼る文（1行目は見出し、2行目から JSON） */
@@ -368,6 +455,7 @@ export function parseMapEdits(text: string | null): MapEdits {
     if (v.patrols && typeof v.patrols === 'object' && Object.keys(v.patrols).length > 0) out.patrols = v.patrols;
     if (v.newChests && typeof v.newChests === 'object' && Object.keys(v.newChests).length > 0) out.newChests = v.newChests;
     if (Array.isArray(v.removedChests) && v.removedChests.length > 0) out.removedChests = v.removedChests;
+    if (v.thingRooms && typeof v.thingRooms === 'object' && Object.keys(v.thingRooms).length > 0) out.thingRooms = v.thingRooms;
     return out;
   } catch {
     return emptyMapEdits();

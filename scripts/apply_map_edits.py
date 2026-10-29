@@ -6,6 +6,7 @@
 - things：areas.ts の、その区画の物の位置を書き換える（敵は見回りの道ごとずらす）
 - patrols：areas.ts の、敵の見回りの道を書き換える（段階119）
 - newChests・removedChests：宝箱を足す（中身は空。入れた後に決める）・消す（段階120）
+- thingRooms：別の部屋へ動かした宝箱・採取の room を書き換える（段階123。全体地図で置いた時）
 入れた後は npx vitest run で checkArea のテストを通すこと
 """
 import json
@@ -109,6 +110,22 @@ def apply_patrols(src, patrols):
     return src
 
 
+def apply_thing_rooms(src, thing_rooms):
+    """別の部屋へ動かした宝箱・採取（段階123）：その物の行の room を書き換える（なければ id の後に足す）"""
+    for key, room in thing_rooms.items():
+        _, _, tid = key.split('/')
+        m = re.search(rf"\{{ id: '{tid}'[^\n]*", src)
+        if not m:
+            sys.exit(f'{key} が areas.ts にない')
+        line = m.group(0)
+        if re.search(r"room: '[^']*'", line):
+            new = re.sub(r"room: '[^']*'", f"room: '{room}'", line, count=1)
+        else:
+            new = line.replace(f"id: '{tid}'", f"id: '{tid}', room: '{room}'", 1)
+        src = src[: m.start()] + new + src[m.end():]
+    return src
+
+
 def apply_chests(src, new_chests, removed):
     """宝箱の増減（段階120）：消した宝箱の行を外し、足した宝箱をその区画の chests の最後に足す（中身は空なので、入れた後に決める）"""
     for key in removed:
@@ -138,6 +155,7 @@ def main():
     areas = open(AREAS, encoding='utf-8').read()
     areas = apply_things(areas, edits.get('things', {}))
     areas = apply_patrols(areas, edits.get('patrols', {}))
+    areas = apply_thing_rooms(areas, edits.get('thingRooms', {}))
     open(AREAS, 'w', encoding='utf-8').write(apply_chests(areas, edits.get('newChests', {}), edits.get('removedChests', [])))
     print(f"部屋 {len(edits.get('rooms', {}))}・物 {len(edits.get('things', {}))}・敵の道 {len(edits.get('patrols', {}))} を入れた")
 
