@@ -9,7 +9,7 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
-import { run, setStoryVars, storyLineup } from './run';
+import { run, saveRun, setStoryVars, storyLineup } from './run';
 
 // 昼の日常（段階24）：地図から場所を選び、場所の絵に出ている印をタップして出来事を見る。
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
@@ -91,9 +91,14 @@ export class DailyScene extends Phaser.Scene {
     if (place) this.showPlace(place);
     else this.showMap();
     this.cameras.main.fadeIn(250, 0, 0, 0);
+    // 段階98（レビューの D2）：その日の昼に初めて入った時だけ、保存したことを小さく知らせる（ここでやめても、この昼から始められる）。
+    // 段階124（レビューの項目1）：実際に保存できた時だけ「保存しました」と言う。書き込めない時は、上の「未保存」の印（ui/saveNotice.ts）と一緒に知らせる
+    const saved = saveRun();
     if (gearNote) this.toast(gearNote);
-    // 段階98（レビューの D2）：その日の昼に初めて入った時だけ、保存したことを小さく知らせる（ここでやめても、この昼から始められる）
-    else if (data0.day !== undefined && savedNoticeFor !== data.event) this.toast('保存しました（ここでやめても、この昼から始められる）');
+    else if (data0.day !== undefined && savedNoticeFor !== data.event) {
+      if (saved === 'failed') this.toast('保存できませんでした（ここでやめると、前に保存した所から）。上の印をタップすると、もう一度保存する', true);
+      else if (saved !== 'skipped') this.toast('保存しました（ここでやめても、この昼から始められる）');
+    }
     savedNoticeFor = data.event;
   }
 
@@ -335,8 +340,8 @@ export class DailyScene extends Phaser.Scene {
     addButton(this, panel, cx + 75, 470, 130, 52, 'いいえ', { onTap: () => panel.destroy(true) }, { size: 16 });
   }
 
-  private toast(text: string): void {
-    const t = addText(this, GAME_WIDTH / 2, 130, text, { size: 13, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5).setDepth(60);
+  private toast(text: string, warn = false): void {
+    const t = addText(this, GAME_WIDTH / 2, 130, text, { size: 13, align: 'center', wrap: GAME_WIDTH - 40, color: warn ? COLORS.allyDamage : undefined }).setOrigin(0.5).setDepth(60);
     const bg = this.add.rectangle(GAME_WIDTH / 2, 130, t.width + 24, t.height + 14, 0x000000, 0.8).setDepth(59);
     this.tweens.add({ targets: [t, bg], alpha: 0, delay: 1800, duration: 400, onComplete: () => (t.destroy(), bg.destroy()) });
   }

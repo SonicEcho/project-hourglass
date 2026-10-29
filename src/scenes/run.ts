@@ -213,6 +213,7 @@ let lastWritten: string | null = null;
 export function setSaveStorage(s: SaveStorage): void {
   storage = s;
   lastWritten = null;
+  setSaveFailing(false);
 }
 
 export function saveContext(): SaveContext {
@@ -258,14 +259,50 @@ export function setBattleMark(mark: SavedBattle | null): void {
   saveRun();
 }
 
+/**
+ * 保存した結果（段階124。レビューの項目1）。saved：書き込めた。unchanged：前に書き込めた中身と同じなので書き込みを省いた（保存は済んでいる）。
+ * skipped：周回の外なので保存する物がない。failed：書き込めなかった（容量がいっぱい、プライベートモードなど）
+ */
+export type SaveResult = 'saved' | 'unchanged' | 'skipped' | 'failed';
+
+/** 最後の書き込みに失敗し、その後まだ書き込めていないか（段階124） */
+let saveFailing = false;
+const saveStatusListeners = new Set<(failing: boolean) => void>();
+
+function setSaveFailing(failing: boolean): void {
+  if (saveFailing === failing) return;
+  saveFailing = failing;
+  for (const fn of saveStatusListeners) fn(failing);
+}
+
+/** 保存できていない状態か（段階124。書き込めた時・セーブを消した時に戻る） */
+export function isSaveFailing(): boolean {
+  return saveFailing;
+}
+
+/** 保存できていない状態が変わった時に知らせる（段階124。画面の「未保存」の印に使う）。戻り値で知らせを止める */
+export function onSaveStatus(fn: (failing: boolean) => void): () => void {
+  saveStatusListeners.add(fn);
+  return () => saveStatusListeners.delete(fn);
+}
+
 /** 今の周回の状態を保存する。周回の外（タイトル、クリア後）では何もしない。中身が前と同じなら書き込まない */
-export function saveRun(): void {
-  if (!run.active) return;
-  const text = serializeSave(snapshot(), new Date());
+export function saveRun(): SaveResult {
+  if (!run.active) return 'skipped';
   // 日時を除いた中身で比べる
   const body = JSON.stringify(snapshot());
-  if (body === lastWritten) return;
-  if (storage.write(SAVE_KEY, text)) lastWritten = body;
+  if (body === lastWritten) {
+    // 失敗の後に中身が前に書き込めた形へ戻った時も、保存は済んでいる
+    setSaveFailing(false);
+    return 'unchanged';
+  }
+  if (storage.write(SAVE_KEY, serializeSave(snapshot(), new Date()))) {
+    lastWritten = body;
+    setSaveFailing(false);
+    return 'saved';
+  }
+  setSaveFailing(true);
+  return 'failed';
 }
 
 /** セーブを読む（なければ null）。読めない時は error */
@@ -291,6 +328,7 @@ export function moveBrokenSave(): void {
 export function deleteSave(): void {
   storage.remove(SAVE_KEY);
   lastWritten = null;
+  setSaveFailing(false);
 }
 
 /**

@@ -32,7 +32,8 @@ import { TalkArchiveScene } from './scenes/TalkArchiveScene';
 import { ResultScene } from './scenes/ResultScene';
 import { findEvent } from './core';
 import { SLICE_FLOW } from './data';
-import { getActiveBattle, initRunFromUrl, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { getActiveBattle, initRunFromUrl, isSaveFailing, onSaveStatus, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { installSaveNotice } from './ui/saveNotice';
 import { notePlayInput, tickPlayRecord } from './scenes/playRecord';
 import { PlayLogScene } from './scenes/PlayLogScene';
 import { TitleScene } from './scenes/TitleScene';
@@ -54,6 +55,10 @@ if (debug) {
 
 initRunFromUrl();
 installServiceWorker();
+
+// 保存できていない時の印（段階124）
+const saveNoticeEl = document.getElementById('save-notice');
+if (saveNoticeEl) installSaveNotice(saveNoticeEl, { onStatus: onSaveStatus, isFailing: isSaveFailing, retry: saveRun });
 
 // ブラウザが裏に回った時（アプリの切り替え、タブを閉じる）も保存する。戦闘中なら、その戦闘の前の状態が保存される
 document.addEventListener('visibilitychange', () => {
