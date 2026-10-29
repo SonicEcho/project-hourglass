@@ -298,7 +298,7 @@ export const AREAS: Record<string, AreaDef> = {
     // 晩の区切り（段階63）：2晩目は参道の前のチェックポイントから、3晩目は石段の下のチェックポイントから
     // 段階120（2026-10-29）：縁日の広場をやぐらの広場の絵（24×36）にし、左の部屋（西の屋台）をなくした。左の部屋の敵・宝箱・人は、
     // 広場の左の横道（行き止まり）と広場の左側へ移した。ぬしは社の前（社の裏の林の上）へ移した
-    nights: [{ koma: 3 }, { koma: 6, start: { room: 'festival_night', cell: [11, 26] } }, { start: { room: 'festival_night', cell: [11, 8] } }],
+    nights: [{ koma: 3 }, { koma: 6, start: { room: 'festival_night', cell: [11, 27] } }, { start: { room: 'festival_night', cell: [11, 8] } }],
     // ノイズの壁（段階63）：参道の前から広場へ（2晩目から開く）と、社へ上る石段（3晩目から開く）
     walls: [
       // 参道の前から広場へ上る所（行20）を、2晩目まで閉じる
@@ -311,7 +311,7 @@ export const AREAS: Record<string, AreaDef> = {
       gathers: [
         { id: 'a11_gather_goldfish', room: 'festival_night', cell: [7, 30], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
         { id: 'a11_gather_ramune', room: 'festival_night', cell: [17, 26], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
-        { id: 'a11_gather_yukata', room: 'festival_night', cell: [16, 7], items: [ITEMS.maskShard.id] },
+        { id: 'a11_gather_yukata', room: 'festival_night', cell: [1, 17], items: [ITEMS.maskShard.id] },
         { id: 'a11_gather_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
       ],
       tables: {
@@ -323,16 +323,17 @@ export const AREAS: Record<string, AreaDef> = {
     },
     chests: [
       { id: 'a11_chest_goldfish', room: 'festival_night', cell: [7, 30], items: [ITEMS.goldfishScale.id, ITEMS.potion.id] },
-      { id: 'a11_chest_ramune', room: 'festival_night', cell: [17, 26], items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
       { id: 'a11_chest_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
-      { id: 'a11_chest_west', room: 'festival_night', cell: [1, 17], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
+      { id: 'a11_chest_west', room: 'festival_night', cell: [8, 17], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.ether.id] },
       { id: 'a11_chest_woods', room: 'fest_woods', cell: [4, 3], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
+      { id: 'a11_chest_new1', room: 'festival_night', cell: [17, 26], night: 3, items: [ITEMS.balloonShard.id, ITEMS.maskShard.id] },
+      { id: 'a11_chest_new2', room: 'festival_night', cell: [1, 17], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
     ],
     enemies: [
       // ---- 1晩目 ----
       { id: 'a11_e_gate', room: 'fest_gate', patrol: [[6, 7], [16, 7]], battle: 'a11_n1_gate' },
-      { id: 'a11_e_gate_chase', room: 'fest_gate', move: 'chase', patrol: [[9, 15], [12, 20]], battle: 'a11_n1_chaser' },
-      { id: 'a11_e_back', room: 'fest_backyard', patrol: [[4, 12], [20, 12]], battle: 'a11_n1_back' },
+      { id: 'a11_e_gate_chase', room: 'fest_gate', move: 'chase', patrol: [[9, 15], [14, 15]], battle: 'a11_n1_chaser' },
+      { id: 'a11_e_back', room: 'fest_backyard', patrol: [[5, 14], [16, 13], [11, 12], [8, 10]], battle: 'a11_n1_back' },
       // 屋台の裏の逃げる敵（寄り道。コマなし、レアの素材。段階59）
       { id: 'a11_e_runner', room: 'fest_backyard', move: 'flee', patrol: [[15, 15]], battle: 'a11_runner' },
       { id: 'a11_e_road', room: 'festival_night', patrol: [[10, 31], [13, 31]], battle: 'a11_n1_road' },
@@ -356,12 +357,12 @@ export const AREAS: Record<string, AreaDef> = {
     // 写しの人々。晩ごとに、戻ってきた過去の分だけ言葉が先へ進む（段階63）
     talkers: [
       { id: 'a11_voice_goldfish', room: 'festival_night', cell: [8, 29], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん' },
-      { id: 'a11_voice_cotton', room: 'festival_night', cell: [8, 23], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋' },
+      { id: 'a11_voice_cotton', room: 'festival_night', cell: [7, 23], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋' },
       { id: 'a11_voice_yukata', room: 'festival_night', cell: [15, 32], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人' },
       { id: 'a11_voice2_goldfish', room: 'fest_east', cell: [16, 20], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん' },
-      { id: 'a11_voice2_cotton', room: 'festival_night', cell: [7, 18], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋' },
+      { id: 'a11_voice2_cotton', room: 'festival_night', cell: [9, 21], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋' },
       { id: 'a11_voice2_yukata', room: 'festival_night', cell: [17, 19], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人' },
-      { id: 'a11_voice3_goldfish', room: 'festival_night', cell: [8, 14], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん' },
+      { id: 'a11_voice3_goldfish', room: 'festival_night', cell: [9, 10], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん' },
       { id: 'a11_voice3_cotton', room: 'festival_night', cell: [15, 13], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋' },
       { id: 'a11_voice3_yukata', room: 'festival_night', cell: [16, 9], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人' },
     ],
