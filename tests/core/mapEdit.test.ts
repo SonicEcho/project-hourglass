@@ -21,6 +21,8 @@ import {
   setPatrol,
   addChest,
   removeChest,
+  chestKeysInRoom,
+  placeChestInOrder,
   paintRoofFine,
   roofMask,
   isShade,
@@ -164,6 +166,29 @@ describe('地図の調整', () => {
     expect(parseMapEdits(exportMapEdits(edits))).toEqual(edits);
     // ほかの区画の足した宝箱は入らない
     expect(applyMapEdits({ ...AREA, id: 'az' }, edits).chests.map((c) => c.id)).toEqual(['c1']);
+  });
+
+  it('宝箱をまとめて置き直す（段階122）：持ち上げた宝箱が、タップした順に中身のまま移り、置き終えたら新しい宝箱を足す', () => {
+    const area: AreaDef = { ...AREA, chests: [...AREA.chests, { id: 'c2', cell: [6, 3], items: ['potion'] }] };
+    let edits = addChest(emptyMapEdits(), area, 'r1', [3, 7]);
+    let waiting = chestKeysInRoom(applyMapEdits(area, edits), 'r1');
+    expect(waiting).toEqual(['ax/chest/c1', 'ax/chest/c2', 'ax/chest/ax_chest_new1']);
+    // 2つ目を先に消しても、次に置くのは残っている宝箱
+    edits = removeChest(edits, placedThings(area, 'r1').find((t) => t.id === 'c2')!);
+    ({ edits, waiting } = placeChestInOrder(edits, area, 'r1', waiting, [2, 4]));
+    expect(waiting).toEqual(['ax/chest/ax_chest_new1']);
+    ({ edits, waiting } = placeChestInOrder(edits, area, 'r1', waiting, [2, 5]));
+    expect(waiting).toEqual([]);
+    let a = applyMapEdits(area, edits);
+    expect(a.chests.map((c) => [c.id, c.cell])).toEqual([
+      ['c1', [2, 4]],
+      ['ax_chest_new1', [2, 5]],
+    ]);
+    // 持ち上げた分を置き終えた後は、新しい宝箱を足す（今の晩から）
+    ({ edits, waiting } = placeChestInOrder(edits, area, 'r1', waiting, [2, 6], 2));
+    a = applyMapEdits(area, edits);
+    expect(a.chests.map((c) => c.id)).toEqual(['c1', 'ax_chest_new1', 'ax_chest_new2']);
+    expect(a.chests[2]).toEqual({ id: 'ax_chest_new2', room: 'r1', cell: [2, 6], items: [], night: 2 });
   });
 
   it('宝箱・人・ぬし・採取・晩の始めと帰り口を動かせる', () => {
