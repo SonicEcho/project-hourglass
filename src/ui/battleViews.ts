@@ -1164,7 +1164,7 @@ function orderDetail(s: BattleState, entry: OrderEntry, i: number): { title: str
   };
 }
 
-/** フィルム：行動順をコマで見せる。今の番のコマは赤い枠で顔を大きく「▶ 選んでいる」 */
+/** フィルム：行動順をコマで見せる。今の番のコマは赤い枠で顔を大きく「▶ 選択中」 */
 function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const { y, h: height } = FILM_LAYOUT.film;
   const s = vm.state;
@@ -1229,12 +1229,12 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
       root.add(scene.add.circle(fcx, fcy, r).setStrokeStyle(2, 0xffffff));
     }
     root.add(slantText(scene, fx + SKEW + 2, fy + 1, String(i + 1).padStart(2, '0'), 14));
-    // 下の札：決めた行動。今の番は「▶ 選んでいる」
+    // 下の札：決めた行動。今の番は「▶ 選択中」（段階131）
     const charging = enemy && !!(unit as EnemyUnit).charging;
     const plan = !enemy ? (pb?.labels ?? vm.planLabels)[unit.uid] : undefined;
     const tag = entry.guard ? '防御' : entry.precede ? '先制' : '';
     const label = isActor
-      ? '▶ 選んでいる'
+      ? '▶ 選択中'
       : enemy
         ? entry.cut
           ? `✂ ${unit.name}`
@@ -1244,10 +1244,11 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
           : entry.tentative
             ? `${unit.name}：未定`
             : unit.name;
-    const maxChars = Math.max(3, Math.floor((w - 6) / 10));
-    const shown = label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
     root.add(skewBox(scene, fx, fy + fh - 18, w, 18, isActor ? FILM_RED : 0x000000, isActor ? 1 : 0.8));
-    root.add(addText(scene, cx, fy + fh - 9, shown, { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+    // 段階131（開発者が見本で選んだ案1）：前は1文字10ドットと見積もって、入る文字まで切っていた。実際の幅を測り、入らない時だけ「…」で切る
+    const tagText = addText(scene, cx, fy + fh - 9, label, { size: 10, bold: true, align: 'center' }).setOrigin(0.5);
+    for (let n = label.length - 1; tagText.width > w - 6 && n > 2; n--) tagText.setText(`${label.slice(0, n)}…`);
+    root.add(tagText);
     // 切り取り（段階107）：切り取られたコマは穴に、ねらわれているコマはファインダーの角で囲む
     if (!enemy && entry.ids.some((id) => cutDone.has(id))) drawCutHole(scene, root, fx, fy, w, fh);
     else if (!enemy && entry.ids.some((id) => cutAim.has(id))) drawCutAim(scene, root, fx, fy, w, fh);
