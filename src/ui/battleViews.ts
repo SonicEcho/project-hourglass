@@ -321,7 +321,7 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     const barW = g.withParts ? 220 : Math.min(110, colW - 16);
     const hpFrom = previousValue(`${enemy.uid}:hp`, enemy.hp);
     addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / enemy.maxHp);
-    const hpText = addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5);
+    const hpText = addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 13, bold: true, color: COLORS.text }).setOrigin(0.5);
     if (bigArt) hpText.setStroke('#0b1018', 3);
     root.add(hpText);
     countText(scene, hpText, hpFrom, enemy.hp, (v) => `${v}/${enemy.maxHp}`);
@@ -500,9 +500,9 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   const { y, h: height } = handArea();
   const s = vm.state;
   const hand = s.hand;
-  root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 10, color: COLORS.subText }));
+  root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 12, color: COLORS.subText }));
   const supportText = s.supportUsed ? 'サポート：このラウンドは使用済み' : `サポート：あと${SUPPORT_PER_ROUND}枚使える`;
-  const rule = addText(scene, GAME_WIDTH - SIDE_PADDING, y + 2, supportText, { size: 10, color: s.supportUsed ? COLORS.dimText : COLORS.subText }).setOrigin(1, 0);
+  const rule = addText(scene, GAME_WIDTH - SIDE_PADDING, y + 2, supportText, { size: 12, color: s.supportUsed ? COLORS.dimText : COLORS.subText }).setOrigin(1, 0);
   root.add(rule);
   makePressable(rule, { onLongPress: () => h.detail('手札のルール', HAND_RULE_TEXT) });
   // 新しい画面（段階102a）：そろいそうなコンボがない時は帯を出さず、その分だけ手札を高くする
@@ -1411,15 +1411,16 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const status = [s.precedeIds.includes(ally.uid) ? '先制' : '', ally.guarding ? '防御' : '', alive ? '' : '不能']
       .filter(Boolean)
       .join(' ');
-    if (status) root.add(addText(scene, x + w - 50, y + 5, status, { size: 9, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    if (status) root.add(addText(scene, x + w - 50, y + 5, status, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
     const barW = w - 62;
     const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
     const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
     addBar(scene, root, x + SKEW + 4, y + 24, barW, 5, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / ally.maxHp);
-    const hpText = addText(scene, x + SKEW + 4, y + 31, `${ally.hp}`, { size: 10, bold: true, color: playing ? '#101010' : COLORS.text });
+    // 段階128（開発者が見本で確認）：HP・MP の数字を大きく（前は10。スマホでは小さすぎた）
+    const hpText = addText(scene, x + SKEW + 4, y + 31, `${ally.hp}`, { size: 13, bold: true, color: playing ? '#101010' : COLORS.text });
     root.add(hpText);
     countText(scene, hpText, hpFrom, ally.hp, (v) => `${v}`);
-    const mpText = addText(scene, x + SKEW + 4 + barW, y + 31, `MP ${ally.mp}`, { size: 10, color: toCss(COLORS.mp) }).setOrigin(1, 0);
+    const mpText = addText(scene, x + SKEW + 4 + barW, y + 31, `MP ${ally.mp}`, { size: 12, bold: true, color: toCss(COLORS.mp) }).setOrigin(1, 0);
     root.add(mpText);
     countText(scene, mpText, mpFrom, ally.mp, (v) => `MP ${v}`);
     const hit = scene.add.rectangle(x + w / 2, y + height / 2, w, height, 0xffffff, 0.001);
