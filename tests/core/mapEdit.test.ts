@@ -8,6 +8,9 @@ import {
   exitCells,
   exportMapEdits,
   isEmptyMapEdits,
+  isWalkable,
+  parseGrid,
+  roofCells,
   moveExit,
   moveMark,
   moveThing,
@@ -15,6 +18,7 @@ import {
   parseMapEdits,
   patchRoom,
   placedThings,
+  setPatrol,
 } from '../../src/core';
 
 // 段階117：地図の調整（スマホで部屋の歩ける場所・出入口・物の位置を直す）
@@ -50,16 +54,27 @@ const AREA: AreaDef = {
 
 describe('地図の調整', () => {
   it('塗ると歩ける・通れないが変わり、S と P はそのまま', () => {
-    let edits = paintCells(emptyMapEdits(), ROOM, [[2, 2], [1, 1], [4, 3]], false);
+    let edits = paintCells(emptyMapEdits(), ROOM, [[2, 2], [1, 1], [4, 3]], 'block');
     const room = patchRoom(ROOM, edits);
     expect(room.layout[2][2]).toBe('#');
     expect(room.layout[1][1]).toBe('S');
     expect(room.layout[3][4]).toBe('P');
-    edits = paintCells(edits, ROOM, [[2, 2], [0, 1]], true);
+    edits = paintCells(edits, ROOM, [[2, 2], [0, 1]], 'open');
     expect(patchRoom(ROOM, edits).layout[1][0]).toBe('.');
     // 元に戻した所は、直しから外れる
-    edits = paintCells(edits, ROOM, [[0, 1]], false);
+    edits = paintCells(edits, ROOM, [[0, 1]], 'block');
     expect(isEmptyMapEdits(edits)).toBe(true);
+  });
+
+  it('屋根の下（段階118）：^ に塗ると歩けて、歩けるで塗ると屋根が外れる', () => {
+    let edits = paintCells(emptyMapEdits(), ROOM, [[0, 0], [2, 2], [1, 1]], 'roof');
+    const room = patchRoom(ROOM, edits);
+    expect(roofCells(room)).toEqual([[0, 0], [2, 2]]);
+    expect(isWalkable(parseGrid(room.layout), [0, 0])).toBe(true);
+    expect(room.layout[1][1]).toBe('S');
+    edits = paintCells(edits, ROOM, [[0, 0], [2, 2]], 'open');
+    expect(roofCells(patchRoom(ROOM, edits))).toEqual([]);
+    expect(patchRoom(ROOM, edits).layout[0][0]).toBe('.');
   });
 
   it('出入口をずらすと、辺と内側のマスが開き、前の辺のマスは閉じる', () => {
@@ -83,6 +98,20 @@ describe('地図の調整', () => {
     let edits = moveThing(emptyMapEdits(), AREA, enemy, [2, 5]);
     expect(applyMapEdits(AREA, edits).enemies[0].patrol).toEqual([[2, 5], [5, 5]]);
     edits = moveThing(edits, AREA, enemy, [2, 2]);
+    expect(isEmptyMapEdits(edits)).toBe(true);
+  });
+
+  it('敵の見回りの道を引き直す（段階119）：元の道と同じなら外れ、引き直した後に動かすと道ごとずれる', () => {
+    const enemy = placedThings(AREA, 'r1').find((t) => t.kind === 'enemy')!;
+    let edits = moveThing(emptyMapEdits(), AREA, enemy, [2, 5]);
+    edits = setPatrol(edits, AREA, { ...enemy, cell: [2, 5] }, [[2, 5], [6, 5], [6, 7]]);
+    expect(edits.things).toEqual({});
+    expect(applyMapEdits(AREA, edits).enemies[0].patrol).toEqual([[2, 5], [6, 5], [6, 7]]);
+    expect(checkArea(applyMapEdits(AREA, edits))).toEqual([]);
+    edits = moveThing(edits, AREA, enemy, [3, 5]);
+    expect(applyMapEdits(AREA, edits).enemies[0].patrol).toEqual([[3, 5], [7, 5], [7, 7]]);
+    expect(parseMapEdits(exportMapEdits(edits))).toEqual(edits);
+    edits = setPatrol(edits, AREA, enemy, [[2, 2], [5, 2]]);
     expect(isEmptyMapEdits(edits)).toBe(true);
   });
 
@@ -113,12 +142,12 @@ describe('地図の調整', () => {
 
   it('直した区画も検査できる（通れなくしたマスにいる敵を見つける）', () => {
     expect(checkArea(AREA)).toEqual([]);
-    const edits = paintCells(emptyMapEdits(), ROOM, [[5, 2]], false);
+    const edits = paintCells(emptyMapEdits(), ROOM, [[5, 2]], 'block');
     expect(checkArea(applyMapEdits(AREA, edits)).length).toBeGreaterThan(0);
   });
 
   it('部屋の直しは、同じ部屋を使う区画のどれにも効く', () => {
-    const edits = paintCells(emptyMapEdits(), ROOM2, [[2, 2]], false);
+    const edits = paintCells(emptyMapEdits(), ROOM2, [[2, 2]], 'block');
     const other: AreaDef = { ...AREA, id: 'ay', rooms: [ROOM, ROOM2] };
     expect(applyMapEdits(other, edits).rooms[1].layout[2][2]).toBe('#');
     expect(applyMapEdits(other, edits).rooms[0].layout[2][2]).toBe('.');

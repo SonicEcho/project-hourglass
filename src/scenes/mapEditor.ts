@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { AreaDef, GridCell, MapEdits, PlacedThing, RoomDef } from '../core';
-import { applyMapEdits, checkArea, emptyMapEdits, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings } from '../core';
+import { ROOF, applyMapEdits, checkArea, emptyMapEdits, exitAtTap, exitCells, moveExit, moveMark, moveThing, paintCells, patchRoom, placedThings, setPatrol } from '../core';
 import { AREA_TILE, ROOM_NAMES } from '../data';
 import { saveMapEdits, showMapEditPanel } from '../debug/mapEdits';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
@@ -12,12 +12,14 @@ import { addButton, addText } from '../ui/widgets';
 
 const T = AREA_TILE;
 
-type Tool = 'look' | 'open' | 'block' | 'move' | 'exit';
+type Tool = 'look' | 'open' | 'block' | 'roof' | 'move' | 'route' | 'exit';
 const TOOLS: [Tool, string][] = [
   ['look', '見る'],
   ['open', '歩ける'],
   ['block', '通れない'],
+  ['roof', '屋根'],
   ['move', '動かす'],
+  ['route', '道'],
   ['exit', '出入口'],
 ];
 
@@ -61,6 +63,8 @@ export class MapEditor {
   private undo: MapEdits[] = [];
   private tool: Tool = 'look';
   private selected: Selected | null = null;
+  /** 見回りの道を引き直している敵と、折り返しの点（段階119）。fresh は、まだ点を足していない（最初の点で道を引き直す） */
+  private routing: { thing: PlacedThing; points: GridCell[]; fresh: boolean } | null = null;
   private grid: Phaser.GameObjects.Graphics;
   private marks: Phaser.GameObjects.Container;
   private bar: Phaser.GameObjects.Container;
@@ -120,7 +124,7 @@ export class MapEditor {
       this.dragFrom = { x: p.x, y: p.y, sx: this.host.cam.scrollX, sy: this.host.cam.scrollY };
       return;
     }
-    if (this.tool === 'open' || this.tool === 'block') {
+    if (this.tool === 'open' || this.tool === 'block' || this.tool === 'roof') {
       this.stroke = { before: this.edits, done: new Set() };
       this.paint(cell);
     }
@@ -147,13 +151,14 @@ export class MapEditor {
     if (this.stroke) {
       const before = this.stroke.before;
       this.stroke = null;
-      if (before !== this.edits) this.commit(before, this.tool === 'open' ? '歩ける所にした' : '通れない所にした');
+      if (before !== this.edits) this.commit(before, this.tool === 'open' ? '歩ける所にした' : this.tool === 'roof' ? '屋根の下にした' : '通れない所にした');
       return;
     }
     if (p.getDistance() > 12) return;
     const cell = this.cellAt(p, over);
     if (!cell) return;
     if (this.tool === 'move') this.tapMove(cell);
+    else if (this.tool === 'route') this.tapRoute(cell);
     else if (this.tool === 'exit') this.tapExit(cell);
   }
 
@@ -161,7 +166,8 @@ export class MapEditor {
     const key = `${cell[0]},${cell[1]}`;
     if (!this.stroke || this.stroke.done.has(key)) return;
     this.stroke.done.add(key);
-    this.edits = paintCells(this.edits, this.originalRoom, [cell], this.tool === 'open');
+    if (this.tool !== 'open' && this.tool !== 'block' && this.tool !== 'roof') return;
+    this.edits = paintCells(this.edits, this.originalRoom, [cell], this.tool);
     this.drawGrid();
   }
 
@@ -193,6 +199,38 @@ export class MapEditor {
         : moveMark(this.edits, this.host.original, this.originalRoom, sel.cell, cell);
     this.selected = null;
     this.commit(before, `${this.describe(sel)}を動かした`);
+  }
+
+  /**
+   * 道（段階119）：敵をタップして選び、折り返しの点を順にタップする（最初の点で前の道は消える）。
+   * 最後の点をもう一度タップすると取り消し、敵をもう一度タップすると決める。2点なら行き来、3点以上なら輪
+   */
+  private tapRoute(cell: GridCell): void {
+    const r = this.routing;
+    if (!r) {
+      const enemy = placedThings(this.area, this.host.room).find((t) => t.kind === 'enemy' && same(t.cell, cell));
+      if (!enemy) {
+        this.host.say('道：まず敵（赤い「敵」の札）をタップする');
+        return;
+      }
+      this.routing = { thing: enemy, points: enemy.patrol ?? [enemy.cell], fresh: true };
+      this.drawMarks();
+      this.host.say(`${this.describe({ kind: 'thing', thing: enemy })}の道を引き直す：折り返しの点を順にタップ。最後の点をもう一度タップで取り消し、敵をタップで決める`);
+      return;
+    }
+    if (same(cell, r.points[0])) {
+      this.routing = null;
+      this.drawMarks();
+      this.check(`道を決めた（${r.points.length < 2 ? '動かない' : r.points.length === 2 ? '行き来する' : `${r.points.length}点を回る`}）`);
+      return;
+    }
+    const last = r.points[r.points.length - 1];
+    if (!r.fresh && r.points.length > 1 && same(cell, last)) r.points = r.points.slice(0, -1);
+    else r.points = r.fresh ? [r.points[0], cell] : [...r.points, cell];
+    r.fresh = false;
+    const before = this.edits;
+    this.edits = setPatrol(this.edits, this.host.original, r.thing, r.points);
+    this.commit(before, `道：折り返しの点 ${r.points.length - 1}つ`);
   }
 
   /** 出入口：辺の近くをタップすると、そこへずらす */
@@ -248,7 +286,9 @@ export class MapEditor {
     const room = this.room;
     room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
-        g.fillStyle(ch === '#' ? 0xff3030 : 0x40ff80, ch === '#' ? 0.3 : 0.08).fillRect(c * T, r * T, T, T);
+        // 屋根の下（段階118）は紫
+        if (ch === ROOF) g.fillStyle(0xb060ff, 0.35).fillRect(c * T, r * T, T, T);
+        else g.fillStyle(ch === '#' ? 0xff3030 : 0x40ff80, ch === '#' ? 0.3 : 0.08).fillRect(c * T, r * T, T, T);
         g.lineStyle(1, 0xffffff, 0.22).strokeRect(c * T, r * T, T, T);
       }),
     );
@@ -290,6 +330,19 @@ export class MapEditor {
       const [c, r] = selCell(sel);
       this.marks.add(scene.add.rectangle(c * T + T / 2, r * T + T / 2, T, T).setStrokeStyle(3, 0xffe040));
     }
+    // 引き直している道（段階119）：黄色の線と、折り返しの点の番号
+    const route = this.routing?.points;
+    if (route) {
+      const g = scene.add.graphics().lineStyle(4, 0xffe040, 0.95);
+      const pts = route.length > 2 ? [...route, route[0]] : route;
+      for (let i = 1; i < pts.length; i++) g.lineBetween(pts[i - 1][0] * T + T / 2, pts[i - 1][1] * T + T / 2, pts[i][0] * T + T / 2, pts[i][1] * T + T / 2);
+      g.strokeRect(route[0][0] * T, route[0][1] * T, T, T);
+      this.marks.add(g);
+      route.slice(1).forEach(([c, r], i) => {
+        this.marks.add(scene.add.circle(c * T + T / 2, r * T + T / 2, 9, 0xffe040).setStrokeStyle(1, 0x000000));
+        this.marks.add(addText(scene, c * T + T / 2, r * T + T / 2, String(i + 1), { size: 11, bold: true, color: '#000000' }).setOrigin(0.5));
+      });
+    }
   }
 
   /** マスの上の小さな札（同じマスに重なる時は少しずらす） */
@@ -312,7 +365,7 @@ export class MapEditor {
     TOOLS.forEach(([tool, name], i) => {
       const on = this.tool === tool;
       addButton(scene, this.bar, 6 + w * i + w / 2, top + 26, w - 4, 40, name, { onTap: () => this.pick(tool) }, {
-        size: 13,
+        size: 11,
         fill: on ? 0x5a4a1e : COLORS.panelLight,
         stroke: on ? 0xffd84a : COLORS.border,
         strokeWidth: on ? 2 : 1,
@@ -332,13 +385,16 @@ export class MapEditor {
   private pick(tool: Tool): void {
     this.tool = tool;
     this.selected = null;
+    this.routing = null;
     this.drawBar();
     this.drawMarks();
     const help: Record<Tool, string> = {
       look: '見る：なぞると地図が動く',
-      open: '歩ける：なぞったマスを歩ける所にする',
+      open: '歩ける：なぞったマスを歩ける所にする（屋根の下も外す）',
+      roof: '屋根：なぞったマスを、歩ける屋根や木の下にする（紫。歩くと絵の下に隠れる）',
       block: '通れない：なぞったマスを通れない所にする（S・P はそのまま）',
       move: '動かす：物をタップして選び、行き先をタップ（敵は見回りの道ごと動く）',
+      route: '道：敵をタップして選び、見回りの折り返しの点を順にタップ（2点なら行き来、3点以上なら輪）。敵をもう一度タップで決める',
       exit: '出入口：出入口の辺の近くをタップすると、そこへずらす（青いマス）',
     };
     this.host.say(help[tool]);
@@ -352,6 +408,7 @@ export class MapEditor {
     }
     this.edits = prev;
     this.selected = null;
+    this.routing = null;
     saveMapEdits(this.edits);
     this.redraw();
     this.check('1手前に戻した');
@@ -364,8 +421,10 @@ export class MapEditor {
     delete rooms[this.host.room];
     const inRoom = new Set(placedThings(this.host.original, this.host.room).map((t) => t.key));
     const things = Object.fromEntries(Object.entries(this.edits.things).filter(([k]) => !inRoom.has(k)));
-    this.edits = { rooms, things };
+    const patrols = Object.fromEntries(Object.entries(this.edits.patrols ?? {}).filter(([k]) => !inRoom.has(k)));
+    this.edits = Object.keys(patrols).length > 0 ? { rooms, things, patrols } : { rooms, things };
     this.selected = null;
+    this.routing = null;
     this.commit(before, 'この部屋を元の地図に戻した');
   }
 
@@ -373,6 +432,7 @@ export class MapEditor {
     const before = this.edits;
     this.edits = emptyMapEdits();
     this.selected = null;
+    this.routing = null;
     this.commit(before, '直したものを全部消した');
   }
 }

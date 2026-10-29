@@ -35,6 +35,19 @@ export interface RoomDef {
   exitAt?: Partial<Record<RoomSide, number>>;
 }
 
+/**
+ * 屋根の下（段階118）：文字の地図の ^ は歩けるマス。地図の絵で屋根や木の上を通る道を、その下を歩いているように見せる
+ * （探索の画面が、絵の同じ所を仲間と敵の上に重ねる）
+ */
+export const ROOF = '^';
+
+/** 部屋の屋根の下のマス */
+export function roofCells(room: RoomDef): GridCell[] {
+  const out: GridCell[] = [];
+  room.layout.forEach((line, r) => [...line].forEach((ch, c) => ch === ROOF && out.push([c, r])));
+  return out;
+}
+
 /** 部屋の出入口 */
 export interface RoomDoor {
   room: string;
