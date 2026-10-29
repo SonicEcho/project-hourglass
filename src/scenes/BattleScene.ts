@@ -1769,7 +1769,16 @@ export class BattleScene extends Phaser.Scene {
     }
     if (!win) {
       c.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, '最後に記録したチェックポイントから、やり直す', { size: 15, align: 'center', color: COLORS.subText, wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
-      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });
+      // 段階130（レビューの項目43。開発者が見本で決めた）：負けても残るものを毎回伝える。罰そのもの（チェックポイントへ戻る・使ったポーチの品は減る）は変えない
+      const keep = [
+        enc.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま',
+        'HP・MP は全回復して戻る',
+        ...(Object.keys(result.pouchUsed).length > 0 ? ['この戦闘で使ったポーチの品は、戻らない'] : []),
+      ];
+      const box = addText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 12, keep.map((t) => `・${t}`).join('\n'), { size: 14, color: COLORS.text, wrap: GAME_WIDTH - 60 }).setOrigin(0.5, 0).setLineSpacing(6);
+      c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 2, box.width + 32, box.height + 20, 0x1c2433, 0.95).setOrigin(0.5, 0).setStrokeStyle(1, COLORS.border));
+      c.add(box);
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + box.height + 80, 260, 60, 'チェックポイントへ', { onTap: () => this.scene.start(enc.lose.key, enc.lose.data) }, { size: 18, bold: true });
       return;
     }
     // 狩りで前の章の区画なら、星の砂と経験値は半分（星の砂は切り上げ。段階49。格下の砂嵐からは伸びにくい。docs/design/economy.md の 2.）
