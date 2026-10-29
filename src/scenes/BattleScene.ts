@@ -1306,7 +1306,9 @@ export class BattleScene extends Phaser.Scene {
         const breaks = part && !part.broken ? (t.partMin! >= part.hp ? '（割れる！）' : t.partMax! >= part.hp ? '（割れるかも）' : '') : '';
         return `${part?.name ?? ''} ${range(t.partMin!, t.partMax!)}${breaks}／本体 ${range(t.min, t.max)}${tag}`;
       }
-      return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : t.kind === 'mp' ? 'MP回復' : ''}${range(t.min, t.max)}${tag}`;
+      // 段階133（レビューの項目18）：予測は分かった弱点だけで計算するので、まだ弱点を1つも見つけていない敵には、弱点なら増えることを添える
+      const unknown = t.kind === 'damage' && t.affinity === 'normal' && unit?.side === 'enemy' && unit.knownWeaknesses.length === 0 ? '（弱点なら増える）' : '';
+      return `${unit?.name ?? ''} ${t.kind === 'heal' ? '回復' : t.kind === 'mp' ? 'MP回復' : ''}${range(t.min, t.max)}${tag}${unknown}`;
     });
     if (merged.length > 3) parts.push('…');
     const order = p.orderIndex >= 0 ? `行動順 ${p.orderIndex + 1}番目` : '';

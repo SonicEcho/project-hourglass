@@ -148,14 +148,15 @@ export class HubScene extends Phaser.Scene {
     if (this.overlay) return;
     const areas = huntableAreas(AREAS, run.returned);
     const cx = GAME_WIDTH / 2;
-    const h = 150 + areas.length * 60;
+    const h = 168 + areas.length * 60;
     const top = Math.round((GAME_HEIGHT - h) / 2);
     const panel = this.add.container(0, 0).setDepth(50);
     this.overlay = panel;
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
     panel.add(addWindow(this, cx - 165, top, 330, h));
     panel.add(addText(this, cx, top + 30, 'どの記憶をたどる？', { size: 17, bold: true }).setOrigin(0.5));
-    panel.add(addText(this, cx, top + 58, '砂嵐の名残とぬしから素材を集める\n同じ記憶を続けてたどると薄れる（1日で戻る）', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
+    // 段階133（レビューの項目90）：狩りの途中はセーブしないので、閉じた時のことを伝える
+    panel.add(addText(this, cx, top + 70, '砂嵐の名残とぬしから素材を集める\n同じ記憶を続けてたどると薄れる（1日で戻る）\n途中で閉じると昼の町から（手に入れた素材は残る）', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
     const now = storyLineup().chapter;
     const today = dayAt(SLICE_FLOW, run.event);
     areas.forEach((area, i) => {
@@ -165,7 +166,7 @@ export class HubScene extends Phaser.Scene {
       const rate = fadeRate(MEMORY_FADE_RATES, level);
       const fade = rate === null ? '今日はもう、かすれて見えない' : rate < 1 ? `記憶が${MEMORY_FADE_LABELS[level]}（実入り${Math.round(rate * 10)}割）` : '記憶は濃い';
       const note = [fade, half && rate !== null ? '星の砂と経験値は半分' : ''].filter(Boolean).join('・');
-      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, `${area.name}\n${note}`, { onTap: () => this.enterHunt(area.id) }, { size: 12, enabled: rate !== null });
+      addButton(this, panel, cx, top + 124 + i * 60, 290, 50, `${area.name}\n${note}`, { onTap: () => this.enterHunt(area.id) }, { size: 12, enabled: rate !== null });
     });
     addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', {
       onTap: () => {

@@ -261,7 +261,7 @@ export class DailyScene extends Phaser.Scene {
       };
       this.scene.start('Dialogue', data);
     };
-    if (spot.confirm) this.confirm(spot.confirm, go);
+    if (spot.confirm) this.confirm([spot.confirm, ...this.leftNotes()].join('\n\n'), go);
     else go();
   }
 
@@ -332,14 +332,32 @@ export class DailyScene extends Phaser.Scene {
     return { holder, width: cx - x };
   }
 
+  /**
+   * 夕暮れへ行く前の確認に添える、まだ残っているもの（段階133。レビューの項目50）：昼にあと何回選べるかと、まだ見ていない絆・小話の場所。
+   * 何も残っていなければ空
+   */
+  private leftNotes(): string[] {
+    const left = picksLeft(this.hub, run.vars);
+    if (!Number.isFinite(left) || left <= 0) return [];
+    const open = this.hub.places.flatMap((p) => {
+      const words = [...new Set(p.spots.filter((sp) => (sp.mark === 'bond' || sp.mark === 'talk') && spotState(this.hub, run.vars, sp) === 'open').map((sp) => MARK_STYLE[sp.mark].word))];
+      return words.length > 0 ? [`${p.name}（${words.join('・')}）`] : [];
+    });
+    return [`昼に選べるのは、あと${left}回${open.length > 0 ? `\nまだ見ていない：${open.join('、')}` : ''}`];
+  }
+
   private confirm(text: string, onYes: () => void): void {
     const cx = GAME_WIDTH / 2;
     const panel = this.add.container(0, 0).setDepth(50);
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(this.add.rectangle(cx, 420, 320, 220, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
-    panel.add(addText(this, cx, 370, text, { size: 15, align: 'center', wrap: 280 }).setOrigin(0.5));
-    addButton(this, panel, cx - 75, 470, 130, 52, 'はい', { onTap: onYes }, { size: 16, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
-    addButton(this, panel, cx + 75, 470, 130, 52, 'いいえ', { onTap: () => panel.destroy(true) }, { size: 16 });
+    // 段階133：残っているものを添えると文が長くなるので、窓の高さを文に合わせる
+    const body = addText(this, cx, 0, text, { size: 15, align: 'center', wrap: 280 }).setOrigin(0.5, 0);
+    const h = Math.max(220, body.height + 130);
+    const top = 420 - h / 2;
+    panel.add(this.add.rectangle(cx, 420, 320, h, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
+    panel.add(body.setY(top + 30));
+    addButton(this, panel, cx - 75, top + h - 50, 130, 52, 'はい', { onTap: onYes }, { size: 16, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+    addButton(this, panel, cx + 75, top + h - 50, 130, 52, 'いいえ', { onTap: () => panel.destroy(true) }, { size: 16 });
   }
 
   private toast(text: string, warn = false): void {
