@@ -309,8 +309,9 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       const aim = charged.cutsFrame && enemy.chargeTarget ? findUnit(vm.state, enemy.chargeTarget)?.name : undefined;
       const label = charged.cutsFrame ? `ため：✂ ${charged.name}${aim ? ` → ${aim}` : ''}` : `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
       const ty = bodyY - radius - 12;
-      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
-      root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
+      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 14 + 16), 24, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
+      // 段階129：予告の帯の文字を 11→13（帯も合わせて大きく）
+      root.add([bg, addText(scene, cx, ty, label, { size: 13, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
     }
 
     // ボスの大きな絵では、名前と HP を絵の足もとに重ねる（名前は縁取りで読めるように）
@@ -720,7 +721,7 @@ function withTargetNote(def: ActionDef): string {
 
 const HAND_RULE_TEXT = [
   `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったスナップは次のラウンドに残る（残した分だけ、新しく引く枚数は減る）。`,
-  '計画でスナップを仲間に割り当てると、そのスナップは他の仲間には使えない（スナップに「○○が使う」と出る）。',
+  '計画でスナップを仲間に割り当てると、そのスナップは他の仲間には使えない（スナップの下に「▶○○」と、使う仲間の名前が出る）。',
   `延長になると、手札を${ONE_MORE_DRAW}枚引いてから追加行動を選べる。`,
   `ドロー・サーチ・クイックステップはサポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで）。`,
 ].join('\n');
@@ -1598,7 +1599,7 @@ function drawPhotoCard(
   c.add(scene.add.rectangle(L + inset, T + inset, pw, ph).setOrigin(0).setStrokeStyle(1, 0x000000, 0.5));
   // 属性の札（写真の左上）
   const { label: typeLabel, icon: iconKind } = snapLook(def);
-  const tag = addText(scene, 0, 0, typeLabel, { size: 9, bold: true, color: '#ffffff' });
+  const tag = addText(scene, 0, 0, typeLabel, { size: 10, bold: true, color: '#ffffff' });
   const tagW = tag.width + 20;
   c.add(scene.add.rectangle(L + inset, T + inset, tagW, 15, color, dim ? 0.5 : 1).setOrigin(0));
   c.add(addIcon(scene, iconKind, L + inset + 8, T + inset + 7.5, 10, 0xffffff, dim ? 0.5 : 1));
@@ -1622,12 +1623,13 @@ function drawPhotoCard(
   // 下：使う人・その場で使う・重さ
   if (o.reservedBy) {
     c.add(scene.add.rectangle(0, footY, w - 8, 18, 0x000000, 0.85));
-    c.add(addText(scene, 0, footY, `${o.reservedBy}が使う`, { size: 10, bold: true, color: COLORS.accentText, align: 'center' }).setOrigin(0.5));
+    // 段階129（開発者が見本で選んだ案2）：「○○が使う」は11以上だとカードの幅からはみ出すので、名前だけを大きく
+    c.add(addText(scene, 0, footY, `▶${o.reservedBy}`, { size: 12, bold: true, color: COLORS.accentText, align: 'center' }).setOrigin(0.5));
   } else if (def.support) {
-    c.add(addText(scene, 0, footY, 'その場で使う', { size: 10, bold: true, color: '#6a4fb0' }).setOrigin(0.5));
+    c.add(addText(scene, 0, footY, 'その場で使う', { size: 11, bold: true, color: '#6a4fb0' }).setOrigin(0.5));
   } else {
     // 重さの名前と目盛りを1行に並べる
-    const wl = addText(scene, 0, footY, weightLabel(def.weight), { size: 10, bold: true, color: '#444444' }).setOrigin(0, 0.5);
+    const wl = addText(scene, 0, footY, weightLabel(def.weight), { size: 11, bold: true, color: '#444444' }).setOrigin(0, 0.5);
     const n = WEIGHT_LABELS.length;
     const start = -(wl.width + 4 + n * 7) / 2;
     wl.setX(start);
