@@ -17,7 +17,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - E. 部屋の地図（39枚。済 38）
 - F. 会話の背景（14枚。済 14）
 - G. 1枚絵（1枚。済 1）
-- H. スナップの写真（14枚）
+- H. スナップの写真（14枚。済 13）
 
 ## A. 小夜子（ヒロイン）
 
@@ -1525,7 +1525,7 @@ Keep the lower quarter of the image simple, because a text box may cover it. Abs
 
 `docs/ART.md` の 5-7 の表の本文を、下の頭と締めの間に入れて作る。人が写る物は、ハルト（`hero_smile.webp`）とあかり（`akari_smile.webp`）など、写る人の立ち絵を添付する
 
-### 105. スナップ：ソード
+### 105. スナップ：ソード（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_sword.png`
@@ -1538,7 +1538,7 @@ Late 1990s Japan, a riverside embankment at sunset. A high school boy playfully 
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 106. スナップ：ヘビーブロウ
+### 106. スナップ：ヘビーブロウ（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_heavyBlow.png`
@@ -1564,7 +1564,7 @@ A summer festival night in late 1990s Japan. The boy and the girl in yukata, see
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 108. スナップ：アイスニードル
+### 108. スナップ：アイスニードル（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_iceChip.png`
@@ -1577,7 +1577,7 @@ A cold winter morning. The girl, seen from the side, draws a small picture with 
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 109. スナップ：サンダーボルト
+### 109. スナップ：サンダーボルト（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_thunderChip.png`
@@ -1590,7 +1590,7 @@ A sudden summer evening shower. The boy and the girl take shelter under the eave
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 110. スナップ：ワイドショット
+### 110. スナップ：ワイドショット（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_wideShot.png`
@@ -1603,7 +1603,7 @@ A shooting gallery stall at a summer festival. The girl aims a cork gun at a row
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 111. スナップ：リカバー
+### 111. スナップ：リカバー（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_recover.png`
@@ -1616,7 +1616,7 @@ A quiet summer afternoon on a wooden veranda of an old Japanese house. The girl 
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 112. スナップ：クイックステップ
+### 112. スナップ：クイックステップ（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_quickStep.png`
@@ -1629,7 +1629,7 @@ A school sports day relay race. The moment the boy passes the baton to the girl,
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 113. スナップ：サーチ
+### 113. スナップ：サーチ（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_search.png`
@@ -1642,7 +1642,7 @@ A quiet school library. The boy and the girl lean over one old book together, th
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 114. スナップ：ブレイクアーム
+### 114. スナップ：ブレイクアーム（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_breakArm.png`
@@ -1655,7 +1655,7 @@ A narrow alley at dusk. The boy and the girl crouch beside an old bicycle and fi
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 115. スナップ：ドロー
+### 115. スナップ：ドロー（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_draw.png`
@@ -1668,7 +1668,7 @@ An empty classroom after school. Playing cards are spread out across two pushed-
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 116. スナップ：ジョーカー
+### 116. スナップ：ジョーカー（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`snap_joker.png`
@@ -1681,7 +1681,7 @@ A small 10-year-old girl with a confident grin, seen from the side, shows off a 
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 117. スナップ：アンコール
+### 117. スナップ：アンコール（済）
 
 - 添付：`public/assets/portraits/past_kenta_smile.webp`
 - 保存名：`snap_encore.png`
@@ -1694,7 +1694,7 @@ A high school culture festival stage in the gym. A boy keeps singing into the mi
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 118. スナップ：ピンチヒッター
+### 118. スナップ：ピンチヒッター（済）
 
 - 添付：`past_koji_normal.png（C で作った絵）`、`past_masaru_smile.png（C で作った絵）`
 - 保存名：`snap_pinchHitter.png`

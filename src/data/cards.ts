@@ -51,23 +51,23 @@ export const CARD_NAME_LINES: Partial<Record<string, string>> = {
 
 /**
  * 写真のカードの絵（段階102b。新しい戦闘の画面）。台帳（assets.ts）の画像の id と、切り抜く中心（絵の幅・高さに対する割合）。
- * 今は仮に、今ある1枚絵と背景から選んでいる。正式な札の絵は後で docs/ART.md に頼む
+ * 2026-10-30 に開発者から写真が届いた（docs/ART.md の 5-7。snap.<id>）。ファイアボールだけは、まだ1枚絵の花火から切り抜いている
  */
 export const CARD_ART: Record<keyof typeof CARDS, { asset: string; x: number; y: number }> = {
-  sword: { asset: 'cg.awaken_weapons', x: 0.3, y: 0.3 },
-  heavyBlow: { asset: 'cg.cut_ground', x: 0.5, y: 0.25 },
+  sword: { asset: 'snap.sword', x: 0.5, y: 0.5 },
+  heavyBlow: { asset: 'snap.heavyBlow', x: 0.5, y: 0.5 },
   fireChip: { asset: 'cg.fireworks', x: 0.5, y: 0.2 },
-  iceChip: { asset: 'cg.white_city', x: 0.5, y: 0.35 },
-  thunderChip: { asset: 'cg.string_stage', x: 0.5, y: 0.2 },
-  wideShot: { asset: 'bg.shooting_stall', x: 0.5, y: 0.4 },
-  recover: { asset: 'cg.tandem_bicycle', x: 0.45, y: 0.4 },
-  quickStep: { asset: 'bg.riverside_path', x: 0.5, y: 0.45 },
-  search: { asset: 'bg.library', x: 0.5, y: 0.4 },
-  breakArm: { asset: 'bg.factory_1969', x: 0.5, y: 0.5 },
-  draw: { asset: 'cg.mio_cards', x: 0.5, y: 0.35 },
-  joker: { asset: 'cg.noa_passing', x: 0.62, y: 0.3 },
-  encore: { asset: 'bg.school_gym', x: 0.5, y: 0.35 },
-  pinchHitter: { asset: 'bg.riverside_1998', x: 0.5, y: 0.55 },
+  iceChip: { asset: 'snap.iceChip', x: 0.5, y: 0.5 },
+  thunderChip: { asset: 'snap.thunderChip', x: 0.5, y: 0.5 },
+  wideShot: { asset: 'snap.wideShot', x: 0.5, y: 0.5 },
+  recover: { asset: 'snap.recover', x: 0.5, y: 0.5 },
+  quickStep: { asset: 'snap.quickStep', x: 0.5, y: 0.5 },
+  search: { asset: 'snap.search', x: 0.5, y: 0.5 },
+  breakArm: { asset: 'snap.breakArm', x: 0.5, y: 0.5 },
+  draw: { asset: 'snap.draw', x: 0.5, y: 0.5 },
+  joker: { asset: 'snap.joker', x: 0.5, y: 0.5 },
+  encore: { asset: 'snap.encore', x: 0.5, y: 0.5 },
+  pinchHitter: { asset: 'snap.pinchHitter', x: 0.5, y: 0.5 },
 };
 
 /** アルバム（パーティ共通の山札）20枚の構成 */
