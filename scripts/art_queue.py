@@ -284,6 +284,89 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.''')
 
 
+# ---- I〜K. 表情違いと 4-1 の人（2026-10-30。感情移入を優先して、台本で多く使う表情から） ----
+
+
+def expression(face, keep, child=False):
+    ref = 'the attached portrait, with the same childlike proportions' if child else 'the attached portrait'
+    return f'''{STYLE}
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, {face}.
+This is exactly the same character as {ref}: {keep}
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.'''
+
+
+MIO = 'Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.'
+SAYOKO = 'Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.'
+section('I. みお・小夜子の表情', '今の立ち絵は、みおは笑顔、小夜子は微笑みの1枚だけで、どの場面もその顔で話している。台本で多く使う順に並べた（回数は 1〜4章の台本の数）。毎回、基本の1枚を添付する。気に入らない時は「表情だけもっと強く」などと足して作り直してよい')
+MIO_FACES = [
+    ('真剣（93回）', 'a serious, determined look, eyebrows drawn together, mouth set firmly', 'mio_serious.png'),
+    ('驚き（90回）', 'a surprised look, eyes wide open, mouth open in a small "oh"', 'mio_surprised.png'),
+    ('考える（44回）', 'a thinking look, eyes glancing up to the side, lips slightly pursed', 'mio_thinking.png'),
+    ('心配（28回）', 'a worried look, eyebrows raised in the middle, looking up anxiously', 'mio_worried.png'),
+    ('大笑い（25回）', 'laughing out loud with her eyes squeezed shut and mouth wide open, showing her small snaggletooth', 'mio_laugh.png'),
+    ('むっ（22回）', 'a pouting, sulky look, cheeks puffed out, lips pushed forward', 'mio_pout.png'),
+    ('悔しい（18回）', 'a frustrated look, biting her lower lip, eyes watery but holding back tears, fists clenched below the frame', 'mio_frustrated.png'),
+    ('困り笑い（10回）', 'an awkward, embarrassed smile, eyebrows lowered, as if apologizing', 'mio_wry.png'),
+    ('照れ（8回）', 'a shy, blushing look, cheeks red, eyes looking away, a small bashful smile', 'mio_shy.png'),
+    ('泣き笑い（3回）', 'smiling through tears, tears running down her cheeks but a brave grin', 'mio_teary.png'),
+]
+for label, face, save in MIO_FACES:
+    add(f'みお：{label}', [P + 'mio_smile.webp'], save, expression(face, MIO, child=True))
+SAYOKO_FACES = [
+    ('考える（41回）', 'a thoughtful look, eyes lowered slightly to the side, one corner of her lips pressed in', 'sayoko_thinking.png'),
+    ('驚き（22回）', 'a surprised look, eyes wide open, lips parted, a hint of curious delight', 'sayoko_surprised.png'),
+    ('笑顔（21回）', 'a bright, open, happy smile, eyes curved into crescents', 'sayoko_laugh.png'),
+    ('真剣（20回）', 'a serious, resolute look, calm but firm eyes, mouth closed', 'sayoko_serious.png'),
+    ('通常（8回）', 'a calm, neutral expression with a composed, polite face, mouth closed', 'sayoko_normal.png'),
+    ('照れ（7回）', 'a shy, blushing look, cheeks pink, eyes cast down, a small embarrassed smile', 'sayoko_shy.png'),
+    ('さみしげ（5回）', 'a quiet, lonely smile, eyes a little sad and distant', 'sayoko_lonely.png'),
+    ('泣き笑い（2回）', 'smiling through tears, tears on her cheeks, a gentle accepting smile', 'sayoko_teary.png'),
+]
+for label, face, save in SAYOKO_FACES:
+    add(f'小夜子：{label}', [P + 'sayoko_smile.webp'], save, expression(face, SAYOKO))
+
+section('J. 4-1「シロのいた夏」の人', '今は色の札で出している3人（`docs/script/4-1.md` の 2.）。まず基本の1枚（通常）を作り、できた絵を添付して表情違いを作る。写しの2人はゲームの中でセピアに色を付けるので、ふつうの色で作る')
+TAICHI = 'Taichi, a 16-year-old Japanese boy, a first-year student at the same high school as the boy in the attached portrait, who quit the track team this summer. Slim, athletic build, short black hair a little grown out, sharp but tired eyes, a blunt, guarded face. The same school uniform as the attached portrait of the boy (white collared shirt and a mustard-yellow tie), but instead of his hoodie, a plain navy track jacket left open, a leftover from the track team. No letters or logos.'
+add('たいち（今16歳。高校1年）：通常', [REF_TEEN, P + 'hero_normal.webp'], 'taichi_normal.png',
+    portrait('a guarded, blunt neutral look, mouth closed', 'Character: ' + TAICHI), '一番先に作る。下の表情違いは、この絵を添付する')
+TAICHI_KEEP = 'Taichi, a 16-year-old boy with short black hair a little grown out, sharp but tired eyes, a white collared shirt with a mustard-yellow tie and an open plain navy track jacket.'
+for label, face, save in [
+    ('不機嫌', 'a sullen, annoyed look, eyebrows drawn down, looking slightly away', 'taichi_sullen.png'),
+    ('泣きそう', 'on the verge of tears, eyes glistening, lips pressed together, trying hard not to cry', 'taichi_tearful.png'),
+    ('考える', 'a thinking look, eyes lowered, as if trying to remember something', 'taichi_thinking.png'),
+    ('驚き', 'a surprised look, eyes wide open', 'taichi_surprised.png'),
+    ('笑顔', 'a small, awkward but genuine smile, the first in a long time', 'taichi_smile.png'),
+]:
+    add(f'たいち：{label}', ['taichi_normal.png（上で作った絵）'], save, expression(face, TAICHI_KEEP))
+PAST_TAICHI = 'Young Taichi, the same boy as the attached portrait of the teenager but six years earlier: a 10-year-old Japanese boy spending the summer of 2018 at his grandfather\'s house in the countryside. Keep the same face features so he is clearly the same person. Sun-tanned skin, short black hair, a big straw hat, a plain white T-shirt, a cheap child\'s digital wristwatch hanging from his neck on a cord.'
+add('写しのたいち（平成30年の夏、10歳）：通常', [REF_CHILD, 'taichi_normal.png（上で作った絵）'], 'past_taichi_normal.png',
+    portrait('a plain, quiet look, mouth closed', 'Character: ' + PAST_TAICHI, child=True), '下の表情違いは、この絵を添付する')
+PAST_TAICHI_KEEP = 'young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child\'s digital wristwatch hanging from his neck on a cord.'
+for label, face, save in [
+    ('笑顔', 'a big, happy, sunny grin', 'past_taichi_smile.png'),
+    ('泣きそう', 'on the verge of tears, eyes glistening, lips trembling', 'past_taichi_tearful.png'),
+    ('真剣', 'a serious, determined look, jaw set, eyes fixed forward', 'past_taichi_serious.png'),
+    ('怒り', 'shouting in anger, eyebrows sharply drawn, mouth open, red-faced', 'past_taichi_angry.png'),
+    ('驚き', 'a surprised look, eyes wide open, mouth open', 'past_taichi_surprised.png'),
+    ('不機嫌', 'a sulky, stubborn look, lower lip pushed out', 'past_taichi_sullen.png'),
+]:
+    add(f'写しのたいち：{label}', ['past_taichi_normal.png（上で作った絵）'], save, expression(face, PAST_TAICHI_KEEP, child=True))
+GRANDPA = 'Taichi\'s grandfather, a Japanese farmer around 72 in the summer of 2018, living alone in a countryside house. Sun-tanned, deeply wrinkled face, short white hair, thick eyebrows, a few words and gruff manners but kind eyes. A faded straw hat, a white towel around his neck, a light gray work shirt with rolled sleeves.'
+add('写しのおじいちゃん（平成30年の夏）：通常', [REF_TEEN], 'past_grandpa_normal.png',
+    portrait('a gruff, quiet look, mouth firmly closed', 'Character: ' + GRANDPA), '下の「怒り」は、この絵を添付する')
+add('写しのおじいちゃん：怒り', ['past_grandpa_normal.png（上で作った絵）'], 'past_grandpa_angry.png',
+    expression('shouting in anger and worry, eyebrows drawn together, mouth open', 'a sun-tanned Japanese farmer around 72 with short white hair, a faded straw hat, a white towel around his neck and a light gray work shirt.'))
+
+section('K. ハルト・あかりの足りない表情', '4-1 の脚本で指定した表情。今はハルトの「困り」、あかりの「悲しい」で代わりにしている。届いたら脚本どおりに戻す')
+add('ハルト：考える', [P + 'hero_normal.webp'], 'hero_thinking.png',
+    expression('a thinking look, eyes lowered to the side, brow slightly furrowed, mouth closed', 'Haruto, the boy in the attached portrait, in his school uniform.'))
+add('あかり：泣きそう', [P + 'akari_smile.webp'], 'akari_tearful.png',
+    expression('on the verge of tears, eyes glistening with tears not yet falling, lips pressed together', 'Akari, the girl in the cardigan in the attached portrait.'))
+
+
 def main():
     out = ['# 絵の「そのまま貼る一覧」（2026-10-25）', '',
            'ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1つの枠が1枚**。上から順に作る。',
@@ -292,7 +375,7 @@ def main():
            '- できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする',
            '- 気に入らない時は、同じ文でもう一度作るか、「ここを直して」と一言足して作り直してよい',
            '- 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる',
-           '- まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、表情違い（Gemini。5-3 の 14）',
+           '- まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、ほかの人の表情違い（5-3 の 14。みお・小夜子・ハルト・あかりと 4-1 の人は下の I〜K）',
            '']
     n = 0
     toc = []

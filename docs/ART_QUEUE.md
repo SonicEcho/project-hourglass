@@ -6,9 +6,9 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
 - 気に入らない時は、同じ文でもう一度作るか、「ここを直して」と一言足して作り直してよい
 - 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる
-- まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、表情違い（Gemini。5-3 の 14）
+- まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、ほかの人の表情違い（5-3 の 14。みお・小夜子・ハルト・あかりと 4-1 の人は下の I〜K）
 
-全部で 118 枚。
+全部で 153 枚。
 
 - A. 小夜子（ヒロイン）（2枚。済 2）
 - B. 3章の人（9枚。済 9）
@@ -18,6 +18,9 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - F. 会話の背景（14枚。済 14）
 - G. 1枚絵（1枚。済 1）
 - H. スナップの写真（14枚。済 14）
+- I. みお・小夜子の表情（18枚）
+- J. 4-1「シロのいた夏」の人（15枚）
+- K. ハルト・あかりの足りない表情（2枚）
 
 ## A. 小夜子（ヒロイン）
 
@@ -1705,4 +1708,544 @@ Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft c
 A candid snapshot, like a slightly faded instant photo of a precious everyday moment. Square 1:1 image. The main subject is in the center of the image; the outer edges are simple, because the image will be cropped tightly. Do not draw a photo border or frame. People are shown from behind, from the side, or small in the scene; no large close-up faces.
 A late 1990s riverside little league baseball field. A boy in a baseball uniform steps into the batter's box as a pinch hitter, seen from behind; in the stands, his father cups his hands and shouts. Bright summer afternoon.
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
+```
+
+## I. みお・小夜子の表情
+
+今の立ち絵は、みおは笑顔、小夜子は微笑みの1枚だけで、どの場面もその顔で話している。台本で多く使う順に並べた（回数は 1〜4章の台本の数）。毎回、基本の1枚を添付する。気に入らない時は「表情だけもっと強く」などと足して作り直してよい
+
+### 119. みお：真剣（93回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_serious.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a serious, determined look, eyebrows drawn together, mouth set firmly.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 120. みお：驚き（90回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_surprised.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes wide open, mouth open in a small "oh".
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 121. みお：考える（44回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_thinking.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a thinking look, eyes glancing up to the side, lips slightly pursed.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 122. みお：心配（28回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_worried.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a worried look, eyebrows raised in the middle, looking up anxiously.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 123. みお：大笑い（25回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_laugh.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, laughing out loud with her eyes squeezed shut and mouth wide open, showing her small snaggletooth.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 124. みお：むっ（22回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_pout.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a pouting, sulky look, cheeks puffed out, lips pushed forward.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 125. みお：悔しい（18回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_frustrated.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a frustrated look, biting her lower lip, eyes watery but holding back tears, fists clenched below the frame.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 126. みお：困り笑い（10回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_wry.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, an awkward, embarrassed smile, eyebrows lowered, as if apologizing.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 127. みお：照れ（8回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_shy.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a shy, blushing look, cheeks red, eyes looking away, a small bashful smile.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 128. みお：泣き笑い（3回）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_teary.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, smiling through tears, tears running down her cheeks but a brave grin.
+This is exactly the same character as the attached portrait, with the same childlike proportions: Mio, a petite, energetic 10-year-old girl with bright light-brown messy short hair, one tiny side tuft tied with a small orange hair tie, big warm brown eyes, a plain yellow T-shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 129. 小夜子：考える（41回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_thinking.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a thoughtful look, eyes lowered slightly to the side, one corner of her lips pressed in.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 130. 小夜子：驚き（22回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_surprised.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes wide open, lips parted, a hint of curious delight.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 131. 小夜子：笑顔（21回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_laugh.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a bright, open, happy smile, eyes curved into crescents.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 132. 小夜子：真剣（20回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_serious.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a serious, resolute look, calm but firm eyes, mouth closed.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 133. 小夜子：通常（8回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_normal.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a calm, neutral expression with a composed, polite face, mouth closed.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 134. 小夜子：照れ（7回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_shy.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a shy, blushing look, cheeks pink, eyes cast down, a small embarrassed smile.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 135. 小夜子：さみしげ（5回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_lonely.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a quiet, lonely smile, eyes a little sad and distant.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 136. 小夜子：泣き笑い（2回）
+
+- 添付：`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`sayoko_teary.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, smiling through tears, tears on her cheeks, a gentle accepting smile.
+This is exactly the same character as the attached portrait: Sayoko, a graceful 16-year-old girl of the Taisho era with long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+## J. 4-1「シロのいた夏」の人
+
+今は色の札で出している3人（`docs/script/4-1.md` の 2.）。まず基本の1枚（通常）を作り、できた絵を添付して表情違いを作る。写しの2人はゲームの中でセピアに色を付けるので、ふつうの色で作る
+
+### 137. たいち（今16歳。高校1年）：通常
+
+- 添付：`public/assets/portraits/akari_smile.webp`、`public/assets/portraits/hero_normal.webp`
+- 保存名：`taichi_normal.png`
+- メモ：一番先に作る。下の表情違いは、この絵を添付する
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a guarded, blunt neutral look, mouth closed.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl in the cardigan.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Taichi, a 16-year-old Japanese boy, a first-year student at the same high school as the boy in the attached portrait, who quit the track team this summer. Slim, athletic build, short black hair a little grown out, sharp but tired eyes, a blunt, guarded face. The same school uniform as the attached portrait of the boy (white collared shirt and a mustard-yellow tie), but instead of his hoodie, a plain navy track jacket left open, a leftover from the track team. No letters or logos.
+```
+
+### 138. たいち：不機嫌
+
+- 添付：`taichi_normal.png（上で作った絵）`
+- 保存名：`taichi_sullen.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a sullen, annoyed look, eyebrows drawn down, looking slightly away.
+This is exactly the same character as the attached portrait: Taichi, a 16-year-old boy with short black hair a little grown out, sharp but tired eyes, a white collared shirt with a mustard-yellow tie and an open plain navy track jacket.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 139. たいち：泣きそう
+
+- 添付：`taichi_normal.png（上で作った絵）`
+- 保存名：`taichi_tearful.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, on the verge of tears, eyes glistening, lips pressed together, trying hard not to cry.
+This is exactly the same character as the attached portrait: Taichi, a 16-year-old boy with short black hair a little grown out, sharp but tired eyes, a white collared shirt with a mustard-yellow tie and an open plain navy track jacket.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 140. たいち：考える
+
+- 添付：`taichi_normal.png（上で作った絵）`
+- 保存名：`taichi_thinking.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a thinking look, eyes lowered, as if trying to remember something.
+This is exactly the same character as the attached portrait: Taichi, a 16-year-old boy with short black hair a little grown out, sharp but tired eyes, a white collared shirt with a mustard-yellow tie and an open plain navy track jacket.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 141. たいち：驚き
+
+- 添付：`taichi_normal.png（上で作った絵）`
+- 保存名：`taichi_surprised.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes wide open.
+This is exactly the same character as the attached portrait: Taichi, a 16-year-old boy with short black hair a little grown out, sharp but tired eyes, a white collared shirt with a mustard-yellow tie and an open plain navy track jacket.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 142. たいち：笑顔
+
+- 添付：`taichi_normal.png（上で作った絵）`
+- 保存名：`taichi_smile.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a small, awkward but genuine smile, the first in a long time.
+This is exactly the same character as the attached portrait: Taichi, a 16-year-old boy with short black hair a little grown out, sharp but tired eyes, a white collared shirt with a mustard-yellow tie and an open plain navy track jacket.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 143. 写しのたいち（平成30年の夏、10歳）：通常
+
+- 添付：`public/assets/portraits/young_akari_smile.webp`、`taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_normal.png`
+- メモ：下の表情違いは、この絵を添付する
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a plain, quiet look, mouth closed.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the little girl in the yukata, with the same childlike proportions.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Young Taichi, the same boy as the attached portrait of the teenager but six years earlier: a 10-year-old Japanese boy spending the summer of 2018 at his grandfather's house in the countryside. Keep the same face features so he is clearly the same person. Sun-tanned skin, short black hair, a big straw hat, a plain white T-shirt, a cheap child's digital wristwatch hanging from his neck on a cord.
+```
+
+### 144. 写しのたいち：笑顔
+
+- 添付：`past_taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_smile.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a big, happy, sunny grin.
+This is exactly the same character as the attached portrait, with the same childlike proportions: young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child's digital wristwatch hanging from his neck on a cord.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 145. 写しのたいち：泣きそう
+
+- 添付：`past_taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_tearful.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, on the verge of tears, eyes glistening, lips trembling.
+This is exactly the same character as the attached portrait, with the same childlike proportions: young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child's digital wristwatch hanging from his neck on a cord.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 146. 写しのたいち：真剣
+
+- 添付：`past_taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_serious.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a serious, determined look, jaw set, eyes fixed forward.
+This is exactly the same character as the attached portrait, with the same childlike proportions: young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child's digital wristwatch hanging from his neck on a cord.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 147. 写しのたいち：怒り
+
+- 添付：`past_taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_angry.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, shouting in anger, eyebrows sharply drawn, mouth open, red-faced.
+This is exactly the same character as the attached portrait, with the same childlike proportions: young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child's digital wristwatch hanging from his neck on a cord.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 148. 写しのたいち：驚き
+
+- 添付：`past_taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_surprised.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes wide open, mouth open.
+This is exactly the same character as the attached portrait, with the same childlike proportions: young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child's digital wristwatch hanging from his neck on a cord.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 149. 写しのたいち：不機嫌
+
+- 添付：`past_taichi_normal.png（上で作った絵）`
+- 保存名：`past_taichi_sullen.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a sulky, stubborn look, lower lip pushed out.
+This is exactly the same character as the attached portrait, with the same childlike proportions: young Taichi, a sun-tanned 10-year-old boy with short black hair, a big straw hat, a plain white T-shirt and a child's digital wristwatch hanging from his neck on a cord.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 150. 写しのおじいちゃん（平成30年の夏）：通常
+
+- 添付：`public/assets/portraits/akari_smile.webp`
+- 保存名：`past_grandpa_normal.png`
+- メモ：下の「怒り」は、この絵を添付する
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a gruff, quiet look, mouth firmly closed.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl in the cardigan.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Taichi's grandfather, a Japanese farmer around 72 in the summer of 2018, living alone in a countryside house. Sun-tanned, deeply wrinkled face, short white hair, thick eyebrows, a few words and gruff manners but kind eyes. A faded straw hat, a white towel around his neck, a light gray work shirt with rolled sleeves.
+```
+
+### 151. 写しのおじいちゃん：怒り
+
+- 添付：`past_grandpa_normal.png（上で作った絵）`
+- 保存名：`past_grandpa_angry.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, shouting in anger and worry, eyebrows drawn together, mouth open.
+This is exactly the same character as the attached portrait: a sun-tanned Japanese farmer around 72 with short white hair, a faded straw hat, a white towel around his neck and a light gray work shirt.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+## K. ハルト・あかりの足りない表情
+
+4-1 の脚本で指定した表情。今はハルトの「困り」、あかりの「悲しい」で代わりにしている。届いたら脚本どおりに戻す
+
+### 152. ハルト：考える
+
+- 添付：`public/assets/portraits/hero_normal.webp`
+- 保存名：`hero_thinking.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a thinking look, eyes lowered to the side, brow slightly furrowed, mouth closed.
+This is exactly the same character as the attached portrait: Haruto, the boy in the attached portrait, in his school uniform.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+```
+
+### 153. あかり：泣きそう
+
+- 添付：`public/assets/portraits/akari_smile.webp`
+- 保存名：`akari_tearful.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, on the verge of tears, eyes glistening with tears not yet falling, lips pressed together.
+This is exactly the same character as the attached portrait: Akari, the girl in the cardigan in the attached portrait.
+Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
 ```
