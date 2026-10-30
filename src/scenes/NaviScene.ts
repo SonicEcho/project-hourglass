@@ -306,12 +306,15 @@ export class NaviScene extends Phaser.Scene {
       const m = METAL[def.color];
       const base = this.add.graphics();
       const inset = 4;
-      // 黒いふち → 台座（同じギアのマスどうしは、つないで1つの台座に）
-      for (const [layer, pad, color, alpha] of [
-        ['edge', 2.5, 0x000000, 0.85],
-        ['base', 0, m.dark, active ? 1 : 0.5],
-      ] as const) {
-        void layer;
+      // 選んでいるギアは白い太いふち → 効果のギアは金のふち（ブリッジの帯と同じ金。ブリッジが要る印） → 黒いふち → 台座
+      // （同じギアのマスどうしは、つないで1つの台座に）
+      const layers: [number, number, number][] = [
+        ...(selected ? ([[7, 0xffffff, 1]] as [number, number, number][]) : []),
+        ...(def.kind === 'effect' ? ([[4.5, FRAME_COLORS.gold, active ? 1 : 0.55]] as [number, number, number][]) : []),
+        [2.5, 0x000000, 0.85],
+        [0, m.dark, active ? 1 : 0.5],
+      ];
+      for (const [pad, color, alpha] of layers) {
         base.fillStyle(color, alpha);
         for (const [c, r] of cells) {
           const x = o.x + c * cell;
@@ -321,14 +324,9 @@ export class NaviScene extends Phaser.Scene {
           if (set.has(key([c, r + 1]))) base.fillRect(x + inset - pad, y + cell - inset - pad - 2, cell - inset * 2 + pad * 2, inset * 2 + pad * 2 + 4);
         }
       }
-      // 選んでいるギアは金のふち
-      if (selected) {
-        base.lineStyle(2.5, FRAME_COLORS.gold, 1);
-        for (const [c, r] of cells) base.strokeRoundedRect(o.x + c * cell + inset - 3, o.y + r * cell + inset - 3, cell - inset * 2 + 6, cell - inset * 2 + 6, 10);
-      }
       this.root.add(base);
       const gears = this.add.graphics();
-      for (const [c, r] of cells) drawGear(gears, o.x + c * cell + cell / 2, o.y + r * cell + cell / 2, cell * 0.4, def.color, active ? 1 : 0.4);
+      for (const [c, r] of cells) drawGear(gears, o.x + c * cell + cell / 2, o.y + r * cell + cell / 2, cell * 0.4, def.color, active ? 1 : 0.4, true, def.kind === 'effect' && active);
       this.root.add(gears);
       const [c0, r0] = cells[0];
       const x = o.x + c0 * cell;
@@ -557,7 +555,8 @@ export class NaviScene extends Phaser.Scene {
       const y = v.top + Math.floor(i / LIST_COLS) * (CHIP_H + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
       const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? 0x0a0908 : 0x1a1612, 0.92).setRounded(10).setOrigin(0);
-      rect.setStrokeStyle(selected ? 2 : 1, selected ? FRAME_COLORS.gold : FRAME_COLORS.line);
+      // 選んでいるギアは白いふち（金は効果のギアの印。段階146 の調整）
+      rect.setStrokeStyle(selected ? 2.5 : 1, selected ? 0xffffff : FRAME_COLORS.line);
       layer.add(rect);
       drawPartShape(this, layer, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
       layer.add(addText(this, x + 4, y + CHIP_H - 16, `${PART_COLOR_LABEL[def.color]}・${def.name}`, { size: 9, color: p.placement ? COLORS.subText : COLORS.text }));

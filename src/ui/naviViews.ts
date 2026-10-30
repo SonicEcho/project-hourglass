@@ -54,14 +54,18 @@ export function drawPartShape(
   alpha = 1,
 ): void {
   const g = scene.add.graphics();
-  for (const [c, r] of rotateCells(def.cells, rotation)) drawGear(g, x + c * cell + cell / 2, y + r * cell + cell / 2, cell * 0.5, def.color, alpha, cell >= 14);
+  const cells = rotateCells(def.cells, rotation);
+  // 効果のギア（ブリッジが要る）は、歯車の後ろに金の輪（段階146 の調整。盤の上の金のふちと同じ印）
+  if (def.kind === 'effect') for (const [c, r] of cells) g.fillStyle(0xffd77a, alpha).fillCircle(x + c * cell + cell / 2, y + r * cell + cell / 2, cell * 0.74);
+  for (const [c, r] of cells) drawGear(g, x + c * cell + cell / 2, y + r * cell + cell / 2, cell * 0.5, def.color, alpha, cell >= 14);
   parent.add(g);
 }
 
 /**
- * 金属の歯車を1つ描く（中心 cx, cy、歯の先までの半径 r）。detail が true なら、肉抜きの穴・軸の赤い石・照り返しも描く
+ * 金属の歯車を1つ描く（中心 cx, cy、歯の先までの半径 r）。detail が true なら、肉抜きの穴・軸の赤い石・照り返しも描く。
+ * lit が true なら軸の石が光る（ブリッジに乗って効いている効果のギア）
  */
-export function drawGear(g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number, color: PartColor, alpha = 1, detail = true): void {
+export function drawGear(g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number, color: PartColor, alpha = 1, detail = true, lit = false): void {
   const m = METAL[color];
   const teeth = 10;
   const body = r * 0.78;
@@ -96,7 +100,11 @@ export function drawGear(g: Phaser.GameObjects.Graphics, cx: number, cy: number,
   }
   // 軸と赤い石
   g.fillStyle(m.light, alpha).fillCircle(cx, cy, body * 0.24);
-  g.fillStyle(0xc0102a, alpha).fillCircle(cx, cy, body * 0.13);
+  if (lit) {
+    g.fillStyle(0xff4060, 0.35).fillCircle(cx, cy, body * 0.5);
+    g.fillStyle(0xffd0a0, 0.5).fillCircle(cx, cy, body * 0.32);
+  }
+  g.fillStyle(lit ? 0xff4a5a : 0xc0102a, alpha).fillCircle(cx, cy, body * 0.13);
   g.fillStyle(0xffffff, 0.7 * alpha).fillCircle(cx - body * 0.05, cy - body * 0.05, body * 0.04);
 }
 
