@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
 import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar, spareSnaps } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
+import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
@@ -13,6 +13,7 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { battleAt, canChooseParty, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
+import { faceTexture } from '../ui/portrait';
 import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 import { addIcon } from '../ui/icons';
 
@@ -33,6 +34,8 @@ const LONG_PRESS_MS = 500;
 const NODE_R = 12;
 /** 星図の夜空（段階32a 調整2）：またたく星の数、星がきらめく間（ミリ秒） */
 const SKY = { stars: 70, twinkleMs: 1300 } as const;
+/** 開けた道の芯の色（段階144。金より少し白い） */
+const SKY_GOLD_CORE = 0xfff0c0;
 /** 夜空の地の色（段階141。上が深い紺、下がうっすら紫） */
 const SKY_COLORS = { top: 0x070a1e, bottom: 0x221a3c } as const;
 
@@ -375,7 +378,6 @@ export class GrowthScene extends Phaser.Scene {
     const g = run.growth;
     const chapter = growthChapter(hubLineup());
     const shown = (n: GrowthNodeDef) => !chapterLocked(n, chapter);
-    const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
     const byId = new Map(GROWTH_MAP.nodes.map((n) => [n.id, n]));
 
     // 星図の空（触れる範囲が分かるように、うっすら塗る）と、小さな飾りの星（いつも同じ並び）
@@ -417,11 +419,13 @@ export class GrowthScene extends Phaser.Scene {
       const b = byId.get(ib);
       if (!a || !b || !shown(a) || !shown(b)) continue;
       const lit = isOpened(g, this.charId, a.id) && isOpened(g, this.charId, b.id);
+      // 段階144（星空と砂時計）：開けた道は金に光らせ、まだの道は点線（星座の中は細かく、星座と星座の橋は粗く）
       if (lit) {
-        lines.lineStyle(10, color, 0.16).lineBetween(a.x, a.y, b.x, b.y);
-        lines.lineStyle(3, color, 1).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(14, FRAME_COLORS.gold, 0.07).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(7, FRAME_COLORS.gold, 0.18).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(2.5, SKY_GOLD_CORE, 1).lineBetween(a.x, a.y, b.x, b.y);
       } else if (a.con !== b.con) dashedLine(lines, a.x, a.y, b.x, b.y, 0x9fb8e8, 0.5, 5, 4);
-      else lines.lineStyle(1.2, 0x9fb8e8, 0.45).lineBetween(a.x, a.y, b.x, b.y);
+      else dashedLine(lines, a.x, a.y, b.x, b.y, 0x9fb8e8, 0.5, 3, 4);
     }
     // 将来の星座へつなぐ場所：外へ向かう薄い点線と「？」
     for (const f of GROWTH_FRONTIER) {
@@ -468,9 +472,14 @@ export class GrowthScene extends Phaser.Scene {
         { x: -(NODE_R + 10), y: -16 },
       ][i % 5];
       const current = c.id === this.charId;
-      const r = current ? 9 : 6;
-      layer.add(this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff));
-      if (current) layer.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
+      const r = current ? 11 : 7;
+      const [px, py] = [p.x + offset.x, p.y + offset.y];
+      // 駒は仲間の顔（段階144）。立ち絵がない人は、その人の色の丸に名前の1文字
+      const face = ALLY_FACE[c.id] ? faceTexture(this, ALLY_FACE[c.id], FACE_CROPS[c.id], 24) : '';
+      if (face) layer.add(this.add.image(px, py, face).setDisplaySize(r * 2, r * 2));
+      else layer.add(this.add.circle(px, py, r, ALLY_COLOR[c.id] ?? COLORS.ally));
+      layer.add(this.add.circle(px, py, r).setStrokeStyle(current ? 2 : 1, current ? FRAME_COLORS.gold : 0xffffff));
+      if (!face && current) layer.add(addText(this, px, py, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
     });
   }
 
@@ -499,6 +508,11 @@ export class GrowthScene extends Phaser.Scene {
       label = `${STAT_SHORT[n.stat]}${n.amount}`;
     }
     const shape = this.add.graphics();
+    // 開けた星は金の光に包む（段階144）
+    if (opened) {
+      shape.fillStyle(FRAME_COLORS.gold, 0.1).fillCircle(x, y, r * 3.2);
+      shape.lineStyle(1, FRAME_COLORS.gold, 0.55).strokeCircle(x, y, r + 3.5);
+    }
     // まわりの光
     shape.fillStyle(color, (opened ? 0.3 : 0.12) * alpha).fillCircle(x, y, r * 2.4);
     shape.fillStyle(color, (opened ? 0.25 : 0.1) * alpha).fillCircle(x, y, r * 1.6);
@@ -516,7 +530,10 @@ export class GrowthScene extends Phaser.Scene {
     if (n.kind === 'statBig') shape.lineStyle(1, 0xffffff, 0.6 * alpha).strokeCircle(x, y, r + 3);
     // 開けられる星は点線の輪、選んだ星は太い輪
     if (openable && !selected) dashedCircle(shape, x, y, r + 7, COLORS.accent, 1, 16);
-    if (selected) shape.lineStyle(3, COLORS.select, 1).strokeCircle(x, y, r + 7);
+    if (selected) {
+      shape.lineStyle(8, FRAME_COLORS.gold, 0.25).strokeCircle(x, y, r + 8);
+      shape.lineStyle(2.5, 0xffffff, 1).strokeCircle(x, y, r + 8);
+    }
     layer.add(shape);
     layer.add(
       addText(this, x, y + r + 11, label, {
@@ -542,7 +559,9 @@ export class GrowthScene extends Phaser.Scene {
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = INFO_TOP;
     const h = 120;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    // すりガラスの札（段階144）：夜空が透ける薄い地に、金の細いふち
+    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, 0x1a2040, 0.72).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.gold, 0.45));
+    this.root.add(this.add.rectangle(SIDE_PADDING + 1, top + 1, GAME_WIDTH - SIDE_PADDING * 2 - 2, h / 2, 0xffffff, 0.05).setRounded(11).setOrigin(0));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
@@ -557,12 +576,7 @@ export class GrowthScene extends Phaser.Scene {
       const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
       if (advice) {
-        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, {
-          fill: 0x5a4a10,
-          stroke: 0xffd76a,
-          size: 13,
-          bold: true,
-        });
+        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, stroke: FRAME_COLORS.gold, size: 13, bold: true });
       }
       return;
     }
@@ -589,7 +603,7 @@ export class GrowthScene extends Phaser.Scene {
       56,
       opened ? '開けた' : `開ける\n${cost}pt`,
       { onTap: () => this.open(n.id) },
-      { enabled: !err, fill: 0x2f6b3f, stroke: 0x6dff9e, size: 14, bold: true },
+      { ...GOLD_BUTTON, enabled: !err, size: 14 },
     );
   }
 

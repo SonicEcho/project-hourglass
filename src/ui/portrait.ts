@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
 import { CAST, FACE_CROP } from '../data';
+import { RENDER_SCALE } from './theme';
 
 /** 会話の人と表情 → 使える立ち絵の台帳の id（その表情の絵、なければ代わりの表情の絵。どちらもなければ ''） */
 export function portraitImageId(scene: Phaser.Scene, castName: string, face: string): string {
@@ -22,4 +23,28 @@ export function faceImage(scene: Phaser.Scene, id: string, cx: number, cy: numbe
   img.setMask(shape.createGeometryMask());
   img.once(Phaser.GameObjects.Events.DESTROY, () => shape.destroy());
   return img;
+}
+
+/**
+ * 立ち絵から丸く切り出した顔を、絵（テクスチャ）として作る（段階144）。動く入れ物（星図など）の中でも使えるよう、マスクを使わずに絵にする。
+ * 作った絵の key を返す（立ち絵がなければ ''）。直径 size は画面の座標の大きさで、描く倍率をかけて作る
+ */
+export function faceTexture(scene: Phaser.Scene, id: string, crop: { x: number; y: number; size: number } = FACE_CROP, size = 32): string {
+  if (!hasImage(scene, id)) return '';
+  const key = `face-circle:${id}:${size}`;
+  if (scene.textures.exists(key)) return key;
+  const src = scene.textures.get(id).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+  const d = Math.round(size * RENDER_SCALE);
+  const tex = scene.textures.createCanvas(key, d, d);
+  const ctx = tex?.getContext();
+  if (!tex || !ctx) return '';
+  const s = src.width * crop.size;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(d / 2, d / 2, d / 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.drawImage(src, src.width * crop.x, src.height * crop.y, s, s, 0, 0, d, d);
+  ctx.restore();
+  tex.refresh();
+  return key;
 }
