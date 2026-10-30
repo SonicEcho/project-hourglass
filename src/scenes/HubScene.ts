@@ -1,19 +1,20 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, hasSpare, huntableAreas, huntRewardRate, isSeen, markSeen, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, POUCH_MAX, POUCH_ORDER, SLICE_FLOW } from '../data';
+import { areaChapter, canEvolveAny, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, findBugs, hasSpare, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, shelfLost, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, POUCH_MAX, POUCH_ORDER, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
-import { backButton, FRAME_COLORS, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
+import { backButton, FRAME_COLORS, frameHeader, PLAIN_BUTTON } from '../ui/frame';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
+import { addGalleryTile, type GalleryTile } from '../ui/gallery';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
 import { notePlayCount } from './playRecord';
 import { archivedTalks } from './TalkArchiveScene';
-import { canChooseParty, currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
+import { canChooseParty, currentEvent, currentNaviData, lineupBase, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
 // 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）もここ。
@@ -58,52 +59,78 @@ export class HubScene extends Phaser.Scene {
     playBgm(this, BGM.library);
     const root = this.add.container(0, 0);
     drawBackdrop(this, root, BACKDROPS.library, 0, GAME_HEIGHT, false);
+    // ギャラリーの暗い地（段階142）：蔵書の棚はうっすら見えるだけにして、タイルの絵を引き立てる
+    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0a0705, 0.78).setOrigin(0));
     // 見出し（段階141：共通の枠）
     frameHeader(this, root, 'hourglass', 'レストピア', { label: '蔵書の棚 ― 時間は進まない ―', value: '' });
 
-    const cx = GAME_WIDTH / 2;
-    const w = GAME_WIDTH - 60;
-    // 段階141：押してほしい「記憶をたどる」だけ金、ほかは暗い地（共通の枠の色の決まり）
-    const strong = { ...GOLD_BUTTON, size: 17 };
-    const plain = { ...PLAIN_BUTTON, size: 15, bold: true };
-    // 狩り
-    const hunts = huntableAreas(AREAS, run.returned);
-    addButton(this, root, cx, 180, w, 62, '記憶をたどる', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
-    // ポーチの中身（段階51）。絵の上でも読めるよう、暗い下地に白い字（2026-10-16 開発者の指摘：見にくかった）
-    const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}`).join('　');
-    root.add(this.add.rectangle(cx, 237, w, 44, FRAME_COLORS.panel, 0.85).setRounded(12).setStrokeStyle(1, FRAME_COLORS.line));
-    root.add(addText(this, cx, 225, `ポーチ（1種類${POUCH_MAX}個まで）`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
-    root.add(addText(this, cx, 245, pouch, { size: 14, bold: true, color: COLORS.text }).setOrigin(0.5));
-    // 育成（今の章で開いているものだけ）
-    const unlocks = storyLineup().unlocks;
-    const grow: [string, string][] = [];
-    if (unlocks.growth) grow.push(['星図', 'Growth']);
-    if (unlocks.navi) grow.push(['ムーブメント', 'Navi']);
-    if (unlocks.weapon) grow.push(['武器', 'Weapon']);
-    if (hasSpare(run.album)) grow.push(['アルバム', 'Album']);
-    // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
-    if (canChooseParty()) grow.push(['並び', 'Party']);
+    // 思い出のギャラリー（段階142。docs/ART.md の 5-9）：メニューを1枚絵のタイルにする
+    const left = 14;
+    const w = GAME_WIDTH - left * 2;
     const gap = 8;
-    const per = Math.min(3, grow.length);
-    const bw = (w - gap * (per - 1)) / Math.max(1, per);
-    grow.forEach(([label, key], i) => {
-      const row = Math.floor(i / per);
-      const col = i % per;
-      addButton(this, root, 30 + bw / 2 + col * (bw + gap), 290 + row * 64, bw, 54, label, { onTap: () => this.openGrowth(key) }, plain);
-    });
-    const below = 290 + Math.ceil(grow.length / Math.max(1, per)) * 64 + 30;
-    // 交換所（段階52）と落とし物の棚（段階53）
-    addButton(this, root, cx, below + 20, w, 54, '交換所', { onTap: () => this.openExchange() }, plain);
-    addButton(this, root, cx, below + 84, w, 54, '落とし物の棚', { onTap: () => this.openLost() }, plain);
-    // 町の小話（段階82）：過ぎた日の小話を後から見る。過ぎた日の小話がある時だけ
+    // 狩り：一番上の大きなタイル
+    const hunts = huntableAreas(AREAS, run.returned);
+    let y = 62;
+    addGalleryTile(this, root, left, y, w, 168, { id: 'hunt', label: '記憶をたどる', sub: '返した時間へ、もう一度', enabled: hunts.length > 0, onTap: () => this.pickHunt() });
+    y += 168 + 6;
+    // ポーチの中身（段階51）。1行で
+    const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}`).join('　');
+    root.add(this.add.rectangle(left, y, w, 26, FRAME_COLORS.panel, 0.85).setOrigin(0).setRounded(8).setStrokeStyle(1, FRAME_COLORS.line));
+    root.add(addText(this, left + 10, y + 13, `ポーチ（各${POUCH_MAX}まで）`, { size: 10, color: COLORS.subText }).setOrigin(0, 0.5));
+    root.add(addText(this, left + w - 10, y + 13, pouch, { size: 12, bold: true }).setOrigin(1, 0.5));
+    y += 26 + gap + 4;
+    // 育成（今の章で開いているものだけ）
+    const lineup = storyLineup();
+    const members = lineupBase(lineup);
+    const unlocks = lineup.unlocks;
+    const grow: GalleryTile[] = [];
+    if (unlocks.growth) grow.push({ id: 'growth', label: '星図', sub: `星の砂 ${run.growth.points}`, onTap: () => this.openGrowth('Growth') });
+    if (unlocks.weapon) {
+      const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+      grow.push({ id: 'weapon', label: '武器', badge: evolvable ? '進化できる' : undefined, onTap: () => this.openGrowth('Weapon') });
+    }
+    if (unlocks.navi) {
+      // 狂いがある時だけ赤い札（赤はムーブメントの焼き付きの色。ART.md 5-9 のそろえ方の決まり）
+      const bugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
+      grow.push({ id: 'navi', label: 'ムーブメント', badge: bugs > 0 ? `狂い ${bugs}` : undefined, badgeColor: bugs > 0 ? 0xc0303a : undefined, onTap: () => this.openGrowth('Navi') });
+    }
+    if (hasSpare(run.album)) grow.push({ id: 'album', label: 'アルバム', onTap: () => this.openGrowth('Album') });
+    // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
+    if (canChooseParty()) grow.push({ id: 'party', label: '並び', onTap: () => this.openGrowth('Party') });
+    y = this.tileRows(root, grow, left, y, w, gap);
+    // 交換所（段階52）・落とし物の棚（段階53）・町の小話（段階82。過ぎた日の小話がある時だけ）
+    const lostReady = shelfLost(LOST_ITEMS, run.returned).filter((d) => lostStatus(run.vars, d.id) === 'found').length;
+    const misc: GalleryTile[] = [
+      { id: 'exchange', label: '交換所', onTap: () => this.openExchange() },
+      { id: 'lost', label: '落とし物の棚', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
+    ];
     const talks = archivedTalks();
     if (talks.length > 0) {
       const unseen = talks.filter((t) => !t.seen).length;
-      addButton(this, root, cx, below + 148, w, 54, unseen > 0 ? `町の小話（まだ ${unseen}）` : '町の小話', { onTap: () => this.openTalks() }, plain);
+      misc.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
     }
+    this.tileRows(root, misc, left, y, w, gap, 3);
     // 昼へ戻る
     backButton(this, root, '時計屋へ戻る', () => this.leave());
     this.cameras.main.fadeIn(250, 0, 0, 0);
+  }
+
+  /**
+   * タイルを段に並べて描き、下の端を返す。max 枚まで1段に並べる（育成は、4つなら2・2、5つなら2・3。上の段ほど大きく）
+   */
+  private tileRows(root: Phaser.GameObjects.Container, tiles: GalleryTile[], left: number, top: number, w: number, gap: number, max = 3): number {
+    const rows: GalleryTile[][] = [];
+    if (tiles.length === 4 && max === 3) rows.push(tiles.slice(0, 2), tiles.slice(2));
+    else if (tiles.length === 5) rows.push(tiles.slice(0, 2), tiles.slice(2));
+    else for (let i = 0; i < tiles.length; i += max) rows.push(tiles.slice(i, i + max));
+    let y = top;
+    for (const row of rows) {
+      const h = row.length <= 2 ? 150 : 138;
+      const tw = (w - gap * (row.length - 1)) / row.length;
+      row.forEach((t, i) => addGalleryTile(this, root, left + i * (tw + gap), y, tw, h, t));
+      y += h + gap;
+    }
+    return y;
   }
 
   /** 育成の画面を開く。閉じると拠点に戻る */
@@ -149,7 +176,7 @@ export class HubScene extends Phaser.Scene {
     const panel = this.add.container(0, 0).setDepth(50);
     this.overlay = panel;
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(addWindow(this, cx - 165, top, 330, h));
+    panel.add(addWindow(this, cx - 165, top, 330, h, FRAME_COLORS.gold, FRAME_COLORS.panel));
     panel.add(addText(this, cx, top + 30, 'どの記憶をたどる？', { size: 17, bold: true }).setOrigin(0.5));
     panel.add(addText(this, cx, top + 58, '砂嵐の名残とぬしから素材を集める\n同じ記憶を続けてたどると薄れる（1日で戻る）', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
     const now = storyLineup().chapter;
@@ -161,14 +188,14 @@ export class HubScene extends Phaser.Scene {
       const rate = fadeRate(MEMORY_FADE_RATES, level);
       const fade = rate === null ? '今日はもう、かすれて見えない' : rate < 1 ? `記憶が${MEMORY_FADE_LABELS[level]}（実入り${Math.round(rate * 10)}割）` : '記憶は濃い';
       const note = [fade, half && rate !== null ? '星の砂と経験値は半分' : ''].filter(Boolean).join('・');
-      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, `${area.name}\n${note}`, { onTap: () => this.enterHunt(area.id) }, { size: 12, enabled: rate !== null });
+      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, `${area.name}\n${note}`, { onTap: () => this.enterHunt(area.id) }, { ...PLAIN_BUTTON, size: 12, enabled: rate !== null });
     });
     addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', {
       onTap: () => {
         panel.destroy(true);
         this.overlay = undefined;
       },
-    }, { size: 14 });
+    }, { ...PLAIN_BUTTON, size: 14 });
     popIn(this, panel);
   }
 

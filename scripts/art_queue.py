@@ -367,6 +367,42 @@ add('あかり：泣きそう', [P + 'akari_smile.webp'], 'akari_tearful.png',
     expression('on the verge of tears, eyes glistening with tears not yet falling, lips pressed together', 'Akari, the girl in the cardigan in the attached portrait.'))
 
 
+
+# ---- L. 拠点のタイル（段階142。2026-10-30） ----
+
+
+def tile(scene):
+    return f'''{STYLE}
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+{scene}
+Absolutely no letters, numbers or text anywhere.'''
+
+
+LIB = 'public/assets/backgrounds/library.webp'
+section('L. 拠点のタイル（思い出のギャラリー）', '段階142。拠点（レストピア）のメニューを、1枚絵のタイルにするための絵（`docs/ART.md` の 5-9）。開発者が「タイルの絵は新調したい」と言った（2026-10-30）。横 3:2 で作り、ゲームの中で横長や正方形に切り抜く。真ん中に大事な物を置き、下の4分の1は名前の文字が乗るので暗くすっきりさせる。蔵書の棚の背景を絵柄の見本に付ける。届くまでは、今までの1枚絵と背景で代わりに出す')
+add('タイル：記憶をたどる', [LIB, P + 'hero_smile.webp', P + 'akari_smile.webp'], 'tile_hunt.png', tile(
+    'Restopia, a vast library of memories where stolen happy hours are kept as glowing hourglasses on endless shelves. Seen from behind, a high school boy and a girl in a cardigan (keep their designs as in the attached portraits) walk toward a tall archway of swirling golden sand; through the archway, a faint, dreamlike summer festival night with lanterns and fireworks is visible, as if they are stepping back into a memory.'))
+add('タイル：星図', [LIB], 'tile_growth.png', tile(
+    'A deep indigo night sky full of stars above the library of memories. Several stars are linked by thin glowing golden lines into a constellation, and in the center stands a large antique hourglass whose falling sand glitters like stardust, slowly spilling up into the sky to become new stars.'))
+add('タイル：武器', [LIB], 'tile_weapon.png', tile(
+    'A single slender sword rests on dark crimson velvet in the library of memories, its blade faintly glowing with a crimson light, as if remembering the boy who wields it. Behind it, faint silver octagonal emblems linked by thin crimson lines float in the dark like a family tree. Floating grains of golden sand.'))
+add('タイル：ムーブメント', [LIB], 'tile_navi.png', tile(
+    'A close-up of the open back of an antique pocket watch: the beautiful clockwork movement with interlocking gears made of four metals (copper, blued steel, green bronze and yellow brass), tiny red ruby jewels, blued screws, and a golden balance wheel in motion. Warm light catching the metal edges, dark velvet around the watch.'))
+add('タイル：アルバム', [LIB], 'tile_album.png', tile(
+    'An open old photo album on a dark wooden desk, lit by a warm desk lamp. Several slightly faded instant photos are taped onto cream-colored pages; the photos show only soft blurry colors of everyday moments (a festival night, a riverside sunset, a classroom), with no clear faces. A few loose photos and a roll of masking tape beside the album.'))
+add('タイル：並び', [LIB], 'tile_party.png', tile(
+    'Hands of several people of different ages placed together one on top of another in the center, as a promise before setting out together, seen from above; soft golden light and drifting sand around them. Only hands and sleeves are visible, no faces.'))
+add('タイル：交換所', [LIB, P + 'petra_normal.webp'], 'tile_exchange.png', tile(
+    'A neat exchange counter tucked between the bookshelves of the library of memories: a brass balance scale, glass jars of glowing sand and small crystal memory fragments, a thick ledger and a rubber stamp, arranged in perfect order. Behind the counter, the clerk in the attached portrait is seen small and from the side, adjusting her glasses while checking the ledger.'))
+add('タイル：落とし物の棚', [LIB], 'tile_lost.png', tile(
+    'A small wooden shelf of lost things in a quiet corner of the library of memories, each item with a little paper tag tied by string (the tags are blank): a child\'s straw hat, a red umbrella, a wind-up tin toy, a music box, a single glove, an old cassette tape. A soft golden glow on each item, as if waiting for its owner.'))
+add('タイル：町の小話', [], 'tile_talks.png', tile(
+    'A small Japanese shopping street at dusk seen from a little distance: paper lanterns and shop lights coming on, a few townspeople chatting in front of a bakery and a candy shop, a cat on a bench, warm windows. A peaceful, everyday evening; people are small and seen from the side or behind.'))
+
+
 def main():
     out = ['# 絵の「そのまま貼る一覧」（2026-10-25）', '',
            'ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1つの枠が1枚**。上から順に作る。',

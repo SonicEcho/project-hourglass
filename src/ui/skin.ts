@@ -65,12 +65,12 @@ export function rounded<T extends Phaser.GameObjects.Rectangle>(rect: T, radius:
 }
 
 /**
- * 説明や詳しい情報の窓（左上が x, y）。角の丸い枠に、砂色のふちと、四隅の小さな飾り
+ * 説明や詳しい情報の窓（左上が x, y）。角の丸い枠に、砂色のふちと、四隅の小さな飾り。fill は地の色（育成の画面の枠は暗い地。段階142）
  */
-export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, h: number, accent: number = COLORS.accent): Phaser.GameObjects.Container {
+export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, h: number, accent: number = COLORS.accent, fill: number = COLORS.panel): Phaser.GameObjects.Container {
   const c = scene.add.container(0, 0);
   c.add(scene.add.rectangle(x + 2, y + 5, w, h, 0x000000, 0.4).setOrigin(0).setRounded(14));
-  c.add(scene.add.rectangle(x, y, w, h, COLORS.panel, 0.97).setOrigin(0).setRounded(14).setStrokeStyle(2, accent));
+  c.add(scene.add.rectangle(x, y, w, h, fill, 0.97).setOrigin(0).setRounded(14).setStrokeStyle(2, accent));
   const g = scene.add.graphics();
   g.lineStyle(1, accent, 0.35).strokeRoundedRect(x + 5, y + 5, w - 10, h - 10, 10);
   g.fillStyle(accent, 1);

@@ -8,7 +8,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる
 - まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、ほかの人の表情違い（5-3 の 14。みお・小夜子・ハルト・あかりと 4-1 の人は下の I〜K）
 
-全部で 153 枚。
+全部で 162 枚。
 
 - A. 小夜子（ヒロイン）（2枚。済 2）
 - B. 3章の人（9枚。済 9）
@@ -21,6 +21,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - I. みお・小夜子の表情（18枚）
 - J. 4-1「シロのいた夏」の人（15枚）
 - K. ハルト・あかりの足りない表情（2枚）
+- L. 拠点のタイル（思い出のギャラリー）（9枚）
 
 ## A. 小夜子（ヒロイン）
 
@@ -2248,4 +2249,143 @@ This is exactly the same character as the attached portrait: Akari, the girl in 
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
+```
+
+## L. 拠点のタイル（思い出のギャラリー）
+
+段階142。拠点（レストピア）のメニューを、1枚絵のタイルにするための絵（`docs/ART.md` の 5-9）。開発者が「タイルの絵は新調したい」と言った（2026-10-30）。横 3:2 で作り、ゲームの中で横長や正方形に切り抜く。真ん中に大事な物を置き、下の4分の1は名前の文字が乗るので暗くすっきりさせる。蔵書の棚の背景を絵柄の見本に付ける。届くまでは、今までの1枚絵と背景で代わりに出す
+
+### 154. タイル：記憶をたどる
+
+- 添付：`public/assets/backgrounds/library.webp`、`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
+- 保存名：`tile_hunt.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+Restopia, a vast library of memories where stolen happy hours are kept as glowing hourglasses on endless shelves. Seen from behind, a high school boy and a girl in a cardigan (keep their designs as in the attached portraits) walk toward a tall archway of swirling golden sand; through the archway, a faint, dreamlike summer festival night with lanterns and fireworks is visible, as if they are stepping back into a memory.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 155. タイル：星図
+
+- 添付：`public/assets/backgrounds/library.webp`
+- 保存名：`tile_growth.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+A deep indigo night sky full of stars above the library of memories. Several stars are linked by thin glowing golden lines into a constellation, and in the center stands a large antique hourglass whose falling sand glitters like stardust, slowly spilling up into the sky to become new stars.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 156. タイル：武器
+
+- 添付：`public/assets/backgrounds/library.webp`
+- 保存名：`tile_weapon.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+A single slender sword rests on dark crimson velvet in the library of memories, its blade faintly glowing with a crimson light, as if remembering the boy who wields it. Behind it, faint silver octagonal emblems linked by thin crimson lines float in the dark like a family tree. Floating grains of golden sand.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 157. タイル：ムーブメント
+
+- 添付：`public/assets/backgrounds/library.webp`
+- 保存名：`tile_navi.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+A close-up of the open back of an antique pocket watch: the beautiful clockwork movement with interlocking gears made of four metals (copper, blued steel, green bronze and yellow brass), tiny red ruby jewels, blued screws, and a golden balance wheel in motion. Warm light catching the metal edges, dark velvet around the watch.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 158. タイル：アルバム
+
+- 添付：`public/assets/backgrounds/library.webp`
+- 保存名：`tile_album.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+An open old photo album on a dark wooden desk, lit by a warm desk lamp. Several slightly faded instant photos are taped onto cream-colored pages; the photos show only soft blurry colors of everyday moments (a festival night, a riverside sunset, a classroom), with no clear faces. A few loose photos and a roll of masking tape beside the album.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 159. タイル：並び
+
+- 添付：`public/assets/backgrounds/library.webp`
+- 保存名：`tile_party.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+Hands of several people of different ages placed together one on top of another in the center, as a promise before setting out together, seen from above; soft golden light and drifting sand around them. Only hands and sleeves are visible, no faces.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 160. タイル：交換所
+
+- 添付：`public/assets/backgrounds/library.webp`、`public/assets/portraits/petra_normal.webp`
+- 保存名：`tile_exchange.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+A neat exchange counter tucked between the bookshelves of the library of memories: a brass balance scale, glass jars of glowing sand and small crystal memory fragments, a thick ledger and a rubber stamp, arranged in perfect order. Behind the counter, the clerk in the attached portrait is seen small and from the side, adjusting her glasses while checking the ledger.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 161. タイル：落とし物の棚
+
+- 添付：`public/assets/backgrounds/library.webp`
+- 保存名：`tile_lost.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+A small wooden shelf of lost things in a quiet corner of the library of memories, each item with a little paper tag tied by string (the tags are blank): a child's straw hat, a red umbrella, a wind-up tin toy, a music box, a single glove, an old cassette tape. A soft golden glow on each item, as if waiting for its owner.
+Absolutely no letters, numbers or text anywhere.
+```
+
+### 162. タイル：町の小話
+
+- 添付：なし
+- 保存名：`tile_talks.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
+The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
+Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
+A small Japanese shopping street at dusk seen from a little distance: paper lanterns and shop lights coming on, a few townspeople chatting in front of a bakery and a candy shop, a cat on a bench, warm windows. A peaceful, everyday evening; people are small and seen from the side or behind.
+Absolutely no letters, numbers or text anywhere.
 ```
