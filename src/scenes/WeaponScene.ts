@@ -29,26 +29,28 @@ import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../da
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { PART_COLOR } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss } from '../ui/theme';
+import { COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addBar, addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
-import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, screenBg, sparkAt } from '../ui/skin';
+import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, sparkAt } from '../ui/skin';
+import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader } from '../ui/frame';
 import { addIcon } from '../ui/icons';
 
 // 武器の画面（段階9）。縦持ち 390×844 に、武器・進化先・記憶の欠片を1画面で収める
 //
-// 記憶の欠片をタップで選び「吸わせる」。条件を全部満たした次の進化先に「進化」ボタンが出る（型を選んで、確認してから進化）。
+// 記憶の欠片をタップで選び「刻む」。条件を全部満たした次の進化先に「進化」ボタンが出る（型を選んで、確認してから進化）。
 // 段階42：進化は何度もできる（進化ツリー）。ここには次の進化先だけを出し、ツリー全体は「ツリーを見る」（WeaponTreeScene）で
 
 const D = WEAPON_DATA;
 const PARAM_KEYS: WeaponParamKey[] = ['atk', 'fire', 'ice', 'thunder'];
 const PARAM_COLOR: Record<WeaponParamKey, number> = { atk: ELEMENT_COLOR.physical, fire: ELEMENT_COLOR.fire, ice: ELEMENT_COLOR.ice, thunder: ELEMENT_COLOR.thunder };
 
-const CARD_TOP = 92;
-const EVO_TOP = 234;
-const EVO_H = 78;
+const CARD_TOP = FRAME.contentTop;
+const EVO_TOP = FRAME.contentTop + 142;
+// 段階141：上に顔のタブが入ったので、3つ並んでも下の素材に重ならないよう少し低くした
+const EVO_H = 74;
 const FRAG_TOP = 518;
 
 export class WeaponScene extends Phaser.Scene {
@@ -61,10 +63,10 @@ export class WeaponScene extends Phaser.Scene {
   private page = 0;
   /** 選んでいる素材・アイテム、または記憶の欠片 */
   private selected: string | null = null;
-  /** 素材・欠片の並びの場所（吸わせる演出の出どころ。描くたびに覚え直す） */
+  /** 素材・欠片の並びの場所（刻む演出の出どころ。描くたびに覚え直す） */
   private itemSpots = new Map<string, { x: number; y: number; color: number }>();
   private message = '';
-  /** 時分解を出しているか（段階100c。どれかの武器の吸わせ枠が初めていっぱいになってから） */
+  /** 時分解を出しているか（段階100c。どれかの武器の刻印が初めていっぱいになってから） */
   private decompose = false;
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
@@ -88,7 +90,7 @@ export class WeaponScene extends Phaser.Scene {
   }
 
   /**
-   * 時分解を出すか（段階100c）：どれかの武器の吸わせ枠が初めていっぱいになったら、物語の変数に覚えて、その後はずっと出す
+   * 時分解を出すか（段階100c）：どれかの武器の刻印が初めていっぱいになったら、物語の変数に覚えて、その後はずっと出す
    * （1章では枠が埋まらず、時分解を使う理由がないため）。初めて出た時は説明の窓も出す。交換所を初めて開いた時にも覚える（ExchangeScene）
    */
   private updateDecompose(): void {
@@ -113,13 +115,13 @@ export class WeaponScene extends Phaser.Scene {
 
   // ---- 操作 ----
 
-  /** 素材を武器に吸わせる（段階27b） */
+  /** 素材を武器に刻む（段階27b） */
   private absorb(): void {
     const id = this.selected;
     if (!id || getAbsorbError(D, run.armory, this.charId, id)) return;
     const before = weaponName(D, this.weapon());
     run.armory = absorbMaterial(D, run.armory, this.charId, id);
-    this.message = `${before}に${D.items[id].name}を吸わせた（${describeGains(D.items[id].gains)}）`;
+    this.message = `${before}に${D.items[id].name}を刻んだ（${describeGains(D.items[id].gains)}）`;
     console.log('[weapon] absorb', this.charId, id, JSON.stringify(this.weapon().params));
     if ((run.armory.items[id] ?? 0) <= 0) this.selected = null;
     const spot = this.itemSpots.get(id);
@@ -133,7 +135,7 @@ export class WeaponScene extends Phaser.Scene {
     if (!id || getFragmentError(D, run.armory, id)) return;
     const it = D.items[id];
     run.armory = fragmentItem(D, run.armory, id);
-    this.message = `${it.name}を時分解した（${describeDecompose(D, it)}）。「記憶の欠片」のタブで吸わせる`;
+    this.message = `${it.name}を時分解した（${describeDecompose(D, it)}）。「記憶の欠片」のタブで刻む`;
     console.log('[weapon] fragment', id, JSON.stringify(run.armory.fragments));
     if ((run.armory.items[id] ?? 0) < D.decomposeCost) this.selected = null;
     this.render();
@@ -144,7 +146,7 @@ export class WeaponScene extends Phaser.Scene {
     if (!id || getFeedError(D, run.armory, this.charId, id)) return;
     const before = weaponName(D, this.weapon());
     run.armory = feedFragment(D, run.armory, this.charId, id);
-    this.message = `${before}に記憶の欠片（${D.fragments[id].name}）を吸わせた（${describeFragment(D.fragments[id])}。枠は使わない）`;
+    this.message = `${before}に記憶の欠片（${D.fragments[id].name}）を刻んだ（${describeFragment(D.fragments[id])}。刻印は使わない）`;
     console.log('[weapon] feed', this.charId, id, JSON.stringify(this.weapon().params));
     if ((run.armory.fragments[id] ?? 0) <= 0) this.selected = null;
     const spot = this.itemSpots.get(id);
@@ -203,7 +205,7 @@ export class WeaponScene extends Phaser.Scene {
   }
 
   /**
-   * 吸わせる演出（段階32a 調整2）：素材の場所から光の粒が武器の枠へ吸い込まれ、武器が光る
+   * 刻む演出（段階32a 調整2）：素材の場所から光の粒が武器の枠へ吸い込まれ、武器が光る
    */
   private playAbsorb(from: { x: number; y: number; color: number }): void {
     const width = GAME_WIDTH - SIDE_PADDING * 2;
@@ -285,13 +287,9 @@ export class WeaponScene extends Phaser.Scene {
     // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
     saveRun();
     this.root.removeAll(true);
-    this.root.add(screenBg(this));
-    // 見出しのアイコン（段階32a 調整2）
-    this.root.add(addIcon(this, 'weapon', SIDE_PADDING + 9, 20, 18, COLORS.accent));
-    this.root.add(addText(this, SIDE_PADDING + 24, 8, '武器', { size: 17, bold: true }));
-    this.root.add(
-      addText(this, GAME_WIDTH - SIDE_PADDING, 12, '条件を満たすと進化。何度も進化する', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
-    );
+    this.root.add(frameBg(this));
+    // 見出し（段階141：共通の枠）
+    frameHeader(this, this.root, 'weapon', '武器');
     this.drawTabs();
     this.drawWeapon();
     this.drawEvolutions();
@@ -307,42 +305,30 @@ export class WeaponScene extends Phaser.Scene {
       setHubReturn(null);
       this.scene.start(back.key, back.data);
     };
-    addButton(this, this.root, GAME_WIDTH / 2, 800, GAME_WIDTH - SIDE_PADDING * 2, 52, back ? (back.label ?? '探索へ戻る') : '星図へ戻る', { onTap: leave }, {
-      size: 16,
-      bold: true,
+    backButton(this, this.root, back ? (back.label ?? '探索へ戻る') : '星図へ戻る', leave);
+  }
+
+  /** 仲間の顔のタブ（段階141：共通の枠） */
+  private drawTabs(): void {
+    const tabs = lineupBase(hubLineup()).map((c) => {
+      const ws = run.armory.weapons[c.id];
+      const ready = canEvolveAny(D, run.armory, c.id);
+      return {
+        id: c.id,
+        name: c.name,
+        sub: ready ? '進化できる！' : `Lv${weaponLevel(D, ws.exp)}${ws.path.length > 0 ? `・進化${ws.path.length}` : ''}`,
+        subColor: ready ? FRAME_COLORS.goldText : undefined,
+      };
+    });
+    faceTabs(this, this.root, tabs, this.charId, {
+      onTap: (id) => {
+        this.charId = id;
+        this.message = '';
+        this.render();
+      },
     });
   }
 
-  private drawTabs(): void {
-    const top = 36;
-    const members = lineupBase(hubLineup());
-    const n = members.length;
-    const gap = 6;
-    const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-    members.forEach((c, i) => {
-      const x = SIDE_PADDING + i * (w + gap);
-      const active = c.id === this.charId;
-      const ws = run.armory.weapons[c.id];
-      const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
-      this.root.add(rect);
-      this.root.add(addText(this, x + 8, top + 5, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
-      const ready = canEvolveAny(D, run.armory, c.id);
-      this.root.add(
-        addText(this, x + 8, top + 26, ready ? '進化できる！' : `Lv${weaponLevel(D, ws.exp)}${ws.path.length > 0 ? `・進化${ws.path.length}回` : ''}`, {
-          size: 10,
-          color: ready ? COLORS.accentText : COLORS.subText,
-        }),
-      );
-      makePressable(rect, {
-        onTap: () => {
-          this.charId = c.id;
-          this.message = '';
-          this.render();
-        },
-      });
-    });
-  }
 
   /** 武器のスナップ：名前、レベルと経験値、パラメータ、傾向 */
   private drawWeapon(): void {
@@ -379,10 +365,10 @@ export class WeaponScene extends Phaser.Scene {
       this.root.add(addText(this, x + 6, y + 16, `${v}${extra}`, { size: 14, bold: true }));
     });
 
-    // 吸わせ枠（段階27b）
+    // 刻印（段階27b）
     const slots = weaponSlots(D, w);
     this.root.add(
-      addText(this, x0 + 10, CARD_TOP + 110, `吸わせ枠 ${w.absorbed}/${slots}${w.absorbed >= slots ? '（いっぱい。レベルが上がると増える）' : ''}`, {
+      addText(this, x0 + 10, CARD_TOP + 110, `刻印 ${w.absorbed}/${slots}${w.absorbed >= slots ? '（いっぱい）' : ''}`, {
         size: 12,
         bold: true,
         color: w.absorbed >= slots ? COLORS.allyDamage : COLORS.text,
@@ -486,9 +472,9 @@ export class WeaponScene extends Phaser.Scene {
     return near && near.evolution.conditions.some((c) => c.kind === 'param' && w.params[c.param] < c.min) ? near : null;
   }
 
-  /** 下の段：「素材」（吸わせる・時分解）と「記憶の欠片」（吸わせる。枠を使わない）の2つのタブ（段階27b） */
+  /** 下の段：「素材」（刻む・時分解）と「記憶の欠片」（刻む。刻印を使わない）の2つのタブ（段階27b） */
   private drawInventory(): void {
-    // ポーチの消費アイテム（段階51）は素材の一覧に出さない（吸わせられず、時分解もできない）
+    // ポーチの消費アイテム（段階51）は素材の一覧に出さない（刻めず、時分解もできない）
     const itemTotal = Object.entries(run.armory.items).reduce((a, [id, n]) => a + (D.items[id]?.kind === 'material' ? n : 0), 0);
     const fragTotal = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
     // タブは左に寄せ、右に素材の絞り込み（攻・火・氷・雷。段階72）を並べる
@@ -587,7 +573,7 @@ export class WeaponScene extends Phaser.Scene {
       else if (it.kind === 'material') this.root.add(this.add.circle(x + 10, y + 10, 6, color, alpha));
       else this.root.add(this.add.rectangle(x + 4, y + 4, 11, 11, color, alpha).setOrigin(0).setStrokeStyle(1, 0xffffff, alpha));
       if (recommended.has(id)) this.root.add(addText(this, x + 20, y + 2, '★', { size: 11, bold: true, color: COLORS.accentText }));
-      // この武器の進化の鍵になる素材（吸わせると鍵が減る）
+      // この武器の進化の鍵になる素材（刻むと鍵が減る）
       if (keyItems(this.weapon()).has(id)) this.root.add(addText(this, x + (recommended.has(id) ? 34 : 20), y + 3, '鍵', { size: 10, bold: true, color: '#ffb070' }));
       this.root.add(addText(this, x + w - 4, y + 2, `×${n}`, { size: 12, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }).setOrigin(1, 0));
       this.root.add(addText(this, x + 4, y + 18, name, { size: 10, bold: true, color: n > 0 ? COLORS.text : COLORS.dimText }));
@@ -623,25 +609,25 @@ export class WeaponScene extends Phaser.Scene {
     const top = FRAG_TOP + 36 + rows * (h + gap) + (pages > 1 ? 28 : 4);
     let text = this.message;
     if (!text) {
-      if (!sel) text = isItems ? '素材を選ぶと、吸わせた時の変化が出る。★は進化先に近づく素材。攻・火・氷・雷で絞れる' : '記憶の欠片を選んで「吸わせる」。枠を使わず +1（時分解でできる）';
+      if (!sel) text = isItems ? '素材を選ぶと、刻んだ時の変化が出る。★は進化先に近づく素材。攻・火・氷・雷で絞れる' : '記憶の欠片を選んで「刻む」。刻印を使わず +1（時分解でできる）';
       else if (isItems) {
         const it = D.items[sel];
-        if (it.kind !== 'material') text = `${it.name}：吸わせられない（${describeDecompose(D, it)}）`;
+        if (it.kind !== 'material') text = `${it.name}：刻めない（${describeDecompose(D, it)}）`;
         else {
           const after = paramsAfter(weapon.params, it.gains);
           const diff = (Object.keys(after) as WeaponParamKey[]).filter((k) => after[k] !== weapon.params[k]).map((k) => `${PARAM_LABEL[k]} ${weapon.params[k]}→${after[k]}`);
-          text = `${it.name}：${diff.join('、') || '変化なし'}（枠 ${weapon.absorbed}→${weapon.absorbed + 1}/${weaponSlots(D, weapon)}）${keyItems(weapon).has(sel) ? '。進化の鍵にもなる素材' : ''}`;
+          text = `${it.name}：${diff.join('、') || '変化なし'}（刻印 ${weapon.absorbed}→${weapon.absorbed + 1}/${weaponSlots(D, weapon)}）${keyItems(weapon).has(sel) ? '。進化の鍵にもなる素材' : ''}`;
         }
-      } else text = `${weaponName(D, weapon)}に記憶の欠片（${D.fragments[sel].name}）を吸わせる（${describeFragment(D.fragments[sel])}。枠は使わない）`;
+      } else text = `${weaponName(D, weapon)}に記憶の欠片（${D.fragments[sel].name}）を刻む（${describeFragment(D.fragments[sel])}。刻印は使わない）`;
     }
     const btnW = 92;
     this.root.add(addText(this, SIDE_PADDING + 2, top, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - (isItems ? btnW * 2 + 12 : btnW + 8) }));
     if (isItems) {
       const absorbErr = sel ? getAbsorbError(D, run.armory, this.charId, sel) : 'none';
       const fragErr = sel ? getFragmentError(D, run.armory, sel) : 'none';
-      // 時分解が出るまでは、吸わせるを右の端に（段階100c）
+      // 時分解が出るまでは、刻むを右の端に（段階100c）
       const absorbX = this.decompose ? GAME_WIDTH - SIDE_PADDING - btnW * 1.5 - 6 : GAME_WIDTH - SIDE_PADDING - btnW / 2;
-      addButton(this, this.root, absorbX, top + 22, btnW, 44, '吸わせる', { onTap: () => this.absorb() }, {
+      addButton(this, this.root, absorbX, top + 22, btnW, 44, '刻む', { onTap: () => this.absorb() }, {
         enabled: !absorbErr,
         fill: 0x2f6b3f,
         stroke: 0x6dff9e,
@@ -659,7 +645,7 @@ export class WeaponScene extends Phaser.Scene {
       }
     } else {
       const err = sel ? getFeedError(D, run.armory, this.charId, sel) : 'none';
-      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '吸わせる', { onTap: () => this.feed() }, {
+      addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - btnW / 2, top + 22, btnW, 44, '刻む', { onTap: () => this.feed() }, {
         enabled: !err,
         fill: 0x2f6b3f,
         stroke: 0x6dff9e,
@@ -717,7 +703,7 @@ function itemDetail(itemId: string, decompose: boolean): string {
   const it = D.items[itemId];
   return [
     it.kind === 'material' ? `素材（${RARITY_LABEL[it.rarity ?? 'common']}）` : 'ポーチの消費アイテム（戦闘の「その他」から使う）',
-    it.kind === 'material' ? `吸わせると：${describeGains(it.gains)}（吸わせ枠を1つ使う）` : '',
+    it.kind === 'material' ? `刻むと：${describeGains(it.gains)}（刻印を1つ使う）` : '',
     decompose ? `時分解すると：${describeDecompose(D, it)}` : '',
     '',
     `手に入れ方：${itemSources(itemId).join('、') || '―'}`,
@@ -729,7 +715,7 @@ function itemDetail(itemId: string, decompose: boolean): string {
 function fragmentDetail(fragmentId: string): string {
   return [
     '記憶の欠片。記憶に宿る感情ごとに種類が分かれる',
-    `1つにつき：${describeFragment(D.fragments[fragmentId])}（吸わせ枠を使わない）`,
+    `1つにつき：${describeFragment(D.fragments[fragmentId])}（刻印を使わない）`,
     '',
     `要らない素材・アイテムを${D.decomposeCost}つ時分解すると1つできる（その素材が一番大きく上げる能力値の欠片）`,
   ].join('\n');

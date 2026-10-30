@@ -109,7 +109,7 @@ export const MIGRATIONS: SaveMigrations = {
   3: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, explore: null } } : raw),
   // 版4 → 版5（段階26の調整3）：引き継ぐつながりゲージを足す（版4の時は、戦闘ごとに0から）
   4: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, linkGauge: null } } : raw),
-  // 版5 → 版6（段階27b）：素材を直接吸わせる形になった。武器の吸わせ枠（absorbed）は、整える時に0で補う。
+  // 版5 → 版6（段階27b）：素材を直接刻む形になった。武器の刻印（absorbed）は、整える時に0で補う。
   // 今のデータにない素材（縁日の古い素材など）は、整える時に捨てる
   5: (raw) => raw,
   // 版6 → 版7（段階28）：返した時間（returned）を足す。探索の状態のコマは、整える時に0で補う

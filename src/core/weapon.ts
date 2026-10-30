@@ -27,14 +27,14 @@ export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'part' | 'boss';
 
 /**
  * 素材（敵が落とす）と、ポーチの消費アイテム（勝利の報酬・宝箱。段階51）。
- * 段階27b：素材は武器に直接吸わせる（gains の分だけ能力値が上下する。吸わせ枠を1つ使う）。
- * 要らない素材は時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）。消費アイテムは吸わせられず、時分解もできない
+ * 段階27b：素材は武器に直接刻む（gains の分だけ能力値が上下する。刻印を1つ使う）。
+ * 要らない素材は時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）。消費アイテムは刻めず、時分解もできない
  */
 export interface ItemDef {
   id: string;
   name: string;
   kind: 'material' | 'item';
-  /** 吸わせた時の能力値の上がり下がり（素材だけ吸わせられる。消費アイテムは空） */
+  /** 刻んだ時の能力値の上がり下がり（素材だけ刻める。消費アイテムは空） */
   gains: Partial<WeaponParams>;
   /** 素材の種類（アイテムにはない） */
   rarity?: ItemRarity;
@@ -123,7 +123,7 @@ export interface WeaponData {
   elementRate: number;
   /** 進化した時に盤に増えるマスの数（形は選んだ型で決まる） */
   boardExtension: number;
-  /** レベルごとの吸わせ枠（累計。Lv1, Lv2, …。段階27b） */
+  /** レベルごとの刻印（累計。Lv1, Lv2, …。段階27b） */
   slotsPerLevel: number[];
   /** 時分解：この数の素材・アイテムで、記憶の欠片1つ */
   decomposeCost: number;
@@ -139,7 +139,7 @@ export interface WeaponState {
   tendency: Record<PartColor, number>;
   /** 通った進化先と選んだ型（古い順。まだ進化していなければ空。段階42で evolvedTo から替えた） */
   path: EvolutionStep[];
-  /** 吸わせた素材の数（吸わせ枠を使った数。段階27b） */
+  /** 刻んだ素材の数（刻印を使った数。段階27b） */
   absorbed: number;
 }
 
@@ -202,25 +202,25 @@ export function spendItems(armory: ArmoryState, used: Record<string, number>): A
   return { ...armory, items };
 }
 
-/** 武器の吸わせ枠（今のレベルまでの合計） */
+/** 武器の刻印（今のレベルまでの合計） */
 export function weaponSlots(data: WeaponData, w: WeaponState): number {
   const lv = weaponLevel(data, w.exp);
   return data.slotsPerLevel[Math.min(lv, data.slotsPerLevel.length) - 1] ?? 0;
 }
 
-/** どれかの武器の吸わせ枠がいっぱいか（段階100c。時分解を出すきっかけ） */
+/** どれかの武器の刻印がいっぱいか（段階100c。時分解を出すきっかけ） */
 export function anySlotsFull(data: WeaponData, armory: ArmoryState): boolean {
   return Object.values(armory.weapons).some((w) => w.absorbed >= weaponSlots(data, w));
 }
 
-/** 素材を吸わせた後の能力値（下がっても0より小さくならない）。プレビューにも使う */
+/** 素材を刻んだ後の能力値（下がっても0より小さくならない）。プレビューにも使う */
 export function paramsAfter(params: WeaponParams, gains: Partial<WeaponParams>): WeaponParams {
   const next = { ...params };
   for (const k of PARAM_KEYS) next[k] = Math.max(0, next[k] + (gains[k] ?? 0));
   return next;
 }
 
-/** 素材を吸わせられない理由。吸わせられるなら null */
+/** 素材を刻めない理由。刻めるなら null */
 export function getAbsorbError(data: WeaponData, armory: ArmoryState, charId: string, itemId: string): string | null {
   const w = armory.weapons[charId];
   if (!w) return 'no weapon';
@@ -232,7 +232,7 @@ export function getAbsorbError(data: WeaponData, armory: ArmoryState, charId: st
   return null;
 }
 
-/** 素材を武器に吸わせる（素材は1つ減り、能力値が上下し、吸わせ枠を1つ使う） */
+/** 素材を武器に刻む（素材は1つ減り、能力値が上下し、刻印を1つ使う） */
 export function absorbMaterial(data: WeaponData, armory: ArmoryState, charId: string, itemId: string): ArmoryState {
   const err = getAbsorbError(data, armory, charId, itemId);
   if (err) throw new Error(err);
@@ -272,7 +272,7 @@ export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: stri
   };
 }
 
-/** 記憶の欠片を吸わせられない理由。吸わせられるなら null */
+/** 記憶の欠片を刻めない理由。刻めるなら null */
 export function getFeedError(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): string | null {
   if (!armory.weapons[charId]) return 'no weapon';
   if (!data.fragments[fragmentId]) return 'unknown fragment';
@@ -280,7 +280,7 @@ export function getFeedError(data: WeaponData, armory: ArmoryState, charId: stri
   return null;
 }
 
-/** 記憶の欠片を武器に吸わせる（記憶の欠片はなくなり、パラメータが上がる。吸わせ枠は使わない） */
+/** 記憶の欠片を武器に刻む（記憶の欠片はなくなり、パラメータが上がる。刻印は使わない） */
 export function feedFragment(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): ArmoryState {
   const err = getFeedError(data, armory, charId, fragmentId);
   if (err) throw new Error(err);

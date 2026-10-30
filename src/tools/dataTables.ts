@@ -234,20 +234,20 @@ function weaponsPage(): string {
         ].join('\n'),
       ],
       [
-        '素材・アイテム（段階27b：素材は直接吸わせる。吸わせ枠を1つ使う）',
+        '素材・アイテム（段階27b：素材は直接刻む。刻印を1つ使う）',
         [
-          `吸わせ枠（累計）：${D.slotsPerLevel.map((n, i) => `Lv${i + 1} で ${n}`).join('、')}。時分解は${D.decomposeCost}つで記憶の欠片1つ。`,
+          `刻印（累計）：${D.slotsPerLevel.map((n, i) => `Lv${i + 1} で ${n}`).join('、')}。時分解は${D.decomposeCost}つで記憶の欠片1つ。`,
           '',
-          table(['名前', '種類', '吸わせると', '時分解すると', '手に入れ方'], Object.values(ITEMS).map((it) => [
+          table(['名前', '種類', '刻むと', '時分解すると', '手に入れ方'], Object.values(ITEMS).map((it) => [
             it.name,
             it.kind === 'material' ? RARITY_LABEL[it.rarity ?? 'common'] : 'アイテム',
-            it.kind === 'material' ? describeGains(it.gains) : '（吸わせられない）',
+            it.kind === 'material' ? describeGains(it.gains) : '（刻めない）',
             describeDecompose(D, it),
             itemSources(it.id).join('、') || '―',
           ])),
         ].join('\n'),
       ],
-      ['記憶の欠片', table(['名前', '1つ吸わせると'], Object.values(D.fragments).map((f) => [f.name, describeFragment(f)]))],
+      ['記憶の欠片', table(['名前', '1つ刻むと'], Object.values(D.fragments).map((f) => [f.name, describeFragment(f)]))],
     ],
   );
 }

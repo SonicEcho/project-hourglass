@@ -7,11 +7,11 @@ import { PARTY } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePassives } from '../ui/naviText';
 import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
+import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, currentParty, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
-import { addWindow, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
-import { addIcon } from '../ui/icons';
+import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
+import { backButton, faceTabs, FRAME, frameBg, frameHeader } from '../ui/frame';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -20,8 +20,9 @@ import { addIcon } from '../ui/icons';
 
 /** 盤の1マスの大きさ（盤が広い時は画面に収まるよう縮める） */
 const MAX_CELL = 56;
-const BOARD_TOP = 92;
-const BOARD_H = MAX_CELL * 4;
+const BOARD_TOP = FRAME.contentTop;
+// 段階141：上に顔のタブが入ったので、盤の高さを少し縮めた（下の端は今までと同じ）
+const BOARD_H = 200;
 /** 選んだギアの説明の窓の上の端 */
 const INFO_TOP = 392;
 const LIST_TOP = 520;
@@ -211,29 +212,15 @@ export class NaviScene extends Phaser.Scene {
     const b = this.board();
     // 段階42：型で盤が下にも伸びるので、高さにも収める
     this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / b.cols), Math.floor(BOARD_H / b.rows));
-    this.root.add(screenBg(this));
-    // 見出しのアイコン（段階32a 調整2）
-    this.root.add(addIcon(this, 'gear', SIDE_PADDING + 9, 20, 18, COLORS.accent));
-    this.root.add(addText(this, SIDE_PADDING + 24, 8, 'ムーブメント', { size: 17, bold: true }));
-    this.root.add(
-      addText(this, GAME_WIDTH - SIDE_PADDING, 12, '光る帯＝ブリッジ', { size: 11, color: COLORS.accentText }).setOrigin(1, 0),
-    );
+    this.root.add(frameBg(this));
+    // 見出し（段階141：共通の枠）
+    frameHeader(this, this.root, 'gear', 'ムーブメント');
     this.drawTabs();
     this.drawBoard();
     this.drawStatus();
     this.drawInfo();
     this.drawList();
-    addButton(
-      this,
-      this.root,
-      GAME_WIDTH / 2,
-      800,
-      GAME_WIDTH - SIDE_PADDING * 2,
-      52,
-      hubBack()?.label ?? '星図へ戻る',
-      { onTap: () => this.leave() },
-      { size: 16, bold: true },
-    );
+    backButton(this, this.root, hubBack()?.label ?? '星図へ戻る', () => this.leave());
   }
 
   /** 戻る：拠点から開いた時は拠点へ（段階45）、それ以外は星図へ */
@@ -247,36 +234,24 @@ export class NaviScene extends Phaser.Scene {
     this.scene.start(hub.key, hub.data);
   }
 
+  /** 仲間の顔のタブ（段階141：共通の枠）。パーティにいる仲間の盤だけ（段階26） */
   private drawTabs(): void {
-    const top = 36;
-    // パーティにいる仲間の盤だけ（段階26）
-    const members = lineupBase(hubLineup());
-    const n = members.length;
-    const gap = 6;
-    const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-    members.forEach((c, i) => {
-      const x = SIDE_PADDING + i * (w + gap);
-      const active = c.id === this.charId;
-      const rect = this.add.rectangle(x, top, w, 46, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
-      this.root.add(rect);
+    const tabs = lineupBase(hubLineup()).map((c) => {
       const bugs = findBugs(currentNaviData(), run.navi, c.id).length;
       const count = boardParts(run.navi, c.id).length;
-      this.root.add(addText(this, x + 8, top + 5, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
-      this.root.add(
-        addText(this, x + 8, top + 26, `ギア${count}${bugs > 0 ? `　狂い${bugs}` : ''}`, { size: 10, color: bugs > 0 ? '#ff8a7a' : COLORS.subText }),
-      );
-      makePressable(rect, {
-        onTap: () => {
-          this.charId = c.id;
-          // 選んでいるギアはそのまま（別の盤へ移せる）。影だけ消す
-          this.ghost = null;
-          this.message = '';
-          this.render();
-        },
-      });
+      return { id: c.id, name: c.name, sub: `ギア${count}${bugs > 0 ? ` 狂い${bugs}` : ''}`, subColor: bugs > 0 ? '#ff8a7a' : undefined };
+    });
+    faceTabs(this, this.root, tabs, this.charId, {
+      onTap: (id) => {
+        this.charId = id;
+        // 選んでいるギアはそのまま（別の盤へ移せる）。影だけ消す
+        this.ghost = null;
+        this.message = '';
+        this.render();
+      },
     });
   }
+
 
   private boardOrigin(): { x: number; y: number } {
     const b = this.board();

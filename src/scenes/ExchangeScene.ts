@@ -77,7 +77,7 @@ export class ExchangeScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.render();
     this.cameras.main.fadeIn(250, 0, 0, 0);
-    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す（それまでは、吸わせ枠が初めていっぱいになるまで出さない）
+    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す（それまでは、刻印が初めていっぱいになるまで出さない）
     if (!run.vars[DECOMPOSE_VAR]) {
       setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
       this.time.delayedCall(400, () => maybeShowTip(this, ['growth_decompose']));

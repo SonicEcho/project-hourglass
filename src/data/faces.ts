@@ -5,6 +5,8 @@ export const ALLY_FACE: Record<string, string> = {
   akari: 'portrait.akari.gentle',
   // みお（段階45で足した）。立ち絵が胸から上の構図なので、切り出す範囲は FACE_CROPS で別にする
   mio: 'portrait.mio.smile',
+  // 小夜子（段階141。育成の画面の顔のタブで使う）。早瀬は立ち絵ができるまで名前の1文字
+  sayoko: 'portrait.sayoko.smile',
 };
 
 /** 立ち絵から顔を切り出す範囲（絵の幅・高さに対する割合） */

@@ -61,7 +61,7 @@ function freshRun(): RunSnapshot {
   };
 }
 
-/** 星図を開け、ギアをはめ、素材を時分解して吸わせた周回 */
+/** 星図を開け、ギアをはめ、素材を時分解して刻んだ周回 */
 function playedRun(): RunSnapshot {
   const r = freshRun();
   const hero = PARTY[0];
@@ -72,7 +72,7 @@ function playedRun(): RunSnapshot {
   r.armory = addItems(r.armory, ['slimeJelly', 'slimeJelly', 'steelClaw', 'goldfishScale', 'goldfishScale']);
   r.armory = fragmentItem(WEAPON_DATA, r.armory, 'slimeJelly');
   r.armory = feedFragment(WEAPON_DATA, r.armory, 'hero', 'elation');
-  // 段階27b：素材を直接吸わせる（吸わせ枠を使う）
+  // 段階27b：素材を直接刻む（刻印を使う）
   r.armory = absorbMaterial(WEAPON_DATA, r.armory, 'akari', 'goldfishScale');
   r.progress = progressAt(STORY, 2);
   r.pendingReward = 'battle2';
@@ -155,7 +155,7 @@ describe('セーブ：保存して読む', () => {
     expect(res.ok && res.save.run.armory.items).toEqual({ steelClaw: 1, goldfishScale: 1 });
   });
 
-  it('版5のセーブ（吸わせ枠がなかった）は、枠を0として読む（段階27b）', () => {
+  it('版5のセーブ（刻印がなかった）は、枠を0として読む（段階27b）', () => {
     const res = parseEdited((raw) => {
       raw.version = 5;
       for (const w of Object.values(raw.run.armory.weapons) as any[]) delete w.absorbed;

@@ -153,7 +153,7 @@ export function formatAreaMeasure(m: AreaMeasureResult): string {
       .map(([id, t]) => `${PARTY.find((c) => c.id === id)?.name ?? id} ${avg(t.evolutions, m.bossReached)}回／Lv${avg(t.level, m.bossReached)}`)
       .join('、')}`,
     '',
-    '星図はでたらめ、素材は一番近い進化先へ向けて吸わせ、残りは時分解（鍵の素材は残す）、つながりゲージは戦闘をまたいで引き継ぐ',
+    '星図はでたらめ、素材は一番近い進化先へ向けて刻み、残りは時分解（鍵の素材は残す）、つながりゲージは戦闘をまたいで引き継ぐ',
   ].join('\n');
 }
 

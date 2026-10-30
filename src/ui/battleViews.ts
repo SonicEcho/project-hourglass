@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType, targetNote } from './describe';
 import { weightLabel } from './labels';
@@ -9,6 +9,7 @@ import { summarizePassives } from './naviText';
 import { columnX, FILM_LAYOUT, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, STAGE, toCss } from './theme';
 import { hasImage } from '../assets/loader';
+import { faceImage } from './portrait';
 import { addBar, addText, type ButtonOptions, makePressable } from './widgets';
 import { countText, screenBg } from './skin';
 import { addIcon, type IconKind } from './icons';
@@ -199,20 +200,6 @@ export function unitPosition(s: BattleState, id: string, partId?: string): { x: 
   const n = s.allies.length;
   const w = (GAME_WIDTH - SIDE_PADDING * 2 - 6 * (n - 1)) / n;
   return { x: SIDE_PADDING + Math.max(0, ai) * (w + 6) + w / 2, y: FILM_LAYOUT.tabs.y + FILM_LAYOUT.tabs.h / 2 };
-}
-
-/** 立ち絵から顔を丸く切り出した絵（中心 cx, cy、半径 r） */
-function faceImage(scene: Phaser.Scene, id: string, cx: number, cy: number, r: number, crop: { x: number; y: number; size: number } = FACE_CROP): Phaser.GameObjects.Image {
-  const src = scene.textures.get(id).getSourceImage();
-  const size = src.width * crop.size;
-  const sx = src.width * crop.x;
-  const sy = src.height * crop.y;
-  const img = scene.add.image(cx, cy, id).setCrop(sx, sy, size, size);
-  img.setOrigin((sx + size / 2) / src.width, (sy + size / 2) / src.height).setScale((r * 2) / size);
-  const shape = scene.make.graphics({}, false).fillStyle(0xffffff).fillCircle(cx, cy, r);
-  img.setMask(shape.createGeometryMask());
-  img.once(Phaser.GameObjects.Events.DESTROY, () => shape.destroy());
-  return img;
 }
 
 /** 敵のいる場所の舞台（段階32a 調整1）：奥の地平の線と、手前ほど暗くなる地面の帯 */

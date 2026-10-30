@@ -17,7 +17,7 @@ export const FRAGMENTS = {
 
 /**
  * 素材（敵が落とす）と通常アイテム（勝利の報酬）。
- * 段階27b：素材は武器に直接吸わせる（gains の分だけ上下する。吸わせ枠を1つ使う）。種類（rarity）は落とし物の確率と色分けに使う。
+ * 段階27b：素材は武器に直接刻む（gains の分だけ上下する。刻印を1つ使う）。種類（rarity）は落とし物の確率と色分けに使う。
  * 通常アイテムは、今は戦闘で使えないので、時分解して記憶の欠片にするだけ（gains は欠片の種類を決めるだけ）。
  * 数値は docs/design/growth.md の 6-4（たたき台）
  */
@@ -168,7 +168,7 @@ export const ITEMS = {
   frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', rarity: 'common', gains: { thunder: 2, ice: 1 } },
   hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
   steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', rarity: 'uncommon', gains: { atk: 3 } },
-  // ---- ポーチの消費アイテム（勝利の報酬・宝箱。段階51。戦闘での効き目は pouch.ts。吸わせられず、時分解もできない） ----
+  // ---- ポーチの消費アイテム（勝利の報酬・宝箱。段階51。戦闘での効き目は pouch.ts。刻めず、時分解もできない） ----
   potion: { id: 'potion', name: 'ポーション', kind: 'item', gains: {}, max: POUCH_MAX },
   ether: { id: 'ether', name: 'エーテル', kind: 'item', gains: {}, max: POUCH_MAX },
   hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', gains: {}, max: POUCH_MAX },
@@ -511,15 +511,15 @@ export const WEAPON_DATA: WeaponData = {
   elementRate: 0.02,
   // 進化1回で盤に足すマス（段階111。テストプレイのメモ 24：2マスでは増えすぎたので1マス）
   boardExtension: 1,
-  // 段階27b：吸わせ枠（累計）。Lv1 で6、Lv2 で12、Lv3 で18。段階42：Lv4 から1レベルで4つずつ
+  // 段階27b：刻印（累計）。Lv1 で6、Lv2 で12、Lv3 で18。段階42：Lv4 から1レベルで4つずつ
   slotsPerLevel: [6, 12, 18, 22, 26, 30, 34],
-  // 時分解は、素材・アイテム2つで記憶の欠片1つ（要らない素材の整理。素材のまま吸わせる方が強い）
+  // 時分解は、素材・アイテム2つで記憶の欠片1つ（要らない素材の整理。素材のまま刻む方が強い）
   decomposeCost: 2,
   fragmentFor: { atk: FRAGMENTS.courage.id, fire: FRAGMENTS.elation.id, ice: FRAGMENTS.relief.id, thunder: FRAGMENTS.wonder.id },
 };
 
 /**
- * 時分解を出したことを覚える物語の変数（段階100c）。武器の画面の時分解は、どれかの武器の吸わせ枠が初めていっぱいになった時か、
+ * 時分解を出したことを覚える物語の変数（段階100c）。武器の画面の時分解は、どれかの武器の刻印が初めていっぱいになった時か、
  * 交換所を初めて開いた時（ペトラが時分解を教える）の、早い方から出す
  */
 export const DECOMPOSE_VAR = '武器:時分解';

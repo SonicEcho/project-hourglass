@@ -5,6 +5,7 @@ import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, MEMORY_FA
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
+import { backButton, FRAME_COLORS, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DailyData } from './DailyScene';
@@ -57,19 +58,20 @@ export class HubScene extends Phaser.Scene {
     playBgm(this, BGM.library);
     const root = this.add.container(0, 0);
     drawBackdrop(this, root, BACKDROPS.library, 0, GAME_HEIGHT, false);
-    root.add(this.add.rectangle(0, 0, GAME_WIDTH, 96, 0x000000, 0.55).setOrigin(0));
-    root.add(addText(this, GAME_WIDTH / 2, 30, 'レストピア', { size: 20, bold: true }).setOrigin(0.5));
-    root.add(addText(this, GAME_WIDTH / 2, 62, '蔵書の棚　― 時間は進まない ―', { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    // 見出し（段階141：共通の枠）
+    frameHeader(this, root, 'hourglass', 'レストピア', { label: '蔵書の棚 ― 時間は進まない ―', value: '' });
 
     const cx = GAME_WIDTH / 2;
     const w = GAME_WIDTH - 60;
-    const strong = { size: 17, bold: true, fill: 0x2f4f3a, stroke: 0x6fe0a0, strokeWidth: 2 };
+    // 段階141：押してほしい「記憶をたどる」だけ金、ほかは暗い地（共通の枠の色の決まり）
+    const strong = { ...GOLD_BUTTON, size: 17 };
+    const plain = { ...PLAIN_BUTTON, size: 15, bold: true };
     // 狩り
     const hunts = huntableAreas(AREAS, run.returned);
     addButton(this, root, cx, 180, w, 62, '記憶をたどる', { onTap: () => this.pickHunt() }, { ...strong, enabled: hunts.length > 0 });
     // ポーチの中身（段階51）。絵の上でも読めるよう、暗い下地に白い字（2026-10-16 開発者の指摘：見にくかった）
     const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}`).join('　');
-    root.add(this.add.rectangle(cx, 237, w, 44, 0x0b0f22, 0.85).setRounded(8).setStrokeStyle(1, COLORS.border));
+    root.add(this.add.rectangle(cx, 237, w, 44, FRAME_COLORS.panel, 0.85).setRounded(12).setStrokeStyle(1, FRAME_COLORS.line));
     root.add(addText(this, cx, 225, `ポーチ（1種類${POUCH_MAX}個まで）`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
     root.add(addText(this, cx, 245, pouch, { size: 14, bold: true, color: COLORS.text }).setOrigin(0.5));
     // 育成（今の章で開いているものだけ）
@@ -87,26 +89,20 @@ export class HubScene extends Phaser.Scene {
     grow.forEach(([label, key], i) => {
       const row = Math.floor(i / per);
       const col = i % per;
-      addButton(this, root, 30 + bw / 2 + col * (bw + gap), 290 + row * 64, bw, 54, label, { onTap: () => this.openGrowth(key) }, {
-        size: 15,
-        bold: true,
-        fill: 0x1e3a5a,
-        stroke: 0x6bc8ff,
-        strokeWidth: 2,
-      });
+      addButton(this, root, 30 + bw / 2 + col * (bw + gap), 290 + row * 64, bw, 54, label, { onTap: () => this.openGrowth(key) }, plain);
     });
     const below = 290 + Math.ceil(grow.length / Math.max(1, per)) * 64 + 30;
     // 交換所（段階52）と落とし物の棚（段階53）
-    addButton(this, root, cx, below + 20, w, 54, '交換所', { onTap: () => this.openExchange() }, { size: 15, bold: true, fill: 0x24384a, stroke: 0x6bc8ff, strokeWidth: 2 });
-    addButton(this, root, cx, below + 84, w, 54, '落とし物の棚', { onTap: () => this.openLost() }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+    addButton(this, root, cx, below + 20, w, 54, '交換所', { onTap: () => this.openExchange() }, plain);
+    addButton(this, root, cx, below + 84, w, 54, '落とし物の棚', { onTap: () => this.openLost() }, plain);
     // 町の小話（段階82）：過ぎた日の小話を後から見る。過ぎた日の小話がある時だけ
     const talks = archivedTalks();
     if (talks.length > 0) {
       const unseen = talks.filter((t) => !t.seen).length;
-      addButton(this, root, cx, below + 148, w, 54, unseen > 0 ? `町の小話（まだ ${unseen}）` : '町の小話', { onTap: () => this.openTalks() }, { size: 15, bold: true, fill: 0x3a2a4a, stroke: 0xc8a0ff, strokeWidth: 2 });
+      addButton(this, root, cx, below + 148, w, 54, unseen > 0 ? `町の小話（まだ ${unseen}）` : '町の小話', { onTap: () => this.openTalks() }, plain);
     }
     // 昼へ戻る
-    addButton(this, root, cx, 780, w, 56, '時計屋へ戻る', { onTap: () => this.leave() }, { size: 17, bold: true });
+    backButton(this, root, '時計屋へ戻る', () => this.leave());
     this.cameras.main.fadeIn(250, 0, 0, 0);
   }
 
