@@ -50,6 +50,8 @@ export const CHAPTER3_SAYOKO_LINEUP: Lineup = {
   unlocks: { growth: true, navi: true, weapon: true },
   chapter: 3,
 };
+/** 4章（段階137a）：3章の終わりと同じ4人で、戦闘に出るのは3人。ハルトは外せない */
+export const CHAPTER4_LINEUP: Lineup = { ...CHAPTER3_SAYOKO_LINEUP, chapter: 4 };
 
 // ---- 物語の流れ（段階23）：プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 →（段階34）3日目〜8日目 → 2章の終わりの「つづく」 ----
 // 会話の出来事の id は、台本（scriptM1.ts・scriptM2.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
@@ -347,8 +349,44 @@ export const SLICE_FLOW: Flow = [
       // 33日目（火曜）：昼は選べる話だけ。夕暮れに3章の終わり
       { id: 'd32_free', kind: 'daily', title: '33日目：昼' },
       talk('d32_evening', '33日目：夕暮れ・3章の終わり'),
-      // 今の流れの終わり（段階96。30日目の後の ch3_end_d30 から替えた。30日目の「つづく」にいたセーブは、31日目から続く。RENAMED_EVENTS。段階103 で日の数字が1つずれた）
-      { id: 'ch3_end_d32', kind: 'end', title: 'つづく' },
+    ],
+  },
+  {
+    id: 'ch4',
+    name: '第4章「消える、ということ」',
+    lineup: CHAPTER4_LINEUP,
+    // 段階137a：4-1「シロのいた夏」を3晩で（脚本 docs/script/4-1.md）。34〜37日目
+    events: [
+      talk('chapter4_title', '第4章'),
+      day(34),
+      talk('d34_classroom', '34日目：秒針'),
+      // 34日目（水曜）：時計屋のたいちの「52分の時計」は必ず見る（daily.ts の DAILY_HUBS）。第1夜「台車」
+      { id: 'd34_free', kind: 'daily', title: '34日目：昼' },
+      talk('d34_library', '34日目：夕暮れ・蔵書の棚'),
+      // 4-1 の区画（areas.ts の a41）
+      talk('a41_enter', '4-1：夏の庭に入る'),
+      { id: 'a41_explore', kind: 'explore', area: 'a41', night: 1, title: '4-1「シロのいた夏」：夏の1晩目' },
+      talk('a41_night1_end', '34日目：蔵書の棚に戻る'),
+      day(35),
+      // 35日目（木曜）：河川敷のおじいちゃんの電話は必ず見る。第2夜「あぜ道」
+      { id: 'd35_free', kind: 'daily', title: '35日目：昼' },
+      talk('a41_night2_enter', '35日目：夏の2晩目に入る'),
+      { id: 'a41_explore2', kind: 'explore', area: 'a41', night: 2, title: '4-1「シロのいた夏」：夏の2晩目' },
+      talk('a41_night2_end', '35日目：時計屋に戻る'),
+      day(36),
+      // 36日目（金曜）：河川敷のたいちの本音は必ず見る。第3夜「浅瀬」
+      { id: 'd36_free', kind: 'daily', title: '36日目：昼' },
+      talk('a41_night3_enter', '36日目：夏の3晩目に入る'),
+      { id: 'a41_explore3', kind: 'explore', area: 'a41', night: 3, title: '4-1「シロのいた夏」：夏の3晩目' },
+      { id: 'a41_return', kind: 'return', area: 'a41', title: '4-1：時間を返す' },
+      talk('d36_return', '36日目：時間を返す'),
+      talk('a41_noa_alone', '36日目：ノアひとり'),
+      day(37),
+      // 37日目（土曜）：4-1 を返した翌日の河川敷のたいち（daily.ts の RETURN_VISITS）。夕暮れに、小夜子の日記
+      { id: 'd37_free', kind: 'daily', title: '37日目：昼' },
+      talk('d37_evening', '37日目：夕暮れ・小夜子の日記'),
+      // 今の流れの終わり（段階137a。3章の終わりの後の ch3_end_d32 から替えた。3章の終わりの「つづく」にいたセーブは、4章の扉から続く。RENAMED_EVENTS）
+      { id: 'ch4_end_d37', kind: 'end', title: 'つづく' },
     ],
   },
 ];
@@ -358,5 +396,6 @@ export const SLICE_FLOW: Flow = [
 // 段階88：流れの終わり（つづく）を2章の終わりから3章の 3-1 の後へ伸ばした。2章の終わりの「つづく」にいたセーブは、3章の扉から続く
 // 段階94：流れの終わりを26日目の後から 3-2 の後（30日目）へ伸ばした。26日目の「つづく」にいたセーブは、27日目から続く
 // 段階96：流れの終わりを3章の終わり（32日目）の後へ伸ばした。30日目の「つづく」にいたセーブは、31日目から続く
+// 段階137a：流れの終わりを3章の終わりから 4-1 の後（37日目）へ伸ばした。3章の終わりの「つづく」にいたセーブは、4章の扉から続く
 // 段階103：2章が1日延び、3章の日の数字が1つずれた（日の変わり目の id `dayN` も1つずれる）。上の2つの続き先は、同じ所（今の28日目・32日目の始め）を指すように直した
-export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title', ch3_end: 'day28', ch3_end_d30: 'day32' };
+export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title', ch3_end: 'day28', ch3_end_d30: 'day32', ch3_end_d32: 'chapter4_title' };

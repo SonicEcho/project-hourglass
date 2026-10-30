@@ -51,6 +51,9 @@ const text = [
   // 段階96：祭りの夜（カイ）。本気のカイ（3-2 の後から。小夜子を入れた3人）
   module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a3k')),
   module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a3k')),
+  // 段階137a：4-1 の夏の田舎（3章を通した後から。4人から3人）
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'random', 'a41')),
+  module.formatAreaMeasure(module.measureArea(runs, seed, 'smart', 'a41')),
   // 段階54：進化の道ごとの勝率（1人の1回目の進化先を決めて）。2-1 は弱点をねらう方針、2-3 はでたらめな方針（ねらう方針はほぼ勝つため）
   module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a21', 'smart')),
   module.formatPathMeasure(module.measureEvolutionPaths(Math.max(1, Math.floor(runs / 2)), seed, 'a23', 'random')),

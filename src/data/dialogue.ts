@@ -353,6 +353,10 @@ export const CAST: Record<string, CastMember> = {
   とうや: { portrait: 'portrait.toya', ...young(['笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
   写しのしおり: { portrait: 'portrait.past_shiori', ...young(['むっ', '笑顔', '通常', '真剣'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
   写しのとうや: { portrait: 'portrait.past_toya', ...young(['笑顔', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
+  // 段階137a（4-1。docs/script/4-1.md の 2.）：ハルトたちの高校の1年生のたいち（今16歳）、平成30年の夏の写しのたいち（10歳）と写しのおじいちゃん。立ち絵はまだない（色の札）。写しはセピア
+  たいち: { faces: names('通常', '不機嫌', '驚き', '考える', '泣きそう', '笑顔'), firstFace: '通常', color: 0x4a6a8a, voice: { pitch: 360, wave: 'square' } },
+  写しのたいち: { faces: names('通常', '泣きそう', '不機嫌', '真剣', '笑顔', '驚き', '怒り'), firstFace: '通常', color: 0x8aa0c0, voice: { pitch: 620, wave: 'square' }, tint: SEPIA_TINT },
+  写しのおじいちゃん: { faces: names('通常', '怒り'), firstFace: '通常', color: 0x7a6a5a, voice: { pitch: 250, wave: 'sawtooth' }, tint: SEPIA_TINT },
   小夜子: { portrait: 'portrait.sayoko', ...young(['微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'], { 微笑み: 'smile' }, '微笑み'), height: 450, color: 0xc0485a, voice: { pitch: 560, wave: 'sine' } },
   カイ: {
     portrait: 'portrait.kai',
@@ -421,6 +425,9 @@ export const VOICE_ONLY: Record<string, BlipVoice> = {
   写しの後輩: { pitch: 700, wave: 'square' },
   コンビニの店員: { pitch: 520, wave: 'triangle' },
   八百屋のおじさん: { pitch: 270, wave: 'sawtooth' },
+  // 4-1 の声だけの人（段階137a）
+  おじいちゃん: { pitch: 250, wave: 'sawtooth' },
+  遠くのラジオ: { pitch: 300, wave: 'square' },
 };
 export const VOICE_DEFAULT: BlipVoice = { pitch: 400, wave: 'triangle' };
 /**
@@ -514,6 +521,11 @@ export const BACKDROPS: Record<string, Backdrop> = {
   grad_2019: { title: '平成31年3月、卒業式の帰り道（昼）', top: 0xc8e0f0, bottom: 0xb0b8a0, image: 'bg.grad_2019' },
   grad_dusk: { title: '平成31年3月、夕暮れの踏切', top: 0xf0a070, bottom: 0x4a3a4a, image: 'bg.grad_dusk', ambient: 'dust' },
   crossing_now: { title: '駅の近くの踏切（今の夕方の前）', top: 0xe8c8a0, bottom: 0x5a5a62, image: 'bg.crossing_now' },
+  // 段階137a：4-1 の平成30年の夏の田舎（おじいちゃんの家の庭の朝、田んぼのあぜ道、川の浅瀬）と、空になった蔵書の棚。
+  // 絵が届くまで、3-1 の村の昼の絵と、河川敷の絵で代わり（docs/script/4-1.md の 6.）
+  summer_garden: { title: '平成30年の夏、おじいちゃんの家の庭（朝）', top: 0xa8d8f0, bottom: 0x8aa060, image: 'bg.village_1966', tint: 0xf0f0e0 },
+  summer_paddy: { title: '平成30年の夏、田んぼのあぜ道（昼前）', top: 0x9ad0f0, bottom: 0x7ab060, image: 'bg.village_1966' },
+  summer_shallows: { title: '平成30年の夏、川の浅瀬（昼）', top: 0x8ac8f0, bottom: 0x6a9aa0, image: 'bg.riverside_1998', tint: 0xe0f0f0 },
   // 段階96：32日目の雨（今の絵に、灰色をかけて雨の粒を降らせる）
   classroom_rain: { title: '教室（雨の朝）', top: 0x9aa4b0, bottom: 0x6a7470, image: 'bg.classroom', tint: 0x8890a0, ambient: 'rain' },
   clock_shop_rain: { title: '時計屋の店内（雨）', top: 0x707880, bottom: 0x3a3a40, image: 'bg.clock_shop', tint: 0x7a8290, ambient: 'rain' },

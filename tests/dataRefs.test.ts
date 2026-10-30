@@ -561,11 +561,11 @@ describe('探索の試作の地図（段階16・18b）', () => {
 });
 
 describe('周回・狩り（段階43）', () => {
-  it('返す区画（1-1〜3-2）に狩りの中身があり、書き間違いがない。素材はある物（段階85：2-3 も返すので狩りがある。4晩目の書庫は狩りがない。段階88：3-1）', async () => {
+  it('返す区画（1-1〜4-1）に狩りの中身があり、書き間違いがない。素材はある物（段階85：2-3 も返すので狩りがある。4晩目の書庫は狩りがない。段階88：3-1。段階137a：4-1）', async () => {
     const { AREA_BATTLES, AREAS, ITEMS } = await import('../src/data');
     const { checkHunt, huntableAreas } = await import('../src/core');
     const hunts = huntableAreas(AREAS, Object.keys(AREAS));
-    expect(hunts.map((a) => a.id)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32']);
+    expect(hunts.map((a) => a.id)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32', 'a41']);
     for (const area of hunts) {
       expect(checkHunt(area, AREA_BATTLES), area.id).toEqual([]);
       for (const g of area.hunt.gathers) for (const item of g.items) expect(item in ITEMS, `${g.id} ${item}`).toBe(true);

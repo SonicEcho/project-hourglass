@@ -13,6 +13,7 @@ export * from './riversideEnemies';
 export * from './villageEnemies';
 export * from './taishoEnemies';
 export * from './gradEnemies';
+export * from './summerEnemies';
 export * from './enemyArt';
 export * from './encounters';
 export * from './growthMap';
