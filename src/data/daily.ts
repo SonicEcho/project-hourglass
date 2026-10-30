@@ -110,6 +110,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari8', title: 'いつもの場所', label: '商店街の角（あかり）', from: 27, place: 'street', x: 195, y: ROW2 },
     // 段階96（docs/script/3-kai.md の 4.）
     { id: 'bond_akari9', title: '目覚まし三つ', label: '屋上へ（あかり）', from: 31, place: 'school', x: 195, y: ROW2 },
+    // 段階137b（docs/script/4-1.md の 4.）
+    { id: 'bond_akari10', title: '撮らない写真', label: '屋上へ（あかり）', from: 34, place: 'school', x: 195, y: ROW2 },
   ],
   // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
@@ -123,6 +125,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_mio6', title: '大食い大会', label: '福引のテントの横（みお）', from: 27, place: 'street', x: 195, y: 640 },
     // 段階96（docs/script/3-kai.md の 4.）
     { id: 'bond_mio7', title: 'ハヤテ号', label: '駐輪場（みお）', from: 31, place: 'street', x: 195, y: 640 },
+    // 段階137b。河川敷の上の段は、35・36日目のたいち（必ず見る）
+    { id: 'bond_mio8', title: '陸上部', label: 'グラウンド（みお）', from: 35, place: 'riverside', x: 195, y: ROW2 },
   ],
   // 段階94：小夜子（26日目に今の町へ出た後。27日目から）。時計屋の奥の入口の部屋と、商店街
   sayoko: [
@@ -130,6 +134,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_sayoko2', title: '試着室', label: '洋服屋の前（小夜子）', from: 29, place: 'street', x: 195, y: 560 },
     // 段階96（docs/script/3-kai.md の 4.）。32日目の雨の店先
     { id: 'bond_sayoko3', title: '雨の日', label: '店先（小夜子）', from: 32, place: 'clockshop', x: 195, y: 385 },
+    // 段階137b（4-1 の緩める話）
+    { id: 'bond_sayoko4', title: '平成の夏', label: 'レジの前（小夜子）', from: 34, place: 'convenience', x: 195, y: ROW1 },
   ],
 };
 
@@ -590,7 +596,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('clockshop', toDusk('d32_to_dusk')),
     ],
   },
-  // ---- 4-1（段階137a。docs/script/4-1.md の 4.）。昼の選べる話は段階137b で足す ----
+  // ---- 4-1（段階137a。docs/script/4-1.md の 4.）。昼の選べる話は段階137b（絆の出来事は BOND_EVENTS、小話は下の印） ----
   // 34日目（水曜）：時計屋のたいちの「52分の時計」は必ず見る。夕暮れの後、4-1 の1晩目
   d34_free: {
     id: 'd34_free',
@@ -607,7 +613,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 35,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
-    places: [at('riverside', main('d35_collar', 'シロの首輪')), at('clockshop', toDusk('d35_to_dusk'))],
+    places: [at('riverside', main('d35_collar', 'シロの首輪')), at('school', talk('d35_talk_fur', '廊下')), at('clockshop', toDusk('d35_to_dusk'))],
   },
   // 36日目（金曜）：河川敷のたいちの本音は必ず見る。夕暮れの後、3晩目
   d36_free: {
@@ -616,7 +622,7 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     day: 36,
     picks: DAILY_PICKS,
     partners: ['akari', 'mio', 'sayoko'],
-    places: [at('riverside', main('d36_taichi', 'ひとりにした')), at('clockshop', toDusk('d36_to_dusk'))],
+    places: [at('riverside', main('d36_taichi', 'ひとりにした')), at('clockshop', talk('d36_talk_memos', '作業台'), toDusk('d36_to_dusk'))],
   },
   // 37日目（土曜）：4-1 を返した翌日の河川敷のたいち（RETURN_VISITS）。夕暮れに、小夜子の日記
   d37_free: {
