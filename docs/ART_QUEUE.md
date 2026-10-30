@@ -15,8 +15,8 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - C. 2章の残りの人（7枚。済 7）
 - D. 敵（32枚。済 32）
 - E. 部屋の地図（39枚。済 38）
-- F. 会話の背景（14枚）
-- G. 1枚絵（1枚）
+- F. 会話の背景（14枚。済 14）
+- G. 1枚絵（1枚。済 1）
 - H. スナップの写真（14枚）
 
 ## A. 小夜子（ヒロイン）
@@ -1324,7 +1324,7 @@ Follow the attached layout sketch exactly: light areas are walkable ground, dark
 
 見本は要らない（描きにくければ、施設の台所の背景 `public/assets/backgrounds/` のどれかを絵柄の見本に付ける）
 
-### 90. 施設の居間（夜、テレビの光だけ）
+### 90. 施設の居間（夜、テレビの光だけ）（済）
 
 - 添付：なし
 - 保存名：`bg_home_tv_dark.png`
@@ -1337,7 +1337,7 @@ Scene: the shared living room of a small children's home at night in present-day
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 91. 平成の高校の文化祭（秋の昼）
+### 91. 平成の高校の文化祭（秋の昼）（済）
 
 - 添付：なし
 - 保存名：`bg_school_festival.png`
@@ -1350,7 +1350,7 @@ Scene: a Japanese high school building decorated for its school festival on a br
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 92. 昭和41年の夏、山あいの村（昼）
+### 92. 昭和41年の夏、山あいの村（昼）（済）
 
 - 添付：なし
 - 保存名：`bg_village_1966.png`
@@ -1363,7 +1363,7 @@ Scene: a mountain farming village in Japan in the summer of 1966, green rice fie
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 93. 昭和41年の夏、村の駅（夕暮れ）
+### 93. 昭和41年の夏、村の駅（夕暮れ）（済）
 
 - 添付：なし
 - 保存名：`bg_village_dusk.png`
@@ -1376,7 +1376,7 @@ Scene: the platform of a tiny wooden country train station at summer dusk in 196
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 94. ひだまり荘の部屋（窓辺）
+### 94. ひだまり荘の部屋（窓辺）（済）
 
 - 添付：なし
 - 保存名：`bg_care_home.png`
@@ -1389,7 +1389,7 @@ Scene: a bright, cozy private room in a small Japanese care home, a bed with a q
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 95. ひだまり荘の部屋（窓辺・雨）
+### 95. ひだまり荘の部屋（窓辺・雨）（済）
 
 - 添付：なし
 - 保存名：`bg_care_home_rain.png`
@@ -1402,7 +1402,7 @@ Scene: the same cozy private room in a small Japanese care home on a rainy after
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 96. 町の駅のホーム（夕方の前）
+### 96. 町の駅のホーム（夕方の前）（済）
 
 - 添付：なし
 - 保存名：`bg_station_now.png`
@@ -1415,7 +1415,7 @@ Scene: the platform of a small local train station in a quiet present-day Japane
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 97. 文化祭の学校の中庭（今）
+### 97. 文化祭の学校の中庭（今）（済）
 
 - 添付：なし
 - 保存名：`bg_school_fair.png`
@@ -1428,7 +1428,7 @@ Scene: the courtyard of a present-day Japanese high school during its school fes
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 98. 大正十年の夏祭り（夜）
+### 98. 大正十年の夏祭り（夜）（済）
 
 - 添付：なし
 - 保存名：`bg_taisho_festival.png`
@@ -1441,7 +1441,7 @@ Scene: a Japanese shrine summer festival on a night in 1921 (Taisho era), rows o
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 99. 祭りの夜の端（砂の落ちる縁）
+### 99. 祭りの夜の端（砂の落ちる縁）（済）
 
 - 添付：なし
 - 保存名：`bg_taisho_edge.png`
@@ -1454,7 +1454,7 @@ Scene: the far edge of a 1921 Japanese summer festival night, where the lantern-
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 100. 町の神社（今の昼）
+### 100. 町の神社（今の昼）（済）
 
 - 添付：なし
 - 保存名：`bg_shrine_now.png`
@@ -1467,7 +1467,7 @@ Scene: a small shrine in a quiet present-day Japanese town on a calm afternoon, 
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 101. 平成31年3月、卒業式の帰り道（昼）
+### 101. 平成31年3月、卒業式の帰り道（昼）（済）
 
 - 添付：なし
 - 保存名：`bg_grad_2019.png`
@@ -1480,7 +1480,7 @@ Scene: a residential road in a quiet Japanese town in March 2019, the afternoon 
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 102. 平成31年3月、夕暮れの踏切
+### 102. 平成31年3月、夕暮れの踏切（済）
 
 - 添付：なし
 - 保存名：`bg_grad_dusk.png`
@@ -1493,7 +1493,7 @@ Scene: a railroad crossing at the edge of a quiet Japanese town at dusk in March
 Keep the lower third of the image simple, because a dialogue box will cover it. Absolutely no letters or text anywhere: signs, posters and labels are blank or have simple patterns only.
 ```
 
-### 103. 駅の近くの踏切（今の夕方の前）
+### 103. 駅の近くの踏切（今の夕方の前）（済）
 
 - 添付：なし
 - 保存名：`bg_crossing_now.png`
@@ -1508,7 +1508,7 @@ Keep the lower third of the image simple, because a dialogue box will cover it. 
 
 ## G. 1枚絵
 
-### 104. 代打の一打（2-3）
+### 104. 代打の一打（2-3）（済）
 
 - 添付：`past_koji_normal.png（C で作った絵）`、`past_masaru_smile.png（C で作った絵）`
 - 保存名：`cg_pinch_hit.png`

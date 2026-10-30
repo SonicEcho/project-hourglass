@@ -476,7 +476,7 @@ export const BACKDROPS: Record<string, Backdrop> = {
   // 段階35（M2 の昼の日常）。絵が届くまで仮の色
   river_path: { title: '川沿いの帰り道', top: 0xe8b078, bottom: 0x5a7a6a, image: 'bg.riverside_path' },
   riverside_ground: { title: '河川敷のグラウンド', top: 0x9ac0e0, bottom: 0xa08a5a, image: 'bg.riverside_1998', tint: 0xd8d0c0 },
-  home_tv_dark: { title: '施設の居間（テレビの光だけ）', top: 0x101828, bottom: 0x2a3a5a },
+  home_tv_dark: { title: '施設の居間（テレビの光だけ）', top: 0x101828, bottom: 0x2a3a5a, image: 'bg.home_tv_dark' },
   clock_shop: { title: '時計屋の店内（夕暮れ）', top: 0xd07040, bottom: 0x5a3a30, image: 'bg.clock_shop', ambient: 'dust' },
   // 段階36：昼の店内（4-A の返した翌日のふみさん）
   clock_shop_day: { title: '時計屋の店内（昼）', top: 0xe8dcc0, bottom: 0x7a5a40, image: 'bg.clock_shop_day', ambient: 'dust' },
@@ -492,7 +492,7 @@ export const BACKDROPS: Record<string, Backdrop> = {
   factory_1969: { title: '昭和44年の町工場の中（夜）', top: 0x3a2a1a, bottom: 0x6a4a2a, image: 'bg.factory_1969', ambient: 'dust' },
   factory_now: { title: '町工場の中（今）', top: 0x8a8a80, bottom: 0x4a4a48, image: 'bg.factory_1969', tint: 0x9a9890, ambient: 'dust' },
   // 段階39b：2-2 の平成18年の秋の高校の文化祭（会話の背景。絵が届くまで仮の色）、体育館のステージ、商店街の楽器店（昼と、閉店後の夜）
-  school_festival: { title: '平成の高校の文化祭（秋の昼）', top: 0xa8d8f0, bottom: 0xf0c8d8, ambienceSe: SE.crowd },
+  school_festival: { title: '平成の高校の文化祭（秋の昼）', top: 0xa8d8f0, bottom: 0xf0c8d8, image: 'bg.school_festival', ambienceSe: SE.crowd },
   school_gym: { title: '高校の体育館のステージ', top: 0x2a2a40, bottom: 0x8a6a4a, image: 'bg.school_gym', ambient: 'dust' },
   music_shop: { title: '商店街の楽器店（昼）', top: 0xe0c8a0, bottom: 0x6a4a3a, image: 'bg.music_shop', ambient: 'dust' },
   music_shop_night: { title: '商店街の楽器店（夜。閉店後）', top: 0x1a2038, bottom: 0x5a3a2a, image: 'bg.music_shop', tint: 0x6070a8, ambient: 'dust' },
@@ -501,24 +501,24 @@ export const BACKDROPS: Record<string, Backdrop> = {
   library_bridge: { title: 'レストピアの高い所（棚と棚をつなぐ細い橋）', top: 0x080c20, bottom: 0x2a2a3a, image: 'bg.library', tint: 0x7080a8, ambient: 'dust' },
   bakery: { title: '商店街のパン屋（昼）', top: 0xf0d8b0, bottom: 0x9a6a40, image: 'bg.bakery', ambient: 'dust' },
   // 段階88：3-1 の昭和41年の夏の山あいの村（昼と、夕暮れの駅）、ひだまり荘の部屋、今の駅のホーム、文化祭の中庭。絵が届くまで仮の色
-  village_1966: { title: '昭和41年の夏、山あいの村（昼）', top: 0x9ad0f0, bottom: 0x7aa060 },
-  village_dusk: { title: '昭和41年の夏、村の駅（夕暮れ）', top: 0xe09060, bottom: 0x4a3a40, ambient: 'dust' },
-  care_home: { title: 'ひだまり荘の部屋（窓辺）', top: 0xf0e8d8, bottom: 0xb0a088 },
-  station_now: { title: '町の駅のホーム（夕方の前）', top: 0xd8c8b0, bottom: 0x6a6a70 },
-  school_fair: { title: '文化祭の学校の中庭', top: 0xb0d8f0, bottom: 0xd8c0a0, ambienceSe: SE.crowd },
+  village_1966: { title: '昭和41年の夏、山あいの村（昼）', top: 0x9ad0f0, bottom: 0x7aa060, image: 'bg.village_1966' },
+  village_dusk: { title: '昭和41年の夏、村の駅（夕暮れ）', top: 0xe09060, bottom: 0x4a3a40, image: 'bg.village_dusk', ambient: 'dust' },
+  care_home: { title: 'ひだまり荘の部屋（窓辺）', top: 0xf0e8d8, bottom: 0xb0a088, image: 'bg.care_home' },
+  station_now: { title: '町の駅のホーム（夕方の前）', top: 0xd8c8b0, bottom: 0x6a6a70, image: 'bg.station_now' },
+  school_fair: { title: '文化祭の学校の中庭', top: 0xb0d8f0, bottom: 0xd8c0a0, image: 'bg.school_fair', ambienceSe: SE.crowd },
   // 段階91：祭りの夜（大正十年の夏祭り。参道と、夜の端）と、今の町の神社（昼）。絵が届くまで仮の色
-  taisho_festival: { title: '大正十年の夏祭り（夜）', top: 0x1a1a3a, bottom: 0xb04a3a, ambient: 'lanterns', ambienceSe: SE.crowd },
-  taisho_edge: { title: '祭りの夜の端（砂の落ちる縁）', top: 0x0a0a1a, bottom: 0x3a2a3a, ambient: 'dust' },
-  shrine_now: { title: '町の神社（今の昼）', top: 0xb8d8e8, bottom: 0x9a8a6a },
+  taisho_festival: { title: '大正十年の夏祭り（夜）', top: 0x1a1a3a, bottom: 0xb04a3a, image: 'bg.taisho_festival', ambient: 'lanterns', ambienceSe: SE.crowd },
+  taisho_edge: { title: '祭りの夜の端（砂の落ちる縁）', top: 0x0a0a1a, bottom: 0x3a2a3a, image: 'bg.taisho_edge', ambient: 'dust' },
+  shrine_now: { title: '町の神社（今の昼）', top: 0xb8d8e8, bottom: 0x9a8a6a, image: 'bg.shrine_now' },
   // 段階94：3-2 の平成31年3月の町（卒業式の帰り道の昼と、夕暮れの踏切）、今の駅の近くの踏切。絵が届くまで仮の色
-  grad_2019: { title: '平成31年3月、卒業式の帰り道（昼）', top: 0xc8e0f0, bottom: 0xb0b8a0 },
-  grad_dusk: { title: '平成31年3月、夕暮れの踏切', top: 0xf0a070, bottom: 0x4a3a4a, ambient: 'dust' },
-  crossing_now: { title: '駅の近くの踏切（今の夕方の前）', top: 0xe8c8a0, bottom: 0x5a5a62 },
+  grad_2019: { title: '平成31年3月、卒業式の帰り道（昼）', top: 0xc8e0f0, bottom: 0xb0b8a0, image: 'bg.grad_2019' },
+  grad_dusk: { title: '平成31年3月、夕暮れの踏切', top: 0xf0a070, bottom: 0x4a3a4a, image: 'bg.grad_dusk', ambient: 'dust' },
+  crossing_now: { title: '駅の近くの踏切（今の夕方の前）', top: 0xe8c8a0, bottom: 0x5a5a62, image: 'bg.crossing_now' },
   // 段階96：32日目の雨（今の絵に、灰色をかけて雨の粒を降らせる）
   classroom_rain: { title: '教室（雨の朝）', top: 0x9aa4b0, bottom: 0x6a7470, image: 'bg.classroom', tint: 0x8890a0, ambient: 'rain' },
   clock_shop_rain: { title: '時計屋の店内（雨）', top: 0x707880, bottom: 0x3a3a40, image: 'bg.clock_shop', tint: 0x7a8290, ambient: 'rain' },
   factory_rain: { title: '町工場の中（今・雨）', top: 0x6a6e70, bottom: 0x3a3a3a, image: 'bg.factory_1969', tint: 0x7a7e84, ambient: 'rain' },
-  care_home_rain: { title: 'ひだまり荘の部屋（窓辺・雨）', top: 0xb8c0c8, bottom: 0x8a8a88, ambient: 'rain' },
+  care_home_rain: { title: 'ひだまり荘の部屋（窓辺・雨）', top: 0xb8c0c8, bottom: 0x8a8a88, image: 'bg.care_home_rain', ambient: 'rain' },
 };
 
 /** 立ち絵の芝居の動き（@act で使う。表情が替わった時にも FACE_MOTIONS で自動で動く） */
@@ -572,7 +572,7 @@ export const CGS: Record<string, Backdrop> = {
   // 段階61：持ち物が武器に変わる瞬間（1-1 のハルトとあかり、2-1 のみお）。2026-10-20 に絵が届いた。白い街・花火・金魚の写真・切り取られるグラウンドも同じ日
   awaken_weapons: { title: '1枚絵：長針の剣と、金魚の灯籠の杖', top: 0x2a3060, bottom: 0xe0a050, image: 'cg.awaken_weapons', ambient: 'motes', glow: { x: 0.5, y: 0.45, color: 0xfff0c0 } },
   mio_cards: { title: '1枚絵：光るトランプ', top: 0x3a2a40, bottom: 0xd0b070, image: 'cg.mio_cards', ambient: 'motes', glow: { x: 0.5, y: 0.5, color: 0xfff4d0 } },
-  pinch_hit: { title: '1枚絵：代打の一打', top: 0x6ab0e8, bottom: 0xc0a060, ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
+  pinch_hit: { title: '1枚絵：代打の一打', top: 0x6ab0e8, bottom: 0xc0a060, image: 'cg.pinch_hit', ambient: 'motes', glow: { x: 0.5, y: 0.3, color: 0xffffff } },
   // 上の方にいるカイの顔が切れないよう、上寄りで切り抜く（段階108。テストプレイのメモ 33）。上のボタンと重ならないよう、上に黒い帯を足して下げる（段階107c）
   cut_ground: { title: '1枚絵：四角い枠に切り取られるグラウンド', top: 0x404850, bottom: 0x8a9098, image: 'cg.cut_ground', glow: { x: 0.5, y: 0.4, color: 0xe0f0ff }, focusY: 0.36, topBand: 30 },
   noa_passing: { title: '1枚絵：蔵書の棚で、白い服の少女とすれ違う', top: 0x0e1430, bottom: 0x6a8a90, image: 'cg.noa_passing', ambient: 'motes', glow: { x: 0.3, y: 0.3, color: 0xffd68c } },
