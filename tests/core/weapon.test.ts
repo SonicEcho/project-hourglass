@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { ArmoryState } from '../../src/core';
 import {
   absorbMaterial,
+  absorbPicked,
+  getAbsorbPickedError,
+  paramsAfterPicked,
   addFragments,
   addItems,
   applyWeapons,
@@ -130,6 +133,33 @@ describe('武器：素材を刻む（段階27b）', () => {
       const total = Object.values(it.gains).reduce((x: number, n) => x + (n ?? 0), 0);
       expect(total, it.id).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('武器：素材をまとめて刻む（段階145）', () => {
+  it('選んだ数だけ1つずつ刻むのと同じになり、プレビューも同じ値', () => {
+    const a = addItems(createArmory(D), ['goldfishScale', 'goldfishScale', 'maskShard']);
+    const picks = { goldfishScale: 2, maskShard: 1 };
+    expect(getAbsorbPickedError(D, a, 'hero', picks)).toBeNull();
+    const b = absorbPicked(D, a, 'hero', picks);
+    let c = a;
+    for (const id of ['goldfishScale', 'goldfishScale', 'maskShard']) c = absorbMaterial(D, c, 'hero', id);
+    expect(b.weapons.hero).toEqual(c.weapons.hero);
+    expect(b.items).toEqual(c.items);
+    expect(paramsAfterPicked(D, a.weapons.hero.params, picks)).toEqual(b.weapons.hero.params);
+    expect(b.weapons.hero.absorbed).toBe(3);
+  });
+
+  it('何も選んでいない・持っている数より多い・刻印が足りない・アイテムは刻めない', () => {
+    const a = addItems(createArmory(D), ['goldfishScale', 'potion']);
+    expect(getAbsorbPickedError(D, a, 'hero', {})).toBe('nothing picked');
+    expect(getAbsorbPickedError(D, a, 'hero', { goldfishScale: 0 })).toBe('nothing picked');
+    expect(getAbsorbPickedError(D, a, 'hero', { goldfishScale: 2 })).toBe('no item left');
+    expect(getAbsorbPickedError(D, a, 'hero', { potion: 1 })).toBe('only materials can be absorbed');
+    const many = addItems(createArmory(D), Array<string>(D.slotsPerLevel[0] + 1).fill('goldfishScale'));
+    expect(getAbsorbPickedError(D, many, 'hero', { goldfishScale: D.slotsPerLevel[0] })).toBeNull();
+    expect(getAbsorbPickedError(D, many, 'hero', { goldfishScale: D.slotsPerLevel[0] + 1 })).toBe('no slot left');
+    expect(() => absorbPicked(D, a, 'hero', { goldfishScale: 2 })).toThrow('no item left');
   });
 });
 
@@ -335,7 +365,7 @@ describe('武器：表示の文字', () => {
   it('条件と進化先の効果を、日本語で説明する', async () => {
     const { describeCondition, describeEvolution, describeFragment } = await import('../../src/ui/weaponText');
     expect(describeCondition({ kind: 'param', param: 'fire', min: 6 })).toBe('火 6以上');
-    expect(describeCondition({ kind: 'tendency', color: 'red' })).toBe('傾向が赤');
+    expect(describeCondition({ kind: 'tendency', color: 'red' })).toBe('傾向が銅');
     expect(describeCondition({ kind: 'key', item: 'maskString' }, D)).toBe('鍵：お面のひも');
     expect(describeCondition({ kind: 'level', min: 3 })).toBe('Lv3');
     expect(describeFragment(FRAGMENTS.elation)).toBe('火 +1');
@@ -475,7 +505,7 @@ describe('武器：進化ツリー（段階42）', () => {
     const find = (id: string) => Object.values(D.weapons).flatMap((w) => w.evolutions).find((e) => e.id === id)!;
     expect(describeDirection(find('sunsetBlade'))).toBe('火↑↑ 攻↑↑');
     expect(describeDirection(find('blessRod'))).toBe('氷↑↑ 火↑↑');
-    expect(describeDirection(find('magicianCards'))).toBe('雷↑↑ 傾向 黄');
+    expect(describeDirection(find('magicianCards'))).toBe('雷↑↑ 傾向 真鍮');
     expect(describeDirection(find('strayEdge'))).toBe('雷↓');
     expect(describeCondition({ kind: 'paramMax', param: 'thunder', max: 2 })).toBe('雷 2以下');
     expect(describeStyle(find('flameBlade').styles![1], 2)).toBe('灯：ラウンドの始めに最大HPの3%を回復。盤の右に2マス増える');

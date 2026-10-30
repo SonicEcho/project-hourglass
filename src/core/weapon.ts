@@ -244,6 +244,42 @@ export function absorbMaterial(data: WeaponData, armory: ArmoryState, charId: st
   };
 }
 
+/**
+ * 選んだ素材をまとめて刻めない理由（段階145。武器の画面で素材を何回か押して数を足し、「刻む（N）」でまとめて刻む）。刻めるなら null。
+ * picks は素材の id → 刻む数。どれも0なら 'nothing picked'、持っている数より多い・刻印が足りない時もだめ
+ */
+export function getAbsorbPickedError(data: WeaponData, armory: ArmoryState, charId: string, picks: Record<string, number>): string | null {
+  const w = armory.weapons[charId];
+  if (!w) return 'no weapon';
+  const entries = Object.entries(picks).filter(([, n]) => n > 0);
+  if (entries.length === 0) return 'nothing picked';
+  for (const [id, n] of entries) {
+    const it = data.items[id];
+    if (!it) return 'unknown item';
+    if (it.kind !== 'material') return 'only materials can be absorbed';
+    if ((armory.items[id] ?? 0) < n) return 'no item left';
+  }
+  const total = entries.reduce((a, [, n]) => a + n, 0);
+  if (w.absorbed + total > weaponSlots(data, w)) return 'no slot left';
+  return null;
+}
+
+/** 選んだ素材をまとめて刻む（素材の id の順に1つずつ刻むのと同じ。能力値は1つ刻むたびに0より下がらない） */
+export function absorbPicked(data: WeaponData, armory: ArmoryState, charId: string, picks: Record<string, number>): ArmoryState {
+  const err = getAbsorbPickedError(data, armory, charId, picks);
+  if (err) throw new Error(err);
+  let a = armory;
+  for (const id of Object.keys(picks).sort()) for (let i = 0; i < picks[id]; i++) a = absorbMaterial(data, a, charId, id);
+  return a;
+}
+
+/** まとめて刻んだ後の能力値（プレビュー。absorbPicked と同じ順に足す） */
+export function paramsAfterPicked(data: WeaponData, params: WeaponParams, picks: Record<string, number>): WeaponParams {
+  let p = params;
+  for (const id of Object.keys(picks).sort()) for (let i = 0; i < picks[id]; i++) p = paramsAfter(p, data.items[id]?.gains ?? data.fragments[id]?.gains ?? {});
+  return p;
+}
+
 /** 時分解でできる記憶の欠片（一番大きく上がる能力値。同じなら 攻撃 → 火 → 氷 → 雷 の順） */
 export function decomposeFragment(data: WeaponData, itemId: string): string {
   const gains = data.items[itemId]?.gains ?? {};

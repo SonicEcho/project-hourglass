@@ -6,12 +6,12 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { PARTY } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePassives } from '../ui/naviText';
-import { drawPartShape, PART_COLOR, PART_SHORT } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
+import { addBalanceWheel, drawGear, drawMovementBg, drawPartShape, METAL, PART_COLOR, PART_SHORT } from '../ui/naviViews';
+import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, currentParty, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
-import { addWindow, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
-import { backButton, faceTabs, FRAME, frameBg, frameHeader } from '../ui/frame';
+import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
+import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 
 // ムーブメントの画面（段階8）。縦持ち 390×844 に、盤・説明・ギアの一覧・操作を1画面で収める
 //
@@ -20,12 +20,13 @@ import { backButton, faceTabs, FRAME, frameBg, frameHeader } from '../ui/frame';
 
 /** 盤の1マスの大きさ（盤が広い時は画面に収まるよう縮める） */
 const MAX_CELL = 56;
-const BOARD_TOP = FRAME.contentTop;
-// 段階141：上に顔のタブが入ったので、盤の高さを少し縮めた（下の端は今までと同じ）
-const BOARD_H = 200;
+const BOARD_TOP = FRAME.contentTop + 14;
+// 段階146：時計の機械の地板と縁が入るので、盤の場所を広げた（その分、説明の窓を低くした）
+const BOARD_H = 230;
 /** 選んだギアの説明の窓の上の端 */
-const INFO_TOP = 392;
-const LIST_TOP = 520;
+const INFO_TOP = 432;
+const INFO_H = 92;
+const LIST_TOP = 528;
 const LIST_COLS = 4;
 /** 一覧の下の端（「戻る」ボタンの上） */
 const LIST_BOTTOM = 766;
@@ -211,8 +212,10 @@ export class NaviScene extends Phaser.Scene {
     this.root.removeAll(true);
     const b = this.board();
     // 段階42：型で盤が下にも伸びるので、高さにも収める
-    this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 12) / b.cols), Math.floor(BOARD_H / b.rows));
-    this.root.add(frameBg(this));
+    // 段階146：地板と時計の縁（上下に 22 ずつ）が盤の場所に収まるように
+    this.cell = Math.min(MAX_CELL, Math.floor((GAME_WIDTH - SIDE_PADDING * 2 - 60) / b.cols), Math.floor((BOARD_H - 44) / b.rows));
+    // 地はビロード（段階146。時計の機械）
+    this.root.add(frameBg(this, 0x3a1218, 0x0a0406));
     // 見出し（段階141：共通の枠）
     frameHeader(this, this.root, 'gear', 'ムーブメント');
     this.drawTabs();
@@ -261,23 +264,28 @@ export class NaviScene extends Phaser.Scene {
   private drawBoard(): void {
     const b = this.board();
     const o = this.boardOrigin();
+    const cell = this.cell;
     const cellSet = new Set(b.cells.map(key));
+    const data = currentNaviData();
 
-    // ブリッジ（光る帯）
-    this.root.add(
-      this.add.rectangle(o.x + b.commandCol * this.cell - 3, o.y - 6, this.cell + 6, this.cell * b.rows + 12, COLORS.accent, 0.28).setOrigin(0).setStrokeStyle(2, COLORS.accent),
-    );
+    // 時計の機械（段階146。docs/ART.md の 5-9）：ビロードの上の時計の縁と、銀の地板。地板は盤のまわりに少し余白をとる
+    const plate = { x: o.x - 14, y: o.y - 12, w: cell * b.cols + 28, h: cell * b.rows + 24 };
+    drawMovementBg(this, this.root, plate);
+    // てんぷ（地板の右下の外。場所がある時だけ）
+    if (plate.x + plate.w + 46 < GAME_WIDTH) addBalanceWheel(this, this.root, plate.x + plate.w + 30, plate.y + plate.h - 20, 15);
 
-    // マス
+    // マス（地板に彫った、ギアの受け）
+    const holes = this.add.graphics();
     for (let row = 0; row < b.rows; row++) {
       for (let col = 0; col < b.cols; col++) {
         if (!cellSet.has(key([col, row]))) continue;
-        const x = o.x + col * this.cell;
-        const y = o.y + row * this.cell;
-        const rect = this.add.rectangle(x + 1, y + 1, this.cell - 2, this.cell - 2, col === b.commandCol ? 0x3a3a1e : COLORS.panel).setRounded(8).setOrigin(0);
-        rect.setStrokeStyle(1, COLORS.border);
-        this.root.add(rect);
-        makePressable(rect, {
+        const x = o.x + col * cell;
+        const y = o.y + row * cell;
+        holes.fillStyle(0x2a2c32, 0.55).fillRoundedRect(x + 3, y + 3, cell - 6, cell - 6, 8);
+        holes.lineStyle(1, 0xffffff, 0.35).lineBetween(x + 8, y + cell - 3, x + cell - 8, y + cell - 3);
+        const hit = this.add.rectangle(x, y, cell, cell, 0x000000, 0.001).setOrigin(0);
+        this.root.add(hit);
+        makePressable(hit, {
           onTap: () => this.tapCell(col, row),
           onLongPress: () => {
             const p = this.partAt(col, row);
@@ -286,57 +294,108 @@ export class NaviScene extends Phaser.Scene {
         });
       }
     }
+    this.root.add(holes);
 
-    // はまっているギア
+    // はまっているギア：ひと組は同じ金属の台座でまとめ、黒いふちで囲む。マスごとに金属の歯車
     for (const p of boardParts(run.navi, this.charId)) {
-      const def = currentNaviData().parts[p.partId];
-      const active = isPartActive(currentNaviData(), p);
+      const def = data.parts[p.partId];
+      const active = isPartActive(data, p);
       const selected = p.uid === this.selectedUid;
       const cells = placedCells(def, p.placement!);
-      cells.forEach(([c, r], i) => {
-        const x = o.x + c * this.cell;
-        const y = o.y + r * this.cell;
-        const rect = this.add.rectangle(x + 3, y + 3, this.cell - 6, this.cell - 6, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0);
-        rect.setStrokeStyle(selected ? 4 : def.kind === 'effect' ? 2 : 0, selected ? COLORS.select : 0xffffff, 1);
-        this.root.add(rect);
-        // マスのタップは下のマスで受ける
-        if (i === 0) {
-          this.root.add(
-            addText(this, x + this.cell / 2, y + this.cell / 2, PART_SHORT[def.id] ?? '', { size: 16, bold: true, color: active ? '#101820' : '#dddddd' }).setOrigin(0.5),
-          );
-          // 段階126（レビューの項目35）：ブリッジの外で効かない効果ギアは、暗さだけでなく × の印でも分かるように
-          if (def.kind === 'effect' && !active) {
-            this.root.add(this.add.circle(x + this.cell - 11, y + 11, 8, 0x401010).setStrokeStyle(1, 0xff8a7a));
-            this.root.add(addText(this, x + this.cell - 11, y + 11, '×', { size: 11, bold: true, color: '#ff8a7a' }).setOrigin(0.5));
-          }
-        }
-      });
-      // 同じギアのマスどうしをつなぐ（1つのギアだと分かるように）
       const set = new Set(cells.map(key));
-      for (const [c, r] of cells) {
-        if (set.has(key([c + 1, r]))) this.root.add(this.add.rectangle(o.x + (c + 1) * this.cell - 4, o.y + r * this.cell + 14, 8, this.cell - 28, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
-        if (set.has(key([c, r + 1]))) this.root.add(this.add.rectangle(o.x + c * this.cell + 14, o.y + (r + 1) * this.cell - 4, this.cell - 28, 8, PART_COLOR[def.color], active ? 1 : 0.35).setOrigin(0));
+      const m = METAL[def.color];
+      const base = this.add.graphics();
+      const inset = 4;
+      // 黒いふち → 台座（同じギアのマスどうしは、つないで1つの台座に）
+      for (const [layer, pad, color, alpha] of [
+        ['edge', 2.5, 0x000000, 0.85],
+        ['base', 0, m.dark, active ? 1 : 0.5],
+      ] as const) {
+        void layer;
+        base.fillStyle(color, alpha);
+        for (const [c, r] of cells) {
+          const x = o.x + c * cell;
+          const y = o.y + r * cell;
+          base.fillRoundedRect(x + inset - pad, y + inset - pad, cell - inset * 2 + pad * 2, cell - inset * 2 + pad * 2, 9);
+          if (set.has(key([c + 1, r]))) base.fillRect(x + cell - inset - pad - 2, y + inset - pad, inset * 2 + pad * 2 + 4, cell - inset * 2 + pad * 2);
+          if (set.has(key([c, r + 1]))) base.fillRect(x + inset - pad, y + cell - inset - pad - 2, cell - inset * 2 + pad * 2, inset * 2 + pad * 2 + 4);
+        }
+      }
+      // 選んでいるギアは金のふち
+      if (selected) {
+        base.lineStyle(2.5, FRAME_COLORS.gold, 1);
+        for (const [c, r] of cells) base.strokeRoundedRect(o.x + c * cell + inset - 3, o.y + r * cell + inset - 3, cell - inset * 2 + 6, cell - inset * 2 + 6, 10);
+      }
+      this.root.add(base);
+      const gears = this.add.graphics();
+      for (const [c, r] of cells) drawGear(gears, o.x + c * cell + cell / 2, o.y + r * cell + cell / 2, cell * 0.4, def.color, active ? 1 : 0.4);
+      this.root.add(gears);
+      const [c0, r0] = cells[0];
+      const x = o.x + c0 * cell;
+      const y = o.y + r0 * cell;
+      // ギアの印（刻印のように、暗い字に明るい縁）
+      this.root.add(addText(this, x + cell / 2, y + cell / 2, PART_SHORT[def.id] ?? '', { size: 15, bold: true, color: '#ffffff' }).setOrigin(0.5).setStroke(toCss(m.dark), 4).setAlpha(active ? 1 : 0.6));
+      // 段階126（レビューの項目35）：ブリッジの外で効かない効果ギアは、暗さだけでなく × の印でも分かるように
+      if (def.kind === 'effect' && !active) {
+        this.root.add(this.add.circle(x + cell - 11, y + 11, 8, 0x401010).setStrokeStyle(1, 0xff8a7a));
+        this.root.add(addText(this, x + cell - 11, y + 11, '×', { size: 11, bold: true, color: '#ff8a7a' }).setOrigin(0.5));
       }
     }
 
-    // 狂い：接している辺を赤く光らせる。置ける影がある時は、はめた後の形で出す（段階126）
+    // ブリッジ：列全体を囲む金の光の帯（上下に矢印）。ギアの上に重ねる
+    const bx = o.x + b.commandCol * cell;
+    const band = this.add.graphics();
+    band.fillStyle(FRAME_COLORS.gold, 0.1).fillRoundedRect(bx - 2, o.y - 8, cell + 4, cell * b.rows + 16, 10);
+    band.lineStyle(8, FRAME_COLORS.gold, 0.18).strokeRoundedRect(bx - 2, o.y - 8, cell + 4, cell * b.rows + 16, 10);
+    band.lineStyle(2, 0xfff0c0, 0.95).strokeRoundedRect(bx - 2, o.y - 8, cell + 4, cell * b.rows + 16, 10);
+    const ax = bx + cell / 2;
+    band.fillStyle(0xfff0c0, 1).fillTriangle(ax - 6, o.y - 10, ax + 6, o.y - 10, ax, o.y - 18);
+    band.fillTriangle(ax - 6, o.y + cell * b.rows + 10, ax + 6, o.y + cell * b.rows + 10, ax, o.y + cell * b.rows + 18);
+    this.root.add(band);
+    this.tweens.add({ targets: band, alpha: { from: 1, to: 0.7 }, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    // 狂い：同じ金属の別のギアが触れた所が、赤く焼けて煙が出る（文字は出さない）。置ける影がある時は、はめた後の形で出す（段階126）
     const nv = this.previewNavi() ?? run.navi;
-    const g = this.add.graphics();
-    g.lineStyle(5, 0xff3030, 1);
-    for (const [ua, ub] of findBugs(currentNaviData(), nv, this.charId)) {
+    const burns: { x: number; y: number; vertical: boolean }[] = [];
+    for (const [ua, ub] of findBugs(data, nv, this.charId)) {
       const pa = nv.parts.find((p) => p.uid === ua)!;
       const pb = nv.parts.find((p) => p.uid === ub)!;
-      const bCells = new Set(placedCells(currentNaviData().parts[pb.partId], pb.placement!).map(key));
-      for (const [c, r] of placedCells(currentNaviData().parts[pa.partId], pa.placement!)) {
-        const x = o.x + c * this.cell;
-        const y = o.y + r * this.cell;
-        if (bCells.has(key([c + 1, r]))) g.lineBetween(x + this.cell, y + 4, x + this.cell, y + this.cell - 4);
-        if (bCells.has(key([c - 1, r]))) g.lineBetween(x, y + 4, x, y + this.cell - 4);
-        if (bCells.has(key([c, r + 1]))) g.lineBetween(x + 4, y + this.cell, x + this.cell - 4, y + this.cell);
-        if (bCells.has(key([c, r - 1]))) g.lineBetween(x + 4, y, x + this.cell - 4, y);
+      const bCells = new Set(placedCells(data.parts[pb.partId], pb.placement!).map(key));
+      for (const [c, r] of placedCells(data.parts[pa.partId], pa.placement!)) {
+        const x = o.x + c * cell;
+        const y = o.y + r * cell;
+        if (bCells.has(key([c + 1, r]))) burns.push({ x: x + cell, y: y + cell / 2, vertical: true });
+        if (bCells.has(key([c - 1, r]))) burns.push({ x, y: y + cell / 2, vertical: true });
+        if (bCells.has(key([c, r + 1]))) burns.push({ x: x + cell / 2, y: y + cell, vertical: false });
+        if (bCells.has(key([c, r - 1]))) burns.push({ x: x + cell / 2, y, vertical: false });
       }
     }
-    this.root.add(g);
+    if (burns.length > 0) {
+      const heat = this.add.graphics();
+      for (const bn of burns) {
+        heat.fillStyle(0xff3010, 0.18).fillCircle(bn.x, bn.y, cell * 0.55);
+        heat.fillStyle(0xff5a20, 0.35).fillCircle(bn.x, bn.y, cell * 0.32);
+        heat.fillStyle(0xffd080, 0.9);
+        if (bn.vertical) heat.fillRect(bn.x - 2, bn.y - cell * 0.3, 4, cell * 0.6);
+        else heat.fillRect(bn.x - cell * 0.3, bn.y - 2, cell * 0.6, 4);
+      }
+      this.root.add(heat);
+      this.tweens.add({ targets: heat, alpha: { from: 1, to: 0.55 }, duration: 380, yoyo: true, repeat: -1 });
+      ensureSandTexture(this);
+      for (const bn of burns) {
+        const smoke = this.add.particles(bn.x, bn.y, 'ui-sand', {
+          x: { min: -6, max: 6 },
+          speedY: { min: -40, max: -18 },
+          speedX: { min: -8, max: 8 },
+          scale: { start: 1.6, end: 4 },
+          alpha: { start: 0.35, end: 0 },
+          tint: 0x8a8a8a,
+          lifespan: 1100,
+          frequency: 140,
+        });
+        this.root.add(smoke);
+      }
+    }
 
     // 影（仮置き）
     const sel = this.selectedPart();
@@ -344,7 +403,7 @@ export class NaviScene extends Phaser.Scene {
     if (sel && ghost) {
       const ok = !getPlaceError(currentNaviData(), run.navi, sel.uid, ghost);
       for (const [c, r] of placedCells(currentNaviData().parts[sel.partId], ghost)) {
-        const shadow = this.add.rectangle(o.x + c * this.cell + 4, o.y + r * this.cell + 4, this.cell - 8, this.cell - 8, ok ? PART_COLOR[currentNaviData().parts[sel.partId].color] : 0xff3030, 0.5).setOrigin(0);
+        const shadow = this.add.rectangle(o.x + c * this.cell + 4, o.y + r * this.cell + 4, this.cell - 8, this.cell - 8, ok ? PART_COLOR[currentNaviData().parts[sel.partId].color] : 0xff3030, 0.45).setOrigin(0).setRounded(9);
         shadow.setStrokeStyle(3, ok ? 0x6dff9e : 0xff3030);
         this.root.add(shadow);
         // 影のマスのタップは下のマスで受ける（影がはみ出している所は受けない）
@@ -413,12 +472,12 @@ export class NaviScene extends Phaser.Scene {
   /** 選んだギアの説明と、回転・はめる・外す */
   private drawInfo(): void {
     const top = INFO_TOP;
-    const h = 120;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    const h = INFO_H;
+    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, FRAME_COLORS.panel, 0.92).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.line));
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
-      const text = this.message || '下の一覧からギアを選び、ムーブメントのマスをタップして置き場所を決める。同じ色を隣に置くと狂いになる';
+      const text = this.message || '下の一覧からギアを選び、ムーブメントのマスをタップして置き場所を決める。同じ金属を隣に置くと焼き付いて狂いになる';
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, text, { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
       return;
     }
@@ -438,28 +497,28 @@ export class NaviScene extends Phaser.Scene {
     drawPartShape(this, this.root, def, this.rotation, SIDE_PADDING + 10, top + 12, 12);
     this.root.add(addText(this, SIDE_PADDING + 62, top + 8, def.name, { size: 15, bold: true, color: COLORS.accentText }));
     this.root.add(
-      addText(this, SIDE_PADDING + 62, top + 30, `${describePart(def)}\n${def.kind === 'stat' ? '能力値（どこでも効く）' : '効果（ブリッジで効く）'}　${PART_COLOR_LABEL[def.color]}`, {
+      addText(this, SIDE_PADDING + 62, top + 28, `${describePart(def)}\n${def.kind === 'stat' ? '能力値（どこでも効く）' : '効果（ブリッジで効く）'}　${PART_COLOR_LABEL[def.color]}`, {
         size: 11,
         wrap: textW - 54,
       }),
     );
-    this.root.add(addText(this, SIDE_PADDING + 10, top + h - 22, this.message || status, { size: 11, color: err ? '#ff8a7a' : COLORS.subText, wrap: textW }));
+    this.root.add(addText(this, SIDE_PADDING + 10, top + h - 18, this.message || status, { size: 11, color: err ? '#ff8a7a' : COLORS.subText, wrap: textW }));
 
     // ボタン（右側に縦に3つ）
     const bx = GAME_WIDTH - SIDE_PADDING - 60;
-    addButton(this, this.root, bx, top + 20, 108, 34, '回転', { onTap: () => this.rotate() }, { size: 13, bold: true });
+    addButton(this, this.root, bx, top + 16, 108, 26, '回転', { onTap: () => this.rotate() }, { ...PLAIN_BUTTON, size: 12, bold: true });
     addButton(
       this,
       this.root,
       bx,
-      top + 60,
+      top + 46,
       108,
-      34,
+      26,
       'はめる',
       { onTap: () => this.place() },
-      { enabled: !!ghost && !err, fill: 0x2f6b3f, stroke: 0x6dff9e, size: 13, bold: true },
+      { ...GOLD_BUTTON, enabled: !!ghost && !err, size: 12 },
     );
-    addButton(this, this.root, bx, top + 100, 108, 34, '外す', { onTap: () => this.remove() }, { enabled: !!sel.placement, size: 13 });
+    addButton(this, this.root, bx, top + 76, 108, 26, '外す', { onTap: () => this.remove() }, { ...PLAIN_BUTTON, enabled: !!sel.placement, size: 12 });
   }
 
   /** 一覧の見える範囲（段階127。ギアが多い時は、この中を上下にずらす） */
@@ -497,11 +556,11 @@ export class NaviScene extends Phaser.Scene {
       const x = SIDE_PADDING + (i % LIST_COLS) * (w + CHIP_GAP);
       const y = v.top + Math.floor(i / LIST_COLS) * (CHIP_H + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
-      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? COLORS.panel : COLORS.panelLight).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : COLORS.border);
+      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? 0x0a0908 : 0x1a1612, 0.92).setRounded(10).setOrigin(0);
+      rect.setStrokeStyle(selected ? 2 : 1, selected ? FRAME_COLORS.gold : FRAME_COLORS.line);
       layer.add(rect);
       drawPartShape(this, layer, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
-      layer.add(addText(this, x + 4, y + CHIP_H - 16, def.name, { size: 10, color: p.placement ? COLORS.subText : COLORS.text }));
+      layer.add(addText(this, x + 4, y + CHIP_H - 16, `${PART_COLOR_LABEL[def.color]}・${def.name}`, { size: 9, color: p.placement ? COLORS.subText : COLORS.text }));
       if (p.placement) {
         const owner = p.placement.charId;
         const name = PARTY.find((c) => c.id === owner)?.name.slice(0, 1) ?? '';
@@ -566,7 +625,7 @@ export class NaviScene extends Phaser.Scene {
   private showPartDetail(p: OwnedPart): void {
     const def = currentNaviData().parts[p.partId];
     const owner: CharacterDef | undefined = p.placement ? PARTY.find((c) => c.id === p.placement!.charId) : undefined;
-    const lines = [describePart(def), partKindText(def), `色：${PART_COLOR_LABEL[def.color]}（同じ色を隣に置くと狂い）`, `大きさ：${def.cells.length}マス`];
+    const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと焼き付いて狂い）`, `大きさ：${def.cells.length}マス`];
     if (owner) {
       lines.push('', `${owner.name}のムーブメントにはまっている`);
       if (def.kind === 'effect' && !isPartActive(currentNaviData(), p)) lines.push('ブリッジに乗っていないので、今は効かない');

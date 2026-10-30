@@ -12,7 +12,7 @@ const TICK_MS = 1000;
 /** これより長く触っていなければ、置きっぱなしとして数えない */
 const IDLE_MS = 120_000;
 /** 数える画面の優先順（同時に動いている画面があれば、前のものを数える） */
-const PRIORITY = ['Dialogue', 'Battle', 'Explore', 'Daily', 'Return', 'Hub', 'Exchange', 'Lost', 'TalkArchive', 'Growth', 'Weapon', 'WeaponTree', 'Navi', 'Album', 'Flow', 'Title'];
+const PRIORITY = ['Dialogue', 'Battle', 'Explore', 'Daily', 'Return', 'Hub', 'Exchange', 'Lost', 'TalkArchive', 'Growth', 'Weapon', 'Navi', 'Album', 'Flow', 'Title'];
 
 let log: PlaytimeLog = emptyPlaytime();
 let lastInput = Date.now();

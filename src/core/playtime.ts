@@ -86,7 +86,6 @@ const SCENE_NAMES: Record<string, string> = {
   Return: '返す',
   Growth: '星図',
   Weapon: '武器',
-  WeaponTree: '進化ツリー',
   Navi: 'ムーブメント',
   Album: 'アルバム',
   Hub: '拠点',
