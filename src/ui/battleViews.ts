@@ -674,7 +674,7 @@ function cardHandlers(card: CardInstance, o: CardOptions): { onTap?: () => void;
         def.name,
         def.support
           ? `サポートスナップ（MP不要・行動枠を使わない）\n${supportText(def)}\n\n計画の途中でその場で使う。1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで。`
-          : `スナップ（MP不要）\n${describeAction(def)}\n\n${weightHelp(def.weight, o.actor)}`,
+          : `スナップ（MP不要）\n${withTargetNote(def)}\n\n${weightHelp(def.weight, o.actor)}`,
       ),
   };
 }
@@ -1557,7 +1557,7 @@ export function photoHandLayout(n: number, areaW: number, cardW: number): number
 
 /**
  * 写真のカード（段階102b。新しい画面の手札）：白い枠・太い黒の縁・属性の色の影。写真らしく少し傾ける。
- * 上に写真、左上に属性の札、下の白い所に名前と重さ
+ * 上に写真、上の縁に属性の札、下の白い所に名前と重さ
  */
 function drawPhotoCard(
   scene: Phaser.Scene,
@@ -1598,17 +1598,20 @@ function drawPhotoCard(
     c.add(scene.add.rectangle(L + inset, T + inset, pw, ph, color, dim ? 0.3 : 0.8).setOrigin(0));
   }
   c.add(scene.add.rectangle(L + inset, T + inset, pw, ph).setOrigin(0).setStrokeStyle(1, 0x000000, 0.5));
-  // 属性の札（写真の左上）
+  // 属性の札。段階138（開発者の指摘）：写真の左上に重ねると絵が隠れるので、カードの上の縁にまたがる位置へ上げ、写真の外に出す
   const { label: typeLabel, icon: iconKind } = snapLook(def);
   const tag = addText(scene, 0, 0, typeLabel, { size: 10, bold: true, color: '#ffffff' });
   const tagW = tag.width + 20;
-  c.add(scene.add.rectangle(L + inset, T + inset, tagW, 15, color, dim ? 0.5 : 1).setOrigin(0));
-  c.add(addIcon(scene, iconKind, L + inset + 8, T + inset + 7.5, 10, 0xffffff, dim ? 0.5 : 1));
-  tag.setPosition(L + inset + 15, T + inset + 7.5).setOrigin(0, 0.5);
+  const tagY = T - 11;
+  c.add(scene.add.rectangle(L + 2, tagY, tagW, 15, color, dim ? 0.5 : 1).setOrigin(0).setStrokeStyle(1, 0x000000, 0.6));
+  c.add(addIcon(scene, iconKind, L + 2 + 8, tagY + 7.5, 10, 0xffffff, dim ? 0.5 : 1));
+  tag.setPosition(L + 2 + 15, tagY + 7.5).setOrigin(0, 0.5);
   c.add(tag);
   if (o.isNew) {
-    const tag = addText(scene, L + w - 4, T - 6, 'NEW', { size: 10, bold: true, color: '#101010' }).setOrigin(1, 0.5);
-    c.add(scene.add.rectangle(tag.x - tag.width / 2, T - 6, tag.width + 10, 15, 0xffd700).setStrokeStyle(1, 0x000000).setAngle(-6));
+    // 段階138：上の縁は属性の札が使うので、NEW は写真の右下の角の内側に置く（名前にかからず、絵の真ん中も隠さない）
+    const newY = T + inset + ph - 9;
+    const tag = addText(scene, L + w - 4, newY, 'NEW', { size: 10, bold: true, color: '#101010' }).setOrigin(1, 0.5);
+    c.add(scene.add.rectangle(tag.x - tag.width / 2, newY, tag.width + 10, 15, 0xffd700).setStrokeStyle(1, 0x000000).setAngle(-6));
     c.add(tag.setAngle(-6));
   }
   // 名前（黒の太字）
@@ -1629,14 +1632,12 @@ function drawPhotoCard(
   } else if (def.support) {
     c.add(addText(scene, 0, footY, 'その場で使う', { size: 11, bold: true, color: '#6a4fb0' }).setOrigin(0.5));
   } else {
-    // 重さの名前と目盛りを1行に並べる
-    const wl = addText(scene, 0, footY, weightLabel(def.weight), { size: 11, bold: true, color: '#444444' }).setOrigin(0, 0.5);
+    // 重さの目盛り。段階138（開発者の案）：「普通」などの文字はやめ、目盛りだけを少し大きくして真ん中に（名前は長押しの説明に出る）
     const n = WEIGHT_LABELS.length;
-    const start = -(wl.width + 4 + n * 7) / 2;
-    wl.setX(start);
-    c.add(wl);
+    const step = 11;
+    const start = -(n * step - 3) / 2;
     const level = WEIGHT_LABELS.findIndex((wt) => def.weight <= wt.max + 1e-9);
-    for (let i = 0; i < n; i++) c.add(scene.add.rectangle(start + wl.width + 4 + i * 7, footY, 5, 4, i <= level ? 0xffb347 : 0x9aa3ad).setOrigin(0, 0.5));
+    for (let i = 0; i < n; i++) c.add(scene.add.rectangle(start + i * step, footY, 8, 6, i <= level ? 0xffb347 : 0x9aa3ad).setOrigin(0, 0.5));
   }
   const hit = scene.add.rectangle(0, 0, w, hgt, 0xffffff, 0.001);
   c.add(hit);
