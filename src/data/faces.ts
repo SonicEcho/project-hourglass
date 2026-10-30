@@ -24,3 +24,14 @@ export const BARK_FACE_CROP: Record<string, { x: number; y: number; w: number }>
   default: { x: 0.22, y: 0.15, w: 0.56 },
   mio: { x: 0.15, y: 0.22, w: 0.7 },
 };
+
+/**
+ * 並びの画面（段階143。思い出のアルバム）のポラロイド写真に使う立ち絵。立ち絵の上の方（顔と肩）を切り出す。
+ * 書いていない仲間（早瀬）は、立ち絵ができるまで影の写真
+ */
+export const PARTY_PHOTO: Record<string, string> = {
+  hero: 'portrait.hero.smile',
+  akari: 'portrait.akari.smile',
+  mio: 'portrait.mio.smile',
+  sayoko: 'portrait.sayoko.smile',
+};
