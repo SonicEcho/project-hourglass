@@ -51,12 +51,12 @@ export const CARD_NAME_LINES: Partial<Record<string, string>> = {
 
 /**
  * 写真のカードの絵（段階102b。新しい戦闘の画面）。台帳（assets.ts）の画像の id と、切り抜く中心（絵の幅・高さに対する割合）。
- * 2026-10-30 に開発者から写真が届いた（docs/ART.md の 5-7。snap.<id>）。ファイアボールだけは、まだ1枚絵の花火から切り抜いている
+ * 2026-10-30 に開発者から写真が届いた（docs/ART.md の 5-7。snap.<id>）。ファイアボールは、子どもの3人が花火を見る1枚絵（cg.fireworks）を切り抜いて使い回す（開発者が決めた）
  */
 export const CARD_ART: Record<keyof typeof CARDS, { asset: string; x: number; y: number }> = {
   sword: { asset: 'snap.sword', x: 0.5, y: 0.5 },
   heavyBlow: { asset: 'snap.heavyBlow', x: 0.5, y: 0.5 },
-  fireChip: { asset: 'cg.fireworks', x: 0.5, y: 0.2 },
+  fireChip: { asset: 'snap.fireChip', x: 0.5, y: 0.5 },
   iceChip: { asset: 'snap.iceChip', x: 0.5, y: 0.5 },
   thunderChip: { asset: 'snap.thunderChip', x: 0.5, y: 0.5 },
   wideShot: { asset: 'snap.wideShot', x: 0.5, y: 0.5 },

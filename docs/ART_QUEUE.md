@@ -17,7 +17,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - E. 部屋の地図（39枚。済 38）
 - F. 会話の背景（14枚。済 14）
 - G. 1枚絵（1枚。済 1）
-- H. スナップの写真（14枚。済 13）
+- H. スナップの写真（14枚。済 14）
 
 ## A. 小夜子（ヒロイン）
 
@@ -1551,7 +1551,7 @@ A high school classroom after school, preparing for the culture festival. The bo
 Keep their designs exactly as in the attached reference portraits. Absolutely no letters or text anywhere.
 ```
 
-### 107. スナップ：ファイアボール
+### 107. スナップ：ファイアボール（済）
 
 - 添付：`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`snap_fireChip.png`

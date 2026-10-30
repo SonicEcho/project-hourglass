@@ -2307,6 +2307,16 @@ export const ASSETS: AssetEntry[] = [
     '2026-10-30',
     'Plus（有料）',
   ),
+  chatgptArt(
+    'snap.fireChip',
+    'スナップの写真（ファイアボール）',
+    'assets/snaps/fireChip.webp',
+    '1枚絵 cg.fireworks（高台で花火を見る3人の後ろ姿）と同じ絵。指示文は cg.fireworks の台帳を見る',
+    '1枚絵 cg.fireworks（720×1280）の、花火の下半分と3人の後ろ姿が入る正方形（上から 330〜1050）を切り抜き、768×768 にして WebP にした',
+    'docs/ART.md の 5-7（2026-10-30 開発者が、ファイアボールは子どもの3人が花火を見る1枚絵を使い回すと決めた）',
+    '2026-10-30',
+    'Plus（有料）',
+  ),
 ];
 
 /**
