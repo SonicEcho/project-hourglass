@@ -35,8 +35,17 @@ export function installSaveNotice(el: HTMLElement, deps: SaveNoticeDeps): void {
     const r = deps.retry();
     // まだ書き込めない時は、押したことが分かるよう言葉を変える（印は残す）
     if (r === 'failed') show('⚠ まだ保存できません（空き容量・プライベートモード？）', false);
-    else if (r === 'skipped') el.hidden = true;
+    else if (r === 'skipped' || r === 'stale') el.hidden = true;
   });
   deps.onStatus(update);
   if (deps.isFailing()) update(true);
+}
+
+/**
+ * ほかのタブで進めた時の帯（段階134。レビューの項目88）。このタブは保存を止めているので、タップで開き直して新しい進み具合を読む
+ */
+export function showStaleNotice(el: HTMLElement): void {
+  el.textContent = '別の画面で進めました。タップで開き直す';
+  el.hidden = false;
+  el.onclick = () => window.location.reload();
 }

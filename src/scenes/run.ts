@@ -213,6 +213,7 @@ let lastWritten: string | null = null;
 export function setSaveStorage(s: SaveStorage): void {
   storage = s;
   lastWritten = null;
+  staleByOtherTab = false;
   setSaveFailing(false);
 }
 
@@ -261,9 +262,25 @@ export function setBattleMark(mark: SavedBattle | null): void {
 
 /**
  * 保存した結果（段階124。レビューの項目1）。saved：書き込めた。unchanged：前に書き込めた中身と同じなので書き込みを省いた（保存は済んでいる）。
- * skipped：周回の外なので保存する物がない。failed：書き込めなかった（容量がいっぱい、プライベートモードなど）
+ * skipped：周回の外なので保存する物がない。failed：書き込めなかった（容量がいっぱい、プライベートモードなど）。
+ * stale：ほかのタブで新しく保存されたので、このタブからは保存しない（段階134）
  */
-export type SaveResult = 'saved' | 'unchanged' | 'skipped' | 'failed';
+export type SaveResult = 'saved' | 'unchanged' | 'skipped' | 'failed' | 'stale';
+
+/**
+ * ほかのタブで保存が書き換わった（段階134。レビューの項目88）。このタブの中身は古いので、もう保存しない（新しい進み具合を上書きしないように）。
+ * 開き直すと消える
+ */
+let staleByOtherTab = false;
+
+/** ほかのタブで保存が書き換わったことを覚える（main.ts の storage イベントから） */
+export function markStaleByOtherTab(): void {
+  staleByOtherTab = true;
+}
+
+export function isStaleByOtherTab(): boolean {
+  return staleByOtherTab;
+}
 
 /** 最後の書き込みに失敗し、その後まだ書き込めていないか（段階124） */
 let saveFailing = false;
@@ -289,6 +306,7 @@ export function onSaveStatus(fn: (failing: boolean) => void): () => void {
 /** 今の周回の状態を保存する。周回の外（タイトル、クリア後）では何もしない。中身が前と同じなら書き込まない */
 export function saveRun(): SaveResult {
   if (!run.active) return 'skipped';
+  if (staleByOtherTab) return 'stale';
   // 日時を除いた中身で比べる
   const body = JSON.stringify(snapshot());
   if (body === lastWritten) {

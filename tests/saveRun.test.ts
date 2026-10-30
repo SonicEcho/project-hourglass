@@ -3,7 +3,7 @@ import { addToAlbum, createAlbum, gainSnaps, parseSave, removeFromAlbum, sameAlb
 import { FOLDER } from '../src/data';
 import type { SaveStorage } from '../src/save/storage';
 import { memoryStorage } from '../src/save/storage';
-import { isSaveFailing, onSaveStatus, readSave, run, SAVE_KEY, saveContext, saveRun, setSaveStorage, startNewRun } from '../src/scenes/run';
+import { isSaveFailing, isStaleByOtherTab, markStaleByOtherTab, onSaveStatus, readSave, run, SAVE_KEY, saveContext, saveRun, setSaveStorage, startNewRun } from '../src/scenes/run';
 
 // 段階124（レビューの項目1〜3）：保存の結果と知らせ、アルバムの下書き
 
@@ -98,6 +98,32 @@ describe('保存の結果（段階124）', () => {
     expect(isSaveFailing()).toBe(true);
     setSaveStorage(memoryStorage());
     expect(isSaveFailing()).toBe(false);
+  });
+});
+
+describe('ほかのタブで進めた時（段階134）', () => {
+  it('ほかのタブで保存が書き換わったら、このタブからは保存しない（新しい進み具合を上書きしない）', () => {
+    const st = flakyStorage();
+    setSaveStorage(st);
+    startNewRun();
+    // ほかのタブが新しい進み具合を書いた
+    st.write(SAVE_KEY, 'other tab');
+    markStaleByOtherTab();
+    expect(isStaleByOtherTab()).toBe(true);
+    run.vars = { a: '1' };
+    const writes = st.writes;
+    expect(saveRun()).toBe('stale');
+    expect(st.writes).toBe(writes);
+    expect(st.read(SAVE_KEY)).toBe('other tab');
+  });
+
+  it('保存の場所を替える（開き直す）と、また保存する', () => {
+    markStaleByOtherTab();
+    setSaveStorage(memoryStorage());
+    expect(isStaleByOtherTab()).toBe(false);
+    startNewRun();
+    run.vars = { a: '1' };
+    expect(saveRun()).toBe('saved');
   });
 });
 

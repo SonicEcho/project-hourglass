@@ -97,7 +97,7 @@ export class DailyScene extends Phaser.Scene {
     if (gearNote) this.toast(gearNote);
     else if (data0.day !== undefined && savedNoticeFor !== data.event) {
       if (saved === 'failed') this.toast('保存できませんでした（ここでやめると、前に保存した所から）。上の印をタップすると、もう一度保存する', true);
-      else if (saved !== 'skipped') this.toast('保存しました（ここでやめても、この昼から始められる）');
+      else if (saved !== 'skipped' && saved !== 'stale') this.toast('保存しました（ここでやめても、この昼から始められる）');
     }
     savedNoticeFor = data.event;
   }
