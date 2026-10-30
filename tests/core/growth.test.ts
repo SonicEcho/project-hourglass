@@ -21,8 +21,8 @@ const ids = PARTY.map((c) => c.id);
 const fresh = (points = 99): GrowthState => createGrowth(GROWTH_MAP, ids, points);
 
 describe('星図のデータ', () => {
-  it('本物の星座の48個の星（段階56）と、ヘルクレス座の11個（段階91a）。どの星も星図の中にあり、4人の出発点がある。書き間違いがない', () => {
-    expect(GROWTH_MAP.nodes.length).toBe(59);
+  it('本物の星座の48個の星（段階56）と、ヘルクレス座の11個（段階91a）、ケフェウス座の9個（段階140a）。どの星も星図の中にあり、5人の出発点がある。書き間違いがない', () => {
+    expect(GROWTH_MAP.nodes.length).toBe(68);
     for (const n of GROWTH_MAP.nodes) {
       expect(n.x).toBeGreaterThan(0);
       expect(n.y).toBeGreaterThan(0);
@@ -32,12 +32,13 @@ describe('星図のデータ', () => {
     expect(checkGrowthMap(GROWTH_MAP, { minGap: 34, frontier: GROWTH_FRONTIER.map((f) => f.node) })).toEqual([]);
     // 効果の数は格子の星図と同じ（わし座ι だけ、防1 → 防2 にした）
     const count = (k: string) => GROWTH_MAP.nodes.filter((n) => n.kind === k).length;
-    // ヘルクレス座：小夜子の出発点・ダブルスラッシュ・小4・大5
-    expect([count('start'), count('skill'), count('stat'), count('statBig')]).toEqual([4, 11, 32, 12]);
+    // ヘルクレス座：小夜子の出発点・ダブルスラッシュ・小4・大5。ケフェウス座：早瀬の出発点・サンダラ・小3・大4
+    expect([count('start'), count('skill'), count('stat'), count('statBig')]).toEqual([5, 12, 35, 16]);
     expect(GROWTH_MAP.nodes.filter((n) => n.chapter === 2)).toHaveLength(17);
     expect(GROWTH_MAP.nodes.filter((n) => n.chapter === 3)).toHaveLength(11);
+    expect(GROWTH_MAP.nodes.filter((n) => n.chapter === 4)).toHaveLength(9);
     expect(GROWTH_MAP.nodes.filter((n) => n.kind === 'start').map((n) => (n.kind === 'start' ? n.owner : ''))).toEqual(
-      expect.arrayContaining(['hero', 'akari', 'mio', 'sayoko']),
+      expect.arrayContaining(['hero', 'akari', 'mio', 'sayoko', 'hayase']),
     );
   });
 

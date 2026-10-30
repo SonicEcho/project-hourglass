@@ -496,12 +496,15 @@ export class GrowthScene extends Phaser.Scene {
     // 駒（今のキャラは大きく）。パーティにいない仲間の駒は出さない
     members.forEach((c, i) => {
       const p = byId.get(piecePosition(g, c.id))!;
-      // 星の右に、真ん中・下・上の順に（上と左は、星の名前や隣の星の文字と重なりやすい）
+      // 星の右に、真ん中・下・上の順に（上と左は、星の名前や隣の星の文字と重なりやすい）。
+      // 4人目・5人目は星の左の下・上（段階140a：前は3人分しかなく、小夜子が加わった後の4人目で星図が開けなかった）
       const offset = [
         { x: NODE_R + 10, y: 0 },
         { x: NODE_R + 10, y: 16 },
         { x: NODE_R + 10, y: -16 },
-      ][i];
+        { x: -(NODE_R + 10), y: 16 },
+        { x: -(NODE_R + 10), y: -16 },
+      ][i % 5];
       const current = c.id === this.charId;
       const r = current ? 9 : 6;
       layer.add(this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff));

@@ -132,6 +132,21 @@ export const ITEMS = {
   hatBrim: { id: 'hatBrim', name: '麦わらのつば', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
   riverStone: { id: 'riverStone', name: '川底の石', kind: 'material', rarity: 'part', gains: { atk: 3 } },
   lordStrawHat: { id: 'lordStrawHat', name: 'ぬしの麦わら帽子', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
+  // ---- 4-2 の昭和55年の春、開店の日の商店街（段階140a） ----
+  cubeTile: { id: 'cubeTile', name: 'キューブの色の面', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
+  cubeCore: { id: 'cubeCore', name: 'キューブの芯', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
+  gameButton: { id: 'gameButton', name: 'ゲーム機のボタン', kind: 'material', rarity: 'common', gains: { atk: 2, thunder: 1 } },
+  gameGlass: { id: 'gameGlass', name: 'ゲーム機の天板', kind: 'material', rarity: 'uncommon', gains: { atk: 3, ice: -1 } },
+  balloonPaper: { id: 'balloonPaper', name: '紙風船の紙', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
+  balloonMouth: { id: 'balloonMouth', name: '紙風船の口', kind: 'material', rarity: 'uncommon', gains: { fire: 3, ice: -1 } },
+  redBalloon: { id: 'redBalloon', name: '赤い紙風船', kind: 'material', rarity: 'rare', gains: { atk: 3, fire: 3, ice: 2 } },
+  cuckooBird: { id: 'cuckooBird', name: '鳩時計の鳩', kind: 'material', rarity: 'common', gains: { thunder: 2, atk: 1 } },
+  cuckooWeight: { id: 'cuckooWeight', name: '鳩時計のおもり', kind: 'material', rarity: 'uncommon', gains: { thunder: 3, fire: -1 } },
+  wreathRibbon: { id: 'wreathRibbon', name: '花輪のリボン', kind: 'material', rarity: 'uncommon', gains: { fire: 2, thunder: 2 } },
+  brushSign: { id: 'brushSign', name: '手書きの看板', kind: 'material', rarity: 'rare', gains: { atk: 2, thunder: 3, ice: 2 } },
+  shutterSlat: { id: 'shutterSlat', name: 'シャッターの板', kind: 'material', rarity: 'part', gains: { atk: 3 } },
+  winchGear: { id: 'winchGear', name: '巻き上げの歯車', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
+  lordShutterKey: { id: 'lordShutterKey', name: 'ぬしの合鍵', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
   // ---- 3章のカイのリベンジ（段階96） ----
   frameShard: { id: 'frameShard', name: '枠のかけら', kind: 'material', rarity: 'part', gains: { thunder: 2, atk: 2 } },
   burntFilm: { id: 'burntFilm', name: '焼けたフィルム', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
@@ -445,8 +460,47 @@ const naginata: WeaponDef = {
   ],
 };
 
+// 早瀬の武器（段階140a。docs/script/4-2.md）：精密ドライバー。属性魔法の職人なので、どの進化先も魔力と、火・氷・雷のどれかを伸ばす。4章から加わるので、Lv6 から始める。
+// 鍵は、1回目が 3-2 の珍しい素材、2回目が 4-1 の珍しい素材・番人の素材、3回目が 4-1 のレア・部位・ぬしの素材（4章から加わるので、先の区画の素材にはしない）
+const driver: WeaponDef = {
+  id: 'precisionDriver',
+  name: '精密ドライバー',
+  owner: 'hayase',
+  startExp: 38,
+  evolutions: [
+    { id: 'temperDriver', name: '焼き戻しのドライバー', conditions: [param('fire', 12), key('thickStraw')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'coolDriver', name: '冷やしのドライバー', conditions: [param('ice', 12), key('flowerRibbon')], attackElement: 'ice', stats: { mag: 3 }, styles: [STYLES.fierce('ice'), STYLES.guard] },
+    { id: 'currentDriver', name: '電流のドライバー', conditions: [param('thunder', 12), key('earbudTip')], attackElement: 'thunder', stats: { mag: 3 }, styles: [STYLES.fierce('thunder'), STYLES.first] },
+    // 2回目
+    { id: 'forgeDriver', name: '鍛冶のドライバー', from: 'temperDriver', conditions: [param('fire', 24), key('cageStrap')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.calm] },
+    { id: 'frostDriver', name: '霜のドライバー', from: 'coolDriver', conditions: [param('ice', 24), key('fireworkPaper')], attackElement: 'ice', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.sage, STYLES.guard] },
+    { id: 'arcDriver', name: '火花のドライバー', from: 'currentDriver', conditions: [param('thunder', 24), key('waterTank')], attackElement: 'thunder', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.sage, STYLES.first] },
+    // 寄り道：電流のドライバーから。攻撃を低いままにして、MP を細く長く使うドライバー
+    {
+      id: 'tuningDriver',
+      name: '調律のドライバー',
+      from: 'currentDriver',
+      detour: true,
+      conditions: [{ kind: 'paramMax', param: 'atk', max: 2 }, key('jizoBib')],
+      stats: { mag: 3, spd: 1 },
+      passives: [{ kind: 'mpSave', amount: 1 }],
+      styles: [STYLES.sage, STYLES.calm],
+    },
+    // 3回目
+    { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'icicleDriver', name: '氷柱のドライバー', from: 'frostDriver', conditions: [param('ice', 36), key('hatBrim')], attackElement: 'ice', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
+    { id: 'thunderDriver', name: '雷鳴のドライバー', from: 'arcDriver', conditions: [param('thunder', 36), key('lordStrawHat')], attackElement: 'thunder', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.first] },
+    { id: 'masterDriver', name: '名工のドライバー', from: 'arcDriver', conditions: [param('thunder', 24), param('fire', 16), key('radioCard')], stats: { mag: 5, mp: 6 }, styles: [STYLES.sage, STYLES.calm] },
+    // 4回目より先（まだ作っていない）
+    ...beyond('kilnDriver', [['冷えきった町の時計を、ひと晩で全部あたため直したという', '炉の火で、止まった秒針をもう一度打ち直したという']]),
+    ...beyond('icicleDriver', [['止まった秒針を、凍らせたまま美しく見せたという']]),
+    ...beyond('thunderDriver', [['一本の火花で、百の時計を同時に動かしたという'], ['雷を、ぜんまいの中にしまったという']]),
+    ...beyond('masterDriver', [['直せない時計は、ひとつもなかったという']]),
+  ],
+};
+
 export const WEAPON_DATA: WeaponData = {
-  weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards, [naginata.id]: naginata },
+  weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards, [naginata.id]: naginata, [driver.id]: driver },
   fragments: FRAGMENTS,
   items: ITEMS,
   // 経験値 4 で Lv2、8 で Lv3（1人が戦闘1回で行動するのは3回前後なので、だいたい戦闘3つで Lv3）。

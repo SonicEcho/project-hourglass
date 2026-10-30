@@ -101,6 +101,7 @@ export const MEASURED_AREAS: Record<string, { title: string; prior: string[] }> 
   a32: { title: '3-2 の卒業式の帰り道（祭りの夜を通した後から。4人から3人）', prior: ['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a3s1', 'a3s2'] },
   a3k: { title: '祭りの夜（カイ）（3-2 を通した後から。小夜子を入れた3人）', prior: ['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a3s1', 'a3s2', 'a32'] },
   a41: { title: '4-1 の夏の田舎（3章を通した後から。4人から3人）', prior: ['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a3s1', 'a3s2', 'a32', 'a3k'] },
+  a42: { title: '4-2 の開店の日（4-1 を通した後から。早瀬を入れた3人）', prior: ['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a3s1', 'a3s2', 'a32', 'a3k', 'a41'] },
 };
 
 export function measureArea(runs: number, seed: number, policy: AreaPolicy, areaId = 'a11'): AreaMeasureResult {

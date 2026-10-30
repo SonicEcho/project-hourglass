@@ -4,7 +4,7 @@ import type { Story } from '../core/progress';
 import { V1_AREA_ID, V1_CHAPTER_ID } from '../core/save';
 import type { CampaignBattle } from './campaign';
 import { CAMPAIGN } from './campaign';
-import { AKARI, HERO, MIO, SAYOKO } from './characters';
+import { AKARI, HAYASE, HERO, MIO, SAYOKO } from './characters';
 
 // 物語の章 → 区画 → 戦闘（段階13）。今は試作の1章・1区画に、今までの5戦だけ。
 // 章・区画・戦闘の id はセーブが覚えるので、名前を変えても id は変えない
@@ -52,6 +52,8 @@ export const CHAPTER3_SAYOKO_LINEUP: Lineup = {
 };
 /** 4章（段階137a）：3章の終わりと同じ4人で、戦闘に出るのは3人。ハルトは外せない */
 export const CHAPTER4_LINEUP: Lineup = { ...CHAPTER3_SAYOKO_LINEUP, chapter: 4 };
+/** 早瀬が加わった後の4章（段階140a。4-2 の1晩目に入る所から）。仲間は5人で、戦闘に出るのは3人。ハルトは外せない */
+export const CHAPTER4_HAYASE_LINEUP: Lineup = { ...CHAPTER4_LINEUP, members: [...CHAPTER4_LINEUP.members, HAYASE.id] };
 
 // ---- 物語の流れ（段階23）：プロローグ → 1日目 → 1-1 → 時間を返す → 2日目 →（段階34）3日目〜8日目 → 2章の終わりの「つづく」 ----
 // 会話の出来事の id は、台本（scriptM1.ts・scriptM2.ts）の場面の id と同じにする。セーブは出来事の id で覚えるので、名前を変えても id は変えない。
@@ -355,6 +357,8 @@ export const SLICE_FLOW: Flow = [
     id: 'ch4',
     name: '第4章「消える、ということ」',
     lineup: CHAPTER4_LINEUP,
+    // 段階140a：4-2 の1晩目に入る所で、早瀬が加わる
+    lineupChanges: [{ from: 'a42_enter', lineup: CHAPTER4_HAYASE_LINEUP }],
     // 段階137a：4-1「シロのいた夏」を3晩で（脚本 docs/script/4-1.md）。34〜37日目
     events: [
       talk('chapter4_title', '第4章'),
@@ -385,8 +389,38 @@ export const SLICE_FLOW: Flow = [
       // 37日目（土曜）：4-1 を返した翌日の河川敷のたいち（daily.ts の RETURN_VISITS）。夕暮れに、小夜子の日記
       { id: 'd37_free', kind: 'daily', title: '37日目：昼' },
       talk('d37_evening', '37日目：夕暮れ・小夜子の日記'),
-      // 今の流れの終わり（段階137a。3章の終わりの後の ch3_end_d32 から替えた。3章の終わりの「つづく」にいたセーブは、4章の扉から続く。RENAMED_EVENTS）
-      { id: 'ch4_end_d37', kind: 'end', title: 'つづく' },
+      // 段階140a：38日目「早瀬にばれる」と 4-2「早瀬の時間」を3晩で（脚本 docs/script/4-2.md）。38〜42日目
+      day(38),
+      talk('d38_hayase', '38日目：店を開けろ'),
+      // 38日目（日曜）：昼は選べる話だけ。夕暮れに、店長を連れて蔵書の棚へ
+      { id: 'd38_free', kind: 'daily', title: '38日目：昼' },
+      talk('d38_library', '38日目：夕暮れ・金色の砂'),
+      day(39),
+      // 39日目（月曜）：時計屋の店長の「置いとけ」は必ず見る。夕暮れに、伏せられた写真立て
+      { id: 'd39_free', kind: 'daily', title: '39日目：昼' },
+      talk('d39_evening', '39日目：夕暮れ・伏せられた写真立て'),
+      day(40),
+      // 40日目（火曜）：時計屋のたいちのお礼は必ず見る。第1夜「シャッター」（店長も入る）
+      { id: 'd40_free', kind: 'daily', title: '40日目：昼' },
+      talk('a42_enter', '40日目：店長も入る'),
+      { id: 'a42_explore', kind: 'explore', area: 'a42', night: 1, title: '4-2「早瀬の時間」：開店の日の1晩目' },
+      talk('a42_night1_end', '40日目：時計屋に戻る'),
+      day(41),
+      // 41日目（水曜）：時計屋のふみさんは必ず見る。第2夜「紙風船」
+      { id: 'd41_free', kind: 'daily', title: '41日目：昼' },
+      talk('a42_night2_enter', '41日目：開店の日の2晩目に入る'),
+      { id: 'a42_explore2', kind: 'explore', area: 'a42', night: 2, title: '4-2「早瀬の時間」：開店の日の2晩目' },
+      talk('a42_night2_end', '41日目：時計屋に戻る'),
+      day(42),
+      // 42日目（木曜）：作業台の店長の本音は必ず見る。第3夜「一個、売れたね」
+      { id: 'd42_free', kind: 'daily', title: '42日目：昼' },
+      talk('a42_night3_enter', '42日目：開店の日の3晩目に入る'),
+      { id: 'a42_explore3', kind: 'explore', area: 'a42', night: 3, title: '4-2「早瀬の時間」：開店の日の3晩目' },
+      { id: 'a42_return', kind: 'return', area: 'a42', title: '4-2：時間を返す' },
+      talk('d42_return', '42日目：時間を返す'),
+      talk('a42_after', '42日目：店長の揺らぎ'),
+      // 今の流れの終わり（段階140a。37日目の後の ch4_end_d37 から替えた。37日目の「つづく」にいたセーブは、38日目から続く。RENAMED_EVENTS）
+      { id: 'ch4_end_d42', kind: 'end', title: 'つづく' },
     ],
   },
 ];
@@ -397,5 +431,6 @@ export const SLICE_FLOW: Flow = [
 // 段階94：流れの終わりを26日目の後から 3-2 の後（30日目）へ伸ばした。26日目の「つづく」にいたセーブは、27日目から続く
 // 段階96：流れの終わりを3章の終わり（32日目）の後へ伸ばした。30日目の「つづく」にいたセーブは、31日目から続く
 // 段階137a：流れの終わりを3章の終わりから 4-1 の後（37日目）へ伸ばした。3章の終わりの「つづく」にいたセーブは、4章の扉から続く
+// 段階140a：流れの終わりを 4-1 の後から 4-2 の後（42日目）へ伸ばした。37日目の「つづく」にいたセーブは、38日目から続く
 // 段階103：2章が1日延び、3章の日の数字が1つずれた（日の変わり目の id `dayN` も1つずれる）。上の2つの続き先は、同じ所（今の28日目・32日目の始め）を指すように直した
-export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title', ch3_end: 'day28', ch3_end_d30: 'day32', ch3_end_d32: 'chapter4_title' };
+export const RENAMED_EVENTS: Record<string, string> = { d1_return: 'a11_returned', d2_noa: 'a11_night2_end', ch2_end: 'chapter3_title', ch3_end: 'day28', ch3_end_d30: 'day32', ch3_end_d32: 'chapter4_title', ch4_end_d37: 'day38' };

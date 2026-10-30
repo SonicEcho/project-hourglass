@@ -633,4 +633,50 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
     partners: ['akari', 'mio', 'sayoko'],
     places: [at('clockshop', toDusk('d37_to_dusk'))],
   },
+  // ---- 38日目と 4-2（段階140a。docs/script/4-2.md の 4.）。昼の選べる話は段階140b で足す ----
+  // 38日目（日曜）：朝に店長にばれた後。昼は選べる話だけ。夕暮れに、店長を連れて蔵書の棚へ
+  d38_free: {
+    id: 'd38_free',
+    time: '38日目　日曜の昼',
+    day: 38,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', toDusk('d38_to_dusk'))],
+  },
+  // 39日目（月曜）：時計屋の店長の「置いとけ」は必ず見る
+  d39_free: {
+    id: 'd39_free',
+    time: '39日目　月曜の放課後',
+    day: 39,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d39_refuse', '置いとけ'), toDusk('d39_to_dusk'))],
+  },
+  // 40日目（火曜）：時計屋のたいちのお礼は必ず見る。夕暮れの後、4-2 の1晩目
+  d40_free: {
+    id: 'd40_free',
+    time: '40日目　火曜の放課後',
+    day: 40,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d40_taichi', '52分のお礼'), toDusk('d40_to_dusk'))],
+  },
+  // 41日目（水曜）：時計屋のふみさんは必ず見る。夕暮れの後、2晩目
+  d41_free: {
+    id: 'd41_free',
+    time: '41日目　水曜の放課後',
+    day: 41,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d41_fumi', '一番目のお客'), toDusk('d41_to_dusk'))],
+  },
+  // 42日目（木曜）：作業台の店長の本音は必ず見る。夕暮れの後、3晩目
+  d42_free: {
+    id: 'd42_free',
+    time: '42日目　木曜の放課後',
+    day: 42,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d42_hayase', '会いたくなる'), toDusk('d42_to_dusk'))],
+  },
 };

@@ -34,4 +34,15 @@ export const SAYOKO: CharacterDef = {
   skills: [SKILLS.kabutoWari, SKILLS.tsukiBarai],
 };
 
-export const PARTY: CharacterDef[] = [HERO, AKARI, MIO, SAYOKO];
+/**
+ * 早瀬（段階140a。4章の 4-2 から戦う）。属性魔法の職人（docs/CONCEPT.md の仲間の表。小夜子の物理・部位破壊とは重ねない）。
+ * 火・氷・雷を使い分けて弱点を突く。4章から加わるので、星図の分を見こんで元の能力値を高くした（数値は npm run measure の「4-2」で測った）
+ */
+export const HAYASE: CharacterDef = {
+  id: 'hayase',
+  name: '早瀬',
+  stats: { hp: 180, mp: 54, atk: 14, mag: 34, def: 14, spd: 11 },
+  skills: [SKILLS.yakiire, SKILLS.reikyaku, SKILLS.tsuden, SKILLS.short],
+};
+
+export const PARTY: CharacterDef[] = [HERO, AKARI, MIO, SAYOKO, HAYASE];

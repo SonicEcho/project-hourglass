@@ -96,6 +96,17 @@ const STARS: StarRow[] = [
   ['muHer', 'ヘルクレス座μ', 'her', 17.774, 27.72, 3, 'P', ''],
   ['betaHer', 'ヘルクレス座β', 'her', 16.503, 21.49, 3, 'skill:doubleSlash', ''],
   ['alphaHer', 'ラス・アルゲティ', 'her', 17.244, 14.39, 3, 'M', ''],
+  // ---- ケフェウス座（段階140a。4章の区域。早瀬の出発点はアルデラミン。はくちょう座ρから、μを通ってつながる）。魔力の星を多めに ----
+  ['alderamin', 'アルデラミン', 'cep', 21.31, 62.59, 4, 'start:hayase', ''],
+  ['muCep', 'ケフェウス座μ', 'cep', 21.725, 58.78, 4, 'm', ''],
+  ['etaCep', 'ケフェウス座η', 'cep', 20.755, 61.84, 4, 'p', ''],
+  ['thetaCep', 'ケフェウス座θ', 'cep', 20.495, 62.99, 4, 'M', ''],
+  ['alfirk', 'アルフィルク', 'cep', 21.478, 70.56, 4, 'skill:thundara', ''],
+  ['iotaCep', 'ケフェウス座ι', 'cep', 22.828, 66.2, 4, 'H', ''],
+  ['zetaCep', 'ケフェウス座ζ', 'cep', 22.181, 58.2, 4, 'd', ''],
+  // ε はζに近すぎるので、少しずらした（タップできるように）
+  ['epsCep', 'ケフェウス座ε', 'cep', 22.3, 55.6, 4, 'S', ''],
+  ['deltaCep', 'ケフェウス座δ', 'cep', 22.486, 58.42, 4, 'A', ''],
 ];
 
 /** 道（星-星） */
@@ -110,6 +121,8 @@ const LINKS: string[] = [
   // ヘルクレス座（段階91a）：要の四角（π・η・ζ・ε）と、こと座κへの道
   'kappaLyr-thetaHer', 'thetaHer-rhoHer', 'rhoHer-piHer', 'thetaHer-iotaHer', 'piHer-etaHer', 'etaHer-zetaHer', 'zetaHer-epsHer', 'epsHer-piHer',
   'zetaHer-betaHer', 'epsHer-deltaHer', 'deltaHer-muHer', 'deltaHer-alphaHer',
+  // ケフェウス座（段階140a）：家の形（アルデラミン・μ・ζ・ι・アルフィルク）と、はくちょう座ρへの道
+  'rhoCyg-muCep', 'muCep-alderamin', 'alderamin-etaCep', 'etaCep-thetaCep', 'alderamin-alfirk', 'alfirk-iotaCep', 'iotaCep-zetaCep', 'zetaCep-muCep', 'zetaCep-epsCep', 'zetaCep-deltaCep',
 ];
 
 /** 星座の名前と、名前を出す場所（その星からのずれ） */
@@ -121,10 +134,11 @@ const CONSTELLATIONS: Record<string, { name: string; label: [string, number, num
   del: { name: 'いるか座', label: ['sualocin', -10, -44] },
   cyg: { name: 'はくちょう座', label: ['kappaCyg', 0, -34] },
   her: { name: 'ヘルクレス座', label: ['etaHer', 0, -40] },
+  cep: { name: 'ケフェウス座', label: ['alfirk', 0, -34] },
 };
 
 /** 星座ごとの広げ方（小さな星座ほど大きく） */
-const SPREAD: Record<string, number> = { aql: 1.5, lyr: 1.7, vul: 1, sge: 2.3, del: 2.5, cyg: 1, her: 1.2 };
+const SPREAD: Record<string, number> = { aql: 1.5, lyr: 1.7, vul: 1, sge: 2.3, del: 2.5, cyg: 1, her: 1.2, cep: 1.1 };
 /** 1度あたりの大きさ（星図は画面より大きく、指でずらして見る） */
 const PX_PER_DEG = 13;
 /** 星図のまわりの余白（将来の星座への「？」の分） */
@@ -135,7 +149,6 @@ const SKY_CENTER = { ra: 20.0, dec: 24 };
 /** 将来の星座へつなぐ場所（行き止まりのまま）。外へ向かう向きと、その先の星座 */
 export const GROWTH_FRONTIER: { node: string; dx: number; dy: number; name: string }[] = [
   { node: 'lambdaAql', dx: 0.2, dy: 1, name: 'たて座・いて座' },
-  { node: 'rhoCyg', dx: -1, dy: -0.3, name: 'ケフェウス座' },
   { node: 'kappaCyg', dx: 0.25, dy: -1, name: 'りゅう座' },
 ];
 

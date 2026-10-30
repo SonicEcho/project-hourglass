@@ -76,6 +76,7 @@ export const ALLY_COLOR: Record<string, number> = {
   mio: 0xf0b040,
   // 小夜子（段階91a）：赤い鼻緒の紅
   sayoko: 0xc0485a,
+  hayase: 0x8a7a5a,
 };
 
 export const toCss = (c: number) => `#${c.toString(16).padStart(6, '0')}`;

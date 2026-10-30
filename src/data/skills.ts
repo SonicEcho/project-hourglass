@@ -38,4 +38,10 @@ export const SKILLS = {
   // 兜割り：部位を狙うと部位に3倍（ブレイクスラッシュの2倍より重い）。月払い：薙刀で敵全体を払う
   kabutoWari: { id: 'kabutoWari', name: '兜割り', mp: 6, weight: 1.3, target: 'enemy', effects: [{ kind: 'damage', type: 'physical', power: 32, partMultiplier: 3 }] },
   tsukiBarai: { id: 'tsukiBarai', name: '月払い', mp: 10, weight: 1.3, target: 'enemies', effects: [{ kind: 'damage', type: 'physical', power: 26 }] },
+  // ---- 早瀬が最初から持つ技（段階140a。属性魔法の職人。docs/CONCEPT.md の仲間の表、docs/script/4-2.md） ----
+  // 焼き入れ・冷却・通電：火・氷・雷を一つずつ（ファイアたちより少し強く、少し重い）。ショート：雷で敵全体（機械の中を走る火花）
+  yakiire: { id: 'yakiire', name: '焼き入れ', mp: 7, weight: 1.1, target: 'enemy', effects: [{ kind: 'damage', type: 'fire', power: 46 }] },
+  reikyaku: { id: 'reikyaku', name: '冷却', mp: 7, weight: 1.1, target: 'enemy', effects: [{ kind: 'damage', type: 'ice', power: 46 }] },
+  tsuden: { id: 'tsuden', name: '通電', mp: 7, weight: 1.1, target: 'enemy', effects: [{ kind: 'damage', type: 'thunder', power: 46 }] },
+  short: { id: 'short', name: 'ショート', mp: 12, weight: 1.4, target: 'enemies', effects: [{ kind: 'damage', type: 'thunder', power: 26 }] },
 } satisfies Record<string, SkillDef>;
