@@ -333,17 +333,12 @@ export class DailyScene extends Phaser.Scene {
   }
 
   /**
-   * 夕暮れへ行く前の確認に添える、まだ残っているもの（段階133。レビューの項目50）：昼にあと何回選べるかと、まだ見ていない絆・小話の場所。
-   * 何も残っていなければ空
+   * 夕暮れへ行く前の確認に添える、昼の残りの回数（段階133。レビューの項目50）。残っていなければ空。
+   * まだ見ていない場所は地図の印で見えるので、重ねて書かない（開発者と決めた：判断の直前の1行だけ）
    */
   private leftNotes(): string[] {
     const left = picksLeft(this.hub, run.vars);
-    if (!Number.isFinite(left) || left <= 0) return [];
-    const open = this.hub.places.flatMap((p) => {
-      const words = [...new Set(p.spots.filter((sp) => (sp.mark === 'bond' || sp.mark === 'talk') && spotState(this.hub, run.vars, sp) === 'open').map((sp) => MARK_STYLE[sp.mark].word))];
-      return words.length > 0 ? [`${p.name}（${words.join('・')}）`] : [];
-    });
-    return [`昼に選べるのは、あと${left}回${open.length > 0 ? `\nまだ見ていない：${open.join('、')}` : ''}`];
+    return Number.isFinite(left) && left > 0 ? [`昼にあと${left}回選べる`] : [];
   }
 
   private confirm(text: string, onYes: () => void): void {
