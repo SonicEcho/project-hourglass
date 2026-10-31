@@ -1,20 +1,21 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, canEvolveAny, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, findBugs, hasSpare, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, shelfLost, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, POUCH_MAX, POUCH_ORDER, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, shelfLost, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { backButton, FRAME_COLORS, frameHeader, PLAIN_BUTTON } from '../ui/frame';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
-import { addGalleryTile, type GalleryTile } from '../ui/gallery';
+import { addGalleryTile, addTileRows, type GalleryTile } from '../ui/gallery';
+import { addPouchLine, growthTiles } from './growthMenu';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
 import { notePlayCount } from './playRecord';
 import { archivedTalks } from './TalkArchiveScene';
-import { canChooseParty, currentEvent, currentNaviData, lineupBase, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
+import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
 // 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）もここ。
@@ -74,30 +75,9 @@ export class HubScene extends Phaser.Scene {
     addGalleryTile(this, root, left, y, w, 168, { id: 'hunt', label: '記憶をたどる', sub: '返した時間へ、もう一度', enabled: hunts.length > 0, onTap: () => this.pickHunt() });
     y += 168 + 6;
     // ポーチの中身（段階51）。1行で
-    const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}`).join('　');
-    root.add(this.add.rectangle(left, y, w, 26, FRAME_COLORS.panel, 0.85).setOrigin(0).setRounded(8).setStrokeStyle(1, FRAME_COLORS.line));
-    root.add(addText(this, left + 10, y + 13, `ポーチ（各${POUCH_MAX}まで）`, { size: 10, color: COLORS.subText }).setOrigin(0, 0.5));
-    root.add(addText(this, left + w - 10, y + 13, pouch, { size: 12, bold: true }).setOrigin(1, 0.5));
-    y += 26 + gap + 4;
+    y = addPouchLine(this, root, left, y, w) + gap + 4;
     // 育成（今の章で開いているものだけ）
-    const lineup = storyLineup();
-    const members = lineupBase(lineup);
-    const unlocks = lineup.unlocks;
-    const grow: GalleryTile[] = [];
-    if (unlocks.growth) grow.push({ id: 'growth', label: '星図', sub: `星の砂 ${run.growth.points}`, onTap: () => this.openGrowth('Growth') });
-    if (unlocks.weapon) {
-      const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
-      grow.push({ id: 'weapon', label: '武器', badge: evolvable ? '進化できる' : undefined, onTap: () => this.openGrowth('Weapon') });
-    }
-    if (unlocks.navi) {
-      // 狂いがある時だけ赤い札（赤はムーブメントの焼き付きの色。ART.md 5-9 のそろえ方の決まり）
-      const bugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
-      grow.push({ id: 'navi', label: 'ムーブメント', badge: bugs > 0 ? `狂い ${bugs}` : undefined, badgeColor: bugs > 0 ? 0xc0303a : undefined, onTap: () => this.openGrowth('Navi') });
-    }
-    if (hasSpare(run.album)) grow.push({ id: 'album', label: 'アルバム', onTap: () => this.openGrowth('Album') });
-    // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
-    if (canChooseParty()) grow.push({ id: 'party', label: '並び', onTap: () => this.openGrowth('Party') });
-    y = this.tileRows(root, grow, left, y, w, gap);
+    y = addTileRows(this, root, growthTiles((key) => this.openGrowth(key)), left, y, w, gap);
     // 交換所（段階52）・落とし物の棚（段階53）・町の小話（段階82。過ぎた日の小話がある時だけ）
     const lostReady = shelfLost(LOST_ITEMS, run.returned).filter((d) => lostStatus(run.vars, d.id) === 'found').length;
     const misc: GalleryTile[] = [
@@ -109,28 +89,10 @@ export class HubScene extends Phaser.Scene {
       const unseen = talks.filter((t) => !t.seen).length;
       misc.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
     }
-    this.tileRows(root, misc, left, y, w, gap, 3);
+    addTileRows(this, root, misc, left, y, w, gap, 3);
     // 昼へ戻る
     backButton(this, root, '時計屋へ戻る', () => this.leave());
     this.cameras.main.fadeIn(250, 0, 0, 0);
-  }
-
-  /**
-   * タイルを段に並べて描き、下の端を返す。max 枚まで1段に並べる（育成は、4つなら2・2、5つなら2・3。上の段ほど大きく）
-   */
-  private tileRows(root: Phaser.GameObjects.Container, tiles: GalleryTile[], left: number, top: number, w: number, gap: number, max = 3): number {
-    const rows: GalleryTile[][] = [];
-    if (tiles.length === 4 && max === 3) rows.push(tiles.slice(0, 2), tiles.slice(2));
-    else if (tiles.length === 5) rows.push(tiles.slice(0, 2), tiles.slice(2));
-    else for (let i = 0; i < tiles.length; i += max) rows.push(tiles.slice(i, i + max));
-    let y = top;
-    for (const row of rows) {
-      const h = row.length <= 2 ? 150 : 138;
-      const tw = (w - gap * (row.length - 1)) / row.length;
-      row.forEach((t, i) => addGalleryTile(this, root, left + i * (tw + gap), y, tw, h, t));
-      y += h + gap;
-    }
-    return y;
   }
 
   /** 育成の画面を開く。閉じると拠点に戻る */

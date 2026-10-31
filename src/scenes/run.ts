@@ -466,10 +466,26 @@ export function setHubReturn(target: SceneTarget | null): void {
   hubReturn = target;
 }
 
-/** 拠点（レストピア）から開いた育成の画面なら、拠点へ戻る行き先（段階45。ムーブメント・武器・アルバムも、星図を通さず拠点へ戻す） */
+/**
+ * 拠点（レストピア）か探索の休憩所から開いた育成の画面なら、そのメニューへ戻る行き先
+ * （段階45。段階147 で休憩所も。ムーブメント・武器・アルバムも、星図を通さずメニューへ戻す）
+ */
 export function hubBack(): SceneTarget | null {
   const back = getHubReturn();
-  return back?.key === 'Hub' ? back : null;
+  return back?.key === 'Hub' || back?.key === 'Camp' ? back : null;
+}
+
+/** 休憩所（段階147）から探索へ戻る時の行き先（探索の画面が覚えて渡す。セーブはしない） */
+let campReturn: SceneTarget | null = null;
+
+export function setCampReturn(target: SceneTarget | null): void {
+  campReturn = target;
+}
+
+/** 休憩所から探索へ戻る行き先。覚えが消えていても（ページを開き直した等）、探索の途中ならその区画へ */
+export function getCampReturn(): SceneTarget | null {
+  if (campReturn) return campReturn;
+  return run.explore ? { key: 'Explore', data: { area: run.explore.area } } : null;
 }
 
 export function getHubReturn(): SceneTarget | null {

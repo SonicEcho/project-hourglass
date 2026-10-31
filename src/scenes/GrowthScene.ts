@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
-import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar, spareSnaps } from '../core';
+import { canEvolveAny, chapterLocked, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
@@ -11,7 +11,7 @@ import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { battleAt, canChooseParty, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
+import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 import { faceTexture } from '../ui/portrait';
 import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
@@ -23,7 +23,8 @@ import { addIcon } from '../ui/icons';
 
 /** 星図を見せる枠（画面の座標） */
 // 段階141：上に見出しと顔のタブ（共通の枠）が入ったので、星図はその下から
-const VIEW = { x: 0, y: FRAME.contentTop, w: GAME_WIDTH, h: 440 } as const;
+// 段階147：下の育成の入口をなくしたので、その分だけ星図を広げた
+const VIEW = { x: 0, y: FRAME.contentTop, w: GAME_WIDTH, h: 466 } as const;
 /** 下の説明の枠と、キャラの切り替えの位置 */
 const INFO_TOP = VIEW.y + VIEW.h + 6;
 /** 星をタップしたと見なす近さ・ドラッグと見なす動き・長押しの時間 */
@@ -189,10 +190,11 @@ export class GrowthScene extends Phaser.Scene {
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
 
-    // ムーブメントと武器へ（並べる。開いているものだけ。段階26）。アルバムは、入れ替えられるスナップがある時だけ（探索のチェックポイント。段階41）
+    // ムーブメントと武器へ（段階26）。段階147 から、拠点と探索の休憩所では、育成の画面へはメニューから入るので出さない。
+    // 拠点も休憩所もない「試作の5戦」（デバッグ）の時だけ出す
     // 3つ並ぶ時は幅が狭いので、アイコンを省いて文字を短く・小さくする
     const subs: ((x: number, w: number, compact: boolean) => void)[] = [];
-    if (lineup.unlocks.navi) {
+    if (!back && lineup.unlocks.navi) {
       subs.push((x, w, compact) => {
         const naviBugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
         const loose = run.navi.parts.filter((p) => !p.placement).length;
@@ -203,7 +205,7 @@ export class GrowthScene extends Phaser.Scene {
         if (!compact) this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, FRAME_COLORS.gold));
       });
     }
-    if (lineup.unlocks.weapon) {
+    if (!back && lineup.unlocks.weapon) {
       subs.push((x, w, compact) => {
         const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
         const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
@@ -222,19 +224,6 @@ export class GrowthScene extends Phaser.Scene {
           evolvable ? { ...GOLD_BUTTON, size: compact ? 10 : 12 } : { ...PLAIN_BUTTON, size: compact ? 10 : 12, bold: true },
         );
         if (!compact) this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? 0x2a1a06 : FRAME_COLORS.gold));
-      });
-    }
-    if (back && hasSpare(run.album)) {
-      subs.push((x, w, compact) => {
-        const spare = countOf(spareSnaps(run.album));
-        addButton(this, this.root, x, 733, w, 44, `アルバム\n入れていない ${spare}枚`, { onTap: () => this.scene.start('Album') }, { ...PLAIN_BUTTON, size: compact ? 10 : 12, bold: true });
-        if (!compact) this.root.add(addIcon(this, 'support', x - w / 2 + 18, 733, 16, FRAME_COLORS.gold));
-      });
-    }
-    // 戦闘の並び（段階91a）：探索のチェックポイントから開いた時で、仲間が戦闘に出られる人数より多い時だけ
-    if (back && canChooseParty()) {
-      subs.push((x, w, compact) => {
-        addButton(this, this.root, x, 733, w, 44, compact ? '並び' : '並び\n戦闘に出る仲間', { onTap: () => this.scene.start('Party') }, { ...PLAIN_BUTTON, size: compact ? 11 : 12, bold: true });
       });
     }
     // 1つだけなら横いっぱいに

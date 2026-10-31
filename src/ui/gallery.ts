@@ -96,3 +96,22 @@ export function addGalleryTile(scene: Phaser.Scene, root: Phaser.GameObjects.Con
     },
   });
 }
+
+/**
+ * タイルを段に並べて描き、下の端を返す。max 枚まで1段に並べる（4つなら2・2、5つなら2・3。上の段ほど大きく）。
+ * 拠点（段階142）と休憩所（段階147）で使う
+ */
+export function addTileRows(scene: Phaser.Scene, root: Phaser.GameObjects.Container, tiles: GalleryTile[], left: number, top: number, w: number, gap: number, max = 3): number {
+  const rows: GalleryTile[][] = [];
+  if (tiles.length === 4 && max === 3) rows.push(tiles.slice(0, 2), tiles.slice(2));
+  else if (tiles.length === 5) rows.push(tiles.slice(0, 2), tiles.slice(2));
+  else for (let i = 0; i < tiles.length; i += max) rows.push(tiles.slice(i, i + max));
+  let y = top;
+  for (const row of rows) {
+    const h = row.length <= 2 ? 150 : 138;
+    const tw = (w - gap * (row.length - 1)) / row.length;
+    row.forEach((t, i) => addGalleryTile(scene, root, left + i * (tw + gap), y, tw, h, t));
+    y += h + gap;
+  }
+  return y;
+}
