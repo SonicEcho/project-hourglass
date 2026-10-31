@@ -18,9 +18,9 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - F. 会話の背景（14枚。済 14）
 - G. 1枚絵（1枚。済 1）
 - H. スナップの写真（14枚。済 14）
-- I. みお・小夜子の表情（18枚）
+- I. みお・小夜子の表情（18枚。済 18）
 - J. 4-1「シロのいた夏」の人（15枚）
-- K. ハルト・あかりの足りない表情（2枚）
+- K. ハルト・あかりの足りない表情（2枚。済 2）
 - L. 拠点のタイル（思い出のギャラリー）（9枚）
 
 ## A. 小夜子（ヒロイン）
@@ -1715,7 +1715,7 @@ Keep their designs exactly as in the attached reference portraits. Absolutely no
 
 今の立ち絵は、みおは笑顔、小夜子は微笑みの1枚だけで、どの場面もその顔で話している。台本で多く使う順に並べた（回数は 1〜4章の台本の数）。毎回、基本の1枚を添付する。気に入らない時は「表情だけもっと強く」などと足して作り直してよい
 
-### 119. みお：真剣（93回）
+### 119. みお：真剣（93回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_serious.png`
@@ -1730,7 +1730,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 120. みお：驚き（90回）
+### 120. みお：驚き（90回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_surprised.png`
@@ -1745,7 +1745,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 121. みお：考える（44回）
+### 121. みお：考える（44回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_thinking.png`
@@ -1760,7 +1760,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 122. みお：心配（28回）
+### 122. みお：心配（28回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_worried.png`
@@ -1775,7 +1775,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 123. みお：大笑い（25回）
+### 123. みお：大笑い（25回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_laugh.png`
@@ -1790,7 +1790,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 124. みお：むっ（22回）
+### 124. みお：むっ（22回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_pout.png`
@@ -1805,7 +1805,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 125. みお：悔しい（18回）
+### 125. みお：悔しい（18回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_frustrated.png`
@@ -1820,7 +1820,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 126. みお：困り笑い（10回）
+### 126. みお：困り笑い（10回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_wry.png`
@@ -1835,7 +1835,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 127. みお：照れ（8回）
+### 127. みお：照れ（8回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_shy.png`
@@ -1850,7 +1850,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 128. みお：泣き笑い（3回）
+### 128. みお：泣き笑い（3回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_teary.png`
@@ -1865,7 +1865,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 129. 小夜子：考える（41回）
+### 129. 小夜子：考える（41回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_thinking.png`
@@ -1880,7 +1880,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 130. 小夜子：驚き（22回）
+### 130. 小夜子：驚き（22回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_surprised.png`
@@ -1895,7 +1895,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 131. 小夜子：笑顔（21回）
+### 131. 小夜子：笑顔（21回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_laugh.png`
@@ -1910,7 +1910,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 132. 小夜子：真剣（20回）
+### 132. 小夜子：真剣（20回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_serious.png`
@@ -1925,7 +1925,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 133. 小夜子：通常（8回）
+### 133. 小夜子：通常（8回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_normal.png`
@@ -1940,7 +1940,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 134. 小夜子：照れ（7回）
+### 134. 小夜子：照れ（7回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_shy.png`
@@ -1955,7 +1955,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 135. 小夜子：さみしげ（5回）
+### 135. 小夜子：さみしげ（5回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_lonely.png`
@@ -1970,7 +1970,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 136. 小夜子：泣き笑い（2回）
+### 136. 小夜子：泣き笑い（2回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_teary.png`
@@ -2221,7 +2221,7 @@ Background: plain pure white, no shadow, no gradient.
 
 4-1 の脚本で指定した表情。今はハルトの「困り」、あかりの「悲しい」で代わりにしている。届いたら脚本どおりに戻す
 
-### 152. ハルト：考える
+### 152. ハルト：考える（済）
 
 - 添付：`public/assets/portraits/hero_normal.webp`
 - 保存名：`hero_thinking.png`
@@ -2236,7 +2236,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 153. あかり：泣きそう
+### 153. あかり：泣きそう（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_tearful.png`

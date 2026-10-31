@@ -54,6 +54,8 @@ const AKARI_FACES = {
   微笑み: 'gentle',
   考える: 'thinking',
   泣き笑い: 'teary',
+  // 2026-10-31（docs/ART_QUEUE.md の K。4-1 の脚本で指定した表情）
+  泣きそう: 'tearful',
 };
 const HERO_FACES = {
   通常: 'normal',
@@ -67,6 +69,8 @@ const HERO_FACES = {
   苦笑い: 'wry',
   悔しい: 'frustrated',
   怒り: 'angry',
+  // 2026-10-31（docs/ART_QUEUE.md の K。4-1 の脚本で指定した表情）
+  考える: 'thinking',
 };
 const RIKU_FACES = {
   通常: 'normal',
@@ -252,7 +256,12 @@ export const CAST: Record<string, CastMember> = {
   // M2（段階35）。みおは笑顔の絵だけある（2026-10-13。ほかの表情は Gemini で作るまで笑顔で代わりに出す）。ふみは全部の表情の絵がある（2026-10-11）
   みお: {
     portrait: 'portrait.mio',
-    ...young(['笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい', 'むっ', '泣き笑い', '心配'], { 笑顔: 'smile' }, '笑顔'),
+    // 表情違い10枚（2026-10-31。docs/ART_QUEUE.md の I）
+    ...young(
+      ['笑顔', '大笑い', '驚き', '考える', '困り笑い', '照れ', '真剣', '悔しい', 'むっ', '泣き笑い', '心配'],
+      { 笑顔: 'smile', 大笑い: 'laugh', 驚き: 'surprised', 考える: 'thinking', 困り笑い: 'wry', 照れ: 'shy', 真剣: 'serious', 悔しい: 'frustrated', むっ: 'pout', 泣き笑い: 'teary', 心配: 'worried' },
+      '笑顔',
+    ),
     color: 0xe08a3a,
     height: YOUNG_HEIGHT,
     voice: { pitch: 720, wave: 'square' },
@@ -361,7 +370,18 @@ export const CAST: Record<string, CastMember> = {
   早瀬: { faces: names('通常', '怒り', '驚き', '考える', '苦笑い', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 250, wave: 'sawtooth' } },
   写しのじん: { faces: names('通常', '驚き', '真剣', '困り'), firstFace: '通常', color: 0x9a8a6a, voice: { pitch: 280, wave: 'sawtooth' }, tint: SEPIA_TINT },
   写しのしずえ: { faces: names('笑顔', '大笑い', '照れ', '驚き', '困り笑い', '泣き笑い', '考える', '微笑み'), firstFace: '笑顔', color: 0xd09a7a, voice: { pitch: 620, wave: 'triangle' }, tint: SEPIA_TINT },
-  小夜子: { portrait: 'portrait.sayoko', ...young(['微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'], { 微笑み: 'smile' }, '微笑み'), height: 450, color: 0xc0485a, voice: { pitch: 560, wave: 'sine' } },
+  // 表情違い8枚（2026-10-31。docs/ART_QUEUE.md の I）
+  小夜子: {
+    portrait: 'portrait.sayoko',
+    ...young(
+      ['微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'],
+      { 微笑み: 'smile', 笑顔: 'laugh', 通常: 'normal', 考える: 'thinking', 驚き: 'surprised', 真剣: 'serious', さみしげ: 'lonely', 照れ: 'shy', 泣き笑い: 'teary' },
+      '微笑み',
+    ),
+    height: 450,
+    color: 0xc0485a,
+    voice: { pitch: 560, wave: 'sine' },
+  },
   カイ: {
     portrait: 'portrait.kai',
     ...young(['余裕', '見下す', '通常'], { 余裕: 'smug' }, '余裕'),
