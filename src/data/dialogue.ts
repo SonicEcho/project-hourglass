@@ -94,23 +94,17 @@ export interface PortraitPart {
 }
 const RIKU_TALK_FACES = ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'];
 const MIO_BLINK_FACES = ['smile', 'serious', 'surprised', 'thinking', 'worried', 'pout', 'frustrated', 'wry', 'shy', 'teary'];
-/** 表情ごとに位置を合わせた差分（<人>_blink_<表情>・<人>_talk_<表情>）を使う人のまばたき・口パク */
-function shiftedParts(who: string, blink: string[], talk: string[]): { blink: PortraitPart; talk: PortraitPart } {
-  const part = (kind: string, faces: string[]): PortraitPart => ({
-    image: `portrait.part.${who}_${kind}_${faces[0]}`,
-    faces,
-    byFace: Object.fromEntries(faces.map((f) => [f, `portrait.part.${who}_${kind}_${f}`])),
-  });
-  return { blink: part('blink', blink), talk: part('talk', talk) };
-}
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
-  // みお・小夜子（2026-10-31）：「大笑い」「笑顔」の閉じた目と「驚き」の開いた口を、表情ごとに位置を合わせて重ねる
-  // みお：表情ごとに「目だけ閉じた絵」から作ったまばたき（2026-10-31。別の表情の閉じた目を重ねると顔がゆがんだため）と、「驚き」の開いた口
+  // みお（2026-10-31）：表情ごとの「目だけ閉じた絵」から作ったまばたき（別の表情の閉じた目を重ねると顔がゆがんだため）と、「驚き」の開いた口
   みお: {
     blink: { image: 'portrait.part.mio_blink_smile', faces: MIO_BLINK_FACES, byFace: Object.fromEntries(MIO_BLINK_FACES.map((f) => [f, `portrait.part.mio_blink_${f}`])) },
-    talk: shiftedParts('mio', ['smile'], ['serious', 'thinking', 'shy']).talk,
+    talk: { image: 'portrait.part.mio_talk', faces: ['serious', 'thinking', 'shy'] },
   },
-  小夜子: shiftedParts('sayoko', ['smile', 'thinking', 'surprised', 'serious', 'normal', 'shy', 'lonely', 'teary'], ['smile', 'thinking', 'serious', 'normal', 'shy', 'lonely', 'teary']),
+  // 小夜子（2026-10-31）：「笑顔」の閉じた目と「驚き」の開いた口（表情どうしで顔の位置がそろっている）
+  小夜子: {
+    blink: { image: 'portrait.part.sayoko_blink', faces: ['smile', 'thinking', 'surprised', 'serious', 'normal', 'shy', 'lonely', 'teary'] },
+    talk: { image: 'portrait.part.sayoko_talk', faces: ['smile', 'thinking', 'serious', 'normal', 'shy', 'lonely', 'teary'] },
+  },
   あかり: {
     blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry', 'thinking'] },
     talk: { image: 'portrait.part.akari_talk', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'thinking', 'teary'] },

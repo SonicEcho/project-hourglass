@@ -130,7 +130,8 @@ try {
   await waitScene('Title');
   await until('「つづきから」の下にプロローグの場面', () => findText('プロローグ：参道の入口'));
   await tap('^つづきから$');
-  await waitScene('Dialogue');
+  // 開き直すと絵を全部読み直すので、「はじめる」と同じく長く待つ（絵が増えて 15 秒では足りなくなった。2026-10-31）
+  await waitScene('Dialogue', 60000);
 
   step('物語の流れを最後（つづく）まで開く');
   let reloaded = false;
@@ -150,7 +151,7 @@ try {
       await waitScene('Title');
       await until('「つづきから」の下に探索の出来事', () => findText('縁日の1晩目'));
       await tap('^つづきから$');
-      await waitScene('Explore');
+      await waitScene('Explore', 60000);
       await until('縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
       reloaded = true;
       await debugButton('次の出来事へ飛ばす');
@@ -322,7 +323,7 @@ try {
   await waitScene('Title');
   await until('「つづきから」の下に戦闘の途中', () => findText('（砂嵐の途中）'));
   await tap('^つづきから$');
-  await waitScene('Battle');
+  await waitScene('Battle', 60000);
   if ((await page.evaluate(() => window.__restopia.scene('Battle').battle.id)) !== 'a11_storm2') throw new Error('別の戦闘に戻った');
   await winBattle();
 
