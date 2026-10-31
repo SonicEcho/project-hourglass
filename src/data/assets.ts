@@ -2375,6 +2375,21 @@ const PORTRAIT_PART_FILES: [file: string, from: string, title: string][] = [
       `${name}の${f.startsWith('blink') ? '閉じた目（まばたき）' : '開いた口（口パク）'}${f.endsWith('_l') ? '（基本の1枚の大きさ）' : ''}`,
     ]),
   ),
+  // みお・小夜子（2026-10-31）：表情ごとに顔が少しずれているので、重ねる表情ごとに位置を合わせた差分（scripts/portrait_parts.py の SHIFTED）
+  ...(
+    [
+      ['mio', 'みお', 'blink', 'laugh', ['smile', 'serious', 'surprised', 'thinking', 'worried', 'pout', 'frustrated', 'wry', 'shy', 'teary']],
+      ['mio', 'みお', 'talk', 'surprised', ['serious', 'thinking', 'shy']],
+      ['sayoko', '小夜子', 'blink', 'laugh', ['smile', 'thinking', 'surprised', 'serious', 'normal', 'shy', 'lonely', 'teary']],
+      ['sayoko', '小夜子', 'talk', 'surprised', ['smile', 'thinking', 'serious', 'normal', 'shy', 'lonely', 'teary']],
+    ] as const
+  ).flatMap(([who, name, kind, from, faces]) =>
+    faces.map((f): [string, string, string] => [
+      `${who}_${kind}_${f}`,
+      `portrait.${who}.${from}`,
+      `${name}の${kind === 'blink' ? '閉じた目（まばたき）' : '開いた口（口パク）'}（${f} に重ねる）`,
+    ]),
+  ),
 ];
 for (const [file, from, title] of PORTRAIT_PART_FILES) {
   const src = ASSETS.find((a) => a.id === from);

@@ -103,6 +103,65 @@ def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, i
         print(f"{name}_l.webp ← {src}（{LARGE_SIZE[0]}×{LARGE_SIZE[1]} に広げた）")
 
 
+# 表情ごとに顔の位置が少しずれている人（2026-10-31。ChatGPT で表情ごとに別々に作った、みお・小夜子）：
+# 元にする表情（目を閉じた絵・口を開けた絵）の目・口を切り抜き、重ねる表情ごとに顔のずれを測って、その分だけずらした差分（<名前>_<表情>）を作る。
+# ずれは、目より上の前髪と耳のあたり（ALIGN_BOX）を、元の表情と重ねる表情で比べて、いちばん似る位置で測る
+# 出す絵の名前 → (元にする表情の絵, 切り抜く楕円（いくつか重ねる時は並べる）, ぼかし, 重ねる表情)
+SHIFTED = {
+    # みおの閉じた目：「大笑い」の目（顔が少し傾いているので、目ごとに楕円を分けた）
+    "mio_blink": ("mio_laugh", [(262, 488, 462, 640), (548, 448, 752, 600)], 7, ["smile", "serious", "surprised", "thinking", "worried", "pout", "frustrated", "wry", "shy", "teary"]),
+    # みおの開いた口：「驚き」の小さく開いた口。口を閉じている表情だけ
+    "mio_talk": ("mio_surprised", (474, 650, 584, 748), 7, ["serious", "thinking", "shy"]),
+    # 小夜子の閉じた目：「笑顔」の目
+    "sayoko_blink": ("sayoko_laugh", [(370, 360, 490, 448), (550, 318, 688, 402)], 6, ["smile", "thinking", "surprised", "serious", "normal", "shy", "lonely", "teary"]),
+    # 小夜子の開いた口：「驚き」の口。口を閉じている表情だけ
+    "sayoko_talk": ("sayoko_surprised", (484, 488, 572, 540), 6, ["smile", "thinking", "serious", "normal", "shy", "lonely", "teary"]),
+}
+ALIGN_BOX = (260, 300, 780, 470)
+
+
+def gray(name: str):
+    import numpy as np
+
+    im = Image.open(SRC / f"{name}.webp").convert("RGBA")
+    bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
+    bg.alpha_composite(im)
+    return np.asarray(bg.convert("L"), dtype=float)
+
+
+def offset(src: str, face: str, box: tuple[int, int, int, int] = ALIGN_BOX) -> tuple[int, int]:
+    """face の顔が src の顔からどれだけずれているか（右・下が正）。粗く探してから、まわりを1ドットずつ"""
+    a, b = gray(src), gray(face)
+    x0, y0, x1, y1 = box
+    base = a[y0:y1, x0:x1]
+
+    def diff(dx: int, dy: int) -> float:
+        return float(abs(base - b[y0 + dy : y1 + dy, x0 + dx : x1 + dx]).mean())
+
+    best = min(((dx, dy) for dx in range(-30, 31, 3) for dy in range(-30, 31, 3)), key=lambda d: diff(*d))
+    return min(((best[0] + dx, best[1] + dy) for dx in range(-3, 4) for dy in range(-3, 4)), key=lambda d: diff(*d))
+
+
+def make_shifted(name: str, src: str, box, feather: int, faces: list[str]) -> None:
+    boxes = box if isinstance(box, list) else [box]
+    im = Image.open(SRC / f"{src}.webp").convert("RGBA")
+    mask = Image.new("L", im.size, 0)
+    for b in boxes:
+        ImageDraw.Draw(mask).ellipse(b, fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(feather))
+    part = im.copy()
+    part.putalpha(ImageChops.multiply(im.getchannel("A"), mask))
+    OUT.mkdir(exist_ok=True)
+    for face in faces:
+        dx, dy = offset(src, f"{name.split('_')[0]}_{face}")
+        out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+        out.paste(part, (dx, dy))
+        out.save(OUT / f"{name}_{face}.webp", quality=88, method=6)
+        print(f"{name}_{face}.webp ← {src}（ずれ {dx}, {dy}）")
+
+
 if __name__ == "__main__":
     for name, (src, box, feather, squash) in PARTS.items():
         make(name, src, box, feather, squash)
+    for name, (src, box, feather, faces) in SHIFTED.items():
+        make_shifted(name, src, box, feather, faces)

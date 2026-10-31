@@ -93,7 +93,19 @@ export interface PortraitPart {
   byFace?: Record<string, string>;
 }
 const RIKU_TALK_FACES = ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'];
+/** 表情ごとに位置を合わせた差分（<人>_blink_<表情>・<人>_talk_<表情>）を使う人のまばたき・口パク */
+function shiftedParts(who: string, blink: string[], talk: string[]): { blink: PortraitPart; talk: PortraitPart } {
+  const part = (kind: string, faces: string[]): PortraitPart => ({
+    image: `portrait.part.${who}_${kind}_${faces[0]}`,
+    faces,
+    byFace: Object.fromEntries(faces.map((f) => [f, `portrait.part.${who}_${kind}_${f}`])),
+  });
+  return { blink: part('blink', blink), talk: part('talk', talk) };
+}
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
+  // みお・小夜子（2026-10-31）：「大笑い」「笑顔」の閉じた目と「驚き」の開いた口を、表情ごとに位置を合わせて重ねる
+  みお: shiftedParts('mio', ['smile', 'serious', 'surprised', 'thinking', 'worried', 'pout', 'frustrated', 'wry', 'shy', 'teary'], ['serious', 'thinking', 'shy']),
+  小夜子: shiftedParts('sayoko', ['smile', 'thinking', 'surprised', 'serious', 'normal', 'shy', 'lonely', 'teary'], ['smile', 'thinking', 'serious', 'normal', 'shy', 'lonely', 'teary']),
   あかり: {
     blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry', 'thinking'] },
     talk: { image: 'portrait.part.akari_talk', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'thinking', 'teary'] },
