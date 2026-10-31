@@ -109,7 +109,7 @@ def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, i
 # 出す絵の名前 → (元にする表情の絵, 切り抜く楕円（いくつか重ねる時は並べる）, ぼかし, 重ねる表情)
 SHIFTED = {
     # みおの閉じた目：「大笑い」の目（顔が少し傾いているので、目ごとに楕円を分けた）
-    "mio_blink": ("mio_laugh", [(262, 488, 462, 640), (548, 448, 752, 600)], 7, ["smile", "serious", "surprised", "thinking", "worried", "pout", "frustrated", "wry", "shy", "teary"]),
+    "mio_blink": ("mio_laugh", [(236, 466, 482, 678), (528, 428, 772, 622)], 8, ["smile", "serious", "surprised", "thinking", "worried", "pout", "frustrated", "wry", "shy", "teary"]),
     # みおの開いた口：「驚き」の小さく開いた口。口を閉じている表情だけ
     "mio_talk": ("mio_surprised", (474, 650, 584, 748), 7, ["serious", "thinking", "shy"]),
     # 小夜子の閉じた目：「笑顔」の目
@@ -118,6 +118,21 @@ SHIFTED = {
     "sayoko_talk": ("sayoko_surprised", (484, 488, 572, 540), 6, ["smile", "thinking", "serious", "normal", "shy", "lonely", "teary"]),
 }
 ALIGN_BOX = (260, 300, 780, 470)
+# 目ごとに、目そのものの位置で合わせる差分（2026-10-31。みおは前髪の形が表情ごとに違い、前髪で合わせると目が20〜30ドットずれた）。
+# 楕円のまわりの暗い所（まつ毛・瞳）の真ん中を、元の表情（閉じた目）と重ねる表情（開いた目）で比べる。
+# 開いた目は上のまつ毛が濃いので、暗い所の真ん中が目の真ん中より上に出る。閉じた目の線を少し下に置く（EYE_BIAS）
+BY_EYE = {"mio_blink"}
+EYE_DARK = 60
+EYE_BIAS = 6
+
+
+def eye_center(name: str, box: tuple[int, int, int, int]) -> tuple[float, float] | None:
+    import numpy as np
+
+    a = gray(name)
+    x0, y0, x1, y1 = box[0] - 20, box[1] - 30, box[2] + 20, box[3] + 30
+    ys, xs = np.nonzero(a[y0:y1, x0:x1] < EYE_DARK)
+    return (float(xs.mean()) + x0, float(ys.mean()) + y0) if len(xs) else None
 
 
 def gray(name: str):
@@ -153,11 +168,29 @@ def make_shifted(name: str, src: str, box, feather: int, faces: list[str]) -> No
     part.putalpha(ImageChops.multiply(im.getchannel("A"), mask))
     OUT.mkdir(exist_ok=True)
     for face in faces:
-        dx, dy = offset(src, f"{name.split('_')[0]}_{face}")
+        target = f"{name.split('_')[0]}_{face}"
         out = Image.new("RGBA", im.size, (0, 0, 0, 0))
-        out.paste(part, (dx, dy))
+        if name in BY_EYE:
+            # 目ごとに切り抜いて、それぞれの目の位置へ
+            shifts = []
+            for b in boxes:
+                eye = Image.new("L", im.size, 0)
+                ImageDraw.Draw(eye).ellipse(b, fill=255)
+                eye = ImageChops.multiply(mask, eye.filter(ImageFilter.GaussianBlur(feather)))
+                piece = im.copy()
+                piece.putalpha(ImageChops.multiply(im.getchannel("A"), eye))
+                a, t = eye_center(src, b), eye_center(target, b)
+                dx, dy = (round(t[0] - a[0]), round(t[1] - a[1]) + EYE_BIAS) if a and t else (0, 0)
+                layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+                layer.paste(piece, (dx, dy))
+                out.alpha_composite(layer)
+                shifts.append(f"{dx}, {dy}")
+            print(f"{name}_{face}.webp ← {src}（目ごとのずれ {' / '.join(shifts)}）")
+        else:
+            dx, dy = offset(src, target)
+            out.paste(part, (dx, dy))
+            print(f"{name}_{face}.webp ← {src}（ずれ {dx}, {dy}）")
         out.save(OUT / f"{name}_{face}.webp", quality=88, method=6)
-        print(f"{name}_{face}.webp ← {src}（ずれ {dx}, {dy}）")
 
 
 if __name__ == "__main__":
