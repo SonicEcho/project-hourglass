@@ -93,6 +93,7 @@ export interface PortraitPart {
   byFace?: Record<string, string>;
 }
 const RIKU_TALK_FACES = ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'];
+const MIO_BLINK_FACES = ['smile', 'serious', 'surprised', 'thinking', 'worried', 'pout', 'frustrated', 'wry', 'shy', 'teary'];
 /** 表情ごとに位置を合わせた差分（<人>_blink_<表情>・<人>_talk_<表情>）を使う人のまばたき・口パク */
 function shiftedParts(who: string, blink: string[], talk: string[]): { blink: PortraitPart; talk: PortraitPart } {
   const part = (kind: string, faces: string[]): PortraitPart => ({
@@ -104,9 +105,11 @@ function shiftedParts(who: string, blink: string[], talk: string[]): { blink: Po
 }
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
   // みお・小夜子（2026-10-31）：「大笑い」「笑顔」の閉じた目と「驚き」の開いた口を、表情ごとに位置を合わせて重ねる
-  // みおのまばたきは止めた（2026-10-31 開発者の指摘：表情ごとに顔の傾きと大きさが違い、別の表情の閉じた目を重ねると顔がゆがんで見えた）。
-  // 表情ごとに「目だけ閉じた絵」を頼んだ（docs/ART_QUEUE.md の M）。届くまで口パクだけ
-  みお: { talk: shiftedParts('mio', ['smile'], ['serious', 'thinking', 'shy']).talk },
+  // みお：表情ごとに「目だけ閉じた絵」から作ったまばたき（2026-10-31。別の表情の閉じた目を重ねると顔がゆがんだため）と、「驚き」の開いた口
+  みお: {
+    blink: { image: 'portrait.part.mio_blink_smile', faces: MIO_BLINK_FACES, byFace: Object.fromEntries(MIO_BLINK_FACES.map((f) => [f, `portrait.part.mio_blink_${f}`])) },
+    talk: shiftedParts('mio', ['smile'], ['serious', 'thinking', 'shy']).talk,
+  },
   小夜子: shiftedParts('sayoko', ['smile', 'thinking', 'surprised', 'serious', 'normal', 'shy', 'lonely', 'teary'], ['smile', 'thinking', 'serious', 'normal', 'shy', 'lonely', 'teary']),
   あかり: {
     blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry', 'thinking'] },

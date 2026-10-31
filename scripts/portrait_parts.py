@@ -62,6 +62,18 @@ PARTS = {
     "kenta_blink": ("kenta_blink_src", [(268, 210, 387, 336), (407, 186, 537, 295)], 5, 1.0),
     "kenta_talk": ("kenta_talk_src", (340, 336, 512, 474), 6, 1.0),
     "kai_blink": ("kai_blink_src", [(274, 282, 401, 362), (373, 234, 550, 330)], 5, 1.0),
+    # みおの閉じた目（2026-10-31）：表情ごとに、その表情の絵から目だけ閉じた絵（mio_<表情>_blink_src。開発者が ChatGPT で作った）。
+    # 別の表情の閉じた目を重ねると顔がゆがんだので、表情ごとに作った。楕円は左右の目ごと
+    "mio_blink_smile": ("mio_smile_blink_src", [(218, 467, 488, 667), (515, 425, 785, 625)], 10, 1.0),
+    "mio_blink_serious": ("mio_serious_blink_src", [(223, 467, 493, 667), (517, 427, 787, 627)], 10, 1.0),
+    "mio_blink_surprised": ("mio_surprised_blink_src", [(218, 463, 488, 663), (514, 416, 784, 616)], 10, 1.0),
+    "mio_blink_thinking": ("mio_thinking_blink_src", [(221, 463, 491, 663), (525, 406, 795, 606)], 10, 1.0),
+    "mio_blink_worried": ("mio_worried_blink_src", [(225, 459, 495, 659), (512, 412, 782, 612)], 10, 1.0),
+    "mio_blink_pout": ("mio_pout_blink_src", [(213, 461, 483, 661), (521, 415, 791, 615)], 10, 1.0),
+    "mio_blink_frustrated": ("mio_frustrated_blink_src", [(208, 467, 478, 667), (517, 414, 787, 614)], 10, 1.0),
+    "mio_blink_wry": ("mio_wry_blink_src", [(217, 496, 487, 696), (513, 439, 783, 639)], 10, 1.0),
+    "mio_blink_shy": ("mio_shy_blink_src", [(208, 475, 478, 675), (549, 446, 819, 646)], 10, 1.0),
+    "mio_blink_teary": ("mio_teary_blink_src", [(210, 485, 480, 685), (521, 430, 791, 630)], 10, 1.0),
 }
 
 # 基本の1枚（ChatGPT。1024×1536）に重ねる分：Gemini の絵（843×1264）から作った差分を、基本の1枚の大きさに広げたものも作る（<名前>_l）。
@@ -108,8 +120,6 @@ def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, i
 # ずれは、目より上の前髪と耳のあたり（ALIGN_BOX）を、元の表情と重ねる表情で比べて、いちばん似る位置で測る
 # 出す絵の名前 → (元にする表情の絵, 切り抜く楕円（いくつか重ねる時は並べる）, ぼかし, 重ねる表情)
 SHIFTED = {
-    # みおの閉じた目：「大笑い」の目（顔が少し傾いているので、目ごとに楕円を分けた）
-    "mio_blink": ("mio_laugh", [(236, 466, 482, 678), (528, 428, 772, 622)], 8, ["smile", "serious", "surprised", "thinking", "worried", "pout", "frustrated", "wry", "shy", "teary"]),
     # みおの開いた口：「驚き」の小さく開いた口。口を閉じている表情だけ
     "mio_talk": ("mio_surprised", (474, 650, 584, 748), 7, ["serious", "thinking", "shy"]),
     # 小夜子の閉じた目：「笑顔」の目
@@ -118,44 +128,6 @@ SHIFTED = {
     "sayoko_talk": ("sayoko_surprised", (484, 488, 572, 540), 6, ["smile", "thinking", "serious", "normal", "shy", "lonely", "teary"]),
 }
 ALIGN_BOX = (260, 300, 780, 470)
-# 目ごとに、目そのものの位置で合わせる差分（2026-10-31。みおは前髪の形が表情ごとに違い、前髪で合わせると目が20〜30ドットずれた）。
-# 楕円のまわりの暗い所（まつ毛・瞳）の真ん中を、元の表情（閉じた目）と重ねる表情（開いた目）で比べる。
-# 開いた目は上のまつ毛が濃いので、暗い所の真ん中が目の真ん中より上に出る。閉じた目の線を少し下に置く（EYE_BIAS）
-BY_EYE = {"mio_blink"}
-EYE_DARK = 60
-EYE_BIAS = 6
-
-
-def eye_center(name: str, box: tuple[int, int, int, int]) -> tuple[float, float] | None:
-    import numpy as np
-
-    a = gray(name)
-    x0, y0, x1, y1 = box[0] - 20, box[1] - 30, box[2] + 20, box[3] + 30
-    ys, xs = np.nonzero(a[y0:y1, x0:x1] < EYE_DARK)
-    return (float(xs.mean()) + x0, float(ys.mean()) + y0) if len(xs) else None
-
-
-def gray(name: str):
-    import numpy as np
-
-    im = Image.open(SRC / f"{name}.webp").convert("RGBA")
-    bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
-    bg.alpha_composite(im)
-    return np.asarray(bg.convert("L"), dtype=float)
-
-
-def offset(src: str, face: str, box: tuple[int, int, int, int] = ALIGN_BOX) -> tuple[int, int]:
-    """face の顔が src の顔からどれだけずれているか（右・下が正）。粗く探してから、まわりを1ドットずつ"""
-    a, b = gray(src), gray(face)
-    x0, y0, x1, y1 = box
-    base = a[y0:y1, x0:x1]
-
-    def diff(dx: int, dy: int) -> float:
-        return float(abs(base - b[y0 + dy : y1 + dy, x0 + dx : x1 + dx]).mean())
-
-    best = min(((dx, dy) for dx in range(-30, 31, 3) for dy in range(-30, 31, 3)), key=lambda d: diff(*d))
-    return min(((best[0] + dx, best[1] + dy) for dx in range(-3, 4) for dy in range(-3, 4)), key=lambda d: diff(*d))
-
 
 def make_shifted(name: str, src: str, box, feather: int, faces: list[str]) -> None:
     boxes = box if isinstance(box, list) else [box]
@@ -170,26 +142,9 @@ def make_shifted(name: str, src: str, box, feather: int, faces: list[str]) -> No
     for face in faces:
         target = f"{name.split('_')[0]}_{face}"
         out = Image.new("RGBA", im.size, (0, 0, 0, 0))
-        if name in BY_EYE:
-            # 目ごとに切り抜いて、それぞれの目の位置へ
-            shifts = []
-            for b in boxes:
-                eye = Image.new("L", im.size, 0)
-                ImageDraw.Draw(eye).ellipse(b, fill=255)
-                eye = ImageChops.multiply(mask, eye.filter(ImageFilter.GaussianBlur(feather)))
-                piece = im.copy()
-                piece.putalpha(ImageChops.multiply(im.getchannel("A"), eye))
-                a, t = eye_center(src, b), eye_center(target, b)
-                dx, dy = (round(t[0] - a[0]), round(t[1] - a[1]) + EYE_BIAS) if a and t else (0, 0)
-                layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
-                layer.paste(piece, (dx, dy))
-                out.alpha_composite(layer)
-                shifts.append(f"{dx}, {dy}")
-            print(f"{name}_{face}.webp ← {src}（目ごとのずれ {' / '.join(shifts)}）")
-        else:
-            dx, dy = offset(src, target)
-            out.paste(part, (dx, dy))
-            print(f"{name}_{face}.webp ← {src}（ずれ {dx}, {dy}）")
+        dx, dy = offset(src, target)
+        out.paste(part, (dx, dy))
+        print(f"{name}_{face}.webp ← {src}（ずれ {dx}, {dy}）")
         out.save(OUT / f"{name}_{face}.webp", quality=88, method=6)
 
 
