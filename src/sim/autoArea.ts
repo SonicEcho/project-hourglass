@@ -34,7 +34,7 @@ import { autoPlay, lcg, smartPlay } from './autoBattle';
 import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
 
 // 区画の自動対戦（段階27。段階37で 1-2 も）：1-1 の縁日を、章のパーティ（ハルトとあかり）で、出会う順に戦ってボスまで通す。
-// 戦闘の間に、星図（でたらめ）と武器（autoArmory.ts。一番近い進化先へ向けて吸わせる）で育て、つながりゲージは戦闘をまたいで引き継ぐ。
+// 戦闘の間に、星図（でたらめ）と武器（autoArmory.ts。一番近い進化先へ向けて刻む）で育て、つながりゲージは戦闘をまたいで引き継ぐ。
 // 宝箱は最初の戦闘の後に2つとも開ける（縁日の手前にあるので）。負けたらチェックポイントから同じ戦闘をやり直す。
 // HP・MP は戦闘をまたいで持ち越す（段階32b 調整3）。チェックポイントの先の戦闘（CHECKPOINT_FROM 番目から）は、星図・武器で育てるために
 // チェックポイントへ寄る（全回復する）ものとする。負けてやり直す時も全回復
@@ -45,7 +45,7 @@ import { arrangeNavi, MAX_ATTEMPTS, type StageRecord } from './autoRun';
  * チェックポイントより先の戦闘（この番目から）。1-1 は社への道の砂嵐とボス（地図の P は、広場と左右の参道の砂嵐の先）。
  * 1-2 は駄菓子屋の前（P）の先の砂嵐から（段階37）。2-2 は中庭のベンチ（P）の先の、駐輪場の逃げる敵から（段階39b）。2-3 もベンチの裏（P）の先の、川べりの逃げる敵から（段階40）。チェックポイントの先では、育成のために寄る（全回復する）ものとする
  */
-const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2, a22: 2, a23: 2, a31: 2, a3s1: 2, a3s2: 3, a32: 2, a3k: 2 };
+const CHECKPOINT_FROM: Record<string, number> = { a11: 3, a12: 2, a21: 2, a22: 2, a23: 2, a31: 2, a3s1: 2, a3s2: 3, a32: 2, a3k: 2, a41: 2, a42: 3 };
 
 /** 手の選び方：random（ほぼでたらめ。段階12の方針）、smart（弱点をねらう。autoBattle.ts の smartPlay）、pouch（smart に、ポーチを使うのを足す。段階51） */
 export type AreaPolicy = 'random' | 'smart' | 'pouch';

@@ -63,11 +63,12 @@ import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { GOLD_BUTTON } from '../ui/frame';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './BattleScene';
 import type { DialogueData } from './DialogueScene';
-import { currentParty, nextHuntCount, run, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup, storyLinkGauge } from './run';
+import { currentParty, nextHuntCount, run, setCampReturn, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup, storyLinkGauge } from './run';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -806,7 +807,7 @@ export class ExploreScene extends Phaser.Scene {
     }
     if (r.event.type === 'checkpoint') {
       playSe(this, SE.heal);
-      this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。下のボタンで${hubLabel()}を開ける`);
+      this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。${storyLineup().unlocks.growth || storyLineup().unlocks.weapon ? '「休憩する」で育成できる' : ''}`);
       if (r.event.healed) this.refreshVitals();
     }
     if (this.atExit(cell)) this.say('光る砂時計：今夜はここまで\n下のボタンで時計屋へ帰る');
@@ -962,22 +963,18 @@ export class ExploreScene extends Phaser.Scene {
       });
     }
     if (!target || !isCheckpoint(this.area, this.state.cell, this.state.room)) return;
-    addButton(this, this.hubButton, GAME_WIDTH / 2, y, 240, 60, hubLabel(), { onTap: () => this.openHub(target) }, {
-      size: 17,
-      bold: true,
-      fill: 0x1e3a5a,
-      stroke: 0x6bc8ff,
-      strokeWidth: 2,
-    });
+    // 段階147：育成の画面へは、休憩所のメニュー（拠点と同じ形）から入る
+    addButton(this, this.hubButton, GAME_WIDTH / 2, y, 240, 60, '休憩する', { onTap: () => this.openCamp() }, { ...GOLD_BUTTON, size: 18 });
   }
 
-  /** 育成の画面（星図・武器）を開く。閉じると、この画面のチェックポイントに戻る */
-  private openHub(target: string): void {
+  /** 休憩所（段階147）を開く。休憩所の「探索へ戻る」で、この画面のチェックポイントに戻る */
+  private openCamp(): void {
     if (this.leaving) return;
     this.leaving = true;
     this.keep(this.state);
-    setHubReturn({ key: 'Explore', data: this.back() });
-    this.scene.start(target);
+    setCampReturn({ key: 'Explore', data: this.back() });
+    setHubReturn(null);
+    this.scene.start('Camp');
   }
 
   /** 途中の会話を見る。見終えたら、この画面に seen を付けて戻る */
@@ -1217,12 +1214,6 @@ function vitalsBandHeight(members: number): number {
 }
 /** HP・MP を仲間ごとの列に並べる幅（右下の設定のボタンの左まで） */
 const VITALS_WIDTH = GAME_WIDTH - 56;
-
-/** 育成の入口のボタンの名前（開いている育成だけ。「星図・武器」など） */
-function hubLabel(): string {
-  const u = storyLineup().unlocks;
-  return [u.growth && '星図', u.navi && 'ムーブメント', u.weapon && '武器'].filter(Boolean).join('・');
-}
 
 /** 地図直しの試し歩き（段階121）で、部屋に入って立つマス：S か P、なければ最初の出入口の内側、なければ最初の歩けるマス */
 function tuneStart(room: RoomDef): GridCell {

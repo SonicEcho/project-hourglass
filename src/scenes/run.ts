@@ -213,6 +213,8 @@ let lastWritten: string | null = null;
 export function setSaveStorage(s: SaveStorage): void {
   storage = s;
   lastWritten = null;
+  staleByOtherTab = false;
+  setSaveFailing(false);
 }
 
 export function saveContext(): SaveContext {
@@ -258,14 +260,67 @@ export function setBattleMark(mark: SavedBattle | null): void {
   saveRun();
 }
 
+/**
+ * 保存した結果（段階124。レビューの項目1）。saved：書き込めた。unchanged：前に書き込めた中身と同じなので書き込みを省いた（保存は済んでいる）。
+ * skipped：周回の外なので保存する物がない。failed：書き込めなかった（容量がいっぱい、プライベートモードなど）。
+ * stale：ほかのタブで新しく保存されたので、このタブからは保存しない（段階134）
+ */
+export type SaveResult = 'saved' | 'unchanged' | 'skipped' | 'failed' | 'stale';
+
+/**
+ * ほかのタブで保存が書き換わった（段階134。レビューの項目88）。このタブの中身は古いので、もう保存しない（新しい進み具合を上書きしないように）。
+ * 開き直すと消える
+ */
+let staleByOtherTab = false;
+
+/** ほかのタブで保存が書き換わったことを覚える（main.ts の storage イベントから） */
+export function markStaleByOtherTab(): void {
+  staleByOtherTab = true;
+}
+
+export function isStaleByOtherTab(): boolean {
+  return staleByOtherTab;
+}
+
+/** 最後の書き込みに失敗し、その後まだ書き込めていないか（段階124） */
+let saveFailing = false;
+const saveStatusListeners = new Set<(failing: boolean) => void>();
+
+function setSaveFailing(failing: boolean): void {
+  if (saveFailing === failing) return;
+  saveFailing = failing;
+  for (const fn of saveStatusListeners) fn(failing);
+}
+
+/** 保存できていない状態か（段階124。書き込めた時・セーブを消した時に戻る） */
+export function isSaveFailing(): boolean {
+  return saveFailing;
+}
+
+/** 保存できていない状態が変わった時に知らせる（段階124。画面の「未保存」の印に使う）。戻り値で知らせを止める */
+export function onSaveStatus(fn: (failing: boolean) => void): () => void {
+  saveStatusListeners.add(fn);
+  return () => saveStatusListeners.delete(fn);
+}
+
 /** 今の周回の状態を保存する。周回の外（タイトル、クリア後）では何もしない。中身が前と同じなら書き込まない */
-export function saveRun(): void {
-  if (!run.active) return;
-  const text = serializeSave(snapshot(), new Date());
+export function saveRun(): SaveResult {
+  if (!run.active) return 'skipped';
+  if (staleByOtherTab) return 'stale';
   // 日時を除いた中身で比べる
   const body = JSON.stringify(snapshot());
-  if (body === lastWritten) return;
-  if (storage.write(SAVE_KEY, text)) lastWritten = body;
+  if (body === lastWritten) {
+    // 失敗の後に中身が前に書き込めた形へ戻った時も、保存は済んでいる
+    setSaveFailing(false);
+    return 'unchanged';
+  }
+  if (storage.write(SAVE_KEY, serializeSave(snapshot(), new Date()))) {
+    lastWritten = body;
+    setSaveFailing(false);
+    return 'saved';
+  }
+  setSaveFailing(true);
+  return 'failed';
 }
 
 /** セーブを読む（なければ null）。読めない時は error */
@@ -291,6 +346,7 @@ export function moveBrokenSave(): void {
 export function deleteSave(): void {
   storage.remove(SAVE_KEY);
   lastWritten = null;
+  setSaveFailing(false);
 }
 
 /**
@@ -410,10 +466,26 @@ export function setHubReturn(target: SceneTarget | null): void {
   hubReturn = target;
 }
 
-/** 拠点（レストピア）から開いた育成の画面なら、拠点へ戻る行き先（段階45。ムーブメント・武器・アルバムも、星図を通さず拠点へ戻す） */
+/**
+ * 拠点（レストピア）か探索の休憩所から開いた育成の画面なら、そのメニューへ戻る行き先
+ * （段階45。段階147 で休憩所も。ムーブメント・武器・アルバムも、星図を通さずメニューへ戻す）
+ */
 export function hubBack(): SceneTarget | null {
   const back = getHubReturn();
-  return back?.key === 'Hub' ? back : null;
+  return back?.key === 'Hub' || back?.key === 'Camp' ? back : null;
+}
+
+/** 休憩所（段階147）から探索へ戻る時の行き先（探索の画面が覚えて渡す。セーブはしない） */
+let campReturn: SceneTarget | null = null;
+
+export function setCampReturn(target: SceneTarget | null): void {
+  campReturn = target;
+}
+
+/** 休憩所から探索へ戻る行き先。覚えが消えていても（ページを開き直した等）、探索の途中ならその区画へ */
+export function getCampReturn(): SceneTarget | null {
+  if (campReturn) return campReturn;
+  return run.explore ? { key: 'Explore', data: { area: run.explore.area } } : null;
 }
 
 export function getHubReturn(): SceneTarget | null {
@@ -484,11 +556,12 @@ export function lineupBase(lineup: Lineup): CharacterDef[] {
 }
 
 /** 成長を反映した、パーティにいる仲間（星図 → ムーブメント → 武器の順に反映する。閉じている育成は反映しない） */
-export function currentParty(lineup: Lineup = PROTOTYPE_LINEUP): CharacterDef[] {
+export function currentParty(lineup: Lineup = PROTOTYPE_LINEUP, naviState: NaviState = run.navi): CharacterDef[] {
   const base = lineupBase(lineup);
   const u = lineup.unlocks;
   const grown = u.growth ? applyGrowth(GROWTH_MAP, run.growth, base, SKILLS) : base;
-  const navi = u.navi ? applyNavi(currentNaviData(), run.navi, grown) : grown;
+  // naviState：ムーブメントの画面で、仮置きした時の盤で計算する（段階126）
+  const navi = u.navi ? applyNavi(currentNaviData(), naviState, grown) : grown;
   return u.weapon ? applyWeapons(WEAPON_DATA, run.armory, navi) : navi;
 }
 

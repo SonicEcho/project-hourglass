@@ -4,6 +4,7 @@ import { playSe } from '../audio/sound';
 import { SE } from '../data';
 // 角の丸い四角をなめらかに描く置き換え（skin.ts）を、どの画面よりも先に入れる
 import { sparkAt } from './skin';
+import { wrapJapanese } from './kinsoku';
 
 export const LONG_PRESS_MS = 500;
 
@@ -16,6 +17,8 @@ export interface TextStyle {
   wrap?: number;
   /** 子どもの手書き風の書体で出す（けいかくひょう。段階32b 調整3） */
   hand?: boolean;
+  /** wrap の折り返しを日本語向けにする（段階125。英数字のまとまりを切らず、禁則を守る。ui/kinsoku.ts の wrapJapanese） */
+  ja?: boolean;
 }
 
 export function addText(scene: Phaser.Scene, x: number, y: number, text: string, style: TextStyle = {}): Phaser.GameObjects.Text {
@@ -25,9 +28,14 @@ export function addText(scene: Phaser.Scene, x: number, y: number, text: string,
     color: style.color ?? COLORS.text,
     fontStyle: style.bold && !style.hand ? 'bold' : 'normal',
     align: style.align ?? 'left',
-    wordWrap: style.wrap ? { width: style.wrap, useAdvancedWrap: true } : undefined,
+    wordWrap: style.wrap && !style.ja ? { width: style.wrap, useAdvancedWrap: true } : undefined,
   });
   t.setResolution(RENDER_SCALE);
+  if (style.wrap && style.ja) {
+    const ctx = t.context;
+    t.style.syncFont(t.canvas, ctx);
+    t.setText(wrapJapanese(text, style.wrap, (s) => ctx.measureText(s).width).join('\n'));
+  }
   return t;
 }
 

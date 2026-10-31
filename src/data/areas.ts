@@ -9,6 +9,8 @@ import { BALL_NOISE, JUG_NOISE, KAI, KAI_REVENGE, MEGAPHONE_NOISE, PET_NOISE, SC
 import { CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE, YAGURA_LORD } from './taishoEnemies';
 import { COIL_NOISE, FAN_NOISE, POSTBOX_NOISE, RADIO_NOISE, TABLE_NOISE, TRAIN_LORD } from './villageEnemies';
 import { CROSSING_LORD, DIPLOMA_NOISE, EARPHONE_NOISE, SELFIE_NOISE, TAPIOCA_NOISE, YOSEGAKI_NOISE } from './gradEnemies';
+import { CUBE_NOISE, CUCKOO_NOISE, GAMETABLE_NOISE, PAPERBALLOON_NOISE, SHUTTER_LORD, WREATH_NOISE } from './openingEnemies';
+import { BUGCAGE_NOISE, FIREWORK_NOISE, JIZO_NOISE, RIVER_LORD, WATERGUN_NOISE, WATERMELON_NOISE } from './summerEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { box, ROOMS } from './rooms';
 import { BGM } from './sounds';
@@ -59,6 +61,10 @@ export const A3S_SCALE = { n1: 1.4, end: 1.5, n2: 1.45, boss: 1.75 };
 /** 祭りの夜（カイ）の砂嵐の攻撃の倍率と、本気のカイの HP の倍率（段階96） */
 export const A3K_SCALE = { storm: 1.55, kai: 1.7 };
 export const A32_SCALE = { n1: 1.5, n2: 1.5, n3: 1.6, guard: 1.25, boss: 2.1 };
+/** 4-1 の砂嵐の強さ（段階137a）：晩ごとの攻撃の倍率（scaleEnemy）と、番人・ぬしの HP の倍率（toughenEnemy） */
+export const A41_SCALE = { n1: 1.55, n2: 1.6, n3: 1.7, guard: 1.25, boss: 2.3 };
+/** 4-2 の砂嵐の強さ（段階140a）：晩ごとの攻撃の倍率（scaleEnemy）と、番人・ぬしの HP の倍率（toughenEnemy） */
+export const A42_SCALE = { n1: 1.6, n2: 1.65, n3: 1.75, guard: 1.0, boss: 2.0 };
 
 export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_storm1: { id: 'a11_storm1', name: '砂嵐', enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], reward: 4, koma: 1 },
@@ -257,6 +263,43 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a3k_yagura: { id: 'a3k_yagura', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, CANDY_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3K_SCALE.storm))), reward: 4 },
   a3k_kai: { id: 'a3k_kai', name: 'カイ', enemies: [toughenEnemy(KAI_REVENGE, A3K_SCALE.kai)], reward: 12, boss: true, snaps: ['encore'] },
   a32_boss: { id: 'a32_boss', name: '踏切のぬし', enemies: [toughenEnemy(CROSSING_LORD, A32_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['wideShot'] },
+  // ---- 4-1「シロのいた夏」（段階137a。summerEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし ----
+  a41_n1_gate: { id: 'a41_n1_gate', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
+  a41_n1_well: { id: 'a41_n1_well', name: '砂嵐', enemies: tough([WATERMELON_NOISE, BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
+  a41_n1_yard: { id: 'a41_n1_yard', name: '砂嵐', enemies: tough([FIREWORK_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 2 },
+  a41_n1_shed: { id: 'a41_n1_shed', name: '砂嵐', enemies: tough([FIREWORK_NOISE, WATERMELON_NOISE, BUGCAGE_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
+  a41_n1_shed2: { id: 'a41_n1_shed2', name: '砂嵐', enemies: tough([WATERGUN_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 2 },
+  a41_runner: { id: 'a41_runner', name: '砂嵐', enemies: [WATERGUN_NOISE, WATERGUN_NOISE, WATERGUN_NOISE], reward: 3, item: ITEMS.radioCard.id },
+  a41_n2_ridge: { id: 'a41_n2_ridge', name: '砂嵐', enemies: tough([WATERMELON_NOISE, FIREWORK_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n2))), reward: 3, koma: 1 },
+  a41_n2_ridge2: { id: 'a41_n2_ridge2', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, BUGCAGE_NOISE, FIREWORK_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n2))), reward: 2 },
+  a41_n2_ridge3: { id: 'a41_n2_ridge3', name: '砂嵐', enemies: tough([WATERGUN_NOISE, WATERMELON_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n2))), reward: 2 },
+  a41_n2_canal: { id: 'a41_n2_canal', name: '砂嵐', enemies: tough([FIREWORK_NOISE, WATERGUN_NOISE, BUGCAGE_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n2))), reward: 4, koma: 1 },
+  // あぜ道のお地蔵さまの前の番人：倒すと川の浅瀬への道が開く（3晩目から）
+  a41_n2_guard: { id: 'a41_n2_guard', name: 'お地蔵さまの前の砂嵐', enemies: [toughenEnemy(JIZO_NOISE, A41_SCALE.guard), ...tough([BUGCAGE_NOISE, WATERMELON_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n2)))], reward: 5, koma: 1 },
+  a41_n3_ridge: { id: 'a41_n3_ridge', name: '砂嵐', enemies: tough([FIREWORK_NOISE, BUGCAGE_NOISE, WATERMELON_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n3))), reward: 3, koma: 1 },
+  a41_n3_ridge2: { id: 'a41_n3_ridge2', name: '砂嵐', enemies: tough([WATERGUN_NOISE, FIREWORK_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n3))), reward: 2 },
+  a41_n3_shallows: { id: 'a41_n3_shallows', name: '砂嵐', enemies: tough([WATERMELON_NOISE, WATERGUN_NOISE, FIREWORK_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n3))), reward: 4, koma: 1 },
+  a41_n3_shallows2: { id: 'a41_n3_shallows2', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, FIREWORK_NOISE, WATERMELON_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n3))), reward: 4, koma: 1 },
+  a41_boss: { id: 'a41_boss', name: '川のぬし', enemies: [toughenEnemy(RIVER_LORD, A41_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['pinchHitter'] },
+  // ---- 4-2「早瀬の時間」（段階140a。openingEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし。部屋と敵の置き場所は 1-2 と同じ（坂の上の代わりに店内） ----
+  a42_n1_gate: { id: 'a42_n1_gate', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_entry: { id: 'a42_n1_entry', name: '砂嵐', enemies: tough([CUCKOO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
+  a42_n1_lower: { id: 'a42_n1_lower', name: '砂嵐', enemies: tough([GAMETABLE_NOISE, PAPERBALLOON_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_tobacco: { id: 'a42_n1_tobacco', name: '砂嵐', enemies: tough([CUBE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
+  a42_n1_mid: { id: 'a42_n1_mid', name: '砂嵐', enemies: tough([CUCKOO_NOISE, GAMETABLE_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_runner: { id: 'a42_runner', name: '砂嵐', enemies: [PAPERBALLOON_NOISE, PAPERBALLOON_NOISE, PAPERBALLOON_NOISE], reward: 3, item: ITEMS.brushSign.id },
+  a42_n2_upper: { id: 'a42_n2_upper', name: '砂嵐', enemies: tough([CUBE_NOISE, GAMETABLE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
+  a42_n2_alley1: { id: 'a42_n2_alley1', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, PAPERBALLOON_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
+  a42_n2_alley2: { id: 'a42_n2_alley2', name: '砂嵐', enemies: tough([GAMETABLE_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
+  a42_n2_lane1: { id: 'a42_n2_lane1', name: '砂嵐', enemies: tough([CUCKOO_NOISE, CUBE_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
+  a42_n2_lane2: { id: 'a42_n2_lane2', name: '砂嵐', enemies: tough([CUBE_NOISE, PAPERBALLOON_NOISE, GAMETABLE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
+  // 坂の手前の番人：倒すと店の中への道が開く（3晩目から）
+  a42_n2_guard: { id: 'a42_n2_guard', name: '開店祝いの花輪ノイズ', enemies: [toughenEnemy(WREATH_NOISE, A42_SCALE.guard), ...tough([CUBE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2)))], reward: 5, koma: 1 },
+  a42_n3_slope: { id: 'a42_n3_slope', name: '砂嵐', enemies: tough([GAMETABLE_NOISE, CUCKOO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 3, koma: 1 },
+  a42_n3_slope2: { id: 'a42_n3_slope2', name: '砂嵐', enemies: tough([CUBE_NOISE, CUBE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 2 },
+  a42_n3_shop: { id: 'a42_n3_shop', name: '砂嵐', enemies: tough([CUCKOO_NOISE, GAMETABLE_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 4, koma: 1 },
+  a42_n3_shop2: { id: 'a42_n3_shop2', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, CUBE_NOISE, GAMETABLE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 4, koma: 1 },
+  a42_boss: { id: 'a42_boss', name: 'シャッターのぬし', enemies: [toughenEnemy(SHUTTER_LORD, A42_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['breakArm'] },
 };
 
 /**
@@ -1075,6 +1118,201 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3k_stalls' },
       { on: 'boss', scene: 'a3k_dark' },
       { on: 'cleared', scene: 'a3k_fireworks' },
+    ],
+  },
+  // 4-1「シロのいた夏」（段階137a。docs/script/4-1.md）。平成30年の夏、田舎のおじいちゃんの家と田んぼと川。
+  // 庭（左に物置）→ あぜ道（左に寄り道の用水路）→ 川の浅瀬。3晩に分けて入る
+  a41: {
+    id: 'a41',
+    name: '4-1「シロのいた夏」',
+    returnSnaps: ['search'],
+    rooms: [ROOMS.summer_garden, ROOMS.summer_shed, ROOMS.summer_ridge, ROOMS.summer_canal, ROOMS.summer_shallows],
+    links: [
+      { a: { room: 'summer_garden', side: 'left' }, b: { room: 'summer_shed', side: 'right' } },
+      { a: { room: 'summer_garden', side: 'top' }, b: { room: 'summer_ridge', side: 'bottom' } },
+      { a: { room: 'summer_ridge', side: 'left' }, b: { room: 'summer_canal', side: 'right' } },
+      // 川の浅瀬へは、お地蔵さまの前の番人を倒すと入れる（壁は3晩目から開く）
+      { a: { room: 'summer_ridge', side: 'top' }, b: { room: 'summer_shallows', side: 'bottom' }, opensWhen: 'a41_e_guard' },
+    ],
+    // 夏の記憶の曲が届くまで、3-1 の昭和の曲で代わり（docs/script/4-1.md の 6.）
+    bgm: BGM.showa,
+    komaNeed: 10,
+    timeTitle: 'シロのいた夏',
+    owner: 'タイチ',
+    memory: 'summer_shallows',
+    // 晩の区切り：2晩目はあぜ道の入口、3晩目はお地蔵さまの前（どちらもチェックポイント）から。1晩目の帰り口は、庭の物干しの前（あぜ道はまだ壁の向こう）
+    nights: [{ koma: 3, exit: { room: 'summer_garden', cell: [10, 13] } }, { koma: 6, start: { room: 'summer_ridge', cell: [11, 35] } }, { start: { room: 'summer_ridge', cell: [11, 8] } }],
+    // ノイズの壁：庭からあぜ道への出入口（2晩目から開く）と、あぜ道から川への出入口（3晩目から開く）
+    walls: [
+      { id: 'a41_wall_ridge', room: 'summer_garden', cells: box(10, 13, 0, 1), opens: 2 },
+      { id: 'a41_wall_river', room: 'summer_ridge', cells: box(10, 13, 0, 1), opens: 3 },
+    ],
+    // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘はあぜ道の表に入れる
+    hunt: {
+      gathers: [
+        { id: 'a41_gather_garden', room: 'summer_garden', cell: [7, 4], items: [ITEMS.melonRind.id, ITEMS.cageMesh.id] },
+        { id: 'a41_gather_shed', room: 'summer_shed', cell: [16, 18], items: [ITEMS.pumpHandle.id, ITEMS.fireworkStick.id] },
+        { id: 'a41_gather_canal', room: 'summer_canal', cell: [4, 4], items: [ITEMS.cageMesh.id, ITEMS.pumpHandle.id] },
+      ],
+      tables: {
+        summer_garden: ['a41_n1_gate', 'a41_n1_well', 'a41_n1_yard'],
+        summer_shed: ['a41_n1_shed', 'a41_n1_shed2'],
+        summer_ridge: ['a41_n2_ridge', 'a41_n2_ridge2', 'a41_n2_ridge3', 'a41_n2_guard', 'a41_n3_ridge', 'a41_n3_ridge2'],
+        summer_canal: ['a41_n2_canal'],
+        summer_shallows: ['a41_n3_shallows', 'a41_n3_shallows2'],
+      },
+    },
+    chests: [
+      { id: 'a41_chest_garden', room: 'summer_garden', cell: [7, 4], items: [ITEMS.potion.id], snaps: ['iceChip'] },
+      { id: 'a41_chest_shed', room: 'summer_shed', cell: [16, 18], items: [ITEMS.melonSeed.id], gears: ['thunderBoost'] },
+      { id: 'a41_chest_canal', room: 'summer_canal', cell: [4, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['hpMemory'] },
+    ],
+    enemies: [
+      // ---- 1晩目（庭・物置） ----
+      { id: 'a41_e_gate', room: 'summer_garden', patrol: [[5, 16], [18, 16]], battle: 'a41_n1_gate' },
+      // 井戸のまわり：近づくと追ってくる
+      { id: 'a41_e_well', room: 'summer_garden', move: 'chase', patrol: [[6, 6], [17, 6]], battle: 'a41_n1_well' },
+      { id: 'a41_e_yard', room: 'summer_garden', patrol: [[4, 9], [14, 9]], battle: 'a41_n1_yard' },
+      { id: 'a41_e_shed', room: 'summer_shed', patrol: [[5, 8], [16, 8]], battle: 'a41_n1_shed' },
+      { id: 'a41_e_shed2', room: 'summer_shed', patrol: [[5, 17], [16, 17]], battle: 'a41_n1_shed2' },
+      // ---- 2晩目（あぜ道・用水路） ----
+      { id: 'a41_e_ridge', room: 'summer_ridge', night: 2, patrol: [[5, 31], [20, 31]], battle: 'a41_n2_ridge' },
+      // 田んぼの真ん中のあぜ：近づくと追ってくる
+      { id: 'a41_e_ridge2', room: 'summer_ridge', night: 2, move: 'chase', patrol: [[5, 26], [16, 26]], battle: 'a41_n2_ridge2' },
+      { id: 'a41_e_ridge3', room: 'summer_ridge', night: 2, patrol: [[5, 17], [16, 17]], battle: 'a41_n2_ridge3' },
+      { id: 'a41_e_canal', room: 'summer_canal', night: 2, patrol: [[4, 7], [17, 7]], battle: 'a41_n2_canal' },
+      // 用水路の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a41_e_runner', room: 'summer_canal', night: 2, move: 'flee', patrol: [[14, 16]], battle: 'a41_runner' },
+      // お地蔵さまの前の番人：倒すと川の浅瀬への道が開く（3晩目から。戦う前の会話）
+      { id: 'a41_e_guard', room: 'summer_ridge', night: 2, until: 2, move: 'guard', patrol: [[13, 4]], battle: 'a41_n2_guard', scene: 'a41_guard' },
+      // ---- 3晩目（あぜ道の上と、川の浅瀬） ----
+      { id: 'a41_e_ridge4', room: 'summer_ridge', night: 3, patrol: [[7, 12], [16, 12]], battle: 'a41_n3_ridge' },
+      { id: 'a41_e_ridge5', room: 'summer_ridge', night: 3, patrol: [[5, 17], [16, 17]], battle: 'a41_n3_ridge2' },
+      { id: 'a41_e_shallows', room: 'summer_shallows', night: 3, patrol: [[4, 12], [19, 12]], battle: 'a41_n3_shallows' },
+      { id: 'a41_e_shallows2', room: 'summer_shallows', night: 3, move: 'chase', patrol: [[5, 6], [18, 6]], battle: 'a41_n3_shallows2' },
+    ],
+    // 浅瀬の向こうから流れてくる、大きな麦わら帽子
+    boss: { id: 'a41_boss', room: 'summer_shallows', cell: [11, 4], battle: 'a41_boss' },
+    // 写しの人々と、夜ごとの謎（りくの落書き・ノアの髪留め）
+    talkers: [
+      { id: 'a41_voice_radio', room: 'summer_garden', cell: [5, 17], until: 1, scene: 'a41_voice_radio', label: '遠くのラジオ' },
+      { id: 'a41_voice_grandpa', room: 'summer_garden', cell: [15, 9], until: 1, scene: 'a41_voice_grandpa', label: '縁側' },
+      { id: 'a41_riku', room: 'summer_shed', cell: [5, 3], scene: 'a41_riku', label: '物置の柱' },
+      { id: 'a41_voice2_friend', room: 'summer_ridge', cell: [16, 22], night: 2, until: 2, scene: 'a41_voice2_friend', label: '自転車の子' },
+      { id: 'a41_hairclip', room: 'summer_ridge', cell: [9, 7], night: 2, scene: 'a41_hairclip', label: 'お地蔵さま' },
+    ],
+    // コマが戻るたびに、過去の場面が1つずつ進む
+    triggers: [
+      { on: 'koma', count: 1, scene: 'a41_first_koma' },
+      { on: 'checkpoint', room: 'summer_garden', cell: [10, 13], scene: 'a41_checkpoint' },
+      { on: 'koma', count: 2, scene: 'a41_koma2' },
+      { on: 'koma', count: 3, scene: 'a41_koma3' },
+      { on: 'koma', count: 4, scene: 'a41_koma4' },
+      { on: 'room', room: 'summer_canal', scene: 'a41_canal' },
+      { on: 'koma', count: 5, scene: 'a41_koma5' },
+      { on: 'koma', count: 6, scene: 'a41_koma6' },
+      { on: 'room', room: 'summer_shallows', scene: 'a41_river' },
+      { on: 'koma', count: 7, scene: 'a41_koma7' },
+      { on: 'koma', count: 8, scene: 'a41_koma8' },
+      { on: 'komaLeft', left: 1, scene: 'a41_one_left' },
+      { on: 'boss', scene: 'a41_boss' },
+      { on: 'cleared', scene: 'a41_last_koma' },
+    ],
+  },
+  // 4-2「早瀬の時間」（段階140a。docs/script/4-2.md）。昭和55年の春、時計屋の開店の日。1-2 の昭和の商店街の部屋を使い回し、坂の上の代わりに店内をつなぐ。
+  // 早瀬（持ち主）も一緒に入る（並びから外せない）。3晩に分けて入る
+  a42: {
+    id: 'a42',
+    name: '4-2「早瀬の時間」',
+    returnSnaps: ['quickStep'],
+    rooms: [ROOMS.showa_night, ROOMS.showa_alley, ROOMS.showa_lane, ROOMS.opening_shop],
+    links: [
+      { a: { room: 'showa_night', side: 'left' }, b: { room: 'showa_alley', side: 'right' } },
+      { a: { room: 'showa_night', side: 'right' }, b: { room: 'showa_lane', side: 'left' } },
+      // 店の中へは、坂の手前の番人を倒すと入れる（壁は3晩目から開く）
+      { a: { room: 'showa_night', side: 'top' }, b: { room: 'opening_shop', side: 'bottom' }, opensWhen: 'a42_e_guard' },
+    ],
+    // 早瀬のテーマ（昭和の歌謡曲ふう）が届くまで、1-2 の昭和の商店街の曲で代わり（docs/script/4-2.md の 6.）
+    bgm: BGM.showa,
+    komaNeed: 10,
+    timeTitle: '開店の日',
+    owner: 'ジン',
+    memory: 'opening_shop_night',
+    partyFixed: ['hayase'],
+    // 晩の区切り：1-2 と同じ。2晩目は時計屋の前から、3晩目は坂の手前から
+    nights: [{ koma: 3 }, { koma: 6, start: { cell: [16, 23] } }, { start: { cell: [12, 13] } }],
+    // ノイズの壁：時計屋の先（2晩目から開く）と、坂の手前（3晩目から開く）
+    walls: [
+      { id: 'a42_wall_upper', cells: box(7, 16, 21, 22), opens: 2 },
+      { id: 'a42_wall_shop', cells: box(10, 16, 12, 12), opens: 3 },
+    ],
+    // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘は通りの表に入れる
+    hunt: {
+      gathers: [
+        { id: 'a42_gather_clock', cell: [18, 30], items: [ITEMS.balloonPaper.id, ITEMS.cubeTile.id] },
+        { id: 'a42_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.gameButton.id, ITEMS.cuckooBird.id] },
+        { id: 'a42_gather_shop', room: 'opening_shop', cell: [6, 16], items: [ITEMS.cuckooBird.id, ITEMS.balloonPaper.id] },
+      ],
+      tables: {
+        showa_night: ['a42_n1_gate', 'a42_n1_lower', 'a42_n1_mid', 'a42_n2_upper', 'a42_n2_guard', 'a42_n3_slope'],
+        showa_alley: ['a42_n2_alley1', 'a42_n2_alley2'],
+        showa_lane: ['a42_n2_lane1', 'a42_n2_lane2'],
+        opening_shop: ['a42_n3_shop', 'a42_n3_shop2'],
+      },
+    },
+    chests: [
+      { id: 'a42_chest_clock', cell: [18, 30], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
+      { id: 'a42_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.cubeCore.id], gears: ['fireBoost'] },
+      { id: 'a42_chest_shop', room: 'opening_shop', cell: [6, 16], night: 3, items: [ITEMS.hiPotion.id], gears: ['mpSave'] },
+    ],
+    enemies: [
+      // ---- 1晩目（入口から時計屋の前） ----
+      { id: 'a42_e_gate', patrol: [[9, 36], [16, 36]], battle: 'a42_n1_gate' },
+      { id: 'a42_e_entry', patrol: [[9, 40], [14, 40]], battle: 'a42_n1_entry' },
+      { id: 'a42_e_lower', move: 'chase', patrol: [[15, 32], [8, 32]], battle: 'a42_n1_lower' },
+      { id: 'a42_e_tobacco', move: 'chase', patrol: [[16, 33], [16, 37]], battle: 'a42_n1_tobacco' },
+      { id: 'a42_e_middle', patrol: [[8, 26], [15, 26]], battle: 'a42_n1_mid' },
+      // 時計屋の手前の広い歩道の逃げる敵（寄り道。コマなし、レアの素材）
+      { id: 'a42_e_runner', move: 'flee', patrol: [[18, 31]], battle: 'a42_runner' },
+      // ---- 2晩目（時計屋の前から坂の手前、左右の路地） ----
+      { id: 'a42_e_upper', night: 2, patrol: [[10, 19], [14, 19]], battle: 'a42_n2_upper' },
+      { id: 'a42_e_alley1', room: 'showa_alley', night: 2, move: 'chase', patrol: [[7, 7], [16, 9]], battle: 'a42_n2_alley1' },
+      { id: 'a42_e_alley2', room: 'showa_alley', night: 2, patrol: [[8, 16], [20, 11]], battle: 'a42_n2_alley2' },
+      { id: 'a42_e_lane1', room: 'showa_lane', night: 2, patrol: [[3, 2], [16, 8]], battle: 'a42_n2_lane1' },
+      { id: 'a42_e_lane2', room: 'showa_lane', night: 2, move: 'chase', patrol: [[10, 10], [20, 15]], battle: 'a42_n2_lane2' },
+      // 坂の手前の番人（2晩目の山場。戦う前の会話）
+      { id: 'a42_e_guard', night: 2, until: 2, move: 'guard', patrol: [[12, 16]], battle: 'a42_n2_guard', scene: 'a42_guard' },
+      // ---- 3晩目（坂の手前と、店の中） ----
+      { id: 'a42_e_slope', night: 3, patrol: [[10, 10], [15, 10]], battle: 'a42_n3_slope' },
+      { id: 'a42_e_slope2', night: 3, move: 'chase', patrol: [[11, 6], [14, 6]], battle: 'a42_n3_slope2' },
+      { id: 'a42_e_shop', room: 'opening_shop', night: 3, patrol: [[5, 12], [18, 12]], battle: 'a42_n3_shop' },
+      { id: 'a42_e_shop2', room: 'opening_shop', night: 3, move: 'chase', patrol: [[6, 7], [17, 7]], battle: 'a42_n3_shop2' },
+    ],
+    // 奥のカウンターの前の、下りてくるシャッター
+    boss: { id: 'a42_boss', room: 'opening_shop', cell: [11, 4], battle: 'a42_boss' },
+    // 写しの人々と、夜ごとの謎（店の奥の柱時計・しずえさんの白い薬）
+    talkers: [
+      { id: 'a42_voice_grocer', cell: [8, 38], until: 1, scene: 'a42_voice_grocer', label: '八百屋' },
+      { id: 'a42_voice_kid', cell: [7, 27], until: 1, scene: 'a42_voice_kid', label: '紙風船の子' },
+      { id: 'a42_window', cell: [17, 28], until: 2, scene: 'a42_window', label: '時計屋の窓' },
+      { id: 'a42_medicine', room: 'showa_alley', cell: [4, 11], night: 2, until: 2, scene: 'a42_medicine', label: '店の裏口' },
+      { id: 'a42_voice2_grocer', cell: [14, 20], night: 2, until: 2, scene: 'a42_voice2_grocer', label: '八百屋' },
+    ],
+    // コマが戻るたびに、過去の場面が1つずつ進む
+    triggers: [
+      { on: 'koma', count: 1, scene: 'a42_first_koma' },
+      { on: 'checkpoint', cell: [16, 23], scene: 'a42_checkpoint' },
+      { on: 'koma', count: 2, scene: 'a42_koma2' },
+      { on: 'koma', count: 3, scene: 'a42_koma3' },
+      { on: 'koma', count: 4, scene: 'a42_koma4' },
+      { on: 'koma', count: 5, scene: 'a42_koma5' },
+      { on: 'koma', count: 6, scene: 'a42_koma6' },
+      { on: 'room', room: 'opening_shop', scene: 'a42_shop' },
+      { on: 'koma', count: 7, scene: 'a42_koma7' },
+      { on: 'koma', count: 8, scene: 'a42_koma8' },
+      { on: 'komaLeft', left: 1, scene: 'a42_one_left' },
+      { on: 'boss', scene: 'a42_boss' },
+      { on: 'cleared', scene: 'a42_last_koma' },
     ],
   },
   // 大正の祭りの夜（段階91b。docs/script/3-matsuri.md）。小夜子の夜は、まだ返さない。コマはない。2晩とも同じ夜（写しの台詞もまったく同じ）。

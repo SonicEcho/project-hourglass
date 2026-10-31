@@ -5,6 +5,8 @@ export const ALLY_FACE: Record<string, string> = {
   akari: 'portrait.akari.gentle',
   // みお（段階45で足した）。立ち絵が胸から上の構図なので、切り出す範囲は FACE_CROPS で別にする
   mio: 'portrait.mio.smile',
+  // 小夜子（段階141。育成の画面の顔のタブで使う）。早瀬は立ち絵ができるまで名前の1文字
+  sayoko: 'portrait.sayoko.smile',
 };
 
 /** 立ち絵から顔を切り出す範囲（絵の幅・高さに対する割合） */
@@ -21,4 +23,15 @@ export const FACE_CROPS: Record<string, { x: number; y: number; size: number }> 
 export const BARK_FACE_CROP: Record<string, { x: number; y: number; w: number }> = {
   default: { x: 0.22, y: 0.15, w: 0.56 },
   mio: { x: 0.15, y: 0.22, w: 0.7 },
+};
+
+/**
+ * 並びの画面（段階143。思い出のアルバム）のポラロイド写真に使う立ち絵。立ち絵の上の方（顔と肩）を切り出す。
+ * 書いていない仲間（早瀬）は、立ち絵ができるまで影の写真
+ */
+export const PARTY_PHOTO: Record<string, string> = {
+  hero: 'portrait.hero.smile',
+  akari: 'portrait.akari.smile',
+  mio: 'portrait.mio.smile',
+  sayoko: 'portrait.sayoko.smile',
 };

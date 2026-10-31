@@ -17,7 +17,7 @@ export const FRAGMENTS = {
 
 /**
  * 素材（敵が落とす）と通常アイテム（勝利の報酬）。
- * 段階27b：素材は武器に直接吸わせる（gains の分だけ上下する。吸わせ枠を1つ使う）。種類（rarity）は落とし物の確率と色分けに使う。
+ * 段階27b：素材は武器に直接刻む（gains の分だけ上下する。刻印を1つ使う）。種類（rarity）は落とし物の確率と色分けに使う。
  * 通常アイテムは、今は戦闘で使えないので、時分解して記憶の欠片にするだけ（gains は欠片の種類を決めるだけ）。
  * 数値は docs/design/growth.md の 6-4（たたき台）
  */
@@ -117,6 +117,36 @@ export const ITEMS = {
   alarmLamp: { id: 'alarmLamp', name: '警報機の赤い灯', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
   barrierArm: { id: 'barrierArm', name: '遮断機の竿', kind: 'material', rarity: 'part', gains: { atk: 3 } },
   lordSignal: { id: 'lordSignal', name: 'ぬしの警報灯', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
+  // ---- 4-1 の平成30年の夏、田舎（段階137a） ----
+  cageMesh: { id: 'cageMesh', name: '虫かごの網', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
+  cageStrap: { id: 'cageStrap', name: '虫かごのひも', kind: 'material', rarity: 'uncommon', gains: { fire: 3, ice: -1 } },
+  melonRind: { id: 'melonRind', name: 'すいかの皮', kind: 'material', rarity: 'common', gains: { atk: 2, ice: 1 } },
+  melonSeed: { id: 'melonSeed', name: 'すいかの種', kind: 'material', rarity: 'uncommon', gains: { atk: 3, thunder: -1 } },
+  fireworkStick: { id: 'fireworkStick', name: '花火の燃えさし', kind: 'material', rarity: 'common', gains: { ice: 2, fire: 1 } },
+  fireworkPaper: { id: 'fireworkPaper', name: '花火の色紙', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
+  sparklerBead: { id: 'sparklerBead', name: '線香花火の玉', kind: 'material', rarity: 'rare', gains: { atk: 3, fire: 2, ice: 3 } },
+  pumpHandle: { id: 'pumpHandle', name: 'ポンプの取っ手', kind: 'material', rarity: 'common', gains: { thunder: 2, atk: 1 } },
+  waterTank: { id: 'waterTank', name: '水鉄砲のタンク', kind: 'material', rarity: 'uncommon', gains: { thunder: 3, ice: -1 } },
+  jizoBib: { id: 'jizoBib', name: '赤い前掛け', kind: 'material', rarity: 'uncommon', gains: { fire: 2, thunder: 2 } },
+  radioCard: { id: 'radioCard', name: 'ラジオ体操のカード', kind: 'material', rarity: 'rare', gains: { atk: 2, thunder: 3, ice: 2 } },
+  hatBrim: { id: 'hatBrim', name: '麦わらのつば', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
+  riverStone: { id: 'riverStone', name: '川底の石', kind: 'material', rarity: 'part', gains: { atk: 3 } },
+  lordStrawHat: { id: 'lordStrawHat', name: 'ぬしの麦わら帽子', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
+  // ---- 4-2 の昭和55年の春、開店の日の商店街（段階140a） ----
+  cubeTile: { id: 'cubeTile', name: 'キューブの色の面', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
+  cubeCore: { id: 'cubeCore', name: 'キューブの芯', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
+  gameButton: { id: 'gameButton', name: 'ゲーム機のボタン', kind: 'material', rarity: 'common', gains: { atk: 2, thunder: 1 } },
+  gameGlass: { id: 'gameGlass', name: 'ゲーム機の天板', kind: 'material', rarity: 'uncommon', gains: { atk: 3, ice: -1 } },
+  balloonPaper: { id: 'balloonPaper', name: '紙風船の紙', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
+  balloonMouth: { id: 'balloonMouth', name: '紙風船の口', kind: 'material', rarity: 'uncommon', gains: { fire: 3, ice: -1 } },
+  redBalloon: { id: 'redBalloon', name: '赤い紙風船', kind: 'material', rarity: 'rare', gains: { atk: 3, fire: 3, ice: 2 } },
+  cuckooBird: { id: 'cuckooBird', name: '鳩時計の鳩', kind: 'material', rarity: 'common', gains: { thunder: 2, atk: 1 } },
+  cuckooWeight: { id: 'cuckooWeight', name: '鳩時計のおもり', kind: 'material', rarity: 'uncommon', gains: { thunder: 3, fire: -1 } },
+  wreathRibbon: { id: 'wreathRibbon', name: '花輪のリボン', kind: 'material', rarity: 'uncommon', gains: { fire: 2, thunder: 2 } },
+  brushSign: { id: 'brushSign', name: '手書きの看板', kind: 'material', rarity: 'rare', gains: { atk: 2, thunder: 3, ice: 2 } },
+  shutterSlat: { id: 'shutterSlat', name: 'シャッターの板', kind: 'material', rarity: 'part', gains: { atk: 3 } },
+  winchGear: { id: 'winchGear', name: '巻き上げの歯車', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
+  lordShutterKey: { id: 'lordShutterKey', name: 'ぬしの合鍵', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
   // ---- 3章のカイのリベンジ（段階96） ----
   frameShard: { id: 'frameShard', name: '枠のかけら', kind: 'material', rarity: 'part', gains: { thunder: 2, atk: 2 } },
   burntFilm: { id: 'burntFilm', name: '焼けたフィルム', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
@@ -138,7 +168,7 @@ export const ITEMS = {
   frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', rarity: 'common', gains: { thunder: 2, ice: 1 } },
   hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
   steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', rarity: 'uncommon', gains: { atk: 3 } },
-  // ---- ポーチの消費アイテム（勝利の報酬・宝箱。段階51。戦闘での効き目は pouch.ts。吸わせられず、時分解もできない） ----
+  // ---- ポーチの消費アイテム（勝利の報酬・宝箱。段階51。戦闘での効き目は pouch.ts。刻めず、時分解もできない） ----
   potion: { id: 'potion', name: 'ポーション', kind: 'item', gains: {}, max: POUCH_MAX },
   ether: { id: 'ether', name: 'エーテル', kind: 'item', gains: {}, max: POUCH_MAX },
   hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', gains: {}, max: POUCH_MAX },
@@ -430,8 +460,47 @@ const naginata: WeaponDef = {
   ],
 };
 
+// 早瀬の武器（段階140a。docs/script/4-2.md）：精密ドライバー。属性魔法の職人なので、どの進化先も魔力と、火・氷・雷のどれかを伸ばす。4章から加わるので、Lv6 から始める。
+// 鍵は、1回目が 3-2 の珍しい素材、2回目が 4-1 の珍しい素材・番人の素材、3回目が 4-1 のレア・部位・ぬしの素材（4章から加わるので、先の区画の素材にはしない）
+const driver: WeaponDef = {
+  id: 'precisionDriver',
+  name: '精密ドライバー',
+  owner: 'hayase',
+  startExp: 38,
+  evolutions: [
+    { id: 'temperDriver', name: '焼き戻しのドライバー', conditions: [param('fire', 12), key('thickStraw')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'coolDriver', name: '冷やしのドライバー', conditions: [param('ice', 12), key('flowerRibbon')], attackElement: 'ice', stats: { mag: 3 }, styles: [STYLES.fierce('ice'), STYLES.guard] },
+    { id: 'currentDriver', name: '電流のドライバー', conditions: [param('thunder', 12), key('earbudTip')], attackElement: 'thunder', stats: { mag: 3 }, styles: [STYLES.fierce('thunder'), STYLES.first] },
+    // 2回目
+    { id: 'forgeDriver', name: '鍛冶のドライバー', from: 'temperDriver', conditions: [param('fire', 24), key('cageStrap')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.calm] },
+    { id: 'frostDriver', name: '霜のドライバー', from: 'coolDriver', conditions: [param('ice', 24), key('fireworkPaper')], attackElement: 'ice', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.sage, STYLES.guard] },
+    { id: 'arcDriver', name: '火花のドライバー', from: 'currentDriver', conditions: [param('thunder', 24), key('waterTank')], attackElement: 'thunder', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.sage, STYLES.first] },
+    // 寄り道：電流のドライバーから。攻撃を低いままにして、MP を細く長く使うドライバー
+    {
+      id: 'tuningDriver',
+      name: '調律のドライバー',
+      from: 'currentDriver',
+      detour: true,
+      conditions: [{ kind: 'paramMax', param: 'atk', max: 2 }, key('jizoBib')],
+      stats: { mag: 3, spd: 1 },
+      passives: [{ kind: 'mpSave', amount: 1 }],
+      styles: [STYLES.sage, STYLES.calm],
+    },
+    // 3回目
+    { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'icicleDriver', name: '氷柱のドライバー', from: 'frostDriver', conditions: [param('ice', 36), key('hatBrim')], attackElement: 'ice', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
+    { id: 'thunderDriver', name: '雷鳴のドライバー', from: 'arcDriver', conditions: [param('thunder', 36), key('lordStrawHat')], attackElement: 'thunder', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.first] },
+    { id: 'masterDriver', name: '名工のドライバー', from: 'arcDriver', conditions: [param('thunder', 24), param('fire', 16), key('radioCard')], stats: { mag: 5, mp: 6 }, styles: [STYLES.sage, STYLES.calm] },
+    // 4回目より先（まだ作っていない）
+    ...beyond('kilnDriver', [['冷えきった町の時計を、ひと晩で全部あたため直したという', '炉の火で、止まった秒針をもう一度打ち直したという']]),
+    ...beyond('icicleDriver', [['止まった秒針を、凍らせたまま美しく見せたという']]),
+    ...beyond('thunderDriver', [['一本の火花で、百の時計を同時に動かしたという'], ['雷を、ぜんまいの中にしまったという']]),
+    ...beyond('masterDriver', [['直せない時計は、ひとつもなかったという']]),
+  ],
+};
+
 export const WEAPON_DATA: WeaponData = {
-  weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards, [naginata.id]: naginata },
+  weapons: { [sword.id]: sword, [rod.id]: rod, [cards.id]: cards, [naginata.id]: naginata, [driver.id]: driver },
   fragments: FRAGMENTS,
   items: ITEMS,
   // 経験値 4 で Lv2、8 で Lv3（1人が戦闘1回で行動するのは3回前後なので、だいたい戦闘3つで Lv3）。
@@ -442,15 +511,15 @@ export const WEAPON_DATA: WeaponData = {
   elementRate: 0.02,
   // 進化1回で盤に足すマス（段階111。テストプレイのメモ 24：2マスでは増えすぎたので1マス）
   boardExtension: 1,
-  // 段階27b：吸わせ枠（累計）。Lv1 で6、Lv2 で12、Lv3 で18。段階42：Lv4 から1レベルで4つずつ
+  // 段階27b：刻印（累計）。Lv1 で6、Lv2 で12、Lv3 で18。段階42：Lv4 から1レベルで4つずつ
   slotsPerLevel: [6, 12, 18, 22, 26, 30, 34],
-  // 時分解は、素材・アイテム2つで記憶の欠片1つ（要らない素材の整理。素材のまま吸わせる方が強い）
+  // 時分解は、素材・アイテム2つで記憶の欠片1つ（要らない素材の整理。素材のまま刻む方が強い）
   decomposeCost: 2,
   fragmentFor: { atk: FRAGMENTS.courage.id, fire: FRAGMENTS.elation.id, ice: FRAGMENTS.relief.id, thunder: FRAGMENTS.wonder.id },
 };
 
 /**
- * 時分解を出したことを覚える物語の変数（段階100c）。武器の画面の時分解は、どれかの武器の吸わせ枠が初めていっぱいになった時か、
+ * 時分解を出したことを覚える物語の変数（段階100c）。武器の画面の時分解は、どれかの武器の刻印が初めていっぱいになった時か、
  * 交換所を初めて開いた時（ペトラが時分解を教える）の、早い方から出す
  */
 export const DECOMPOSE_VAR = '武器:時分解';

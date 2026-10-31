@@ -5,7 +5,8 @@ import { ELEMENT_LABEL } from './labels';
 
 export const STAT_LABEL: Record<keyof Stats, string> = { hp: 'HP', mp: 'MP', atk: '攻撃', mag: '魔力', def: '防御', spd: '速さ' };
 
-export const PART_COLOR_LABEL: Record<PartColor, string> = { red: '赤', blue: '青', green: '緑', yellow: '黄' };
+/** ギアの色の名前（段階146：金属の名前。赤＝銅、青＝鋼、緑＝青銅、黄＝真鍮。docs/ART.md の 5-9） */
+export const PART_COLOR_LABEL: Record<PartColor, string> = { red: '銅', blue: '鋼', green: '青銅', yellow: '真鍮' };
 
 const pct = (rate: number) => `${Math.round(rate * 100)}%`;
 

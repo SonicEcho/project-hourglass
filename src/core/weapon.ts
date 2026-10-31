@@ -27,14 +27,14 @@ export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'part' | 'boss';
 
 /**
  * 素材（敵が落とす）と、ポーチの消費アイテム（勝利の報酬・宝箱。段階51）。
- * 段階27b：素材は武器に直接吸わせる（gains の分だけ能力値が上下する。吸わせ枠を1つ使う）。
- * 要らない素材は時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）。消費アイテムは吸わせられず、時分解もできない
+ * 段階27b：素材は武器に直接刻む（gains の分だけ能力値が上下する。刻印を1つ使う）。
+ * 要らない素材は時分解で記憶の欠片にする（decomposeCost 個で、一番大きく上がる能力値の欠片1つ）。消費アイテムは刻めず、時分解もできない
  */
 export interface ItemDef {
   id: string;
   name: string;
   kind: 'material' | 'item';
-  /** 吸わせた時の能力値の上がり下がり（素材だけ吸わせられる。消費アイテムは空） */
+  /** 刻んだ時の能力値の上がり下がり（素材だけ刻める。消費アイテムは空） */
   gains: Partial<WeaponParams>;
   /** 素材の種類（アイテムにはない） */
   rarity?: ItemRarity;
@@ -123,7 +123,7 @@ export interface WeaponData {
   elementRate: number;
   /** 進化した時に盤に増えるマスの数（形は選んだ型で決まる） */
   boardExtension: number;
-  /** レベルごとの吸わせ枠（累計。Lv1, Lv2, …。段階27b） */
+  /** レベルごとの刻印（累計。Lv1, Lv2, …。段階27b） */
   slotsPerLevel: number[];
   /** 時分解：この数の素材・アイテムで、記憶の欠片1つ */
   decomposeCost: number;
@@ -139,7 +139,7 @@ export interface WeaponState {
   tendency: Record<PartColor, number>;
   /** 通った進化先と選んだ型（古い順。まだ進化していなければ空。段階42で evolvedTo から替えた） */
   path: EvolutionStep[];
-  /** 吸わせた素材の数（吸わせ枠を使った数。段階27b） */
+  /** 刻んだ素材の数（刻印を使った数。段階27b） */
   absorbed: number;
 }
 
@@ -202,25 +202,25 @@ export function spendItems(armory: ArmoryState, used: Record<string, number>): A
   return { ...armory, items };
 }
 
-/** 武器の吸わせ枠（今のレベルまでの合計） */
+/** 武器の刻印（今のレベルまでの合計） */
 export function weaponSlots(data: WeaponData, w: WeaponState): number {
   const lv = weaponLevel(data, w.exp);
   return data.slotsPerLevel[Math.min(lv, data.slotsPerLevel.length) - 1] ?? 0;
 }
 
-/** どれかの武器の吸わせ枠がいっぱいか（段階100c。時分解を出すきっかけ） */
+/** どれかの武器の刻印がいっぱいか（段階100c。時分解を出すきっかけ） */
 export function anySlotsFull(data: WeaponData, armory: ArmoryState): boolean {
   return Object.values(armory.weapons).some((w) => w.absorbed >= weaponSlots(data, w));
 }
 
-/** 素材を吸わせた後の能力値（下がっても0より小さくならない）。プレビューにも使う */
+/** 素材を刻んだ後の能力値（下がっても0より小さくならない）。プレビューにも使う */
 export function paramsAfter(params: WeaponParams, gains: Partial<WeaponParams>): WeaponParams {
   const next = { ...params };
   for (const k of PARAM_KEYS) next[k] = Math.max(0, next[k] + (gains[k] ?? 0));
   return next;
 }
 
-/** 素材を吸わせられない理由。吸わせられるなら null */
+/** 素材を刻めない理由。刻めるなら null */
 export function getAbsorbError(data: WeaponData, armory: ArmoryState, charId: string, itemId: string): string | null {
   const w = armory.weapons[charId];
   if (!w) return 'no weapon';
@@ -232,7 +232,7 @@ export function getAbsorbError(data: WeaponData, armory: ArmoryState, charId: st
   return null;
 }
 
-/** 素材を武器に吸わせる（素材は1つ減り、能力値が上下し、吸わせ枠を1つ使う） */
+/** 素材を武器に刻む（素材は1つ減り、能力値が上下し、刻印を1つ使う） */
 export function absorbMaterial(data: WeaponData, armory: ArmoryState, charId: string, itemId: string): ArmoryState {
   const err = getAbsorbError(data, armory, charId, itemId);
   if (err) throw new Error(err);
@@ -242,6 +242,42 @@ export function absorbMaterial(data: WeaponData, armory: ArmoryState, charId: st
     weapons: { ...armory.weapons, [charId]: { ...w, params: paramsAfter(w.params, data.items[itemId].gains), absorbed: w.absorbed + 1 } },
     items: { ...armory.items, [itemId]: armory.items[itemId] - 1 },
   };
+}
+
+/**
+ * 選んだ素材をまとめて刻めない理由（段階145。武器の画面で素材を何回か押して数を足し、「刻む（N）」でまとめて刻む）。刻めるなら null。
+ * picks は素材の id → 刻む数。どれも0なら 'nothing picked'、持っている数より多い・刻印が足りない時もだめ
+ */
+export function getAbsorbPickedError(data: WeaponData, armory: ArmoryState, charId: string, picks: Record<string, number>): string | null {
+  const w = armory.weapons[charId];
+  if (!w) return 'no weapon';
+  const entries = Object.entries(picks).filter(([, n]) => n > 0);
+  if (entries.length === 0) return 'nothing picked';
+  for (const [id, n] of entries) {
+    const it = data.items[id];
+    if (!it) return 'unknown item';
+    if (it.kind !== 'material') return 'only materials can be absorbed';
+    if ((armory.items[id] ?? 0) < n) return 'no item left';
+  }
+  const total = entries.reduce((a, [, n]) => a + n, 0);
+  if (w.absorbed + total > weaponSlots(data, w)) return 'no slot left';
+  return null;
+}
+
+/** 選んだ素材をまとめて刻む（素材の id の順に1つずつ刻むのと同じ。能力値は1つ刻むたびに0より下がらない） */
+export function absorbPicked(data: WeaponData, armory: ArmoryState, charId: string, picks: Record<string, number>): ArmoryState {
+  const err = getAbsorbPickedError(data, armory, charId, picks);
+  if (err) throw new Error(err);
+  let a = armory;
+  for (const id of Object.keys(picks).sort()) for (let i = 0; i < picks[id]; i++) a = absorbMaterial(data, a, charId, id);
+  return a;
+}
+
+/** まとめて刻んだ後の能力値（プレビュー。absorbPicked と同じ順に足す） */
+export function paramsAfterPicked(data: WeaponData, params: WeaponParams, picks: Record<string, number>): WeaponParams {
+  let p = params;
+  for (const id of Object.keys(picks).sort()) for (let i = 0; i < picks[id]; i++) p = paramsAfter(p, data.items[id]?.gains ?? data.fragments[id]?.gains ?? {});
+  return p;
 }
 
 /** 時分解でできる記憶の欠片（一番大きく上がる能力値。同じなら 攻撃 → 火 → 氷 → 雷 の順） */
@@ -272,7 +308,7 @@ export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: stri
   };
 }
 
-/** 記憶の欠片を吸わせられない理由。吸わせられるなら null */
+/** 記憶の欠片を刻めない理由。刻めるなら null */
 export function getFeedError(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): string | null {
   if (!armory.weapons[charId]) return 'no weapon';
   if (!data.fragments[fragmentId]) return 'unknown fragment';
@@ -280,7 +316,7 @@ export function getFeedError(data: WeaponData, armory: ArmoryState, charId: stri
   return null;
 }
 
-/** 記憶の欠片を武器に吸わせる（記憶の欠片はなくなり、パラメータが上がる。吸わせ枠は使わない） */
+/** 記憶の欠片を武器に刻む（記憶の欠片はなくなり、パラメータが上がる。刻印は使わない） */
 export function feedFragment(data: WeaponData, armory: ArmoryState, charId: string, fragmentId: string): ArmoryState {
   const err = getFeedError(data, armory, charId, fragmentId);
   if (err) throw new Error(err);

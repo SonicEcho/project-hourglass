@@ -118,7 +118,7 @@ describe('ポーチ（段階51）', () => {
     expect(s.pouch[0].count).toBe(0);
   });
 
-  it('武器に吸わせられず、時分解もできない。持てる数を超えた分は捨て、捨てた物を返す。使った分を減らす', () => {
+  it('武器に刻めず、時分解もできない。持てる数を超えた分は捨て、捨てた物を返す。使った分を減らす', () => {
     let a = createArmory(WEAPON_DATA);
     a = { ...a, items: { potion: 5, ether: 2, goldfishScale: 9 } };
     expect(getAbsorbError(WEAPON_DATA, a, 'hero', 'potion')).toBe('only materials can be absorbed');

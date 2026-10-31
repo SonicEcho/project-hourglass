@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import type { CardDef } from '../core';
-import { addToAlbum, countOf, getAddError, isAlbumComplete, recommendAlbum, removeFromAlbum } from '../core';
+import type { AlbumState, CardDef } from '../core';
+import { addToAlbum, countOf, getAddError, isAlbumComplete, recommendAlbum, removeFromAlbum, sameAlbum } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { ALBUM_COPY_MAX, ALBUM_RECOMMEND, ALBUM_SIZE, CARDS } from '../data';
 import { snapLook } from '../ui/battleViews';
@@ -16,7 +16,9 @@ import { hubBack, run, saveRun, setHubReturn } from './run';
 
 // アルバムの編集（段階41。docs/design/battle.md の 2.）。探索のチェックポイントの星図から開く。
 // 持っているスナップを1種類1行に並べ、「−」で外し「＋」で入れる。ALBUM_SIZE 枚ちょうどの時だけ星図へ戻れる。
-// 名前をタップすると、下の窓にそのスナップの説明が出る
+// 名前をタップすると、下の窓にそのスナップの説明が出る。
+// 段階124（レビューの項目2・3）：画面の中では下書きを変え、run.album（セーブされる編成）は「決めて戻る」まで変えない。
+// 途中で保存されたり（画面が裏に回る時など）、やめて閉じたりしても、直前に決めた ALBUM_SIZE 枚の編成が残る。「変更をやめる」で下書きを捨てて戻れる
 
 /** 1ページに並べる行の数（種類がこれより多い時は、ページを切り替える） */
 const ROWS = 14;
@@ -34,6 +36,10 @@ export class AlbumScene extends Phaser.Scene {
   /** message が注意ではなく、やったことの知らせか（段階100。おまかせ） */
   private messageOk = false;
   private page = 0;
+  /** 編集中の下書き（段階124） */
+  private draft!: AlbumState;
+  /** 「変更をやめる」を1回押して、もう一度押すのを待っているか */
+  private discardArmed = false;
 
   constructor() {
     super('Album');
@@ -46,18 +52,21 @@ export class AlbumScene extends Phaser.Scene {
     this.selected = null;
     this.message = '';
     this.page = 0;
+    this.draft = run.album;
+    this.discardArmed = false;
     this.render();
     maybeShowTip(this, ['growth_album']);
   }
 
   /** 持っているスナップ（スナップの一覧の順） */
   private ownedCards(): CardDef[] {
-    return Object.values(CARDS as Record<string, CardDef>).filter((c) => (run.album.owned[c.id] ?? 0) > 0);
+    return Object.values(CARDS as Record<string, CardDef>).filter((c) => (this.draft.owned[c.id] ?? 0) > 0);
   }
 
   private insert(id: string): void {
+    this.discardArmed = false;
     this.messageOk = false;
-    const err = getAddError(run.album, id);
+    const err = getAddError(this.draft, id);
     if (err) {
       this.message =
         err === 'album is full'
@@ -66,7 +75,7 @@ export class AlbumScene extends Phaser.Scene {
             ? `同じスナップは${ALBUM_COPY_MAX}枚まで`
             : '持っている分は、もう全部入っている';
     } else {
-      run.album = addToAlbum(run.album, id);
+      this.draft = addToAlbum(this.draft, id);
       this.message = '';
     }
     this.selected = id;
@@ -75,28 +84,29 @@ export class AlbumScene extends Phaser.Scene {
 
   /** おまかせ（段階100）：持っているスナップから、コンボを組める形の20枚に入れ直す */
   private recommend(): void {
-    const next = recommendAlbum(run.album, ALBUM_RECOMMEND);
-    this.message = JSON.stringify(next.album) === JSON.stringify(run.album.album) ? 'もう、おまかせと同じ組み方' : 'おまかせで組んだ（コンボを組める形）';
+    this.discardArmed = false;
+    const next = recommendAlbum(this.draft, ALBUM_RECOMMEND);
+    this.message = sameAlbum(next, this.draft) ? 'もう、おまかせと同じ組み方' : 'おまかせで組んだ（コンボを組める形）';
     this.messageOk = true;
-    run.album = next;
+    this.draft = next;
     this.selected = null;
     this.render();
   }
 
   private remove(id: string): void {
-    if ((run.album.album[id] ?? 0) > 0) run.album = removeFromAlbum(run.album, id);
+    this.discardArmed = false;
+    if ((this.draft.album[id] ?? 0) > 0) this.draft = removeFromAlbum(this.draft, id);
     this.selected = id;
     this.message = '';
     this.render();
   }
 
   private render(): void {
-    // 変えたら描き直すので、ここで自動セーブする（中身が同じなら書き込まない）
-    saveRun();
     this.root.removeAll(true);
     this.root.add(screenBg(this));
-    const total = countOf(run.album.album);
-    const complete = isAlbumComplete(run.album);
+    const total = countOf(this.draft.album);
+    const complete = isAlbumComplete(this.draft);
+    const changed = !sameAlbum(this.draft, run.album);
 
     // 上：見出しと枚数
     this.root.add(addIcon(this, 'support', SIDE_PADDING + 9, 20, 18, COLORS.accent));
@@ -135,32 +145,69 @@ export class AlbumScene extends Phaser.Scene {
       this.root.add(addText(this, GAME_WIDTH / 2, detailY + DETAIL_H - 14, this.message, { size: 12, bold: true, color: this.messageOk ? COLORS.accentText : COLORS.allyDamage }).setOrigin(0.5));
     }
 
-    // 下：おまかせ（段階100）と、星図へ戻る（ちょうど ALBUM_SIZE 枚の時だけ）
-    const autoW = 110;
-    addButton(this, this.root, SIDE_PADDING + autoW / 2, 800, autoW, 52, 'おまかせ', { onTap: () => this.recommend() }, { size: 15, bold: true });
-    const backW = GAME_WIDTH - SIDE_PADDING * 2 - autoW - 8;
+    // 下：おまかせ（段階100）と、変更をやめる・決めて戻る（段階124。決めて戻れるのは ALBUM_SIZE 枚ちょうどの時だけ）
+    const y = 800;
+    const gap = 6;
+    const autoW = 92;
+    const discardW = 100;
+    addButton(this, this.root, SIDE_PADDING + autoW / 2, y, autoW, 52, 'おまかせ', { onTap: () => this.recommend() }, { size: 15, bold: true });
+    const discardX = SIDE_PADDING + autoW + gap + discardW / 2;
+    addButton(
+      this,
+      this.root,
+      discardX,
+      y,
+      discardW,
+      52,
+      this.discardArmed ? 'もう一度で\nやめる' : '変更を\nやめる',
+      { onTap: () => this.discard() },
+      changed ? { size: 13, fill: this.discardArmed ? 0x5a1a14 : undefined, stroke: this.discardArmed ? 0xff8a7a : undefined } : { enabled: false, size: 13 },
+    );
+    const backW = GAME_WIDTH - SIDE_PADDING * 2 - autoW - discardW - gap * 2;
+    const backLabel = hubBack()?.label ?? '星図へ戻る';
     addButton(
       this,
       this.root,
       GAME_WIDTH - SIDE_PADDING - backW / 2,
-      800,
+      y,
       backW,
       52,
-      complete ? (hubBack()?.label ?? '星図へ戻る') : `あと${ALBUM_SIZE - total}枚入れると戻れる`,
-      {
-        onTap: () => {
-          // 拠点から開いた時は拠点へ戻る（段階45）
-          const hub = hubBack();
-          if (!hub) {
-            this.scene.start('Growth');
-            return;
-          }
-          setHubReturn(null);
-          this.scene.start(hub.key, hub.data);
-        },
-      },
-      complete ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true } : { enabled: false, size: 15 },
+      !complete ? `あと${ALBUM_SIZE - total}枚入れると\n決められる` : changed ? `決めて\n${backLabel}` : backLabel,
+      { onTap: () => this.confirm() },
+      complete ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: changed ? 14 : 15, bold: true } : { enabled: false, size: 12 },
     );
+  }
+
+  /** 決めて戻る（段階124）：下書きを周回の編成にして保存する。ALBUM_SIZE 枚ちょうどの時だけ */
+  private confirm(): void {
+    if (!isAlbumComplete(this.draft)) return;
+    run.album = this.draft;
+    saveRun();
+    this.leave();
+  }
+
+  /** 変更をやめる（段階124）：下書きを捨てて、開いた時の編成のまま戻る。誤タップで消さないよう2回押す */
+  private discard(): void {
+    if (!this.discardArmed) {
+      this.discardArmed = true;
+      this.message = 'もう一度押すと、変更をやめて開いた時の編成に戻る';
+      this.messageOk = false;
+      this.render();
+      return;
+    }
+    this.draft = run.album;
+    this.leave();
+  }
+
+  private leave(): void {
+    // 拠点から開いた時は拠点へ戻る（段階45）
+    const hub = hubBack();
+    if (!hub) {
+      this.scene.start('Growth');
+      return;
+    }
+    setHubReturn(null);
+    this.scene.start(hub.key, hub.data);
   }
 
   private turn(d: number): void {
@@ -171,8 +218,8 @@ export class AlbumScene extends Phaser.Scene {
   /** 1種類の行：属性の帯・名前、「−」入れる枚数「＋」、持っている枚数 */
   private drawRow(card: CardDef, top: number): void {
     const cy = top + ROW_H / 2;
-    const inAlbum = run.album.album[card.id] ?? 0;
-    const owned = run.album.owned[card.id] ?? 0;
+    const inAlbum = this.draft.album[card.id] ?? 0;
+    const owned = this.draft.owned[card.id] ?? 0;
     const selected = this.selected === card.id;
     const look = snapLook(card);
     const row = this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, ROW_H, inAlbum > 0 ? COLORS.panel : 0x141c25).setRounded(8).setOrigin(0);
@@ -182,6 +229,7 @@ export class AlbumScene extends Phaser.Scene {
       onTap: () => {
         this.selected = card.id;
         this.message = '';
+        this.discardArmed = false;
         this.render();
       },
     });

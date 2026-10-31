@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BattleState } from '../../src/core';
+import type { BattleState, EnemyActionDef } from '../../src/core';
 import { battleTipTriggers, createBattle, exploreTipTriggers, markTipSeen, nextTip, parseSeenTips, serializeSeenTips, startExplore } from '../../src/core';
 import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, PARTY, TIPS } from '../../src/data';
 import { lineupMembers } from '../../src/core';
@@ -61,6 +61,18 @@ describe('説明（段階30）', () => {
     expect(battleTipTriggers(boss(), { autoAvailable: false })).toContain('battle_boss');
     expect(battleTipTriggers(storm(), { autoAvailable: false })).not.toContain('battle_link');
     expect(battleTipTriggers({ ...storm(), linkGauge: 100 }, { autoAvailable: false })).toContain('battle_link');
+  });
+
+  it('戦闘：切り取りをためた時だけ「切り取り」（段階125）。ほかの大技のためでは出さない', () => {
+    const cut: EnemyActionDef = { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 10, weight: 1.0, charge: true, cutsFrame: true };
+    const s = boss();
+    expect(battleTipTriggers(s, { autoAvailable: false })).not.toContain('battle_cut');
+    const kai = { ...s.enemies[0], actions: [...s.enemies[0].actions, cut], charging: 'frameCut' };
+    expect(battleTipTriggers({ ...s, enemies: [kai] }, { autoAvailable: false })).toContain('battle_cut');
+    const big = s.enemies[0].actions.find((a) => a.charge);
+    if (big) expect(battleTipTriggers({ ...s, enemies: [{ ...s.enemies[0], charging: big.id }] }, { autoAvailable: false })).not.toContain('battle_cut');
+    // 倒れた敵のためでは出さない
+    expect(battleTipTriggers({ ...s, enemies: [{ ...kai, hp: 0 }] }, { autoAvailable: false })).not.toContain('battle_cut');
   });
 
   it('戦闘：出したい説明は、どれも説明の文がある', () => {

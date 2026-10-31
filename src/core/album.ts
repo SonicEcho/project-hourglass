@@ -21,6 +21,12 @@ export function createAlbum(initial: { card: CardDef; count: number }[]): AlbumS
   return { owned: { ...counts }, album: { ...counts } };
 }
 
+/** アルバムに入れている枚数が同じか（段階124。アルバムの下書きが変わったかを見る。持っている数は比べない） */
+export function sameAlbum(a: AlbumState, b: AlbumState): boolean {
+  const ids = new Set([...Object.keys(a.album), ...Object.keys(b.album)]);
+  return [...ids].every((id) => (a.album[id] ?? 0) === (b.album[id] ?? 0));
+}
+
 export function countOf(counts: SnapCounts): number {
   return Object.values(counts).reduce((sum, n) => sum + n, 0);
 }

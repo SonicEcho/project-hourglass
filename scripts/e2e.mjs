@@ -11,7 +11,7 @@ import { preview } from 'vite';
 
 const BATTLES = 5;
 /** 物語の流れの出来事の数の上限（無限に回らないように） */
-const MAX_EVENTS = 200;
+const MAX_EVENTS = 280;
 const step = (msg) => console.log(`- ${msg}`);
 
 const server = await preview({ preview: { port: 4173, strictPort: false }, logLevel: 'warn' });
@@ -367,7 +367,7 @@ try {
   }
   await waitScene('Exchange');
   // 段階100c：交換所を初めて開くと、ペトラから時分解を教わり、武器の画面に時分解が出る（セーブの物語の変数に覚える）。
-  // ここまでの育ち具合を引き継いでいるので、先に吸わせ枠がいっぱいになって出ていることもある。その時は説明の窓は出ない
+  // ここまでの育ち具合を引き継いでいるので、先に刻印がいっぱいになって出ていることもある。その時は説明の窓は出ない
   await until('時分解が出た印', () => page.evaluate(() => (localStorage.getItem('restopia.save.auto') ?? '').includes('"武器:時分解":"1"')));
   await page.waitForTimeout(800);
   await skipTips();

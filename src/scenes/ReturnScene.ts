@@ -268,7 +268,7 @@ export class ReturnScene extends Phaser.Scene {
         onTap: () => {
           run.armory = addFragments(run.armory, Array<string>(extra).fill(f.id));
           panel.destroy(true);
-          this.root.add(addText(this, GAME_WIDTH / 2, 560, `記憶の欠片（${f.name}）を${extra}つ手に入れた。武器の画面で吸わせられる`, { size: 13, color: COLORS.accentText, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
+          this.root.add(addText(this, GAME_WIDTH / 2, 560, `記憶の欠片（${f.name}）を${extra}つ手に入れた。武器の画面で刻める`, { size: 13, color: COLORS.accentText, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5));
           this.showNext();
         },
       }, { size: 12, bold: true });

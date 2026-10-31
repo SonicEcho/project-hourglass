@@ -110,6 +110,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari8', title: 'いつもの場所', label: '商店街の角（あかり）', from: 27, place: 'street', x: 195, y: ROW2 },
     // 段階96（docs/script/3-kai.md の 4.）
     { id: 'bond_akari9', title: '目覚まし三つ', label: '屋上へ（あかり）', from: 31, place: 'school', x: 195, y: ROW2 },
+    // 段階137b（docs/script/4-1.md の 4.）
+    { id: 'bond_akari10', title: '撮らない写真', label: '屋上へ（あかり）', from: 34, place: 'school', x: 195, y: ROW2 },
   ],
   // 段階82：みお1は9日目から、みお2は11日目から（段階78で後ろへずらしたのを、昼の選び方の案Aに合わせて戻した）
   mio: [
@@ -123,6 +125,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_mio6', title: '大食い大会', label: '福引のテントの横（みお）', from: 27, place: 'street', x: 195, y: 640 },
     // 段階96（docs/script/3-kai.md の 4.）
     { id: 'bond_mio7', title: 'ハヤテ号', label: '駐輪場（みお）', from: 31, place: 'street', x: 195, y: 640 },
+    // 段階137b。河川敷の上の段は、35・36日目のたいち（必ず見る）
+    { id: 'bond_mio8', title: '陸上部', label: 'グラウンド（みお）', from: 35, place: 'riverside', x: 195, y: ROW2 },
   ],
   // 段階94：小夜子（26日目に今の町へ出た後。27日目から）。時計屋の奥の入口の部屋と、商店街
   sayoko: [
@@ -130,6 +134,8 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_sayoko2', title: '試着室', label: '洋服屋の前（小夜子）', from: 29, place: 'street', x: 195, y: 560 },
     // 段階96（docs/script/3-kai.md の 4.）。32日目の雨の店先
     { id: 'bond_sayoko3', title: '雨の日', label: '店先（小夜子）', from: 32, place: 'clockshop', x: 195, y: 385 },
+    // 段階137b（4-1 の緩める話）
+    { id: 'bond_sayoko4', title: '平成の夏', label: 'レジの前（小夜子）', from: 34, place: 'convenience', x: 195, y: ROW1 },
   ],
 };
 
@@ -150,6 +156,8 @@ export const RETURN_VISITS: ReturnVisit[] = [
   { area: 'a31', id: 'd24_chiyo', label: '駅の見送り', place: 'station', x: 195, y: ROW1 },
   // 3-2 の翌日（31日目。段階94。段階103 で日の数字が1つずれた）：店長が彫った時計を持って、駅の近くの踏切で、しおりさんがとうやさんを見送る（docs/script/3-2.md の 30-A・30-B）
   { area: 'a32', id: 'd30_shiori', label: '駅の近くの踏切', place: 'station', x: 195, y: ROW1 },
+  // 4-1 の翌日（37日目。段階137a）：河川敷で、たいちが一人で川に入る（docs/script/4-1.md の 37-A）
+  { area: 'a41', id: 'd37_taichi', label: '河川敷のたいち', place: 'riverside', x: 195, y: ROW1 },
 ];
 
 
@@ -587,5 +595,88 @@ export const DAILY_HUBS: Record<string, DailyHub> = {
       at('care_home', talk('d32_talk_care', '窓辺', ROW2)),
       at('clockshop', toDusk('d32_to_dusk')),
     ],
+  },
+  // ---- 4-1（段階137a。docs/script/4-1.md の 4.）。昼の選べる話は段階137b（絆の出来事は BOND_EVENTS、小話は下の印） ----
+  // 34日目（水曜）：時計屋のたいちの「52分の時計」は必ず見る。夕暮れの後、4-1 の1晩目
+  d34_free: {
+    id: 'd34_free',
+    time: '34日目　水曜の放課後',
+    day: 34,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d34_taichi', '52分の時計'), toDusk('d34_to_dusk'))],
+  },
+  // 35日目（木曜）：河川敷のたいちとおじいちゃんの電話は必ず見る。夕暮れの後、2晩目
+  d35_free: {
+    id: 'd35_free',
+    time: '35日目　木曜の放課後',
+    day: 35,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('riverside', main('d35_collar', 'シロの首輪')), at('school', talk('d35_talk_fur', '廊下')), at('clockshop', toDusk('d35_to_dusk'))],
+  },
+  // 36日目（金曜）：河川敷のたいちの本音は必ず見る。夕暮れの後、3晩目
+  d36_free: {
+    id: 'd36_free',
+    time: '36日目　金曜の放課後',
+    day: 36,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('riverside', main('d36_taichi', 'ひとりにした')), at('clockshop', talk('d36_talk_memos', '作業台'), toDusk('d36_to_dusk'))],
+  },
+  // 37日目（土曜）：4-1 を返した翌日の河川敷のたいち（RETURN_VISITS）。夕暮れに、小夜子の日記
+  d37_free: {
+    id: 'd37_free',
+    time: '37日目　土曜の昼',
+    day: 37,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', toDusk('d37_to_dusk'))],
+  },
+  // ---- 38日目と 4-2（段階140a。docs/script/4-2.md の 4.）。昼の選べる話は段階140b で足す ----
+  // 38日目（日曜）：朝に店長にばれた後。昼は選べる話だけ。夕暮れに、店長を連れて蔵書の棚へ
+  d38_free: {
+    id: 'd38_free',
+    time: '38日目　日曜の昼',
+    day: 38,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', toDusk('d38_to_dusk'))],
+  },
+  // 39日目（月曜）：時計屋の店長の「置いとけ」は必ず見る
+  d39_free: {
+    id: 'd39_free',
+    time: '39日目　月曜の放課後',
+    day: 39,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d39_refuse', '置いとけ'), toDusk('d39_to_dusk'))],
+  },
+  // 40日目（火曜）：時計屋のたいちのお礼は必ず見る。夕暮れの後、4-2 の1晩目
+  d40_free: {
+    id: 'd40_free',
+    time: '40日目　火曜の放課後',
+    day: 40,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d40_taichi', '52分のお礼'), toDusk('d40_to_dusk'))],
+  },
+  // 41日目（水曜）：時計屋のふみさんは必ず見る。夕暮れの後、2晩目
+  d41_free: {
+    id: 'd41_free',
+    time: '41日目　水曜の放課後',
+    day: 41,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d41_fumi', '一番目のお客'), toDusk('d41_to_dusk'))],
+  },
+  // 42日目（木曜）：作業台の店長の本音は必ず見る。夕暮れの後、3晩目
+  d42_free: {
+    id: 'd42_free',
+    time: '42日目　木曜の放課後',
+    day: 42,
+    picks: DAILY_PICKS,
+    partners: ['akari', 'mio', 'sayoko'],
+    places: [at('clockshop', main('d42_hayase', '会いたくなる'), toDusk('d42_to_dusk'))],
   },
 };

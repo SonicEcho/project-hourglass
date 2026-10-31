@@ -309,6 +309,18 @@ export function spotGears(hub: DailyHub, vars: Record<string, string>, spot: Dai
   return spot.gears && spotState(hub, vars, spot) !== 'seen' ? spot.gears : [];
 }
 
+/** 場所の絵の上で、印どうしが重ならない縦の間と、ずらす幅（段階137b） */
+export const SPOT_GAP = 80;
+export const SPOT_STEP = 85;
+/**
+ * 絆の出来事の印の縦の位置（段階137b）：同じ場所のほかの印（必ず見る・返した翌日など）と重なる時は、空いている所まで下へずらす。
+ * 前の章の絆の出来事を見ていないと、決めた位置の印が、その日の必ず見る印と重なることがあるため。700 を越えるなら元の位置のまま
+ */
+export function freeSpotY(spots: readonly DailySpot[], y: number): number {
+  for (let ny = y; ny <= 700; ny += SPOT_STEP) if (!spots.some((s) => Math.abs(s.y - ny) < SPOT_GAP)) return ny;
+  return y;
+}
+
 /**
  * その日の日常を、今の値で組み立てる（段階35）：会える相手ごとに、絆の出来事の印をその場所に足す。
  * 段階36：返した翌日の出来事（visits。visitsFor で選んだもの）も、必ず見る出来事としてその場所の先頭に足す。
@@ -341,7 +353,8 @@ export function resolveHub(
   for (const partner of hub.partners ?? []) {
     const ev = bondEventFor(hub, vars, partner, bonds[partner] ?? []);
     if (!ev) continue;
-    placeOf(ev.place)?.spots.push({ id: ev.id, scene: ev.id, label: ev.label, mark: 'bond', x: ev.x, y: ev.y, partner });
+    const place = placeOf(ev.place);
+    place?.spots.push({ id: ev.id, scene: ev.id, label: ev.label, mark: 'bond', x: ev.x, y: freeSpotY(place.spots, ev.y), partner });
   }
   return { ...hub, places: places.filter((p) => p.spots.length > 0) };
 }

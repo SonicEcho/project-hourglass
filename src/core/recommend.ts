@@ -5,7 +5,7 @@ import type { CharacterDef } from './types';
 import { evolutionVisibility, getAbsorbError, nextEvolutions, type ArmoryState, type EvolutionDef, type WeaponData, type WeaponParamKey } from './weapon';
 
 // 育成の「おすすめ」（段階100。レビューの E1）。Phaser に依存しない。受け取った状態を書き換えず、新しい状態を返す。
-// 取り消せる操作（アルバム・ムーブメントの並べ方）は「おまかせ」で組み、取り消せない操作（星を開ける・素材を吸わせる）は勧めるだけ。
+// 取り消せる操作（アルバム・ムーブメントの並べ方）は「おまかせ」で組み、取り消せない操作（星を開ける・素材を刻む）は勧めるだけ。
 // 自動対戦（src/sim）も同じ選び方を使う
 
 // ---- ① アルバムのおまかせ ----
@@ -152,7 +152,7 @@ function bestSpot(data: NaviData, navi: NaviState, uid: number, charId: string, 
   return fallback;
 }
 
-// ---- ④ 武器に吸わせる素材のおすすめ ----
+// ---- ④ 武器に刻む素材のおすすめ ----
 
 /** 進化の鍵になる素材（勧めない・時分解しない） */
 export function evolutionKeys(D: WeaponData): Set<string> {
@@ -196,9 +196,9 @@ export function nearestEvolution(D: WeaponData, armory: ArmoryState, owner: stri
 }
 
 /**
- * その仲間に吸わせる素材の順番（よい方から）：一番近い進化先の条件の能力値を上げる素材ほど先、次に上がる合計の大きい素材。
- * 条件の能力値を下げる素材、上がらない素材、今は吸わせられない素材は入れない。進化の鍵の素材は、残しておく数（reserve）より多く持っている時だけ。
- * reserve を書かなければ、どの武器のどの進化の鍵も勧めない（自動対戦。鍵は吸わせない）
+ * その仲間に刻む素材の順番（よい方から）：一番近い進化先の条件の能力値を上げる素材ほど先、次に上がる合計の大きい素材。
+ * 条件の能力値を下げる素材、上がらない素材、今は刻めない素材は入れない。進化の鍵の素材は、残しておく数（reserve）より多く持っている時だけ。
+ * reserve を書かなければ、どの武器のどの進化の鍵も勧めない（自動対戦。鍵は刻まない）
  */
 export function recommendMaterials(D: WeaponData, armory: ArmoryState, owner: string, prefer?: string, reserve?: Map<string, number>): string[] {
   const target = nearestEvolution(D, armory, owner, prefer)?.params ?? [];

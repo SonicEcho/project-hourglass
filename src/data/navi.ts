@@ -57,6 +57,8 @@ export const NAVI_BOARDS: Record<string, NaviBoardDef> = {
   mio: board(['.##.', '####', '####', '.##.'], 1),
   // 小夜子（段階91a）：斜めに長い盤（薙刀の形。仮）
   sayoko: board(['##..', '###.', '.###', '..##'], 1),
+  // 早瀬（段階140a）：マスは多いが、ところどころ置けない盤（構想ノートの「マスが多いが制約も多い」。時計の機械の穴の形。仮）
+  hayase: board(['##.##', '#####', '.#.#.', '#####', '##.##'], 1),
 };
 
 export const NAVI_DATA: NaviData = { parts: NAVI_PARTS, boards: NAVI_BOARDS };

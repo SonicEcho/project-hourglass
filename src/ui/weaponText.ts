@@ -7,7 +7,7 @@ import { PART_COLOR_LABEL, STAT_LABEL, summarizePassives } from './naviText';
 
 export const PARAM_LABEL: Record<WeaponParamKey, string> = { atk: '攻撃値', fire: '火', ice: '氷', thunder: '雷' };
 
-/** 記憶の欠片を吸わせた時に上がるもの */
+/** 記憶の欠片を刻んだ時に上がるもの */
 export function describeFragment(f: FragmentDef): string {
   return (Object.entries(f.gains) as [WeaponParamKey, number][]).map(([k, v]) => `${PARAM_LABEL[k]} +${v}`).join('、');
 }

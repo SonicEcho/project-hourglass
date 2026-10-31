@@ -9,7 +9,7 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import type { DialogueData } from './DialogueScene';
-import { run, setStoryVars, storyLineup } from './run';
+import { run, saveRun, setStoryVars, storyLineup } from './run';
 
 // 昼の日常（段階24）：地図から場所を選び、場所の絵に出ている印をタップして出来事を見る。
 // プロローグの屋台めぐりも同じ画面（場所が1つ、画面の下に「けいかくひょう」、4つ見ると次へ）。
@@ -91,9 +91,14 @@ export class DailyScene extends Phaser.Scene {
     if (place) this.showPlace(place);
     else this.showMap();
     this.cameras.main.fadeIn(250, 0, 0, 0);
+    // 段階98（レビューの D2）：その日の昼に初めて入った時だけ、保存したことを小さく知らせる（ここでやめても、この昼から始められる）。
+    // 段階124（レビューの項目1）：実際に保存できた時だけ「保存しました」と言う。書き込めない時は、上の「未保存」の印（ui/saveNotice.ts）と一緒に知らせる
+    const saved = saveRun();
     if (gearNote) this.toast(gearNote);
-    // 段階98（レビューの D2）：その日の昼に初めて入った時だけ、保存したことを小さく知らせる（ここでやめても、この昼から始められる）
-    else if (data0.day !== undefined && savedNoticeFor !== data.event) this.toast('保存しました（ここでやめても、この昼から始められる）');
+    else if (data0.day !== undefined && savedNoticeFor !== data.event) {
+      if (saved === 'failed') this.toast('保存できませんでした（ここでやめると、前に保存した所から）。上の印をタップすると、もう一度保存する', true);
+      else if (saved !== 'skipped' && saved !== 'stale') this.toast('保存しました（ここでやめても、この昼から始められる）');
+    }
     savedNoticeFor = data.event;
   }
 
@@ -155,9 +160,11 @@ export class DailyScene extends Phaser.Scene {
     }
     const left = requiredLeft(this.hub, run.vars);
     const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
-    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！は数えない`);
-    // 段階83：相手のいる小話は、その日に見ると♥が半分増える
-    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…（小話）も、相手の絆の帯が半分進む');
+    // 段階125（レビューの項目48）：拠点の扉も回数を使わない
+    const hasHub = allSpots(this.hub).some((s) => s.mark === 'hub');
+    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！${hasHub ? 'と扉' : ''}は数えない`);
+    // 段階83：相手のいる小話は、その日に見ると♥が半分増える。段階125（レビューの項目49）：後から拠点で読んでも増えないので「その日に見た時だけ」と書く
+    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…小話は、その日に見た時だけ絆の帯が半分進む');
     root.add(addText(this, GAME_WIDTH / 2, 730, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
     this.drawBonds(root, 790);
   }
@@ -254,7 +261,7 @@ export class DailyScene extends Phaser.Scene {
       };
       this.scene.start('Dialogue', data);
     };
-    if (spot.confirm) this.confirm(spot.confirm, go);
+    if (spot.confirm) this.confirm([spot.confirm, ...this.leftNotes()].join('\n\n'), go);
     else go();
   }
 
@@ -325,18 +332,31 @@ export class DailyScene extends Phaser.Scene {
     return { holder, width: cx - x };
   }
 
+  /**
+   * 夕暮れへ行く前の確認に添える、昼の残りの回数（段階133。レビューの項目50）。残っていなければ空。
+   * まだ見ていない場所は地図の印で見えるので、重ねて書かない（開発者と決めた：判断の直前の1行だけ）
+   */
+  private leftNotes(): string[] {
+    const left = picksLeft(this.hub, run.vars);
+    return Number.isFinite(left) && left > 0 ? [`昼にあと${left}回選べる`] : [];
+  }
+
   private confirm(text: string, onYes: () => void): void {
     const cx = GAME_WIDTH / 2;
     const panel = this.add.container(0, 0).setDepth(50);
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(this.add.rectangle(cx, 420, 320, 220, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
-    panel.add(addText(this, cx, 370, text, { size: 15, align: 'center', wrap: 280 }).setOrigin(0.5));
-    addButton(this, panel, cx - 75, 470, 130, 52, 'はい', { onTap: onYes }, { size: 16, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
-    addButton(this, panel, cx + 75, 470, 130, 52, 'いいえ', { onTap: () => panel.destroy(true) }, { size: 16 });
+    // 段階133：残っているものを添えると文が長くなるので、窓の高さを文に合わせる
+    const body = addText(this, cx, 0, text, { size: 15, align: 'center', wrap: 280 }).setOrigin(0.5, 0);
+    const h = Math.max(220, body.height + 130);
+    const top = 420 - h / 2;
+    panel.add(this.add.rectangle(cx, 420, 320, h, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
+    panel.add(body.setY(top + 30));
+    addButton(this, panel, cx - 75, top + h - 50, 130, 52, 'はい', { onTap: onYes }, { size: 16, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+    addButton(this, panel, cx + 75, top + h - 50, 130, 52, 'いいえ', { onTap: () => panel.destroy(true) }, { size: 16 });
   }
 
-  private toast(text: string): void {
-    const t = addText(this, GAME_WIDTH / 2, 130, text, { size: 13, align: 'center', wrap: GAME_WIDTH - 40 }).setOrigin(0.5).setDepth(60);
+  private toast(text: string, warn = false): void {
+    const t = addText(this, GAME_WIDTH / 2, 130, text, { size: 13, align: 'center', wrap: GAME_WIDTH - 40, color: warn ? COLORS.allyDamage : undefined }).setOrigin(0.5).setDepth(60);
     const bg = this.add.rectangle(GAME_WIDTH / 2, 130, t.width + 24, t.height + 14, 0x000000, 0.8).setDepth(59);
     this.tweens.add({ targets: [t, bg], alpha: 0, delay: 1800, duration: 400, onComplete: () => (t.destroy(), bg.destroy()) });
   }

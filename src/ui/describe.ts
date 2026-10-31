@@ -67,3 +67,13 @@ export function mainDamageType(def: ActionDef) {
 export function formatWeight(w: number): string {
   return w.toFixed(1);
 }
+
+/**
+ * 相手が先に倒れた時にどうなるか（段階125。レビューの項目19。戦闘の長押しの説明に添える）。
+ * 敵単体の攻撃は残っている敵へ向け直し、味方単体の回復は不発（使ったスナップ・MP は戻らない）。src/core/battle.ts の retarget・heal と合わせる
+ */
+export function targetNote(def: ActionDef): string {
+  if (def.target === 'enemy' && def.effects.some((e) => e.kind === 'damage')) return '狙った敵が先に倒れた時は、残っている敵に向け直す（壊れた部位をねらっていた時は本体へ）';
+  if (def.target === 'ally' && def.effects.some((e) => e.kind === 'heal' && !e.allies)) return '回復する相手が、この行動の番より前に倒れると回復しない（使ったスナップ・MPは戻らない）';
+  return '';
+}

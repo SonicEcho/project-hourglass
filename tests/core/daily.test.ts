@@ -9,6 +9,7 @@ import {
   checkDailyHub,
   checkVisits,
   finishesAfter,
+  freeSpotY,
   bondGauge,
   heartText,
   isSeen,
@@ -142,6 +143,23 @@ describe('誰と過ごすか（段階35）', () => {
     expect(ids(after)).toContain('a2');
     // みおは6日目から
     expect(ids(resolveHub(day(6), {}, BONDS, TOWN_T))).toContain('m1');
+  });
+
+  it('絆の出来事の印が、同じ場所のほかの印と重なる時は、空いている所まで下へずらす（段階137b）', () => {
+    const raw: DailyHub = {
+      ...day(3),
+      places: [
+        { ...TOWN_T.school, spots: [{ id: 'r3', scene: 'r3', label: '必ず', mark: 'main', x: 195, y: 300, required: true }] },
+        { ...TOWN_T.shop, spots: [{ id: 'go3', label: '→', mark: 'go', x: 195, y: 560, ends: true }] },
+      ],
+    };
+    const bonds: Record<string, BondEvent[]> = { akari: [{ id: 'a1', title: '1', label: 'A1', from: 1, place: 'school', x: 195, y: 300 }] };
+    const a1 = allSpots(resolveHub(raw, {}, bonds, TOWN_T)).find((s) => s.id === 'a1');
+    expect(a1?.y).toBe(385);
+    // 重ならなければ、決めた位置のまま
+    const free: Record<string, BondEvent[]> = { akari: [{ ...bonds.akari[0], y: 470 }] };
+    expect(allSpots(resolveHub(raw, {}, free, TOWN_T)).find((s) => s.id === 'a1')?.y).toBe(470);
+    expect(freeSpotY([{ id: 'x', label: '', mark: 'main', x: 0, y: 300 }, { id: 'y', label: '', mark: 'go', x: 0, y: 385 }], 300)).toBe(470);
   });
 
   it('先の出来事は、何日目からより前には出ない。見なかった出来事は、次の日も同じ所から', () => {

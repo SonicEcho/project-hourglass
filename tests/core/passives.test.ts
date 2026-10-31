@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleState, CharacterDef, PassiveEffect, PlayerAction } from '../../src/core';
-import { batonMultiplier, cappedPassives, getRoundOrder, oneMoreDrawCount, passBaton, passiveRate, passiveTotal, previewAction, skillMpCost } from '../../src/core';
+import { batonMultiplier, bugHpLoss, cappedPassives, getRoundOrder, oneMoreDrawCount, passBaton, passiveRate, passiveTotal, previewAction, skillMpCost } from '../../src/core';
 import { CARDS, PASSIVE_CAPS, SKILLS } from '../../src/data';
 import { ally, battle, enemy, eventsOf, execute, guard, planAll, withHand } from './helpers';
 
@@ -120,6 +120,15 @@ describe('特性：ラウンドの始めのHP', () => {
     const s = battle({ allies: [withPassives(ally('hero', { hp: 200 }), [bug, bug])], enemies: [enemy('a')] });
     expect(s.allies[0].hp).toBe(200 - 20);
     expect(eventsOf(s, 'passiveHp')).toEqual([{ type: 'passiveHp', allyId: 'hero', source: 'bug', amount: -20, hpAfter: 180 }]);
+  });
+
+  it('ムーブメントの画面の予告（bugHpLoss。段階126）は、戦闘で減る量と同じ（切り捨て）', () => {
+    const bug: PassiveEffect = { kind: 'bug', rate: 0.05 };
+    expect(bugHpLoss(143, [bug, bug])).toBe(14);
+    expect(bugHpLoss(143, [])).toBe(0);
+    expect(bugHpLoss(143, undefined)).toBe(0);
+    const s = battle({ allies: [withPassives(ally('hero', { hp: 143 }), [bug, bug])], enemies: [enemy('a')] });
+    expect(eventsOf(s, 'passiveHp')[0]).toMatchObject({ amount: -bugHpLoss(143, [bug, bug]) });
   });
 
   it('狂いではHPが1未満にならない', () => {

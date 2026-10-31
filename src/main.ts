@@ -22,17 +22,18 @@ import { ProtoExploreScene } from './scenes/ProtoExploreScene';
 import { GrowthScene } from './scenes/GrowthScene';
 import { NaviScene } from './scenes/NaviScene';
 import { WeaponScene } from './scenes/WeaponScene';
-import { WeaponTreeScene } from './scenes/WeaponTreeScene';
 import { AlbumScene } from './scenes/AlbumScene';
 import { PartyScene } from './scenes/PartyScene';
 import { HubScene } from './scenes/HubScene';
+import { CampScene } from './scenes/CampScene';
 import { ExchangeScene } from './scenes/ExchangeScene';
 import { LostScene } from './scenes/LostScene';
 import { TalkArchiveScene } from './scenes/TalkArchiveScene';
 import { ResultScene } from './scenes/ResultScene';
 import { findEvent } from './core';
 import { SLICE_FLOW } from './data';
-import { getActiveBattle, initRunFromUrl, run, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { getActiveBattle, initRunFromUrl, isSaveFailing, markStaleByOtherTab, onSaveStatus, run, SAVE_KEY, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { installSaveNotice, showStaleNotice } from './ui/saveNotice';
 import { notePlayInput, tickPlayRecord } from './scenes/playRecord';
 import { PlayLogScene } from './scenes/PlayLogScene';
 import { TitleScene } from './scenes/TitleScene';
@@ -54,6 +55,18 @@ if (debug) {
 
 initRunFromUrl();
 installServiceWorker();
+
+// 保存できていない時の印（段階124）
+const saveNoticeEl = document.getElementById('save-notice');
+if (saveNoticeEl) installSaveNotice(saveNoticeEl, { onStatus: onSaveStatus, isFailing: isSaveFailing, retry: saveRun });
+
+// ほかのタブで保存が書き換わった時（段階134）：遊んでいる途中なら、このタブの保存を止めて、開き直しを勧める
+window.addEventListener('storage', (e) => {
+  if (e.key !== SAVE_KEY || !run.active) return;
+  markStaleByOtherTab();
+  const el = document.getElementById('stale-notice');
+  if (el) showStaleNotice(el);
+});
 
 // ブラウザが裏に回った時（アプリの切り替え、タブを閉じる）も保存する。戦闘中なら、その戦闘の前の状態が保存される
 document.addEventListener('visibilitychange', () => {
@@ -84,7 +97,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, WeaponTreeScene, AlbumScene, PartyScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, PartyScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene],
 });
 
 if (debug) {

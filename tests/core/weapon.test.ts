@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { ArmoryState } from '../../src/core';
 import {
   absorbMaterial,
+  absorbPicked,
+  getAbsorbPickedError,
+  paramsAfterPicked,
   addFragments,
   addItems,
   applyWeapons,
@@ -42,20 +45,20 @@ function withExp(a: ArmoryState, charId: string, exp: number): ArmoryState {
   return { ...a, weapons: { ...a.weapons, [charId]: { ...a.weapons[charId], exp } } };
 }
 
-/** 素材を持たせて、順に吸わせる（枠が足りるよう、必要ならレベルを上げておく） */
+/** 素材を持たせて、順に刻む（枠が足りるよう、必要ならレベルを上げておく） */
 function absorbMany(a: ArmoryState, charId: string, ids: string[]): ArmoryState {
   let out = addItems(a, ids);
   for (const id of ids) out = absorbMaterial(D, out, charId, id);
   return out;
 }
 
-describe('武器：記憶の欠片を吸わせる', () => {
+describe('武器：記憶の欠片を刻む', () => {
   it('3人それぞれに武器が1本ある', () => {
     const a = createArmory(D);
     expect(Object.keys(a.weapons).sort()).toEqual(PARTY.map((c) => c.id).sort());
   });
 
-  it('吸わせると、その感情のパラメータが1上がり、記憶の欠片はなくなる', () => {
+  it('刻むと、その感情のパラメータが1上がり、記憶の欠片はなくなる', () => {
     let a = addFragments(createArmory(D), ['elation', 'elation']);
     a = feedFragment(D, a, 'hero', 'elation');
     expect(a.weapons.hero.params).toEqual({ atk: 0, fire: 1, ice: 0, thunder: 0 });
@@ -69,7 +72,7 @@ describe('武器：記憶の欠片を吸わせる', () => {
     expect(FRAGMENTS.wonder.gains).toEqual({ thunder: 1 });
   });
 
-  it('持っていない記憶の欠片は吸わせられない', () => {
+  it('持っていない記憶の欠片は刻めない', () => {
     const a = createArmory(D);
     expect(getFeedError(D, a, 'hero', 'elation')).toBe('no fragment left');
     expect(() => feedFragment(D, a, 'hero', 'elation')).toThrow();
@@ -83,8 +86,8 @@ describe('武器：記憶の欠片を吸わせる', () => {
   });
 });
 
-describe('武器：素材を吸わせる（段階27b）', () => {
-  it('素材を吸わせると、素材ごとの上がり下がりの分だけ能力値が変わり、吸わせ枠を1つ使う', () => {
+describe('武器：素材を刻む（段階27b）', () => {
+  it('素材を刻むと、素材ごとの上がり下がりの分だけ能力値が変わり、刻印を1つ使う', () => {
     let a = absorbMany(createArmory(D), 'hero', ['maskShard']);
     expect(a.weapons.hero.params).toEqual({ atk: 0, fire: 2, ice: 0, thunder: 0 });
     expect(a.weapons.hero.absorbed).toBe(1);
@@ -100,7 +103,7 @@ describe('武器：素材を吸わせる（段階27b）', () => {
     expect(absorbMany(createArmory(D), 'hero', ['cottonThread']).weapons.hero.params).toEqual({ atk: 0, fire: 0, ice: 0, thunder: 2 });
   });
 
-  it('吸わせ枠はレベルで増え、いっぱいなら吸わせられない', () => {
+  it('刻印はレベルで増え、いっぱいなら刻めない', () => {
     const [lv1, lv2, lv3] = D.slotsPerLevel;
     let a = addItems(createArmory(D), Array<string>(lv1 + 1).fill('goldfishScale'));
     expect(weaponSlots(D, a.weapons.hero)).toBe(lv1);
@@ -114,7 +117,7 @@ describe('武器：素材を吸わせる（段階27b）', () => {
     expect(weaponSlots(D, withExp(a, 'hero', 999).weapons.hero)).toBe(D.slotsPerLevel[D.slotsPerLevel.length - 1]);
   });
 
-  it('アイテム・持っていない素材は吸わせられない。元の状態は書き換えない', () => {
+  it('アイテム・持っていない素材は刻めない。元の状態は書き換えない', () => {
     const a = addItems(createArmory(D), ['potion', 'maskShard']);
     expect(getAbsorbError(D, a, 'hero', 'potion')).toBe('only materials can be absorbed');
     expect(getAbsorbError(D, a, 'hero', 'goldfishFin')).toBe('no item left');
@@ -133,6 +136,33 @@ describe('武器：素材を吸わせる（段階27b）', () => {
   });
 });
 
+describe('武器：素材をまとめて刻む（段階145）', () => {
+  it('選んだ数だけ1つずつ刻むのと同じになり、プレビューも同じ値', () => {
+    const a = addItems(createArmory(D), ['goldfishScale', 'goldfishScale', 'maskShard']);
+    const picks = { goldfishScale: 2, maskShard: 1 };
+    expect(getAbsorbPickedError(D, a, 'hero', picks)).toBeNull();
+    const b = absorbPicked(D, a, 'hero', picks);
+    let c = a;
+    for (const id of ['goldfishScale', 'goldfishScale', 'maskShard']) c = absorbMaterial(D, c, 'hero', id);
+    expect(b.weapons.hero).toEqual(c.weapons.hero);
+    expect(b.items).toEqual(c.items);
+    expect(paramsAfterPicked(D, a.weapons.hero.params, picks)).toEqual(b.weapons.hero.params);
+    expect(b.weapons.hero.absorbed).toBe(3);
+  });
+
+  it('何も選んでいない・持っている数より多い・刻印が足りない・アイテムは刻めない', () => {
+    const a = addItems(createArmory(D), ['goldfishScale', 'potion']);
+    expect(getAbsorbPickedError(D, a, 'hero', {})).toBe('nothing picked');
+    expect(getAbsorbPickedError(D, a, 'hero', { goldfishScale: 0 })).toBe('nothing picked');
+    expect(getAbsorbPickedError(D, a, 'hero', { goldfishScale: 2 })).toBe('no item left');
+    expect(getAbsorbPickedError(D, a, 'hero', { potion: 1 })).toBe('only materials can be absorbed');
+    const many = addItems(createArmory(D), Array<string>(D.slotsPerLevel[0] + 1).fill('goldfishScale'));
+    expect(getAbsorbPickedError(D, many, 'hero', { goldfishScale: D.slotsPerLevel[0] })).toBeNull();
+    expect(getAbsorbPickedError(D, many, 'hero', { goldfishScale: D.slotsPerLevel[0] + 1 })).toBe('no slot left');
+    expect(() => absorbPicked(D, a, 'hero', { goldfishScale: 2 })).toThrow('no item left');
+  });
+});
+
 describe('武器：時分解（要らない素材の整理。段階27b）', () => {
   it('素材2つで、一番大きく上がる能力値の記憶の欠片1つ', () => {
     let a = addItems(createArmory(D), ['goldfishScale', 'goldfishScale', 'goldfishScale']);
@@ -144,7 +174,7 @@ describe('武器：時分解（要らない素材の整理。段階27b）', () =
     expect(decomposeFragment(D, 'balloonShard')).toBe('relief');
   });
 
-  it('欠片は吸わせ枠を使わずに +1', () => {
+  it('欠片は刻印を使わずに +1', () => {
     let a = addFragments(createArmory(D), ['relief']);
     a = feedFragment(D, a, 'hero', 'relief');
     expect(a.weapons.hero.params.ice).toBe(1);
@@ -335,7 +365,7 @@ describe('武器：表示の文字', () => {
   it('条件と進化先の効果を、日本語で説明する', async () => {
     const { describeCondition, describeEvolution, describeFragment } = await import('../../src/ui/weaponText');
     expect(describeCondition({ kind: 'param', param: 'fire', min: 6 })).toBe('火 6以上');
-    expect(describeCondition({ kind: 'tendency', color: 'red' })).toBe('傾向が赤');
+    expect(describeCondition({ kind: 'tendency', color: 'red' })).toBe('傾向が銅');
     expect(describeCondition({ kind: 'key', item: 'maskString' }, D)).toBe('鍵：お面のひも');
     expect(describeCondition({ kind: 'level', min: 3 })).toBe('Lv3');
     expect(describeFragment(FRAGMENTS.elation)).toBe('火 +1');
@@ -420,7 +450,7 @@ describe('武器：進化ツリー（段階42）', () => {
   it('通った進化先と型の能力値・特性は全部足し、通常攻撃の属性は一番新しいもの', () => {
     const a = evolveAlong([['flameBlade', 1], ['crimsonBlade', 0]]);
     const [hero] = applyWeapons(D, a, [PARTY[0]]);
-    // 攻撃：吸わせた素材（お面のひも 18個で +36）＋ フレイムブレード 3 ＋ 紅蓮の刃 4 ＋ 剛 3
+    // 攻撃：刻んだ素材（お面のひも 18個で +36）＋ フレイムブレード 3 ＋ 紅蓮の刃 4 ＋ 剛 3
     expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 36 + 3 + 4 + 3);
     // 灯（フレイムブレードの型）の再生
     expect(hero.passives).toContainEqual({ kind: 'regen', rate: 0.03 });
@@ -475,7 +505,7 @@ describe('武器：進化ツリー（段階42）', () => {
     const find = (id: string) => Object.values(D.weapons).flatMap((w) => w.evolutions).find((e) => e.id === id)!;
     expect(describeDirection(find('sunsetBlade'))).toBe('火↑↑ 攻↑↑');
     expect(describeDirection(find('blessRod'))).toBe('氷↑↑ 火↑↑');
-    expect(describeDirection(find('magicianCards'))).toBe('雷↑↑ 傾向 黄');
+    expect(describeDirection(find('magicianCards'))).toBe('雷↑↑ 傾向 真鍮');
     expect(describeDirection(find('strayEdge'))).toBe('雷↓');
     expect(describeCondition({ kind: 'paramMax', param: 'thunder', max: 2 })).toBe('雷 2以下');
     expect(describeStyle(find('flameBlade').styles![1], 2)).toBe('灯：ラウンドの始めに最大HPの3%を回復。盤の右に2マス増える');
@@ -487,7 +517,7 @@ describe('武器：進化ツリー（段階42）', () => {
 });
 
 describe('時分解を出すきっかけ（段階100c）', () => {
-  it('どれかの武器の吸わせ枠がいっぱいになると true。初めは false', () => {
+  it('どれかの武器の刻印がいっぱいになると true。初めは false', () => {
     const fresh = createArmory(D);
     expect(anySlotsFull(D, fresh)).toBe(false);
     const hero = fresh.weapons.hero;

@@ -1,14 +1,15 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROP, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
 import { GAME_WIDTH } from '../config';
-import { describeAction, formatWeight, mainDamageType } from './describe';
+import { describeAction, formatWeight, mainDamageType, targetNote } from './describe';
 import { weightLabel } from './labels';
 import { summarizePassives } from './naviText';
 import { columnX, FILM_LAYOUT, LAYOUT, MIN_TAP, SIDE_PADDING } from './layout';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, ENEMY_COLOR, STAGE, toCss } from './theme';
 import { hasImage } from '../assets/loader';
+import { faceImage } from './portrait';
 import { addBar, addText, type ButtonOptions, makePressable } from './widgets';
 import { countText, screenBg } from './skin';
 import { addIcon, type IconKind } from './icons';
@@ -201,20 +202,6 @@ export function unitPosition(s: BattleState, id: string, partId?: string): { x: 
   return { x: SIDE_PADDING + Math.max(0, ai) * (w + 6) + w / 2, y: FILM_LAYOUT.tabs.y + FILM_LAYOUT.tabs.h / 2 };
 }
 
-/** 立ち絵から顔を丸く切り出した絵（中心 cx, cy、半径 r） */
-function faceImage(scene: Phaser.Scene, id: string, cx: number, cy: number, r: number, crop: { x: number; y: number; size: number } = FACE_CROP): Phaser.GameObjects.Image {
-  const src = scene.textures.get(id).getSourceImage();
-  const size = src.width * crop.size;
-  const sx = src.width * crop.x;
-  const sy = src.height * crop.y;
-  const img = scene.add.image(cx, cy, id).setCrop(sx, sy, size, size);
-  img.setOrigin((sx + size / 2) / src.width, (sy + size / 2) / src.height).setScale((r * 2) / size);
-  const shape = scene.make.graphics({}, false).fillStyle(0xffffff).fillCircle(cx, cy, r);
-  img.setMask(shape.createGeometryMask());
-  img.once(Phaser.GameObjects.Events.DESTROY, () => shape.destroy());
-  return img;
-}
-
 /** 敵のいる場所の舞台（段階32a 調整1）：奥の地平の線と、手前ほど暗くなる地面の帯 */
 function drawStage(scene: Phaser.Scene, root: Phaser.GameObjects.Container): void {
   const { y, h: height } = LAYOUT.enemies;
@@ -309,8 +296,9 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       const aim = charged.cutsFrame && enemy.chargeTarget ? findUnit(vm.state, enemy.chargeTarget)?.name : undefined;
       const label = charged.cutsFrame ? `ため：✂ ${charged.name}${aim ? ` → ${aim}` : ''}` : `ため：${charged.name}${charged.target === 'allies' ? '（全体）' : ''}`;
       const ty = bodyY - radius - 12;
-      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 12 + 16), 20, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
-      root.add([bg, addText(scene, cx, ty, label, { size: 11, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
+      const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 14 + 16), 24, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
+      // 段階129：予告の帯の文字を 11→13（帯も合わせて大きく）
+      root.add([bg, addText(scene, cx, ty, label, { size: 13, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
     }
 
     // ボスの大きな絵では、名前と HP を絵の足もとに重ねる（名前は縁取りで読めるように）
@@ -321,7 +309,7 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     const barW = g.withParts ? 220 : Math.min(110, colW - 16);
     const hpFrom = previousValue(`${enemy.uid}:hp`, enemy.hp);
     addBar(scene, root, cx - barW / 2, nameY + 18, barW, 8, enemy.hp / enemy.maxHp, enemy.hp / enemy.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / enemy.maxHp);
-    const hpText = addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 11, color: COLORS.subText }).setOrigin(0.5);
+    const hpText = addText(scene, cx, nameY + 32, `${enemy.hp}/${enemy.maxHp}`, { size: 13, bold: true, color: COLORS.text }).setOrigin(0.5);
     if (bigArt) hpText.setStroke('#0b1018', 3);
     root.add(hpText);
     countText(scene, hpText, hpFrom, enemy.hp, (v) => `${v}/${enemy.maxHp}`);
@@ -500,9 +488,9 @@ function drawHand(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: V
   const { y, h: height } = handArea();
   const s = vm.state;
   const hand = s.hand;
-  root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 10, color: COLORS.subText }));
+  root.add(addText(scene, SIDE_PADDING, y + 2, `手札 ${hand.length}　山札 ${s.deck.length}　捨て札 ${s.discard.length}`, { size: 12, color: COLORS.subText }));
   const supportText = s.supportUsed ? 'サポート：このラウンドは使用済み' : `サポート：あと${SUPPORT_PER_ROUND}枚使える`;
-  const rule = addText(scene, GAME_WIDTH - SIDE_PADDING, y + 2, supportText, { size: 10, color: s.supportUsed ? COLORS.dimText : COLORS.subText }).setOrigin(1, 0);
+  const rule = addText(scene, GAME_WIDTH - SIDE_PADDING, y + 2, supportText, { size: 12, color: s.supportUsed ? COLORS.dimText : COLORS.subText }).setOrigin(1, 0);
   root.add(rule);
   makePressable(rule, { onLongPress: () => h.detail('手札のルール', HAND_RULE_TEXT) });
   // 新しい画面（段階102a）：そろいそうなコンボがない時は帯を出さず、その分だけ手札を高くする
@@ -673,7 +661,7 @@ function cardHandlers(card: CardInstance, o: CardOptions): { onTap?: () => void;
         def.name,
         def.support
           ? `サポートスナップ（MP不要・行動枠を使わない）\n${supportText(def)}\n\n計画の途中でその場で使う。1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで。`
-          : `スナップ（MP不要）\n${describeAction(def)}\n\n${weightHelp(def.weight, o.actor)}`,
+          : `スナップ（MP不要）\n${withTargetNote(def)}\n\n${weightHelp(def.weight, o.actor)}`,
       ),
   };
 }
@@ -712,9 +700,15 @@ function comboListText(s: BattleState, pool: CardInstance[]): string {
   ].join('\n');
 }
 
+/** 行動の説明に、相手が先に倒れた時のこと（段階125）を添える */
+function withTargetNote(def: ActionDef): string {
+  const note = targetNote(def);
+  return note ? `${describeAction(def)}\n${note}` : describeAction(def);
+}
+
 const HAND_RULE_TEXT = [
-  `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったスナップは次のラウンドに残る。`,
-  '計画でスナップを仲間に割り当てると、そのスナップは他の仲間には使えない（スナップに「○○が使う」と出る）。',
+  `ラウンドの始めに、手札を${HAND_SIZE}枚まで補充する。使わなかったスナップは次のラウンドに残る（残した分だけ、新しく引く枚数は減る）。`,
+  '計画でスナップを仲間に割り当てると、そのスナップは他の仲間には使えない（スナップの下に「▶○○」と、使う仲間の名前が出る）。',
   `延長になると、手札を${ONE_MORE_DRAW}枚引いてから追加行動を選べる。`,
   `ドロー・サーチ・クイックステップはサポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで）。`,
 ].join('\n');
@@ -834,7 +828,7 @@ function drawFilmSkillPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Contai
     root.add(hit);
     makePressable(hit, {
       onTap: enabled ? () => h.tapSkill(skill.id) : undefined,
-      onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${describeAction(skill)}\n\n${weightHelp(skill.weight, actor)}`),
+      onLongPress: () => h.detail(skill.name, `MP ${cost}${cost < skill.mp ? `（MPセーブで${skill.mp}→${cost}）` : ''}\n${withTargetNote(skill)}\n\n${weightHelp(skill.weight, actor)}`),
     });
   });
   if (skills.length <= rows) return;
@@ -903,7 +897,7 @@ function drawOtherPanel(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
       pw,
       rowH,
       `${p.item.name}\n残り${left2.count}`,
-      { onTap: () => h.tapItem(p.item.id), onLongPress: () => h.detail(p.item.name, `${describeAction(p.item)}\n\n手番を1つ使う。1つの戦闘で使えるのは${vm.state.pouchUsesLeft + pouch.reduce((n, x) => n + x.used, 0)}回まで。倒れた仲間には使えない。`) },
+      { onTap: () => h.tapItem(p.item.id), onLongPress: () => h.detail(p.item.name, `${describeAction(p.item)}\n\n手番を1つ使う。1つの戦闘で使えるのは${vm.state.pouchUsesLeft + pouch.reduce((n, x) => n + x.used, 0)}回まで。倒れた仲間には使えない。使う相手がこの行動の番より前に倒れた時は、使わずに残る（回数も減らない）。`) },
       { enabled: vm.interactive && left2.count > 0 && left2.uses > 0, stroke: selected ? COLORS.select : COLORS.border, strokeWidth: selected ? 3 : 1, size: 11 },
     );
   });
@@ -935,7 +929,7 @@ function cardGrid(
       w,
       rowH,
       CARD_NAME_LINES[card.card.id] ?? card.card.name,
-      { onTap: () => onTap(card.uid), onLongPress: () => h.detail(card.card.name, card.card.support ? supportText(card.card) : describeAction(card.card)) },
+      { onTap: () => onTap(card.uid), onLongPress: () => h.detail(card.card.name, card.card.support ? supportText(card.card) : withTargetNote(card.card)) },
       { stroke: cardColor(card.card), size: 11, accent: cardColor(card.card), art: CARD_ART[card.card.id as keyof typeof CARD_ART] },
     );
   });
@@ -1157,7 +1151,7 @@ function orderDetail(s: BattleState, entry: OrderEntry, i: number): { title: str
   };
 }
 
-/** フィルム：行動順をコマで見せる。今の番のコマは赤い枠で顔を大きく「▶ 選んでいる」 */
+/** フィルム：行動順をコマで見せる。今の番のコマは赤い枠で顔を大きく「▶ 選択中」 */
 function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const { y, h: height } = FILM_LAYOUT.film;
   const s = vm.state;
@@ -1222,12 +1216,12 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
       root.add(scene.add.circle(fcx, fcy, r).setStrokeStyle(2, 0xffffff));
     }
     root.add(slantText(scene, fx + SKEW + 2, fy + 1, String(i + 1).padStart(2, '0'), 14));
-    // 下の札：決めた行動。今の番は「▶ 選んでいる」
+    // 下の札：決めた行動。今の番は「▶ 選択中」（段階131）
     const charging = enemy && !!(unit as EnemyUnit).charging;
     const plan = !enemy ? (pb?.labels ?? vm.planLabels)[unit.uid] : undefined;
     const tag = entry.guard ? '防御' : entry.precede ? '先制' : '';
     const label = isActor
-      ? '▶ 選んでいる'
+      ? '▶ 選択中'
       : enemy
         ? entry.cut
           ? `✂ ${unit.name}`
@@ -1237,10 +1231,11 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
           : entry.tentative
             ? `${unit.name}：未定`
             : unit.name;
-    const maxChars = Math.max(3, Math.floor((w - 6) / 10));
-    const shown = label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
     root.add(skewBox(scene, fx, fy + fh - 18, w, 18, isActor ? FILM_RED : 0x000000, isActor ? 1 : 0.8));
-    root.add(addText(scene, cx, fy + fh - 9, shown, { size: 10, bold: true, align: 'center' }).setOrigin(0.5));
+    // 段階131（開発者が見本で選んだ案1）：前は1文字10ドットと見積もって、入る文字まで切っていた。実際の幅を測り、入らない時だけ「…」で切る
+    const tagText = addText(scene, cx, fy + fh - 9, label, { size: 10, bold: true, align: 'center' }).setOrigin(0.5);
+    for (let n = label.length - 1; tagText.width > w - 6 && n > 2; n--) tagText.setText(`${label.slice(0, n)}…`);
+    root.add(tagText);
     // 切り取り（段階107）：切り取られたコマは穴に、ねらわれているコマはファインダーの角で囲む
     if (!enemy && entry.ids.some((id) => cutDone.has(id))) drawCutHole(scene, root, fx, fy, w, fh);
     else if (!enemy && entry.ids.some((id) => cutAim.has(id))) drawCutAim(scene, root, fx, fy, w, fh);
@@ -1405,15 +1400,16 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const status = [s.precedeIds.includes(ally.uid) ? '先制' : '', ally.guarding ? '防御' : '', alive ? '' : '不能']
       .filter(Boolean)
       .join(' ');
-    if (status) root.add(addText(scene, x + w - 50, y + 5, status, { size: 9, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    if (status) root.add(addText(scene, x + w - 50, y + 5, status, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
     const barW = w - 62;
     const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
     const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
     addBar(scene, root, x + SKEW + 4, y + 24, barW, 5, ally.hp / ally.maxHp, ally.hp / ally.maxHp < 0.3 ? COLORS.hpLow : COLORS.hp, hpFrom / ally.maxHp);
-    const hpText = addText(scene, x + SKEW + 4, y + 31, `${ally.hp}`, { size: 10, bold: true, color: playing ? '#101010' : COLORS.text });
+    // 段階128（開発者が見本で確認）：HP・MP の数字を大きく（前は10。スマホでは小さすぎた）
+    const hpText = addText(scene, x + SKEW + 4, y + 31, `${ally.hp}`, { size: 13, bold: true, color: playing ? '#101010' : COLORS.text });
     root.add(hpText);
     countText(scene, hpText, hpFrom, ally.hp, (v) => `${v}`);
-    const mpText = addText(scene, x + SKEW + 4 + barW, y + 31, `MP ${ally.mp}`, { size: 10, color: toCss(COLORS.mp) }).setOrigin(1, 0);
+    const mpText = addText(scene, x + SKEW + 4 + barW, y + 31, `MP ${ally.mp}`, { size: 12, bold: true, color: toCss(COLORS.mp) }).setOrigin(1, 0);
     root.add(mpText);
     countText(scene, mpText, mpFrom, ally.mp, (v) => `MP ${v}`);
     const hit = scene.add.rectangle(x + w / 2, y + height / 2, w, height, 0xffffff, 0.001);
@@ -1548,7 +1544,7 @@ export function photoHandLayout(n: number, areaW: number, cardW: number): number
 
 /**
  * 写真のカード（段階102b。新しい画面の手札）：白い枠・太い黒の縁・属性の色の影。写真らしく少し傾ける。
- * 上に写真、左上に属性の札、下の白い所に名前と重さ
+ * 上に写真、上の縁に属性の札、下の白い所に名前と重さ
  */
 function drawPhotoCard(
   scene: Phaser.Scene,
@@ -1589,17 +1585,20 @@ function drawPhotoCard(
     c.add(scene.add.rectangle(L + inset, T + inset, pw, ph, color, dim ? 0.3 : 0.8).setOrigin(0));
   }
   c.add(scene.add.rectangle(L + inset, T + inset, pw, ph).setOrigin(0).setStrokeStyle(1, 0x000000, 0.5));
-  // 属性の札（写真の左上）
+  // 属性の札。段階138（開発者の指摘）：写真の左上に重ねると絵が隠れるので、カードの上の縁にまたがる位置へ上げ、写真の外に出す
   const { label: typeLabel, icon: iconKind } = snapLook(def);
-  const tag = addText(scene, 0, 0, typeLabel, { size: 9, bold: true, color: '#ffffff' });
+  const tag = addText(scene, 0, 0, typeLabel, { size: 10, bold: true, color: '#ffffff' });
   const tagW = tag.width + 20;
-  c.add(scene.add.rectangle(L + inset, T + inset, tagW, 15, color, dim ? 0.5 : 1).setOrigin(0));
-  c.add(addIcon(scene, iconKind, L + inset + 8, T + inset + 7.5, 10, 0xffffff, dim ? 0.5 : 1));
-  tag.setPosition(L + inset + 15, T + inset + 7.5).setOrigin(0, 0.5);
+  const tagY = T - 11;
+  c.add(scene.add.rectangle(L + 2, tagY, tagW, 15, color, dim ? 0.5 : 1).setOrigin(0).setStrokeStyle(1, 0x000000, 0.6));
+  c.add(addIcon(scene, iconKind, L + 2 + 8, tagY + 7.5, 10, 0xffffff, dim ? 0.5 : 1));
+  tag.setPosition(L + 2 + 15, tagY + 7.5).setOrigin(0, 0.5);
   c.add(tag);
   if (o.isNew) {
-    const tag = addText(scene, L + w - 4, T - 6, 'NEW', { size: 10, bold: true, color: '#101010' }).setOrigin(1, 0.5);
-    c.add(scene.add.rectangle(tag.x - tag.width / 2, T - 6, tag.width + 10, 15, 0xffd700).setStrokeStyle(1, 0x000000).setAngle(-6));
+    // 段階138：上の縁は属性の札が使うので、NEW は写真の右下の角の内側に置く（名前にかからず、絵の真ん中も隠さない）
+    const newY = T + inset + ph - 9;
+    const tag = addText(scene, L + w - 4, newY, 'NEW', { size: 10, bold: true, color: '#101010' }).setOrigin(1, 0.5);
+    c.add(scene.add.rectangle(tag.x - tag.width / 2, newY, tag.width + 10, 15, 0xffd700).setStrokeStyle(1, 0x000000).setAngle(-6));
     c.add(tag.setAngle(-6));
   }
   // 名前（黒の太字）
@@ -1615,18 +1614,17 @@ function drawPhotoCard(
   // 下：使う人・その場で使う・重さ
   if (o.reservedBy) {
     c.add(scene.add.rectangle(0, footY, w - 8, 18, 0x000000, 0.85));
-    c.add(addText(scene, 0, footY, `${o.reservedBy}が使う`, { size: 10, bold: true, color: COLORS.accentText, align: 'center' }).setOrigin(0.5));
+    // 段階129（開発者が見本で選んだ案2）：「○○が使う」は11以上だとカードの幅からはみ出すので、名前だけを大きく
+    c.add(addText(scene, 0, footY, `▶${o.reservedBy}`, { size: 12, bold: true, color: COLORS.accentText, align: 'center' }).setOrigin(0.5));
   } else if (def.support) {
-    c.add(addText(scene, 0, footY, 'その場で使う', { size: 10, bold: true, color: '#6a4fb0' }).setOrigin(0.5));
+    c.add(addText(scene, 0, footY, 'その場で使う', { size: 11, bold: true, color: '#6a4fb0' }).setOrigin(0.5));
   } else {
-    // 重さの名前と目盛りを1行に並べる
-    const wl = addText(scene, 0, footY, weightLabel(def.weight), { size: 10, bold: true, color: '#444444' }).setOrigin(0, 0.5);
+    // 重さの目盛り。段階138（開発者の案）：「普通」などの文字はやめ、目盛りだけを少し大きくして真ん中に（名前は長押しの説明に出る）
     const n = WEIGHT_LABELS.length;
-    const start = -(wl.width + 4 + n * 7) / 2;
-    wl.setX(start);
-    c.add(wl);
+    const step = 11;
+    const start = -(n * step - 3) / 2;
     const level = WEIGHT_LABELS.findIndex((wt) => def.weight <= wt.max + 1e-9);
-    for (let i = 0; i < n; i++) c.add(scene.add.rectangle(start + wl.width + 4 + i * 7, footY, 5, 4, i <= level ? 0xffb347 : 0x9aa3ad).setOrigin(0, 0.5));
+    for (let i = 0; i < n; i++) c.add(scene.add.rectangle(start + i * step, footY, 8, 6, i <= level ? 0xffb347 : 0x9aa3ad).setOrigin(0, 0.5));
   }
   const hit = scene.add.rectangle(0, 0, w, hgt, 0xffffff, 0.001);
   c.add(hit);

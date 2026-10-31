@@ -1,18 +1,20 @@
 import Phaser from 'phaser';
 import type { CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
-import { canEvolveAny, chapterLocked, claimRewardParts, countOf, findBattle, findBugs, findNode, getOpenError, hasSpare, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar, spareSnaps } from '../core';
+import { canEvolveAny, chapterLocked, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
+import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
 import { describeAction } from '../ui/describe';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
 import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
-import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
+import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { battleAt, canChooseParty, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
-import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn, screenBg } from '../ui/skin';
+import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
+import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
+import { faceTexture } from '../ui/portrait';
+import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 import { addIcon } from '../ui/icons';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、星図と操作を1画面で収める。
@@ -20,10 +22,11 @@ import { addIcon } from '../ui/icons';
 // 星のタップ・長押し・ドラッグは、画面の入力で見分ける（星図は描き直しても、ずらした位置を覚えておく）
 
 /** 星図を見せる枠（画面の座標） */
-const VIEW = { x: 0, y: 50, w: GAME_WIDTH, h: 440 } as const;
+// 段階141：上に見出しと顔のタブ（共通の枠）が入ったので、星図はその下から
+// 段階147：下の育成の入口をなくしたので、その分だけ星図を広げた
+const VIEW = { x: 0, y: FRAME.contentTop, w: GAME_WIDTH, h: 466 } as const;
 /** 下の説明の枠と、キャラの切り替えの位置 */
 const INFO_TOP = VIEW.y + VIEW.h + 6;
-const TABS_TOP = INFO_TOP + 128;
 /** 星をタップしたと見なす近さ・ドラッグと見なす動き・長押しの時間 */
 const TAP_RANGE = 24;
 const DRAG_SLOP = 10;
@@ -32,6 +35,10 @@ const LONG_PRESS_MS = 500;
 const NODE_R = 12;
 /** 星図の夜空（段階32a 調整2）：またたく星の数、星がきらめく間（ミリ秒） */
 const SKY = { stars: 70, twinkleMs: 1300 } as const;
+/** 開けた道の芯の色（段階144。金より少し白い） */
+const SKY_GOLD_CORE = 0xfff0c0;
+/** 夜空の地の色（段階141。上が深い紺、下がうっすら紫） */
+const SKY_COLORS = { top: 0x070a1e, bottom: 0x221a3c } as const;
 
 const STAT_LABEL: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻撃', mag: '魔力', def: '防御', spd: '速さ' };
 const STAT_SHORT: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: '攻', mag: '魔', def: '防', spd: '速' };
@@ -169,23 +176,11 @@ export class GrowthScene extends Phaser.Scene {
     const members = lineupBase(lineup);
     const party = currentParty(lineup);
     const back = getHubReturn();
-    this.root.add(screenBg(this));
+    this.root.add(frameBg(this, SKY_COLORS.top, SKY_COLORS.bottom));
 
-    // 上：見出しと星の砂
+    // 上：見出しと星の砂（段階141：共通の枠。今いる場所の一言は、下のボタンの名前と重なるので出さない）
     const next = back ? null : battleAt(run.progress);
-    const area = run.explore ? AREAS[run.explore.area] : undefined;
-    // 見出しのアイコン（段階32a 調整2）
-    this.root.add(addIcon(this, 'star', SIDE_PADDING + 9, 20, 18, COLORS.accent));
-    this.root.add(addText(this, SIDE_PADDING + 24, 8, '星図', { size: 17, bold: true }));
-    this.root.add(
-      addText(this, SIDE_PADDING, 32, back ? (back.place ?? `${area?.name ?? ''}のチェックポイント`) : `次：${next ? `${next.name}（${next.enemies.map((e) => e.name).join('・')}）` : 'なし'}`, {
-        size: 11,
-        color: COLORS.subText,
-      }),
-    );
-    this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 6, '星の砂', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
-    const pointsText = addText(this, GAME_WIDTH - SIDE_PADDING, 20, `${g.points}`, { size: 24, bold: true, color: COLORS.accentText }).setOrigin(1, 0);
-    this.root.add(pointsText);
+    const pointsText = frameHeader(this, this.root, 'star', '星図', { label: '星の砂', value: `${g.points}` })!;
     // マスを開けて減った時などは、前の数から数えるように動く（段階32a 調整1）
     countText(this, pointsText, this.shownPoints ?? g.points, g.points, (v) => `${v}`);
     this.shownPoints = g.points;
@@ -195,27 +190,22 @@ export class GrowthScene extends Phaser.Scene {
     this.drawInfo(base, party.find((c) => c.id === this.charId)!);
     this.drawTabs(party);
 
-    // ムーブメントと武器へ（並べる。開いているものだけ。段階26）。アルバムは、入れ替えられるスナップがある時だけ（探索のチェックポイント。段階41）
+    // ムーブメントと武器へ（段階26）。段階147 から、拠点と探索の休憩所では、育成の画面へはメニューから入るので出さない。
+    // 拠点も休憩所もない「試作の5戦」（デバッグ）の時だけ出す
     // 3つ並ぶ時は幅が狭いので、アイコンを省いて文字を短く・小さくする
     const subs: ((x: number, w: number, compact: boolean) => void)[] = [];
-    if (lineup.unlocks.navi) {
+    if (!back && lineup.unlocks.navi) {
       subs.push((x, w, compact) => {
         const naviBugs = members.reduce((sum, c) => sum + findBugs(currentNaviData(), run.navi, c.id).length, 0);
         const loose = run.navi.parts.filter((p) => !p.placement).length;
         const label = compact
           ? `ムーブメント\nはめていない${loose}${naviBugs > 0 ? ` 狂い${naviBugs}` : ''}`
           : `ムーブメント\nはめていない ${loose}${naviBugs > 0 ? `・狂い ${naviBugs}` : ''}`;
-        addButton(this, this.root, x, 733, w, 44, label, { onTap: () => this.scene.start('Navi') }, {
-          fill: 0x1e3a5a,
-          stroke: 0x5aa8ff,
-          strokeWidth: 2,
-          size: compact ? 10 : 12,
-          bold: true,
-        });
-        if (!compact) this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, 0x5aa8ff));
+        addButton(this, this.root, x, 733, w, 44, label, { onTap: () => this.scene.start('Navi') }, { ...PLAIN_BUTTON, size: compact ? 10 : 12, bold: true });
+        if (!compact) this.root.add(addIcon(this, 'gear', x - w / 2 + 18, 733, 16, FRAME_COLORS.gold));
       });
     }
-    if (lineup.unlocks.weapon) {
+    if (!back && lineup.unlocks.weapon) {
       subs.push((x, w, compact) => {
         const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
         const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
@@ -230,36 +220,10 @@ export class GrowthScene extends Phaser.Scene {
           44,
           `武器\n${evolvable ? '進化できる！' : stock}`,
           { onTap: () => this.scene.start('Weapon') },
-          evolvable
-            ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 3, size: compact ? 10 : 12, bold: true, textColor: COLORS.accentText }
-            : { fill: 0x4a2a1e, stroke: 0xff9a5a, strokeWidth: 2, size: compact ? 10 : 12, bold: true },
+          // 進化できる時だけ金（段階141：押してほしいボタンは金）
+          evolvable ? { ...GOLD_BUTTON, size: compact ? 10 : 12 } : { ...PLAIN_BUTTON, size: compact ? 10 : 12, bold: true },
         );
-        if (!compact) this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? COLORS.accent : 0xff9a5a));
-      });
-    }
-    if (back && hasSpare(run.album)) {
-      subs.push((x, w, compact) => {
-        const spare = countOf(spareSnaps(run.album));
-        addButton(this, this.root, x, 733, w, 44, `アルバム\n入れていない ${spare}枚`, { onTap: () => this.scene.start('Album') }, {
-          fill: 0x3a2a5a,
-          stroke: 0xa98be0,
-          strokeWidth: 2,
-          size: compact ? 10 : 12,
-          bold: true,
-        });
-        if (!compact) this.root.add(addIcon(this, 'support', x - w / 2 + 18, 733, 16, 0xa98be0));
-      });
-    }
-    // 戦闘の並び（段階91a）：探索のチェックポイントから開いた時で、仲間が戦闘に出られる人数より多い時だけ
-    if (back && canChooseParty()) {
-      subs.push((x, w, compact) => {
-        addButton(this, this.root, x, 733, w, 44, compact ? '並び' : '並び\n戦闘に出る仲間', { onTap: () => this.scene.start('Party') }, {
-          fill: 0x2a3a2a,
-          stroke: 0x8ad08a,
-          strokeWidth: 2,
-          size: compact ? 11 : 12,
-          bold: true,
-        });
+        if (!compact) this.root.add(addIcon(this, 'weapon', x - w / 2 + 18, 733, 16, evolvable ? 0x2a1a06 : FRAME_COLORS.gold));
       });
     }
     // 1つだけなら横いっぱいに
@@ -267,27 +231,17 @@ export class GrowthScene extends Phaser.Scene {
     const subW = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (subs.length - 1)) / Math.max(1, subs.length);
     subs.forEach((draw, i) => draw(SIDE_PADDING + subW / 2 + i * (subW + gap), subW, subs.length >= 3));
 
-    // 下：次の戦闘へ
-    addButton(
-      this,
-      this.root,
-      GAME_WIDTH / 2,
-      792,
-      GAME_WIDTH - SIDE_PADDING * 2,
-      52,
-      back ? (back.label ?? '探索へ戻る') : next ? `${next.name}へ` : '結果へ',
-      {
-        onTap: () => {
-          if (!back) {
-            this.scene.start('Battle', { progress: run.progress });
-            return;
-          }
-          setHubReturn(null);
-          this.scene.start(back.key, back.data);
-        },
-      },
-      { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
-    );
+    // 下：戻る（探索・拠点から開いた時）か、次の戦闘へ（試作の5戦。金のボタン）
+    if (back) {
+      backButton(this, this.root, back.label ?? '探索へ戻る', () => {
+        setHubReturn(null);
+        this.scene.start(back.key, back.data);
+      });
+    } else {
+      addButton(this, this.root, GAME_WIDTH / 2, FRAME.backY, GAME_WIDTH - SIDE_PADDING * 2 - 8, FRAME.backH, next ? `${next.name}へ` : '結果へ', {
+        onTap: () => this.scene.start('Battle', { progress: run.progress }),
+      }, GOLD_BUTTON);
+    }
   }
 
   /**
@@ -413,7 +367,6 @@ export class GrowthScene extends Phaser.Scene {
     const g = run.growth;
     const chapter = growthChapter(hubLineup());
     const shown = (n: GrowthNodeDef) => !chapterLocked(n, chapter);
-    const color = ALLY_COLOR[this.charId] ?? COLORS.ally;
     const byId = new Map(GROWTH_MAP.nodes.map((n) => [n.id, n]));
 
     // 星図の空（触れる範囲が分かるように、うっすら塗る）と、小さな飾りの星（いつも同じ並び）
@@ -455,11 +408,13 @@ export class GrowthScene extends Phaser.Scene {
       const b = byId.get(ib);
       if (!a || !b || !shown(a) || !shown(b)) continue;
       const lit = isOpened(g, this.charId, a.id) && isOpened(g, this.charId, b.id);
+      // 段階144（星空と砂時計）：開けた道は金に光らせ、まだの道は点線（星座の中は細かく、星座と星座の橋は粗く）
       if (lit) {
-        lines.lineStyle(10, color, 0.16).lineBetween(a.x, a.y, b.x, b.y);
-        lines.lineStyle(3, color, 1).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(14, FRAME_COLORS.gold, 0.07).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(7, FRAME_COLORS.gold, 0.18).lineBetween(a.x, a.y, b.x, b.y);
+        lines.lineStyle(2.5, SKY_GOLD_CORE, 1).lineBetween(a.x, a.y, b.x, b.y);
       } else if (a.con !== b.con) dashedLine(lines, a.x, a.y, b.x, b.y, 0x9fb8e8, 0.5, 5, 4);
-      else lines.lineStyle(1.2, 0x9fb8e8, 0.45).lineBetween(a.x, a.y, b.x, b.y);
+      else dashedLine(lines, a.x, a.y, b.x, b.y, 0x9fb8e8, 0.5, 3, 4);
     }
     // 将来の星座へつなぐ場所：外へ向かう薄い点線と「？」
     for (const f of GROWTH_FRONTIER) {
@@ -496,16 +451,24 @@ export class GrowthScene extends Phaser.Scene {
     // 駒（今のキャラは大きく）。パーティにいない仲間の駒は出さない
     members.forEach((c, i) => {
       const p = byId.get(piecePosition(g, c.id))!;
-      // 星の右に、真ん中・下・上の順に（上と左は、星の名前や隣の星の文字と重なりやすい）
+      // 星の右に、真ん中・下・上の順に（上と左は、星の名前や隣の星の文字と重なりやすい）。
+      // 4人目・5人目は星の左の下・上（段階140a：前は3人分しかなく、小夜子が加わった後の4人目で星図が開けなかった）
       const offset = [
         { x: NODE_R + 10, y: 0 },
         { x: NODE_R + 10, y: 16 },
         { x: NODE_R + 10, y: -16 },
-      ][i];
+        { x: -(NODE_R + 10), y: 16 },
+        { x: -(NODE_R + 10), y: -16 },
+      ][i % 5];
       const current = c.id === this.charId;
-      const r = current ? 9 : 6;
-      layer.add(this.add.circle(p.x + offset.x, p.y + offset.y, r, ALLY_COLOR[c.id] ?? COLORS.ally).setStrokeStyle(current ? 2 : 1, 0xffffff));
-      if (current) layer.add(addText(this, p.x + offset.x, p.y + offset.y, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
+      const r = current ? 11 : 7;
+      const [px, py] = [p.x + offset.x, p.y + offset.y];
+      // 駒は仲間の顔（段階144）。立ち絵がない人は、その人の色の丸に名前の1文字
+      const face = ALLY_FACE[c.id] ? faceTexture(this, ALLY_FACE[c.id], FACE_CROPS[c.id], 24) : '';
+      if (face) layer.add(this.add.image(px, py, face).setDisplaySize(r * 2, r * 2));
+      else layer.add(this.add.circle(px, py, r, ALLY_COLOR[c.id] ?? COLORS.ally));
+      layer.add(this.add.circle(px, py, r).setStrokeStyle(current ? 2 : 1, current ? FRAME_COLORS.gold : 0xffffff));
+      if (!face && current) layer.add(addText(this, px, py, c.name.slice(0, 1), { size: 10, bold: true }).setOrigin(0.5));
     });
   }
 
@@ -534,6 +497,11 @@ export class GrowthScene extends Phaser.Scene {
       label = `${STAT_SHORT[n.stat]}${n.amount}`;
     }
     const shape = this.add.graphics();
+    // 開けた星は金の光に包む（段階144）
+    if (opened) {
+      shape.fillStyle(FRAME_COLORS.gold, 0.1).fillCircle(x, y, r * 3.2);
+      shape.lineStyle(1, FRAME_COLORS.gold, 0.55).strokeCircle(x, y, r + 3.5);
+    }
     // まわりの光
     shape.fillStyle(color, (opened ? 0.3 : 0.12) * alpha).fillCircle(x, y, r * 2.4);
     shape.fillStyle(color, (opened ? 0.25 : 0.1) * alpha).fillCircle(x, y, r * 1.6);
@@ -551,7 +519,10 @@ export class GrowthScene extends Phaser.Scene {
     if (n.kind === 'statBig') shape.lineStyle(1, 0xffffff, 0.6 * alpha).strokeCircle(x, y, r + 3);
     // 開けられる星は点線の輪、選んだ星は太い輪
     if (openable && !selected) dashedCircle(shape, x, y, r + 7, COLORS.accent, 1, 16);
-    if (selected) shape.lineStyle(3, COLORS.select, 1).strokeCircle(x, y, r + 7);
+    if (selected) {
+      shape.lineStyle(8, FRAME_COLORS.gold, 0.25).strokeCircle(x, y, r + 8);
+      shape.lineStyle(2.5, 0xffffff, 1).strokeCircle(x, y, r + 8);
+    }
     layer.add(shape);
     layer.add(
       addText(this, x, y + r + 11, label, {
@@ -577,7 +548,9 @@ export class GrowthScene extends Phaser.Scene {
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = INFO_TOP;
     const h = 120;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
+    // すりガラスの札（段階144）：夜空が透ける薄い地に、金の細いふち
+    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, 0x1a2040, 0.72).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.gold, 0.45));
+    this.root.add(this.add.rectangle(SIDE_PADDING + 1, top + 1, GAME_WIDTH - SIDE_PADDING * 2 - 2, h / 2, 0xffffff, 0.05).setRounded(11).setOrigin(0));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
@@ -590,14 +563,9 @@ export class GrowthScene extends Phaser.Scene {
         `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}　速さ ${grown.stats.spd}`,
       ];
       const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
-      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW }));
+      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
       if (advice) {
-        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, {
-          fill: 0x5a4a10,
-          stroke: 0xffd76a,
-          size: 13,
-          bold: true,
-        });
+        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, stroke: FRAME_COLORS.gold, size: 13, bold: true });
       }
       return;
     }
@@ -613,7 +581,7 @@ export class GrowthScene extends Phaser.Scene {
           : `${cost}pt で開けられる`;
     const onAdvice = this.advice()?.path.includes(n.id) && !opened;
     this.root.add(addText(this, SIDE_PADDING + 10, top + 8, nodeTitle(n, base), { size: 15, bold: true, color: COLORS.accentText }));
-    this.root.add(addText(this, SIDE_PADDING + 10, top + 32, nodeDetail(n, base), { size: 11, wrap: GAME_WIDTH - 150 }));
+    this.root.add(addText(this, SIDE_PADDING + 10, top + 32, nodeDetail(n, base), { size: 11, wrap: GAME_WIDTH - 150, ja: true }));
     this.root.add(addText(this, SIDE_PADDING + 10, top + h - 22, onAdvice ? `${status}（おすすめの道）` : status, { size: 11, color: onAdvice ? '#ffd76a' : COLORS.subText }));
     addButton(
       this,
@@ -624,43 +592,32 @@ export class GrowthScene extends Phaser.Scene {
       56,
       opened ? '開けた' : `開ける\n${cost}pt`,
       { onTap: () => this.open(n.id) },
-      { enabled: !err, fill: 0x2f6b3f, stroke: 0x6dff9e, size: 14, bold: true },
+      { ...GOLD_BUTTON, enabled: !err, size: 14 },
     );
   }
 
-  /** キャラの切り替え */
+  /** キャラの切り替え（段階141：共通の枠の顔のタブ。長押しで詳しく） */
   private drawTabs(party: CharacterDef[]): void {
-    const top = TABS_TOP;
-    const n = party.length;
-    const gap = 6;
-    const w = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (n - 1)) / n;
-    party.forEach((c, i) => {
-      const x = SIDE_PADDING + i * (w + gap);
-      const active = c.id === this.charId;
-      const rect = this.add.rectangle(x, top, w, 72, active ? COLORS.panelLight : COLORS.panel).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(active ? 3 : 1, active ? 0xffffff : COLORS.border);
-      this.root.add(rect);
-      this.root.add(addText(this, x + 8, top + 6, c.name, { size: 14, bold: true, color: toCss(ALLY_COLOR[c.id] ?? COLORS.ally) }));
+    const tabs = party.map((c) => {
       const learned = c.skills.length - this.base(c.id).skills.length;
-      this.root.add(
-        addText(this, x + 8, top + 28, `HP${c.stats.hp} 攻${c.stats.atk}\n魔${c.stats.mag} 速${c.stats.spd}${learned > 0 ? ` 技+${learned}` : ''}`, {
-          size: 10,
-          color: COLORS.subText,
-        }),
-      );
-      makePressable(rect, {
-        onTap: () => {
-          this.charId = c.id;
-          this.selected = null;
-          this.message = '';
-          // 切り替えたキャラの駒が見えるように
-          this.centerOn(piecePosition(run.growth, c.id));
-          this.render();
-        },
-        onLongPress: () => this.showDetail(c.name, characterDetail(c, this.base(c.id))),
-      });
+      return { id: c.id, name: c.name, sub: learned > 0 ? `技+${learned}` : undefined };
+    });
+    faceTabs(this, this.root, tabs, this.charId, {
+      onTap: (id) => {
+        this.charId = id;
+        this.selected = null;
+        this.message = '';
+        // 切り替えたキャラの駒が見えるように
+        this.centerOn(piecePosition(run.growth, id));
+        this.render();
+      },
+      onLongPress: (id) => {
+        const c = party.find((p) => p.id === id)!;
+        this.showDetail(c.name, characterDetail(c, this.base(id)));
+      },
     });
   }
+
 
   /** 勝利の報酬：ギアの候補から決まった数を選ぶ（選ぶまで閉じない） */
   private showReward(): void {
