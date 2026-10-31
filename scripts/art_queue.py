@@ -394,13 +394,26 @@ add('タイル：ムーブメント', [LIB], 'tile_navi.png', tile(
 add('タイル：アルバム', [LIB], 'tile_album.png', tile(
     'An open old photo album on a dark wooden desk, lit by a warm desk lamp. Several slightly faded instant photos are taped onto cream-colored pages; the photos show only soft blurry colors of everyday moments (a festival night, a riverside sunset, a classroom), with no clear faces. A few loose photos and a roll of masking tape beside the album.'))
 add('タイル：並び', [LIB], 'tile_party.png', tile(
-    'Hands of several people of different ages placed together one on top of another in the center, as a promise before setting out together, seen from above; soft golden light and drifting sand around them. Only hands and sleeves are visible, no faces.'))
+    'A narrow country path at night, wrapped in soft mist. Small old-fashioned oil lanterns are placed here and there along the path. Only a few lanterns in the foreground are lit with a warm golden glow; the rest stand unlit and fade away into the deep mist, so it is impossible to tell how many there are. A quiet feeling of choosing who will walk the road together tonight. No people, no hands, no silhouettes, no footprints.'),
+    'ネタバレを避けるため、人・手・服を描かない（2026-10-31 開発者の指摘：手の数や服装で仲間の人数や顔ぶれが分かる。案オ）')
 add('タイル：交換所', [LIB, P + 'petra_normal.webp'], 'tile_exchange.png', tile(
     'A neat exchange counter tucked between the bookshelves of the library of memories: a brass balance scale, glass jars of glowing sand and small crystal memory fragments, a thick ledger and a rubber stamp, arranged in perfect order. Behind the counter, the clerk in the attached portrait is seen small and from the side, adjusting her glasses while checking the ledger.'))
 add('タイル：落とし物の棚', [LIB], 'tile_lost.png', tile(
     'A small wooden shelf of lost things in a quiet corner of the library of memories, each item with a little paper tag tied by string (the tags are blank): a child\'s straw hat, a red umbrella, a wind-up tin toy, a music box, a single glove, an old cassette tape. A soft golden glow on each item, as if waiting for its owner.'))
 add('タイル：町の小話', [], 'tile_talks.png', tile(
     'A small Japanese shopping street at dusk seen from a little distance: paper lanterns and shop lights coming on, a few townspeople chatting in front of a bakery and a candy shop, a cat on a bench, warm windows. A peaceful, everyday evening; people are small and seen from the side or behind.'))
+
+
+
+# ---- M. みおの目を閉じた絵（2026-10-31） ----
+def close_eyes(face):
+    return f'''Edit the attached image. Keep everything exactly the same: the same character, the same {face} expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.'''
+
+
+section('M. みおの目を閉じた絵（まばたき用）', 'みおの表情は1枚ずつ別に作ったので、顔の傾きや大きさが表情ごとに違う。別の表情の閉じた目を重ねると顔がゆがんだ（2026-10-31 開発者の指摘）。そこで、表情の絵をそのまま直して目だけ閉じた絵を作る。毎回その表情の絵を添付する（ChatGPT でも Gemini でもよい。構図が少しでも動いたら作り直す）。台本で多く使う順')
+for label, face, src in [('笑顔', 'wide confident grin', 'smile'), ('真剣', 'serious, determined', 'serious'), ('驚き', 'surprised, mouth open', 'surprised'), ('考える', 'thinking', 'thinking'), ('心配', 'worried', 'worried'), ('むっ', 'pouting, cheeks puffed', 'pout'), ('悔しい', 'frustrated, biting her lip', 'frustrated'), ('困り笑い', 'awkward smile', 'wry'), ('照れ', 'shy, blushing', 'shy'), ('泣き笑い', 'smiling through tears', 'teary')]:
+    add(f'みお：{label}（目を閉じた絵）', [P + f'mio_{src}.webp'], f'mio_blink_src_{src}.png', close_eyes(face))
 
 
 def main():

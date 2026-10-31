@@ -104,7 +104,9 @@ function shiftedParts(who: string, blink: string[], talk: string[]): { blink: Po
 }
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
   // みお・小夜子（2026-10-31）：「大笑い」「笑顔」の閉じた目と「驚き」の開いた口を、表情ごとに位置を合わせて重ねる
-  みお: shiftedParts('mio', ['smile', 'serious', 'surprised', 'thinking', 'worried', 'pout', 'frustrated', 'wry', 'shy', 'teary'], ['serious', 'thinking', 'shy']),
+  // みおのまばたきは止めた（2026-10-31 開発者の指摘：表情ごとに顔の傾きと大きさが違い、別の表情の閉じた目を重ねると顔がゆがんで見えた）。
+  // 表情ごとに「目だけ閉じた絵」を頼んだ（docs/ART_QUEUE.md の M）。届くまで口パクだけ
+  みお: { talk: shiftedParts('mio', ['smile'], ['serious', 'thinking', 'shy']).talk },
   小夜子: shiftedParts('sayoko', ['smile', 'thinking', 'surprised', 'serious', 'normal', 'shy', 'lonely', 'teary'], ['smile', 'thinking', 'serious', 'normal', 'shy', 'lonely', 'teary']),
   あかり: {
     blink: { image: 'portrait.part.akari_blink', faces: ['gentle', 'dejavu', 'pout', 'sad', 'serious', 'shy', 'surprised', 'worried', 'wry', 'thinking'] },
