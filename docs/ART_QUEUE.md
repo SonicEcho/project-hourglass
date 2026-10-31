@@ -8,7 +8,7 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる
 - まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、ほかの人の表情違い（5-3 の 14。みお・小夜子・ハルト・あかりと 4-1 の人は下の I〜K）
 
-全部で 162 枚。
+全部で 172 枚。
 
 - A. 小夜子（ヒロイン）（2枚。済 2）
 - B. 3章の人（9枚。済 9）
@@ -18,10 +18,11 @@ ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1�
 - F. 会話の背景（14枚。済 14）
 - G. 1枚絵（1枚。済 1）
 - H. スナップの写真（14枚。済 14）
-- I. みお・小夜子の表情（18枚）
+- I. みお・小夜子の表情（18枚。済 18）
 - J. 4-1「シロのいた夏」の人（15枚）
-- K. ハルト・あかりの足りない表情（2枚）
-- L. 拠点のタイル（思い出のギャラリー）（9枚）
+- K. ハルト・あかりの足りない表情（2枚。済 2）
+- L. 拠点のタイル（思い出のギャラリー）（9枚。済 9）
+- M. みおの目を閉じた絵（まばたき用）（10枚。済 10）
 
 ## A. 小夜子（ヒロイン）
 
@@ -1715,7 +1716,7 @@ Keep their designs exactly as in the attached reference portraits. Absolutely no
 
 今の立ち絵は、みおは笑顔、小夜子は微笑みの1枚だけで、どの場面もその顔で話している。台本で多く使う順に並べた（回数は 1〜4章の台本の数）。毎回、基本の1枚を添付する。気に入らない時は「表情だけもっと強く」などと足して作り直してよい
 
-### 119. みお：真剣（93回）
+### 119. みお：真剣（93回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_serious.png`
@@ -1730,7 +1731,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 120. みお：驚き（90回）
+### 120. みお：驚き（90回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_surprised.png`
@@ -1745,7 +1746,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 121. みお：考える（44回）
+### 121. みお：考える（44回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_thinking.png`
@@ -1760,7 +1761,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 122. みお：心配（28回）
+### 122. みお：心配（28回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_worried.png`
@@ -1775,7 +1776,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 123. みお：大笑い（25回）
+### 123. みお：大笑い（25回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_laugh.png`
@@ -1790,7 +1791,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 124. みお：むっ（22回）
+### 124. みお：むっ（22回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_pout.png`
@@ -1805,7 +1806,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 125. みお：悔しい（18回）
+### 125. みお：悔しい（18回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_frustrated.png`
@@ -1820,7 +1821,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 126. みお：困り笑い（10回）
+### 126. みお：困り笑い（10回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_wry.png`
@@ -1835,7 +1836,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 127. みお：照れ（8回）
+### 127. みお：照れ（8回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_shy.png`
@@ -1850,7 +1851,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 128. みお：泣き笑い（3回）
+### 128. みお：泣き笑い（3回）（済）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_teary.png`
@@ -1865,7 +1866,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 129. 小夜子：考える（41回）
+### 129. 小夜子：考える（41回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_thinking.png`
@@ -1880,7 +1881,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 130. 小夜子：驚き（22回）
+### 130. 小夜子：驚き（22回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_surprised.png`
@@ -1895,7 +1896,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 131. 小夜子：笑顔（21回）
+### 131. 小夜子：笑顔（21回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_laugh.png`
@@ -1910,7 +1911,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 132. 小夜子：真剣（20回）
+### 132. 小夜子：真剣（20回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_serious.png`
@@ -1925,7 +1926,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 133. 小夜子：通常（8回）
+### 133. 小夜子：通常（8回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_normal.png`
@@ -1940,7 +1941,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 134. 小夜子：照れ（7回）
+### 134. 小夜子：照れ（7回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_shy.png`
@@ -1955,7 +1956,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 135. 小夜子：さみしげ（5回）
+### 135. 小夜子：さみしげ（5回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_lonely.png`
@@ -1970,7 +1971,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 136. 小夜子：泣き笑い（2回）
+### 136. 小夜子：泣き笑い（2回）（済）
 
 - 添付：`public/assets/portraits/sayoko_smile.webp`
 - 保存名：`sayoko_teary.png`
@@ -2221,7 +2222,7 @@ Background: plain pure white, no shadow, no gradient.
 
 4-1 の脚本で指定した表情。今はハルトの「困り」、あかりの「悲しい」で代わりにしている。届いたら脚本どおりに戻す
 
-### 152. ハルト：考える
+### 152. ハルト：考える（済）
 
 - 添付：`public/assets/portraits/hero_normal.webp`
 - 保存名：`hero_thinking.png`
@@ -2236,7 +2237,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-### 153. あかり：泣きそう
+### 153. あかり：泣きそう（済）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_tearful.png`
@@ -2255,7 +2256,7 @@ Background: plain pure white, no shadow, no gradient.
 
 段階142。拠点（レストピア）のメニューを、1枚絵のタイルにするための絵（`docs/ART.md` の 5-9）。開発者が「タイルの絵は新調したい」と言った（2026-10-30）。横 3:2 で作り、ゲームの中で横長や正方形に切り抜く。真ん中に大事な物を置き、下の4分の1は名前の文字が乗るので暗くすっきりさせる。蔵書の棚の背景を絵柄の見本に付ける。届くまでは、今までの1枚絵と背景で代わりに出す
 
-### 154. タイル：記憶をたどる
+### 154. タイル：記憶をたどる（済）
 
 - 添付：`public/assets/backgrounds/library.webp`、`public/assets/portraits/hero_smile.webp`、`public/assets/portraits/akari_smile.webp`
 - 保存名：`tile_hunt.png`
@@ -2270,7 +2271,7 @@ Restopia, a vast library of memories where stolen happy hours are kept as glowin
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 155. タイル：星図
+### 155. タイル：星図（済）
 
 - 添付：`public/assets/backgrounds/library.webp`
 - 保存名：`tile_growth.png`
@@ -2285,7 +2286,7 @@ A deep indigo night sky full of stars above the library of memories. Several sta
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 156. タイル：武器
+### 156. タイル：武器（済）
 
 - 添付：`public/assets/backgrounds/library.webp`
 - 保存名：`tile_weapon.png`
@@ -2300,7 +2301,7 @@ A single slender sword rests on dark crimson velvet in the library of memories, 
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 157. タイル：ムーブメント
+### 157. タイル：ムーブメント（済）
 
 - 添付：`public/assets/backgrounds/library.webp`
 - 保存名：`tile_navi.png`
@@ -2315,7 +2316,7 @@ A close-up of the open back of an antique pocket watch: the beautiful clockwork 
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 158. タイル：アルバム
+### 158. タイル：アルバム（済）
 
 - 添付：`public/assets/backgrounds/library.webp`
 - 保存名：`tile_album.png`
@@ -2330,10 +2331,11 @@ An open old photo album on a dark wooden desk, lit by a warm desk lamp. Several 
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 159. タイル：並び
+### 159. タイル：並び（済）
 
 - 添付：`public/assets/backgrounds/library.webp`
 - 保存名：`tile_party.png`
+- メモ：ネタバレを避けるため、人・手・服を描かない（2026-10-31 開発者の指摘：手の数や服装で仲間の人数や顔ぶれが分かる。いくつかの案から、開発者が「重なった古い切符」を選んだ）
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
@@ -2341,11 +2343,11 @@ Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft c
 A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024).
 The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a wide strip or to a square. Keep the bottom quarter darker and simple, because a white label will be placed over it.
 Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
-Hands of several people of different ages placed together one on top of another in the center, as a promise before setting out together, seen from above; soft golden light and drifting sand around them. Only hands and sleeves are visible, no faces.
-Absolutely no letters, numbers or text anywhere.
+A close-up of many old-fashioned thick cardboard train tickets on a dark wooden desk, spread out in a loose fan and overlapping so much that it is impossible to count them. A few of the tickets glow with a soft warm golden light, as if they have just been chosen; the others are faded and dim. Drifting grains of golden sand in the lamplight. No people, no hands.
+Absolutely no letters, numbers or text anywhere: the tickets are blank, with only simple border patterns.
 ```
 
-### 160. タイル：交換所
+### 160. タイル：交換所（済）
 
 - 添付：`public/assets/backgrounds/library.webp`、`public/assets/portraits/petra_normal.webp`
 - 保存名：`tile_exchange.png`
@@ -2360,7 +2362,7 @@ A neat exchange counter tucked between the bookshelves of the library of memorie
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 161. タイル：落とし物の棚
+### 161. タイル：落とし物の棚（済）
 
 - 添付：`public/assets/backgrounds/library.webp`
 - 保存名：`tile_lost.png`
@@ -2375,7 +2377,7 @@ A small wooden shelf of lost things in a quiet corner of the library of memories
 Absolutely no letters, numbers or text anywhere.
 ```
 
-### 162. タイル：町の小話
+### 162. タイル：町の小話（済）
 
 - 添付：なし
 - 保存名：`tile_talks.png`
@@ -2388,4 +2390,108 @@ The main subject sits in the center of the image; the edges are simple, because 
 Rich, glowing light against deep shadows, so the tile stands out on a near-black screen.
 A small Japanese shopping street at dusk seen from a little distance: paper lanterns and shop lights coming on, a few townspeople chatting in front of a bakery and a candy shop, a cat on a bench, warm windows. A peaceful, everyday evening; people are small and seen from the side or behind.
 Absolutely no letters, numbers or text anywhere.
+```
+
+## M. みおの目を閉じた絵（まばたき用）
+
+みおの表情は1枚ずつ別に作ったので、顔の傾きや大きさが表情ごとに違う。別の表情の閉じた目を重ねると顔がゆがんだ（2026-10-31 開発者の指摘）。そこで、表情の絵をそのまま直して目だけ閉じた絵を作る。毎回その表情の絵を添付する（ChatGPT でも Gemini でもよい。構図が少しでも動いたら作り直す）。台本で多く使う順
+
+### 163. みお：笑顔（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_smile.webp`
+- 保存名：`mio_blink_src_smile.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same wide confident grin expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 164. みお：真剣（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_serious.webp`
+- 保存名：`mio_blink_src_serious.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same serious, determined expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 165. みお：驚き（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_surprised.webp`
+- 保存名：`mio_blink_src_surprised.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same surprised, mouth open expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 166. みお：考える（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_thinking.webp`
+- 保存名：`mio_blink_src_thinking.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same thinking expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 167. みお：心配（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_worried.webp`
+- 保存名：`mio_blink_src_worried.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same worried expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 168. みお：むっ（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_pout.webp`
+- 保存名：`mio_blink_src_pout.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same pouting, cheeks puffed expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 169. みお：悔しい（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_frustrated.webp`
+- 保存名：`mio_blink_src_frustrated.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same frustrated, biting her lip expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 170. みお：困り笑い（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_wry.webp`
+- 保存名：`mio_blink_src_wry.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same awkward smile expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 171. みお：照れ（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_shy.webp`
+- 保存名：`mio_blink_src_shy.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same shy, blushing expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
+```
+
+### 172. みお：泣き笑い（目を閉じた絵）（済）
+
+- 添付：`public/assets/portraits/mio_teary.webp`
+- 保存名：`mio_blink_src_teary.png`
+
+```
+Edit the attached image. Keep everything exactly the same: the same character, the same smiling through tears expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only her eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
