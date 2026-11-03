@@ -1,15 +1,16 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
-import { addImageOr, background } from '../assets/loader';
+import { addImageOr, preloadQueue } from '../assets/loader';
+import { ALL, dialogueImages, focusImages, waitImages } from '../ui/waitImages';
 import { addButton, addText } from '../ui/widgets';
 import { playBgm, playSand, stopAmbience } from '../audio/sound';
 import { prepareBgm } from '../audio/bgmStore';
-import { chapterOfEvent, findEvent } from '../core';
+import { chapterOfEvent, dialogueRun, findEvent } from '../core';
 import { AREA_BATTLES, BGM, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
-import { continueRun, deleteSave, moveBrokenSave, readSave, run, startNewRun } from './run';
+import { continueRun, currentEvent, deleteSave, moveBrokenSave, readSave, run, startNewRun } from './run';
 import type { BattleSceneData } from './BattleScene';
 import { enterScreen, fadeOutAndDestroy, screenBg } from '../ui/skin';
 import { openOptions } from '../ui/options';
@@ -89,9 +90,29 @@ export class TitleScene extends Phaser.Scene {
     // 物語の流れへ移る時に消すもの（ボタンと小さな文字）。題字と砂時計は残す（段階32b 調整5）
     const ui = this.add.container(0, 0);
     root.add(ui);
-    const flow = (data: object) => this.leave(glow, fall, ui, () => this.scene.start('Flow', data));
+    // タイトルの間は、裏で絵を読まない（段階148。読むと画面の動きが重くなり、押した後の余韻が何秒も延びた）。
+    // 押されたら、最初の会話の場面の絵だけを読む。ほかへ移る時（クレジット・遊んだ記録・デバッグで飛ぶ時など）は、止めたのを戻す
+    preloadQueue.hold();
+    let focused = false;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (!focused) preloadQueue.release();
+    });
+    const flow = (data: object) => {
+      // 最初が会話の場面なら、その場面の絵だけを先に読み、ほかの絵は会話が始まるまで止める（段階148）
+      const event = currentEvent();
+      if (event.kind === 'dialogue') {
+        focusImages(dialogueImages(dialogueRun(SLICE_FLOW, event.id).slice(0, 1)));
+        focused = true;
+      }
+      this.leave(glow, fall, ui, () => this.scene.start('Flow', data));
+    };
     // 戦闘の途中から続ける（段階44）
-    const battle = (data: BattleSceneData) => this.leave(glow, fall, ui, () => this.scene.start('Battle', data));
+    // 戦闘の画面は、まだ場面ごとに使う絵を分けていないので、全部の絵を待ってから（段階148。会話の画面は、その場面の絵だけを自分で待つ）
+    const battle = (data: BattleSceneData) =>
+      this.leave(glow, fall, ui, () => {
+        this.cameras.main.resetFX();
+        waitImages(this, ALL, () => this.scene.start('Battle', data));
+      });
     root = ui;
     root.add(addText(this, cx, 432, '試作版（第4章の 4-1 まで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
     // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3）
@@ -233,8 +254,8 @@ export class TitleScene extends Phaser.Scene {
    * 取れなかった時は「もう一度」と「曲なしで進む」（曲なしで進んだら、流す時にその場で読む）
    */
   private waitBgm(job: BgmJob, go: () => void): void {
-    // 裏で読んでいる絵（段階69）も、読み終えるまで待つ
-    if (job.state === 'ok' && background.done) {
+    // 絵は、ここでは待たない（段階148。次の画面が、自分の場面で使う絵だけを待つ）
+    if (job.state === 'ok') {
       go();
       return;
     }
@@ -253,13 +274,6 @@ export class TitleScene extends Phaser.Scene {
     const buttons = this.add.container(0, 0);
     layer.add(buttons);
     const show = () => {
-      // 絵を読み終えるまでは、絵の進み具合（段階69）
-      if (!background.done) {
-        title.setText('絵を読み込んでいます');
-        bar.width = barW * (background.total > 0 ? Math.min(1, background.loaded / background.total) : 0);
-        amount.setText(`${background.loaded} / ${background.total}`);
-        return;
-      }
       title.setText('曲を読み込んでいます');
       if (job.total > 0) {
         bar.width = barW * Math.min(1, job.loaded / job.total);
@@ -272,7 +286,7 @@ export class TitleScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (job.state !== 'error') show();
-        if (job.state === 'ok' && background.done) {
+        if (job.state === 'ok') {
           timer.remove();
           cam.fadeOut(200, 0, 0, 0);
           cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, go);
@@ -290,7 +304,7 @@ export class TitleScene extends Phaser.Scene {
           }, { size: 16, bold: true });
           addButton(this, buttons, cx, 606, 220, 52, '曲なしで進む', {
             onTap: () => {
-              // 曲は流す時にその場で読む。絵（段階69）は読み終えるまで待ってから進む
+              // 曲は流す時にその場で読む
               buttons.removeAll(true);
               this.input.enabled = false;
               job.state = 'ok';

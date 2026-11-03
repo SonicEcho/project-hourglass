@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { dialogueImages, releaseSoon, waitImages } from '../ui/waitImages';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playTick, startAmbience, stopAmbience, stopBgm, warmBgm } from '../audio/sound';
@@ -305,7 +306,11 @@ export class DialogueScene extends Phaser.Scene {
       this.advance();
     });
 
-    void this.proceed();
+    // この場面で使う絵だけを待ってから始める（段階148。残りの絵は裏で読み続ける）
+    waitImages(this, dialogueImages([data.scene]), () => {
+      releaseSoon(this);
+      void this.proceed();
+    });
   }
 
   /** 次の止まる所まで台本を進め、演出をしてから見せる */
@@ -1207,7 +1212,7 @@ export class DialogueScene extends Phaser.Scene {
     if (next) {
       this.pos = { scene: next, index: 0 };
       this.onScene?.(next);
-      void this.proceed();
+      waitImages(this, dialogueImages([next]), () => void this.proceed());
       return;
     }
     this.sand.stop();

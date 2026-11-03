@@ -141,6 +141,8 @@ try {
   let sawCutoff = false;
   for (let i = 0; ; i++) {
     if (i > MAX_EVENTS) throw new Error('物語の流れが終わらない');
+    // 段階148：場面の絵がそろうまで「絵を読み込んでいます」が出る（出来事をどんどん飛ばすと、裏の読み込みが追いつかない）。消えるのを待ってから見る
+    await until('絵を読み終える', async () => !(await findText('^絵を読み込んでいます$')), 60000);
     if (await findText('^つづく$')) break;
     if (await findText('^けいかくひょう$')) sawPlan = true;
     if (await findText('^どこへ行く？$')) sawMap = true;

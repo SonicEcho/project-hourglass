@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ALL, waitImages } from '../ui/waitImages';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { FlowEvent } from '../core';
 import { chapterOfEvent, dialogueRun, isPlaceholder } from '../core';
@@ -61,24 +62,32 @@ export class FlowScene extends Phaser.Scene {
         this.showEnd();
         return;
       case 'daily':
-        this.scene.start('Daily', { event: event.id });
+        this.startWhenReady('Daily', { event: event.id });
         return;
       case 'explore':
-        this.scene.start('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined, hunt: undefined, night: event.night });
+        this.startWhenReady('Explore', { area: event.area, won: undefined, lost: undefined, seen: undefined, hunt: undefined, night: event.night });
         return;
       case 'return':
-        this.scene.start('Return', { area: event.area });
+        this.startWhenReady('Return', { area: event.area });
         return;
       case 'battle': {
         // 物語の戦闘（段階40。カイの負け戦）。前の区画の探索は、返さずに終わったので片付ける。勝ち負けにかかわらず次の出来事へ
         setExplore(null);
         const next = { key: 'Flow', data: { done: true } satisfies FlowData };
-        this.scene.start('Battle', { encounter: { battle: event.battle!, win: next, lose: next } } satisfies BattleSceneData);
+        this.startWhenReady('Battle', { encounter: { battle: event.battle!, win: next, lose: next } } satisfies BattleSceneData);
         return;
       }
       default:
         this.showPlaceholder(event);
     }
+  }
+
+  /**
+   * 会話のほかの画面（日常・探索・返す・戦闘）は、まだ場面ごとに使う絵を分けていないので、裏で読んでいる絵を全部読み終えてから開く（段階148）。
+   * 会話の画面は、自分の場面で使う絵だけを待つ
+   */
+  private startWhenReady(key: string, data: object): void {
+    waitImages(this, ALL, () => this.scene.start(key, data));
   }
 
   /** 会話の出来事が続く所までを、会話の画面1回で続けて読む。場面を読み始めるたびに、今の出来事を覚えてセーブする */
