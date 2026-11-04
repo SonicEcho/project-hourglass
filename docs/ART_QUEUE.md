@@ -269,35 +269,35 @@ Background: plain pure white, no shadow, no gradient.
 
 ### N. 早瀬（仲間）
 
-4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：今75歳くらい、無口で皮肉屋、ルーペ、作業着）。見た目はまだ決まっていないので、下の設定画の文はたたき台。設定画を見て決めてから、胸から上の1枚と表情違いを作る。構図の見本は、同じお年寄りのふみさんの立ち絵
+4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：無口で皮肉屋、ルーペ、作業着）。見た目はたたき台。2026-11-04 開発者の指摘「おじいさん過ぎる。もっと動けるかっこいいイケオジ風」で、背筋の伸びた銀髪のイケオジに直した。設定画を見て決めてから、胸から上の1枚と表情違いを作る。絵柄と構図の見本はハルトの立ち絵（お年寄りの絵を見本にすると、老けて出たため）
 
 #### 17. 早瀬の設定画
 
-- 添付：`public/assets/portraits/fumi_smile.webp`
+- 添付：`public/assets/portraits/hero_normal.webp`
 - 保存名：`hayase_sheet.png`
 - メモ：たたき台。気に入らない所（髪・服・小物）は「ここを直して」と足して作り直してよい
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
-Character design sheet of an original anime-style elderly man for a mobile turn-based JRPG, full body front view, standing, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
-Character: Jin Hayase, about 75, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. Small and wiry, slightly stooped from decades at the workbench. Short white hair, thick grey eyebrows, deep wrinkles, sharp narrow eyes. A watchmaker's loupe pushed up on his forehead. A faded navy work jacket over a plain grey shirt, black arm covers, a tiny screwdriver in the breast pocket.
+Character design sheet of an original anime-style cool older man for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
+Character: Jin Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A cool, handsome older man who looks far younger and stronger than his age: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast. Silver-grey hair swept back with a few loose strands, a neatly trimmed short silver beard, sharp narrow eyes with a hint of a smirk, a few handsome lines on his face. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt.
 ```
 
 #### 18. 早瀬の胸から上の基本の1枚（通常）
 
-- 添付：`hayase_sheet.png（上で決めた設定画）`、`public/assets/portraits/fumi_smile.webp`
+- 添付：`hayase_sheet.png（上で決めた設定画）`、`public/assets/portraits/hero_normal.webp`
 - 保存名：`hayase_normal.png`
 - メモ：台本で72回（いちばん多い）
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a gruff, calm, neutral look, mouth closed.
-Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the elderly woman.
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a gruff, calm, cool look, mouth closed.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the boy in the hoodie.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
-Character: Hayase, about 75, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. Small and wiry, slightly stooped from decades at the workbench. Short white hair, thick grey eyebrows, deep wrinkles, sharp narrow eyes. A watchmaker's loupe pushed up on his forehead. A faded navy work jacket over a plain grey shirt, black arm covers, a tiny screwdriver in the breast pocket. Keep his design exactly as in the attached character sheet.
+Character: Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A cool, handsome older man who looks far younger and stronger than his age: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast. Silver-grey hair swept back with a few loose strands, a neatly trimmed short silver beard, sharp narrow eyes with a hint of a smirk, a few handsome lines on his face. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt. Keep his design exactly as in the attached character sheet.
 ```
 
 #### 19. 早瀬：考える（8回）
@@ -309,7 +309,7 @@ Character: Hayase, about 75, the owner of a small old watch and clock repair sho
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a thinking look, eyes narrowed and lowered, as if examining a tiny watch part.
-This is exactly the same character as the attached portrait: Hayase, the elderly watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -324,7 +324,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a wry, crooked half smile, one corner of his mouth up, eyebrows a little raised.
-This is exactly the same character as the attached portrait: Hayase, the elderly watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -339,7 +339,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes opened wide under the thick eyebrows, mouth slightly open.
-This is exactly the same character as the attached portrait: Hayase, the elderly watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -354,7 +354,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, an angry, stern scowl, eyebrows drawn together, mouth pressed in a hard line.
-This is exactly the same character as the attached portrait: Hayase, the elderly watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -369,7 +369,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, smiling through tears, eyes wet and crinkled, a gentle trembling smile.
-This is exactly the same character as the attached portrait: Hayase, the elderly watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.

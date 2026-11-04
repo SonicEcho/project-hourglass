@@ -418,16 +418,17 @@ for label, face, src in [('笑顔', 'wide confident grin', 'smile'), ('真剣', 
 
 
 # ---- N〜P. 4章（2026-11-04）：早瀬、4-1・4-2 の敵、4-1・4-2 の部屋の地図 ----
-section('N. 早瀬（仲間）', '4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：今75歳くらい、無口で皮肉屋、ルーペ、作業着）。見た目はまだ決まっていないので、下の設定画の文はたたき台。設定画を見て決めてから、胸から上の1枚と表情違いを作る。構図の見本は、同じお年寄りのふみさんの立ち絵')
-HAYASE = ('Character: Jin Hayase, about 75, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. '
-          'Small and wiry, slightly stooped from decades at the workbench. Short white hair, thick grey eyebrows, deep wrinkles, sharp narrow eyes. '
-          'A watchmaker\'s loupe pushed up on his forehead. A faded navy work jacket over a plain grey shirt, black arm covers, a tiny screwdriver in the breast pocket.')
-add('早瀬の設定画', [P + 'fumi_smile.webp'], 'hayase_sheet.png', f'''{STYLE}
+section('N. 早瀬（仲間）', '4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：無口で皮肉屋、ルーペ、作業着）。見た目はたたき台。2026-11-04 開発者の指摘「おじいさん過ぎる。もっと動けるかっこいいイケオジ風」で、背筋の伸びた銀髪のイケオジに直した。設定画を見て決めてから、胸から上の1枚と表情違いを作る。絵柄と構図の見本はハルトの立ち絵（お年寄りの絵を見本にすると、老けて出たため）')
+HAYASE = ('Character: Jin Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. '
+          'A cool, handsome older man who looks far younger and stronger than his age: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast. '
+          'Silver-grey hair swept back with a few loose strands, a neatly trimmed short silver beard, sharp narrow eyes with a hint of a smirk, a few handsome lines on his face. '
+          'A watchmaker\'s loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt.')
+add('早瀬の設定画', [P + 'hero_normal.webp'], 'hayase_sheet.png', f'''{STYLE}
 
-Character design sheet of an original anime-style elderly man for a mobile turn-based JRPG, full body front view, standing, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
+Character design sheet of an original anime-style cool older man for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
 {HAYASE}''', 'たたき台。気に入らない所（髪・服・小物）は「ここを直して」と足して作り直してよい')
-add('早瀬の胸から上の基本の1枚（通常）', ['hayase_sheet.png（上で決めた設定画）', P + 'fumi_smile.webp'], 'hayase_normal.png',
-    portrait('a gruff, calm, neutral look, mouth closed', HAYASE.replace('Character: Jin Hayase', 'Character: Hayase') + ' Keep his design exactly as in the attached character sheet.').replace('the girl in the cardigan', 'the elderly woman'),
+add('早瀬の胸から上の基本の1枚（通常）', ['hayase_sheet.png（上で決めた設定画）', P + 'hero_normal.webp'], 'hayase_normal.png',
+    portrait('a gruff, calm, cool look, mouth closed', HAYASE.replace('Character: Jin Hayase', 'Character: Hayase') + ' Keep his design exactly as in the attached character sheet.').replace('the girl in the cardigan', 'the boy in the hoodie'),
     '台本で72回（いちばん多い）')
 for label, face, save in [
     ('考える（8回）', 'a thinking look, eyes narrowed and lowered, as if examining a tiny watch part', 'hayase_thinking.png'),
@@ -436,7 +437,7 @@ for label, face, save in [
     ('怒り（2回）', 'an angry, stern scowl, eyebrows drawn together, mouth pressed in a hard line', 'hayase_angry.png'),
     ('泣き笑い（1回）', 'smiling through tears, eyes wet and crinkled, a gentle trembling smile', 'hayase_teary.png'),
 ]:
-    add(f'早瀬：{label}', ['hayase_normal.png（上で作った絵）'], save, expression(face, 'Hayase, the elderly watchmaker in the attached portrait.'))
+    add(f'早瀬：{label}', ['hayase_normal.png（上で作った絵）'], save, expression(face, 'Hayase, the silver-haired watchmaker in the attached portrait.'))
 
 section('O. 4章の敵', 'D と同じ形。毎回、ブリキノイズの絵（`public/assets/enemies/tin_noise.webp`）を絵柄の見本として添付する。白い背景のまま送ってくれればよい')
 SUMMER = 'bright summer greens, sky blue and sunflower yellow'
