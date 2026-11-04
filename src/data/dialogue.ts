@@ -552,6 +552,8 @@ export const BACKDROPS: Record<string, Backdrop> = {
   school_fair: { title: '文化祭の学校の中庭', top: 0xb0d8f0, bottom: 0xd8c0a0, image: 'bg.school_fair', ambienceSe: SE.crowd },
   // 段階91：祭りの夜（大正十年の夏祭り。参道と、夜の端）と、今の町の神社（昼）。絵が届くまで仮の色
   taisho_festival: { title: '大正十年の夏祭り（夜）', top: 0x1a1a3a, bottom: 0xb04a3a, image: 'bg.taisho_festival', ambient: 'lanterns', ambienceSe: SE.crowd },
+  // 段階151（テストプレイのメモ 2 の 30）：カイの枠で止まった祭り。同じ絵で、人混みの音は鳴らさない（「音がしない」の地の文と合わせる）
+  taisho_festival_still: { title: '大正十年の夏祭り（止まった夜）', top: 0x1a1a3a, bottom: 0xb04a3a, image: 'bg.taisho_festival', ambient: 'lanterns' },
   taisho_edge: { title: '祭りの夜の端（砂の落ちる縁）', top: 0x0a0a1a, bottom: 0x3a2a3a, image: 'bg.taisho_edge', ambient: 'dust' },
   shrine_now: { title: '町の神社（今の昼）', top: 0xb8d8e8, bottom: 0x9a8a6a, image: 'bg.shrine_now' },
   // 段階94：3-2 の平成31年3月の町（卒業式の帰り道の昼と、夕暮れの踏切）、今の駅の近くの踏切。絵が届くまで仮の色

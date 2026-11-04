@@ -137,7 +137,10 @@ export class ExchangeScene extends Phaser.Scene {
     const talk = this.talk();
     if (talk) {
       root.add(addText(this, 24, 690, `${EXCHANGE_KEEPER}「${talk.teaser}」`, { size: 13, wrap: GAME_WIDTH - 150 }).setOrigin(0, 0.5));
-      addButton(this, root, GAME_WIDTH - 66, 690, 92, 44, '！ 話す', { onTap: () => this.startTalk(talk.scene) }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+      addButton(this, root, GAME_WIDTH - 66, 690, 92, 44, '話す', { onTap: () => this.startTalk(talk.scene) }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+      // 段階151（テストプレイのメモ 2 の 5）：「！」は字に混ぜず、日常の印と同じ赤い丸にして、ボタンの右上の角に付ける
+      root.add(this.add.circle(GAME_WIDTH - 22, 670, 10, 0xe0563e).setStrokeStyle(2, 0xffffff));
+      root.add(addText(this, GAME_WIDTH - 22, 670, '！', { size: 12, bold: true }).setOrigin(0.5));
     } else root.add(addText(this, GAME_WIDTH / 2, 690, this.message, { size: 13, align: 'center', wrap: GAME_WIDTH - 44 }).setOrigin(0.5));
     addButton(this, root, GAME_WIDTH / 2, 780, GAME_WIDTH - 60, 56, 'レストピアへ戻る', { onTap: () => this.scene.start('Hub', { seen: undefined }) }, { size: 17, bold: true });
   }

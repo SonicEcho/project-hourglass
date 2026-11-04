@@ -24,9 +24,12 @@ import { addIcon } from '../ui/icons';
 /** 星図を見せる枠（画面の座標） */
 // 段階141：上に見出しと顔のタブ（共通の枠）が入ったので、星図はその下から
 // 段階147：下の育成の入口をなくしたので、その分だけ星図を広げた
-const VIEW = { x: 0, y: FRAME.contentTop, w: GAME_WIDTH, h: 466 } as const;
-/** 下の説明の枠と、キャラの切り替えの位置 */
-const INFO_TOP = VIEW.y + VIEW.h + 6;
+// 段階151（テストプレイのメモ 2 の 3）：まだ下に空きが残っていたので、説明の札を戻るボタンのすぐ上まで下げ、星図をその分広げた
+/** 下の説明の枠の高さ */
+const INFO_H = 120;
+/** 下の説明の枠の上の端（戻るボタンの8上で終わる） */
+const INFO_TOP = FRAME.backY - FRAME.backH / 2 - 8 - INFO_H;
+const VIEW = { x: 0, y: FRAME.contentTop, w: GAME_WIDTH, h: INFO_TOP - 6 - FRAME.contentTop } as const;
 /** 星をタップしたと見なす近さ・ドラッグと見なす動き・長押しの時間 */
 const TAP_RANGE = 24;
 const DRAG_SLOP = 10;
@@ -484,9 +487,11 @@ export class GrowthScene extends Phaser.Scene {
     let r = 6;
     let label = '';
     if (n.kind === 'start') {
-      color = ALLY_COLOR[n.owner] ?? COLORS.ally;
+      // まだパーティにいない仲間の出発点は、名前と色を出さない（段階151。テストプレイのメモ 2 の 12：3-1 の時点で小夜子の星が見えていた）
+      const here = lineupBase(hubLineup()).some((c) => c.id === n.owner);
+      color = here ? (ALLY_COLOR[n.owner] ?? COLORS.ally) : 0x8a96b0;
       r = NODE_R;
-      label = PARTY.find((c) => c.id === n.owner)?.name ?? '';
+      label = here ? (PARTY.find((c) => c.id === n.owner)?.name ?? '') : '？';
     } else if (n.kind === 'skill') {
       color = 0xffd76a;
       r = 10;
@@ -547,7 +552,7 @@ export class GrowthScene extends Phaser.Scene {
   /** 選んだマスの説明と「開ける」ボタン */
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = INFO_TOP;
-    const h = 120;
+    const h = INFO_H;
     // すりガラスの札（段階144）：夜空が透ける薄い地に、金の細いふち
     this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, 0x1a2040, 0.72).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.gold, 0.45));
     this.root.add(this.add.rectangle(SIDE_PADDING + 1, top + 1, GAME_WIDTH - SIDE_PADDING * 2 - 2, h / 2, 0xffffff, 0.05).setRounded(11).setOrigin(0));
