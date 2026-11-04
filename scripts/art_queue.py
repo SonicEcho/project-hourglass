@@ -416,37 +416,105 @@ for label, face, src in [('笑顔', 'wide confident grin', 'smile'), ('真剣', 
     add(f'みお：{label}（目を閉じた絵）', [P + f'mio_{src}.webp'], f'mio_blink_src_{src}.png', close_eyes(face))
 
 
+
+# ---- N〜P. 4章（2026-11-04）：早瀬、4-1・4-2 の敵、4-1・4-2 の部屋の地図 ----
+section('N. 早瀬（仲間）', '4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：今75歳くらい、無口で皮肉屋、ルーペ、作業着）。見た目はまだ決まっていないので、下の設定画の文はたたき台。設定画を見て決めてから、胸から上の1枚と表情違いを作る。構図の見本は、同じお年寄りのふみさんの立ち絵')
+HAYASE = ('Character: Jin Hayase, about 75, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. '
+          'Small and wiry, slightly stooped from decades at the workbench. Short white hair, thick grey eyebrows, deep wrinkles, sharp narrow eyes. '
+          'A watchmaker\'s loupe pushed up on his forehead. A faded navy work jacket over a plain grey shirt, black arm covers, a tiny screwdriver in the breast pocket.')
+add('早瀬の設定画', [P + 'fumi_smile.webp'], 'hayase_sheet.png', f'''{STYLE}
+
+Character design sheet of an original anime-style elderly man for a mobile turn-based JRPG, full body front view, standing, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
+{HAYASE}''', 'たたき台。気に入らない所（髪・服・小物）は「ここを直して」と足して作り直してよい')
+add('早瀬の胸から上の基本の1枚（通常）', ['hayase_sheet.png（上で決めた設定画）', P + 'fumi_smile.webp'], 'hayase_normal.png',
+    portrait('a gruff, calm, neutral look, mouth closed', HAYASE.replace('Character: Jin Hayase', 'Character: Hayase') + ' Keep his design exactly as in the attached character sheet.').replace('the girl in the cardigan', 'the elderly woman'),
+    '台本で72回（いちばん多い）')
+for label, face, save in [
+    ('考える（8回）', 'a thinking look, eyes narrowed and lowered, as if examining a tiny watch part', 'hayase_thinking.png'),
+    ('苦笑い（5回）', 'a wry, crooked half smile, one corner of his mouth up, eyebrows a little raised', 'hayase_wry.png'),
+    ('驚き（2回）', 'a surprised look, eyes opened wide under the thick eyebrows, mouth slightly open', 'hayase_surprised.png'),
+    ('怒り（2回）', 'an angry, stern scowl, eyebrows drawn together, mouth pressed in a hard line', 'hayase_angry.png'),
+    ('泣き笑い（1回）', 'smiling through tears, eyes wet and crinkled, a gentle trembling smile', 'hayase_teary.png'),
+]:
+    add(f'早瀬：{label}', ['hayase_normal.png（上で作った絵）'], save, expression(face, 'Hayase, the elderly watchmaker in the attached portrait.'))
+
+section('O. 4章の敵', 'D と同じ形。毎回、ブリキノイズの絵（`public/assets/enemies/tin_noise.webp`）を絵柄の見本として添付する。白い背景のまま送ってくれればよい')
+SUMMER = 'bright summer greens, sky blue and sunflower yellow'
+OPENING = 'sepia, faded orange and cream'
+for name, era, body, boss, save in [
+    ('4-1 虫かごノイズ', SUMMER, 'a plastic insect cage with a green lid, the buzzing of insects inside shaking it, the lid snapping like a mouth', False, 'bugcage_noise.png'),
+    ('4-1 すいかノイズ', SUMMER, 'half of a big watermelon, spitting black seeds like bullets, rolling heavily', False, 'watermelon_noise.png'),
+    ('4-1 花火の燃えかすノイズ', SUMMER, 'burnt-out handheld fireworks stuck in a small metal bucket of water, sparks and smoke still drifting from the tips', False, 'firework_noise.png'),
+    ('4-1 水鉄砲ノイズ', SUMMER, 'a big pump-action toy water gun, shooting jets of water, quick and light', False, 'watergun_noise.png'),
+    ('4-1 お地蔵さまの前の砂嵐（番人）', SUMMER, 'the offerings in front of a small roadside stone Jizo statue: many spinning paper pinwheels and a red bib, swirling into a guardian blocking the path (the stone statue itself stays calm and small at the center, not monstrous)', False, 'jizo_noise.png'),
+    ('4-1 川のぬし（ボス）', SUMMER, 'a giant straw hat riding on a rushing river current, water churning beneath it. Two clearly visible parts: the wide brim of the straw hat at the top, and the swirling river current with stones at the bottom', True, 'river_boss.png'),
+    ('4-2 ルービックキューブノイズ', OPENING, 'a colorful puzzle cube whose colors never line up, its layers twisting endlessly', False, 'cube_noise.png'),
+    ('4-2 テーブルゲームノイズ', OPENING, 'a coffee-shop table-style arcade game cabinet from around 1980, tiny glowing pixel bullets flying out of its glass screen (no logos, no letters)', False, 'gametable_noise.png'),
+    ('4-2 紙風船ノイズ', OPENING, 'a cluster of colorful paper balloons given out on a shop opening day, bouncing and drifting lightly', False, 'paperballoon_noise.png'),
+    ('4-2 鳩時計ノイズ', OPENING, 'a wooden cuckoo clock whose little bird is stuck outside and keeps calling, its pendulum swinging wildly', False, 'cuckoo_noise.png'),
+    ('4-2 開店祝いの花輪ノイズ（番人）', OPENING, 'tall congratulatory flower wreath stands for a shop opening, overlapping again and again into a wall of flowers, petals scattering like a storm (ribbons are blank, no letters)', False, 'wreath_noise.png'),
+    ('4-2 シャッターのぬし（ボス）', OPENING, 'dozens of rolling metal shop shutters stacked and overlapping, rattling down again and again. Two clearly visible parts: the stack of metal shutter slats in front, and the winding drum with a big gear at the top', True, 'shutter_boss.png'),
+]:
+    add(name, ['public/assets/enemies/tin_noise.webp'], save, enemy(era, body, boss))
+
+section('P. 4章の部屋の地図', 'E と同じ形。毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。4-1 は最初の部屋（庭）の絵ができたら、それを残りの見本にする。4-2 の店内は、1-2 の商店街の地図を見本にする')
+SUMMER_ROOM = 'in the summer of 2018 (late Heisei era) in the Japanese countryside, bright summer greens, sky blue and sunflower yellow, cicada-filled afternoon'
+for name, rid, ref, scene, exits, tall, *closed in [
+    ('4-1 おじいちゃんの家の庭', 'summer_garden', M + 'village_paddy.webp', f'Scene: the garden of an old wooden country house {SUMMER_ROOM}. A small vegetable patch and a dog house (two small blocks as in the sketch), a watering can and a hose, morning glories on a bamboo fence, a wooden veranda on the right side. A path leaves through the top edge toward the rice fields, and another through the left edge toward the storage shed.', ['top', 'left'], False),
+    ('4-1 物置', 'summer_shed', 'map_summer_garden.png（上で作った絵）', f'Scene: the inside of an old wooden storage shed beside a country house {SUMMER_ROOM}, seen from above with the roof removed. Shelves of old tools, a straw broom, a wooden cart for carrying a dog, boxes of fireworks and bug cages (four small blocks as in the sketch). Dust in the light. The entrance comes in from the right edge.', ['right'], False),
+    ('4-1 田んぼのあぜ道', 'summer_ridge', 'map_summer_garden.png', f'Scene: narrow raised paths between green rice paddies {SUMMER_ROOM}. Bright green rice fields fill the dark areas of the sketch; the light areas are the earthen ridge paths winding between them. A small roadside stone Jizo statue with pinwheels near the top. Paths lead out through the bottom edge (to the house), the top edge (to the river) and the left edge (to the irrigation canal).', ['bottom', 'top', 'left'], True, 'rice paddies, trees and hedges'),
+    ('4-1 用水路', 'summer_canal', 'map_summer_garden.png', f'Scene: a concrete irrigation canal beside rice fields {SUMMER_ROOM}. A narrow strip of clear running water (the dark vertical strip in the sketch, crossed by two small gaps you can step over) divides two grassy banks. Dragonflies, water plants, a small sluice gate. The entrance comes in from the right edge.', ['right'], False, 'rice paddies, trees and hedges'),
+    ('4-1 川の浅瀬', 'summer_shallows', 'map_summer_garden.png', f'Scene: a shallow, sparkling river bank {SUMMER_ROOM}. A wide pebbly shallow where you can wade, with a few large river rocks (the small dark blocks in the sketch), deep water and trees beyond the edges. The path comes in from the bottom edge.', ['bottom'], False, 'deep river water, rocks and trees'),
+    ('4-2 開店の日の店内', 'opening_shop', M + 'showa_street.webp', 'Scene: the inside of a small Japanese watch and clock shop on its opening day in the spring of 1980, seen from above with the ceiling removed, warm sepia-tinted retro colors with fresh wood. A long glass display counter with wristwatches and two small glass cases (the dark blocks in the sketch), wall clocks and a tall antique pendulum clock against the top wall, a workbench with a desk lamp and tiny tools, congratulatory flowers by the door. The entrance (a rolling shutter, raised) comes in from the bottom edge.', ['bottom'], False, 'shop walls'),
+]:
+    add(name, [L + f'room_{rid}.png', ref], f'map_{rid}.png', room(scene, exits, tall, *closed))
+
+
 def main():
-    out = ['# 絵の「そのまま貼る一覧」（2026-10-25）', '',
-           'ChatGPT Plus で、待っている絵をまとめて作るための一覧。**1つの枠が1枚**。上から順に作る。',
-           '',
+    """未対応の絵を上に、指示文つきで並べる。済んだ絵は下に名前だけ（指示文はこのファイルと台帳 src/data/assets.ts に残っている）"""
+    pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
+    pending = [p for p in pending if p[2]]
+    n_left = sum(len(items) for _, _, items in pending)
+    n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
+    out = ['# 絵の「そのまま貼る一覧」', '',
+           f'**まだの絵：{n_left} 枚**（済んだ絵 {n_done} 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。', '',
            '- 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）',
            '- できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする',
            '- 気に入らない時は、同じ文でもう一度作るか、「ここを直して」と一言足して作り直してよい',
-           '- 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる',
-           '- まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、ほかの人の表情違い（5-3 の 14。みお・小夜子・ハルト・あかりと 4-1 の人は下の I〜K）',
-           '']
+           '- 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる（届いた絵は DONE に足すと、下の「済んだ絵」に移る）',
+           '- まだ一覧にない物：ひなののまばたき・口パク（Gemini。ART.md の 5-8 の 1）、昼の町の地図と2頭身の歩くハルト・カイ（5-8 の 2〜4）、脇役の表情違い（5-3 の 14）、写しのしずえ・写しのじん・写しのとしおの立ち絵',
+           '', '## まだの絵', '']
+    for title, _, items in pending:
+        out.append(f'- [{title}](#{anchor(title)})：{len(items)} 枚')
+    out.append('')
     n = 0
-    toc = []
-    body = []
-    for title, note, items in ITEMS:
-        done = sum(1 for it in items if it[2] in DONE)
-        toc.append(f'- {title}（{len(items)}枚' + (f'。済 {done}' if done else '') + '）')
-        body += [f'## {title}', '']
+    for title, note, items in pending:
+        out += [f'### {title}', '']
         if note:
-            body += [note, '']
+            out += [note, '']
         for name, attach, save, prompt, memo in items:
             n += 1
-            body += [f'### {n}. {name}' + ('（済）' if save in DONE else ''), '']
-            body.append(f'- 添付：{"、".join(f"`{a}`" for a in attach) if attach else "なし"}')
-            body.append(f'- 保存名：`{save}`')
+            out += [f'#### {n}. {name}', '']
+            out.append(f'- 添付：{"、".join(f"`{a}`" for a in attach) if attach else "なし"}')
+            out.append(f'- 保存名：`{save}`')
             if memo:
-                body.append(f'- メモ：{memo}')
-            body += ['', '```', prompt, '```', '']
-    out += [f'全部で {n} 枚。', ''] + toc + [''] + body
+                out.append(f'- メモ：{memo}')
+            out += ['', '```', prompt, '```', '']
+    out += ['## 済んだ絵', '', '届いてゲームに入れた絵（指示文は `scripts/art_queue.py` と台帳 `src/data/assets.ts`）。', '']
+    for title, _, items in ITEMS:
+        done = [it for it in items if it[2] in DONE]
+        if done:
+            out.append(f'- **{title}**（{len(done)} 枚）：' + '、'.join(it[0] for it in done))
+    out.append('')
     with open('docs/ART_QUEUE.md', 'w') as f:
         f.write('\n'.join(out))
-    print(f'docs/ART_QUEUE.md：{n} 枚')
+    print(f'docs/ART_QUEUE.md：まだ {n_left} 枚、済 {n_done} 枚')
+
+
+def anchor(title):
+    """GitHub の見出しの飛び先（英数字・かな漢字はそのまま、記号は消し、空白は -）"""
+    import re
+    return re.sub(r'[\s]+', '-', re.sub(r'[^\w\s\-ぁ-んァ-ヶー一-龠々〜]', '', title.lower()))
 
 
 if __name__ == '__main__':
