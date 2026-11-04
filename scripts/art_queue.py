@@ -427,6 +427,11 @@ add('早瀬の設定画', [P + 'hero_normal.webp'], 'hayase_sheet.png', f'''{STY
 
 Character design sheet of an original anime-style dandy man in his late fifties for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
 {HAYASE}''', 'たたき台。気に入らない所（髪・服・小物）は「ここを直して」と足して作り直してよい')
+add('早瀬の設定画（1枚目を直す）', ['hayase_sheet_draft.png（1枚目にできた設定画）'], 'hayase_sheet.png', '''Edit the attached character design sheet. Keep the same character, the same age (late fifties), the same tall, lean and fit build, the same clothes and colors (the open navy work jacket with rolled-up sleeves, the dark henley shirt, the brown leather belt and tool roll of tiny screwdrivers, the pocket watch chain, the brown boots), the same art style and the same plain background. Change only the following:
+1. Expression: a gruff, closed-mouth, slightly grumpy neutral face. A man of few words who does not smile at strangers. At most, one corner of his mouth is raised a little in a dry, sarcastic way. Eyes calm and sharp, not narrowed in a smile.
+2. Pose: a natural, unposed stance with his weight on both feet. One hand holds a small precision screwdriver loosely at his side, the other hand hangs relaxed. No hands in pockets, no model-like pose.
+3. Hair and beard: a little more rumpled and lived-in, as if he hasn't looked in a mirror today. Rough salt-and-pepper stubble instead of a neatly groomed beard. He is a widower who has run his shop alone for years, so he looks a little tired and lonely, but still handsome.
+4. Loupe: remove the strap around his head. Instead, a small cylindrical watchmaker's eye loupe (a single short tube lens) is pushed up and resting on his forehead, held by nothing.''', '開発者の指摘（2026-11-04）：1枚目は愛想がよすぎた（脚本の早瀬は無口で皮肉屋、妻を亡くして一人で店を続けてきた人）。服・体つき・年齢は1枚目のまま、表情・立ち方・髪とひげ・ルーペだけ直す。1枚目は hayase_sheet_draft.png として保存して添付')
 add('早瀬の胸から上の基本の1枚（通常）', ['hayase_sheet.png（上で決めた設定画）', P + 'hero_normal.webp'], 'hayase_normal.png',
     portrait('a gruff, calm, cool look, mouth closed', HAYASE.replace('Character: Jin Hayase', 'Character: Hayase') + ' Keep his design exactly as in the attached character sheet.').replace('the girl in the cardigan', 'the boy in the hoodie'),
     '台本で72回（いちばん多い）')

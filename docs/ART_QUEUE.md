@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：41 枚**（済んだ絵 156 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：42 枚**（済んだ絵 156 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -12,7 +12,7 @@
 
 - [E. 部屋の地図](#e-部屋の地図)：1 枚
 - [J. 4-1「シロのいた夏」の人](#j-4-1シロのいた夏の人)：15 枚
-- [N. 早瀬（仲間）](#n-早瀬仲間)：7 枚
+- [N. 早瀬（仲間）](#n-早瀬仲間)：8 枚
 - [O. 4章の敵](#o-4章の敵)：12 枚
 - [P. 4章の部屋の地図](#p-4章の部屋の地図)：6 枚
 
@@ -284,7 +284,21 @@ Character design sheet of an original anime-style dandy man in his late fifties 
 Character: Jin Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A dandy, handsome man in his late fifties: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast in a fight. Dark hair with streaks of grey at the temples, swept back with a few loose strands, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes with a hint of a smirk, a few handsome lines around his eyes. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt.
 ```
 
-#### 18. 早瀬の胸から上の基本の1枚（通常）
+#### 18. 早瀬の設定画（1枚目を直す）
+
+- 添付：`hayase_sheet_draft.png（1枚目にできた設定画）`
+- 保存名：`hayase_sheet.png`
+- メモ：開発者の指摘（2026-11-04）：1枚目は愛想がよすぎた（脚本の早瀬は無口で皮肉屋、妻を亡くして一人で店を続けてきた人）。服・体つき・年齢は1枚目のまま、表情・立ち方・髪とひげ・ルーペだけ直す。1枚目は hayase_sheet_draft.png として保存して添付
+
+```
+Edit the attached character design sheet. Keep the same character, the same age (late fifties), the same tall, lean and fit build, the same clothes and colors (the open navy work jacket with rolled-up sleeves, the dark henley shirt, the brown leather belt and tool roll of tiny screwdrivers, the pocket watch chain, the brown boots), the same art style and the same plain background. Change only the following:
+1. Expression: a gruff, closed-mouth, slightly grumpy neutral face. A man of few words who does not smile at strangers. At most, one corner of his mouth is raised a little in a dry, sarcastic way. Eyes calm and sharp, not narrowed in a smile.
+2. Pose: a natural, unposed stance with his weight on both feet. One hand holds a small precision screwdriver loosely at his side, the other hand hangs relaxed. No hands in pockets, no model-like pose.
+3. Hair and beard: a little more rumpled and lived-in, as if he hasn't looked in a mirror today. Rough salt-and-pepper stubble instead of a neatly groomed beard. He is a widower who has run his shop alone for years, so he looks a little tired and lonely, but still handsome.
+4. Loupe: remove the strap around his head. Instead, a small cylindrical watchmaker's eye loupe (a single short tube lens) is pushed up and resting on his forehead, held by nothing.
+```
+
+#### 19. 早瀬の胸から上の基本の1枚（通常）
 
 - 添付：`hayase_sheet.png（上で決めた設定画）`、`public/assets/portraits/hero_normal.webp`
 - 保存名：`hayase_normal.png`
@@ -300,7 +314,7 @@ Background: plain pure white, no shadow, no gradient.
 Character: Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A dandy, handsome man in his late fifties: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast in a fight. Dark hair with streaks of grey at the temples, swept back with a few loose strands, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes with a hint of a smirk, a few handsome lines around his eyes. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt. Keep his design exactly as in the attached character sheet.
 ```
 
-#### 19. 早瀬：考える（8回）
+#### 20. 早瀬：考える（8回）
 
 - 添付：`hayase_normal.png（上で作った絵）`
 - 保存名：`hayase_thinking.png`
@@ -315,7 +329,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 20. 早瀬：苦笑い（5回）
+#### 21. 早瀬：苦笑い（5回）
 
 - 添付：`hayase_normal.png（上で作った絵）`
 - 保存名：`hayase_wry.png`
@@ -330,7 +344,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 21. 早瀬：驚き（2回）
+#### 22. 早瀬：驚き（2回）
 
 - 添付：`hayase_normal.png（上で作った絵）`
 - 保存名：`hayase_surprised.png`
@@ -345,7 +359,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 22. 早瀬：怒り（2回）
+#### 23. 早瀬：怒り（2回）
 
 - 添付：`hayase_normal.png（上で作った絵）`
 - 保存名：`hayase_angry.png`
@@ -360,7 +374,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 23. 早瀬：泣き笑い（1回）
+#### 24. 早瀬：泣き笑い（1回）
 
 - 添付：`hayase_normal.png（上で作った絵）`
 - 保存名：`hayase_teary.png`
@@ -379,7 +393,7 @@ Background: plain pure white, no shadow, no gradient.
 
 D と同じ形。毎回、ブリキノイズの絵（`public/assets/enemies/tin_noise.webp`）を絵柄の見本として添付する。白い背景のまま送ってくれればよい
 
-#### 24. 4-1 虫かごノイズ
+#### 25. 4-1 虫かごノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`bugcage_noise.png`
@@ -393,7 +407,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a plastic insect cage with a green lid, the buzzing of insects inside shaking it, the lid snapping like a mouth
 ```
 
-#### 25. 4-1 すいかノイズ
+#### 26. 4-1 すいかノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`watermelon_noise.png`
@@ -407,7 +421,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: half of a big watermelon, spitting black seeds like bullets, rolling heavily
 ```
 
-#### 26. 4-1 花火の燃えかすノイズ
+#### 27. 4-1 花火の燃えかすノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`firework_noise.png`
@@ -421,7 +435,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: burnt-out handheld fireworks stuck in a small metal bucket of water, sparks and smoke still drifting from the tips
 ```
 
-#### 27. 4-1 水鉄砲ノイズ
+#### 28. 4-1 水鉄砲ノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`watergun_noise.png`
@@ -435,7 +449,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a big pump-action toy water gun, shooting jets of water, quick and light
 ```
 
-#### 28. 4-1 お地蔵さまの前の砂嵐（番人）
+#### 29. 4-1 お地蔵さまの前の砂嵐（番人）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`jizo_noise.png`
@@ -449,7 +463,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: the offerings in front of a small roadside stone Jizo statue: many spinning paper pinwheels and a red bib, swirling into a guardian blocking the path (the stone statue itself stays calm and small at the center, not monstrous)
 ```
 
-#### 29. 4-1 川のぬし（ボス）
+#### 30. 4-1 川のぬし（ボス）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`river_boss.png`
@@ -463,7 +477,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a giant straw hat riding on a rushing river current, water churning beneath it. Two clearly visible parts: the wide brim of the straw hat at the top, and the swirling river current with stones at the bottom
 ```
 
-#### 30. 4-2 ハイパーヨーヨーノイズ
+#### 31. 4-2 ハイパーヨーヨーノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`yoyo_noise.png`
@@ -477,7 +491,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a glowing toy yo-yo from 1997, spinning endlessly at the end of its stretched string, swinging around in loops and tricks (no logos)
 ```
 
-#### 31. 4-2 ポケベルノイズ
+#### 32. 4-2 ポケベルノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`pager_noise.png`
@@ -491,7 +505,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a cluster of 1990s pagers (pocket bells) beeping nonstop, their tiny screens flashing, glowing beeps flying out like bullets (no letters or numbers on the screens)
 ```
 
-#### 32. 4-2 紙風船ノイズ
+#### 33. 4-2 紙風船ノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`paperballoon_noise.png`
@@ -505,7 +519,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a cluster of colorful paper balloons given out on a shop opening day, bouncing and drifting lightly
 ```
 
-#### 33. 4-2 鳩時計ノイズ
+#### 34. 4-2 鳩時計ノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`cuckoo_noise.png`
@@ -519,7 +533,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: a wooden cuckoo clock whose little bird is stuck outside and keeps calling, its pendulum swinging wildly
 ```
 
-#### 34. 4-2 開店祝いの花輪ノイズ（番人）
+#### 35. 4-2 開店祝いの花輪ノイズ（番人）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`wreath_noise.png`
@@ -533,7 +547,7 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 Body: tall congratulatory flower wreath stands for a shop opening, overlapping again and again into a wall of flowers, petals scattering like a storm (ribbons are blank, no letters)
 ```
 
-#### 35. 4-2 シャッターのぬし（ボス）
+#### 36. 4-2 シャッターのぬし（ボス）
 
 - 添付：`public/assets/enemies/tin_noise.webp`
 - 保存名：`shutter_boss.png`
@@ -551,7 +565,7 @@ A large boss monster, filling most of the image. Body: dozens of rolling metal s
 
 E と同じ形。毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。4-1 は最初の部屋（庭）の絵ができたら、それを残りの見本にする。4-2 の店内（平成9年の春）は、1-2 の商店街の地図を見本にする
 
-#### 36. 4-1 おじいちゃんの家の庭
+#### 37. 4-1 おじいちゃんの家の庭
 
 - 添付：`docs/sketches/room_layouts/room_summer_garden.png`、`public/assets/maps/village_paddy.webp`
 - 保存名：`map_summer_garden.png`
@@ -565,7 +579,7 @@ An opening at the center of the top edge, one sixth of the image width wide, lea
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-#### 37. 4-1 物置
+#### 38. 4-1 物置
 
 - 添付：`docs/sketches/room_layouts/room_summer_shed.png`、`map_summer_garden.png（上で作った絵）`
 - 保存名：`map_summer_shed.png`
@@ -579,7 +593,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-#### 38. 4-1 田んぼのあぜ道
+#### 39. 4-1 田んぼのあぜ道
 
 - 添付：`docs/sketches/room_layouts/room_summer_ridge.png`、`map_summer_garden.png`
 - 保存名：`map_summer_ridge.png`
@@ -593,7 +607,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-#### 39. 4-1 用水路
+#### 40. 4-1 用水路
 
 - 添付：`docs/sketches/room_layouts/room_summer_canal.png`、`map_summer_garden.png`
 - 保存名：`map_summer_canal.png`
@@ -607,7 +621,7 @@ An opening at the center of the right edge, one sixth of the image height wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-#### 40. 4-1 川の浅瀬
+#### 41. 4-1 川の浅瀬
 
 - 添付：`docs/sketches/room_layouts/room_summer_shallows.png`、`map_summer_garden.png`
 - 保存名：`map_summer_shallows.png`
@@ -621,7 +635,7 @@ An opening at the center of the bottom edge, one sixth of the image width wide, 
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
-#### 41. 4-2 開店の日の店内
+#### 42. 4-2 開店の日の店内
 
 - 添付：`docs/sketches/room_layouts/room_opening_shop.png`、`public/assets/maps/showa_street.webp`
 - 保存名：`map_opening_shop.png`
