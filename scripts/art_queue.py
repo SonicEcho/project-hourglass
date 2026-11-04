@@ -476,6 +476,37 @@ for name, rid, ref, scene, exits, tall, *closed in [
     add(name, [L + f'room_{rid}.png', ref], f'map_{rid}.png', room(scene, exits, tall, *closed))
 
 
+
+# ---- Q〜S. テストプレイのメモ 2（2026-11-04） ----
+section('Q. だいち・さきの描き直し（けんたと見分けやすく）', 'テストプレイのメモ 2 の 1：15日目のけんた・だいち・さきの顔が似すぎている（3人とも同じ輪郭・目・笑い方だった）。絵柄と構図はそのままで、顔のつくり・髪型・体つきを、けんたとはっきり変える。けんたの絵は「この人と似せない」ために添付する。できた絵は、今の daichi_smile・saki_smile と差し替える')
+add('だいち（描き直し）', [REF_TEEN, P + 'kenta_smile.webp'], 'daichi_smile_v2.png', portrait('a friendly, slightly awkward smile with his eyes narrowed into thin happy arcs',
+    'Character: Daichi, a 37-year-old Japanese salesman, the former drummer of a high school band. He must look clearly different from the man in the second attached portrait: '
+    'a stocky, broad-shouldered build, a round full face with a wide jaw and slightly chubby cheeks, thick straight eyebrows, small narrow eyes, '
+    'very short cropped black hair (a neat crew cut, forehead fully visible), clean-shaven, black rectangular-framed glasses. '
+    'A dark navy business suit with a white shirt and a loosened plain dark red tie. Same art style as the first attached portrait.'))
+add('さき（描き直し）', [REF_TEEN, P + 'kenta_smile.webp'], 'saki_smile_v2.png', portrait('a confident, teasing smile with one corner of her mouth raised',
+    'Character: Saki, a 37-year-old Japanese woman, the former bassist of a high school band, now a working mother. She must look clearly different from the man in the second attached portrait: '
+    'a slim oval face with a sharp chin, upturned almond-shaped cat-like eyes with long lashes, a small beauty mark under her left eye, '
+    'glossy jet-black hair in a short chin-length bob with blunt side-swept bangs, small silver hoop earrings. '
+    'A mustard-yellow knit sweater over a white collared shirt. Straightforward and a little mischievous. Same art style as the first attached portrait.'))
+
+SAYOKO_WEST = 'Sayoko, the girl in the attached portrait, the same face, long straight black hair and silver crescent moon hairpin, but now wearing modern clothes for the first time: a plain white blouse with a soft round collar and a navy knee-length skirt (the skirt may be outside the frame). Keep the crescent moon hairpin.'
+section('R. 洋服の小夜子（試着室）', 'テストプレイのメモ 2 の 25：29日目の絆の出来事「試着室」（`bond_sayoko2`）で、カーテンが開いた後に出す洋服の小夜子。今の小夜子の「微笑み」の絵を添付する。台本で使う表情（照れ・驚き）と、あとで使えるように微笑み')
+add('洋服の小夜子：照れ（基本の1枚）', [P + 'sayoko_smile.webp'], 'sayoko_western_shy.png', expression('a shy, blushing look, cheeks pink, eyes cast down a little, a small embarrassed smile', SAYOKO_WEST).replace('Change only the facial expression', 'Change the outfit to the modern clothes described above and the facial expression').replace('Keep exactly the same character design, hairstyle, outfit, colors, art style', 'Keep exactly the same face, hairstyle, hairpin, art style'), '一番先に作る。下の2枚は、この絵を添付する')
+for label, face, save in [('驚き', 'a surprised look, eyes wide open, lips parted, then frozen as if she cannot answer', 'sayoko_western_surprised.png'), ('微笑み', 'a gentle, happy smile', 'sayoko_western_smile.png')]:
+    add(f'洋服の小夜子：{label}', ['sayoko_western_shy.png（上で作った絵）'], save, expression(face, SAYOKO_WEST))
+
+
+def open_mouth(face):
+    return f'''Edit the attached image. Keep everything exactly the same: the same character, the same {face} expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
+Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.'''
+
+
+section('S. とうや・しおりのまばたき・口パク用', 'テストプレイのメモ 2 の 27：とうやとしおりは、まばたき・口パクがない。表情が笑顔の1枚だけなので、その絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。scripts/portrait_parts.py）。毎回その人の絵を添付する。構図が少しでも動いたら作り直す')
+for who, name in [('toya', 'とうや'), ('shiori', 'しおり')]:
+    add(f'{name}：目を閉じた絵', [P + f'{who}_smile.webp'], f'{who}_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
+    add(f'{name}：口を開けた絵', [P + f'{who}_smile.webp'], f'{who}_talk_src.png', open_mouth('smiling'))
+
 def main():
     """未対応の絵を上に、指示文つきで並べる。済んだ絵は下に名前だけ（指示文はこのファイルと台帳 src/data/assets.ts に残っている）"""
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]

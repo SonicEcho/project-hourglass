@@ -15,6 +15,7 @@ export * from './taishoEnemies';
 export * from './gradEnemies';
 export * from './summerEnemies';
 export * from './openingEnemies';
+export * from './clockTrial';
 export * from './enemyArt';
 export * from './encounters';
 export * from './growthMap';

@@ -39,7 +39,7 @@ export class ResultScene extends Phaser.Scene {
       }).setOrigin(0.5),
     );
 
-    // 破壊した部位と、手に入るはずの素材（表示のみ）
+    // 破壊した部位と、手に入る素材（段階151：素材は本当に手に入るので「表示のみ」を消した）
     const top = 250;
     root.add(this.add.rectangle(20, top, GAME_WIDTH - 40, 230, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     root.add(addText(this, 36, top + 14, '破壊した部位', { size: 15, bold: true, color: COLORS.accentText }));
@@ -51,7 +51,7 @@ export class ResultScene extends Phaser.Scene {
         root.add(addText(this, 36, y, `${p.enemyName}の${p.partName}`, { size: 15, bold: true }));
         const part = BOSS_PART_REWARDS[p.partId];
         const reward = part ? `　ギア：${NAVI_PARTS[part].name}` : '';
-        root.add(addText(this, 52, y + 24, `素材：${p.material}${reward}（表示のみ）`, { size: 13, color: COLORS.subText }));
+        root.add(addText(this, 52, y + 24, `素材：${p.material}${reward}`, { size: 13, color: COLORS.subText }));
       });
     }
     root.add(addText(this, cx, top + 250, `seed ${data.seed}`, { size: 11, color: COLORS.dimText }).setOrigin(0.5));

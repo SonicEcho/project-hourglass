@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
 import { addImageOr, preloadQueue } from '../assets/loader';
-import { ALL, dialogueImages, focusImages, waitImages } from '../ui/waitImages';
+import { dialogueImages, focusImages, startWithImages } from '../ui/waitImages';
 import { addButton, addText } from '../ui/widgets';
 import { playBgm, playSand, stopAmbience } from '../audio/sound';
 import { prepareBgm } from '../audio/bgmStore';
@@ -107,11 +107,11 @@ export class TitleScene extends Phaser.Scene {
       this.leave(glow, fall, ui, () => this.scene.start('Flow', data));
     };
     // 戦闘の途中から続ける（段階44）
-    // 戦闘の画面は、まだ場面ごとに使う絵を分けていないので、全部の絵を待ってから（段階148。会話の画面は、その場面の絵だけを自分で待つ）
+    // 戦闘は、その戦闘の敵の絵と仲間の顔だけを待ってから（段階150。試作の5戦は全部の絵を待つ。会話の画面は、その場面の絵だけを自分で待つ）
     const battle = (data: BattleSceneData) =>
       this.leave(glow, fall, ui, () => {
         this.cameras.main.resetFX();
-        waitImages(this, ALL, () => this.scene.start('Battle', data));
+        startWithImages(this, 'Battle', data);
       });
     root = ui;
     root.add(addText(this, cx, 432, '試作版（第4章の 4-1 まで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));

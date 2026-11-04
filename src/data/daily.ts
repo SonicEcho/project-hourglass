@@ -84,8 +84,11 @@ export const HUB_SCENES: { scene: string; after?: string; before?: string }[] = 
   { scene: 'hub_taken', after: 'd7_taken', before: 'a23_return' },
 ];
 
-/** 絆の点の重み（段階83。docs/design/daily.md の 4-2）：絆の出来事1つで2点（♥1つ）、その日に見た小話1つで1点（♥半分） */
-export const BOND_POINTS: BondPoints = { event: 2, talk: 1 };
+/**
+ * 絆の点の重み（段階83。docs/design/daily.md の 4-2）。段階153（テストプレイのメモ 2 の 4）：帯は少しずつ進み、10点でレベルが1上がる。
+ * 絆の出来事1つで4点（帯の4割）、その日に見た小話1つで1点（1割）。「絆の一番」などの判定は、レベルで比べる
+ */
+export const BOND_POINTS: BondPoints = { event: 4, talk: 1, level: 10 };
 
 /** 昼に選べる回数（段階35。docs/milestones/M2.md の「決まったこと」） */
 export const DAILY_PICKS = 2;
@@ -101,9 +104,10 @@ export const BOND_EVENTS: Record<string, BondEvent[]> = {
     { id: 'bond_akari3', title: 'りくのいない帰り道', label: '帰り道（あかり）', from: 7, place: 'river_path', x: 195, y: ROW1 },
     { id: 'bond_akari4', title: '最初の五分', label: '施設の居間（あかり）', from: 8, place: 'home', x: 195, y: ROW1 },
     // 段階82（docs/script/2-2_rework.md の 4.）
-    { id: 'bond_akari5', title: '出し物、決まらない', label: '教室（あかり）', from: 12, place: 'school', x: 195, y: ROW1 },
+    // 段階153（テストプレイのメモ 2 の 26）：文化祭（23日目）の準備の話なので、22日目まで。過ぎたら飛ばす（絆の点は入る）
+    { id: 'bond_akari5', title: '出し物、決まらない', label: '教室（あかり）', from: 12, until: 22, place: 'school', x: 195, y: ROW1 },
     // 段階85（docs/script/2-3_rework.md の 4.）
-    { id: 'bond_akari6', title: '時計の博物館', label: '教室（あかり）', from: 17, place: 'school', x: 195, y: ROW1 },
+    { id: 'bond_akari6', title: '時計の博物館', label: '教室（あかり）', from: 17, until: 22, place: 'school', x: 195, y: ROW1 },
     // 段階88（docs/script/3-1.md の 4.）。22日目の学校は文化祭の印が並ぶので、下の段
     { id: 'bond_akari7', title: 'お弁当対決', label: '屋上へ（あかり）', from: 21, place: 'school', x: 195, y: ROW2 },
     // 段階94（docs/script/3-2.md の 4.）

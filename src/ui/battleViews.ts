@@ -216,6 +216,8 @@ function drawStage(scene: Phaser.Scene, root: Phaser.GameObjects.Container): voi
 
 function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: ViewModel, h: ViewHandlers): void {
   const s = vm.state;
+  /** 部位の照準より上に置く物（ボスの大技の予告） */
+  const lateTags: Phaser.GameObjects.GameObject[] = [];
   s.enemies.forEach((enemy, i) => {
     const g = enemyGeometry(s, i);
     const { cx, colW, bodyY, radius } = g;
@@ -298,13 +300,18 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
       const ty = bodyY - radius - 12;
       const bg = scene.add.rectangle(cx, ty, Math.min(colW - 8, label.length * 14 + 16), 24, 0x7a2a10, 0.95).setRounded(8).setStrokeStyle(1, 0xff9a5a);
       // 段階129：予告の帯の文字を 11→13（帯も合わせて大きく）
-      root.add([bg, addText(scene, cx, ty, label, { size: 13, bold: true, color: '#ffd0a0' }).setOrigin(0.5)]);
+      // 段階151（テストプレイのメモ 2 の 14）：ボスでは部位の照準より後に置く（前は照準の輪と札の下に隠れた）
+      const chargeTag = [bg, addText(scene, cx, ty, label, { size: 13, bold: true, color: '#ffd0a0' }).setOrigin(0.5)];
+      if (g.withParts) lateTags.push(...chargeTag);
+      else root.add(chargeTag);
     }
 
     // ボスの大きな絵では、名前と HP を絵の足もとに重ねる（名前は縁取りで読めるように）
     const nameY = bigArt ? BOSS_ART_BOTTOM - 36 : bodyY + radius + 16;
     const nameText = addText(scene, cx, nameY, enemy.name, { size: 13, align: 'center', color: alive ? COLORS.text : COLORS.dimText }).setOrigin(0.5);
     if (bigArt) nameText.setStroke('#0b1018', 4);
+    // 段階151：長い名前（トランジスタラジオノイズなど）は、隣の敵と重ならないよう列の幅に縮める
+    if (!bigArt && nameText.width > colW - 6) nameText.setScale((colW - 6) / nameText.width);
     root.add(nameText);
     const barW = g.withParts ? 220 : Math.min(110, colW - 16);
     const hpFrom = previousValue(`${enemy.uid}:hp`, enemy.hp);
@@ -315,6 +322,7 @@ function drawEnemies(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm
     countText(scene, hpText, hpFrom, enemy.hp, (v) => `${v}/${enemy.maxHp}`);
 
     if (g.withParts) drawParts(scene, root, vm, h, enemy);
+    root.add(lateTags.splice(0));
   });
 }
 
@@ -957,7 +965,7 @@ function linkDetail(s: BattleState, link: LinkDef): string {
     describeAction(link),
     '',
     `つながりゲージ：${s.linkGauge}/${LINK_GAUGE_MAX}。弱点を突く・ダウンさせる・バトンタッチ・部位破壊・攻撃を受けると貯まる。満タンで連携技を1回使え、使うと0に戻る。`,
-    `使い方：ゲージが満タンの時、計画で${a}か${b}の行動を選ぶ時に「連携技」を押す。2人分の行動をまとめて使う（組める技が2つある時は、もう一度押すと切り替わる）。`,
+    `使い方：ゲージが満タンの時、計画で${a}か${b}の行動を選ぶ時に「連携技」を押す。2人分の行動をまとめて使う（組める技が2つある時は、選んだ後の「⇄ 切り替え」で替えられる）。`,
     '必ずラウンドの最初に動く（防御の次）。体勢が崩れた敵（ダウン中か、立ち上がったばかりでまだ動いていない敵）には大きく効く。',
     '狙い目：敵をダウンさせた次のラウンドに連携技を選ぶと、敵が動く前に、崩れた体勢へ当たる。',
     '延長やバトンの追加行動では使えない。',
@@ -1011,7 +1019,7 @@ function partDetail(e: EnemyUnit, p: PartState): string {
     'この印をタップして攻撃すると、部位に全部、本体に半分のダメージ。壊すと、ぬしがよろける（ダウン）',
   ];
   if (sealed.length > 0) lines.push(`破壊すると${sealed.join('、')}が使えなくなる`);
-  lines.push(`破壊すると素材「${p.material}」が手に入る（表示のみ）`);
+  lines.push(`破壊すると素材「${p.material}」が手に入る`);
   return lines.join('\n');
 }
 
@@ -1046,6 +1054,8 @@ function skewBox(scene: Phaser.Scene, x: number, y: number, w: number, h: number
 function slantText(scene: Phaser.Scene, x: number, y: number, text: string, size: number, color = '#ffffff', shadow = '#ff2d55'): Phaser.GameObjects.Text {
   const t = addText(scene, x, y, text, { size, bold: true, color });
   t.setFontStyle('bold italic');
+  // 段階151（テストプレイのメモ 2 の 24）：斜めの字は、字の枠からはみ出した右上が切れる。枠に余白を足す
+  t.setPadding(2, 3, 6, 2);
   if (shadow) t.setShadow(2, 2, shadow, 0, false, true);
   return t;
 }
@@ -1119,7 +1129,8 @@ function drawFilmHeader(scene: Phaser.Scene, root: Phaser.GameObjects.Container,
   root.add(scene.add.circle(SIDE_PADDING + 6, y + 16, 5, FILM_RED));
   root.add(addText(scene, SIDE_PADDING + 15, y + 8, 'REC', { size: 12, bold: true, color: toCss(FILM_RED) }));
   root.add(slantText(scene, SIDE_PADDING + 52, y + 9, 'ROUND', 11, '#ffffff', ''));
-  root.add(slantText(scene, SIDE_PADDING + 98, y + 1, String(vm.state.round).padStart(2, '0'), 24));
+  // 数は上の端に寄りすぎて、端末によっては頭が切れた（段階151）。余白の分だけ左上へずらして置く（見た目の位置は前と同じ）
+  root.add(slantText(scene, SIDE_PADDING + 96, y + 1, String(vm.state.round).padStart(2, '0'), 24));
   if (vm.footer !== 'execute') return;
   const bw = 54;
   const bh = 30;
@@ -1400,7 +1411,15 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     const status = [s.precedeIds.includes(ally.uid) ? '先制' : '', ally.guarding ? '防御' : '', alive ? '' : '不能']
       .filter(Boolean)
       .join(' ');
-    if (status) root.add(addText(scene, x + w - 50, y + 5, status, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    if (status) {
+      const tag = addText(scene, x + w - 50, y + 5, status, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(1, 0);
+      // 段階151（テストプレイのメモ 2 の 11）：名前と重なる時（名前が長い・枠が細い時）は、枠の上の縁に札のように出す
+      if (nameText.x + nameText.width + 4 > tag.x - tag.width) {
+        tag.setColor('#101010').setPosition(x + w - 50, y - 9);
+        root.add(scene.add.rectangle(tag.x - tag.width - 4, tag.y - 1, tag.width + 8, 15, COLORS.accent).setOrigin(0));
+      }
+      root.add(tag);
+    }
     const barW = w - 62;
     const hpFrom = previousValue(`${ally.uid}:hp`, ally.hp);
     const mpFrom = previousValue(`${ally.uid}:mp`, ally.mp);
@@ -1410,6 +1429,17 @@ function drawFilmTabs(scene: Phaser.Scene, root: Phaser.GameObjects.Container, v
     root.add(hpText);
     countText(scene, hpText, hpFrom, ally.hp, (v) => `${v}`);
     const mpText = addText(scene, x + SKEW + 4 + barW, y + 31, `MP ${ally.mp}`, { size: 12, bold: true, color: toCss(COLORS.mp) }).setOrigin(1, 0);
+    // 段階151（テストプレイのメモ 2 の 22）：HP と MP の桁が増えて重なる時は、一番大きい数（最大の値）でも収まるまで字を小さくする
+    const widest = addText(scene, 0, 0, `${ally.maxHp}`, { size: 13, bold: true });
+    const widestMp = addText(scene, 0, 0, `MP ${ally.maxMp}`, { size: 12, bold: true });
+    const need = widest.width + widestMp.width + 6;
+    widest.destroy();
+    widestMp.destroy();
+    if (need > barW) {
+      const k = Math.max(0.7, barW / need);
+      hpText.setScale(k);
+      mpText.setScale(k);
+    }
     root.add(mpText);
     countText(scene, mpText, mpFrom, ally.mp, (v) => `MP ${v}`);
     const hit = scene.add.rectangle(x + w / 2, y + height / 2, w, height, 0xffffff, 0.001);
@@ -1464,7 +1494,12 @@ function drawFilmButtons(scene: Phaser.Scene, root: Phaser.GameObjects.Container
     filmButton(scene, root, xs[0], by, wOf(0) + gap + wOf(1), bh, `▶▶ 早送り　×${vm.speed}`, {}, { size: 14 });
   } else {
     filmButton(scene, root, xs[0], by, wOf(0), bh, '魔法・スキル', { onTap: () => h.tapCommand('skills') }, { enabled: canAct, active: vm.panel === 'skills', size: 11 });
-    filmButton(scene, root, xs[1], by, wOf(1), bh, 'その他', { onTap: () => h.tapCommand('other') }, { enabled: canAct, active: vm.panel === 'other' });
+    // 段階151（テストプレイのメモ 2 の 17）：連携技を選んでいる時は下の段が「キャンセル・決定」になり、連携技のボタンが消えて切り替えられなかった。
+    // 組める連携技が2つ以上ある時は、「その他」の所を切り替えのボタンにする
+    const links = vm.selectedLinkId && vm.actor ? actorLinks(s, vm.actor.uid) : [];
+    if (vm.footer === 'select' && links.length > 1) {
+      filmButton(scene, root, xs[1], by, wOf(1), bh, '連携技を\n⇄ 切り替え', { onTap: () => h.tapCommand('link') }, { enabled: canAct, fill: 0xffd700, textColor: '#000000', size: 11 });
+    } else filmButton(scene, root, xs[1], by, wOf(1), bh, 'その他', { onTap: () => h.tapCommand('other') }, { enabled: canAct, active: vm.panel === 'other' });
   }
   if (vm.footer === 'select') {
     filmButton(scene, root, xs[2], by, wOf(2), bh, 'キャンセル', { onTap: () => h.cancel() }, { size: 12 });
@@ -1499,7 +1534,8 @@ function drawFilmButtons(scene: Phaser.Scene, root: Phaser.GameObjects.Container
       fill: FILM_RED,
       size: vm.planComplete ? 17 : 12,
     });
-  } else filmButton(scene, root, xs[3], by, wOf(3), bh, '■ 再生中', {}, { enabled: false });
+  }
+  // 段階151（テストプレイのメモ 2 の 29）：再生中に右下に出していた「■ 再生中」は止めるボタンに見え、押すと（どこを押しても早送りなので）残りが一気に終わって、取り消されたように見えた。出さない
 }
 
 /** 平行四辺形の4つの角（上の辺を右へ skew だけずらす）。左上が (x, y) */

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ALL, waitImages } from '../ui/waitImages';
+import { startWithImages } from '../ui/waitImages';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { FlowEvent } from '../core';
 import { chapterOfEvent, dialogueRun, isPlaceholder } from '../core';
@@ -83,11 +83,11 @@ export class FlowScene extends Phaser.Scene {
   }
 
   /**
-   * 会話のほかの画面（日常・探索・返す・戦闘）は、まだ場面ごとに使う絵を分けていないので、裏で読んでいる絵を全部読み終えてから開く（段階148）。
+   * 会話のほかの画面（日常・探索・返す・戦闘）は、その画面で使う絵だけを待ってから開く（段階150。段階148 では全部の絵を待っていた）。
    * 会話の画面は、自分の場面で使う絵だけを待つ
    */
   private startWhenReady(key: string, data: object): void {
-    waitImages(this, ALL, () => this.scene.start(key, data));
+    startWithImages(this, key, data);
   }
 
   /** 会話の出来事が続く所までを、会話の画面1回で続けて読む。場面を読み始めるたびに、今の出来事を覚えてセーブする */

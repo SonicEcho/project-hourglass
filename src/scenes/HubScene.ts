@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, shelfLost, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
+import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, KEEPER_TALKS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
+import { startWithImages } from '../ui/waitImages';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { backButton, FRAME_COLORS, frameHeader, PLAIN_BUTTON } from '../ui/frame';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -80,8 +81,10 @@ export class HubScene extends Phaser.Scene {
     y = addTileRows(this, root, growthTiles((key) => this.openGrowth(key)), left, y, w, gap);
     // 交換所（段階52）・落とし物の棚（段階53）・町の小話（段階82。過ぎた日の小話がある時だけ）
     const lostReady = shelfLost(LOST_ITEMS, run.returned).filter((d) => lostStatus(run.vars, d.id) === 'found').length;
+    const petraTalk = isSeen(run.vars, 'exchange_intro') && nextKeeperTalk(KEEPER_TALKS, (id) => eventPassed(SLICE_FLOW, run.event, id), (scene) => isSeen(run.vars, scene));
     const misc: GalleryTile[] = [
-      { id: 'exchange', label: '交換所', onTap: () => this.openExchange() },
+      // 段階152（テストプレイのメモ 2 の 7）：ペトラと話せる時は、タイルに札
+      { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() },
       { id: 'lost', label: '落とし物の棚', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
     ];
     const talks = archivedTalks();
@@ -173,6 +176,7 @@ export class HubScene extends Phaser.Scene {
     startHunt(startExplore(area), fade.rate);
     const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
     this.cameras.main.fadeOut(250, 0, 0, 0);
-    this.time.delayedCall(260, () => this.scene.start('Explore', data));
+    // 狩りの区画の地図と敵の絵だけを待つ（段階150）
+    this.time.delayedCall(260, () => startWithImages(this, 'Explore', data));
   }
 }

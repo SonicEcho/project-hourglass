@@ -68,12 +68,14 @@ describe('ポーチ（段階51）', () => {
     expect(eventsOf(full, 'heal')[0].amount).toBe(10);
   });
 
-  it('エーテルで MP が戻る。予告にも出る', () => {
+  it('エーテルで MP が戻る（段階153 から 30。最大 MP で止まる）。予告にも出る', () => {
     let s = battle({ allies: [ally('hero')], pouch: [{ item: ether, count: 1, used: 0 }] });
     s = hurt(s, 'hero', 100, 5);
-    expect(previewAction(s, 'hero', use('ether', 'hero')).targets).toEqual([{ unitId: 'hero', kind: 'mp', min: 12, max: 12, affinity: 'normal' }]);
+    const max = s.allies[0].maxMp;
+    const gain = Math.min(30, max - 5);
+    expect(previewAction(s, 'hero', use('ether', 'hero')).targets).toEqual([{ unitId: 'hero', kind: 'mp', min: gain, max: gain, affinity: 'normal' }]);
     s = execute(planAll(s, { hero: use('ether', 'hero') }));
-    expect(eventsOf(s, 'mpRestore')[0]).toMatchObject({ targetId: 'hero', amount: 12, mpAfter: 17 });
+    expect(eventsOf(s, 'mpRestore')[0]).toMatchObject({ targetId: 'hero', amount: gain, mpAfter: 5 + gain });
   });
 
   it('予約した分も数える：残り1個なら2人目は選べない。選び直す仲間の予約は空く', () => {

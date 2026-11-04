@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { BondEvent, DailyHub, ReturnVisit } from '../../src/core';
 import {
+  bondEventFor,
+  expireBondEvents,
+  skippedKey,
   allSpots,
   blockers,
   bondLevel,
@@ -11,7 +14,6 @@ import {
   finishesAfter,
   freeSpotY,
   bondGauge,
-  heartText,
   isSeen,
   markArchived,
   markSeen,
@@ -313,7 +315,7 @@ describe('♥が一番多い相手と、町の小話の棚（段階82）', () =>
     ],
   };
 
-  const points = { event: 2, talk: 1 };
+  const points = { event: 2, talk: 1, level: 2 };
   const talkHubs: Record<string, DailyHub> = {
     d1: {
       id: 'd1',
@@ -359,11 +361,16 @@ describe('♥が一番多い相手と、町の小話の棚（段階82）', () =>
     expect(talkArchive(talkHubs, {}, () => true).map((t) => t.seen)).toEqual([false, false, false]);
   });
 
-  it('♥の書き方：♥1つは絆の出来事1つ。半分は♡。0 は ―', () => {
-    expect(heartText(0, points)).toBe('―');
-    expect(heartText(1, points)).toBe('♡');
-    expect(heartText(4, points)).toBe('♥♥');
-    expect(heartText(5, points)).toBe('♥♥♡');
+  it('段階153：帯は少しずつ進み、level 点でレベルが1上がる。「絆の一番」はまずレベル、同じなら点で比べる', () => {
+    const fine = { event: 4, talk: 1, level: 10 };
+    expect(bondGauge(4, fine)).toEqual({ level: 0, progress: 0.4 });
+    expect(bondGauge(9, fine)).toEqual({ level: 0, progress: 0.9 });
+    expect(bondGauge(10, fine)).toEqual({ level: 1, progress: 0 });
+    expect(bondGauge(13, fine)).toEqual({ level: 1, progress: 0.3 });
+    // どちらもレベル0なら、点の多いみお
+    expect(topBondPartner(markSeen({}, 'm1'), bonds, {}, fine)).toBe('mio');
+    // 点もレベルも同じなら、並びの先のあかり
+    expect(topBondPartner(markSeen(markSeen({}, 'm1'), 'a1'), bonds, {}, fine)).toBe('akari');
   });
 
   it('絆の段と帯（段階110）：段は絆の出来事の分、帯は小話の半分', () => {
@@ -395,5 +402,26 @@ describe('♥が一番多い相手と、町の小話の棚（段階82）', () =>
       ['t1b', 1, true],
       ['t2', 2, false],
     ]);
+  });
+});
+
+describe('段階153：絆の出来事の「何日目まで」（テストプレイのメモ 2 の 26）', () => {
+  const events = [
+    { id: 'e1', title: '', label: '', from: 1, until: 5, place: 'p', x: 0, y: 0 },
+    { id: 'e2', title: '', label: '', from: 3, place: 'p', x: 0, y: 0 },
+  ];
+  const bonds = { akari: events };
+  const hub = (day: number): DailyHub => ({ id: `h${day}`, day, time: '', places: [], partners: ['akari'] }) as unknown as DailyHub;
+  it('過ぎる前は出し、過ぎたら飛ばして次の出来事を出す', () => {
+    expect(bondEventFor(hub(5), {}, 'akari', events)?.id).toBe('e1');
+    expect(bondEventFor(hub(6), {}, 'akari', events)?.id).toBe('e2');
+  });
+  it('飛ばした印を付けると、絆の点は見た時と同じだけ入る。見た出来事には付けない', () => {
+    const vars = expireBondEvents({}, bonds, 6);
+    expect(vars[skippedKey('e1')]).toBe('1');
+    expect(bondLevel(vars, events)).toBe(1);
+    const seen = markSeen({}, 'e1');
+    expect(expireBondEvents(seen, bonds, 6)).toBe(seen);
+    expect(expireBondEvents({}, bonds, 5)).toEqual({});
   });
 });

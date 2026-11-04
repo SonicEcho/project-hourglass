@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { startWithImages } from '../ui/waitImages';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -898,7 +899,7 @@ export class ExploreScene extends Phaser.Scene {
     if (this.leaving) return;
     this.leaving = true;
     run.hunt = null;
-    this.scene.start('Hub', { seen: undefined });
+    startWithImages(this, 'Hub', { seen: undefined });
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */
