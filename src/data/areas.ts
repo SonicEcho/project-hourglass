@@ -682,7 +682,7 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     enemies: [
       // ---- 1晩目（校門・中庭・駐輪場） ----
-      { id: 'a22_e_gate', patrol: [[5, 12], [18, 12]], battle: 'a22_n1_gate' },
+      { id: 'a22_e_gate', patrol: [[6, 12], [17, 12]], battle: 'a22_n1_gate' },
       { id: 'a22_e_gate2', patrol: [[6, 17], [17, 17]], battle: 'a22_n1_gate2' },
       { id: 'a22_e_stalls', room: 'school_courtyard', patrol: [[8, 29], [16, 29]], battle: 'a22_n1_stalls' },
       { id: 'a22_e_west', room: 'school_courtyard', patrol: [[3, 14], [9, 14]], battle: 'a22_n1_west' },

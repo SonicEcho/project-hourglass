@@ -340,6 +340,33 @@ export const SCHOOL_GATE_LAYOUT = [
   '##########.S..##########',
   '##########....##########',
 ];
+// 2026-11-04：絵（map.school_gate）の形に合わせて書き直した。上の左右にテントと看板、真ん中に花壇2つ、左右に自転車、下に校門のアーチ
+export const ART_SCHOOL_GATE_LAYOUT = [
+  '##########....##########',
+  '##########....##########',
+  '##########....##########',
+  '##########....##########',
+  '##########....##########',
+  '#######..........#######',
+  '#######..........#######',
+  '#######..........#######',
+  '#######..........#######',
+  '###..................###',
+  '###.....##....##.....###',
+  '######..##....##..######',
+  '######............######',
+  '######............######',
+  '######............######',
+  '###.##.............#####',
+  '###.##.............#####',
+  '###..................###',
+  '###..................###',
+  '########........########',
+  '########........########',
+  '########...S....########',
+  '########........########',
+  '########################',
+];
 /** 模擬店の中庭（縦長）。下は校門、上は渡り廊下、左は駐輪場へ。両側に模擬店のテント、真ん中に木。木の左下のベンチがチェックポイント1（P） */
 export const SCHOOL_COURTYARD_LAYOUT = [
   '##########....##########',
@@ -2609,7 +2636,7 @@ export const ROOMS = {
   showa_lane: { id: 'showa_lane', layout: ART_SHOWA_LANE_LAYOUT, image: 'map.showa_lane', era: 'showa_late', exits: ['left'], exitAt: { left: 7 } },
   showa_hill: { id: 'showa_hill', layout: ART_SHOWA_HILL_LAYOUT, image: 'map.showa_hill', era: 'showa_late', exits: ['bottom'] },
   // 2-2 の高校の部屋（段階39b。平成の半ば）。地図の絵が届いたら台帳に書いて image を足す（id は map.school_gate など）
-  school_gate: { id: 'school_gate', layout: SCHOOL_GATE_LAYOUT, era: 'heisei_mid', exits: ['top'] },
+  school_gate: { id: 'school_gate', layout: ART_SCHOOL_GATE_LAYOUT, image: 'map.school_gate', era: 'heisei_mid', exits: ['top'] },
   school_courtyard: { id: 'school_courtyard', layout: ART_SCHOOL_COURTYARD_LAYOUT, image: 'map.school_courtyard', era: 'heisei_mid', exits: ['bottom', 'top', 'left'], exitAt: { left: 14 } },
   school_bikes: { id: 'school_bikes', layout: ART_SCHOOL_BIKES_LAYOUT, image: 'map.school_bikes', era: 'heisei_mid', exits: ['right'] },
   school_corridor: { id: 'school_corridor', layout: ART_SCHOOL_CORRIDOR_LAYOUT, image: 'map.school_corridor', era: 'heisei_mid', exits: ['bottom', 'top', 'right'], exitAt: { right: 8 } },
