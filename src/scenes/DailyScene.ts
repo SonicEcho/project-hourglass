@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { addParts, allSpots, blockers, bondGauge, bondPoints, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
 import { AREAS, BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE, toCss } from '../ui/theme';
@@ -67,6 +67,11 @@ export class DailyScene extends Phaser.Scene {
     if (!data0) throw new Error(`no daily hub ${data.event}`);
     // 町の昼（何日目かがある日常）は日常の曲。重い場面を無音や別の曲にした後でも、昼に戻ると日常の曲になる（段階73）。屋台めぐりはプロローグの曲のまま
     if (data0.day !== undefined) playBgm(this, BGM.daily);
+    // 段階153：「何日目まで」を過ぎた絆の出来事は、飛ばした印を付ける（出さずに、絆の点だけ入れる）
+    if (data0.day !== undefined) {
+      const expired = expireBondEvents(run.vars, BOND_EVENTS, data0.day);
+      if (expired !== run.vars) setStoryVars(expired);
+    }
     let gearNote = '';
     if (data.finished) {
       const hub = build(data0);
@@ -164,8 +169,8 @@ export class DailyScene extends Phaser.Scene {
     // 段階125（レビューの項目48）：拠点の扉も回数を使わない
     const hasHub = allSpots(this.hub).some((s) => s.mark === 'hub');
     if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！${hasHub ? 'と扉' : ''}は数えない`);
-    // 段階83：相手のいる小話は、その日に見ると♥が半分増える。段階125（レビューの項目49）：後から拠点で読んでも増えないので「その日に見た時だけ」と書く
-    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…小話は、その日に見た時だけ絆の帯が半分進む');
+    // 段階83：相手のいる小話は、その日に見ると♥が半分増える（段階153 から、帯が1割進む）。段階125（レビューの項目49）：後から拠点で読んでも増えないので「その日に見た時だけ」と書く
+    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…小話は、その日に見た時だけ絆の帯が少し進む');
     root.add(addText(this, GAME_WIDTH / 2, 730, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
     this.drawBonds(root, 790);
   }

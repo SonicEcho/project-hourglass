@@ -88,6 +88,11 @@ export interface BondEvent {
   label: string;
   /** 何日目から出るか */
   from: number;
+  /**
+   * 何日目まで出るか（段階153。テストプレイのメモ 2 の 26：文化祭の準備の話が、文化祭の後に出ていた）。
+   * 過ぎても見ていなければ飛ばし、絆の点は見た時と同じだけ入れる（skippedKey）。書かなければいつまでも
+   */
+  until?: number;
   /** 出る場所の id（町の地図の場所） */
   place: string;
   /** 場所の絵の上の位置 */
@@ -196,20 +201,45 @@ export function picksLeft(hub: DailyHub, vars: Record<string, string>): number {
 export function bondEventFor(hub: DailyHub, vars: Record<string, string>, partner: string, events: readonly BondEvent[]): BondEvent | undefined {
   const met = vars[metKey(hub.id, partner)];
   if (met) return events.find((e) => e.id === met);
-  const next = events.find((e) => !isSeen(vars, e.id));
-  if (!next || next.from > (hub.day ?? 0)) return undefined;
+  const day = hub.day ?? 0;
+  const next = events.find((e) => !bondDone(vars, e) && !(e.until !== undefined && e.until < day));
+  if (!next || next.from > day) return undefined;
   return next;
 }
 
-/** 絆の深さ：相手の、見た絆の出来事の数 */
-export function bondLevel(vars: Record<string, string>, events: readonly BondEvent[]): number {
-  return events.filter((e) => isSeen(vars, e.id)).length;
+/** 日が過ぎて飛ばした絆の出来事の印（段階153） */
+export function skippedKey(eventId: string): string {
+  return `飛ばした:${eventId}`;
 }
 
-/** 絆の点の重み（段階83）：絆の出来事1つと、その日に見た小話1つ。♥1つは event 点 */
+/** 絆の出来事を見たか、日が過ぎて飛ばしたか */
+function bondDone(vars: Record<string, string>, e: BondEvent): boolean {
+  return isSeen(vars, e.id) || vars[skippedKey(e.id)] === '1';
+}
+
+/**
+ * その日になったら、「何日目まで」を過ぎて見ていない絆の出来事に、飛ばした印を付ける（段階153）。
+ * 飛ばした出来事は出さず、絆の点は見た時と同じだけ入る。付ける物がなければ、同じ vars を返す
+ */
+export function expireBondEvents(vars: Record<string, string>, bonds: Readonly<Record<string, readonly BondEvent[]>>, day: number): Record<string, string> {
+  const late = Object.values(bonds)
+    .flat()
+    .filter((e) => e.until !== undefined && e.until < day && !bondDone(vars, e));
+  if (late.length === 0) return vars;
+  return { ...vars, ...Object.fromEntries(late.map((e) => [skippedKey(e.id), '1'])) };
+}
+
+/** 絆の深さ：相手の、見た絆の出来事の数（段階153：日が過ぎて飛ばした出来事も数える） */
+export function bondLevel(vars: Record<string, string>, events: readonly BondEvent[]): number {
+  return events.filter((e) => bondDone(vars, e)).length;
+}
+
+/** 絆の点の重み（段階83）：絆の出来事1つと、その日に見た小話1つ。段階153：level 点たまると、絆のレベルが1上がる */
 export interface BondPoints {
   event: number;
   talk: number;
+  /** 絆のレベル1つ分の点（帯が満タンになる点） */
+  level: number;
 }
 
 /**
@@ -231,15 +261,11 @@ export function bondPoints(
 
 /** 絆の点を♥で書く（♥1つは event 点。足りない分があれば♡を1つ。0 は ―） */
 /**
- * 絆の段と帯（段階110。テストプレイのメモ 29：♥が増えると見づらいので、段と短い帯で見せる）。
- * 段は絆の出来事の分（♥の数）、帯は次の段までの割合（その日に見た小話の分。半分なら 0.5）
+ * 絆のレベルと帯（段階110。テストプレイのメモ 29：♥が増えると見づらいので、段と短い帯で見せる）。
+ * 段階153（テストプレイのメモ 2 の 4）：帯は少しずつ進み（絆の出来事・小話のたびに点が入る）、level 点で満タンになるとレベルが1上がる
  */
 export function bondGauge(n: number, points: BondPoints): { level: number; progress: number } {
-  return { level: Math.floor(n / points.event), progress: (n % points.event) / points.event };
-}
-
-export function heartText(n: number, points: BondPoints): string {
-  return '♥'.repeat(Math.floor(n / points.event)) + (n % points.event > 0 ? '♡' : '') || '―';
+  return { level: Math.floor(n / points.level), progress: (n % points.level) / points.level };
 }
 
 /**
@@ -254,11 +280,15 @@ export function topBondPartner(
 ): string | null {
   let best: string | null = null;
   let level = -1;
+  let rest = -1;
   for (const partner of Object.keys(bonds)) {
+    // 段階153（テストプレイのメモ 2 の 4）：まず絆のレベルで比べ、同じレベルなら帯の進み（点）で比べる。それも同じなら並びの先
     const n = bondPoints(vars, partner, bonds, hubs, points);
-    if (n > level) {
+    const lv = bondGauge(n, points).level;
+    if (lv > level || (lv === level && n > rest)) {
       best = partner;
-      level = n;
+      level = lv;
+      rest = n;
     }
   }
   return best;
