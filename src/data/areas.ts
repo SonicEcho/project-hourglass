@@ -1141,7 +1141,7 @@ export const AREAS: Record<string, AreaDef> = {
     owner: 'タイチ',
     memory: 'summer_shallows',
     // 晩の区切り：2晩目はあぜ道の入口、3晩目はお地蔵さまの前（どちらもチェックポイント）から。1晩目の帰り口は、庭の物干しの前（あぜ道はまだ壁の向こう）
-    nights: [{ koma: 3, exit: { room: 'summer_garden', cell: [10, 13] } }, { koma: 6, start: { room: 'summer_ridge', cell: [11, 35] } }, { start: { room: 'summer_ridge', cell: [11, 8] } }],
+    nights: [{ koma: 3, exit: { room: 'summer_garden', cell: [9, 9] } }, { koma: 6, start: { room: 'summer_ridge', cell: [12, 32] } }, { start: { room: 'summer_ridge', cell: [12, 9] } }],
     // ノイズの壁：庭からあぜ道への出入口（2晩目から開く）と、あぜ道から川への出入口（3晩目から開く）
     walls: [
       { id: 'a41_wall_ridge', room: 'summer_garden', cells: box(10, 13, 0, 1), opens: 2 },
@@ -1150,9 +1150,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘はあぜ道の表に入れる
     hunt: {
       gathers: [
-        { id: 'a41_gather_garden', room: 'summer_garden', cell: [7, 4], items: [ITEMS.melonRind.id, ITEMS.cageMesh.id] },
-        { id: 'a41_gather_shed', room: 'summer_shed', cell: [16, 18], items: [ITEMS.pumpHandle.id, ITEMS.fireworkStick.id] },
-        { id: 'a41_gather_canal', room: 'summer_canal', cell: [4, 4], items: [ITEMS.cageMesh.id, ITEMS.pumpHandle.id] },
+        { id: 'a41_gather_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.melonRind.id, ITEMS.cageMesh.id] },
+        { id: 'a41_gather_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.pumpHandle.id, ITEMS.fireworkStick.id] },
+        { id: 'a41_gather_canal', room: 'summer_canal', cell: [5, 4], items: [ITEMS.cageMesh.id, ITEMS.pumpHandle.id] },
       ],
       tables: {
         summer_garden: ['a41_n1_gate', 'a41_n1_well', 'a41_n1_yard'],
@@ -1163,48 +1163,48 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a41_chest_garden', room: 'summer_garden', cell: [7, 4], items: [ITEMS.potion.id], snaps: ['iceChip'] },
-      { id: 'a41_chest_shed', room: 'summer_shed', cell: [16, 18], items: [ITEMS.melonSeed.id], gears: ['thunderBoost'] },
-      { id: 'a41_chest_canal', room: 'summer_canal', cell: [4, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['hpMemory'] },
+      { id: 'a41_chest_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.potion.id], snaps: ['iceChip'] },
+      { id: 'a41_chest_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.melonSeed.id], gears: ['thunderBoost'] },
+      { id: 'a41_chest_canal', room: 'summer_canal', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['hpMemory'] },
     ],
     enemies: [
       // ---- 1晩目（庭・物置） ----
-      { id: 'a41_e_gate', room: 'summer_garden', patrol: [[5, 16], [18, 16]], battle: 'a41_n1_gate' },
+      { id: 'a41_e_gate', room: 'summer_garden', patrol: [[6, 16], [14, 16]], battle: 'a41_n1_gate' },
       // 井戸のまわり：近づくと追ってくる
-      { id: 'a41_e_well', room: 'summer_garden', move: 'chase', patrol: [[6, 6], [17, 6]], battle: 'a41_n1_well' },
-      { id: 'a41_e_yard', room: 'summer_garden', patrol: [[4, 9], [14, 9]], battle: 'a41_n1_yard' },
-      { id: 'a41_e_shed', room: 'summer_shed', patrol: [[5, 8], [16, 8]], battle: 'a41_n1_shed' },
-      { id: 'a41_e_shed2', room: 'summer_shed', patrol: [[5, 17], [16, 17]], battle: 'a41_n1_shed2' },
+      { id: 'a41_e_well', room: 'summer_garden', move: 'chase', patrol: [[11, 14], [17, 14]], battle: 'a41_n1_well' },
+      { id: 'a41_e_yard', room: 'summer_garden', patrol: [[3, 10], [16, 10]], battle: 'a41_n1_yard' },
+      { id: 'a41_e_shed', room: 'summer_shed', patrol: [[10, 9], [21, 9]], battle: 'a41_n1_shed' },
+      { id: 'a41_e_shed2', room: 'summer_shed', patrol: [[5, 16], [17, 16]], battle: 'a41_n1_shed2' },
       // ---- 2晩目（あぜ道・用水路） ----
-      { id: 'a41_e_ridge', room: 'summer_ridge', night: 2, patrol: [[5, 31], [20, 31]], battle: 'a41_n2_ridge' },
+      { id: 'a41_e_ridge', room: 'summer_ridge', night: 2, patrol: [[13, 24], [13, 29]], battle: 'a41_n2_ridge' },
       // 田んぼの真ん中のあぜ：近づくと追ってくる
-      { id: 'a41_e_ridge2', room: 'summer_ridge', night: 2, move: 'chase', patrol: [[5, 26], [16, 26]], battle: 'a41_n2_ridge2' },
-      { id: 'a41_e_ridge3', room: 'summer_ridge', night: 2, patrol: [[5, 17], [16, 17]], battle: 'a41_n2_ridge3' },
-      { id: 'a41_e_canal', room: 'summer_canal', night: 2, patrol: [[4, 7], [17, 7]], battle: 'a41_n2_canal' },
+      { id: 'a41_e_ridge2', room: 'summer_ridge', night: 2, move: 'chase', patrol: [[12, 20], [12, 23]], battle: 'a41_n2_ridge2' },
+      { id: 'a41_e_ridge3', room: 'summer_ridge', night: 2, patrol: [[2, 13], [9, 13]], battle: 'a41_n2_ridge3' },
+      { id: 'a41_e_canal', room: 'summer_canal', night: 2, patrol: [[5, 8], [16, 8]], battle: 'a41_n2_canal' },
       // 用水路の逃げる敵（寄り道。コマなし、レアの素材）
       { id: 'a41_e_runner', room: 'summer_canal', night: 2, move: 'flee', patrol: [[14, 16]], battle: 'a41_runner' },
       // お地蔵さまの前の番人：倒すと川の浅瀬への道が開く（3晩目から。戦う前の会話）
-      { id: 'a41_e_guard', room: 'summer_ridge', night: 2, until: 2, move: 'guard', patrol: [[13, 4]], battle: 'a41_n2_guard', scene: 'a41_guard' },
+      { id: 'a41_e_guard', room: 'summer_ridge', night: 2, until: 2, move: 'guard', patrol: [[12, 4]], battle: 'a41_n2_guard', scene: 'a41_guard' },
       // ---- 3晩目（あぜ道の上と、川の浅瀬） ----
-      { id: 'a41_e_ridge4', room: 'summer_ridge', night: 3, patrol: [[7, 12], [16, 12]], battle: 'a41_n3_ridge' },
-      { id: 'a41_e_ridge5', room: 'summer_ridge', night: 3, patrol: [[5, 17], [16, 17]], battle: 'a41_n3_ridge2' },
+      { id: 'a41_e_ridge4', room: 'summer_ridge', night: 3, patrol: [[14, 7], [21, 7]], battle: 'a41_n3_ridge' },
+      { id: 'a41_e_ridge5', room: 'summer_ridge', night: 3, patrol: [[12, 16], [12, 21]], battle: 'a41_n3_ridge2' },
       { id: 'a41_e_shallows', room: 'summer_shallows', night: 3, patrol: [[4, 12], [19, 12]], battle: 'a41_n3_shallows' },
-      { id: 'a41_e_shallows2', room: 'summer_shallows', night: 3, move: 'chase', patrol: [[5, 6], [18, 6]], battle: 'a41_n3_shallows2' },
+      { id: 'a41_e_shallows2', room: 'summer_shallows', night: 3, move: 'chase', patrol: [[9, 10], [19, 10]], battle: 'a41_n3_shallows2' },
     ],
     // 浅瀬の向こうから流れてくる、大きな麦わら帽子
     boss: { id: 'a41_boss', room: 'summer_shallows', cell: [11, 4], battle: 'a41_boss' },
     // 写しの人々と、夜ごとの謎（りくの落書き・ノアの髪留め）
     talkers: [
-      { id: 'a41_voice_radio', room: 'summer_garden', cell: [5, 17], until: 1, scene: 'a41_voice_radio', label: '遠くのラジオ' },
-      { id: 'a41_voice_grandpa', room: 'summer_garden', cell: [15, 9], until: 1, scene: 'a41_voice_grandpa', label: '縁側' },
-      { id: 'a41_riku', room: 'summer_shed', cell: [5, 3], scene: 'a41_riku', label: '物置の柱' },
-      { id: 'a41_voice2_friend', room: 'summer_ridge', cell: [16, 22], night: 2, until: 2, scene: 'a41_voice2_friend', label: '自転車の子' },
-      { id: 'a41_hairclip', room: 'summer_ridge', cell: [9, 7], night: 2, scene: 'a41_hairclip', label: 'お地蔵さま' },
+      { id: 'a41_voice_radio', room: 'summer_garden', cell: [5, 18], until: 1, scene: 'a41_voice_radio', label: '遠くのラジオ' },
+      { id: 'a41_voice_grandpa', room: 'summer_garden', cell: [17, 11], until: 1, scene: 'a41_voice_grandpa', label: '縁側' },
+      { id: 'a41_riku', room: 'summer_shed', cell: [16, 8], scene: 'a41_riku', label: '物置の柱' },
+      { id: 'a41_voice2_friend', room: 'summer_ridge', cell: [13, 17], night: 2, until: 2, scene: 'a41_voice2_friend', label: '自転車の子' },
+      { id: 'a41_hairclip', room: 'summer_ridge', cell: [16, 6], night: 2, scene: 'a41_hairclip', label: 'お地蔵さま' },
     ],
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a41_first_koma' },
-      { on: 'checkpoint', room: 'summer_garden', cell: [10, 13], scene: 'a41_checkpoint' },
+      { on: 'checkpoint', room: 'summer_garden', cell: [9, 9], scene: 'a41_checkpoint' },
       { on: 'koma', count: 2, scene: 'a41_koma2' },
       { on: 'koma', count: 3, scene: 'a41_koma3' },
       { on: 'koma', count: 4, scene: 'a41_koma4' },
@@ -1251,7 +1251,7 @@ export const AREAS: Record<string, AreaDef> = {
       gathers: [
         { id: 'a42_gather_clock', cell: [18, 30], items: [ITEMS.balloonPaper.id, ITEMS.cubeTile.id] },
         { id: 'a42_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.gameButton.id, ITEMS.cuckooBird.id] },
-        { id: 'a42_gather_shop', room: 'opening_shop', cell: [6, 16], items: [ITEMS.cuckooBird.id, ITEMS.balloonPaper.id] },
+        { id: 'a42_gather_shop', room: 'opening_shop', cell: [4, 17], items: [ITEMS.cuckooBird.id, ITEMS.balloonPaper.id] },
       ],
       tables: {
         showa_night: ['a42_n1_gate', 'a42_n1_lower', 'a42_n1_mid', 'a42_n2_upper', 'a42_n2_guard', 'a42_n3_slope'],
@@ -1263,7 +1263,7 @@ export const AREAS: Record<string, AreaDef> = {
     chests: [
       { id: 'a42_chest_clock', cell: [18, 30], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
       { id: 'a42_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.cubeCore.id], gears: ['fireBoost'] },
-      { id: 'a42_chest_shop', room: 'opening_shop', cell: [6, 16], night: 3, items: [ITEMS.hiPotion.id], gears: ['mpSave'] },
+      { id: 'a42_chest_shop', room: 'opening_shop', cell: [4, 17], night: 3, items: [ITEMS.hiPotion.id], gears: ['mpSave'] },
     ],
     enemies: [
       // ---- 1晩目（入口から時計屋の前） ----
@@ -1285,11 +1285,11 @@ export const AREAS: Record<string, AreaDef> = {
       // ---- 3晩目（坂の手前と、店の中） ----
       { id: 'a42_e_slope', night: 3, patrol: [[10, 10], [15, 10]], battle: 'a42_n3_slope' },
       { id: 'a42_e_slope2', night: 3, move: 'chase', patrol: [[11, 6], [14, 6]], battle: 'a42_n3_slope2' },
-      { id: 'a42_e_shop', room: 'opening_shop', night: 3, patrol: [[5, 12], [18, 12]], battle: 'a42_n3_shop' },
-      { id: 'a42_e_shop2', room: 'opening_shop', night: 3, move: 'chase', patrol: [[6, 7], [17, 7]], battle: 'a42_n3_shop2' },
+      { id: 'a42_e_shop', room: 'opening_shop', night: 3, patrol: [[4, 20], [18, 20]], battle: 'a42_n3_shop' },
+      { id: 'a42_e_shop2', room: 'opening_shop', night: 3, move: 'chase', patrol: [[3, 9], [21, 9]], battle: 'a42_n3_shop2' },
     ],
     // 奥のカウンターの前の、下りてくるシャッター
-    boss: { id: 'a42_boss', room: 'opening_shop', cell: [11, 4], battle: 'a42_boss' },
+    boss: { id: 'a42_boss', room: 'opening_shop', cell: [9, 8], battle: 'a42_boss' },
     // 写しの人々と、夜ごとの謎（店の奥の柱時計・しずえさんの白い薬）
     talkers: [
       { id: 'a42_voice_grocer', cell: [8, 38], until: 1, scene: 'a42_voice_grocer', label: '八百屋' },

@@ -49,6 +49,19 @@ export const ENEMY_ART: Record<string, string> = {
   diplomaNoise: 'enemy.diploma_noise',
   yosegakiNoise: 'enemy.yosegaki_noise',
   crossingLord: 'enemy.crossing_boss',
+  // 2026-11-04：4章の敵（docs/ART_QUEUE.md の O）
+  bugcageNoise: 'enemy.bugcage_noise',
+  watermelonNoise: 'enemy.watermelon_noise',
+  fireworkNoise: 'enemy.firework_noise',
+  watergunNoise: 'enemy.watergun_noise',
+  jizoNoise: 'enemy.jizo_noise',
+  riverLord: 'enemy.river_boss',
+  yoyoNoise: 'enemy.yoyo_noise',
+  pagerNoise: 'enemy.pager_noise',
+  paperballoonNoise: 'enemy.paperballoon_noise',
+  cuckooNoise: 'enemy.cuckoo_noise',
+  wreathNoise: 'enemy.wreath_noise',
+  shutterLord: 'enemy.shutter_boss',
 };
 
 /** 部位がなくても、1体で出る時はボスの大きさで描く敵（段階108。テストプレイのメモ 32：2-3 の負け戦のカイが小さかった） */
@@ -71,6 +84,9 @@ export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: numb
   trainLord: { chimney: [0.3, 0.2], wheel: [0.62, 0.74] },
   yaguraLord: { drum: [0.52, 0.22], lanternRope: [0.72, 0.64] },
   crossingLord: { alarm: [0.55, 0.2], barrier: [0.12, 0.42, 'left'] },
+  // 2026-11-04：川のぬしは上の麦わらのつばと下の流れ、シャッターのぬしは真ん中の板と上の巻き上げ機
+  riverLord: { brim: [0.3, 0.22, 'left'], current: [0.5, 0.68] },
+  shutterLord: { slats: [0.5, 0.62], winch: [0.6, 0.14] },
 };
 
 /**
