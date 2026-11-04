@@ -11,6 +11,7 @@
 - 今の作業の一覧：`docs/milestones/M3.md`（3〜5章。段階87〜。段階は先にここへ書いてから作る）。3章の脚本は `docs/script/3-1.md` から（話ごとに1つ）。4章は `docs/script/4-1.md` から
 - M2 の作業の一覧：`docs/milestones/M2.md`（段階33〜86。すべて作った）。M2 の脚本は `docs/script/M2.md` と、作り直しの `docs/script/1-1_rework.md`〜`2-3_rework.md`
 - M1 の残り（31a・31b の素材、32b の引っかかりの直し）：`docs/milestones/M1.md`
+- 人物の早見表（名前・設定・顔）：`docs/CHARACTERS.md`（2026-11-04。人や絵が増えたら作り直す）
 - 背景：`docs/CONCEPT.md`（構想）、`docs/STORY.md`（物語）、`docs/NAMING.md`（名前と用語）、`docs/ART.md`（絵と音）、`docs/ROADMAP.md`（マイルストーン）
 - 必要な時だけ：`docs/HISTORY.md`（段階の歩み）、`docs/SPEC.md`（試作の段階1〜14の記録。書き足さない）、`docs/script/M1.md`（M1 の脚本）
 
