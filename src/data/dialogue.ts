@@ -326,7 +326,7 @@ export const CAST: Record<string, CastMember> = {
     tint: SEPIA_TINT,
   },
   // 段階78（2-1 の書き直し。docs/script/2-1_rework.md）：源三の娘すみ（今77歳。銭湯「松の湯」の女将）と、昭和44年の写しのすみ（22歳）・先輩の職人としお。
-  // 立ち絵はまだない（色の札）。写しはセピアをかける
+  // 早瀬の立ち絵は 2026-11-04 に届いた。写しの2人はまだない（色の札）。写しはセピアをかける
   すみ: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
   写しのすみ: { portrait: 'portrait.past_sumi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
   写しのとしお: { faces: names('通常'), firstFace: '通常', color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
@@ -373,12 +373,12 @@ export const CAST: Record<string, CastMember> = {
   とうや: { portrait: 'portrait.toya', ...young(['笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
   写しのしおり: { portrait: 'portrait.past_shiori', ...young(['むっ', '笑顔', '通常', '真剣'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
   写しのとうや: { portrait: 'portrait.past_toya', ...young(['笑顔', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
-  // 段階137a（4-1。docs/script/4-1.md の 2.）：ハルトたちの高校の1年生のたいち（今16歳）、平成30年の夏の写しのたいち（10歳）と写しのおじいちゃん。立ち絵はまだない（色の札）。写しはセピア
-  たいち: { faces: names('通常', '不機嫌', '驚き', '考える', '泣きそう', '笑顔'), firstFace: '通常', color: 0x4a6a8a, voice: { pitch: 360, wave: 'square' } },
-  写しのたいち: { faces: names('通常', '泣きそう', '不機嫌', '真剣', '笑顔', '驚き', '怒り'), firstFace: '通常', color: 0x8aa0c0, voice: { pitch: 620, wave: 'square' }, tint: SEPIA_TINT },
-  写しのおじいちゃん: { faces: names('通常', '怒り'), firstFace: '通常', color: 0x7a6a5a, voice: { pitch: 250, wave: 'sawtooth' }, tint: SEPIA_TINT },
-  // 段階140a（4-2。docs/script/4-2.md の 2.）：店長の早瀬じん（今75歳くらい。5人目の仲間）、昭和55年の春の写しのじん（29歳）と写しのしずえ（27歳）。立ち絵はまだない（色の札）。写しはセピア
-  早瀬: { faces: names('通常', '怒り', '驚き', '考える', '苦笑い', '泣き笑い'), firstFace: '通常', color: 0x8a7a5a, voice: { pitch: 250, wave: 'sawtooth' } },
+  // 段階137a（4-1。docs/script/4-1.md の 2.）：ハルトたちの高校の1年生のたいち（今16歳）、平成30年の夏の写しのたいち（10歳）と写しのおじいちゃん。立ち絵は 2026-11-04 に届いた（docs/ART_QUEUE.md の J）。写しはセピア
+  たいち: { portrait: 'portrait.taichi', ...young(['通常', '不機嫌', '驚き', '考える', '泣きそう', '笑顔'], { 通常: 'normal', 不機嫌: 'sullen', 驚き: 'surprised', 考える: 'thinking', 泣きそう: 'tearful', 笑顔: 'smile' }, '通常'), height: 450, color: 0x4a6a8a, voice: { pitch: 360, wave: 'square' } },
+  写しのたいち: { portrait: 'portrait.past_taichi', ...young(['通常', '泣きそう', '不機嫌', '真剣', '笑顔', '驚き', '怒り'], { 通常: 'normal', 泣きそう: 'tearful', 不機嫌: 'sullen', 真剣: 'serious', 笑顔: 'smile', 驚き: 'surprised', 怒り: 'angry' }, '通常'), height: YOUNG_HEIGHT, color: 0x8aa0c0, voice: { pitch: 620, wave: 'square' }, tint: SEPIA_TINT },
+  写しのおじいちゃん: { portrait: 'portrait.past_grandpa', ...young(['通常', '怒り'], { 通常: 'normal', 怒り: 'angry' }, '通常'), height: 450, color: 0x7a6a5a, voice: { pitch: 250, wave: 'sawtooth' }, tint: SEPIA_TINT },
+  // 段階140a（4-2。docs/script/4-2.md の 2.）：店長の早瀬じん（今58歳。5人目の仲間。段階149 で75歳から直した）、平成9年の春の写しのじん（29歳）と写しのしずえ（27歳）。立ち絵はまだない（色の札）。写しはセピア
+  早瀬: { portrait: 'portrait.hayase', ...young(['通常', '怒り', '驚き', '考える', '苦笑い', '泣き笑い'], { 通常: 'normal', 怒り: 'angry', 驚き: 'surprised', 考える: 'thinking', 苦笑い: 'wry', 泣き笑い: 'teary' }, '通常'), height: 450, color: 0x8a7a5a, voice: { pitch: 250, wave: 'sawtooth' } },
   写しのじん: { faces: names('通常', '驚き', '真剣', '困り'), firstFace: '通常', color: 0x9a8a6a, voice: { pitch: 280, wave: 'sawtooth' }, tint: SEPIA_TINT },
   写しのしずえ: { faces: names('笑顔', '大笑い', '照れ', '驚き', '困り笑い', '泣き笑い', '考える', '微笑み'), firstFace: '笑顔', color: 0xd09a7a, voice: { pitch: 620, wave: 'triangle' }, tint: SEPIA_TINT },
   // 表情違い8枚（2026-10-31。docs/ART_QUEUE.md の I）
@@ -563,9 +563,9 @@ export const BACKDROPS: Record<string, Backdrop> = {
   summer_garden: { title: '平成30年の夏、おじいちゃんの家の庭（朝）', top: 0xa8d8f0, bottom: 0x8aa060, image: 'bg.village_1966', tint: 0xf0f0e0 },
   summer_paddy: { title: '平成30年の夏、田んぼのあぜ道（昼前）', top: 0x9ad0f0, bottom: 0x7ab060, image: 'bg.village_1966' },
   summer_shallows: { title: '平成30年の夏、川の浅瀬（昼）', top: 0x8ac8f0, bottom: 0x6a9aa0, image: 'bg.riverside_1998', tint: 0xe0f0f0 },
-  // 段階140a：4-2 の昭和55年の春の商店街（朝・昼）と、開店の日の時計屋の店内（夜）。絵が届くまで、1-2 の商店街と今の時計屋の絵の色を変えて代わり
-  opening_street: { title: '昭和55年の春、商店街（朝）', top: 0xc8e0f0, bottom: 0x9a8a6a, image: 'bg.showa_street', tint: 0xf0f0e8 },
-  opening_shop_night: { title: '昭和55年の春、開店の日の時計屋（夜）', top: 0x2a2030, bottom: 0x4a3a2a, image: 'bg.clock_shop', tint: 0x8a7a68, ambient: 'dust' },
+  // 段階140a：4-2 の平成9年の春（段階149 で昭和55年から動かした）の商店街（朝・昼）と、開店の日の時計屋の店内（夜）。絵が届くまで、1-2 の商店街と今の時計屋の絵の色を変えて代わり
+  opening_street: { title: '平成9年の春、商店街（朝）', top: 0xc8e0f0, bottom: 0x9a8a6a, image: 'bg.showa_street', tint: 0xf0f0e8 },
+  opening_shop_night: { title: '平成9年の春、開店の日の時計屋（夜）', top: 0x2a2030, bottom: 0x4a3a2a, image: 'bg.clock_shop', tint: 0x8a7a68, ambient: 'dust' },
   // 段階96：32日目の雨（今の絵に、灰色をかけて雨の粒を降らせる）
   classroom_rain: { title: '教室（雨の朝）', top: 0x9aa4b0, bottom: 0x6a7470, image: 'bg.classroom', tint: 0x8890a0, ambient: 'rain' },
   clock_shop_rain: { title: '時計屋の店内（雨）', top: 0x707880, bottom: 0x3a3a40, image: 'bg.clock_shop', tint: 0x7a8290, ambient: 'rain' },

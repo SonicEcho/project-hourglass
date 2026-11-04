@@ -132,11 +132,11 @@ export const ITEMS = {
   hatBrim: { id: 'hatBrim', name: '麦わらのつば', kind: 'material', rarity: 'part', gains: { ice: 2, thunder: 2 } },
   riverStone: { id: 'riverStone', name: '川底の石', kind: 'material', rarity: 'part', gains: { atk: 3 } },
   lordStrawHat: { id: 'lordStrawHat', name: 'ぬしの麦わら帽子', kind: 'material', rarity: 'boss', gains: { fire: 2, ice: 2, thunder: 2 } },
-  // ---- 4-2 の昭和55年の春、開店の日の商店街（段階140a） ----
-  cubeTile: { id: 'cubeTile', name: 'キューブの色の面', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
-  cubeCore: { id: 'cubeCore', name: 'キューブの芯', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
-  gameButton: { id: 'gameButton', name: 'ゲーム機のボタン', kind: 'material', rarity: 'common', gains: { atk: 2, thunder: 1 } },
-  gameGlass: { id: 'gameGlass', name: 'ゲーム機の天板', kind: 'material', rarity: 'uncommon', gains: { atk: 3, ice: -1 } },
+  // ---- 4-2 の平成9年の春、開店の日の商店街（段階140a。段階149 で昭和55年から動かし、2つの敵を替えた。id はセーブに入っているので前のまま） ----
+  cubeTile: { id: 'cubeTile', name: 'ヨーヨーの糸', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
+  cubeCore: { id: 'cubeCore', name: 'ヨーヨーの軸', kind: 'material', rarity: 'uncommon', gains: { ice: 3, fire: -1 } },
+  gameButton: { id: 'gameButton', name: 'ポケベルのボタン', kind: 'material', rarity: 'common', gains: { atk: 2, thunder: 1 } },
+  gameGlass: { id: 'gameGlass', name: 'ポケベルの画面', kind: 'material', rarity: 'uncommon', gains: { atk: 3, ice: -1 } },
   balloonPaper: { id: 'balloonPaper', name: '紙風船の紙', kind: 'material', rarity: 'common', gains: { fire: 2, atk: 1 } },
   balloonMouth: { id: 'balloonMouth', name: '紙風船の口', kind: 'material', rarity: 'uncommon', gains: { fire: 3, ice: -1 } },
   redBalloon: { id: 'redBalloon', name: '赤い紙風船', kind: 'material', rarity: 'rare', gains: { atk: 3, fire: 3, ice: 2 } },
