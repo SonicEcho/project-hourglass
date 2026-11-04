@@ -4,6 +4,7 @@ import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntab
 import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
+import { startWithImages } from '../ui/waitImages';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { backButton, FRAME_COLORS, frameHeader, PLAIN_BUTTON } from '../ui/frame';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -173,6 +174,7 @@ export class HubScene extends Phaser.Scene {
     startHunt(startExplore(area), fade.rate);
     const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
     this.cameras.main.fadeOut(250, 0, 0, 0);
-    this.time.delayedCall(260, () => this.scene.start('Explore', data));
+    // 狩りの区画の地図と敵の絵だけを待つ（段階150）
+    this.time.delayedCall(260, () => startWithImages(this, 'Explore', data));
   }
 }

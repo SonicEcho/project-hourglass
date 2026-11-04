@@ -8,6 +8,7 @@ import { COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
+import { startWithImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
 import { run, saveRun, setStoryVars, storyLineup } from './run';
 
@@ -231,7 +232,7 @@ export class DailyScene extends Phaser.Scene {
   private tapSpot(place: DailyPlace, spot: DailySpot): void {
     if (spot.mark === 'hub') {
       this.cameras.main.fadeOut(250, 0, 0, 0);
-      this.time.delayedCall(260, () => this.scene.start('Hub', { seen: undefined }));
+      this.time.delayedCall(260, () => startWithImages(this, 'Hub', { seen: undefined }));
       return;
     }
     const state = spotState(this.hub, run.vars, spot);

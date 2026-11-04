@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BACKDROPS, CAST, CGS, PORTRAIT_PARTS, SCENES } from '../data';
 import { background, preloadQueue, unsettled } from '../assets/loader';
 import { sceneImageIds } from '../assets/sceneImages';
+import { screenImages } from '../assets/screenImages';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { COLORS } from './theme';
 import { addText } from './widgets';
@@ -25,7 +26,9 @@ export function waitImages(scene: Phaser.Scene, ids: string[], then: () => void)
     then();
     return;
   }
-  if (ids !== ALL) preloadQueue.prioritize(ids);
+  // 段階150：待つ間は、その絵だけを読む（ほかの絵も一緒に読むと、絵を画面に載せる手間の取り合いで待ちが延びる）。
+  // 読み終えて画面が始まり、少ししてから残りを裏で読み始める
+  if (ids !== ALL) preloadQueue.focus(ids);
   else preloadQueue.release();
   const total = ids === ALL ? 0 : unsettled(scene, ids).length;
   const layer = scene.add.container(0, 0).setDepth(3000);
@@ -44,6 +47,8 @@ export function waitImages(scene: Phaser.Scene, ids: string[], then: () => void)
       if (rest > 0) return;
       timer.remove();
       layer.destroy(true);
+      // 画面が替わるとその画面の時計は止まるので、ブラウザの時計で
+      if (ids !== ALL) window.setTimeout(() => preloadQueue.release(), 1500);
       then();
     },
   });
@@ -61,6 +66,11 @@ export function focusImages(ids: string[]): void {
 /** 止めていた裏の読み込みを、少し置いてから再び始める */
 export function releaseSoon(scene: Phaser.Scene, ms = 1500): void {
   scene.time.delayedCall(ms, () => preloadQueue.release());
+}
+
+/** その画面（会話のほか）を、その画面で使う絵がそろってから開く（段階150。わからない画面は全部の絵を待つ） */
+export function startWithImages(scene: Phaser.Scene, key: string, data: object): void {
+  waitImages(scene, screenImages(key, data as Record<string, unknown>, ALL), () => scene.scene.start(key, data));
 }
 
 /** waitImages に渡すと、全部の絵を待つ */
