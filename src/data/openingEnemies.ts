@@ -1,34 +1,36 @@
 import type { EnemyDef } from '../core/types';
 
-// 4-2「早瀬の時間」：昭和55年の春、時計屋の開店の日の商店街の砂嵐と、坂の手前の番人、区画のボス（段階140a）。
-// 名前は脚本の候補（docs/script/4-2.md の 3.・6.）。1-2（昭和63年の夏）の物とは変える。弱点は物理・雷・火・氷の4つに散らす。
+// 4-2「早瀬の時間」：平成9年（1997年）の春、時計屋の開店の日の商店街の砂嵐と、坂の手前の番人、区画のボス（段階140a）。
+// 名前は脚本の候補（docs/script/4-2.md の 3.・6.）。1-2（昭和63年の夏）の物とは変える。
+// 段階149：早瀬を50代にしたので、開店の日を昭和55年から平成9年に動かし、1980年の物（ルービックキューブ・テーブルのゲーム機）を1997年の物に替えた。
+// 素材の id は、セーブに入っているので前のまま（名前だけ替えた）。弱点は物理・雷・火・氷の4つに散らす。
 // 数値は自動対戦（npm run measure の「4-2」の表。4-1 を通した後の育ち具合から始める）で測って決めた。目安は docs/design/battle.md の 13.
 
-/** ルービックキューブノイズ：色のそろわない立方体が、ぐるぐる回り続ける。氷が弱点（冷えて固まる）、火に強い */
-export const CUBE_NOISE: EnemyDef = {
-  id: 'cubeNoise',
-  name: 'ルービックキューブノイズ',
+/** ハイパーヨーヨーノイズ：平成9年に大流行したヨーヨーが、糸を伸ばしたまま回り続ける。氷が弱点（冷えて糸が固まる）、火に強い */
+export const YOYO_NOISE: EnemyDef = {
+  id: 'yoyoNoise',
+  name: 'ハイパーヨーヨーノイズ',
   stats: { hp: 330, atk: 32, mag: 20, def: 16, spd: 14 },
   weaknesses: ['ice'],
   resistances: ['fire'],
   actions: [
-    { id: 'twist', name: 'ひねり', target: 'ally', type: 'physical', power: 38, weight: 1.0 },
-    { id: 'colorScatter', name: '色ちらし', target: 'allies', type: 'magic', power: 24, weight: 1.0 },
+    { id: 'loop', name: 'ループ', target: 'ally', type: 'physical', power: 38, weight: 1.0 },
+    { id: 'colorScatter', name: '光る回転', target: 'allies', type: 'magic', power: 24, weight: 1.0 },
   ],
   ai: { type: 'random' },
   dropTable: { common: 'cubeTile', uncommon: 'cubeCore' },
 };
 
-/** テーブルゲームノイズ：喫茶店のテーブル型のゲーム機。画面から小さな光の弾。物理が弱点（ガラスが割れる）、雷に強い */
-export const GAMETABLE_NOISE: EnemyDef = {
-  id: 'gametableNoise',
-  name: 'テーブルゲームノイズ',
+/** ポケベルノイズ：ポケットベルが、鳴りやまない数字の呼び出しを飛ばす。物理が弱点（小さな画面が割れる）、雷に強い */
+export const PAGER_NOISE: EnemyDef = {
+  id: 'pagerNoise',
+  name: 'ポケベルノイズ',
   stats: { hp: 420, atk: 22, mag: 32, def: 18, spd: 8 },
   weaknesses: ['physical'],
   resistances: ['thunder'],
   actions: [
-    { id: 'pixelShot', name: '光の弾', target: 'allies', type: 'thunder', power: 26, weight: 1.0 },
-    { id: 'gameOver', name: 'ゲームオーバー', target: 'ally', type: 'magic', power: 38, weight: 1.0 },
+    { id: 'pixelShot', name: '呼び出し', target: 'allies', type: 'thunder', power: 26, weight: 1.0 },
+    { id: 'gameOver', name: '0840（おはよう）', target: 'ally', type: 'magic', power: 38, weight: 1.0 },
   ],
   ai: { type: 'random' },
   dropTable: { common: 'gameButton', uncommon: 'gameGlass' },
@@ -110,4 +112,4 @@ export const SHUTTER_LORD: EnemyDef = {
   drops: ['lordShutterKey'],
 };
 
-export const OPENING_NOISES: EnemyDef[] = [CUBE_NOISE, GAMETABLE_NOISE, PAPERBALLOON_NOISE, CUCKOO_NOISE];
+export const OPENING_NOISES: EnemyDef[] = [YOYO_NOISE, PAGER_NOISE, PAPERBALLOON_NOISE, CUCKOO_NOISE];

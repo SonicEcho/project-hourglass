@@ -9,7 +9,7 @@ import { BALL_NOISE, JUG_NOISE, KAI, KAI_REVENGE, MEGAPHONE_NOISE, PET_NOISE, SC
 import { CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE, PINWHEEL_NOISE, YAGURA_LORD } from './taishoEnemies';
 import { COIL_NOISE, FAN_NOISE, POSTBOX_NOISE, RADIO_NOISE, TABLE_NOISE, TRAIN_LORD } from './villageEnemies';
 import { CROSSING_LORD, DIPLOMA_NOISE, EARPHONE_NOISE, SELFIE_NOISE, TAPIOCA_NOISE, YOSEGAKI_NOISE } from './gradEnemies';
-import { CUBE_NOISE, CUCKOO_NOISE, GAMETABLE_NOISE, PAPERBALLOON_NOISE, SHUTTER_LORD, WREATH_NOISE } from './openingEnemies';
+import { YOYO_NOISE, CUCKOO_NOISE, PAGER_NOISE, PAPERBALLOON_NOISE, SHUTTER_LORD, WREATH_NOISE } from './openingEnemies';
 import { BUGCAGE_NOISE, FIREWORK_NOISE, JIZO_NOISE, RIVER_LORD, WATERGUN_NOISE, WATERMELON_NOISE } from './summerEnemies';
 import { BICYCLE_LORD, MENKO_NOISE, PHONE_NOISE, RAMUNE_NOISE, TIN_NOISE } from './showaEnemies';
 import { box, ROOMS } from './rooms';
@@ -282,23 +282,23 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a41_n3_shallows2: { id: 'a41_n3_shallows2', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, FIREWORK_NOISE, WATERMELON_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n3))), reward: 4, koma: 1 },
   a41_boss: { id: 'a41_boss', name: '川のぬし', enemies: [toughenEnemy(RIVER_LORD, A41_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['pinchHitter'] },
   // ---- 4-2「早瀬の時間」（段階140a。openingEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし。部屋と敵の置き場所は 1-2 と同じ（坂の上の代わりに店内） ----
-  a42_n1_gate: { id: 'a42_n1_gate', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_gate: { id: 'a42_n1_gate', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
   a42_n1_entry: { id: 'a42_n1_entry', name: '砂嵐', enemies: tough([CUCKOO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
-  a42_n1_lower: { id: 'a42_n1_lower', name: '砂嵐', enemies: tough([GAMETABLE_NOISE, PAPERBALLOON_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
-  a42_n1_tobacco: { id: 'a42_n1_tobacco', name: '砂嵐', enemies: tough([CUBE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
-  a42_n1_mid: { id: 'a42_n1_mid', name: '砂嵐', enemies: tough([CUCKOO_NOISE, GAMETABLE_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_lower: { id: 'a42_n1_lower', name: '砂嵐', enemies: tough([PAGER_NOISE, PAPERBALLOON_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_tobacco: { id: 'a42_n1_tobacco', name: '砂嵐', enemies: tough([YOYO_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
+  a42_n1_mid: { id: 'a42_n1_mid', name: '砂嵐', enemies: tough([CUCKOO_NOISE, PAGER_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
   a42_runner: { id: 'a42_runner', name: '砂嵐', enemies: [PAPERBALLOON_NOISE, PAPERBALLOON_NOISE, PAPERBALLOON_NOISE], reward: 3, item: ITEMS.brushSign.id },
-  a42_n2_upper: { id: 'a42_n2_upper', name: '砂嵐', enemies: tough([CUBE_NOISE, GAMETABLE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
+  a42_n2_upper: { id: 'a42_n2_upper', name: '砂嵐', enemies: tough([YOYO_NOISE, PAGER_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
   a42_n2_alley1: { id: 'a42_n2_alley1', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, PAPERBALLOON_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
-  a42_n2_alley2: { id: 'a42_n2_alley2', name: '砂嵐', enemies: tough([GAMETABLE_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
-  a42_n2_lane1: { id: 'a42_n2_lane1', name: '砂嵐', enemies: tough([CUCKOO_NOISE, CUBE_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
-  a42_n2_lane2: { id: 'a42_n2_lane2', name: '砂嵐', enemies: tough([CUBE_NOISE, PAPERBALLOON_NOISE, GAMETABLE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
+  a42_n2_alley2: { id: 'a42_n2_alley2', name: '砂嵐', enemies: tough([PAGER_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
+  a42_n2_lane1: { id: 'a42_n2_lane1', name: '砂嵐', enemies: tough([CUCKOO_NOISE, YOYO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
+  a42_n2_lane2: { id: 'a42_n2_lane2', name: '砂嵐', enemies: tough([YOYO_NOISE, PAPERBALLOON_NOISE, PAGER_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
   // 坂の手前の番人：倒すと店の中への道が開く（3晩目から）
-  a42_n2_guard: { id: 'a42_n2_guard', name: '開店祝いの花輪ノイズ', enemies: [toughenEnemy(WREATH_NOISE, A42_SCALE.guard), ...tough([CUBE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2)))], reward: 5, koma: 1 },
-  a42_n3_slope: { id: 'a42_n3_slope', name: '砂嵐', enemies: tough([GAMETABLE_NOISE, CUCKOO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 3, koma: 1 },
-  a42_n3_slope2: { id: 'a42_n3_slope2', name: '砂嵐', enemies: tough([CUBE_NOISE, CUBE_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 2 },
-  a42_n3_shop: { id: 'a42_n3_shop', name: '砂嵐', enemies: tough([CUCKOO_NOISE, GAMETABLE_NOISE, CUBE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 4, koma: 1 },
-  a42_n3_shop2: { id: 'a42_n3_shop2', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, CUBE_NOISE, GAMETABLE_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 4, koma: 1 },
+  a42_n2_guard: { id: 'a42_n2_guard', name: '開店祝いの花輪ノイズ', enemies: [toughenEnemy(WREATH_NOISE, A42_SCALE.guard), ...tough([YOYO_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2)))], reward: 5, koma: 1 },
+  a42_n3_slope: { id: 'a42_n3_slope', name: '砂嵐', enemies: tough([PAGER_NOISE, CUCKOO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 3, koma: 1 },
+  a42_n3_slope2: { id: 'a42_n3_slope2', name: '砂嵐', enemies: tough([YOYO_NOISE, YOYO_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 2 },
+  a42_n3_shop: { id: 'a42_n3_shop', name: '砂嵐', enemies: tough([CUCKOO_NOISE, PAGER_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 4, koma: 1 },
+  a42_n3_shop2: { id: 'a42_n3_shop2', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, YOYO_NOISE, PAGER_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n3))), reward: 4, koma: 1 },
   a42_boss: { id: 'a42_boss', name: 'シャッターのぬし', enemies: [toughenEnemy(SHUTTER_LORD, A42_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['breakArm'] },
 };
 
@@ -1219,7 +1219,7 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'cleared', scene: 'a41_last_koma' },
     ],
   },
-  // 4-2「早瀬の時間」（段階140a。docs/script/4-2.md）。昭和55年の春、時計屋の開店の日。1-2 の昭和の商店街の部屋を使い回し、坂の上の代わりに店内をつなぐ。
+  // 4-2「早瀬の時間」（段階140a。docs/script/4-2.md）。平成9年の春、時計屋の開店の日。1-2 の昭和の商店街の部屋を使い回し、坂の上の代わりに店内をつなぐ。
   // 早瀬（持ち主）も一緒に入る（並びから外せない）。3晩に分けて入る
   a42: {
     id: 'a42',

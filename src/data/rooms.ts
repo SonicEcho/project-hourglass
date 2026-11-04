@@ -2560,7 +2560,7 @@ export const SUMMER_SHALLOWS_LAYOUT = [
   '##########....##########',
 ];
 
-// ---- 4-2 の昭和55年の春、開店の日の時計屋の店内（段階140a。文字の地図だけ。絵は後で頼む。docs/script/4-2.md の 3.）。ほかの部屋は 1-2 の昭和の商店街を使い回す ----
+// ---- 4-2 の平成9年の春（段階149 で昭和55年から動かした）、開店の日の時計屋の店内（段階140a。文字の地図だけ。絵は後で頼む。docs/script/4-2.md の 3.）。ほかの部屋は 1-2 の昭和の商店街を使い回す ----
 /** 開店の日の時計屋の店内（正方形）。下の出入口だけ（夜は通りから、シャッターの下をくぐって入る）。ガラスケース（#）の間を歩き、奥のカウンターの前にぬし。左の奥に柱時計 */
 export const OPENING_SHOP_LAYOUT = [
   '########################',
@@ -2654,7 +2654,7 @@ export const ROOMS = {
   summer_canal: { id: 'summer_canal', layout: SUMMER_CANAL_LAYOUT, era: 'heisei_late', exits: ['right'] },
   summer_shallows: { id: 'summer_shallows', layout: SUMMER_SHALLOWS_LAYOUT, era: 'heisei_late', exits: ['bottom'] },
   // 4-2 の開店の日の時計屋の店内（段階140a。昭和の半ば。文字の地図だけ）
-  opening_shop: { id: 'opening_shop', layout: OPENING_SHOP_LAYOUT, era: 'showa_mid', exits: ['bottom'] },
+  opening_shop: { id: 'opening_shop', layout: OPENING_SHOP_LAYOUT, era: 'heisei_mid', exits: ['bottom'] },
   // 試しの区画（デバッグメニュー。段階47）：今ある地図の絵3枚に、出入口の道を開けたもの（絵は道の所が壁のまま）。本編では使わない
   trial_street: { id: 'trial_street', layout: carve(SHOWA_STREET_LAYOUT, [...box(10, 13, 0, 5), ...box(0, 9, 19, 22)]), image: 'map.showa_street', exits: ['top', 'left'] },
   trial_factory: { id: 'trial_factory', layout: carve(FACTORY_ALLEY_LAYOUT, box(19, 23, 19, 22), true), image: 'map.factory_alley', exits: ['right'] },

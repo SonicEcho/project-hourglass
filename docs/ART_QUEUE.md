@@ -269,7 +269,7 @@ Background: plain pure white, no shadow, no gradient.
 
 ### N. 早瀬（仲間）
 
-4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：無口で皮肉屋、ルーペ、作業着）。見た目はたたき台。2026-11-04 開発者の指摘「おじいさん過ぎる。もっと動けるかっこいいイケオジ風」で、背筋の伸びた銀髪のイケオジに直した。設定画を見て決めてから、胸から上の1枚と表情違いを作る。絵柄と構図の見本はハルトの立ち絵（お年寄りの絵を見本にすると、老けて出たため）
+4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：無口で皮肉屋、ルーペ、作業着）。見た目はたたき台。2026-11-04 開発者の指摘「おじいさん過ぎる。50代のダンディな感じ」で、今58歳にし（段階149）、白髪まじりのダンディに直した。設定画を見て決めてから、胸から上の1枚と表情違いを作る。絵柄と構図の見本はハルトの立ち絵（お年寄りの絵を見本にすると、老けて出たため）
 
 #### 17. 早瀬の設定画
 
@@ -280,8 +280,8 @@ Background: plain pure white, no shadow, no gradient.
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
-Character design sheet of an original anime-style cool older man for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
-Character: Jin Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A cool, handsome older man who looks far younger and stronger than his age: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast. Silver-grey hair swept back with a few loose strands, a neatly trimmed short silver beard, sharp narrow eyes with a hint of a smirk, a few handsome lines on his face. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt.
+Character design sheet of an original anime-style dandy man in his late fifties for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
+Character: Jin Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A dandy, handsome man in his late fifties: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast in a fight. Dark hair with streaks of grey at the temples, swept back with a few loose strands, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes with a hint of a smirk, a few handsome lines around his eyes. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt.
 ```
 
 #### 18. 早瀬の胸から上の基本の1枚（通常）
@@ -297,7 +297,7 @@ Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3
 Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the boy in the hoodie.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
-Character: Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A cool, handsome older man who looks far younger and stronger than his age: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast. Silver-grey hair swept back with a few loose strands, a neatly trimmed short silver beard, sharp narrow eyes with a hint of a smirk, a few handsome lines on his face. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt. Keep his design exactly as in the attached character sheet.
+Character: Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. A dandy, handsome man in his late fifties: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast in a fight. Dark hair with streaks of grey at the temples, swept back with a few loose strands, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes with a hint of a smirk, a few handsome lines around his eyes. A watchmaker's loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt. Keep his design exactly as in the attached character sheet.
 ```
 
 #### 19. 早瀬：考える（8回）
@@ -309,7 +309,7 @@ Character: Hayase, the owner of a small old watch and clock repair shop in a Jap
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a thinking look, eyes narrowed and lowered, as if examining a tiny watch part.
-This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the dandy watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -324,7 +324,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a wry, crooked half smile, one corner of his mouth up, eyebrows a little raised.
-This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the dandy watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -339,7 +339,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes opened wide under the thick eyebrows, mouth slightly open.
-This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the dandy watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -354,7 +354,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, an angry, stern scowl, eyebrows drawn together, mouth pressed in a hard line.
-This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the dandy watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -369,7 +369,7 @@ Background: plain pure white, no shadow, no gradient.
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, smiling through tears, eyes wet and crinkled, a gentle trembling smile.
-This is exactly the same character as the attached portrait: Hayase, the silver-haired watchmaker in the attached portrait.
+This is exactly the same character as the attached portrait: Hayase, the dandy watchmaker in the attached portrait.
 Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
@@ -463,32 +463,32 @@ Use a few large, clearly recognizable objects rather than many small ones, so ea
 A large boss monster, filling most of the image. Body: a giant straw hat riding on a rushing river current, water churning beneath it. Two clearly visible parts: the wide brim of the straw hat at the top, and the swirling river current with stones at the bottom
 ```
 
-#### 30. 4-2 ルービックキューブノイズ
+#### 30. 4-2 ハイパーヨーヨーノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
-- 保存名：`cube_noise.png`
+- 保存名：`yoyo_noise.png`
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
 
 Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly.
-It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded orange and cream). Eerie but not gory, readable as a small silhouette on a phone screen.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (bright late-1990s colors, light blue and orange). Eerie but not gory, readable as a small silhouette on a phone screen.
 Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance.
-Body: a colorful puzzle cube whose colors never line up, its layers twisting endlessly
+Body: a glowing toy yo-yo from 1997, spinning endlessly at the end of its stretched string, swinging around in loops and tricks (no logos)
 ```
 
-#### 31. 4-2 テーブルゲームノイズ
+#### 31. 4-2 ポケベルノイズ
 
 - 添付：`public/assets/enemies/tin_noise.webp`
-- 保存名：`gametable_noise.png`
+- 保存名：`pager_noise.png`
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
 
 Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly.
-It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded orange and cream). Eerie but not gory, readable as a small silhouette on a phone screen.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (bright late-1990s colors, light blue and orange). Eerie but not gory, readable as a small silhouette on a phone screen.
 Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance.
-Body: a coffee-shop table-style arcade game cabinet from around 1980, tiny glowing pixel bullets flying out of its glass screen (no logos, no letters)
+Body: a cluster of 1990s pagers (pocket bells) beeping nonstop, their tiny screens flashing, glowing beeps flying out like bullets (no letters or numbers on the screens)
 ```
 
 #### 32. 4-2 紙風船ノイズ
@@ -500,7 +500,7 @@ Body: a coffee-shop table-style arcade game cabinet from around 1980, tiny glowi
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
 
 Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly.
-It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded orange and cream). Eerie but not gory, readable as a small silhouette on a phone screen.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (bright late-1990s colors, light blue and orange). Eerie but not gory, readable as a small silhouette on a phone screen.
 Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance.
 Body: a cluster of colorful paper balloons given out on a shop opening day, bouncing and drifting lightly
 ```
@@ -514,7 +514,7 @@ Body: a cluster of colorful paper balloons given out on a shop opening day, boun
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
 
 Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly.
-It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded orange and cream). Eerie but not gory, readable as a small silhouette on a phone screen.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (bright late-1990s colors, light blue and orange). Eerie but not gory, readable as a small silhouette on a phone screen.
 Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance.
 Body: a wooden cuckoo clock whose little bird is stuck outside and keeps calling, its pendulum swinging wildly
 ```
@@ -528,7 +528,7 @@ Body: a wooden cuckoo clock whose little bird is stuck outside and keeps calling
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
 
 Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly.
-It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded orange and cream). Eerie but not gory, readable as a small silhouette on a phone screen.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (bright late-1990s colors, light blue and orange). Eerie but not gory, readable as a small silhouette on a phone screen.
 Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance.
 Body: tall congratulatory flower wreath stands for a shop opening, overlapping again and again into a wall of flowers, petals scattering like a storm (ribbons are blank, no letters)
 ```
@@ -542,14 +542,14 @@ Body: tall congratulatory flower wreath stands for a shop opening, overlapping a
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting. No text, no watermark, no signature.
 
 Enemy art for a turn-based mobile JRPG battle screen. Square 1:1 image. A single creature, full body, centered, front three-quarter view, plain pure white background, no shadow, no ground. Match the art style of the attached enemy art exactly.
-It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (sepia, faded orange and cream). Eerie but not gory, readable as a small silhouette on a phone screen.
+It is a "sandstorm": a monster born from a stolen happy memory that is wearing away. Its body is made of the objects below, partly dissolving into black-and-white TV static noise and drifting grains of sand at the edges, with a few colors of its era (bright late-1990s colors, light blue and orange). Eerie but not gory, readable as a small silhouette on a phone screen.
 Use a few large, clearly recognizable objects rather than many small ones, so each object's shape reads clearly at a glance.
 A large boss monster, filling most of the image. Body: dozens of rolling metal shop shutters stacked and overlapping, rattling down again and again. Two clearly visible parts: the stack of metal shutter slats in front, and the winding drum with a big gear at the top
 ```
 
 ### P. 4章の部屋の地図
 
-E と同じ形。毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。4-1 は最初の部屋（庭）の絵ができたら、それを残りの見本にする。4-2 の店内は、1-2 の商店街の地図を見本にする
+E と同じ形。毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。4-1 は最初の部屋（庭）の絵ができたら、それを残りの見本にする。4-2 の店内（平成9年の春）は、1-2 の商店街の地図を見本にする
 
 #### 36. 4-1 おじいちゃんの家の庭
 
@@ -630,7 +630,7 @@ Follow the attached layout sketch exactly: light areas are walkable ground, dark
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters.
-Scene: the inside of a small Japanese watch and clock shop on its opening day in the spring of 1980, seen from above with the ceiling removed, warm sepia-tinted retro colors with fresh wood. A long glass display counter with wristwatches and two small glass cases (the dark blocks in the sketch), wall clocks and a tall antique pendulum clock against the top wall, a workbench with a desk lamp and tiny tools, congratulatory flowers by the door. The entrance (a rolling shutter, raised) comes in from the bottom edge.
+Scene: the inside of a small Japanese watch and clock shop on its reopening day in the spring of 1997, seen from above with the ceiling removed, bright late-1990s colors with fresh wood and new glass. A long glass display counter with wristwatches and two small glass cases (the dark blocks in the sketch), wall clocks and a tall antique pendulum clock against the top wall, a workbench with a desk lamp and tiny tools, congratulatory flowers by the door. The entrance (a rolling shutter, raised) comes in from the bottom edge.
 An opening at the center of the bottom edge, one sixth of the image width wide, leading out of the image. All other edges are closed by shop walls.
 Follow the attached layout sketch exactly: light areas are walkable ground, dark areas are buildings and obstacles, blue marks the openings. Walkable areas must be clearly distinguishable from non-walkable objects. Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```

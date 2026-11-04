@@ -418,14 +418,14 @@ for label, face, src in [('笑顔', 'wide confident grin', 'smile'), ('真剣', 
 
 
 # ---- N〜P. 4章（2026-11-04）：早瀬、4-1・4-2 の敵、4-1・4-2 の部屋の地図 ----
-section('N. 早瀬（仲間）', '4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：無口で皮肉屋、ルーペ、作業着）。見た目はたたき台。2026-11-04 開発者の指摘「おじいさん過ぎる。もっと動けるかっこいいイケオジ風」で、背筋の伸びた銀髪のイケオジに直した。設定画を見て決めてから、胸から上の1枚と表情違いを作る。絵柄と構図の見本はハルトの立ち絵（お年寄りの絵を見本にすると、老けて出たため）')
+section('N. 早瀬（仲間）', '4-2 で仲間に加わる時計屋の店長（`docs/script/4-2.md` の 2.：無口で皮肉屋、ルーペ、作業着）。見た目はたたき台。2026-11-04 開発者の指摘「おじいさん過ぎる。50代のダンディな感じ」で、今58歳にし（段階149）、白髪まじりのダンディに直した。設定画を見て決めてから、胸から上の1枚と表情違いを作る。絵柄と構図の見本はハルトの立ち絵（お年寄りの絵を見本にすると、老けて出たため）')
 HAYASE = ('Character: Jin Hayase, the owner of a small old watch and clock repair shop in a Japanese shopping street. A man of few words, gruff and sarcastic, but quietly kind. '
-          'A cool, handsome older man who looks far younger and stronger than his age: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast. '
-          'Silver-grey hair swept back with a few loose strands, a neatly trimmed short silver beard, sharp narrow eyes with a hint of a smirk, a few handsome lines on his face. '
+          'A dandy, handsome man in his late fifties: tall, lean and fit, straight confident posture, broad shoulders, the calm sharp presence of a veteran craftsman who can still move fast in a fight. '
+          'Dark hair with streaks of grey at the temples, swept back with a few loose strands, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes with a hint of a smirk, a few handsome lines around his eyes. '
           'A watchmaker\'s loupe pushed up on his forehead. A dark navy work jacket worn open over a black henley shirt, sleeves rolled up to show strong forearms, a leather tool roll of tiny screwdrivers on his belt.')
 add('早瀬の設定画', [P + 'hero_normal.webp'], 'hayase_sheet.png', f'''{STYLE}
 
-Character design sheet of an original anime-style cool older man for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
+Character design sheet of an original anime-style dandy man in his late fifties for a mobile turn-based JRPG, full body front view, standing in a confident pose, plain off-white background, clean lineart with soft cel shading. Same art style as the attached reference portrait.
 {HAYASE}''', 'たたき台。気に入らない所（髪・服・小物）は「ここを直して」と足して作り直してよい')
 add('早瀬の胸から上の基本の1枚（通常）', ['hayase_sheet.png（上で決めた設定画）', P + 'hero_normal.webp'], 'hayase_normal.png',
     portrait('a gruff, calm, cool look, mouth closed', HAYASE.replace('Character: Jin Hayase', 'Character: Hayase') + ' Keep his design exactly as in the attached character sheet.').replace('the girl in the cardigan', 'the boy in the hoodie'),
@@ -437,11 +437,11 @@ for label, face, save in [
     ('怒り（2回）', 'an angry, stern scowl, eyebrows drawn together, mouth pressed in a hard line', 'hayase_angry.png'),
     ('泣き笑い（1回）', 'smiling through tears, eyes wet and crinkled, a gentle trembling smile', 'hayase_teary.png'),
 ]:
-    add(f'早瀬：{label}', ['hayase_normal.png（上で作った絵）'], save, expression(face, 'Hayase, the silver-haired watchmaker in the attached portrait.'))
+    add(f'早瀬：{label}', ['hayase_normal.png（上で作った絵）'], save, expression(face, 'Hayase, the dandy watchmaker in the attached portrait.'))
 
 section('O. 4章の敵', 'D と同じ形。毎回、ブリキノイズの絵（`public/assets/enemies/tin_noise.webp`）を絵柄の見本として添付する。白い背景のまま送ってくれればよい')
 SUMMER = 'bright summer greens, sky blue and sunflower yellow'
-OPENING = 'sepia, faded orange and cream'
+OPENING = 'bright late-1990s colors, light blue and orange'
 for name, era, body, boss, save in [
     ('4-1 虫かごノイズ', SUMMER, 'a plastic insect cage with a green lid, the buzzing of insects inside shaking it, the lid snapping like a mouth', False, 'bugcage_noise.png'),
     ('4-1 すいかノイズ', SUMMER, 'half of a big watermelon, spitting black seeds like bullets, rolling heavily', False, 'watermelon_noise.png'),
@@ -449,8 +449,8 @@ for name, era, body, boss, save in [
     ('4-1 水鉄砲ノイズ', SUMMER, 'a big pump-action toy water gun, shooting jets of water, quick and light', False, 'watergun_noise.png'),
     ('4-1 お地蔵さまの前の砂嵐（番人）', SUMMER, 'the offerings in front of a small roadside stone Jizo statue: many spinning paper pinwheels and a red bib, swirling into a guardian blocking the path (the stone statue itself stays calm and small at the center, not monstrous)', False, 'jizo_noise.png'),
     ('4-1 川のぬし（ボス）', SUMMER, 'a giant straw hat riding on a rushing river current, water churning beneath it. Two clearly visible parts: the wide brim of the straw hat at the top, and the swirling river current with stones at the bottom', True, 'river_boss.png'),
-    ('4-2 ルービックキューブノイズ', OPENING, 'a colorful puzzle cube whose colors never line up, its layers twisting endlessly', False, 'cube_noise.png'),
-    ('4-2 テーブルゲームノイズ', OPENING, 'a coffee-shop table-style arcade game cabinet from around 1980, tiny glowing pixel bullets flying out of its glass screen (no logos, no letters)', False, 'gametable_noise.png'),
+    ('4-2 ハイパーヨーヨーノイズ', OPENING, 'a glowing toy yo-yo from 1997, spinning endlessly at the end of its stretched string, swinging around in loops and tricks (no logos)', False, 'yoyo_noise.png'),
+    ('4-2 ポケベルノイズ', OPENING, 'a cluster of 1990s pagers (pocket bells) beeping nonstop, their tiny screens flashing, glowing beeps flying out like bullets (no letters or numbers on the screens)', False, 'pager_noise.png'),
     ('4-2 紙風船ノイズ', OPENING, 'a cluster of colorful paper balloons given out on a shop opening day, bouncing and drifting lightly', False, 'paperballoon_noise.png'),
     ('4-2 鳩時計ノイズ', OPENING, 'a wooden cuckoo clock whose little bird is stuck outside and keeps calling, its pendulum swinging wildly', False, 'cuckoo_noise.png'),
     ('4-2 開店祝いの花輪ノイズ（番人）', OPENING, 'tall congratulatory flower wreath stands for a shop opening, overlapping again and again into a wall of flowers, petals scattering like a storm (ribbons are blank, no letters)', False, 'wreath_noise.png'),
@@ -458,7 +458,7 @@ for name, era, body, boss, save in [
 ]:
     add(name, ['public/assets/enemies/tin_noise.webp'], save, enemy(era, body, boss))
 
-section('P. 4章の部屋の地図', 'E と同じ形。毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。4-1 は最初の部屋（庭）の絵ができたら、それを残りの見本にする。4-2 の店内は、1-2 の商店街の地図を見本にする')
+section('P. 4章の部屋の地図', 'E と同じ形。毎回、その部屋の配置の下絵（`docs/sketches/room_layouts/room_<部屋>.png`）と、絵柄の見本の地図を添付する。4-1 は最初の部屋（庭）の絵ができたら、それを残りの見本にする。4-2 の店内（平成9年の春）は、1-2 の商店街の地図を見本にする')
 SUMMER_ROOM = 'in the summer of 2018 (late Heisei era) in the Japanese countryside, bright summer greens, sky blue and sunflower yellow, cicada-filled afternoon'
 for name, rid, ref, scene, exits, tall, *closed in [
     ('4-1 おじいちゃんの家の庭', 'summer_garden', M + 'village_paddy.webp', f'Scene: the garden of an old wooden country house {SUMMER_ROOM}. A small vegetable patch and a dog house (two small blocks as in the sketch), a watering can and a hose, morning glories on a bamboo fence, a wooden veranda on the right side. A path leaves through the top edge toward the rice fields, and another through the left edge toward the storage shed.', ['top', 'left'], False),
@@ -466,7 +466,7 @@ for name, rid, ref, scene, exits, tall, *closed in [
     ('4-1 田んぼのあぜ道', 'summer_ridge', 'map_summer_garden.png', f'Scene: narrow raised paths between green rice paddies {SUMMER_ROOM}. Bright green rice fields fill the dark areas of the sketch; the light areas are the earthen ridge paths winding between them. A small roadside stone Jizo statue with pinwheels near the top. Paths lead out through the bottom edge (to the house), the top edge (to the river) and the left edge (to the irrigation canal).', ['bottom', 'top', 'left'], True, 'rice paddies, trees and hedges'),
     ('4-1 用水路', 'summer_canal', 'map_summer_garden.png', f'Scene: a concrete irrigation canal beside rice fields {SUMMER_ROOM}. A narrow strip of clear running water (the dark vertical strip in the sketch, crossed by two small gaps you can step over) divides two grassy banks. Dragonflies, water plants, a small sluice gate. The entrance comes in from the right edge.', ['right'], False, 'rice paddies, trees and hedges'),
     ('4-1 川の浅瀬', 'summer_shallows', 'map_summer_garden.png', f'Scene: a shallow, sparkling river bank {SUMMER_ROOM}. A wide pebbly shallow where you can wade, with a few large river rocks (the small dark blocks in the sketch), deep water and trees beyond the edges. The path comes in from the bottom edge.', ['bottom'], False, 'deep river water, rocks and trees'),
-    ('4-2 開店の日の店内', 'opening_shop', M + 'showa_street.webp', 'Scene: the inside of a small Japanese watch and clock shop on its opening day in the spring of 1980, seen from above with the ceiling removed, warm sepia-tinted retro colors with fresh wood. A long glass display counter with wristwatches and two small glass cases (the dark blocks in the sketch), wall clocks and a tall antique pendulum clock against the top wall, a workbench with a desk lamp and tiny tools, congratulatory flowers by the door. The entrance (a rolling shutter, raised) comes in from the bottom edge.', ['bottom'], False, 'shop walls'),
+    ('4-2 開店の日の店内', 'opening_shop', M + 'showa_street.webp', 'Scene: the inside of a small Japanese watch and clock shop on its reopening day in the spring of 1997, seen from above with the ceiling removed, bright late-1990s colors with fresh wood and new glass. A long glass display counter with wristwatches and two small glass cases (the dark blocks in the sketch), wall clocks and a tall antique pendulum clock against the top wall, a workbench with a desk lamp and tiny tools, congratulatory flowers by the door. The entrance (a rolling shutter, raised) comes in from the bottom edge.', ['bottom'], False, 'shop walls'),
 ]:
     add(name, [L + f'room_{rid}.png', ref], f'map_{rid}.png', room(scene, exits, tall, *closed))
 
