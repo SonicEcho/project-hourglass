@@ -1,51 +1,64 @@
 import type { ChainAllyDef, ChainBattleDef, ChainEnemyDef, ChainLinkDef, ChainMove, ChainRules } from '../core/chain';
 
 // 試し：並べてつなぐ戦闘（段階156。docs/milestones/M3_battle_review.md の 12.）。デバッグメニューから入る試しだけで使う。
-// 数値はたたき台（開発者が遊んだ手応えと、自動対戦で直す）。敵は 1-2 の商店街の砂嵐の絵を使い、特徴を1つずつ持たせた
+// 数値はたたき台（開発者が遊んだ手応えと、自動対戦で直す）。敵は、今の砂嵐の絵を使い、特徴を1つずつ持たせた（調整3）
 
 export const CHAIN_RULES: ChainRules = {
   roundLen: 10,
   handSize: 5,
   weakMult: 1.5,
   resistMult: 0.5,
-  gearHits: 3,
   popDamage: 16,
-  blastPower: 16,
+  stickyDelay: 2,
+  counterPower: 22,
+  timerDamage: 60,
   healDiv: 10,
 };
 
-/** 札（山札に2枚ずつ）。型：置く・受ける・数える・締める */
+const card = (m: ChainMove): ChainMove => m;
+
+/** 札。型：置く（属性の色の印）・受ける・数える・締める。専用の札は、その仲間しか使えない */
 export const CHAIN_CARDS = {
-  puddle: { id: 'ch_puddle', name: '水たまり', type: 'place', weight: 2, target: 'enemies', effect: { kind: 'mark', mark: 'wet' }, text: '敵全体を濡らす。濡れた敵に雷が当たると、濡れた敵みんなに伝わる（鏡も曇る）' },
-  ember: { id: 'ch_ember', name: '火種', type: 'place', weight: 2, target: 'enemy', effect: { kind: 'mark', mark: 'oil' }, text: '敵1体に油を付ける。油の敵に火が当たると爆発し、敵全体に火が当たって、みんなよろける（ダウン）' },
-  tailwind: { id: 'ch_tailwind', name: '追い風', type: 'receive', weight: 2, target: 'enemies', effect: { kind: 'wind', rate: 0.5 }, text: '直前に動いた仲間の攻撃を、威力半分で敵全体にもう一度（属性も同じ）。直前が攻撃でなければ不発' },
-  overlay: { id: 'ch_overlay', name: '重ね撮り', type: 'receive', weight: 3, target: 'enemy', effect: { kind: 'layer', power: 22, mult: 2 }, text: '直前に動いた仲間の攻撃と同じ属性で、敵1体に。直前が攻撃なら威力2倍（でなければ物理）' },
-  burst: { id: 'ch_burst', name: '連写', type: 'count', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 12, hitsPerActed: true }, text: '敵1体に物理を、このラウンドにもう動いた仲間の数 + 1 回。かたい敵に効く' },
-  panorama: { id: 'ch_panorama', name: 'パノラマ', type: 'count', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 8, perActed: 8 }, text: '敵全体に物理。このラウンドにもう動いた仲間1人ごとに、威力が上がる' },
-  imprint: { id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 18, perMark: 30 }, text: '敵1体に物理。相手に付いた印1つごとに威力が大きく上がる（印は消える）' },
-  decisive: { id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 26, downMult: 2 }, text: '敵1体に物理。ダウン中の敵には2倍' },
+  ember: card({ id: 'ch_ember', name: '火種', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', element: 'fire' }, text: '敵1体に火の印。火が当たると、火の印の敵みんなに広がる' }),
+  puddle: card({ id: 'ch_puddle', name: '水たまり', type: 'place', weight: 2, target: 'enemies', effect: { kind: 'mark', element: 'ice' }, text: '敵全体に氷の印。氷が当たると、氷の印の敵みんなに広がる' }),
+  rod: card({ id: 'ch_rod', name: '避雷針', type: 'place', weight: 2, target: 'enemies', effect: { kind: 'mark', element: 'thunder' }, text: '敵全体に雷の印。雷が当たると、雷の印の敵みんなに広がる' }),
+  target: card({ id: 'ch_target', name: '目印', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', element: 'physical' }, text: '敵1体に物理の印。物理が当たると、物理の印の敵みんなに広がる' }),
+  tailwind: card({ id: 'ch_tailwind', name: '追い風', type: 'receive', weight: 2, target: 'enemies', effect: { kind: 'wind', rate: 0.5 }, text: '直前に動いた仲間の攻撃を、威力半分で敵全体にもう一度（属性も同じ）。直前が攻撃でなければ不発' }),
+  overlay: card({ id: 'ch_overlay', name: '重ね撮り', type: 'receive', weight: 3, target: 'enemy', effect: { kind: 'layer', power: 22, mult: 2 }, text: '直前に動いた仲間の攻撃と同じ属性で、敵1体に。直前が攻撃なら威力2倍（でなければ物理）' }),
+  burst: card({ id: 'ch_burst', name: '連写', type: 'count', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 12, hitsPerActed: true }, text: '敵1体に物理を、このラウンドにもう動いた仲間の数 + 1 回' }),
+  panorama: card({ id: 'ch_panorama', name: 'パノラマ', type: 'count', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 8, perActed: 8 }, text: '敵全体に物理。このラウンドにもう動いた仲間1人ごとに、威力が上がる' }),
+  imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 18, perMark: 30 }, text: '敵1体に物理。相手に付いた印1つごとに威力が大きく上がる（印は消える）' }),
+  decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 26, downMult: 2 }, text: '敵1体に物理。ダウン中の敵には2倍' }),
+  // 専用の札（その仲間しか使えない。組む2人の札がそろうと連携技）
+  swing: card({ id: 'ch_swing', name: '全力スイング', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 36 }, text: 'ハルト専用。敵1体に強い物理', owner: 'hero' }),
+  sparkler: card({ id: 'ch_sparkler', name: '線香花火', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 14 }, text: 'あかり専用。敵全体に火', owner: 'akari' }),
+  waterBalloon: card({ id: 'ch_waterBalloon', name: '水風船', type: 'place', weight: 2, target: 'enemies', effect: { kind: 'mark', element: 'ice', power: 6 }, text: 'みお専用。敵全体に氷で小さく当て、氷の印を付ける', owner: 'mio' }),
 } satisfies Record<string, ChainMove>;
 
 /** 札の絵（近い情景の今のスナップの絵を、仮に使う） */
 export const CHAIN_CARD_ART: Record<string, string> = {
-  ch_puddle: 'snap.iceChip',
   ch_ember: 'snap.fireChip',
+  ch_puddle: 'snap.iceChip',
+  ch_rod: 'snap.thunderChip',
+  ch_target: 'snap.search',
   ch_tailwind: 'snap.wideShot',
-  ch_overlay: 'snap.search',
+  ch_overlay: 'snap.draw',
   ch_burst: 'snap.sword',
   ch_panorama: 'snap.wideShot',
   ch_imprint: 'snap.heavyBlow',
   ch_decisive: 'snap.breakArm',
+  ch_swing: 'snap.pinchHitter',
+  ch_sparkler: 'snap.fireChip',
+  ch_waterBalloon: 'snap.recover',
 };
 
 const move = (m: ChainMove): ChainMove => m;
 
-/** 仲間（型が違う3人）。技は MP なしで、いつでも使える */
+/** 仲間。技は MP なしで、いつでも使える */
 export const CHAIN_ALLIES: ChainAllyDef[] = [
   {
     id: 'hero',
     name: 'ハルト',
-    role: '締める・物理',
     hp: 210,
     atk: 22,
     mag: 14,
@@ -59,7 +72,6 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
   {
     id: 'akari',
     name: 'あかり',
-    role: '属性・回復',
     hp: 180,
     atk: 12,
     mag: 22,
@@ -73,121 +85,125 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
   {
     id: 'mio',
     name: 'みお',
-    role: '置く・雷',
     hp: 170,
     atk: 16,
     mag: 18,
     def: 8,
     moves: [
-      move({ id: 'thunder', name: 'サンダー', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 26 }, text: '敵1体に雷。濡れた敵に当たると、濡れた敵みんなに伝わる' }),
-      move({ id: 'squirt', name: '水でっぽう', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', mark: 'wet', element: 'ice', power: 8 }, text: '敵1体を濡らし、氷で小さく当てる。時間をほとんど使わない' }),
+      move({ id: 'thunder', name: 'サンダー', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 26 }, text: '敵1体に雷' }),
+      move({ id: 'marker', name: 'マーカー', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', element: 'thunder' }, text: '敵1体に雷の印。時間をほとんど使わない' }),
       move({ id: 'kick', name: 'けとばし', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 18 }, text: '敵1体に物理' }),
     ],
   },
 ];
 
-/** 連携技（クロノ・トリガーの連携技のように、組む2人がそろっている時だけ）。前の人の攻撃の属性が合い、間に敵が動かなければ使える */
+/** 連携技（クロノ・トリガーの連携技のように、組む2人がそろっている時だけ）。2人の専用の札が手札にそろうと使える */
 export const CHAIN_LINKS: ChainLinkDef[] = [
   {
     id: 'afterglow',
-    from: 'akari',
-    to: 'hero',
-    needs: ['fire', 'ice'],
-    move: { id: 'afterglow', name: 'アフターグロウ', type: 'link', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 30, bestOf: ['fire', 'ice'] }, text: 'あかりの火か氷のすぐ後に。敵全体に、敵ごとに火か氷の効く方で（弱点ならダウン）' },
+    members: ['hero', 'akari'],
+    cards: ['ch_swing', 'ch_sparkler'],
+    move: { id: 'afterglow', name: 'アフターグロウ', type: 'link', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 34, bestOf: ['fire', 'ice'] }, text: 'ハルトとあかり。敵全体に、敵ごとに火か氷の効く方で（弱点ならダウン）' },
   },
   {
     id: 'crossDrive',
-    from: 'hero',
-    to: 'mio',
-    needs: ['physical'],
-    move: { id: 'crossDrive', name: 'クロスドライブ', type: 'link', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 30, ignoreResist: true }, text: 'ハルトの物理のすぐ後に。敵全体に物理（耐性を無視。物理が弱点ならダウン）' },
+    members: ['hero', 'mio'],
+    cards: ['ch_swing', 'ch_waterBalloon'],
+    move: { id: 'crossDrive', name: 'クロスドライブ', type: 'link', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 34, ignoreResist: true }, text: 'ハルトとみお。敵全体に物理（耐性を無視。物理が弱点ならダウン）' },
+  },
+  {
+    id: 'shower',
+    members: ['akari', 'mio'],
+    cards: ['ch_sparkler', 'ch_waterBalloon'],
+    move: { id: 'shower', name: '夕立', type: 'link', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 30, bestOf: ['thunder', 'ice'] }, text: 'あかりとみお。敵全体に、敵ごとに雷か氷の効く方で（弱点ならダウン）' },
   },
 ];
 
-/** 敵（1つずつ特徴がある） */
+const foe = (e: ChainEnemyDef): ChainEnemyDef => e;
+
+/** 分裂で出てくる、小さい水風船 */
+const MINI_BALLOON = foe({
+  id: 'miniBalloon',
+  name: '小さい水風船',
+  hp: 45,
+  atk: 10,
+  def: 6,
+  weak: ['thunder'],
+  resist: [],
+  pattern: [{ id: 'splash', name: 'ぱしゃっ', at: 6, element: 'ice', power: 18 }],
+});
+
+/** 敵（1つずつ特徴がある。絵は今の砂嵐の絵） */
 export const CHAIN_ENEMIES = {
-  tin: {
-    id: 'tinNoise',
-    name: 'ブリキノイズ',
-    hp: 190,
-    atk: 14,
-    def: 12,
-    weak: ['thunder'],
-    resist: [],
-    trait: 'gear',
-    pattern: [
-      { id: 'windUp', name: 'ぜんまいパンチ', at: 7, element: 'physical', power: 34 },
-      { id: 'march', name: 'ブリキの行進', at: 5, all: true, element: 'physical', power: 18 },
-    ],
-  },
-  phone: {
-    id: 'phoneNoise',
-    name: '黒電話ノイズ',
-    hp: 160,
-    atk: 13,
-    def: 9,
-    weak: ['ice'],
-    resist: ['fire'],
-    trait: 'herald',
-    pattern: [
-      { id: 'ring', name: 'ジリリリ', at: 4, all: true, element: 'thunder', power: 30 },
-      { id: 'cord', name: 'コードのむち', at: 6, element: 'physical', power: 28 },
-    ],
-  },
-  ramune: {
-    id: 'ramuneNoise',
-    name: 'ラムネノイズ',
-    hp: 130,
-    atk: 12,
-    def: 7,
-    weak: ['physical'],
-    resist: ['ice'],
-    trait: 'pop',
-    pattern: [
-      { id: 'marble', name: 'ビー玉はじき', at: 2, element: 'physical', power: 28 },
-      { id: 'fizz', name: 'しゅわしゅわ', at: 3, element: 'ice', power: 30 },
-    ],
-  },
-  menko: {
-    id: 'menkoNoise',
-    name: 'めんこノイズ',
-    hp: 150,
-    atk: 12,
-    def: 10,
-    weak: ['fire'],
-    resist: ['physical'],
-    trait: 'mirror',
-    pattern: [
-      { id: 'slap', name: 'めんこ打ち', at: 5, element: 'physical', power: 30 },
-      { id: 'spin', name: 'ベーゴマの渦', at: 8, all: true, element: 'physical', power: 20 },
-    ],
-  },
+  ramune: foe({ id: 'ramuneNoise', name: 'ラムネノイズ', hp: 130, atk: 12, def: 7, weak: ['physical'], resist: ['ice'], trait: 'pop', pattern: [
+    { id: 'marble', name: 'ビー玉はじき', at: 2, element: 'physical', power: 28 },
+    { id: 'fizz', name: 'しゅわしゅわ', at: 3, element: 'ice', power: 30 },
+  ] }),
+  yoyo: foe({ id: 'yoyoNoise', name: 'ヨーヨーノイズ', hp: 120, atk: 11, def: 8, weak: ['ice'], resist: [], trait: 'swift', pattern: [
+    { id: 'loop', name: '行って戻る', at: 2, at2: 6, element: 'physical', power: 22 },
+    { id: 'spin', name: 'ループ・ザ・ループ', at: 3, at2: 7, element: 'physical', power: 20 },
+  ] }),
+  table: foe({ id: 'tableNoise', name: 'ちゃぶ台ノイズ', hp: 200, atk: 12, def: 12, weak: ['thunder'], resist: ['physical'], trait: 'shield', pattern: [
+    { id: 'flip', name: 'ちゃぶ台返し', at: 6, all: true, element: 'physical', power: 18 },
+    { id: 'press', name: 'のしかかり', at: 5, element: 'physical', power: 30 },
+  ] }),
+  tin: foe({ id: 'tinNoise', name: 'ブリキノイズ', hp: 160, atk: 13, def: 10, weak: ['ice'], resist: [], trait: 'shell', pattern: [
+    { id: 'windUp', name: 'ぜんまいパンチ', at: 7, element: 'physical', power: 32 },
+    { id: 'march', name: 'ブリキの行進', at: 5, all: true, element: 'physical', power: 18 },
+  ] }),
+  candy: foe({ id: 'candyNoise', name: '飴細工ノイズ', hp: 150, atk: 12, def: 9, weak: ['fire'], resist: ['ice'], trait: 'sticky', pattern: [
+    { id: 'whip', name: '飴のむち', at: 4, element: 'physical', power: 26 },
+    { id: 'melt', name: 'とろける', at: 6, all: true, element: 'fire', power: 18 },
+  ] }),
+  cuckoo: foe({ id: 'cuckooNoise', name: '鳩時計ノイズ', hp: 140, atk: 12, def: 9, weak: ['thunder'], resist: [], trait: 'waker', pattern: [
+    { id: 'chime', name: '時報', at: 5, all: true, element: 'physical', power: 16 },
+    { id: 'peck', name: 'つつく', at: 7, element: 'physical', power: 26 },
+  ] }),
+  menko: foe({ id: 'menkoNoise', name: 'めんこノイズ', hp: 150, atk: 12, def: 10, weak: ['fire'], resist: ['physical'], trait: 'counter', pattern: [
+    { id: 'slap', name: 'めんこ打ち', at: 5, element: 'physical', power: 30 },
+    { id: 'spin', name: 'ベーゴマの渦', at: 8, all: true, element: 'physical', power: 20 },
+  ] }),
+  balloon: foe({ id: 'balloonNoise', name: '水風船ノイズ', hp: 110, atk: 11, def: 7, weak: ['thunder'], resist: ['fire'], trait: 'split', splitInto: MINI_BALLOON, pattern: [
+    { id: 'bounce', name: 'ぼよん', at: 4, element: 'physical', power: 26 },
+  ] }),
+  coil: foe({ id: 'coilNoise', name: '蚊取り線香ノイズ', hp: 140, atk: 11, def: 9, weak: ['ice'], resist: ['fire'], trait: 'timer', timer: 3, pattern: [
+    { id: 'smoke', name: 'けむり', at: 6, element: 'fire', power: 22 },
+  ] }),
+  goldfish: foe({ id: 'goldfishNoise', name: '金魚ノイズ', hp: 120, atk: 11, def: 8, weak: ['thunder'], resist: [], trait: 'flee', pattern: [
+    { id: 'splashTail', name: '尾びれではたく', at: 3, element: 'physical', power: 24 },
+    { id: 'escape', name: '逃げる', at: 8, element: 'physical', power: 0, flee: true },
+  ] }),
 } satisfies Record<string, ChainEnemyDef>;
 
 /** 特徴の名前と説明（画面に出す） */
 export const CHAIN_TRAIT_TEXT: Record<string, { name: string; text: string }> = {
-  gear: { name: 'かたい', text: '弱点でも爆発でもダウンしない。1ラウンドに3回当てるとダウン（連写・全体攻撃・追い風の数で押す）' },
-  herald: { name: '予告', text: '早い時刻に、強い全体攻撃を予告する。動く前にダウンさせれば止められる' },
-  pop: { name: 'はじける', text: '弱点でダウンさせると、破片が仲間全体に当たる（爆発やほかの手で崩せば当たらない）' },
-  mirror: { name: '鏡', text: '弱点の火を受けると、はね返して使った仲間に当てる。濡らすと曇って、はね返せない' },
+  pop: { name: 'はじける', text: '弱点でダウンさせると、破片が仲間全体に当たる' },
+  swift: { name: 'すばやい', text: '1ラウンドに2回動く。1回目より前にダウンさせれば、2回とも止まる' },
+  shield: { name: '盾', text: '立っている間、ほかの敵への単体攻撃を代わりに受ける。先にダウンさせるか、全体攻撃で' },
+  shell: { name: '殻', text: '最初の1回は殻が割れるだけで、効かない。軽い技で先に割ってから本命を' },
+  sticky: { name: 'ねばねば', text: '攻撃を当てると、まだ動いていない仲間の時刻が2遅れる。叩く人を最後に回す' },
+  waker: { name: '起こし役', text: '動くと、ダウンしているほかの敵を起こす。起こし役より後にダウンさせるか、先に止める' },
+  counter: { name: '反撃', text: 'ダウンしていない時に叩かれると、やり返す。先にダウンさせてから叩く' },
+  split: { name: '分裂', text: '倒すと、小さい2体に分かれる。全体攻撃でまとめて' },
+  timer: { name: '時限', text: 'ラウンドの終わりごとに数が減り、0で大爆発して仲間全体に大きなダメージ。期限までに倒す' },
+  flee: { name: '逃げる', text: '「逃げる」の予定の時刻に、戦闘からいなくなる。逃げる前に倒すかダウンさせる' },
 };
 
-const DECK = Object.values(CHAIN_CARDS).flatMap((c) => [c.id, c.id]);
+const DECK = [
+  ...['ch_ember', 'ch_ember', 'ch_puddle', 'ch_puddle', 'ch_rod', 'ch_rod', 'ch_target'],
+  ...['ch_tailwind', 'ch_overlay', 'ch_burst', 'ch_burst', 'ch_panorama', 'ch_imprint', 'ch_decisive'],
+  ...['ch_swing', 'ch_swing', 'ch_sparkler', 'ch_sparkler', 'ch_waterBalloon', 'ch_waterBalloon'],
+];
 const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_CARDS).map((c) => [c.id, c]));
 
 function battle(id: string, name: string, enemies: ChainEnemyDef[]): ChainBattleDef {
   return { id, name, allies: CHAIN_ALLIES, enemies, deck: DECK, cards: CARDS, links: CHAIN_LINKS };
 }
 
-/** 攻撃を下げた敵 */
-function weaker(e: ChainEnemyDef, rate: number): ChainEnemyDef {
-  return { ...e, atk: Math.round(e.atk * rate) };
-}
-
-/** 試しの組み合わせ */
+/** 試しの組み合わせ（10の特徴を、4つの組み合わせで） */
 export const CHAIN_TRIALS: ChainBattleDef[] = [
-  battle('chain1', '黒電話・ブリキ・ラムネ', [CHAIN_ENEMIES.phone, CHAIN_ENEMIES.tin, CHAIN_ENEMIES.ramune]),
-  battle('chain2', 'めんこ・黒電話・ラムネ', [CHAIN_ENEMIES.menko, CHAIN_ENEMIES.phone, CHAIN_ENEMIES.ramune]),
-  // 4体の時は、攻撃を下げる（1ラウンドに受ける数が増えるため）
-  battle('chain3', 'めんこ・ブリキ・黒電話・ラムネ', [CHAIN_ENEMIES.menko, CHAIN_ENEMIES.tin, CHAIN_ENEMIES.phone, CHAIN_ENEMIES.ramune].map((e) => weaker(e, 0.6))),
+  battle('chain1', 'ちゃぶ台・ブリキ・ラムネ（盾・殻・はじける）', [CHAIN_ENEMIES.table, CHAIN_ENEMIES.tin, CHAIN_ENEMIES.ramune]),
+  battle('chain2', 'ヨーヨー・鳩時計・めんこ（すばやい・起こし役・反撃）', [CHAIN_ENEMIES.yoyo, CHAIN_ENEMIES.cuckoo, CHAIN_ENEMIES.menko]),
+  battle('chain3', '飴細工・水風船・金魚（ねばねば・分裂・逃げる）', [CHAIN_ENEMIES.candy, CHAIN_ENEMIES.balloon, CHAIN_ENEMIES.goldfish]),
+  battle('chain4', '蚊取り線香・ちゃぶ台・めんこ（時限・盾・反撃）', [CHAIN_ENEMIES.coil, CHAIN_ENEMIES.table, CHAIN_ENEMIES.menko]),
 ];

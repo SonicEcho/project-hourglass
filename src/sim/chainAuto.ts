@@ -17,7 +17,7 @@ export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: stri
   const me = s.allies.find((a) => a.uid === ally);
   const def = s.def.allies.find((a) => a.id === me?.defId);
   for (const m of def?.moves ?? []) sources.push({ kind: 'move', moveId: m.id });
-  for (const l of availableLinks(s, plan, ally)) sources.push({ kind: 'link', linkId: l.id });
+  for (const x of availableLinks(s, plan)) if (x.link.members.includes(me?.defId ?? '')) sources.push({ kind: 'link', linkId: x.link.id, cards: x.cards });
   for (const source of sources) {
     const base: ChainPlanStep = { ally, source };
     const move = chainMoveOf(s, base);
