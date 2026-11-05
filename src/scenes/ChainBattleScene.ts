@@ -47,6 +47,8 @@ const ALLY_Y = 368;
 const TAB_Y = 458;
 const HAND_Y = 480;
 const CMD_Y = 768;
+/** 実行中、再生位置が1マス進む時間（ms） */
+const TICK_MS = 380;
 
 /** 敵の印の色（フィルムの上の段と、敵の名前の横） */
 const ENEMY_COLORS = [0xff8a5a, 0x6bc8ff, 0xc89aff, 0x7ad98a];
@@ -68,7 +70,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private message = '';
   private busy = false;
   /** 実行中に見せている時刻（フィルムの再生位置） */
-  private playhead: number | null = null;
+  /** 実行中の再生位置（フィルムの上を左から右へ動く線。描き直しても消えないよう、root の外に置く） */
+  private head: Phaser.GameObjects.Rectangle | null = null;
   private enemyImages = new Map<string, Phaser.GameObjects.Image>();
   /** 実行中：このラウンドに動く順番と、済んだ行動の結果（順番の番号ごと） */
   private runOrder: ChainOrderEntry[] = [];
@@ -96,7 +99,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.pending = null;
     this.tab = 'cards';
     this.busy = false;
-    this.playhead = null;
+    this.head = null;
     this.ally = this.firstFreeAlly();
     this.runOrder = [];
     this.runResults = new Map();
@@ -341,11 +344,6 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(this.add.rectangle(cx + 1, top + 80, 3, 36, COLORS.accent).setOrigin(0, 0.5));
       } else if (at >= len) r.add(addText(this, x0, top + 104, '時間はいっぱい', { size: 9, color: '#ff9a7a' }).setOrigin(0, 0.5));
     }
-    // 再生位置
-    if (this.playhead !== null) {
-      const px = x0 + CELL * this.playhead + CELL / 2;
-      r.add(this.add.rectangle(px, top + 56, 3, 104, 0xff3b5c, 0.9));
-    }
   }
 
   private drawAllies(s: ChainState): void {
@@ -565,7 +563,72 @@ export class ChainBattleScene extends Phaser.Scene {
     this.runResults = new Map();
     this.busy = true;
     this.pending = null;
+    this.head?.destroy();
+    this.head = this.add.rectangle(FILM_X, FILM_Y + 56, 3, 104, 0xff3b5c, 0.95).setDepth(5);
     this.playFrames(frames, 0, state, this.s);
+  }
+
+  /** 再生位置を、時刻 t のマスの真ん中まで、左から右へなめらかに動かす（1マス TICK_MS）。タップで飛ばす */
+  private moveHead(t: number, next: () => void): void {
+    const head = this.head;
+    if (!head) {
+      next();
+      return;
+    }
+    const x = FILM_X + CELL * t + CELL / 2;
+    const ms = Math.max(0, ((x - head.x) / CELL) * TICK_MS);
+    if (ms < 30) {
+      head.x = Math.max(head.x, x);
+      next();
+      return;
+    }
+    let fired = false;
+    const tween = this.tweens.add({ targets: head, x, duration: ms, ease: 'Linear', onComplete: () => run() });
+    const run = () => {
+      if (fired) return;
+      fired = true;
+      tween.stop();
+      head.x = x;
+      this.advance = null;
+      next();
+    };
+    this.advance = run;
+  }
+
+  /** 攻撃・回復の、元から相手へ飛ぶ光（元が光り、玉が飛び、相手が光る）。1つの行動に1組だけ。画面は揺らさない */
+  private flyEffects(f: ChainFrame, view: ChainState): void {
+    const pairs: { from: string; to: string; heal: boolean }[] = [];
+    for (const ev of f.events) {
+      if (ev.type === 'damage' && !pairs.some((p) => p.from === ev.from && p.to === ev.to)) pairs.push({ from: ev.from, to: ev.to, heal: false });
+      if (ev.type === 'heal' && !pairs.some((p) => p.to === ev.to)) pairs.push({ from: f.uid, to: ev.to, heal: true });
+    }
+    const src = this.posOf(view, f.uid);
+    const actor = findChainUnit(view, f.uid);
+    const color = actor?.side === 'enemy' ? 0xff5a5a : (ALLY_COLOR[actor?.defId ?? ''] ?? 0x9ad0ff);
+    if (src) {
+      const ring = this.add.circle(src.x, src.y, 14, color, 0.35).setStrokeStyle(3, color).setDepth(40);
+      this.tweens.add({ targets: ring, scale: 2.2, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+    }
+    pairs.forEach((p, k) => {
+      const a = this.posOf(view, p.from) ?? src;
+      const b = this.posOf(view, p.to);
+      if (!a || !b) return;
+      const c = p.heal ? 0x6dff9e : p.from === f.uid ? color : 0xffd84a;
+      const dot = this.add.circle(a.x, a.y, 7, c, 1).setStrokeStyle(2, 0xffffff).setDepth(41);
+      this.tweens.add({
+        targets: dot,
+        x: b.x,
+        y: b.y,
+        delay: 200 + k * 90,
+        duration: 380,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          dot.destroy();
+          const hit = this.add.circle(b.x, b.y, 12, 0xffffff, 0.7).setDepth(41);
+          this.tweens.add({ targets: hit, scale: 2.4, alpha: 0, duration: 320, onComplete: () => hit.destroy() });
+        },
+      });
+    });
   }
 
   /** ms 待ってから next。画面をタップすると、待たずに next */
@@ -585,16 +648,25 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 1つの行動を、2段で見せる：まず「誰が・何を・誰に」（動く者とねらう相手を光らせる）、次に結果 */
   private playFrames(frames: ChainFrame[], i: number, final: ChainState, before: ChainState): void {
     if (i >= frames.length) {
-      this.currentOrder = 0;
-      this.actorUid = '';
-      this.targetUid = '';
-      this.finishRound(final);
+      const done = () => {
+        this.currentOrder = 0;
+        this.actorUid = '';
+        this.targetUid = '';
+        this.finishRound(final);
+      };
+      // シャッターや決着で止まった時は、そこで終わる。最後まで動いた時は、ラウンドの終わりまで線を進める
+      if (final.shutter || final.outcome !== 'ongoing') done();
+      else this.moveHead(CHAIN_RULES.roundLen - 0.5, () => this.wait(300, done));
       return;
     }
     const f = frames[i];
+    // 再生位置がその行動の時刻に来るまで、線を進める
+    if (this.head && this.head.x < FILM_X + CELL * f.at + CELL / 2 - 1) {
+      this.moveHead(f.at, () => this.playFrames(frames, i, final, before));
+      return;
+    }
     const entry = this.runOrder[f.order - 1];
     const label = entry ? this.orderLabel(before, entry) : `${f.name}`;
-    this.playhead = f.at;
     this.currentOrder = f.order;
     this.actorUid = f.uid;
     this.targetUid = f.target ?? '';
@@ -609,6 +681,7 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     this.message = `${f.order}番目（時刻${f.at}）　${label}`;
     this.render(before);
+    this.flyEffects(f, before);
     this.wait(800, () => {
       this.runResults.set(f.order, result);
       this.message = `${f.order}番目（時刻${f.at}）　${label}\n${result}`;
@@ -624,7 +697,8 @@ export class ChainBattleScene extends Phaser.Scene {
 
   private finishRound(final: ChainState): void {
     this.s = final;
-    this.playhead = null;
+    this.head?.destroy();
+    this.head = null;
     this.plan = [];
     this.ally = this.firstFreeAlly();
     if (final.shutter) {
