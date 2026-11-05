@@ -202,6 +202,10 @@ export interface ChainState {
 
 /** 実行の1コマ（仲間か敵の1回の行動）。画面はこの順に見せる */
 export interface ChainFrame {
+  /** 動く順番の何番目か（1から。chainOrder の並び） */
+  order: number;
+  /** ねらった相手（単体の行動だけ） */
+  target?: string;
   at: number;
   uid: string;
   name: string;
@@ -548,6 +552,19 @@ function checkEnd(s: ChainState, ev: ChainEvent[]): boolean {
   return false;
 }
 
+/** 動く順番の1つ（仲間なら計画の何行目か、敵なら予定） */
+export type ChainOrderEntry = { at: number; kind: 'ally'; i: number } | { at: number; kind: 'enemy'; intent: ChainIntent };
+
+/** このラウンドに動く順番（早い時刻から。同じ時刻なら仲間が先、仲間どうしは並べた順）。画面の番号もこれで出す */
+export function chainOrder(s: ChainState, plan: ChainPlanStep[]): ChainOrderEntry[] {
+  const starts = planStarts(s, plan);
+  const queue: ChainOrderEntry[] = [
+    ...plan.map((_, i) => ({ at: starts[i], kind: 'ally' as const, i })),
+    ...s.intents.map((intent) => ({ at: intent.at, kind: 'enemy' as const, intent })),
+  ];
+  return queue.sort((a, b) => a.at - b.at || (a.kind === b.kind ? 0 : a.kind === 'ally' ? -1 : 1));
+}
+
 /**
  * ラウンドを実行する。計画の順と敵の予定の時刻で1つずつ動き、コマ（frames）を返す。
  * 全員ダウン（シャッター）か決着で途中で止まる。最後まで動けば、ラウンドの終わり（ダウンが解け、手札を補充し、次の予定を決める）まで進めた状態を返す
@@ -555,24 +572,17 @@ function checkEnd(s: ChainState, ev: ChainEvent[]): boolean {
 export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: ChainState; frames: ChainFrame[] } {
   const s = cloneChain(s0);
   const frames: ChainFrame[] = [];
-  const starts = planStarts(s0, plan);
   // 使う札は、手札から場へ（倒れて動けなかった仲間の札は、手札に戻す）
   const moves = plan.map((p) => chainMoveOf(s0, p));
   const cardIds = plan.map((p) => (p.source.kind === 'card' ? s0.hand[p.source.index] : null));
   const usedIdx = new Set(plan.flatMap((p) => (p.source.kind === 'card' ? [p.source.index] : [])));
   s.hand = s0.hand.filter((_, i) => !usedIdx.has(i));
-  type Entry = { at: number; kind: 'ally'; i: number } | { at: number; kind: 'enemy'; intent: ChainIntent };
-  const queue: Entry[] = [
-    ...plan.map((_, i) => ({ at: starts[i], kind: 'ally' as const, i })),
-    ...s0.intents.map((intent) => ({ at: intent.at, kind: 'enemy' as const, intent })),
-  ];
-  // 早い時刻から。同じ時刻なら仲間が先（仲間どうしは並べた順）
-  queue.sort((a, b) => a.at - b.at || (a.kind === b.kind ? 0 : a.kind === 'ally' ? -1 : 1));
+  const queue = chainOrder(s0, plan);
   let prev: PrevAct | null = null;
   let acted = 0;
   let enemySincePrev = false;
   let stopped = false;
-  for (const q of queue) {
+  for (const [qi, q] of queue.entries()) {
     const ev: ChainEvent[] = [];
     if (q.kind === 'ally') {
       const step = plan[q.i];
@@ -581,7 +591,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       if (actor.hp <= 0 || !move) {
         if (cardIds[q.i]) s.hand.push(cardIds[q.i]!);
         ev.push({ type: 'cancel', uid: actor.uid, reason: 'dead' });
-        frames.push({ at: q.at, uid: actor.uid, name: move?.name ?? '', events: ev, state: cloneChain(s) });
+        frames.push({ order: qi + 1, target: plan[q.i].target, at: q.at, uid: actor.uid, name: move?.name ?? '', events: ev, state: cloneChain(s) });
         continue;
       }
       if (cardIds[q.i]) s.discard.push(cardIds[q.i]!);
@@ -599,19 +609,19 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       } else prev = doAllyMove(s, actor, move, step.target, prev, acted, ev);
       acted++;
       enemySincePrev = false;
-      frames.push({ at: q.at, uid: actor.uid, name: move.name, events: ev, state: cloneChain(s) });
+      frames.push({ order: qi + 1, target: plan[q.i].target, at: q.at, uid: actor.uid, name: move.name, events: ev, state: cloneChain(s) });
     } else {
       const e = s.enemies.find((x) => x.uid === q.intent.enemy)!;
       if (e.hp <= 0) continue;
       if (e.down) {
         ev.push({ type: 'cancel', uid: e.uid, reason: 'down' });
-        frames.push({ at: q.at, uid: e.uid, name: q.intent.move.name, events: ev, state: cloneChain(s) });
+        frames.push({ order: qi + 1, target: q.intent.target, at: q.at, uid: e.uid, name: q.intent.move.name, events: ev, state: cloneChain(s) });
         continue;
       }
       ev.push({ type: 'act', uid: e.uid, name: q.intent.move.name, at: q.at });
       doEnemyMove(s, e, q.intent, ev);
       enemySincePrev = true;
-      frames.push({ at: q.at, uid: e.uid, name: q.intent.move.name, events: ev, state: cloneChain(s) });
+      frames.push({ order: qi + 1, target: q.intent.target, at: q.at, uid: e.uid, name: q.intent.move.name, events: ev, state: cloneChain(s) });
     }
     if (checkEnd(s, frames[frames.length - 1].events)) {
       frames[frames.length - 1].state = cloneChain(s);

@@ -3,6 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import {
   availableLinks,
   chainMoveOf,
+  chainOrder,
   chainPlanError,
   createChainBattle,
   findChainUnit,
@@ -14,6 +15,7 @@ import {
   takeShutter,
   type ChainEvent,
   type ChainFrame,
+  type ChainOrderEntry,
   type ChainMove,
   type ChainPlanStep,
   type ChainSource,
@@ -68,6 +70,16 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 実行中に見せている時刻（フィルムの再生位置） */
   private playhead: number | null = null;
   private enemyImages = new Map<string, Phaser.GameObjects.Image>();
+  /** 実行中：このラウンドに動く順番と、済んだ行動の結果（順番の番号ごと） */
+  private runOrder: ChainOrderEntry[] = [];
+  private runResults = new Map<number, string>();
+  /** 実行中：今動いている順番の番号（0 は実行していない） */
+  private currentOrder = 0;
+  /** 実行中：今動いている者と、ねらわれた相手（光らせる） */
+  private actorUid = '';
+  private targetUid = '';
+  /** 実行中：タップで次へ進める（待ちを飛ばす） */
+  private advance: (() => void) | null = null;
 
   constructor() {
     super('ChainBattle');
@@ -86,6 +98,15 @@ export class ChainBattleScene extends Phaser.Scene {
     this.busy = false;
     this.playhead = null;
     this.ally = this.firstFreeAlly();
+    this.runOrder = [];
+    this.runResults = new Map();
+    this.currentOrder = 0;
+    this.actorUid = '';
+    this.targetUid = '';
+    this.advance = null;
+    this.input.on('pointerdown', () => {
+      if (this.busy && this.advance) this.advance();
+    });
     this.message = '上の段は敵の予定（時刻と行動）。仲間を選んで札か技を並べると、下の段に入る。全員ダウンさせるとシャッターで決着';
     const ids = [...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
@@ -113,7 +134,50 @@ export class ChainBattleScene extends Phaser.Scene {
       this.drawTabs();
       this.drawOptions();
       this.drawCommands();
+    } else if (this.currentOrder > 0) this.drawRunList(view);
+  }
+
+  /** 計画の行・敵の予定を、1行の言葉で（「ハルト：斬る → 黒電話」） */
+  private orderLabel(view: ChainState, o: ChainOrderEntry): string {
+    const nm = (uid?: string) => (uid ? (findChainUnit(view, uid)?.name.replace('ノイズ', '') ?? '') : '');
+    if (o.kind === 'ally') {
+      const step = this.plan[o.i];
+      const move = step ? chainMoveOf(this.s, step) : null;
+      if (!step || !move) return '';
+      return `${nm(step.ally)}：${move.name}${move.target === 'enemy' ? ` → ${nm(step.target)}` : move.target === 'enemies' ? '（敵全体）' : '（仲間全体）'}`;
     }
+    return `${nm(o.intent.enemy)}：${o.intent.move.name}${o.intent.move.all ? '（全体）' : ` → ${nm(o.intent.target)}`}`;
+  }
+
+  /** 実行中の、動く順の一覧（済んだ行動は結果、今の行動は光らせ、この後の行動は薄く） */
+  private drawRunList(view: ChainState): void {
+    const top = TAB_Y - 10;
+    this.root.add(addText(this, 12, top, '動く順（番号の順。同じ時刻なら味方が先）', { size: 11, bold: true, color: COLORS.accentText }));
+    const rowH = 30;
+    this.runOrder.forEach((o, k) => {
+      const n = k + 1;
+      const y = top + 26 + k * rowH;
+      if (y > GAME_HEIGHT - 60) return;
+      const done = n < this.currentOrder;
+      const now = n === this.currentOrder;
+      const ally = o.kind === 'ally';
+      const box = this.add.rectangle(GAME_WIDTH / 2, y + 10, GAME_WIDTH - 16, rowH - 4, now ? 0x3a2a10 : 0x141a30, now ? 1 : 0.9).setRounded(6);
+      if (now) box.setStrokeStyle(2, COLORS.accent);
+      this.root.add(box);
+      this.root.add(this.add.circle(24, y + 10, 10, ally ? 0x3f7fbf : 0xbf4f4f, done ? 0.5 : 1));
+      this.root.add(addText(this, 24, y + 10, String(n), { size: 11, bold: true }).setOrigin(0.5));
+      const head = `時刻${o.at}　${this.orderLabel(view, o)}`;
+      const t = addText(this, 40, y + (done || now ? 2 : 10), head, { size: 11, bold: now, color: done ? COLORS.subText : now ? '#ffffff' : COLORS.dimText }).setOrigin(0, done || now ? 0 : 0.5);
+      if (t.width > GAME_WIDTH - 60) t.setScale((GAME_WIDTH - 60) / t.width);
+      this.root.add(t);
+      const res = this.runResults.get(n);
+      if ((done || now) && res) {
+        const rt = addText(this, 40, y + 16, res, { size: 9, color: now ? COLORS.weak : '#c8d0ec' });
+        if (rt.width > GAME_WIDTH - 60) rt.setScale((GAME_WIDTH - 60) / rt.width);
+        this.root.add(rt);
+      }
+    });
+    this.root.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 50, '画面をタップすると次へ進む', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
   }
 
   private drawEnemies(s: ChainState): void {
@@ -126,6 +190,8 @@ export class ChainBattleScene extends Phaser.Scene {
       const top = ENEMY_TOP;
       const color = ENEMY_COLORS[i % ENEMY_COLORS.length];
       const isTarget = this.pending?.move.target === 'enemy' && alive;
+      if (this.busy && e.uid === this.actorUid) this.root.add(this.add.rectangle(cx, top + 66, colW - 6, 134, 0xff3b5c, 0.12).setStrokeStyle(3, 0xff3b5c).setRounded(8));
+      if (this.busy && e.uid === this.targetUid) this.root.add(this.add.rectangle(cx, top + 66, colW - 6, 134, 0xffd84a, 0.08).setStrokeStyle(3, 0xffd84a).setRounded(8));
       if (isTarget) this.root.add(this.add.rectangle(cx, top + 66, colW - 6, 134, 0xffffff, 0.04).setStrokeStyle(2, COLORS.select).setRounded(8));
       const art = ENEMY_ART[e.defId];
       if (art && hasImage(this, art)) {
@@ -219,6 +285,17 @@ export class ChainBattleScene extends Phaser.Scene {
     for (let t = 0; t < len; t++) r.add(addText(this, x0 + CELL * t + CELL / 2, top + 10, String(t), { size: 10, bold: true, color: '#d9a440' }).setOrigin(0.5, 0));
     r.add(addText(this, 8, top + 38, '敵', { size: 10, bold: true, color: '#ff9a7a' }).setOrigin(0, 0.5));
     r.add(addText(this, 8, top + 80, '味方', { size: 9, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
+    // 動く順の番号（同じ時刻なら味方が先）。実行中は、済んだ番号を薄く、今の番号を光らせる
+    const order = this.busy && this.runOrder.length ? this.runOrder : chainOrder(this.s, this.plan);
+    const numOf = (pred: (o: ChainOrderEntry) => boolean) => order.findIndex(pred) + 1;
+    const badge = (x: number, y: number, n: number) => {
+      if (n <= 0) return;
+      const now = n === this.currentOrder;
+      const done = this.currentOrder > 0 && n < this.currentOrder;
+      r.add(this.add.circle(x, y, now ? 9 : 7, now ? 0xff3b5c : 0xffffff, done ? 0.35 : 1).setStrokeStyle(1, 0x000000));
+      r.add(addText(this, x, y, String(n), { size: now ? 11 : 9, bold: true, color: now ? '#ffffff' : '#101010' }).setOrigin(0.5).setAlpha(done ? 0.5 : 1));
+    };
+    r.add(addText(this, GAME_WIDTH - 10, top + 104, '番号の順に動く（同じ時刻なら味方が先）', { size: 9, color: '#d9a440' }).setOrigin(1, 0.5));
     // 上の段：敵の予定
     const slots: Record<number, number> = {};
     s.intents.forEach((it) => {
@@ -234,6 +311,7 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(addText(this, cx, cy, String.fromCharCode(65 + i), { size: 10, bold: true, color: '#101010' }).setOrigin(0.5).setAlpha(e.down ? 0.4 : 1));
       if (it.move.all) r.add(addText(this, cx + 9, cy - 9, '全', { size: 8, bold: true, color: '#ff9a7a' }).setOrigin(0.5));
       if (e.down) r.add(addText(this, cx, cy, '×', { size: 16, bold: true, color: COLORS.weak }).setOrigin(0.5));
+      badge(cx - 11, cy - 9, numOf((o) => o.kind === 'enemy' && o.intent.enemy === it.enemy));
     });
     // 下の段：並べた行動（重さの分の長さ）
     const starts = planStarts(s, this.plan);
@@ -249,7 +327,8 @@ export class ChainBattleScene extends Phaser.Scene {
       const bar = this.add.rectangle(bx, top + 80, CELL * w - 2, 34, color, 0.85).setOrigin(0, 0.5).setRounded(5);
       if (isLink) bar.setStrokeStyle(2.5, 0xffd700);
       r.add(bar);
-      r.add(addText(this, bx + 3, top + 70, `${i + 1} ${u.name}`, { size: 9, bold: true, color: '#101010' }));
+      r.add(addText(this, bx + 14, top + 70, u.name, { size: 9, bold: true, color: '#101010' }));
+      badge(bx + 7, top + 70 + 6, numOf((o) => o.kind === 'ally' && o.i === i));
       const nm = addText(this, bx + 3, top + 84, move.name, { size: 10, bold: true, color: '#101010' });
       if (nm.width > CELL * w - 6) nm.setScale((CELL * w - 6) / nm.width);
       r.add(nm);
@@ -260,8 +339,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (at < len && this.ally) {
         const cx = x0 + CELL * at;
         r.add(this.add.rectangle(cx + 1, top + 80, 3, 36, COLORS.accent).setOrigin(0, 0.5));
-        r.add(addText(this, cx + 6, top + 104, `次は時刻${at}`, { size: 9, color: COLORS.accentText }).setOrigin(0, 0.5));
-      } else if (at >= len) r.add(addText(this, GAME_WIDTH - 14, top + 104, 'このラウンドの時間はいっぱい', { size: 9, color: '#ff9a7a' }).setOrigin(1, 0.5));
+      } else if (at >= len) r.add(addText(this, x0, top + 104, '時間はいっぱい', { size: 9, color: '#ff9a7a' }).setOrigin(0, 0.5));
     }
     // 再生位置
     if (this.playhead !== null) {
@@ -279,7 +357,9 @@ export class ChainBattleScene extends Phaser.Scene {
       const planned = this.plan.findIndex((p) => p.ally === u.uid);
       const sel = !this.busy && this.ally === u.uid;
       const box = this.add.rectangle(x, y, colW - 6, 76, 0x1d2544, 0.95).setRounded(8);
-      box.setStrokeStyle(sel ? 3 : 1, sel ? COLORS.accent : COLORS.border);
+      const acting = this.busy && this.actorUid === u.uid;
+      const aimed = this.busy && this.targetUid === u.uid;
+      box.setStrokeStyle(sel || acting || aimed ? 3 : 1, acting ? 0xff3b5c : aimed ? 0xffd84a : sel ? COLORS.accent : COLORS.border);
       this.root.add(box);
       const id = ALLY_FACE[u.defId];
       if (id && hasImage(this, id)) this.root.add(faceImage(this, id, x - colW / 2 + 24, y - 14, 15, FACE_CROPS[u.defId]).setAlpha(u.hp > 0 ? 1 : 0.3));
@@ -290,7 +370,8 @@ export class ChainBattleScene extends Phaser.Scene {
       this.root.add(this.add.rectangle(x - bw / 2, y + 8, bw, 5, COLORS.barBg).setOrigin(0, 0.5));
       this.root.add(this.add.rectangle(x - bw / 2, y + 8, bw * (u.hp / u.maxHp), 5, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : COLORS.hp).setOrigin(0, 0.5));
       this.root.add(addText(this, x - bw / 2, y + 12, `${u.hp}/${u.maxHp}`, { size: 9 }));
-      const state = u.hp <= 0 ? '倒れている' : planned >= 0 ? `${planned + 1}番目・時刻${starts[planned]}` : sel ? '← 並べる人' : 'タップで選ぶ';
+      const turn = planned >= 0 ? chainOrder(this.s, this.plan).findIndex((o) => o.kind === 'ally' && o.i === planned) + 1 : 0;
+      const state = u.hp <= 0 ? '倒れている' : planned >= 0 ? `動く順 ${turn}・時刻${starts[planned]}` : sel ? '← 並べる人' : 'タップで選ぶ';
       this.root.add(addText(this, x, y + 30, state, { size: 9, bold: planned >= 0 || sel, color: planned >= 0 ? '#9ad0ff' : sel ? COLORS.accentText : COLORS.dimText }).setOrigin(0.5));
       const hit = this.add.rectangle(x, y, colW - 6, 76, 0xffffff, 0.001);
       this.root.add(hit);
@@ -480,26 +561,65 @@ export class ChainBattleScene extends Phaser.Scene {
   private execute(): void {
     if (this.busy || this.plan.length === 0) return;
     const { state, frames } = runChainRound(this.s, this.plan);
+    this.runOrder = chainOrder(this.s, this.plan);
+    this.runResults = new Map();
     this.busy = true;
     this.pending = null;
-    this.playFrames(frames, 0, state);
+    this.playFrames(frames, 0, state, this.s);
   }
 
-  private playFrames(frames: ChainFrame[], i: number, final: ChainState): void {
+  /** ms 待ってから next。画面をタップすると、待たずに next */
+  private wait(ms: number, next: () => void): void {
+    let fired = false;
+    const run = () => {
+      if (fired) return;
+      fired = true;
+      timer.remove();
+      this.advance = null;
+      next();
+    };
+    const timer = this.time.delayedCall(ms, run);
+    this.advance = run;
+  }
+
+  /** 1つの行動を、2段で見せる：まず「誰が・何を・誰に」（動く者とねらう相手を光らせる）、次に結果 */
+  private playFrames(frames: ChainFrame[], i: number, final: ChainState, before: ChainState): void {
     if (i >= frames.length) {
+      this.currentOrder = 0;
+      this.actorUid = '';
+      this.targetUid = '';
       this.finishRound(final);
       return;
     }
     const f = frames[i];
+    const entry = this.runOrder[f.order - 1];
+    const label = entry ? this.orderLabel(before, entry) : `${f.name}`;
     this.playhead = f.at;
-    this.message = describe(f, this.s);
-    this.render(f.state);
-    this.popNumbers(f.events, f.state);
-    if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
-    if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
-    if (f.events.some((e) => e.type === 'blast')) playSe(this, SE.firework);
-    const wait = f.events.some((e) => e.type === 'link' || e.type === 'blast' || e.type === 'spread') ? 1300 : f.events.some((e) => e.type === 'cancel') ? 700 : 950;
-    this.time.delayedCall(wait, () => this.playFrames(frames, i + 1, final));
+    this.currentOrder = f.order;
+    this.actorUid = f.uid;
+    this.targetUid = f.target ?? '';
+    const canceled = f.events.some((e) => e.type === 'cancel');
+    const result = describe(f, before);
+    if (canceled) {
+      this.runResults.set(f.order, result);
+      this.message = `${f.order}番目（時刻${f.at}）　${label}\n${result}`;
+      this.render(f.state);
+      this.wait(1300, () => this.playFrames(frames, i + 1, final, f.state));
+      return;
+    }
+    this.message = `${f.order}番目（時刻${f.at}）　${label}`;
+    this.render(before);
+    this.wait(800, () => {
+      this.runResults.set(f.order, result);
+      this.message = `${f.order}番目（時刻${f.at}）　${label}\n${result}`;
+      this.render(f.state);
+      this.popNumbers(f.events, f.state);
+      if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
+      if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
+      if (f.events.some((e) => e.type === 'blast')) playSe(this, SE.firework);
+      const big = f.events.some((e) => e.type === 'link' || e.type === 'blast' || e.type === 'spread' || e.type === 'reflect' || e.type === 'pop');
+      this.wait(big ? 2000 : 1500, () => this.playFrames(frames, i + 1, final, f.state));
+    });
   }
 
   private finishRound(final: ChainState): void {
@@ -636,9 +756,9 @@ function shortText(m: ChainMove): string {
 /** そのコマで起きたことを、1〜2行で */
 function describe(f: ChainFrame, before: ChainState): string {
   const name = (uid: string) => (findChainUnit(f.state, uid) ?? findChainUnit(before, uid))?.name.replace('ノイズ', '') ?? uid;
-  const parts: string[] = [`時刻${f.at}`];
+  const parts: string[] = [];
   for (const ev of f.events) {
-    if (ev.type === 'act') parts.push(`${name(ev.uid)}の${ev.name}！`);
+    if (ev.type === 'act') continue;
     else if (ev.type === 'cancel') parts.push(ev.reason === 'down' ? `${name(ev.uid)}はダウンしていて、${f.name}は起きなかった` : `${name(ev.uid)}は倒れていて動けない`);
     else if (ev.type === 'damage') parts.push(`${name(ev.to)}に${ev.amount}${ev.weak ? '（弱点）' : ev.resist ? '（耐性）' : ''}`);
     else if (ev.type === 'heal') parts.push(`${name(ev.to)}+${ev.amount}`);
@@ -653,5 +773,5 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'link') parts.push(`連携技「${ev.name}」！`);
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
   }
-  return parts.join(' ');
+  return parts.length ? parts.join(' ') : '（何も起きなかった）';
 }
