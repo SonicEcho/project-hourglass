@@ -78,6 +78,64 @@ export interface ChainAutoResult {
   rounds: number;
 }
 
+/** 測った数（段階156の調整5。考える方針が何を使って勝っているかを見る） */
+export interface ChainStats {
+  battles: number;
+  wins: number;
+  rounds: number;
+  shutters: number;
+  /** 1ラウンド目にシャッターで決着した数 */
+  firstRoundShutters: number;
+  /** 共鳴が起きた回数・連携技を使った回数・弱点でダウンさせた回数 */
+  resonances: number;
+  links: number;
+  weakDowns: number;
+  /** 使った札・技（名前ごとの回数） */
+  used: Record<string, number>;
+}
+
+/** 1つの組み合わせを runs 回戦い、使った札・技と勝ち方を数える */
+export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: number, policy: 'random' | 'smart', seed = 100): ChainStats {
+  const st: ChainStats = { battles: 0, wins: 0, rounds: 0, shutters: 0, firstRoundShutters: 0, resonances: 0, links: 0, weakDowns: 0, used: {} };
+  for (let k = 0; k < runs; k++) {
+    let r = ((seed + k) ^ 0x9e3779b9) >>> 0;
+    const pick = (n: number): number => {
+      const [v, next] = nextRandom(r);
+      r = next;
+      return Math.floor(v * n);
+    };
+    let s = createChainBattle(def, rules, seed + k);
+    while (s.outcome === 'ongoing' && s.round <= 20) {
+      const plan = policy === 'smart' ? smartChainPlan(s, pick) : randomChainPlan(s, pick);
+      const res = runChainRound(s, plan);
+      for (const f of res.frames) {
+        const ev = f.events;
+        if (ev.some((e) => e.type === 'act') && s.allies.some((a) => a.uid === f.uid)) st.used[f.name] = (st.used[f.name] ?? 0) + 1;
+        st.resonances += ev.filter((e) => e.type === 'resonate' && e.to.length > 0).length;
+        st.links += ev.filter((e) => e.type === 'link').length;
+      }
+      // 弱点のダウン：弱点で当たった直後のダウン
+      for (const f of res.frames) {
+        f.events.forEach((e, i) => {
+          if (e.type === 'down' && f.events.slice(0, i).some((d) => d.type === 'damage' && d.weak && d.to === e.uid)) st.weakDowns++;
+        });
+      }
+      s = res.state;
+      if (s.shutter) s = takeShutter(s);
+    }
+    st.battles++;
+    if (s.outcome === 'win') {
+      st.wins++;
+      st.rounds += s.finishRound ?? s.round;
+      if (s.finish === 'shutter') {
+        st.shutters++;
+        if (s.finishRound === 1) st.firstRoundShutters++;
+      }
+    }
+  }
+  return st;
+}
+
 /** 1戦を最後まで（シャッターが光ったら押す）。maxRounds で打ち切り（負け） */
 export function autoChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, policy: 'random' | 'smart', maxRounds = 20): ChainAutoResult {
   let r = (seed ^ 0x9e3779b9) >>> 0;
