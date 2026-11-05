@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   availableLinks,
+  chainOrder,
   chainPlanError,
   createChainBattle,
   nextStart,
@@ -68,6 +69,21 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(events.some((e) => e.type === 'down' && e.uid === phone)).toBe(true);
     expect(events.some((e) => e.type === 'cancel' && e.uid === phone)).toBe(true);
     expect(events.some((e) => e.type === 'act' && e.uid === phone)).toBe(false);
+  });
+
+  it('動く順番は、早い時刻から。同じ時刻なら仲間が先で、実行のコマにも何番目かが付く', () => {
+    const s = make([idle(CHAIN_ENEMIES.phone), idle(CHAIN_ENEMIES.tin)]);
+    const phone = uid(s, 'phoneNoise');
+    // ハルトのとどめの一閃（重さ4）の後、あかりは時刻4。黒電話も時刻4、ブリキは時刻7
+    const plan: ChainPlanStep[] = [
+      { ally: 'hero', source: { kind: 'move', moveId: 'finisher' }, target: phone },
+      { ally: 'akari', source: { kind: 'move', moveId: 'fire' }, target: phone },
+    ];
+    const order = chainOrder(s, plan);
+    expect(order.map((o) => (o.kind === 'ally' ? `ally${o.i}@${o.at}` : `${o.intent.enemy}@${o.at}`))).toEqual(['ally0@0', 'ally1@4', `${phone}@4`, `${uid(s, 'tinNoise')}@7`]);
+    const { frames } = runChainRound(s, plan);
+    expect(frames.map((f) => f.order)).toEqual([1, 2, 3, 4]);
+    expect(frames[0].target).toBe(phone);
   });
 
   it('ダウンさせなければ、敵は予定どおりに動く', () => {
