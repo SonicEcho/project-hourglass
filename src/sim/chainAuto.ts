@@ -1,0 +1,96 @@
+import { availableLinks, chainMoveOf, chainPlanError, createChainBattle, nextRandom, runChainRound, takeShutter, type ChainBattleDef, type ChainPlanStep, type ChainRules, type ChainState } from '../core';
+
+// 試し：並べてつなぐ戦闘（段階156）の自動対戦。手応えの目安を測るためだけに使う。
+// random：並べる順・行動・相手をでたらめに選ぶ。smart：でたらめな計画をたくさん作って、1ラウンド先まで動かし、一番よい物を選ぶ（読み切る人の目安）
+
+/** 計画の続きに置ける行（仲間1人分の候補。同じ札は1枚にまとめる） */
+export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: string): ChainPlanStep[] {
+  const out: ChainPlanStep[] = [];
+  const seen = new Set<string>();
+  const sources: ChainPlanStep['source'][] = [];
+  s.hand.forEach((id, index) => {
+    if (seen.has(id)) return;
+    if (plan.some((p) => p.source.kind === 'card' && p.source.index === index)) return;
+    seen.add(id);
+    sources.push({ kind: 'card', index });
+  });
+  const me = s.allies.find((a) => a.uid === ally);
+  const def = s.def.allies.find((a) => a.id === me?.defId);
+  for (const m of def?.moves ?? []) sources.push({ kind: 'move', moveId: m.id });
+  for (const l of availableLinks(s, plan, ally)) sources.push({ kind: 'link', linkId: l.id });
+  for (const source of sources) {
+    const base: ChainPlanStep = { ally, source };
+    const move = chainMoveOf(s, base);
+    if (!move) continue;
+    const targets = move.target === 'enemy' ? s.enemies.filter((e) => e.hp > 0).map((e) => e.uid) : [undefined];
+    for (const target of targets) {
+      const step = { ...base, target };
+      if (chainPlanError(s, plan, step) === null) out.push(step);
+    }
+  }
+  return out;
+}
+
+/** でたらめな計画（生きている仲間を、でたらめな順で、置ける限り） */
+export function randomChainPlan(s: ChainState, pick: (n: number) => number): ChainPlanStep[] {
+  const order = s.allies.filter((a) => a.hp > 0).map((a) => a.uid);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = pick(i + 1);
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  const plan: ChainPlanStep[] = [];
+  for (const ally of order) {
+    const c = chainCandidates(s, plan, ally);
+    if (c.length === 0) continue;
+    plan.push(c[pick(c.length)]);
+  }
+  return plan;
+}
+
+/** 1ラウンド動かした後の良さ（シャッター・勝ち > ダウン・与えたダメージ > 受けたダメージ） */
+function score(before: ChainState, after: ChainState): number {
+  if (after.outcome === 'lose') return -1e6;
+  if (after.shutter || after.outcome === 'win') return 1e6;
+  const foeHp = (s: ChainState) => s.enemies.reduce((a, e) => a + e.hp, 0);
+  const allyHp = (s: ChainState) => s.allies.reduce((a, u) => a + u.hp, 0);
+  const kills = after.enemies.filter((e) => e.hp <= 0).length - before.enemies.filter((e) => e.hp <= 0).length;
+  const deadAllies = after.allies.filter((a) => a.hp <= 0).length;
+  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300;
+}
+
+export function smartChainPlan(s: ChainState, pick: (n: number) => number, tries = 600): ChainPlanStep[] {
+  let best: ChainPlanStep[] = [];
+  let bestScore = -Infinity;
+  for (let k = 0; k < tries; k++) {
+    const plan = randomChainPlan(s, pick);
+    const v = score(s, runChainRound(s, plan).state);
+    if (v > bestScore) {
+      bestScore = v;
+      best = plan;
+    }
+  }
+  return best;
+}
+
+export interface ChainAutoResult {
+  outcome: ChainState['outcome'];
+  finish?: ChainState['finish'];
+  rounds: number;
+}
+
+/** 1戦を最後まで（シャッターが光ったら押す）。maxRounds で打ち切り（負け） */
+export function autoChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, policy: 'random' | 'smart', maxRounds = 20): ChainAutoResult {
+  let r = (seed ^ 0x9e3779b9) >>> 0;
+  const pick = (n: number): number => {
+    const [v, next] = nextRandom(r);
+    r = next;
+    return Math.floor(v * n);
+  };
+  let s = createChainBattle(def, rules, seed);
+  while (s.outcome === 'ongoing' && s.round <= maxRounds) {
+    const plan = policy === 'smart' ? smartChainPlan(s, pick) : randomChainPlan(s, pick);
+    s = runChainRound(s, plan).state;
+    if (s.shutter) s = takeShutter(s);
+  }
+  return { outcome: s.outcome === 'ongoing' ? 'lose' : s.outcome, finish: s.finish, rounds: s.finishRound ?? s.round };
+}

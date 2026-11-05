@@ -16,6 +16,7 @@ export * from './gradEnemies';
 export * from './summerEnemies';
 export * from './openingEnemies';
 export * from './clockTrial';
+export * from './chainTrial';
 export * from './snapTrial';
 export * from './enemyArt';
 export * from './encounters';
