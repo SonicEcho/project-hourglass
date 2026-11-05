@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import type { ActionDef, AllyUnit, BattleState, CardDef, CardInstance, ComboDef, EnemyUnit, LinkDef, OrderEntry, PartState, TargetScope } from '../core';
 import { actionSpeed, availableCombos, basicAttackFor, batonTargets, chargingAction, comboCards, comboProgress, findUnit, linkReady, planOf, pouchLeft, skillMpCost } from '../core';
-import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, WEIGHT_LABELS } from '../data';
+import { ALLY_FACE, BASIC_ATTACK, ENEMY_ART, ENEMY_ART_BIG, ENEMY_PART_SPOTS, CARD_ART, CARD_NAME_LINES, CARDS, COMBO_NAME_LINES, FACE_CROPS, GUARD, HAND_SIZE, LINK_GAUGE_MAX, ONE_MORE_DRAW, SUPPORT_PER_ROUND, TRIAL_CARD_ART, TRIAL_CARDS, TRIAL_COMBO_NAME_LINES, WEIGHT_LABELS } from '../data';
+import { stagedCard } from '../core/deck';
 import { GAME_WIDTH } from '../config';
 import { describeAction, formatWeight, mainDamageType, targetNote } from './describe';
 import { weightLabel } from './labels';
@@ -578,7 +579,7 @@ function drawFilmComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Contai
       const mw = 20;
       const mh = 28;
       const my = by + (bh - mh) / 2;
-      const art = CARD_ART[slot.id as keyof typeof CARD_ART];
+      const art = cardArtOf(slot.id);
       if (slot.have) {
         root.add(scene.add.rectangle(mx, my, mw, mh, 0xffffff).setOrigin(0).setStrokeStyle(1, 0x000000));
         if (art && hasImage(scene, art.asset)) root.add(photoCrop(scene, art.asset, mx + 2, my + 2, mw - 4, mh - 4, art));
@@ -590,7 +591,7 @@ function drawFilmComboStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Contai
     }
     // 名前は言葉の切れ目で2行に（COMBO_NAME_LINES）。そろった物は★、あと1枚の物は右上にピンクの小札
     const tx = mx + 4;
-    const name = COMBO_NAME_LINES[e.combo.id] ?? e.combo.name;
+    const name = COMBO_NAME_LINES[e.combo.id as keyof typeof COMBO_NAME_LINES] ?? TRIAL_COMBO_NAME_LINES[e.combo.id] ?? e.combo.name;
     if (ready) root.add(addText(scene, tx, by + bh / 2, '★', { size: 12, bold: true, color: '#101010' }).setOrigin(0, 0.5));
     root.add(addText(scene, ready ? tx + 14 : tx, by + bh / 2, name, { size: 12, bold: true, color: ready ? '#101010' : COLORS.text }).setOrigin(0, 0.5).setLineSpacing(1));
     if (!ready) {
@@ -669,9 +670,20 @@ function cardHandlers(card: CardInstance, o: CardOptions): { onTap?: () => void;
         def.name,
         def.support
           ? `サポートスナップ（MP不要・行動枠を使わない）\n${supportText(def)}\n\n計画の途中でその場で使う。1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで。`
-          : `スナップ（MP不要）\n${withTargetNote(def)}\n\n${weightHelp(def.weight, o.actor)}`,
+          : `スナップ（MP不要）\n${withTargetNote(def)}${developText(card)}\n\n${weightHelp(def.weight, o.actor)}`,
       ),
   };
+}
+
+/** 現像の説明（段階155）：手札に残すと、ラウンドの始めに段が進む。段ごとの効き目 */
+const STAGE_NAMES = ['撮りたて', '現像', '焼き付け'];
+const DEVELOP_KIND: Record<string, string> = { grow: '育つ（残すほど強い）', fade: '色あせる（撮りたてが一番強い）', change: '化ける（焼き付けで別の効き目）' };
+function developText(card: CardInstance): string {
+  const base = card.base ?? card.card;
+  if (!base.develop) return '';
+  const now = card.stage ?? 0;
+  const lines = [0, 1, 2].map((i) => `${i === now ? '▶' : '　'}${STAGE_NAMES[i]}：${describeAction(stagedCard(base, i))}`);
+  return `\n\n現像：${DEVELOP_KIND[base.develop.kind]}。手札に残すと、次のラウンドの始めに1段進む。使うと撮りたてに戻る\n${lines.join('\n')}`;
 }
 
 function supportText(def: ActionDef): string {
@@ -721,7 +733,12 @@ const HAND_RULE_TEXT = [
   `ドロー・サーチ・クイックステップはサポートスナップ。計画中にその場で使い、行動枠を使わない（1ラウンドにチーム全体で${SUPPORT_PER_ROUND}枚まで）。`,
 ].join('\n');
 
-const CARD_NAME: Record<string, string> = Object.fromEntries(Object.values(CARDS).map((c) => [c.id, c.name]));
+const CARD_NAME: Record<string, string> = Object.fromEntries([...Object.values(CARDS), ...Object.values(TRIAL_CARDS)].map((c) => [c.id, c.name]));
+
+/** スナップの写真（段階155：試しの札は、近い情景の今の写真を仮に使う） */
+function cardArtOf(id: string): { asset: string; x: number; y: number } | undefined {
+  return CARD_ART[id as keyof typeof CARD_ART] ?? TRIAL_CARD_ART[id];
+}
 
 function panelBackground(scene: Phaser.Scene, root: Phaser.GameObjects.Container, title: string): void {
   const { y, h: height } = handArea();
@@ -938,7 +955,7 @@ function cardGrid(
       rowH,
       CARD_NAME_LINES[card.card.id] ?? card.card.name,
       { onTap: () => onTap(card.uid), onLongPress: () => h.detail(card.card.name, card.card.support ? supportText(card.card) : withTargetNote(card.card)) },
-      { stroke: cardColor(card.card), size: 11, accent: cardColor(card.card), art: CARD_ART[card.card.id as keyof typeof CARD_ART] },
+      { stroke: cardColor(card.card), size: 11, accent: cardColor(card.card), art: cardArtOf(card.card.id) },
     );
   });
 }
@@ -1211,7 +1228,7 @@ function drawFilmStrip(scene: Phaser.Scene, root: Phaser.GameObjects.Container, 
     const cx = fx + w / 2;
     // 決めた行動がスナップ（コンボ）なら、その札の写真を薄く入れる（段階102b）
     const planCard = !enemy && !isActor ? (pb?.cards ?? vm.planCards)[unit.uid] : undefined;
-    const art = planCard ? CARD_ART[planCard as keyof typeof CARD_ART] : undefined;
+    const art = planCard ? cardArtOf(planCard) : undefined;
     if (art && hasImage(scene, art.asset)) {
       const pts = skewPoints(fx, fy, w, fh, SKEW);
       root.add(photoImage(scene, art.asset, fx, fy, w, fh, art, pts).setAlpha(isCurrent ? 0.9 : 0.6));
@@ -1612,7 +1629,7 @@ function drawPhotoCard(
   const inset = 6;
   const pw = w - inset * 2;
   const ph = Math.round(hgt * 0.43);
-  const art = CARD_ART[def.id as keyof typeof CARD_ART];
+  const art = cardArtOf(def.id);
   if (art && hasImage(scene, art.asset)) {
     const img = photoCrop(scene, art.asset, L + inset, T + inset, pw, ph, art);
     if (dim) img.setTint(0x777777).setAlpha(0.6);
@@ -1637,15 +1654,30 @@ function drawPhotoCard(
     c.add(scene.add.rectangle(tag.x - tag.width / 2, newY, tag.width + 10, 15, 0xffd700).setStrokeStyle(1, 0x000000).setAngle(-6));
     c.add(tag.setAngle(-6));
   }
+  // 現像の段（段階155）：現像する札だけ、写真の右上に ●○○。育つは金、色あせるは灰、化けるは紫
+  const develop = (card.base ?? card.card).develop;
+  if (develop) {
+    const stage = card.stage ?? 0;
+    const dotColor = develop.kind === 'grow' ? 0xffd700 : develop.kind === 'fade' ? 0xb8c4d0 : 0xc58bff;
+    const dy = T + inset + 9;
+    c.add(scene.add.rectangle(L + w - inset - 21, dy, 40, 14, 0x000000, 0.7).setRounded(7));
+    for (let i = 0; i < 3; i++) {
+      const dot = scene.add.circle(L + w - inset - 34 + i * 13, dy, 4.5, i <= stage ? dotColor : 0x000000, 1);
+      dot.setStrokeStyle(1, dotColor);
+      c.add(dot);
+    }
+  }
   // 名前（黒の太字）
   const footY = hgt / 2 - 13;
   const nameY = (T + inset + ph + footY - 8) / 2;
   const nameColor = dim ? '#444444' : '#101010';
   const lines = CARD_NAME_LINES[def.id];
+  // 現像で段の名前が付いても、札には撮りたての名前を出す（段は右上の点で見せる。段の名前は長押しの説明に）
+  const shownName = (card.base ?? def).name;
   c.add(
     lines
       ? addText(scene, 0, nameY, lines, { size: CARD_NAME_SIZE, bold: true, align: 'center', color: nameColor }).setOrigin(0.5).setLineSpacing(1)
-      : addText(scene, 0, nameY, def.name, { size: def.name.length > 5 ? CARD_NAME_SIZE - 1 : CARD_NAME_SIZE, bold: true, align: 'center', wrap: w - 8, color: nameColor }).setOrigin(0.5),
+      : addText(scene, 0, nameY, shownName, { size: shownName.length > 5 ? CARD_NAME_SIZE - 1 : CARD_NAME_SIZE, bold: true, align: 'center', wrap: w - 8, color: nameColor }).setOrigin(0.5),
   );
   // 下：使う人・その場で使う・重さ
   if (o.reservedBy) {

@@ -28,7 +28,7 @@ export interface DebugNavigator {
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
   /** 試作の画面を開く（段階16。エンジンを決めるための探索の試作。段階18b：data で地図を選ぶ。今は縁日の絵の見本だけ） */
-  openPrototype(key: 'ProtoExplore' | 'ClockBattle', data?: object): void;
+  openPrototype(key: 'ProtoExplore' | 'ClockBattle' | 'Battle', data?: object): void;
   /** 会話の画面を開く（段階22。DialogueScene の DialogueData） */
   openDialogue(data: { scene: string; queue?: string[] }): void;
   /** 物語の流れの画面を開く（段階23。今の出来事から） */
@@ -481,6 +481,19 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         nav.openPrototype('ProtoExplore', { map: 'festival' });
       }),
+      // 段階155：試し：コンボと現像（今の戦闘に、2枚のコンボと現像する札を入れたアルバムで戦う。今のセーブには触れない）
+      button('試し：コンボと現像（砂嵐3体）', () => {
+        close();
+        nav.openPrototype('Battle', { trial: 'zako' });
+      }, true, 'background:#1f3a5a;border-color:#6bc8ff;'),
+      button('試し：コンボと現像（砂嵐4体）', () => {
+        close();
+        nav.openPrototype('Battle', { trial: 'zako2' });
+      }, true, 'background:#1f3a5a;border-color:#6bc8ff;'),
+      button('試し：コンボと現像（自転車のぬし）', () => {
+        close();
+        nav.openPrototype('Battle', { trial: 'boss' });
+      }, true, 'background:#1f3a5a;border-color:#6bc8ff;'),
       // 段階154：試し：文字盤の戦闘（docs/milestones/M3_battle_review.md）。今のセーブには触れない
       button('試し：文字盤の戦闘（砂嵐3体）', () => {
         close();
