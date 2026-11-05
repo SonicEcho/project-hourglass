@@ -17,17 +17,14 @@ export const CHAIN_RULES: ChainRules = {
 
 const card = (m: ChainMove): ChainMove => m;
 
-/** 札。型：置く（属性の色の印）・受ける・数える・締める。専用の札は、その仲間しか使えない */
+/** 札。型：置く（属性の色の印）・攻撃・締める。専用の札は、その仲間しか使えない（調整5で、受ける・数える札を外した） */
 export const CHAIN_CARDS = {
   ember: card({ id: 'ch_ember', name: '火種', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', element: 'fire' }, text: '敵1体に火の印。火が当たると、火の印の敵みんなに広がる' }),
   puddle: card({ id: 'ch_puddle', name: '水たまり', type: 'place', weight: 2, target: 'enemies', effect: { kind: 'mark', element: 'ice' }, text: '敵全体に氷の印。氷が当たると、氷の印の敵みんなに広がる' }),
   rod: card({ id: 'ch_rod', name: '避雷針', type: 'place', weight: 2, target: 'enemies', effect: { kind: 'mark', element: 'thunder' }, text: '敵全体に雷の印。雷が当たると、雷の印の敵みんなに広がる' }),
   target: card({ id: 'ch_target', name: '目印', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', element: 'physical' }, text: '敵1体に物理の印。物理が当たると、物理の印の敵みんなに広がる' }),
-  tailwind: card({ id: 'ch_tailwind', name: '追い風', type: 'receive', weight: 2, target: 'enemies', effect: { kind: 'wind', rate: 0.5 }, text: '直前に動いた仲間の攻撃を、威力半分で敵全体にもう一度（属性も同じ）。直前が攻撃でなければ不発' }),
-  overlay: card({ id: 'ch_overlay', name: '重ね撮り', type: 'receive', weight: 3, target: 'enemy', effect: { kind: 'layer', power: 22, mult: 2 }, text: '直前に動いた仲間の攻撃と同じ属性で、敵1体に。直前が攻撃なら威力2倍（でなければ物理）' }),
-  burst: card({ id: 'ch_burst', name: '連写', type: 'count', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 12, hitsPerActed: true }, text: '敵1体に物理を、このラウンドにもう動いた仲間の数 + 1 回' }),
-  panorama: card({ id: 'ch_panorama', name: 'パノラマ', type: 'count', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 8, perActed: 8 }, text: '敵全体に物理。このラウンドにもう動いた仲間1人ごとに、威力が上がる' }),
   imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 18, perMark: 30 }, text: '敵1体に物理。相手に付いた印1つごとに威力が大きく上がる（印は消える）' }),
+  wideShot: card({ id: 'ch_wideShot', name: 'ワイドショット', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 14 }, text: '敵全体に物理' }),
   decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 26, downMult: 2 }, text: '敵1体に物理。ダウン中の敵には2倍' }),
   // 専用の札（その仲間しか使えない。組む2人の札がそろうと連携技）
   swing: card({ id: 'ch_swing', name: '全力スイング', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 36 }, text: 'ハルト専用。敵1体に強い物理', owner: 'hero' }),
@@ -41,10 +38,7 @@ export const CHAIN_CARD_ART: Record<string, string> = {
   ch_puddle: 'snap.iceChip',
   ch_rod: 'snap.thunderChip',
   ch_target: 'snap.search',
-  ch_tailwind: 'snap.wideShot',
-  ch_overlay: 'snap.draw',
-  ch_burst: 'snap.sword',
-  ch_panorama: 'snap.wideShot',
+  ch_wideShot: 'snap.wideShot',
   ch_imprint: 'snap.heavyBlow',
   ch_decisive: 'snap.breakArm',
   ch_swing: 'snap.pinchHitter',
@@ -91,7 +85,6 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     def: 8,
     moves: [
       move({ id: 'thunder', name: 'サンダー', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 26 }, text: '敵1体に雷' }),
-      move({ id: 'marker', name: 'マーカー', type: 'place', weight: 1, target: 'enemy', effect: { kind: 'mark', element: 'thunder' }, text: '敵1体に雷の印。時間をほとんど使わない' }),
       move({ id: 'kick', name: 'けとばし', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 18 }, text: '敵1体に物理' }),
     ],
   },
@@ -143,7 +136,7 @@ export const CHAIN_ENEMIES = {
     { id: 'loop', name: '行って戻る', at: 2, at2: 6, element: 'physical', power: 22 },
     { id: 'spin', name: 'ループ・ザ・ループ', at: 3, at2: 7, element: 'physical', power: 20 },
   ] }),
-  table: foe({ id: 'tableNoise', name: 'ちゃぶ台ノイズ', hp: 200, atk: 12, def: 12, weak: ['thunder'], resist: ['physical'], trait: 'shield', pattern: [
+  table: foe({ id: 'tableNoise', name: 'ちゃぶ台ノイズ', hp: 200, atk: 12, def: 12, weak: ['fire'], resist: ['physical'], trait: 'shield', pattern: [
     { id: 'flip', name: 'ちゃぶ台返し', at: 6, all: true, element: 'physical', power: 18 },
     { id: 'press', name: 'のしかかり', at: 5, element: 'physical', power: 30 },
   ] }),
@@ -155,7 +148,7 @@ export const CHAIN_ENEMIES = {
     { id: 'whip', name: '飴のむち', at: 4, element: 'physical', power: 26 },
     { id: 'melt', name: 'とろける', at: 6, all: true, element: 'fire', power: 18 },
   ] }),
-  cuckoo: foe({ id: 'cuckooNoise', name: '鳩時計ノイズ', hp: 140, atk: 12, def: 9, weak: ['thunder'], resist: [], trait: 'waker', pattern: [
+  cuckoo: foe({ id: 'cuckooNoise', name: '鳩時計ノイズ', hp: 140, atk: 12, def: 9, weak: ['physical'], resist: [], trait: 'waker', pattern: [
     { id: 'chime', name: '時報', at: 5, all: true, element: 'physical', power: 16 },
     { id: 'peck', name: 'つつく', at: 7, element: 'physical', power: 26 },
   ] }),
@@ -191,7 +184,7 @@ export const CHAIN_TRAIT_TEXT: Record<string, { name: string; text: string }> = 
 
 const DECK = [
   ...['ch_ember', 'ch_ember', 'ch_puddle', 'ch_puddle', 'ch_rod', 'ch_rod', 'ch_target'],
-  ...['ch_tailwind', 'ch_overlay', 'ch_burst', 'ch_burst', 'ch_panorama', 'ch_imprint', 'ch_decisive'],
+  ...['ch_wideShot', 'ch_wideShot', 'ch_target', 'ch_imprint', 'ch_imprint', 'ch_decisive', 'ch_decisive'],
   ...['ch_swing', 'ch_swing', 'ch_sparkler', 'ch_sparkler', 'ch_waterBalloon', 'ch_waterBalloon'],
 ];
 const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_CARDS).map((c) => [c.id, c]));

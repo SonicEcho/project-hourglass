@@ -245,14 +245,13 @@ export class ChainBattleScene extends Phaser.Scene {
       const bw = colW - 14;
       this.root.add(this.add.rectangle(cx - bw / 2, y + 20, bw, 4, COLORS.barBg).setOrigin(0, 0.5));
       this.root.add(this.add.rectangle(cx - bw / 2, y + 20, bw * (Math.max(0, e.hp) / e.maxHp), 4, COLORS.hp).setOrigin(0, 0.5));
-      this.root.add(addText(this, cx - bw / 2, y + 24, `${e.hp}`, { size: 9, color: COLORS.subText }));
-      // 弱点と特徴
+      // 弱点（1文字の色の丸）と特徴。細かい数字は長押しで（調整5）
       const w = e.weak[0];
-      let tx = cx - bw / 2 + 26;
+      let tx = cx - bw / 2;
       if (w) {
-        this.root.add(this.add.rectangle(tx + 12, y + 31, 26, 13, ELEMENT_COLOR[w]).setRounded(6));
-        this.root.add(addText(this, tx + 12, y + 31, `弱${ELEMENT_LABEL[w]}`, { size: 9, bold: true, color: '#101010' }).setOrigin(0.5));
-        tx += 28;
+        this.root.add(this.add.circle(tx + 8, y + 31, 8, ELEMENT_COLOR[w]).setStrokeStyle(1, 0xffffff));
+        this.root.add(addText(this, tx + 8, y + 31, ELEMENT_LABEL[w].slice(0, 1), { size: 9, bold: true, color: '#101010' }).setOrigin(0.5));
+        tx += 18;
       }
       if (e.trait) {
         const t = CHAIN_TRAIT_TEXT[e.trait];
@@ -410,9 +409,6 @@ export class ChainBattleScene extends Phaser.Scene {
       const id = ALLY_FACE[u.defId];
       if (id && hasImage(this, id)) this.root.add(faceImage(this, id, x - colW / 2 + 24, y - 14, 15, FACE_CROPS[u.defId]).setAlpha(u.hp > 0 ? 1 : 0.3));
       this.root.add(addText(this, x - colW / 2 + 44, y - 30, u.name, { size: 12, bold: true, color: u.hp > 0 ? toCss(ALLY_COLOR[u.defId] ?? COLORS.ally) : COLORS.dimText }));
-      // 専用の札の名前
-      const own = Object.values(s.def.cards).find((c) => c.owner === u.defId);
-      if (own) this.root.add(addText(this, x - colW / 2 + 44, y - 13, `専用：${own.name}`, { size: 9, color: '#ffd77a' }));
       const bw = colW - 20;
       this.root.add(this.add.rectangle(x - bw / 2, y + 8, bw, 5, COLORS.barBg).setOrigin(0, 0.5));
       this.root.add(this.add.rectangle(x - bw / 2, y + 8, bw * (u.hp / u.maxHp), 5, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : COLORS.hp).setOrigin(0, 0.5));
@@ -432,7 +428,8 @@ export class ChainBattleScene extends Phaser.Scene {
     addButton(this, this.root, 8 + w / 2, TAB_Y, w, 28, links.length ? `手札・連携技 ★` : `手札（${this.s.hand.length}枚）`, { onTap: () => this.switchTab('cards') }, { size: 12, fill: this.tab === 'cards' ? 0x2f4f8f : 0x1d2544, stroke: links.length ? 0xffd700 : undefined });
     addButton(this, this.root, 16 + w * 1.5, TAB_Y, w, 28, '技', { onTap: () => this.switchTab('moves') }, { size: 12, fill: this.tab === 'moves' ? 0x2f4f8f : 0x1d2544 });
     const name = this.ally ? findChainUnit(this.s, this.ally)?.name : '';
-    this.root.add(addText(this, GAME_WIDTH - 10, TAB_Y, name ? `${name}の行動` : '全員並べた', { size: 11, bold: true, color: COLORS.accentText }).setOrigin(1, 0.5));
+    this.root.add(addText(this, GAME_WIDTH - 52, TAB_Y, name ? `${name}の行動` : '全員並べた', { size: 11, bold: true, color: COLORS.accentText }).setOrigin(1, 0.5));
+    addButton(this, this.root, GAME_WIDTH - 24, TAB_Y, 36, 28, '？', { onTap: () => this.showRules() }, { size: 14, bold: true });
   }
 
   private switchTab(tab: 'cards' | 'moves'): void {
@@ -491,7 +488,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const me = this.ally ? findChainUnit(s, this.ally) : undefined;
     const shown = items.slice(0, 7);
     const w = shown.length > 5 ? 52 : 70;
-    const h = 150 - linkH;
+    const h = 118 - Math.min(linkH, 10);
     const gap = Math.max(2, (GAME_WIDTH - 16 - w * Math.max(5, shown.length)) / Math.max(4, shown.length - 1));
     shown.forEach((it, i) => {
       const x = 8 + i * (w + gap) + w / 2;
@@ -530,7 +527,6 @@ export class ChainBattleScene extends Phaser.Scene {
       const title = addText(this, x, top + 62, it.move.name, { size: 11, bold: true, color: '#222222', align: 'center', wrap: w - 4 }).setOrigin(0.5);
       this.root.add(title);
       this.root.add(addText(this, x, top + 80, `重さ ${it.move.weight}`, { size: 10, bold: true, color: '#7a4a10' }).setOrigin(0.5));
-      if (h - 92 > 24) this.root.add(addText(this, x, top + 92, shortText(it.move, this.allyName.bind(this)), { size: 9, color: '#334', align: 'center', wrap: w - 6 }).setOrigin(0.5, 0));
       // 共鳴の予告
       const res = this.resonanceCount(it.move);
       if (res > 0 && !it.used) {
@@ -552,23 +548,12 @@ export class ChainBattleScene extends Phaser.Scene {
     const hint = addText(this, GAME_WIDTH / 2, HAND_Y + linkH + h + 14, 'タップで並べる（敵1体の札は、続けて敵をタップ）。長押しで説明。間違えたら「1つ戻す」', { size: 9, color: COLORS.dimText }).setOrigin(0.5);
     if (hint.width > GAME_WIDTH - 16) hint.setScale((GAME_WIDTH - 16) / hint.width);
     this.root.add(hint);
-    this.drawHelp();
   }
 
-  /** 札のつながり方の早見 */
-  private drawHelp(): void {
-    const y = HAND_Y + 190;
-    const lines = [
-      '同じ色を重ねると広がる：置く札で付けた印と同じ属性が当たると、同じ印の敵みんなに広がる',
-      '専用の札（顔付き）はその人だけ。組む2人の専用の札がそろうと、手札の先頭に連携技が出る',
-      '受ける札は直前の仲間の攻撃を使う　／　数える札は、先に動いた仲間が多いほど強い',
-    ];
-    this.root.add(this.add.rectangle(GAME_WIDTH / 2, y + 26, GAME_WIDTH - 16, 62, 0x141a30, 0.9).setRounded(6));
-    lines.forEach((l, i) => {
-      const t = addText(this, 14, y + 4 + i * 18, l, { size: 9, color: '#c8d0ec' });
-      if (t.width > GAME_WIDTH - 28) t.setScale((GAME_WIDTH - 28) / t.width);
-      this.root.add(t);
-    });
+  /** 決まりの早見（「？」で案内の窓に出す。調整5で、常に出す早見をやめた） */
+  private showRules(): void {
+    this.message = '同じ色を重ねると広がる：置く札の印と同じ属性が当たると、同じ印の敵みんなに広がる／顔付きの札はその人専用。2人の専用の札がそろうと連携技／敵を長押しで特徴と癖';
+    this.render();
   }
 
   private drawCommands(): void {
@@ -949,23 +934,6 @@ function sameSource(a: ChainSource, b: ChainSource): boolean {
   if (a.kind === 'move' && b.kind === 'move') return a.moveId === b.moveId;
   if (a.kind === 'link' && b.kind === 'link') return a.linkId === b.linkId;
   return false;
-}
-
-/** 札の小さい説明（2〜3行） */
-function shortText(m: ChainMove, allyName: (id: string) => string): string {
-  const e = m.effect;
-  const where = m.target === 'enemies' ? '敵全体' : m.target === 'allies' ? '仲間全体' : '敵1体';
-  const own = m.owner ? `${allyName(m.owner)}専用。` : '';
-  if (e.kind === 'mark') return `${own}${where}に${ELEMENT_LABEL[e.element]}の印`;
-  if (e.kind === 'wind') return '直前の攻撃を全体に';
-  if (e.kind === 'layer') return '直前と同じ属性で2倍';
-  if (e.kind === 'heal') return '仲間全体を回復';
-  const el = e.bestOf ? e.bestOf.map((x) => ELEMENT_LABEL[x]).join('か') : ELEMENT_LABEL[e.element];
-  if (e.hitsPerActed) return `${where}に${el}。動いた数+1回`;
-  if (e.perActed) return `${where}に${el}。動いた数で強く`;
-  if (e.perMark) return `${where}に${el}。印で強く`;
-  if (e.downMult) return `${where}に${el}。ダウンに2倍`;
-  return `${own}${where}に${el}`;
 }
 
 /** そのコマで起きたことを、1〜2行で */

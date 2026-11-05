@@ -92,7 +92,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
   });
 
   it('盾：立っている間、ほかの敵への単体攻撃を代わりに受ける。全体攻撃は防がない', () => {
-    const s = make([idle(CHAIN_ENEMIES.table), idle(plain(CHAIN_ENEMIES.cuckoo))], [CHAIN_CARDS.panorama.id]);
+    const s = make([idle(CHAIN_ENEMIES.table), idle(plain(CHAIN_ENEMIES.cuckoo))], [CHAIN_CARDS.wideShot.id]);
     const table = uid(s, 'tableNoise');
     const c = uid(s, 'cuckooNoise');
     const r = runChainRound(s, [move('hero', 'slash', c), { ally: 'akari', source: { kind: 'card', index: 0 } }]);
@@ -174,7 +174,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
   });
 
   it('専用の札はその仲間しか使えない。組む2人の専用の札が手札にそろうと連携技が使え、2人の手番と2枚を使う', () => {
-    const s = make([idle(plain(CHAIN_ENEMIES.cuckoo)), idle(plain(CHAIN_ENEMIES.tin))], [CHAIN_CARDS.swing.id, CHAIN_CARDS.sparkler.id, CHAIN_CARDS.burst.id]);
+    const s = make([idle(plain(CHAIN_ENEMIES.cuckoo)), idle(plain(CHAIN_ENEMIES.tin))], [CHAIN_CARDS.swing.id, CHAIN_CARDS.sparkler.id, CHAIN_CARDS.decisive.id]);
     expect(chainPlanError(s, [], { ally: 'mio', source: { kind: 'card', index: 0 }, target: s.enemies[0].uid })).toContain('ハルト');
     const links = availableLinks(s, []);
     expect(links.map((x) => x.link.id)).toEqual(['afterglow']);
@@ -189,7 +189,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
   });
 
   it('生きている敵が全員ダウンするとシャッターが光り、押すと決着（1ラウンド目なら撮れ高3）', () => {
-    const s = make([idle(plain(CHAIN_ENEMIES.cuckoo)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.rod.id]);
+    const s = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.rod.id]);
     const r = runChainRound(s, [{ ally: 'akari', source: { kind: 'card', index: 0 } }, move('mio', 'thunder', s.enemies[0].uid)]);
     expect(r.state.shutter).toBe(true);
     const won = takeShutter(r.state);
