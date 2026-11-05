@@ -30,3 +30,4 @@ export * from './fade';
 export * from './playtime';
 export * from './recommend';
 export * from './clock';
+export * from './chain';
