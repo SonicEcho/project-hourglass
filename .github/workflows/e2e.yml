@@ -1,0 +1,69 @@
+name: E2E
+
+# 通しの自動確認（段階20。scripts/e2e.mjs）：公開物を本物のブラウザで開き、タイトルから物語を自動で遊ぶ（約11分。章が増えるほど伸びる）。
+# 2026-11-05、開発者と決めた：公開（Test and Deploy）を待たせないよう、別の流れにした。公開は止めない（失敗しても公開された版はそのまま）。
+# 毎回は走らせず、壊れると遊べなくなる所（セーブ・物語の流れ・タイトルと読み込み・画面の土台・通しの筋書き・部品の版）を
+# 変えて main に入れた時だけ走る。手で走らせる時は、GitHub の Actions →「E2E」→「Run workflow」
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/core/save.ts'
+      - 'src/core/flow.ts'
+      - 'src/core/progress.ts'
+      - 'src/scenes/run.ts'
+      - 'src/scenes/BootScene.ts'
+      - 'src/scenes/PreloadScene.ts'
+      - 'src/scenes/TitleScene.ts'
+      - 'src/scenes/FlowScene.ts'
+      - 'src/main.ts'
+      - 'src/config.ts'
+      - 'src/assets/**'
+      - 'src/audio/**'
+      - 'src/debug/testHook.ts'
+      - 'scripts/e2e.mjs'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Playwright のブラウザは、版が同じ間は GitHub に覚えておいてもらい、毎回は入れ直さない（待ち時間を縮める）
+      - id: pw
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      # 覚えておいたブラウザを使う時も、動かすのに要る OS の部品だけは入れる
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-failure
+          path: e2e-failure.png
+          if-no-files-found: ignore
