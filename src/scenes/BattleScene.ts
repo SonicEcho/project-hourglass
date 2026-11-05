@@ -47,7 +47,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { CampaignBattle } from '../data';
-import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, createCampaignSetup, ENEMY_CUT_INS, type EnemyCutIn, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
+import { ALLY_FACE, AREA_BATTLES, BARK_CAST, BATTLE_BGM, BARK_FACE_CROP, BARK_RULES, BARK_SHOW_MS, BARKS, BASIC_ATTACK, BGM, CARDS, COMBOS, createCampaignSetup, SNAP_TRIAL_BATTLES, TRIAL_COMBOS, TRIAL_DECK, ENEMY_CUT_INS, type EnemyCutIn, GUARD, NAVI_REWARD_PICKS, PART_BREAK_POINTS, POUCH_ITEMS, POUCH_ORDER, PROTOTYPE_LINEUP, SE, snapNames, STORY, WEAPON_DATA } from '../data';
 import { actorLinks, chargeCounterText, drawBattle, drawFilmAutoSpeed, FILM_SKILL_ROWS, filmFrameRect, type FilmPlayback, type FooterMode, resetShownValues, type Panel, unitPosition, type ViewHandlers, type ViewModel } from '../ui/battleViews';
 import { FILM_LAYOUT, LAYOUT } from '../ui/layout';
 import { portraitImageId } from '../ui/portrait';
@@ -102,6 +102,8 @@ export interface BattleSceneData {
     /** 落とした素材が残る割合（段階57。記憶の薄れ。書かなければ全部残る） */
     dropRate?: number;
   };
+  /** 試し：コンボと現像（段階155。デバッグメニューから。SNAP_TRIAL_BATTLES の名前）。セーブ・報酬・ポーチには触れない */
+  trial?: string;
 }
 
 /** 文字から作る、ずらしの数（探索の戦闘のシードを、戦闘ごとに変えるため） */
@@ -120,6 +122,7 @@ export class BattleScene extends Phaser.Scene {
   /** 戦っている場所と、その戦闘 */
   private progress!: Progress;
   private encounter?: BattleSceneData['encounter'];
+  private trial?: string;
   private battle!: CampaignBattle;
   /** 戦う仲間（探索から来た戦闘は物語の章のパーティ、試作の5戦は3人。段階26） */
   private lineup!: Lineup;
@@ -171,7 +174,19 @@ export class BattleScene extends Phaser.Scene {
       const target = (t: { key: string; data: object }) => ({ key: t.key, data: { ...t.data } as Record<string, unknown> });
       setBattleMark({ battle: data.encounter.battle, win: target(data.encounter.win), lose: target(data.encounter.lose) });
     }
-    this.battle = areaBattle ?? battleAt(this.progress);
+    // 試し：コンボと現像（段階155）
+    this.trial = data.trial;
+    const trialBattle = data.trial ? SNAP_TRIAL_BATTLES[data.trial] : undefined;
+    this.battle = trialBattle ?? areaBattle ?? battleAt(this.progress);
+    if (trialBattle) {
+      this.lineup = PROTOTYPE_LINEUP;
+      playBgm(this, trialBattle.boss ? BGM.boss : BGM.battle);
+      // 育成を入れない元の3人で、試しのアルバムと、今のコンボ＋2枚のコンボで戦う
+      const setup = createCampaignSetup(trialBattle, (Date.now() % 100000) >>> 0, lineupBase(PROTOTYPE_LINEUP), TRIAL_DECK);
+      this.state = createBattle({ ...setup, combos: [...COMBOS, ...TRIAL_COMBOS] });
+      this.afterCreate();
+      return;
+    }
     const seed = areaBattle ? (run.seed + textHash(areaBattle.id) + (data.encounter?.seedShift ?? 0) * 104729) >>> 0 : battleSeed(this.progress);
     console.log(`[battle] ${this.battle.id} seed=${seed}`, this.progress);
     // 戦闘の曲（戦いごとの曲があればそれ、ボスはボス戦の曲）。探索に戻ると、探索の画面が区画の曲に戻す
@@ -187,6 +202,11 @@ export class BattleScene extends Phaser.Scene {
     this.state = createBattle({ ...createCampaignSetup(this.battle, seed, currentParty(this.lineup), deck), vitals, pouch });
     // 探索から来た戦闘は、章の中で貯めたつながりゲージを引き継いで始める（段階26の調整3）
     if (areaBattle && this.state.links.length > 0) this.state = { ...this.state, linkGauge: storyLinkGauge() };
+    this.afterCreate();
+  }
+
+  /** 戦闘の状態を作った後の、画面の準備（段階155 で、試しの戦闘と分けた） */
+  private afterCreate(): void {
     logEvents(this.state.log);
     this.selection = null;
     this.panel = 'none';
@@ -1669,9 +1689,9 @@ export class BattleScene extends Phaser.Scene {
     this.closeOverlay();
     // 戦闘が終わったので、戦闘中の印を消す（段階44）
     if (run.battle) setBattleMark(null);
-    // ポーチ（段階51）：使った消費アイテムは、勝っても負けても減る
+    // ポーチ（段階51）：使った消費アイテムは、勝っても負けても減る（試しの戦闘はポーチを持ち込まない）
     const used = getBattleResult(this.state).pouchUsed;
-    if (Object.keys(used).length > 0) {
+    if (!this.trial && Object.keys(used).length > 0) {
       run.armory = spendItems(run.armory, used);
       saveRun();
       notePlayCount('pouch', Object.values(used).reduce((a, n) => a + n, 0));
@@ -1689,6 +1709,18 @@ export class BattleScene extends Phaser.Scene {
     c.add([shade, title]);
     const result = getBattleResult(this.state);
     const def = this.battle;
+    if (this.trial) {
+      // 試し（段階155）：もう一度・ほかの試し・タイトルへ
+      const others = Object.keys(SNAP_TRIAL_BATTLES).filter((k) => k !== this.trial);
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 10, 260, 52, 'もう一度（同じ敵）', { onTap: () => this.scene.restart({ trial: this.trial }) }, { size: 15 });
+      others.forEach((k, i) =>
+        addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 72 + i * 62, 260, 52, SNAP_TRIAL_BATTLES[k].name, { onTap: () => this.scene.restart({ trial: k }) }, { size: 15 }),
+      );
+      addButton(this, c, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 72 + others.length * 62, 260, 52, 'タイトルへ', { onTap: () => this.scene.start('Title') }, { size: 15 });
+      this.overlay = c;
+      popIn(this, c);
+      return;
+    }
     // 探索の雑魚戦に勝ったら、その敵の組み合わせを覚える（次に会った時から、物語の探索でもオートを出す。段階105）
     if (win && this.encounter && !def.boss) markFormationWon(this.formation());
     if (this.encounter) {

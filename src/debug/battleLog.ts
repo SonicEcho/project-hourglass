@@ -79,6 +79,8 @@ export function formatLogEvent(s: BattleState, e: LogEvent): string {
       return `  ${name(s, e.unitId)}は倒れた`;
     case 'draw':
       return `  ${e.cardUids.length}枚引いた（${e.cardUids.map((u) => cardName(s, u)).join('、')}）`;
+    case 'develop':
+      return `  ${e.name}の現像が進んだ（${e.stage === 1 ? '現像' : '焼き付け'}）`;
     case 'discardHand':
       return `  手札${e.cardUids.length}枚を捨てた`;
     case 'retrieve':

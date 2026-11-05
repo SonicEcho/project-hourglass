@@ -17,7 +17,7 @@ import {
   SUPPORT_PER_ROUND,
 } from '../data/constants';
 import { affinityOf, attackStatOf, calcDamage, calcHeal, randomFactor } from './damage';
-import { discardCards, drawCards, refillHand, takeFromDeck } from './deck';
+import { developHand, discardCards, drawCards, refillHand, takeFromDeck } from './deck';
 import { actionSpeed, compareOrder, type OrderKey } from './order';
 import { random, randomPick, shuffleInPlace } from './rng';
 import type {
@@ -337,6 +337,8 @@ function startRound(s: BattleState): void {
   applyRoundStartPassives(s);
   // スタートダッシュ：戦闘の最初のラウンドは先制
   if (s.round === 1) s.precedeIds = livingAllies(s).filter((a) => passivesOf(a, 'startDash').length > 0).map((a) => a.uid);
+  // 現像（段階155）：手札に残っていた札の段を進めてから、新しく引く
+  developHand(s);
   refillHand(s);
 }
 

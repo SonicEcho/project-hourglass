@@ -77,7 +77,20 @@ export interface CardDef extends ActionDef {
   support?: boolean;
   /** このスナップを使う仲間は、そのラウンドの最初に動く（段階41。ピンチヒッター） */
   precede?: boolean;
+  /**
+   * 現像（段階155。docs/milestones/M3_snap_catalog.md の 12・16）。手札に残したままラウンドを越すと、段が1つ進む（撮りたて → 現像 → 焼き付け）。
+   * stages[0] が現像、stages[1] が焼き付けの時の中身（書いた所だけ、撮りたての中身を置き換える）。使うと捨て札へ行き、撮りたてに戻る
+   */
+  develop?: CardDevelop;
 }
+
+/** 現像の育ち方。grow：育つ／fade：色あせる（撮りたてが一番強い）／change：化ける（焼き付けで別の効き目） */
+export interface CardDevelop {
+  kind: 'grow' | 'fade' | 'change';
+  stages: [CardStage, CardStage];
+}
+
+export type CardStage = Partial<Pick<ActionDef, 'name' | 'weight' | 'target' | 'effects'>>;
 
 /**
  * コンボ。手札に決まった組み合わせのスナップがそろうと、まとめて使える大技。
@@ -324,7 +337,12 @@ export type Unit = AllyUnit | EnemyUnit;
 
 export interface CardInstance {
   uid: number;
+  /** 今の段の中身（現像が進むと、段の中身に置き換わる） */
   card: CardDef;
+  /** 現像の段（0：撮りたて、1：現像、2：焼き付け。段階155。現像しない札は書かない） */
+  stage?: number;
+  /** 撮りたての中身（現像が進んだ札だけ。捨て札へ行く時に戻す） */
+  base?: CardDef;
 }
 
 /** 計画した行動。連携技は2人で1つ */
@@ -410,6 +428,8 @@ export type LogEvent =
   | { type: 'partBreak'; enemyId: string; partId: string }
   | { type: 'defeated'; unitId: string }
   | { type: 'draw'; cardUids: number[] }
+  /** 手札の現像が1段進んだ（段階155） */
+  | { type: 'develop'; cardUid: number; name: string; stage: number }
   | { type: 'discardHand'; cardUids: number[] }
   | { type: 'retrieve'; cardUid: number }
   /** アンコール（段階41）：name はもう一度使ったスナップ。このラウンドにまだスナップが使われていなければ null（不発） */
