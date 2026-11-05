@@ -200,10 +200,19 @@ function battle(id: string, name: string, enemies: ChainEnemyDef[]): ChainBattle
   return { id, name, allies: CHAIN_ALLIES, enemies, deck: DECK, cards: CARDS, links: CHAIN_LINKS };
 }
 
-/** 試しの組み合わせ（10の特徴を、4つの組み合わせで） */
+/**
+ * 試しの組み合わせ（調整4。ロックマンエグゼのウイルスの編成のように、名前の付いた決まった組み合わせ）。
+ * 特徴どうしが噛み合うように組む（開発者の頼み「盾・盾・逃げる、のように、うまく連携を取っている組み合わせ」）
+ */
 export const CHAIN_TRIALS: ChainBattleDef[] = [
-  battle('chain1', 'ちゃぶ台・ブリキ・ラムネ（盾・殻・はじける）', [CHAIN_ENEMIES.table, CHAIN_ENEMIES.tin, CHAIN_ENEMIES.ramune]),
-  battle('chain2', 'ヨーヨー・鳩時計・めんこ（すばやい・起こし役・反撃）', [CHAIN_ENEMIES.yoyo, CHAIN_ENEMIES.cuckoo, CHAIN_ENEMIES.menko]),
-  battle('chain3', '飴細工・水風船・金魚（ねばねば・分裂・逃げる）', [CHAIN_ENEMIES.candy, CHAIN_ENEMIES.balloon, CHAIN_ENEMIES.goldfish]),
-  battle('chain4', '蚊取り線香・ちゃぶ台・めんこ（時限・盾・反撃）', [CHAIN_ENEMIES.coil, CHAIN_ENEMIES.table, CHAIN_ENEMIES.menko]),
+  // 盾2体が、逃げる金魚を守る。単体の攻撃は盾に吸われるので、全体攻撃か、盾を2体ともダウンさせてから。金魚は2ラウンド目の時刻8に逃げる
+  battle('chain1', '金魚すくいの屋台（盾・盾・逃げる）', [CHAIN_ENEMIES.table, CHAIN_ENEMIES.goldfish, CHAIN_ENEMIES.table]),
+  // 起こし役が時刻5に、ダウンした仲間を起こす。殻のブリキは1回目が効かず、ヨーヨーは2回動く。起こし役を先に止めるか、5より後にまとめて崩す
+  battle('chain2', 'からくり時計（起こし役・殻・すばやい）', [CHAIN_ENEMIES.tin, CHAIN_ENEMIES.cuckoo, CHAIN_ENEMIES.yoyo]),
+  // 盾のちゃぶ台が、時限の蚊取り線香を守る。叩くとやり返すめんこもいる。3ラウンドで大爆発するので、盾を崩して線香を倒す
+  battle('chain3', '夏の縁側（時限・盾・反撃）', [CHAIN_ENEMIES.menko, CHAIN_ENEMIES.coil, CHAIN_ENEMIES.table]),
+  // 飴細工を叩くと、後の仲間が遅れ、すばやいヨーヨー2体の2回目が先に来る。飴細工を叩く人は最後に
+  battle('chain4', '駄菓子屋の店先（ねばねば・すばやい・すばやい）', [CHAIN_ENEMIES.yoyo, CHAIN_ENEMIES.candy, CHAIN_ENEMIES.yoyo]),
+  // 水風船2体は倒すと4体に増える。ラムネを弱点でダウンさせると破片が飛ぶ。全体攻撃と共鳴でまとめて崩す
+  battle('chain5', '水遊び（分裂・分裂・はじける）', [CHAIN_ENEMIES.balloon, CHAIN_ENEMIES.ramune, CHAIN_ENEMIES.balloon]),
 ];

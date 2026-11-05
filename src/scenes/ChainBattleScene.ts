@@ -51,7 +51,9 @@ const TAB_Y = 458;
 const HAND_Y = 480;
 const CMD_Y = 768;
 /** 実行中、再生位置が1マス進む時間（ms） */
-const TICK_MS = 380;
+const TICK_MS = 140;
+/** 実行中の待ち時間（ms）：誰が・何をの帯 → 結果 → 次へ（調整4で、半分以下に縮めた） */
+const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as const;
 
 /** 敵の印の色（フィルムの上の段と、敵の名前の横） */
 const ENEMY_COLORS = [0xff8a5a, 0x6bc8ff, 0xc89aff, 0x7ad98a, 0xf2c45a];
@@ -116,7 +118,9 @@ export class ChainBattleScene extends Phaser.Scene {
     this.actorUid = '';
     this.targetUid = '';
     this.advance = null;
-    this.input.on('pointerdown', () => {
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      // 「結果まで飛ばす」のボタンの上は、次へ進めない（描き直すと、ボタンが押せなくなるため）
+      if (p.worldY > CMD_Y - 30 && p.worldX > GAME_WIDTH - 200) return;
       if (this.busy && this.advance) this.advance();
     });
     this.message = '上の段は敵の予定（時刻と行動）。仲間を選んで札か技を並べると、下の段に入る。全員ダウンさせるとシャッターで決着';
@@ -196,7 +200,8 @@ export class ChainBattleScene extends Phaser.Scene {
         this.root.add(rt);
       }
     });
-    this.root.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 50, '画面をタップすると次へ進む', { size: 10, color: COLORS.dimText }).setOrigin(0.5));
+    this.root.add(addText(this, 12, CMD_Y, 'タップで次へ', { size: 10, color: COLORS.dimText }).setOrigin(0, 0.5));
+    addButton(this, this.root, GAME_WIDTH - 8 - 90, CMD_Y, 180, 46, '結果まで飛ばす ▶▶', { onTap: () => this.skipToEnd() }, { size: 14, bold: true, fill: 0x2f4f8f });
   }
 
   /** 画面に出す敵（分裂して倒れた元の敵は出さない） */
@@ -544,7 +549,9 @@ export class ChainBattleScene extends Phaser.Scene {
       });
     });
     if (items.length === 0) this.root.add(addText(this, GAME_WIDTH / 2, HAND_Y + 60, this.tab === 'cards' ? '手札がない' : '仲間を選ぶ', { size: 12, color: COLORS.subText }).setOrigin(0.5));
-    this.root.add(addText(this, GAME_WIDTH / 2, HAND_Y + linkH + h + 14, '札・技は1回タップで説明、もう1回（敵の技は敵をタップ）で並べる。長押しでも説明', { size: 9, color: COLORS.dimText }).setOrigin(0.5));
+    const hint = addText(this, GAME_WIDTH / 2, HAND_Y + linkH + h + 14, 'タップで並べる（敵1体の札は、続けて敵をタップ）。長押しで説明。間違えたら「1つ戻す」', { size: 9, color: COLORS.dimText }).setOrigin(0.5);
+    if (hint.width > GAME_WIDTH - 16) hint.setScale((GAME_WIDTH - 16) / hint.width);
+    this.root.add(hint);
     this.drawHelp();
   }
 
@@ -599,18 +606,20 @@ export class ChainBattleScene extends Phaser.Scene {
       this.render();
       return;
     }
+    // 敵1体を選ばない札・技は、1回のタップで並べる（調整4。説明は長押しと、並べた後の案内で）
+    if (move.target !== 'enemy') {
+      this.place({ ally: actor, source });
+      return;
+    }
     if (this.pending && sameSource(this.pending.source, source)) {
-      if (move.target !== 'enemy') this.place({ ally: actor, source });
-      else {
-        this.message = `${move.name}：相手の敵をタップ`;
-        this.render();
-      }
+      this.message = `${move.name}：相手の敵をタップ`;
+      this.render();
       return;
     }
     this.pending = { source, move };
     const at = nextStart(this.s, this.plan);
     const res = this.resonanceCount(move);
-    this.message = `【${TYPE_LABEL[move.type]}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}${res ? `。印の敵に当たると${res}体に共鳴` : ''}${move.target === 'enemy' ? '　→ 敵をタップ' : '　→ もう1回タップで並べる'}`;
+    this.message = `【${TYPE_LABEL[move.type]}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}${res ? `。印の敵に当たると${res}体に共鳴` : ''}　→ 敵をタップ`;
     this.render();
   }
 
@@ -634,7 +643,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.ally = this.firstFreeAlly();
     const next = nextStart(this.s, this.plan);
     const who = stepAllies(this.s, step).map((u) => findChainUnit(this.s, u)?.name).join('と');
-    this.message = `${who}：${move.name}を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}）` : '全員並べた。「実行」で動き出す'}`;
+    this.message = `${who}：${move.name}（${move.text}）を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}）` : '全員並べた。「実行」で動き出す'}`;
     if (availableLinks(this.s, this.plan).length) this.message += '。連携技が使える（手札の先頭 ★）';
     this.render();
   }
@@ -659,9 +668,32 @@ export class ChainBattleScene extends Phaser.Scene {
 
   // ---------- 動かす ----------
 
+  /** 実行中のラウンドの、最後の状態（結果まで飛ばす時に使う） */
+  private runFinal: ChainState | null = null;
+
+  /** 結果まで飛ばす：残りのコマの結果を一覧に書き、ラウンドの終わりへ */
+  private skipToEnd(): void {
+    if (!this.busy || !this.runFinal) return;
+    const final = this.runFinal;
+    this.runFinal = null;
+    this.advance = null;
+    this.time.removeAllEvents();
+    this.tweens.killAll();
+    let before = this.s;
+    for (const f of this.runFrames) {
+      if (!this.runResults.has(f.order)) this.runResults.set(f.order, describe(f, before));
+      before = f.state;
+    }
+    this.currentOrder = 0;
+    this.actorUid = '';
+    this.targetUid = '';
+    this.finishRound(final);
+  }
+
   private execute(): void {
     if (this.busy || this.plan.length === 0) return;
     const { state, frames } = runChainRound(this.s, this.plan);
+    this.runFinal = state;
     this.runFrames = frames;
     this.runResults = new Map();
     this.busy = true;
@@ -722,8 +754,8 @@ export class ChainBattleScene extends Phaser.Scene {
         targets: dot,
         x: b.x,
         y: b.y,
-        delay: 200 + k * 90,
-        duration: 380,
+        delay: 80 + k * 60,
+        duration: 240,
         ease: 'Quad.easeIn',
         onComplete: () => {
           dot.destroy();
@@ -759,7 +791,7 @@ export class ChainBattleScene extends Phaser.Scene {
       };
       // シャッターや決着で止まった時は、そこで終わる。最後まで動いた時は、ラウンドの終わりまで線を進める
       if (final.shutter || final.outcome !== 'ongoing') done();
-      else this.moveHead(CHAIN_RULES.roundLen - 0.5, () => this.wait(300, done));
+      else this.moveHead(CHAIN_RULES.roundLen - 0.5, () => this.wait(WAIT.end, done));
       return;
     }
     const f = frames[i];
@@ -779,13 +811,13 @@ export class ChainBattleScene extends Phaser.Scene {
       this.runResults.set(f.order, result);
       this.message = `${when}　${label}\n${result}`;
       this.render(f.state);
-      this.wait(1300, () => this.playFrames(frames, i + 1, final, f.state));
+      this.wait(WAIT.cancel, () => this.playFrames(frames, i + 1, final, f.state));
       return;
     }
     this.message = `${when}　${label}`;
     this.render(before);
     this.flyEffects(f, before);
-    this.wait(800, () => {
+    this.wait(WAIT.announce, () => {
       this.runResults.set(f.order, result);
       this.message = `${when}　${label}\n${result}`;
       this.render(f.state);
@@ -794,12 +826,13 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => e.type === 'resonate' || e.type === 'timerBlast')) playSe(this, SE.firework);
       const big = f.events.some((e) => ['link', 'resonate', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak'].includes(e.type));
-      this.wait(big ? 2000 : 1500, () => this.playFrames(frames, i + 1, final, f.state));
+      this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
 
   private finishRound(final: ChainState): void {
     this.s = final;
+    this.runFinal = null;
     this.head?.destroy();
     this.head = null;
     this.plan = [];

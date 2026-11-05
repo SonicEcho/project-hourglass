@@ -482,21 +482,25 @@ export function installDebugMenu(nav: DebugNavigator): void {
         nav.openPrototype('ProtoExplore', { map: 'festival' });
       }),
       // 段階156：試し：並べてつなぐ戦闘（docs/milestones/M3_battle_review.md の 12.）。今のセーブには触れない
-      button('試し：並べてつなぐ戦闘（盾・殻・はじける）', () => {
+      button('試し：並べてつなぐ戦闘（金魚すくいの屋台）', () => {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain1' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（すばやい・起こし役・反撃）', () => {
+      button('試し：並べてつなぐ戦闘（からくり時計）', () => {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain2' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（ねばねば・分裂・逃げる）', () => {
+      button('試し：並べてつなぐ戦闘（夏の縁側）', () => {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain3' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（時限・盾・反撃）', () => {
+      button('試し：並べてつなぐ戦闘（駄菓子屋の店先）', () => {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain4' });
+      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
+      button('試し：並べてつなぐ戦闘（水遊び）', () => {
+        close();
+        nav.openPrototype('ChainBattle', { trial: 'chain5' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
       // 段階155：試し：コンボと現像（今の戦闘に、2枚のコンボと現像する札を入れたアルバムで戦う。今のセーブには触れない）
       button('試し：コンボと現像（砂嵐3体）', () => {
