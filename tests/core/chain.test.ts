@@ -8,7 +8,7 @@ import {
   plannedMarks,
   planStarts,
   runChainRound,
-  shutterGrade,
+  chainGrade,
   takeShutter,
   type ChainBattleDef,
   type ChainEnemyDef,
@@ -19,12 +19,12 @@ import {
 import { CHAIN_CARDS, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_TRIALS } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
-// 試し：並べてつなぐ戦闘（段階156。調整3：色の印・専用の札と連携技・10の特徴）
+// 試し：並べてつなぐ戦闘（段階156。調整3：色の印・専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻）
 const BASE = CHAIN_TRIALS[0];
 
 /** 敵と手札を決めた戦闘（敵の予定の狙いは乱数のまま） */
 function make(enemies: ChainEnemyDef[], hand: string[] = []): ChainState {
-  const def: ChainBattleDef = { ...BASE, enemies };
+  const def: ChainBattleDef = { ...BASE, enemies, variants: undefined };
   const s = createChainBattle(def, CHAIN_RULES, 7);
   s.hand = [...hand];
   return s;
@@ -50,17 +50,44 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(chainPlanError(s, plan.slice(0, 1), move('hero', 'slash', t))).not.toBeNull();
   });
 
-  it('動く順番は早い時刻から。同じ時刻なら仲間が先。ダウンさせた敵の予定は起きない', () => {
+  it('行動は重さの分だけかかって、終わった時刻に効く。同じ時刻なら仲間が先。効く前にダウンさせた敵の予定は起きない', () => {
     const s = make([plain(CHAIN_ENEMIES.cuckoo), idle(plain(CHAIN_ENEMIES.tin))]);
     const c = s.enemies[0].uid;
-    // 鳩時計の時報は時刻5。ハルトのすばやく（重さ1）→ あかり（時刻1）→ みおのサンダー（時刻4）で弱点
-    const plan = [move('hero', 'quick', c), move('akari', 'heal'), move('mio', 'thunder', c)];
+    // ハルトのすばやく（重さ1）は時刻1に効く。あかり（時刻1から重さ3）は時刻4、みお（時刻4から重さ1）は時刻5。鳩時計の時報も時刻5だが、仲間が先
+    const plan = [move('hero', 'quick', c), move('akari', 'heal'), move('mio', 'kick', c)];
     const order = chainOrder(s, plan);
-    expect(order.slice(0, 3).map((o) => o.kind)).toEqual(['ally', 'ally', 'ally']);
+    expect(order.slice(0, 3).map((o) => `${o.kind}@${o.at}`)).toEqual(['ally@1', 'ally@4', 'ally@5']);
     const r = runChainRound(s, plan);
+    // 鳩時計は物理が弱点。すばやくで時刻1にダウンし、時報は起きない
     expect(events(r).some((e) => e.type === 'down' && e.uid === c)).toBe(true);
     expect(events(r).some((e) => e.type === 'cancel' && e.uid === c)).toBe(true);
     expect(r.frames.map((f) => f.order)).toEqual(r.frames.map((_, i) => i + 1));
+    // 重い技は、ラウンドの終わり（時刻10）までに終わらないと置けない
+    expect(chainPlanError(s, [move('hero', 'finisher', c), move('akari', 'fire', c)], move('mio', 'thunder', c))).toBeNull();
+    expect(chainPlanError(s, [move('hero', 'finisher', c), move('akari', 'fire', c), move('mio', 'kick', c)], { ally: 'hero', source: { kind: 'move', moveId: 'quick' }, target: c })).not.toBeNull();
+  });
+
+  it('押す：軽い技を当てると、その敵のまだ動いていない予定が後ろへずれ、ラウンドの外へ出ると起きない', () => {
+    const s = make([{ ...plain(CHAIN_ENEMIES.menko), pattern: [{ ...CHAIN_ENEMIES.menko.pattern[1], at: 8 }] }, idle(plain(CHAIN_ENEMIES.tin))]);
+    const m = s.enemies[0].uid;
+    // めんこの予定は時刻8。けとばし（押す2）で時刻10 へ → ラウンドの外
+    const r = runChainRound(s, [move('mio', 'kick', m)]);
+    const ev = events(r);
+    expect(ev.some((e) => e.type === 'push' && e.uid === m && e.out)).toBe(true);
+    expect(ev.some((e) => e.type === 'act' && e.uid === m)).toBe(false);
+    // 押し出さない時は、2マス後ろで動く
+    const s2 = make([{ ...plain(CHAIN_ENEMIES.menko), pattern: [{ ...CHAIN_ENEMIES.menko.pattern[0], at: 5 }] }, idle(plain(CHAIN_ENEMIES.tin))]);
+    const r2 = runChainRound(s2, [move('mio', 'kick', s2.enemies[0].uid)]);
+    expect(r2.frames.find((f) => f.uid === s2.enemies[0].uid)!.at).toBe(7);
+  });
+
+  it('組み合わせの型：戦闘ごとに1つを選び、型の癖で予定が決まる（同じシードなら同じ型）', () => {
+    const names = new Set<string>();
+    for (let seed = 1; seed <= 30; seed++) names.add(createChainBattle(BASE, CHAIN_RULES, seed).variant!);
+    expect(names.size).toBe(BASE.variants!.length);
+    expect(createChainBattle(BASE, CHAIN_RULES, 5).variant).toBe(createChainBattle(BASE, CHAIN_RULES, 5).variant);
+    const big = [...Array(30)].map((_, k) => createChainBattle(BASE, CHAIN_RULES, k + 1)).find((x) => x.variant === '店じまい')!;
+    expect(big.intents.find((i) => i.enemy === big.enemies[0].uid)!.move.id).toBe('bigFlip');
   });
 
   it('印と同じ属性が当たると共鳴し、同じ印の敵みんなに広がる（印は消える）', () => {
@@ -84,9 +111,9 @@ describe('並べてつなぐ戦闘（段階156）', () => {
   });
 
   it('すばやい：1ラウンドに2回動く。1回目より前にダウンさせれば、2回とも止まる', () => {
-    const s = make([CHAIN_ENEMIES.yoyo, idle(plain(CHAIN_ENEMIES.tin))]);
+    const s = make([{ ...CHAIN_ENEMIES.yoyo, hp: 400, pattern: [{ ...CHAIN_ENEMIES.yoyo.pattern[0], at: 4, at2: 8 }] }, idle(plain(CHAIN_ENEMIES.tin))]);
     const y = uid(s, 'yoyoNoise');
-    expect(s.intents.filter((i) => i.enemy === y).map((i) => i.at)).toEqual([2, 6]);
+    expect(s.intents.filter((i) => i.enemy === y).map((i) => i.at)).toEqual([4, 8]);
     const r = runChainRound(s, [move('akari', 'ice', y)]);
     expect(events(r).filter((e) => e.type === 'cancel' && e.uid === y).length).toBe(2);
   });
@@ -116,19 +143,18 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     const s = make([idle(CHAIN_ENEMIES.candy), idle(plain(CHAIN_ENEMIES.cuckoo))]);
     const c = uid(s, 'candyNoise');
     const cu = uid(s, 'cuckooNoise');
-    // ハルト（0）→ あかり（4）→ みお（7）。ハルトがねばねばを叩くと、あかりは6、みおは9
-    const plan = [move('hero', 'finisher', c), move('akari', 'heal'), move('mio', 'kick', cu)];
-    const r = runChainRound(s, plan);
+    // ハルト（時刻0から重さ4 → 4）→ あかり（4から3 → 7）→ みお（7から1 → 8）。ハルトがねばねばを叩くと、あかりは9、みおは10
+    const r = runChainRound(s, [move('hero', 'finisher', c), move('akari', 'heal'), move('mio', 'kick', cu)]);
     expect(events(r).some((e) => e.type === 'sticky')).toBe(true);
-    expect(r.frames.find((f) => f.uid === 'akari')!.at).toBe(6);
-    expect(r.frames.find((f) => f.uid === 'mio')!.at).toBe(9);
-    // みおもねばねばを叩くと、さらに遅れる
+    expect(r.frames.find((f) => f.uid === 'akari')!.at).toBe(9);
+    expect(r.frames.find((f) => f.uid === 'mio')!.at).toBe(10);
+    // みおもねばねばを叩くと、さらに遅れ、あかりは時刻12で間に合わない
     const r2 = runChainRound(s, [move('hero', 'finisher', c), move('mio', 'kick', c), move('akari', 'fire', c)]);
     expect(events(r2).some((e) => e.type === 'cancel' && e.uid === 'akari' && e.reason === 'time')).toBe(true);
   });
 
   it('起こし役：動くと、ダウンしているほかの敵を起こす', () => {
-    const s = make([plain(CHAIN_ENEMIES.yoyo), CHAIN_ENEMIES.cuckoo]);
+    const s = make([{ ...plain(CHAIN_ENEMIES.yoyo), hp: 400 }, CHAIN_ENEMIES.cuckoo]);
     const y = uid(s, 'yoyoNoise');
     const r = runChainRound(s, [move('akari', 'ice', y)]);
     const ev = events(r);
@@ -188,13 +214,17 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(r.state.discard).toEqual(expect.arrayContaining([CHAIN_CARDS.swing.id, CHAIN_CARDS.sparkler.id]));
   });
 
-  it('生きている敵が全員ダウンするとシャッターが光り、押すと決着（1ラウンド目なら撮れ高3）', () => {
+  it('生きている敵が全員ダウンするとシャッターが光り、押すと決着。決着の時刻が早いほど評価が高い', () => {
     const s = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.rod.id]);
     const r = runChainRound(s, [{ ally: 'akari', source: { kind: 'card', index: 0 } }, move('mio', 'thunder', s.enemies[0].uid)]);
     expect(r.state.shutter).toBe(true);
     const won = takeShutter(r.state);
     expect(won.outcome).toBe('win');
-    expect(shutterGrade(won)).toBe(3);
+    // 避雷針（重さ2 → 時刻2）→ サンダー（2から3 → 時刻5）で全員ダウン。決着の時刻は5で、評価は高
+    expect(won.finishTime).toBe(5);
+    expect(chainGrade(won)).toBe('high');
+    expect(chainGrade({ ...won, finishTime: 14 })).toBe('mid');
+    expect(chainGrade({ ...won, finishTime: 30 })).toBe('low');
   });
 
   it('ラウンドの終わりに、ダウンが解け、癖が1つ進み、手札が5枚まで戻る', () => {
@@ -205,7 +235,10 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(state.round).toBe(2);
     expect(state.hand.length).toBe(5);
     expect(state.enemies.every((e) => !e.down)).toBe(true);
-    expect(state.intents.find((i) => i.enemy === state.enemies[0].uid)!.move.id).toBe('press');
+    const e0 = state.enemies[0];
+    const pattern = e0.pattern ?? CHAIN_ENEMIES.table.pattern;
+    expect(state.intents.find((i) => i.enemy === e0.uid)!.move.id).toBe(pattern[1 % pattern.length].id);
+    expect(state.elapsed).toBe(CHAIN_RULES.roundLen);
   });
 
   it('同じシードなら同じ結果。考える方針は、でたらめな方針より早く勝つ', () => {

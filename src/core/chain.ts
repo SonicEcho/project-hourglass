@@ -3,8 +3,12 @@ import type { Element } from './types';
 
 // 試し：並べてつなぐ戦闘（段階156。docs/milestones/M3_battle_review.md の 12.）。今の戦闘（battle.ts）とは別の、試しの仕組み。
 // - 敵の予定（行動・狙う相手・動く時刻）は、ラウンドの始めに決まり、計画の前から見えている
-// - 仲間は、計画で並べた順に動く。1番目は時刻0に動き、次の仲間は「前の仲間の時刻 + 前の行動の重さ」に動く（時間の予算）。
-//   同じ時刻なら仲間が先。ラウンドの長さ（roundLen）を過ぎる時刻には置けない（ねばねばで押し出されて過ぎたら、時間切れで動けない）
+// - 仲間は、計画で並べた順に動く。1番目は時刻0に動き始め、次の仲間は前の仲間が終わった時刻から動き始める（時間の予算）。
+//   行動は、重さの分だけかかって、終わった時刻に効く（詠唱。調整6）。同じ時刻なら仲間が先。
+//   ラウンドの長さ（roundLen）までに終わらない行動は置けない（ねばねばで遅れて間に合わなくなったら、時間切れで動けない）
+// - 軽い技には「押す」がある。当てると、その敵のまだ動いていない予定が後ろへずれる。ラウンドの外へ押し出すと、その予定は起きない（調整6）
+// - 敵の組み合わせには、エグゼのウイルスの編成のように、いくつかの型（variants）がある。戦闘ごとに1つを選ぶ（調整6）
+// - 決着した時刻の合計（elapsed + 決着の時刻）が早いほど、評価が高い（調整6。報酬のレア度に使う）
 // - 札には型がある（置く・受ける・数える・締める）。置く札は、敵に属性の色の印を付ける。
 //   印と同じ属性の攻撃が当たると「共鳴」し、同じ印の付いた敵みんなに広がる（調整3。決まりは「同じ色を重ねると広がる」1つだけ）
 // - 仲間ごとの専用の札（その人しか使えない）が山札に混ざる。組む2人の専用の札が手札にそろうと、連携技を使える（2人の手番を使う。調整3）
@@ -41,9 +45,10 @@ export type ChainMoveType = 'place' | 'receive' | 'count' | 'finish' | 'attack' 
 export type ChainEffect =
   /**
    * ダメージ。perActed：このラウンドにもう動いた仲間1人ごとに威力を足す。hitsPerActed：もう動いた仲間の数 + 1 回当てる。
-   * downMult：ダウン中の敵への倍率。perMark：相手の印1つごとに威力を足し、印を消す。bestOf：敵ごとに一番効く属性を選ぶ
+   * downMult：ダウン中の敵への倍率。perMark：相手の印1つごとに威力を足し、印を消す。bestOf：敵ごとに一番効く属性を選ぶ。
+   * push：当てた敵の、まだ動いていない予定を、この数だけ後ろへずらす
    */
-  | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[] }
+  | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[]; push?: number }
   /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理） */
   | { kind: 'layer'; power: number; mult: number }
   /** 追い風：直前に動いた仲間の攻撃（属性と威力）を、威力 × rate で敵全体にもう一度。直前が攻撃でなければ不発 */
@@ -132,11 +137,25 @@ export interface ChainRules {
   healDiv: number;
 }
 
+/** 組み合わせの型（エグゼのウイルスの編成のように、同じ顔ぶれでも行動の並びが違う）。patterns は enemies と同じ並びで、書かない敵は敵の定義の癖のまま */
+export interface ChainVariant {
+  id: string;
+  name: string;
+  patterns: (ChainEnemyMove[] | undefined)[];
+}
+
+/** 評価の段（決着した時刻の合計が早いほど上） */
+export type ChainGrade = 'high' | 'mid' | 'low';
+
 export interface ChainBattleDef {
   id: string;
   name: string;
   allies: ChainAllyDef[];
   enemies: ChainEnemyDef[];
+  /** 組み合わせの型。戦闘ごとに1つを乱数で選ぶ */
+  variants?: ChainVariant[];
+  /** 評価の境目：決着した時刻の合計がこの値以下なら高・中（それより遅ければ低） */
+  gradeAt?: { high: number; mid: number };
   /** 山札（札の id の並び） */
   deck: string[];
   cards: Record<string, ChainMove>;
@@ -167,6 +186,8 @@ export interface ChainUnit {
   timer?: number;
   /** 逃げた（もう戦闘にいない） */
   gone?: boolean;
+  /** 組み合わせの型で決まった癖（なければ敵の定義の癖） */
+  pattern?: ChainEnemyMove[];
 }
 
 /** 敵の予定（ラウンドの始めに決まる） */
@@ -203,6 +224,8 @@ export type ChainEvent =
   | { type: 'cover'; shield: string; from: string }
   | { type: 'shellBreak'; uid: string }
   | { type: 'sticky'; uid: string; delay: number }
+  /** 押す：まだ動いていない予定を by だけ後ろへ。out はラウンドの外へ押し出して止めた。moved は動かせる予定があった */
+  | { type: 'push'; uid: string; by: number; out: boolean; moved: boolean }
   | { type: 'wake'; uid: string; woke: string[] }
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
@@ -227,6 +250,12 @@ export interface ChainState {
   discard: string[];
   intents: ChainIntent[];
   rng: number;
+  /** 選ばれた組み合わせの型の名前 */
+  variant?: string;
+  /** 終わったラウンドの時刻の合計 */
+  elapsed: number;
+  /** 決着した時刻の合計（終わったラウンドの時刻 + 決着した時刻） */
+  finishTime?: number;
   /** このラウンドに、ねばねばで遅れた時刻の合計（まだ動いていない仲間に効く） */
   timeShift: number;
   /** このラウンドに動いた仲間の、本当に動いた時刻（計画の何行目か → 時刻） */
@@ -339,7 +368,8 @@ function planIntents(s: ChainState): void {
   for (const e of living(s.enemies)) {
     const d = chainEnemyDef(s, e.defId);
     if (!d) continue;
-    const move = d.pattern[e.step % d.pattern.length];
+    const pattern = e.pattern ?? d.pattern;
+    const move = pattern[e.step % pattern.length];
     const pick = () => (move.all || move.flee || allies.length === 0 ? undefined : allies[Math.floor(rand(s) * allies.length)].uid);
     s.intents.push({ enemy: e.uid, move, at: move.at, target: pick() });
     if (move.at2 !== undefined) s.intents.push({ enemy: e.uid, move, at: move.at2, target: pick() });
@@ -358,11 +388,20 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     discard: [],
     intents: [],
     rng: seed >>> 0,
+    elapsed: 0,
     timeShift: 0,
     actedAt: {},
     shutter: false,
     outcome: 'ongoing',
   };
+  // 組み合わせの型を1つ選ぶ
+  if (def.variants?.length) {
+    const v = def.variants[Math.floor(rand(s) * def.variants.length)];
+    s.variant = v.name;
+    v.patterns.forEach((p, i) => {
+      if (p && s.enemies[i]) s.enemies[i].pattern = p;
+    });
+  }
   s.deck = shuffle(s, def.deck);
   for (let i = 0; i < rules.handSize; i++) draw(s);
   planIntents(s);
@@ -467,7 +506,7 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
     if (!t || t.hp <= 0 || t.gone) return '相手の敵を選ぶ';
   }
   const at = nextStart(s, plan);
-  if (at >= s.rules.roundLen) return `時刻${at}は、このラウンドに入らない（${s.rules.roundLen - 1}まで）`;
+  if (at + move.weight > s.rules.roundLen) return `時刻${at}から重さ${move.weight}では、このラウンドに終わらない（時刻${s.rules.roundLen}まで）`;
   return null;
 }
 
@@ -645,6 +684,8 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
       e.marks = [];
     }
     for (let k = 0; k < hits && e.hp > 0; k++) hitEnemy(s, actor, e, el, p, { ignoreResist: eff.ignoreResist, downMult: eff.downMult }, ctx, ev);
+    // 押す：実際にずらすのは runChainRound（まだ動いていない予定を知っている）
+    if (eff.push && e.hp > 0 && !e.gone) ev.push({ type: 'push', uid: e.uid, by: eff.push, out: false, moved: false });
   }
   return { ally: actor.uid, element: eff.element, power };
 }
@@ -668,8 +709,10 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
   }
 }
 
-function checkEnd(s: ChainState, ev: ChainEvent[]): boolean {
+function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
+  const done = () => (s.finishTime = s.elapsed + at);
   if (s.allies.every((a) => a.hp <= 0)) {
+    done();
     s.outcome = 'lose';
     s.finishRound = s.round;
     return true;
@@ -679,9 +722,11 @@ function checkEnd(s: ChainState, ev: ChainEvent[]): boolean {
     s.outcome = 'win';
     s.finish = 'defeat';
     s.finishRound = s.round;
+    done();
     return true;
   }
   if (foes.every((e) => e.down)) {
+    done();
     s.shutter = true;
     ev.push({ type: 'shutterReady' });
     return true;
@@ -697,11 +742,11 @@ function byTime(a: ChainOrderEntry, b: ChainOrderEntry): number {
   return a.at - b.at || (a.kind === b.kind ? 0 : a.kind === 'ally' ? -1 : 1);
 }
 
-/** このラウンドに動く順番（計画の時の見込み。ねばねばで遅れると、実行の時に変わる）。画面の番号もこれで出す */
+/** このラウンドに動く順番（計画の時の見込み。ねばねば・押すで、実行の時に変わる）。仲間の時刻は、行動が終わって効く時刻。画面の番号もこれで出す */
 export function chainOrder(s: ChainState, plan: ChainPlanStep[]): ChainOrderEntry[] {
   const starts = planStarts(s, plan);
   const queue: ChainOrderEntry[] = [
-    ...plan.map((_, i) => ({ at: starts[i], key: `a${i}`, kind: 'ally' as const, i })),
+    ...plan.map((p, i) => ({ at: starts[i] + (chainMoveOf(s, p)?.weight ?? 0), key: `a${i}`, kind: 'ally' as const, i })),
     ...s.intents.map((intent, k) => ({ at: intent.at, key: `e${k}`, kind: 'enemy' as const, intent })),
   ];
   return queue.sort(byTime);
@@ -739,7 +784,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       const actors = stepAllies(s, step).map((u) => s.allies.find((a) => a.uid === u)!);
       const actor = actors[0];
       const move = moves[q.i];
-      if (actors.some((a) => a.hp <= 0) || !move || at >= s.rules.roundLen) {
+      if (actors.some((a) => a.hp <= 0) || !move || at > s.rules.roundLen) {
         s.hand.push(...cardIds[q.i]);
         ev.push({ type: 'cancel', uid: actor.uid, reason: at >= s.rules.roundLen ? 'time' : 'dead' });
         push(q, '', at, actor.uid, move?.name ?? '', ev, step.target, move?.target !== 'enemy');
@@ -755,6 +800,20 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       // 連携技の計算用に写した仲間のダメージ（反撃・破片）は、1人目に戻す
       if (doer !== actor) actor.hp = Math.min(actor.hp, doer.hp);
       acted += actors.length;
+      // 押す：その敵のまだ動いていない予定を後ろへ。ラウンドの外へ出たら、その予定は起きない
+      for (const pe of ev) {
+        if (pe.type !== 'push') continue;
+        for (const e of pending.filter((x) => x.kind === 'enemy' && x.intent.enemy === pe.uid)) {
+          pe.moved = true;
+          e.at += pe.by;
+          const k = Number(e.key.slice(1));
+          if (s.intents[k]) s.intents[k] = { ...s.intents[k], at: e.at };
+          if (e.at > s.rules.roundLen - 1) {
+            pe.out = true;
+            pending.splice(pending.indexOf(e), 1);
+          }
+        }
+      }
       push(q, '', at, actor.uid, move.name, ev, step.target, move.target !== 'enemy');
     } else {
       const e = s.enemies.find((x) => x.uid === q.intent.enemy)!;
@@ -768,7 +827,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       doEnemyMove(s, e, q.intent, ev);
       push(q, '', q.at, e.uid, q.intent.move.name, ev, q.intent.target, q.intent.move.all);
     }
-    if (checkEnd(s, frames[frames.length - 1].events)) {
+    if (checkEnd(s, frames[frames.length - 1].events, frames[frames.length - 1].at)) {
       frames[frames.length - 1].state = cloneChain(s);
       stopped = true;
       break;
@@ -786,7 +845,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         e.gone = true;
       }
       push(null, `end:${e.uid}`, s.rules.roundLen - 1, e.uid, e.timer <= 0 ? '大爆発' : `あと${e.timer}`, ev, undefined, true);
-      if (checkEnd(s, ev)) {
+      if (checkEnd(s, ev, s.rules.roundLen)) {
         frames[frames.length - 1].state = cloneChain(s);
         stopped = true;
         break;
@@ -804,6 +863,7 @@ function endRound(s: ChainState): void {
     e.step++;
   }
   s.round++;
+  s.elapsed += s.rules.roundLen;
   s.timeShift = 0;
   s.actedAt = {};
   while (s.hand.length < s.rules.handSize && (s.deck.length > 0 || s.discard.length > 0)) draw(s);
@@ -821,8 +881,9 @@ export function takeShutter(s0: ChainState): ChainState {
   return s;
 }
 
-/** シャッターで決着した時の撮れ高（1ラウンド目なら3、2ラウンド目なら2、それより後は1。全部倒した時は0） */
-export function shutterGrade(s: ChainState): number {
-  if (s.finish !== 'shutter' || !s.finishRound) return 0;
-  return s.finishRound <= 1 ? 3 : s.finishRound === 2 ? 2 : 1;
+/** 評価：決着した時刻の合計が早いほど上（負けは null）。境目は組み合わせの gradeAt（なければ1ラウンド目なら高、2ラウンド目までなら中） */
+export function chainGrade(s: ChainState): ChainGrade | null {
+  if (s.outcome !== 'win' || s.finishTime === undefined) return null;
+  const at = s.def.gradeAt ?? { high: s.rules.roundLen, mid: s.rules.roundLen * 2 };
+  return s.finishTime <= at.high ? 'high' : s.finishTime <= at.mid ? 'mid' : 'low';
 }
