@@ -371,7 +371,8 @@ export class ChainBattleScene extends Phaser.Scene {
       const nameRoom = colW - 36;
       if (name.width > nameRoom) name.setScale(nameRoom / name.width);
       r.add(name);
-      const known = e.weak.filter((w) => isWeakKnown(s, e.defId, w));
+      // 属性チェンジの敵は、今の弱点がいつも見える（調整12）
+      const known = e.trait === 'shift' ? e.weak : e.weak.filter((w) => isWeakKnown(s, e.defId, w));
       const wx = x0 + colW - 16;
       if (known.length) {
         known.slice(0, 2).forEach((w, k) => {
@@ -422,17 +423,18 @@ export class ChainBattleScene extends Phaser.Scene {
         const tgt = it.target ? findChainUnit(s, it.target)?.name : '';
         const foe = it.confused ? findChainUnit(s, it.confused)?.name.replace('ノイズ', '') : '';
         const big = it.move.all || it.move.flee || it.move.power >= CHAIN_RULES.sealBig;
-        const detail = it.move.flee ? '逃げる' : `${it.move.all ? '全体' : foe ? `→ ${foe}（ハレーション）` : `→ ${tgt}`} ${it.move.power}`;
+        const veiled = !!e.veiled;
+        const detail = veiled ? '予定が見えない' : it.move.flee ? '逃げる' : `${it.move.all ? '全体' : foe ? `→ ${foe}（ハレーション）` : `→ ${tgt}`} ${it.move.power}`;
         const px = x0 + 12;
         const pw = colW - 18;
         const a = e.down ? 0.35 : 1;
         r.add(this.para(px + 3, STAGE_Y + 9, pw, 34, RED, 0.45 * a, 8));
         r.add(this.para(px, STAGE_Y + 6, pw, 34, big ? 0x3a0010 : 0x000000, a, 8));
         r.add(this.add.rectangle(px + 4, STAGE_Y + 6, 4, 34, big ? YELLOW : RED, a).setOrigin(0));
-        const times = intents.map((x) => x.at).join('・');
+        const times = veiled ? '？' : intents.map((x) => x.at).join('・');
         r.add(this.add.circle(px + 2, STAGE_Y + 23, 14, big ? YELLOW : RED, a));
         r.add(addText(this, px + 2, STAGE_Y + 23, times, { size: times.length > 2 ? 10 : 15, bold: true, color: big ? '#000000' : '#ffffff' }).setOrigin(0.5).setAlpha(a));
-        const t1 = addText(this, px + 20, STAGE_Y + 15, it.move.name, { size: 11, bold: true }).setOrigin(0, 0.5).setAlpha(a);
+        const t1 = addText(this, px + 20, STAGE_Y + 15, veiled ? '？？？' : it.move.name, { size: 11, bold: true }).setOrigin(0, 0.5).setAlpha(a);
         const t2 = addText(this, px + 20, STAGE_Y + 31, detail, { size: 9, bold: true, color: big ? '#ffe08a' : '#ff9db0' }).setOrigin(0, 0.5).setAlpha(a);
         for (const t of [t1, t2]) if (t.width > pw - 26) t.setScale((pw - 26) / t.width);
         r.add([t1, t2]);
@@ -449,10 +451,10 @@ export class ChainBattleScene extends Phaser.Scene {
   private explainEnemy(e: ChainUnit): void {
     const d = chainEnemyDef(this.s, e.defId);
     const t = e.trait ? CHAIN_TRAIT_TEXT[e.trait] : null;
-    const known = e.weak.filter((w) => isWeakKnown(this.s, e.defId, w));
+    const known = e.trait === 'shift' ? e.weak : e.weak.filter((w) => isWeakKnown(this.s, e.defId, w));
     const weak = known.length ? known.map((x) => ELEMENT_LABEL[x]).join('・') : '？（その属性で当てると分かる）';
     const resist = e.resist.length ? `・耐性 ${e.resist.map((x) => ELEMENT_LABEL[x]).join('・')}` : '';
-    const pattern = (d?.pattern ?? []).map((p) => `${p.name}（時刻${p.at}${p.at2 !== undefined ? `・${p.at2}` : ''}${p.all ? '・全体' : ''}）`).join(' → ');
+    const pattern = e.veiled ? '？（攻撃を当てると見える）' : (e.pattern ?? d?.pattern ?? []).map((p) => `${p.name}（時刻${p.at}${p.at2 !== undefined ? `・${p.at2}` : ''}${p.all ? '・全体' : ''}）`).join(' → ');
     this.message = `${e.name}：弱点 ${weak}${resist}。${t ? `【${t.name}】${t.text}。` : ''}癖：${pattern}`;
     this.render();
   }
@@ -496,7 +498,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const slots: Record<number, number> = {};
     s.intents.forEach((it, k) => {
       const e = s.enemies.find((x) => x.uid === it.enemy);
-      if (!e || e.hp <= 0 || e.gone) return;
+      if (!e || e.hp <= 0 || e.gone || e.veiled) return;
       const row = (slots[it.at] = (slots[it.at] ?? 0) + 1) - 1;
       const cx = x0 + CELL * it.at + row * 7;
       const cy = FOE_TRACK + row * 6 - (slots[it.at] > 1 ? 3 : 0);
@@ -1054,6 +1056,10 @@ export class ChainBattleScene extends Phaser.Scene {
       this.cutIn('パノラマ！', `${f.name}の一撃が、ほかの敵みんなに広がった`, 0x7a3ad8, actor?.side === 'ally' ? [actor.defId] : []);
       return;
     }
+    if (f.events.some((e) => e.type === 'panic')) {
+      this.cutIn('動揺！', 'リーダーを倒した。ほかの敵がダウン', 0xc88a10, actor?.side === 'ally' ? [actor.defId] : []);
+      return;
+    }
     if (f.events.some((e) => e.type === 'shutterReady')) this.cutIn('ALL DOWN!', '全員ダウン。シャッターのチャンス', RED, []);
   }
 
@@ -1137,6 +1143,12 @@ export class ChainBattleScene extends Phaser.Scene {
       } else if (ev.type === 'down') {
         const p = this.posOf(s, ev.uid);
         if (p) this.popSticker(p.x + 12, p.y + 34, 'DOWN', RED, '#ffffff', 8, k++);
+      } else if (ev.type === 'rewind') {
+        const p = this.posOf(s, ev.uid);
+        if (p) this.popSticker(p.x, p.y - 30, `巻き戻し +${ev.amount}`, 0x6dff9e, '#000000', -6, k++);
+      } else if (ev.type === 'interrupt') {
+        const p = this.posOf(s, ev.uid);
+        if (p) this.popSticker(p.x, p.y - 40, '割り込み！', 0xffffff, '#ff2d55', -8, k++);
       } else if (ev.type === 'reveal') {
         const p = this.posOf(s, ev.uid);
         if (p) this.popSticker(p.x, p.y + 52, `弱点判明！ ${ELEMENT_LABEL[ev.element]}`, ELEMENT_COLOR[ev.element], '#000000', -4, k++);
@@ -1290,7 +1302,7 @@ function gradeStars(g: string | null): number {
 
 /** ラウンドの終わりのコマ（時限・ヒート） */
 function isRoundEnd(key: string): boolean {
-  return key.startsWith('end:') || key.startsWith('burn:');
+  return key.startsWith('end:') || key.startsWith('burn:') || key.startsWith('rewind:');
 }
 
 function sameSource(a: ChainSource, b: ChainSource): boolean {
@@ -1331,6 +1343,10 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'fizzle') parts.push('直前の攻撃がなくて不発');
     else if (ev.type === 'link') parts.push(`連携技「${ev.name}」！`);
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
+    else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'unveil') parts.push(`${name(ev.uid)}の予定が見えた`);
+    else if (ev.type === 'rewind') parts.push(`${name(ev.uid)}が巻き戻しで${ev.amount}回復`);
+    else if (ev.type === 'panic') parts.push(`リーダーを倒した！ ${ev.downed.map(name).join('・')}が動揺してダウン`);
     else if (ev.type === 'reveal') parts.push(`弱点判明！ ${name(ev.uid)}は${ELEMENT_LABEL[ev.element]}に弱い`);
   }
   const out = parts.filter(Boolean);

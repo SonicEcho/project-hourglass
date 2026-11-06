@@ -502,6 +502,14 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain5' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
+      button('試し：並べてつなぐ戦闘（夏祭りの本部テント）', () => {
+        close();
+        nav.openPrototype('ChainBattle', { trial: 'chain6' });
+      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
+      button('試し：並べてつなぐ戦闘（古い電器屋の奥）', () => {
+        close();
+        nav.openPrototype('ChainBattle', { trial: 'chain7' });
+      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
       // 段階155：試し：コンボと現像（今の戦闘に、2枚のコンボと現像する札を入れたアルバムで戦う。今のセーブには触れない）
       button('試し：コンボと現像（砂嵐3体）', () => {
         close();
