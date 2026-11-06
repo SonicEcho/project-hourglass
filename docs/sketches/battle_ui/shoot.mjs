@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dir = process.argv[2] ? resolve(here, process.argv[2]) : here;
-const browser = await chromium.launch();
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 const num = (f) => parseInt(f, 10);
 for (const name of readdirSync(dir).filter((f) => f.endsWith('.html')).sort((a, b) => num(a) - num(b))) {
