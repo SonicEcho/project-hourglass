@@ -69,6 +69,32 @@ export const CHAIN_CARD_ART: Record<string, string> = {
   ch_waterBalloon: 'snap.recover',
 };
 
+/** 仲間の技と連携技の絵（フィルムの帯に並べる。調整9） */
+export const CHAIN_MOVE_ART: Record<string, string> = {
+  quick: 'snap.quickStep',
+  slash: 'snap.sword',
+  finisher: 'snap.heavyBlow',
+  spark: 'snap.fireChip',
+  fire: 'snap.fireChip',
+  ice: 'snap.iceChip',
+  heal: 'snap.recover',
+  kick: 'snap.quickStep',
+  zap: 'snap.thunderChip',
+  thunder: 'snap.thunderChip',
+  afterglow: 'snap.fireChip',
+  crossDrive: 'snap.sword',
+  shower: 'snap.thunderChip',
+};
+
+/** 組み合わせごとの背景（調整9。今の戦闘と同じく、その時代の場所の絵を暗くして敷く） */
+export const CHAIN_TRIAL_BG: Record<string, string> = {
+  chain1: 'bg.goldfish_stall',
+  chain2: 'bg.clock_shop',
+  chain3: 'bg.village_dusk',
+  chain4: 'bg.showa_street',
+  chain5: 'bg.riverside_1998',
+};
+
 const move = (m: ChainMove): ChainMove => m;
 
 /**

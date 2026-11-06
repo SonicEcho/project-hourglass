@@ -275,7 +275,9 @@ export type ChainEvent =
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
   | { type: 'link'; name: string; uids: string[] }
-  | { type: 'shutterReady' };
+  | { type: 'shutterReady' }
+  /** 弱点が分かった（その属性で初めて当てた。ハイライトで弱点扱いになっただけでは分からない） */
+  | { type: 'reveal'; uid: string; defId: string; element: Element };
 
 export interface ChainState {
   def: ChainBattleDef;
@@ -305,6 +307,11 @@ export interface ChainState {
   finish?: 'shutter' | 'defeat';
   /** 決着したラウンド */
   finishRound?: number;
+  /**
+   * 分かっている弱点（敵の定義の id → 属性。調整9）。弱点は最初は見えず、その属性で当てた時に分かる。
+   * 戦闘をまたいで引き継ぐ時は、createChainBattle に前の戦闘の known を渡す
+   */
+  known: Record<string, Element[]>;
 }
 
 /** 実行の1コマ（仲間か敵の1回の行動、ラウンドの終わりの時限）。画面はこの順に見せる */
@@ -354,7 +361,13 @@ export function cloneChain(s: ChainState): ChainState {
     discard: [...s.discard],
     intents: s.intents.map((i) => ({ ...i })),
     actedAt: { ...s.actedAt },
+    known: Object.fromEntries(Object.entries(s.known).map(([k, v]) => [k, [...v]])),
   };
+}
+
+/** その敵の弱点が、もう分かっているか（調整9） */
+export function isWeakKnown(s: ChainState, defId: string, el: Element): boolean {
+  return s.known[defId]?.includes(el) ?? false;
 }
 
 function draw(s: ChainState): void {
@@ -431,7 +444,7 @@ function statusIntent(s: ChainState, e: ChainUnit, it: ChainIntent, kind: ChainS
   return it;
 }
 
-export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number): ChainState {
+export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, known: Record<string, Element[]> = {}): ChainState {
   const s: ChainState = {
     def,
     rules,
@@ -448,6 +461,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     actedAt: {},
     shutter: false,
     outcome: 'ongoing',
+    known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
   if (def.variants?.length) {
@@ -656,7 +670,8 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   const trick = opts.noChain ? undefined : e.trick;
   const useTrick = trick === 'expose' || trick === 'spread' || (trick === 'opening' && opts.finish);
   if (useTrick) e.trick = undefined;
-  const aff = trick === 'expose' ? { mult: s.rules.weakMult, weak: true, resist: false } : affinity(s, e, el, opts.ignoreResist);
+  const real = affinity(s, e, el, opts.ignoreResist);
+  const aff = trick === 'expose' ? { mult: s.rules.weakMult, weak: true, resist: false } : real;
   let mult = aff.mult * (e.down && opts.downMult ? opts.downMult : 1);
   if (trick === 'opening' && opts.finish) mult *= 2;
   // 刻み：重なるほど受けるダメージが上がる
@@ -667,6 +682,11 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   const amount = Math.max(1, Math.floor(((power * stat) / Math.max(1, e.def)) * mult));
   e.hp = Math.max(0, e.hp - amount);
   ev.push({ type: 'damage', from: actor.uid, to: e.uid, amount, weak: aff.weak, resist: aff.resist });
+  // 本当の弱点で当てた時だけ、弱点が分かる（調整9）
+  if (real.weak && !isWeakKnown(s, e.defId, el)) {
+    (s.known[e.defId] ??= []).push(el);
+    ev.push({ type: 'reveal', uid: e.uid, defId: e.defId, element: el });
+  }
   if (useTrick && trick !== 'spread') ev.push({ type: 'trickUse', uid: e.uid, trick: trick! });
   // 吸い取り：攻撃した仲間が回復
   if (e.status?.kind === 'drain' && actor.hp > 0) {

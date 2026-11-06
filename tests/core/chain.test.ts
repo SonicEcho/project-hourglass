@@ -124,6 +124,29 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(ev.some((e) => e.type === 'down' && e.uid === t)).toBe(true);
   });
 
+  it('弱点は最初は分からず、その属性で当てた時に分かる。分かった弱点は次の戦闘へ引き継げる。ハイライトの弱点扱いでは分からない（調整9）', () => {
+    const big = { ...idle(plain(CHAIN_ENEMIES.cuckoo)), hp: 999 };
+    const s = make([big]);
+    const t = s.enemies[0].uid;
+    expect(s.known).toEqual({});
+    const r = runChainRound(s, [move('hero', 'slash', t)]);
+    expect(events(r).filter((e) => e.type === 'reveal')).toEqual([{ type: 'reveal', uid: t, defId: big.id, element: 'physical' }]);
+    expect(r.state.known[big.id]).toEqual(['physical']);
+    // 元の状態は変わらない
+    expect(s.known).toEqual({});
+    // 次の戦闘へ引き継ぐと、もう一度当てても「分かった」は出ない
+    const next = createChainBattle({ ...BASE, enemies: [big], variants: undefined }, CHAIN_RULES, 8, r.state.known);
+    expect(next.known[big.id]).toEqual(['physical']);
+    const r2 = runChainRound(next, [move('hero', 'slash', next.enemies[0].uid)]);
+    expect(events(r2).some((e) => e.type === 'reveal')).toBe(false);
+    // ハイライトで弱点扱いになっても、本当の弱点（ブリキは氷）は分からない
+    const s3 = make([{ ...idle(plain(CHAIN_ENEMIES.tin)), hp: 999 }], [CHAIN_CARDS.expose.id]);
+    const t3 = s3.enemies[0].uid;
+    const r3 = runChainRound(s3, [cardStep('akari', 0, t3), move('hero', 'slash', t3)]);
+    expect(events(r3).some((e) => e.type === 'reveal')).toBe(false);
+    expect(r3.state.known).toEqual({});
+  });
+
   it('仕掛け「すき」：次に当たった締めの札が2倍になる', () => {
     const base = make([{ ...idle(plain(CHAIN_ENEMIES.table)), hp: 999 }, idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.rattle.id]);
     const t = base.enemies[0].uid;
