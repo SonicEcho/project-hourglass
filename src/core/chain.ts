@@ -79,10 +79,10 @@ export type ChainEffect =
    * perActed は負でもよい（先に動くほど強い札。威力は1より下がらない）
    */
   | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[]; push?: number; pierce?: boolean }
-  /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理） */
-  | { kind: 'layer'; power: number; mult: number }
+  /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理）。直前が弱点を突いていれば × weakMult（調整16） */
+  | { kind: 'layer'; power: number; mult: number; weakMult?: number }
   /** 追い風：直前に動いた仲間の攻撃（属性と威力）を、威力 × rate で敵全体にもう一度。直前が攻撃でなければ不発 */
-  | { kind: 'wind'; rate: number }
+  | { kind: 'wind'; rate: number; weakRate?: number }
   /** 仕掛け：次に当たった攻撃で使い切る。power があれば、その属性で小さく当ててから仕掛ける */
   | { kind: 'trick'; trick: ChainTrick; element?: Element; power?: number }
   /** 状態：rounds ラウンド続く。power があれば、その属性で小さく当ててから付ける */
@@ -193,6 +193,8 @@ export interface ChainRules {
   sealBig: number;
   /** リーダー：生きている間、ほかの敵の攻撃の倍率（調整12） */
   leaderRate: number;
+  /** ピンポイント：付いた敵が次に受けるフィニッシュの倍率（調整16：2 → 3） */
+  openingMult: number;
   /** シャッター（総攻撃）：生きている敵みんなに、最大 HP のこの割合のダメージ（調整15。前は即決着） */
   shutterRate: number;
 }
@@ -220,6 +222,8 @@ export interface ChainBattleDef {
   deck: string[];
   cards: Record<string, ChainMove>;
   links: ChainLinkDef[];
+  /** 1人1回をやめる（調整16の試し）：時間の予算が許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回まで（札は手札の分だけ） */
+  multiAct?: boolean;
 }
 
 export interface ChainUnit {
@@ -584,7 +588,7 @@ export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: Ch
   const out: { link: ChainLinkDef; cards: [number, number] }[] = [];
   for (const link of s.def.links) {
     const uids = link.members.map((m) => s.allies.find((a) => a.defId === m));
-    if (uids.some((u) => !u || u.hp <= 0 || usedAllies.has(u.uid))) continue;
+    if (uids.some((u) => !u || u.hp <= 0 || (usedAllies.has(u.uid) && !s.def.multiAct))) continue;
     const a = s.hand.findIndex((c, i) => c === link.cards[0] && !usedCards.has(i));
     const b = s.hand.findIndex((c, i) => c === link.cards[1] && !usedCards.has(i) && i !== a);
     if (a >= 0 && b >= 0) out.push({ link, cards: [a, b] });
@@ -599,7 +603,12 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
   for (const uid of stepAllies(s, step)) {
     const ally = s.allies.find((a) => a.uid === uid);
     if (!ally || ally.hp <= 0) return '動ける仲間ではない';
-    if (usedAllies.has(uid)) return `${ally.name}は、もう並べた`;
+    if (usedAllies.has(uid) && !s.def.multiAct) return `${ally.name}は、もう並べた`;
+  }
+  // 1人1回をやめた時も、同じ技は1ラウンドに1回まで（技は手札を使わないので）
+  if (s.def.multiAct && step.source.kind === 'move') {
+    const id = step.source.moveId;
+    if (plan.some((p) => p.ally === step.ally && p.source.kind === 'move' && p.source.moveId === id)) return 'その技は、このラウンドもう並べた';
   }
   const usedCards = new Set(plan.flatMap(stepCards));
   for (const idx of stepCards(step)) {
@@ -724,7 +733,7 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   const real = affinity(s, e, el, opts.ignoreResist);
   const aff = trick === 'expose' ? { mult: s.rules.weakMult, weak: true, resist: false } : real;
   let mult = aff.mult * (e.down && opts.downMult ? opts.downMult : 1);
-  if (trick === 'opening' && opts.finish) mult *= 2;
+  if (trick === 'opening' && opts.finish) mult *= s.rules.openingMult;
   // 刻み：重なるほど受けるダメージが上がる
   if (e.status?.kind === 'stack') {
     mult *= 1 + s.rules.stackRate * e.status.stacks;
@@ -779,6 +788,8 @@ interface PrevAct {
   ally: string;
   element: Element | null;
   power: number;
+  /** 弱点を突いたか（調整16。多重露光・流し撮りが強くなる） */
+  weak?: boolean;
 }
 
 /** 単体攻撃の相手（倒れていたら向け直す。盾が立っていれば盾が受ける） */
@@ -826,13 +837,13 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
       ev.push({ type: 'fizzle', uid: actor.uid });
       return { ally: actor.uid, element: null, power: 0 };
     }
-    const power = Math.max(1, Math.round(prev.power * eff.rate));
+    const power = Math.max(1, Math.round(prev.power * (prev.weak && eff.weakRate ? eff.weakRate : eff.rate)));
     for (const e of living(s.enemies)) hitEnemy(s, actor, e, prev.element, power, {}, ctx, ev);
     return { ally: actor.uid, element: prev.element, power };
   }
   if (eff.kind === 'layer') {
     const el = prev?.element ?? 'physical';
-    const power = prev?.element ? eff.power * eff.mult : eff.power;
+    const power = prev?.element ? eff.power * (prev.weak && eff.weakMult ? eff.weakMult : eff.mult) : eff.power;
     for (const e of targets()) hitEnemy(s, actor, e, el, power, {}, ctx, ev);
     return { ally: actor.uid, element: el, power };
   }
@@ -986,6 +997,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       // 連携技は2人の攻撃・魔力の平均で
       const doer = actors.length > 1 ? { ...actor, atk: Math.round((actors[0].atk + actors[1].atk) / 2), mag: Math.round((actors[0].mag + actors[1].mag) / 2) } : actor;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev);
+      prev.weak = ev.some((e) => e.type === 'damage' && e.weak && e.from === doer.uid);
       // 連携技の計算用に写した仲間のダメージ（反撃・破片）は、1人目に戻す
       if (doer !== actor) actor.hp = Math.min(actor.hp, doer.hp);
       acted += actors.length;

@@ -14,13 +14,14 @@ export const CHAIN_RULES: ChainRules = {
   timerDamage: 60,
   healDiv: 10,
   burnDamage: 16,
-  stackRate: 0.15,
+  stackRate: 0.5,
   weakenRate: 0.5,
   drainRate: 0.3,
   sealPower: 20,
   sealBig: 40,
   leaderRate: 1.3,
   shutterRate: 0.4,
+  openingMult: 3,
 };
 
 const card = (m: ChainMove): ChainMove => m;
@@ -33,36 +34,36 @@ export const CHAIN_CARDS = {
   // フォーカス：敵に合わせておき、次に当たった攻撃で使い切る
   target: card({ id: 'ch_target', name: 'パノラマ', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'spread' }, text: '対象の敵に「パノラマ」を付与する。次にこの敵が攻撃を受けた時、同じダメージを他の敵全体にも与える（広がった先はダウンしない）' }),
   expose: card({ id: 'ch_expose', name: 'ハイライト', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'expose' }, text: '対象の敵に「ハイライト」を付与する。次にこの敵が受ける攻撃は、属性に関係なく弱点扱いになる（ダウンする）' }),
-  rattle: card({ id: 'ch_rattle', name: 'ピンポイント', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'opening', element: 'physical', power: 6 }, text: '敵1体に物理の小ダメージを与え、「ピンポイント」を付与する。次にこの敵が受けるフィニッシュの威力が2倍' }),
+  rattle: card({ id: 'ch_rattle', name: 'ピンポイント', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'opening', element: 'physical', power: 4 }, text: '敵1体に物理の小ダメージを与え、「ピンポイント」を付与する。次にこの敵が受けるフィニッシュの威力が3倍' }),
   // フィルター：数ラウンド続く（1体に1つ。新しく付けると上書き）
   chill: card({ id: 'ch_chill', name: 'スロー', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'slow', rounds: 2 }, text: '敵1体を2ラウンドの間「スロー」にする。敵の行動が1マス遅れる' }),
-  ember: card({ id: 'ch_ember', name: 'ヒート', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'burn', rounds: 3, element: 'fire', power: 6 }, text: '敵1体に火の小ダメージを与え、3ラウンドの間「ヒート」にする。ラウンド終了時にダメージを与える' }),
-  notch: card({ id: 'ch_notch', name: 'クラック', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'stack', rounds: 2 }, text: '敵1体に2ラウンドの間「クラック」を付与する。攻撃を受けるたびに、被ダメージが15%ずつ増える' }),
+  ember: card({ id: 'ch_ember', name: 'ヒート', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'burn', rounds: 3, element: 'fire', power: 4 }, text: '敵1体に火の小ダメージを与え、3ラウンドの間「ヒート」にする。ラウンド終了時にダメージを与える' }),
+  notch: card({ id: 'ch_notch', name: 'クラック', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'stack', rounds: 1 }, text: '敵1体に、このラウンドの間「クラック」を付与する。攻撃を受けるたびに、被ダメージが50%ずつ増える（2回目1.5倍、3回目2倍…）' }),
   wilt: card({ id: 'ch_wilt', name: 'ピンぼけ', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'weak', rounds: 2 }, text: '敵1体を2ラウンドの間「ピンぼけ」にする。敵の攻撃のダメージが半減する' }),
   seal: card({ id: 'ch_seal', name: 'ポーズ', type: 'status', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'seal', rounds: 2 }, text: '敵1体を2ラウンドの間「ポーズ」にする。敵の全体攻撃と大技を封じ、通常攻撃にする' }),
   dazzle: card({ id: 'ch_dazzle', name: 'ハレーション', type: 'status', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'confuse', rounds: 1 }, text: '敵1体を1ラウンドの間「ハレーション」（混乱）にする。敵の単体攻撃が、他の敵に向かう' }),
   leech: card({ id: 'ch_leech', name: 'リワインド', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'drain', rounds: 3 }, text: '敵1体に3ラウンドの間「リワインド」を付与する。この敵を攻撃した味方は、与えたダメージの30%のHPを回復する' }),
-  imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 24, perMark: 30 }, text: '敵1体に物理ダメージ。敵に付与されている効果1つにつき、威力が上がる' }),
-  wideShot: card({ id: 'ch_wideShot', name: 'ワイドショット', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 16 }, text: '敵全体に物理ダメージ' }),
+  imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 8, perMark: 40 }, text: '敵1体に物理ダメージ。敵に付与されている効果1つにつき、威力が上がる' }),
+  wideShot: card({ id: 'ch_wideShot', name: 'ワイドショット', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 10 }, text: '敵全体に物理ダメージ' }),
   // 調整14：シンプルなアタック（序盤の主役。技を覚える前は、これで戦う）
-  quickShot: card({ id: 'ch_quickShot', name: '速写', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
-  closeUp: card({ id: 'ch_closeUp', name: 'クローズアップ', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 22 }, text: '敵1体に物理ダメージ' }),
-  longExpo: card({ id: 'ch_longExpo', name: '長時間露光', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 46 }, text: '敵1体に物理の大ダメージ' }),
-  flash: card({ id: 'ch_flash', name: 'フラッシュ', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 12 }, text: '敵全体に雷ダメージ' }),
+  quickShot: card({ id: 'ch_quickShot', name: '速写', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 6, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
+  closeUp: card({ id: 'ch_closeUp', name: 'クローズアップ', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 13 }, text: '敵1体に物理ダメージ' }),
+  longExpo: card({ id: 'ch_longExpo', name: '長時間露光', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 28 }, text: '敵1体に物理の大ダメージ' }),
+  flash: card({ id: 'ch_flash', name: 'フラッシュ', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 8 }, text: '敵全体に雷ダメージ' }),
   // 調整13：汎用のアタックを増やした（属性3つ・並べる順で変わる2つ・直前の味方を受ける2つ・かばうを抜く1つ）
-  backlight: card({ id: 'ch_backlight', name: '逆光', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 22 }, text: '敵1体に火ダメージ' }),
-  blueHour: card({ id: 'ch_blueHour', name: 'ブルーアワー', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'ice', power: 22 }, text: '敵1体に氷ダメージ' }),
-  strobe: card({ id: 'ch_strobe', name: 'ストロボ', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 22 }, text: '敵1体に雷ダメージ' }),
-  burst: card({ id: 'ch_burst', name: '連写', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 9, hitsPerActed: true }, text: '敵1体に物理ダメージを1回与える。このラウンドに先に行動した味方1人につき、攻撃回数+1' }),
-  firstCut: card({ id: 'ch_firstCut', name: 'ファーストカット', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, perActed: -10 }, text: '敵1体に物理ダメージ。このラウンドに先に行動した味方1人につき、威力が下がる（最初に使うと最大）' }),
-  multiExpo: card({ id: 'ch_multiExpo', name: '多重露光', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'layer', power: 16, mult: 1.5 }, text: '敵1体に、直前に行動した味方の攻撃と同じ属性でダメージ。直前が攻撃なら威力1.5倍（攻撃でなければ物理）' }),
-  panning: card({ id: 'ch_panning', name: '流し撮り', type: 'attack', weight: 2, target: 'enemies', effect: { kind: 'wind', rate: 0.6 }, text: '直前に行動した味方の攻撃を、威力60%で敵全体にもう一度与える。直前が攻撃でなければ不発' }),
-  zoomIn: card({ id: 'ch_zoomIn', name: 'ズームイン', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 20, pierce: true }, text: '敵1体に物理ダメージ。「かばう」に防がれず、選んだ敵に当たる' }),
-  decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, downMult: 2 }, text: '敵1体に物理ダメージ。ダウン中の敵には威力2倍' }),
+  backlight: card({ id: 'ch_backlight', name: '逆光', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 14 }, text: '敵1体に火ダメージ' }),
+  blueHour: card({ id: 'ch_blueHour', name: 'ブルーアワー', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'ice', power: 14 }, text: '敵1体に氷ダメージ' }),
+  strobe: card({ id: 'ch_strobe', name: 'ストロボ', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 14 }, text: '敵1体に雷ダメージ' }),
+  burst: card({ id: 'ch_burst', name: '連写', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 6, hitsPerActed: true }, text: '敵1体に物理ダメージを1回与える。このラウンドに先に行動した味方1人につき、攻撃回数+1' }),
+  firstCut: card({ id: 'ch_firstCut', name: 'ファーストカット', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 18, perActed: -6 }, text: '敵1体に物理ダメージ。このラウンドに先に行動した味方1人につき、威力が下がる（最初に使うと最大）' }),
+  multiExpo: card({ id: 'ch_multiExpo', name: '多重露光', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'layer', power: 10, mult: 1, weakMult: 2 }, text: '敵1体に、直前に行動した味方の攻撃と同じ属性でダメージ（攻撃でなければ物理）。直前の攻撃が弱点を突いていれば威力2倍' }),
+  panning: card({ id: 'ch_panning', name: '流し撮り', type: 'attack', weight: 2, target: 'enemies', effect: { kind: 'wind', rate: 0.5, weakRate: 1 }, text: '直前に行動した味方の攻撃を、威力50%で敵全体にもう一度与える。直前の攻撃が弱点を突いていれば威力100%。直前が攻撃でなければ不発' }),
+  zoomIn: card({ id: 'ch_zoomIn', name: 'ズームイン', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 12, pierce: true }, text: '敵1体に物理ダメージ。「かばう」に防がれず、選んだ敵に当たる' }),
+  decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 12, downMult: 4 }, text: '敵1体に物理ダメージ。ダウン中の敵には威力4倍' }),
   // 専用の札（その仲間しか使えない。組む2人の札がそろうと連携技）
-  swing: card({ id: 'ch_swing', name: '全力スイング', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 52 }, text: 'ハルト専用。敵1体に物理の大ダメージ', owner: 'hero' }),
-  sparkler: card({ id: 'ch_sparkler', name: '線香花火', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 18 }, text: 'あかり専用。敵全体に火ダメージ', owner: 'akari' }),
-  waterBalloon: card({ id: 'ch_waterBalloon', name: '水風船', type: 'status', weight: 2, target: 'enemies', effect: { kind: 'status', status: 'slow', rounds: 1, element: 'ice', power: 8 }, text: 'みお専用。敵全体に氷の小ダメージを与え、1ラウンドの間「スロー」にする', owner: 'mio' }),
+  swing: card({ id: 'ch_swing', name: '全力スイング', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 31 }, text: 'ハルト専用。敵1体に物理の大ダメージ', owner: 'hero' }),
+  sparkler: card({ id: 'ch_sparkler', name: '線香花火', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 11 }, text: 'あかり専用。敵全体に火ダメージ', owner: 'akari' }),
+  waterBalloon: card({ id: 'ch_waterBalloon', name: '水風船', type: 'status', weight: 2, target: 'enemies', effect: { kind: 'status', status: 'slow', rounds: 1, element: 'ice', power: 5 }, text: 'みお専用。敵全体に氷の小ダメージを与え、1ラウンドの間「スロー」にする', owner: 'mio' }),
 } satisfies Record<string, ChainMove>;
 
 /** 札の絵（近い情景の今のスナップの絵を、仮に使う） */
@@ -101,17 +102,17 @@ export const CHAIN_CARD_ART: Record<string, string> = {
 export const CHAIN_SHORT_TEXT: Record<string, string> = {
   ch_target: '次の攻撃を\n敵全体に拡散',
   ch_expose: '次の攻撃が\n弱点扱いに',
-  ch_rattle: 'フィニッシュ\n威力2倍',
+  ch_rattle: 'フィニッシュ\n威力3倍',
   ch_chill: '敵の行動が\n1マス遅れる',
   ch_ember: 'ラウンド終了\n時にダメージ',
-  ch_notch: '被ダメージが\n段々増える',
+  ch_notch: 'このラウンド\n被ダメ+50%ずつ',
   ch_wilt: '敵の攻撃\nダメージ半減',
   ch_seal: '大技・全体\n攻撃を封じる',
   ch_dazzle: '混乱させて\n同士討ちに',
   ch_leech: '与ダメージ\nの30%回復',
   ch_imprint: '付与効果1つ\nごとに威力↑',
   ch_wideShot: '敵全体に\n物理ダメージ',
-  ch_decisive: 'ダウン中の敵\nに威力2倍',
+  ch_decisive: 'ダウン中の敵\nに威力4倍',
   ch_quickShot: '物理小ダメージ\n行動2マス遅延',
   ch_closeUp: '敵1体に\n物理ダメージ',
   ch_longExpo: '敵1体に\n物理大ダメージ',
@@ -122,15 +123,15 @@ export const CHAIN_SHORT_TEXT: Record<string, string> = {
   ch_strobe: '敵1体に\n雷ダメージ',
   ch_burst: '後に動くほど\n連続ヒット',
   ch_firstCut: '先に動くほど\n威力アップ',
-  ch_multiExpo: '直前の攻撃と\n同じ属性で',
-  ch_panning: '直前の攻撃を\n敵全体に',
+  ch_multiExpo: '直前の攻撃と同属性\n弱点なら2倍',
+  ch_panning: '直前の攻撃を\n敵全体に再び',
   ch_zoomIn: '「かばう」を\n無視して攻撃',
   ch_swing: '敵1体に\n物理大ダメージ',
   ch_sparkler: '敵全体に\n火ダメージ',
   ch_waterBalloon: '敵全体に氷\n＋スロー',
   quick: '物理小ダメージ\n行動2マス遅延',
   slash: '敵1体に\n物理ダメージ',
-  finisher: '物理大ダメージ\nダウン中2倍',
+  finisher: '物理大ダメージ\nダウン中4倍',
   spark: '火の小ダメージ\n行動2マス遅延',
   fire: '敵1体に\n火ダメージ',
   ice: '敵1体に\n氷ダメージ',
@@ -172,7 +173,7 @@ export const CHAIN_TRIAL_BG: Record<string, string> = {
 const move = (m: ChainMove): ChainMove => m;
 
 /** 通常攻撃（調整14。技を覚えていなくても、いつでも使える。手札に使える札がない時の受け皿） */
-export const CHAIN_BASIC: ChainMove = { id: 'basic', name: '通常攻撃', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 16 }, text: '敵1体に物理ダメージ（いつでも使える）' };
+export const CHAIN_BASIC: ChainMove = { id: 'basic', name: '通常攻撃', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10 }, text: '敵1体に物理ダメージ（いつでも使える）' };
 
 /**
  * 仲間。技は MP なしで、いつでも使える。
@@ -188,9 +189,9 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     def: 11,
     moves: [
       CHAIN_BASIC,
-      move({ id: 'quick', name: 'すばやく', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
-      move({ id: 'slash', name: '斬る', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 22 }, text: '敵1体に物理ダメージ' }),
-      move({ id: 'finisher', name: 'とどめの一閃', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, downMult: 2 }, text: '敵1体に物理の大ダメージ。ダウン中の敵には威力2倍' }),
+      move({ id: 'quick', name: 'すばやく', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 6, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
+      move({ id: 'slash', name: '斬る', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 13 }, text: '敵1体に物理ダメージ' }),
+      move({ id: 'finisher', name: 'とどめの一閃', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 24, downMult: 4 }, text: '敵1体に物理の大ダメージ。ダウン中の敵には威力4倍' }),
     ],
   },
   {
@@ -202,9 +203,9 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     def: 9,
     moves: [
       CHAIN_BASIC,
-      move({ id: 'spark', name: '火花', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 8, push: 2 }, text: '敵1体に火の小ダメージ。当てた敵の行動を2マス遅らせる' }),
-      move({ id: 'fire', name: 'ファイア', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 30 }, text: '敵1体に火ダメージ' }),
-      move({ id: 'ice', name: 'アイス', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'ice', power: 30 }, text: '敵1体に氷ダメージ' }),
+      move({ id: 'spark', name: '火花', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 5, push: 2 }, text: '敵1体に火の小ダメージ。当てた敵の行動を2マス遅らせる' }),
+      move({ id: 'fire', name: 'ファイア', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 18 }, text: '敵1体に火ダメージ' }),
+      move({ id: 'ice', name: 'アイス', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'ice', power: 18 }, text: '敵1体に氷ダメージ' }),
       move({ id: 'heal', name: 'いやしの歌', type: 'support', weight: 3, target: 'allies', effect: { kind: 'heal', power: 30 }, text: '味方全体のHPを回復する' }),
     ],
   },
@@ -217,9 +218,9 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     def: 8,
     moves: [
       CHAIN_BASIC,
-      move({ id: 'kick', name: 'けとばし', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
-      move({ id: 'zap', name: '静電気', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 8, push: 2 }, text: '敵1体に雷の小ダメージ。当てた敵の行動を2マス遅らせる' }),
-      move({ id: 'thunder', name: 'サンダー', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 30 }, text: '敵1体に雷ダメージ' }),
+      move({ id: 'kick', name: 'けとばし', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 6, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
+      move({ id: 'zap', name: '静電気', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 5, push: 2 }, text: '敵1体に雷の小ダメージ。当てた敵の行動を2マス遅らせる' }),
+      move({ id: 'thunder', name: 'サンダー', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 18 }, text: '敵1体に雷ダメージ' }),
     ],
   },
 ];
@@ -353,7 +354,8 @@ export const CHAIN_TRAIT_TEXT: Record<string, { name: string; text: string }> = 
  *   スペシャル（専用の札）はアルバムの外で、連れていく仲間1人につき2枚ずつ、自動で山札に入る（仲間を替えると山札も変わる）
  * 序盤：技を覚える前。アルバム20枚＝アタック14（シンプルだけ）・サポート4・フィニッシュ2。スペシャルと連携技はまだない
  */
-export type ChainStage = 'early' | 'mid';
+/** 時期（調整14）。multi は中盤と同じ山札で、1人1回をやめた試し（調整16） */
+export type ChainStage = 'early' | 'mid' | 'multi';
 export const CHAIN_DECK_PLAN = {
   mid: { album: 20, attack: 10, effectAttack: 3, support: 6, finish: 4, specialPerAlly: 2 },
   early: { album: 20, attack: 14, effectAttack: 0, support: 4, finish: 2, specialPerAlly: 0 },
@@ -389,13 +391,19 @@ export function chainDeckEarly(filters: FilterKey[]): string[] {
 
 const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_CARDS).map((c) => [c.id, c]));
 
+/** 序盤の敵（調整16。札と技の単体の威力を約6割に下げたので、組み合わせの札がない序盤は、敵の HP も6割にする。本番でも序盤の敵は弱い前提） */
+const EARLY_HP_RATE = 0.6;
+function earlyFoe(e: ChainEnemyDef): ChainEnemyDef {
+  return { ...e, hp: Math.round(e.hp * EARLY_HP_RATE), splitInto: e.splitInto ? earlyFoe(e.splitInto) : undefined };
+}
+
 /** 序盤の組み合わせ（同じ id。中盤を作る時に一緒に作る） */
 const EARLY: ChainBattleDef[] = [];
 /** 序盤は1戦が長くなるので、評価の目安の時刻を延ばす。調整15：シャッターが総攻撃になり決着が2ラウンド目にずれたので、中盤の目安を 8・16 → 13・18 に（★3 約3割・★2 約5割） */
 const EARLY_GRADE_RATE = 1.7;
 
 function battle(id: string, name: string, enemies: ChainEnemyDef[], variants: ChainVariant[], filters: FilterKey[], effects: EffectKey[], gradeAt = { high: 13, mid: 18 }): ChainBattleDef {
-  EARLY.push({ id, name, allies: CHAIN_ALLIES_EARLY, enemies, deck: chainDeckEarly(filters), cards: CARDS, links: [], variants, gradeAt: { high: Math.round(gradeAt.high * EARLY_GRADE_RATE), mid: Math.round(gradeAt.mid * EARLY_GRADE_RATE) } });
+  EARLY.push({ id, name, allies: CHAIN_ALLIES_EARLY, enemies: enemies.map(earlyFoe), deck: chainDeckEarly(filters), cards: CARDS, links: [], variants, gradeAt: { high: Math.round(gradeAt.high * EARLY_GRADE_RATE), mid: Math.round(gradeAt.mid * EARLY_GRADE_RATE) } });
   return { id, name, allies: CHAIN_ALLIES, enemies, deck: chainDeck(filters, effects), cards: CARDS, links: CHAIN_LINKS, variants, gradeAt };
 }
 
@@ -487,8 +495,11 @@ export const CHAIN_TRIALS: ChainBattleDef[] = [
 /** 序盤の試し（調整14。技を覚える前：仲間は通常攻撃だけ、山札はシンプルなアタック中心） */
 export const CHAIN_TRIALS_EARLY: ChainBattleDef[] = EARLY;
 
+/** 1人1回をやめた試し（調整16。中盤と同じ山札で、時間の予算が許す限り同じ仲間が何回でも動ける。同じ技は1ラウンドに1回まで） */
+export const CHAIN_TRIALS_MULTI: ChainBattleDef[] = CHAIN_TRIALS.map((d) => ({ ...d, multiAct: true }));
+
 /** 試しの組み合わせを、時期を指定して選ぶ */
 export function chainTrialDef(id: string, stage: ChainStage = 'mid'): ChainBattleDef {
-  const list = stage === 'early' ? CHAIN_TRIALS_EARLY : CHAIN_TRIALS;
+  const list = stage === 'early' ? CHAIN_TRIALS_EARLY : stage === 'multi' ? CHAIN_TRIALS_MULTI : CHAIN_TRIALS;
   return list.find((t) => t.id === id) ?? list[0];
 }

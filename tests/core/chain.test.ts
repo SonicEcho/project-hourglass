@@ -18,7 +18,7 @@ import {
   type ChainPlanStep,
   type ChainState,
 } from '../../src/core';
-import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS, CHAIN_TRIALS_EARLY, chainTrialDef } from '../../src/data';
+import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS, CHAIN_TRIALS_EARLY, CHAIN_TRIALS_MULTI, chainTrialDef } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
 // 試し：並べてつなぐ戦闘（段階156。調整3：専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻。調整7：仕掛けと状態）
@@ -547,6 +547,74 @@ describe('並べてつなぐ戦闘（段階156）', () => {
       for (let k = 0; k < 4; k++) {
         const x = autoChainBattle(def, CHAIN_RULES, 70 + k, 'smart');
         const y = autoChainBattle(def, CHAIN_RULES, 70 + k, 'random');
+        expect(x.outcome).toBe('win');
+        smart += x.rounds;
+        random += y.outcome === 'win' ? y.rounds : 20;
+      }
+      expect(smart).toBeLessThan(random);
+    });
+  });
+
+  describe('調整16：1枚では弱く、組むと強い／1人1回をやめた試し', () => {
+    const card = (ally: string, index: number, target?: string): ChainPlanStep => ({ ally, source: { kind: 'card', index }, target });
+    const tough = (): ChainEnemyDef => ({ ...idle(plain(CHAIN_ENEMIES.tin)), hp: 999 });
+    const other = (): ChainEnemyDef => ({ ...idle(plain(CHAIN_ENEMIES.cuckoo)), weak: [], hp: 999 });
+    const hitsOf = (r: ReturnType<typeof runChainRound>, from: string) => events(r).filter((e): e is Extract<ChainEvent, { type: 'damage' }> => e.type === 'damage' && e.from === from);
+
+    it('多重露光：直前の攻撃が弱点を突いていれば威力2倍（突いていなければ等倍）', () => {
+      const s1 = make([tough(), other()], [CHAIN_CARDS.multiExpo.id]);
+      const t = s1.enemies[0].uid;
+      const o = s1.enemies[1].uid;
+      // 直前の氷が、弱点のない相手に当たった時と、氷が弱点のブリキに当たった時
+      const plainHit = hitsOf(runChainRound(s1, [move('akari', 'ice', o), card('hero', 0, o)]), 'hero')[0].amount;
+      const s2 = make([tough(), other()], [CHAIN_CARDS.multiExpo.id]);
+      const weakHit = hitsOf(runChainRound(s2, [move('akari', 'ice', t), card('hero', 0, o)]), 'hero')[0].amount;
+      expect(weakHit).toBeGreaterThanOrEqual(plainHit * 2 - 1);
+    });
+
+    it('流し撮り：直前の攻撃が弱点を突いていれば、同じ威力で敵全体に', () => {
+      const s1 = make([tough(), other()], [CHAIN_CARDS.panning.id]);
+      const [t, o] = s1.enemies.map((e) => e.uid);
+      const weak = hitsOf(runChainRound(s1, [move('akari', 'ice', t), card('mio', 0)]), 'mio').find((e) => e.to === o)!.amount;
+      const s2 = make([tough(), other()], [CHAIN_CARDS.panning.id]);
+      const normal = hitsOf(runChainRound(s2, [move('akari', 'ice', o), card('mio', 0)]), 'mio').find((e) => e.to === o)!.amount;
+      expect(weak).toBeGreaterThanOrEqual(normal * 2 - 1);
+    });
+
+    it('ピンポイントの後のフィニッシュは3倍', () => {
+      const base = make([{ ...idle(plain(CHAIN_ENEMIES.table)), resist: [], hp: 999 }, other()], [CHAIN_CARDS.rattle.id, CHAIN_CARDS.decisive.id]);
+      const t = base.enemies[0].uid;
+      const once = hitsOf(runChainRound(make([{ ...idle(plain(CHAIN_ENEMIES.table)), resist: [], hp: 999 }, other()], [CHAIN_CARDS.decisive.id]), [card('hero', 0, t)]), 'hero')[0].amount;
+      const combo = hitsOf(runChainRound(base, [card('mio', 0, t), card('hero', 1, t)]), 'hero')[0].amount;
+      expect(combo).toBeGreaterThanOrEqual(once * 3 - 2);
+    });
+
+    it('1人1回をやめた試し：同じ仲間が続けて動ける。同じ技は1ラウンドに1回まで。時間の予算は超えられない', () => {
+      const def: ChainBattleDef = { ...CHAIN_TRIALS_MULTI[0], enemies: [tough()], variants: undefined };
+      const s = createChainBattle(def, CHAIN_RULES, 7);
+      const t = s.enemies[0].uid;
+      const plan = [move('hero', 'quick', t), move('hero', 'slash', t)];
+      expect(chainPlanError(s, [plan[0]], plan[1])).toBeNull();
+      expect(chainPlanError(s, plan, move('hero', 'quick', t))).not.toBeNull();
+      expect(chainPlanError(s, plan, move('mio', 'kick', t))).toBeNull();
+      const r = runChainRound(s, plan);
+      expect(hitsOf(r, 'hero').length).toBe(2);
+      // 1人1回の試しでは、同じ仲間は2回並べられない
+      const s1 = make([tough()]);
+      expect(chainPlanError(s1, [move('hero', 'quick', s1.enemies[0].uid)], move('hero', 'slash', s1.enemies[0].uid))).not.toBeNull();
+      // 時間の予算：重さの合計がラウンドの長さを超える行動は置けない
+      const long = [move('hero', 'finisher', t), move('akari', 'fire', t), move('mio', 'thunder', t)];
+      expect(chainPlanError(s, long, move('hero', 'slash', t))).not.toBeNull();
+      expect(chainTrialDef('chain1', 'multi').multiAct).toBe(true);
+    });
+
+    it('連続の試しでも、考える方針はでたらめな方針より早く勝つ', () => {
+      const def = CHAIN_TRIALS_MULTI[1];
+      let smart = 0;
+      let random = 0;
+      for (let k = 0; k < 3; k++) {
+        const x = autoChainBattle(def, CHAIN_RULES, 80 + k, 'smart');
+        const y = autoChainBattle(def, CHAIN_RULES, 80 + k, 'random');
         expect(x.outcome).toBe('win');
         smart += x.rounds;
         random += y.outcome === 'win' ? y.rounds : 20;
