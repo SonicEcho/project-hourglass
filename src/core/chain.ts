@@ -13,7 +13,8 @@ import type { Element } from './types';
 //   仕掛け：敵に仕掛けておき、次に当たった攻撃で使い切る（目印＝ほかの敵みんなに広がる、むき出し＝弱点になる、すき＝締めの札が2倍）。
 //   状態：数ラウンド続く（鈍足・やけど・刻み・弱り・封印・混乱・吸い取り）。1体に仕掛けと状態は1つずつ（新しく付けると上書き）
 // - 仲間ごとの専用の札（その人しか使えない）が山札に混ざる。組む2人の専用の札が手札にそろうと、連携技を使える（2人の手番を使う。調整3）
-// - 敵ごとに1つの特徴（はじける・すばやい・盾・殻・ねばねば・起こし役・反撃・分裂・時限・逃げる。調整3）
+// - 敵ごとに1つの特徴（はじける・すばやい・盾・殻・ねばねば・起こし役・反撃・分裂・時限・逃げる。調整3。
+//   調整12で、計画を揺さぶる 割り込み・予定隠し・巻き戻し・属性チェンジ・リーダー を足した。画面の名前は src/data の CHAIN_TRAIT_TEXT）
 // - 生きている敵が全員ダウンしたら、シャッターで切り取って決着する（ダウンはラウンドの終わりに解ける）
 // ダメージに乱数はない（組んだ計画が、思い通りに動くかを読めるように）。乱数は山札と、敵の狙う相手だけ
 
@@ -38,7 +39,17 @@ export type ChainTrait =
   /** 時限：ラウンドの終わりごとに数が1減り、0になると大爆発して消える */
   | 'timer'
   /** 逃げる：「逃げる」の行動（flee）が動くと、戦闘からいなくなる */
-  | 'flee';
+  | 'flee'
+  /** 割り込み：仲間の単体の行動に狙われると、その行動の前に、まだ動いていない自分の予定を1つ先に動かす */
+  | 'interrupt'
+  /** 予定隠し：ラウンドの始めは予定が隠れている（画面で「？」）。攻撃が当たると見える */
+  | 'veil'
+  /** 巻き戻し：ラウンドの終わりに、そのラウンドに受けたダメージを回復する（ダウン中なら回復しない） */
+  | 'rewind'
+  /** 属性チェンジ：ラウンドごとに弱点が変わる（weakCycle の順。今の弱点は画面に出る） */
+  | 'shift'
+  /** リーダー：生きている間、ほかの敵の攻撃が強くなる（leaderRate 倍）。倒すと、ほかの敵が動揺してダウンする */
+  | 'leader';
 
 /** 仕掛け（次に当たった攻撃で使い切る）：spread 目印（ほかの敵みんなに広がる。広がった先ではダウンしない）・expose むき出し（属性に関係なく弱点になる）・opening すき（締めの札が2倍） */
 export type ChainTrick = 'spread' | 'expose' | 'opening';
@@ -130,6 +141,8 @@ export interface ChainEnemyDef {
   splitInto?: ChainEnemyDef;
   /** 時限：始めの数（ラウンドの終わりごとに1減る） */
   timer?: number;
+  /** 属性チェンジ：ラウンドごとの弱点の順（1ラウンド目は先頭） */
+  weakCycle?: Element[];
 }
 
 /** 連携技：組む2人（members）の専用の札（cards）が手札にそろうと使える。2人の手番を使う */
@@ -166,6 +179,8 @@ export interface ChainRules {
   /** 封印：大技の代わりのふつうの攻撃の威力。この威力以上の行動は大技とみなす */
   sealPower: number;
   sealBig: number;
+  /** リーダー：生きている間、ほかの敵の攻撃の倍率（調整12） */
+  leaderRate: number;
 }
 
 /** 組み合わせの型（エグゼのウイルスの編成のように、同じ顔ぶれでも行動の並びが違う）。patterns は enemies と同じ並びで、書かない敵は敵の定義の癖のまま */
@@ -221,6 +236,10 @@ export interface ChainUnit {
   gone?: boolean;
   /** 組み合わせの型で決まった癖（なければ敵の定義の癖） */
   pattern?: ChainEnemyMove[];
+  /** 予定隠し：今のラウンドの予定が、まだ隠れている */
+  veiled?: boolean;
+  /** 巻き戻し：ラウンドの始めの HP */
+  roundHp?: number;
 }
 
 /** 敵の予定（ラウンドの始めに決まる） */
@@ -276,6 +295,14 @@ export type ChainEvent =
   | { type: 'fizzle'; uid: string }
   | { type: 'link'; name: string; uids: string[] }
   | { type: 'shutterReady' }
+  /** 割り込み：狙われて、先に動いた */
+  | { type: 'interrupt'; uid: string; by: string }
+  /** 予定隠し：攻撃が当たって、予定が見えた */
+  | { type: 'unveil'; uid: string }
+  /** 巻き戻し：ラウンドの終わりに、受けたダメージを回復した */
+  | { type: 'rewind'; uid: string; amount: number }
+  /** リーダーを倒した：ほかの敵が動揺してダウンした */
+  | { type: 'panic'; uid: string; downed: string[] }
   /** 弱点が分かった（その属性で初めて当てた。ハイライトで弱点扱いになっただけでは分からない） */
   | { type: 'reveal'; uid: string; defId: string; element: Element };
 
@@ -392,13 +419,15 @@ function enemyUnit(d: ChainEnemyDef, uid: string): ChainUnit {
     atk: d.atk,
     mag: d.atk,
     def: d.def,
-    weak: [...d.weak],
+    weak: d.trait === 'shift' && d.weakCycle?.length ? [d.weakCycle[0]] : [...d.weak],
     resist: [...d.resist],
     trait: d.trait,
     down: false,
     step: 0,
     shell: d.trait === 'shell' ? true : undefined,
     timer: d.trait === 'timer' ? (d.timer ?? 3) : undefined,
+    veiled: d.trait === 'veil' ? true : undefined,
+    roundHp: d.hp,
   };
 }
 
@@ -648,6 +677,12 @@ function defeatEnemy(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
   e.trick = undefined;
   e.status = undefined;
   ev.push({ type: 'defeat', uid: e.uid });
+  // リーダー：倒すと、ほかの敵が動揺してダウンする（調整12）
+  if (e.trait === 'leader') {
+    const others = living(s.enemies).filter((x) => x.uid !== e.uid && !x.down);
+    for (const x of others) knockDown(s, x, ev);
+    if (others.length) ev.push({ type: 'panic', uid: e.uid, downed: others.map((x) => x.uid) });
+  }
   const into = e.trait === 'split' ? chainEnemyDef(s, e.defId)?.splitInto : undefined;
   if (into) {
     const kids = [enemyUnit(into, `${e.uid}a`), enemyUnit(into, `${e.uid}b`)];
@@ -682,6 +717,11 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   const amount = Math.max(1, Math.floor(((power * stat) / Math.max(1, e.def)) * mult));
   e.hp = Math.max(0, e.hp - amount);
   ev.push({ type: 'damage', from: actor.uid, to: e.uid, amount, weak: aff.weak, resist: aff.resist });
+  // 予定隠し：当たると、このラウンドの予定が見える（調整12）
+  if (e.veiled) {
+    e.veiled = false;
+    ev.push({ type: 'unveil', uid: e.uid });
+  }
   // 本当の弱点で当てた時だけ、弱点が分かる（調整9）
   if (real.weak && !isWeakKnown(s, e.defId, el)) {
     (s.known[e.defId] ??= []).push(el);
@@ -800,7 +840,9 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
     ev.push({ type: 'flee', uid: e.uid });
     return;
   }
-  const rate = e.status?.kind === 'weak' ? s.rules.weakenRate : 1;
+  // リーダーが生きている間、ほかの敵の攻撃が強くなる（調整12）
+  const led = living(s.enemies).some((x) => x.trait === 'leader' && x.uid !== e.uid);
+  const rate = (e.status?.kind === 'weak' ? s.rules.weakenRate : 1) * (led ? s.rules.leaderRate : 1);
   // 混乱：単体攻撃が、ほかの敵に向く
   const foe = intent.confused ? s.enemies.find((x) => x.uid === intent.confused && x.hp > 0 && !x.gone) : undefined;
   if (foe && !m.all) {
@@ -896,6 +938,23 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       const actors = stepAllies(s, step).map((u) => s.allies.find((a) => a.uid === u)!);
       const actor = actors[0];
       const move = moves[q.i];
+      // 割り込み：単体の行動に狙われた敵は、まだ動いていない自分の予定を1つ、その前に動かす（調整12）
+      const aimed = move?.target === 'enemy' ? s.enemies.find((x) => x.uid === step.target) : undefined;
+      if (aimed && aimed.trait === 'interrupt' && aimed.hp > 0 && !aimed.gone && !aimed.down && at <= s.rules.roundLen && actors.every((a) => a.hp > 0)) {
+        const qi = pending.findIndex((x) => x.kind === 'enemy' && x.intent.enemy === aimed.uid);
+        const eq = qi >= 0 ? pending[qi] : undefined;
+        if (eq && eq.kind === 'enemy') {
+          pending.splice(qi, 1);
+          const iev: ChainEvent[] = [{ type: 'interrupt', uid: aimed.uid, by: actor.uid }, { type: 'act', uid: aimed.uid, name: eq.intent.move.name, at }];
+          doEnemyMove(s, aimed, eq.intent, iev);
+          push(eq, '', at, aimed.uid, eq.intent.move.name, iev, eq.intent.target, eq.intent.move.all);
+          if (checkEnd(s, iev, at)) {
+            frames[frames.length - 1].state = cloneChain(s);
+            stopped = true;
+            break;
+          }
+        }
+      }
       if (actors.some((a) => a.hp <= 0) || !move || at > s.rules.roundLen) {
         s.hand.push(...cardIds[q.i]);
         ev.push({ type: 'cancel', uid: actor.uid, reason: at >= s.rules.roundLen ? 'time' : 'dead' });
@@ -994,7 +1053,15 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       }
     }
   }
-  if (!stopped) endRound(s);
+  if (!stopped) {
+    // 巻き戻し：ダウンしていなければ、このラウンドに受けたダメージを回復する（調整12）
+    for (const e of living(s.enemies).filter((x) => x.trait === 'rewind' && !x.down && x.roundHp !== undefined && x.hp < x.roundHp)) {
+      const amount = e.roundHp! - e.hp;
+      e.hp = e.roundHp!;
+      push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻し', [{ type: 'rewind', uid: e.uid, amount }], undefined, true);
+    }
+    endRound(s);
+  }
   return { state: s, frames };
 }
 
@@ -1005,6 +1072,12 @@ function endRound(s: ChainState): void {
     e.step++;
     // 状態は、ラウンドの終わりごとに1つ減り、0で消える
     if (e.status && --e.status.left <= 0) e.status = undefined;
+    // 予定隠し：次のラウンドの予定はまた隠れる。巻き戻し：次のラウンドの始めの HP を覚える（調整12）
+    if (e.trait === 'veil' && e.hp > 0) e.veiled = true;
+    e.roundHp = e.hp;
+    // 属性チェンジ：弱点が次の属性に変わる（調整12）
+    const cycle = e.trait === 'shift' ? chainEnemyDef(s, e.defId)?.weakCycle : undefined;
+    if (cycle?.length) e.weak = [cycle[e.step % cycle.length]];
   }
   s.round++;
   s.elapsed += s.rules.roundLen;

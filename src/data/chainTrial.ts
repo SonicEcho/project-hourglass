@@ -19,6 +19,7 @@ export const CHAIN_RULES: ChainRules = {
   drainRate: 0.3,
   sealPower: 20,
   sealBig: 40,
+  leaderRate: 1.3,
 };
 
 const card = (m: ChainMove): ChainMove => m;
@@ -123,6 +124,8 @@ export const CHAIN_TRIAL_BG: Record<string, string> = {
   chain3: 'bg.village_dusk',
   chain4: 'bg.showa_street',
   chain5: 'bg.riverside_1998',
+  chain6: 'bg.school_festival',
+  chain7: 'bg.music_shop',
 };
 
 const move = (m: ChainMove): ChainMove => m;
@@ -250,20 +253,47 @@ export const CHAIN_ENEMIES = {
     { id: 'splashTail', name: '尾びれではたく', at: 3, element: 'physical', power: 24 },
     { id: 'escape', name: '逃げる', at: 8, element: 'physical', power: 0, flee: true },
   ] }),
+  // 調整12：計画を揺さぶる特徴の敵
+  phone: foe({ id: 'phoneNoise', name: '黒電話ノイズ', hp: 140, atk: 12, def: 9, weak: ['ice'], resist: ['thunder'], trait: 'interrupt', pattern: [
+    { id: 'ring', name: 'じりりりん', at: 6, element: 'physical', power: 26 },
+    { id: 'longCall', name: '長電話', at: 7, all: true, element: 'thunder', power: 16 },
+  ] }),
+  mask: foe({ id: 'maskNoise', name: 'お面ノイズ', hp: 130, atk: 12, def: 8, weak: ['fire'], resist: [], trait: 'veil', pattern: [
+    { id: 'glare', name: 'にらみつけ', at: 3, element: 'physical', power: 26 },
+    { id: 'faces', name: '百面相', at: 5, all: true, element: 'physical', power: 18 },
+  ] }),
+  phonograph: foe({ id: 'phonographNoise', name: '蓄音機ノイズ', hp: 170, atk: 12, def: 9, weak: ['thunder'], resist: ['ice'], trait: 'rewind', pattern: [
+    { id: 'static', name: '雑音', at: 5, all: true, element: 'thunder', power: 16 },
+    { id: 'record', name: 'レコード投げ', at: 7, element: 'physical', power: 30 },
+  ] }),
+  pinwheel: foe({ id: 'pinwheelNoise', name: '風車ノイズ', hp: 140, atk: 11, def: 8, weak: ['fire'], resist: [], trait: 'shift', weakCycle: ['fire', 'ice', 'thunder'], pattern: [
+    { id: 'gust', name: '風起こし', at: 4, all: true, element: 'physical', power: 16 },
+    { id: 'spinBlade', name: 'くるくる', at: 6, element: 'physical', power: 28 },
+  ] }),
+  megaphone: foe({ id: 'megaphoneNoise', name: 'メガホンノイズ', hp: 260, atk: 11, def: 11, weak: ['ice'], resist: ['physical'], trait: 'leader', pattern: [
+    { id: 'order', name: '号令', at: 2, element: 'physical', power: 12 },
+    { id: 'shout', name: 'がなり声', at: 7, all: true, element: 'thunder', power: 20 },
+  ] }),
 } satisfies Record<string, ChainEnemyDef>;
 
 /** 特徴の名前と説明（画面に出す） */
 export const CHAIN_TRAIT_TEXT: Record<string, { name: string; text: string }> = {
-  pop: { name: 'はじける', text: '弱点でダウンさせると、破片が仲間全体に当たる' },
-  swift: { name: 'すばやい', text: '1ラウンドに2回動く。1回目より前にダウンさせれば、2回とも止まる' },
-  shield: { name: '盾', text: '立っている間、ほかの敵への単体攻撃を代わりに受ける。先にダウンさせるか、全体攻撃で' },
-  shell: { name: '殻', text: '最初の1回は殻が割れるだけで、効かない。軽い技で先に割ってから本命を' },
-  sticky: { name: 'ねばねば', text: '攻撃を当てると、まだ動いていない仲間の時刻が2遅れる。叩く人を最後に回す' },
-  waker: { name: '起こし役', text: '動くと、ダウンしているほかの敵を起こす。起こし役より後にダウンさせるか、先に止める' },
-  counter: { name: '反撃', text: 'ダウンしていない時に叩かれると、やり返す。先にダウンさせてから叩く' },
-  split: { name: '分裂', text: '倒すと、小さい2体に分かれる。全体攻撃でまとめて' },
-  timer: { name: '時限', text: 'ラウンドの終わりごとに数が減り、0で大爆発して仲間全体に大きなダメージ。期限までに倒す' },
-  flee: { name: '逃げる', text: '「逃げる」の予定の時刻に、戦闘からいなくなる。逃げる前に倒すかダウンさせる' },
+  // 調整12：よくあるゲームの言葉に付け直した（開発者と決めた）
+  pop: { name: 'ダウン時爆発', text: '弱点を突かれてダウンすると爆発し、味方全体にダメージを与える' },
+  swift: { name: '2回行動', text: '1ラウンドに2回行動する。1回目の前にダウンさせると、2回とも止まる' },
+  shield: { name: 'かばう', text: 'ほかの敵への単体攻撃を、代わりに受ける。ダウン中はかばえない。全体攻撃はかばえない' },
+  shell: { name: 'バリア', text: '最初に受けた攻撃を1回だけ無効にする。軽い攻撃で先に割ってから本命を' },
+  sticky: { name: '足止め', text: '攻撃を受けると、まだ行動していない味方の行動を2マス遅らせる' },
+  waker: { name: 'ダウン解除', text: '行動すると、ダウン中の仲間を起こす' },
+  counter: { name: 'カウンター', text: 'ダウンしていない時に攻撃を受けると、反撃する' },
+  split: { name: '分裂', text: '倒すと、小さな2体に分かれる' },
+  timer: { name: '自爆', text: 'ラウンド終了ごとに数字が減り、0になると自爆して味方全体に大ダメージを与える' },
+  flee: { name: '逃げ足', text: '「逃げる」の予定の時刻になると、戦闘からいなくなる' },
+  interrupt: { name: '割り込み', text: '単体攻撃で狙われると、その攻撃の前に自分の行動を1つ割り込ませる' },
+  veil: { name: '予定隠し', text: 'ラウンドの始めは行動の予定が見えない。攻撃を当てると見える' },
+  rewind: { name: '巻き戻し', text: 'ラウンド終了時、そのラウンドに受けたダメージを回復する。ダウン中は回復しない' },
+  shift: { name: '属性チェンジ', text: 'ラウンドごとに弱点が変わる（今の弱点は見えている）' },
+  leader: { name: 'リーダー', text: '生きている間、ほかの敵の攻撃が強くなる。倒すと、ほかの敵が動揺してダウンする' },
 };
 
 const DECK = [
@@ -294,6 +324,10 @@ const BIG = {
   candyRain: { id: 'candyRain', name: '飴の雨', at: 2, all: true, element: 'fire', power: 36 },
   bigSplash: { id: 'bigSplash', name: '大しぶき', at: 2, all: true, element: 'ice', power: 34 },
   rapid: { id: 'rapid', name: 'ビー玉連射', at: 1, element: 'physical', power: 80 },
+  bigShout: { id: 'bigShout', name: '大号令', at: 3, all: true, element: 'thunder', power: 36 },
+  gale: { id: 'gale', name: '大つむじ', at: 2, all: true, element: 'physical', power: 32 },
+  earlyRing: { id: 'earlyRing', name: '非常ベル', at: 3, all: true, element: 'thunder', power: 34 },
+  loudRecord: { id: 'loudRecord', name: '大音量', at: 3, all: true, element: 'thunder', power: 38 },
 } satisfies Record<string, ChainEnemyMove>;
 
 /** 型（patterns は敵の並びと同じ。undefined はその敵の定義の癖のまま） */
@@ -306,6 +340,8 @@ export const CHAIN_REWARDS: Record<string, Record<ChainGrade, string>> = {
   chain3: { low: '素材「蚊取り線香の灰」', mid: 'レアアイテム「ハイポーション」', high: '固有のスナップ「めんこ乱れ打ち」（めんこノイズ）' },
   chain4: { low: '素材「ヨーヨーのひも」', mid: 'レア素材「べっこう飴」', high: '固有のスナップ「つむじ風」（ヨーヨーノイズ）' },
   chain5: { low: '素材「ビー玉」', mid: 'レア素材「夕焼けのビー玉」', high: '固有のスナップ「大しぶき」（水風船ノイズ）' },
+  chain6: { low: '素材「紙のお面」', mid: 'レア素材「祭りの法被」', high: '固有のスナップ「大号令」（メガホンノイズ）' },
+  chain7: { low: '素材「古い電線」', mid: 'レア素材「SPレコード」', high: '固有のスナップ「Ａ面Ｂ面」（蓄音機ノイズ）' },
 };
 
 /**
@@ -314,33 +350,45 @@ export const CHAIN_REWARDS: Record<string, Record<ChainGrade, string>> = {
  */
 export const CHAIN_TRIALS: ChainBattleDef[] = [
   // 盾2体が、逃げる金魚を守る。単体の攻撃は盾に吸われる
-  battle('chain1', '金魚すくいの屋台（盾・盾・逃げる）', [E.table, E.goldfish, E.table], [
+  battle('chain1', '金魚すくいの屋台（かばう・かばう・逃げ足）', [E.table, E.goldfish, E.table], [
     variant('v1', '客寄せ', [undefined, undefined, [mv(E.table, 1), mv(E.table, 0)]]),
     variant('v2', '店じまい', [[BIG.bigFlip, mv(E.table, 1)], undefined, undefined]),
     variant('v3', '逃げ足', [undefined, [BIG.earlyEscape], [mv(E.table, 1), mv(E.table, 0)]]),
   ]),
   // 起こし役がダウンした仲間を起こす。殻のブリキは1回目が効かず、ヨーヨーは2回動く
-  battle('chain2', 'からくり時計（起こし役・殻・すばやい）', [E.tin, E.cuckoo, E.yoyo], [
+  battle('chain2', 'からくり時計（ダウン解除・バリア・2回行動）', [E.tin, E.cuckoo, E.yoyo], [
     variant('v1', 'ねじ巻き', [undefined, undefined, undefined]),
     variant('v2', '早鐘', [undefined, [BIG.earlyChime, mv(E.cuckoo, 1)], undefined]),
     variant('v3', '全開', [[BIG.fullSpring, mv(E.tin, 0)], undefined, [BIG.whirl, mv(E.yoyo, 0)]]),
   ]),
   // 盾のちゃぶ台が、時限の蚊取り線香を守る。叩くとやり返すめんこもいる
-  battle('chain3', '夏の縁側（時限・盾・反撃）', [E.menko, E.coil, E.table], [
+  battle('chain3', '夏の縁側（カウンター・自爆・かばう）', [E.menko, E.coil, E.table], [
     variant('v1', '夕涼み', [undefined, undefined, undefined]),
     variant('v2', '乱れ打ち', [[BIG.menkoStorm, mv(E.menko, 0)], undefined, undefined]),
     variant('v3', '煙幕', [undefined, [BIG.thickSmoke, mv(E.coil, 0)], [mv(E.table, 1), mv(E.table, 0)]]),
   ]),
   // 飴細工を叩くと、後の仲間が遅れ、すばやいヨーヨー2体の2回目が先に来る
-  battle('chain4', '駄菓子屋の店先（ねばねば・すばやい・すばやい）', [E.yoyo, E.candy, E.yoyo], [
+  battle('chain4', '駄菓子屋の店先（2回行動・足止め・2回行動）', [E.yoyo, E.candy, E.yoyo], [
     variant('v1', '店番', [undefined, undefined, [mv(E.yoyo, 1), mv(E.yoyo, 0)]]),
     variant('v2', '飴の雨', [undefined, [BIG.candyRain, mv(E.candy, 0)], undefined]),
     variant('v3', 'つむじ', [[BIG.whirl, mv(E.yoyo, 0)], undefined, [mv(E.yoyo, 1), BIG.whirl]]),
   ]),
   // 水風船2体は倒すと4体に増える。ラムネを弱点でダウンさせると破片が飛ぶ
-  battle('chain5', '水遊び（分裂・分裂・はじける）', [E.balloon, E.ramune, E.balloon], [
+  battle('chain5', '水遊び（分裂・ダウン時爆発・分裂）', [E.balloon, E.ramune, E.balloon], [
     variant('v1', '水まき', [undefined, undefined, undefined]),
     variant('v2', '大しぶき', [[BIG.bigSplash, mv(E.balloon, 0)], undefined, undefined]),
     variant('v3', '連射', [undefined, [BIG.rapid, mv(E.ramune, 0)], undefined]),
+  ]),
+  // 調整12：リーダーのメガホンが生きている間、ほかの敵が強い。お面は予定が隠れ、風車は弱点が変わる
+  battle('chain6', '夏祭りの本部テント（リーダー・予定隠し・属性チェンジ）', [E.mask, E.megaphone, E.pinwheel], [
+    variant('v1', '開会', [undefined, undefined, undefined]),
+    variant('v2', '号令', [undefined, [BIG.bigShout, mv(E.megaphone, 0)], undefined]),
+    variant('v3', '仮面行列', [[mv(E.mask, 1), mv(E.mask, 0)], undefined, [BIG.gale, mv(E.pinwheel, 0)]]),
+  ]),
+  // 調整12：黒電話は狙うと先に鳴る。蓄音機はダウンさせずに終わると傷が戻る。ブリキのバリアも
+  battle('chain7', '古い電器屋の奥（割り込み・巻き戻し・バリア）', [E.phone, E.phonograph, E.tin], [
+    variant('v1', '閉店前', [undefined, undefined, undefined]),
+    variant('v2', '呼び出し', [[BIG.earlyRing, mv(E.phone, 1)], undefined, undefined]),
+    variant('v3', 'Ａ面Ｂ面', [undefined, [BIG.loudRecord, mv(E.phonograph, 0)], [mv(E.tin, 1), mv(E.tin, 0)]]),
   ]),
 ];

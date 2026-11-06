@@ -147,6 +147,72 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(r3.state.known).toEqual({});
   });
 
+  it('割り込み：単体の行動に狙われると、その行動の前に、まだ動いていない自分の予定を先に動かす（調整12）', () => {
+    const phone = { ...CHAIN_ENEMIES.phone, hp: 999 };
+    const s = make([phone]);
+    const t = s.enemies[0].uid;
+    const r = runChainRound(s, [move('hero', 'slash', t)]);
+    // 斬る（時刻2）の前に、黒電話の時刻6の予定が割り込む。時刻6にはもう動かない
+    const iFrame = r.frames.findIndex((f) => f.events.some((e) => e.type === 'interrupt'));
+    const hFrame = r.frames.findIndex((f) => f.uid === 'hero' && f.events.some((e) => e.type === 'act'));
+    expect(iFrame).toBeGreaterThanOrEqual(0);
+    expect(iFrame).toBeLessThan(hFrame);
+    expect(r.frames[iFrame].at).toBe(2);
+    expect(r.frames.filter((f) => f.uid === t && f.events.some((e) => e.type === 'act'))).toHaveLength(1);
+    // 全体攻撃では割り込まない
+    const r2 = runChainRound(make([phone], [CHAIN_CARDS.wideShot.id]), [cardStep('hero', 0)]);
+    expect(events(r2).some((e) => e.type === 'interrupt')).toBe(false);
+  });
+
+  it('予定隠し：ラウンドの始めは予定が隠れ、攻撃を当てると見える。次のラウンドはまた隠れる（調整12）', () => {
+    const s = make([{ ...idle(CHAIN_ENEMIES.mask), hp: 999 }]);
+    const t = s.enemies[0].uid;
+    expect(s.enemies[0].veiled).toBe(true);
+    const r = runChainRound(s, [move('hero', 'quick', t)]);
+    const unveil = r.frames.find((f) => f.events.some((e) => e.type === 'unveil'));
+    expect(unveil?.state.enemies[0].veiled).toBe(false);
+    expect(r.state.enemies[0].veiled).toBe(true);
+  });
+
+  it('巻き戻し：ラウンドの終わりに、そのラウンドに受けたダメージを回復する。ダウン中なら回復しない（調整12）', () => {
+    const big = { ...idle(CHAIN_ENEMIES.phonograph), hp: 999 };
+    const s = make([big]);
+    const t = s.enemies[0].uid;
+    // 斬る（物理。弱点でない）だけ：ダメージは戻る
+    const r = runChainRound(s, [move('hero', 'slash', t)]);
+    expect(events(r).some((e) => e.type === 'rewind')).toBe(true);
+    expect(r.state.enemies[0].hp).toBe(999);
+    // 弱点の雷でダウンさせると、戻らない
+    const r2 = runChainRound(make([big, idle(plain(CHAIN_ENEMIES.cuckoo))]), [move('mio', 'zap', t)]);
+    expect(events(r2).some((e) => e.type === 'rewind')).toBe(false);
+    expect(r2.state.enemies[0].hp).toBeLessThan(999);
+  });
+
+  it('属性チェンジ：ラウンドごとに弱点が順に変わる（調整12）', () => {
+    let s = make([{ ...idle(CHAIN_ENEMIES.pinwheel), hp: 999 }]);
+    expect(s.enemies[0].weak).toEqual(['fire']);
+    s = runChainRound(s, []).state;
+    expect(s.enemies[0].weak).toEqual(['ice']);
+    s = runChainRound(s, []).state;
+    expect(s.enemies[0].weak).toEqual(['thunder']);
+  });
+
+  it('リーダー：生きている間、ほかの敵の攻撃が強くなる。倒すと、ほかの敵が動揺してダウンする（調整12）', () => {
+    const mask = { ...plain(CHAIN_ENEMIES.mask), hp: 999 };
+    const leader = idle(CHAIN_ENEMIES.megaphone);
+    const dealt = (enemies: ChainEnemyDef[]) => {
+      const s = make(enemies);
+      const m = s.enemies[0].uid;
+      return events(runChainRound(s, [])).filter((e) => e.type === 'damage' && e.from === m).reduce((a, e) => a + (e.type === 'damage' ? e.amount : 0), 0);
+    };
+    expect(dealt([mask, { ...leader, hp: 999 }])).toBeGreaterThan(dealt([mask, plain({ ...leader, hp: 999 })]));
+    // 倒すと、ほかの敵がダウン（全員ダウンでシャッター）
+    const s = make([{ ...idle(mask) }, { ...leader, hp: 1 }]);
+    const r = runChainRound(s, [move('hero', 'quick', s.enemies[1].uid)]);
+    expect(events(r).some((e) => e.type === 'panic')).toBe(true);
+    expect(r.state.shutter).toBe(true);
+  });
+
   it('仕掛け「すき」：次に当たった締めの札が2倍になる', () => {
     const base = make([{ ...idle(plain(CHAIN_ENEMIES.table)), hp: 999 }, idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.rattle.id]);
     const t = base.enemies[0].uid;
