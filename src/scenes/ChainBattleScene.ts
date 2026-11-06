@@ -147,7 +147,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 10 && p.worldX > GAME_WIDTH - 220) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : ''}型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
+    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
     const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -158,6 +158,8 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   private firstFreeAlly(): string {
+    // 1人1回をやめた試し（調整16）：今の仲間のまま続けて並べられる
+    if (this.s.def.multiAct) return this.s.allies.find((a) => a.uid === this.ally && a.hp > 0)?.uid ?? this.s.allies.find((a) => a.hp > 0)?.uid ?? '';
     const used = this.plannedAllies();
     return this.s.allies.find((a) => a.hp > 0 && !used.has(a.uid))?.uid ?? '';
   }
@@ -266,7 +268,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const round = addText(this, 58, 21, `ROUND ${String(view.round).padStart(2, '0')}`, { size: 22, bold: true }).setOrigin(0, 0.5).setFontStyle('bold italic');
     round.setShadow(3, 3, '#ff2d55', 0, false, true);
     r.add(round);
-    const name = `${this.stage === 'early' ? '序盤：' : ''}${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
+    const name = `${this.stage === 'early' ? '序盤：' : this.stage === 'multi' ? '連続：' : ''}${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
     const t = addText(this, GAME_WIDTH - 18, 21, name, { size: 10, bold: true }).setOrigin(1, 0.5);
     const room = GAME_WIDTH - 190;
     if (t.width > room) t.setScale(room / t.width);
@@ -603,8 +605,10 @@ export class ChainBattleScene extends Phaser.Scene {
       if (u.hp > 0) r.add(this.para(x + 60, ALLY_Y + 24, Math.max(4, bw * (u.hp / u.maxHp)), 6, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : color, 1, 3));
       r.add(addText(this, x + 62, ALLY_Y + 38, `HP ${u.hp}/${u.maxHp}`, { size: 9, color: '#9aa3c0' }).setOrigin(0, 0.5));
       const turn = planned >= 0 ? order.findIndex((o) => o.kind === 'ally' && o.i === planned) + 1 : 0;
-      const state = u.hp <= 0 ? '倒れている' : planned >= 0 ? `${turn}番目・${starts[planned]}〜` : sel ? `並べる人 ${used}〜` : '';
-      if (state) r.add(this.sticker(x + w - 30, ALLY_Y - 2, state, planned >= 0 ? 0xffffff : YELLOW, '#000000', 5, 9));
+      const times = this.plan.filter((p) => stepAllies(this.s, p).includes(u.uid)).length;
+      const multi = !!this.s.def.multiAct;
+      const state = u.hp <= 0 ? '倒れている' : multi ? (sel ? `並べる人 ${used}〜${times ? `（${times}回）` : ''}` : times ? `${times}回` : '') : planned >= 0 ? `${turn}番目・${starts[planned]}〜` : sel ? `並べる人 ${used}〜` : '';
+      if (state) r.add(this.sticker(x + w - 30, ALLY_Y - 2, state, !sel && times > 0 ? 0xffffff : YELLOW, '#000000', 5, 9));
       const hit = this.add.rectangle(x + w / 2, ALLY_Y + ALLY_H / 2, w, ALLY_H, 0xffffff, 0.001);
       r.add(hit);
       makePressable(hit, { onTap: () => this.pickAlly(u.uid) });
@@ -673,7 +677,9 @@ export class ChainBattleScene extends Phaser.Scene {
     } else if (this.ally) {
       const me = findChainUnit(s, this.ally);
       const def = s.def.allies.find((a) => a.id === me?.defId);
-      for (const m of def?.moves ?? []) items.push({ source: { kind: 'move', moveId: m.id }, move: m, art: CHAIN_MOVE_ART[m.id], key: m.id });
+      // 1人1回をやめた試し：同じ技は1ラウンドに1回まで（並べた技は「置いた」）
+      const usedMove = (id: string) => !!s.def.multiAct && this.plan.some((p) => p.ally === this.ally && p.source.kind === 'move' && p.source.moveId === id);
+      for (const m of def?.moves ?? []) items.push({ source: { kind: 'move', moveId: m.id }, move: m, art: CHAIN_MOVE_ART[m.id], key: m.id, used: usedMove(m.id) });
     }
     const me = this.ally ? findChainUnit(s, this.ally) : undefined;
     const shown = items.slice(0, 5);
@@ -772,7 +778,7 @@ export class ChainBattleScene extends Phaser.Scene {
     if (this.busy) return;
     const u = this.s.allies.find((a) => a.uid === uid);
     if (!u || u.hp <= 0) return;
-    if (this.plannedAllies().has(uid)) {
+    if (this.plannedAllies().has(uid) && !this.s.def.multiAct) {
       this.message = `${u.name}は並べてある。外すなら「1つ戻す」で後ろから外す`;
       this.render();
       return;
@@ -829,7 +835,9 @@ export class ChainBattleScene extends Phaser.Scene {
     this.ally = this.firstFreeAlly();
     const next = nextStart(this.s, this.plan);
     const who = stepAllies(this.s, step).map((u) => findChainUnit(this.s, u)?.name).join('と');
-    this.message = `${who}：${move.name}（${move.text}）を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}）` : '全員並べた。「実行」で動き出す'}`;
+    this.message = this.s.def.multiAct
+      ? `${who}：${move.name}を並べた。時刻${next}まで使った。続けて並べるか、仲間を替えるか、「実行」`
+      : `${who}：${move.name}（${move.text}）を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}）` : '全員並べた。「実行」で動き出す'}`;
     if (availableLinks(this.s, this.plan).length) this.message += '。連携技が使える（手札の先頭 ★）';
     this.render();
   }

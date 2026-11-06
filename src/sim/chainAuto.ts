@@ -32,14 +32,23 @@ export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: stri
   return out;
 }
 
-/** でたらめな計画（生きている仲間を、でたらめな順で、置ける限り） */
+/** でたらめな計画（生きている仲間を、でたらめな順で、置ける限り）。1人1回をやめた試しでは、置ける仲間をでたらめに選び続ける（時々、途中でやめる） */
 export function randomChainPlan(s: ChainState, pick: (n: number) => number): ChainPlanStep[] {
+  const plan: ChainPlanStep[] = [];
+  if (s.def.multiAct) {
+    for (let k = 0; k < 12; k++) {
+      const options = s.allies.filter((a) => a.hp > 0).map((a) => chainCandidates(s, plan, a.uid)).filter((c) => c.length > 0);
+      if (options.length === 0 || (plan.length > 0 && pick(10) === 0)) break;
+      const c = options[pick(options.length)];
+      plan.push(c[pick(c.length)]);
+    }
+    return plan;
+  }
   const order = s.allies.filter((a) => a.hp > 0).map((a) => a.uid);
   for (let i = order.length - 1; i > 0; i--) {
     const j = pick(i + 1);
     [order[i], order[j]] = [order[j], order[i]];
   }
-  const plan: ChainPlanStep[] = [];
   for (const ally of order) {
     const c = chainCandidates(s, plan, ally);
     if (c.length === 0) continue;

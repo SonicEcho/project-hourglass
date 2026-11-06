@@ -525,6 +525,18 @@ export function installDebugMenu(nav: DebugNavigator): void {
           nav.openPrototype('ChainBattle', { trial, stage: 'early' });
         }, true, 'background:#1f3a5a;border-color:#8ac8ff;'),
       ),
+      // 調整16：1人1回をやめた試し（時間の予算が許す限り、同じ仲間が何回でも動ける）
+      ...[
+        ['chain1', '金魚すくいの屋台'],
+        ['chain2', 'からくり時計'],
+        ['chain4', '駄菓子屋の店先'],
+        ['chain6', '夏祭りの本部テント'],
+      ].map(([trial, name]) =>
+        button(`試し：並べてつなぐ戦闘・連続（${name}）`, () => {
+          close();
+          nav.openPrototype('ChainBattle', { trial, stage: 'multi' });
+        }, true, 'background:#3a3a1f;border-color:#ffe08a;'),
+      ),
       // 段階155：試し：コンボと現像（今の戦闘に、2枚のコンボと現像する札を入れたアルバムで戦う。今のセーブには触れない）
       button('試し：コンボと現像（砂嵐3体）', () => {
         close();
