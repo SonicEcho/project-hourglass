@@ -12,7 +12,7 @@ import {
   plannedMarks,
   planStarts,
   runChainRound,
-  shutterGrade,
+  chainGrade,
   stepAllies,
   takeShutter,
   type ChainEvent,
@@ -25,7 +25,7 @@ import {
   type ChainUnit,
   type Element,
 } from '../core';
-import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_RULES, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, ENEMY_ART, FACE_CROPS, SE } from '../data';
+import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, ENEMY_ART, FACE_CROPS, SE } from '../data';
 import { hasImage } from '../assets/loader';
 import { playSe } from '../audio/sound';
 import { faceImage } from '../ui/portrait';
@@ -123,7 +123,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 30 && p.worldX > GAME_WIDTH - 200) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = '上の段は敵の予定（時刻と行動）。仲間を選んで札か技を並べると、下の段に入る。全員ダウンさせるとシャッターで決着';
+    this.message = `型「${this.s.variant ?? ''}」。上の段は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。早く決着するほど報酬が良い`;
     const ids = [...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -150,7 +150,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const r = this.root;
     r.add(addText(this, 12, 8, '● REC', { size: 12, bold: true, color: '#ff3b5c' }));
     r.add(addText(this, 70, 8, '試し：並べてつなぐ戦闘', { size: 12, bold: true }));
-    r.add(addText(this, GAME_WIDTH - 12, 8, `ラウンド ${view.round}`, { size: 12, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
+    r.add(addText(this, GAME_WIDTH - 12, 8, `${view.variant ? `型：${view.variant}　` : ''}ラウンド ${view.round}`, { size: 12, bold: true, color: COLORS.accentText }).setOrigin(1, 0));
     this.drawEnemies(view);
     this.drawFilm(view);
     r.add(this.add.rectangle(GAME_WIDTH / 2, MSG_Y, GAME_WIDTH - 16, 46, 0x0b0f22, 0.92).setStrokeStyle(1, COLORS.border).setRounded(6));
@@ -339,7 +339,7 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(this.add.circle(x, y, now ? 9 : 7, now ? 0xff3b5c : 0xffffff, done ? 0.35 : 1).setStrokeStyle(1, 0x000000));
       r.add(addText(this, x, y, String(n), { size: now ? 11 : 9, bold: true, color: now ? '#ffffff' : '#101010' }).setOrigin(0.5).setAlpha(done ? 0.5 : 1));
     };
-    r.add(addText(this, GAME_WIDTH - 10, top + 104, '番号の順に動く（同じ時刻なら味方が先）', { size: 9, color: '#d9a440' }).setOrigin(1, 0.5));
+    r.add(addText(this, GAME_WIDTH - 10, top + 104, '番号の順に効く（▼で効く。同じ時刻なら味方が先）', { size: 9, color: '#d9a440' }).setOrigin(1, 0.5));
     // 上の段：敵の予定
     const slots: Record<number, number> = {};
     s.intents.forEach((it, k) => {
@@ -364,8 +364,9 @@ export class ChainBattleScene extends Phaser.Scene {
       const move = chainMoveOf(this.s, step);
       if (!move) return;
       const members = stepAllies(this.s, step).map((u) => findChainUnit(s, u)!);
-      const at = this.busy ? (s.actedAt[i] ?? starts[i] + s.timeShift) : starts[i];
-      if (at >= len) {
+      // 帯は動き始めから終わり（効く時刻）まで。実行中は、本当に効いた時刻・ねばねばで遅れた時刻に
+      const at = this.busy ? (s.actedAt[i] !== undefined ? s.actedAt[i] - move.weight : starts[i] + s.timeShift) : starts[i];
+      if (at + move.weight > len) {
         r.add(addText(this, x0 + CELL * len - 4, top + 80, `${members[0].name} 時間切れ`, { size: 9, bold: true, color: '#ff9a7a' }).setOrigin(1, 0.5));
         return;
       }
@@ -376,12 +377,14 @@ export class ChainBattleScene extends Phaser.Scene {
       const bar = this.add.rectangle(bx, top + 80, CELL * w - 2, 34, isLink ? 0xd9a440 : color, 0.88).setOrigin(0, 0.5).setRounded(5);
       if (isLink) bar.setStrokeStyle(2.5, 0xffd700);
       r.add(bar);
-      const nmText = addText(this, bx + 14, top + 70, members.map((m) => m.name).join('＋'), { size: 9, bold: true, color: '#101010' });
-      if (nmText.width > CELL * w - 18) nmText.setScale((CELL * w - 18) / nmText.width);
+      const nmText = addText(this, bx + 3, top + 70, members.map((m) => m.name).join('＋'), { size: 9, bold: true, color: '#101010' });
+      if (nmText.width > CELL * w - 20) nmText.setScale(Math.max(0.3, (CELL * w - 20) / nmText.width));
       r.add(nmText);
-      badge(bx + 7, top + 70 + 6, numOf(`a${i}`));
+      badge(bx + CELL * w - 9, top + 70 + 6, numOf(`a${i}`));
+      // 効く時刻の印（帯の右端）
+      r.add(this.add.triangle(bx + CELL * w - 2, top + 97, 0, 0, 8, 0, 4, 6, 0xffffff, 0.9));
       const nm = addText(this, bx + 3, top + 84, move.name, { size: 10, bold: true, color: '#101010' });
-      if (nm.width > CELL * w - 6) nm.setScale((CELL * w - 6) / nm.width);
+      if (nm.width > CELL * w - 6) nm.setScale(Math.max(0.3, (CELL * w - 6) / nm.width));
       r.add(nm);
     });
     // 次に並べる時刻
@@ -526,7 +529,8 @@ export class ChainBattleScene extends Phaser.Scene {
       this.root.add(addText(this, x - w / 2 + 18, top + 8, TYPE_LABEL[it.move.type], { size: 9, bold: true, color: '#101010' }).setOrigin(0.5));
       const title = addText(this, x, top + 62, it.move.name, { size: 11, bold: true, color: '#222222', align: 'center', wrap: w - 4 }).setOrigin(0.5);
       this.root.add(title);
-      this.root.add(addText(this, x, top + 80, `重さ ${it.move.weight}`, { size: 10, bold: true, color: '#7a4a10' }).setOrigin(0.5));
+      const pushN = it.move.effect.kind === 'damage' ? it.move.effect.push : undefined;
+      this.root.add(addText(this, x, top + 80, `重さ ${it.move.weight}${pushN ? `・押す${pushN}` : ''}`, { size: 10, bold: true, color: pushN ? '#1a5a8a' : '#7a4a10' }).setOrigin(0.5));
       // 共鳴の予告
       const res = this.resonanceCount(it.move);
       if (res > 0 && !it.used) {
@@ -867,7 +871,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const frame = this.add.graphics();
     frame.lineStyle(10, 0xf6f1e6, 1).strokeRect(8, ENEMY_TOP - 6, GAME_WIDTH - 16, 146);
     photo.add(frame);
-    const grade = shutterGrade(this.s);
+    const grade = gradeStars(chainGrade(this.s));
     const d = new Date();
     const stamp = `'${String(d.getFullYear()).slice(2)} ${d.getMonth() + 1} ${d.getDate()}`;
     photo.add(addText(this, GAME_WIDTH - 20, ENEMY_TOP + 122, stamp, { size: 13, bold: true, color: '#ff9a3a' }).setOrigin(1, 0.5));
@@ -877,7 +881,7 @@ export class ChainBattleScene extends Phaser.Scene {
       this.tweens.add({ targets: img, y: img.y + 16, alpha: 0, delay: 900, duration: 1100 });
     }
     this.time.delayedCall(2200, () => {
-      this.message = `切り取った！ 撮れ高 ${'★'.repeat(grade)}${'☆'.repeat(3 - grade)}（${this.s.finishRound}ラウンド目）`;
+      this.message = `切り取った！ 評価 ${'★'.repeat(grade)}${'☆'.repeat(3 - grade)}（決着の時刻 合計${this.s.finishTime}）`;
       this.busy = false;
       photo.destroy();
       this.render();
@@ -914,18 +918,30 @@ export class ChainBattleScene extends Phaser.Scene {
     o.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x05070f, 0.88).setOrigin(0).setInteractive());
     const title = !win ? '全滅…' : s.finish === 'shutter' ? '切り取った！' : '勝利！';
     o.add(addText(this, GAME_WIDTH / 2, 230, title, { size: 30, bold: true, color: win ? COLORS.accentText : '#ff8a7a' }).setOrigin(0.5));
-    const grade = shutterGrade(s);
+    const g = chainGrade(s);
+    const grade = gradeStars(g);
     const fled = s.enemies.filter((e) => e.gone && e.trait === 'flee').length;
-    const sub = !win ? `${s.finishRound}ラウンド目で倒れた` : s.finish === 'shutter' ? `撮れ高 ${'★'.repeat(grade)}${'☆'.repeat(3 - grade)}（${s.finishRound}ラウンド目・シャッターで決着）` : `${s.finishRound}ラウンド目に全部倒した（シャッターなし）`;
-    o.add(addText(this, GAME_WIDTH / 2, 276, sub, { size: 13, color: COLORS.subText }).setOrigin(0.5));
-    if (fled) o.add(addText(this, GAME_WIDTH / 2, 300, `逃げられた敵：${fled}体`, { size: 12, color: '#ff9a7a' }).setOrigin(0.5));
-    addButton(this, o, GAME_WIDTH / 2, 350, 300, 46, 'もう一度（同じ敵・別の手札）', { onTap: () => this.scene.restart({ trial: this.trial }) }, { size: 14 });
+    const how = s.finish === 'shutter' ? 'シャッターで決着' : '全部倒した';
+    const sub = !win ? `${s.finishRound}ラウンド目で倒れた` : `評価 ${'★'.repeat(grade)}${'☆'.repeat(3 - grade)}　決着の時刻 合計${s.finishTime}（${s.finishRound}ラウンド目・${how}）`;
+    o.add(addText(this, GAME_WIDTH / 2, 272, sub, { size: 13, color: COLORS.subText }).setOrigin(0.5));
+    // 早く終えるほど報酬のレア度が上がる（試しでは表示だけ）
+    const reward = g ? CHAIN_REWARDS[this.trial]?.[g] : undefined;
+    if (reward) o.add(addText(this, GAME_WIDTH / 2, 296, `報酬：${reward}`, { size: 12, bold: true, color: g === 'high' ? COLORS.accentText : g === 'mid' ? '#9ad0ff' : '#c8d0ec' }).setOrigin(0.5));
+    const at = s.def.gradeAt;
+    if (win && at) o.add(addText(this, GAME_WIDTH / 2, 316, `合計${at.high}以下で★3（固有のスナップ）・${at.mid}以下で★2（レア）`, { size: 10, color: COLORS.dimText }).setOrigin(0.5));
+    if (fled) o.add(addText(this, GAME_WIDTH / 2, 334, `逃げられた敵：${fled}体`, { size: 12, color: '#ff9a7a' }).setOrigin(0.5));
+    addButton(this, o, GAME_WIDTH / 2, 384, 300, 46, 'もう一度（同じ敵・別の型と手札）', { onTap: () => this.scene.restart({ trial: this.trial }) }, { size: 14 });
     const others = CHAIN_TRIALS.filter((t) => t.id !== this.trial);
     others.forEach((t, i) => {
-      addButton(this, o, GAME_WIDTH / 2, 404 + i * 54, 300, 46, `ほかの試し：${t.name.replace(/（.*）/, '')}`, { onTap: () => this.scene.restart({ trial: t.id }) }, { size: 13 });
+      addButton(this, o, GAME_WIDTH / 2, 438 + i * 54, 300, 46, `ほかの試し：${t.name.replace(/（.*）/, '')}`, { onTap: () => this.scene.restart({ trial: t.id }) }, { size: 13 });
     });
-    addButton(this, o, GAME_WIDTH / 2, 404 + others.length * 54, 300, 46, 'タイトルへ', { onTap: () => this.scene.start('Title') }, { size: 14 });
+    addButton(this, o, GAME_WIDTH / 2, 438 + others.length * 54, 300, 46, 'タイトルへ', { onTap: () => this.scene.start('Title') }, { size: 14 });
   }
+}
+
+/** 評価の段を星の数に（高3・中2・低1） */
+function gradeStars(g: string | null): number {
+  return g === 'high' ? 3 : g === 'mid' ? 2 : g === 'low' ? 1 : 0;
 }
 
 function sameSource(a: ChainSource, b: ChainSource): boolean {
@@ -950,6 +966,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'pop') parts.push(`${name(ev.uid)}がはじけた！`);
     else if (ev.type === 'cover') parts.push(`${name(ev.shield)}が盾になって受けた！`);
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);
+    else if (ev.type === 'push') parts.push(!ev.moved ? '' : ev.out ? `${name(ev.uid)}の予定をラウンドの外へ押し出した！` : `${name(ev.uid)}の予定を${ev.by}マス押した`);
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
     else if (ev.type === 'wake') parts.push(`${name(ev.uid)}が${ev.woke.map(name).join('・')}を起こした！`);
     else if (ev.type === 'counter') parts.push(`${name(ev.uid)}の反撃！`);

@@ -1,4 +1,4 @@
-import { availableLinks, chainMoveOf, chainPlanError, createChainBattle, nextRandom, runChainRound, takeShutter, type ChainBattleDef, type ChainPlanStep, type ChainRules, type ChainState } from '../core';
+import { availableLinks, chainGrade, chainMoveOf, chainPlanError, createChainBattle, nextRandom, runChainRound, takeShutter, type ChainBattleDef, type ChainPlanStep, type ChainRules, type ChainState } from '../core';
 
 // 試し：並べてつなぐ戦闘（段階156）の自動対戦。手応えの目安を測るためだけに使う。
 // random：並べる順・行動・相手をでたらめに選ぶ。smart：でたらめな計画をたくさん作って、1ラウンド先まで動かし、一番よい物を選ぶ（読み切る人の目安）
@@ -50,7 +50,8 @@ export function randomChainPlan(s: ChainState, pick: (n: number) => number): Cha
 /** 1ラウンド動かした後の良さ（シャッター・勝ち > ダウン・与えたダメージ > 受けたダメージ） */
 function score(before: ChainState, after: ChainState): number {
   if (after.outcome === 'lose') return -1e6;
-  if (after.shutter || after.outcome === 'win') return 1e6;
+  // 早く決着するほど良い（評価と報酬が上がるため。調整6）
+  if (after.shutter || after.outcome === 'win') return 1e6 - (after.finishTime ?? 0) * 1000;
   const foeHp = (s: ChainState) => s.enemies.reduce((a, e) => a + e.hp, 0);
   const allyHp = (s: ChainState) => s.allies.reduce((a, u) => a + u.hp, 0);
   const kills = after.enemies.filter((e) => e.hp <= 0).length - before.enemies.filter((e) => e.hp <= 0).length;
@@ -92,11 +93,20 @@ export interface ChainStats {
   weakDowns: number;
   /** 使った札・技（名前ごとの回数） */
   used: Record<string, number>;
+  /** 評価の段ごとの勝ち数（調整6） */
+  grades: Record<string, number>;
+  /** 決着した時刻の合計（勝った戦闘の合計） */
+  finishTime: number;
+  /** 押すで、敵の予定をラウンドの外へ押し出して止めた回数・押した回数 */
+  pushOuts: number;
+  pushes: number;
+  /** 敵の行動をダウンで止めた回数 */
+  interrupts: number;
 }
 
 /** 1つの組み合わせを runs 回戦い、使った札・技と勝ち方を数える */
 export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: number, policy: 'random' | 'smart', seed = 100): ChainStats {
-  const st: ChainStats = { battles: 0, wins: 0, rounds: 0, shutters: 0, firstRoundShutters: 0, resonances: 0, links: 0, weakDowns: 0, used: {} };
+  const st: ChainStats = { battles: 0, wins: 0, rounds: 0, shutters: 0, firstRoundShutters: 0, resonances: 0, links: 0, weakDowns: 0, used: {}, grades: {}, finishTime: 0, pushOuts: 0, pushes: 0, interrupts: 0 };
   for (let k = 0; k < runs; k++) {
     let r = ((seed + k) ^ 0x9e3779b9) >>> 0;
     const pick = (n: number): number => {
@@ -113,6 +123,9 @@ export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: numbe
         if (ev.some((e) => e.type === 'act') && s.allies.some((a) => a.uid === f.uid)) st.used[f.name] = (st.used[f.name] ?? 0) + 1;
         st.resonances += ev.filter((e) => e.type === 'resonate' && e.to.length > 0).length;
         st.links += ev.filter((e) => e.type === 'link').length;
+        st.pushes += ev.filter((e) => e.type === 'push' && e.moved).length;
+        st.pushOuts += ev.filter((e) => e.type === 'push' && e.out).length;
+        st.interrupts += ev.filter((e) => e.type === 'cancel' && e.reason === 'down').length;
       }
       // 弱点のダウン：弱点で当たった直後のダウン
       for (const f of res.frames) {
@@ -126,6 +139,9 @@ export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: numbe
     st.battles++;
     if (s.outcome === 'win') {
       st.wins++;
+      st.finishTime += s.finishTime ?? 0;
+      const g = chainGrade(s);
+      if (g) st.grades[g] = (st.grades[g] ?? 0) + 1;
       st.rounds += s.finishRound ?? s.round;
       if (s.finish === 'shutter') {
         st.shutters++;
