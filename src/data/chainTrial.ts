@@ -20,6 +20,7 @@ export const CHAIN_RULES: ChainRules = {
   sealPower: 20,
   sealBig: 40,
   leaderRate: 1.3,
+  shutterRate: 0.4,
 };
 
 const card = (m: ChainMove): ChainMove => m;
@@ -390,10 +391,10 @@ const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_
 
 /** 序盤の組み合わせ（同じ id。中盤を作る時に一緒に作る） */
 const EARLY: ChainBattleDef[] = [];
-/** 序盤は1戦が長くなるので、評価の目安の時刻を延ばす */
-const EARLY_GRADE_RATE = 2;
+/** 序盤は1戦が長くなるので、評価の目安の時刻を延ばす。調整15：シャッターが総攻撃になり決着が2ラウンド目にずれたので、中盤の目安を 8・16 → 13・18 に（★3 約3割・★2 約5割） */
+const EARLY_GRADE_RATE = 1.7;
 
-function battle(id: string, name: string, enemies: ChainEnemyDef[], variants: ChainVariant[], filters: FilterKey[], effects: EffectKey[], gradeAt = { high: 8, mid: 16 }): ChainBattleDef {
+function battle(id: string, name: string, enemies: ChainEnemyDef[], variants: ChainVariant[], filters: FilterKey[], effects: EffectKey[], gradeAt = { high: 13, mid: 18 }): ChainBattleDef {
   EARLY.push({ id, name, allies: CHAIN_ALLIES_EARLY, enemies, deck: chainDeckEarly(filters), cards: CARDS, links: [], variants, gradeAt: { high: Math.round(gradeAt.high * EARLY_GRADE_RATE), mid: Math.round(gradeAt.mid * EARLY_GRADE_RATE) } });
   return { id, name, allies: CHAIN_ALLIES, enemies, deck: chainDeck(filters, effects), cards: CARDS, links: CHAIN_LINKS, variants, gradeAt };
 }
