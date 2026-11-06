@@ -74,8 +74,12 @@ const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;
-const TYPE_LABEL: Record<string, string> = { place: 'セット', trick: 'フォーカス', status: 'フィルター', receive: '受ける', count: '数える', finish: 'フィニッシュ', attack: 'ショット', support: 'サポート', link: '連携' };
-const TYPE_COLOR: Record<string, number> = { place: 0x4aa8ff, trick: 0xb36bff, status: 0x19d3c5, receive: 0x19d3c5, count: 0xf2c45a, finish: RED, attack: 0x7d8699, support: 0x3fcf7a, link: GOLD };
+/** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート） */
+const TYPE_LABEL: Record<string, string> = { place: 'サポート', trick: 'サポート', status: 'サポート', receive: 'サポート', count: 'サポート', finish: 'フィニッシュ', attack: 'アタック', support: 'サポート', link: '連携技' };
+const TYPE_COLOR: Record<string, number> = { place: 0x19b37a, trick: 0x19b37a, status: 0x19b37a, receive: 0x19b37a, count: 0x19b37a, finish: RED, attack: 0x3a8dff, support: 0x19b37a, link: GOLD };
+/** 敵に付いた効果のシールの色（一度で消える物は紫、ラウンドの間続く物は青緑） */
+const CHIP_ONCE = 0xb36bff;
+const CHIP_LASTING = 0x19d3c5;
 /** フォーカスの名前（敵の上に「◎」付きで出す。次の攻撃で使い切る。調整8で写真の言葉に） */
 const TRICK_LABEL: Record<ChainTrick, string> = { spread: 'パノラマ', expose: 'ハイライト', opening: 'ピンポイント' };
 /** フィルターの名前（敵の上に、残りのラウンドと出す） */
@@ -397,16 +401,16 @@ export class ChainBattleScene extends Phaser.Scene {
       const plannedFx = (ghost as Record<string, { trick?: ChainTrick; status?: ChainStatusKind }>)[e.uid] ?? {};
       const chips: { text: string; color: number; planned: boolean }[] = [];
       const st = plannedFx.status ?? e.status?.kind;
-      if (st) chips.push({ text: plannedFx.status ? STATUS_LABEL[st] : `${STATUS_LABEL[st]}${e.status?.kind === 'stack' && e.status.stacks ? `×${e.status.stacks}` : ''} あと${e.status?.left}`, color: TYPE_COLOR.status, planned: !!plannedFx.status });
+      if (st) chips.push({ text: plannedFx.status ? STATUS_LABEL[st] : `${STATUS_LABEL[st]}${e.status?.kind === 'stack' && e.status.stacks ? `×${e.status.stacks}` : ''} あと${e.status?.left}`, color: CHIP_LASTING, planned: !!plannedFx.status });
       const trick = plannedFx.trick ?? e.trick;
-      if (trick) chips.push({ text: `◎${TRICK_LABEL[trick]}`, color: TYPE_COLOR.trick, planned: !!plannedFx.trick });
+      if (trick) chips.push({ text: `◎${TRICK_LABEL[trick]}`, color: CHIP_ONCE, planned: !!plannedFx.trick });
       chips.forEach((c, k) => {
         const cy = STAGE_Y + 206 + k * 19;
         const t = addText(this, x0 + 14, cy, c.text, { size: 10, bold: true, color: c.planned ? '#ffffff' : '#06201e' }).setOrigin(0, 0.5);
         if (t.width > colW - 24) t.setScale((colW - 24) / t.width);
         const box = this.add.rectangle(x0 + 8, cy, t.displayWidth + 12, 16, c.color, c.planned ? 0.25 : 1).setOrigin(0, 0.5).setAngle(k === 0 ? -2 : 2);
         if (c.planned) box.setStrokeStyle(1.5, c.color);
-        else if (c.color === TYPE_COLOR.trick) t.setColor('#ffffff');
+        else if (c.color === CHIP_ONCE) t.setColor('#ffffff');
         r.add(box);
         r.add(t);
       });
@@ -688,7 +692,7 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
   private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
     const m = it.move;
-    const color = m.owner ? (ALLY_COLOR[m.owner] ?? GOLD) : TYPE_COLOR[m.type];
+    const color = TYPE_COLOR[m.type];
     const parts: Phaser.GameObjects.GameObject[] = [];
     const w = CARD_W;
     const h = CARD_H;
@@ -697,7 +701,7 @@ export class ChainBattleScene extends Phaser.Scene {
     parts.push(this.add.rectangle(0, 0, w + 6, h + 6, sel ? YELLOW : color));
     parts.push(this.add.rectangle(0, 0, w, h, m.owner ? 0xffe6a8 : 0xf4efe4));
     parts.push(this.add.rectangle(0, -h / 2 + 10, w + 6, 20, color));
-    const label = m.owner ? `${this.allyName(m.owner)}専用` : TYPE_LABEL[m.type];
+    const label = TYPE_LABEL[m.type];
     parts.push(addText(this, 0, -h / 2 + 10, label, { size: 10, bold: true, color: '#ffffff' }).setOrigin(0.5));
     if (it.art && hasImage(this, it.art)) parts.push(this.cropImage(it.art, 0, -h / 2 + 54, w - 8, 60));
     else parts.push(this.add.rectangle(0, -h / 2 + 54, w - 8, 60, 0x2b3560));
@@ -724,10 +728,11 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     parts.push(title);
     for (let k = 0; k < 4; k++) parts.push(this.add.rectangle(-w / 2 + 10 + k * 11, h / 2 - 16, 8, 8, k < m.weight ? 0x111111 : 0xcccccc).setAngle(-12));
-    const pushN = m.effect.kind === 'damage' ? m.effect.push : undefined;
-    if (pushN) {
-      parts.push(this.add.rectangle(w / 2 - 14, h / 2 - 16, 24, 13, RED));
-      parts.push(addText(this, w / 2 - 14, h / 2 - 16, `押${pushN}`, { size: 9, bold: true, color: '#ffffff' }).setOrigin(0.5));
+    // 続く効果は、ラウンドの数を右下に（行動を遅らせる技は、文に書いたので印は出さない。調整11）
+    const rounds = m.effect.kind === 'status' ? m.effect.rounds : undefined;
+    if (rounds) {
+      parts.push(this.add.rectangle(w / 2 - 15, h / 2 - 16, 26, 13, CHIP_LASTING));
+      parts.push(addText(this, w / 2 - 15, h / 2 - 16, `${rounds}R`, { size: 9, bold: true, color: '#06201e' }).setOrigin(0.5));
     }
     if (it.used || notMine) parts.push(this.add.rectangle(0, 0, w + 6, h + 6, 0x000000, 0.55));
     if (it.used) parts.push(this.sticker(0, -10, '置いた', 0xffffff, '#000000', -10, 12));
@@ -736,7 +741,7 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 決まりの早見（「？」で案内の帯に出す。調整5で、常に出す早見をやめた） */
   private showRules(): void {
-    this.message = 'フォーカス（紫）は次に当たった攻撃で使い切る：パノラマ＝広がる・ハイライト＝弱点扱い・ピンポイント＝フィニッシュ2倍／フィルター（青緑）は数ラウンド続く／弱点は「？」。その属性で当てると分かり、次の戦闘でも見える／敵を長押しで特徴と癖';
+    this.message = '札は3種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動';
     this.render();
   }
 
@@ -1305,7 +1310,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'cancel') parts.push(ev.reason === 'down' ? `${name(ev.uid)}はダウンしていて、${f.name}は起きなかった` : ev.reason === 'time' ? `${name(ev.uid)}は時間切れで動けなかった` : `${name(ev.uid)}は倒れていて動けない`);
     else if (ev.type === 'damage') parts.push(`${name(ev.to)}に${ev.amount}${ev.weak ? '（弱点）' : ev.resist ? '（耐性）' : ''}`);
     else if (ev.type === 'heal') parts.push(`${name(ev.to)}+${ev.amount}`);
-    else if (ev.type === 'trick') parts.push(`${name(ev.to)}にフォーカス「${TRICK_LABEL[ev.trick]}」`);
+    else if (ev.type === 'trick') parts.push(`${name(ev.to)}に「${TRICK_LABEL[ev.trick]}」を付与`);
     else if (ev.type === 'trickUse') parts.push(ev.trick === 'spread' ? `パノラマ！${ev.to?.length ? `${ev.to.map(name).join('・')}にも広がる` : '（ほかに敵がいない）'}` : ev.trick === 'expose' ? 'ハイライト！ 弱点になった' : 'ピンポイント！ フィニッシュが2倍');
     else if (ev.type === 'status') parts.push(`${name(ev.to)}に${STATUS_LABEL[ev.status]}（${ev.left}ラウンド）`);
     else if (ev.type === 'burn') parts.push(`${name(ev.uid)}にヒートで${ev.amount}`);
