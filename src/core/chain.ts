@@ -75,9 +75,10 @@ export type ChainEffect =
   /**
    * ダメージ。perActed：このラウンドにもう動いた仲間1人ごとに威力を足す。hitsPerActed：もう動いた仲間の数 + 1 回当てる。
    * downMult：ダウン中の敵への倍率。perMark：相手の仕掛けと状態1つごとに威力を足す。bestOf：敵ごとに一番効く属性を選ぶ。
-   * push：当てた敵の、まだ動いていない予定を、この数だけ後ろへずらす
+   * push：当てた敵の、まだ動いていない予定を、この数だけ後ろへずらす。pierce：単体攻撃が「かばう」に吸われず、選んだ敵に当たる（調整13）。
+   * perActed は負でもよい（先に動くほど強い札。威力は1より下がらない）
    */
-  | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[]; push?: number }
+  | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[]; push?: number; pierce?: boolean }
   /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理） */
   | { kind: 'layer'; power: number; mult: number }
   /** 追い風：直前に動いた仲間の攻撃（属性と威力）を、威力 × rate で敵全体にもう一度。直前が攻撃でなければ不発 */
@@ -100,6 +101,17 @@ export interface ChainMove {
   text: string;
   /** 専用の札：この仲間（id）しか使えない */
   owner?: string;
+}
+
+/** 札の分類（画面の帯と説明に出す。調整13：専用の札は、中身にかかわらず「スペシャル」に分ける） */
+export type ChainCardCategory = 'attack' | 'support' | 'finish' | 'special' | 'link';
+
+export function chainCardCategory(m: ChainMove): ChainCardCategory {
+  if (m.type === 'link') return 'link';
+  if (m.owner) return 'special';
+  if (m.type === 'finish') return 'finish';
+  if (m.type === 'attack') return 'attack';
+  return 'support';
 }
 
 export interface ChainAllyDef {
@@ -766,9 +778,10 @@ interface PrevAct {
 }
 
 /** 単体攻撃の相手（倒れていたら向け直す。盾が立っていれば盾が受ける） */
-function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[], actor: string): ChainUnit | undefined {
+function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[], actor: string, pierce = false): ChainUnit | undefined {
   const t = s.enemies.find((e) => e.uid === target && e.hp > 0 && !e.gone) ?? living(s.enemies)[0];
   if (!t) return undefined;
+  if (pierce) return t;
   const shield = living(s.enemies).find((e) => e.trait === 'shield' && !e.down && e.uid !== t.uid);
   if (shield) {
     ev.push({ type: 'cover', shield: shield.uid, from: actor });
@@ -780,7 +793,8 @@ function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[
 function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[]): PrevAct {
   const eff = move.effect;
   const ctx: ActCtx = { countered: new Set(), stuck: false };
-  const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid)].filter((x): x is ChainUnit => !!x));
+  const pierce = eff.kind === 'damage' && !!eff.pierce;
+  const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid, pierce)].filter((x): x is ChainUnit => !!x));
   if (eff.kind === 'heal') {
     for (const a of s.allies.filter((x) => x.hp > 0)) {
       const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.power * actor.mag) / s.rules.healDiv));
@@ -819,7 +833,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     return { ally: actor.uid, element: el, power };
   }
   // damage
-  const power = eff.power + (eff.perActed ?? 0) * acted;
+  const power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
   const hits = eff.hitsPerActed ? acted + 1 : 1;
   for (const e of targets()) {
     const el = eff.bestOf ? bestElement(s, e, eff.bestOf) : eff.element;

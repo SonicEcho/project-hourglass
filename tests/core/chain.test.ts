@@ -9,6 +9,7 @@ import {
   planStarts,
   runChainRound,
   chainGrade,
+  chainCardCategory,
   takeShutter,
   type ChainBattleDef,
   type ChainEnemyDef,
@@ -16,7 +17,7 @@ import {
   type ChainPlanStep,
   type ChainState,
 } from '../../src/core';
-import { CHAIN_CARDS, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_TRIALS } from '../../src/data';
+import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS, CHAIN_TRIALS_EARLY, chainTrialDef } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
 // 試し：並べてつなぐ戦闘（段階156。調整3：専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻。調整7：仕掛けと状態）
@@ -425,6 +426,106 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     const pattern = e0.pattern ?? CHAIN_ENEMIES.table.pattern;
     expect(state.intents.find((i) => i.enemy === e0.uid)!.move.id).toBe(pattern[1 % pattern.length].id);
     expect(state.elapsed).toBe(CHAIN_RULES.roundLen);
+  });
+
+  describe('調整13：アタックの札と、本番を想定した山札', () => {
+    const card = (ally: string, index: number, target?: string): ChainPlanStep => ({ ally, source: { kind: 'card', index }, target });
+    const tough = (): ChainEnemyDef => ({ ...idle(plain(CHAIN_ENEMIES.tin)), hp: 999 });
+    const hitsOf = (r: ReturnType<typeof runChainRound>, from: string) => events(r).filter((e): e is Extract<ChainEvent, { type: 'damage' }> => e.type === 'damage' && e.from === from);
+
+    it('連写：先に動いた味方1人につき、当てる回数が1回増える', () => {
+      const s1 = make([tough()], [CHAIN_CARDS.burst.id]);
+      const t = s1.enemies[0].uid;
+      expect(hitsOf(runChainRound(s1, [card('hero', 0, t)]), 'hero').length).toBe(1);
+      const s2 = make([tough()], [CHAIN_CARDS.burst.id]);
+      expect(hitsOf(runChainRound(s2, [move('akari', 'spark', t), move('mio', 'kick', t), card('hero', 0, t)]), 'hero').length).toBe(3);
+    });
+
+    it('ファーストカット：最初に使うと一番強く、後に動くほど弱い', () => {
+      const s1 = make([tough()], [CHAIN_CARDS.firstCut.id]);
+      const t = s1.enemies[0].uid;
+      const first = hitsOf(runChainRound(s1, [card('hero', 0, t)]), 'hero')[0].amount;
+      const s2 = make([tough()], [CHAIN_CARDS.firstCut.id]);
+      const late = hitsOf(runChainRound(s2, [move('akari', 'spark', t), move('mio', 'kick', t), card('hero', 0, t)]), 'hero')[0].amount;
+      expect(first).toBeGreaterThan(late * 2);
+    });
+
+    it('多重露光：直前の味方の攻撃と同じ属性で当てる（氷の後なら氷の弱点を突く）。直前がなければ物理', () => {
+      const s1 = make([tough()], [CHAIN_CARDS.multiExpo.id]);
+      const t = s1.enemies[0].uid;
+      expect(hitsOf(runChainRound(s1, [card('hero', 0, t)]), 'hero')[0].weak).toBe(false);
+      // 1体だけだと、氷のダウンでシャッターになって止まるので、もう1体いる
+      const s2 = make([tough(), { ...idle(plain(CHAIN_ENEMIES.cuckoo)), weak: [], hp: 999 }], [CHAIN_CARDS.multiExpo.id]);
+      expect(hitsOf(runChainRound(s2, [move('akari', 'ice', t), card('hero', 0, t)]), 'hero')[0].weak).toBe(true);
+    });
+
+    it('流し撮り：直前の味方の攻撃を、敵全体にもう一度。直前が攻撃でなければ不発', () => {
+      const s1 = make([tough(), tough(), { ...idle(plain(CHAIN_ENEMIES.cuckoo)), weak: [], hp: 999 }], [CHAIN_CARDS.panning.id]);
+      const [a, b, c] = s1.enemies.map((e) => e.uid);
+      const r = runChainRound(s1, [move('akari', 'ice', a), card('mio', 0)]);
+      expect(hitsOf(r, 'mio').map((e) => [e.to, e.weak])).toEqual([[a, true], [b, true], [c, false]]);
+      const s2 = make([tough()], [CHAIN_CARDS.panning.id]);
+      expect(events(runChainRound(s2, [card('mio', 0)])).some((e) => e.type === 'fizzle')).toBe(true);
+    });
+
+    it('ズームイン：「かばう」に吸われず、選んだ敵に当たる', () => {
+      const s = make([idle(CHAIN_ENEMIES.table), { ...idle(plain(CHAIN_ENEMIES.cuckoo)), hp: 999 }], [CHAIN_CARDS.zoomIn.id]);
+      const c = uid(s, 'cuckooNoise');
+      const ev = events(runChainRound(s, [card('hero', 0, c)]));
+      expect(ev.some((e) => e.type === 'cover')).toBe(false);
+      expect(ev.some((e) => e.type === 'damage' && e.from === 'hero' && e.to === c)).toBe(true);
+    });
+
+    it('山札（中盤）：アルバム20枚（アタック10のうち効果つき3・サポート6・フィニッシュ4）と、仲間1人につきスペシャル2枚。専用の札はスペシャルに分かれる', () => {
+      const plan = CHAIN_DECK_PLAN.mid;
+      const effectKinds = new Set(['layer', 'wind']);
+      for (const t of CHAIN_TRIALS) {
+        const cats = t.deck.map((id) => chainCardCategory(t.cards[id]));
+        const n = (c: string) => cats.filter((x) => x === c).length;
+        expect([n('attack'), n('support'), n('finish')]).toEqual([plan.attack, plan.support, plan.finish]);
+        expect(n('attack') + n('support') + n('finish')).toBe(plan.album);
+        expect(n('special')).toBe(CHAIN_ALLIES.length * plan.specialPerAlly);
+        for (const a of CHAIN_ALLIES) expect(CHAIN_SPECIALS[a.id].every((id) => t.cards[id].owner === a.id)).toBe(true);
+        // 効果つきのアタック（並べる順・直前の味方・かばうで変わる札）は3つ
+        const isEffect = (id: string) => { const e = t.cards[id].effect; return effectKinds.has(e.kind) || (e.kind === 'damage' && (!!e.hitsPerActed || !!e.perActed || !!e.pierce)); };
+        expect(t.deck.filter((id) => !t.cards[id].owner && t.cards[id].type === 'attack' && isEffect(id)).length).toBe(plan.effectAttack);
+        // フィルター（状態）の札は1つの区画で3つまで
+        expect(new Set(t.deck.filter((id) => t.cards[id].type === 'status' && !t.cards[id].owner)).size).toBe(3);
+        // 通常攻撃は、だれでもいつでも使える
+        for (const a of t.allies) expect(a.moves.some((m) => m.id === 'basic')).toBe(true);
+      }
+      expect(chainCardCategory(CHAIN_CARDS.waterBalloon)).toBe('special');
+      expect(chainCardCategory(CHAIN_CARDS.wideShot)).toBe('attack');
+    });
+
+    it('山札（序盤）：技は通常攻撃だけ。アルバム20枚はアタック14・サポート4・フィニッシュ2で、スペシャルと連携技はない', () => {
+      const plan = CHAIN_DECK_PLAN.early;
+      expect(CHAIN_TRIALS_EARLY.map((t) => t.id)).toEqual(CHAIN_TRIALS.map((t) => t.id));
+      for (const t of CHAIN_TRIALS_EARLY) {
+        const cats = t.deck.map((id) => chainCardCategory(t.cards[id]));
+        const n = (c: string) => cats.filter((x) => x === c).length;
+        expect([n('attack'), n('support'), n('finish'), n('special')]).toEqual([plan.attack, plan.support, plan.finish, 0]);
+        expect(t.deck.length).toBe(plan.album);
+        expect(t.links).toEqual([]);
+        for (const a of t.allies) expect(a.moves.map((m) => m.id)).toEqual(['basic']);
+        expect(chainTrialDef(t.id, 'early')).toBe(t);
+      }
+      expect(chainTrialDef('chain2')).toBe(CHAIN_TRIALS[1]);
+    });
+
+    it('序盤でも、考える方針はでたらめな方針より早く勝つ', () => {
+      const def = CHAIN_TRIALS_EARLY[1];
+      let smart = 0;
+      let random = 0;
+      for (let k = 0; k < 4; k++) {
+        const x = autoChainBattle(def, CHAIN_RULES, 70 + k, 'smart');
+        const y = autoChainBattle(def, CHAIN_RULES, 70 + k, 'random');
+        expect(x.outcome).toBe('win');
+        smart += x.rounds;
+        random += y.outcome === 'win' ? y.rounds : 20;
+      }
+      expect(smart).toBeLessThan(random);
+    });
   });
 
   it('同じシードなら同じ結果。考える方針は、でたらめな方針より早く勝つ', () => {

@@ -43,6 +43,20 @@ export const CHAIN_CARDS = {
   leech: card({ id: 'ch_leech', name: 'リワインド', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'drain', rounds: 3 }, text: '敵1体に3ラウンドの間「リワインド」を付与する。この敵を攻撃した味方は、与えたダメージの30%のHPを回復する' }),
   imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 24, perMark: 30 }, text: '敵1体に物理ダメージ。敵に付与されている効果1つにつき、威力が上がる' }),
   wideShot: card({ id: 'ch_wideShot', name: 'ワイドショット', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 16 }, text: '敵全体に物理ダメージ' }),
+  // 調整14：シンプルなアタック（序盤の主役。技を覚える前は、これで戦う）
+  quickShot: card({ id: 'ch_quickShot', name: '速写', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
+  closeUp: card({ id: 'ch_closeUp', name: 'クローズアップ', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 22 }, text: '敵1体に物理ダメージ' }),
+  longExpo: card({ id: 'ch_longExpo', name: '長時間露光', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 46 }, text: '敵1体に物理の大ダメージ' }),
+  flash: card({ id: 'ch_flash', name: 'フラッシュ', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 12 }, text: '敵全体に雷ダメージ' }),
+  // 調整13：汎用のアタックを増やした（属性3つ・並べる順で変わる2つ・直前の味方を受ける2つ・かばうを抜く1つ）
+  backlight: card({ id: 'ch_backlight', name: '逆光', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 22 }, text: '敵1体に火ダメージ' }),
+  blueHour: card({ id: 'ch_blueHour', name: 'ブルーアワー', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'ice', power: 22 }, text: '敵1体に氷ダメージ' }),
+  strobe: card({ id: 'ch_strobe', name: 'ストロボ', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 22 }, text: '敵1体に雷ダメージ' }),
+  burst: card({ id: 'ch_burst', name: '連写', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 9, hitsPerActed: true }, text: '敵1体に物理ダメージを1回与える。このラウンドに先に行動した味方1人につき、攻撃回数+1' }),
+  firstCut: card({ id: 'ch_firstCut', name: 'ファーストカット', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, perActed: -10 }, text: '敵1体に物理ダメージ。このラウンドに先に行動した味方1人につき、威力が下がる（最初に使うと最大）' }),
+  multiExpo: card({ id: 'ch_multiExpo', name: '多重露光', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'layer', power: 16, mult: 1.5 }, text: '敵1体に、直前に行動した味方の攻撃と同じ属性でダメージ。直前が攻撃なら威力1.5倍（攻撃でなければ物理）' }),
+  panning: card({ id: 'ch_panning', name: '流し撮り', type: 'attack', weight: 2, target: 'enemies', effect: { kind: 'wind', rate: 0.6 }, text: '直前に行動した味方の攻撃を、威力60%で敵全体にもう一度与える。直前が攻撃でなければ不発' }),
+  zoomIn: card({ id: 'ch_zoomIn', name: 'ズームイン', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 20, pierce: true }, text: '敵1体に物理ダメージ。「かばう」に防がれず、選んだ敵に当たる' }),
   decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, downMult: 2 }, text: '敵1体に物理ダメージ。ダウン中の敵には威力2倍' }),
   // 専用の札（その仲間しか使えない。組む2人の札がそろうと連携技）
   swing: card({ id: 'ch_swing', name: '全力スイング', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 52 }, text: 'ハルト専用。敵1体に物理の大ダメージ', owner: 'hero' }),
@@ -65,6 +79,18 @@ export const CHAIN_CARD_ART: Record<string, string> = {
   ch_wideShot: 'snap.wideShot',
   ch_imprint: 'snap.heavyBlow',
   ch_decisive: 'snap.breakArm',
+  ch_quickShot: 'snap.quickStep',
+  ch_closeUp: 'snap.sword',
+  ch_longExpo: 'snap.heavyBlow',
+  ch_flash: 'snap.thunderChip',
+  ch_backlight: 'snap.fireChip',
+  ch_blueHour: 'snap.iceChip',
+  ch_strobe: 'snap.thunderChip',
+  ch_burst: 'snap.quickStep',
+  ch_firstCut: 'snap.sword',
+  ch_multiExpo: 'snap.joker',
+  ch_panning: 'snap.wideShot',
+  ch_zoomIn: 'snap.search',
   ch_swing: 'snap.pinchHitter',
   ch_sparkler: 'snap.fireChip',
   ch_waterBalloon: 'snap.recover',
@@ -85,6 +111,19 @@ export const CHAIN_SHORT_TEXT: Record<string, string> = {
   ch_imprint: '付与効果1つ\nごとに威力↑',
   ch_wideShot: '敵全体に\n物理ダメージ',
   ch_decisive: 'ダウン中の敵\nに威力2倍',
+  ch_quickShot: '物理小ダメージ\n行動2マス遅延',
+  ch_closeUp: '敵1体に\n物理ダメージ',
+  ch_longExpo: '敵1体に\n物理大ダメージ',
+  ch_flash: '敵全体に\n雷ダメージ',
+  basic: '敵1体に\n物理ダメージ',
+  ch_backlight: '敵1体に\n火ダメージ',
+  ch_blueHour: '敵1体に\n氷ダメージ',
+  ch_strobe: '敵1体に\n雷ダメージ',
+  ch_burst: '後に動くほど\n連続ヒット',
+  ch_firstCut: '先に動くほど\n威力アップ',
+  ch_multiExpo: '直前の攻撃と\n同じ属性で',
+  ch_panning: '直前の攻撃を\n敵全体に',
+  ch_zoomIn: '「かばう」を\n無視して攻撃',
   ch_swing: '敵1体に\n物理大ダメージ',
   ch_sparkler: '敵全体に\n火ダメージ',
   ch_waterBalloon: '敵全体に氷\n＋スロー',
@@ -102,6 +141,7 @@ export const CHAIN_SHORT_TEXT: Record<string, string> = {
 
 /** 仲間の技と連携技の絵（フィルムの帯に並べる。調整9） */
 export const CHAIN_MOVE_ART: Record<string, string> = {
+  basic: 'snap.sword',
   quick: 'snap.quickStep',
   slash: 'snap.sword',
   finisher: 'snap.heavyBlow',
@@ -130,6 +170,9 @@ export const CHAIN_TRIAL_BG: Record<string, string> = {
 
 const move = (m: ChainMove): ChainMove => m;
 
+/** 通常攻撃（調整14。技を覚えていなくても、いつでも使える。手札に使える札がない時の受け皿） */
+export const CHAIN_BASIC: ChainMove = { id: 'basic', name: '通常攻撃', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 16 }, text: '敵1体に物理ダメージ（いつでも使える）' };
+
 /**
  * 仲間。技は MP なしで、いつでも使える。
  * 調整6：重さと強さを釣り合わせた（重さ1は約10で「押す2」付き、2は約20、3は約30、4は約45）。行動は終わった時刻に効くので、重い技ほど遅れて効く
@@ -143,6 +186,7 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     mag: 14,
     def: 11,
     moves: [
+      CHAIN_BASIC,
       move({ id: 'quick', name: 'すばやく', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
       move({ id: 'slash', name: '斬る', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 22 }, text: '敵1体に物理ダメージ' }),
       move({ id: 'finisher', name: 'とどめの一閃', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, downMult: 2 }, text: '敵1体に物理の大ダメージ。ダウン中の敵には威力2倍' }),
@@ -156,6 +200,7 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     mag: 22,
     def: 9,
     moves: [
+      CHAIN_BASIC,
       move({ id: 'spark', name: '火花', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 8, push: 2 }, text: '敵1体に火の小ダメージ。当てた敵の行動を2マス遅らせる' }),
       move({ id: 'fire', name: 'ファイア', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'fire', power: 30 }, text: '敵1体に火ダメージ' }),
       move({ id: 'ice', name: 'アイス', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'ice', power: 30 }, text: '敵1体に氷ダメージ' }),
@@ -170,12 +215,17 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     mag: 18,
     def: 8,
     moves: [
+      CHAIN_BASIC,
       move({ id: 'kick', name: 'けとばし', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に物理の小ダメージ。当てた敵の行動を2マス遅らせる' }),
       move({ id: 'zap', name: '静電気', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 8, push: 2 }, text: '敵1体に雷の小ダメージ。当てた敵の行動を2マス遅らせる' }),
       move({ id: 'thunder', name: 'サンダー', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 30 }, text: '敵1体に雷ダメージ' }),
     ],
   },
 ];
+
+
+/** 序盤の仲間（調整14。技をまだ覚えていない。通常攻撃だけ） */
+export const CHAIN_ALLIES_EARLY: ChainAllyDef[] = CHAIN_ALLIES.map((a) => ({ ...a, moves: [CHAIN_BASIC] }));
 
 /** 連携技（クロノ・トリガーの連携技のように、組む2人がそろっている時だけ）。2人の専用の札が手札にそろうと使える */
 export const CHAIN_LINKS: ChainLinkDef[] = [
@@ -296,16 +346,56 @@ export const CHAIN_TRAIT_TEXT: Record<string, { name: string; text: string }> = 
   leader: { name: 'リーダー', text: '生きている間、ほかの敵の攻撃が強くなる。倒すと、ほかの敵が動揺してダウンする' },
 };
 
-const DECK = [
-  ...['ch_target', 'ch_target', 'ch_expose', 'ch_rattle'],
-  ...['ch_chill', 'ch_ember', 'ch_notch', 'ch_wilt', 'ch_seal', 'ch_dazzle', 'ch_leech'],
-  ...['ch_wideShot', 'ch_wideShot', 'ch_imprint', 'ch_decisive'],
-  ...['ch_swing', 'ch_swing', 'ch_sparkler', 'ch_sparkler', 'ch_waterBalloon'],
-];
+/**
+ * 山札の組み方（調整13。本番を想定した枚数比率。調整14で、序盤と中盤の2つに）。
+ * 中盤：アルバム20枚＝アタック10（シンプル7・効果つき3）・サポート6（フォーカス3つと、その区画のフィルター3つ）・フィニッシュ4。
+ *   スペシャル（専用の札）はアルバムの外で、連れていく仲間1人につき2枚ずつ、自動で山札に入る（仲間を替えると山札も変わる）
+ * 序盤：技を覚える前。アルバム20枚＝アタック14（シンプルだけ）・サポート4・フィニッシュ2。スペシャルと連携技はまだない
+ */
+export type ChainStage = 'early' | 'mid';
+export const CHAIN_DECK_PLAN = {
+  mid: { album: 20, attack: 10, effectAttack: 3, support: 6, finish: 4, specialPerAlly: 2 },
+  early: { album: 20, attack: 14, effectAttack: 0, support: 4, finish: 2, specialPerAlly: 0 },
+} as const;
+const C = CHAIN_CARDS;
+const ids = (cs: ChainMove[]) => cs.map((c) => c.id);
+const MID_SIMPLE = ids([C.closeUp, C.backlight, C.blueHour, C.strobe, C.wideShot, C.flash, C.longExpo]);
+const MID_FINISH = ids([C.imprint, C.imprint, C.decisive, C.decisive]);
+const FOCUS = ids([C.target, C.expose, C.rattle]);
+const EARLY_ATTACK = ids([C.quickShot, C.quickShot, C.quickShot, C.closeUp, C.closeUp, C.closeUp, C.backlight, C.backlight, C.blueHour, C.blueHour, C.strobe, C.strobe, C.wideShot, C.longExpo]);
+const EARLY_FINISH = ids([C.decisive, C.decisive]);
+/** フィルター（状態）の札。1つの区画で使うのは3つまで（M3_battle_review.md の 12. 調整7） */
+type FilterKey = 'chill' | 'ember' | 'notch' | 'wilt' | 'seal' | 'dazzle' | 'leech';
+/** 効果つきのアタック。1つの区画で使うのは3つまで（調整14。本編では章ごとに増やす） */
+type EffectKey = 'burst' | 'firstCut' | 'multiExpo' | 'panning' | 'zoomIn';
+/** 仲間ごとの専用の札（2枚ずつ） */
+export const CHAIN_SPECIALS: Record<string, string[]> = {
+  hero: [C.swing.id, C.swing.id],
+  akari: [C.sparkler.id, C.sparkler.id],
+  mio: [C.waterBalloon.id, C.waterBalloon.id],
+};
+
+/** 中盤の山札（アルバム20枚 ＋ 連れていく仲間のスペシャル） */
+export function chainDeck(filters: FilterKey[], effects: EffectKey[], allies: ChainAllyDef[] = CHAIN_ALLIES): string[] {
+  const album = [...MID_SIMPLE, ...effects.map((k) => C[k].id), ...FOCUS, ...filters.map((k) => C[k].id), ...MID_FINISH];
+  return [...album, ...allies.flatMap((a) => CHAIN_SPECIALS[a.id] ?? [])];
+}
+
+/** 序盤の山札（シンプルなアタック中心。フォーカスはパノラマ・ハイライト、フィルターは区画の始めの2つ） */
+export function chainDeckEarly(filters: FilterKey[]): string[] {
+  return [...EARLY_ATTACK, C.target.id, C.expose.id, ...filters.slice(0, 2).map((k) => C[k].id), ...EARLY_FINISH];
+}
+
 const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_CARDS).map((c) => [c.id, c]));
 
-function battle(id: string, name: string, enemies: ChainEnemyDef[], variants: ChainVariant[], gradeAt = { high: 8, mid: 16 }): ChainBattleDef {
-  return { id, name, allies: CHAIN_ALLIES, enemies, deck: DECK, cards: CARDS, links: CHAIN_LINKS, variants, gradeAt };
+/** 序盤の組み合わせ（同じ id。中盤を作る時に一緒に作る） */
+const EARLY: ChainBattleDef[] = [];
+/** 序盤は1戦が長くなるので、評価の目安の時刻を延ばす */
+const EARLY_GRADE_RATE = 2;
+
+function battle(id: string, name: string, enemies: ChainEnemyDef[], variants: ChainVariant[], filters: FilterKey[], effects: EffectKey[], gradeAt = { high: 8, mid: 16 }): ChainBattleDef {
+  EARLY.push({ id, name, allies: CHAIN_ALLIES_EARLY, enemies, deck: chainDeckEarly(filters), cards: CARDS, links: [], variants, gradeAt: { high: Math.round(gradeAt.high * EARLY_GRADE_RATE), mid: Math.round(gradeAt.mid * EARLY_GRADE_RATE) } });
+  return { id, name, allies: CHAIN_ALLIES, enemies, deck: chainDeck(filters, effects), cards: CARDS, links: CHAIN_LINKS, variants, gradeAt };
 }
 
 const E = CHAIN_ENEMIES;
@@ -354,41 +444,50 @@ export const CHAIN_TRIALS: ChainBattleDef[] = [
     variant('v1', '客寄せ', [undefined, undefined, [mv(E.table, 1), mv(E.table, 0)]]),
     variant('v2', '店じまい', [[BIG.bigFlip, mv(E.table, 1)], undefined, undefined]),
     variant('v3', '逃げ足', [undefined, [BIG.earlyEscape], [mv(E.table, 1), mv(E.table, 0)]]),
-  ]),
+  ], ['chill', 'dazzle', 'seal'], ['zoomIn', 'burst', 'panning']),
   // 起こし役がダウンした仲間を起こす。殻のブリキは1回目が効かず、ヨーヨーは2回動く
   battle('chain2', 'からくり時計（ダウン解除・バリア・2回行動）', [E.tin, E.cuckoo, E.yoyo], [
     variant('v1', 'ねじ巻き', [undefined, undefined, undefined]),
     variant('v2', '早鐘', [undefined, [BIG.earlyChime, mv(E.cuckoo, 1)], undefined]),
     variant('v3', '全開', [[BIG.fullSpring, mv(E.tin, 0)], undefined, [BIG.whirl, mv(E.yoyo, 0)]]),
-  ]),
+  ], ['chill', 'notch', 'wilt'], ['firstCut', 'multiExpo', 'burst']),
   // 盾のちゃぶ台が、時限の蚊取り線香を守る。叩くとやり返すめんこもいる
   battle('chain3', '夏の縁側（カウンター・自爆・かばう）', [E.menko, E.coil, E.table], [
     variant('v1', '夕涼み', [undefined, undefined, undefined]),
     variant('v2', '乱れ打ち', [[BIG.menkoStorm, mv(E.menko, 0)], undefined, undefined]),
     variant('v3', '煙幕', [undefined, [BIG.thickSmoke, mv(E.coil, 0)], [mv(E.table, 1), mv(E.table, 0)]]),
-  ]),
+  ], ['ember', 'seal', 'leech'], ['zoomIn', 'firstCut', 'multiExpo']),
   // 飴細工を叩くと、後の仲間が遅れ、すばやいヨーヨー2体の2回目が先に来る
   battle('chain4', '駄菓子屋の店先（2回行動・足止め・2回行動）', [E.yoyo, E.candy, E.yoyo], [
     variant('v1', '店番', [undefined, undefined, [mv(E.yoyo, 1), mv(E.yoyo, 0)]]),
     variant('v2', '飴の雨', [undefined, [BIG.candyRain, mv(E.candy, 0)], undefined]),
     variant('v3', 'つむじ', [[BIG.whirl, mv(E.yoyo, 0)], undefined, [mv(E.yoyo, 1), BIG.whirl]]),
-  ]),
+  ], ['chill', 'wilt', 'dazzle'], ['burst', 'panning', 'firstCut']),
   // 水風船2体は倒すと4体に増える。ラムネを弱点でダウンさせると破片が飛ぶ
   battle('chain5', '水遊び（分裂・ダウン時爆発・分裂）', [E.balloon, E.ramune, E.balloon], [
     variant('v1', '水まき', [undefined, undefined, undefined]),
     variant('v2', '大しぶき', [[BIG.bigSplash, mv(E.balloon, 0)], undefined, undefined]),
     variant('v3', '連射', [undefined, [BIG.rapid, mv(E.ramune, 0)], undefined]),
-  ]),
+  ], ['ember', 'seal', 'leech'], ['panning', 'multiExpo', 'firstCut']),
   // 調整12：リーダーのメガホンが生きている間、ほかの敵が強い。お面は予定が隠れ、風車は弱点が変わる
   battle('chain6', '夏祭りの本部テント（リーダー・予定隠し・属性チェンジ）', [E.mask, E.megaphone, E.pinwheel], [
     variant('v1', '開会', [undefined, undefined, undefined]),
     variant('v2', '号令', [undefined, [BIG.bigShout, mv(E.megaphone, 0)], undefined]),
     variant('v3', '仮面行列', [[mv(E.mask, 1), mv(E.mask, 0)], undefined, [BIG.gale, mv(E.pinwheel, 0)]]),
-  ]),
+  ], ['seal', 'notch', 'dazzle'], ['multiExpo', 'burst', 'panning']),
   // 調整12：黒電話は狙うと先に鳴る。蓄音機はダウンさせずに終わると傷が戻る。ブリキのバリアも
   battle('chain7', '古い電器屋の奥（割り込み・巻き戻し・バリア）', [E.phone, E.phonograph, E.tin], [
     variant('v1', '閉店前', [undefined, undefined, undefined]),
     variant('v2', '呼び出し', [[BIG.earlyRing, mv(E.phone, 1)], undefined, undefined]),
     variant('v3', 'Ａ面Ｂ面', [undefined, [BIG.loudRecord, mv(E.phonograph, 0)], [mv(E.tin, 1), mv(E.tin, 0)]]),
-  ]),
+  ], ['ember', 'notch', 'wilt'], ['firstCut', 'burst', 'multiExpo']),
 ];
+
+/** 序盤の試し（調整14。技を覚える前：仲間は通常攻撃だけ、山札はシンプルなアタック中心） */
+export const CHAIN_TRIALS_EARLY: ChainBattleDef[] = EARLY;
+
+/** 試しの組み合わせを、時期を指定して選ぶ */
+export function chainTrialDef(id: string, stage: ChainStage = 'mid'): ChainBattleDef {
+  const list = stage === 'early' ? CHAIN_TRIALS_EARLY : CHAIN_TRIALS;
+  return list.find((t) => t.id === id) ?? list[0];
+}

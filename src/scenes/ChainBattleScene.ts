@@ -17,6 +17,8 @@ import {
   stepAllies,
   takeShutter,
   type ChainEvent,
+  chainCardCategory,
+  type ChainCardCategory,
   type ChainFrame,
   type ChainMove,
   type ChainPlanStep,
@@ -26,7 +28,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import type { Element } from '../core';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
@@ -41,6 +43,8 @@ import { waitImages } from '../ui/waitImages';
 export interface ChainBattleData {
   trial: string;
   seed?: number;
+  /** 序盤（技を覚える前）か中盤か（調整14。省くと中盤） */
+  stage?: ChainStage;
 }
 
 /** 画面の割り付け（調整9：今の戦闘のイメージ docs/sketches/battle/chain に合わせた） */
@@ -74,9 +78,9 @@ const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;
-/** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート） */
-const TYPE_LABEL: Record<string, string> = { place: 'サポート', trick: 'サポート', status: 'サポート', receive: 'サポート', count: 'サポート', finish: 'フィニッシュ', attack: 'アタック', support: 'サポート', link: '連携技' };
-const TYPE_COLOR: Record<string, number> = { place: 0x19b37a, trick: 0x19b37a, status: 0x19b37a, receive: 0x19b37a, count: 0x19b37a, finish: RED, attack: 0x3a8dff, support: 0x19b37a, link: GOLD };
+/** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート。調整13：専用の札は「スペシャル」に分ける） */
+const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アタック', support: 'サポート', finish: 'フィニッシュ', special: 'スペシャル', link: '連携技' };
+const CATEGORY_COLOR: Record<ChainCardCategory, number> = { attack: 0x3a8dff, support: 0x19b37a, finish: RED, special: 0xff8a1f, link: GOLD };
 /** 敵に付いた効果のシールの色（一度で消える物は紫、ラウンドの間続く物は青緑） */
 const CHIP_ONCE = 0xb36bff;
 const CHIP_LASTING = 0x19d3c5;
@@ -92,6 +96,7 @@ type Pending = { source: ChainSource; move: ChainMove } | null;
 export class ChainBattleScene extends Phaser.Scene {
   private s!: ChainState;
   private trial = '';
+  private stage: ChainStage = 'mid';
   private root!: Phaser.GameObjects.Container;
   private plan: ChainPlanStep[] = [];
   private ally = '';
@@ -121,7 +126,8 @@ export class ChainBattleScene extends Phaser.Scene {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b0f22).setOrigin(0);
     this.trial = data.trial;
-    const def = CHAIN_TRIALS.find((t) => t.id === data.trial) ?? CHAIN_TRIALS[0];
+    this.stage = data.stage ?? 'mid';
+    const def = chainTrialDef(data.trial, this.stage);
     this.s = createChainBattle(def, CHAIN_RULES, data.seed ?? Date.now() % 100000, loadKnown());
     this.root = this.add.container(0, 0);
     this.plan = [];
@@ -141,7 +147,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 10 && p.worldX > GAME_WIDTH - 220) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = `型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
+    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : ''}型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
     const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -260,7 +266,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const round = addText(this, 58, 21, `ROUND ${String(view.round).padStart(2, '0')}`, { size: 22, bold: true }).setOrigin(0, 0.5).setFontStyle('bold italic');
     round.setShadow(3, 3, '#ff2d55', 0, false, true);
     r.add(round);
-    const name = `${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
+    const name = `${this.stage === 'early' ? '序盤：' : ''}${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
     const t = addText(this, GAME_WIDTH - 18, 21, name, { size: 10, bold: true }).setOrigin(1, 0.5);
     const room = GAME_WIDTH - 190;
     if (t.width > room) t.setScale(room / t.width);
@@ -683,7 +689,7 @@ export class ChainBattleScene extends Phaser.Scene {
       makePressable(hit, {
         onTap: () => !it.used && this.pickOption(it.source, it.move),
         onLongPress: () => {
-          this.message = `【${TYPE_LABEL[it.move.type]}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}`;
+          this.message = `【${this.categoryLabel(it.move)}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}`;
           this.render();
         },
       });
@@ -694,7 +700,7 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
   private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
     const m = it.move;
-    const color = TYPE_COLOR[m.type];
+    const color = CATEGORY_COLOR[chainCardCategory(m)];
     const parts: Phaser.GameObjects.GameObject[] = [];
     const w = CARD_W;
     const h = CARD_H;
@@ -703,7 +709,7 @@ export class ChainBattleScene extends Phaser.Scene {
     parts.push(this.add.rectangle(0, 0, w + 6, h + 6, sel ? YELLOW : color));
     parts.push(this.add.rectangle(0, 0, w, h, m.owner ? 0xffe6a8 : 0xf4efe4));
     parts.push(this.add.rectangle(0, -h / 2 + 10, w + 6, 20, color));
-    const label = TYPE_LABEL[m.type];
+    const label = CATEGORY_LABEL[chainCardCategory(m)];
     parts.push(addText(this, 0, -h / 2 + 10, label, { size: 10, bold: true, color: '#ffffff' }).setOrigin(0.5));
     if (it.art && hasImage(this, it.art)) parts.push(this.cropImage(it.art, 0, -h / 2 + 54, w - 8, 60));
     else parts.push(this.add.rectangle(0, -h / 2 + 54, w - 8, 60, 0x2b3560));
@@ -741,9 +747,15 @@ export class ChainBattleScene extends Phaser.Scene {
     this.root.add(this.add.container(cx, cy, parts).setAngle(angle));
   }
 
+  /** 長押しの説明の分類（スペシャルは、誰の専用かも） */
+  private categoryLabel(m: ChainMove): string {
+    const c = chainCardCategory(m);
+    return c === 'special' && m.owner ? `スペシャル・${this.allyName(m.owner)}専用` : CATEGORY_LABEL[c];
+  }
+
   /** 決まりの早見（「？」で案内の帯に出す。調整5で、常に出す早見をやめた） */
   private showRules(): void {
-    this.message = '札は3種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動';
+    this.message = '札は4種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）・スペシャル（顔の仲間だけが使える。2人の札がそろうと連携技）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動';
     this.render();
   }
 
@@ -793,7 +805,7 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     this.pending = { source, move };
     const at = nextStart(this.s, this.plan);
-    this.message = `【${TYPE_LABEL[move.type]}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}　→ 敵をタップ`;
+    this.message = `【${this.categoryLabel(move)}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}　→ 敵をタップ`;
     this.render();
   }
 
@@ -1269,8 +1281,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private endButtons(o: Phaser.GameObjects.Container): void {
     const idx = CHAIN_TRIALS.findIndex((t) => t.id === this.trial);
     const next = CHAIN_TRIALS[(idx + 1) % CHAIN_TRIALS.length];
-    this.slantButton(8, 744, 150, 46, 'もう一度', () => this.scene.restart({ trial: this.trial }), { into: o, size: 14 });
-    this.slantButton(168, 744, 214, 46, `次：${next.name.replace(/（.*）/, '')} ▶`, () => this.scene.restart({ trial: next.id }), { into: o, go: true, size: 13 });
+    this.slantButton(8, 744, 150, 46, 'もう一度', () => this.scene.restart({ trial: this.trial, stage: this.stage }), { into: o, size: 14 });
+    this.slantButton(168, 744, 214, 46, `次：${next.name.replace(/（.*）/, '')} ▶`, () => this.scene.restart({ trial: next.id, stage: this.stage }), { into: o, go: true, size: 13 });
     const back = addText(this, GAME_WIDTH / 2, 808, 'タイトルへ', { size: 12, color: '#9aa3c0' }).setOrigin(0.5);
     o.add(back);
     o.add(this.add.rectangle(GAME_WIDTH / 2, 808, 120, 28, 0xffffff, 0.001));
