@@ -28,7 +28,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import type { Element } from '../core';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
@@ -43,6 +43,8 @@ import { waitImages } from '../ui/waitImages';
 export interface ChainBattleData {
   trial: string;
   seed?: number;
+  /** 序盤（技を覚える前）か中盤か（調整14。省くと中盤） */
+  stage?: ChainStage;
 }
 
 /** 画面の割り付け（調整9：今の戦闘のイメージ docs/sketches/battle/chain に合わせた） */
@@ -94,6 +96,7 @@ type Pending = { source: ChainSource; move: ChainMove } | null;
 export class ChainBattleScene extends Phaser.Scene {
   private s!: ChainState;
   private trial = '';
+  private stage: ChainStage = 'mid';
   private root!: Phaser.GameObjects.Container;
   private plan: ChainPlanStep[] = [];
   private ally = '';
@@ -123,7 +126,8 @@ export class ChainBattleScene extends Phaser.Scene {
     this.cameras.main.setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b0f22).setOrigin(0);
     this.trial = data.trial;
-    const def = CHAIN_TRIALS.find((t) => t.id === data.trial) ?? CHAIN_TRIALS[0];
+    this.stage = data.stage ?? 'mid';
+    const def = chainTrialDef(data.trial, this.stage);
     this.s = createChainBattle(def, CHAIN_RULES, data.seed ?? Date.now() % 100000, loadKnown());
     this.root = this.add.container(0, 0);
     this.plan = [];
@@ -143,7 +147,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 10 && p.worldX > GAME_WIDTH - 220) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = `型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
+    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : ''}型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
     const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -262,7 +266,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const round = addText(this, 58, 21, `ROUND ${String(view.round).padStart(2, '0')}`, { size: 22, bold: true }).setOrigin(0, 0.5).setFontStyle('bold italic');
     round.setShadow(3, 3, '#ff2d55', 0, false, true);
     r.add(round);
-    const name = `${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
+    const name = `${this.stage === 'early' ? '序盤：' : ''}${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
     const t = addText(this, GAME_WIDTH - 18, 21, name, { size: 10, bold: true }).setOrigin(1, 0.5);
     const room = GAME_WIDTH - 190;
     if (t.width > room) t.setScale(room / t.width);
@@ -1277,8 +1281,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private endButtons(o: Phaser.GameObjects.Container): void {
     const idx = CHAIN_TRIALS.findIndex((t) => t.id === this.trial);
     const next = CHAIN_TRIALS[(idx + 1) % CHAIN_TRIALS.length];
-    this.slantButton(8, 744, 150, 46, 'もう一度', () => this.scene.restart({ trial: this.trial }), { into: o, size: 14 });
-    this.slantButton(168, 744, 214, 46, `次：${next.name.replace(/（.*）/, '')} ▶`, () => this.scene.restart({ trial: next.id }), { into: o, go: true, size: 13 });
+    this.slantButton(8, 744, 150, 46, 'もう一度', () => this.scene.restart({ trial: this.trial, stage: this.stage }), { into: o, size: 14 });
+    this.slantButton(168, 744, 214, 46, `次：${next.name.replace(/（.*）/, '')} ▶`, () => this.scene.restart({ trial: next.id, stage: this.stage }), { into: o, go: true, size: 13 });
     const back = addText(this, GAME_WIDTH / 2, 808, 'タイトルへ', { size: 12, color: '#9aa3c0' }).setOrigin(0.5);
     o.add(back);
     o.add(this.add.rectangle(GAME_WIDTH / 2, 808, 120, 28, 0xffffff, 0.001));

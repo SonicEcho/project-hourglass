@@ -17,7 +17,7 @@ import {
   type ChainPlanStep,
   type ChainState,
 } from '../../src/core';
-import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS } from '../../src/data';
+import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS, CHAIN_TRIALS_EARLY, chainTrialDef } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
 // 試し：並べてつなぐ戦闘（段階156。調整3：専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻。調整7：仕掛けと状態）
@@ -476,19 +476,55 @@ describe('並べてつなぐ戦闘（段階156）', () => {
       expect(ev.some((e) => e.type === 'damage' && e.from === 'hero' && e.to === c)).toBe(true);
     });
 
-    it('山札：アルバム20枚（アタック10・サポート6・フィニッシュ4）と、仲間1人につきスペシャル2枚。専用の札はスペシャルに分かれる', () => {
+    it('山札（中盤）：アルバム20枚（アタック10のうち効果つき3・サポート6・フィニッシュ4）と、仲間1人につきスペシャル2枚。専用の札はスペシャルに分かれる', () => {
+      const plan = CHAIN_DECK_PLAN.mid;
+      const effectKinds = new Set(['layer', 'wind']);
       for (const t of CHAIN_TRIALS) {
         const cats = t.deck.map((id) => chainCardCategory(t.cards[id]));
         const n = (c: string) => cats.filter((x) => x === c).length;
-        expect([n('attack'), n('support'), n('finish')]).toEqual([CHAIN_DECK_PLAN.attack, CHAIN_DECK_PLAN.support, CHAIN_DECK_PLAN.finish]);
-        expect(n('attack') + n('support') + n('finish')).toBe(CHAIN_DECK_PLAN.album);
-        expect(n('special')).toBe(CHAIN_ALLIES.length * CHAIN_DECK_PLAN.specialPerAlly);
+        expect([n('attack'), n('support'), n('finish')]).toEqual([plan.attack, plan.support, plan.finish]);
+        expect(n('attack') + n('support') + n('finish')).toBe(plan.album);
+        expect(n('special')).toBe(CHAIN_ALLIES.length * plan.specialPerAlly);
         for (const a of CHAIN_ALLIES) expect(CHAIN_SPECIALS[a.id].every((id) => t.cards[id].owner === a.id)).toBe(true);
+        // 効果つきのアタック（並べる順・直前の味方・かばうで変わる札）は3つ
+        const isEffect = (id: string) => { const e = t.cards[id].effect; return effectKinds.has(e.kind) || (e.kind === 'damage' && (!!e.hitsPerActed || !!e.perActed || !!e.pierce)); };
+        expect(t.deck.filter((id) => !t.cards[id].owner && t.cards[id].type === 'attack' && isEffect(id)).length).toBe(plan.effectAttack);
         // フィルター（状態）の札は1つの区画で3つまで
         expect(new Set(t.deck.filter((id) => t.cards[id].type === 'status' && !t.cards[id].owner)).size).toBe(3);
+        // 通常攻撃は、だれでもいつでも使える
+        for (const a of t.allies) expect(a.moves.some((m) => m.id === 'basic')).toBe(true);
       }
       expect(chainCardCategory(CHAIN_CARDS.waterBalloon)).toBe('special');
       expect(chainCardCategory(CHAIN_CARDS.wideShot)).toBe('attack');
+    });
+
+    it('山札（序盤）：技は通常攻撃だけ。アルバム20枚はアタック14・サポート4・フィニッシュ2で、スペシャルと連携技はない', () => {
+      const plan = CHAIN_DECK_PLAN.early;
+      expect(CHAIN_TRIALS_EARLY.map((t) => t.id)).toEqual(CHAIN_TRIALS.map((t) => t.id));
+      for (const t of CHAIN_TRIALS_EARLY) {
+        const cats = t.deck.map((id) => chainCardCategory(t.cards[id]));
+        const n = (c: string) => cats.filter((x) => x === c).length;
+        expect([n('attack'), n('support'), n('finish'), n('special')]).toEqual([plan.attack, plan.support, plan.finish, 0]);
+        expect(t.deck.length).toBe(plan.album);
+        expect(t.links).toEqual([]);
+        for (const a of t.allies) expect(a.moves.map((m) => m.id)).toEqual(['basic']);
+        expect(chainTrialDef(t.id, 'early')).toBe(t);
+      }
+      expect(chainTrialDef('chain2')).toBe(CHAIN_TRIALS[1]);
+    });
+
+    it('序盤でも、考える方針はでたらめな方針より早く勝つ', () => {
+      const def = CHAIN_TRIALS_EARLY[1];
+      let smart = 0;
+      let random = 0;
+      for (let k = 0; k < 4; k++) {
+        const x = autoChainBattle(def, CHAIN_RULES, 70 + k, 'smart');
+        const y = autoChainBattle(def, CHAIN_RULES, 70 + k, 'random');
+        expect(x.outcome).toBe('win');
+        smart += x.rounds;
+        random += y.outcome === 'win' ? y.rounds : 20;
+      }
+      expect(smart).toBeLessThan(random);
     });
   });
 

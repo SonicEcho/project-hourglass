@@ -510,6 +510,21 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain7' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
+      // 調整14：序盤（技を覚える前）の試し。仲間は通常攻撃だけ、山札はシンプルなアタック中心
+      ...[
+        ['chain1', '金魚すくいの屋台'],
+        ['chain2', 'からくり時計'],
+        ['chain3', '夏の縁側'],
+        ['chain4', '駄菓子屋の店先'],
+        ['chain5', '水遊び'],
+        ['chain6', '夏祭りの本部テント'],
+        ['chain7', '古い電器屋の奥'],
+      ].map(([trial, name]) =>
+        button(`試し：並べてつなぐ戦闘・序盤（${name}）`, () => {
+          close();
+          nav.openPrototype('ChainBattle', { trial, stage: 'early' });
+        }, true, 'background:#1f3a5a;border-color:#8ac8ff;'),
+      ),
       // 段階155：試し：コンボと現像（今の戦闘に、2枚のコンボと現像する札を入れたアルバムで戦う。今のセーブには触れない）
       button('試し：コンボと現像（砂嵐3体）', () => {
         close();
