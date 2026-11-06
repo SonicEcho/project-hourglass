@@ -947,7 +947,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       e.hp -= amount;
       ev.push({ type: 'burn', uid: e.uid, amount });
       if (e.hp === 0) defeatEnemy(s, e, ev);
-      push(null, `burn:${e.uid}`, s.rules.roundLen - 1, e.uid, 'やけど', ev, undefined, true);
+      push(null, `burn:${e.uid}`, s.rules.roundLen, e.uid, 'ヒート', ev, undefined, true);
       if (checkEnd(s, ev, s.rules.roundLen)) {
         frames[frames.length - 1].state = cloneChain(s);
         stopped = true;
@@ -966,7 +966,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         for (const a of s.allies.filter((x) => x.hp > 0)) hurtAlly(e.uid, a, s.rules.timerDamage, ev);
         e.gone = true;
       }
-      push(null, `end:${e.uid}`, s.rules.roundLen - 1, e.uid, e.timer <= 0 ? '大爆発' : `あと${e.timer}`, ev, undefined, true);
+      push(null, `end:${e.uid}`, s.rules.roundLen, e.uid, e.timer <= 0 ? '大爆発' : `あと${e.timer}`, ev, undefined, true);
       if (checkEnd(s, ev, s.rules.roundLen)) {
         frames[frames.length - 1].state = cloneChain(s);
         stopped = true;

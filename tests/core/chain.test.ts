@@ -146,6 +146,8 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     const t = s.enemies[0].uid;
     const r = runChainRound(s, [cardStep('akari', 0, t)]);
     expect(events(r).some((e) => e.type === 'burn' && e.uid === t && e.amount === CHAIN_RULES.burnDamage)).toBe(true);
+    // ラウンドの終わりのコマは、時刻の境目のラウンドの終わり（時刻10）に出る
+    expect(r.frames.find((f) => f.key.startsWith('burn:'))!.at).toBe(CHAIN_RULES.roundLen);
     s = r.state;
     for (let k = 0; k < 3; k++) s = runChainRound(s, []).state;
     expect(s.enemies[0].status).toBeUndefined();

@@ -58,12 +58,12 @@ const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as
 
 /** 敵の印の色（フィルムの上の段と、敵の名前の横） */
 const ENEMY_COLORS = [0xff8a5a, 0x6bc8ff, 0xc89aff, 0x7ad98a, 0xf2c45a];
-const TYPE_LABEL: Record<string, string> = { place: '置く', trick: '仕掛け', status: '状態', receive: '受ける', count: '数える', finish: '締める', attack: '攻撃', support: '支援', link: '連携' };
+const TYPE_LABEL: Record<string, string> = { place: 'セット', trick: 'フォーカス', status: 'フィルター', receive: '受ける', count: '数える', finish: 'フィニッシュ', attack: 'ショット', support: 'サポート', link: '連携' };
 const TYPE_COLOR: Record<string, number> = { place: 0x4aa8ff, trick: 0xc89aff, status: 0x6ad0b0, receive: 0x6ad0b0, count: 0xf2c45a, finish: 0xff7a5a, attack: 0x9aa5b1, support: 0x6dff9e, link: 0xffd700 };
-/** 仕掛けの短い名前（敵の上に出す。次の攻撃で使い切る） */
-const TRICK_LABEL: Record<ChainTrick, string> = { spread: '次：広がる', expose: '次：弱点', opening: '次：締め2倍' };
-/** 状態の名前（敵の上に、残りのラウンドと出す） */
-const STATUS_LABEL: Record<ChainStatusKind, string> = { slow: '鈍足', burn: 'やけど', stack: '刻み', weak: '弱り', seal: '封印', confuse: '混乱', drain: '吸い取り' };
+/** フォーカスの名前（敵の上に「◎」付きで出す。次の攻撃で使い切る。調整8で写真の言葉に） */
+const TRICK_LABEL: Record<ChainTrick, string> = { spread: 'パノラマ', expose: 'ハイライト', opening: 'ピンポイント' };
+/** フィルターの名前（敵の上に、残りのラウンドと出す） */
+const STATUS_LABEL: Record<ChainStatusKind, string> = { slow: 'スロー', burn: 'ヒート', stack: 'クラック', weak: 'ピンぼけ', seal: 'ポーズ', confuse: 'ハレーション', drain: 'リワインド' };
 const STATUS_COLOR: Record<ChainStatusKind, number> = { slow: 0x6bc8ff, burn: 0xff6b4a, stack: 0xf2c45a, weak: 0x9aa5b1, seal: 0xc89aff, confuse: 0xff8ac8, drain: 0x6dff9e };
 /** 分裂で出てきた敵の絵（元の敵の絵を小さく使う） */
 const SPLIT_ART: Record<string, string> = { miniBalloon: 'balloonNoise' };
@@ -270,7 +270,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const plannedFx = (ghost as Record<string, { trick?: ChainTrick; status?: ChainStatusKind }>)[e.uid] ?? {};
       const chips: { text: string; color: number; planned: boolean }[] = [];
       const trick = plannedFx.trick ?? e.trick;
-      if (trick) chips.push({ text: TRICK_LABEL[trick], color: 0xc89aff, planned: !!plannedFx.trick });
+      if (trick) chips.push({ text: `◎${TRICK_LABEL[trick]}`, color: 0xc89aff, planned: !!plannedFx.trick });
       const st = plannedFx.status ?? e.status?.kind;
       if (st) chips.push({ text: plannedFx.status ? STATUS_LABEL[st] : `${STATUS_LABEL[st]}${e.status?.kind === 'stack' && e.status.stacks ? `×${e.status.stacks}` : ''} あと${e.status?.left}`, color: STATUS_COLOR[st], planned: !!plannedFx.status });
       chips.forEach((c, k) => {
@@ -290,7 +290,7 @@ export class ChainBattleScene extends Phaser.Scene {
         const tgt = it.target ? findChainUnit(s, it.target)?.name : '';
         const times = intents.map((x) => x.at).join('・');
         const foe = it.confused ? findChainUnit(s, it.confused)?.name.replace('ノイズ', '') : '';
-        const label = `${times}：${it.move.name}${it.move.flee ? '' : it.move.all ? '（全体）' : foe ? ` → ${foe}（混乱）` : ` → ${tgt}`}`;
+        const label = `${times}：${it.move.name}${it.move.flee ? '' : it.move.all ? '（全体）' : foe ? ` → ${foe}（ハレーション）` : ` → ${tgt}`}`;
         const big = it.move.all || it.move.flee;
         const tag = addText(this, cx, y + 46, label, { size: 10, bold: true, color: big ? '#ffd0a0' : '#dfe6ff' }).setOrigin(0.5);
         if (tag.width > colW - 8) tag.setScale((colW - 8) / tag.width);
@@ -333,7 +333,11 @@ export class ChainBattleScene extends Phaser.Scene {
     // 目盛り
     for (let t = 0; t < len; t++) g.fillStyle(t % 2 === 0 ? 0x2a2214 : 0x221b10, 1).fillRect(x0 + CELL * t, top + 6, CELL, 100);
     r.add(g);
-    for (let t = 0; t < len; t++) r.add(addText(this, x0 + CELL * t + CELL / 2, top + 10, String(t), { size: 10, bold: true, color: '#d9a440' }).setOrigin(0.5, 0));
+    // 時刻はマスの境目（調整8。味方の帯の右端・敵の丸・再生位置の線が、同じ所にそろう）
+    for (let t = 0; t <= len; t++) {
+      r.add(this.add.rectangle(x0 + CELL * t, top + 24, 1, 82, 0xd9a440, 0.25));
+      r.add(addText(this, x0 + CELL * t, top + 10, String(t), { size: 10, bold: true, color: '#d9a440' }).setOrigin(0.5, 0));
+    }
     r.add(addText(this, 8, top + 38, '敵', { size: 10, bold: true, color: '#ff9a7a' }).setOrigin(0, 0.5));
     r.add(addText(this, 8, top + 80, '味方', { size: 9, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
     // 動く順の番号（同じ時刻なら味方が先）。計画の時は見込み、実行中は本当のコマの番号。済んだ番号は薄く、今の番号を光らせる
@@ -354,7 +358,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const e = s.enemies[i];
       if (!e || e.hp <= 0 || e.gone) return;
       const row = (slots[it.at] = (slots[it.at] ?? 0) + 1) - 1;
-      const cx = x0 + CELL * it.at + CELL / 2;
+      const cx = x0 + CELL * it.at;
       const cy = top + 38 + row * 15 - 4;
       const color = ENEMY_COLORS[i % ENEMY_COLORS.length];
       const big = it.move.all || it.move.flee;
@@ -549,7 +553,7 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 決まりの早見（「？」で案内の窓に出す。調整5で、常に出す早見をやめた） */
   private showRules(): void {
-    this.message = '仕掛け（紫）は次に当たった攻撃で使い切る：目印＝広がる・むき出し＝弱点・すき＝締め2倍／状態は数ラウンド続く（1体に1つ）／顔付きの札はその人専用。2人の専用の札がそろうと連携技／敵を長押しで特徴と癖';
+    this.message = 'フォーカス（紫）は次に当たった攻撃で使い切る：パノラマ＝広がる・ハイライト＝弱点・ピンポイント＝フィニッシュ2倍／フィルター（緑）は数ラウンド続く（1体に1つ）／顔付きの札はその人専用。2人の専用の札がそろうと連携技／敵を長押しで特徴と癖';
     this.render();
   }
 
@@ -691,7 +695,7 @@ export class ChainBattleScene extends Phaser.Scene {
       next();
       return;
     }
-    const x = FILM_X + CELL * t + CELL / 2;
+    const x = FILM_X + CELL * t;
     const ms = Math.max(0, ((x - head.x) / CELL) * TICK_MS);
     if (ms < 30) {
       head.x = Math.max(head.x, x);
@@ -772,12 +776,12 @@ export class ChainBattleScene extends Phaser.Scene {
       };
       // シャッターや決着で止まった時は、そこで終わる。最後まで動いた時は、ラウンドの終わりまで線を進める
       if (final.shutter || final.outcome !== 'ongoing') done();
-      else this.moveHead(CHAIN_RULES.roundLen - 0.5, () => this.wait(WAIT.end, done));
+      else this.moveHead(CHAIN_RULES.roundLen, () => this.wait(WAIT.end, done));
       return;
     }
     const f = frames[i];
     // 再生位置がその行動の時刻に来るまで、線を進める
-    if (this.head && this.head.x < FILM_X + CELL * f.at + CELL / 2 - 1) {
+    if (this.head && this.head.x < FILM_X + CELL * f.at - 1) {
       this.moveHead(f.at, () => this.playFrames(frames, i, final, before));
       return;
     }
@@ -936,7 +940,7 @@ function gradeStars(g: string | null): number {
   return g === 'high' ? 3 : g === 'mid' ? 2 : g === 'low' ? 1 : 0;
 }
 
-/** ラウンドの終わりのコマ（時限・やけど） */
+/** ラウンドの終わりのコマ（時限・ヒート） */
 function isRoundEnd(key: string): boolean {
   return key.startsWith('end:') || key.startsWith('burn:');
 }
@@ -958,11 +962,11 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'cancel') parts.push(ev.reason === 'down' ? `${name(ev.uid)}はダウンしていて、${f.name}は起きなかった` : ev.reason === 'time' ? `${name(ev.uid)}は時間切れで動けなかった` : `${name(ev.uid)}は倒れていて動けない`);
     else if (ev.type === 'damage') parts.push(`${name(ev.to)}に${ev.amount}${ev.weak ? '（弱点）' : ev.resist ? '（耐性）' : ''}`);
     else if (ev.type === 'heal') parts.push(`${name(ev.to)}+${ev.amount}`);
-    else if (ev.type === 'trick') parts.push(`${name(ev.to)}に仕掛け「${TRICK_LABEL[ev.trick].replace('次：', '')}」`);
-    else if (ev.type === 'trickUse') parts.push(ev.trick === 'spread' ? `目印が働いた！${ev.to?.length ? `${ev.to.map(name).join('・')}にも広がる` : '（ほかに敵がいない）'}` : ev.trick === 'expose' ? 'むき出し！ 弱点になった' : 'すき！ 締めが2倍');
-    else if (ev.type === 'status') parts.push(`${name(ev.to)}は${STATUS_LABEL[ev.status]}（${ev.left}ラウンド）`);
-    else if (ev.type === 'burn') parts.push(`${name(ev.uid)}はやけどで${ev.amount}`);
-    else if (ev.type === 'drain') parts.push(`${name(ev.to)}が${ev.amount}吸い取った`);
+    else if (ev.type === 'trick') parts.push(`${name(ev.to)}にフォーカス「${TRICK_LABEL[ev.trick]}」`);
+    else if (ev.type === 'trickUse') parts.push(ev.trick === 'spread' ? `パノラマ！${ev.to?.length ? `${ev.to.map(name).join('・')}にも広がる` : '（ほかに敵がいない）'}` : ev.trick === 'expose' ? 'ハイライト！ 弱点になった' : 'ピンポイント！ フィニッシュが2倍');
+    else if (ev.type === 'status') parts.push(`${name(ev.to)}に${STATUS_LABEL[ev.status]}（${ev.left}ラウンド）`);
+    else if (ev.type === 'burn') parts.push(`${name(ev.uid)}にヒートで${ev.amount}`);
+    else if (ev.type === 'drain') parts.push(`${name(ev.to)}がリワインドで${ev.amount}回復`);
     else if (ev.type === 'pop') parts.push(`${name(ev.uid)}がはじけた！`);
     else if (ev.type === 'cover') parts.push(`${name(ev.shield)}が盾になって受けた！`);
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);

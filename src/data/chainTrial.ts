@@ -24,29 +24,29 @@ export const CHAIN_RULES: ChainRules = {
 const card = (m: ChainMove): ChainMove => m;
 
 /**
- * 札。型：仕掛け（次の1回）・状態（数ラウンド続く）・攻撃・締める。専用の札は、その仲間しか使えない。
- * 調整7で、色の印と共鳴をやめ、仕掛け3つと状態7つにした（開発者と決めた）
+ * 札。型：フォーカス（次の1回）・フィルター（数ラウンド続く）・ショット（攻撃）・フィニッシュ（締め）。専用の札は、その仲間しか使えない。
+ * 調整7で、色の印と共鳴をやめ、フォーカス3つとフィルター7つにした（開発者と決めた）。調整8で、名前を写真とフィルムの言葉にそろえた（開発者の「文言がダサい」）
  */
 export const CHAIN_CARDS = {
-  // 仕掛け：次に当たった攻撃で使い切る
-  target: card({ id: 'ch_target', name: '目印', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'spread' }, text: '仕掛け。次にこの敵に当たった攻撃が、ほかの敵みんなにも同じ威力で広がる（広がった先ではダウンしない）' }),
-  expose: card({ id: 'ch_expose', name: 'あばく', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'expose' }, text: '仕掛け「むき出し」。次にこの敵に当たった攻撃は、属性に関係なく弱点になる（ダウンする）' }),
-  rattle: card({ id: 'ch_rattle', name: '揺さぶり', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'opening', element: 'physical', power: 6 }, text: '仕掛け「すき」。小さく当て、次にこの敵に当たった締めの札（決めの一枚・焼き付け・とどめの一閃）が2倍' }),
-  // 状態：数ラウンド続く（1体に1つ。新しく付けると上書き）
-  chill: card({ id: 'ch_chill', name: '冷たい風', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'slow', rounds: 2 }, text: '状態「鈍足」（2ラウンド）。この敵の予定が1マス遅れる' }),
-  ember: card({ id: 'ch_ember', name: '火の粉', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'burn', rounds: 3, element: 'fire', power: 6 }, text: '状態「やけど」（3ラウンド）。小さく火を当て、ラウンドの終わりごとにダメージ' }),
-  notch: card({ id: 'ch_notch', name: '刻み目', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'stack', rounds: 2 }, text: '状態「刻み」（2ラウンド）。当たるたびに、この敵の受けるダメージが上がっていく' }),
-  wilt: card({ id: 'ch_wilt', name: 'しおれ', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'weak', rounds: 2 }, text: '状態「弱り」（2ラウンド）。この敵の攻撃が半分になる' }),
-  seal: card({ id: 'ch_seal', name: '封じ札', type: 'status', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'seal', rounds: 2 }, text: '状態「封印」（2ラウンド）。この敵の全体攻撃と大技が、ふつうの攻撃に変わる' }),
-  dazzle: card({ id: 'ch_dazzle', name: '目くらまし', type: 'status', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'confuse', rounds: 1 }, text: '状態「混乱」（1ラウンド）。この敵の単体攻撃が、ほかの敵に向く' }),
-  leech: card({ id: 'ch_leech', name: '吸い取り', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'drain', rounds: 3 }, text: '状態「吸い取り」（3ラウンド）。この敵を攻撃した仲間が、与えたダメージの3割だけ回復する' }),
-  imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 24, perMark: 30 }, text: '敵1体に物理。相手に付いた仕掛け・状態1つごとに威力が大きく上がる' }),
+  // フォーカス：敵に合わせておき、次に当たった攻撃で使い切る
+  target: card({ id: 'ch_target', name: 'パノラマ', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'spread' }, text: 'フォーカス。次にこの敵に当たった攻撃が、ほかの敵みんなにも同じ威力で広がる（広がった先ではダウンしない）' }),
+  expose: card({ id: 'ch_expose', name: 'ハイライト', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'expose' }, text: 'フォーカス。次にこの敵に当たった攻撃は、属性に関係なく弱点になる（ダウンする）' }),
+  rattle: card({ id: 'ch_rattle', name: 'ピンポイント', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'opening', element: 'physical', power: 6 }, text: 'フォーカス。小さく当て、次にこの敵に当たったフィニッシュ（決めの一枚・焼き付け・とどめの一閃）が2倍' }),
+  // フィルター：数ラウンド続く（1体に1つ。新しく付けると上書き）
+  chill: card({ id: 'ch_chill', name: 'スロー', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'slow', rounds: 2 }, text: 'フィルター（2ラウンド）。この敵の予定が1マス遅れる' }),
+  ember: card({ id: 'ch_ember', name: 'ヒート', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'burn', rounds: 3, element: 'fire', power: 6 }, text: 'フィルター（3ラウンド）。小さく火を当て、ラウンドの終わりごとに熱でダメージ' }),
+  notch: card({ id: 'ch_notch', name: 'クラック', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'stack', rounds: 2 }, text: 'フィルター（2ラウンド）。当たるたびにひびが広がり、この敵の受けるダメージが上がっていく' }),
+  wilt: card({ id: 'ch_wilt', name: 'ピンぼけ', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'weak', rounds: 2 }, text: 'フィルター（2ラウンド）。狙いがぼけて、この敵の攻撃が半分になる' }),
+  seal: card({ id: 'ch_seal', name: 'ポーズ', type: 'status', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'seal', rounds: 2 }, text: 'フィルター（2ラウンド）。一時停止。この敵の全体攻撃と大技が、ふつうの攻撃に変わる' }),
+  dazzle: card({ id: 'ch_dazzle', name: 'ハレーション', type: 'status', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'confuse', rounds: 1 }, text: 'フィルター（1ラウンド）。光がにじんで、この敵の単体攻撃が、ほかの敵に向く' }),
+  leech: card({ id: 'ch_leech', name: 'リワインド', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'drain', rounds: 3 }, text: 'フィルター（3ラウンド）。この敵を攻撃した仲間の時間が巻き戻り、与えたダメージの3割だけ回復する' }),
+  imprint: card({ id: 'ch_imprint', name: '焼き付け', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 24, perMark: 30 }, text: 'フィニッシュ。敵1体に物理。相手に付いたフォーカス・フィルター1つごとに威力が大きく上がる' }),
   wideShot: card({ id: 'ch_wideShot', name: 'ワイドショット', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 16 }, text: '敵全体に物理' }),
-  decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, downMult: 2 }, text: '敵1体に物理。ダウン中の敵には2倍' }),
+  decisive: card({ id: 'ch_decisive', name: '決めの一枚', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, downMult: 2 }, text: 'フィニッシュ。敵1体に物理。ダウン中の敵には2倍' }),
   // 専用の札（その仲間しか使えない。組む2人の札がそろうと連携技）
   swing: card({ id: 'ch_swing', name: '全力スイング', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 52 }, text: 'ハルト専用。敵1体にとても強い物理（重い）', owner: 'hero' }),
   sparkler: card({ id: 'ch_sparkler', name: '線香花火', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 18 }, text: 'あかり専用。敵全体に火', owner: 'akari' }),
-  waterBalloon: card({ id: 'ch_waterBalloon', name: '水風船', type: 'status', weight: 2, target: 'enemies', effect: { kind: 'status', status: 'slow', rounds: 1, element: 'ice', power: 8 }, text: 'みお専用。敵全体に氷で小さく当て、鈍足（1ラウンド）にする', owner: 'mio' }),
+  waterBalloon: card({ id: 'ch_waterBalloon', name: '水風船', type: 'status', weight: 2, target: 'enemies', effect: { kind: 'status', status: 'slow', rounds: 1, element: 'ice', power: 8 }, text: 'みお専用。敵全体に氷で小さく当て、スロー（1ラウンド）にする', owner: 'mio' }),
 } satisfies Record<string, ChainMove>;
 
 /** 札の絵（近い情景の今のスナップの絵を、仮に使う） */
@@ -86,7 +86,7 @@ export const CHAIN_ALLIES: ChainAllyDef[] = [
     moves: [
       move({ id: 'quick', name: 'すばやく', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 10, push: 2 }, text: '敵1体に軽い物理。当てた敵のまだ動いていない予定を、2マス後ろへ押す' }),
       move({ id: 'slash', name: '斬る', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 22 }, text: '敵1体に物理' }),
-      move({ id: 'finisher', name: 'とどめの一閃', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, downMult: 2 }, text: '敵1体に強い物理（重い）。ダウン中の敵には2倍' }),
+      move({ id: 'finisher', name: 'とどめの一閃', type: 'finish', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, downMult: 2 }, text: 'フィニッシュ。敵1体に強い物理（重い）。ダウン中の敵には2倍' }),
     ],
   },
   {
