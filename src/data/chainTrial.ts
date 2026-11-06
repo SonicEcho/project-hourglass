@@ -69,6 +69,36 @@ export const CHAIN_CARD_ART: Record<string, string> = {
   ch_waterBalloon: 'snap.recover',
 };
 
+/** 札・技の上に書く、短い効果（調整10。札の幅に2行まで。くわしくは長押し） */
+export const CHAIN_SHORT_TEXT: Record<string, string> = {
+  ch_target: '次の一撃が\n全員に広がる',
+  ch_expose: '次の一撃を\n弱点扱い',
+  ch_rattle: '次のフィニッ\nシュが2倍',
+  ch_chill: '予定が1マス\n遅れる 2R',
+  ch_ember: '終わりごと\nに熱 3R',
+  ch_notch: '当たるほど\n痛くなる 2R',
+  ch_wilt: '敵の攻撃が\n半分 2R',
+  ch_seal: '大技を\n止める 2R',
+  ch_dazzle: '敵の攻撃が\n仲間割れ 1R',
+  ch_leech: '当てた分\n回復 3R',
+  ch_imprint: '付いた効果\nごとに強く',
+  ch_wideShot: '敵全体に\n物理',
+  ch_decisive: 'ダウン中\nなら2倍',
+  ch_swing: '敵1体に\nとても強く',
+  ch_sparkler: '敵全体に火',
+  ch_waterBalloon: '全体に氷\n＋スロー',
+  quick: '軽い物理',
+  slash: '敵1体に物理',
+  finisher: '強い物理\nダウン中2倍',
+  spark: '軽い火',
+  fire: '敵1体に火',
+  ice: '敵1体に氷',
+  heal: '仲間全体を\n回復',
+  kick: '軽い物理',
+  zap: '軽い雷',
+  thunder: '敵1体に雷',
+};
+
 /** 仲間の技と連携技の絵（フィルムの帯に並べる。調整9） */
 export const CHAIN_MOVE_ART: Record<string, string> = {
   quick: 'snap.quickStep',

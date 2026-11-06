@@ -26,7 +26,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import type { Element } from '../core';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
@@ -631,7 +631,7 @@ export class ChainBattleScene extends Phaser.Scene {
   private drawOptions(): void {
     const s = this.s;
     const r = this.root;
-    const items: { source: ChainSource; move: ChainMove; art?: string; used?: boolean }[] = [];
+    const items: { source: ChainSource; move: ChainMove; art?: string; used?: boolean; key?: string }[] = [];
     const links = this.tab === 'cards' ? availableLinks(s, this.plan) : [];
     links.forEach((x, k) => {
       const lw = (GAME_WIDTH - 16 - (links.length - 1) * 6) / links.length;
@@ -657,11 +657,11 @@ export class ChainBattleScene extends Phaser.Scene {
     });
     if (this.tab === 'cards') {
       const usedCards = new Set(this.plan.flatMap((p) => (p.source.kind === 'card' ? [p.source.index] : p.source.kind === 'link' ? p.source.cards : [])));
-      s.hand.forEach((id, index) => items.push({ source: { kind: 'card', index }, move: s.def.cards[id], art: CHAIN_CARD_ART[id], used: usedCards.has(index) }));
+      s.hand.forEach((id, index) => items.push({ source: { kind: 'card', index }, move: s.def.cards[id], art: CHAIN_CARD_ART[id], used: usedCards.has(index), key: id }));
     } else if (this.ally) {
       const me = findChainUnit(s, this.ally);
       const def = s.def.allies.find((a) => a.id === me?.defId);
-      for (const m of def?.moves ?? []) items.push({ source: { kind: 'move', moveId: m.id }, move: m, art: CHAIN_MOVE_ART[m.id] });
+      for (const m of def?.moves ?? []) items.push({ source: { kind: 'move', moveId: m.id }, move: m, art: CHAIN_MOVE_ART[m.id], key: m.id });
     }
     const me = this.ally ? findChainUnit(s, this.ally) : undefined;
     const shown = items.slice(0, 5);
@@ -686,7 +686,7 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
-  private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean }, angle: number, sel: boolean, notMine: boolean): void {
+  private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
     const m = it.move;
     const color = m.owner ? (ALLY_COLOR[m.owner] ?? GOLD) : TYPE_COLOR[m.type];
     const parts: Phaser.GameObjects.GameObject[] = [];
@@ -699,20 +699,27 @@ export class ChainBattleScene extends Phaser.Scene {
     parts.push(this.add.rectangle(0, -h / 2 + 10, w + 6, 20, color));
     const label = m.owner ? `${this.allyName(m.owner)}専用` : TYPE_LABEL[m.type];
     parts.push(addText(this, 0, -h / 2 + 10, label, { size: 10, bold: true, color: '#ffffff' }).setOrigin(0.5));
-    if (it.art && hasImage(this, it.art)) parts.push(this.cropImage(it.art, 0, -h / 2 + 62, w - 8, 76));
-    else parts.push(this.add.rectangle(0, -h / 2 + 62, w - 8, 76, 0x2b3560));
+    if (it.art && hasImage(this, it.art)) parts.push(this.cropImage(it.art, 0, -h / 2 + 54, w - 8, 60));
+    else parts.push(this.add.rectangle(0, -h / 2 + 54, w - 8, 60, 0x2b3560));
     if (m.owner) {
-      const f = this.faceSquare(m.owner, w / 2 - 14, -h / 2 + 88, 22);
-      if (f) parts.push(this.add.rectangle(w / 2 - 14, -h / 2 + 88, 25, 25, 0xffffff), f);
+      const f = this.faceSquare(m.owner, w / 2 - 14, -h / 2 + 72, 22);
+      if (f) parts.push(this.add.rectangle(w / 2 - 14, -h / 2 + 72, 25, 25, 0xffffff), f);
+    }
+    // 効果をひと言で（調整10）
+    const short = CHAIN_SHORT_TEXT[it.key ?? ''];
+    if (short) {
+      const ef = addText(this, 0, -h / 2 + 128, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center' }).setOrigin(0.5);
+      if (ef.width > w - 6) ef.setScale((w - 6) / ef.width);
+      parts.push(ef);
     }
     // 名前は1行に縮めて収める。縮めすぎる時だけ2行に
-    let title = addText(this, 0, -h / 2 + 116, m.name, { size: 12, bold: true, color: '#111111' }).setOrigin(0.5);
+    let title = addText(this, 0, -h / 2 + 100, m.name, { size: 12, bold: true, color: '#111111' }).setOrigin(0.5);
     if (title.width > w - 6) {
       if ((w - 6) / title.width >= 0.72) title.setScale((w - 6) / title.width);
       else {
         title.destroy();
-        title = addText(this, 0, -h / 2 + 116, m.name, { size: 12, bold: true, color: '#111111', align: 'center', wrap: w - 4, ja: true }).setOrigin(0.5);
-        if (title.height > 30) title.setScale(30 / title.height);
+        title = addText(this, 0, -h / 2 + 100, m.name, { size: 12, bold: true, color: '#111111', align: 'center', wrap: w - 4, ja: true }).setOrigin(0.5);
+        if (title.height > 26) title.setScale(26 / title.height);
       }
     }
     parts.push(title);
