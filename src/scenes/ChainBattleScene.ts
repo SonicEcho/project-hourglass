@@ -17,6 +17,8 @@ import {
   stepAllies,
   takeShutter,
   type ChainEvent,
+  chainCardCategory,
+  type ChainCardCategory,
   type ChainFrame,
   type ChainMove,
   type ChainPlanStep,
@@ -74,9 +76,9 @@ const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;
-/** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート） */
-const TYPE_LABEL: Record<string, string> = { place: 'サポート', trick: 'サポート', status: 'サポート', receive: 'サポート', count: 'サポート', finish: 'フィニッシュ', attack: 'アタック', support: 'サポート', link: '連携技' };
-const TYPE_COLOR: Record<string, number> = { place: 0x19b37a, trick: 0x19b37a, status: 0x19b37a, receive: 0x19b37a, count: 0x19b37a, finish: RED, attack: 0x3a8dff, support: 0x19b37a, link: GOLD };
+/** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート。調整13：専用の札は「スペシャル」に分ける） */
+const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アタック', support: 'サポート', finish: 'フィニッシュ', special: 'スペシャル', link: '連携技' };
+const CATEGORY_COLOR: Record<ChainCardCategory, number> = { attack: 0x3a8dff, support: 0x19b37a, finish: RED, special: 0xff8a1f, link: GOLD };
 /** 敵に付いた効果のシールの色（一度で消える物は紫、ラウンドの間続く物は青緑） */
 const CHIP_ONCE = 0xb36bff;
 const CHIP_LASTING = 0x19d3c5;
@@ -683,7 +685,7 @@ export class ChainBattleScene extends Phaser.Scene {
       makePressable(hit, {
         onTap: () => !it.used && this.pickOption(it.source, it.move),
         onLongPress: () => {
-          this.message = `【${TYPE_LABEL[it.move.type]}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}`;
+          this.message = `【${this.categoryLabel(it.move)}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}`;
           this.render();
         },
       });
@@ -694,7 +696,7 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
   private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
     const m = it.move;
-    const color = TYPE_COLOR[m.type];
+    const color = CATEGORY_COLOR[chainCardCategory(m)];
     const parts: Phaser.GameObjects.GameObject[] = [];
     const w = CARD_W;
     const h = CARD_H;
@@ -703,7 +705,7 @@ export class ChainBattleScene extends Phaser.Scene {
     parts.push(this.add.rectangle(0, 0, w + 6, h + 6, sel ? YELLOW : color));
     parts.push(this.add.rectangle(0, 0, w, h, m.owner ? 0xffe6a8 : 0xf4efe4));
     parts.push(this.add.rectangle(0, -h / 2 + 10, w + 6, 20, color));
-    const label = TYPE_LABEL[m.type];
+    const label = CATEGORY_LABEL[chainCardCategory(m)];
     parts.push(addText(this, 0, -h / 2 + 10, label, { size: 10, bold: true, color: '#ffffff' }).setOrigin(0.5));
     if (it.art && hasImage(this, it.art)) parts.push(this.cropImage(it.art, 0, -h / 2 + 54, w - 8, 60));
     else parts.push(this.add.rectangle(0, -h / 2 + 54, w - 8, 60, 0x2b3560));
@@ -741,9 +743,15 @@ export class ChainBattleScene extends Phaser.Scene {
     this.root.add(this.add.container(cx, cy, parts).setAngle(angle));
   }
 
+  /** 長押しの説明の分類（スペシャルは、誰の専用かも） */
+  private categoryLabel(m: ChainMove): string {
+    const c = chainCardCategory(m);
+    return c === 'special' && m.owner ? `スペシャル・${this.allyName(m.owner)}専用` : CATEGORY_LABEL[c];
+  }
+
   /** 決まりの早見（「？」で案内の帯に出す。調整5で、常に出す早見をやめた） */
   private showRules(): void {
-    this.message = '札は3種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動';
+    this.message = '札は4種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）・スペシャル（顔の仲間だけが使える。2人の札がそろうと連携技）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動';
     this.render();
   }
 
@@ -793,7 +801,7 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     this.pending = { source, move };
     const at = nextStart(this.s, this.plan);
-    this.message = `【${TYPE_LABEL[move.type]}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}　→ 敵をタップ`;
+    this.message = `【${this.categoryLabel(move)}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}　→ 敵をタップ`;
     this.render();
   }
 
