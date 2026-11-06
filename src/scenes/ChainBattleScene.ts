@@ -15,7 +15,7 @@ import {
   runChainRound,
   chainGrade,
   stepAllies,
-  takeShutter,
+  shootShutter,
   type ChainEvent,
   chainCardCategory,
   type ChainCardCategory,
@@ -755,7 +755,7 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 決まりの早見（「？」で案内の帯に出す。調整5で、常に出す早見をやめた） */
   private showRules(): void {
-    this.message = '札は4種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）・スペシャル（顔の仲間だけが使える。2人の札がそろうと連携技）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動';
+    this.message = `札は4種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）・スペシャル（顔の仲間だけが使える。2人の札がそろうと連携技）。敵を全員ダウンさせるとシャッター：押すと敵みんなに最大HPの${Math.round(CHAIN_RULES.shutterRate * 10)}割の総攻撃（倒し切れなければ、そのラウンドはそこで終わる）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動`;
     this.render();
   }
 
@@ -1084,7 +1084,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.plan = [];
     this.ally = this.firstFreeAlly();
     if (final.shutter) {
-      this.message = '敵が全員ダウンした。今だ、シャッター！';
+      this.message = '敵が全員ダウンした。今だ、シャッターで総攻撃！';
       this.render();
       this.showShutter();
       return;
@@ -1099,7 +1099,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.render();
   }
 
-  /** シャッターのボタン。押すと、その瞬間を切り取って決着 */
+  /** シャッターのボタン。押すと総攻撃（調整15。前は、その瞬間を切り取って決着） */
   private showShutter(): void {
     const o = this.add.container(0, 0).setDepth(90);
     o.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.45).setOrigin(0).setInteractive());
@@ -1108,7 +1108,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const btn = this.add.circle(GAME_WIDTH / 2, cy, 60, RED).setStrokeStyle(5, 0xffffff);
     const t = addText(this, GAME_WIDTH / 2, cy, 'SHUTTER', { size: 22, bold: true }).setOrigin(0.5).setFontStyle('bold italic');
     o.add([ring, btn, t]);
-    o.add(this.sticker(GAME_WIDTH / 2, cy - 98, '全員の動きが止まった！ 今だ', YELLOW, '#000000', -4, 13));
+    o.add(this.sticker(GAME_WIDTH / 2, cy - 98, '全員の動きが止まった！ 総攻撃のチャンス', YELLOW, '#000000', -4, 13));
     this.tweens.add({ targets: ring, scale: 1.18, alpha: 0.4, duration: 600, yoyo: true, repeat: -1 });
     makePressable(btn, {
       onTap: () => {
@@ -1118,18 +1118,30 @@ export class ChainBattleScene extends Phaser.Scene {
     });
   }
 
+  /** シャッター（調整15：総攻撃）。敵みんなに大きなダメージ。倒し切れば決着、残ればダウンが解けて次のラウンドへ */
   private snap(): void {
     playSe(this, SE.shutter);
-    this.s = takeShutter(this.s);
+    const before = this.s;
+    const r = shootShutter(this.s);
+    this.s = r.state;
     saveKnown(this.s.known);
-    // 白く光って、敵がセピアに止まる
+    // 白く光って、敵がセピアに止まり、総攻撃の数字が出る
     const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0).setDepth(95);
     this.tweens.add({ targets: flash, alpha: 0, duration: 600, onComplete: () => flash.destroy() });
     for (const img of this.enemyImages.values()) if (img.alpha >= 0.5) img.setTint(0xc8a878);
-    this.time.delayedCall(1000, () => {
+    this.popNumbers(r.events, before);
+    const win = this.s.outcome !== 'ongoing';
+    this.time.delayedCall(win ? 1000 : 1500, () => {
       this.busy = false;
+      for (const img of this.enemyImages.values()) img.clearTint();
+      if (win) {
+        this.render();
+        this.showEnd();
+        return;
+      }
+      const left = this.s.enemies.filter((e) => e.hp > 0 && !e.gone).length;
+      this.message = `総攻撃！ ${left}体が持ちこたえて起き上がった。ラウンド${this.s.round}。敵の新しい予定を見て並べる`;
       this.render();
-      this.showEnd();
     });
   }
 
@@ -1355,6 +1367,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'fizzle') parts.push('直前の攻撃がなくて不発');
     else if (ev.type === 'link') parts.push(`連携技「${ev.name}」！`);
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
+    else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
     else if (ev.type === 'unveil') parts.push(`${name(ev.uid)}の予定が見えた`);
     else if (ev.type === 'rewind') parts.push(`${name(ev.uid)}が巻き戻しで${ev.amount}回復`);

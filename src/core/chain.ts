@@ -193,6 +193,8 @@ export interface ChainRules {
   sealBig: number;
   /** リーダー：生きている間、ほかの敵の攻撃の倍率（調整12） */
   leaderRate: number;
+  /** シャッター（総攻撃）：生きている敵みんなに、最大 HP のこの割合のダメージ（調整15。前は即決着） */
+  shutterRate: number;
 }
 
 /** 組み合わせの型（エグゼのウイルスの編成のように、同じ顔ぶれでも行動の並びが違う）。patterns は enemies と同じ並びで、書かない敵は敵の定義の癖のまま */
@@ -307,6 +309,8 @@ export type ChainEvent =
   | { type: 'fizzle'; uid: string }
   | { type: 'link'; name: string; uids: string[] }
   | { type: 'shutterReady' }
+  /** シャッター（総攻撃）を撮った。続けて敵ごとの damage が並ぶ（調整15） */
+  | { type: 'shutterShot'; uids: string[] }
   /** 割り込み：狙われて、先に動いた */
   | { type: 'interrupt'; uid: string; by: string }
   /** 予定隠し：攻撃が当たって、予定が見えた */
@@ -1032,6 +1036,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       break;
     }
   }
+  // シャッターで止まった時：まだ動いていない仲間の札は、手札に戻す（調整15。シャッターの後も戦闘が続くため）
+  if (s.shutter) for (const q of pending) if (q.kind === 'ally') s.hand.push(...cardIds[q.i]);
   if (!stopped) {
     // やけど：ラウンドの終わりに小さなダメージ
     for (const e of living(s.enemies).filter((x) => x.status?.kind === 'burn')) {
@@ -1101,15 +1107,34 @@ function endRound(s: ChainState): void {
   planIntents(s);
 }
 
-/** シャッターを押す（全員ダウンの時だけ）：その瞬間を切り取って決着 */
-export function takeShutter(s0: ChainState): ChainState {
-  if (!s0.shutter || s0.outcome !== 'ongoing') return s0;
+/**
+ * シャッターを押す（全員ダウンの時だけ）。調整15：即決着をやめ、総攻撃にした（ペルソナの総攻撃）。
+ * 生きている敵みんなに、最大 HP × shutterRate のダメージ（防御・バリア・耐性は関係なし）。全員倒せば決着（finish は 'shutter'）。
+ * 残った敵がいれば、そのラウンドはそこで終わる（残りの予定は起きない。やけど・自爆・巻き戻しのラウンドの終わりの処理もない）。ダウンが解けて次のラウンドへ
+ */
+export function shootShutter(s0: ChainState): { state: ChainState; events: ChainEvent[] } {
+  if (!s0.shutter || s0.outcome !== 'ongoing') return { state: s0, events: [] };
   const s = cloneChain(s0);
   s.shutter = false;
-  s.outcome = 'win';
-  s.finish = 'shutter';
-  s.finishRound = s.round;
-  return s;
+  const foes = living(s.enemies);
+  const ev: ChainEvent[] = [{ type: 'shutterShot', uids: foes.map((e) => e.uid) }];
+  for (const e of foes) {
+    const amount = Math.max(1, Math.floor(e.maxHp * s.rules.shutterRate));
+    e.hp = Math.max(0, e.hp - amount);
+    ev.push({ type: 'damage', from: 'shutter', to: e.uid, amount, weak: false, resist: false });
+    if (e.hp === 0) defeatEnemy(s, e, ev);
+  }
+  if (living(s.enemies).length === 0) {
+    s.outcome = 'win';
+    s.finish = 'shutter';
+    s.finishRound = s.round;
+  } else endRound(s);
+  return { state: s, events: ev };
+}
+
+/** シャッターを押した後の状態だけ（自動対戦とテスト用） */
+export function takeShutter(s0: ChainState): ChainState {
+  return shootShutter(s0).state;
 }
 
 /** 評価：決着した時刻の合計が早いほど上（負けは null）。境目は組み合わせの gradeAt（なければ1ラウンド目なら高、2ラウンド目までなら中） */

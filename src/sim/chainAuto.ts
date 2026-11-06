@@ -1,7 +1,8 @@
 import { availableLinks, chainGrade, chainMoveOf, chainPlanError, createChainBattle, nextRandom, runChainRound, takeShutter, type ChainBattleDef, type ChainPlanStep, type ChainRules, type ChainState } from '../core';
 
 // 試し：並べてつなぐ戦闘（段階156）の自動対戦。手応えの目安を測るためだけに使う。
-// random：並べる順・行動・相手をでたらめに選ぶ。smart：でたらめな計画をたくさん作って、1ラウンド先まで動かし、一番よい物を選ぶ（読み切る人の目安）
+// random：並べる順・行動・相手をでたらめに選ぶ。smart：でたらめな計画をたくさん作って、1ラウンド先まで動かし、一番よい物を選ぶ（読み切る人の目安）。
+// deep（調整15）：smart の上位の計画ごとに、次のラウンドの計画も探して、2ラウンド先までで一番よい物を選ぶ（数ラウンド続くサポートの値打ちを測るため）
 
 /** 計画の続きに置ける行（仲間1人分の候補。同じ札は1枚にまとめる） */
 export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: string): ChainPlanStep[] {
@@ -51,7 +52,7 @@ export function randomChainPlan(s: ChainState, pick: (n: number) => number): Cha
 function score(before: ChainState, after: ChainState): number {
   if (after.outcome === 'lose') return -1e6;
   // 早く決着するほど良い（評価と報酬が上がるため。調整6）
-  if (after.shutter || after.outcome === 'win') return 1e6 - (after.finishTime ?? 0) * 1000;
+  if (after.outcome === 'win') return 1e6 - (after.finishTime ?? 0) * 1000;
   const foeHp = (s: ChainState) => s.enemies.reduce((a, e) => a + e.hp, 0);
   const allyHp = (s: ChainState) => s.allies.reduce((a, u) => a + u.hp, 0);
   const kills = after.enemies.filter((e) => e.hp <= 0).length - before.enemies.filter((e) => e.hp <= 0).length;
@@ -59,19 +60,48 @@ function score(before: ChainState, after: ChainState): number {
   return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300;
 }
 
-export function smartChainPlan(s: ChainState, pick: (n: number) => number, tries = 600): ChainPlanStep[] {
-  let best: ChainPlanStep[] = [];
-  let bestScore = -Infinity;
+/** 1ラウンド動かす（シャッターが光ったら押す。調整15：シャッターは総攻撃なので、押した後も続くことがある） */
+function step(s: ChainState, plan: ChainPlanStep[]): ChainState {
+  const r = runChainRound(s, plan).state;
+  return r.shutter ? takeShutter(r) : r;
+}
+
+/** 1ラウンド先までで一番よい計画（と、その後の状態と点） */
+function bestOne(s: ChainState, pick: (n: number) => number, tries: number, keep = 1): { plan: ChainPlanStep[]; after: ChainState; v: number }[] {
+  const out: { plan: ChainPlanStep[]; after: ChainState; v: number }[] = [];
   for (let k = 0; k < tries; k++) {
     const plan = randomChainPlan(s, pick);
-    const v = score(s, runChainRound(s, plan).state);
+    const after = step(s, plan);
+    out.push({ plan, after, v: score(s, after) });
+  }
+  return out.sort((a, b) => b.v - a.v).slice(0, keep);
+}
+
+export function smartChainPlan(s: ChainState, pick: (n: number) => number, tries = 600): ChainPlanStep[] {
+  return bestOne(s, pick, tries)[0]?.plan ?? [];
+}
+
+/** 2ラウンド先まで読む（調整15）。1ラウンド目の上位 top 個それぞれに、次のラウンドの計画を inner 個試す */
+export function deepChainPlan(s: ChainState, pick: (n: number) => number, tries = 600, top = 12, inner = 120): ChainPlanStep[] {
+  let best: ChainPlanStep[] = [];
+  let bestScore = -Infinity;
+  for (const c of bestOne(s, pick, tries, top)) {
+    let v = c.v;
+    if (c.after.outcome === 'ongoing') {
+      const next = bestOne(c.after, pick, inner)[0];
+      if (next) v = score(s, next.after);
+    }
     if (v > bestScore) {
       bestScore = v;
-      best = plan;
+      best = c.plan;
     }
   }
   return best;
 }
+
+export type ChainPolicy = 'random' | 'smart' | 'deep';
+const planBy = (policy: ChainPolicy, s: ChainState, pick: (n: number) => number): ChainPlanStep[] =>
+  policy === 'deep' ? deepChainPlan(s, pick) : policy === 'smart' ? smartChainPlan(s, pick) : randomChainPlan(s, pick);
 
 export interface ChainAutoResult {
   outcome: ChainState['outcome'];
@@ -102,11 +132,13 @@ export interface ChainStats {
   pushes: number;
   /** 敵の行動をダウンで止めた回数 */
   interrupts: number;
+  /** シャッター（総攻撃）を撮った回数（調整15。決着しなかった分も数える） */
+  shutterShots: number;
 }
 
 /** 1つの組み合わせを runs 回戦い、使った札・技と勝ち方を数える */
-export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: number, policy: 'random' | 'smart', seed = 100): ChainStats {
-  const st: ChainStats = { battles: 0, wins: 0, rounds: 0, shutters: 0, firstRoundShutters: 0, resonances: 0, links: 0, weakDowns: 0, used: {}, grades: {}, finishTime: 0, pushOuts: 0, pushes: 0, interrupts: 0 };
+export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: number, policy: ChainPolicy, seed = 100): ChainStats {
+  const st: ChainStats = { battles: 0, wins: 0, rounds: 0, shutters: 0, firstRoundShutters: 0, resonances: 0, links: 0, weakDowns: 0, used: {}, grades: {}, finishTime: 0, pushOuts: 0, pushes: 0, interrupts: 0, shutterShots: 0 };
   for (let k = 0; k < runs; k++) {
     let r = ((seed + k) ^ 0x9e3779b9) >>> 0;
     const pick = (n: number): number => {
@@ -116,7 +148,7 @@ export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: numbe
     };
     let s = createChainBattle(def, rules, seed + k);
     while (s.outcome === 'ongoing' && s.round <= 20) {
-      const plan = policy === 'smart' ? smartChainPlan(s, pick) : randomChainPlan(s, pick);
+      const plan = planBy(policy, s, pick);
       const res = runChainRound(s, plan);
       for (const f of res.frames) {
         const ev = f.events;
@@ -135,7 +167,10 @@ export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: numbe
         });
       }
       s = res.state;
-      if (s.shutter) s = takeShutter(s);
+      if (s.shutter) {
+        st.shutterShots++;
+        s = takeShutter(s);
+      }
     }
     st.battles++;
     if (s.outcome === 'win') {
@@ -154,7 +189,7 @@ export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: numbe
 }
 
 /** 1戦を最後まで（シャッターが光ったら押す）。maxRounds で打ち切り（負け） */
-export function autoChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, policy: 'random' | 'smart', maxRounds = 20): ChainAutoResult {
+export function autoChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, policy: ChainPolicy, maxRounds = 20): ChainAutoResult {
   let r = (seed ^ 0x9e3779b9) >>> 0;
   const pick = (n: number): number => {
     const [v, next] = nextRandom(r);
@@ -163,7 +198,7 @@ export function autoChainBattle(def: ChainBattleDef, rules: ChainRules, seed: nu
   };
   let s = createChainBattle(def, rules, seed);
   while (s.outcome === 'ongoing' && s.round <= maxRounds) {
-    const plan = policy === 'smart' ? smartChainPlan(s, pick) : randomChainPlan(s, pick);
+    const plan = planBy(policy, s, pick);
     s = runChainRound(s, plan).state;
     if (s.shutter) s = takeShutter(s);
   }

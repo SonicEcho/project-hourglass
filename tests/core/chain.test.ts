@@ -11,6 +11,7 @@ import {
   chainGrade,
   chainCardCategory,
   takeShutter,
+  shootShutter,
   type ChainBattleDef,
   type ChainEnemyDef,
   type ChainEvent,
@@ -400,18 +401,44 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(r.state.discard).toEqual(expect.arrayContaining([CHAIN_CARDS.swing.id, CHAIN_CARDS.sparkler.id]));
   });
 
-  it('生きている敵が全員ダウンするとシャッターが光り、押すと決着。決着の時刻が早いほど評価が高い', () => {
+  it('生きている敵が全員ダウンするとシャッターが光り、押すと総攻撃。倒し切れば決着。決着の時刻が早いほど評価が高い', () => {
     const s = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.expose.id]);
+    // 総攻撃（最大 HP × shutterRate）で倒し切れるようにしておく
+    s.rules = { ...s.rules, shutterRate: 1 };
     const [ba, go] = s.enemies.map((e) => e.uid);
     // 静電気（時刻1）で水風船が雷の弱点でダウン → あばく（時刻2）→ すばやく（時刻3）で金魚がむき出しの弱点でダウン
     const r = runChainRound(s, [move('mio', 'zap', ba), cardStep('akari', 0, go), move('hero', 'quick', go)]);
     expect(r.state.shutter).toBe(true);
-    const won = takeShutter(r.state);
+    const shot = shootShutter(r.state);
+    expect(shot.events[0].type).toBe('shutterShot');
+    expect(shot.events.filter((e) => e.type === 'damage' && e.from === 'shutter').length).toBe(2);
+    const won = shot.state;
     expect(won.outcome).toBe('win');
+    expect(won.finish).toBe('shutter');
     expect(won.finishTime).toBe(3);
     expect(chainGrade(won)).toBe('high');
-    expect(chainGrade({ ...won, finishTime: 14 })).toBe('mid');
-    expect(chainGrade({ ...won, finishTime: 30 })).toBe('low');
+    expect(chainGrade({ ...won, finishTime: (BASE.gradeAt!.high + BASE.gradeAt!.mid) / 2 })).toBe('mid');
+    expect(chainGrade({ ...won, finishTime: BASE.gradeAt!.mid + 1 })).toBe('low');
+  });
+
+  it('総攻撃で倒し切れなければ、そのラウンドはそこで終わる。ダウンが解けて次のラウンドへ。まだ動いていない仲間の札は手札に戻る', () => {
+    const s = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.expose.id, CHAIN_CARDS.closeUp.id]);
+    const [ba, go] = s.enemies.map((e) => e.uid);
+    const r = runChainRound(s, [move('mio', 'zap', ba), cardStep('akari', 0, go), move('hero', 'quick', go)]);
+    expect(r.state.shutter).toBe(true);
+    const before = r.state.enemies.map((e) => e.hp);
+    const next = takeShutter(r.state);
+    expect(next.outcome).toBe('ongoing');
+    expect(next.shutter).toBe(false);
+    expect(next.round).toBe(2);
+    expect(next.enemies.every((e) => !e.down)).toBe(true);
+    next.enemies.forEach((e, i) => expect(before[i] - e.hp).toBe(Math.floor(e.maxHp * CHAIN_RULES.shutterRate)));
+    // シャッターの後の行動に置いた札は、なくならずに手札へ戻る（静電気とストロボで2体とも雷の弱点 → あかりのクローズアップは起きない）
+    const s2 = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.strobe.id, CHAIN_CARDS.closeUp.id]);
+    const r2 = runChainRound(s2, [move('mio', 'zap', ba), cardStep('hero', 0, go), cardStep('akari', 1, ba)]);
+    expect(r2.state.shutter).toBe(true);
+    expect(r2.state.hand).toEqual([CHAIN_CARDS.closeUp.id]);
+    expect(r2.state.discard).toEqual([CHAIN_CARDS.strobe.id]);
   });
 
   it('ラウンドの終わりに、ダウンが解け、癖が1つ進み、手札が5枚まで戻る', () => {
