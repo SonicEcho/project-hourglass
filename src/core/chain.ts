@@ -9,8 +9,9 @@ import type { Element } from './types';
 // - 軽い技には「押す」がある。当てると、その敵のまだ動いていない予定が後ろへずれる。ラウンドの外へ押し出すと、その予定は起きない（調整6）
 // - 敵の組み合わせには、エグゼのウイルスの編成のように、いくつかの型（variants）がある。戦闘ごとに1つを選ぶ（調整6）
 // - 決着した時刻の合計（elapsed + 決着の時刻）が早いほど、評価が高い（調整6。報酬のレア度に使う）
-// - 札には型がある（置く・受ける・数える・締める）。置く札は、敵に属性の色の印を付ける。
-//   印と同じ属性の攻撃が当たると「共鳴」し、同じ印の付いた敵みんなに広がる（調整3。決まりは「同じ色を重ねると広がる」1つだけ）
+// - 札には型がある（仕掛け・状態・攻撃・締める。調整7）。
+//   仕掛け：敵に仕掛けておき、次に当たった攻撃で使い切る（目印＝ほかの敵みんなに広がる、むき出し＝弱点になる、すき＝締めの札が2倍）。
+//   状態：数ラウンド続く（鈍足・やけど・刻み・弱り・封印・混乱・吸い取り）。1体に仕掛けと状態は1つずつ（新しく付けると上書き）
 // - 仲間ごとの専用の札（その人しか使えない）が山札に混ざる。組む2人の専用の札が手札にそろうと、連携技を使える（2人の手番を使う。調整3）
 // - 敵ごとに1つの特徴（はじける・すばやい・盾・殻・ねばねば・起こし役・反撃・分裂・時限・逃げる。調整3）
 // - 生きている敵が全員ダウンしたら、シャッターで切り取って決着する（ダウンはラウンドの終わりに解ける）
@@ -39,13 +40,30 @@ export type ChainTrait =
   /** 逃げる：「逃げる」の行動（flee）が動くと、戦闘からいなくなる */
   | 'flee';
 
+/** 仕掛け（次に当たった攻撃で使い切る）：spread 目印（ほかの敵みんなに広がる。広がった先ではダウンしない）・expose むき出し（属性に関係なく弱点になる）・opening すき（締めの札が2倍） */
+export type ChainTrick = 'spread' | 'expose' | 'opening';
+
+/**
+ * 状態（数ラウンド続く）：slow 鈍足（予定が1マス遅れる）・burn やけど（ラウンドの終わりに小さなダメージ）・stack 刻み（当たるたびに受けるダメージが上がる）・
+ * weak 弱り（攻撃が半分）・seal 封印（全体攻撃と大技が、ふつうの攻撃に変わる）・confuse 混乱（単体攻撃が、ほかの敵に向く）・drain 吸い取り（攻撃した仲間が回復）
+ */
+export type ChainStatusKind = 'slow' | 'burn' | 'stack' | 'weak' | 'seal' | 'confuse' | 'drain';
+
+export interface ChainStatus {
+  kind: ChainStatusKind;
+  /** 残りのラウンド */
+  left: number;
+  /** 刻みの重なり */
+  stacks: number;
+}
+
 /** 札・技の型（表示と説明のため。効き目は effect で決まる） */
-export type ChainMoveType = 'place' | 'receive' | 'count' | 'finish' | 'attack' | 'support' | 'link';
+export type ChainMoveType = 'place' | 'trick' | 'status' | 'receive' | 'count' | 'finish' | 'attack' | 'support' | 'link';
 
 export type ChainEffect =
   /**
    * ダメージ。perActed：このラウンドにもう動いた仲間1人ごとに威力を足す。hitsPerActed：もう動いた仲間の数 + 1 回当てる。
-   * downMult：ダウン中の敵への倍率。perMark：相手の印1つごとに威力を足し、印を消す。bestOf：敵ごとに一番効く属性を選ぶ。
+   * downMult：ダウン中の敵への倍率。perMark：相手の仕掛けと状態1つごとに威力を足す。bestOf：敵ごとに一番効く属性を選ぶ。
    * push：当てた敵の、まだ動いていない予定を、この数だけ後ろへずらす
    */
   | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[]; push?: number }
@@ -53,8 +71,10 @@ export type ChainEffect =
   | { kind: 'layer'; power: number; mult: number }
   /** 追い風：直前に動いた仲間の攻撃（属性と威力）を、威力 × rate で敵全体にもう一度。直前が攻撃でなければ不発 */
   | { kind: 'wind'; rate: number }
-  /** 印を付ける（属性の色）。power があれば、その属性で小さく当てる */
-  | { kind: 'mark'; element: Element; power?: number }
+  /** 仕掛け：次に当たった攻撃で使い切る。power があれば、その属性で小さく当ててから仕掛ける */
+  | { kind: 'trick'; trick: ChainTrick; element?: Element; power?: number }
+  /** 状態：rounds ラウンド続く。power があれば、その属性で小さく当ててから付ける */
+  | { kind: 'status'; status: ChainStatusKind; rounds: number; element?: Element; power?: number }
   | { kind: 'heal'; power: number };
 
 export interface ChainMove {
@@ -135,6 +155,17 @@ export interface ChainRules {
   timerDamage: number;
   /** 回復量 = 威力 × 魔力 ÷ この値 */
   healDiv: number;
+  /** やけど：ラウンドの終わりのダメージ */
+  burnDamage: number;
+  /** 刻み：重なり1つごとに受けるダメージに足す割合 */
+  stackRate: number;
+  /** 弱り：敵の攻撃の倍率 */
+  weakenRate: number;
+  /** 吸い取り：与えたダメージのこの割合だけ回復 */
+  drainRate: number;
+  /** 封印：大技の代わりのふつうの攻撃の威力。この威力以上の行動は大技とみなす */
+  sealPower: number;
+  sealBig: number;
 }
 
 /** 組み合わせの型（エグゼのウイルスの編成のように、同じ顔ぶれでも行動の並びが違う）。patterns は enemies と同じ並びで、書かない敵は敵の定義の癖のまま */
@@ -175,8 +206,10 @@ export interface ChainUnit {
   weak: Element[];
   resist: Element[];
   trait?: ChainTrait;
-  /** 付いている印（属性の色） */
-  marks: Element[];
+  /** 仕掛け（次に当たった攻撃で使い切る） */
+  trick?: ChainTrick;
+  /** 状態（数ラウンド続く） */
+  status?: ChainStatus;
   down: boolean;
   /** 行動の癖の何番目か */
   step: number;
@@ -197,6 +230,8 @@ export interface ChainIntent {
   at: number;
   /** 単体の時にねらう仲間 */
   target?: string;
+  /** 混乱：代わりにねらうほかの敵 */
+  confused?: string;
 }
 
 export type ChainSource =
@@ -217,9 +252,12 @@ export type ChainEvent =
   | { type: 'cancel'; uid: string; reason: 'down' | 'dead' | 'time' }
   | { type: 'damage'; from: string; to: string; amount: number; weak: boolean; resist: boolean }
   | { type: 'heal'; to: string; amount: number }
-  | { type: 'mark'; to: string; element: Element }
-  /** 共鳴：印と同じ属性が当たり、同じ印の敵みんなに広がった */
-  | { type: 'resonate'; element: Element; from: string; to: string[] }
+  | { type: 'trick'; to: string; trick: ChainTrick }
+  /** 仕掛けを使った（目印は to に広がった先） */
+  | { type: 'trickUse'; uid: string; trick: ChainTrick; to?: string[] }
+  | { type: 'status'; to: string; status: ChainStatusKind; left: number }
+  | { type: 'burn'; uid: string; amount: number }
+  | { type: 'drain'; to: string; amount: number }
   | { type: 'pop'; uid: string }
   | { type: 'cover'; shield: string; from: string }
   | { type: 'shellBreak'; uid: string }
@@ -303,7 +341,7 @@ function shuffle(s: ChainState, list: string[]): string[] {
 }
 
 function cloneUnit(u: ChainUnit): ChainUnit {
-  return { ...u, marks: [...u.marks] };
+  return { ...u, status: u.status ? { ...u.status } : undefined };
 }
 
 export function cloneChain(s: ChainState): ChainState {
@@ -344,7 +382,6 @@ function enemyUnit(d: ChainEnemyDef, uid: string): ChainUnit {
     weak: [...d.weak],
     resist: [...d.resist],
     trait: d.trait,
-    marks: [],
     down: false,
     step: 0,
     shell: d.trait === 'shell' ? true : undefined,
@@ -371,9 +408,27 @@ function planIntents(s: ChainState): void {
     const pattern = e.pattern ?? d.pattern;
     const move = pattern[e.step % pattern.length];
     const pick = () => (move.all || move.flee || allies.length === 0 ? undefined : allies[Math.floor(rand(s) * allies.length)].uid);
-    s.intents.push({ enemy: e.uid, move, at: move.at, target: pick() });
-    if (move.at2 !== undefined) s.intents.push({ enemy: e.uid, move, at: move.at2, target: pick() });
+    const add = (at: number) => {
+      let it: ChainIntent = { enemy: e.uid, move, at, target: pick() };
+      if (e.status) it = statusIntent(s, e, it, e.status.kind);
+      s.intents.push(it);
+    };
+    add(move.at);
+    if (move.at2 !== undefined) add(move.at2);
   }
+}
+
+/** 状態が敵の予定に効く（鈍足は1マス遅れる・封印は大技がふつうの攻撃に・混乱は単体攻撃がほかの敵へ） */
+function statusIntent(s: ChainState, e: ChainUnit, it: ChainIntent, kind: ChainStatusKind): ChainIntent {
+  const m = it.move;
+  if (kind === 'slow') return { ...it, at: Math.min(s.rules.roundLen - 1, it.at + 1) };
+  if (kind === 'seal' && !m.flee && (m.all || m.power >= s.rules.sealBig))
+    return { ...it, move: { id: 'sealed', name: `${m.name}（封印）`, at: m.at, at2: m.at2, element: 'physical', power: s.rules.sealPower }, target: it.target ?? s.allies.find((a) => a.hp > 0)?.uid };
+  if (kind === 'confuse' && !m.flee && !m.all) {
+    const other = living(s.enemies).find((x) => x.uid !== e.uid);
+    if (other) return { ...it, confused: other.uid };
+  }
+  return it;
 }
 
 export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number): ChainState {
@@ -381,7 +436,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     def,
     rules,
     round: 1,
-    allies: def.allies.map((d) => ({ uid: d.id, defId: d.id, name: d.name, side: 'ally', hp: d.hp, maxHp: d.hp, atk: d.atk, mag: d.mag, def: d.def, weak: [], resist: [], marks: [], down: false, step: 0 })),
+    allies: def.allies.map((d) => ({ uid: d.id, defId: d.id, name: d.name, side: 'ally', hp: d.hp, maxHp: d.hp, atk: d.atk, mag: d.mag, def: d.def, weak: [], resist: [], down: false, step: 0 })),
     enemies: def.enemies.map((d, i) => enemyUnit(d, `${d.id}#${i}`)),
     deck: [],
     hand: [],
@@ -510,15 +565,21 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
   return null;
 }
 
-/** 計画の置く札で付く予定の印（敵ごと。今付いている印は含まない） */
-export function plannedMarks(s: ChainState, plan: ChainPlanStep[]): Record<string, Element[]> {
-  const out: Record<string, Element[]> = {};
+/** 計画の仕掛け・状態の札で、付く予定の物（敵ごと） */
+export function plannedEffects(s: ChainState, plan: ChainPlanStep[]): Record<string, { trick?: ChainTrick; status?: ChainStatusKind }> {
+  const out: Record<string, { trick?: ChainTrick; status?: ChainStatusKind }> = {};
   for (const step of plan) {
     const m = chainMoveOf(s, step);
-    if (!m || m.effect.kind !== 'mark') continue;
-    const el = m.effect.element;
-    const targets = m.target === 'enemies' ? living(s.enemies).map((e) => e.uid) : step.target ? [step.target] : [];
-    for (const t of targets) (out[t] ??= []).includes(el) || out[t].push(el);
+    if (!m || (m.effect.kind !== 'trick' && m.effect.kind !== 'status')) continue;
+    // 単体は、盾が立っていれば盾に付く（実行の時と同じ）
+    const shield = living(s.enemies).find((e) => e.trait === 'shield' && !e.down);
+    const single = step.target && shield && shield.uid !== step.target ? shield.uid : step.target;
+    const targets = m.target === 'enemies' ? living(s.enemies).map((e) => e.uid) : single ? [single] : [];
+    for (const t of targets) {
+      const o = (out[t] ??= {});
+      if (m.effect.kind === 'trick') o.trick = m.effect.trick;
+      else o.status = m.effect.status;
+    }
   }
   return out;
 }
@@ -544,8 +605,10 @@ interface ActCtx {
 interface HitOpts {
   ignoreResist?: boolean;
   downMult?: number;
-  /** 共鳴を起こさない（共鳴で広がった先） */
+  /** 目印で広がった先（もう広がらない・ダウンしない・仕掛けを使わない） */
   noChain?: boolean;
+  /** 締めの札（すきで2倍） */
+  finish?: boolean;
 }
 
 function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
@@ -568,7 +631,8 @@ function hurtAlly(from: string, a: ChainUnit, amount: number, ev: ChainEvent[]):
 /** 倒れた敵の後始末（分裂は2体に分かれる） */
 function defeatEnemy(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
   e.down = false;
-  e.marks = [];
+  e.trick = undefined;
+  e.status = undefined;
   ev.push({ type: 'defeat', uid: e.uid });
   const into = e.trait === 'split' ? chainEnemyDef(s, e.defId)?.splitInto : undefined;
   if (into) {
@@ -588,15 +652,32 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     return;
   }
   const stat = el === 'physical' ? actor.atk : actor.mag;
-  const aff = affinity(s, e, el, opts.ignoreResist);
-  const mult = aff.mult * (e.down && opts.downMult ? opts.downMult : 1);
+  // 仕掛け：むき出しは弱点になる、すきは締めの札が2倍、目印はほかの敵みんなに広がる（どれも1回で消える。広がった先では使わない）
+  const trick = opts.noChain ? undefined : e.trick;
+  const useTrick = trick === 'expose' || trick === 'spread' || (trick === 'opening' && opts.finish);
+  if (useTrick) e.trick = undefined;
+  const aff = trick === 'expose' ? { mult: s.rules.weakMult, weak: true, resist: false } : affinity(s, e, el, opts.ignoreResist);
+  let mult = aff.mult * (e.down && opts.downMult ? opts.downMult : 1);
+  if (trick === 'opening' && opts.finish) mult *= 2;
+  // 刻み：重なるほど受けるダメージが上がる
+  if (e.status?.kind === 'stack') {
+    mult *= 1 + s.rules.stackRate * e.status.stacks;
+    e.status.stacks++;
+  }
   const amount = Math.max(1, Math.floor(((power * stat) / Math.max(1, e.def)) * mult));
-  // 共鳴：印と同じ属性が当たると、同じ印の敵みんなに広がる（印は消える）
-  const resonate = !opts.noChain && e.marks.includes(el);
   e.hp = Math.max(0, e.hp - amount);
   ev.push({ type: 'damage', from: actor.uid, to: e.uid, amount, weak: aff.weak, resist: aff.resist });
+  if (useTrick && trick !== 'spread') ev.push({ type: 'trickUse', uid: e.uid, trick: trick! });
+  // 吸い取り：攻撃した仲間が回復
+  if (e.status?.kind === 'drain' && actor.hp > 0) {
+    const heal = Math.min(actor.maxHp - actor.hp, Math.floor(amount * s.rules.drainRate));
+    if (heal > 0) {
+      actor.hp += heal;
+      ev.push({ type: 'drain', to: actor.uid, amount: heal });
+    }
+  }
   if (e.hp === 0) defeatEnemy(s, e, ev);
-  else if (aff.weak) knockDown(s, e, ev);
+  else if (aff.weak && !opts.noChain) knockDown(s, e, ev);
   // ねばねば：この行動の後、まだ動いていない仲間が遅れる
   if (e.trait === 'sticky' && !ctx.stuck) {
     ctx.stuck = true;
@@ -609,11 +690,10 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     ev.push({ type: 'counter', uid: e.uid, to: actor.uid });
     hurtAlly(e.uid, actor, Math.max(1, Math.floor((s.rules.counterPower * e.atk) / Math.max(1, actor.def))), ev);
   }
-  if (resonate) {
-    const others = living(s.enemies).filter((x) => x.uid !== e.uid && x.marks.includes(el));
-    e.marks = e.marks.filter((m) => m !== el);
-    for (const x of others) x.marks = x.marks.filter((m) => m !== el);
-    ev.push({ type: 'resonate', element: el, from: e.uid, to: others.map((x) => x.uid) });
+  // 目印：ほかの敵みんなに、同じ威力で広がる（広がった先ではダウンしない）
+  if (trick === 'spread') {
+    const others = living(s.enemies).filter((x) => x.uid !== e.uid);
+    ev.push({ type: 'trickUse', uid: e.uid, trick: 'spread', to: others.map((x) => x.uid) });
     for (const x of others) hitEnemy(s, actor, x, el, power, { ...opts, noChain: true }, ctx, ev);
   }
 }
@@ -649,14 +729,19 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     }
     return { ally: actor.uid, element: null, power: 0 };
   }
-  if (eff.kind === 'mark') {
+  if (eff.kind === 'trick' || eff.kind === 'status') {
     for (const e of targets()) {
-      if (eff.power) hitEnemy(s, actor, e, eff.element, eff.power, { noChain: true }, ctx, ev);
-      if (e.hp <= 0) continue;
-      if (!e.marks.includes(eff.element)) e.marks.push(eff.element);
-      ev.push({ type: 'mark', to: e.uid, element: eff.element });
+      if (eff.power && eff.element) hitEnemy(s, actor, e, eff.element, eff.power, {}, ctx, ev);
+      if (e.hp <= 0 || e.gone) continue;
+      if (eff.kind === 'trick') {
+        e.trick = eff.trick;
+        ev.push({ type: 'trick', to: e.uid, trick: eff.trick });
+      } else {
+        e.status = { kind: eff.status, left: eff.rounds, stacks: 0 };
+        ev.push({ type: 'status', to: e.uid, status: eff.status, left: eff.rounds });
+      }
     }
-    return { ally: actor.uid, element: eff.power ? eff.element : null, power: eff.power ?? 0 };
+    return { ally: actor.uid, element: eff.power && eff.element ? eff.element : null, power: eff.power ?? 0 };
   }
   if (eff.kind === 'wind') {
     if (!prev || prev.element === null) {
@@ -679,11 +764,8 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   for (const e of targets()) {
     const el = eff.bestOf ? bestElement(s, e, eff.bestOf) : eff.element;
     let p = power;
-    if (eff.perMark) {
-      p += eff.perMark * e.marks.length;
-      e.marks = [];
-    }
-    for (let k = 0; k < hits && e.hp > 0; k++) hitEnemy(s, actor, e, el, p, { ignoreResist: eff.ignoreResist, downMult: eff.downMult }, ctx, ev);
+    if (eff.perMark) p += eff.perMark * ((e.trick ? 1 : 0) + (e.status ? 1 : 0));
+    for (let k = 0; k < hits && e.hp > 0; k++) hitEnemy(s, actor, e, el, p, { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: move.type === 'finish' }, ctx, ev);
     // 押す：実際にずらすのは runChainRound（まだ動いていない予定を知っている）
     if (eff.push && e.hp > 0 && !e.gone) ev.push({ type: 'push', uid: e.uid, by: eff.push, out: false, moved: false });
   }
@@ -698,9 +780,19 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
     ev.push({ type: 'flee', uid: e.uid });
     return;
   }
+  const rate = e.status?.kind === 'weak' ? s.rules.weakenRate : 1;
+  // 混乱：単体攻撃が、ほかの敵に向く
+  const foe = intent.confused ? s.enemies.find((x) => x.uid === intent.confused && x.hp > 0 && !x.gone) : undefined;
+  if (foe && !m.all) {
+    const amount = Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, foe.def)) * rate));
+    foe.hp = Math.max(0, foe.hp - amount);
+    ev.push({ type: 'damage', from: e.uid, to: foe.uid, amount, weak: false, resist: false });
+    if (foe.hp === 0) defeatEnemy(s, foe, ev);
+    return;
+  }
   const allies = s.allies.filter((a) => a.hp > 0);
   const targets = m.all ? allies : [s.allies.find((a) => a.uid === intent.target && a.hp > 0) ?? allies[0]].filter((x): x is ChainUnit => !!x);
-  for (const a of targets) hurtAlly(e.uid, a, Math.max(1, Math.floor((m.power * e.atk) / Math.max(1, a.def))), ev);
+  for (const a of targets) hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate)), ev);
   // 起こし役：ダウンしているほかの敵を起こす
   if (e.trait === 'waker') {
     const woke = living(s.enemies).filter((x) => x.down && x.uid !== e.uid);
@@ -814,6 +906,20 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
           }
         }
       }
+      // 状態：付いた敵のまだ動いていない予定に、すぐ効く（鈍足・封印・混乱）
+      for (const se of ev) {
+        if (se.type !== 'status') continue;
+        const target = s.enemies.find((x) => x.uid === se.to);
+        if (!target) continue;
+        for (const e of pending.filter((x) => x.kind === 'enemy' && x.intent.enemy === se.to)) {
+          if (e.kind !== 'enemy') continue;
+          const next = statusIntent(s, target, e.intent, se.status);
+          e.intent = next;
+          e.at = next.at;
+          const k = Number(e.key.slice(1));
+          if (s.intents[k]) s.intents[k] = next;
+        }
+      }
       push(q, '', at, actor.uid, move.name, ev, step.target, move.target !== 'enemy');
     } else {
       const e = s.enemies.find((x) => x.uid === q.intent.enemy)!;
@@ -831,6 +937,22 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       frames[frames.length - 1].state = cloneChain(s);
       stopped = true;
       break;
+    }
+  }
+  if (!stopped) {
+    // やけど：ラウンドの終わりに小さなダメージ
+    for (const e of living(s.enemies).filter((x) => x.status?.kind === 'burn')) {
+      const ev: ChainEvent[] = [];
+      const amount = Math.min(e.hp, s.rules.burnDamage);
+      e.hp -= amount;
+      ev.push({ type: 'burn', uid: e.uid, amount });
+      if (e.hp === 0) defeatEnemy(s, e, ev);
+      push(null, `burn:${e.uid}`, s.rules.roundLen - 1, e.uid, 'やけど', ev, undefined, true);
+      if (checkEnd(s, ev, s.rules.roundLen)) {
+        frames[frames.length - 1].state = cloneChain(s);
+        stopped = true;
+        break;
+      }
     }
   }
   if (!stopped) {
@@ -861,6 +983,8 @@ function endRound(s: ChainState): void {
   for (const e of s.enemies) {
     e.down = false;
     e.step++;
+    // 状態は、ラウンドの終わりごとに1つ減り、0で消える
+    if (e.status && --e.status.left <= 0) e.status = undefined;
   }
   s.round++;
   s.elapsed += s.rules.roundLen;

@@ -5,7 +5,7 @@ import {
   chainPlanError,
   createChainBattle,
   nextStart,
-  plannedMarks,
+  plannedEffects,
   planStarts,
   runChainRound,
   chainGrade,
@@ -19,7 +19,7 @@ import {
 import { CHAIN_CARDS, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_TRIALS } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
-// 試し：並べてつなぐ戦闘（段階156。調整3：色の印・専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻）
+// 試し：並べてつなぐ戦闘（段階156。調整3：専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻。調整7：仕掛けと状態）
 const BASE = CHAIN_TRIALS[0];
 
 /** 敵と手札を決めた戦闘（敵の予定の狙いは乱数のまま） */
@@ -90,17 +90,111 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     expect(big.intents.find((i) => i.enemy === big.enemies[0].uid)!.move.id).toBe('bigFlip');
   });
 
-  it('印と同じ属性が当たると共鳴し、同じ印の敵みんなに広がる（印は消える）', () => {
-    const s = make([idle(plain(CHAIN_ENEMIES.tin)), idle(plain(CHAIN_ENEMIES.cuckoo)), idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.rod.id]);
-    const a = s.enemies[0].uid;
-    const plan: ChainPlanStep[] = [{ ally: 'akari', source: { kind: 'card', index: 0 } }, move('mio', 'thunder', a)];
-    // 並べている時に、付く予定の印が分かる
-    expect(Object.values(plannedMarks(s, plan)).every((m) => m.includes('thunder'))).toBe(true);
+  const cardStep = (ally: string, index: number, target?: string): ChainPlanStep => ({ ally, source: { kind: 'card', index }, target });
+
+  it('仕掛け「目印」：次に当たった攻撃が、ほかの敵みんなに同じ威力で広がる（広がった先ではダウンしない。1回で消える）', () => {
+    const s = make([idle(plain(CHAIN_ENEMIES.cuckoo)), idle(plain(CHAIN_ENEMIES.cuckoo)), idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.target.id]);
+    const [a, b, c] = s.enemies.map((e) => e.uid);
+    const plan = [cardStep('akari', 0, a), move('hero', 'slash', a)];
+    expect(plannedEffects(s, plan)[a].trick).toBe('spread');
     const r = runChainRound(s, plan);
-    expect(events(r).some((e) => e.type === 'resonate' && e.element === 'thunder' && e.to.length === 2)).toBe(true);
-    const hit = new Set(events(r).flatMap((e) => (e.type === 'damage' && e.from === 'mio' ? [e.to] : [])));
-    expect(hit.size).toBe(3);
-    expect(r.state.enemies.every((e) => e.marks.length === 0)).toBe(true);
+    const ev = events(r);
+    expect(ev.some((e) => e.type === 'trickUse' && e.trick === 'spread' && e.to!.length === 2)).toBe(true);
+    const hit = new Set(ev.flatMap((e) => (e.type === 'damage' && e.from === 'hero' ? [e.to] : [])));
+    expect([...hit].sort()).toEqual([a, b, c].sort());
+    // 鳩時計は物理が弱点。印の敵はダウンし、広がった先の鳩時計はダウンしない
+    expect(ev.some((e) => e.type === 'down' && e.uid === a)).toBe(true);
+    expect(ev.some((e) => e.type === 'down' && e.uid === b)).toBe(false);
+    expect(r.frames.at(-1)!.state.enemies[0].trick).toBeUndefined();
+  });
+
+  it('仕掛け・状態の予告：単体の札は、盾が立っていれば盾に付く見込みを出す', () => {
+    const s = make([idle(plain(CHAIN_ENEMIES.menko)), idle(CHAIN_ENEMIES.table)], [CHAIN_CARDS.target.id]);
+    const [m, tb] = s.enemies.map((e) => e.uid);
+    const fx = plannedEffects(s, [cardStep('hero', 0, m)]);
+    expect(fx[tb].trick).toBe('spread');
+    expect(fx[m]).toBeUndefined();
+  });
+
+  it('仕掛け「むき出し」：次に当たった攻撃が、属性に関係なく弱点になってダウンする', () => {
+    const s = make([idle(plain(CHAIN_ENEMIES.tin)), idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.expose.id]);
+    const t = s.enemies[0].uid;
+    const ev = events(runChainRound(s, [cardStep('akari', 0, t), move('hero', 'slash', t)]));
+    expect(ev.some((e) => e.type === 'damage' && e.from === 'hero' && e.to === t && e.weak)).toBe(true);
+    expect(ev.some((e) => e.type === 'down' && e.uid === t)).toBe(true);
+  });
+
+  it('仕掛け「すき」：次に当たった締めの札が2倍になる', () => {
+    const base = make([{ ...idle(plain(CHAIN_ENEMIES.table)), hp: 999 }, idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.rattle.id]);
+    const t = base.enemies[0].uid;
+    const dmg = (r: ReturnType<typeof runChainRound>) => (r.frames.flatMap((f) => f.events).find((e) => e.type === 'damage' && e.from === 'hero') as { amount: number }).amount;
+    const plain1 = dmg(runChainRound(base, [move('mio', 'kick', base.enemies[1].uid), move('hero', 'finisher', t)]));
+    const boosted = dmg(runChainRound(base, [cardStep('mio', 0, t), move('hero', 'finisher', t)]));
+    expect(boosted).toBeGreaterThanOrEqual(plain1 * 2 - 1);
+  });
+
+  it('状態「鈍足」：その敵の予定が1マス遅れる（付けたラウンドにもすぐ効き、次のラウンドも続く）', () => {
+    const s = make([{ ...plain(CHAIN_ENEMIES.cuckoo), pattern: [{ ...CHAIN_ENEMIES.cuckoo.pattern[1], at: 5 }] }, idle(plain(CHAIN_ENEMIES.tin))], [CHAIN_CARDS.chill.id]);
+    const c = s.enemies[0].uid;
+    const r = runChainRound(s, [cardStep('akari', 0, c)]);
+    expect(r.frames.find((f) => f.uid === c && f.events.some((e) => e.type === 'act'))!.at).toBe(6);
+    expect(r.state.intents.find((i) => i.enemy === c)!.at).toBe(6);
+  });
+
+  it('状態「やけど」：ラウンドの終わりごとにダメージ。数ラウンドで消える', () => {
+    let s = make([{ ...idle(plain(CHAIN_ENEMIES.tin)), hp: 999 }, idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.ember.id]);
+    const t = s.enemies[0].uid;
+    const r = runChainRound(s, [cardStep('akari', 0, t)]);
+    expect(events(r).some((e) => e.type === 'burn' && e.uid === t && e.amount === CHAIN_RULES.burnDamage)).toBe(true);
+    s = r.state;
+    for (let k = 0; k < 3; k++) s = runChainRound(s, []).state;
+    expect(s.enemies[0].status).toBeUndefined();
+  });
+
+  it('状態「刻み」：当たるたびに、受けるダメージが上がっていく', () => {
+    const s = make([{ ...idle(plain(CHAIN_ENEMIES.table)), resist: [], hp: 999 }, idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.notch.id]);
+    const t = s.enemies[0].uid;
+    const r = runChainRound(s, [cardStep('akari', 0, t), move('hero', 'quick', t), move('mio', 'kick', t)]);
+    const st = r.frames.at(-1)!.state.enemies[0].status!;
+    expect(st.kind).toBe('stack');
+    expect(st.stacks).toBe(2);
+  });
+
+  it('状態「弱り」：その敵の攻撃が半分になる', () => {
+    const foe = { ...plain(CHAIN_ENEMIES.cuckoo), pattern: [{ ...CHAIN_ENEMIES.cuckoo.pattern[0], at: 5 }] };
+    const s = make([foe, idle(plain(CHAIN_ENEMIES.tin))], [CHAIN_CARDS.wilt.id]);
+    const hurt = (r: ReturnType<typeof runChainRound>) => events(r).filter((e) => e.type === 'damage' && e.from === s.enemies[0].uid).reduce((a, e) => a + (e as { amount: number }).amount, 0);
+    const normal = hurt(runChainRound(s, [move('akari', 'heal')]));
+    const weak = hurt(runChainRound(s, [cardStep('akari', 0, s.enemies[0].uid)]));
+    expect(weak).toBeLessThanOrEqual(Math.ceil(normal / 2) + 3);
+    expect(weak).toBeLessThan(normal);
+  });
+
+  it('状態「封印」：全体攻撃と大技が、ふつうの攻撃に変わる', () => {
+    const s = make([plain(CHAIN_ENEMIES.cuckoo), idle(plain(CHAIN_ENEMIES.tin))], [CHAIN_CARDS.seal.id]);
+    const c = s.enemies[0].uid;
+    expect(s.intents.find((i) => i.enemy === c)!.move.all).toBe(true);
+    const r = runChainRound(s, [cardStep('akari', 0, c)]);
+    const f = r.frames.find((x) => x.uid === c && x.events.some((e) => e.type === 'act'))!;
+    expect(f.name).toContain('封印');
+    expect(f.events.filter((e) => e.type === 'damage').length).toBe(1);
+  });
+
+  it('状態「混乱」：その敵の単体攻撃が、ほかの敵に向く', () => {
+    const s = make([{ ...plain(CHAIN_ENEMIES.cuckoo), pattern: [{ ...CHAIN_ENEMIES.cuckoo.pattern[1], at: 7 }] }, { ...idle(plain(CHAIN_ENEMIES.tin)), hp: 999 }], [CHAIN_CARDS.dazzle.id]);
+    const c = s.enemies[0].uid;
+    const r = runChainRound(s, [cardStep('akari', 0, c)]);
+    const ev = events(r).filter((e) => e.type === 'damage' && e.from === c);
+    expect(ev.length).toBe(1);
+    expect((ev[0] as { to: string }).to).toBe(s.enemies[1].uid);
+  });
+
+  it('状態「吸い取り」：その敵を攻撃した仲間が、与えたダメージの一部だけ回復する', () => {
+    const s = make([{ ...idle(plain(CHAIN_ENEMIES.tin)), hp: 999 }, idle(plain(CHAIN_ENEMIES.candy))], [CHAIN_CARDS.leech.id]);
+    s.allies[0].hp = 100;
+    const r = runChainRound(s, [cardStep('akari', 0, s.enemies[0].uid), move('hero', 'slash', s.enemies[0].uid)]);
+    expect(events(r).some((e) => e.type === 'drain' && e.to === 'hero')).toBe(true);
+    expect(r.state.allies[0].hp).toBeGreaterThan(100);
   });
 
   it('はじける：弱点でダウンさせると、破片が仲間全体に当たる', () => {
@@ -215,13 +309,14 @@ describe('並べてつなぐ戦闘（段階156）', () => {
   });
 
   it('生きている敵が全員ダウンするとシャッターが光り、押すと決着。決着の時刻が早いほど評価が高い', () => {
-    const s = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.rod.id]);
-    const r = runChainRound(s, [{ ally: 'akari', source: { kind: 'card', index: 0 } }, move('mio', 'thunder', s.enemies[0].uid)]);
+    const s = make([idle(plain(CHAIN_ENEMIES.balloon)), idle(plain(CHAIN_ENEMIES.goldfish))], [CHAIN_CARDS.expose.id]);
+    const [ba, go] = s.enemies.map((e) => e.uid);
+    // 静電気（時刻1）で水風船が雷の弱点でダウン → あばく（時刻2）→ すばやく（時刻3）で金魚がむき出しの弱点でダウン
+    const r = runChainRound(s, [move('mio', 'zap', ba), cardStep('akari', 0, go), move('hero', 'quick', go)]);
     expect(r.state.shutter).toBe(true);
     const won = takeShutter(r.state);
     expect(won.outcome).toBe('win');
-    // 避雷針（重さ2 → 時刻2）→ サンダー（2から3 → 時刻5）で全員ダウン。決着の時刻は5で、評価は高
-    expect(won.finishTime).toBe(5);
+    expect(won.finishTime).toBe(3);
     expect(chainGrade(won)).toBe('high');
     expect(chainGrade({ ...won, finishTime: 14 })).toBe('mid');
     expect(chainGrade({ ...won, finishTime: 30 })).toBe('low');

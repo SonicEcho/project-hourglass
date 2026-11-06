@@ -121,7 +121,8 @@ export function measureChain(def: ChainBattleDef, rules: ChainRules, runs: numbe
       for (const f of res.frames) {
         const ev = f.events;
         if (ev.some((e) => e.type === 'act') && s.allies.some((a) => a.uid === f.uid)) st.used[f.name] = (st.used[f.name] ?? 0) + 1;
-        st.resonances += ev.filter((e) => e.type === 'resonate' && e.to.length > 0).length;
+        // 目印で広がった回数（調整7で共鳴の代わり）
+        st.resonances += ev.filter((e) => e.type === 'trickUse' && e.trick === 'spread' && (e.to?.length ?? 0) > 0).length;
         st.links += ev.filter((e) => e.type === 'link').length;
         st.pushes += ev.filter((e) => e.type === 'push' && e.moved).length;
         st.pushOuts += ev.filter((e) => e.type === 'push' && e.out).length;
