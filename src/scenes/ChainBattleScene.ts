@@ -848,8 +848,9 @@ export class ChainBattleScene extends Phaser.Scene {
       this.toggleAddon(source.index, move);
       return;
     }
-    // 連携技は、組む2人のうち1人目が動く（今選んでいる仲間によらない）
-    const actor = source.kind === 'link' ? (this.s.allies.find((a) => a.defId === this.s.def.links.find((l) => l.id === source.linkId)?.members[0])?.uid ?? '') : this.ally;
+    // 連携技は、組む仲間の1人目が動く（今選んでいる仲間によらない）。持ち主のいないコンボ（調整17）は、今選んでいる仲間が動く
+    const owner = source.kind === 'link' ? this.s.def.links.find((l) => l.id === source.linkId)?.members[0] : undefined;
+    const actor = source.kind === 'link' && owner ? (this.s.allies.find((a) => a.defId === owner)?.uid ?? '') : this.ally;
     if (!actor) return;
     if (move.owner && source.kind === 'card' && findChainUnit(this.s, actor)?.defId !== move.owner) {
       this.message = `${move.name}は${this.allyName(move.owner)}の専用の札。${this.allyName(move.owner)}を選んでから使う`;
@@ -898,7 +899,11 @@ export class ChainBattleScene extends Phaser.Scene {
   private pickEnemy(uid: string): void {
     if (this.busy || !this.pending || !this.ally) return;
     if (this.pending.move.target !== 'enemy') return;
-    this.place({ ally: this.ally, source: this.pending.source, target: uid });
+    // 連携技は、組む仲間の1人目が動く
+    const src = this.pending.source;
+    const owner = src.kind === 'link' ? this.s.def.links.find((l) => l.id === src.linkId)?.members[0] : undefined;
+    const ally = owner ? (this.s.allies.find((a) => a.defId === owner)?.uid ?? this.ally) : this.ally;
+    this.place({ ally, source: src, target: uid });
   }
 
   private place(step: ChainPlanStep): void {
