@@ -147,6 +147,8 @@ export function chainCardCategory(m: ChainMove): ChainCardCategory {
   if (m.owner) return 'special';
   if (m.type === 'finish') return 'finish';
   if (m.type === 'attack') return 'attack';
+  // 回復の札・技は、アクション（攻撃と同じ分類。2026-11-07 開発者と決めた）
+  if (m.effect.kind === 'heal') return 'attack';
   return 'support';
 }
 
@@ -677,7 +679,7 @@ export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: Ch
 export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: ChainPlanStep): string | null {
   if (s.outcome !== 'ongoing' || s.shutter) return '戦闘は終わっている';
   // フィニッシュ（コンボ・連携技も）の後には並べられない（調整17：フィニッシュはラウンドで最後に動く仲間だけ）
-  if (s.def.finishLast && plan.some((p) => isChainFinish(chainMoveOf(s, p)))) return 'フィニッシュの後には並べられない（フィニッシュは最後の行動）';
+  if (s.def.finishLast && plan.some((p) => isChainFinish(chainMoveOf(s, p)))) return 'クライマックスの後には並べられない（クライマックスは最後の行動）';
   const usedAllies = new Set(plan.flatMap((p) => stepAllies(s, p)));
   for (const uid of stepAllies(s, step)) {
     const ally = s.allies.find((a) => a.uid === uid);
@@ -705,12 +707,12 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
   // 添える札（調整17）
   const addons = step.addons ?? [];
   if (addons.length) {
-    if (isChainFinish(move)) return 'フィニッシュには添えられない';
+    if (isChainFinish(move)) return 'クライマックスには添えられない';
     if (addons.length > s.rules.addonMax) return `添える札は${s.rules.addonMax}枚まで`;
     if (new Set(addons).size !== addons.length) return 'その札は、もう使う予定';
     for (const a of addons) {
       const c = s.def.cards[s.hand[a]];
-      if (!c || c.effect.kind !== 'addon') return '添えられるのは、サポートの札だけ';
+      if (!c || c.effect.kind !== 'addon') return '添えられるのは、エフェクトの札だけ';
       if (usedCards.has(a) || (step.source.kind === 'card' && step.source.index === a)) return 'その札は、もう使う予定';
       if (c.effect.split && (move.effect.kind !== 'damage' || (move.effect.hits ?? 1) > 1 || move.effect.unsplittable)) return `${c.name}は、分けられる単発の攻撃にだけ添えられる`;
       if (c.effect.kind === 'addon' && move.effect.kind !== 'damage' && (c.effect.add || c.effect.spread || c.effect.expose || c.effect.element || c.effect.pinpoint || c.effect.push || c.effect.seal || c.effect.drain)) return `${c.name}は、攻撃にだけ添えられる`;

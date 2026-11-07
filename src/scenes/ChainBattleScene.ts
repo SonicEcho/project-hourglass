@@ -101,7 +101,8 @@ const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;
 /** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート。調整13：専用の札は「スペシャル」に分ける） */
-const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アタック', support: 'サポート', finish: 'フィニッシュ', special: 'スペシャル', link: 'コンボ' };
+/** 分類の名前（2026-11-07：映像の言葉に。アタック＋回復 → アクション、サポート → エフェクト、フィニッシュ → クライマックス） */
+const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アクション', support: 'エフェクト', finish: 'クライマックス', special: 'スペシャル', link: 'コンボ' };
 const CATEGORY_COLOR: Record<ChainCardCategory, number> = { attack: 0x3a8dff, support: 0x19b37a, finish: RED, special: 0xff8a1f, link: GOLD };
 /** 敵に付いた効果のシールの色（一度で消える物は紫、ラウンドの間続く物は青緑） */
 const CHIP_ONCE = 0xb36bff;
@@ -171,7 +172,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 10 && p.worldX > GAME_WIDTH - 220) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}型「${this.s.variant ?? ''}」。${this.s.def.finishLast ? 'サポートは並べた行動に添える（時間を使わない。2枚まで）。フィニッシュは最後に。' : '上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。'}弱点は当てると分かる`;
+    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}型「${this.s.variant ?? ''}」。${this.s.def.finishLast ? 'エフェクトは並べた行動に添える（時間を使わない。2枚まで）。クライマックスは最後に。' : '上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。'}弱点は当てると分かる`;
     const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -821,7 +822,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const all = this.s.def.links;
       const names = all.filter((l) => found.includes(l.id)).map((l) => l.move.name);
       const hints = all.filter((l) => !found.includes(l.id)).slice(0, 2).map((l) => `？？？（${CHAIN17_COMBO_HINT[l.id] ?? ''}）`);
-      this.message = `アタックと技を時間の帯に並べ、サポートは直前に並べた行動に添える（時間を使わない・2枚まで・もう一度タップで外す）。連続攻撃は全段当たる。長回しは帯の幅の中に敵の行動が来ると不発。フィニッシュとコンボは最後の行動だけ（添えられない）。全員ダウンのシャッターはない／見つけたコンボ ${names.length}/${all.length}：${names.join('・') || 'まだない'}${hints.length ? `　${hints.join('　')}` : ''}`;
+      this.message = `アクション（攻撃・回復）と技を時間の帯に並べ、エフェクトは直前に並べた行動に添える（時間を使わない・2枚まで・もう一度タップで外す。帯の上の行動をタップすると添える先を選べる）。連続攻撃は全段当たる。長回しは帯の幅の中に敵の行動が来ると不発。クライマックスとコンボは最後の行動だけ（添えられない）／見つけたコンボ ${names.length}/${all.length}：${names.join('・') || 'まだない'}${hints.length ? `　${hints.join('　')}` : ''}`;
       this.render();
       return;
     }
@@ -894,7 +895,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const at = this.addonIndex();
     const step = this.plan[at];
     if (!step) {
-      this.message = `${move.name}はサポート。先に行動を並べてから、タップして添える（帯の上の行動をタップすると、添える先を選べる）`;
+      this.message = `${move.name}はエフェクト。先に行動を並べてから、タップして添える（帯の上の行動をタップすると、添える先を選べる）`;
       this.render();
       return;
     }
@@ -922,7 +923,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.addonAt = i;
     const step = this.plan[i];
     const who = stepAllies(this.s, step).map((u) => findChainUnit(this.s, u)?.name).join('と');
-    this.message = `${who}の${chainMoveOf(this.s, step)?.name}を選んだ。手札のサポートをタップすると、ここに添える`;
+    this.message = `${who}の${chainMoveOf(this.s, step)?.name}を選んだ。手札のエフェクトをタップすると、ここに添える`;
     this.render();
   }
 
