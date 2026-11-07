@@ -29,7 +29,7 @@ export const CHAIN17_CARDS = {
   plus20: m({ id: 'c17_plus20', name: 'アタック+20', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', add: 20 }, text: 'アクションに添える。1発ごとに威力+20' }),
   plus30: m({ id: 'c17_plus30', name: 'アタック+30', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', add: 30 }, text: 'アクションに添える。1発ごとに威力+30' }),
   split: m({ id: 'c17_split', name: '複数攻撃化', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', split: true }, text: '単発の攻撃に添える。威力を4つに分けて4回当てる（総ダメージは同じ。1発ごとに効く物と重ねると伸びる）' }),
-  exposure: m({ id: 'c17_exposure', name: '露出補正', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', exposure: 5 }, text: 'レア。行動に添える。この行動から後、このラウンドの味方の攻撃すべてに（フィニッシュにも）1発ごとに威力+5' }),
+  exposure: m({ id: 'c17_exposure', name: '露出補正', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', exposure: 5 }, text: '行動に添える。この行動から後、このラウンドの味方の攻撃すべてに（フィニッシュにも）1発ごとに威力+5' }),
   panorama: m({ id: 'c17_panorama', name: 'パノラマ', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', spread: true }, text: '単体の攻撃に添える。ほかの敵全体にも同じだけ当たる（広がった先はダウンしない）' }),
   highlight: m({ id: 'c17_highlight', name: 'ハイライト', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', expose: true }, text: 'アクションに添える。属性に関係なく弱点扱い（ダウンする）' }),
   filterRed: m({ id: 'c17_filterRed', name: '赤フィルター', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', element: 'fire' }, text: 'アクションに添える。その攻撃を火にする' }),
@@ -212,23 +212,23 @@ BY_ID.tinNoise = TIN;
 
 /** 山札：アタック9（共通）＋サポート8（共通6＋組み合わせごとに2）＋フィニッシュ3（組み合わせごと）＋専用の札（仲間1人につき2枚） */
 const ATTACKS = [C.quick, C.backlight, C.blueHour, C.strobe, C.burst, C.burst, C.wide, C.bigShot, C.longTake];
-/** 共通のサポート5枚（露出補正はレアなので、一部の戦闘にだけ入れる） */
-const SUPPORTS = [C.push, C.push, C.plus30, C.split, C.panorama];
+/** 共通のエフェクト6枚（露出補正は+5に下げたので、レアにしない。2026-11-07） */
+const SUPPORTS = [C.push, C.push, C.plus30, C.split, C.panorama, C.exposure];
 const SPECIALS = [C.swing, C.swing, C.snow, C.snow, C.paperGun, C.paperGun];
 export const CHAIN17_DECK_PLAN = { attack: 9, support: 8, finish: 3, specialPerAlly: 2 } as const;
 const deckOf = (supports: ChainMove[], finishes: ChainMove[]): string[] => [...ATTACKS, ...SUPPORTS, ...supports, ...finishes, ...SPECIALS].map((c) => c.id);
 const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN17_CARDS).map((c) => [c.id, c]));
 
-/** 組み合わせごとのサポート3枚とフィニッシュ3枚（露出補正はレア：駄菓子屋の店先とボスだけ） */
+/** 組み合わせごとのエフェクト2枚とクライマックス3枚 */
 const PICKS: Record<string, [ChainMove[], ChainMove[]]> = {
-  chain1: [[C.highlight, C.pause, C.plus10], [C.decisive, C.group, C.margin]],
-  chain2: [[C.pinpoint, C.filterRed, C.plus20], [C.imprint, C.decisive, C.reel]],
-  chain3: [[C.rewind, C.pause, C.plus10], [C.group, C.develop, C.decisive]],
-  chain4: [[C.plus10, C.highlight, C.exposure], [C.margin, C.reel, C.rainbow]],
-  chain5: [[C.filterYellow, C.plus20, C.highlight], [C.group, C.rainbow, C.decisive]],
-  chain6: [[C.highlight, C.pinpoint, C.plus20], [C.imprint, C.rainbow, C.develop]],
-  chain7: [[C.filterBlue, C.pause, C.plus10], [C.decisive, C.imprint, C.margin]],
-  chain8: [[C.pinpoint, C.rewind, C.exposure], [C.imprint, C.reel, C.develop]],
+  chain1: [[C.highlight, C.pause], [C.decisive, C.group, C.margin]],
+  chain2: [[C.pinpoint, C.filterRed], [C.imprint, C.decisive, C.reel]],
+  chain3: [[C.rewind, C.pause], [C.group, C.develop, C.decisive]],
+  chain4: [[C.plus10, C.highlight], [C.margin, C.reel, C.rainbow]],
+  chain5: [[C.filterYellow, C.plus20], [C.group, C.rainbow, C.decisive]],
+  chain6: [[C.highlight, C.pinpoint], [C.imprint, C.rainbow, C.develop]],
+  chain7: [[C.filterBlue, C.pause], [C.decisive, C.imprint, C.margin]],
+  chain8: [[C.pinpoint, C.rewind], [C.imprint, C.reel, C.develop]],
 };
 
 function make17(base: ChainBattleDef, enemies?: ChainEnemyDef[], variants = base.variants, name = base.name): ChainBattleDef {
