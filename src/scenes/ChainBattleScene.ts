@@ -15,6 +15,7 @@ import {
   runChainRound,
   chainGrade,
   stepAllies,
+  stepCards,
   shootShutter,
   type ChainEvent,
   chainCardCategory,
@@ -28,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ALLY_FACE, CHAIN_CARD_ART, CHAIN_MOVE_ART, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_COMBO_HINT, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import type { Element } from '../core';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
@@ -75,11 +76,32 @@ const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as
 /** 分かった弱点を、試しの戦闘をまたいで覚えておく所（セーブとは別。調整9） */
 const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 
+/** 札・技の絵と短い効果（調整17の札も） */
+const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART };
+const CHAIN_MOVE_ART: Record<string, string> = { ...CHAIN_MOVE_ART_16, ...CHAIN17_MOVE_ART };
+const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT };
+/** 見つけたコンボ（調整17。端末に覚える） */
+const COMBO_KEY = 'hourglass.chainTrial.combos';
+function loadCombos(): string[] {
+  try {
+    const raw = browserStorage().read(COMBO_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+function saveCombos(ids: string[]): void {
+  try {
+    browserStorage().write(COMBO_KEY, JSON.stringify(ids));
+  } catch {
+    // 覚えられなくても遊べる
+  }
+}
 const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;
 /** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート。調整13：専用の札は「スペシャル」に分ける） */
-const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アタック', support: 'サポート', finish: 'フィニッシュ', special: 'スペシャル', link: '連携技' };
+const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アタック', support: 'サポート', finish: 'フィニッシュ', special: 'スペシャル', link: 'コンボ' };
 const CATEGORY_COLOR: Record<ChainCardCategory, number> = { attack: 0x3a8dff, support: 0x19b37a, finish: RED, special: 0xff8a1f, link: GOLD };
 /** 敵に付いた効果のシールの色（一度で消える物は紫、ラウンドの間続く物は青緑） */
 const CHIP_ONCE = 0xb36bff;
@@ -147,7 +169,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 10 && p.worldX > GAME_WIDTH - 220) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}型「${this.s.variant ?? ''}」。上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。弱点は当てると分かる`;
+    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}型「${this.s.variant ?? ''}」。${this.s.def.finishLast ? 'サポートは並べた行動に添える（時間を使わない。2枚まで）。フィニッシュは最後に。' : '上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。'}弱点は当てると分かる`;
     const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -555,6 +577,19 @@ export class ChainBattleScene extends Phaser.Scene {
       const nm = addText(this, bx + 4, CLIP_TOP + CLIP_H - 6.5, label, { size: 9, bold: true }).setOrigin(0, 0.5);
       if (nm.width > bw - 6) nm.setScale(Math.max(0.3, (bw - 6) / nm.width));
       r.add(nm);
+      // 添えた札（調整17）：帯の上に「＋名前」
+      const adds = (step.addons ?? []).map((a) => this.s.def.cards[this.s.hand[a]]?.name).filter(Boolean);
+      if (adds.length) {
+        const tag = addText(this, bx + 3, CLIP_TOP + 14, `＋${adds.join('＋')}`, { size: 8, bold: true, color: '#000000' }).setOrigin(0, 0.5);
+        if (tag.width > bw - 18) tag.setScale(Math.max(0.4, (bw - 18) / tag.width));
+        r.add(this.add.rectangle(bx + 1, CLIP_TOP + 8, Math.min(bw - 16, tag.displayWidth + 4), 12, YELLOW, 0.95).setOrigin(0));
+        r.add(tag);
+      }
+      // 邪魔されなければ強い札：幅の中に敵の予定があれば「中断」の見込み（計画の時だけ）
+      if (!this.busy && move.effect.kind === 'damage' && move.effect.fragile) {
+        const hit = planOrder.some((o) => o.kind === 'enemy' && o.at >= at && o.at < at + move.weight && !s.enemies.find((e) => e.uid === o.intent.enemy)?.down);
+        if (hit) r.add(this.sticker(bx + bw / 2, CLIP_TOP + CLIP_H / 2, '中断のおそれ', RED, '#ffffff', -6, 9));
+      }
       // 効く時刻の印（帯の右端の上）と番号
       r.add(this.add.triangle(bx + bw + 1, CLIP_TOP - 4, -5, -4, 5, -4, 0, 3, 0xffffff));
       badge(bx + bw - 8, CLIP_TOP + 14, numOf(`a${i}`));
@@ -647,7 +682,7 @@ export class ChainBattleScene extends Phaser.Scene {
   private drawOptions(): void {
     const s = this.s;
     const r = this.root;
-    const items: { source: ChainSource; move: ChainMove; art?: string; used?: boolean; key?: string }[] = [];
+    const items: { source: ChainSource; move: ChainMove; art?: string; used?: boolean; added?: boolean; key?: string }[] = [];
     const links = this.tab === 'cards' ? availableLinks(s, this.plan) : [];
     links.forEach((x, k) => {
       const lw = (GAME_WIDTH - 16 - (links.length - 1) * 6) / links.length;
@@ -658,7 +693,12 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(this.para(lx + 3, LINK_Y + 3, lw, 28, 0x000000, 0.7, 10));
       r.add(this.para(lx, LINK_Y, lw, 28, sel ? 0xfff0b0 : GOLD, 1, 10));
       const who = x.link.members.map((m) => this.allyName(m)).join('＋');
-      const t = addText(this, lx + 14, LINK_Y + 14, `★ 連携技 ${x.link.move.name}　${who}`, { size: 12, bold: true, color: '#2a1300' }).setOrigin(0, 0.5);
+      // 初めてそろったコンボは「NEW」（調整17：レシピは最初は見えず、そろうと分かる）
+      const found = loadCombos();
+      const fresh = !!s.def.finishLast && !found.includes(x.link.id);
+      if (fresh) saveCombos([...found, x.link.id]);
+      const t = addText(this, lx + 14, LINK_Y + 14, `★ ${s.def.finishLast ? 'コンボ' : '連携技'} ${x.link.move.name}${who ? `　${who}` : ''}`, { size: 12, bold: true, color: '#2a1300' }).setOrigin(0, 0.5);
+      if (fresh) r.add(this.sticker(lx + lw - 20, LINK_Y - 2, 'NEW!', RED, '#ffffff', 8, 10));
       if (t.width > lw - 24) t.setScale((lw - 24) / t.width);
       r.add(t);
       const hit = this.add.rectangle(lx + lw / 2, LINK_Y + 14, lw, 30, 0xffffff, 0.001);
@@ -666,14 +706,16 @@ export class ChainBattleScene extends Phaser.Scene {
       makePressable(hit, {
         onTap: () => this.pickOption(source, x.link.move),
         onLongPress: () => {
-          this.message = `【連携】${x.link.move.name}（重さ${x.link.move.weight}・2人の手番を使う）：${x.link.move.text}`;
+          this.message = `【コンボ】${x.link.move.name}（重さ${x.link.move.weight}${x.link.members.length > 1 ? `・${x.link.members.length}人の手番を使う` : ''}。最後の行動だけ）：${x.link.move.text}`;
           this.render();
         },
       });
     });
     if (this.tab === 'cards') {
-      const usedCards = new Set(this.plan.flatMap((p) => (p.source.kind === 'card' ? [p.source.index] : p.source.kind === 'link' ? p.source.cards : [])));
-      s.hand.forEach((id, index) => items.push({ source: { kind: 'card', index }, move: s.def.cards[id], art: CHAIN_CARD_ART[id], used: usedCards.has(index), key: id }));
+      const usedCards = new Set(this.plan.flatMap(stepCards));
+      const lastAddons = new Set(this.plan[this.plan.length - 1]?.addons ?? []);
+      // 添えた札は、もう一度タップで外せるよう、押せるまま（「添えた」の印）
+      s.hand.forEach((id, index) => items.push({ source: { kind: 'card', index }, move: s.def.cards[id], art: CHAIN_CARD_ART[id], used: usedCards.has(index) && !lastAddons.has(index), added: lastAddons.has(index), key: id }));
     } else if (this.ally) {
       const me = findChainUnit(s, this.ally);
       const def = s.def.allies.find((a) => a.id === me?.defId);
@@ -704,7 +746,7 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
-  private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
+  private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; added?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
     const m = it.move;
     const color = CATEGORY_COLOR[chainCardCategory(m)];
     const parts: Phaser.GameObjects.GameObject[] = [];
@@ -750,6 +792,7 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     if (it.used || notMine) parts.push(this.add.rectangle(0, 0, w + 6, h + 6, 0x000000, 0.55));
     if (it.used) parts.push(this.sticker(0, -10, '置いた', 0xffffff, '#000000', -10, 12));
+    if (it.added) parts.push(this.sticker(0, -10, '添えた', YELLOW, '#000000', -10, 12));
     this.root.add(this.add.container(cx, cy, parts).setAngle(angle));
   }
 
@@ -761,6 +804,15 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 決まりの早見（「？」で案内の帯に出す。調整5で、常に出す早見をやめた） */
   private showRules(): void {
+    if (this.s.def.finishLast) {
+      const found = loadCombos();
+      const all = this.s.def.links;
+      const names = all.filter((l) => found.includes(l.id)).map((l) => l.move.name);
+      const hints = all.filter((l) => !found.includes(l.id)).slice(0, 2).map((l) => `？？？（${CHAIN17_COMBO_HINT[l.id] ?? ''}）`);
+      this.message = `アタックと技を時間の帯に並べ、サポートは直前に並べた行動に添える（時間を使わない・2枚まで・もう一度タップで外す）。連続攻撃は全段当たる。長回しは帯の幅の中に敵の行動が来ると不発。フィニッシュとコンボは最後の行動だけ（添えられない）。全員ダウンのシャッターはない／見つけたコンボ ${names.length}/${all.length}：${names.join('・') || 'まだない'}${hints.length ? `　${hints.join('　')}` : ''}`;
+      this.render();
+      return;
+    }
     this.message = `札は4種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）・スペシャル（顔の仲間だけが使える。2人の札がそろうと連携技）。敵を全員ダウンさせるとシャッター：押すと敵みんなに最大HPの${Math.round(CHAIN_RULES.shutterRate * 10)}割の総攻撃（倒し切れなければ、そのラウンドはそこで終わる）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動`;
     this.render();
   }
@@ -791,6 +843,11 @@ export class ChainBattleScene extends Phaser.Scene {
 
   private pickOption(source: ChainSource, move: ChainMove): void {
     if (this.busy) return;
+    // 添える札（調整17）：直前に並べた行動に重ねる。もう一度タップで外す
+    if (move.effect.kind === 'addon' && source.kind === 'card') {
+      this.toggleAddon(source.index, move);
+      return;
+    }
     // 連携技は、組む2人のうち1人目が動く（今選んでいる仲間によらない）
     const actor = source.kind === 'link' ? (this.s.allies.find((a) => a.defId === this.s.def.links.find((l) => l.id === source.linkId)?.members[0])?.uid ?? '') : this.ally;
     if (!actor) return;
@@ -812,6 +869,29 @@ export class ChainBattleScene extends Phaser.Scene {
     this.pending = { source, move };
     const at = nextStart(this.s, this.plan);
     this.message = `【${this.categoryLabel(move)}】${move.name}（重さ${move.weight}・時刻${at}〜）：${move.text}　→ 敵をタップ`;
+    this.render();
+  }
+
+  private toggleAddon(index: number, move: ChainMove): void {
+    const last = this.plan[this.plan.length - 1];
+    if (!last) {
+      this.message = `${move.name}はサポート。先に行動を並べてから、タップして直前の行動に添える`;
+      this.render();
+      return;
+    }
+    const mine = (last.addons ?? []).includes(index);
+    const next: ChainPlanStep = { ...last, addons: mine ? (last.addons ?? []).filter((a) => a !== index) : [...(last.addons ?? []), index] };
+    const err = chainPlanError(this.s, this.plan.slice(0, -1), next);
+    if (err && !mine) {
+      this.message = err;
+      this.render();
+      return;
+    }
+    if (!mine) playSe(this, SE.tap);
+    this.plan[this.plan.length - 1] = next;
+    const who = stepAllies(this.s, last).map((u) => findChainUnit(this.s, u)?.name).join('と');
+    const names = (next.addons ?? []).map((a) => this.s.def.cards[this.s.hand[a]]?.name);
+    this.message = `${who}の${chainMoveOf(this.s, last)?.name}に、${names.length ? `「${names.join('・')}」を添えた` : '何も添えていない'}（${this.s.rules.addonMax}枚まで）`;
     this.render();
   }
 
@@ -1351,7 +1431,9 @@ function describe(f: ChainFrame, before: ChainState): string {
   const parts: string[] = [];
   for (const ev of f.events) {
     if (ev.type === 'act') continue;
-    else if (ev.type === 'cancel') parts.push(ev.reason === 'down' ? `${name(ev.uid)}はダウンしていて、${f.name}は起きなかった` : ev.reason === 'time' ? `${name(ev.uid)}は時間切れで動けなかった` : `${name(ev.uid)}は倒れていて動けない`);
+    else if (ev.type === 'cancel') parts.push(ev.reason === 'down' ? `${name(ev.uid)}はダウンしていて、${f.name}は起きなかった` : ev.reason === 'time' ? `${name(ev.uid)}は時間切れで動けなかった` : ev.reason === 'interrupted' ? `${name(ev.uid)}の${f.name}は、敵に邪魔されて不発（札は手札に戻った）` : `${name(ev.uid)}は倒れていて動けない`);
+    else if (ev.type === 'addon') parts.push(`＋${ev.names.join('＋')}`);
+    else if (ev.type === 'exposure') parts.push(`露出補正：この後の攻撃は1発ごとに+${ev.total}`);
     else if (ev.type === 'damage') parts.push(`${name(ev.to)}に${ev.amount}${ev.weak ? '（弱点）' : ev.resist ? '（耐性）' : ''}`);
     else if (ev.type === 'heal') parts.push(`${name(ev.to)}+${ev.amount}`);
     else if (ev.type === 'trick') parts.push(`${name(ev.to)}に「${TRICK_LABEL[ev.trick]}」を付与`);
