@@ -121,6 +121,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private stage: ChainStage = 'mid';
   private root!: Phaser.GameObjects.Container;
   private plan: ChainPlanStep[] = [];
+  /** サポートを添える先（計画の何行目か。null は最後の行。調整17） */
+  private addonAt: number | null = null;
   private ally = '';
   private pending: Pending = null;
   private tab: 'cards' | 'moves' = 'cards';
@@ -547,6 +549,13 @@ export class ChainBattleScene extends Phaser.Scene {
     });
     // 下の段：並べた行動のクリップ（重さの分の長さ。札・技の絵を正方形のコマにして並べる。調整9）
     const starts = planStarts(this.s, this.plan);
+    // 邪魔されなければ強い札の「中断のおそれ」：今の計画を実際に動かして見る（押す・ダウンで敵の予定が動くのも入る。調整17）
+    const fragileIdx = this.plan.map((p, i) => ({ m: chainMoveOf(this.s, p), i })).filter((x) => x.m?.effect.kind === 'damage' && x.m.effect.fragile).map((x) => x.i);
+    const interrupted = new Set<number>();
+    if (!this.busy && fragileIdx.length) {
+      for (const f of runChainRound(this.s, this.plan).frames) if (f.events.some((e) => e.type === 'cancel' && e.reason === 'interrupted')) interrupted.add(Number(f.key.slice(1)));
+    }
+    const target = this.s.def.finishLast && this.plan.length ? this.addonIndex() : -1;
     this.plan.forEach((step, i) => {
       const move = chainMoveOf(this.s, step);
       if (!move) return;
@@ -585,10 +594,13 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(this.add.rectangle(bx + 1, CLIP_TOP + 8, Math.min(bw - 16, tag.displayWidth + 4), 12, YELLOW, 0.95).setOrigin(0));
         r.add(tag);
       }
-      // 邪魔されなければ強い札：幅の中に敵の予定があれば「中断」の見込み（計画の時だけ）
-      if (!this.busy && move.effect.kind === 'damage' && move.effect.fragile) {
-        const hit = planOrder.some((o) => o.kind === 'enemy' && o.at >= at && o.at < at + move.weight && !s.enemies.find((e) => e.uid === o.intent.enemy)?.down);
-        if (hit) r.add(this.sticker(bx + bw / 2, CLIP_TOP + CLIP_H / 2, '中断のおそれ', RED, '#ffffff', -6, 9));
+      if (!this.busy && interrupted.has(i)) r.add(this.sticker(bx + bw / 2, CLIP_TOP + CLIP_H / 2, '中断のおそれ', RED, '#ffffff', -6, 9));
+      // サポートを添える先（黄色の枠）。帯の上の行動をタップすると選べる
+      if (!this.busy && i === target) r.add(this.add.rectangle(bx - 1, CLIP_TOP - 1, bw + 2, CLIP_H + 2).setOrigin(0).setStrokeStyle(2, YELLOW));
+      if (!this.busy && this.s.def.finishLast) {
+        const clipHit = this.add.rectangle(bx + bw / 2, CLIP_TOP + CLIP_H / 2, bw, CLIP_H, 0xffffff, 0.001);
+        r.add(clipHit);
+        makePressable(clipHit, { onTap: () => this.pickClip(i) });
       }
       // 効く時刻の印（帯の右端の上）と番号
       r.add(this.add.triangle(bx + bw + 1, CLIP_TOP - 4, -5, -4, 5, -4, 0, 3, 0xffffff));
@@ -654,7 +666,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const r = this.root;
     const links = availableLinks(this.s, this.plan);
     const tabs: { label: string; on: boolean; w: number; tap: () => void }[] = [
-      { label: links.length ? '手札・連携技 ★' : `手札（${this.s.hand.length}枚）`, on: this.tab === 'cards', w: 128, tap: () => this.switchTab('cards') },
+      { label: links.length ? (this.s.def.finishLast ? '手札・コンボ ★' : '手札・連携技 ★') : `手札（${this.s.hand.length}枚）`, on: this.tab === 'cards', w: 128, tap: () => this.switchTab('cards') },
       { label: '技', on: this.tab === 'moves', w: 56, tap: () => this.switchTab('moves') },
       { label: '？', on: false, w: 40, tap: () => this.showRules() },
     ];
@@ -713,7 +725,7 @@ export class ChainBattleScene extends Phaser.Scene {
     });
     if (this.tab === 'cards') {
       const usedCards = new Set(this.plan.flatMap(stepCards));
-      const lastAddons = new Set(this.plan[this.plan.length - 1]?.addons ?? []);
+      const lastAddons = new Set(this.plan[this.addonIndex()]?.addons ?? []);
       // 添えた札は、もう一度タップで外せるよう、押せるまま（「添えた」の印）
       s.hand.forEach((id, index) => items.push({ source: { kind: 'card', index }, move: s.def.cards[id], art: CHAIN_CARD_ART[id], used: usedCards.has(index) && !lastAddons.has(index), added: lastAddons.has(index), key: id }));
     } else if (this.ally) {
@@ -873,26 +885,44 @@ export class ChainBattleScene extends Phaser.Scene {
     this.render();
   }
 
+  /** サポートを添える先の行（帯の上でタップして選ぶ。選んでいなければ最後の行） */
+  private addonIndex(): number {
+    return this.addonAt !== null && this.addonAt < this.plan.length ? this.addonAt : this.plan.length - 1;
+  }
+
   private toggleAddon(index: number, move: ChainMove): void {
-    const last = this.plan[this.plan.length - 1];
-    if (!last) {
-      this.message = `${move.name}はサポート。先に行動を並べてから、タップして直前の行動に添える`;
+    const at = this.addonIndex();
+    const step = this.plan[at];
+    if (!step) {
+      this.message = `${move.name}はサポート。先に行動を並べてから、タップして添える（帯の上の行動をタップすると、添える先を選べる）`;
       this.render();
       return;
     }
-    const mine = (last.addons ?? []).includes(index);
-    const next: ChainPlanStep = { ...last, addons: mine ? (last.addons ?? []).filter((a) => a !== index) : [...(last.addons ?? []), index] };
-    const err = chainPlanError(this.s, this.plan.slice(0, -1), next);
+    const mine = (step.addons ?? []).includes(index);
+    const next: ChainPlanStep = { ...step, addons: mine ? (step.addons ?? []).filter((a) => a !== index) : [...(step.addons ?? []), index] };
+    // ほかの行で使う札は添えられない（前の行は chainPlanError が、後ろの行はここで見る）
+    const later = this.plan.slice(at + 1).some((p) => stepCards(p).includes(index));
+    const err = later ? 'その札は、もう使う予定' : chainPlanError(this.s, this.plan.slice(0, at), next);
     if (err && !mine) {
       this.message = err;
       this.render();
       return;
     }
     if (!mine) playSe(this, SE.tap);
-    this.plan[this.plan.length - 1] = next;
-    const who = stepAllies(this.s, last).map((u) => findChainUnit(this.s, u)?.name).join('と');
+    this.plan[at] = next;
+    const who = stepAllies(this.s, step).map((u) => findChainUnit(this.s, u)?.name).join('と');
     const names = (next.addons ?? []).map((a) => this.s.def.cards[this.s.hand[a]]?.name);
-    this.message = `${who}の${chainMoveOf(this.s, last)?.name}に、${names.length ? `「${names.join('・')}」を添えた` : '何も添えていない'}（${this.s.rules.addonMax}枚まで）`;
+    this.message = `${who}の${chainMoveOf(this.s, step)?.name}に、${names.length ? `「${names.join('・')}」を添えた` : '何も添えていない'}（${this.s.rules.addonMax}枚まで）`;
+    this.render();
+  }
+
+  /** 帯の上の行動をタップ：サポートを添える先にする（調整17） */
+  private pickClip(i: number): void {
+    if (this.busy || !this.plan[i]) return;
+    this.addonAt = i;
+    const step = this.plan[i];
+    const who = stepAllies(this.s, step).map((u) => findChainUnit(this.s, u)?.name).join('と');
+    this.message = `${who}の${chainMoveOf(this.s, step)?.name}を選んだ。手札のサポートをタップすると、ここに添える`;
     this.render();
   }
 
@@ -915,6 +945,7 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     playSe(this, SE.tap);
     this.plan.push(step);
+    this.addonAt = null;
     const move = chainMoveOf(this.s, step)!;
     this.pending = null;
     this.ally = this.firstFreeAlly();
@@ -923,13 +954,14 @@ export class ChainBattleScene extends Phaser.Scene {
     this.message = this.s.def.multiAct
       ? `${who}：${move.name}を並べた。時刻${next}まで使った。続けて並べるか、仲間を替えるか、「実行」`
       : `${who}：${move.name}（${move.text}）を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}）` : '全員並べた。「実行」で動き出す'}`;
-    if (availableLinks(this.s, this.plan).length) this.message += '。連携技が使える（手札の先頭 ★）';
+    if (availableLinks(this.s, this.plan).length) this.message += this.s.def.finishLast ? '。コンボがそろっている（手札の上の ★。最後の行動に）' : '。連携技が使える（手札の先頭 ★）';
     this.render();
   }
 
   private undo(): void {
     if (this.busy || this.plan.length === 0) return;
     const last = this.plan.pop()!;
+    this.addonAt = null;
     this.ally = last.ally;
     this.pending = null;
     this.message = `${stepAllies(this.s, last).map((u) => findChainUnit(this.s, u)?.name).join('と')}の行動を外した`;
@@ -939,6 +971,7 @@ export class ChainBattleScene extends Phaser.Scene {
   private clearPlan(): void {
     if (this.busy) return;
     this.plan = [];
+    this.addonAt = null;
     this.pending = null;
     this.ally = this.firstFreeAlly();
     this.message = '並べた行動を全部外した';

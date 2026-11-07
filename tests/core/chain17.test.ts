@@ -37,14 +37,14 @@ describe('並べてつなぐ戦闘・調整17（跳ねる要素）', () => {
     expect(chainPlanError(s, [], card('hero', 1, t))).not.toBeNull();
   });
 
-  it('露出補正は、添えた行動から後の味方の攻撃すべてに（フィニッシュにも）1発ごと+10', () => {
+  it('露出補正（レア）は、添えた行動から後の味方の攻撃すべてに（フィニッシュにも）1発ごと+5', () => {
     const s = make([dummy()], [C.exposure.id, C.decisive.id]);
     const t = s.enemies[0].uid;
     const r = runChainRound(s, [mv('hero', 'basic', t, [0]), mv('mio', 'basic', t), card('akari', 1, t)]);
-    expect(dmg(r, 'hero')[0].amount).toBe(30);
-    expect(dmg(r, 'mio')[0].amount).toBe(Math.floor(((20 + 10) * 8) / 10));
-    // 決めの一枚：60 + 当てた回数2 × 10 + 露出補正10（あかりの攻撃6）
-    expect(dmg(r, 'akari')[0].amount).toBe(Math.floor(((60 + 20 + 10) * 6) / 10));
+    expect(dmg(r, 'hero')[0].amount).toBe(25);
+    expect(dmg(r, 'mio')[0].amount).toBe(Math.floor(((20 + 5) * 8) / 10));
+    // 決めの一枚：60 + 当てた回数2 × 10 + 露出補正5（あかりの攻撃6）
+    expect(dmg(r, 'akari')[0].amount).toBe(Math.floor(((60 + 20 + 5) * 6) / 10));
   });
 
   it('フィニッシュはラウンドの最後の行動だけ。添えられない', () => {
@@ -120,8 +120,11 @@ describe('並べてつなぐ戦闘・調整17（跳ねる要素）', () => {
   it('コンボ：材料がそろうと使える。仲間の専用の札のレシピは、その仲間が動く（3人技は3人とも）', () => {
     const s = make([dummy()], [C.backlight.id, C.blueHour.id, C.strobe.id]);
     const found = availableLinks(s, []);
-    expect(found.map((x) => x.link.id)).toEqual(['tricolor']);
-    const step: ChainPlanStep = { ally: 'mio', source: { kind: 'link', linkId: 'tricolor', cards: found[0].cards } };
+    // 3枚の三原色と、2枚のフラッシュバック（逆光＋ストロボ）の両方がそろう
+    expect(found.map((x) => x.link.id).sort()).toEqual(['flashback', 'tricolor']);
+    expect(found.find((x) => x.link.id === 'flashback')!.cards.length).toBe(2);
+    const tri = found.find((x) => x.link.id === 'tricolor')!;
+    const step: ChainPlanStep = { ally: 'mio', source: { kind: 'link', linkId: 'tricolor', cards: tri.cards } };
     expect(chainPlanError(s, [], step)).toBeNull();
     expect(chainMoveOf(s, step)?.name).toBe('三原色');
     const r = runChainRound(s, [step]);
