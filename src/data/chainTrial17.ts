@@ -29,7 +29,7 @@ export const CHAIN17_CARDS = {
   plus20: m({ id: 'c17_plus20', name: 'アタック+20', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', add: 20 }, text: '攻撃に添える。1発ごとに威力+20' }),
   plus30: m({ id: 'c17_plus30', name: 'アタック+30', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', add: 30 }, text: '攻撃に添える。1発ごとに威力+30' }),
   split: m({ id: 'c17_split', name: '複数攻撃化', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', split: true }, text: '単発の攻撃に添える。威力を4つに分けて4回当てる（総ダメージは同じ。1発ごとに効く物と重ねると伸びる）' }),
-  exposure: m({ id: 'c17_exposure', name: '露出補正', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', exposure: 10 }, text: '行動に添える。この行動から後、このラウンドの味方の攻撃すべてに（フィニッシュにも）1発ごとに威力+10' }),
+  exposure: m({ id: 'c17_exposure', name: '露出補正', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', exposure: 5 }, text: 'レア。行動に添える。この行動から後、このラウンドの味方の攻撃すべてに（フィニッシュにも）1発ごとに威力+5' }),
   panorama: m({ id: 'c17_panorama', name: 'パノラマ', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', spread: true }, text: '単体の攻撃に添える。ほかの敵全体にも同じだけ当たる（広がった先はダウンしない）' }),
   highlight: m({ id: 'c17_highlight', name: 'ハイライト', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', expose: true }, text: '攻撃に添える。属性に関係なく弱点扱い（ダウンする）' }),
   filterRed: m({ id: 'c17_filterRed', name: '赤フィルター', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', element: 'fire' }, text: '攻撃に添える。その攻撃を火にする' }),
@@ -71,6 +71,7 @@ export const CHAIN17_CARD_ART: Record<string, string> = {
 export const CHAIN17_MOVE_ART: Record<string, string> = {
   flurry: 'snap.sword', iceShard: 'snap.iceChip', tricolor: 'snap.joker', burstStorm: 'snap.quickStep', timeStop: 'snap.encore', homerun: 'snap.pinchHitter',
   diamondDust: 'snap.iceChip', thunderDrum: 'snap.thunderChip', twoSwords: 'snap.sword', threeTimes: 'snap.joker',
+  flashback: 'snap.fireChip', thunderRain: 'snap.thunderChip', onceInLife: 'snap.heavyBlow', thousandKnock: 'snap.pinchHitter', iceFlower: 'snap.iceChip', biribiri: 'snap.thunderChip', inSync: 'snap.joker',
 };
 
 /** 札の上の短い効果 */
@@ -78,7 +79,7 @@ export const CHAIN17_SHORT_TEXT: Record<string, string> = {
   c17_quick: '敵1体に\n物理20', c17_closeUp: '敵1体に\n物理40', c17_backlight: '敵1体に\n火35', c17_blueHour: '敵1体に\n氷35', c17_strobe: '敵1体に\n雷35',
   c17_flash: '敵全体に\n雷20', c17_burst: '物理12×5回\n分けられない', c17_sparkler: '全体に火6×5\n分けられない', c17_wide: '敵全体に\n物理25', c17_bigShot: '物理100\nかたい・バリアに強い',
   c17_longTake: '物理150\n邪魔されると不発', c17_zoom: '物理30\nかばうを無視', c17_firstCut: '物理30\n最初なら2倍',
-  c17_plus10: '添える\n1発ごと+10', c17_plus20: '添える\n1発ごと+20', c17_plus30: '添える\n1発ごと+30', c17_split: '添える\n4回に分ける', c17_exposure: '添える\n以後ずっと+10',
+  c17_plus10: '添える\n1発ごと+10', c17_plus20: '添える\n1発ごと+20', c17_plus30: '添える\n1発ごと+30', c17_split: '添える\n4回に分ける', c17_exposure: '添える\n以後ずっと+5',
   c17_panorama: '添える\n全体に広げる', c17_highlight: '添える\n弱点扱い', c17_filterRed: '添える\n火にする', c17_filterBlue: '添える\n氷にする', c17_filterYellow: '添える\n雷にする',
   c17_pinpoint: '添える\nフィニッシュ1.5倍', c17_push: '添える\n予定を2マス後へ', c17_pause: '添える\n大技を封じる', c17_rewind: '添える\n30%回復',
   c17_decisive: '物理60\n当てた回数×10', c17_group: '全体に物理30\n当てた回数×4', c17_imprint: '物理40\nその敵へ×15', c17_margin: '物理40\n残りマス×20',
@@ -155,6 +156,14 @@ export const CHAIN17_COMBOS: ChainLinkDef[] = [
   combo('afterglow', 'アフターグロウ', [C.swing, C.snow, C.backlight], ['hero', 'akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 60, bestOf: ['fire', 'ice'], healAll: 30 }, text: 'ハルトとあかり。敵全体に、敵ごとに火か氷の効く方で60。味方全体を回復' }),
   combo('crossDrive', 'クロスドライブ', [C.swing, C.paperGun, C.quick], ['hero', 'mio'], { weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, hits: 3, extra: [{ element: 'thunder', power: 40, hits: 3 }] }, text: 'ハルトとみお。敵1体に物理40を3回と、雷40を3回' }),
   combo('shower', '夕立', [C.snow, C.paperGun, C.wide], ['akari', 'mio'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 15, hits: 4, extra: [{ element: 'ice', power: 15, hits: 2 }] }, text: 'あかりとみお。敵全体に雷15を4回と、氷15を2回' }),
+  // 2枚のコンボ（3枚より少し弱い。3枚目を待つか、2枚で撃つか）
+  combo('flashback', 'フラッシュバック', [C.backlight, C.strobe], [], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 30, extra: [{ element: 'thunder', power: 30 }] }, text: '敵全体に火30と雷30（弱点ならダウン）' }),
+  combo('thunderRain', '雷の雨', [C.wide, C.strobe], [], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 15, hits: 4 }, text: '敵全体に雷15を4回' }),
+  combo('onceInLife', '一世一代', [C.bigShot, C.longTake], [], { weight: 5, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 280, heavy: true }, text: '敵1体に物理280（かたい敵に1.5倍・バリアを割る）' }),
+  combo('thousandKnock', '千本ノック', [C.swing, C.burst], ['hero'], { weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, hits: 6 }, text: 'ハルト。敵1体に物理30を6回' }),
+  combo('iceFlower', '氷の花', [C.snow, C.blueHour], ['akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 25, hits: 3 }, text: 'あかり。敵全体に氷25を3回' }),
+  combo('biribiri', 'ビリビリ', [C.paperGun, C.push], ['mio'], { weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 10, hits: 6, push: 2 }, text: 'みお。敵1体に雷10を6回。当たった敵の予定を2マス後ろへ' }),
+  combo('inSync', '息ぴったり', [C.swing, C.snow], ['hero', 'akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 40, extra: [{ element: 'ice', power: 40 }] }, text: 'ハルトとあかり。敵全体に物理40と氷40' }),
   // 専用2（同じ仲間）＋通常1
   combo('twoSwords', '二刀流', [C.swing, C.swing, C.exposure], ['hero'], { weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 100, hits: 2, exposure: 20 }, text: 'ハルト。敵1体に物理100を2回。使う時に、このラウンドの露出補正に+20' }),
   // 専用3（3人技）
@@ -174,6 +183,13 @@ export const CHAIN17_COMBO_HINT: Record<string, string> = {
   shower: 'あかりとみおの専用の札＋全体の札',
   twoSwords: 'ハルトの専用の札2枚＋添える札',
   threeTimes: '3人の専用の札',
+  flashback: '火と雷のアタック',
+  thunderRain: '全体の札＋雷のアタック',
+  onceInLife: '重い一撃＋邪魔されると不発の札',
+  thousandKnock: 'ハルトの専用の札＋連続攻撃の札',
+  iceFlower: 'あかりの専用の札＋氷のアタック',
+  biribiri: 'みおの専用の札＋予定を動かす札',
+  inSync: 'ハルトとあかりの専用の札',
 };
 
 /** 敵（調整17）：防御を10にそろえ、ブリキはバリア（最初の2発を消す）、歯車はかたい（1発ごとに減らす） */
@@ -196,22 +212,23 @@ BY_ID.tinNoise = TIN;
 
 /** 山札：アタック9（共通）＋サポート8（共通6＋組み合わせごとに2）＋フィニッシュ3（組み合わせごと）＋専用の札（仲間1人につき2枚） */
 const ATTACKS = [C.quick, C.backlight, C.blueHour, C.strobe, C.burst, C.burst, C.wide, C.bigShot, C.longTake];
-const SUPPORTS = [C.push, C.push, C.plus30, C.split, C.exposure, C.panorama];
+/** 共通のサポート5枚（露出補正はレアなので、一部の戦闘にだけ入れる） */
+const SUPPORTS = [C.push, C.push, C.plus30, C.split, C.panorama];
 const SPECIALS = [C.swing, C.swing, C.snow, C.snow, C.paperGun, C.paperGun];
 export const CHAIN17_DECK_PLAN = { attack: 9, support: 8, finish: 3, specialPerAlly: 2 } as const;
 const deckOf = (supports: ChainMove[], finishes: ChainMove[]): string[] => [...ATTACKS, ...SUPPORTS, ...supports, ...finishes, ...SPECIALS].map((c) => c.id);
 const CARDS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN17_CARDS).map((c) => [c.id, c]));
 
-/** 組み合わせごとのサポート2枚とフィニッシュ3枚 */
+/** 組み合わせごとのサポート3枚とフィニッシュ3枚（露出補正はレア：駄菓子屋の店先とボスだけ） */
 const PICKS: Record<string, [ChainMove[], ChainMove[]]> = {
-  chain1: [[C.highlight, C.pause], [C.decisive, C.group, C.margin]],
-  chain2: [[C.pinpoint, C.filterRed], [C.imprint, C.decisive, C.reel]],
-  chain3: [[C.rewind, C.pause], [C.group, C.develop, C.decisive]],
-  chain4: [[C.plus10, C.highlight], [C.margin, C.reel, C.rainbow]],
-  chain5: [[C.filterYellow, C.plus20], [C.group, C.rainbow, C.decisive]],
-  chain6: [[C.highlight, C.pinpoint], [C.imprint, C.rainbow, C.develop]],
-  chain7: [[C.filterBlue, C.pause], [C.decisive, C.imprint, C.margin]],
-  chain8: [[C.pinpoint, C.rewind], [C.imprint, C.reel, C.develop]],
+  chain1: [[C.highlight, C.pause, C.plus10], [C.decisive, C.group, C.margin]],
+  chain2: [[C.pinpoint, C.filterRed, C.plus20], [C.imprint, C.decisive, C.reel]],
+  chain3: [[C.rewind, C.pause, C.plus10], [C.group, C.develop, C.decisive]],
+  chain4: [[C.plus10, C.highlight, C.exposure], [C.margin, C.reel, C.rainbow]],
+  chain5: [[C.filterYellow, C.plus20, C.highlight], [C.group, C.rainbow, C.decisive]],
+  chain6: [[C.highlight, C.pinpoint, C.plus20], [C.imprint, C.rainbow, C.develop]],
+  chain7: [[C.filterBlue, C.pause, C.plus10], [C.decisive, C.imprint, C.margin]],
+  chain8: [[C.pinpoint, C.rewind, C.exposure], [C.imprint, C.reel, C.develop]],
 };
 
 function make17(base: ChainBattleDef, enemies?: ChainEnemyDef[], variants = base.variants, name = base.name): ChainBattleDef {
@@ -228,7 +245,7 @@ function make17(base: ChainBattleDef, enemies?: ChainEnemyDef[], variants = base
     noShutter: true,
     finishLast: true,
     // 決着が2〜3ラウンドになるので、評価の目安を延ばす（ボスはさらに）
-    gradeAt: base.id === 'chain8' ? { high: 35, mid: 50 } : { high: 15, mid: 22 },
+    gradeAt: base.id === 'chain8' ? { high: 35, mid: 50 } : { high: 13, mid: 20 },
   };
 }
 
