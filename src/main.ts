@@ -18,6 +18,7 @@ import { DailyScene } from './scenes/DailyScene';
 import { ChestMapScene } from './scenes/ChestMapScene';
 import { ClockBattleScene } from './scenes/ClockBattleScene';
 import { ChainBattleScene } from './scenes/ChainBattleScene';
+import { LeapBattleScene } from './scenes/LeapBattleScene';
 import { ExploreScene } from './scenes/ExploreScene';
 import { ReturnScene } from './scenes/ReturnScene';
 import { ProtoExploreScene } from './scenes/ProtoExploreScene';
@@ -99,7 +100,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, PartyScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene, ClockBattleScene, ChainBattleScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, PartyScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene, ClockBattleScene, ChainBattleScene, LeapBattleScene],
 });
 
 if (debug) {
