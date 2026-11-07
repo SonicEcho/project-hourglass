@@ -43,3 +43,4 @@ export * from './faces';
 export * from './scriptM2';
 export * from './barks';
 export * from './hubTiles';
+export * from './leapTrial';

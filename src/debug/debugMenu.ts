@@ -28,7 +28,7 @@ export interface DebugNavigator {
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
   /** 試作の画面を開く（段階16。エンジンを決めるための探索の試作。段階18b：data で地図を選ぶ。今は縁日の絵の見本だけ） */
-  openPrototype(key: 'ProtoExplore' | 'ClockBattle' | 'ChainBattle' | 'Battle', data?: object): void;
+  openPrototype(key: 'ProtoExplore' | 'ClockBattle' | 'ChainBattle' | 'LeapBattle' | 'Battle', data?: object): void;
   /** 会話の画面を開く（段階22。DialogueScene の DialogueData） */
   openDialogue(data: { scene: string; queue?: string[] }): void;
   /** 物語の流れの画面を開く（段階23。今の出来事から） */
@@ -481,6 +481,17 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         nav.openPrototype('ProtoExplore', { map: 'festival' });
       }),
+      // 段階157：試し：組んで跳ねる戦闘（docs/milestones/M3_battle_rethink.md の 10.・12.）。今のセーブには触れない
+      ...[
+        ['leap1', '縁日の砂嵐・雑魚'],
+        ['leap2', '商店街の砂嵐・雑魚'],
+        ['leap3', '金魚鉢のぬし・ボス'],
+      ].map(([trial, name]) =>
+        button(`試し：組んで跳ねる（${name}）`, () => {
+          close();
+          nav.openPrototype('LeapBattle', { trial });
+        }, true, 'background:#1f5a3a;border-color:#8affc8;'),
+      ),
       // 段階156：試し：並べてつなぐ戦闘（docs/milestones/M3_battle_review.md の 12.）。今のセーブには触れない
       button('試し：並べてつなぐ戦闘（金魚すくいの屋台）', () => {
         close();
