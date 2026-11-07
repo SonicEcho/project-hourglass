@@ -1,4 +1,4 @@
-import { availableLinks, chainGrade, chainMoveOf, chainPlanError, createChainBattle, nextRandom, runChainRound, takeShutter, type ChainBattleDef, type ChainPlanStep, type ChainRules, type ChainState } from '../core';
+import { availableLinks, chainGrade, chainMoveOf, chainPlanError, createChainBattle, nextRandom, runChainRound, stepCards, takeShutter, type ChainBattleDef, type ChainPlanStep, type ChainRules, type ChainState } from '../core';
 
 // 試し：並べてつなぐ戦闘（段階156）の自動対戦。手応えの目安を測るためだけに使う。
 // random：並べる順・行動・相手をでたらめに選ぶ。smart：でたらめな計画をたくさん作って、1ラウンド先まで動かし、一番よい物を選ぶ（読み切る人の目安）。
@@ -11,6 +11,8 @@ export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: stri
   const sources: ChainPlanStep['source'][] = [];
   s.hand.forEach((id, index) => {
     if (seen.has(id)) return;
+    // 添える札は、行動としては置けない（調整17）
+    if (s.def.cards[id]?.effect.kind === 'addon') return;
     if (plan.some((p) => p.source.kind === 'card' && p.source.index === index)) return;
     seen.add(id);
     sources.push({ kind: 'card', index });
@@ -18,7 +20,7 @@ export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: stri
   const me = s.allies.find((a) => a.uid === ally);
   const def = s.def.allies.find((a) => a.id === me?.defId);
   for (const m of def?.moves ?? []) sources.push({ kind: 'move', moveId: m.id });
-  for (const x of availableLinks(s, plan)) if (x.link.members.includes(me?.defId ?? '')) sources.push({ kind: 'link', linkId: x.link.id, cards: x.cards });
+  for (const x of availableLinks(s, plan)) if (x.link.members.length === 0 || x.link.members[0] === me?.defId) sources.push({ kind: 'link', linkId: x.link.id, cards: x.cards });
   for (const source of sources) {
     const base: ChainPlanStep = { ally, source };
     const move = chainMoveOf(s, base);
@@ -33,6 +35,18 @@ export function chainCandidates(s: ChainState, plan: ChainPlanStep[], ally: stri
 }
 
 /** でたらめな計画（生きている仲間を、でたらめな順で、置ける限り）。1人1回をやめた試しでは、置ける仲間をでたらめに選び続ける（時々、途中でやめる） */
+/** 置いた行に、でたらめに添える札を0〜2枚（調整17。置けない組み合わせなら添えない） */
+function withAddons(s: ChainState, plan: ChainPlanStep[], step: ChainPlanStep, pick: (n: number) => number): ChainPlanStep {
+  const used = new Set(plan.flatMap(stepCards).concat(stepCards(step)));
+  const free = s.hand.map((id, i) => ({ id, i })).filter((x) => !used.has(x.i) && s.def.cards[x.id]?.effect.kind === 'addon').map((x) => x.i);
+  if (free.length === 0) return step;
+  const n = pick(s.rules.addonMax + 1);
+  const chosen: number[] = [];
+  while (chosen.length < n && free.length) chosen.push(free.splice(pick(free.length), 1)[0]);
+  const next = { ...step, addons: chosen };
+  return chosen.length && chainPlanError(s, plan, next) === null ? next : step;
+}
+
 export function randomChainPlan(s: ChainState, pick: (n: number) => number): ChainPlanStep[] {
   const plan: ChainPlanStep[] = [];
   if (s.def.multiAct) {
@@ -40,7 +54,7 @@ export function randomChainPlan(s: ChainState, pick: (n: number) => number): Cha
       const options = s.allies.filter((a) => a.hp > 0).map((a) => chainCandidates(s, plan, a.uid)).filter((c) => c.length > 0);
       if (options.length === 0 || (plan.length > 0 && pick(10) === 0)) break;
       const c = options[pick(options.length)];
-      plan.push(c[pick(c.length)]);
+      plan.push(withAddons(s, plan, c[pick(c.length)], pick));
     }
     return plan;
   }
@@ -52,7 +66,7 @@ export function randomChainPlan(s: ChainState, pick: (n: number) => number): Cha
   for (const ally of order) {
     const c = chainCandidates(s, plan, ally);
     if (c.length === 0) continue;
-    plan.push(c[pick(c.length)]);
+    plan.push(withAddons(s, plan, c[pick(c.length)], pick));
   }
   return plan;
 }

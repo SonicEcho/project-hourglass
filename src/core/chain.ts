@@ -49,7 +49,9 @@ export type ChainTrait =
   /** 属性チェンジ：ラウンドごとに弱点が変わる（weakCycle の順。今の弱点は画面に出る） */
   | 'shift'
   /** リーダー：生きている間、ほかの敵の攻撃が強くなる（leaderRate 倍）。倒すと、ほかの敵が動揺してダウンする */
-  | 'leader';
+  | 'leader'
+  /** かたい（調整17）：1発ごとにダメージを hardCut 減らす。重い一撃（heavy）には効かず、逆に1.5倍で受ける */
+  | 'hard';
 
 /** 仕掛け（次に当たった攻撃で使い切る）：spread 目印（ほかの敵みんなに広がる。広がった先ではダウンしない）・expose むき出し（属性に関係なく弱点になる）・opening すき（締めの札が2倍） */
 export type ChainTrick = 'spread' | 'expose' | 'opening';
@@ -78,7 +80,41 @@ export type ChainEffect =
    * push：当てた敵の、まだ動いていない予定を、この数だけ後ろへずらす。pierce：単体攻撃が「かばう」に吸われず、選んだ敵に当たる（調整13）。
    * perActed は負でもよい（先に動くほど強い札。威力は1より下がらない）
    */
-  | { kind: 'damage'; element: Element; power: number; perActed?: number; hitsPerActed?: boolean; downMult?: number; perMark?: number; ignoreResist?: boolean; bestOf?: Element[]; push?: number; pierce?: boolean }
+  | {
+      kind: 'damage';
+      element: Element;
+      power: number;
+      perActed?: number;
+      hitsPerActed?: boolean;
+      downMult?: number;
+      perMark?: number;
+      ignoreResist?: boolean;
+      bestOf?: Element[];
+      push?: number;
+      pierce?: boolean;
+      /** 連続攻撃（調整17。いつでも全段当たる） */
+      hits?: number;
+      /** 複数攻撃化できない（調整17） */
+      unsplittable?: boolean;
+      /** 重い一撃（調整17）：かたい敵に1.5倍・バリアを1発で割る */
+      heavy?: boolean;
+      /** 邪魔されなければ強い（調整17）：動き始めてから効くまでの間に敵が動くと不発（札は手札に戻る） */
+      fragile?: boolean;
+      /** フィニッシュの伸び方（調整17）：単位1つにつき威力を per 足す */
+      scale?: { by: 'hits' | 'targetHits' | 'slotsLeft' | 'supports'; per: number };
+      /** コンボ「時間よ止まれ」：当たった後、敵全員のこのラウンドの残りの予定を消す */
+      stopAll?: boolean;
+      /** ほかの効果のあと、味方全体を回復する（コンボ） */
+      healAll?: number;
+      /** ほかの属性でも続けて当てる（コンボ） */
+      extra?: { element: Element; power: number; hits?: number }[];
+      /** ラウンドで最初に動くと威力がこの倍（調整17。ファーストカット） */
+      firstMult?: number;
+      /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
+      exposure?: number;
+    }
+  /** 添える札（調整17）：行動に添えて使う。重さ0で、手番も時間も使わない。1つの行動に addonMax 枚まで（フィニッシュ・コンボには付けられない） */
+  | { kind: 'addon'; add?: number; split?: boolean; exposure?: number; spread?: boolean; expose?: boolean; element?: Element; pinpoint?: boolean; push?: number; seal?: boolean; drain?: number }
   /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理）。直前が弱点を突いていれば × weakMult（調整16） */
   | { kind: 'layer'; power: number; mult: number; weakMult?: number }
   /** 追い風：直前に動いた仲間の攻撃（属性と威力）を、威力 × rate で敵全体にもう一度。直前が攻撃でなければ不発 */
@@ -155,13 +191,18 @@ export interface ChainEnemyDef {
   timer?: number;
   /** 属性チェンジ：ラウンドごとの弱点の順（1ラウンド目は先頭） */
   weakCycle?: Element[];
+  /** 殻（バリア）が消す発数（調整17。省くと1） */
+  shellHits?: number;
 }
 
-/** 連携技：組む2人（members）の専用の札（cards）が手札にそろうと使える。2人の手番を使う */
+/**
+ * 連携技・コンボ：決まった札（cards）が手札にそろうと使える。members の仲間（専用の札の持ち主）が動く（2人以上なら全員の手番を使う）。
+ * 調整17：材料は2〜3枚。members が空なら、だれでも使える（並べた仲間が動く）。フィニッシュ扱い
+ */
 export interface ChainLinkDef {
   id: string;
-  members: [string, string];
-  cards: [string, string];
+  members: string[];
+  cards: string[];
   move: ChainMove;
 }
 
@@ -195,6 +236,11 @@ export interface ChainRules {
   leaderRate: number;
   /** ピンポイント：付いた敵が次に受けるフィニッシュの倍率（調整16：2 → 3） */
   openingMult: number;
+  /** 調整17：1つの行動に添えられる札の数・複数攻撃化の回数・かたいが1発ごとに減らす量・ピンポイント（添える）のフィニッシュの倍率 */
+  addonMax: number;
+  splitHits: number;
+  hardCut: number;
+  pinpointMult: number;
   /** シャッター（総攻撃）：生きている敵みんなに、最大 HP のこの割合のダメージ（調整15。前は即決着） */
   shutterRate: number;
 }
@@ -224,6 +270,10 @@ export interface ChainBattleDef {
   links: ChainLinkDef[];
   /** 1人1回をやめる（調整16の試し）：時間の予算が許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回まで（札は手札の分だけ） */
   multiAct?: boolean;
+  /** 全員ダウンのシャッターを使わない（調整17） */
+  noShutter?: boolean;
+  /** フィニッシュ（コンボ・連携技も）はラウンドの最後の行動だけ（調整17） */
+  finishLast?: boolean;
 }
 
 export interface ChainUnit {
@@ -248,6 +298,12 @@ export interface ChainUnit {
   step: number;
   /** 殻がまだ割れていない */
   shell?: boolean;
+  /** 殻（バリア）があと何発を消すか（調整17） */
+  shellLeft?: number;
+  /** このラウンドに、味方の攻撃が当たった回数（調整17。焼き付け） */
+  roundTaken?: number;
+  /** ピンポイント（添える）：このラウンドのフィニッシュを pinpointMult 倍で受ける（調整17） */
+  pinpoint?: boolean;
   /** 時限の残り */
   timer?: number;
   /** 逃げた（もう戦闘にいない） */
@@ -274,19 +330,24 @@ export interface ChainIntent {
 export type ChainSource =
   | { kind: 'card'; index: number }
   | { kind: 'move'; moveId: string }
-  /** 連携技。cards は使う2枚の専用の札の、手札の位置 */
-  | { kind: 'link'; linkId: string; cards: [number, number] };
+  /** 連携技・コンボ。cards は使う札の、手札の位置 */
+  | { kind: 'link'; linkId: string; cards: number[] };
 
 /** 計画の1行（仲間1人の行動。連携技は、組む2人のうち1人目を ally に書く） */
 export interface ChainPlanStep {
   ally: string;
   source: ChainSource;
   target?: string;
+  /** 添える札（調整17。手札の位置） */
+  addons?: number[];
 }
 
 export type ChainEvent =
   | { type: 'act'; uid: string; name: string; at: number }
-  | { type: 'cancel'; uid: string; reason: 'down' | 'dead' | 'time' }
+  | { type: 'cancel'; uid: string; reason: 'down' | 'dead' | 'time' | 'interrupted' }
+  /** 添える札を使った（調整17） */
+  | { type: 'addon'; uid: string; names: string[] }
+  | { type: 'exposure'; total: number }
   | { type: 'damage'; from: string; to: string; amount: number; weak: boolean; resist: boolean }
   | { type: 'heal'; to: string; amount: number }
   | { type: 'trick'; to: string; trick: ChainTrick }
@@ -349,6 +410,10 @@ export interface ChainState {
   actedAt: Record<number, number>;
   /** 生きている敵が全員ダウンした（シャッターを押せば決着） */
   shutter: boolean;
+  /** 調整17：このラウンドの露出補正の合計・味方の攻撃が当たった回数・添えた札の数 */
+  exposure: number;
+  roundHits: number;
+  roundSupports: number;
   outcome: 'ongoing' | 'win' | 'lose';
   /** 決着の仕方 */
   finish?: 'shutter' | 'defeat';
@@ -445,6 +510,7 @@ function enemyUnit(d: ChainEnemyDef, uid: string): ChainUnit {
     down: false,
     step: 0,
     shell: d.trait === 'shell' ? true : undefined,
+    shellLeft: d.trait === 'shell' ? (d.shellHits ?? 1) : undefined,
     timer: d.trait === 'timer' ? (d.timer ?? 3) : undefined,
     veiled: d.trait === 'veil' ? true : undefined,
     roundHp: d.hp,
@@ -509,6 +575,9 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     timeShift: 0,
     actedAt: {},
     shutter: false,
+    exposure: 0,
+    roundHits: 0,
+    roundSupports: 0,
     outcome: 'ongoing',
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
@@ -553,14 +622,18 @@ export function chainMoveOf(s: ChainState, step: ChainPlanStep): ChainMove | nul
 export function stepAllies(s: ChainState, step: ChainPlanStep): string[] {
   if (step.source.kind !== 'link') return [step.ally];
   const link = s.def.links.find((l) => l.id === (step.source as { linkId: string }).linkId);
-  return link ? link.members.map((m) => s.allies.find((a) => a.defId === m)?.uid ?? m) : [step.ally];
+  return link && link.members.length ? link.members.map((m) => s.allies.find((a) => a.defId === m)?.uid ?? m) : [step.ally];
 }
 
 /** 計画の行で使う、手札の位置 */
-function stepCards(step: ChainPlanStep): number[] {
-  if (step.source.kind === 'card') return [step.source.index];
-  if (step.source.kind === 'link') return [...step.source.cards];
-  return [];
+export function stepCards(step: ChainPlanStep): number[] {
+  const own = step.source.kind === 'card' ? [step.source.index] : step.source.kind === 'link' ? [...step.source.cards] : [];
+  return [...own, ...(step.addons ?? [])];
+}
+
+/** フィニッシュか（コンボ・連携技も。調整17：ラウンドで最後に動く仲間だけ、添える札は付けられない） */
+export function isChainFinish(m: ChainMove | null | undefined): boolean {
+  return !!m && (m.type === 'finish' || m.type === 'link');
 }
 
 /** 計画の行ごとの動く時刻（1番目は0、次は前の時刻 + 前の行動の重さ） */
@@ -581,17 +654,21 @@ export function nextStart(s: ChainState, plan: ChainPlanStep[]): number {
   return starts[starts.length - 1] + (chainMoveOf(s, plan[plan.length - 1])?.weight ?? 0);
 }
 
-/** 今の計画の続きで使える連携技（組む2人が生きていて、まだ並べておらず、2人の専用の札が手札にある） */
-export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: ChainLinkDef; cards: [number, number] }[] {
+/** 今の計画の続きで使える連携技・コンボ（動く仲間が生きていて、まだ並べておらず、材料の札が手札にそろっている） */
+export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: ChainLinkDef; cards: number[] }[] {
   const usedCards = new Set(plan.flatMap(stepCards));
   const usedAllies = new Set(plan.flatMap((p) => stepAllies(s, p)));
-  const out: { link: ChainLinkDef; cards: [number, number] }[] = [];
+  const out: { link: ChainLinkDef; cards: number[] }[] = [];
   for (const link of s.def.links) {
     const uids = link.members.map((m) => s.allies.find((a) => a.defId === m));
     if (uids.some((u) => !u || u.hp <= 0 || (usedAllies.has(u.uid) && !s.def.multiAct))) continue;
-    const a = s.hand.findIndex((c, i) => c === link.cards[0] && !usedCards.has(i));
-    const b = s.hand.findIndex((c, i) => c === link.cards[1] && !usedCards.has(i) && i !== a);
-    if (a >= 0 && b >= 0) out.push({ link, cards: [a, b] });
+    const picked: number[] = [];
+    for (const id of link.cards) {
+      const i = s.hand.findIndex((c, k) => c === id && !usedCards.has(k) && !picked.includes(k));
+      if (i < 0) break;
+      picked.push(i);
+    }
+    if (picked.length === link.cards.length) out.push({ link, cards: picked });
   }
   return out;
 }
@@ -599,6 +676,8 @@ export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: Ch
 /** 計画の最後に step を足せない理由（足せれば null） */
 export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: ChainPlanStep): string | null {
   if (s.outcome !== 'ongoing' || s.shutter) return '戦闘は終わっている';
+  // フィニッシュ（コンボ・連携技も）の後には並べられない（調整17：フィニッシュはラウンドで最後に動く仲間だけ）
+  if (s.def.finishLast && plan.some((p) => isChainFinish(chainMoveOf(s, p)))) return 'フィニッシュの後には並べられない（フィニッシュは最後の行動）';
   const usedAllies = new Set(plan.flatMap((p) => stepAllies(s, p)));
   for (const uid of stepAllies(s, step)) {
     const ally = s.allies.find((a) => a.uid === uid);
@@ -617,11 +696,26 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
   }
   if (step.source.kind === 'link') {
     const src = step.source;
-    const ok = availableLinks(s, plan).some((x) => x.link.id === src.linkId && x.cards[0] === src.cards[0] && x.cards[1] === src.cards[1]);
-    if (!ok) return '連携技は、組む2人の専用の札がそろっている時だけ';
+    const ok = availableLinks(s, plan).some((x) => x.link.id === src.linkId && x.cards.length === src.cards.length && x.cards.every((c, i) => c === src.cards[i]));
+    if (!ok) return 'コンボは、材料の札がそろっている時だけ';
   }
   const move = chainMoveOf(s, step);
   if (!move) return 'その行動は使えない';
+  if (move.effect.kind === 'addon') return '添える札は、行動に添えて使う';
+  // 添える札（調整17）
+  const addons = step.addons ?? [];
+  if (addons.length) {
+    if (isChainFinish(move)) return 'フィニッシュには添えられない';
+    if (addons.length > s.rules.addonMax) return `添える札は${s.rules.addonMax}枚まで`;
+    if (new Set(addons).size !== addons.length) return 'その札は、もう使う予定';
+    for (const a of addons) {
+      const c = s.def.cards[s.hand[a]];
+      if (!c || c.effect.kind !== 'addon') return '添えられるのは、サポートの札だけ';
+      if (usedCards.has(a) || (step.source.kind === 'card' && step.source.index === a)) return 'その札は、もう使う予定';
+      if (c.effect.split && (move.effect.kind !== 'damage' || (move.effect.hits ?? 1) > 1 || move.effect.unsplittable)) return `${c.name}は、分けられる単発の攻撃にだけ添えられる`;
+      if (c.effect.kind === 'addon' && move.effect.kind !== 'damage' && (c.effect.add || c.effect.spread || c.effect.expose || c.effect.element || c.effect.pinpoint || c.effect.push || c.effect.seal || c.effect.drain)) return `${c.name}は、攻撃にだけ添えられる`;
+    }
+  }
   const me = s.allies.find((a) => a.uid === step.ally);
   if (move.owner && step.source.kind === 'card' && me?.defId !== move.owner) return `${s.def.allies.find((a) => a.id === move.owner)?.name ?? ''}の専用の札`;
   if (move.target === 'enemy') {
@@ -677,6 +771,10 @@ interface HitOpts {
   noChain?: boolean;
   /** 締めの札（すきで2倍） */
   finish?: boolean;
+  /** 調整17：1発ごとに足す威力（添える札＋露出補正）・弱点扱い（ハイライト）・重い一撃 */
+  add?: number;
+  forceWeak?: boolean;
+  heavy?: boolean;
 }
 
 function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
@@ -719,11 +817,15 @@ function defeatEnemy(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
 /** 仲間の攻撃を、敵1体に1回当てる */
 function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, power: number, opts: HitOpts, ctx: ActCtx, ev: ChainEvent[]): void {
   if (e.hp <= 0 || e.gone) return;
-  // 殻：最初の1回は割れるだけ
+  // 殻：最初の1回は割れるだけ（調整17：バリアは shellHits 発まで。重い一撃は1発で割って、そのまま当たる）
   if (e.shell) {
-    e.shell = false;
+    e.shellLeft = (e.shellLeft ?? 1) - 1;
+    if (opts.heavy || e.shellLeft <= 0) {
+      e.shell = false;
+      e.shellLeft = 0;
+    }
     ev.push({ type: 'shellBreak', uid: e.uid });
-    return;
+    if (!opts.heavy) return;
   }
   const stat = el === 'physical' ? actor.atk : actor.mag;
   // 仕掛け：むき出しは弱点になる、すきは締めの札が2倍、目印はほかの敵みんなに広がる（どれも1回で消える。広がった先では使わない）
@@ -731,7 +833,7 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   const useTrick = trick === 'expose' || trick === 'spread' || (trick === 'opening' && opts.finish);
   if (useTrick) e.trick = undefined;
   const real = affinity(s, e, el, opts.ignoreResist);
-  const aff = trick === 'expose' ? { mult: s.rules.weakMult, weak: true, resist: false } : real;
+  const aff = trick === 'expose' || opts.forceWeak ? { mult: s.rules.weakMult, weak: true, resist: false } : real;
   let mult = aff.mult * (e.down && opts.downMult ? opts.downMult : 1);
   if (trick === 'opening' && opts.finish) mult *= s.rules.openingMult;
   // 刻み：重なるほど受けるダメージが上がる
@@ -739,7 +841,16 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     mult *= 1 + s.rules.stackRate * e.status.stacks;
     e.status.stacks++;
   }
-  const amount = Math.max(1, Math.floor(((power * stat) / Math.max(1, e.def)) * mult));
+  if (opts.finish && e.pinpoint) mult *= s.rules.pinpointMult;
+  if (e.trait === 'hard' && opts.heavy) mult *= 1.5;
+  let raw = ((power + (opts.add ?? 0)) * stat) / Math.max(1, e.def);
+  // かたい：1発ごとに減らす（重い一撃は減らない）
+  if (e.trait === 'hard' && !opts.heavy) raw = Math.max(0, raw - s.rules.hardCut);
+  const amount = Math.max(1, Math.floor(raw * mult));
+  if (actor.side === 'ally') {
+    s.roundHits++;
+    e.roundTaken = (e.roundTaken ?? 0) + 1;
+  }
   e.hp = Math.max(0, e.hp - amount);
   ev.push({ type: 'damage', from: actor.uid, to: e.uid, amount, weak: aff.weak, resist: aff.resist });
   // 予定隠し：当たると、このラウンドの予定が見える（調整12）
@@ -805,7 +916,7 @@ function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[
   return t;
 }
 
-function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[]): PrevAct {
+function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[], mods: ChainAddonMods = addonMods([]), at = 0): PrevAct {
   const eff = move.effect;
   const ctx: ActCtx = { countered: new Set(), stuck: false };
   const pierce = eff.kind === 'damage' && !!eff.pierce;
@@ -847,18 +958,104 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     for (const e of targets()) hitEnemy(s, actor, e, el, power, {}, ctx, ev);
     return { ally: actor.uid, element: el, power };
   }
-  // damage
-  const power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
-  const hits = eff.hitsPerActed ? acted + 1 : 1;
-  for (const e of targets()) {
-    const el = eff.bestOf ? bestElement(s, e, eff.bestOf) : eff.element;
-    let p = power;
-    if (eff.perMark) p += eff.perMark * ((e.trick ? 1 : 0) + (e.status ? 1 : 0));
-    for (let k = 0; k < hits && e.hp > 0; k++) hitEnemy(s, actor, e, el, p, { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: move.type === 'finish' }, ctx, ev);
-    // 押す：実際にずらすのは runChainRound（まだ動いていない予定を知っている）
-    if (eff.push && e.hp > 0 && !e.gone) ev.push({ type: 'push', uid: e.uid, by: eff.push, out: false, moved: false });
+  if (eff.kind === 'addon') return { ally: actor.uid, element: null, power: 0 };
+  // damage（調整17：連続攻撃・複数攻撃化・添える札・露出補正・フィニッシュの伸び方）
+  const isFinish = isChainFinish(move);
+  let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
+  if (eff.firstMult && acted === 0) power *= eff.firstMult;
+  let hits = eff.hitsPerActed ? acted + 1 : (eff.hits ?? 1);
+  if (eff.exposure) {
+    s.exposure += eff.exposure;
+    ev.push({ type: 'exposure', total: s.exposure });
   }
-  return { ally: actor.uid, element: eff.element, power };
+  if (mods.split && hits === 1 && !eff.unsplittable) {
+    hits = s.rules.splitHits;
+    power = Math.ceil(power / hits);
+  }
+  const add = mods.add + s.exposure;
+  const hitsBefore = s.roundHits;
+  const mark = ev.length;
+  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy };
+  const scaled = (e: ChainUnit): number => {
+    if (!eff.scale) return 0;
+    const unit = eff.scale.by === 'hits' ? hitsBefore : eff.scale.by === 'targetHits' ? (e.roundTaken ?? 0) : eff.scale.by === 'slotsLeft' ? Math.max(0, s.rules.roundLen - at) : s.roundSupports;
+    return eff.scale.per * unit;
+  };
+  const main = targets();
+  let el: Element = eff.element;
+  for (const e of main) {
+    el = mods.element ?? (eff.bestOf ? bestElement(s, e, eff.bestOf) : eff.element);
+    let p = power + scaled(e);
+    if (eff.perMark) p += eff.perMark * ((e.trick ? 1 : 0) + (e.status ? 1 : 0));
+    for (let k = 0; k < hits && e.hp > 0; k++) hitEnemy(s, actor, e, el, p, opts, ctx, ev);
+    for (const x of eff.extra ?? []) for (let k = 0; k < (x.hits ?? 1) && e.hp > 0; k++) hitEnemy(s, actor, e, x.element, x.power + scaled(e), opts, ctx, ev);
+    if (e.hp <= 0 || e.gone) continue;
+    // 押す：実際にずらすのは runChainRound（まだ動いていない予定を知っている）
+    const push = (eff.push ?? 0) + mods.push;
+    if (push) ev.push({ type: 'push', uid: e.uid, by: push, out: false, moved: false });
+    if (mods.pinpoint) e.pinpoint = true;
+    if (mods.seal) {
+      e.status = { kind: 'seal', left: 1, stacks: 0 };
+      ev.push({ type: 'status', to: e.uid, status: 'seal', left: 1 });
+    }
+  }
+  // パノラマ（添える）：単体攻撃が、ほかの敵みんなにも当たる（広がった先ではダウンしない）
+  if (mods.spread && move.target === 'enemy' && main[0]) {
+    const others = living(s.enemies).filter((x) => !main.includes(x));
+    if (others.length) ev.push({ type: 'trickUse', uid: main[0].uid, trick: 'spread', to: others.map((x) => x.uid) });
+    for (const x of others) for (let k = 0; k < hits && x.hp > 0; k++) hitEnemy(s, actor, x, el, power + scaled(x), { ...opts, noChain: true }, ctx, ev);
+  }
+  // 時間よ止まれ（コンボ）：敵全員の、このラウンドの残りの予定を消す
+  if (eff.stopAll) for (const x of living(s.enemies)) ev.push({ type: 'push', uid: x.uid, by: 99, out: false, moved: false });
+  const dealt = ev.slice(mark).reduce((a, e) => a + (e.type === 'damage' && e.from === actor.uid ? e.amount : 0), 0);
+  if (mods.drain && actor.hp > 0) {
+    const heal = Math.min(actor.maxHp - actor.hp, Math.floor(dealt * mods.drain));
+    if (heal > 0) {
+      actor.hp += heal;
+      ev.push({ type: 'drain', to: actor.uid, amount: heal });
+    }
+  }
+  if (eff.healAll) {
+    for (const a of s.allies.filter((x) => x.hp > 0)) {
+      const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.healAll * actor.mag) / s.rules.healDiv));
+      a.hp += amount;
+      ev.push({ type: 'heal', to: a.uid, amount });
+    }
+  }
+  return { ally: actor.uid, element: el, power };
+}
+
+/** 添える札の効き目をまとめた物（調整17） */
+export interface ChainAddonMods {
+  add: number;
+  split: boolean;
+  spread: boolean;
+  expose: boolean;
+  element?: Element;
+  pinpoint: boolean;
+  push: number;
+  seal: boolean;
+  drain: number;
+  exposure: number;
+}
+
+export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
+  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0 };
+  for (const c of cards) {
+    const e = c?.effect;
+    if (!e || e.kind !== 'addon') continue;
+    m.add += e.add ?? 0;
+    m.split ||= !!e.split;
+    m.spread ||= !!e.spread;
+    m.expose ||= !!e.expose;
+    if (e.element) m.element = e.element;
+    m.pinpoint ||= !!e.pinpoint;
+    m.push += e.push ?? 0;
+    m.seal ||= !!e.seal;
+    m.drain += e.drain ?? 0;
+    m.exposure += e.exposure ?? 0;
+  }
+  return m;
 }
 
 function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: ChainEvent[]): void {
@@ -908,7 +1105,7 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
     done();
     return true;
   }
-  if (foes.every((e) => e.down)) {
+  if (!s.def.noShutter && foes.every((e) => e.down)) {
     done();
     s.shutter = true;
     ev.push({ type: 'shutterReady' });
@@ -955,6 +1152,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
   let prev: PrevAct | null = null;
   let acted = 0;
   let stopped = false;
+  /** このラウンドに敵が実際に動いた時刻（邪魔されなければ強い攻撃の中断に使う。調整17） */
+  const enemyActs: number[] = [];
   const push = (q: ChainOrderEntry | null, key: string, at: number, uid: string, name: string, ev: ChainEvent[], target?: string, all?: boolean) =>
     frames.push({ order: frames.length + 1, key: q?.key ?? key, target, all, at, uid, name, events: ev, state: cloneChain(s) });
   while (pending.length > 0) {
@@ -975,6 +1174,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         if (eq && eq.kind === 'enemy') {
           pending.splice(qi, 1);
           const iev: ChainEvent[] = [{ type: 'interrupt', uid: aimed.uid, by: actor.uid }, { type: 'act', uid: aimed.uid, name: eq.intent.move.name, at }];
+          enemyActs.push(at);
           doEnemyMove(s, aimed, eq.intent, iev);
           push(eq, '', at, aimed.uid, eq.intent.move.name, iev, eq.intent.target, eq.intent.move.all);
           if (checkEnd(s, iev, at)) {
@@ -990,13 +1190,32 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         push(q, '', at, actor.uid, move?.name ?? '', ev, step.target, move?.target !== 'enemy');
         continue;
       }
+      // 邪魔されなければ強い（調整17）：動き始めてから効くまでの間（始めの時刻を含み、終わりの時刻は含まない）に敵が動いていたら不発。札は手札に戻す
+      if (move.effect.kind === 'damage' && move.effect.fragile && enemyActs.some((t) => t >= at - move.weight && t < at)) {
+        s.hand.push(...cardIds[q.i]);
+        ev.push({ type: 'cancel', uid: actor.uid, reason: 'interrupted' });
+        push(q, '', at, actor.uid, move.name, ev, step.target, move.target !== 'enemy');
+        continue;
+      }
       s.discard.push(...cardIds[q.i]);
       s.actedAt[q.i] = at;
       ev.push({ type: 'act', uid: actor.uid, name: move.name, at });
+      // 添える札（調整17）：露出補正は、この行動から後の味方の攻撃すべてに効く
+      const addonCards = (step.addons ?? []).map((i) => s0.def.cards[s0.hand[i]]);
+      const mods = addonMods(addonCards);
+      if (addonCards.length) {
+        s.roundSupports += addonCards.length;
+        ev.push({ type: 'addon', uid: actor.uid, names: addonCards.map((c) => c?.name ?? '') });
+      }
+      if (mods.exposure) {
+        s.exposure += mods.exposure;
+        ev.push({ type: 'exposure', total: s.exposure });
+      }
       if (step.source.kind === 'link') ev.push({ type: 'link', name: move.name, uids: actors.map((a) => a.uid) });
-      // 連携技は2人の攻撃・魔力の平均で
-      const doer = actors.length > 1 ? { ...actor, atk: Math.round((actors[0].atk + actors[1].atk) / 2), mag: Math.round((actors[0].mag + actors[1].mag) / 2) } : actor;
-      prev = doAllyMove(s, doer, move, step.target, prev, acted, ev);
+      // 連携技は、動く仲間の攻撃・魔力の平均で
+      const avg = (k: 'atk' | 'mag') => Math.round(actors.reduce((a, u) => a + u[k], 0) / actors.length);
+      const doer = actors.length > 1 ? { ...actor, atk: avg('atk'), mag: avg('mag') } : actor;
+      prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
       prev.weak = ev.some((e) => e.type === 'damage' && e.weak && e.from === doer.uid);
       // 連携技の計算用に写した仲間のダメージ（反撃・破片）は、1人目に戻す
       if (doer !== actor) actor.hp = Math.min(actor.hp, doer.hp);
@@ -1039,6 +1258,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         continue;
       }
       ev.push({ type: 'act', uid: e.uid, name: q.intent.move.name, at: q.at });
+      enemyActs.push(q.at);
       doEnemyMove(s, e, q.intent, ev);
       push(q, '', q.at, e.uid, q.intent.move.name, ev, q.intent.target, q.intent.move.all);
     }
@@ -1099,8 +1319,13 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
 
 /** ラウンドの終わり：ダウンが解け、癖を1つ進め、手札を補充して、次の予定を決める */
 function endRound(s: ChainState): void {
+  s.exposure = 0;
+  s.roundHits = 0;
+  s.roundSupports = 0;
   for (const e of s.enemies) {
     e.down = false;
+    e.roundTaken = 0;
+    e.pinpoint = false;
     e.step++;
     // 状態は、ラウンドの終わりごとに1つ減り、0で消える
     if (e.status && --e.status.left <= 0) e.status = undefined;

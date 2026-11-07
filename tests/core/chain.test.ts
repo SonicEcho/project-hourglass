@@ -18,11 +18,11 @@ import {
   type ChainPlanStep,
   type ChainState,
 } from '../../src/core';
-import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS, CHAIN_TRIALS_EARLY, CHAIN_TRIALS_MULTI, chainTrialDef } from '../../src/data';
+import { CHAIN_ALLIES, CHAIN_CARDS, CHAIN_DECK_PLAN, CHAIN_ENEMIES, CHAIN_RULES, CHAIN_SPECIALS, CHAIN_TRIALS_16, CHAIN_TRIALS_EARLY, CHAIN_TRIALS_MULTI_16, chainTrialDef } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
 // 試し：並べてつなぐ戦闘（段階156。調整3：専用の札と連携技・10の特徴。調整6：終わった時刻に効く・押す・組み合わせの型・決着の時刻。調整7：仕掛けと状態）
-const BASE = CHAIN_TRIALS[0];
+const BASE = CHAIN_TRIALS_16[0];
 
 /** 敵と手札を決めた戦闘（敵の予定の狙いは乱数のまま） */
 function make(enemies: ChainEnemyDef[], hand: string[] = []): ChainState {
@@ -506,7 +506,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     it('山札（中盤）：アルバム20枚（アタック10のうち効果つき3・サポート6・フィニッシュ4）と、仲間1人につきスペシャル2枚。専用の札はスペシャルに分かれる', () => {
       const plan = CHAIN_DECK_PLAN.mid;
       const effectKinds = new Set(['layer', 'wind']);
-      for (const t of CHAIN_TRIALS) {
+      for (const t of CHAIN_TRIALS_16) {
         const cats = t.deck.map((id) => chainCardCategory(t.cards[id]));
         const n = (c: string) => cats.filter((x) => x === c).length;
         expect([n('attack'), n('support'), n('finish')]).toEqual([plan.attack, plan.support, plan.finish]);
@@ -527,7 +527,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
 
     it('山札（序盤）：技は通常攻撃だけ。アルバム20枚はアタック14・サポート4・フィニッシュ2で、スペシャルと連携技はない', () => {
       const plan = CHAIN_DECK_PLAN.early;
-      expect(CHAIN_TRIALS_EARLY.map((t) => t.id)).toEqual(CHAIN_TRIALS.map((t) => t.id));
+      expect(CHAIN_TRIALS_EARLY.map((t) => t.id)).toEqual(CHAIN_TRIALS_16.map((t) => t.id));
       for (const t of CHAIN_TRIALS_EARLY) {
         const cats = t.deck.map((id) => chainCardCategory(t.cards[id]));
         const n = (c: string) => cats.filter((x) => x === c).length;
@@ -537,7 +537,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
         for (const a of t.allies) expect(a.moves.map((m) => m.id)).toEqual(['basic']);
         expect(chainTrialDef(t.id, 'early')).toBe(t);
       }
-      expect(chainTrialDef('chain2')).toBe(CHAIN_TRIALS[1]);
+      expect(chainTrialDef('chain2').finishLast).toBe(true);
     });
 
     it('序盤でも、考える方針はでたらめな方針より早く勝つ', () => {
@@ -590,7 +590,7 @@ describe('並べてつなぐ戦闘（段階156）', () => {
     });
 
     it('1人1回をやめた試し：同じ仲間が続けて動ける。同じ技は1ラウンドに1回まで。時間の予算は超えられない', () => {
-      const def: ChainBattleDef = { ...CHAIN_TRIALS_MULTI[0], enemies: [tough()], variants: undefined };
+      const def: ChainBattleDef = { ...CHAIN_TRIALS_MULTI_16[0], enemies: [tough()], variants: undefined };
       const s = createChainBattle(def, CHAIN_RULES, 7);
       const t = s.enemies[0].uid;
       const plan = [move('hero', 'quick', t), move('hero', 'slash', t)];
@@ -606,10 +606,11 @@ describe('並べてつなぐ戦闘（段階156）', () => {
       const long = [move('hero', 'finisher', t), move('akari', 'fire', t), move('mio', 'thunder', t)];
       expect(chainPlanError(s, long, move('hero', 'slash', t))).not.toBeNull();
       expect(chainTrialDef('chain1', 'multi').multiAct).toBe(true);
+      expect(chainTrialDef('chain1', 'multi').finishLast).toBe(true);
     });
 
     it('連続の試しでも、考える方針はでたらめな方針より早く勝つ', () => {
-      const def = CHAIN_TRIALS_MULTI[1];
+      const def = CHAIN_TRIALS_MULTI_16[1];
       let smart = 0;
       let random = 0;
       for (let k = 0; k < 3; k++) {

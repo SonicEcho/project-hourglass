@@ -22,6 +22,10 @@ export const CHAIN_RULES: ChainRules = {
   leaderRate: 1.3,
   shutterRate: 0.4,
   openingMult: 3,
+  addonMax: 2,
+  splitHits: 4,
+  hardCut: 25,
+  pinpointMult: 1.5,
 };
 
 const card = (m: ChainMove): ChainMove => m;
@@ -168,6 +172,7 @@ export const CHAIN_TRIAL_BG: Record<string, string> = {
   chain5: 'bg.riverside_1998',
   chain6: 'bg.school_festival',
   chain7: 'bg.music_shop',
+  chain8: 'bg.goldfish_stall',
 };
 
 const move = (m: ChainMove): ChainMove => m;
@@ -412,7 +417,7 @@ const E = CHAIN_ENEMIES;
 const mv = (e: ChainEnemyDef, i: number): ChainEnemyMove => e.pattern[i];
 
 /** 早くて痛い大技（調整6。止めないと仲間が大きく削られる。型の中に混ぜる） */
-const BIG = {
+export const CHAIN_BIG = {
   bigFlip: { id: 'bigFlip', name: '大ちゃぶ台返し', at: 3, all: true, element: 'physical', power: 44 },
   earlyEscape: { id: 'earlyEscape', name: '逃げる', at: 6, element: 'physical', power: 0, flee: true },
   fullSpring: { id: 'fullSpring', name: 'ぜんまい全開', at: 2, element: 'physical', power: 90 },
@@ -441,65 +446,60 @@ export const CHAIN_REWARDS: Record<string, Record<ChainGrade, string>> = {
   chain5: { low: '素材「ビー玉」', mid: 'レア素材「夕焼けのビー玉」', high: '固有のスナップ「大しぶき」（水風船ノイズ）' },
   chain6: { low: '素材「紙のお面」', mid: 'レア素材「祭りの法被」', high: '固有のスナップ「大号令」（メガホンノイズ）' },
   chain7: { low: '素材「古い電線」', mid: 'レア素材「SPレコード」', high: '固有のスナップ「Ａ面Ｂ面」（蓄音機ノイズ）' },
+  chain8: { low: 'レア素材「金魚鉢のかけら」', mid: 'レア素材「ぬしの金魚」', high: '固有のスナップ「大波」（金魚鉢のぬし）' },
 };
 
 /**
  * 試しの組み合わせ（調整4。ロックマンエグゼのウイルスの編成のように、名前の付いた決まった組み合わせ）。
  * 調整6：組み合わせごとに3つの型があり、戦闘ごとに1つを選ぶ（同じ顔ぶれでも、予定の並びが違う）。型の中には、早くて痛い大技がある
  */
-export const CHAIN_TRIALS: ChainBattleDef[] = [
+export const CHAIN_TRIALS_16: ChainBattleDef[] = [
   // 盾2体が、逃げる金魚を守る。単体の攻撃は盾に吸われる
   battle('chain1', '金魚すくいの屋台（かばう・かばう・逃げ足）', [E.table, E.goldfish, E.table], [
     variant('v1', '客寄せ', [undefined, undefined, [mv(E.table, 1), mv(E.table, 0)]]),
-    variant('v2', '店じまい', [[BIG.bigFlip, mv(E.table, 1)], undefined, undefined]),
-    variant('v3', '逃げ足', [undefined, [BIG.earlyEscape], [mv(E.table, 1), mv(E.table, 0)]]),
+    variant('v2', '店じまい', [[CHAIN_BIG.bigFlip, mv(E.table, 1)], undefined, undefined]),
+    variant('v3', '逃げ足', [undefined, [CHAIN_BIG.earlyEscape], [mv(E.table, 1), mv(E.table, 0)]]),
   ], ['chill', 'dazzle', 'seal'], ['zoomIn', 'burst', 'panning']),
   // 起こし役がダウンした仲間を起こす。殻のブリキは1回目が効かず、ヨーヨーは2回動く
   battle('chain2', 'からくり時計（ダウン解除・バリア・2回行動）', [E.tin, E.cuckoo, E.yoyo], [
     variant('v1', 'ねじ巻き', [undefined, undefined, undefined]),
-    variant('v2', '早鐘', [undefined, [BIG.earlyChime, mv(E.cuckoo, 1)], undefined]),
-    variant('v3', '全開', [[BIG.fullSpring, mv(E.tin, 0)], undefined, [BIG.whirl, mv(E.yoyo, 0)]]),
+    variant('v2', '早鐘', [undefined, [CHAIN_BIG.earlyChime, mv(E.cuckoo, 1)], undefined]),
+    variant('v3', '全開', [[CHAIN_BIG.fullSpring, mv(E.tin, 0)], undefined, [CHAIN_BIG.whirl, mv(E.yoyo, 0)]]),
   ], ['chill', 'notch', 'wilt'], ['firstCut', 'multiExpo', 'burst']),
   // 盾のちゃぶ台が、時限の蚊取り線香を守る。叩くとやり返すめんこもいる
   battle('chain3', '夏の縁側（カウンター・自爆・かばう）', [E.menko, E.coil, E.table], [
     variant('v1', '夕涼み', [undefined, undefined, undefined]),
-    variant('v2', '乱れ打ち', [[BIG.menkoStorm, mv(E.menko, 0)], undefined, undefined]),
-    variant('v3', '煙幕', [undefined, [BIG.thickSmoke, mv(E.coil, 0)], [mv(E.table, 1), mv(E.table, 0)]]),
+    variant('v2', '乱れ打ち', [[CHAIN_BIG.menkoStorm, mv(E.menko, 0)], undefined, undefined]),
+    variant('v3', '煙幕', [undefined, [CHAIN_BIG.thickSmoke, mv(E.coil, 0)], [mv(E.table, 1), mv(E.table, 0)]]),
   ], ['ember', 'seal', 'leech'], ['zoomIn', 'firstCut', 'multiExpo']),
   // 飴細工を叩くと、後の仲間が遅れ、すばやいヨーヨー2体の2回目が先に来る
   battle('chain4', '駄菓子屋の店先（2回行動・足止め・2回行動）', [E.yoyo, E.candy, E.yoyo], [
     variant('v1', '店番', [undefined, undefined, [mv(E.yoyo, 1), mv(E.yoyo, 0)]]),
-    variant('v2', '飴の雨', [undefined, [BIG.candyRain, mv(E.candy, 0)], undefined]),
-    variant('v3', 'つむじ', [[BIG.whirl, mv(E.yoyo, 0)], undefined, [mv(E.yoyo, 1), BIG.whirl]]),
+    variant('v2', '飴の雨', [undefined, [CHAIN_BIG.candyRain, mv(E.candy, 0)], undefined]),
+    variant('v3', 'つむじ', [[CHAIN_BIG.whirl, mv(E.yoyo, 0)], undefined, [mv(E.yoyo, 1), CHAIN_BIG.whirl]]),
   ], ['chill', 'wilt', 'dazzle'], ['burst', 'panning', 'firstCut']),
   // 水風船2体は倒すと4体に増える。ラムネを弱点でダウンさせると破片が飛ぶ
   battle('chain5', '水遊び（分裂・ダウン時爆発・分裂）', [E.balloon, E.ramune, E.balloon], [
     variant('v1', '水まき', [undefined, undefined, undefined]),
-    variant('v2', '大しぶき', [[BIG.bigSplash, mv(E.balloon, 0)], undefined, undefined]),
-    variant('v3', '連射', [undefined, [BIG.rapid, mv(E.ramune, 0)], undefined]),
+    variant('v2', '大しぶき', [[CHAIN_BIG.bigSplash, mv(E.balloon, 0)], undefined, undefined]),
+    variant('v3', '連射', [undefined, [CHAIN_BIG.rapid, mv(E.ramune, 0)], undefined]),
   ], ['ember', 'seal', 'leech'], ['panning', 'multiExpo', 'firstCut']),
   // 調整12：リーダーのメガホンが生きている間、ほかの敵が強い。お面は予定が隠れ、風車は弱点が変わる
   battle('chain6', '夏祭りの本部テント（リーダー・予定隠し・属性チェンジ）', [E.mask, E.megaphone, E.pinwheel], [
     variant('v1', '開会', [undefined, undefined, undefined]),
-    variant('v2', '号令', [undefined, [BIG.bigShout, mv(E.megaphone, 0)], undefined]),
-    variant('v3', '仮面行列', [[mv(E.mask, 1), mv(E.mask, 0)], undefined, [BIG.gale, mv(E.pinwheel, 0)]]),
+    variant('v2', '号令', [undefined, [CHAIN_BIG.bigShout, mv(E.megaphone, 0)], undefined]),
+    variant('v3', '仮面行列', [[mv(E.mask, 1), mv(E.mask, 0)], undefined, [CHAIN_BIG.gale, mv(E.pinwheel, 0)]]),
   ], ['seal', 'notch', 'dazzle'], ['multiExpo', 'burst', 'panning']),
   // 調整12：黒電話は狙うと先に鳴る。蓄音機はダウンさせずに終わると傷が戻る。ブリキのバリアも
   battle('chain7', '古い電器屋の奥（割り込み・巻き戻し・バリア）', [E.phone, E.phonograph, E.tin], [
     variant('v1', '閉店前', [undefined, undefined, undefined]),
-    variant('v2', '呼び出し', [[BIG.earlyRing, mv(E.phone, 1)], undefined, undefined]),
-    variant('v3', 'Ａ面Ｂ面', [undefined, [BIG.loudRecord, mv(E.phonograph, 0)], [mv(E.tin, 1), mv(E.tin, 0)]]),
+    variant('v2', '呼び出し', [[CHAIN_BIG.earlyRing, mv(E.phone, 1)], undefined, undefined]),
+    variant('v3', 'Ａ面Ｂ面', [undefined, [CHAIN_BIG.loudRecord, mv(E.phonograph, 0)], [mv(E.tin, 1), mv(E.tin, 0)]]),
   ], ['ember', 'notch', 'wilt'], ['firstCut', 'burst', 'multiExpo']),
 ];
 
 /** 序盤の試し（調整14。技を覚える前：仲間は通常攻撃だけ、山札はシンプルなアタック中心） */
 export const CHAIN_TRIALS_EARLY: ChainBattleDef[] = EARLY;
 
-/** 1人1回をやめた試し（調整16。中盤と同じ山札で、時間の予算が許す限り同じ仲間が何回でも動ける。同じ技は1ラウンドに1回まで） */
-export const CHAIN_TRIALS_MULTI: ChainBattleDef[] = CHAIN_TRIALS.map((d) => ({ ...d, multiAct: true }));
-
-/** 試しの組み合わせを、時期を指定して選ぶ */
-export function chainTrialDef(id: string, stage: ChainStage = 'mid'): ChainBattleDef {
-  const list = stage === 'early' ? CHAIN_TRIALS_EARLY : stage === 'multi' ? CHAIN_TRIALS_MULTI : CHAIN_TRIALS;
-  return list.find((t) => t.id === id) ?? list[0];
-}
+/** 調整16までの、1人1回をやめた試し（調整16。中盤と同じ山札で、時間の予算が許す限り同じ仲間が何回でも動ける。同じ技は1ラウンドに1回まで） */
+export const CHAIN_TRIALS_MULTI_16: ChainBattleDef[] = CHAIN_TRIALS_16.map((d) => ({ ...d, multiAct: true }));

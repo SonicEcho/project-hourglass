@@ -521,6 +521,11 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain7' });
       }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
+      // 調整17：ボス（金魚鉢のぬし）。中盤と連続
+      button('試し：並べてつなぐ戦闘（金魚鉢のぬし・ボス）', () => {
+        close();
+        nav.openPrototype('ChainBattle', { trial: 'chain8' });
+      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
       // 調整14：序盤（技を覚える前）の試し。仲間は通常攻撃だけ、山札はシンプルなアタック中心
       ...[
         ['chain1', '金魚すくいの屋台'],
@@ -542,6 +547,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
         ['chain2', 'からくり時計'],
         ['chain4', '駄菓子屋の店先'],
         ['chain6', '夏祭りの本部テント'],
+        ['chain8', '金魚鉢のぬし・ボス'],
       ].map(([trial, name]) =>
         button(`試し：並べてつなぐ戦闘・連続（${name}）`, () => {
           close();
