@@ -631,8 +631,12 @@ export class ChainBattleScene extends Phaser.Scene {
       const color = isLink ? GOLD : (ALLY_COLOR[members[0].defId] ?? COLORS.ally);
       if (isLink) r.add(this.add.rectangle(bx - 2, CLIP_TOP - 2, bw + 4, CLIP_H + 4, GOLD, 0.35).setOrigin(0));
       r.add(this.add.rectangle(bx, CLIP_TOP, bw, CLIP_H, 0x10131c).setOrigin(0));
-      const art = this.artOfStep(step);
-      if (art && hasImage(this, art)) this.tileArt(art, bx, CLIP_TOP + 5, bw, CLIP_H - 5);
+      // コンボは、材料のスナップの絵を等分に並べる（コンボ専用の絵はまだない）
+      const arts = this.artsOfStep(step).filter((a) => hasImage(this, a));
+      arts.forEach((a, k) => {
+        const segW = bw / arts.length;
+        this.tileArt(a, bx + segW * k, CLIP_TOP + 5, segW - (k < arts.length - 1 ? 1 : 0), CLIP_H - 5);
+      });
       // 上の色の帯（誰の行動か）と、両端のつまみ
       r.add(this.add.rectangle(bx, CLIP_TOP, bw, 5, color).setOrigin(0));
       r.add(this.add.rectangle(bx, CLIP_TOP, bw, CLIP_H).setOrigin(0).setStrokeStyle(isLink ? 2.5 : 1.5, color));
@@ -676,12 +680,12 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 並べた行動の絵（札は札の絵、技・連携技は技の絵） */
-  private artOfStep(step: ChainPlanStep): string | undefined {
+  /** 帯のクリップの絵：札・技は1枚、コンボは材料のスナップの絵（並べた順） */
+  private artsOfStep(step: ChainPlanStep): string[] {
     const src = step.source;
-    if (src.kind === 'card') return CHAIN_CARD_ART[this.s.hand[src.index]];
-    if (src.kind === 'move') return CHAIN_MOVE_ART[src.moveId];
-    const link = this.s.def.links.find((l) => l.id === src.linkId);
-    return link ? CHAIN_MOVE_ART[link.move.id] : undefined;
+    if (src.kind === 'card') return [CHAIN_CARD_ART[this.s.hand[src.index]]].filter((x): x is string => !!x);
+    if (src.kind === 'move') return [CHAIN_MOVE_ART[src.moveId]].filter((x): x is string => !!x);
+    return src.cards.map((i) => CHAIN_CARD_ART[this.s.hand[i]]).filter((x): x is string => !!x);
   }
 
   private drawAllies(s: ChainState): void {
@@ -742,7 +746,7 @@ export class ChainBattleScene extends Phaser.Scene {
       x += t.w + 6;
     }
     const name = this.ally ? findChainUnit(this.s, this.ally)?.name : '';
-    r.add(addText(this, GAME_WIDTH - 10, TAB_Y - 2, name ? `${name}の行動` : '全員並べた', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(1, 0.5));
+    r.add(addText(this, GAME_WIDTH - 10, TAB_Y - 2, name ? `${name}の行動` : this.s.def.finishLast && this.plan.some((p) => isChainFinish(chainMoveOf(this.s, p))) ? 'このラウンドはここまで' : '全員並べた', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(1, 0.5));
   }
 
   private switchTab(tab: 'cards' | 'moves'): void {
@@ -1226,13 +1230,15 @@ export class ChainBattleScene extends Phaser.Scene {
     c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0));
     const rad = Phaser.Math.DegToRad(-12);
     const n = ids.length;
-    const bandH = n === 1 ? 360 : n === 2 ? 300 : 220;
+    const bandH = n === 1 ? 330 : n === 2 ? 300 : 190;
     const bandW = GAME_WIDTH + 260;
     const gap = 8;
     const total = n * bandH + (n - 1) * gap;
+    // 技名の箱の場所：2人は帯の間（真ん中）、1人と3人は帯の下（顔に重ねない）。帯はその分だけ上へ
+    const shift = n === 2 ? 0 : 50;
     const at = (cy: number, lx: number, ly: number) => new Phaser.Math.Vector2(GAME_WIDTH / 2 + lx * Math.cos(rad) - ly * Math.sin(rad), cy + lx * Math.sin(rad) + ly * Math.cos(rad));
     ids.forEach((id, i) => {
-      const cy = GAME_HEIGHT / 2 - total / 2 + bandH / 2 + i * (bandH + gap);
+      const cy = GAME_HEIGHT / 2 - shift - total / 2 + bandH / 2 + i * (bandH + gap);
       const color = ALLY_COLOR[id] ?? GOLD;
       const corners = [at(cy, -bandW / 2, -bandH / 2), at(cy, bandW / 2, -bandH / 2), at(cy, bandW / 2, bandH / 2), at(cy, -bandW / 2, bandH / 2)];
       const mask = this.make.graphics({}, false).fillStyle(0xffffff).fillPoints(corners, true);
@@ -1265,7 +1271,7 @@ export class ChainBattleScene extends Phaser.Scene {
       }
     });
     // 真ん中の技名
-    const title = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setAngle(-8);
+    const title = this.add.container(GAME_WIDTH / 2, n === 2 ? GAME_HEIGHT / 2 : GAME_HEIGHT / 2 - shift + total / 2 + 64).setAngle(-8);
     const label = addText(this, 0, 0, name, { size: 32, bold: true }).setOrigin(0.5);
     label.setFontStyle('bold italic').setShadow(4, 4, '#ff2d55', 0, false, true);
     if (label.width > GAME_WIDTH - 60) label.setScale((GAME_WIDTH - 60) / label.width);
