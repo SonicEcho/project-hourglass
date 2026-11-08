@@ -29,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { AKARI, AREA_BATTLES, HERO, MIO, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_COMBO_HINT, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { AKARI, AREA_BATTLES, HERO, MIO, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, type ChainBattleDef, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice } from './run';
 import { browserStorage } from '../save/storage';
@@ -656,14 +656,10 @@ export class ChainBattleScene extends Phaser.Scene {
   private drawAllies(s: ChainState): void {
     const r = this.root;
     const colW = (GAME_WIDTH - 16) / s.allies.length;
-    const starts = planStarts(this.s, this.plan);
-    const order = chainOrder(this.s, this.plan);
-    const used = (this.plan.length ? starts[starts.length - 1] + (chainMoveOf(this.s, this.plan[this.plan.length - 1])?.weight ?? 0) : 0);
     s.allies.forEach((u, i) => {
       const x = 8 + colW * i;
       const w = colW - 8;
       const color = ALLY_COLOR[u.defId] ?? COLORS.ally;
-      const planned = this.plan.findIndex((p) => stepAllies(this.s, p).includes(u.uid));
       const sel = !this.busy && this.ally === u.uid;
       const acting = this.busy && this.actorUid === u.uid;
       const aimed = this.busy && this.targetUid === u.uid;
@@ -679,10 +675,10 @@ export class ChainBattleScene extends Phaser.Scene {
       if (u.hp > 0) r.add(this.para(x + 60, ALLY_Y + 24, Math.max(4, bw * (u.hp / u.maxHp)), 6, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : color, 1, 3));
       // 段階158：MP のある仲間（本番の仲間）は MP も
       r.add(addText(this, x + 62, ALLY_Y + 38, `HP ${u.hp}/${u.maxHp}${u.maxMp ? `　MP ${u.mp ?? 0}/${u.maxMp}` : ''}`, { size: 9, color: '#9aa3c0' }).setOrigin(0, 0.5));
-      const turn = planned >= 0 ? order.findIndex((o) => o.kind === 'ally' && o.i === planned) + 1 : 0;
       const times = this.plan.filter((p) => stepAllies(this.s, p).includes(u.uid)).length;
       const multi = !!this.s.def.multiAct;
-      const state = u.hp <= 0 ? '倒れている' : multi ? (sel ? `選択中・時刻${used}から${times ? `（${times}回）` : ''}` : times ? `${times}回` : '') : planned >= 0 ? `${turn}番目に動く（時刻${starts[planned]}から）` : sel ? `選択中・時刻${used}から` : '';
+      // 印は「選択中」だけ（開発者：時刻の表記は要らない。並べた順はフィルムの番号で分かる）
+      const state = u.hp <= 0 ? '倒れている' : sel ? `選択中${multi && times ? `（${times}回）` : ''}` : multi && times ? `${times}回` : '';
       if (state) r.add(this.sticker(x + w - 30, ALLY_Y - 2, state, !sel && times > 0 ? 0xffffff : YELLOW, '#000000', 5, 9));
       const hit = this.add.rectangle(x + w / 2, ALLY_Y + ALLY_H / 2, w, ALLY_H, 0xffffff, 0.001);
       r.add(hit);
@@ -696,7 +692,6 @@ export class ChainBattleScene extends Phaser.Scene {
     const tabs: { label: string; on: boolean; w: number; tap: () => void }[] = [
       { label: links.length ? (this.s.def.finishLast ? '手札・コンボ ★' : '手札・連携技 ★') : `手札（${this.s.hand.length}枚）`, on: this.tab === 'cards', w: 128, tap: () => this.switchTab('cards') },
       { label: '技', on: this.tab === 'moves', w: 56, tap: () => this.switchTab('moves') },
-      { label: '？', on: false, w: 40, tap: () => this.showRules() },
     ];
     let x = 8;
     for (const t of tabs) {
@@ -886,20 +881,6 @@ export class ChainBattleScene extends Phaser.Scene {
     return c === 'special' && m.owner ? `スペシャル・${this.allyName(m.owner)}専用` : CATEGORY_LABEL[c];
   }
 
-  /** 決まりの早見（「？」で案内の帯に出す。調整5で、常に出す早見をやめた） */
-  private showRules(): void {
-    if (this.s.def.finishLast) {
-      const found = loadCombos();
-      const all = this.s.def.links;
-      const names = all.filter((l) => found.includes(l.id)).map((l) => l.move.name);
-      const hints = all.filter((l) => !found.includes(l.id)).slice(0, 2).map((l) => `？？？（${CHAIN17_COMBO_HINT[l.id] ?? ''}）`);
-      this.message = `アクション（攻撃・回復）と技を時間の帯に並べ、エフェクトは直前に並べた行動に添える（時間を使わない・2枚まで・もう一度タップで外す。帯の上の行動をタップすると添える先を選べる）。連続攻撃は全段当たる。長回しは帯の幅の中に敵の行動が来ると不発。クライマックスとコンボは最後の行動だけ（添えられない）／見つけたコンボ ${names.length}/${all.length}：${names.join('・') || 'まだない'}${hints.length ? `　${hints.join('　')}` : ''}`;
-      this.render();
-      return;
-    }
-    this.message = `札は4種類：アタック（ダメージ）・サポート（敵に効果を付与）・フィニッシュ（とどめ）・スペシャル（顔の仲間だけが使える。2人の札がそろうと連携技）。敵を全員ダウンさせるとシャッター：押すと敵みんなに最大HPの${Math.round(CHAIN_RULES.shutterRate * 10)}割の総攻撃（倒し切れなければ、そのラウンドはそこで終わる）。紫の効果は次の攻撃で消え、青緑の効果は右下のラウンド数だけ続く（R＝ラウンド）／弱点は「？」。その属性で当てると判明し、次の戦闘でも見える／敵を長押しで特徴と行動`;
-    this.render();
-  }
 
   private drawCommands(): void {
     const on = this.plan.length > 0;
