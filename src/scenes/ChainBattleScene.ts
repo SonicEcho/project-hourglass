@@ -739,7 +739,9 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 部位がある本体（ぬし）の絵の大きさと中心 */
   private bossArt(s: ChainState, e: ChainUnit, cx: number): { x: number; y: number; size: number } | null {
-    return this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part ? { x: cx, y: ART_Y + 6, size: 200 } : null;
+    // 敵の場（上の帯の下から、案内の帯の上まで）に収まるように：下の端を案内の帯の上にそろえる
+    const size = 188;
+    return this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part ? { x: cx, y: MSG_TOP - size / 2 - 2, size } : null;
   }
 
   /** 部位の印の位置（ぬしの絵の中の割合 ENEMY_PART_SPOTS。書いていなければ絵の上のほうに横に並べる） */
