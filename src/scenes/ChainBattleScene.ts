@@ -68,9 +68,12 @@ function mainTrialDef(): ChainBattleDef {
 
 /** 画面の割り付け（調整9：今の戦闘のイメージ docs/sketches/battle/chain に合わせた） */
 const STAGE_Y = 44;
+const FILM_Y_BASE = 308;
 const STAGE_H = 262;
 const ART_Y = STAGE_Y + 112;
-const MSG_Y = STAGE_Y + 244;
+/** 案内の帯（敵の HP の帯の下から、フィルムの上まで） */
+const MSG_TOP = STAGE_Y + 198;
+const MSG_H = FILM_Y_BASE - MSG_TOP;
 const FILM_Y = 308;
 const FILM_H = 126;
 const FILM_X = 22;
@@ -322,10 +325,11 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 敵の場の下の、案内の帯 */
   private drawMessage(): void {
     const r = this.root;
-    r.add(this.add.rectangle(0, MSG_Y - 15, GAME_WIDTH, 30, 0x05060a, 0.78).setOrigin(0));
-    r.add(this.add.rectangle(0, MSG_Y - 15, 3, 30, RED).setOrigin(0));
-    const t = addText(this, 10, MSG_Y, this.message, { size: 10, wrap: GAME_WIDTH - 20, ja: true }).setOrigin(0, 0.5);
-    if (t.height > 30) t.setScale(30 / t.height);
+    // 敵の HP の帯の下から、フィルムの上まで（3行まで読める大きさ。それより長い時だけ縮める）
+    r.add(this.add.rectangle(0, MSG_TOP, GAME_WIDTH, MSG_H, 0x05060a, 0.86).setOrigin(0));
+    r.add(this.add.rectangle(0, MSG_TOP, 4, MSG_H, RED).setOrigin(0));
+    const t = addText(this, 12, MSG_TOP + MSG_H / 2, this.message, { size: 12, wrap: GAME_WIDTH - 24, ja: true }).setOrigin(0, 0.5);
+    if (t.height > MSG_H - 6) t.setScale((MSG_H - 6) / t.height);
     r.add(t);
   }
 
@@ -674,7 +678,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const turn = planned >= 0 ? order.findIndex((o) => o.kind === 'ally' && o.i === planned) + 1 : 0;
       const times = this.plan.filter((p) => stepAllies(this.s, p).includes(u.uid)).length;
       const multi = !!this.s.def.multiAct;
-      const state = u.hp <= 0 ? '倒れている' : multi ? (sel ? `並べる人 ${used}〜${times ? `（${times}回）` : ''}` : times ? `${times}回` : '') : planned >= 0 ? `${turn}番目・${starts[planned]}〜` : sel ? `並べる人 ${used}〜` : '';
+      const state = u.hp <= 0 ? '倒れている' : multi ? (sel ? `選択中・時刻${used}から${times ? `（${times}回）` : ''}` : times ? `${times}回` : '') : planned >= 0 ? `${turn}番目に動く（時刻${starts[planned]}から）` : sel ? `選択中・時刻${used}から` : '';
       if (state) r.add(this.sticker(x + w - 30, ALLY_Y - 2, state, !sel && times > 0 ? 0xffffff : YELLOW, '#000000', 5, 9));
       const hit = this.add.rectangle(x + w / 2, ALLY_Y + ALLY_H / 2, w, ALLY_H, 0xffffff, 0.001);
       r.add(hit);
@@ -716,9 +720,12 @@ export class ChainBattleScene extends Phaser.Scene {
     const r = this.root;
     const items: { source: ChainSource; move: ChainMove; art?: string; used?: boolean; added?: boolean; key?: string }[] = [];
     const links = this.tab === 'cards' ? availableLinks(s, this.plan) : [];
+    /** コンボの帯の位置と材料の札（段階158の後の直し：帯と材料の札を線でつなぐ） */
+    const linkSpots: { x: number; w: number; cards: number[]; sel: boolean }[] = [];
     links.forEach((x, k) => {
       const lw = (GAME_WIDTH - 16 - (links.length - 1) * 6) / links.length;
       const lx = 8 + k * (lw + 6);
+      linkSpots.push({ x: lx, w: lw, cards: x.cards, sel: !!this.pending && sameSource(this.pending.source, { kind: 'link', linkId: x.link.id, cards: x.cards }) });
       const source: ChainSource = { kind: 'link', linkId: x.link.id, cards: x.cards };
       const sel = !!this.pending && sameSource(this.pending.source, source);
       r.add(this.para(lx - 2, LINK_Y - 2, lw + 4, 32, GOLD, sel ? 0.7 : 0.3, 10));
@@ -759,10 +766,33 @@ export class ChainBattleScene extends Phaser.Scene {
     const shown = items.slice(0, 5);
     const top = links.length ? LINK_Y + 42 : LINK_Y + 4;
     const step = (GAME_WIDTH - 8) / 5;
+    // コンボの帯から、材料の札の上の端へ線を引く（札の下に描く。選んだコンボは太く）
+    if (this.tab === 'cards' && linkSpots.length) {
+      const g = this.add.graphics();
+      linkSpots.forEach((sp, k) => {
+        const n = sp.cards.length;
+        sp.cards.forEach((idx, j) => {
+          const shownAt = shown.findIndex((it) => it.source.kind === 'card' && it.source.index === idx);
+          if (shownAt < 0) return;
+          const fromX = sp.x + (sp.w * (j + 1)) / (n + 1);
+          const toX = 4 + step * shownAt + step / 2;
+          const color = k % 2 === 0 ? GOLD : 0xffffff;
+          g.lineStyle(sp.sel ? 4 : 2.5, color, sp.sel ? 1 : 0.85);
+          g.lineBetween(fromX, LINK_Y + 30, toX, top - 6);
+          g.fillStyle(color, 1);
+          g.fillCircle(fromX, LINK_Y + 30, 3.5);
+          g.fillCircle(toX, top - 6, 4);
+        });
+      });
+      r.add(g);
+    }
+    const linkedIdx = new Set(this.tab === 'cards' ? linkSpots.flatMap((sp) => sp.cards) : []);
     shown.forEach((it, i) => {
       const cx = 4 + step * i + step / 2;
       const sel = !!this.pending && sameSource(this.pending.source, it.source);
       const cy = top + CARD_H / 2 - (sel ? 10 : 0);
+      // コンボの材料の札は、後ろを金色に光らせる
+      if (it.source.kind === 'card' && linkedIdx.has(it.source.index)) r.add(this.add.rectangle(cx, cy, CARD_W + 16, CARD_H + 16, GOLD, 0.55));
       this.drawCard(cx, cy, it, (i - (shown.length - 1) / 2) * 2.5, sel, !!it.move.owner && me?.defId !== it.move.owner);
       const hit = this.add.rectangle(cx, cy, CARD_W, CARD_H, 0xffffff, 0.001);
       r.add(hit);
@@ -801,8 +831,10 @@ export class ChainBattleScene extends Phaser.Scene {
     // 段階158：本番の技は、短い説明がないので説明の文をそのまま
     const short = CHAIN_SHORT_TEXT[it.key ?? ''] ?? (m.mp ? m.text : undefined);
     if (short) {
-      const ef = addText(this, 0, -h / 2 + 128, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center' }).setOrigin(0.5);
-      if (ef.width > w - 6) ef.setScale((w - 6) / ef.width);
+      // 札の幅で折り返す（2行まで。それより長い時だけ縮める）
+      const ef = addText(this, 0, -h / 2 + 130, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center', wrap: w - 6, ja: true }).setOrigin(0.5);
+      if (ef.width > w - 4) ef.setScale((w - 4) / ef.width);
+      if (ef.displayHeight > 26) ef.setScale(Math.min(ef.scaleX, 26 / ef.height));
       parts.push(ef);
     }
     // 名前は1行に縮めて収める。縮めすぎる時だけ2行に
