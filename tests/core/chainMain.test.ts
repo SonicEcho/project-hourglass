@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMainChainBattle,
   chainEncounterResult,
+  chainTipTriggers,
   chainAllyFromCharacter,
   chainEnemyFromMain,
   chainMoveFromSkill,
@@ -17,7 +18,7 @@ import {
   type ChainState,
   type CharacterDef,
 } from '../../src/core';
-import { AKARI, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS } from '../../src/data';
+import { A11_COMBOS, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
 import { autoChainBattle, smartChainPlan } from '../../src/sim/chainAuto';
 
 let seedPick = 1;
@@ -146,5 +147,42 @@ describe('新しい戦闘を本番用に（段階158）', () => {
     expect(r.actionCounts.hero + r.actionCounts.akari).toBeGreaterThan(0);
     expect(r.vitals.hero.hp).toBe(s.allies.find((a) => a.defId === 'hero')!.hp);
     expect(chainEncounterResult({ ...s, outcome: 'lose' }, enemies, 11)).toMatchObject({ outcome: 'defeat', drops: [] });
+  });
+});
+
+describe('1-1 を新しい戦闘に（段階160）', () => {
+  it('1-1 の雑魚の戦闘は全部新しい戦闘にする（ぬしはまだ）。敵の性質はなく、山札は最初のアルバム20枚＋スペシャル4枚', () => {
+    const ids = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a11_'));
+    for (const id of ids) expect(CHAIN_AREA_BATTLES.includes(id)).toBe(!AREA_BATTLES[id].boss);
+    for (const id of CHAIN_AREA_BATTLES) {
+      const st = CHAIN_AREA_SETUPS[id];
+      expect(st.enemies.every((e) => !e.trait)).toBe(true);
+      expect(st.deck.length).toBe(24);
+      expect(st.deck.every((c) => !!st.cards[c])).toBe(true);
+      expect(st.variants.length).toBe(3);
+      // 落とし物のため、敵の id は今の敵のまま
+      expect(st.enemies.map((e) => e.id)).toEqual(AREA_BATTLES[id].enemies.map((e) => e.id));
+    }
+    expect(A11_COMBOS.map((l) => l.id).sort()).toEqual(['flashback', 'iceFlower', 'inSync']);
+  });
+
+  it('1-1 の雑魚は、育成なしのハルトとあかりでも勝てる（考える方針）', () => {
+    for (const id of CHAIN_AREA_BATTLES) {
+      const st = CHAIN_AREA_SETUPS[id];
+      const def = buildMainChainBattle({ id, name: id, party: [HERO, AKARI], enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
+      expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
+    }
+  });
+
+  it('説明の窓：予定と帯はいつも、エフェクト・クライマックス・コンボは手札にある時', () => {
+    const st = CHAIN_AREA_SETUPS.a11_n1_gate;
+    const def = buildMainChainBattle({ id: 'g', name: 'g', party: [HERO, AKARI], enemies: AREA_BATTLES.a11_n1_gate.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links });
+    const s = createChainBattle(def, CHAIN_RULES, 1);
+    s.hand = ['c17_quick'];
+    expect(chainTipTriggers(s)).toEqual(['chain_plan']);
+    s.hand = ['c17_push', 'c17_decisive', 'c17_swing', 'c17_snow'];
+    expect(chainTipTriggers(s)).toEqual(['chain_plan', 'chain_addon', 'chain_climax', 'chain_combo']);
+    // 説明の文がある
+    for (const id of ['chain_plan', 'chain_addon', 'chain_climax', 'chain_combo']) expect(TIPS.some((t) => t.id === id)).toBe(true);
   });
 });

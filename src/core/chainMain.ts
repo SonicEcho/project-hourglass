@@ -1,5 +1,5 @@
 import { DROP_RATES } from '../data/constants';
-import { chainGrade, chainVitals, type ChainAllyDef, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVitals } from './chain';
+import { availableLinks, chainGrade, chainVitals, isChainFinish, type ChainAllyDef, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVariant, type ChainVitals } from './chain';
 import { nextRandom } from './rng';
 import type { CharacterDef, DamageType, Element, EnemyDef, SkillDef } from './types';
 
@@ -110,6 +110,9 @@ export interface MainChainBattleInput {
   links?: ChainLinkDef[];
   /** 負け戦：このラウンドが終わったら打ち切る */
   cutoffRounds?: number;
+  /** 区画ごとに書いた新しい戦闘の敵（段階160。書いていなければ、今の敵から仮に作る）と、組み合わせの型 */
+  chainEnemies?: ChainEnemyDef[];
+  variants?: ChainVariant[];
   gradeAt?: { high: number; mid: number };
 }
 
@@ -120,7 +123,8 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     id: input.id,
     name: input.name,
     allies: input.party.map(chainAllyFromCharacter),
-    enemies: input.enemies.map(chainEnemyFromMain),
+    enemies: input.chainEnemies ?? input.enemies.map(chainEnemyFromMain),
+    ...(input.variants?.length ? { variants: input.variants } : {}),
     // 並びにいない仲間の専用の札（スペシャル）は、山札から外す
     deck: input.deck.filter((id) => !input.cards[id]?.owner || ids.has(input.cards[id].owner!)),
     cards: input.cards,
@@ -179,4 +183,18 @@ export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: n
   }
   const actionCounts = Object.fromEntries(s.allies.map((a) => [a.defId, s.acted?.[a.defId] ?? 0]));
   return { outcome, grade, drops, actionCounts, vitals: chainVitals(s) };
+}
+
+/**
+ * 新しい戦闘の、初めての人向けの説明（段階160）。出したい説明の id（まだ見ていない物を、並び順に1つずつ出す）：
+ * 予定と時間の帯（いつも）・手札にエフェクトがある時は添える・クライマックスがある時は最後の行動・コンボがそろった時はコンボ
+ */
+export function chainTipTriggers(s: ChainState): string[] {
+  if (s.outcome !== 'ongoing') return [];
+  const out = ['chain_plan'];
+  const hand = s.hand.map((id) => s.def.cards[id]).filter((m): m is ChainMove => !!m);
+  if (hand.some((m) => m.effect.kind === 'addon')) out.push('chain_addon');
+  if (s.def.finishLast && hand.some((m) => isChainFinish(m))) out.push('chain_climax');
+  if (availableLinks(s, []).length > 0) out.push('chain_combo');
+  return out;
 }

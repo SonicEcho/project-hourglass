@@ -29,11 +29,12 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { AKARI, AREA_BATTLES, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
-import { buildMainChainBattle, chainEncounterResult, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
+import { A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { buildMainChainBattle, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
 import { settleChainWin, type ChainWinReward } from './chainEncounter';
+import { maybeShowTip } from '../ui/tipPanel';
 import { smartChainPlan } from '../sim/chainAuto';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
@@ -120,9 +121,9 @@ const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as
 const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 
 /** 札・技の絵と短い効果（調整17の札も） */
-const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART };
+const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART, ...A11_CARD_ART };
 const CHAIN_MOVE_ART: Record<string, string> = { ...CHAIN_MOVE_ART_16, ...CHAIN17_MOVE_ART };
-const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT };
+const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT, ...A11_SHORT_TEXT };
 /** 見つけたコンボ（調整17。端末に覚える） */
 const COMBO_KEY = 'hourglass.chainTrial.combos';
 function loadCombos(): string[] {
@@ -222,19 +223,23 @@ export class ChainBattleScene extends Phaser.Scene {
     if (data.encounter && !area) throw new Error(`unknown area battle ${data.encounter.battle}`);
     this.areaBattle = area;
     if (data.encounter && area) {
-      // 探索から来た戦闘（段階159）：今の並び（育成を反映）・区画の中の HP と MP・区画の戦闘の敵。アルバムは段階D まで試しの札
+      // 探索から来た戦闘（段階159）：今の並び（育成を反映）・区画の中の HP と MP・区画の戦闘の敵。
+      // 区画ごとに書いた新しい戦闘の中身（段階160。1-1 の敵の予定の癖と型・山札・コンボ）があれば、それで。なければ試しの札と、今の敵から仮に作る
       this.lineup = storyBattleLineup();
       const base = CHAIN_TRIALS[0];
+      const setup = CHAIN_AREA_SETUPS[area.id];
       const def = buildMainChainBattle({
         id: area.id,
         name: area.name,
         party: currentParty(this.lineup),
         enemies: area.enemies,
-        deck: base.deck,
-        cards: base.cards,
-        links: base.links,
+        chainEnemies: setup?.enemies,
+        variants: setup?.variants,
+        deck: setup?.deck ?? base.deck,
+        cards: setup?.cards ?? base.cards,
+        links: setup?.links ?? base.links,
         cutoffRounds: area.cutoff?.rounds,
-        gradeAt: area.boss ? { high: 35, mid: 50 } : { high: 13, mid: 20 },
+        gradeAt: setup?.gradeAt ?? (area.boss ? { high: 35, mid: 50 } : { high: 13, mid: 20 }),
       });
       this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
       const vitals = data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
@@ -376,6 +381,8 @@ export class ChainBattleScene extends Phaser.Scene {
       this.drawTabs();
       this.drawOptions();
       this.drawCommands();
+      // 初めての人向けの説明（段階160）：探索から来た戦闘で、その場面になった時に1つずつ（見た物は出さない）
+      if (this.encounter) maybeShowTip(this, chainTipTriggers(this.s));
     } else if (this.currentOrder > 0) this.drawRunList();
   }
 
