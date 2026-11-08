@@ -1,4 +1,4 @@
-import type { ChainEnemyDef, ChainEnemyMove, ChainLinkDef, ChainMove, ChainVariant, EnemyDef } from '../core';
+import type { ChainBattleDef, ChainEnemyDef, ChainEnemyMove, ChainLinkDef, ChainMove, ChainVariant, EnemyDef } from '../core';
 import { AREA_BATTLES } from './areas';
 import { CHAIN17_CARDS as C, CHAIN17_COMBOS } from './chainTrial17';
 
@@ -114,21 +114,71 @@ export interface ChainAreaSetup {
   cards: Record<string, ChainMove>;
   links: ChainLinkDef[];
   gradeAt: { high: number; mid: number };
+  /** ポイ（段階162。1-1 のぬしの思い出の再演） */
+  poi?: ChainBattleDef['poi'];
 }
 
-/** 1-1 の雑魚の戦闘（ぬしは段階D2） */
+/** 1-1 の雑魚の戦闘 */
 const A11_IDS = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a11_') && !AREA_BATTLES[id].boss);
 
-export const CHAIN_AREA_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries(
-  A11_IDS.map((id) => {
+// ---- 段階162（段階D2）：ぬし「金魚鉢のぬし」。思い出の再演「ポイが破れる前に」 ----
+
+/** ぬしと部位の HP の倍率（今の区画の戦闘の HP にかける）。自動対戦（考える方針・育成なしのハルトとあかり）で、20戦中17勝・3〜5ラウンド・残りのポイ1〜17マスになるように決めた */
+export const A11_LORD_HP_RATE = { body: 0.25, part: 0.3 };
+
+/** ポイ：始めは30マス分。仲間の行動の重さの分と、水鉄砲が当たるたびに2減る。0で負け */
+export const A11_POI = { total: 30, hitCost: 2, hitMoves: ['waterShot'] };
+
+function a11Lord(): ChainEnemyDef[] {
+  const lord = AREA_BATTLES.a11_boss.enemies[0];
+  const act = (id: string) => lord.actions.find((a) => a.id === id)!;
+  const move = (id: string, at: number, extra: Partial<ChainEnemyMove> = {}): ChainEnemyMove => {
+    const a = act(id);
+    return { id: a.id, name: a.name, at, ...(a.target === 'allies' ? { all: true } : {}), element: a.type === 'magic' ? 'ice' : a.type, power: a.power, ...extra };
+  };
+  const part = (id: string) => lord.parts!.find((p) => p.id === id)!;
+  const partId = (id: string) => `${lord.id}_${id}`;
+  const body: ChainEnemyDef = {
+    id: lord.id,
+    name: lord.name,
+    hp: Math.round(lord.stats.hp * A11_LORD_HP_RATE.body),
+    atk: Math.max(lord.stats.atk, lord.stats.mag),
+    def: lord.stats.def,
+    weak: [],
+    resist: [],
+    // 予定の癖：水鉄砲 → ポイすくい（ポイの腕） → 大波（全体） → 金魚の渦（全体。金魚鉢）
+    pattern: [move('waterShot', 3), move('poiScoop', 5, { requiresPart: partId('poiArm') }), move('bigWave', 7), move('goldfishSwirl', 6, { requiresPart: partId('bowl') })],
+  };
+  const parts = (['poiArm', 'bowl'] as const).map((id): ChainEnemyDef => {
+    const p = part(id);
+    return {
+      id: partId(id),
+      name: p.name,
+      hp: Math.round(p.hp * A11_LORD_HP_RATE.part),
+      atk: 0,
+      def: lord.stats.def,
+      weak: [],
+      resist: [],
+      pattern: [],
+      part: { of: lord.id, ...(p.revealsWeakness ? { reveals: [...p.revealsWeakness] } : {}) },
+      ...(p.drop ? { drop: p.drop } : {}),
+    };
+  });
+  // 場の並び：ポイの腕・ぬし・金魚鉢
+  return [parts[0], body, parts[1]];
+}
+
+export const CHAIN_AREA_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
+  ['a11_boss', { enemies: a11Lord(), variants: [], deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, poi: A11_POI }],
+  ...A11_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a11_n1_') ? A11_CHAIN_HP_RATE.night1 : A11_CHAIN_HP_RATE.later;
     return [id, { enemies: b.enemies.map((e) => a11ChainEnemy(e, rate)), variants: variantsOf(b.enemies), deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 13, mid: 20 } }];
   }),
-);
+]);
 
 /**
- * 新しい戦闘で戦う区画の戦闘（AREA_BATTLES の id）。段階D1 で 1-1 の雑魚、段階D2 で 1-1 のぬし、段階F で章ごとに増やす。
+ * 新しい戦闘で戦う区画の戦闘（AREA_BATTLES の id）。段階D1（160）で 1-1 の雑魚、段階D2（162）で 1-1 のぬし、段階F で章ごとに増やす。
  * ここにない戦闘は、今の本番の戦闘のまま（デバッグメニューの切り替えで、全部を新しい戦闘にして試せる）
  */
 export const CHAIN_AREA_BATTLES: string[] = Object.keys(CHAIN_AREA_SETUPS);

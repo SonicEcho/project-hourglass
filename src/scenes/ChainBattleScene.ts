@@ -171,6 +171,11 @@ const STATUS_LABEL: Record<ChainStatusKind, string> = { slow: 'スロー', burn:
 /** 分裂で出てきた敵の絵（元の敵の絵を小さく使う） */
 const SPLIT_ART: Record<string, string> = { miniBalloon: 'balloonNoise' };
 
+/** 敵の絵（分裂した子は親の絵、部位（段階162。「本体の id_部位」）は本体の絵） */
+function artOfEnemy(defId: string): string | undefined {
+  return ENEMY_ART[SPLIT_ART[defId] ?? defId] ?? ENEMY_ART[defId.split('_')[0]];
+}
+
 type Pending = { source: ChainSource; move: ChainMove } | null;
 
 export class ChainBattleScene extends Phaser.Scene {
@@ -249,6 +254,7 @@ export class ChainBattleScene extends Phaser.Scene {
         enemies: area.enemies,
         chainEnemies: setup?.enemies,
         variants: setup?.variants,
+        poi: setup?.poi,
         deck: setup?.deck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -396,6 +402,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.enemyImages.clear();
     this.drawTop(view);
     this.drawEnemies(view);
+    this.drawPoi(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -529,6 +536,12 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'poiBar':
+        return { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
+      case 'parts': {
+        const k = foes.findIndex((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0);
+        return k < 0 ? null : { x: colW * k + 2, y: STAGE_Y + 68, w: colW - 4, h: 166 };
+      }
       case 'weak':
         return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
       case 'specialCard':
@@ -687,6 +700,25 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 画面に出す敵（分裂して倒れた元の敵は出さない） */
+  /** ポイの残り（段階162。1-1 のぬしの思い出の再演）。並べた行動の重さの分を、薄く「減る見込み」に */
+  private drawPoi(view: ChainState): void {
+    const poi = view.def.poi;
+    if (!poi) return;
+    const r = this.root;
+    const left = view.poi ?? poi.total;
+    const planned = this.busy ? 0 : this.plan.reduce((a, p) => a + (chainMoveOf(this.s, p)?.weight ?? 0), 0);
+    const after = Math.max(0, left - planned);
+    const x = 70;
+    const y = STAGE_Y + 50;
+    const w = GAME_WIDTH - x - 70;
+    r.add(this.para(8, y - 9, GAME_WIDTH - 16, 22, 0x000000, 0.65, 6));
+    r.add(addText(this, 16, y + 2, 'ポイ', { size: 12, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
+    r.add(this.add.rectangle(x, y - 3, w, 10, 0x1a2a40).setOrigin(0).setStrokeStyle(1, 0x9ad0ff));
+    r.add(this.add.rectangle(x, y - 3, (w * left) / poi.total, 10, 0x6bc8ff, 0.35).setOrigin(0));
+    r.add(this.add.rectangle(x, y - 3, (w * after) / poi.total, 10, after <= 6 ? 0xff6b8a : 0x6bc8ff).setOrigin(0));
+    r.add(addText(this, GAME_WIDTH - 16, y + 2, `${after}${planned ? `（−${planned}）` : ''}/${poi.total}`, { size: 11, bold: true, color: after <= 6 ? '#ff9db0' : '#c9e6ff' }).setOrigin(1, 0.5));
+  }
+
   private foeColor(s: ChainState, uid: string): number {
     const i = s.enemies.findIndex((e) => e.uid === uid);
     return FOE_COLORS[(i < 0 ? 0 : i) % FOE_COLORS.length];
@@ -714,7 +746,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const cx = colW * i + colW / 2;
       const x0 = colW * i;
       const alive = e.hp > 0 && !e.gone;
-      const size = Math.min(100, colW - 20) * (SPLIT_ART[e.defId] ? 0.7 : 1);
+      const size = Math.min(100, colW - 20) * (SPLIT_ART[e.defId] ? 0.7 : e.defId.includes('_') ? 0.6 : 1);
       const isTarget = this.pending?.move.target === 'enemy' && alive;
       if (this.busy && e.uid === this.actorUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, RED, 0.12).setStrokeStyle(3, RED));
       if (this.busy && e.uid === this.targetUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, YELLOW, 0.08).setStrokeStyle(3, YELLOW));
@@ -725,7 +757,7 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       // 敵の後ろの赤い光
       if (alive) r.add(this.add.circle(cx, ART_Y, size * 0.55, 0xff3040, 0.18));
-      const art = ENEMY_ART[SPLIT_ART[e.defId] ?? e.defId];
+      const art = artOfEnemy(e.defId);
       if (art && hasImage(this, art)) {
         const img = this.add.image(cx, ART_Y, art);
         img.setScale(size / Math.max(img.width, img.height));
@@ -881,7 +913,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const a = e.down ? 0.3 : 1;
       if (big && !e.down) r.add(this.add.circle(cx, cy, 21, YELLOW, 0.3));
       r.add(this.add.circle(cx, cy, 17, 0x1a0008, a).setStrokeStyle(3, this.foeColor(s, e.uid)));
-      const art = ENEMY_ART[SPLIT_ART[e.defId] ?? e.defId];
+      const art = artOfEnemy(e.defId);
       if (art && hasImage(this, art)) {
         const img = this.add.image(cx, cy, art).setAlpha(a);
         img.setScale(30 / Math.max(img.width, img.height));
@@ -1719,6 +1751,8 @@ export class ChainBattleScene extends Phaser.Scene {
       return;
     }
     if (f.events.some((e) => e.type === 'shutterReady')) this.cutIn('ALL DOWN!', '全員ダウン。シャッターのチャンス', RED, []);
+    const broke = f.events.find((e) => e.type === 'partBreak');
+    if (broke && broke.type === 'partBreak') this.cutIn('BREAK!', `${findChainUnit(before, broke.uid)?.name ?? ''}を壊した！ その大技はもう来ない`, 0xc88a10, actor?.side === 'ally' ? [actor.defId] : []);
   }
 
   private finishRound(final: ChainState): void {
@@ -1865,7 +1899,7 @@ export class ChainBattleScene extends Phaser.Scene {
     title.setShadow(5, 5, '#ff2d55', 0, false, true);
     o.add(title);
     if (!win) {
-      o.add(addText(this, GAME_WIDTH / 2, 300, `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
+      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
         const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
         o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
@@ -1887,7 +1921,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const foes = this.shownEnemies(s).filter((e) => !e.gone);
     foes.forEach((e, i) => {
       const fx = -iw / 2 + (iw / foes.length) * (i + 0.5);
-      const art = ENEMY_ART[SPLIT_ART[e.defId] ?? e.defId];
+      const art = artOfEnemy(e.defId);
       if (art && hasImage(this, art)) {
         const img = this.add.image(fx, iy + 18, art).setTint(0xb8b0a0).setAngle((i - 1) * 8);
         img.setScale(Math.min(96, iw / foes.length - 4) / Math.max(img.width, img.height));
@@ -2075,6 +2109,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'rewind') parts.push(`${name(ev.uid)}が巻き戻しで${ev.amount}回復`);
     else if (ev.type === 'panic') parts.push(`リーダーを倒した！ ${ev.downed.map(name).join('・')}が動揺してダウン`);
     else if (ev.type === 'reveal') parts.push(`弱点判明！ ${name(ev.uid)}は${ELEMENT_LABEL[ev.element]}に弱い`);
+    else if (ev.type === 'partBreak') parts.push(`${name(ev.uid)}を壊した！ それを使う大技はもう来ない${ev.reveals.length ? `。${name(ev.of)}の弱点「${ev.reveals.map((w) => ELEMENT_LABEL[w]).join('・')}」が見えた` : ''}`);
+    else if (ev.type === 'poi') parts.push(ev.left > 0 ? `ポイが濡れた（残り${ev.left}）` : 'ポイが破れた！');
   }
   const out = parts.filter(Boolean);
   return out.length ? out.join(' ') : '（何も起きなかった）';

@@ -200,6 +200,8 @@ export interface ChainEnemyMove {
   power: number;
   /** 逃げる：動くと戦闘からいなくなる（ダメージはない） */
   flee?: boolean;
+  /** この部位（敵の定義の id）が壊れていると使えない（段階162。予定の癖の次の行動にする） */
+  requiresPart?: string;
 }
 
 export interface ChainEnemyDef {
@@ -221,6 +223,13 @@ export interface ChainEnemyDef {
   weakCycle?: Element[];
   /** 殻（バリア）が消す発数（調整17。省くと1） */
   shellHits?: number;
+  /**
+   * 部位（段階162）：本体（of。敵の定義の id）とは別に狙える。自分では動かない（予定の癖は空でよい）。
+   * 壊すと、それを使う本体の行動が予定から消え、reveals の弱点が本体に出る。本体を倒せば勝ち（部位は残っていてよい）。本体が倒れると部位も消える
+   */
+  part?: { of: string; reveals?: Element[] };
+  /** 倒すと必ず落とす素材（段階162。部位の素材） */
+  drop?: string;
 }
 
 /**
@@ -304,6 +313,11 @@ export interface ChainBattleDef {
   finishLast?: boolean;
   /** 負け戦（段階158）：このラウンドが終わったら打ち切る（outcome は 'cutoff'） */
   cutoff?: { rounds: number };
+  /**
+   * ポイ（段階162。1-1 のぬしの思い出の再演「ポイが破れる前に」）：始めの残り total。仲間が行動すると使った重さの分、
+   * hitMoves の行動が仲間に当たると1発ごとに hitCost 減る。0 になると負け（finish は 'poi'）
+   */
+  poi?: { total: number; hitCost: number; hitMoves: string[] };
 }
 
 export interface ChainUnit {
@@ -403,6 +417,10 @@ export type ChainEvent =
   | { type: 'timerBlast'; uid: string }
   | { type: 'flee'; uid: string }
   | { type: 'down'; uid: string }
+  /** 部位を壊した（段階162）。of は本体の uid、reveals は出た弱点 */
+  | { type: 'partBreak'; uid: string; of: string; reveals: Element[] }
+  /** ポイが濡れた（段階162）。left は残り */
+  | { type: 'poi'; by: number; left: number }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -453,7 +471,9 @@ export interface ChainState {
   /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
   acted?: Record<string, number>;
   /** 決着の仕方 */
-  finish?: 'shutter' | 'defeat';
+  finish?: 'shutter' | 'defeat' | 'poi';
+  /** ポイの残り（段階162） */
+  poi?: number;
   /** 決着したラウンド */
   finishRound?: number;
   /**
@@ -572,7 +592,12 @@ function planIntents(s: ChainState): void {
     const d = chainEnemyDef(s, e.defId);
     if (!d) continue;
     const pattern = e.pattern ?? d.pattern;
-    const move = pattern[e.step % pattern.length];
+    if (!pattern.length) continue;
+    // 壊れた部位を使う行動は飛ばして、癖の次の行動に（段階162）
+    const ok = (m: ChainEnemyMove) => !m.requiresPart || s.enemies.some((x) => x.defId === m.requiresPart && x.hp > 0 && !x.gone);
+    let move = pattern[e.step % pattern.length];
+    for (let k = 1; k < pattern.length && !ok(move); k++) move = pattern[(e.step + k) % pattern.length];
+    if (!ok(move)) continue;
     const pick = () => (move.all || move.flee || allies.length === 0 ? undefined : allies[Math.floor(rand(s) * allies.length)].uid);
     const add = (at: number) => {
       let it: ChainIntent = { enemy: e.uid, move, at, target: pick() };
@@ -641,6 +666,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     roundHits: 0,
     roundSupports: 0,
     outcome: 'ongoing',
+    ...(def.poi ? { poi: def.poi.total } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -895,6 +921,19 @@ function defeatEnemy(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
   e.trick = undefined;
   e.status = undefined;
   ev.push({ type: 'defeat', uid: e.uid });
+  const d = chainEnemyDef(s, e.defId);
+  // 部位を壊した（段階162）：本体に弱点が出る（弱点も分かる）
+  if (d?.part) {
+    const body = s.enemies.find((x) => x.defId === d.part!.of && x.hp > 0 && !x.gone);
+    const reveals = (d.part.reveals ?? []).filter((w) => !body?.weak.includes(w));
+    if (body) {
+      body.weak.push(...reveals);
+      for (const w of reveals) if (!isWeakKnown(s, body.defId, w)) (s.known[body.defId] ??= []).push(w);
+    }
+    ev.push({ type: 'partBreak', uid: e.uid, of: body?.uid ?? '', reveals });
+  }
+  // 本体が倒れたら、部位も消える
+  for (const x of s.enemies) if (x.hp > 0 && !x.gone && chainEnemyDef(s, x.defId)?.part?.of === e.defId) x.gone = true;
   // リーダー：倒すと、ほかの敵が動揺してダウンする（調整12）
   if (e.trait === 'leader') {
     const others = living(s.enemies).filter((x) => x.uid !== e.uid && !x.down);
@@ -1181,12 +1220,21 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
   const allies = s.allies.filter((a) => a.hp > 0);
   const targets = m.all ? allies : [s.allies.find((a) => a.uid === intent.target && a.hp > 0) ?? allies[0]].filter((x): x is ChainUnit => !!x);
   for (const a of targets) hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate)), ev);
+  // ポイ（段階162）：決まった行動が当たると、1発ごとに濡れる
+  if (s.def.poi && s.def.poi.hitMoves.includes(m.id) && targets.length) wetPoi(s, s.def.poi.hitCost * targets.length, ev);
   // 起こし役：ダウンしているほかの敵を起こす
   if (e.trait === 'waker') {
     const woke = living(s.enemies).filter((x) => x.down && x.uid !== e.uid);
     for (const x of woke) x.down = false;
     if (woke.length) ev.push({ type: 'wake', uid: e.uid, woke: woke.map((x) => x.uid) });
   }
+}
+
+/** ポイを濡らす（段階162） */
+function wetPoi(s: ChainState, by: number, ev: ChainEvent[]): void {
+  if (!s.def.poi || by <= 0) return;
+  s.poi = Math.max(0, (s.poi ?? s.def.poi.total) - by);
+  ev.push({ type: 'poi', by, left: s.poi });
 }
 
 function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
@@ -1197,12 +1245,21 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
     s.finishRound = s.round;
     return true;
   }
-  const foes = living(s.enemies);
+  // 部位は勝ち負けに数えない（段階162）
+  const foes = living(s.enemies).filter((x) => !chainEnemyDef(s, x.defId)?.part);
   if (foes.length === 0) {
     s.outcome = 'win';
     s.finish = 'defeat';
     s.finishRound = s.round;
     done();
+    return true;
+  }
+  // ポイが破れた（段階162。ぬしを倒した一撃で破れた時は、勝ちを先に）
+  if (s.def.poi && (s.poi ?? 0) <= 0) {
+    done();
+    s.outcome = 'lose';
+    s.finish = 'poi';
+    s.finishRound = s.round;
     return true;
   }
   if (!s.def.noShutter && foes.every((e) => e.down)) {
@@ -1319,6 +1376,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       for (const a of actors) s.acted[a.defId] = (s.acted[a.defId] ?? 0) + 1;
       // MP は動いた時に払う（段階158。不発・時間切れ・倒れて動けなかった時は払わない）
       if (step.source.kind === 'move') actor.mp = Math.max(0, (actor.mp ?? 0) - chainMoveMp(actor, move));
+      // ポイ（段階162）：行動すると、使った重さの分だけ濡れる（行動の効き目の後で、破れたか見る）
+      const poiBy = s.def.poi ? move.weight : 0;
       ev.push({ type: 'act', uid: actor.uid, name: move.name, at });
       // 添える札（調整17）：露出補正は、この行動から後の味方の攻撃すべてに効く
       const addonCards = (step.addons ?? []).map((i) => s0.def.cards[s0.hand[i]]);
@@ -1336,6 +1395,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       const avg = (k: 'atk' | 'mag') => Math.round(actors.reduce((a, u) => a + u[k], 0) / actors.length);
       const doer = actors.length > 1 ? { ...actor, atk: avg('atk'), mag: avg('mag') } : actor;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
+      if (poiBy) wetPoi(s, poiBy, ev);
       prev.weak = ev.some((e) => e.type === 'damage' && e.weak && e.from === doer.uid);
       // 連携技の計算用に写した仲間のダメージ（反撃・破片）は、1人目に戻す
       if (doer !== actor) actor.hp = Math.min(actor.hp, doer.hp);

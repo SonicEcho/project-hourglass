@@ -151,10 +151,10 @@ describe('新しい戦闘を本番用に（段階158）', () => {
 });
 
 describe('1-1 を新しい戦闘に（段階160）', () => {
-  it('1-1 の雑魚の戦闘は全部新しい戦闘にする（ぬしはまだ）。敵の性質はなく、山札は最初のアルバム20枚＋スペシャル4枚', () => {
+  it('1-1 の戦闘は全部新しい戦闘にする（段階162 でぬしも）。雑魚は敵の性質はなく、山札は最初のアルバム20枚＋スペシャル4枚', () => {
     const ids = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a11_'));
-    for (const id of ids) expect(CHAIN_AREA_BATTLES.includes(id)).toBe(!AREA_BATTLES[id].boss);
-    for (const id of CHAIN_AREA_BATTLES) {
+    for (const id of ids) expect(CHAIN_AREA_BATTLES.includes(id)).toBe(true);
+    for (const id of CHAIN_AREA_BATTLES.filter((x) => !AREA_BATTLES[x].boss)) {
       const st = CHAIN_AREA_SETUPS[id];
       expect(st.enemies.every((e) => !e.trait)).toBe(true);
       expect(st.deck.length).toBe(24);
@@ -167,7 +167,7 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
   });
 
   it('1-1 の雑魚は、育成なしのハルトとあかりでも勝てる（考える方針）', () => {
-    for (const id of CHAIN_AREA_BATTLES) {
+    for (const id of CHAIN_AREA_BATTLES.filter((x) => !AREA_BATTLES[x].boss)) {
       const st = CHAIN_AREA_SETUPS[id];
       const def = buildMainChainBattle({ id, name: id, party: [HERO, AKARI], enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
       expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
@@ -189,5 +189,62 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
       expect(TIPS.some((t) => t.id === id)).toBe(true);
       expect(CHAIN_COACH[id].length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('1-1 のぬし：部位とポイ（段階162）', () => {
+  const st = CHAIN_AREA_SETUPS.a11_boss;
+  const make = () => {
+    const def = buildMainChainBattle({ id: 'b', name: 'b', party: [HERO, AKARI], enemies: AREA_BATTLES.a11_boss.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt, poi: st.poi });
+    const s = createChainBattle(def, CHAIN_RULES, 9);
+    s.hand = [];
+    return s;
+  };
+  const uidOf = (s: ChainState, defId: string) => s.enemies.find((e) => e.defId === defId)!.uid;
+
+  it('場にポイの腕・ぬし・金魚鉢が並ぶ。部位は動かず、ぬしだけが予定を持つ。ポイは30マス', () => {
+    const s = make();
+    expect(s.enemies.map((e) => e.defId)).toEqual(['goldfishBowlLord_poiArm', 'goldfishBowlLord', 'goldfishBowlLord_bowl']);
+    expect(s.intents.map((i) => s.enemies.find((e) => e.uid === i.enemy)!.defId)).toEqual(['goldfishBowlLord']);
+    expect(s.poi).toBe(30);
+    // 最初のぬし戦では、思い出の再演の説明を出す
+    expect(chainTipTriggers(s)).toContain('chain_boss');
+    expect(CHAIN_COACH.chain_boss.length).toBeGreaterThan(0);
+    expect(TIPS.some((t) => t.id === 'chain_boss')).toBe(true);
+  });
+
+  it('仲間が行動すると重さの分だけポイが減り、水鉄砲が当たると2減る', () => {
+    const s = make();
+    // 1ラウンド目は水鉄砲（時刻3）。ハルトの通常攻撃（重さ2）
+    const r = runChainRound(s, [mv('hero', 'basic', uidOf(s, 'goldfishBowlLord'))]).state;
+    expect(r.poi).toBe(30 - 2 - 2);
+  });
+
+  it('部位を壊すと、その部位を使う行動は予定から消え（次の行動になる）、素材を落とす。金魚鉢を壊すと、ぬしの弱点「氷」が出る', () => {
+    let s = make();
+    for (const e of s.enemies) if (e.defId.includes('_')) e.hp = 1;
+    s = runChainRound(s, [mv('hero', 'basic', uidOf(s, 'goldfishBowlLord_poiArm')), mv('akari', 'basic', uidOf(s, 'goldfishBowlLord_bowl'))]).state;
+    const lord = s.enemies.find((e) => e.defId === 'goldfishBowlLord')!;
+    expect(lord.weak).toContain('ice');
+    // 2ラウンド目の予定（ポイすくい）は、ポイの腕が壊れたので次の大波に
+    expect(s.intents[0].move.id).toBe('bigWave');
+    // ぬしを倒すと勝ち（部位の素材とぬしの素材を落とす）
+    lord.hp = 1;
+    const w = runChainRound(s, [mv('hero', 'basic', lord.uid)]).state;
+    expect(w.outcome).toBe('win');
+    const items = chainEncounterResult(w, AREA_BATTLES.a11_boss.enemies, 1).drops.map((d) => d.itemId);
+    expect(items).toEqual(expect.arrayContaining(['tornPoi', 'bowlShard', 'lordGoldfish']));
+  });
+
+  it('ポイが0になると負け（ぬしを倒した一撃なら勝ち）', () => {
+    const s = make();
+    s.poi = 2;
+    const lose = runChainRound(s, [mv('hero', 'basic', uidOf(s, 'goldfishBowlLord'))]).state;
+    expect(lose.outcome).toBe('lose');
+    expect(lose.finish).toBe('poi');
+    const s2 = make();
+    s2.poi = 2;
+    s2.enemies.find((e) => e.defId === 'goldfishBowlLord')!.hp = 1;
+    expect(runChainRound(s2, [mv('hero', 'basic', uidOf(s2, 'goldfishBowlLord'))]).state.outcome).toBe('win');
   });
 });
