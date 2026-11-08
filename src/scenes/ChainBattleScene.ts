@@ -30,7 +30,7 @@ import {
   type ChainUnit,
 } from '../core';
 import { AKARI, AREA_BATTLES, HERO, MIO, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
-import { buildMainChainBattle, type ChainBattleDef, type CharacterDef, type Element } from '../core';
+import { buildMainChainBattle, isChainFinish, type ChainBattleDef, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice } from './run';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
@@ -92,6 +92,8 @@ const CARD_H = 170;
 const CARD_H_LINK = 156;
 /** コンボの木の線の色（1つ目・2つ目・3つ目） */
 const LINK_COLORS = [0xffcf5a, 0x7fe0ff, 0xff8ac8];
+/** 敵ごとの色（上の予定の札・敵の足元・時間の帯の印を同じ色でつなぐ） */
+const FOE_COLORS = [0xff6b8a, 0x5ac8ff, 0xb98aff, 0x7ee08a, 0xffa860];
 /** 下のボタンの上の端（右下のビルド日時の上に収める） */
 const CMD_Y = 778;
 /** 実行中、再生位置が1マス進む時間（ms） */
@@ -167,6 +169,16 @@ export class ChainBattleScene extends Phaser.Scene {
   private targetUid = '';
   /** 実行中：タップで次へ進める（待ちを飛ばす） */
   private advance: (() => void) | null = null;
+  /** 気をつける案内（赤く出す。案内が変わると、ふつうの見た目に戻る） */
+  private warnMsg = '';
+  /** クライマックスの確かめ：1回目のタップで知らせた札 */
+  private climaxOk: string | null = null;
+
+  private warn(text: string): void {
+    this.message = text;
+    this.warnMsg = text;
+    this.render();
+  }
 
   constructor() {
     super('ChainBattle');
@@ -182,6 +194,8 @@ export class ChainBattleScene extends Phaser.Scene {
     this.root = this.add.container(0, 0);
     this.plan = [];
     this.pending = null;
+    this.climaxOk = null;
+    this.warnMsg = '';
     this.tab = 'cards';
     this.busy = false;
     this.head = null;
@@ -330,9 +344,11 @@ export class ChainBattleScene extends Phaser.Scene {
   private drawMessage(): void {
     const r = this.root;
     // 敵の HP の帯の下から、フィルムの上まで（3行まで読める大きさ。それより長い時だけ縮める）
-    r.add(this.add.rectangle(0, MSG_TOP, GAME_WIDTH, MSG_H, 0x05060a, 0.86).setOrigin(0));
-    r.add(this.add.rectangle(0, MSG_TOP, 4, MSG_H, RED).setOrigin(0));
-    const t = addText(this, 12, MSG_TOP + MSG_H / 2, this.message, { size: 12, wrap: GAME_WIDTH - 24, ja: true }).setOrigin(0, 0.5);
+    // 置けなかった時・気をつける時は、赤い帯と字で（ふつうの案内と見分ける）
+    const warn = this.warnMsg === this.message;
+    r.add(this.add.rectangle(0, MSG_TOP, GAME_WIDTH, MSG_H, warn ? 0x3a0612 : 0x05060a, 0.9).setOrigin(0));
+    r.add(this.add.rectangle(0, MSG_TOP, warn ? 6 : 4, MSG_H, warn ? 0xff2d55 : RED).setOrigin(0));
+    const t = addText(this, 12, MSG_TOP + MSG_H / 2, `${warn ? '⚠ ' : ''}${this.message}`, { size: 12, bold: warn, color: warn ? '#ffb3c1' : '#ffffff', wrap: GAME_WIDTH - 24, ja: true }).setOrigin(0, 0.5);
     if (t.height > MSG_H - 6) t.setScale((MSG_H - 6) / t.height);
     r.add(t);
   }
@@ -382,6 +398,11 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 画面に出す敵（分裂して倒れた元の敵は出さない） */
+  private foeColor(s: ChainState, uid: string): number {
+    const i = s.enemies.findIndex((e) => e.uid === uid);
+    return FOE_COLORS[(i < 0 ? 0 : i) % FOE_COLORS.length];
+  }
+
   private shownEnemies(s: ChainState): ChainUnit[] {
     return s.enemies.filter((e) => !(e.hp <= 0 && e.trait === 'split' && s.enemies.some((x) => x.uid.startsWith(e.uid) && x.uid !== e.uid)));
   }
@@ -427,21 +448,26 @@ export class ChainBattleScene extends Phaser.Scene {
       // 名前・弱点（分かるまで「？」。調整9）・HP
       const ny = STAGE_Y + 172;
       const name = addText(this, x0 + 8, ny, e.name, { size: 12, bold: true, color: alive ? '#ffffff' : COLORS.dimText }).setOrigin(0, 0.5).setStroke('#000000', 3);
-      const nameRoom = colW - 36;
-      if (name.width > nameRoom) name.setScale(nameRoom / name.width);
-      r.add(name);
       // 属性チェンジの敵は、今の弱点がいつも見える（調整12）
       const known = e.trait === 'shift' ? e.weak : e.weak.filter((w) => isWeakKnown(s, e.defId, w));
       const wx = x0 + colW - 16;
-      if (known.length) {
-        known.slice(0, 2).forEach((w, k) => {
+      // 弱点は「弱点」と言葉を添える（分かるまで「弱点？」）
+      const shownWeak = known.slice(0, 2);
+      const nameRoom = colW - (shownWeak.length ? 46 + shownWeak.length * 20 : 56);
+      if (name.width > nameRoom) name.setScale(nameRoom / name.width);
+      r.add(name);
+      if (shownWeak.length) {
+        shownWeak.forEach((w, k) => {
           r.add(this.add.circle(wx - k * 20, ny, 10, ELEMENT_COLOR[w]).setStrokeStyle(2, 0xffffff));
           r.add(addText(this, wx - k * 20, ny, ELEMENT_LABEL[w].slice(0, 1), { size: 10, bold: true, color: '#101010' }).setOrigin(0.5));
         });
+        r.add(addText(this, wx - (shownWeak.length - 1) * 20 - 13, ny, '弱点', { size: 9, bold: true, color: '#ffffff' }).setOrigin(1, 0.5).setStroke('#000000', 3));
       } else {
-        r.add(this.add.circle(wx, ny, 10, 0x2a3050).setStrokeStyle(2, 0x9aa3c0));
-        r.add(addText(this, wx, ny, '？', { size: 11, bold: true, color: '#c9d0ea' }).setOrigin(0.5));
+        r.add(this.add.rectangle(wx - 10, ny, 42, 17, 0x2a3050).setStrokeStyle(1.5, 0x9aa3c0));
+        r.add(addText(this, wx - 10, ny, '弱点？', { size: 9, bold: true, color: '#c9d0ea' }).setOrigin(0.5));
       }
+      // 敵の足元に、その敵の色の線（上の予定の札・時間の帯の印と同じ色）
+      if (alive) r.add(this.add.rectangle(x0 + 8 + (colW - 18) / 2, ny + 25, colW - 18, 3, this.foeColor(s, e.uid), 1));
       const bw = colW - 18;
       r.add(this.para(x0 + 8, ny + 13, bw, 7, 0x2a0a12, 1, 3));
       if (e.hp > 0) r.add(this.para(x0 + 8, ny + 13, Math.max(6, bw * (e.hp / e.maxHp)), 7, RED, 1, 3));
@@ -465,7 +491,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const trick = plannedFx.trick ?? e.trick;
       if (trick) chips.push({ text: `◎${TRICK_LABEL[trick]}`, color: CHIP_ONCE, planned: !!plannedFx.trick });
       chips.forEach((c, k) => {
-        const cy = STAGE_Y + 206 + k * 19;
+        const cy = STAGE_Y + 78 + k * 19;
         const t = addText(this, x0 + 14, cy, c.text, { size: 10, bold: true, color: c.planned ? '#ffffff' : '#06201e' }).setOrigin(0, 0.5);
         if (t.width > colW - 24) t.setScale((colW - 24) / t.width);
         const box = this.add.rectangle(x0 + 8, cy, t.displayWidth + 12, 16, c.color, c.planned ? 0.25 : 1).setOrigin(0, 0.5).setAngle(k === 0 ? -2 : 2);
@@ -488,11 +514,12 @@ export class ChainBattleScene extends Phaser.Scene {
         const pw = colW - 18;
         const a = e.down ? 0.35 : 1;
         r.add(this.para(px + 3, STAGE_Y + 9, pw, 34, RED, 0.45 * a, 8));
-        r.add(this.para(px, STAGE_Y + 6, pw, 34, big ? 0x3a0010 : 0x000000, a, 8));
+        r.add(this.para(px, STAGE_Y + 6, pw, 34, big ? 0x3a0010 : 0x000000, a, 8, { w: 2, color: this.foeColor(s, e.uid) }));
         r.add(this.add.rectangle(px + 4, STAGE_Y + 6, 4, 34, big ? YELLOW : RED, a).setOrigin(0));
         const times = veiled ? '？' : intents.map((x) => x.at).join('・');
-        r.add(this.add.circle(px + 2, STAGE_Y + 23, 14, big ? YELLOW : RED, a));
-        r.add(addText(this, px + 2, STAGE_Y + 23, times, { size: times.length > 2 ? 10 : 15, bold: true, color: big ? '#000000' : '#ffffff' }).setOrigin(0.5).setAlpha(a));
+        r.add(this.add.circle(px + 2, STAGE_Y + 23, 16, big ? YELLOW : RED, a));
+        r.add(addText(this, px + 2, STAGE_Y + 15, '時刻', { size: 7, bold: true, color: big ? '#000000' : '#ffffff' }).setOrigin(0.5).setAlpha(a));
+        r.add(addText(this, px + 2, STAGE_Y + 27, times, { size: times.length > 2 ? 9 : 14, bold: true, color: big ? '#000000' : '#ffffff' }).setOrigin(0.5).setAlpha(a));
         const t1 = addText(this, px + 20, STAGE_Y + 15, veiled ? '？？？' : it.move.name, { size: 11, bold: true }).setOrigin(0, 0.5).setAlpha(a);
         const t2 = addText(this, px + 20, STAGE_Y + 31, detail, { size: 9, bold: true, color: big ? '#ffe08a' : '#ff9db0' }).setOrigin(0, 0.5).setAlpha(a);
         for (const t of [t1, t2]) if (t.width > pw - 26) t.setScale((pw - 26) / t.width);
@@ -559,20 +586,20 @@ export class ChainBattleScene extends Phaser.Scene {
       const e = s.enemies.find((x) => x.uid === it.enemy);
       if (!e || e.hp <= 0 || e.gone || e.veiled) return;
       const row = (slots[it.at] = (slots[it.at] ?? 0) + 1) - 1;
-      const cx = x0 + CELL * it.at + row * 7;
-      const cy = FOE_TRACK + row * 6 - (slots[it.at] > 1 ? 3 : 0);
+      const cx = x0 + CELL * it.at + row * 9;
+      const cy = FOE_TRACK + row * 7 - (slots[it.at] > 1 ? 3 : 0);
       const big = it.move.all || it.move.flee || it.move.power >= CHAIN_RULES.sealBig;
       const a = e.down ? 0.3 : 1;
-      if (big && !e.down) r.add(this.add.circle(cx, cy, 16, YELLOW, 0.25));
-      r.add(this.add.circle(cx, cy, 13, 0x1a0008, a).setStrokeStyle(2, big ? YELLOW : RED));
+      if (big && !e.down) r.add(this.add.circle(cx, cy, 21, YELLOW, 0.3));
+      r.add(this.add.circle(cx, cy, 17, 0x1a0008, a).setStrokeStyle(3, this.foeColor(s, e.uid)));
       const art = ENEMY_ART[SPLIT_ART[e.defId] ?? e.defId];
       if (art && hasImage(this, art)) {
         const img = this.add.image(cx, cy, art).setAlpha(a);
-        img.setScale(22 / Math.max(img.width, img.height));
+        img.setScale(30 / Math.max(img.width, img.height));
         r.add(img);
       }
-      if (e.down) r.add(addText(this, cx, cy, '×', { size: 22, bold: true, color: '#ff2d55' }).setOrigin(0.5));
-      badge(cx - 12, cy - 11, numOf(`e${k}`));
+      if (e.down) r.add(addText(this, cx, cy, '×', { size: 26, bold: true, color: '#ff2d55' }).setOrigin(0.5));
+      badge(cx - 15, cy - 14, numOf(`e${k}`));
     });
     // 下の段：並べた行動のクリップ（重さの分の長さ。札・技の絵を正方形のコマにして並べる。調整9）
     const starts = planStarts(this.s, this.plan);
@@ -674,7 +701,14 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(this.para(x + 60, ALLY_Y + 24, bw, 6, 0x222838, 1, 3));
       if (u.hp > 0) r.add(this.para(x + 60, ALLY_Y + 24, Math.max(4, bw * (u.hp / u.maxHp)), 6, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : color, 1, 3));
       // 段階158：MP のある仲間（本番の仲間）は MP も
-      r.add(addText(this, x + 62, ALLY_Y + 38, `HP ${u.hp}/${u.maxHp}${u.maxMp ? `　MP ${u.mp ?? 0}/${u.maxMp}` : ''}`, { size: 9, color: '#9aa3c0' }).setOrigin(0, 0.5));
+      const hpText = addText(this, x + 62, ALLY_Y + 39, `HP ${u.hp}/${u.maxHp}`, { size: 11, bold: true, color: '#c9d0ea' }).setOrigin(0, 0.5);
+      if (hpText.width > w - 66) hpText.setScale((w - 66) / hpText.width);
+      r.add(hpText);
+      if (u.maxMp) {
+        const mpText = addText(this, x + 62, ALLY_Y + 52, `MP ${u.mp ?? 0}/${u.maxMp}`, { size: 11, bold: true, color: '#8ab4ff' }).setOrigin(0, 0.5);
+        if (mpText.width > w - 66) mpText.setScale((w - 66) / mpText.width);
+        r.add(mpText);
+      }
       const times = this.plan.filter((p) => stepAllies(this.s, p).includes(u.uid)).length;
       const multi = !!this.s.def.multiAct;
       // 印は「選択中」だけ（開発者：時刻の表記は要らない。並べた順はフィルムの番号で分かる）
@@ -844,23 +878,26 @@ export class ChainBattleScene extends Phaser.Scene {
     const short = CHAIN_SHORT_TEXT[it.key ?? ''] ?? (m.mp ? m.text : undefined);
     if (short) {
       // 札の幅で折り返す（2行まで。それより長い時だけ縮める）
-      const ef = addText(this, 0, h / 2 - 39, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center', wrap: w - 6, ja: true }).setOrigin(0.5);
+      const ef = addText(this, 0, h / 2 - 38, short, { size: 10, bold: true, color: '#4a4a4a', align: 'center', wrap: w - 6, ja: true }).setOrigin(0.5);
       if (ef.width > w - 4) ef.setScale((w - 4) / ef.width);
-      if (ef.displayHeight > 26) ef.setScale(Math.min(ef.scaleX, 26 / ef.height));
+      if (ef.displayHeight > 24) ef.setScale(Math.min(ef.scaleX, 24 / ef.height));
       parts.push(ef);
     }
     // 名前は1行に縮めて収める。縮めすぎる時だけ2行に
-    let title = addText(this, 0, -h / 2 + 100, m.name, { size: 12, bold: true, color: '#111111' }).setOrigin(0.5);
+    let title = addText(this, 0, -h / 2 + 96, m.name, { size: 12, bold: true, color: '#111111' }).setOrigin(0.5);
     if (title.width > w - 6) {
       if ((w - 6) / title.width >= 0.72) title.setScale((w - 6) / title.width);
       else {
         title.destroy();
-        title = addText(this, 0, -h / 2 + 100, m.name, { size: 12, bold: true, color: '#111111', align: 'center', wrap: w - 4, ja: true }).setOrigin(0.5);
-        if (title.height > 26) title.setScale(26 / title.height);
+        title = addText(this, 0, -h / 2 + 96, m.name, { size: 12, bold: true, color: '#111111', align: 'center', wrap: w - 4, ja: true }).setOrigin(0.5);
+        if (title.height > 24) title.setScale(24 / title.height);
       }
     }
     parts.push(title);
-    for (let k = 0; k < 4; k++) parts.push(this.add.rectangle(-w / 2 + 10 + k * 11, h / 2 - 16, 8, 8, k < m.weight ? 0x111111 : 0xcccccc).setAngle(-12));
+    // 重さ（時間の帯を何マス使うか）を言葉と四角で
+    parts.push(addText(this, -w / 2 + 5, h / 2 - 16, `重さ${m.weight}`, { size: 10, bold: true, color: '#111111' }).setOrigin(0, 0.5));
+    const side = !!m.mp || (m.effect.kind === 'status' && !!m.effect.rounds);
+    if (!side) for (let k = 0; k < m.weight; k++) parts.push(this.add.rectangle(-w / 2 + 39 + k * 6, h / 2 - 16, 4, 8, 0x111111).setAngle(-12));
     // 段階158：技の MP（右下）
     if (m.mp) parts.push(addText(this, w / 2 - 4, h / 2 - 16, `MP${m.mp}`, { size: 10, bold: true, color: '#2a5bd7' }).setOrigin(1, 0.5));
     // 続く効果は、ラウンドの数を右下に（行動を遅らせる技は、文に書いたので印は出さない。調整11）
@@ -917,14 +954,33 @@ export class ChainBattleScene extends Phaser.Scene {
     const owner = source.kind === 'link' ? this.s.def.links.find((l) => l.id === source.linkId)?.members[0] : undefined;
     const actor = source.kind === 'link' && owner ? (this.s.allies.find((a) => a.defId === owner)?.uid ?? '') : this.ally;
     if (!actor) return;
+    let actor2 = actor;
     if (move.owner && source.kind === 'card' && findChainUnit(this.s, actor)?.defId !== move.owner) {
-      this.message = `${move.name}は${this.allyName(move.owner)}の専用の札。${this.allyName(move.owner)}を選んでから使う`;
-      this.render();
-      return;
+      // ほかの仲間のスペシャル：その仲間がまだ並べていなければ、その仲間に切り替えて使う
+      const owner = this.s.allies.find((a) => a.defId === move.owner);
+      const free = owner && owner.hp > 0 && (!!this.s.def.multiAct || !this.plannedAllies().has(owner.uid));
+      if (!owner || !free) {
+        this.warn(`${move.name}は${this.allyName(move.owner)}の専用の札。${this.allyName(move.owner)}はこのラウンドもう並べたか、動けない`);
+        return;
+      }
+      this.ally = owner.uid;
+      actor2 = owner.uid;
     }
+    // クライマックス（コンボも）は最後の行動。まだ並べていない仲間がいる時は、1回目のタップで知らせる
+    if (this.s.def.finishLast && isChainFinish(move) && !this.s.def.multiAct) {
+      const used = this.plannedAllies();
+      const left = this.s.allies.filter((a) => a.hp > 0 && a.uid !== actor2 && !used.has(a.uid) && !(source.kind === 'link' && (this.s.def.links.find((l) => l.id === source.linkId)?.members ?? []).includes(a.defId)));
+      const key = JSON.stringify(source);
+      if (left.length && this.climaxOk !== key) {
+        this.climaxOk = key;
+        this.warn(`${move.name}はクライマックス（ラウンドの最後の行動）。置くと、${left.map((a) => a.name).join('と')}はこのラウンド並べられない。もう一度タップで置く`);
+        return;
+      }
+    }
+    this.climaxOk = null;
     // 敵1体を選ばない札・技は、1回のタップで並べる（調整4。説明は長押しと、並べた後の案内で）
     if (move.target !== 'enemy') {
-      this.place({ ally: actor, source });
+      this.place({ ally: actor2, source });
       return;
     }
     if (this.pending && sameSource(this.pending.source, source)) {
@@ -947,8 +1003,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const at = this.addonIndex();
     const step = this.plan[at];
     if (!step) {
-      this.message = `${move.name}はエフェクト。先に行動を並べてから、タップして添える（帯の上の行動をタップすると、添える先を選べる）`;
-      this.render();
+      this.warn(`${move.name}はエフェクト。先に行動を並べてから、タップして添える（帯の上の行動をタップすると、添える先を選べる）`);
       return;
     }
     const mine = (step.addons ?? []).includes(index);
@@ -957,7 +1012,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const later = this.plan.slice(at + 1).some((p) => stepCards(p).includes(index));
     const err = later ? 'その札は、もう使う予定' : chainPlanError(this.s, this.plan.slice(0, at), next);
     if (err && !mine) {
-      this.message = err;
+      this.warn(err);
       this.render();
       return;
     }
@@ -992,7 +1047,7 @@ export class ChainBattleScene extends Phaser.Scene {
   private place(step: ChainPlanStep): void {
     const err = chainPlanError(this.s, this.plan, step);
     if (err) {
-      this.message = err;
+      this.warn(err);
       this.render();
       return;
     }
@@ -1001,12 +1056,16 @@ export class ChainBattleScene extends Phaser.Scene {
     this.addonAt = null;
     const move = chainMoveOf(this.s, step)!;
     this.pending = null;
-    this.ally = this.firstFreeAlly();
+    // クライマックスの後は並べられないので、次の仲間を選ばない
+    const climaxPlaced = !!this.s.def.finishLast && isChainFinish(move);
+    this.ally = climaxPlaced ? '' : this.firstFreeAlly();
     const next = nextStart(this.s, this.plan);
     const who = stepAllies(this.s, step).map((u) => findChainUnit(this.s, u)?.name).join('と');
     this.message = this.s.def.multiAct
       ? `${who}：${move.name}を並べた。時刻${next}まで使った。続けて並べるか、仲間を替えるか、「実行」`
-      : `${who}：${move.name}（${move.text}）を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}）` : '全員並べた。「実行」で動き出す'}`;
+      : climaxPlaced
+        ? `${who}：${move.name}（クライマックス）を並べた。このラウンドはここまで。「実行」で動き出す`
+        : `${who}：${move.name}（${move.text}）を並べた。${this.ally ? `次は${findChainUnit(this.s, this.ally)?.name}（時刻${next}から）` : '全員並べた。「実行」で動き出す'}`;
     if (availableLinks(this.s, this.plan).length) this.message += this.s.def.finishLast ? '。コンボがそろっている（手札の上の ★。最後の行動に）' : '。連携技が使える（手札の先頭 ★）';
     this.render();
   }
