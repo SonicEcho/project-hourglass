@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildMainChainBattle,
+  chainEncounterResult,
   chainAllyFromCharacter,
   chainEnemyFromMain,
   chainMoveFromSkill,
@@ -17,7 +18,10 @@ import {
   type CharacterDef,
 } from '../../src/core';
 import { AKARI, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS } from '../../src/data';
-import { autoChainBattle } from '../../src/sim/chainAuto';
+import { autoChainBattle, smartChainPlan } from '../../src/sim/chainAuto';
+
+let seedPick = 1;
+const planOf = (s: ChainState) => smartChainPlan(s, (n) => (seedPick = (seedPick * 1103515245 + 12345) >>> 0) % n);
 
 // 段階158：新しい戦闘を本番用にする（MP・持ち越し・特性・打ち切り・セーブ・本番の仲間と敵の変換）
 const BASE = CHAIN_TRIALS[0];
@@ -124,5 +128,23 @@ describe('新しい戦闘を本番用に（段階158）', () => {
     expect(def.deck.every((id) => !def.cards[id].owner || def.cards[id].owner !== 'mio')).toBe(true);
     const r = autoChainBattle(def, CHAIN_RULES, 3, 'smart');
     expect(r.outcome).toBe('win');
+  });
+
+  it('探索の戦闘の結果（段階159）：倒した敵の落とし物・動いた回数・持ち越す HP と MP。負けは落とし物なし', () => {
+    const party = [HERO, AKARI].map((c) => ({ ...c, skills: [SKILLS.fire, SKILLS.care] }));
+    const enemies = [GOLDFISH_NOISE, GOLDFISH_NOISE];
+    const def = buildMainChainBattle({ id: 'm', name: '砂嵐', party, enemies, deck: BASE.deck, cards: BASE.cards, links: BASE.links });
+    // 自動対戦の最後の状態を作る（考える方針）
+    let s = createChainBattle(def, CHAIN_RULES, 3);
+    for (let i = 0; i < 20 && s.outcome === 'ongoing'; i++) s = runChainRound(s, planOf(s)).state;
+    expect(s.outcome).toBe('win');
+    const r = chainEncounterResult(s, enemies, 11);
+    expect(r.outcome).toBe('victory');
+    // 落とし物は金魚ノイズの表の中から。同じ seed なら同じ
+    for (const d of r.drops) expect(['goldfishScale', 'goldfishFin', 'natsuTail']).toContain(d.itemId);
+    expect(chainEncounterResult(s, enemies, 11).drops).toEqual(r.drops);
+    expect(r.actionCounts.hero + r.actionCounts.akari).toBeGreaterThan(0);
+    expect(r.vitals.hero.hp).toBe(s.allies.find((a) => a.defId === 'hero')!.hp);
+    expect(chainEncounterResult({ ...s, outcome: 'lose' }, enemies, 11)).toMatchObject({ outcome: 'defeat', drops: [] });
   });
 });

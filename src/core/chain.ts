@@ -450,6 +450,8 @@ export interface ChainState {
   roundSupports: number;
   /** cutoff：負け戦の打ち切り（段階158） */
   outcome: 'ongoing' | 'win' | 'lose' | 'cutoff';
+  /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
+  acted?: Record<string, number>;
   /** 決着の仕方 */
   finish?: 'shutter' | 'defeat';
   /** 決着したラウンド */
@@ -508,6 +510,7 @@ export function cloneChain(s: ChainState): ChainState {
     discard: [...s.discard],
     intents: s.intents.map((i) => ({ ...i })),
     actedAt: { ...s.actedAt },
+    acted: { ...(s.acted ?? {}) },
     known: Object.fromEntries(Object.entries(s.known).map(([k, v]) => [k, [...v]])),
   };
 }
@@ -1311,6 +1314,9 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       }
       s.discard.push(...cardIds[q.i]);
       s.actedAt[q.i] = at;
+      // 動いた回数（段階159。武器の経験値。コンボは動いた仲間みんな）
+      s.acted ??= {};
+      for (const a of actors) s.acted[a.defId] = (s.acted[a.defId] ?? 0) + 1;
       // MP は動いた時に払う（段階158。不発・時間切れ・倒れて動けなかった時は払わない）
       if (step.source.kind === 'move') actor.mp = Math.max(0, (actor.mp ?? 0) - chainMoveMp(actor, move));
       ev.push({ type: 'act', uid: actor.uid, name: move.name, at });

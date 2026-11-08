@@ -1,4 +1,6 @@
-import type { ChainAllyDef, ChainBattleDef, ChainEnemyDef, ChainEnemyMove, ChainLinkDef, ChainMove, ChainPassive } from './chain';
+import { DROP_RATES } from '../data/constants';
+import { chainGrade, chainVitals, type ChainAllyDef, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVitals } from './chain';
+import { nextRandom } from './rng';
 import type { CharacterDef, DamageType, Element, EnemyDef, SkillDef } from './types';
 
 // 新しい戦闘（並べてつなぐ戦闘）を本番で使うための変換（段階158。docs/milestones/M3_battle_migration.md の段階B）。
@@ -129,4 +131,52 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.cutoffRounds ? { cutoff: { rounds: input.cutoffRounds } } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
+}
+
+/** 落とし物の1つ（今の本番の戦闘の drop と同じ種類） */
+export interface ChainDrop {
+  enemyId: string;
+  itemId: string;
+  kind: 'fixed' | 'common' | 'uncommon' | 'rare';
+}
+
+export interface ChainEncounterResult {
+  outcome: 'victory' | 'defeat' | 'cutoff';
+  /** 評価（早く勝つほど上。負け・打ち切りは null） */
+  grade: ChainGrade | null;
+  drops: ChainDrop[];
+  /** 仲間ごとの動いた回数（武器の経験値） */
+  actionCounts: Record<string, number>;
+  /** 区画の中の次の戦闘へ持ち越す HP・MP */
+  vitals: Record<string, ChainVitals>;
+}
+
+/**
+ * 探索の戦闘の結果（段階159）。倒した敵の落とし物は、今の本番の決まり（必ず落とす物と、表から確率で1つ）。
+ * 早く勝つほど良い報酬（docs/milestones/M3_battle_migration.md の 1.）：★3（評価 high）は、体勢を崩して倒した時と同じ出やすさ。
+ * 乱数は seed から（同じ戦闘・同じ結果なら、同じ落とし物）
+ */
+export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: number): ChainEncounterResult {
+  const outcome = s.outcome === 'win' ? 'victory' : s.outcome === 'cutoff' ? 'cutoff' : 'defeat';
+  const grade = chainGrade(s);
+  const drops: ChainDrop[] = [];
+  if (outcome === 'victory') {
+    const byId = new Map(enemies.map((e) => [e.id, e]));
+    const rates = grade === 'high' ? DROP_RATES.offBalance : DROP_RATES.normal;
+    let r = seed >>> 0;
+    for (const u of s.enemies) {
+      const d = byId.get(u.defId);
+      if (!d || u.hp > 0 || u.gone) continue;
+      for (const id of d.drops ?? []) drops.push({ enemyId: u.uid, itemId: id, kind: 'fixed' });
+      const t = d.dropTable;
+      if (!t) continue;
+      const [v, next] = nextRandom(r);
+      r = next;
+      if (t.rare && v < rates.rare) drops.push({ enemyId: u.uid, itemId: t.rare, kind: 'rare' });
+      else if (t.uncommon && v < rates.rare + rates.uncommon) drops.push({ enemyId: u.uid, itemId: t.uncommon, kind: 'uncommon' });
+      else if (v < rates.rare + rates.uncommon + rates.common) drops.push({ enemyId: u.uid, itemId: t.common, kind: 'common' });
+    }
+  }
+  const actionCounts = Object.fromEntries(s.allies.map((a) => [a.defId, s.acted?.[a.defId] ?? 0]));
+  return { outcome, grade, drops, actionCounts, vitals: chainVitals(s) };
 }
