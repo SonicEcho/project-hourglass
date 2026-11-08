@@ -20,7 +20,7 @@ function chainElement(t: DamageType): Element {
 
 /**
  * 本番の技（星図で覚える魔法・スキル）を、新しい戦闘の技にする。MP はそのまま。
- * ダメージ（同じ属性が並ぶ物は連続攻撃に）と回復だけを変える。手札に触れる技（ひらめき・シャッフル・すりかえ）は、新しい戦闘にまだ置き場がないので null
+ * ダメージ（同じ属性が並ぶ物は連続攻撃に）・回復・手札に触れる技（段階164）を変える。どれでもない技は null
  */
 export function chainMoveFromSkill(skill: SkillDef): ChainMove | null {
   const dmg = skill.effects.filter((e) => e.kind === 'damage');
@@ -43,6 +43,13 @@ export function chainMoveFromSkill(skill: SkillDef): ChainMove | null {
       mp: skill.mp,
     };
   }
+  // 手札に触れる技（段階164）：ひらめき（引く）・シャッフル（引き直す）・すりかえ（捨て札から戻す）。効くのは次のラウンドの手札
+  const hand = skill.effects.find((e) => e.kind === 'draw' || e.kind === 'redraw' || e.kind === 'retrieve');
+  if (hand) {
+    const effect = hand.kind === 'draw' ? { kind: 'draw' as const, count: hand.count } : hand.kind === 'redraw' ? { kind: 'cycle' as const } : { kind: 'retrieve' as const };
+    const text = hand.kind === 'draw' ? `スナップを${hand.count}枚引く（次のラウンドの手札に）` : hand.kind === 'redraw' ? '残った手札を山札に戻して、同じ枚数引き直す' : '最後に使ったスナップを1枚、手札に戻す';
+    return { id: skill.id, name: skill.name, type: 'support', weight, target: 'allies', effect, text, mp: skill.mp };
+  }
   if (heal && heal.kind === 'heal') {
     // 新しい戦闘の回復は味方全体。1人向けの回復は、全体に直す分だけ半分に
     const power = skill.target === 'ally' ? Math.round(heal.power / 2) : heal.power;
@@ -57,11 +64,16 @@ export function chainBasicAttack(element: Element = 'physical'): ChainMove {
   return { id: 'basic', name: '通常攻撃', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element, power: 20 }, text: `敵1体に${label}20（MP なし）` };
 }
 
-/** 本番の特性のうち、新しい戦闘で効く物だけを移す（延長・バトン・先制は新しい戦闘にない。部位は段階D で部位を作る時に） */
+/** 本番の特性を、新しい戦闘の特性にする（段階158。段階164 で、新しい戦闘にない効果も近い効果に置き換えた） */
 export function chainPassives(c: CharacterDef): ChainPassive[] {
   const out: ChainPassive[] = [];
   for (const p of c.passives ?? []) {
-    if (p.kind === 'elementBoost' || p.kind === 'comboBoost' || p.kind === 'regen' || p.kind === 'mpSave' || p.kind === 'bug') out.push({ ...p });
+    if (p.kind === 'elementBoost' || p.kind === 'comboBoost' || p.kind === 'regen' || p.kind === 'mpSave' || p.kind === 'bug' || p.kind === 'partBoost') out.push({ ...p });
+    // 段階164（仮の置き換え。段階G で外す）：新しい戦闘にない効果を、近い効果に
+    // 延長で引く枚数 → 手札の上限 +1、バトン → コンボの割増し、先制 → 最初のラウンドの威力 +30%
+    else if (p.kind === 'oneMoreDraw') out.push({ kind: 'handPlus', count: 1 });
+    else if (p.kind === 'batonBoost') out.push({ kind: 'comboBoost', rate: p.rate });
+    else if (p.kind === 'startDash') out.push({ kind: 'firstRound', rate: 0.3 });
   }
   return out;
 }

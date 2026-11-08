@@ -2255,6 +2255,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'timerBlast') parts.push(`${name(ev.uid)}が大爆発！`);
     else if (ev.type === 'flee') parts.push(`${name(ev.uid)}が逃げた！`);
     else if (ev.type === 'down') parts.push(`${name(ev.uid)}ダウン`);
+    else if (ev.type === 'handDraw') parts.push(ev.kind === 'draw' ? `スナップを${ev.count}枚引いた（次のラウンドの手札に）` : ev.kind === 'cycle' ? `手札を${ev.count}枚引き直した` : ev.count ? '使ったスナップを1枚、手札に戻した' : '戻すスナップがなかった');
     else if (ev.type === 'guarded') parts.push(`${name(ev.uid)}は${guardLabel(ev.left)}中（ダウンしない）`);
     else if (ev.type === 'defeat') parts.push(`${name(ev.uid)}を倒した`);
     else if (ev.type === 'fizzle') parts.push('直前の攻撃がなくて不発');

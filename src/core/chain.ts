@@ -123,7 +123,15 @@ export type ChainEffect =
   | { kind: 'trick'; trick: ChainTrick; element?: Element; power?: number }
   /** 状態：rounds ラウンド続く。power があれば、その属性で小さく当ててから付ける */
   | { kind: 'status'; status: ChainStatusKind; rounds: number; element?: Element; power?: number }
-  | { kind: 'heal'; power: number };
+  | { kind: 'heal'; power: number }
+  /**
+   * 手札に触れる技（段階164。今の星図の ひらめき・シャッフル・すりかえ を、新しい戦闘でも使えるように）。
+   * 動いた時に効く（並べ終えた後なので、次のラウンドの手札が変わる）：draw は count 枚引く（手札の上限を超えてよい）、
+   * cycle は残った手札を山札に戻して同じ枚数引き直す、retrieve は捨て札の一番新しい1枚を手札に戻す
+   */
+  | { kind: 'draw'; count: number }
+  | { kind: 'cycle' }
+  | { kind: 'retrieve' };
 
 export interface ChainMove {
   id: string;
@@ -177,10 +185,17 @@ export type ChainPassive =
   | { kind: 'comboBoost'; rate: number }
   | { kind: 'regen'; rate: number }
   | { kind: 'mpSave'; amount: number }
-  | { kind: 'bug'; rate: number };
+  | { kind: 'bug'; rate: number }
+  /**
+   * 段階164（仮の置き換え。段階G で一覧どおりの育成に入れ替える時に見直す）：今の育成の効果のうち、新しい戦闘になかった物
+   * partBoost：部位へのダメージ。firstRound：最初のラウンドの威力（今の「先制」の代わり）。handPlus：手札の上限（今の「延長で引く枚数」の代わり。合わせて1まで）
+   */
+  | { kind: 'partBoost'; rate: number }
+  | { kind: 'firstRound'; rate: number }
+  | { kind: 'handPlus'; count: number };
 
 /** 割合の特性の上限（段階158。今の本番の PASSIVE_CAPS と同じ考え） */
-export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2 };
+export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1 };
 
 /** 区画の中で持ち越す HP・MP（仲間の id ごと） */
 export interface ChainVitals {
@@ -425,6 +440,8 @@ export type ChainEvent =
   | { type: 'timerBlast'; uid: string }
   | { type: 'flee'; uid: string }
   | { type: 'down'; uid: string }
+  /** 手札に触れる技（段階164） */
+  | { type: 'handDraw'; uid: string; kind: 'draw' | 'cycle' | 'retrieve'; count: number }
   /** 警戒していてダウンしなかった（段階162 調整6）。left は警戒の残りラウンド */
   | { type: 'guarded'; uid: string; left: number }
   /** 部位を壊した（段階162）。of は本体の uid、reveals は出た弱点 */
@@ -688,15 +705,15 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     });
   }
   s.deck = shuffle(s, def.deck);
-  for (let i = 0; i < rules.handSize; i++) draw(s);
+  for (let i = 0; i < handLimit(s); i++) draw(s);
   planIntents(s);
   return s;
 }
 
 /** 特性の合計（種類ごと。上限で止める） */
-function passiveSum(u: ChainUnit, kind: 'comboBoost' | 'regen' | 'mpSave' | 'bug'): number {
+function passiveSum(u: ChainUnit, kind: 'comboBoost' | 'regen' | 'mpSave' | 'bug' | 'partBoost' | 'firstRound' | 'handPlus'): number {
   let sum = 0;
-  for (const p of u.passives ?? []) if (p.kind === kind) sum += p.kind === 'mpSave' ? p.amount : p.rate;
+  for (const p of u.passives ?? []) if (p.kind === kind) sum += p.kind === 'mpSave' ? p.amount : p.kind === 'handPlus' ? p.count : 'rate' in p ? p.rate : 0;
   const cap = kind === 'bug' ? Infinity : CHAIN_PASSIVE_CAPS[kind];
   return Math.min(sum, cap);
 }
@@ -711,6 +728,12 @@ function elementBoost(u: ChainUnit, el: Element): number {
 export function chainMoveMp(u: ChainUnit | undefined, move: ChainMove | null | undefined): number {
   if (!move?.mp) return 0;
   return Math.max(1, move.mp - (u ? passiveSum(u, 'mpSave') : 0));
+}
+
+/** 手札の上限（段階164：仲間の「手札の上限」の特性。合わせて1まで） */
+function handLimit(s: ChainState): number {
+  const plus = Math.max(0, ...s.allies.filter((a) => a.hp > 0).map((a) => passiveSum(a, 'handPlus')));
+  return s.rules.handSize + Math.min(plus, CHAIN_PASSIVE_CAPS.handPlus);
 }
 
 /** 戦闘が終わった時の HP・MP（段階158。区画の中の次の戦闘へ持ち越す） */
@@ -996,6 +1019,9 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   // 育成の特性（段階158）：属性の割増し・コンボの割増し
   if (actor.side === 'ally') {
     mult *= 1 + elementBoost(actor, el);
+    // 段階164：部位への割増し・最初のラウンドの割増し
+    if (chainEnemyDef(s, e.defId)?.part) mult *= 1 + passiveSum(actor, 'partBoost');
+    if (s.round === 1) mult *= 1 + passiveSum(actor, 'firstRound');
     if (opts.combo) mult *= 1 + passiveSum(actor, 'comboBoost');
   }
   let raw = ((power + (opts.add ?? 0)) * stat) / Math.max(1, e.def);
@@ -1076,6 +1102,31 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   const ctx: ActCtx = { countered: new Set(), stuck: false };
   const pierce = eff.kind === 'damage' && !!eff.pierce;
   const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid, pierce)].filter((x): x is ChainUnit => !!x));
+  // 手札に触れる技（段階164）
+  if (eff.kind === 'draw' || eff.kind === 'cycle' || eff.kind === 'retrieve') {
+    let n = 0;
+    if (eff.kind === 'draw') {
+      for (let k = 0; k < eff.count; k++) {
+        const before = s.hand.length;
+        draw(s);
+        n += s.hand.length - before;
+      }
+    } else if (eff.kind === 'cycle') {
+      const back = s.hand.length;
+      s.deck = shuffle(s, [...s.deck, ...s.hand]);
+      s.hand = [];
+      for (let k = 0; k < back; k++) draw(s);
+      n = s.hand.length;
+    } else {
+      const c = s.discard.pop();
+      if (c) {
+        s.hand.push(c);
+        n = 1;
+      }
+    }
+    ev.push({ type: 'handDraw', uid: actor.uid, kind: eff.kind, count: n });
+    return { ally: actor.uid, element: null, power: 0 };
+  }
   if (eff.kind === 'heal') {
     for (const a of s.allies.filter((x) => x.hp > 0)) {
       const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.power * actor.mag) / s.rules.healDiv));
@@ -1546,7 +1597,7 @@ function endRound(s: ChainState): void {
   s.elapsed += s.rules.roundLen;
   s.timeShift = 0;
   s.actedAt = {};
-  while (s.hand.length < s.rules.handSize && (s.deck.length > 0 || s.discard.length > 0)) draw(s);
+  while (s.hand.length < handLimit(s) && (s.deck.length > 0 || s.discard.length > 0)) draw(s);
   planIntents(s);
 }
 
