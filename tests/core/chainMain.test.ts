@@ -110,7 +110,10 @@ describe('新しい戦闘を本番用に（段階158）', () => {
     expect(chainMoveFromSkill(SKILLS.doubleSlash)?.effect).toMatchObject({ hits: 2, power: 30 });
     expect(chainMoveFromSkill(SKILLS.care)).toMatchObject({ weight: 1, target: 'allies', effect: { kind: 'heal', power: 23 } });
     expect(chainMoveFromSkill(SKILLS.tsukiBarai)?.target).toBe('enemies');
-    expect(chainMoveFromSkill(SKILLS.shuffle)).toBeNull();
+    // 段階164：手札に触れる技も使える
+    expect(chainMoveFromSkill(SKILLS.shuffle)).toMatchObject({ effect: { kind: 'cycle' }, mp: SKILLS.shuffle.mp, target: 'allies' });
+    expect(chainMoveFromSkill(SKILLS.inspiration)).toMatchObject({ effect: { kind: 'draw', count: 2 } });
+    expect(chainMoveFromSkill(SKILLS.swap)).toMatchObject({ effect: { kind: 'retrieve' } });
   });
 
   it('本番の仲間と敵を変える：通常攻撃に武器の属性、MP と特性を持つ。敵は行動から予定の癖を作る', () => {
@@ -118,7 +121,8 @@ describe('新しい戦闘を本番用に（段階158）', () => {
     const a = chainAllyFromCharacter(hero);
     expect(a.moves[0]).toMatchObject({ id: 'basic', effect: { element: 'fire' } });
     expect(a.mp).toBe(hero.stats.mp);
-    expect(a.passives).toEqual([{ kind: 'regen', rate: 0.03 }]);
+    // 段階164：延長で引く枚数は、手札の上限 +1 に置き換える
+    expect(a.passives).toEqual([{ kind: 'handPlus', count: 1 }, { kind: 'regen', rate: 0.03 }]);
     const e = chainEnemyFromMain(GOLDFISH_NOISE);
     expect(e).toMatchObject({ hp: GOLDFISH_NOISE.stats.hp, weak: ['ice'], resist: ['fire'] });
     expect(e.pattern[0]).toMatchObject({ id: 'finSlap', power: 28, element: 'physical' });
@@ -314,3 +318,36 @@ describe('新しい戦闘のアルバム（段階163）', () => {
     for (const id of CHAIN_AREA_SETUPS.a11_boss.snaps!) expect(CHAIN_SNAPS[id]).toBeTruthy();
   });
 });
+
+describe('新しい戦闘にない育成の効果を、近い効果で効かせる（段階164。仮の置き換え）', () => {
+  const party = [HERO, AKARI].map((c) => ({ ...c, skills: [SKILLS.inspiration, SKILLS.shuffle, SKILLS.swap] }));
+  const make = (passives: CharacterDef['passives'] = []) => {
+    const ps = party.map((c, i) => (i === 0 ? { ...c, passives } : c));
+    const def = buildMainChainBattle({ id: 'm', name: 'm', party: ps, enemies: [GOLDFISH_NOISE], chainEnemies: [dummy()], deck: BASE.deck, cards: BASE.cards, links: [] });
+    return createChainBattle(def, CHAIN_RULES, 4);
+  };
+
+  it('ひらめき：2枚引く（手札の上限を超えてよい）。すりかえ：捨て札の一番新しい1枚を戻す。シャッフル：残りを引き直す', () => {
+    const s = make();
+    const n = s.hand.length;
+    const r = runChainRound(s, [mv('hero', 'inspiration')]);
+    expect(r.state.hand.length).toBe(n + 2);
+    const s2 = make();
+    s2.discard = ['c17_quick'];
+    expect(runChainRound(s2, [mv('hero', 'swap')]).state.hand).toContain('c17_quick');
+    const s3 = make();
+    const r3 = runChainRound(s3, [mv('hero', 'shuffle')]).state;
+    expect(r3.hand.length).toBe(s3.hand.length);
+  });
+
+  it('延長で引く枚数 → 手札の上限+1。先制 → 最初のラウンドの威力+30%。部位への割増しは部位に効く', () => {
+    expect(make([{ kind: 'oneMoreDraw', count: 1 }]).hand.length).toBe(CHAIN_RULES.handSize + 1);
+    const plain = make();
+    const quick = make([{ kind: 'startDash' }]);
+    const t = plain.enemies[0].uid;
+    const a = dmg(runChainRound(plain, [mv('hero', 'basic', t)]), 'hero')[0].amount;
+    const b = dmg(runChainRound(quick, [mv('hero', 'basic', t)]), 'hero')[0].amount;
+    expect(b).toBe(Math.floor(a * 1.3));
+  });
+});
+
