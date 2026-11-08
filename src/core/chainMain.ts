@@ -1,4 +1,5 @@
 import { DROP_RATES } from '../data/constants';
+import { countOf, getAddError, type AlbumState } from './album';
 import { availableLinks, chainGrade, chainVitals, isChainFinish, type ChainAllyDef, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVariant, type ChainVitals } from './chain';
 import { nextRandom } from './rng';
 import type { CharacterDef, DamageType, Element, EnemyDef, SkillDef } from './types';
@@ -212,4 +213,34 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.finishLast && hand.some((m) => isChainFinish(m))) out.push('chain_climax');
   if (availableLinks(s, []).length > 0) out.push('chain_combo');
   return out;
+}
+
+/** 新しい戦闘のアルバムの決まり（段階163） */
+export interface ChainAlbumRules {
+  size: number;
+  copyMax: number;
+  climaxMax: number;
+}
+
+/** 新しい戦闘のアルバムに1枚入れられない理由（今のアルバムの決まり＋クライマックスの上限）。入れられるなら null */
+export function chainAlbumAddError(state: AlbumState, id: string, cards: Record<string, ChainMove>, rules: ChainAlbumRules): string | null {
+  const err = getAddError(state, id, rules.size, rules.copyMax);
+  if (err) return err;
+  if (isChainFinish(cards[id])) {
+    const climax = Object.entries(state.album).reduce((a, [k, n]) => a + (isChainFinish(cards[k]) ? n : 0), 0);
+    if (climax >= rules.climaxMax) return 'too many climaxes';
+  }
+  return null;
+}
+
+/** 新しい戦闘の山札（段階163）：アルバムの札を枚数分（cards の並び）＋並びの仲間ごとのスペシャル */
+export function chainAlbumDeck(state: AlbumState, cards: Record<string, ChainMove>, specials: Record<string, string[]>, partyIds: string[]): string[] {
+  const out = Object.keys(cards).flatMap((id) => Array.from({ length: state.album[id] ?? 0 }, () => id));
+  for (const id of partyIds) out.push(...(specials[id] ?? []));
+  return out;
+}
+
+/** アルバムの枚数がちょうどか（新しい戦闘の決まりで） */
+export function isChainAlbumComplete(state: AlbumState, rules: ChainAlbumRules): boolean {
+  return countOf(state.album) === rules.size;
 }

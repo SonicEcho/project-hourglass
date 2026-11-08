@@ -11,6 +11,9 @@ export const HAND_SIZE = 5;
 export const ALBUM_SIZE = 20;
 /** アルバムに入れられる、同じスナップの枚数の上限（段階41） */
 export const ALBUM_COPY_MAX = 4;
+
+/** 新しい戦闘のアルバム（段階163）：枚数・同じスナップの上限・クライマックスの上限（スペシャルは別に、仲間ごとに2枚） */
+export const CHAIN_ALBUM = { size: 20, copyMax: 4, climaxMax: 3 };
 /** 延長になった時に引く枚数 */
 export const ONE_MORE_DRAW = 1;
 /** 1ラウンドにチーム全体で使えるサポートスナップの枚数 */

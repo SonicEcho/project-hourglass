@@ -9,14 +9,17 @@ import { CHAIN17_CARDS as C, CHAIN17_COMBOS } from './chainTrial17';
 /** 新しい戦闘の札で、試しにない物（1-1 の回復） */
 const RECOVER: ChainMove = { id: 'a11_recover', name: 'リカバー', type: 'support', weight: 1, target: 'allies', effect: { kind: 'heal', power: 15 }, text: '味方全体の HP を少し回復' };
 
+/** リカバリー（段階163。1-1 のぬしの報酬）：味方全体を回復（中） */
+const RECOVERY: ChainMove = { id: 'a11_recovery', name: 'リカバリー', type: 'support', weight: 2, target: 'allies', effect: { kind: 'heal', power: 30 }, text: '味方全体の HP を回復（中）' };
+
 /** 1-1 で使う札（試しの調整17の札から） */
 export const A11_CARDS: Record<string, ChainMove> = Object.fromEntries(
-  [C.quick, C.closeUp, C.backlight, C.blueHour, C.strobe, C.wide, RECOVER, C.push, C.plus10, C.decisive, C.group, C.swing, C.snow].map((m) => [m.id, m]),
+  [C.quick, C.closeUp, C.backlight, C.blueHour, C.strobe, C.wide, RECOVER, RECOVERY, C.push, C.plus10, C.decisive, C.group, C.swing, C.snow, C.paperGun].map((m) => [m.id, m]),
 );
 
 /** 1-1 の札の絵と短い説明（試しにない物だけ） */
-export const A11_CARD_ART: Record<string, string> = { a11_recover: 'snap.recover' };
-export const A11_SHORT_TEXT: Record<string, string> = { a11_recover: '味方全体の\nHPを少し回復' };
+export const A11_CARD_ART: Record<string, string> = { a11_recover: 'snap.recover', a11_recovery: 'snap.recover' };
+export const A11_SHORT_TEXT: Record<string, string> = { a11_recover: '味方全体の\nHPを少し回復', a11_recovery: '味方全体の\nHPを回復（中）' };
 
 const times = (n: number, id: string): string[] => Array.from({ length: n }, () => id);
 
@@ -38,6 +41,17 @@ export const A11_DECK: string[] = [
   ...times(2, C.swing.id),
   ...times(2, C.snow.id),
 ];
+
+/**
+ * 新しい戦闘のスナップ（段階163）：アルバムに入れられる札の一覧。章ごとに足していく。並びはアルバムの画面の並び
+ */
+export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.values(A11_CARDS).filter((m) => !m.owner).map((m) => [m.id, m]));
+
+/** スペシャル（段階163）：アルバムに入れず、並びの仲間ごとに2枚ずつ山札に加わる */
+export const CHAIN_ALLY_SPECIALS: Record<string, string[]> = { hero: [C.swing.id, C.swing.id], akari: [C.snow.id, C.snow.id], mio: [C.paperGun.id, C.paperGun.id] };
+
+/** 最初のアルバム（段階163。A11_DECK からスペシャルを除いた20枚） */
+export const CHAIN_START_ALBUM: string[] = A11_DECK.filter((id) => !A11_CARDS[id]?.owner);
 
 /** 1-1 のコンボ（2枚のものを3つ） */
 export const A11_COMBOS: ChainLinkDef[] = CHAIN17_COMBOS.filter((l) => ['flashback', 'iceFlower', 'inSync'].includes(l.id));
@@ -116,6 +130,8 @@ export interface ChainAreaSetup {
   gradeAt: { high: number; mid: number };
   /** ポイ（段階162。1-1 のぬしの思い出の再演） */
   poi?: ChainBattleDef['poi'];
+  /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
+  snaps?: string[];
 }
 
 /** 1-1 の雑魚の戦闘 */
@@ -169,7 +185,7 @@ function a11Lord(): ChainEnemyDef[] {
 }
 
 export const CHAIN_AREA_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
-  ['a11_boss', { enemies: a11Lord(), variants: [], deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, poi: A11_POI }],
+  ['a11_boss', { enemies: a11Lord(), variants: [], deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, poi: A11_POI, snaps: [C.group.id, RECOVERY.id] }],
   ...A11_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a11_n1_') ? A11_CHAIN_HP_RATE.night1 : A11_CHAIN_HP_RATE.later;

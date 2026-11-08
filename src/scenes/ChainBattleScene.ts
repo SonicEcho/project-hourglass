@@ -29,8 +29,8 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
-import { buildMainChainBattle, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
+import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
 import { settleChainWin, type ChainWinReward } from './chainEncounter';
@@ -255,15 +255,18 @@ export class ChainBattleScene extends Phaser.Scene {
       this.lineup = storyBattleLineup();
       const base = CHAIN_TRIALS[0];
       const setup = CHAIN_AREA_SETUPS[area.id];
+      const party = currentParty(this.lineup);
+      // 山札（段階163）：区画を作り直した戦闘は、新しい戦闘のアルバム＋並びの仲間ごとのスペシャル
+      const albumDeck = setup ? chainAlbumDeck(run.chainAlbum, CHAIN_SNAPS, CHAIN_ALLY_SPECIALS, party.map((c) => c.id)) : undefined;
       const def = buildMainChainBattle({
         id: area.id,
         name: area.name,
-        party: currentParty(this.lineup),
+        party,
         enemies: area.enemies,
         chainEnemies: setup?.enemies,
         variants: setup?.variants,
         poi: setup?.poi,
-        deck: setup?.deck ?? base.deck,
+        deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
         cutoffRounds: area.cutoff?.rounds,

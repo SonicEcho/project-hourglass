@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addToAlbum,
+  albumFromIds,
   buildMainChainBattle,
+  chainAlbumAddError,
+  chainAlbumDeck,
+  gainSnaps,
+  removeFromAlbum,
   chainEncounterResult,
   chainTipTriggers,
   chainAllyFromCharacter,
@@ -18,7 +24,7 @@ import {
   type ChainState,
   type CharacterDef,
 } from '../../src/core';
-import { A11_COMBOS, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
+import { A11_COMBOS, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
 import { autoChainBattle, smartChainPlan } from '../../src/sim/chainAuto';
 
 let seedPick = 1;
@@ -276,3 +282,35 @@ describe('警戒（段階162 調整6）', () => {
   });
 });
 
+
+describe('新しい戦闘のアルバム（段階163）', () => {
+  it('最初のアルバムは20枚（スペシャルを除く）で、山札はアルバム＋並びの仲間ごとのスペシャル2枚', () => {
+    const a = albumFromIds(CHAIN_START_ALBUM);
+    expect(CHAIN_START_ALBUM.length).toBe(CHAIN_ALBUM.size);
+    expect(CHAIN_START_ALBUM.every((id) => !!CHAIN_SNAPS[id] && !CHAIN_SNAPS[id].owner)).toBe(true);
+    const deck = chainAlbumDeck(a, CHAIN_SNAPS, CHAIN_ALLY_SPECIALS, ['hero', 'akari']);
+    expect(deck.length).toBe(24);
+    expect(deck.filter((id) => id === 'c17_swing').length).toBe(2);
+    expect(deck.filter((id) => id === 'c17_paperGun').length).toBe(0);
+  });
+
+  it('クライマックスは3枚まで。同じスナップは4枚まで。20枚でいっぱい', () => {
+    let a = albumFromIds(CHAIN_START_ALBUM);
+    a = gainSnaps(a, ['c17_group', 'c17_group', 'c17_group', 'c17_decisive']);
+    // いっぱいなので、1枚外してから
+    a = removeFromAlbum(a, 'c17_quick');
+    expect(chainAlbumAddError(a, 'c17_group', CHAIN_SNAPS, CHAIN_ALBUM)).toBeNull();
+    a = addToAlbum(a, 'c17_group', CHAIN_ALBUM.size, CHAIN_ALBUM.copyMax);
+    a = removeFromAlbum(a, 'c17_quick');
+    a = addToAlbum(a, 'c17_group', CHAIN_ALBUM.size, CHAIN_ALBUM.copyMax);
+    a = removeFromAlbum(a, 'c17_quick');
+    // 決めの一枚1＋集合写真2＝3枚。もう入らない
+    expect(chainAlbumAddError(a, 'c17_group', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('too many climaxes');
+    expect(chainAlbumAddError(albumFromIds(CHAIN_START_ALBUM), 'c17_quick', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('no spare copy');
+  });
+
+  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（集合写真・リカバリー）', () => {
+    expect(CHAIN_AREA_SETUPS.a11_boss.snaps).toEqual(['c17_group', 'a11_recovery']);
+    for (const id of CHAIN_AREA_SETUPS.a11_boss.snaps!) expect(CHAIN_SNAPS[id]).toBeTruthy();
+  });
+});
