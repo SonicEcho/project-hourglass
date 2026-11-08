@@ -2,7 +2,7 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
@@ -51,10 +51,19 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
       text: '赤のスナップは「クライマックス」！\nラウンドの最後にだけ置ける大技です。\n攻撃をたくさん当てたあとに使うほど強くなります。',
     },
   ],
+  // スペシャルとコンボは、1戦目では出さず、2戦目にまとめて（開発者と決めた。最初に詰め込みすぎないように。2戦目は手札を決めて必ずそろえる）
   chain_combo: [
     {
+      target: 'intro',
+      text: '今回は「スペシャル」と「コンボ」を覚えましょう！',
+    },
+    {
+      target: 'specialCard',
+      text: '顔マークのついたオレンジのスナップは「スペシャル」。\nその仲間だけが使える、専用のスナップです。',
+    },
+    {
       target: 'comboBar',
-      text: 'コンボ発動のチャンス！\n線でつながったスナップがそろうと、まとめて大技を放てます。\nラウンドの最後の行動に選びましょう。',
+      text: '決まったスナップがそろうと「コンボ」発動のチャンス！\n線でつながったスナップが材料で、まとめて大技を放てます。\nコンボはラウンドの最後の行動に選びましょう。',
     },
   ],
 };
@@ -62,5 +71,8 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
 export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_weak', 'chain_addon', 'chain_climax', 'chain_combo'];
 
-/** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る） */
-export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_swing'];
+/** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
+export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
+
+/** 2戦目の最初の手札（スペシャル2枚で、コンボ「息ぴったり」がそろう） */
+export const CHAIN_TUTORIAL_HAND2 = ['c17_swing', 'c17_snow', 'c17_closeUp', 'c17_backlight', 'c17_quick'];

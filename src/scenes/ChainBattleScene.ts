@@ -29,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
@@ -231,6 +231,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.trial = data.trial;
     this.stage = data.stage ?? 'mid';
     this.encounter = data.encounter;
+    this.firstTutorialBattle = false;
     this.speed = browserStorage().read(SPEED_KEY) === '2' ? 2 : 1;
     const area = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
     if (data.encounter && !area) throw new Error(`unknown area battle ${data.encounter.battle}`);
@@ -258,7 +259,11 @@ export class ChainBattleScene extends Phaser.Scene {
       const vitals = data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
       this.s = createChainBattle(def, CHAIN_RULES, this.seed, loadKnown(), vitals ?? {});
       // チュートリアル（段階161）：最初の戦闘は手札を決めておく（2ラウンド目にエフェクトとクライマックスの説明が出るように）
-      if (!seenTips().includes('chain_plan')) forceHand(this.s, CHAIN_TUTORIAL_HAND);
+      // 2戦目（最初の戦闘を終えて、スペシャルとコンボをまだ見ていない）は、コンボがそろう手札にする
+      const seenNow = seenTips();
+      this.firstTutorialBattle = !seenNow.includes('chain_plan');
+      if (this.firstTutorialBattle) forceHand(this.s, CHAIN_TUTORIAL_HAND);
+      else if (!seenNow.includes('chain_combo')) forceHand(this.s, CHAIN_TUTORIAL_HAND2);
       playBgm(this, BATTLE_BGM[area.id] ?? (area.boss ? BGM.boss : BGM.battle));
       // 戦闘中の印（今の戦闘と同じ）：閉じたら「つづきから」で、この戦闘の始めから
       if (!data.encounter.hunt) {
@@ -407,6 +412,8 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 今の説明の組と、何番目か。照らす覆い */
   private coach: { id: string; i: number } | null = null;
+  /** この戦闘が、チュートリアルの最初の戦闘か（始めた時に、まだ最初の説明を見ていなかった） */
+  private firstTutorialBattle = false;
   /** 今の手順を出し始めた時刻（出た直後のタップは受け付けない。実行中の「タップで次へ」の続きで、うっかり閉じないように） */
   private coachSince = { key: '', at: 0 };
   private coachLayer: Phaser.GameObjects.Container | null = null;
@@ -417,7 +424,8 @@ export class ChainBattleScene extends Phaser.Scene {
     if (!this.encounter || this.busy || this.s.outcome !== 'ongoing' || this.s.shutter) return;
     if (!this.coach) {
       const seen = seenTips();
-      const want = chainTipTriggers(this.s);
+      // スペシャルとコンボは、1戦目では出さない（2戦目にまとめて）
+      const want = chainTipTriggers(this.s).filter((x) => !(this.firstTutorialBattle && x === 'chain_combo'));
       const id = CHAIN_COACH_ORDER.find((x) => want.includes(x) && !seen.includes(x));
       if (!id) return;
       this.coach = { id, i: 0 };
@@ -453,7 +461,7 @@ export class ChainBattleScene extends Phaser.Scene {
       this.render();
       return;
     }
-    if ((step.target === 'addonCard' || step.target === 'climaxCard') && this.tab !== 'cards') {
+    if ((step.target === 'addonCard' || step.target === 'climaxCard' || step.target === 'specialCard' || step.target === 'comboBar') && this.tab !== 'cards') {
       this.tab = 'cards';
       this.render();
       return;
@@ -523,6 +531,8 @@ export class ChainBattleScene extends Phaser.Scene {
         return null;
       case 'weak':
         return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
+      case 'specialCard':
+        return card(this.s.hand.findIndex((id) => !!this.s.def.cards[id]?.owner));
       case 'addonCard':
         return card(this.s.hand.findIndex((id) => this.s.def.cards[id]?.effect.kind === 'addon'));
       case 'climaxCard':
