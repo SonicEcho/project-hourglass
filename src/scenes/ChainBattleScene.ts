@@ -170,6 +170,8 @@ const TRICK_LABEL: Record<ChainTrick, string> = { spread: 'パノラマ', expose
 const STATUS_LABEL: Record<ChainStatusKind, string> = { slow: 'スロー', burn: 'ヒート', stack: 'クラック', weak: 'ピンぼけ', seal: 'ポーズ', confuse: 'ハレーション', drain: 'リワインド' };
 /** 分裂で出てきた敵の絵（元の敵の絵を小さく使う） */
 const SPLIT_ART: Record<string, string> = { miniBalloon: 'balloonNoise' };
+/** ぬし戦の並べ方：右半分（予定の札・ポイ・名前）の左の端 */
+const BOSS_PANEL_X = 196;
 
 /** 敵の絵（分裂した子は親の絵、部位（段階162。「本体の id_部位」）は本体の絵） */
 function artOfEnemy(defId: string): string | undefined {
@@ -509,6 +511,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const colW = GAME_WIDTH / Math.max(1, foes.length);
     switch (t) {
       case 'intent': {
+        if (this.bossLayout(this.s)) return { x: BOSS_PANEL_X + 4, y: STAGE_Y + 2, w: GAME_WIDTH - BOSS_PANEL_X - 8, h: 42 };
         const k = Math.max(0, foes.findIndex((e) => e.hp > 0 && !e.gone));
         return { x: colW * k + 6, y: STAGE_Y + 2, w: colW - 6, h: 42 };
       }
@@ -537,7 +540,7 @@ export class ChainBattleScene extends Phaser.Scene {
       case 'intro':
         return null;
       case 'poiBar':
-        return { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
+        return this.bossLayout(this.s) ? { x: BOSS_PANEL_X - 4, y: STAGE_Y + 44, w: GAME_WIDTH - BOSS_PANEL_X, h: 30 } : { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
       case 'parts': {
         const spots = this.s.enemies.filter((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0).map((e) => this.partSpot(this.s, e)).filter((x): x is NonNullable<typeof x> => !!x);
         if (!spots.length) return null;
@@ -546,7 +549,7 @@ export class ChainBattleScene extends Phaser.Scene {
         return { x: Math.max(2, Math.min(...xs) - 110), y: Math.min(...ys) - 34, w: Math.min(GAME_WIDTH - 4, Math.max(...xs) - Math.min(...xs) + 220), h: Math.max(...ys) - Math.min(...ys) + 68 };
       }
       case 'weak':
-        return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
+        return this.bossLayout(this.s) ? { x: BOSS_PANEL_X - 4, y: STAGE_Y + 80, w: GAME_WIDTH - BOSS_PANEL_X, h: 32 } : { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
       case 'specialCard':
         return card(this.s.hand.findIndex((id) => !!this.s.def.cards[id]?.owner));
       case 'addonCard':
@@ -702,7 +705,6 @@ export class ChainBattleScene extends Phaser.Scene {
     this.slantButton(GAME_WIDTH - 8 - 200, CMD_Y, 200, 46, '結果まで飛ばす ▶▶', () => this.skipToEnd(), { size: 14 });
   }
 
-  /** 画面に出す敵（分裂して倒れた元の敵は出さない） */
   /** ポイの残り（段階162。1-1 のぬしの思い出の再演）。並べた行動の重さの分を、薄く「減る見込み」に */
   private drawPoi(view: ChainState): void {
     const poi = view.def.poi;
@@ -711,11 +713,13 @@ export class ChainBattleScene extends Phaser.Scene {
     const left = view.poi ?? poi.total;
     const planned = this.busy ? 0 : this.plan.reduce((a, p) => a + (chainMoveOf(this.s, p)?.weight ?? 0), 0);
     const after = Math.max(0, left - planned);
-    const x = 70;
-    const y = STAGE_Y + 50;
+    const lay = this.bossLayout(view);
+    const bx = lay ? BOSS_PANEL_X : 8;
+    const x = bx + 40;
+    const y = lay ? STAGE_Y + 58 : STAGE_Y + 50;
     const w = GAME_WIDTH - x - 70;
-    r.add(this.para(8, y - 9, GAME_WIDTH - 16, 22, 0x000000, 0.65, 6));
-    r.add(addText(this, 16, y + 2, 'ポイ', { size: 12, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
+    r.add(this.para(bx, y - 9, GAME_WIDTH - bx - 8, 22, 0x000000, 0.65, 6));
+    r.add(addText(this, bx + 8, y + 2, 'ポイ', { size: 12, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
     r.add(this.add.rectangle(x, y - 3, w, 10, 0x1a2a40).setOrigin(0).setStrokeStyle(1, 0x9ad0ff));
     r.add(this.add.rectangle(x, y - 3, (w * left) / poi.total, 10, 0x6bc8ff, 0.35).setOrigin(0));
     r.add(this.add.rectangle(x, y - 3, (w * after) / poi.total, 10, after <= 6 ? 0xff6b8a : 0x6bc8ff).setOrigin(0));
@@ -737,11 +741,22 @@ export class ChainBattleScene extends Phaser.Scene {
     return s.enemies.filter((x) => chainEnemyDef(s, x.defId)?.part?.of === body.defId && !x.gone);
   }
 
+  /** ぬし戦の並べ方（段階162 調整3）：場に出る敵が部位のある本体1体だけ */
+  private bossLayout(s: ChainState): boolean {
+    const list = this.shownEnemies(s);
+    return list.length === 1 && this.partsOf(s, list[0]).length > 0;
+  }
+
   /** 部位がある本体（ぬし）の絵の大きさと中心 */
   private bossArt(s: ChainState, e: ChainUnit, cx: number): { x: number; y: number; size: number } | null {
-    // 敵の場（上の帯の下から、案内の帯の上まで）に収まるように：下の端を案内の帯の上にそろえる
-    const size = 188;
-    return this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part ? { x: cx, y: MSG_TOP - size / 2 - 2, size } : null;
+    if (!(this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part)) return null;
+    // ぬしが1体の時（段階162 調整3）：左半分に、敵の場の高さいっぱいで（予定の札・ポイ・名前は右半分へ。絵に何も重ねない）
+    if (this.bossLayout(s)) {
+      const size = MSG_TOP - STAGE_Y - 6;
+      return { x: BOSS_PANEL_X / 2, y: (STAGE_Y + MSG_TOP) / 2, size };
+    }
+    const size = 120;
+    return { x: cx, y: MSG_TOP - size / 2 - 2, size };
   }
 
   /** 部位の印の位置（ぬしの絵の中の割合 ENEMY_PART_SPOTS。書いていなければ絵の上のほうに横に並べる） */
@@ -773,7 +788,7 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(ring);
     if (targetable) this.tweens.add({ targets: ring, alpha: 0.4, duration: 500, yoyo: true, repeat: -1 });
     if (!alive) r.add(addText(this, p.x, p.y, '×', { size: 26, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
-    const left = p.side === 'left';
+    const left = p.side === 'left' && p.x - 110 > 0;
     const lx = left ? p.x - 26 : p.x + 26;
     const label = this.sticker(lx + (left ? -34 : 34), p.y - 10, alive ? part.name : `${part.name} BREAK`, alive ? YELLOW : 0x808080, '#000000', left ? 4 : -4, 10);
     r.add(label);
@@ -804,11 +819,15 @@ export class ChainBattleScene extends Phaser.Scene {
     const ghost = this.busy ? {} : plannedEffects(this.s, this.plan);
     list.forEach((e, i) => {
       const cx = colW * i + colW / 2;
-      const x0 = colW * i;
       const alive = e.hp > 0 && !e.gone;
       const boss = this.bossArt(s, e, cx);
       const size = boss ? boss.size : Math.min(100, colW - 20) * (SPLIT_ART[e.defId] ? 0.7 : 1);
       const artY = boss ? boss.y : ART_Y;
+      const artX = boss ? boss.x : cx;
+      // ぬし戦は右半分に、予定の札・ポイ・名前と HP（段階162 調整3）
+      const lay = this.bossLayout(s);
+      const x0 = lay ? BOSS_PANEL_X : colW * i;
+      const panelW = lay ? GAME_WIDTH - BOSS_PANEL_X - 4 : colW;
       const isTarget = this.pending?.move.target === 'enemy' && alive;
       if (this.busy && e.uid === this.actorUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, RED, 0.12).setStrokeStyle(3, RED));
       if (this.busy && e.uid === this.targetUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, YELLOW, 0.08).setStrokeStyle(3, YELLOW));
@@ -818,25 +837,25 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(sel);
       }
       // 敵の後ろの赤い光
-      if (alive) r.add(this.add.circle(cx, artY, size * 0.55, 0xff3040, 0.18));
+      if (alive) r.add(this.add.circle(artX, artY, size * 0.55, 0xff3040, 0.18));
       const art = artOfEnemy(e.defId);
       if (art && hasImage(this, art)) {
-        const img = this.add.image(cx, artY, art);
+        const img = this.add.image(artX, artY, art);
         img.setScale(size / Math.max(img.width, img.height));
         if (!alive) img.setAlpha(0.15).setTint(0x606060);
         else if (e.down) img.setAngle(-14).setTint(0xb0b0ff);
         r.add(img);
         this.enemyImages.set(e.uid, img);
-      } else r.add(this.add.circle(cx, artY, size / 2.4, COLORS.enemy, alive ? 1 : 0.2));
+      } else r.add(this.add.circle(artX, artY, size / 2.4, COLORS.enemy, alive ? 1 : 0.2));
       // 名前・弱点（分かるまで「？」。調整9）・HP
-      const ny = STAGE_Y + 172;
+      const ny = lay ? STAGE_Y + 94 : STAGE_Y + 172;
       const name = addText(this, x0 + 8, ny, e.name, { size: 12, bold: true, color: alive ? '#ffffff' : COLORS.dimText }).setOrigin(0, 0.5).setStroke('#000000', 3);
       // 属性チェンジの敵は、今の弱点がいつも見える（調整12）
       const known = e.trait === 'shift' ? e.weak : e.weak.filter((w) => isWeakKnown(s, e.defId, w));
-      const wx = x0 + colW - 16;
+      const wx = x0 + panelW - 16;
       // 弱点は「弱点」と言葉を添える（分かるまで「弱点？」）
       const shownWeak = known.slice(0, 2);
-      const nameRoom = colW - (shownWeak.length ? 46 + shownWeak.length * 20 : 56);
+      const nameRoom = panelW - (shownWeak.length ? 46 + shownWeak.length * 20 : 56);
       if (name.width > nameRoom) name.setScale(nameRoom / name.width);
       r.add(name);
       if (shownWeak.length) {
@@ -850,8 +869,8 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(addText(this, wx - 10, ny, '弱点？', { size: 9, bold: true, color: '#c9d0ea' }).setOrigin(0.5));
       }
       // 敵の足元に、その敵の色の線（上の予定の札・時間の帯の印と同じ色）
-      if (alive) r.add(this.add.rectangle(x0 + 8 + (colW - 18) / 2, ny + 25, colW - 18, 3, this.foeColor(s, e.uid), 1));
-      const bw = colW - 18;
+      if (alive) r.add(this.add.rectangle(x0 + 8 + (panelW - 18) / 2, ny + 25, panelW - 18, 3, this.foeColor(s, e.uid), 1));
+      const bw = panelW - 18;
       r.add(this.para(x0 + 8, ny + 13, bw, 7, 0x2a0a12, 1, 3));
       if (e.hp > 0) r.add(this.para(x0 + 8, ny + 13, Math.max(6, bw * (e.hp / e.maxHp)), 7, RED, 1, 3));
       // 特徴：黄色の傾いたシール
@@ -874,16 +893,16 @@ export class ChainBattleScene extends Phaser.Scene {
       const trick = plannedFx.trick ?? e.trick;
       if (trick) chips.push({ text: `◎${TRICK_LABEL[trick]}`, color: CHIP_ONCE, planned: !!plannedFx.trick });
       chips.forEach((c, k) => {
-        const cy = STAGE_Y + 78 + k * 19;
+        const cy = (lay ? STAGE_Y + 136 : STAGE_Y + 78) + k * 19;
         const t = addText(this, x0 + 14, cy, c.text, { size: 10, bold: true, color: c.planned ? '#ffffff' : '#06201e' }).setOrigin(0, 0.5);
-        if (t.width > colW - 24) t.setScale((colW - 24) / t.width);
+        if (t.width > panelW - 24) t.setScale((panelW - 24) / t.width);
         const box = this.add.rectangle(x0 + 8, cy, t.displayWidth + 12, 16, c.color, c.planned ? 0.25 : 1).setOrigin(0, 0.5).setAngle(k === 0 ? -2 : 2);
         if (c.planned) box.setStrokeStyle(1.5, c.color);
         else if (c.color === CHIP_ONCE) t.setColor('#ffffff');
         r.add(box);
         r.add(t);
       });
-      if (e.down) r.add(this.sticker(cx + 10, ART_Y + 30, 'DOWN', RED, '#ffffff', 8, 14));
+      if (e.down) r.add(this.sticker(artX + 10, artY + 30, 'DOWN', RED, '#ffffff', 8, 14));
       // 予定：黒い斜めの札に、赤い丸の時刻（大技・全体・逃げるは黄色）。すばやい敵は2つの時刻
       const intents = s.intents.filter((it) => it.enemy === e.uid);
       if (intents.length) {
@@ -894,7 +913,7 @@ export class ChainBattleScene extends Phaser.Scene {
         const veiled = !!e.veiled;
         const detail = veiled ? '予定が見えない' : it.move.flee ? '逃げる' : `${it.move.all ? '全体' : foe ? `→ ${foe}（ハレーション）` : `→ ${tgt}`} ${it.move.power}`;
         const px = x0 + 12;
-        const pw = colW - 18;
+        const pw = panelW - 18;
         const a = e.down ? 0.35 : 1;
         r.add(this.para(px + 3, STAGE_Y + 9, pw, 34, RED, 0.45 * a, 8));
         r.add(this.para(px, STAGE_Y + 6, pw, 34, big ? 0x3a0010 : 0x000000, a, 8, { w: 2, color: this.foeColor(s, e.uid) }));
