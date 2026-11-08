@@ -545,6 +545,15 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'guard': {
+        // 警戒の印（敵の絵の下寄り。ぬし戦は絵の上の端）
+        const k = foes.findIndex((e) => e.hp > 0 && !e.gone && (e.guard ?? 0) > 0);
+        if (k < 0) return null;
+        const art = this.bossArt(this.s, foes[k], colW * k + colW / 2);
+        const x = art ? art.x + 6 : colW * k + colW / 2 + 6;
+        const y = art ? art.y - art.size / 2 + 16 : ART_Y + 34;
+        return { x: x - 56, y: y - 18, w: 112, h: 36 };
+      }
       case 'poiBar':
         return this.bossLayout(this.s) ? { x: 2, y: STAGE_Y + 2, w: BOSS_COL + 2, h: 166 } : { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
       case 'parts': {

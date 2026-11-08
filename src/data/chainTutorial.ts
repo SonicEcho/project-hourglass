@@ -2,7 +2,7 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
@@ -45,7 +45,14 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
   chain_weak: [
     {
       target: 'weak',
-      text: '敵の弱点を突くと「ダウン」させられます。\nダウンした敵の予定はキャンセル！\nただし、起きた敵はしばらく「警戒」してダウンしません。\n「弱点？」の敵には、いろいろな属性を試してみましょう。',
+      text: '敵の弱点を突くと「ダウン」させられます。\nダウンした敵の予定はキャンセル！\n「弱点？」の敵には、いろいろな属性を試してみましょう。',
+    },
+  ],
+  // 警戒（段階162 調整8）：初めて敵に警戒が付いた時に、その印を照らす
+  chain_guard: [
+    {
+      target: 'guard',
+      text: 'ダウンから起きた敵は「警戒」状態！\n警戒中は、弱点を突いてもダウンしません。\nダウンさせるたびに、警戒 → 警戒+ → 警戒++ と長くなります。',
     },
   ],
   chain_addon: [
@@ -78,7 +85,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_weak', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_weak', 'chain_guard', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
