@@ -173,6 +173,10 @@ export class ChainBattleScene extends Phaser.Scene {
   private warnMsg = '';
   /** クライマックスの確かめ：1回目のタップで知らせた札 */
   private climaxOk: string | null = null;
+  /** コンボのカットイン（出ている物と、このラウンドで出したコマ） */
+  private cutInBox: Phaser.GameObjects.Container | null = null;
+  private cutInMasks: Phaser.GameObjects.Graphics[] = [];
+  private cutInShown = new Set<number>();
 
   private warn(text: string): void {
     this.message = text;
@@ -1103,6 +1107,10 @@ export class ChainBattleScene extends Phaser.Scene {
     this.advance = null;
     this.time.removeAllEvents();
     this.tweens.killAll();
+    this.cutInBox?.destroy(true);
+    this.cutInBox = null;
+    for (const m of this.cutInMasks) m.destroy();
+    this.cutInMasks = [];
     let before = this.s;
     for (const f of this.runFrames) {
       if (!this.runResults.has(f.order)) this.runResults.set(f.order, describe(f, before));
@@ -1116,6 +1124,7 @@ export class ChainBattleScene extends Phaser.Scene {
 
   private execute(): void {
     if (this.busy || this.plan.length === 0) return;
+    this.cutInShown = new Set();
     const { state, frames } = runChainRound(this.s, this.plan);
     this.runFinal = state;
     this.runFrames = frames;
@@ -1206,6 +1215,84 @@ export class ChainBattleScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * コンボのカットイン（本番の連携技のカットインと同じ形。段階158 調整5）：画面を暗くし、動く仲間の数だけ斜めの帯を重ね、
+   * 帯ごとに仲間の色と顔を大きく（横から滑り込む）。真ん中の黒い箱に技名と「COMBO」。終わりに白く光って揺れる。画面のタップで先へ
+   */
+  private comboCutIn(name: string, defIds: string[], next: () => void): void {
+    const ids = defIds.length ? defIds.slice(0, 3) : [''];
+    const c = this.add.container(0, 0).setDepth(90);
+    this.cutInBox = c;
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0));
+    const rad = Phaser.Math.DegToRad(-12);
+    const n = ids.length;
+    const bandH = n === 1 ? 360 : n === 2 ? 300 : 220;
+    const bandW = GAME_WIDTH + 260;
+    const gap = 8;
+    const total = n * bandH + (n - 1) * gap;
+    const at = (cy: number, lx: number, ly: number) => new Phaser.Math.Vector2(GAME_WIDTH / 2 + lx * Math.cos(rad) - ly * Math.sin(rad), cy + lx * Math.sin(rad) + ly * Math.cos(rad));
+    ids.forEach((id, i) => {
+      const cy = GAME_HEIGHT / 2 - total / 2 + bandH / 2 + i * (bandH + gap);
+      const color = ALLY_COLOR[id] ?? GOLD;
+      const corners = [at(cy, -bandW / 2, -bandH / 2), at(cy, bandW / 2, -bandH / 2), at(cy, bandW / 2, bandH / 2), at(cy, -bandW / 2, bandH / 2)];
+      const mask = this.make.graphics({}, false).fillStyle(0xffffff).fillPoints(corners, true);
+      this.cutInMasks.push(mask);
+      const inner = this.add.container(0, 0);
+      inner.setMask(mask.createGeometryMask());
+      c.add(inner);
+      inner.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, color).setOrigin(0));
+      const lines = this.add.graphics().lineStyle(2, 0xffffff, 0.14);
+      for (let x = -200; x < GAME_WIDTH + 200; x += 22) lines.lineBetween(x, cy - bandH, x + 60, cy + bandH);
+      inner.add(lines);
+      // 顔：互い違いに右・左へ置き、横から滑り込む
+      const pid = ALLY_FACE[id];
+      if (pid && hasImage(this, pid)) {
+        const img = this.add.image(0, 0, pid).setOrigin(0.5, 0);
+        img.setScale((bandH * 1.45) / img.height);
+        const right = i % 2 === 0;
+        const px = right ? GAME_WIDTH * 0.66 : GAME_WIDTH * 0.34;
+        img.setPosition(px + (right ? 90 : -90), cy - bandH / 2 - 30).setAlpha(0);
+        inner.add(img);
+        this.tweens.add({ targets: img, x: px, alpha: 1, duration: 280, delay: i * 160, ease: 'Cubic.easeOut' });
+      }
+      c.add(this.add.graphics().lineStyle(10, 0x000000).strokePoints(corners, true).lineStyle(4, 0xffffff).strokePoints(corners, true));
+      if (id) {
+        const right = i % 2 === 0;
+        const np = right ? at(cy, -GAME_WIDTH / 2 + 30, -bandH / 2 + 50) : at(cy, GAME_WIDTH / 2 - 30, bandH / 2 - 50);
+        const nm = addText(this, np.x, np.y, this.allyName(id), { size: 24, bold: true }).setOrigin(right ? 0 : 1, 0.5).setAngle(-12);
+        nm.setFontStyle('bold italic').setShadow(3, 3, '#000000', 0, false, true);
+        c.add(nm);
+      }
+    });
+    // 真ん中の技名
+    const title = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setAngle(-8);
+    const label = addText(this, 0, 0, name, { size: 32, bold: true }).setOrigin(0.5);
+    label.setFontStyle('bold italic').setShadow(4, 4, '#ff2d55', 0, false, true);
+    if (label.width > GAME_WIDTH - 60) label.setScale((GAME_WIDTH - 60) / label.width);
+    const boxW = Math.max(240, label.displayWidth + 48);
+    title.add(this.add.rectangle(0, 4, boxW, 66, 0x000000).setStrokeStyle(2, 0xffffff, 0.5));
+    title.add(label);
+    const tag = addText(this, -boxW / 2 + 12, -46, n > 1 && defIds.length > 1 ? 'C O M B O   ×   L I N K' : 'C O M B O', { size: 13, bold: true, color: '#ffd700' });
+    tag.setFontStyle('bold italic').setShadow(2, 2, '#000000', 0, false, true);
+    title.add(tag);
+    title.setScale(2.2).setAlpha(0);
+    c.add(title);
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 420, duration: 280, ease: 'Back.easeOut' });
+    playSe(this, SE.tap);
+    const finish = () => {
+      if (this.cutInBox !== c) return;
+      const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0).setDepth(95);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
+      this.cameras.main.shake(260, 0.012);
+      c.destroy(true);
+      for (const m of this.cutInMasks) m.destroy();
+      this.cutInMasks = [];
+      this.cutInBox = null;
+      next();
+    };
+    this.wait(1400, finish);
+  }
+
   /** 差し込みの帯（パノラマ・連携技など。斜めの帯が右から入って、少しして消える） */
   private cutIn(text: string, sub: string, color: number, faces: string[]): void {
     const y = STAGE_Y + 196;
@@ -1275,6 +1362,16 @@ export class ChainBattleScene extends Phaser.Scene {
       this.wait(WAIT.cancel, () => this.playFrames(frames, i + 1, final, f.state));
       return;
     }
+    // コンボ：行動の前に、本番の連携技と同じ全画面のカットイン（動く仲間の顔を斜めの帯で大きく、真ん中に技名）
+    const link = f.events.find((e) => e.type === 'link');
+    if (link && link.type === 'link' && !this.cutInShown.has(f.order)) {
+      this.cutInShown.add(f.order);
+      this.message = `${when}　${label}`;
+      this.render(before);
+      const ids = link.uids.map((u) => findChainUnit(before, u)?.defId ?? '').filter(Boolean);
+      this.comboCutIn(link.name, ids, () => this.playFrames(frames, i, final, before));
+      return;
+    }
     this.message = `${when}　${label}`;
     this.render(before);
     this.flyEffects(f, before);
@@ -1296,11 +1393,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private cutInFor(f: ChainFrame, before: ChainState): void {
     const actor = findChainUnit(before, f.uid);
     const link = f.events.find((e) => e.type === 'link');
-    if (link && link.type === 'link') {
-      const ids = link.uids.map((u) => findChainUnit(before, u)?.defId ?? '').filter(Boolean);
-      this.cutIn(`${link.name}！`, '連携技', 0xc88a10, ids);
-      return;
-    }
+    // コンボは、行動の前に全画面のカットイン（comboCutIn）を出すので、ここでは出さない
+    if (link && link.type === 'link') return;
     const spread = f.events.find((e) => e.type === 'trickUse' && e.trick === 'spread');
     if (spread && spread.type === 'trickUse' && spread.to?.length) {
       this.cutIn('パノラマ！', `${f.name}の一撃が、ほかの敵みんなに広がった`, 0x7a3ad8, actor?.side === 'ally' ? [actor.defId] : []);
