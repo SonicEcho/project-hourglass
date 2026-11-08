@@ -170,8 +170,9 @@ const TRICK_LABEL: Record<ChainTrick, string> = { spread: 'パノラマ', expose
 const STATUS_LABEL: Record<ChainStatusKind, string> = { slow: 'スロー', burn: 'ヒート', stack: 'クラック', weak: 'ピンぼけ', seal: 'ポーズ', confuse: 'ハレーション', drain: 'リワインド' };
 /** 分裂で出てきた敵の絵（元の敵の絵を小さく使う） */
 const SPLIT_ART: Record<string, string> = { miniBalloon: 'balloonNoise' };
-/** ぬし戦の並べ方：右半分（予定の札・ポイ・名前）の左の端 */
-const BOSS_PANEL_X = 196;
+/** ぬし戦の並べ方（段階162 調整4）：真ん中にぬしの絵（BOSS_ART）、左右の柱（幅 BOSS_COL）に、ポイ（左）と予定の札（右） */
+const BOSS_ART = 192;
+const BOSS_COL = (GAME_WIDTH - BOSS_ART) / 2 - 2;
 
 /** 敵の絵（分裂した子は親の絵、部位（段階162。「本体の id_部位」）は本体の絵） */
 function artOfEnemy(defId: string): string | undefined {
@@ -511,7 +512,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const colW = GAME_WIDTH / Math.max(1, foes.length);
     switch (t) {
       case 'intent': {
-        if (this.bossLayout(this.s)) return { x: BOSS_PANEL_X + 4, y: STAGE_Y + 2, w: GAME_WIDTH - BOSS_PANEL_X - 8, h: 42 };
+        if (this.bossLayout(this.s)) return { x: GAME_WIDTH - BOSS_COL - 4, y: STAGE_Y + 2, w: BOSS_COL + 2, h: 114 };
         const k = Math.max(0, foes.findIndex((e) => e.hp > 0 && !e.gone));
         return { x: colW * k + 6, y: STAGE_Y + 2, w: colW - 6, h: 42 };
       }
@@ -540,7 +541,7 @@ export class ChainBattleScene extends Phaser.Scene {
       case 'intro':
         return null;
       case 'poiBar':
-        return this.bossLayout(this.s) ? { x: BOSS_PANEL_X - 4, y: STAGE_Y + 44, w: GAME_WIDTH - BOSS_PANEL_X, h: 30 } : { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
+        return this.bossLayout(this.s) ? { x: 2, y: STAGE_Y + 2, w: BOSS_COL + 2, h: 166 } : { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
       case 'parts': {
         const spots = this.s.enemies.filter((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0).map((e) => this.partSpot(this.s, e)).filter((x): x is NonNullable<typeof x> => !!x);
         if (!spots.length) return null;
@@ -549,7 +550,7 @@ export class ChainBattleScene extends Phaser.Scene {
         return { x: Math.max(2, Math.min(...xs) - 110), y: Math.min(...ys) - 34, w: Math.min(GAME_WIDTH - 4, Math.max(...xs) - Math.min(...xs) + 220), h: Math.max(...ys) - Math.min(...ys) + 68 };
       }
       case 'weak':
-        return this.bossLayout(this.s) ? { x: BOSS_PANEL_X - 4, y: STAGE_Y + 80, w: GAME_WIDTH - BOSS_PANEL_X, h: 32 } : { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
+        return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
       case 'specialCard':
         return card(this.s.hand.findIndex((id) => !!this.s.def.cards[id]?.owner));
       case 'addonCard':
@@ -638,11 +639,11 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(hit);
       makePressable(hit, { onTap: tap });
     };
-    small(196, 32, `×${this.speed}`, this.speed === 2, () => this.toggleSpeed());
+    small(208, 32, `×${this.speed}`, this.speed === 2, () => this.toggleSpeed());
     const debug = isDebugEnabled(window.location.search);
-    if (debug) small(234, 42, 'AUTO', false, () => this.autoRound());
+    if (debug) small(246, 42, 'AUTO', false, () => this.autoRound());
     const t = addText(this, GAME_WIDTH - 18, 21, name, { size: 10, bold: true }).setOrigin(1, 0.5);
-    const room = GAME_WIDTH - (debug ? 300 : 258);
+    const room = GAME_WIDTH - (debug ? 312 : 270);
     if (t.width > room) t.setScale(room / t.width);
     r.add(this.para(GAME_WIDTH - 28 - t.displayWidth, 10, t.displayWidth + 20, 22, RED, 1, 8));
     r.add(t);
@@ -714,9 +715,27 @@ export class ChainBattleScene extends Phaser.Scene {
     const planned = this.busy ? 0 : this.plan.reduce((a, p) => a + (chainMoveOf(this.s, p)?.weight ?? 0), 0);
     const after = Math.max(0, left - planned);
     const lay = this.bossLayout(view);
-    const bx = lay ? BOSS_PANEL_X : 8;
+    if (lay) {
+      // 左の柱：縦向きのゲージ（下から減る）。並べた分の見込みは薄く
+      const cx = BOSS_COL / 2 + 2;
+      const top = STAGE_Y + 30;
+      const h = 110;
+      const gw = 18;
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, 'ポイ', { size: 13, bold: true, color: '#9ad0ff' }).setOrigin(0.5));
+      r.add(this.add.rectangle(cx, top, gw, h, 0x1a2a40).setOrigin(0.5, 0).setStrokeStyle(1, 0x9ad0ff));
+      const hl = (h * left) / poi.total;
+      const ha = (h * after) / poi.total;
+      r.add(this.add.rectangle(cx, top + h - hl, gw, hl, 0x6bc8ff, 0.35).setOrigin(0.5, 0));
+      r.add(this.add.rectangle(cx, top + h - ha, gw, ha, after <= 6 ? 0xff6b8a : 0x6bc8ff).setOrigin(0.5, 0));
+      const col = after <= 6 ? '#ff9db0' : '#c9e6ff';
+      r.add(addText(this, cx, top + h + 12, `${after}/${poi.total}`, { size: 12, bold: true, color: col }).setOrigin(0.5));
+      if (planned) r.add(addText(this, cx, top + h + 26, `（−${planned}）`, { size: 10, bold: true, color: col }).setOrigin(0.5));
+      return;
+    }
+    const bx = 8;
     const x = bx + 40;
-    const y = lay ? STAGE_Y + 58 : STAGE_Y + 50;
+    const y = STAGE_Y + 50;
     const w = GAME_WIDTH - x - 70;
     r.add(this.para(bx, y - 9, GAME_WIDTH - bx - 8, 22, 0x000000, 0.65, 6));
     r.add(addText(this, bx + 8, y + 2, 'ポイ', { size: 12, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
@@ -750,11 +769,8 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 部位がある本体（ぬし）の絵の大きさと中心 */
   private bossArt(s: ChainState, e: ChainUnit, cx: number): { x: number; y: number; size: number } | null {
     if (!(this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part)) return null;
-    // ぬしが1体の時（段階162 調整3）：左半分に、敵の場の高さいっぱいで（予定の札・ポイ・名前は右半分へ。絵に何も重ねない）
-    if (this.bossLayout(s)) {
-      const size = MSG_TOP - STAGE_Y - 6;
-      return { x: BOSS_PANEL_X / 2, y: (STAGE_Y + MSG_TOP) / 2, size };
-    }
+    // ぬしが1体の時（段階162 調整4）：真ん中に、敵の場の高さいっぱいで（ポイは左の柱、予定の札は右の柱。名前と HP は下に重ねる）
+    if (this.bossLayout(s)) return { x: GAME_WIDTH / 2, y: (STAGE_Y + MSG_TOP) / 2, size: BOSS_ART };
     const size = 120;
     return { x: cx, y: MSG_TOP - size / 2 - 2, size };
   }
@@ -788,7 +804,7 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(ring);
     if (targetable) this.tweens.add({ targets: ring, alpha: 0.4, duration: 500, yoyo: true, repeat: -1 });
     if (!alive) r.add(addText(this, p.x, p.y, '×', { size: 26, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
-    const left = p.side === 'left' && p.x - 110 > 0;
+    const left = p.side === 'left' && p.x - 110 > (this.bossLayout(s) ? BOSS_COL : 0);
     const lx = left ? p.x - 26 : p.x + 26;
     const label = this.sticker(lx + (left ? -34 : 34), p.y - 10, alive ? part.name : `${part.name} BREAK`, alive ? YELLOW : 0x808080, '#000000', left ? 4 : -4, 10);
     r.add(label);
@@ -826,8 +842,8 @@ export class ChainBattleScene extends Phaser.Scene {
       const artX = boss ? boss.x : cx;
       // ぬし戦は右半分に、予定の札・ポイ・名前と HP（段階162 調整3）
       const lay = this.bossLayout(s);
-      const x0 = lay ? BOSS_PANEL_X : colW * i;
-      const panelW = lay ? GAME_WIDTH - BOSS_PANEL_X - 4 : colW;
+      const x0 = colW * i;
+      const panelW = colW;
       const isTarget = this.pending?.move.target === 'enemy' && alive;
       if (this.busy && e.uid === this.actorUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, RED, 0.12).setStrokeStyle(3, RED));
       if (this.busy && e.uid === this.targetUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, YELLOW, 0.08).setStrokeStyle(3, YELLOW));
@@ -848,7 +864,7 @@ export class ChainBattleScene extends Phaser.Scene {
         this.enemyImages.set(e.uid, img);
       } else r.add(this.add.circle(artX, artY, size / 2.4, COLORS.enemy, alive ? 1 : 0.2));
       // 名前・弱点（分かるまで「？」。調整9）・HP
-      const ny = lay ? STAGE_Y + 94 : STAGE_Y + 172;
+      const ny = STAGE_Y + 172;
       const name = addText(this, x0 + 8, ny, e.name, { size: 12, bold: true, color: alive ? '#ffffff' : COLORS.dimText }).setOrigin(0, 0.5).setStroke('#000000', 3);
       // 属性チェンジの敵は、今の弱点がいつも見える（調整12）
       const known = e.trait === 'shift' ? e.weak : e.weak.filter((w) => isWeakKnown(s, e.defId, w));
@@ -893,10 +909,11 @@ export class ChainBattleScene extends Phaser.Scene {
       const trick = plannedFx.trick ?? e.trick;
       if (trick) chips.push({ text: `◎${TRICK_LABEL[trick]}`, color: CHIP_ONCE, planned: !!plannedFx.trick });
       chips.forEach((c, k) => {
-        const cy = (lay ? STAGE_Y + 136 : STAGE_Y + 78) + k * 19;
-        const t = addText(this, x0 + 14, cy, c.text, { size: 10, bold: true, color: c.planned ? '#ffffff' : '#06201e' }).setOrigin(0, 0.5);
-        if (t.width > panelW - 24) t.setScale((panelW - 24) / t.width);
-        const box = this.add.rectangle(x0 + 8, cy, t.displayWidth + 12, 16, c.color, c.planned ? 0.25 : 1).setOrigin(0, 0.5).setAngle(k === 0 ? -2 : 2);
+        const cy = (lay ? STAGE_Y + 118 : STAGE_Y + 78) + k * 19;
+        const cxL = lay ? GAME_WIDTH - BOSS_COL : x0;
+        const t = addText(this, cxL + 14, cy, c.text, { size: 10, bold: true, color: c.planned ? '#ffffff' : '#06201e' }).setOrigin(0, 0.5);
+        if (t.width > (lay ? BOSS_COL : panelW) - 24) t.setScale(((lay ? BOSS_COL : panelW) - 24) / t.width);
+        const box = this.add.rectangle(cxL + 8, cy, t.displayWidth + 12, 16, c.color, c.planned ? 0.25 : 1).setOrigin(0, 0.5).setAngle(k === 0 ? -2 : 2);
         if (c.planned) box.setStrokeStyle(1.5, c.color);
         else if (c.color === CHIP_ONCE) t.setColor('#ffffff');
         r.add(box);
@@ -912,9 +929,33 @@ export class ChainBattleScene extends Phaser.Scene {
         const big = it.move.all || it.move.flee || it.move.power >= CHAIN_RULES.sealBig;
         const veiled = !!e.veiled;
         const detail = veiled ? '予定が見えない' : it.move.flee ? '逃げる' : `${it.move.all ? '全体' : foe ? `→ ${foe}（ハレーション）` : `→ ${tgt}`} ${it.move.power}`;
+        const a = e.down ? 0.35 : 1;
+        if (lay) {
+          // 右の柱：縦長の札に、時刻・行動の名前・誰に・威力
+          const cx2 = GAME_WIDTH - BOSS_COL / 2 - 2;
+          const top = STAGE_Y + 6;
+          const ch = 104;
+          r.add(this.add.rectangle(cx2 + 3, top + ch / 2 + 3, BOSS_COL - 6, ch, RED, 0.45 * a));
+          r.add(this.add.rectangle(cx2, top + ch / 2, BOSS_COL - 6, ch, big ? 0x3a0010 : 0x000000, a).setStrokeStyle(2, this.foeColor(s, e.uid)));
+          const times = veiled ? '？' : intents.map((x) => x.at).join('・');
+          r.add(this.add.circle(cx2, top + 22, 17, big ? YELLOW : RED, a));
+          r.add(addText(this, cx2, top + 13, '時刻', { size: 7, bold: true, color: big ? '#000000' : '#ffffff' }).setOrigin(0.5).setAlpha(a));
+          r.add(addText(this, cx2, top + 26, times, { size: times.length > 2 ? 9 : 15, bold: true, color: big ? '#000000' : '#ffffff' }).setOrigin(0.5).setAlpha(a));
+          const lines = [
+            { t: veiled ? '？？？' : it.move.name, size: 11, color: '#ffffff', y: top + 52 },
+            { t: veiled ? '予定が見えない' : it.move.flee ? '逃げる' : it.move.all ? '全体' : foe ? `→ ${foe}` : `→ ${tgt}`, size: 10, color: big ? '#ffe08a' : '#ff9db0', y: top + 70 },
+            { t: veiled || it.move.flee ? '' : `威力 ${it.move.power}`, size: 10, color: big ? '#ffe08a' : '#ff9db0', y: top + 88 },
+          ];
+          for (const l of lines) {
+            if (!l.t) continue;
+            const tt = addText(this, cx2, l.y, l.t, { size: l.size, bold: true, color: l.color }).setOrigin(0.5).setAlpha(a);
+            if (tt.width > BOSS_COL - 14) tt.setScale((BOSS_COL - 14) / tt.width);
+            r.add(tt);
+          }
+        }
         const px = x0 + 12;
         const pw = panelW - 18;
-        const a = e.down ? 0.35 : 1;
+        if (!lay) {
         r.add(this.para(px + 3, STAGE_Y + 9, pw, 34, RED, 0.45 * a, 8));
         r.add(this.para(px, STAGE_Y + 6, pw, 34, big ? 0x3a0010 : 0x000000, a, 8, { w: 2, color: this.foeColor(s, e.uid) }));
         r.add(this.add.rectangle(px + 4, STAGE_Y + 6, 4, 34, big ? YELLOW : RED, a).setOrigin(0));
@@ -926,6 +967,7 @@ export class ChainBattleScene extends Phaser.Scene {
         const t2 = addText(this, px + 20, STAGE_Y + 31, detail, { size: 9, bold: true, color: big ? '#ffe08a' : '#ff9db0' }).setOrigin(0, 0.5).setAlpha(a);
         for (const t of [t1, t2]) if (t.width > pw - 26) t.setScale((pw - 26) / t.width);
         r.add([t1, t2]);
+        }
       }
       const hit = this.add.rectangle(cx, STAGE_Y + 120, colW - 4, 220, 0xffffff, 0.001);
       r.add(hit);
