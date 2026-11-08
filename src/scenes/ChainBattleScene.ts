@@ -29,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
@@ -539,8 +539,11 @@ export class ChainBattleScene extends Phaser.Scene {
       case 'poiBar':
         return { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
       case 'parts': {
-        const k = foes.findIndex((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0);
-        return k < 0 ? null : { x: colW * k + 2, y: STAGE_Y + 68, w: colW - 4, h: 166 };
+        const spots = this.s.enemies.filter((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0).map((e) => this.partSpot(this.s, e)).filter((x): x is NonNullable<typeof x> => !!x);
+        if (!spots.length) return null;
+        const xs = spots.map((p) => p.x);
+        const ys = spots.map((p) => p.y);
+        return { x: Math.max(2, Math.min(...xs) - 110), y: Math.min(...ys) - 34, w: Math.min(GAME_WIDTH - 4, Math.max(...xs) - Math.min(...xs) + 220), h: Math.max(...ys) - Math.min(...ys) + 68 };
       }
       case 'weak':
         return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
@@ -632,11 +635,11 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(hit);
       makePressable(hit, { onTap: tap });
     };
-    small(172, 34, `×${this.speed}`, this.speed === 2, () => this.toggleSpeed());
+    small(196, 32, `×${this.speed}`, this.speed === 2, () => this.toggleSpeed());
     const debug = isDebugEnabled(window.location.search);
-    if (debug) small(212, 42, 'AUTO', false, () => this.autoRound());
+    if (debug) small(234, 42, 'AUTO', false, () => this.autoRound());
     const t = addText(this, GAME_WIDTH - 18, 21, name, { size: 10, bold: true }).setOrigin(1, 0.5);
-    const room = GAME_WIDTH - (debug ? 280 : 236);
+    const room = GAME_WIDTH - (debug ? 300 : 258);
     if (t.width > room) t.setScale(room / t.width);
     r.add(this.para(GAME_WIDTH - 28 - t.displayWidth, 10, t.displayWidth + 20, 22, RED, 1, 8));
     r.add(t);
@@ -725,7 +728,62 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   private shownEnemies(s: ChainState): ChainUnit[] {
-    return s.enemies.filter((e) => !(e.hp <= 0 && e.trait === 'split' && s.enemies.some((x) => x.uid.startsWith(e.uid) && x.uid !== e.uid)));
+    // 部位（段階162）は列に並べず、本体の絵の上に印で出す（前の本番の戦闘と同じ見せ方。開発者の好み）
+    return s.enemies.filter((e) => !chainEnemyDef(s, e.defId)?.part && !(e.hp <= 0 && e.trait === 'split' && s.enemies.some((x) => x.uid.startsWith(e.uid) && x.uid !== e.uid)));
+  }
+
+  /** 本体の部位（段階162） */
+  private partsOf(s: ChainState, body: ChainUnit): ChainUnit[] {
+    return s.enemies.filter((x) => chainEnemyDef(s, x.defId)?.part?.of === body.defId && !x.gone);
+  }
+
+  /** 部位がある本体（ぬし）の絵の大きさと中心 */
+  private bossArt(s: ChainState, e: ChainUnit, cx: number): { x: number; y: number; size: number } | null {
+    return this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part ? { x: cx, y: ART_Y + 6, size: 200 } : null;
+  }
+
+  /** 部位の印の位置（ぬしの絵の中の割合 ENEMY_PART_SPOTS。書いていなければ絵の上のほうに横に並べる） */
+  private partSpot(s: ChainState, part: ChainUnit): { x: number; y: number; side: 'left' | 'right' } | null {
+    const bodyId = chainEnemyDef(s, part.defId)?.part?.of;
+    const list = this.shownEnemies(s);
+    const k = list.findIndex((x) => x.defId === bodyId);
+    if (k < 0) return null;
+    const body = list[k];
+    const colW = GAME_WIDTH / list.length;
+    const art = this.bossArt(s, body, colW * k + colW / 2);
+    if (!art) return null;
+    const key = part.defId.split('_')[1] ?? '';
+    const spot = ENEMY_PART_SPOTS[body.defId]?.[key];
+    const parts = this.partsOf(s, body);
+    const [fx, fy, side] = spot ?? [0.3 + 0.4 * parts.indexOf(part), 0.25, 'right'];
+    return { x: art.x - art.size / 2 + fx * art.size, y: art.y - art.size / 2 + fy * art.size, side: side ?? 'right' };
+  }
+
+  /** 部位の印（丸い枠・名前の札・HP）。タップで狙う、長押しで説明 */
+  private drawPart(s: ChainState, part: ChainUnit): void {
+    const r = this.root;
+    const p = this.partSpot(s, part);
+    if (!p) return;
+    const alive = part.hp > 0;
+    const targetable = alive && this.pending?.move.target === 'enemy';
+    const lit = this.busy && part.uid === this.targetUid;
+    const ring = this.add.circle(p.x, p.y, 20, 0x000000, alive ? 0.25 : 0.5).setStrokeStyle(3, !alive ? 0x606060 : lit ? YELLOW : targetable ? YELLOW : 0xffffff);
+    r.add(ring);
+    if (targetable) this.tweens.add({ targets: ring, alpha: 0.4, duration: 500, yoyo: true, repeat: -1 });
+    if (!alive) r.add(addText(this, p.x, p.y, '×', { size: 26, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
+    const left = p.side === 'left';
+    const lx = left ? p.x - 26 : p.x + 26;
+    const label = this.sticker(lx + (left ? -34 : 34), p.y - 10, alive ? part.name : `${part.name} BREAK`, alive ? YELLOW : 0x808080, '#000000', left ? 4 : -4, 10);
+    r.add(label);
+    if (alive) {
+      const bw = 64;
+      const bx = left ? lx - bw : lx;
+      r.add(this.add.rectangle(bx, p.y + 6, bw, 6, 0x2a0a12).setOrigin(0, 0.5));
+      r.add(this.add.rectangle(bx, p.y + 6, Math.max(3, (bw * part.hp) / part.maxHp), 6, YELLOW).setOrigin(0, 0.5));
+    }
+    const hit = this.add.circle(p.x, p.y, 28, 0xffffff, 0.001);
+    r.add(hit);
+    makePressable(hit, { onTap: () => this.pickEnemy(part.uid), onLongPress: () => this.explainEnemy(part) });
   }
 
   private drawEnemies(s: ChainState): void {
@@ -746,7 +804,9 @@ export class ChainBattleScene extends Phaser.Scene {
       const cx = colW * i + colW / 2;
       const x0 = colW * i;
       const alive = e.hp > 0 && !e.gone;
-      const size = Math.min(100, colW - 20) * (SPLIT_ART[e.defId] ? 0.7 : e.defId.includes('_') ? 0.6 : 1);
+      const boss = this.bossArt(s, e, cx);
+      const size = boss ? boss.size : Math.min(100, colW - 20) * (SPLIT_ART[e.defId] ? 0.7 : 1);
+      const artY = boss ? boss.y : ART_Y;
       const isTarget = this.pending?.move.target === 'enemy' && alive;
       if (this.busy && e.uid === this.actorUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, RED, 0.12).setStrokeStyle(3, RED));
       if (this.busy && e.uid === this.targetUid) r.add(this.add.rectangle(cx, STAGE_Y + 126, colW - 6, 236, YELLOW, 0.08).setStrokeStyle(3, YELLOW));
@@ -756,16 +816,16 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(sel);
       }
       // 敵の後ろの赤い光
-      if (alive) r.add(this.add.circle(cx, ART_Y, size * 0.55, 0xff3040, 0.18));
+      if (alive) r.add(this.add.circle(cx, artY, size * 0.55, 0xff3040, 0.18));
       const art = artOfEnemy(e.defId);
       if (art && hasImage(this, art)) {
-        const img = this.add.image(cx, ART_Y, art);
+        const img = this.add.image(cx, artY, art);
         img.setScale(size / Math.max(img.width, img.height));
         if (!alive) img.setAlpha(0.15).setTint(0x606060);
         else if (e.down) img.setAngle(-14).setTint(0xb0b0ff);
         r.add(img);
         this.enemyImages.set(e.uid, img);
-      } else r.add(this.add.circle(cx, ART_Y, size / 2.4, COLORS.enemy, alive ? 1 : 0.2));
+      } else r.add(this.add.circle(cx, artY, size / 2.4, COLORS.enemy, alive ? 1 : 0.2));
       // 名前・弱点（分かるまで「？」。調整9）・HP
       const ny = STAGE_Y + 172;
       const name = addText(this, x0 + 8, ny, e.name, { size: 12, bold: true, color: alive ? '#ffffff' : COLORS.dimText }).setOrigin(0, 0.5).setStroke('#000000', 3);
@@ -852,6 +912,8 @@ export class ChainBattleScene extends Phaser.Scene {
         onTap: () => this.pickEnemy(e.uid),
         onLongPress: () => this.explainEnemy(e),
       });
+      // 部位の印は、本体の絵と押す所の上に（段階162）
+      if (alive) for (const part of this.partsOf(s, e)) this.drawPart(s, part);
     });
   }
 
@@ -1870,6 +1932,8 @@ export class ChainBattleScene extends Phaser.Scene {
     const list = this.shownEnemies(s);
     const ei = list.findIndex((u) => u.uid === uid);
     if (ei >= 0) return { x: (GAME_WIDTH / list.length) * (ei + 0.5), y: ART_Y };
+    const part = s.enemies.find((u) => u.uid === uid);
+    if (part && chainEnemyDef(s, part.defId)?.part) return this.partSpot(s, part);
     const ai = s.allies.findIndex((u) => u.uid === uid);
     if (ai >= 0) return { x: 8 + ((GAME_WIDTH - 16) / s.allies.length) * ai + 34, y: ALLY_Y + ALLY_H / 2 };
     return null;
