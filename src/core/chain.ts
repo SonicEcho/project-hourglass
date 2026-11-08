@@ -278,6 +278,11 @@ export interface ChainRules {
   splitHits: number;
   hardCut: number;
   pinpointMult: number;
+  /**
+   * 警戒（段階162 調整6。開発者の案）：ダウンから起きた敵は、そのあと「これまでのダウンの回数」ラウンドの間（この数まで）、
+   * 弱点で当ててもダウンしない（ダメージは弱点のまま）。書かなければ警戒しない（弱点を突き続けると、敵がずっと動けなかったため）
+   */
+  guardMax?: number;
   /** シャッター（総攻撃）：生きている敵みんなに、最大 HP のこの割合のダメージ（調整15。前は即決着） */
   shutterRate: number;
 }
@@ -358,6 +363,9 @@ export interface ChainUnit {
   veiled?: boolean;
   /** 巻き戻し：ラウンドの始めの HP */
   roundHp?: number;
+  /** ダウンした回数と、警戒の残りラウンド（段階162 調整6） */
+  downs?: number;
+  guard?: number;
   /** 仲間の MP（段階158） */
   mp?: number;
   maxMp?: number;
@@ -417,6 +425,8 @@ export type ChainEvent =
   | { type: 'timerBlast'; uid: string }
   | { type: 'flee'; uid: string }
   | { type: 'down'; uid: string }
+  /** 警戒していてダウンしなかった（段階162 調整6）。left は警戒の残りラウンド */
+  | { type: 'guarded'; uid: string; left: number }
   /** 部位を壊した（段階162）。of は本体の uid、reveals は出た弱点 */
   | { type: 'partBreak'; uid: string; of: string; reveals: Element[] }
   /** ポイが濡れた（段階162）。left は残り */
@@ -900,7 +910,13 @@ interface HitOpts {
 
 function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
   if (e.down || e.hp <= 0) return;
+  // 警戒中は、ダウンしない（段階162 調整6）
+  if ((e.guard ?? 0) > 0) {
+    ev.push({ type: 'guarded', uid: e.uid, left: e.guard! });
+    return;
+  }
   e.down = true;
+  e.downs = (e.downs ?? 0) + 1;
   ev.push({ type: 'down', uid: e.uid });
   if (e.trait === 'pop') {
     ev.push({ type: 'pop', uid: e.uid });
@@ -1508,6 +1524,11 @@ function endRound(s: ChainState): void {
   s.roundHits = 0;
   s.roundSupports = 0;
   for (const e of s.enemies) {
+    // 警戒（段階162 調整6）：このラウンドにダウンした敵は、次のラウンドから「ダウンの回数」ラウンド（上限 guardMax）警戒する
+    if (s.rules.guardMax) {
+      if (e.down) e.guard = Math.min(e.downs ?? 1, s.rules.guardMax);
+      else if (e.guard) e.guard--;
+    }
     e.down = false;
     e.roundTaken = 0;
     e.pinpoint = false;
