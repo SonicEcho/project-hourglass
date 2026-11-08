@@ -268,6 +268,11 @@ describe('警戒（段階162 調整6）', () => {
     }
     // 1回目ダウン → 警戒1 → 2回目ダウン → 警戒2 → 3回目ダウン → 警戒3
     expect(downs).toEqual([true, false, true, false, false, true, false, false]);
+    // 警戒が付いている時は、警戒の説明を出す
+    s.enemies[0].guard = 1;
+    expect(chainTipTriggers(s)).toContain('chain_guard');
+    expect(CHAIN_COACH.chain_guard.length).toBe(1);
+    expect(TIPS.some((t) => t.id === 'chain_guard')).toBe(true);
   });
 });
 
