@@ -18,7 +18,7 @@ import {
   type ChainState,
   type CharacterDef,
 } from '../../src/core';
-import { A11_COMBOS, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
+import { A11_COMBOS, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
 import { autoChainBattle, smartChainPlan } from '../../src/sim/chainAuto';
 
 let seedPick = 1;
@@ -182,7 +182,12 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
     expect(chainTipTriggers(s)).toEqual(['chain_plan']);
     s.hand = ['c17_push', 'c17_decisive', 'c17_swing', 'c17_snow'];
     expect(chainTipTriggers(s)).toEqual(['chain_plan', 'chain_addon', 'chain_climax', 'chain_combo']);
+    s.round = 2;
+    expect(chainTipTriggers(s)).toContain('chain_weak');
     // 説明の文がある
-    for (const id of ['chain_plan', 'chain_addon', 'chain_climax', 'chain_combo']) expect(TIPS.some((t) => t.id === id)).toBe(true);
+    for (const id of ['chain_plan', 'chain_weak', 'chain_addon', 'chain_climax', 'chain_combo']) {
+      expect(TIPS.some((t) => t.id === id)).toBe(true);
+      expect(CHAIN_COACH[id].length).toBeGreaterThan(0);
+    }
   });
 });
