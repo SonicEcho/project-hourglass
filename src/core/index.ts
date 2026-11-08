@@ -31,4 +31,5 @@ export * from './playtime';
 export * from './recommend';
 export * from './clock';
 export * from './chain';
+export * from './chainMain';
 export * from './leap';

@@ -492,6 +492,11 @@ export function installDebugMenu(nav: DebugNavigator): void {
           nav.openPrototype('LeapBattle', { trial });
         }, true, 'background:#1f5a3a;border-color:#8affc8;'),
       ),
+      // 段階158：新しい戦闘を本番用に。今の並び（育成を反映）と 1-1 の砂嵐の敵で戦う。今のセーブには触れない
+      button('試し：本番の仲間で並べてつなぐ（1-1 の砂嵐）', () => {
+        close();
+        nav.openPrototype('ChainBattle', { trial: 'chain1', main: true });
+      }, true, 'background:#5a3a1f;border-color:#ffc88a;'),
       // 段階156：試し：並べてつなぐ戦闘（docs/milestones/M3_battle_review.md の 12.）。今のセーブには触れない
       button('試し：並べてつなぐ戦闘（金魚すくいの屋台）', () => {
         close();
