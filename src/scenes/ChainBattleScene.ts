@@ -29,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { CHAIN_COACH, CHAIN_COACH_ORDER, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
@@ -56,6 +56,19 @@ export interface ChainBattleData {
   main?: boolean;
   /** 段階159：探索から来た戦闘（今の戦闘の BattleSceneData と同じ形）。区画の戦闘の敵と今の並びで戦い、報酬を受け取って戻る */
   encounter?: BattleSceneData['encounter'];
+}
+
+/** 手札を決める（山札と手札をまとめ、ids の札を手札へ。足りない分は山札の上から） */
+function forceHand(s: ChainState, ids: string[]): void {
+  const pool = [...s.hand, ...s.deck];
+  const hand: string[] = [];
+  for (const id of ids) {
+    const i = pool.indexOf(id);
+    if (i >= 0) hand.push(...pool.splice(i, 1));
+  }
+  while (hand.length < s.rules.handSize && pool.length) hand.push(pool.shift()!);
+  s.hand = hand;
+  s.deck = pool;
 }
 
 /** 文字から作る、ずらしの数（今の戦闘と同じ。探索の戦闘のシードを、戦闘ごとに変えるため） */
@@ -244,6 +257,8 @@ export class ChainBattleScene extends Phaser.Scene {
       this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
       const vitals = data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
       this.s = createChainBattle(def, CHAIN_RULES, this.seed, loadKnown(), vitals ?? {});
+      // チュートリアル（段階161）：最初の戦闘は手札を決めておく（2ラウンド目にエフェクトとクライマックスの説明が出るように）
+      if (!seenTips().includes('chain_plan')) forceHand(this.s, CHAIN_TUTORIAL_HAND);
       playBgm(this, BATTLE_BGM[area.id] ?? (area.boss ? BGM.boss : BGM.battle));
       // 戦闘中の印（今の戦闘と同じ）：閉じたら「つづきから」で、この戦闘の始めから
       if (!data.encounter.hunt) {
@@ -412,7 +427,18 @@ export class ChainBattleScene extends Phaser.Scene {
     for (;;) {
       const st = steps[this.coach.i];
       if (!st) break;
-      const done = st.target === 'card' ? !!this.pending || this.plan.length > 0 : st.target === 'enemy' ? this.plan.length > 0 : false;
+      const placed = this.plan.length >= (st.placed ?? 1);
+      // 2人目がいない（倒れている・並びに1人）時は、2人目の手順を飛ばす
+      const noSecond = !!st.second && !this.s.allies.some((a) => a.hp > 0 && a.uid !== this.s.allies[0]?.uid);
+      const done =
+        noSecond ||
+        (st.target === 'card' || st.target === 'move'
+          ? !!this.pending || placed
+          : st.target === 'enemy'
+            ? placed
+            : st.target === 'movesTab'
+              ? this.tab === 'moves' || placed
+              : false);
       if (!done) break;
       this.coach.i++;
     }
@@ -432,8 +458,8 @@ export class ChainBattleScene extends Phaser.Scene {
       this.render();
       return;
     }
-    const hole = this.coachRect(step.target);
-    if (!hole) {
+    const hole = step.target === 'intro' ? null : this.coachRect(step.target);
+    if (!hole && step.target !== 'intro') {
       this.endCoach();
       return;
     }
@@ -479,6 +505,22 @@ export class ChainBattleScene extends Phaser.Scene {
         return { x: 0, y: STAGE_Y + 46, w: GAME_WIDTH, h: 150 };
       case 'exec':
         return { x: 204, y: CMD_Y - 4, w: 184, h: 54 };
+      case 'ally2': {
+        const n = this.s.allies.length;
+        const w = (GAME_WIDTH - 16) / n;
+        const k = Math.max(0, this.s.allies.findIndex((a) => a.uid === this.ally));
+        return { x: 8 + w * k - 4, y: ALLY_Y - 6, w: w, h: ALLY_H + 12 };
+      }
+      case 'movesTab':
+        return { x: 136, y: TAB_Y - 18, w: 68, h: 32 };
+      case 'move': {
+        const me = findChainUnit(this.s, this.ally);
+        const moves = this.s.def.allies.find((a) => a.id === me?.defId)?.moves ?? [];
+        const k = moves.findIndex((m) => !!m.mp && m.target === 'enemy' && (me?.mp ?? 0) >= (m.mp ?? 0));
+        return card(k >= 0 ? k : 0);
+      }
+      case 'intro':
+        return null;
       case 'weak':
         return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
       case 'addonCard':
@@ -494,7 +536,9 @@ export class ChainBattleScene extends Phaser.Scene {
    * 照らす覆い：照らす所のまわりを暗くし、黄色の枠を点滅させ、吹き出しに説明。
    * guide：照らした所だけ押せる（まわりの暗い所は押せない）。それ以外は、画面のどこかをタップで次へ
    */
-  private drawCoach(h: { x: number; y: number; w: number; h: number }, text: string, guide: boolean): void {
+  private drawCoach(hole: { x: number; y: number; w: number; h: number } | null, text: string, guide: boolean): void {
+    // 照らす所がない手順（はじめのあいさつ）は、画面のまん中に吹き出しだけ
+    const h = hole ?? { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2 - 120, w: 0, h: 0 };
     const o = this.add.container(0, 0).setDepth(120);
     this.coachLayer = o;
     const dim = 0x000000;
@@ -509,9 +553,11 @@ export class ChainBattleScene extends Phaser.Scene {
       if (guide) r.setInteractive();
       o.add(r);
     }
-    const frame = this.add.rectangle(h.x, h.y, h.w, h.h).setOrigin(0).setStrokeStyle(3, YELLOW);
-    o.add(frame);
-    this.tweens.add({ targets: frame, alpha: 0.35, duration: 520, yoyo: true, repeat: -1 });
+    if (hole) {
+      const frame = this.add.rectangle(h.x, h.y, h.w, h.h).setOrigin(0).setStrokeStyle(3, YELLOW);
+      o.add(frame);
+      this.tweens.add({ targets: frame, alpha: 0.35, duration: 520, yoyo: true, repeat: -1 });
+    }
     // 吹き出し：照らした所が上半分なら下に、下半分なら上に
     const below = h.y + h.h / 2 < GAME_HEIGHT / 2;
     const bw = GAME_WIDTH - 32;
@@ -523,7 +569,8 @@ export class ChainBattleScene extends Phaser.Scene {
     box.add(this.add.rectangle(4, 5, bw, bh, 0x000000, 0.5).setOrigin(0));
     box.add(this.add.rectangle(0, 0, bw, bh, 0xfff6d8).setOrigin(0).setStrokeStyle(3, YELLOW));
     const tip = below ? [h.x + h.w / 2 - 16 - 10, 0, h.x + h.w / 2 - 16 + 10, 0, h.x + h.w / 2 - 16, -12] : [h.x + h.w / 2 - 16 - 10, bh, h.x + h.w / 2 - 16 + 10, bh, h.x + h.w / 2 - 16, bh + 12];
-    box.add(this.add.triangle(0, 0, tip[0], tip[1], tip[2], tip[3], tip[4], tip[5], 0xfff6d8).setOrigin(0));
+    if (hole) box.add(this.add.triangle(0, 0, tip[0], tip[1], tip[2], tip[3], tip[4], tip[5], 0xfff6d8).setOrigin(0));
+    else box.add(addText(this, bw / 2, -2, 'TUTORIAL', { size: 12, bold: true, color: '#ffffff' }).setOrigin(0.5, 1).setFontStyle('bold italic').setShadow(2, 2, '#ff2d55', 0, false, true));
     t.setPosition(14, 12);
     box.add(t);
     if (hint) box.add(addText(this, bw - 14, bh - 14, hint, { size: 11, bold: true, color: '#a06a00' }).setOrigin(1, 0.5));

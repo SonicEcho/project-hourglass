@@ -2,25 +2,35 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'intent' | 'film' | 'card' | 'enemy' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
   text: string;
   /** 照らした所を押してもらう（その間、ほかの所は押せない）。書かなければ、画面のどこかをタップで次へ */
   guide?: boolean;
+  /** 押す手順が終わる目安：並べた行動がこの数になった（札・技を選んだだけでも、選んだ時点で次へ） */
+  placed?: number;
+  /** 2人目の仲間がいる時だけ出す手順 */
+  second?: boolean;
 }
 
 /**
  * 説明の組（id は説明の窓と同じ。見たら、タイトルの「説明」から読み返せる）。
- * chain_plan は最初の戦闘の最初のラウンドで、照らした所を押して1回遊んでもらう。chain_weak は2ラウンド目の始めに
+ * chain_plan は最初の戦闘の最初のラウンドで、照らした所を押して1回遊んでもらう（ハルトはスナップ、あかりは技）。
+ * chain_weak は2ラウンド目の始めに。最初の戦闘は手札を決めておき（CHAIN_TUTORIAL_HAND）、2ラウンド目にエフェクトとクライマックスの説明が続けて出るようにする
  */
 export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
   chain_plan: [
+    { target: 'intro', text: 'ここからは、バトルの説明をします！\nまずは画面の見かたと、行動の並べかたを覚えましょう。' },
     { target: 'intent', text: 'これは敵の行動予定です。\n左の数字の「時刻」になると、矢印の相手を攻撃してきます。' },
     { target: 'film', text: 'ここがタイムラインです。\n行動は左から順に並び、スナップの「重さ」のぶんだけ時間が進みます。' },
-    { target: 'card', text: 'さっそくスナップを使ってみましょう！\nこのスナップをタップしてください。', guide: true },
-    { target: 'enemy', text: '攻撃する敵をタップしてください。', guide: true },
+    { target: 'card', text: 'さっそくスナップを使ってみましょう！\nこのスナップをタップしてください。', guide: true, placed: 1 },
+    { target: 'enemy', text: '攻撃する敵をタップしてください。', guide: true, placed: 1 },
+    { target: 'ally2', text: 'ハルトの行動が並びました！\n次はあかりの番です。仲間はそれぞれ、1ラウンドに1回行動できます。', second: true },
+    { target: 'movesTab', text: '今度は「技」を使ってみましょう。\n「技」のタブをタップ！', guide: true, second: true, placed: 2 },
+    { target: 'move', text: '技は、MP を使って放つ仲間ごとの得意技です。\nこの技をタップしてください。', guide: true, second: true, placed: 2 },
+    { target: 'enemy', text: '攻撃する敵をタップしてください。', guide: true, second: true, placed: 2 },
     { target: 'exec', text: '行動がタイムラインに並びました！\n「REC 実行」をタップして、行動開始です！', guide: true },
   ],
   chain_weak: [
@@ -51,3 +61,6 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
 export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_weak', 'chain_addon', 'chain_climax', 'chain_combo'];
+
+/** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る） */
+export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_swing'];
