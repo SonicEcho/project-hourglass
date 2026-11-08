@@ -2,7 +2,7 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
@@ -32,6 +32,15 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'move', text: '技は、MP を使って放つ仲間ごとの得意技です。\nこの技をタップしてください。', guide: true, second: true, placed: 2 },
     { target: 'enemy', text: '攻撃する敵をタップしてください。', guide: true, second: true, placed: 2 },
     { target: 'exec', text: '行動がタイムラインに並びました！\n「REC 実行」をタップして、行動開始です！', guide: true },
+  ],
+  // ぬし（段階162）：思い出の再演「ポイが破れる前に」。最初のぬし戦の始めに
+  chain_boss: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「ポイが破れる前に」がはじまります。\nいつもの戦いとは、少しルールが違います。' },
+    { target: 'poiBar', text: 'これは「ポイ」のゲージです。\n行動するたびに、重さのぶんだけポイが濡れて減ります。\nぬしの「水鉄砲」を受けても減るので注意！\n0になる前に、ぬしを倒しましょう。' },
+    {
+      target: 'parts',
+      text: 'ポイの腕と金魚鉢は「部位」です。\n壊すと、その部位を使う大技が使えなくなります。\nでも、ポイには限りがあるので、壊すかどうかはよく考えて！',
+    },
   ],
   chain_weak: [
     {
@@ -69,7 +78,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_weak', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_weak', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

@@ -113,6 +113,8 @@ export interface MainChainBattleInput {
   /** 区画ごとに書いた新しい戦闘の敵（段階160。書いていなければ、今の敵から仮に作る）と、組み合わせの型 */
   chainEnemies?: ChainEnemyDef[];
   variants?: ChainVariant[];
+  /** ポイ（段階162。思い出の再演「ポイが破れる前に」） */
+  poi?: ChainBattleDef['poi'];
   gradeAt?: { high: number; mid: number };
 }
 
@@ -133,6 +135,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     noShutter: true,
     finishLast: true,
     ...(input.cutoffRounds ? { cutoff: { rounds: input.cutoffRounds } } : {}),
+    ...(input.poi ? { poi: input.poi } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -141,7 +144,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
 export interface ChainDrop {
   enemyId: string;
   itemId: string;
-  kind: 'fixed' | 'common' | 'uncommon' | 'rare';
+  kind: 'fixed' | 'common' | 'uncommon' | 'rare' | 'part';
 }
 
 export interface ChainEncounterResult {
@@ -169,6 +172,12 @@ export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: n
     const rates = grade === 'high' ? DROP_RATES.offBalance : DROP_RATES.normal;
     let r = seed >>> 0;
     for (const u of s.enemies) {
+      // 部位（段階162）：壊した部位の素材は必ず落とす
+      const cd = s.def.enemies.find((x) => x.id === u.defId);
+      if (cd?.part) {
+        if (u.hp <= 0 && cd.drop) drops.push({ enemyId: u.uid, itemId: cd.drop, kind: 'part' });
+        continue;
+      }
       const d = byId.get(u.defId);
       if (!d || u.hp > 0 || u.gone) continue;
       for (const id of d.drops ?? []) drops.push({ enemyId: u.uid, itemId: id, kind: 'fixed' });
@@ -192,6 +201,8 @@ export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: n
 export function chainTipTriggers(s: ChainState): string[] {
   if (s.outcome !== 'ongoing') return [];
   const out = ['chain_plan'];
+  // ぬしの思い出の再演（段階162）：ポイのある戦闘
+  if (s.def.poi) out.push('chain_boss');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   const hand = s.hand.map((id) => s.def.cards[id]).filter((m): m is ChainMove => !!m);
