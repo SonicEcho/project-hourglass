@@ -71,6 +71,11 @@ function forceHand(s: ChainState, ids: string[]): void {
   s.deck = pool;
 }
 
+/** 警戒の印（残りのラウンドの数を＋で。1：警戒、2：警戒+、3：警戒++） */
+function guardLabel(left: number): string {
+  return `警戒${'+'.repeat(Math.max(0, left - 1))}`;
+}
+
 /** 文字から作る、ずらしの数（今の戦闘と同じ。探索の戦闘のシードを、戦闘ごとに変えるため） */
 function textHash(text: string): number {
   let h = 0;
@@ -931,7 +936,7 @@ export class ChainBattleScene extends Phaser.Scene {
       });
       if (e.down) r.add(this.sticker(artX + 10, boss ? artY - size / 2 + 18 : artY + 30, 'DOWN', RED, '#ffffff', 8, 14));
       // 警戒（段階162 調整6）：ダウンから起きた敵は、しばらくダウンしない
-      else if (alive && (e.guard ?? 0) > 0) r.add(this.sticker(artX + 6, boss ? artY - size / 2 + 16 : artY + 34, `警戒 あと${e.guard}`, 0x6bc8ff, '#06203a', -6, 11));
+      else if (alive && (e.guard ?? 0) > 0) r.add(this.sticker(artX + 6, boss ? artY - size / 2 + 16 : artY + 34, guardLabel(e.guard!), 0x6bc8ff, '#06203a', -6, 11));
       // 予定：黒い斜めの札に、赤い丸の時刻（大技・全体・逃げるは黄色）。すばやい敵は2つの時刻
       const intents = s.intents.filter((it) => it.enemy === e.uid);
       if (intents.length) {
@@ -2238,7 +2243,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'timerBlast') parts.push(`${name(ev.uid)}が大爆発！`);
     else if (ev.type === 'flee') parts.push(`${name(ev.uid)}が逃げた！`);
     else if (ev.type === 'down') parts.push(`${name(ev.uid)}ダウン`);
-    else if (ev.type === 'guarded') parts.push(`${name(ev.uid)}は警戒していて、ダウンしない（あと${ev.left}ラウンド）`);
+    else if (ev.type === 'guarded') parts.push(`${name(ev.uid)}は${guardLabel(ev.left)}中（ダウンしない）`);
     else if (ev.type === 'defeat') parts.push(`${name(ev.uid)}を倒した`);
     else if (ev.type === 'fizzle') parts.push('直前の攻撃がなくて不発');
     else if (ev.type === 'link') parts.push(`連携技「${ev.name}」！`);
