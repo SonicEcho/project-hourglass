@@ -929,7 +929,9 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(box);
         r.add(t);
       });
-      if (e.down) r.add(this.sticker(artX + 10, artY + 30, 'DOWN', RED, '#ffffff', 8, 14));
+      if (e.down) r.add(this.sticker(artX + 10, boss ? artY - size / 2 + 18 : artY + 30, 'DOWN', RED, '#ffffff', 8, 14));
+      // 警戒（段階162 調整6）：ダウンから起きた敵は、しばらくダウンしない
+      else if (alive && (e.guard ?? 0) > 0) r.add(this.sticker(artX + 6, boss ? artY - size / 2 + 16 : artY + 34, `警戒 あと${e.guard}`, 0x6bc8ff, '#06203a', -6, 11));
       // 予定：黒い斜めの札に、赤い丸の時刻（大技・全体・逃げるは黄色）。すばやい敵は2つの時刻
       const intents = s.intents.filter((it) => it.enemy === e.uid);
       if (intents.length) {
@@ -2236,6 +2238,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'timerBlast') parts.push(`${name(ev.uid)}が大爆発！`);
     else if (ev.type === 'flee') parts.push(`${name(ev.uid)}が逃げた！`);
     else if (ev.type === 'down') parts.push(`${name(ev.uid)}ダウン`);
+    else if (ev.type === 'guarded') parts.push(`${name(ev.uid)}は警戒していて、ダウンしない（あと${ev.left}ラウンド）`);
     else if (ev.type === 'defeat') parts.push(`${name(ev.uid)}を倒した`);
     else if (ev.type === 'fizzle') parts.push('直前の攻撃がなくて不発');
     else if (ev.type === 'link') parts.push(`連携技「${ev.name}」！`);

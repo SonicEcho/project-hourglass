@@ -45,7 +45,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
   chain_weak: [
     {
       target: 'weak',
-      text: '敵の弱点を突くと「ダウン」させられます。\nダウンした敵の予定はキャンセル！\n「弱点？」の敵には、いろいろな属性を試してみましょう。',
+      text: '敵の弱点を突くと「ダウン」させられます。\nダウンした敵の予定はキャンセル！\nただし、起きた敵はしばらく「警戒」してダウンしません。\n「弱点？」の敵には、いろいろな属性を試してみましょう。',
     },
   ],
   chain_addon: [

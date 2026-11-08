@@ -26,6 +26,8 @@ export const CHAIN_RULES: ChainRules = {
   splitHits: 4,
   hardCut: 25,
   pinpointMult: 1.5,
+  // 警戒（段階162 調整6）：ダウンから起きた敵は、ダウンの回数のラウンド（3まで）ダウンしない
+  guardMax: 3,
 };
 
 const card = (m: ChainMove): ChainMove => m;

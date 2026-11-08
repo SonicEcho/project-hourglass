@@ -248,3 +248,26 @@ describe('1-1 のぬし：部位とポイ（段階162）', () => {
     expect(runChainRound(s2, [mv('hero', 'basic', uidOf(s2, 'goldfishBowlLord'))]).state.outcome).toBe('win');
   });
 });
+
+describe('警戒（段階162 調整6）', () => {
+  it('ダウンから起きた敵は、ダウンの回数のラウンド（3まで）ダウンしない。弱点のダメージはそのまま', () => {
+    const st = CHAIN_AREA_SETUPS.a11_n1_gate;
+    const def = buildMainChainBattle({ id: 'g', name: 'g', party: [HERO, AKARI], enemies: AREA_BATTLES.a11_n1_gate.enemies, chainEnemies: st.enemies.map((e) => ({ ...e, hp: 99999 })), deck: st.deck, cards: st.cards, links: st.links });
+    let s = createChainBattle(def, CHAIN_RULES, 1);
+    s.hand = [];
+    const t = s.enemies[0].uid;
+    // 金魚は氷が弱点。あかりのアイス（技）で毎ラウンド当てる
+    const hit = (st0: ChainState) => runChainRound(st0, [mv('akari', 'ice', t)]);
+    const downs: boolean[] = [];
+    for (let k = 0; k < 8; k++) {
+      const r = hit(s);
+      downs.push(r.frames.some((f) => f.events.some((e) => e.type === 'down' && e.uid === t)));
+      s = r.state;
+      s.allies.forEach((a) => (a.hp = a.maxHp));
+      s.allies.forEach((a) => (a.mp = a.maxMp));
+    }
+    // 1回目ダウン → 警戒1 → 2回目ダウン → 警戒2 → 3回目ダウン → 警戒3
+    expect(downs).toEqual([true, false, true, false, false, true, false, false]);
+  });
+});
+
