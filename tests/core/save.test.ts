@@ -15,6 +15,7 @@ import {
   openableNodes,
   openNode,
   parseSave,
+  albumFromIds,
   placePart,
   progressAt,
   removeFromAlbum,
@@ -22,7 +23,7 @@ import {
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { AREA_BATTLES, AREAS, CARDS, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -480,5 +481,20 @@ describe('星図の前の id（段階56）', () => {
     expect(opened.hero.every((id) => GROWTH_MAP.nodes.some((n) => n.id === id))).toBe(true);
     expect(opened.akari).toEqual(['vega', GROWTH_MAP.renamed!.n4_0]);
     expect(opened.mio).toEqual(['sualocin']);
+  });
+});
+
+describe('セーブ：新しい戦闘のアルバム（段階163）', () => {
+  const cctx: SaveContext = { ...ctx, chainCards: CHAIN_SNAPS, initialChainAlbum: albumFromIds(CHAIN_START_ALBUM), chainAlbumRules: CHAIN_ALBUM };
+  it('保存して読む。持っていない時（前のセーブ）は最初のアルバム、知らないスナップは捨てる', () => {
+    const r = { ...playedRun(), chainAlbum: gainSnaps(albumFromIds(CHAIN_START_ALBUM), ['c17_group', 'nothing']) };
+    const res = parseSave(serializeSave(r, AT), cctx);
+    expect(res.ok && res.save.run.chainAlbum?.owned.c17_group).toBe(1);
+    expect(res.ok && res.save.run.chainAlbum?.owned.nothing).toBeUndefined();
+    const old = parseSave(serializeSave(playedRun(), AT), cctx);
+    expect(old.ok && old.save.run.chainAlbum).toEqual(albumFromIds(CHAIN_START_ALBUM));
+    // 新しい戦闘のスナップを知らない時（書かない文脈）は、読まない
+    const none = parseSave(serializeSave(r, AT), ctx);
+    expect(none.ok && none.save.run.chainAlbum).toBeUndefined();
   });
 });

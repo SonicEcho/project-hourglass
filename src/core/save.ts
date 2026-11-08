@@ -57,6 +57,8 @@ export interface RunSnapshot {
   album: AlbumState;
   /** 戦闘中（段階44。版12から）：閉じたら、この戦闘の始めから続ける。戦闘の外では null */
   battle: SavedBattle | null;
+  /** 新しい戦闘のアルバム（段階163。同じ版のまま足した。古いセーブは最初のアルバム） */
+  chainAlbum?: AlbumState;
   /** 遊ぶ人が選んだ戦闘の並び（段階91a。版13から）。空なら章の並びのまま */
   party: string[];
 }
@@ -93,6 +95,10 @@ export interface SaveContext {
   /** スナップ（id → 中身）と、最初の持ち物とアルバム（段階41） */
   cards: Record<string, CardDef>;
   initialAlbum: AlbumState;
+  /** 新しい戦闘のスナップと、最初のアルバム（段階163。書かなければ新しい戦闘のアルバムを読まない） */
+  chainCards?: Record<string, { id: string }>;
+  initialChainAlbum?: AlbumState;
+  chainAlbumRules?: { size: number; copyMax: number };
   /** 区画の戦闘の id（段階44。戦闘中の印を整える。書かなければ、戦闘中の印は捨てる） */
   battleIds?: readonly string[];
 }
@@ -210,6 +216,9 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     // 今の区画にないものと、重なりは捨てる
     returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
     album: sanitizeAlbum(raw.album, ctx.cards, ctx.initialAlbum),
+    ...(ctx.chainCards && ctx.initialChainAlbum
+      ? { chainAlbum: sanitizeAlbum(raw.chainAlbum, ctx.chainCards, ctx.initialChainAlbum, ctx.chainAlbumRules?.size, ctx.chainAlbumRules?.copyMax) }
+      : {}),
     battle: sanitizeBattle(raw.battle, ctx),
     // 知らない仲間と、重なりは捨てる（段階91a）
     party: Array.isArray(raw.party) ? [...new Set(raw.party.filter((x): x is string => typeof x === 'string' && ctx.characterIds.includes(x)))] : [],

@@ -21,6 +21,13 @@ export function createAlbum(initial: { card: CardDef; count: number }[]): AlbumS
   return { owned: { ...counts }, album: { ...counts } };
 }
 
+/** 札の id の並びから、最初の持ち物を作る（段階163。新しい戦闘のアルバム） */
+export function albumFromIds(ids: string[]): AlbumState {
+  const counts: SnapCounts = {};
+  for (const id of ids) counts[id] = (counts[id] ?? 0) + 1;
+  return { owned: { ...counts }, album: { ...counts } };
+}
+
 /** アルバムに入れている枚数が同じか（段階124。アルバムの下書きが変わったかを見る。持っている数は比べない） */
 export function sameAlbum(a: AlbumState, b: AlbumState): boolean {
   const ids = new Set([...Object.keys(a.album), ...Object.keys(b.album)]);
@@ -93,7 +100,7 @@ export function albumDeck(state: AlbumState, cards: Record<string, CardDef>): Ca
  * 知らないスナップは捨て、最初の持ち物は必ず持っていることにする。アルバムは持っている枚数と上限におさめ、
  * size 枚ちょうどでなければ最初のアルバムに戻す（壊れた形で戦えなくならないように）
  */
-export function sanitizeAlbum(raw: unknown, cards: Record<string, CardDef>, initial: AlbumState, size = ALBUM_SIZE, copyMax = ALBUM_COPY_MAX): AlbumState {
+export function sanitizeAlbum(raw: unknown, cards: Record<string, { id: string }>, initial: AlbumState, size = ALBUM_SIZE, copyMax = ALBUM_COPY_MAX): AlbumState {
   const obj = isObject(raw) ? raw : {};
   const owned: SnapCounts = { ...initial.owned };
   for (const [id, n] of Object.entries(counts(obj.owned, cards))) owned[id] = Math.max(owned[id] ?? 0, n);
@@ -105,7 +112,7 @@ export function sanitizeAlbum(raw: unknown, cards: Record<string, CardDef>, init
   return { owned, album: countOf(album) === size ? album : { ...initial.album } };
 }
 
-function counts(raw: unknown, cards: Record<string, CardDef>): SnapCounts {
+function counts(raw: unknown, cards: Record<string, { id: string }>): SnapCounts {
   const out: SnapCounts = {};
   if (!isObject(raw)) return out;
   for (const [id, n] of Object.entries(raw)) if (cards[id] && typeof n === 'number' && Number.isInteger(n) && n > 0) out[id] = n;

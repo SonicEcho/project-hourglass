@@ -5,6 +5,7 @@ import {
   applyNavi,
   applyWeapons,
   battleNumber,
+  albumFromIds,
   createAlbum,
   createArmory,
   createGrowth,
@@ -25,7 +26,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CARDS, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -61,6 +62,8 @@ export const run: {
   returned: string[];
   /** 持っているスナップと、アルバムの中身（段階41） */
   album: AlbumState;
+  /** 新しい戦闘のアルバム（段階163） */
+  chainAlbum: AlbumState;
   /**
    * 狩りの途中の状態（段階43。返し終えた区画に入り直している時だけ）。セーブしない（閉じたら昼の日常から）。
    * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）。fade は記憶の薄れ（段階57）による、その回の実入りの割合
@@ -85,6 +88,7 @@ export const run: {
   linkGauge: null,
   returned: [],
   album: createAlbum(FOLDER),
+  chainAlbum: albumFromIds(CHAIN_START_ALBUM),
   hunt: null,
   battle: null,
   party: [],
@@ -128,6 +132,7 @@ export function startNewRun(): void {
   run.linkGauge = null;
   run.returned = [];
   run.album = createAlbum(FOLDER);
+  run.chainAlbum = albumFromIds(CHAIN_START_ALBUM);
   run.hunt = null;
   run.battle = null;
   run.party = [];
@@ -230,6 +235,9 @@ export function saveContext(): SaveContext {
     renamedEvents: RENAMED_EVENTS,
     cards: CARDS,
     initialAlbum: createAlbum(FOLDER),
+    chainCards: CHAIN_SNAPS,
+    initialChainAlbum: albumFromIds(CHAIN_START_ALBUM),
+    chainAlbumRules: CHAIN_ALBUM,
     battleIds: Object.keys(AREA_BATTLES),
   };
 }
@@ -249,6 +257,7 @@ function snapshot(): RunSnapshot {
     linkGauge: run.linkGauge,
     returned: run.returned,
     album: run.album,
+    chainAlbum: run.chainAlbum,
     battle: run.battle,
     party: run.party,
   };
@@ -407,6 +416,7 @@ export function continueRun(): boolean {
   run.linkGauge = s.linkGauge;
   run.returned = s.returned;
   run.album = s.album;
+  run.chainAlbum = s.chainAlbum ?? albumFromIds(CHAIN_START_ALBUM);
   run.battle = s.battle;
   run.party = s.party;
   run.hunt = null;

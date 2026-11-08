@@ -1,5 +1,5 @@
 import { battleReward, boardColorCells, capItems, gainSnaps, keepVitals, recordVictory, thinItems, type ChainEncounterResult, type Lineup } from '../core';
-import { CHAIN_AREA_BATTLES, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
+import { AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import type { BattleSceneData } from './BattleScene';
@@ -23,6 +23,17 @@ export function setDebugNewBattle(on: boolean): void {
 export function useNewBattle(battleId: string): boolean {
   if (CHAIN_AREA_BATTLES.includes(battleId)) return true;
   return isDebugEnabled(typeof window === 'undefined' ? '' : window.location.search) && debugNewBattle();
+}
+
+/**
+ * 今いる区画が、新しい戦闘の区画か（段階163。アルバムの画面で、どちらのアルバムを開くか）。
+ * 探索の外（拠点など）や、区画の戦闘が今の戦闘のままの区画では false
+ */
+export function chainAlbumActive(): boolean {
+  const area = run.explore ? AREAS[run.explore.area] : undefined;
+  if (!area) return false;
+  const battles = [...area.enemies.map((e) => e.battle), area.boss?.battle].filter((x): x is string => !!x);
+  return battles.some((b) => CHAIN_AREA_BATTLES.includes(b));
 }
 
 /** 探索の戦闘の始め方（新しい戦闘か、今の戦闘か） */
@@ -62,8 +73,12 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   });
   const capped = capItems(WEAPON_DATA, run.armory);
   run.armory = capped.armory;
-  const snaps = enc.hunt ? [] : (def.snaps ?? []);
+  // スナップ：区画を作り直した戦闘は、新しい戦闘のスナップを新しいアルバムへ（段階163）。まだの戦闘は今のアルバムへ
+  const setup = CHAIN_AREA_SETUPS[def.id];
+  const chainSnaps = enc.hunt || !setup ? [] : (setup.snaps ?? []);
+  const snaps = enc.hunt || setup ? [] : (def.snaps ?? []);
   if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
+  if (chainSnaps.length > 0) run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
   saveRun();
   const mark = (kind: string) => (kind === 'rare' ? '★' : kind === 'uncommon' ? '◆' : '');
   const counts = new Map<string, number>();
@@ -73,6 +88,6 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   }
   const list = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
   const itemName = (id: string) => WEAPON_DATA.items[id]?.name ?? id;
-  const dropText = `素材：${list || 'なし'}${faded > 0 ? `（記憶が薄れて、${faded}つは砂に戻った）` : ''}${prize ? `　アイテム：${itemName(prize)}` : ''}${capped.overflow.length ? `（いっぱいで入らなかった：${capped.overflow.map(itemName).join('、')}）` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}`;
+  const dropText = `素材：${list || 'なし'}${faded > 0 ? `（記憶が薄れて、${faded}つは砂に戻った）` : ''}${prize ? `　アイテム：${itemName(prize)}` : ''}${capped.overflow.length ? `（いっぱいで入らなかった：${capped.overflow.map(itemName).join('、')}）` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}${chainSnaps.length > 0 ? `\nスナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''}`;
   return { gained, koma: def.koma && !enc.hunt ? def.koma : 0, dropText, rare: drops.some((d) => d.kind === 'rare') };
 }

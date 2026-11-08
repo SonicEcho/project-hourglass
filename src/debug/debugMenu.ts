@@ -4,7 +4,7 @@ import { debugNewBattle, setDebugNewBattle } from '../scenes/chainEncounter';
 import { debugAutoStory, setDebugAutoStory } from './debugFlag';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
-import { AREA_BATTLES, AREAS, ROOM_NAMES, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, ROOM_NAMES, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
 import type { GrowthTier } from '../sim/presets';
 import { clearReadLog } from '../scenes/DialogueScene';
 import {
@@ -349,6 +349,8 @@ export function installDebugMenu(nav: DebugNavigator): void {
       }),
       button(`スナップを全種類1枚ずつもらう（今 ${countOf(run.album.owned)}枚）`, () => {
         run.album = gainSnaps(run.album, Object.keys(CARDS));
+        // 段階163：新しい戦闘のスナップも
+        run.chainAlbum = gainSnaps(run.chainAlbum, Object.keys(CHAIN_SNAPS));
         nav.refreshGrowth();
         notify(`スナップを${Object.keys(CARDS).length}枚もらいました（${countOf(run.album.owned)}枚）`);
       }),
