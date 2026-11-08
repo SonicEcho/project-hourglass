@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { startWithImages } from '../ui/waitImages';
+import { battleSceneFor } from './chainEncounter';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { FlowEvent } from '../core';
 import { chapterOfEvent, dialogueRun, isPlaceholder } from '../core';
@@ -74,7 +75,10 @@ export class FlowScene extends Phaser.Scene {
         // 物語の戦闘（段階40。カイの負け戦）。前の区画の探索は、返さずに終わったので片付ける。勝ち負けにかかわらず次の出来事へ
         setExplore(null);
         const next = { key: 'Flow', data: { done: true } satisfies FlowData };
-        this.startWhenReady('Battle', { encounter: { battle: event.battle!, win: next, lose: next } } satisfies BattleSceneData);
+        {
+          const data = { encounter: { battle: event.battle!, win: next, lose: next } } satisfies BattleSceneData;
+          this.startWhenReady(battleSceneFor(data), data);
+        }
         return;
       }
       default:

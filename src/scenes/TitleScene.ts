@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
+import { battleSceneFor } from './chainEncounter';
 import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
 import { addImageOr, preloadQueue } from '../assets/loader';
 import { dialogueImages, focusImages, startWithImages } from '../ui/waitImages';
@@ -111,7 +112,7 @@ export class TitleScene extends Phaser.Scene {
     const battle = (data: BattleSceneData) =>
       this.leave(glow, fall, ui, () => {
         this.cameras.main.resetFX();
-        startWithImages(this, 'Battle', data);
+        startWithImages(this, battleSceneFor(data), data);
       });
     root = ui;
     root.add(addText(this, cx, 432, '試作版（第4章の 4-1 まで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));

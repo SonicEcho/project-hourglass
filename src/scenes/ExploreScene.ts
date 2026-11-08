@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { startWithImages } from '../ui/waitImages';
+import { battleSceneFor } from './chainEncounter';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -1020,14 +1021,16 @@ export class ExploreScene extends Phaser.Scene {
           : {}),
       },
     };
+    // 段階159：新しい戦闘にした区画の戦闘（と、デバッグの切り替え）は、並べてつなぐ戦闘の画面へ
+    const key = battleSceneFor(data);
     const cam = this.cameras.main;
     if (!cam) {
-      this.scene.start('Battle', data);
+      this.scene.start(key, data);
       return;
     }
     cam.shake(200, 0.006);
     cam.flash(250, 255, 255, 255);
-    this.time.delayedCall(320, () => this.scene.start('Battle', data));
+    this.time.delayedCall(320, () => this.scene.start(key, data));
   }
 
   /** 区画を出て、物語の次の出来事（時間を返す）へ。集めたコマは返す画面で使うので、探索の状態は返し終えるまで残す（段階28） */

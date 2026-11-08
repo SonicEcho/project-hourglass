@@ -29,12 +29,16 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { AKARI, AREA_BATTLES, HERO, MIO, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
-import { buildMainChainBattle, isChainFinish, type ChainBattleDef, type CharacterDef, type Element } from '../core';
-import { currentParty, partyChoice } from './run';
+import { AKARI, AREA_BATTLES, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { buildMainChainBattle, chainEncounterResult, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
+import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
+import type { BattleSceneData } from './BattleScene';
+import { settleChainWin } from './chainEncounter';
+import { smartChainPlan } from '../sim/chainAuto';
+import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
-import { playSe } from '../audio/sound';
+import { playBgm, playSe } from '../audio/sound';
 import { ALLY_COLOR, COLORS, ELEMENT_COLOR, ELEMENT_LABEL, RENDER_SCALE } from '../ui/theme';
 import { addText, makePressable } from '../ui/widgets';
 import { waitImages } from '../ui/waitImages';
@@ -49,7 +53,19 @@ export interface ChainBattleData {
   stage?: ChainStage;
   /** 段階158：本番の仲間（育成を反映した今の並び）と、1-1 の砂嵐の敵で戦う */
   main?: boolean;
+  /** 段階159：探索から来た戦闘（今の戦闘の BattleSceneData と同じ形）。区画の戦闘の敵と今の並びで戦い、報酬を受け取って戻る */
+  encounter?: BattleSceneData['encounter'];
 }
+
+/** 文字から作る、ずらしの数（今の戦闘と同じ。探索の戦闘のシードを、戦闘ごとに変えるため） */
+function textHash(text: string): number {
+  let h = 0;
+  for (const ch of text) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
+  return h;
+}
+
+/** 速さ（×1・×2）を覚える所（端末ごと） */
+const SPEED_KEY = 'hourglass.chainSpeed';
 
 /** 段階158：本番の仲間（今の並び。育成を反映）と 1-1 の砂嵐の敵。札は調整17の試しのアルバム */
 function mainTrialDef(): ChainBattleDef {
@@ -169,6 +185,13 @@ export class ChainBattleScene extends Phaser.Scene {
   private targetUid = '';
   /** 実行中：タップで次へ進める（待ちを飛ばす） */
   private advance: (() => void) | null = null;
+  /** 探索から来た戦闘（段階159） */
+  private encounter?: BattleSceneData['encounter'];
+  private areaBattle?: CampaignBattle;
+  private lineup?: Lineup;
+  private seed = 0;
+  /** 演出の速さ（×1・×2） */
+  private speed: 1 | 2 = 1;
   /** 気をつける案内（赤く出す。案内が変わると、ふつうの見た目に戻る） */
   private warnMsg = '';
   /** クライマックスの確かめ：1回目のタップで知らせた札 */
@@ -193,8 +216,40 @@ export class ChainBattleScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b0f22).setOrigin(0);
     this.trial = data.trial;
     this.stage = data.stage ?? 'mid';
-    const def = data.main ? mainTrialDef() : chainTrialDef(data.trial, this.stage);
-    this.s = createChainBattle(def, CHAIN_RULES, data.seed ?? Date.now() % 100000, loadKnown());
+    this.encounter = data.encounter;
+    this.speed = browserStorage().read(SPEED_KEY) === '2' ? 2 : 1;
+    const area = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
+    if (data.encounter && !area) throw new Error(`unknown area battle ${data.encounter.battle}`);
+    this.areaBattle = area;
+    if (data.encounter && area) {
+      // 探索から来た戦闘（段階159）：今の並び（育成を反映）・区画の中の HP と MP・区画の戦闘の敵。アルバムは段階D まで試しの札
+      this.lineup = storyBattleLineup();
+      const base = CHAIN_TRIALS[0];
+      const def = buildMainChainBattle({
+        id: area.id,
+        name: area.name,
+        party: currentParty(this.lineup),
+        enemies: area.enemies,
+        deck: base.deck,
+        cards: base.cards,
+        links: base.links,
+        cutoffRounds: area.cutoff?.rounds,
+        gradeAt: area.boss ? { high: 35, mid: 50 } : { high: 13, mid: 20 },
+      });
+      this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
+      const vitals = data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
+      this.s = createChainBattle(def, CHAIN_RULES, this.seed, loadKnown(), vitals ?? {});
+      playBgm(this, BATTLE_BGM[area.id] ?? (area.boss ? BGM.boss : BGM.battle));
+      // 戦闘中の印（今の戦闘と同じ）：閉じたら「つづきから」で、この戦闘の始めから
+      if (!data.encounter.hunt) {
+        const target = (t: { key: string; data: object }) => ({ key: t.key, data: { ...t.data } as Record<string, unknown> });
+        setBattleMark({ battle: data.encounter.battle, win: target(data.encounter.win), lose: target(data.encounter.lose) });
+      }
+    } else {
+      const def = data.main ? mainTrialDef() : chainTrialDef(data.trial, this.stage);
+      this.seed = data.seed ?? Date.now() % 100000;
+      this.s = createChainBattle(def, CHAIN_RULES, this.seed, loadKnown());
+    }
     this.root = this.add.container(0, 0);
     this.plan = [];
     this.pending = null;
@@ -216,7 +271,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (this.busy && this.advance) this.advance();
     });
     this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}${this.s.variant ? `型「${this.s.variant}」。` : ''}${this.s.def.finishLast ? 'エフェクトは並べた行動に添える（時間を使わない。2枚まで）。クライマックスは最後に。' : '上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。'}弱点は当てると分かる`;
-    const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
+    const ids = [CHAIN_TRIAL_BG[this.s.def.id], ...this.s.def.enemies.map((e) => ENEMY_ART[e.id]), ...this.s.def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
 
@@ -337,8 +392,19 @@ export class ChainBattleScene extends Phaser.Scene {
     round.setShadow(3, 3, '#ff2d55', 0, false, true);
     r.add(round);
     const name = `${this.stage === 'early' ? '序盤：' : this.stage === 'multi' ? '連続：' : ''}${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
+    // 速さ（×1・×2）と、デバッグの時だけオート（考える方針で1ラウンド並べて実行）
+    const small = (x: number, w: number, label: string, on: boolean, tap: () => void) => {
+      r.add(this.para(x, 11, w, 20, on ? YELLOW : 0x1a2040, 1, 6));
+      r.add(addText(this, x + w / 2, 21, label, { size: 10, bold: true, color: on ? '#000000' : '#c9d0ea' }).setOrigin(0.5));
+      const hit = this.add.rectangle(x + w / 2, 21, w + 6, 30, 0xffffff, 0.001);
+      r.add(hit);
+      makePressable(hit, { onTap: tap });
+    };
+    small(172, 34, `×${this.speed}`, this.speed === 2, () => this.toggleSpeed());
+    const debug = isDebugEnabled(window.location.search);
+    if (debug) small(212, 42, 'AUTO', false, () => this.autoRound());
     const t = addText(this, GAME_WIDTH - 18, 21, name, { size: 10, bold: true }).setOrigin(1, 0.5);
-    const room = GAME_WIDTH - 190;
+    const room = GAME_WIDTH - (debug ? 280 : 236);
     if (t.width > room) t.setScale(room / t.width);
     r.add(this.para(GAME_WIDTH - 28 - t.displayWidth, 10, t.displayWidth + 20, 22, RED, 1, 8));
     r.add(t);
@@ -1126,6 +1192,25 @@ export class ChainBattleScene extends Phaser.Scene {
     this.finishRound(final);
   }
 
+  private toggleSpeed(): void {
+    this.speed = this.speed === 1 ? 2 : 1;
+    browserStorage().write(SPEED_KEY, String(this.speed));
+    if (!this.busy) this.render();
+  }
+
+  /** デバッグ用のオート：考える方針（自動対戦と同じ）で、このラウンドを並べて実行する */
+  private autoRound(): void {
+    if (this.busy || this.s.outcome !== 'ongoing' || this.s.shutter) return;
+    let r = (this.seed + this.s.round * 7919) >>> 0;
+    this.plan = smartChainPlan(this.s, (n) => {
+      const [v, next] = nextRandom(r);
+      r = next;
+      return Math.floor(v * n);
+    });
+    this.addonAt = null;
+    this.execute();
+  }
+
   private execute(): void {
     if (this.busy || this.plan.length === 0) return;
     this.cutInShown = new Set();
@@ -1154,7 +1239,7 @@ export class ChainBattleScene extends Phaser.Scene {
       return;
     }
     const x = FILM_X + CELL * t;
-    const ms = Math.max(0, ((x - head.x) / CELL) * TICK_MS);
+    const ms = Math.max(0, ((x - head.x) / CELL) * TICK_MS) / this.speed;
     if (ms < 30) {
       head.x = Math.max(head.x, x);
       next();
@@ -1330,7 +1415,7 @@ export class ChainBattleScene extends Phaser.Scene {
       this.advance = null;
       next();
     };
-    const timer = this.time.delayedCall(ms, run);
+    const timer = this.time.delayedCall(ms / this.speed, run);
     this.advance = run;
   }
 
@@ -1535,6 +1620,10 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 決着の画面：撮った写真・評価の星・早撮りの報酬（調整9：イメージ 3_shutter） */
   private showEnd(): void {
+    if (this.encounter) {
+      this.showEncounterEnd();
+      return;
+    }
     const s = this.s;
     const win = s.outcome === 'win';
     const o = this.add.container(0, 0).setDepth(100);
@@ -1626,6 +1715,48 @@ export class ChainBattleScene extends Phaser.Scene {
     const fled = s.enemies.filter((e) => e.gone && e.trait === 'flee').length;
     if (fled) o.add(addText(this, GAME_WIDTH / 2, 730, `逃げられた敵：${fled}体`, { size: 11, color: '#ff9db0' }).setOrigin(0.5));
     this.endButtons(o);
+  }
+
+  /** 探索から来た戦闘の終わり（段階159）：勝てば報酬を受け取って探索へ、負ければチェックポイントへ、負け戦は話の続きへ */
+  private showEncounterEnd(): void {
+    const s = this.s;
+    const enc = this.encounter!;
+    const def = this.areaBattle!;
+    if (run.battle) setBattleMark(null);
+    const result = chainEncounterResult(s, def.enemies, this.seed + 7);
+    const o = this.add.container(0, 0).setDepth(100);
+    o.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b1020, 0.97).setOrigin(0).setInteractive());
+    o.add(this.add.circle(GAME_WIDTH / 2, 260, 240, 0x5a1028, 0.35));
+    const win = result.outcome === 'victory';
+    const titleText = win ? 'CLEAR!' : result.outcome === 'cutoff' ? '……' : 'GAME OVER';
+    const title = addText(this, GAME_WIDTH / 2, 120, titleText, { size: 44, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setStroke('#000000', 4);
+    title.setShadow(5, 5, '#ff2d55', 0, false, true);
+    o.add(title);
+    const button = (label: string, to: { key: string; data: object }) => this.slantButton(GAME_WIDTH / 2 - 130, 720, 260, 56, label, () => this.scene.start(to.key, to.data), { into: o, go: true, size: 16 });
+    const body = (text: string, y = 300) => o.add(addText(this, GAME_WIDTH / 2, y, text, { size: 15, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
+    if (result.outcome === 'cutoff') {
+      body(`${s.enemies[0]?.name ?? ''}の動きが、見えない……${def.cutoffBack ? '\n最後に記録したチェックポイントへ戻される' : ''}`);
+      button(def.cutoffBack ? 'チェックポイントへ' : '次へ', def.cutoffBack ? enc.lose : enc.win);
+      return;
+    }
+    if (!win) {
+      body(`${s.finishRound ?? s.round}ラウンド目で倒れた…\n最後に記録したチェックポイントから、やり直す\n\n・${enc.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま'}\n・HP・MP は全回復して戻る`);
+      button('チェックポイントへ', enc.lose);
+      return;
+    }
+    const reward = settleChainWin(enc, def, result, this.lineup!, this.seed);
+    const grade = gradeStars(result.grade);
+    const stars = addText(this, GAME_WIDTH / 2, 210, '★'.repeat(grade) + '☆'.repeat(3 - grade), { size: 44, bold: true, color: '#ffd23f' }).setOrigin(0.5).setStroke('#000000', 4);
+    o.add(stars);
+    this.tweens.add({ targets: stars, scale: { from: 1.6, to: 1 }, duration: 300, ease: 'Back.easeOut' });
+    o.add(addText(this, GAME_WIDTH / 2, 258, `決着 合計 ${s.finishTime} マス（${s.finishRound}ラウンド目）${result.grade === 'high' ? '\n早撮りボーナス：珍しい素材とレアが出やすい' : ''}`, { size: 13, bold: true, align: 'center', color: '#ffd23f' }).setOrigin(0.5, 0));
+    if (reward.rare) {
+      const rare = addText(this, GAME_WIDTH / 2, 340, '★ レア！', { size: 28, bold: true, color: '#ffd23f' }).setOrigin(0.5).setStroke('#5a3a00', 6);
+      o.add(rare);
+      playSe(this, SE.chest);
+    }
+    body(`${reward.koma ? `コマ +${reward.koma}\n` : ''}星の砂 +${reward.gained}（合計 ${run.growth.points}）\n${reward.dropText}`, 380);
+    button('探索へ戻る', enc.win);
   }
 
   private endButtons(o: Phaser.GameObjects.Container): void {

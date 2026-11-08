@@ -278,3 +278,9 @@ export function chainTrialDef(id: string, stage: ChainStage = 'mid'): ChainBattl
   return list.find((t) => t.id === id) ?? list[0];
 }
 
+
+/**
+ * 新しい戦闘で戦う区画の戦闘（段階159。AREA_BATTLES の id）。段階D で 1-1 を入れ、段階F で章ごとに増やす。
+ * ここにない戦闘は、今の本番の戦闘のまま（デバッグメニューの切り替えで、全部を新しい戦闘にして試せる）
+ */
+export const CHAIN_AREA_BATTLES: string[] = [];

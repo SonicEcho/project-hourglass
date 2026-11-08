@@ -1,5 +1,6 @@
 import { formatBattleLog } from './battleLog';
 import { playtimeReport, resetPlaytime } from './playtime';
+import { debugNewBattle, setDebugNewBattle } from '../scenes/chainEncounter';
 import { debugAutoStory, setDebugAutoStory } from './debugFlag';
 import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
@@ -492,6 +493,11 @@ export function installDebugMenu(nav: DebugNavigator): void {
           nav.openPrototype('LeapBattle', { trial });
         }, true, 'background:#1f5a3a;border-color:#8affc8;'),
       ),
+      // 段階159：探索の戦闘を、全部新しい戦闘（並べてつなぐ戦闘）にして試す（端末に覚える。?debug=1 の時だけ効く）
+      button(`探索の戦闘を新しい戦闘にする：${debugNewBattle() ? 'オン' : 'オフ'}`, () => {
+        setDebugNewBattle(!debugNewBattle());
+        close();
+      }, true, 'background:#5a3a1f;border-color:#ffc88a;'),
       // 段階158：新しい戦闘を本番用に。今の並び（育成を反映）と 1-1 の砂嵐の敵で戦う。今のセーブには触れない
       button('試し：本番の仲間で並べてつなぐ（1-1 の砂嵐）', () => {
         close();
