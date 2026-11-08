@@ -137,6 +137,8 @@ export interface ChainMove {
   text: string;
   /** 専用の札：この仲間（id）しか使えない */
   owner?: string;
+  /** 技の MP（段階158。星図で覚える技。札と通常攻撃は使わない） */
+  mp?: number;
 }
 
 /** 札の分類（画面の帯と説明に出す。調整13：専用の札は、中身にかかわらず「スペシャル」に分ける） */
@@ -160,6 +162,30 @@ export interface ChainAllyDef {
   mag: number;
   def: number;
   moves: ChainMove[];
+  /** MP（段階158。書かなければ0＝技の MP を気にしない試しの仲間） */
+  mp?: number;
+  /** 育成からの特性（段階158。星図・武器・ムーブメント） */
+  passives?: ChainPassive[];
+}
+
+/**
+ * 仲間の特性（段階158。本番の育成から受け取る物のうち、新しい戦闘で効く物）。
+ * 属性の割増し・コンボ（クライマックス扱いの連携）の割増し・ラウンドの始めの回復・技の MP の節約・狂い（ラウンドの始めに HP を失う）
+ */
+export type ChainPassive =
+  | { kind: 'elementBoost'; element: Element; rate: number }
+  | { kind: 'comboBoost'; rate: number }
+  | { kind: 'regen'; rate: number }
+  | { kind: 'mpSave'; amount: number }
+  | { kind: 'bug'; rate: number };
+
+/** 割合の特性の上限（段階158。今の本番の PASSIVE_CAPS と同じ考え） */
+export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2 };
+
+/** 区画の中で持ち越す HP・MP（仲間の id ごと） */
+export interface ChainVitals {
+  hp: number;
+  mp: number;
 }
 
 export interface ChainEnemyMove {
@@ -276,6 +302,8 @@ export interface ChainBattleDef {
   noShutter?: boolean;
   /** フィニッシュ（コンボ・連携技も）はラウンドの最後の行動だけ（調整17） */
   finishLast?: boolean;
+  /** 負け戦（段階158）：このラウンドが終わったら打ち切る（outcome は 'cutoff'） */
+  cutoff?: { rounds: number };
 }
 
 export interface ChainUnit {
@@ -316,6 +344,10 @@ export interface ChainUnit {
   veiled?: boolean;
   /** 巻き戻し：ラウンドの始めの HP */
   roundHp?: number;
+  /** 仲間の MP（段階158） */
+  mp?: number;
+  maxMp?: number;
+  passives?: ChainPassive[];
 }
 
 /** 敵の予定（ラウンドの始めに決まる） */
@@ -416,7 +448,8 @@ export interface ChainState {
   exposure: number;
   roundHits: number;
   roundSupports: number;
-  outcome: 'ongoing' | 'win' | 'lose';
+  /** cutoff：負け戦の打ち切り（段階158） */
+  outcome: 'ongoing' | 'win' | 'lose' | 'cutoff';
   /** 決着の仕方 */
   finish?: 'shutter' | 'defeat';
   /** 決着したラウンド */
@@ -561,12 +594,36 @@ function statusIntent(s: ChainState, e: ChainUnit, it: ChainIntent, kind: ChainS
   return it;
 }
 
-export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, known: Record<string, Element[]> = {}): ChainState {
+/**
+ * 戦闘を始める。vitals：区画の中で持ち越した HP・MP（段階158。書いていない仲間は満タン。最大を超える分は最大に）
+ */
+export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: number, known: Record<string, Element[]> = {}, vitals: Record<string, ChainVitals> = {}): ChainState {
   const s: ChainState = {
     def,
     rules,
     round: 1,
-    allies: def.allies.map((d) => ({ uid: d.id, defId: d.id, name: d.name, side: 'ally', hp: d.hp, maxHp: d.hp, atk: d.atk, mag: d.mag, def: d.def, weak: [], resist: [], down: false, step: 0 })),
+    allies: def.allies.map((d) => {
+      const v = vitals[d.id];
+      const maxMp = d.mp ?? 0;
+      return {
+        uid: d.id,
+        defId: d.id,
+        name: d.name,
+        side: 'ally' as const,
+        hp: Math.max(0, Math.min(d.hp, v?.hp ?? d.hp)),
+        maxHp: d.hp,
+        atk: d.atk,
+        mag: d.mag,
+        def: d.def,
+        weak: [],
+        resist: [],
+        down: false,
+        step: 0,
+        mp: Math.max(0, Math.min(maxMp, v?.mp ?? maxMp)),
+        maxMp,
+        passives: d.passives ?? [],
+      };
+    }),
     enemies: def.enemies.map((d, i) => enemyUnit(d, `${d.id}#${i}`)),
     deck: [],
     hand: [],
@@ -595,6 +652,31 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
   for (let i = 0; i < rules.handSize; i++) draw(s);
   planIntents(s);
   return s;
+}
+
+/** 特性の合計（種類ごと。上限で止める） */
+function passiveSum(u: ChainUnit, kind: 'comboBoost' | 'regen' | 'mpSave' | 'bug'): number {
+  let sum = 0;
+  for (const p of u.passives ?? []) if (p.kind === kind) sum += p.kind === 'mpSave' ? p.amount : p.rate;
+  const cap = kind === 'bug' ? Infinity : CHAIN_PASSIVE_CAPS[kind];
+  return Math.min(sum, cap);
+}
+
+function elementBoost(u: ChainUnit, el: Element): number {
+  let sum = 0;
+  for (const p of u.passives ?? []) if (p.kind === 'elementBoost' && p.element === el) sum += p.rate;
+  return Math.min(sum, CHAIN_PASSIVE_CAPS.elementBoost);
+}
+
+/** その仲間が技を使う時の MP（段階158。MP の節約で減る。最低1。MP のない行動は0） */
+export function chainMoveMp(u: ChainUnit | undefined, move: ChainMove | null | undefined): number {
+  if (!move?.mp) return 0;
+  return Math.max(1, move.mp - (u ? passiveSum(u, 'mpSave') : 0));
+}
+
+/** 戦闘が終わった時の HP・MP（段階158。区画の中の次の戦闘へ持ち越す） */
+export function chainVitals(s: ChainState): Record<string, ChainVitals> {
+  return Object.fromEntries(s.allies.map((a) => [a.defId, { hp: a.hp, mp: a.mp ?? 0 }]));
 }
 
 export function findChainUnit(s: ChainState, uid: string): ChainUnit | undefined {
@@ -719,6 +801,12 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
     }
   }
   const me = s.allies.find((a) => a.uid === step.ally);
+  // MP（段階158）：足りない技は並べられない（同じ仲間がこのラウンドに並べた技の分も引く）
+  const mp = chainMoveMp(me, move);
+  if (mp > 0 && me) {
+    const planned = plan.filter((p) => p.ally === me.uid).reduce((a, p) => a + chainMoveMp(me, chainMoveOf(s, p)), 0);
+    if ((me.mp ?? 0) - planned < mp) return `MP が足りない（MP${mp}、残り${Math.max(0, (me.mp ?? 0) - planned)}）`;
+  }
   if (move.owner && step.source.kind === 'card' && me?.defId !== move.owner) return `${s.def.allies.find((a) => a.id === move.owner)?.name ?? ''}の専用の札`;
   if (move.target === 'enemy') {
     const t = s.enemies.find((e) => e.uid === step.target);
@@ -777,6 +865,8 @@ interface HitOpts {
   add?: number;
   forceWeak?: boolean;
   heavy?: boolean;
+  /** コンボ（段階158：コンボの割増しの特性が効く） */
+  combo?: boolean;
 }
 
 function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
@@ -845,6 +935,11 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   }
   if (opts.finish && e.pinpoint) mult *= s.rules.pinpointMult;
   if (e.trait === 'hard' && opts.heavy) mult *= 1.5;
+  // 育成の特性（段階158）：属性の割増し・コンボの割増し
+  if (actor.side === 'ally') {
+    mult *= 1 + elementBoost(actor, el);
+    if (opts.combo) mult *= 1 + passiveSum(actor, 'comboBoost');
+  }
   let raw = ((power + (opts.add ?? 0)) * stat) / Math.max(1, e.def);
   // かたい：1発ごとに減らす（重い一撃は減らない）
   if (e.trait === 'hard' && !opts.heavy) raw = Math.max(0, raw - s.rules.hardCut);
@@ -977,7 +1072,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   const add = mods.add + s.exposure;
   const hitsBefore = s.roundHits;
   const mark = ev.length;
-  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy };
+  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link' };
   const scaled = (e: ChainUnit): number => {
     if (!eff.scale) return 0;
     const unit = eff.scale.by === 'hits' ? hitsBefore : eff.scale.by === 'targetHits' ? (e.roundTaken ?? 0) : eff.scale.by === 'slotsLeft' ? Math.max(0, s.rules.roundLen - at) : s.roundSupports;
@@ -1158,6 +1253,21 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
   const enemyActs: number[] = [];
   const push = (q: ChainOrderEntry | null, key: string, at: number, uid: string, name: string, ev: ChainEvent[], target?: string, all?: boolean) =>
     frames.push({ order: frames.length + 1, key: q?.key ?? key, target, all, at, uid, name, events: ev, state: cloneChain(s) });
+  // ラウンドの始め（段階158）：ラウンドの始めの回復（特性）と、狂い（HP を失う。1より下がらない）
+  for (const a of s.allies.filter((x) => x.hp > 0)) {
+    const ev: ChainEvent[] = [];
+    const regen = Math.min(a.maxHp - a.hp, Math.floor(a.maxHp * passiveSum(a, 'regen')));
+    if (regen > 0) {
+      a.hp += regen;
+      ev.push({ type: 'heal', to: a.uid, amount: regen });
+    }
+    const loss = Math.min(a.hp - 1, Math.floor(a.maxHp * passiveSum(a, 'bug')));
+    if (loss > 0) {
+      a.hp -= loss;
+      ev.push({ type: 'damage', from: a.uid, to: a.uid, amount: loss, weak: false, resist: false });
+    }
+    if (ev.length) push(null, `start:${a.uid}`, 0, a.uid, regen > 0 ? '回復' : '狂い', ev, undefined, false);
+  }
   while (pending.length > 0) {
     pending.sort((a, b) => allyAt(a) - allyAt(b) || byTime(a, b));
     const q = pending.shift()!;
@@ -1201,6 +1311,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       }
       s.discard.push(...cardIds[q.i]);
       s.actedAt[q.i] = at;
+      // MP は動いた時に払う（段階158。不発・時間切れ・倒れて動けなかった時は払わない）
+      if (step.source.kind === 'move') actor.mp = Math.max(0, (actor.mp ?? 0) - chainMoveMp(actor, move));
       ev.push({ type: 'act', uid: actor.uid, name: move.name, at });
       // 添える札（調整17）：露出補正は、この行動から後の味方の攻撃すべてに効く
       const addonCards = (step.addons ?? []).map((i) => s0.def.cards[s0.hand[i]]);
@@ -1315,6 +1427,11 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻し', [{ type: 'rewind', uid: e.uid, amount }], undefined, true);
     }
     endRound(s);
+    // 負け戦の打ち切り（段階158）
+    if (s.def.cutoff && s.outcome === 'ongoing' && s.round > s.def.cutoff.rounds) {
+      s.outcome = 'cutoff';
+      s.finishRound = s.round - 1;
+    }
   }
   return { state: s, frames };
 }

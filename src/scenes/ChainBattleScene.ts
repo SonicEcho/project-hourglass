@@ -29,8 +29,9 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_COMBO_HINT, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
-import type { Element } from '../core';
+import { AKARI, AREA_BATTLES, HERO, MIO, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_COMBO_HINT, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { buildMainChainBattle, type ChainBattleDef, type CharacterDef, type Element } from '../core';
+import { currentParty, partyChoice } from './run';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
 import { playSe } from '../audio/sound';
@@ -46,6 +47,23 @@ export interface ChainBattleData {
   seed?: number;
   /** 序盤（技を覚える前）か中盤か（調整14。省くと中盤） */
   stage?: ChainStage;
+  /** 段階158：本番の仲間（育成を反映した今の並び）と、1-1 の砂嵐の敵で戦う */
+  main?: boolean;
+}
+
+/** 段階158：本番の仲間（今の並び。育成を反映）と 1-1 の砂嵐の敵。札は調整17の試しのアルバム */
+function mainTrialDef(): ChainBattleDef {
+  let party: CharacterDef[];
+  try {
+    const { lineup, chosen } = partyChoice();
+    const all = currentParty(lineup);
+    party = all.filter((c) => chosen.includes(c.id));
+    if (!party.length) party = all;
+  } catch {
+    party = [HERO, AKARI, MIO];
+  }
+  const base = CHAIN_TRIALS[0];
+  return buildMainChainBattle({ id: base.id, name: '本番の仲間で', party: party.slice(0, 3), enemies: AREA_BATTLES.a11_n1_road.enemies, deck: base.deck, cards: base.cards, links: base.links, gradeAt: base.gradeAt });
 }
 
 /** 画面の割り付け（調整9：今の戦闘のイメージ docs/sketches/battle/chain に合わせた） */
@@ -152,7 +170,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b0f22).setOrigin(0);
     this.trial = data.trial;
     this.stage = data.stage ?? 'mid';
-    const def = chainTrialDef(data.trial, this.stage);
+    const def = data.main ? mainTrialDef() : chainTrialDef(data.trial, this.stage);
     this.s = createChainBattle(def, CHAIN_RULES, data.seed ?? Date.now() % 100000, loadKnown());
     this.root = this.add.container(0, 0);
     this.plan = [];
@@ -172,7 +190,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (p.worldY > CMD_Y - 10 && p.worldX > GAME_WIDTH - 220) return;
       if (this.busy && this.advance) this.advance();
     });
-    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}型「${this.s.variant ?? ''}」。${this.s.def.finishLast ? 'エフェクトは並べた行動に添える（時間を使わない。2枚まで）。クライマックスは最後に。' : '上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。'}弱点は当てると分かる`;
+    this.message = `${this.stage === 'early' ? '序盤（技はまだ通常攻撃だけ）。' : this.stage === 'multi' ? '連続（時間の許す限り、同じ仲間が何回でも動ける。同じ技は1ラウンドに1回）。' : ''}${this.s.variant ? `型「${this.s.variant}」。` : ''}${this.s.def.finishLast ? 'エフェクトは並べた行動に添える（時間を使わない。2枚まで）。クライマックスは最後に。' : '上の札は敵の予定。並べた行動は、重さの分だけかかって終わった時に効く。'}弱点は当てると分かる`;
     const ids = [CHAIN_TRIAL_BG[def.id], ...def.enemies.map((e) => ENEMY_ART[e.id]), ...def.allies.map((a) => ALLY_FACE[a.id]), ...Object.values(CHAIN_CARD_ART), ...Object.values(CHAIN_MOVE_ART)].filter((x): x is string => !!x);
     waitImages(this, ids, () => this.render());
   }
@@ -651,7 +669,8 @@ export class ChainBattleScene extends Phaser.Scene {
       const bw = w - 70;
       r.add(this.para(x + 60, ALLY_Y + 24, bw, 6, 0x222838, 1, 3));
       if (u.hp > 0) r.add(this.para(x + 60, ALLY_Y + 24, Math.max(4, bw * (u.hp / u.maxHp)), 6, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : color, 1, 3));
-      r.add(addText(this, x + 62, ALLY_Y + 38, `HP ${u.hp}/${u.maxHp}`, { size: 9, color: '#9aa3c0' }).setOrigin(0, 0.5));
+      // 段階158：MP のある仲間（本番の仲間）は MP も
+      r.add(addText(this, x + 62, ALLY_Y + 38, `HP ${u.hp}/${u.maxHp}${u.maxMp ? `　MP ${u.mp ?? 0}/${u.maxMp}` : ''}`, { size: 9, color: '#9aa3c0' }).setOrigin(0, 0.5));
       const turn = planned >= 0 ? order.findIndex((o) => o.kind === 'ally' && o.i === planned) + 1 : 0;
       const times = this.plan.filter((p) => stepAllies(this.s, p).includes(u.uid)).length;
       const multi = !!this.s.def.multiAct;
@@ -779,7 +798,8 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f) parts.push(this.add.rectangle(w / 2 - 14, -h / 2 + 72, 25, 25, 0xffffff), f);
     }
     // 効果をひと言で（調整10）
-    const short = CHAIN_SHORT_TEXT[it.key ?? ''];
+    // 段階158：本番の技は、短い説明がないので説明の文をそのまま
+    const short = CHAIN_SHORT_TEXT[it.key ?? ''] ?? (m.mp ? m.text : undefined);
     if (short) {
       const ef = addText(this, 0, -h / 2 + 128, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center' }).setOrigin(0.5);
       if (ef.width > w - 6) ef.setScale((w - 6) / ef.width);
@@ -797,6 +817,8 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     parts.push(title);
     for (let k = 0; k < 4; k++) parts.push(this.add.rectangle(-w / 2 + 10 + k * 11, h / 2 - 16, 8, 8, k < m.weight ? 0x111111 : 0xcccccc).setAngle(-12));
+    // 段階158：技の MP（右下）
+    if (m.mp) parts.push(addText(this, w / 2 - 4, h / 2 - 16, `MP${m.mp}`, { size: 10, bold: true, color: '#2a5bd7' }).setOrigin(1, 0.5));
     // 続く効果は、ラウンドの数を右下に（行動を遅らせる技は、文に書いたので印は出さない。調整11）
     const rounds = m.effect.kind === 'status' ? m.effect.rounds : undefined;
     if (rounds) {
