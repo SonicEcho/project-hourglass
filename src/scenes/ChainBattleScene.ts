@@ -88,6 +88,10 @@ const TAB_Y = 518;
 const LINK_Y = 552;
 const CARD_W = 70;
 const CARD_H = 170;
+/** コンボがそろった時の札の高さ（帯と札の間に、材料をつなぐ木を描く場所を空ける） */
+const CARD_H_LINK = 156;
+/** コンボの木の線の色（1つ目・2つ目・3つ目） */
+const LINK_COLORS = [0xffcf5a, 0x7fe0ff, 0xff8ac8];
 /** 下のボタンの上の端（右下のビルド日時の上に収める） */
 const CMD_Y = 778;
 /** 実行中、再生位置が1マス進む時間（ms） */
@@ -731,6 +735,8 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(this.para(lx - 2, LINK_Y - 2, lw + 4, 32, GOLD, sel ? 0.7 : 0.3, 10));
       r.add(this.para(lx + 3, LINK_Y + 3, lw, 28, 0x000000, 0.7, 10));
       r.add(this.para(lx, LINK_Y, lw, 28, sel ? 0xfff0b0 : GOLD, 1, 10));
+      // 線の色の印（コンボが2つ以上の時、どの線がどのコンボか）
+      if (links.length > 1) r.add(this.add.rectangle(lx + lw / 2, LINK_Y + 28, 22, 5, LINK_COLORS[k % LINK_COLORS.length]));
       const who = x.link.members.map((m) => this.allyName(m)).join('＋');
       // 初めてそろったコンボは「NEW」（調整17：レシピは最初は見えず、そろうと分かる）
       const found = loadCombos();
@@ -764,25 +770,37 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     const me = this.ally ? findChainUnit(s, this.ally) : undefined;
     const shown = items.slice(0, 5);
-    const top = links.length ? LINK_Y + 42 : LINK_Y + 4;
+    // コンボがある時は、木を描く場所を空けて札を下げ、少し低くする（下のボタンにかからないように）
+    const cardH = links.length ? CARD_H_LINK : CARD_H;
+    const top = links.length ? LINK_Y + 64 : LINK_Y + 4;
     const step = (GAME_WIDTH - 8) / 5;
-    // コンボの帯から、材料の札の上の端へ線を引く（札の下に描く。選んだコンボは太く）
+    // コンボの帯から、材料の札へトーナメント表のような木（帯の真ん中から1本下ろし、横に分かれて、札へ縦に下りる。札の下に描く）。
+    // コンボが2つ以上なら、横の線の高さと色を分ける。選んだコンボは太く
     if (this.tab === 'cards' && linkSpots.length) {
       const g = this.add.graphics();
+      const barBottom = LINK_Y + 30;
+      const gap = (top - 8 - barBottom) / (linkSpots.length + 1);
       linkSpots.forEach((sp, k) => {
-        const n = sp.cards.length;
-        sp.cards.forEach((idx, j) => {
-          const shownAt = shown.findIndex((it) => it.source.kind === 'card' && it.source.index === idx);
-          if (shownAt < 0) return;
-          const fromX = sp.x + (sp.w * (j + 1)) / (n + 1);
-          const toX = 4 + step * shownAt + step / 2;
-          const color = k % 2 === 0 ? GOLD : 0xffffff;
-          g.lineStyle(sp.sel ? 4 : 2.5, color, sp.sel ? 1 : 0.85);
-          g.lineBetween(fromX, LINK_Y + 30, toX, top - 6);
-          g.fillStyle(color, 1);
-          g.fillCircle(fromX, LINK_Y + 30, 3.5);
-          g.fillCircle(toX, top - 6, 4);
-        });
+        const xs = sp.cards.map((idx) => shown.findIndex((it) => it.source.kind === 'card' && it.source.index === idx)).filter((i) => i >= 0).map((i) => 4 + step * i + step / 2);
+        if (!xs.length) return;
+        const color = LINK_COLORS[k % LINK_COLORS.length];
+        const stemX = sp.x + sp.w / 2;
+        const levelY = barBottom + gap * (k + 1);
+        const width = sp.sel ? 4.5 : 3;
+        g.lineStyle(width + 3, 0x000000, 0.6);
+        g.lineBetween(stemX, barBottom, stemX, levelY);
+        g.lineBetween(Math.min(stemX, ...xs), levelY, Math.max(stemX, ...xs), levelY);
+        for (const x of xs) g.lineBetween(x, levelY, x, top - 6);
+        g.lineStyle(width, color, 1);
+        g.lineBetween(stemX, barBottom, stemX, levelY);
+        g.lineBetween(Math.min(stemX, ...xs), levelY, Math.max(stemX, ...xs), levelY);
+        g.fillStyle(color, 1);
+        g.fillCircle(stemX, levelY, width);
+        for (const x of xs) {
+          g.lineBetween(x, levelY, x, top - 8);
+          // 札の上に、下向きの三角
+          g.fillTriangle(x - 6, top - 10, x + 6, top - 10, x, top - 3);
+        }
       });
       r.add(g);
     }
@@ -790,11 +808,11 @@ export class ChainBattleScene extends Phaser.Scene {
     shown.forEach((it, i) => {
       const cx = 4 + step * i + step / 2;
       const sel = !!this.pending && sameSource(this.pending.source, it.source);
-      const cy = top + CARD_H / 2 - (sel ? 10 : 0);
+      const cy = top + cardH / 2 - (sel ? 10 : 0);
       // コンボの材料の札は、後ろを金色に光らせる
-      if (it.source.kind === 'card' && linkedIdx.has(it.source.index)) r.add(this.add.rectangle(cx, cy, CARD_W + 16, CARD_H + 16, GOLD, 0.55));
-      this.drawCard(cx, cy, it, (i - (shown.length - 1) / 2) * 2.5, sel, !!it.move.owner && me?.defId !== it.move.owner);
-      const hit = this.add.rectangle(cx, cy, CARD_W, CARD_H, 0xffffff, 0.001);
+      if (it.source.kind === 'card' && linkedIdx.has(it.source.index)) r.add(this.add.rectangle(cx, cy, CARD_W + 16, cardH + 16, GOLD, 0.55));
+      this.drawCard(cx, cy, it, (i - (shown.length - 1) / 2) * 2.5, sel, !!it.move.owner && me?.defId !== it.move.owner, cardH);
+      const hit = this.add.rectangle(cx, cy, CARD_W, cardH, 0xffffff, 0.001);
       r.add(hit);
       makePressable(hit, {
         onTap: () => !it.used && this.pickOption(it.source, it.move),
@@ -808,12 +826,11 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
-  private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; added?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean): void {
+  private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; added?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean, h = CARD_H): void {
     const m = it.move;
     const color = CATEGORY_COLOR[chainCardCategory(m)];
     const parts: Phaser.GameObjects.GameObject[] = [];
     const w = CARD_W;
-    const h = CARD_H;
     if (sel) parts.push(this.add.rectangle(0, 0, w + 14, h + 14, color, 0.35));
     parts.push(this.add.rectangle(4, 6, w + 6, h + 6, 0x000000, 0.6));
     parts.push(this.add.rectangle(0, 0, w + 6, h + 6, sel ? YELLOW : color));
@@ -832,7 +849,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const short = CHAIN_SHORT_TEXT[it.key ?? ''] ?? (m.mp ? m.text : undefined);
     if (short) {
       // 札の幅で折り返す（2行まで。それより長い時だけ縮める）
-      const ef = addText(this, 0, -h / 2 + 130, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center', wrap: w - 6, ja: true }).setOrigin(0.5);
+      const ef = addText(this, 0, h / 2 - 39, short, { size: 9, bold: true, color: '#4a4a4a', align: 'center', wrap: w - 6, ja: true }).setOrigin(0.5);
       if (ef.width > w - 4) ef.setScale((w - 4) / ef.width);
       if (ef.displayHeight > 26) ef.setScale(Math.min(ef.scaleX, 26 / ef.height));
       parts.push(ef);
