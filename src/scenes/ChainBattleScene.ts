@@ -543,11 +543,20 @@ export class ChainBattleScene extends Phaser.Scene {
       case 'poiBar':
         return this.bossLayout(this.s) ? { x: 2, y: STAGE_Y + 2, w: BOSS_COL + 2, h: 166 } : { x: 4, y: STAGE_Y + 36, w: GAME_WIDTH - 8, h: 30 };
       case 'parts': {
-        const spots = this.s.enemies.filter((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0).map((e) => this.partSpot(this.s, e)).filter((x): x is NonNullable<typeof x> => !!x);
-        if (!spots.length) return null;
-        const xs = spots.map((p) => p.x);
-        const ys = spots.map((p) => p.y);
-        return { x: Math.max(2, Math.min(...xs) - 110), y: Math.min(...ys) - 34, w: Math.min(GAME_WIDTH - 4, Math.max(...xs) - Math.min(...xs) + 220), h: Math.max(...ys) - Math.min(...ys) + 68 };
+        // 部位の印と、名前の札（札が出る向きの側だけ）を囲む
+        const parts = this.s.enemies.filter((e) => !!chainEnemyDef(this.s, e.defId)?.part && e.hp > 0);
+        const boxes = parts.flatMap((e) => {
+          const p = this.partSpot(this.s, e);
+          if (!p) return [];
+          const labelLeft = p.side === 'left' && p.x - 110 > (this.bossLayout(this.s) ? BOSS_COL : 0);
+          return [{ l: p.x - 26 - (labelLeft ? 104 : 0), r: p.x + 26 + (labelLeft ? 0 : 104), t: p.y - 30, b: p.y + 28 }];
+        });
+        if (!boxes.length) return null;
+        const l = Math.max(2, Math.min(...boxes.map((b) => b.l)));
+        const rr = Math.min(GAME_WIDTH - 2, Math.max(...boxes.map((b) => b.r)));
+        const t = Math.min(...boxes.map((b) => b.t));
+        const b = Math.max(...boxes.map((x) => x.b));
+        return { x: l, y: t, w: rr - l, h: b - t };
       }
       case 'weak':
         return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
@@ -627,7 +636,8 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(g);
     r.add(this.add.circle(16, 21, 5, RED));
     r.add(addText(this, 25, 21, 'REC', { size: 11, bold: true }).setOrigin(0, 0.5));
-    const round = addText(this, 58, 21, `ROUND ${String(view.round).padStart(2, '0')}`, { size: 22, bold: true }).setOrigin(0, 0.5).setFontStyle('bold italic');
+    // 斜体の字は右の端が文字の箱からはみ出して切れるので、右に余白を足す
+    const round = addText(this, 58, 21, `ROUND ${String(view.round).padStart(2, '0')}`, { size: 22, bold: true }).setOrigin(0, 0.5).setFontStyle('bold italic').setPadding(0, 0, 10, 0);
     round.setShadow(3, 3, '#ff2d55', 0, false, true);
     r.add(round);
     const name = `${this.stage === 'early' ? '序盤：' : this.stage === 'multi' ? '連続：' : ''}${this.s.def.name.replace(/（.*）/, '')}${view.variant ? ` ／ ${view.variant}` : ''}`;
