@@ -26,6 +26,11 @@ function saveSeen(list: string[]): void {
 }
 
 /** 見た説明を忘れて、また使う場面で出すようにする */
+/** 説明を見たことにする（段階161：画面を照らす説明が、終わった時に使う） */
+export function markTipSeenNow(id: string): void {
+  saveSeen(markTipSeen(seenTips(), id));
+}
+
 export function resetTips(): void {
   saveSeen([]);
 }

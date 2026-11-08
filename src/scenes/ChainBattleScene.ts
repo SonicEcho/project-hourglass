@@ -29,12 +29,12 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { CHAIN_COACH, CHAIN_COACH_ORDER, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
 import { settleChainWin, type ChainWinReward } from './chainEncounter';
-import { maybeShowTip } from '../ui/tipPanel';
+import { markTipSeenNow, seenTips } from '../ui/tipPanel';
 import { smartChainPlan } from '../sim/chainAuto';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
@@ -260,6 +260,8 @@ export class ChainBattleScene extends Phaser.Scene {
     this.pending = null;
     this.climaxOk = null;
     this.warnMsg = '';
+    this.coach = null;
+    this.coachLayer = null;
     this.tab = 'cards';
     this.busy = false;
     this.head = null;
@@ -381,9 +383,162 @@ export class ChainBattleScene extends Phaser.Scene {
       this.drawTabs();
       this.drawOptions();
       this.drawCommands();
-      // 初めての人向けの説明（段階160）：探索から来た戦闘で、その場面になった時に1つずつ（見た物は出さない）
-      if (this.encounter) maybeShowTip(this, chainTipTriggers(this.s));
     } else if (this.currentOrder > 0) this.drawRunList();
+    // チュートリアル（段階161）：探索から来た戦闘で、その場面になった時に、画面の一部を照らして説明する（見た物は出さない）
+    this.updateCoach();
+  }
+
+  // ---------- チュートリアル（段階161） ----------
+
+  /** 今の説明の組と、何番目か。照らす覆い */
+  private coach: { id: string; i: number } | null = null;
+  /** 今の手順を出し始めた時刻（出た直後のタップは受け付けない。実行中の「タップで次へ」の続きで、うっかり閉じないように） */
+  private coachSince = { key: '', at: 0 };
+  private coachLayer: Phaser.GameObjects.Container | null = null;
+
+  private updateCoach(): void {
+    this.coachLayer?.destroy(true);
+    this.coachLayer = null;
+    if (!this.encounter || this.busy || this.s.outcome !== 'ongoing' || this.s.shutter) return;
+    if (!this.coach) {
+      const seen = seenTips();
+      const want = chainTipTriggers(this.s);
+      const id = CHAIN_COACH_ORDER.find((x) => want.includes(x) && !seen.includes(x));
+      if (!id) return;
+      this.coach = { id, i: 0 };
+    }
+    const steps = CHAIN_COACH[this.coach.id];
+    // 押してもらう手順は、押し終えたら次へ（札を選んだ・敵を選んで並んだ）
+    for (;;) {
+      const st = steps[this.coach.i];
+      if (!st) break;
+      const done = st.target === 'card' ? !!this.pending || this.plan.length > 0 : st.target === 'enemy' ? this.plan.length > 0 : false;
+      if (!done) break;
+      this.coach.i++;
+    }
+    const step = steps[this.coach.i];
+    if (!step) {
+      this.endCoach();
+      return;
+    }
+    // 照らす札が手札になければ（最初の手順は、技の「通常攻撃」で代わりにする）
+    if (step.target === 'card' && this.coachCardIndex() < 0 && this.tab === 'cards') {
+      this.tab = 'moves';
+      this.render();
+      return;
+    }
+    if ((step.target === 'addonCard' || step.target === 'climaxCard') && this.tab !== 'cards') {
+      this.tab = 'cards';
+      this.render();
+      return;
+    }
+    const hole = this.coachRect(step.target);
+    if (!hole) {
+      this.endCoach();
+      return;
+    }
+    const key = `${this.coach.id}:${this.coach.i}`;
+    if (this.coachSince.key !== key) this.coachSince = { key, at: this.time.now };
+    this.drawCoach(hole, step.text, !!step.guide);
+  }
+
+  private endCoach(): void {
+    if (this.coach) markTipSeenNow(this.coach.id);
+    this.coach = null;
+    this.coachLayer?.destroy(true);
+    this.coachLayer = null;
+  }
+
+  /** 最初の手順で照らす札：手札の、敵1体を攻撃するアクション（スペシャルは、選んでいる仲間の物だけ） */
+  private coachCardIndex(): number {
+    const me = findChainUnit(this.s, this.ally);
+    return this.s.hand.findIndex((id) => {
+      const m = this.s.def.cards[id];
+      return !!m && m.type === 'attack' && m.target === 'enemy' && (!m.owner || m.owner === me?.defId);
+    });
+  }
+
+  private coachRect(t: ChainCoachTarget): { x: number; y: number; w: number; h: number } | null {
+    const links = this.tab === 'cards' ? availableLinks(this.s, this.plan) : [];
+    const top = links.length ? LINK_Y + 64 : LINK_Y + 4;
+    const cardH = links.length ? CARD_H_LINK : CARD_H;
+    const step = (GAME_WIDTH - 8) / 5;
+    const card = (i: number) => (i < 0 || i > 4 ? null : { x: 4 + step * i + step / 2 - CARD_W / 2 - 8, y: top - 8, w: CARD_W + 16, h: cardH + 16 });
+    const foes = this.shownEnemies(this.s);
+    const colW = GAME_WIDTH / Math.max(1, foes.length);
+    switch (t) {
+      case 'intent': {
+        const k = Math.max(0, foes.findIndex((e) => e.hp > 0 && !e.gone));
+        return { x: colW * k + 6, y: STAGE_Y + 2, w: colW - 6, h: 42 };
+      }
+      case 'film':
+        return { x: 0, y: FILM_Y, w: GAME_WIDTH, h: FILM_H };
+      case 'card':
+        return card(this.tab === 'cards' ? this.coachCardIndex() : 0);
+      case 'enemy':
+        return { x: 0, y: STAGE_Y + 46, w: GAME_WIDTH, h: 150 };
+      case 'exec':
+        return { x: 204, y: CMD_Y - 4, w: 184, h: 54 };
+      case 'weak':
+        return { x: 0, y: STAGE_Y + 158, w: GAME_WIDTH, h: 32 };
+      case 'addonCard':
+        return card(this.s.hand.findIndex((id) => this.s.def.cards[id]?.effect.kind === 'addon'));
+      case 'climaxCard':
+        return card(this.s.hand.findIndex((id) => isChainFinish(this.s.def.cards[id])));
+      case 'comboBar':
+        return links.length ? { x: 4, y: LINK_Y - 6, w: GAME_WIDTH - 8, h: 40 } : null;
+    }
+  }
+
+  /**
+   * 照らす覆い：照らす所のまわりを暗くし、黄色の枠を点滅させ、吹き出しに説明。
+   * guide：照らした所だけ押せる（まわりの暗い所は押せない）。それ以外は、画面のどこかをタップで次へ
+   */
+  private drawCoach(h: { x: number; y: number; w: number; h: number }, text: string, guide: boolean): void {
+    const o = this.add.container(0, 0).setDepth(120);
+    this.coachLayer = o;
+    const dim = 0x000000;
+    const a = 0.62;
+    const parts = [
+      this.add.rectangle(0, 0, GAME_WIDTH, h.y, dim, a),
+      this.add.rectangle(0, h.y + h.h, GAME_WIDTH, GAME_HEIGHT - h.y - h.h, dim, a),
+      this.add.rectangle(0, h.y, h.x, h.h, dim, a),
+      this.add.rectangle(h.x + h.w, h.y, GAME_WIDTH - h.x - h.w, h.h, dim, a),
+    ].map((r) => r.setOrigin(0));
+    for (const r of parts) {
+      if (guide) r.setInteractive();
+      o.add(r);
+    }
+    const frame = this.add.rectangle(h.x, h.y, h.w, h.h).setOrigin(0).setStrokeStyle(3, YELLOW);
+    o.add(frame);
+    this.tweens.add({ targets: frame, alpha: 0.35, duration: 520, yoyo: true, repeat: -1 });
+    // 吹き出し：照らした所が上半分なら下に、下半分なら上に
+    const below = h.y + h.h / 2 < GAME_HEIGHT / 2;
+    const bw = GAME_WIDTH - 32;
+    const t = addText(this, 0, 0, text, { size: 14, bold: true, color: '#1a1300', wrap: bw - 28, ja: true }).setLineSpacing(4);
+    const hint = guide ? '' : 'タップで次へ ▶';
+    const bh = t.height + (hint ? 40 : 24);
+    const by = below ? Math.min(h.y + h.h + 14, GAME_HEIGHT - bh - 12) : Math.max(h.y - bh - 14, 12);
+    const box = this.add.container(16, by);
+    box.add(this.add.rectangle(4, 5, bw, bh, 0x000000, 0.5).setOrigin(0));
+    box.add(this.add.rectangle(0, 0, bw, bh, 0xfff6d8).setOrigin(0).setStrokeStyle(3, YELLOW));
+    const tip = below ? [h.x + h.w / 2 - 16 - 10, 0, h.x + h.w / 2 - 16 + 10, 0, h.x + h.w / 2 - 16, -12] : [h.x + h.w / 2 - 16 - 10, bh, h.x + h.w / 2 - 16 + 10, bh, h.x + h.w / 2 - 16, bh + 12];
+    box.add(this.add.triangle(0, 0, tip[0], tip[1], tip[2], tip[3], tip[4], tip[5], 0xfff6d8).setOrigin(0));
+    t.setPosition(14, 12);
+    box.add(t);
+    if (hint) box.add(addText(this, bw - 14, bh - 14, hint, { size: 11, bold: true, color: '#a06a00' }).setOrigin(1, 0.5));
+    o.add(box);
+    if (!guide) {
+      // 説明だけの手順：画面のどこをタップしても次へ（下の物は押せない）
+      const all = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 0.001).setOrigin(0).setInteractive();
+      all.on('pointerup', () => {
+        if (!this.coach || this.time.now - this.coachSince.at < 600) return;
+        this.coach.i++;
+        if (!CHAIN_COACH[this.coach.id][this.coach.i]) this.endCoach();
+        this.render();
+      });
+      o.add(all);
+    }
   }
 
   /** 上の帯：● REC・ROUND・組み合わせと型 */
@@ -1220,6 +1375,10 @@ export class ChainBattleScene extends Phaser.Scene {
 
   private execute(): void {
     if (this.busy || this.plan.length === 0) return;
+    // チュートリアルの「REC 実行」の手順は、押したら終わり
+    if (this.coach && CHAIN_COACH[this.coach.id][this.coach.i]?.target === 'exec') this.endCoach();
+    this.coachLayer?.destroy(true);
+    this.coachLayer = null;
     this.cutInShown = new Set();
     const { state, frames } = runChainRound(this.s, this.plan);
     this.runFinal = state;

@@ -19,6 +19,7 @@ export * from './clockTrial';
 export * from './chainTrial';
 export * from './chainTrial17';
 export * from './chainArea11';
+export * from './chainTutorial';
 export * from './snapTrial';
 export * from './enemyArt';
 export * from './encounters';

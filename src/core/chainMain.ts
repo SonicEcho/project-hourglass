@@ -187,11 +187,13 @@ export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: n
 
 /**
  * 新しい戦闘の、初めての人向けの説明（段階160）。出したい説明の id（まだ見ていない物を、並び順に1つずつ出す）：
- * 予定と時間の帯（いつも）・手札にエフェクトがある時は添える・クライマックスがある時は最後の行動・コンボがそろった時はコンボ
+ * 予定と時間の帯（いつも）・2ラウンド目から弱点とダウン・手札にエフェクトがある時は添える・クライマックスがある時は最後の行動・コンボがそろった時はコンボ
  */
 export function chainTipTriggers(s: ChainState): string[] {
   if (s.outcome !== 'ongoing') return [];
   const out = ['chain_plan'];
+  // 弱点とダウン（段階161）：2ラウンド目の始めから
+  if (s.round >= 2) out.push('chain_weak');
   const hand = s.hand.map((id) => s.def.cards[id]).filter((m): m is ChainMove => !!m);
   if (hand.some((m) => m.effect.kind === 'addon')) out.push('chain_addon');
   if (s.def.finishLast && hand.some((m) => isChainFinish(m))) out.push('chain_climax');
