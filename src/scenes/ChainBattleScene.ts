@@ -33,7 +33,7 @@ import { AKARI, AREA_BATTLES, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, A
 import { buildMainChainBattle, chainEncounterResult, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
-import { settleChainWin } from './chainEncounter';
+import { settleChainWin, type ChainWinReward } from './chainEncounter';
 import { smartChainPlan } from '../sim/chainAuto';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
@@ -1620,11 +1620,18 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** 決着の画面：撮った写真・評価の星・早撮りの報酬（調整9：イメージ 3_shutter） */
   private showEnd(): void {
-    if (this.encounter) {
-      this.showEncounterEnd();
-      return;
-    }
     const s = this.s;
+    // 探索から来た戦闘（段階159）：結果を出して報酬を受け取る。見た目は試しの結果画面と同じ（写真・★・決着のマス・報酬の段）
+    let encReward: ChainWinReward | null = null;
+    if (this.encounter) {
+      if (run.battle) setBattleMark(null);
+      const result = chainEncounterResult(s, this.areaBattle!.enemies, this.seed + 7);
+      if (result.outcome === 'cutoff') {
+        this.showCutoff();
+        return;
+      }
+      if (result.outcome === 'victory') encReward = settleChainWin(this.encounter, this.areaBattle!, result, this.lineup!, this.seed);
+    }
     const win = s.outcome === 'win';
     const o = this.add.container(0, 0).setDepth(100);
     o.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b1020, 0.97).setOrigin(0).setInteractive());
@@ -1636,6 +1643,10 @@ export class ChainBattleScene extends Phaser.Scene {
     o.add(title);
     if (!win) {
       o.add(addText(this, GAME_WIDTH / 2, 300, `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
+      if (this.encounter) {
+        const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
+        o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
+      }
       this.endButtons(o);
       return;
     }
@@ -1675,8 +1686,21 @@ export class ChainBattleScene extends Phaser.Scene {
     o.add(this.para(50, 470, 290, 36, 0x000000, 1, 10));
     o.add(this.add.rectangle(58, 470, 4, 36, YELLOW).setOrigin(0));
     o.add(addText(this, GAME_WIDTH / 2, 488, `決着 合計 ${s.finishTime} マス（${s.finishRound}ラウンド目）`, { size: 15, bold: true }).setOrigin(0.5));
+    // 探索から来た戦闘：受け取った報酬（コマ・星の砂・素材）を、試しの報酬の枠と同じ形で
+    if (encReward) {
+      const ry = 526;
+      o.add(this.para(26, ry + 5, 346, 140, 0x000000, 0.7, 12));
+      o.add(this.para(20, ry, 346, 140, g === 'high' ? 0x2b1a00 : 0x141a30, 1, 12, { w: 2, color: g === 'high' ? GOLD : 0x6b7fc0 }));
+      o.add(this.sticker(110, ry, g === 'high' ? 'RARE ★★★ 早撮りボーナス' : g === 'mid' ? '★★' : '★', g === 'high' ? GOLD : g === 'mid' ? 0x6bc8ff : 0xc9d0ea, '#2a1300', -4, 11));
+      if (encReward.rare) o.add(this.sticker(300, ry + 4, '★ レア！', RED, '#ffffff', 6, 12));
+      const lines = `${encReward.koma ? `コマ +${encReward.koma}\n` : ''}星の砂 +${encReward.gained}（合計 ${run.growth.points}）\n${encReward.dropText}`;
+      const t = addText(this, 38, ry + 74, lines, { size: 13, bold: true, color: '#ffffff', wrap: 320, ja: true }).setOrigin(0, 0.5).setLineSpacing(4);
+      if (t.height > 112) t.setScale(112 / t.height);
+      o.add(t);
+      if (encReward.rare) playSe(this, SE.chest);
+    }
     // 早く終えるほど報酬のレア度が上がる（試しでは表示だけ）
-    const reward = g ? CHAIN_REWARDS[this.trial]?.[g] : undefined;
+    const reward = g && !this.encounter ? CHAIN_REWARDS[this.trial]?.[g] : undefined;
     if (reward) {
       const ry = 526;
       o.add(this.para(26, ry + 5, 346, 140, 0x000000, 0.7, 12));
@@ -1701,11 +1725,17 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     // 報酬の段（どこまで届いたか）
     const at = s.def.gradeAt;
-    const tiers: { g: string; label: string }[] = [
-      { g: 'low', label: '★\n素材' },
-      { g: 'mid', label: `★★ ${at?.mid ?? ''}マス以内\nレア` },
-      { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\n固有スナップ` },
-    ];
+    const tiers: { g: string; label: string }[] = this.encounter
+      ? [
+          { g: 'low', label: '★\n素材' },
+          { g: 'mid', label: `★★ ${at?.mid ?? ''}マス以内\n素材` },
+          { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\n珍しい素材・レア` },
+        ]
+      : [
+          { g: 'low', label: '★\n素材' },
+          { g: 'mid', label: `★★ ${at?.mid ?? ''}マス以内\nレア` },
+          { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\n固有スナップ` },
+        ];
     tiers.forEach((t, i) => {
       const on = t.g === g;
       const x = 26 + i * 114;
@@ -1717,49 +1747,27 @@ export class ChainBattleScene extends Phaser.Scene {
     this.endButtons(o);
   }
 
-  /** 探索から来た戦闘の終わり（段階159）：勝てば報酬を受け取って探索へ、負ければチェックポイントへ、負け戦は話の続きへ */
-  private showEncounterEnd(): void {
-    const s = this.s;
+  /** 負け戦の打ち切り（段階159）：報酬はなく、話の続きへ（見つかったら戻される負け戦はチェックポイントへ） */
+  private showCutoff(): void {
     const enc = this.encounter!;
     const def = this.areaBattle!;
-    if (run.battle) setBattleMark(null);
-    const result = chainEncounterResult(s, def.enemies, this.seed + 7);
     const o = this.add.container(0, 0).setDepth(100);
     o.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b1020, 0.97).setOrigin(0).setInteractive());
-    o.add(this.add.circle(GAME_WIDTH / 2, 260, 240, 0x5a1028, 0.35));
-    const win = result.outcome === 'victory';
-    const titleText = win ? 'CLEAR!' : result.outcome === 'cutoff' ? '……' : 'GAME OVER';
-    const title = addText(this, GAME_WIDTH / 2, 120, titleText, { size: 44, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setStroke('#000000', 4);
-    title.setShadow(5, 5, '#ff2d55', 0, false, true);
+    const title = addText(this, GAME_WIDTH / 2, 72, '……', { size: 44, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setStroke('#000000', 4);
     o.add(title);
-    const button = (label: string, to: { key: string; data: object }) => this.slantButton(GAME_WIDTH / 2 - 130, 720, 260, 56, label, () => this.scene.start(to.key, to.data), { into: o, go: true, size: 16 });
-    const body = (text: string, y = 300) => o.add(addText(this, GAME_WIDTH / 2, y, text, { size: 15, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
-    if (result.outcome === 'cutoff') {
-      body(`${s.enemies[0]?.name ?? ''}の動きが、見えない……${def.cutoffBack ? '\n最後に記録したチェックポイントへ戻される' : ''}`);
-      button(def.cutoffBack ? 'チェックポイントへ' : '次へ', def.cutoffBack ? enc.lose : enc.win);
-      return;
-    }
-    if (!win) {
-      body(`${s.finishRound ?? s.round}ラウンド目で倒れた…\n最後に記録したチェックポイントから、やり直す\n\n・${enc.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま'}\n・HP・MP は全回復して戻る`);
-      button('チェックポイントへ', enc.lose);
-      return;
-    }
-    const reward = settleChainWin(enc, def, result, this.lineup!, this.seed);
-    const grade = gradeStars(result.grade);
-    const stars = addText(this, GAME_WIDTH / 2, 210, '★'.repeat(grade) + '☆'.repeat(3 - grade), { size: 44, bold: true, color: '#ffd23f' }).setOrigin(0.5).setStroke('#000000', 4);
-    o.add(stars);
-    this.tweens.add({ targets: stars, scale: { from: 1.6, to: 1 }, duration: 300, ease: 'Back.easeOut' });
-    o.add(addText(this, GAME_WIDTH / 2, 258, `決着 合計 ${s.finishTime} マス（${s.finishRound}ラウンド目）${result.grade === 'high' ? '\n早撮りボーナス：珍しい素材とレアが出やすい' : ''}`, { size: 13, bold: true, align: 'center', color: '#ffd23f' }).setOrigin(0.5, 0));
-    if (reward.rare) {
-      const rare = addText(this, GAME_WIDTH / 2, 340, '★ レア！', { size: 28, bold: true, color: '#ffd23f' }).setOrigin(0.5).setStroke('#5a3a00', 6);
-      o.add(rare);
-      playSe(this, SE.chest);
-    }
-    body(`${reward.koma ? `コマ +${reward.koma}\n` : ''}星の砂 +${reward.gained}（合計 ${run.growth.points}）\n${reward.dropText}`, 380);
-    button('探索へ戻る', enc.win);
+    o.add(addText(this, GAME_WIDTH / 2, 300, `${this.s.enemies[0]?.name ?? ''}の動きが、見えない……${def.cutoffBack ? '\n最後に記録したチェックポイントへ戻される' : ''}`, { size: 15, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5));
+    const to = def.cutoffBack ? enc.lose : enc.win;
+    this.slantButton(GAME_WIDTH / 2 - 130, 744, 260, 46, def.cutoffBack ? 'チェックポイントへ' : '次へ ▶', () => this.scene.start(to.key, to.data), { into: o, go: true, size: 15 });
   }
 
   private endButtons(o: Phaser.GameObjects.Container): void {
+    // 探索から来た戦闘：勝てば探索へ、負ければチェックポイントへ（もう一度・次の試しは出さない）
+    if (this.encounter) {
+      const win = this.s.outcome === 'win';
+      const to = win ? this.encounter.win : this.encounter.lose;
+      this.slantButton(GAME_WIDTH / 2 - 130, 744, 260, 46, win ? '探索へ戻る ▶' : 'チェックポイントへ', () => this.scene.start(to.key, to.data), { into: o, go: true, size: 15 });
+      return;
+    }
     const idx = CHAIN_TRIALS.findIndex((t) => t.id === this.trial);
     const next = CHAIN_TRIALS[(idx + 1) % CHAIN_TRIALS.length];
     this.slantButton(8, 744, 150, 46, 'もう一度', () => this.scene.restart({ trial: this.trial, stage: this.stage }), { into: o, size: 14 });
