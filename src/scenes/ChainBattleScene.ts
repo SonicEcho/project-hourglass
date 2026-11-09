@@ -30,10 +30,11 @@ import {
   type ChainUnit,
 } from '../core';
 import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
-import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
+import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
-import { foundChainCombos as loadCombos, saveFoundChainCombos as saveCombos, settleChainWin, type ChainWinReward } from './chainEncounter';
+import { SNAP_CATEGORY } from '../ui/listKit';
+import { addFoundChainCombo, foundChainCombos, keepChainWeak, knownChainWeak, recordChainBattle, settleChainWin, type ChainWinReward } from './chainEncounter';
 import { markTipSeenNow, seenTips } from '../ui/tipPanel';
 import { smartChainPlan } from '../sim/chainAuto';
 import { isDebugEnabled } from '../debug/debugFlag';
@@ -136,7 +137,6 @@ const TICK_MS = 140;
 /** 実行中の待ち時間（ms）：誰が・何をの帯 → 結果 → 次へ（調整4で、半分以下に縮めた） */
 const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as const;
 /** 分かった弱点を、試しの戦闘をまたいで覚えておく所（セーブとは別。調整9） */
-const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 
 /** 札・技の絵と短い効果（調整17の札も） */
 const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART, ...A11_CARD_ART };
@@ -148,8 +148,9 @@ const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;
 /** 札の分類（調整11：よくあるゲームの言葉で3つに。付与系もサポート。調整13：専用の札は「スペシャル」に分ける） */
 /** 分類の名前（2026-11-07：映像の言葉に。アタック＋回復 → アクション、サポート → エフェクト、フィニッシュ → クライマックス） */
-const CATEGORY_LABEL: Record<ChainCardCategory, string> = { attack: 'アクション', support: 'エフェクト', finish: 'クライマックス', special: 'スペシャル', link: 'コンボ' };
-const CATEGORY_COLOR: Record<ChainCardCategory, number> = { attack: 0x3a8dff, support: 0x19b37a, finish: RED, special: 0xff8a1f, link: GOLD };
+// 段階167：色は一覧の画面と同じ物（src/ui/listKit.ts の SNAP_CATEGORY）
+const CATEGORY_LABEL = Object.fromEntries(Object.entries(SNAP_CATEGORY).map(([k, v]) => [k, v.label])) as Record<ChainCardCategory, string>;
+const CATEGORY_COLOR = Object.fromEntries(Object.entries(SNAP_CATEGORY).map(([k, v]) => [k, v.color])) as Record<ChainCardCategory, number>;
 /** 敵に付いた効果のシールの色（一度で消える物は紫、ラウンドの間続く物は青緑） */
 const CHIP_ONCE = 0xb36bff;
 const CHIP_LASTING = 0x19d3c5;
@@ -258,7 +259,7 @@ export class ChainBattleScene extends Phaser.Scene {
       });
       this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
       const vitals = data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
-      this.s = createChainBattle(def, CHAIN_RULES, this.seed, loadKnown(), vitals ?? {});
+      this.s = createChainBattle(def, CHAIN_RULES, this.seed, knownChainWeak(true), vitals ?? {});
       // チュートリアル（段階161）：最初の戦闘は手札を決めておく（2ラウンド目にエフェクトとクライマックスの説明が出るように）
       // 2戦目（最初の戦闘を終えて、スペシャルとコンボをまだ見ていない）は、コンボがそろう手札にする
       const seenNow = seenTips();
@@ -274,7 +275,7 @@ export class ChainBattleScene extends Phaser.Scene {
     } else {
       const def = data.main ? mainTrialDef() : chainTrialDef(data.trial, this.stage);
       this.seed = data.seed ?? Date.now() % 100000;
-      this.s = createChainBattle(def, CHAIN_RULES, this.seed, loadKnown());
+      this.s = createChainBattle(def, CHAIN_RULES, this.seed, knownChainWeak(false));
     }
     this.root = this.add.container(0, 0);
     this.plan = [];
@@ -1231,9 +1232,8 @@ export class ChainBattleScene extends Phaser.Scene {
       if (links.length > 1) r.add(this.add.rectangle(lx + lw / 2, LINK_Y + 28, 22, 5, LINK_COLORS[k % LINK_COLORS.length]));
       const who = x.link.members.map((m) => this.allyName(m)).join('＋');
       // 初めてそろったコンボは「NEW」（調整17：レシピは最初は見えず、そろうと分かる）
-      const found = loadCombos();
-      const fresh = !!s.def.finishLast && !found.includes(x.link.id);
-      if (fresh) saveCombos([...found, x.link.id]);
+      const fresh = !!s.def.finishLast && !foundChainCombos(!!this.encounter).includes(x.link.id);
+      if (fresh) addFoundChainCombo(!!this.encounter, x.link.id);
       const t = addText(this, lx + 14, LINK_Y + 14, `★ ${s.def.finishLast ? 'コンボ' : '連携技'} ${x.link.move.name}${who ? `　${who}` : ''}`, { size: 12, bold: true, color: '#2a1300' }).setOrigin(0, 0.5);
       if (fresh) r.add(this.sticker(lx + lw - 20, LINK_Y - 2, 'NEW!', RED, '#ffffff', 8, 10));
       if (t.width > lw - 24) t.setScale((lw - 24) / t.width);
@@ -1895,7 +1895,7 @@ export class ChainBattleScene extends Phaser.Scene {
 
   private finishRound(final: ChainState): void {
     this.s = final;
-    saveKnown(final.known);
+    keepChainWeak(!!this.encounter, final.known);
     this.runFinal = null;
     this.head?.destroy();
     this.head = null;
@@ -1942,7 +1942,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const before = this.s;
     const r = shootShutter(this.s);
     this.s = r.state;
-    saveKnown(this.s.known);
+    keepChainWeak(!!this.encounter, this.s.known);
     // 白く光って、敵がセピアに止まり、総攻撃の数字が出る
     const flash = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 1).setOrigin(0).setDepth(95);
     this.tweens.add({ targets: flash, alpha: 0, duration: 600, onComplete: () => flash.destroy() });
@@ -2022,6 +2022,8 @@ export class ChainBattleScene extends Phaser.Scene {
     let encReward: ChainWinReward | null = null;
     if (this.encounter) {
       if (run.battle) setBattleMark(null);
+      // ライブラリ（段階167）：会った敵・倒した敵・分かった弱点
+      recordChainBattle(s);
       // 敵のスナップ（段階165）：区画を作り直した戦闘だけ。★3 の時に確率で
       const snapRule = CHAIN_AREA_SETUPS[this.areaBattle!.id]
         ? { snaps: CHAIN_ENEMY_SNAPS, rate: CHAIN_ENEMY_SNAP_RATE, owned: run.chainAlbum.owned, copyMax: CHAIN_ALBUM.copyMax, boss: !!this.areaBattle!.boss }
@@ -2181,21 +2183,6 @@ export class ChainBattleScene extends Phaser.Scene {
 }
 
 /** 分かった弱点を読む（試しの戦闘の間だけ使う。読めなければ空） */
-function loadKnown(): Record<string, Element[]> {
-  try {
-    const v = JSON.parse(browserStorage().read(KNOWN_KEY) ?? '{}') as unknown;
-    if (!v || typeof v !== 'object') return {};
-    const out: Record<string, Element[]> = {};
-    for (const [k, list] of Object.entries(v as Record<string, unknown>)) if (Array.isArray(list)) out[k] = list.filter((x): x is Element => typeof x === 'string') as Element[];
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-function saveKnown(known: Record<string, Element[]>): void {
-  browserStorage().write(KNOWN_KEY, JSON.stringify(known));
-}
 
 /** 評価の段を星の数に（高3・中2・低1） */
 function gradeStars(g: string | null): number {

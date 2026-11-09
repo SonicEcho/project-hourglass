@@ -1,4 +1,4 @@
-import type { AlbumState, ArmoryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
+import type { AlbumState, ArmoryState, LibraryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -7,6 +7,10 @@ import {
   battleNumber,
   albumFromIds,
   createAlbum,
+  createLibrary,
+  recordLibraryBattle,
+  recordLibraryFinds,
+  sanitizeLibrary,
   createArmory,
   createGrowth,
   createNavi,
@@ -26,7 +30,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, FOLDER, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -64,6 +68,8 @@ export const run: {
   album: AlbumState;
   /** 新しい戦闘のアルバム（段階163） */
   chainAlbum: AlbumState;
+  /** ライブラリの記録（段階167。見つけたスナップ・コンボ・会った敵・分かった弱点・素材） */
+  library: LibraryState;
   /**
    * 狩りの途中の状態（段階43。返し終えた区画に入り直している時だけ）。セーブしない（閉じたら昼の日常から）。
    * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）。fade は記憶の薄れ（段階57）による、その回の実入りの割合
@@ -89,10 +95,37 @@ export const run: {
   returned: [],
   album: createAlbum(FOLDER),
   chainAlbum: albumFromIds(CHAIN_START_ALBUM),
+  library: startLibrary(),
   hunt: null,
   battle: null,
   party: [],
 };
+
+/** 始めのライブラリ：最初のアルバムのスナップは、もう持っている物として載せる */
+function startLibrary(): LibraryState {
+  return recordLibraryFinds(createLibrary(), { snaps: CHAIN_START_ALBUM });
+}
+
+/**
+ * ライブラリのない古いセーブ（段階167より前）：持っているスナップと素材から作り、
+ * 端末に覚えていた見つけたコンボと分かった弱点（新しい戦闘の試しから使っていた物）を移す。弱点が分かっている敵は、会った敵にする
+ */
+export function legacyLibrary(album: AlbumState, armory: ArmoryState): LibraryState {
+  const read = (key: string): unknown => {
+    try {
+      const raw = browserStorage().read(key);
+      return raw ? (JSON.parse(raw) as unknown) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const old = sanitizeLibrary({ combos: read('hourglass.chainTrial.combos'), weak: read('hourglass.chainTrial.knownWeak') }, LIBRARY_CONTEXT);
+  const lib = recordLibraryFinds(old, {
+    snaps: Object.keys(album.owned).filter((id) => (album.owned[id] ?? 0) > 0),
+    items: Object.keys(armory.items).filter((id) => (armory.items[id] ?? 0) > 0),
+  });
+  return recordLibraryBattle(lib, { met: Object.keys(lib.weak), defeated: [] });
+}
 
 /** URL の ?seed= で固定したシード（なければ null） */
 let urlSeed: number | null = null;
@@ -133,6 +166,7 @@ export function startNewRun(): void {
   run.returned = [];
   run.album = createAlbum(FOLDER);
   run.chainAlbum = albumFromIds(CHAIN_START_ALBUM);
+  run.library = startLibrary();
   run.hunt = null;
   run.battle = null;
   run.party = [];
@@ -238,6 +272,7 @@ export function saveContext(): SaveContext {
     chainCards: CHAIN_SNAPS,
     initialChainAlbum: albumFromIds(CHAIN_START_ALBUM),
     chainAlbumRules: CHAIN_ALBUM,
+    library: LIBRARY_CONTEXT,
     battleIds: Object.keys(AREA_BATTLES),
   };
 }
@@ -258,6 +293,7 @@ function snapshot(): RunSnapshot {
     returned: run.returned,
     album: run.album,
     chainAlbum: run.chainAlbum,
+    library: run.library,
     battle: run.battle,
     party: run.party,
   };
@@ -417,6 +453,7 @@ export function continueRun(): boolean {
   run.returned = s.returned;
   run.album = s.album;
   run.chainAlbum = s.chainAlbum ?? albumFromIds(CHAIN_START_ALBUM);
+  run.library = s.library ?? legacyLibrary(run.chainAlbum, run.armory);
   run.battle = s.battle;
   run.party = s.party;
   run.hunt = null;

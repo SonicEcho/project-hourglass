@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { RunSnapshot, SaveContext } from '../../src/core';
 import {
+  createLibrary,
+  recordLibraryBattle,
+  recordLibraryFinds,
   absorbMaterial,
   addItems,
   addToAlbum,
@@ -23,7 +26,7 @@ import {
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, FOLDER, GROWTH_MAP, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, FOLDER, GROWTH_MAP, LIBRARY_CONTEXT, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -496,5 +499,16 @@ describe('セーブ：新しい戦闘のアルバム（段階163）', () => {
     // 新しい戦闘のスナップを知らない時（書かない文脈）は、読まない
     const none = parseSave(serializeSave(r, AT), ctx);
     expect(none.ok && none.save.run.chainAlbum).toBeUndefined();
+  });
+});
+
+describe('セーブ：ライブラリの記録（段階167）', () => {
+  const lctx: SaveContext = { ...ctx, library: LIBRARY_CONTEXT };
+  it('保存して読む。今のデータにない物は捨てる。古いセーブ（ない時）は読まない', () => {
+    const lib = recordLibraryBattle(recordLibraryFinds(createLibrary(), { combos: ['iceFlower', 'nothing'], snaps: ['a11_hireuchi'] }), { met: ['goldfishNoise', 'ghost'], defeated: ['goldfishNoise'], weak: { goldfishNoise: ['thunder'] } });
+    const res = parseSave(serializeSave({ ...playedRun(), library: lib }, AT), lctx);
+    expect(res.ok && res.save.run.library).toEqual({ met: { goldfishNoise: 1 }, defeated: { goldfishNoise: 1 }, weak: { goldfishNoise: ['thunder'] }, snaps: ['a11_hireuchi'], combos: ['iceFlower'], items: [] });
+    const old = parseSave(serializeSave(playedRun(), AT), lctx);
+    expect(old.ok && old.save.run.library).toBeUndefined();
   });
 });

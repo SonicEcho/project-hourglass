@@ -1,4 +1,4 @@
-import { battleReward, boardColorCells, capItems, gainSnaps, keepVitals, recordVictory, thinItems, type ChainEncounterResult, type Lineup } from '../core';
+import { battleReward, boardColorCells, capItems, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
 import { AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
@@ -42,27 +42,72 @@ export function battleSceneFor(data: BattleSceneData): 'ChainBattle' | 'Battle' 
 }
 
 /**
- * 見つけたコンボ（初めてそろうと覚える。試しの戦闘と同じく端末に覚える。アルバムの画面の材料の印にも使う：段階166）。
- * セーブへの記録はライブラリの段階で移す
+ * 見つけたコンボ（初めてそろうと覚える）。探索の戦闘はライブラリの記録（セーブ。段階167）に、
+ * 試しの戦闘は今までどおり端末に覚える
  */
 const COMBO_KEY = 'hourglass.chainTrial.combos';
+const KNOWN_KEY = 'hourglass.chainTrial.knownWeak';
 
-export function foundChainCombos(): string[] {
+function readJson(key: string): unknown {
   try {
-    const raw = browserStorage().read(COMBO_KEY);
-    const v = raw ? (JSON.parse(raw) as unknown) : [];
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    const raw = browserStorage().read(key);
+    return raw ? (JSON.parse(raw) as unknown) : undefined;
   } catch {
-    return [];
+    return undefined;
   }
 }
 
-export function saveFoundChainCombos(ids: string[]): void {
+function writeJson(key: string, v: unknown): void {
   try {
-    browserStorage().write(COMBO_KEY, JSON.stringify(ids));
+    browserStorage().write(key, JSON.stringify(v));
   } catch {
     // 覚えられなくても遊べる
   }
+}
+
+export function foundChainCombos(encounter: boolean): string[] {
+  if (encounter) return [...run.library.combos];
+  const v = readJson(COMBO_KEY);
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+}
+
+export function addFoundChainCombo(encounter: boolean, id: string): void {
+  if (encounter) {
+    run.library = recordLibraryFinds(run.library, { combos: [id] });
+    return;
+  }
+  const list = foundChainCombos(false);
+  if (!list.includes(id)) writeJson(COMBO_KEY, [...list, id]);
+}
+
+/** 分かった弱点（探索の戦闘はライブラリ、試しの戦闘は端末） */
+export function knownChainWeak(encounter: boolean): Record<string, Element[]> {
+  if (encounter) return Object.fromEntries(Object.entries(run.library.weak).map(([k, v]) => [k, [...v]]));
+  const v = readJson(KNOWN_KEY);
+  const out: Record<string, Element[]> = {};
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    for (const [k, list] of Object.entries(v as Record<string, unknown>)) if (Array.isArray(list)) out[k] = list.filter((x): x is Element => typeof x === 'string');
+  }
+  return out;
+}
+
+export function keepChainWeak(encounter: boolean, known: Record<string, Element[]>): void {
+  if (encounter) run.library = recordLibraryBattle(run.library, { met: [], defeated: [], weak: known });
+  else writeJson(KNOWN_KEY, known);
+}
+
+/**
+ * 探索の戦闘が終わった時の、ライブラリの記録（段階167。勝ち負けどちらも）：会った敵と倒した敵（部位は数えない。本体の項目に部位を載せる）。保存する
+ */
+export function recordChainBattle(s: ChainState): void {
+  const body = (defId: string) => !chainEnemyDef(s, defId)?.part;
+  const met = s.def.enemies.filter((e) => !e.part).map((e) => e.id);
+  const defeated = s.enemies.filter((e) => e.hp <= 0 && !e.gone && body(e.defId)).map((e) => e.defId);
+  // 分かれた敵の破片などで、会った数より多く数えない
+  const capped: string[] = [];
+  for (const id of defeated) if (capped.filter((x) => x === id).length < met.filter((x) => x === id).length) capped.push(id);
+  run.library = recordLibraryBattle(run.library, { met, defeated: capped, weak: s.known });
+  saveRun();
 }
 
 export interface ChainWinReward {
@@ -105,6 +150,8 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   // 早く勝った時の敵のスナップ（段階165。狩りでも）
   if (result.snap) chainSnaps.push(result.snap);
   if (chainSnaps.length > 0) run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
+  // ライブラリ（段階167）：手に入れたスナップと素材
+  run.library = recordLibraryFinds(run.library, { snaps: chainSnaps, items: [...drops.map((d) => d.itemId), ...(prize ? [prize] : [])] });
   saveRun();
   const mark = (kind: string) => (kind === 'rare' ? '★' : kind === 'uncommon' ? '◆' : '');
   const counts = new Map<string, number>();
