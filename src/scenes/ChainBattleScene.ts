@@ -33,7 +33,7 @@ import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, 
 import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
-import { settleChainWin, type ChainWinReward } from './chainEncounter';
+import { foundChainCombos as loadCombos, saveFoundChainCombos as saveCombos, settleChainWin, type ChainWinReward } from './chainEncounter';
 import { markTipSeenNow, seenTips } from '../ui/tipPanel';
 import { smartChainPlan } from '../sim/chainAuto';
 import { isDebugEnabled } from '../debug/debugFlag';
@@ -143,22 +143,6 @@ const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN1
 const CHAIN_MOVE_ART: Record<string, string> = { ...CHAIN_MOVE_ART_16, ...CHAIN17_MOVE_ART };
 const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT, ...A11_SHORT_TEXT };
 /** 見つけたコンボ（調整17。端末に覚える） */
-const COMBO_KEY = 'hourglass.chainTrial.combos';
-function loadCombos(): string[] {
-  try {
-    const raw = browserStorage().read(COMBO_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-function saveCombos(ids: string[]): void {
-  try {
-    browserStorage().write(COMBO_KEY, JSON.stringify(ids));
-  } catch {
-    // 覚えられなくても遊べる
-  }
-}
 const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
 const GOLD = 0xffcf5a;

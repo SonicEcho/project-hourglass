@@ -281,3 +281,50 @@ export function chainAlbumDeck(state: AlbumState, cards: Record<string, ChainMov
 export function isChainAlbumComplete(state: AlbumState, rules: ChainAlbumRules): boolean {
   return countOf(state.album) === rules.size;
 }
+
+/** アルバムの画面の分類のタブ（段階166）：すべて・アクション・エフェクト・クライマックス・敵のスナップ */
+export type ChainSnapTab = 'all' | 'attack' | 'support' | 'finish' | 'enemy';
+
+/** スナップの属性（絞り込み用。段階166）：攻撃の属性、添える札が足す属性。回復など属性のない物は null */
+export function chainSnapElement(m: ChainMove): Element | null {
+  const e = m.effect;
+  if (e.kind === 'damage') return e.element;
+  if ((e.kind === 'addon' || e.kind === 'trick' || e.kind === 'status') && e.element) return e.element;
+  return null;
+}
+
+/** アルバムの分類（スペシャル・コンボは入らないので、アクション・エフェクト・クライマックスのどれか） */
+function albumCategory(m: ChainMove): 'attack' | 'support' | 'finish' {
+  if (isChainFinish(m)) return 'finish';
+  return m.type === 'attack' || m.effect.kind === 'heal' ? 'attack' : 'support';
+}
+
+/** タブと属性の絞り込みに合うか（段階166）。敵のスナップは、敵のタブと、その分類のタブの両方に出る */
+export function chainSnapMatches(m: ChainMove, tab: ChainSnapTab, element: Element | null, enemySnaps: readonly string[]): boolean {
+  if (tab === 'enemy' && !enemySnaps.includes(m.id)) return false;
+  if (tab !== 'all' && tab !== 'enemy' && albumCategory(m) !== tab) return false;
+  if (element && chainSnapElement(m) !== element) return false;
+  return true;
+}
+
+/** アルバムの中身の数（段階166。中身の帯）：分類ごとの枚数と、そのうち敵のスナップの枚数 */
+export function chainAlbumCounts(album: Record<string, number>, cards: Record<string, ChainMove>, enemySnaps: readonly string[]): { attack: number; support: number; finish: number; enemy: number } {
+  const out = { attack: 0, support: 0, finish: 0, enemy: 0 };
+  for (const [id, n] of Object.entries(album)) {
+    const m = cards[id];
+    if (!m || n <= 0) continue;
+    out[albumCategory(m)] += n;
+    if (enemySnaps.includes(id)) out.enemy += n;
+  }
+  return out;
+}
+
+/** 見つけたコンボの材料（段階166。アルバムの印）：スナップの id → それを材料にする、見つけたコンボ */
+export function chainComboMaterials(links: readonly ChainLinkDef[], found: readonly string[]): Record<string, ChainLinkDef[]> {
+  const out: Record<string, ChainLinkDef[]> = {};
+  for (const l of links) {
+    if (!found.includes(l.id)) continue;
+    for (const id of new Set(l.cards)) (out[id] ??= []).push(l);
+  }
+  return out;
+}

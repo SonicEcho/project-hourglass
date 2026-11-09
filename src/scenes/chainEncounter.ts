@@ -41,6 +41,30 @@ export function battleSceneFor(data: BattleSceneData): 'ChainBattle' | 'Battle' 
   return data.encounter && useNewBattle(data.encounter.battle) ? 'ChainBattle' : 'Battle';
 }
 
+/**
+ * 見つけたコンボ（初めてそろうと覚える。試しの戦闘と同じく端末に覚える。アルバムの画面の材料の印にも使う：段階166）。
+ * セーブへの記録はライブラリの段階で移す
+ */
+const COMBO_KEY = 'hourglass.chainTrial.combos';
+
+export function foundChainCombos(): string[] {
+  try {
+    const raw = browserStorage().read(COMBO_KEY);
+    const v = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFoundChainCombos(ids: string[]): void {
+  try {
+    browserStorage().write(COMBO_KEY, JSON.stringify(ids));
+  } catch {
+    // 覚えられなくても遊べる
+  }
+}
+
 export interface ChainWinReward {
   gained: number;
   koma: number;
