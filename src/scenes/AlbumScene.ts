@@ -1,14 +1,14 @@
 import Phaser from 'phaser';
-import type { AlbumState, CardDef, ChainMove } from '../core';
-import { addToAlbum, chainAlbumAddError, chainCardCategory, countOf, getAddError, isAlbumComplete, recommendAlbum, removeFromAlbum, sameAlbum } from '../core';
+import type { AlbumState, CardDef, ChainLinkDef, ChainMove, ChainSnapTab, Element } from '../core';
+import { addToAlbum, chainAlbumAddError, chainAlbumCounts, chainCardCategory, chainComboMaterials, chainSnapMatches, countOf, getAddError, isAlbumComplete, recommendAlbum, removeFromAlbum, sameAlbum } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALBUM_COPY_MAX, ALBUM_RECOMMEND, ALBUM_SIZE, CARDS, CHAIN_ALBUM, CHAIN_SNAPS } from '../data';
+import { A11_CARDS, A11_COMBOS, ALBUM_COPY_MAX, ALBUM_RECOMMEND, ALBUM_SIZE, CARDS, CHAIN17_COMBO_HINT, CHAIN_ALBUM, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, FESTIVAL_NOISES, GOLDFISH_BOWL_LORD } from '../data';
 import type { IconKind } from '../ui/icons';
-import { chainAlbumActive } from './chainEncounter';
+import { chainAlbumActive, foundChainCombos } from './chainEncounter';
 import { snapLook } from '../ui/battleViews';
 import { describeAction } from '../ui/describe';
 import { addIcon } from '../ui/icons';
-import { weightLabel } from '../ui/labels';
+import { ELEMENT_LABEL, weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { enterScreen, screenBg } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -48,9 +48,29 @@ const ROWS = 14;
 const ROW_H = 36;
 const ROW_GAP = 3;
 const LIST_Y = 82;
-/** 説明の窓 */
-const DETAIL_Y = LIST_Y + ROWS * (ROW_H + ROW_GAP) + 4;
+/** 新しい戦闘のアルバム（段階166）：上に分類のタブと属性の絞り込みを置くので、一覧は下から。1ページ12行 */
+const CHAIN_ROWS = 12;
+const CHAIN_LIST_Y = 138;
+const TAB_Y = 76;
+const FILTER_Y = 106;
 const DETAIL_H = 104;
+
+/** 分類のタブ（段階166）。コンボは見つけたコンボの一覧 */
+const TABS: { id: ChainSnapTab | 'combo'; label: string; color: number }[] = [
+  { id: 'all', label: 'すべて', color: COLORS.accent },
+  { id: 'attack', label: 'アクション', color: CHAIN_LOOK.attack.color },
+  { id: 'support', label: 'エフェクト', color: CHAIN_LOOK.support.color },
+  { id: 'finish', label: 'クライマックス', color: CHAIN_LOOK.finish.color },
+  { id: 'enemy', label: '敵', color: 0xc08cff },
+  { id: 'combo', label: 'コンボ', color: 0xffcf5a },
+];
+const ELEMENTS: Element[] = ['physical', 'fire', 'ice', 'thunder'];
+const ENEMY_SNAP_IDS = Object.values(CHAIN_ENEMY_SNAPS);
+/** 敵のスナップ → その敵の名前（説明の窓の「手に入れ方」） */
+const ENEMY_OF_SNAP: Record<string, string> = Object.fromEntries(
+  [...FESTIVAL_NOISES, GOLDFISH_BOWL_LORD].filter((e) => CHAIN_ENEMY_SNAPS[e.id]).map((e) => [CHAIN_ENEMY_SNAPS[e.id], e.name]),
+);
+const GOLD = 0xffcf5a;
 
 export class AlbumScene extends Phaser.Scene {
   private root!: Phaser.GameObjects.Container;
@@ -65,6 +85,11 @@ export class AlbumScene extends Phaser.Scene {
   private discardArmed = false;
   /** 新しい戦闘のアルバムを編集しているか（段階163。今いる区画が新しい戦闘の区画の時） */
   private chain = false;
+  /** 分類のタブと属性の絞り込み（段階166。新しい戦闘のアルバムだけ） */
+  private tab: ChainSnapTab | 'combo' = 'all';
+  private element: Element | null = null;
+  /** 見つけたコンボ（開いた時に読む） */
+  private found: string[] = [];
 
   private get size(): number {
     return this.chain ? CHAIN_ALBUM.size : ALBUM_SIZE;
@@ -91,6 +116,9 @@ export class AlbumScene extends Phaser.Scene {
     this.message = '';
     this.page = 0;
     this.chain = chainAlbumActive();
+    this.tab = 'all';
+    this.element = null;
+    this.found = this.chain ? foundChainCombos() : [];
     this.draft = this.saved;
     this.discardArmed = false;
     this.render();
@@ -99,7 +127,12 @@ export class AlbumScene extends Phaser.Scene {
 
   /** 持っているスナップ（スナップの一覧の順） */
   private ownedCards(): SnapRow[] {
-    if (this.chain) return Object.values(CHAIN_SNAPS).filter((m) => (this.draft.owned[m.id] ?? 0) > 0).map((m) => ({ id: m.id, name: m.name, look: chainLook(m) }));
+    if (this.chain) {
+      const tab = this.tab === 'combo' ? 'all' : this.tab;
+      return Object.values(CHAIN_SNAPS)
+        .filter((m) => (this.draft.owned[m.id] ?? 0) > 0 && chainSnapMatches(m, tab, this.element, ENEMY_SNAP_IDS))
+        .map((m) => ({ id: m.id, name: m.name, look: chainLook(m) }));
+    }
     return Object.values(CARDS as Record<string, CardDef>).filter((c) => (this.draft.owned[c.id] ?? 0) > 0).map((c) => ({ id: c.id, name: c.name, look: snapLook(c) }));
   }
 
@@ -154,43 +187,54 @@ export class AlbumScene extends Phaser.Scene {
     // 上：見出しと枚数
     this.root.add(addIcon(this, 'support', SIDE_PADDING + 9, 20, 18, COLORS.accent));
     this.root.add(addText(this, SIDE_PADDING + 24, 8, 'アルバム', { size: 17, bold: true }));
-    this.root.add(
-      addText(
-        this,
-        SIDE_PADDING,
-        34,
-        this.chain
-          ? `${this.size}枚を選んで戦う（同じスナップは${this.copyMax}枚・クライマックスは${CHAIN_ALBUM.climaxMax}枚まで。スペシャルは仲間ごとに2枚加わる）`
-          : `${ALBUM_SIZE}枚を選んで戦う（同じスナップは${ALBUM_COPY_MAX}枚まで）`,
-        { size: 11, color: COLORS.subText, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 70 },
-      ),
-    );
+    if (this.chain) this.drawCounts();
+    else this.root.add(addText(this, SIDE_PADDING, 34, `${ALBUM_SIZE}枚を選んで戦う（同じスナップは${ALBUM_COPY_MAX}枚まで）`, { size: 11, color: COLORS.subText, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 70 }));
+    if (this.chain) this.drawTabs();
+    const listY = this.chain ? CHAIN_LIST_Y : LIST_Y;
+    const rowsPerPage = this.chain ? CHAIN_ROWS : ROWS;
     this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 6, 'アルバム', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
     this.root.add(
       addText(this, GAME_WIDTH - SIDE_PADDING, 18, `${total}/${this.size}`, { size: 22, bold: true, color: complete ? COLORS.accentText : COLORS.allyDamage }).setOrigin(1, 0),
     );
-    this.root.add(addText(this, 266, LIST_Y - 16, '入れる枚数', { size: 10, color: COLORS.subText }).setOrigin(0.5));
-    this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, LIST_Y - 16, '持っている', { size: 10, color: COLORS.subText }).setOrigin(1, 0.5));
+    const comboTab = this.chain && this.tab === 'combo';
+    if (!comboTab) {
+      this.root.add(addText(this, 266, listY - 12, '入れる枚数', { size: 10, color: COLORS.subText }).setOrigin(0.5));
+      this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, listY - 12, '持っている', { size: 10, color: COLORS.subText }).setOrigin(1, 0.5));
+    }
 
-    // 一覧
+    // 一覧（コンボのタブは、見つけたコンボの一覧）
     const cards = this.ownedCards();
-    const pages = Math.max(1, Math.ceil(cards.length / ROWS));
+    const count = comboTab ? A11_COMBOS.length : cards.length;
+    const pages = Math.max(1, Math.ceil(count / rowsPerPage));
     this.page = Math.min(this.page, pages - 1);
-    cards.slice(this.page * ROWS, (this.page + 1) * ROWS).forEach((card, i) => this.drawRow(card, LIST_Y + i * (ROW_H + ROW_GAP)));
+    if (comboTab) A11_COMBOS.slice(this.page * rowsPerPage, (this.page + 1) * rowsPerPage).forEach((l, i) => this.drawComboRow(l, listY + i * (ROW_H + ROW_GAP)));
+    else cards.slice(this.page * rowsPerPage, (this.page + 1) * rowsPerPage).forEach((card, i) => this.drawRow(card, listY + i * (ROW_H + ROW_GAP)));
+    if (count === 0) {
+      const empty = this.element ? `${ELEMENT_LABEL[this.element]}のスナップは、まだ持っていない` : 'この分類のスナップは、まだ持っていない';
+      this.root.add(addText(this, GAME_WIDTH / 2, listY + 40, empty, { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    }
+    const detailTop = listY + rowsPerPage * (ROW_H + ROW_GAP) + 4;
     if (pages > 1) {
-      const y = DETAIL_Y + 12;
+      const y = detailTop + 12;
       addButton(this, this.root, GAME_WIDTH / 2 - 70, y, 60, 28, '◀', { onTap: () => this.turn(-1) }, { enabled: this.page > 0, size: 12 });
       this.root.add(addText(this, GAME_WIDTH / 2, y, `${this.page + 1}/${pages}`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
       addButton(this, this.root, GAME_WIDTH / 2 + 70, y, 60, 28, '▶', { onTap: () => this.turn(1) }, { enabled: this.page < pages - 1, size: 12 });
     }
 
     // 説明の窓
-    const detailY = DETAIL_Y + (pages > 1 ? 30 : 0);
+    const detailY = detailTop + (pages > 1 ? 30 : 0);
     this.root.add(this.add.rectangle(SIDE_PADDING, detailY, GAME_WIDTH - SIDE_PADDING * 2, DETAIL_H, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
     const sel = this.selected && !this.chain ? (CARDS as Record<string, CardDef>)[this.selected] : undefined;
     const chainSel = this.selected && this.chain ? CHAIN_SNAPS[this.selected] : undefined;
-    const lines = chainSel
-      ? [`${chainSel.name}（${chainLook(chainSel).label}・重さ${chainSel.weight}）`, chainSel.text]
+    const comboSel = comboTab && this.selected ? A11_COMBOS.find((l) => l.id === this.selected) : undefined;
+    const lines = comboTab
+      ? comboSel
+        ? this.comboLines(comboSel)
+        : ['名前をタップすると、コンボの説明が出る', `見つけたコンボ ${A11_COMBOS.filter((l) => this.found.includes(l.id)).length}/${A11_COMBOS.length}。材料がそろうと、戦闘で見つかる`]
+      : chainSel
+      ? this.snapLines(chainSel)
+      : this.chain
+        ? ['名前をタップすると、スナップの説明が出る', `${this.size}枚を選んで戦う（同じスナップは${this.copyMax}枚・クライマックスは${CHAIN_ALBUM.climaxMax}枚まで。スペシャルは仲間ごとに2枚加わる）。★は見つけたコンボの材料`]
       : sel
         ? [`${sel.name}（${sel.support ? 'サポート・行動枠を使わない' : `重さ：${weightLabel(sel.weight)}`}）`, describeAction(sel)]
         : ['名前をタップすると、スナップの説明が出る', '宝箱・ボス・時間を返した時に、新しいスナップが手に入る'];
@@ -271,6 +315,115 @@ export class AlbumScene extends Phaser.Scene {
     this.render();
   }
 
+  /** アルバムの中身の帯（段階166）：分類ごとの枚数（クライマックスは上限まで）と、敵のスナップの枚数 */
+  private drawCounts(): void {
+    const c = chainAlbumCounts(this.draft.album, CHAIN_SNAPS, ENEMY_SNAP_IDS);
+    const parts: { label: string; color: number; full?: boolean }[] = [
+      { label: `アクション ${c.attack}`, color: CHAIN_LOOK.attack.color },
+      { label: `エフェクト ${c.support}`, color: CHAIN_LOOK.support.color },
+      { label: `クライマックス ${c.finish}/${CHAIN_ALBUM.climaxMax}`, color: CHAIN_LOOK.finish.color, full: c.finish >= CHAIN_ALBUM.climaxMax },
+      { label: `敵 ${c.enemy}`, color: TABS[4].color },
+    ];
+    let x = SIDE_PADDING;
+    for (const p of parts) {
+      this.root.add(this.add.rectangle(x + 4, 52, 8, 8, p.color).setRounded(2));
+      const t = addText(this, x + 11, 52, p.label, { size: 11, bold: !!p.full, color: p.full ? COLORS.accentText : COLORS.subText }).setOrigin(0, 0.5);
+      this.root.add(t);
+      x += 11 + t.width + 9;
+    }
+  }
+
+  /** 分類のタブと、属性の絞り込み（段階166） */
+  private drawTabs(): void {
+    // 名前の長さに合わせて幅を分ける（クライマックスは広く、敵は狭く）
+    const free = GAME_WIDTH - SIDE_PADDING * 2 - (TABS.length - 1) * 3;
+    const need = TABS.map((t) => 12 + t.label.length * 10);
+    const extra = (free - need.reduce((a, b) => a + b, 0)) / TABS.length;
+    let left = SIDE_PADDING;
+    TABS.forEach((t, i) => {
+      const w = need[i] + extra;
+      const x = left + w / 2;
+      left += w + 3;
+      this.chip(x, TAB_Y, w, 26, t.label, t.color, this.tab === t.id, () => {
+        if (this.tab === t.id) return;
+        // コンボのタブとスナップのタブでは、選んでいる物の種類が違うので外す
+        if (t.id === 'combo' || this.tab === 'combo') this.selected = null;
+        this.tab = t.id;
+        this.page = 0;
+        this.message = '';
+        this.render();
+      });
+    });
+    if (this.tab === 'combo') return;
+    const opts: (Element | null)[] = [null, ...ELEMENTS];
+    const fw = 50;
+    opts.forEach((el, i) => {
+      const x = SIDE_PADDING + fw / 2 + i * (fw + 4);
+      this.chip(x, FILTER_Y, fw, 22, el ? ELEMENT_LABEL[el] : '全属性', COLORS.accent, this.element === el, () => {
+        if (this.element === el) return;
+        this.element = el;
+        this.page = 0;
+        this.render();
+      });
+    });
+  }
+
+  /** タブ・絞り込みの小さな札（選んでいる物は色で塗る） */
+  private chip(x: number, y: number, w: number, h: number, label: string, color: number, on: boolean, onTap: () => void): void {
+    const r = this.add.rectangle(x, y, w, h, on ? color : 0x141c25).setRounded(6);
+    r.setStrokeStyle(1, on ? color : COLORS.border);
+    this.root.add(r);
+    const t = addText(this, x, y, label, { size: 10, bold: true, color: on ? '#101820' : COLORS.subText }).setOrigin(0.5);
+    if (t.width > w - 6) t.setScale((w - 6) / t.width);
+    this.root.add(t);
+    makePressable(r, { onTap });
+  }
+
+  /** スナップの説明の窓の文（段階166：見つけたコンボの材料と、敵のスナップの手に入れ方も） */
+  private snapLines(m: ChainMove): string[] {
+    const lines = [`${m.name}（${chainLook(m).label}・重さ${m.weight}）`, m.text];
+    const combos = chainComboMaterials(A11_COMBOS, this.found)[m.id];
+    if (combos?.length) lines.push(`★コンボの材料：${combos.map((l) => `${l.move.name}（${this.materialNames(l)}）`).join('、')}`);
+    const foe = ENEMY_OF_SNAP[m.id];
+    if (foe) lines.push(`敵のスナップ：${foe}に★3で勝つと、ときどき手に入る`);
+    return lines;
+  }
+
+  private materialNames(l: ChainLinkDef): string {
+    return l.cards.map((id) => A11_CARDS[id]?.name ?? id).join('＋');
+  }
+
+  /** コンボの説明の窓の文。まだ見つけていないコンボは手がかりだけ */
+  private comboLines(l: ChainLinkDef): string[] {
+    if (!this.found.includes(l.id)) return ['？？？（まだ見つけていないコンボ）', `手がかり：${CHAIN17_COMBO_HINT[l.id] ?? '？'}`];
+    return [`${l.move.name}（コンボ・重さ${l.move.weight}）`, `材料：${this.materialNames(l)}`, l.move.text];
+  }
+
+  /** コンボのタブの1行（段階166）：見つけたコンボは名前と材料、まだの物は「？？？」 */
+  private drawComboRow(l: ChainLinkDef, top: number): void {
+    const cy = top + ROW_H / 2;
+    const known = this.found.includes(l.id);
+    const selected = this.selected === l.id;
+    const row = this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, ROW_H, known ? COLORS.panel : 0x141c25).setRounded(8).setOrigin(0);
+    row.setStrokeStyle(selected ? 3 : 1, selected ? COLORS.select : COLORS.border);
+    this.root.add(row);
+    makePressable(row, {
+      onTap: () => {
+        this.selected = l.id;
+        this.render();
+      },
+    });
+    const bandX = SIDE_PADDING + 4 + 44;
+    this.root.add(this.add.rectangle(bandX, cy, 88, 22, GOLD, known ? 0.9 : 0.35).setRounded(6));
+    this.root.add(addText(this, bandX, cy, '★ コンボ', { size: 10, bold: true, color: '#2a1300' }).setOrigin(0.5));
+    const nameX = SIDE_PADDING + 98;
+    this.root.add(addText(this, nameX, cy, known ? l.move.name : '？？？', { size: 13, bold: true, color: known ? COLORS.text : COLORS.dimText }).setOrigin(0, 0.5));
+    const sub = addText(this, GAME_WIDTH - SIDE_PADDING - 8, cy, known ? this.materialNames(l) : 'まだ見つけていない', { size: 11, color: COLORS.subText }).setOrigin(1, 0.5);
+    const maxW = GAME_WIDTH - SIDE_PADDING - 8 - (nameX + 100);
+    if (sub.width > maxW) sub.setScale(maxW / sub.width);
+    this.root.add(sub);
+  }
+
   /** 1種類の行：属性の帯・名前、「−」入れる枚数「＋」、持っている枚数 */
   private drawRow(card: SnapRow, top: number): void {
     const cy = top + ROW_H / 2;
@@ -301,8 +454,12 @@ export class AlbumScene extends Phaser.Scene {
     this.root.add(label);
     const nameX = SIDE_PADDING + 10 + bandW;
     const nameT = addText(this, nameX, cy, card.name, { size: 13, bold: true, color: inAlbum > 0 ? COLORS.text : COLORS.subText }).setOrigin(0, 0.5);
-    if (nameT.width > 200 - nameX) nameT.setScale((200 - nameX) / nameT.width);
+    // 見つけたコンボの材料には★（段階166）。名前の幅を少し詰める
+    const material = this.chain && !!chainComboMaterials(A11_COMBOS, this.found)[card.id];
+    const nameMax = material ? 188 : 200;
+    if (nameT.width > nameMax - nameX) nameT.setScale((nameMax - nameX) / nameT.width);
     this.root.add(nameT);
+    if (material) this.root.add(addText(this, nameX + nameT.displayWidth + 2, cy, '★', { size: 11, bold: true, color: '#ffcf5a' }).setOrigin(0, 0.5));
     // 入れる枚数
     addButton(this, this.root, 226, cy, 40, 28, '−', { onTap: () => this.remove(card.id) }, { enabled: inAlbum > 0, size: 16 });
     this.root.add(addText(this, 266, cy, `${inAlbum}`, { size: 17, bold: true, color: inAlbum > 0 ? COLORS.accentText : COLORS.dimText }).setOrigin(0.5));

@@ -5,6 +5,10 @@ import {
   buildMainChainBattle,
   chainAlbumAddError,
   chainAlbumDeck,
+  chainAlbumCounts,
+  chainComboMaterials,
+  chainSnapElement,
+  chainSnapMatches,
   gainSnaps,
   removeFromAlbum,
   chainEncounterResult,
@@ -374,5 +378,36 @@ describe('敵のスナップ（段階165）', () => {
     expect(chainEncounterResult({ ...s, finishTime: 999 }, AREA_BATTLES.a11_n1_road.enemies, 1, rule()).snap).toBeUndefined();
     // 敵のスナップは、新しい戦闘のスナップの一覧にある
     for (const id of Object.values(CHAIN_ENEMY_SNAPS)) expect(CHAIN_SNAPS[id]).toBeTruthy();
+  });
+});
+
+describe('アルバムの画面の分類と印（段階166）', () => {
+  const enemy = Object.values(CHAIN_ENEMY_SNAPS);
+  it('属性：攻撃は攻撃の属性、回復は属性なし', () => {
+    expect(chainSnapElement(CHAIN_SNAPS.a11_kingyoUzu)).toBe('ice');
+    expect(chainSnapElement(CHAIN_SNAPS.a11_recovery)).toBeNull();
+  });
+  it('タブ：敵のスナップは敵のタブとその分類のタブに出る', () => {
+    const uzu = CHAIN_SNAPS.a11_kingyoUzu;
+    expect(chainSnapMatches(uzu, 'enemy', null, enemy)).toBe(true);
+    expect(chainSnapMatches(uzu, 'finish', null, enemy)).toBe(true);
+    expect(chainSnapMatches(uzu, 'attack', null, enemy)).toBe(false);
+    expect(chainSnapMatches(CHAIN_SNAPS.a11_recovery, 'attack', null, enemy)).toBe(true);
+    expect(chainSnapMatches(CHAIN_SNAPS.a11_recovery, 'enemy', null, enemy)).toBe(false);
+    expect(chainSnapMatches(CHAIN_SNAPS.a11_amaikiri, 'support', null, enemy)).toBe(true);
+    expect(chainSnapMatches(uzu, 'all', 'fire', enemy)).toBe(false);
+    expect(chainSnapMatches(uzu, 'all', 'ice', enemy)).toBe(true);
+  });
+  it('中身の数：分類ごとと、敵のスナップ', () => {
+    const c = chainAlbumCounts({ a11_kingyoUzu: 1, a11_recovery: 2, a11_amaikiri: 1, nope: 3 }, CHAIN_SNAPS, enemy);
+    expect(c).toEqual({ attack: 2, support: 1, finish: 1, enemy: 2 });
+    const start = chainAlbumCounts(albumFromIds(CHAIN_START_ALBUM).album, CHAIN_SNAPS, enemy);
+    expect(start.attack + start.support + start.finish).toBe(20);
+  });
+  it('コンボの材料：見つけたコンボだけ', () => {
+    const ice = A11_COMBOS.find((l) => l.id === 'iceFlower')!;
+    expect(chainComboMaterials(A11_COMBOS, [])).toEqual({});
+    const m = chainComboMaterials(A11_COMBOS, ['iceFlower']);
+    for (const id of ice.cards) expect(m[id]?.map((l) => l.id)).toEqual(['iceFlower']);
   });
 });
