@@ -24,7 +24,7 @@ import {
   type ChainState,
   type CharacterDef,
 } from '../../src/core';
-import { A11_COMBOS, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
+import { A11_COMBOS, CHAIN_ENEMY_SNAPS, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
 import { autoChainBattle, smartChainPlan } from '../../src/sim/chainAuto';
 
 let seedPick = 1;
@@ -351,3 +351,28 @@ describe('新しい戦闘にない育成の効果を、近い効果で効かせ�
   });
 });
 
+
+describe('敵のスナップ（段階165）', () => {
+  const win = () => {
+    const st = CHAIN_AREA_SETUPS.a11_n1_road;
+    const def = buildMainChainBattle({ id: 'r', name: 'r', party: [HERO, AKARI], enemies: AREA_BATTLES.a11_n1_road.enemies, chainEnemies: st.enemies.map((e) => ({ ...e, hp: 1 })), deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
+    const s = createChainBattle(def, CHAIN_RULES, 2);
+    return runChainRound(s, [mv('hero', 'basic', s.enemies[0].uid), mv('akari', 'basic', s.enemies[1].uid)]).state;
+  };
+  const rule = (over: Partial<{ normal: number; boss: number }> = {}, owned: Record<string, number> = {}) => ({ snaps: CHAIN_ENEMY_SNAPS, rate: { normal: 1, boss: 1, ...over }, owned, copyMax: 4, boss: false });
+
+  it('★3 で勝つと、その戦闘にいた敵の種類のスナップを確率で1枚（4枚持っている物は選ばない）', () => {
+    let s = win();
+    // 3体目も倒す
+    s = runChainRound(s, [mv('hero', 'basic', s.enemies[2].uid)]).state;
+    expect(s.outcome).toBe('win');
+    expect(chainEncounterResult(s, AREA_BATTLES.a11_n1_road.enemies, 1).snap).toBeUndefined();
+    const got = chainEncounterResult(s, AREA_BATTLES.a11_n1_road.enemies, 1, rule()).snap;
+    expect(['a11_hireuchi', 'a11_mizushibuki']).toContain(got);
+    expect(chainEncounterResult(s, AREA_BATTLES.a11_n1_road.enemies, 1, rule({ normal: 0 })).snap).toBeUndefined();
+    expect(chainEncounterResult(s, AREA_BATTLES.a11_n1_road.enemies, 1, rule({}, { a11_hireuchi: 4 })).snap).toBe('a11_mizushibuki');
+    expect(chainEncounterResult({ ...s, finishTime: 999 }, AREA_BATTLES.a11_n1_road.enemies, 1, rule()).snap).toBeUndefined();
+    // 敵のスナップは、新しい戦闘のスナップの一覧にある
+    for (const id of Object.values(CHAIN_ENEMY_SNAPS)) expect(CHAIN_SNAPS[id]).toBeTruthy();
+  });
+});

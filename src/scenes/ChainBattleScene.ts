@@ -29,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef, type Element } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
@@ -2038,7 +2038,11 @@ export class ChainBattleScene extends Phaser.Scene {
     let encReward: ChainWinReward | null = null;
     if (this.encounter) {
       if (run.battle) setBattleMark(null);
-      const result = chainEncounterResult(s, this.areaBattle!.enemies, this.seed + 7);
+      // 敵のスナップ（段階165）：区画を作り直した戦闘だけ。★3 の時に確率で
+      const snapRule = CHAIN_AREA_SETUPS[this.areaBattle!.id]
+        ? { snaps: CHAIN_ENEMY_SNAPS, rate: CHAIN_ENEMY_SNAP_RATE, owned: run.chainAlbum.owned, copyMax: CHAIN_ALBUM.copyMax, boss: !!this.areaBattle!.boss }
+        : undefined;
+      const result = chainEncounterResult(s, this.areaBattle!.enemies, this.seed + 7 + (this.encounter.seedShift ?? 0), snapRule);
       if (result.outcome === 'cutoff') {
         this.showCutoff();
         return;
@@ -2142,7 +2146,7 @@ export class ChainBattleScene extends Phaser.Scene {
       ? [
           { g: 'low', label: '★\n素材' },
           { g: 'mid', label: `★★ ${at?.mid ?? ''}マス以内\n素材` },
-          { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\n珍しい素材・レア` },
+          { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\nレア・敵のスナップ` },
         ]
       : [
           { g: 'low', label: '★\n素材' },

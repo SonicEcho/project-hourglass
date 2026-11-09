@@ -12,14 +12,53 @@ const RECOVER: ChainMove = { id: 'a11_recover', name: 'リカバー', type: 'sup
 /** リカバリー（段階163。1-1 のぬしの報酬）：味方全体を回復（中） */
 const RECOVERY: ChainMove = { id: 'a11_recovery', name: 'リカバリー', type: 'support', weight: 2, target: 'allies', effect: { kind: 'heal', power: 30 }, text: '味方全体の HP を回復（中）' };
 
+/**
+ * 1-1 の敵のスナップ（段階165）：★3 で勝つと、確率で手に入る。アクションにエフェクトを1つ組み込む形（一覧の 11.）
+ */
+const ENEMY_SNAP = {
+  hireuchi: { id: 'a11_hireuchi', name: 'ひれ打ち', type: 'attack', weight: 1, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 20, push: 1 }, text: '敵1体に物理20。当たった敵の予定を1マス後ろへ' },
+  mizushibuki: { id: 'a11_mizushibuki', name: '水しぶき', type: 'attack', weight: 2, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 15 }, text: '敵全体に氷15' },
+  zutsuki: { id: 'a11_zutsuki', name: '頭突き', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 50, heavy: true, unsplittable: true }, text: '敵1体に物理50の重い一撃（かたい敵に強く、バリアを1発で割る）' },
+  amaikiri: { id: 'a11_amaikiri', name: 'あまい霧', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', spread: true }, text: '添えた単体攻撃が、ほかの敵みんなにも広がる' },
+  kingyoUzu: { id: 'a11_kingyoUzu', name: '金魚の渦', type: 'finish', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 25, scale: { by: 'hits', per: 5 } }, text: '敵全体に氷25。このラウンドに味方が当てた回数1回につき+5（クライマックス）' },
+} satisfies Record<string, ChainMove>;
+
+/** 敵の種類 → その敵のスナップ（段階165） */
+export const CHAIN_ENEMY_SNAPS: Record<string, string> = {
+  goldfishNoise: ENEMY_SNAP.hireuchi.id,
+  balloonNoise: ENEMY_SNAP.mizushibuki.id,
+  maskNoise: ENEMY_SNAP.zutsuki.id,
+  cottonNoise: ENEMY_SNAP.amaikiri.id,
+  goldfishBowlLord: ENEMY_SNAP.kingyoUzu.id,
+};
+
+/** 敵のスナップが手に入る確率（★3 で勝った時。雑魚とぬし）。スナップはたくさん要る物ではないので低め（開発者と決めた。狩りで集める） */
+export const CHAIN_ENEMY_SNAP_RATE = { normal: 0.25, boss: 0.5 };
+
 /** 1-1 で使う札（試しの調整17の札から） */
 export const A11_CARDS: Record<string, ChainMove> = Object.fromEntries(
-  [C.quick, C.closeUp, C.backlight, C.blueHour, C.strobe, C.wide, RECOVER, RECOVERY, C.push, C.plus10, C.decisive, C.group, C.swing, C.snow, C.paperGun].map((m) => [m.id, m]),
+  [C.quick, C.closeUp, C.backlight, C.blueHour, C.strobe, C.wide, RECOVER, RECOVERY, ...Object.values(ENEMY_SNAP), C.push, C.plus10, C.decisive, C.group, C.swing, C.snow, C.paperGun].map((m) => [m.id, m]),
 );
 
 /** 1-1 の札の絵と短い説明（試しにない物だけ） */
-export const A11_CARD_ART: Record<string, string> = { a11_recover: 'snap.recover', a11_recovery: 'snap.recover' };
-export const A11_SHORT_TEXT: Record<string, string> = { a11_recover: '味方全体の\nHPを少し回復', a11_recovery: '味方全体の\nHPを回復（中）' };
+export const A11_CARD_ART: Record<string, string> = {
+  a11_recover: 'snap.recover',
+  a11_recovery: 'snap.recover',
+  a11_hireuchi: 'snap.quickStep',
+  a11_mizushibuki: 'snap.iceChip',
+  a11_zutsuki: 'snap.heavyBlow',
+  a11_amaikiri: 'snap.wideShot',
+  a11_kingyoUzu: 'snap.iceChip',
+};
+export const A11_SHORT_TEXT: Record<string, string> = {
+  a11_recover: '味方全体の\nHPを少し回復',
+  a11_recovery: '味方全体の\nHPを回復（中）',
+  a11_hireuchi: '物理20\n予定を1マス後へ',
+  a11_mizushibuki: '敵全体に\n氷15',
+  a11_zutsuki: '物理50\n重い一撃',
+  a11_amaikiri: '添える\n全体に広げる',
+  a11_kingyoUzu: '全体に氷25\n当てた回数×5',
+};
 
 const times = (n: number, id: string): string[] => Array.from({ length: n }, () => id);
 

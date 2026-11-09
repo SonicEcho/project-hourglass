@@ -75,9 +75,11 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   run.armory = capped.armory;
   // スナップ：区画を作り直した戦闘は、新しい戦闘のスナップを新しいアルバムへ（段階163）。まだの戦闘は今のアルバムへ
   const setup = CHAIN_AREA_SETUPS[def.id];
-  const chainSnaps = enc.hunt || !setup ? [] : (setup.snaps ?? []);
+  const chainSnaps = enc.hunt || !setup ? [] : [...(setup.snaps ?? [])];
   const snaps = enc.hunt || setup ? [] : (def.snaps ?? []);
   if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
+  // 早く勝った時の敵のスナップ（段階165。狩りでも）
+  if (result.snap) chainSnaps.push(result.snap);
   if (chainSnaps.length > 0) run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
   saveRun();
   const mark = (kind: string) => (kind === 'rare' ? '★' : kind === 'uncommon' ? '◆' : '');

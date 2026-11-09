@@ -169,6 +169,17 @@ export interface ChainEncounterResult {
   actionCounts: Record<string, number>;
   /** 区画の中の次の戦闘へ持ち越す HP・MP */
   vitals: Record<string, ChainVitals>;
+  /** 手に入った敵のスナップ（段階165。★3 の時に確率で） */
+  snap?: string;
+}
+
+/** 敵のスナップの決まり（段階165）：敵の種類 → スナップ、確率（雑魚・ぬし）、持っている枚数と上限 */
+export interface ChainEnemySnapRule {
+  snaps: Record<string, string>;
+  rate: { normal: number; boss: number };
+  owned: Record<string, number>;
+  copyMax: number;
+  boss: boolean;
 }
 
 /**
@@ -176,7 +187,7 @@ export interface ChainEncounterResult {
  * 早く勝つほど良い報酬（docs/milestones/M3_battle_migration.md の 1.）：★3（評価 high）は、体勢を崩して倒した時と同じ出やすさ。
  * 乱数は seed から（同じ戦闘・同じ結果なら、同じ落とし物）
  */
-export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: number): ChainEncounterResult {
+export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: number, snapRule?: ChainEnemySnapRule): ChainEncounterResult {
   const outcome = s.outcome === 'win' ? 'victory' : s.outcome === 'cutoff' ? 'cutoff' : 'defeat';
   const grade = chainGrade(s);
   const drops: ChainDrop[] = [];
@@ -204,7 +215,21 @@ export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: n
     }
   }
   const actionCounts = Object.fromEntries(s.allies.map((a) => [a.defId, s.acted?.[a.defId] ?? 0]));
-  return { outcome, grade, drops, actionCounts, vitals: chainVitals(s) };
+  // 敵のスナップ（段階165）：★3 で勝った時に、その戦闘にいた敵の種類（部位を除く。上限まで持っている物を除く）から1種類を選び、確率で1枚
+  let snap: string | undefined;
+  if (outcome === 'victory' && grade === 'high' && snapRule) {
+    const kinds = [...new Set(s.enemies.filter((u) => !s.def.enemies.find((x) => x.id === u.defId)?.part).map((u) => u.defId))]
+      .map((id) => snapRule.snaps[id])
+      .filter((id): id is string => !!id && (snapRule.owned[id] ?? 0) < snapRule.copyMax);
+    let r = (seed ^ 0x5bd1e995) >>> 0;
+    const roll = () => {
+      const [v, next] = nextRandom(r);
+      r = next;
+      return v;
+    };
+    if (kinds.length && roll() < (snapRule.boss ? snapRule.rate.boss : snapRule.rate.normal)) snap = kinds[Math.floor(roll() * kinds.length)];
+  }
+  return { outcome, grade, drops, actionCounts, vitals: chainVitals(s), ...(snap ? { snap } : {}) };
 }
 
 /**
