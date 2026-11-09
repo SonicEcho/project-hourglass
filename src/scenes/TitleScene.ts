@@ -122,6 +122,7 @@ export class TitleScene extends Phaser.Scene {
         openOptions(this, {
           links: [
             { label: '説明を読む', onTap: () => this.openTips() },
+            { label: 'ライブラリ', onTap: () => this.scene.start('Library', { back: 'Title' }) },
             { label: '遊んだ記録', onTap: () => this.scene.start('PlayLog', { back: 'Title' }) },
             { label: 'クレジット', onTap: () => this.scene.start('Credits') },
           ],

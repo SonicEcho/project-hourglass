@@ -6,6 +6,7 @@ import { FRAME_COLORS } from '../ui/frame';
 import type { GalleryTile } from '../ui/gallery';
 import { COLORS } from '../ui/theme';
 import { addText } from '../ui/widgets';
+import { libraryProgressText } from './libraryView';
 import { canChooseParty, currentNaviData, lineupBase, run, storyLineup } from './run';
 
 // 育成の画面（星図・武器・ムーブメント・アルバム・並び）へのタイル（段階147）。
@@ -31,6 +32,8 @@ export function growthTiles(open: (key: string) => void): GalleryTile[] {
   if (hasSpare(chainAlbumActive() ? run.chainAlbum : run.album)) tiles.push({ id: 'album', label: 'アルバム', onTap: () => open('Album') });
   // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
   if (canChooseParty()) tiles.push({ id: 'party', label: '並び', onTap: () => open('Party') });
+  // ライブラリ（段階167）：見つけたスナップ・コンボ・会った敵・素材の記録
+  tiles.push({ id: 'library', label: 'ライブラリ', sub: libraryProgressText(), onTap: () => open('Library') });
   return tiles;
 }
 

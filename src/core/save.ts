@@ -1,5 +1,6 @@
 import type { AlbumState } from './album';
 import { sanitizeAlbum } from './album';
+import { sanitizeLibrary, type LibraryContext, type LibraryState } from './library';
 import type { AreaDef, ExploreState } from './explore';
 import { normalizeExplore } from './explore';
 import type { Flow } from './flow';
@@ -59,6 +60,8 @@ export interface RunSnapshot {
   battle: SavedBattle | null;
   /** 新しい戦闘のアルバム（段階163。同じ版のまま足した。古いセーブは最初のアルバム） */
   chainAlbum?: AlbumState;
+  /** ライブラリの記録（段階167。同じ版のまま足した。古いセーブにはない） */
+  library?: LibraryState;
   /** 遊ぶ人が選んだ戦闘の並び（段階91a。版13から）。空なら章の並びのまま */
   party: string[];
 }
@@ -99,6 +102,8 @@ export interface SaveContext {
   chainCards?: Record<string, { id: string }>;
   initialChainAlbum?: AlbumState;
   chainAlbumRules?: { size: number; copyMax: number };
+  /** ライブラリに載る物（段階167。書かなければライブラリを読まない） */
+  library?: LibraryContext;
   /** 区画の戦闘の id（段階44。戦闘中の印を整える。書かなければ、戦闘中の印は捨てる） */
   battleIds?: readonly string[];
 }
@@ -219,6 +224,7 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     ...(ctx.chainCards && ctx.initialChainAlbum
       ? { chainAlbum: sanitizeAlbum(raw.chainAlbum, ctx.chainCards, ctx.initialChainAlbum, ctx.chainAlbumRules?.size, ctx.chainAlbumRules?.copyMax) }
       : {}),
+    ...(ctx.library && raw.library !== undefined ? { library: sanitizeLibrary(raw.library, ctx.library) } : {}),
     battle: sanitizeBattle(raw.battle, ctx),
     // 知らない仲間と、重なりは捨てる（段階91a）
     party: Array.isArray(raw.party) ? [...new Set(raw.party.filter((x): x is string => typeof x === 'string' && ctx.characterIds.includes(x)))] : [],
