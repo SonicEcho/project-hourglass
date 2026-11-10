@@ -106,6 +106,8 @@ export interface AreaChest extends InRoom, InNight {
   gears?: string[];
   /** 入っているスナップ（段階41。持ち物に入り、アルバムの画面で入れ替えられる） */
   snaps?: string[];
+  /** 新しい戦闘の区画で渡すスナップ（段階168。新しい戦闘のアルバムへ。書かなければ snaps を今のアルバムへ） */
+  chainSnaps?: string[];
 }
 
 /**

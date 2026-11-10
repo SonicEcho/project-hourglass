@@ -2,7 +2,7 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'trait_shield' | 'trait_flee' | 'trait_split' | 'trait_pop' | 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
@@ -55,6 +55,19 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
       text: 'ダウンから起きた敵は「警戒」状態！\n警戒中は、弱点を突いてもダウンしません。\nダウンさせるたびに、警戒 → 警戒+ → 警戒++ と長くなります。',
     },
   ],
+  // 段階168：1-2 の敵の性質（初めて出た戦闘で、その敵の性質の札を照らす）
+  chain_shield: [
+    { target: 'trait_shield', text: 'この敵は「かばう」！\nほかの敵への単体攻撃を、代わりに受けてしまいます。\n全体攻撃か、先にダウンさせて崩しましょう。' },
+  ],
+  chain_flee: [
+    { target: 'trait_flee', text: '「逃げ足」の敵は、予定の時刻になると逃げてしまいます！\n逃げられると、素材は手に入りません。\n押して時刻をずらすか、先に倒しましょう。' },
+  ],
+  chain_split: [
+    { target: 'trait_split', text: '「分裂」の敵は、倒すと小さな2体に分かれます。\n全体攻撃やパノラマで、まとめて片付けましょう。' },
+  ],
+  chain_pop: [
+    { target: 'trait_pop', text: '「ダウン時爆発」の敵は、弱点でダウンさせると爆発！\n味方全体にダメージが来ます。\n弱点以外で倒すか、回復を用意しておきましょう。' },
+  ],
   chain_addon: [
     {
       target: 'addonCard',
@@ -85,7 +98,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_weak', 'chain_guard', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

@@ -1,6 +1,6 @@
 import type { ChainEnemyDef, ChainLinkDef, ChainMove, EnemyDef, LibraryContext } from '../core';
 import { AREAS, AREA_BATTLES } from './areas';
-import { CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS } from './chainArea11';
+import { CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS } from './chainAreas';
 import { WEAPON_DATA } from './weapons';
 
 // ライブラリに載る物（段階167）：新しい戦闘で戦う区画（CHAIN_AREA_SETUPS）から集める。

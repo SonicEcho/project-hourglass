@@ -29,7 +29,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, A11_CARD_ART, A11_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
@@ -139,9 +139,9 @@ const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as
 /** 分かった弱点を、試しの戦闘をまたいで覚えておく所（セーブとは別。調整9） */
 
 /** 札・技の絵と短い効果（調整17の札も） */
-const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART, ...A11_CARD_ART };
+const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART, ...CHAIN_MAIN_CARD_ART };
 const CHAIN_MOVE_ART: Record<string, string> = { ...CHAIN_MOVE_ART_16, ...CHAIN17_MOVE_ART };
-const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT, ...A11_SHORT_TEXT };
+const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT, ...CHAIN_MAIN_SHORT_TEXT };
 /** 見つけたコンボ（調整17。端末に覚える） */
 const RED = 0xff2d55;
 const YELLOW = 0xffd23f;
@@ -533,6 +533,15 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_shield':
+      case 'trait_flee':
+      case 'trait_split':
+      case 'trait_pop': {
+        // 敵の性質の札（敵の列の上の黄色のシール）と、その敵の名前のあたり
+        const k = foes.findIndex((e) => e.hp > 0 && !e.gone && e.trait === t.slice(6));
+        if (k < 0) return null;
+        return { x: colW * k + 4, y: STAGE_Y + 42, w: Math.min(colW - 8, 150), h: 28 };
+      }
       case 'guard': {
         // 警戒の印（敵の絵の下寄り。ぬし戦は絵の上の端）
         const k = foes.findIndex((e) => e.hp > 0 && !e.gone && (e.guard ?? 0) > 0);
@@ -1868,7 +1877,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2223,6 +2232,11 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);
     else if (ev.type === 'push') parts.push(!ev.moved ? '' : ev.out ? `${name(ev.uid)}の予定をラウンドの外へ押し出した！` : `${name(ev.uid)}の予定を${ev.by}マス押した`);
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
+    else if (ev.type === 'allyGuard') parts.push(`${name(ev.uid)}が盾の構え（ラウンドの終わりまで、仲間をかばう）`);
+    else if (ev.type === 'allyCover') parts.push(`${name(ev.uid)}が${name(ev.for)}をかばった！`);
+    else if (ev.type === 'haste') parts.push(`この後の仲間が${ev.by}マス早まる！`);
+    else if (ev.type === 'scatter') parts.push(`欠片が${ev.to.map(name).join('・')}に散った！`);
+    else if (ev.type === 'blast') parts.push(`非常ベル！ ${ev.to.map(name).join('・')}に鳴り響く`);
     else if (ev.type === 'wake') parts.push(`${name(ev.uid)}が${ev.woke.map(name).join('・')}を起こした！`);
     else if (ev.type === 'counter') parts.push(`${name(ev.uid)}の反撃！`);
     else if (ev.type === 'split') parts.push(`${name(ev.uid)}が2つに分かれた！`);

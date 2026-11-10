@@ -1,6 +1,6 @@
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainCardCategory, chainComboMaterials } from '../core';
-import { A11_CARDS, CHAIN17_COMBO_HINT, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP } from '../data';
+import { CHAIN_MAIN_CARDS, CHAIN17_COMBO_HINT, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP } from '../data';
 import type { IconKind } from './icons';
 import { SNAP_CATEGORY } from './listKit';
 
@@ -19,7 +19,7 @@ export const ENEMY_OF_SNAP: Record<string, string> = Object.fromEntries(LIBRARY_
 
 /** コンボの材料の名前（「雪の結晶＋ブルーアワー」） */
 export function comboMaterialNames(l: ChainLinkDef): string {
-  return l.cards.map((id) => A11_CARDS[id]?.name ?? id).join('＋');
+  return l.cards.map((id) => CHAIN_MAIN_CARDS[id]?.name ?? id).join('＋');
 }
 
 /** スナップの説明：名前・分類・重さ・効果、見つけたコンボの材料なら★、敵のスナップなら手に入れ方 */
