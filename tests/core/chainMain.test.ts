@@ -168,7 +168,7 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
   it('1-1 の戦闘は全部新しい戦闘にする（段階162 でぬしも）。雑魚は敵の性質はなく、山札は最初のアルバム20枚＋スペシャル4枚', () => {
     const ids = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a11_'));
     for (const id of ids) expect(CHAIN_AREA_BATTLES.includes(id)).toBe(true);
-    for (const id of CHAIN_AREA_BATTLES.filter((x) => !AREA_BATTLES[x].boss)) {
+    for (const id of CHAIN_AREA_BATTLES.filter((x) => x.startsWith('a11_') && !AREA_BATTLES[x].boss)) {
       const st = CHAIN_AREA_SETUPS[id];
       expect(st.enemies.every((e) => !e.trait)).toBe(true);
       expect(st.deck.length).toBe(24);
@@ -181,7 +181,7 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
   });
 
   it('1-1 の雑魚は、育成なしのハルトとあかりでも勝てる（考える方針）', () => {
-    for (const id of CHAIN_AREA_BATTLES.filter((x) => !AREA_BATTLES[x].boss)) {
+    for (const id of CHAIN_AREA_BATTLES.filter((x) => x.startsWith('a11_') && !AREA_BATTLES[x].boss)) {
       const st = CHAIN_AREA_SETUPS[id];
       const def = buildMainChainBattle({ id, name: id, party: [HERO, AKARI], enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
       expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');

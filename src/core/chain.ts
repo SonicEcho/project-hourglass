@@ -112,9 +112,29 @@ export type ChainEffect =
       firstMult?: number;
       /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
       exposure?: number;
+      /** 当てると、この後に動く仲間の時刻がこの数だけ早まる（段階168。ラムネノイズのスナップ「ビー玉はじき」） */
+      haste?: number;
+      /** 当たった後、威力 power の欠片が、ほかの敵へ hits 回散る（段階168。めんこノイズのスナップ「めんこ吹雪」。散った先ではダウンしない） */
+      scatter?: { power: number; hits: number };
     }
   /** 添える札（調整17）：行動に添えて使う。重さ0で、手番も時間も使わない。1つの行動に addonMax 枚まで（フィニッシュ・コンボには付けられない） */
-  | { kind: 'addon'; add?: number; split?: boolean; exposure?: number; spread?: boolean; expose?: boolean; element?: Element; pinpoint?: boolean; push?: number; seal?: boolean; drain?: number }
+  | {
+      kind: 'addon';
+      add?: number;
+      split?: boolean;
+      exposure?: number;
+      spread?: boolean;
+      expose?: boolean;
+      element?: Element;
+      pinpoint?: boolean;
+      push?: number;
+      seal?: boolean;
+      drain?: number;
+      /** 段階168（ブリキノイズのスナップ「ブリキの盾」）：添えた行動の後、ラウンドの終わりまで、ほかの仲間への単体攻撃を代わりに受ける（受けるダメージ × この割合） */
+      cover?: number;
+      /** 段階168（黒電話ノイズのスナップ「非常ベル」）：添えた攻撃で敵を倒すと、ほかの敵全体にこの威力で当たる（攻撃の属性。ダウンしない） */
+      blast?: number;
+    }
   /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理）。直前が弱点を突いていれば × weakMult（調整16） */
   | { kind: 'layer'; power: number; mult: number; weakMult?: number }
   /** 追い風：直前に動いた仲間の攻撃（属性と威力）を、威力 × rate で敵全体にもう一度。直前が攻撃でなければ不発 */
@@ -232,6 +252,8 @@ export interface ChainEnemyDef {
   pattern: ChainEnemyMove[];
   /** 分裂：倒すと出てくる敵（2体） */
   splitInto?: ChainEnemyDef;
+  /** ダウン時爆発の強さ（段階168。威力 × この敵の攻撃 ÷ 仲間の防御。書かなければ決まりの popDamage） */
+  popPower?: number;
   /** 時限：始めの数（ラウンドの終わりごとに1減る） */
   timer?: number;
   /** 属性チェンジ：ラウンドごとの弱点の順（1ラウンド目は先頭） */
@@ -341,6 +363,8 @@ export interface ChainBattleDef {
 }
 
 export interface ChainUnit {
+  /** 段階168：ほかの仲間への単体攻撃を代わりに受けている（受けるダメージの割合。ラウンドの終わりに消える） */
+  covering?: number;
   uid: string;
   defId: string;
   name: string;
@@ -431,6 +455,12 @@ export type ChainEvent =
   | { type: 'cover'; shield: string; from: string }
   | { type: 'shellBreak'; uid: string }
   | { type: 'sticky'; uid: string; delay: number }
+  /** 段階168：仲間が盾の構え（ブリキの盾）・仲間が代わりに受けた・この後の仲間が早まる・欠片が散った・倒した敵からベルが広がった */
+  | { type: 'allyGuard'; uid: string }
+  | { type: 'allyCover'; uid: string; from: string; for: string }
+  | { type: 'haste'; uid: string; by: number }
+  | { type: 'scatter'; uid: string; to: string[] }
+  | { type: 'blast'; uid: string; to: string[] }
   /** 押す：まだ動いていない予定を by だけ後ろへ。out はラウンドの外へ押し出して止めた。moved は動かせる予定があった */
   | { type: 'push'; uid: string; by: number; out: boolean; moved: boolean }
   | { type: 'wake'; uid: string; woke: string[] }
@@ -859,7 +889,7 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
       if (!c || c.effect.kind !== 'addon') return '添えられるのは、エフェクトの札だけ';
       if (usedCards.has(a) || (step.source.kind === 'card' && step.source.index === a)) return 'その札は、もう使う予定';
       if (c.effect.split && (move.effect.kind !== 'damage' || (move.effect.hits ?? 1) > 1 || move.effect.unsplittable)) return `${c.name}は、分けられる単発の攻撃にだけ添えられる`;
-      if (c.effect.kind === 'addon' && move.effect.kind !== 'damage' && (c.effect.add || c.effect.spread || c.effect.expose || c.effect.element || c.effect.pinpoint || c.effect.push || c.effect.seal || c.effect.drain)) return `${c.name}は、攻撃にだけ添えられる`;
+      if (c.effect.kind === 'addon' && move.effect.kind !== 'damage' && (c.effect.add || c.effect.spread || c.effect.expose || c.effect.element || c.effect.pinpoint || c.effect.push || c.effect.seal || c.effect.drain || c.effect.blast)) return `${c.name}は、攻撃にだけ添えられる`;
     }
   }
   const me = s.allies.find((a) => a.uid === step.ally);
@@ -943,7 +973,8 @@ function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
   ev.push({ type: 'down', uid: e.uid });
   if (e.trait === 'pop') {
     ev.push({ type: 'pop', uid: e.uid });
-    for (const a of living(s.allies)) hurtAlly(e.uid, a, s.rules.popDamage, ev);
+    const pp = chainEnemyDef(s, e.defId)?.popPower;
+    for (const a of living(s.allies)) hurtAlly(e.uid, a, pp ? Math.max(1, Math.floor((pp * e.atk) / Math.max(1, a.def))) : s.rules.popDamage, ev);
   }
 }
 
@@ -1100,6 +1131,11 @@ function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[
 function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[], mods: ChainAddonMods = addonMods([]), at = 0): PrevAct {
   const eff = move.effect;
   const ctx: ActCtx = { countered: new Set(), stuck: false };
+  // ブリキの盾（段階168）：添えた行動の後、ラウンドの終わりまで、ほかの仲間をかばう
+  if (mods.cover && actor.hp > 0 && s.allies.some((a) => a.uid !== actor.uid && a.hp > 0)) {
+    actor.covering = mods.cover;
+    ev.push({ type: 'allyGuard', uid: actor.uid });
+  }
   const pierce = eff.kind === 'damage' && !!eff.pierce;
   const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid, pierce)].filter((x): x is ChainUnit => !!x));
   // 手札に触れる技（段階164）
@@ -1211,6 +1247,31 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     if (others.length) ev.push({ type: 'trickUse', uid: main[0].uid, trick: 'spread', to: others.map((x) => x.uid) });
     for (const x of others) for (let k = 0; k < hits && x.hp > 0; k++) hitEnemy(s, actor, x, el, power + scaled(x), { ...opts, noChain: true }, ctx, ev);
   }
+  // めんこ吹雪（段階168）：当たった後、欠片がほかの敵へ散る（でたらめに選ぶ。散った先ではダウンしない）
+  if (eff.scatter && main.length && ev.slice(mark).some((x) => x.type === 'damage' && x.from === actor.uid)) {
+    const to: string[] = [];
+    for (let k = 0; k < eff.scatter.hits; k++) {
+      const others = living(s.enemies).filter((x) => !main.includes(x));
+      if (!others.length) break;
+      const x = others[Math.floor(rand(s) * others.length)];
+      to.push(x.uid);
+      hitEnemy(s, actor, x, el, eff.scatter.power, { ...opts, noChain: true, finish: false }, ctx, ev);
+    }
+    if (to.length) ev.push({ type: 'scatter', uid: actor.uid, to });
+  }
+  // 非常ベル（段階168）：この攻撃で敵を倒したら、ほかの敵全体に当たる（1つの行動に1回。ダウンしない）
+  if (mods.blast && ev.slice(mark).some((x) => x.type === 'defeat' && s.enemies.some((e) => e.uid === x.uid))) {
+    const others = living(s.enemies);
+    if (others.length) {
+      ev.push({ type: 'blast', uid: actor.uid, to: others.map((x) => x.uid) });
+      for (const x of others) hitEnemy(s, actor, x, el, mods.blast, { ...opts, noChain: true, finish: false }, ctx, ev);
+    }
+  }
+  // ビー玉はじき（段階168）：当てると、この後に動く仲間の時刻が早まる
+  if (eff.haste && ev.slice(mark).some((x) => x.type === 'damage' && x.from === actor.uid)) {
+    s.timeShift -= eff.haste;
+    ev.push({ type: 'haste', uid: actor.uid, by: eff.haste });
+  }
   // 時間よ止まれ（コンボ）：敵全員の、このラウンドの残りの予定を消す
   if (eff.stopAll) for (const x of living(s.enemies)) ev.push({ type: 'push', uid: x.uid, by: 99, out: false, moved: false });
   const dealt = ev.slice(mark).reduce((a, e) => a + (e.type === 'damage' && e.from === actor.uid ? e.amount : 0), 0);
@@ -1243,10 +1304,12 @@ export interface ChainAddonMods {
   seal: boolean;
   drain: number;
   exposure: number;
+  cover: number;
+  blast: number;
 }
 
 export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
-  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0 };
+  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0 };
   for (const c of cards) {
     const e = c?.effect;
     if (!e || e.kind !== 'addon') continue;
@@ -1260,6 +1323,8 @@ export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
     m.seal ||= !!e.seal;
     m.drain += e.drain ?? 0;
     m.exposure += e.exposure ?? 0;
+    if (e.cover) m.cover = m.cover ? Math.min(m.cover, e.cover) : e.cover;
+    m.blast += e.blast ?? 0;
   }
   return m;
 }
@@ -1285,8 +1350,16 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
     return;
   }
   const allies = s.allies.filter((a) => a.hp > 0);
-  const targets = m.all ? allies : [s.allies.find((a) => a.uid === intent.target && a.hp > 0) ?? allies[0]].filter((x): x is ChainUnit => !!x);
-  for (const a of targets) hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate)), ev);
+  let targets = m.all ? allies : [s.allies.find((a) => a.uid === intent.target && a.hp > 0) ?? allies[0]].filter((x): x is ChainUnit => !!x);
+  // ブリキの盾（段階168）：ほかの仲間への単体攻撃は、構えている仲間が代わりに受ける（ダメージは割合を掛ける）
+  let coverRate = 1;
+  const guard = !m.all && targets[0] ? allies.find((a) => (a.covering ?? 0) > 0 && a.uid !== targets[0].uid) : undefined;
+  if (guard) {
+    ev.push({ type: 'allyCover', uid: guard.uid, from: e.uid, for: targets[0].uid });
+    coverRate = guard.covering!;
+    targets = [guard];
+  }
+  for (const a of targets) hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate)), ev);
   // ポイ（段階162）：決まった行動が当たると、1発ごとに濡れる
   if (s.def.poi && s.def.poi.hitMoves.includes(m.id) && targets.length) wetPoi(s, s.def.poi.hitCost * targets.length, ev);
   // 起こし役：ダウンしているほかの敵を起こす
@@ -1593,6 +1666,7 @@ function endRound(s: ChainState): void {
     const cycle = e.trait === 'shift' ? chainEnemyDef(s, e.defId)?.weakCycle : undefined;
     if (cycle?.length) e.weak = [cycle[e.step % cycle.length]];
   }
+  for (const a of s.allies) a.covering = undefined;
   s.round++;
   s.elapsed += s.rules.roundLen;
   s.timeShift = 0;

@@ -103,22 +103,23 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a12_storm4: { id: 'a12_storm4', name: '砂嵐', enemies: [TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2)), reward: 7, koma: 2 },
   a12_storm5: { id: 'a12_storm5', name: '砂嵐', enemies: [PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25)), reward: 7, koma: 2 },
   // 1-2 を3晩に分けた区画の戦闘（段階66。1-1 と同じく本番の量。HP は 1晩目 1.4倍、ほかは 1.8倍）。コマを持つのは9つ（3・3・3）＋ぬし
-  a12_n1_gate: { id: 'a12_n1_gate', name: '砂嵐', enemies: tough([TIN_NOISE, PHONE_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  // 段階168（段取りの段階F1）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目はラムネ（逃げ足）とブリキ（かばう）だけ、2晩目にめんこ（分裂）と黒電話（ダウン時爆発）、3晩目は組み合わせ）
+  a12_n1_gate: { id: 'a12_n1_gate', name: '砂嵐', enemies: tough([RAMUNE_NOISE, RAMUNE_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
   a12_n1_entry: { id: 'a12_n1_entry', name: '砂嵐', enemies: tough([TIN_NOISE, RAMUNE_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a12_n1_lower: { id: 'a12_n1_lower', name: '砂嵐', enemies: tough([RAMUNE_NOISE, MENKO_NOISE, TIN_NOISE], A11_STORM_HP.night1), reward: 3, item: ITEMS.ether.id, koma: 1 },
-  a12_n1_tobacco: { id: 'a12_n1_tobacco', name: '砂嵐', enemies: tough([PHONE_NOISE, MENKO_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a12_n1_mid: { id: 'a12_n1_mid', name: '砂嵐', enemies: tough([PHONE_NOISE, RAMUNE_NOISE, MENKO_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
-  a12_n2_upper: { id: 'a12_n2_upper', name: '砂嵐', enemies: tough([TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE]), reward: 3, koma: 1 },
-  a12_n2_alley1: { id: 'a12_n2_alley1', name: '砂嵐', enemies: tough([RAMUNE_NOISE, RAMUNE_NOISE, TIN_NOISE]), reward: 2 },
-  a12_n2_alley2: { id: 'a12_n2_alley2', name: '砂嵐', enemies: tough([MENKO_NOISE, PHONE_NOISE, TIN_NOISE]), reward: 4, koma: 1 },
-  a12_n2_lane1: { id: 'a12_n2_lane1', name: '砂嵐', enemies: tough([PHONE_NOISE, PHONE_NOISE, RAMUNE_NOISE]), reward: 2 },
-  a12_n2_lane2: { id: 'a12_n2_lane2', name: '砂嵐', enemies: tough([MENKO_NOISE, TIN_NOISE].map((e) => scaleEnemy(e, 1.1))), reward: 2 },
+  a12_n1_lower: { id: 'a12_n1_lower', name: '砂嵐', enemies: tough([RAMUNE_NOISE, TIN_NOISE, RAMUNE_NOISE], A11_STORM_HP.night1), reward: 3, item: ITEMS.ether.id, koma: 1 },
+  a12_n1_tobacco: { id: 'a12_n1_tobacco', name: '砂嵐', enemies: tough([TIN_NOISE, TIN_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a12_n1_mid: { id: 'a12_n1_mid', name: '砂嵐', enemies: tough([RAMUNE_NOISE, TIN_NOISE, RAMUNE_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
+  a12_n2_upper: { id: 'a12_n2_upper', name: '砂嵐', enemies: tough([MENKO_NOISE, MENKO_NOISE]), reward: 3, koma: 1 },
+  a12_n2_alley1: { id: 'a12_n2_alley1', name: '砂嵐', enemies: tough([PHONE_NOISE, RAMUNE_NOISE]), reward: 2 },
+  a12_n2_alley2: { id: 'a12_n2_alley2', name: '砂嵐', enemies: tough([MENKO_NOISE, TIN_NOISE]), reward: 4, koma: 1 },
+  a12_n2_lane1: { id: 'a12_n2_lane1', name: '砂嵐', enemies: tough([PHONE_NOISE, PHONE_NOISE, MENKO_NOISE]), reward: 2 },
+  a12_n2_lane2: { id: 'a12_n2_lane2', name: '砂嵐', enemies: tough([TIN_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.1))), reward: 2 },
   // 電器屋の前の番人（2晩目の山場）
-  a12_n2_guard: { id: 'a12_n2_guard', name: '砂嵐', enemies: tough([PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
-  a12_n3_slope: { id: 'a12_n3_slope', name: '砂嵐', enemies: tough([TIN_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
-  a12_n3_slope2: { id: 'a12_n3_slope2', name: '砂嵐', enemies: tough([PHONE_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 3, koma: 1 },
-  a12_n3_hill1: { id: 'a12_n3_hill1', name: '砂嵐', enemies: tough([MENKO_NOISE, RAMUNE_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 2 },
-  a12_n3_hill2: { id: 'a12_n3_hill2', name: '砂嵐', enemies: tough([TIN_NOISE, PHONE_NOISE, MENKO_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4, koma: 1 },
+  a12_n2_guard: { id: 'a12_n2_guard', name: '砂嵐', enemies: tough([PHONE_NOISE, TIN_NOISE, TIN_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
+  a12_n3_slope: { id: 'a12_n3_slope', name: '砂嵐', enemies: tough([TIN_NOISE, PHONE_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
+  a12_n3_slope2: { id: 'a12_n3_slope2', name: '砂嵐', enemies: tough([MENKO_NOISE, TIN_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 3, koma: 1 },
+  a12_n3_hill1: { id: 'a12_n3_hill1', name: '砂嵐', enemies: tough([PHONE_NOISE, MENKO_NOISE, RAMUNE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 2 },
+  a12_n3_hill2: { id: 'a12_n3_hill2', name: '砂嵐', enemies: tough([TIN_NOISE, MENKO_NOISE, PHONE_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 4, koma: 1 },
   // 時計屋の手前の広い歩道の逃げる敵（段階59。コマなし。勝つとレアの素材。星の砂は少なめ）
   a12_runner: { id: 'a12_runner', name: '砂嵐', enemies: [RAMUNE_NOISE, RAMUNE_NOISE], reward: 3, item: ITEMS.sunsetMarble.id },
   // 段階63で 1-1 が17戦になり、1-2 に入る時の仲間が強くなったので強めた。段階66：攻撃は元のまま、HP 1.3倍（1.5倍では、ねらう方針で11ラウンドかかって長すぎた）。コマは1つ
@@ -469,8 +470,8 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id], snaps: ['heavyBlow'] },
-      { id: 'a12_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.tinSpring.id], snaps: ['iceChip'] },
+      { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id], snaps: ['heavyBlow'], chainSnaps: ['c17_strobe'] },
+      { id: 'a12_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.tinSpring.id], snaps: ['iceChip'], chainSnaps: ['c17_wide'] },
       { id: 'a12_chest_hill', room: 'showa_hill', cell: [5, 2], night: 3, items: [ITEMS.ramuneGlass.id, ITEMS.potion.id] },
     ],
     enemies: [

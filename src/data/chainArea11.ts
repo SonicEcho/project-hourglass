@@ -23,8 +23,8 @@ const ENEMY_SNAP = {
   kingyoUzu: { id: 'a11_kingyoUzu', name: '金魚の渦', type: 'finish', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 25, scale: { by: 'hits', per: 5 } }, text: '敵全体に氷25。このラウンドに味方が当てた回数1回につき+5（クライマックス）' },
 } satisfies Record<string, ChainMove>;
 
-/** 敵の種類 → その敵のスナップ（段階165） */
-export const CHAIN_ENEMY_SNAPS: Record<string, string> = {
+/** 敵の種類 → その敵のスナップ（段階165。全部の区画の分は chainAreas.ts の CHAIN_ENEMY_SNAPS） */
+export const A11_ENEMY_SNAPS: Record<string, string> = {
   goldfishNoise: ENEMY_SNAP.hireuchi.id,
   balloonNoise: ENEMY_SNAP.mizushibuki.id,
   maskNoise: ENEMY_SNAP.zutsuki.id,
@@ -81,10 +81,6 @@ export const A11_DECK: string[] = [
   ...times(2, C.snow.id),
 ];
 
-/**
- * 新しい戦闘のスナップ（段階163）：アルバムに入れられる札の一覧。章ごとに足していく。並びはアルバムの画面の並び
- */
-export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.values(A11_CARDS).filter((m) => !m.owner).map((m) => [m.id, m]));
 
 /** スペシャル（段階163）：アルバムに入れず、並びの仲間ごとに2枚ずつ山札に加わる */
 export const CHAIN_ALLY_SPECIALS: Record<string, string[]> = { hero: [C.swing.id, C.swing.id], akari: [C.snow.id, C.snow.id], mio: [C.paperGun.id, C.paperGun.id] };
@@ -223,7 +219,8 @@ function a11Lord(): ChainEnemyDef[] {
   return [parts[0], body, parts[1]];
 }
 
-export const CHAIN_AREA_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
+/** 1-1 の区画の戦闘の中身（全部の区画の分は chainAreas.ts の CHAIN_AREA_SETUPS） */
+export const A11_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
   ['a11_boss', { enemies: a11Lord(), variants: [], deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, poi: A11_POI, snaps: [C.group.id, RECOVERY.id] }],
   ...A11_IDS.map((id) => {
     const b = AREA_BATTLES[id];
@@ -231,9 +228,3 @@ export const CHAIN_AREA_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntr
     return [id, { enemies: b.enemies.map((e) => a11ChainEnemy(e, rate)), variants: variantsOf(b.enemies), deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 13, mid: 20 } }];
   }),
 ]);
-
-/**
- * 新しい戦闘で戦う区画の戦闘（AREA_BATTLES の id）。段階D1（160）で 1-1 の雑魚、段階D2（162）で 1-1 のぬし、段階F で章ごとに増やす。
- * ここにない戦闘は、今の本番の戦闘のまま（デバッグメニューの切り替えで、全部を新しい戦闘にして試せる）
- */
-export const CHAIN_AREA_BATTLES: string[] = Object.keys(CHAIN_AREA_SETUPS);

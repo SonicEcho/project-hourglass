@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { startWithImages } from '../ui/waitImages';
-import { battleSceneFor } from './chainEncounter';
+import { battleSceneFor, chainAlbumActive } from './chainEncounter';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -12,6 +12,7 @@ import {
   nightGoal,
   startNight,
   gainSnaps,
+  recordLibraryFinds,
   addParts,
   enemyNext,
   exploreTipTriggers,
@@ -60,7 +61,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
@@ -931,8 +932,15 @@ export class ExploreScene extends Phaser.Scene {
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
     // スナップは持ち物に入る（段階41。チェックポイントのアルバムで入れ替える）
-    const snaps = r.chest.snaps ?? [];
+    // 段階168：新しい戦闘の区画では、新しい戦闘のスナップ（chainSnaps）を新しい戦闘のアルバムへ（ライブラリにも記録）
+    const chainChest = chainAlbumActive() && !!r.chest.chainSnaps;
+    const snaps = chainChest ? [] : (r.chest.snaps ?? []);
+    const chainSnaps = chainChest ? (r.chest.chainSnaps ?? []) : [];
     if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
+    if (chainSnaps.length > 0) {
+      run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
+      run.library = recordLibraryFinds(run.library, { snaps: chainSnaps });
+    }
     const sprite = this.chestSprites.get(r.chest.id);
     if (sprite && this.hunting) {
       this.tweens.killTweensOf(sprite);
@@ -940,7 +948,7 @@ export class ExploreScene extends Phaser.Scene {
     } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
-      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[got.length > 0 ? summarize(got) : '（記憶がかすれて、何も残っていなかった）', lostByFade > 0 && got.length > 0 ? `（記憶が薄れて、${lostByFade}つは砂に戻った）` : '', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : '', capped.overflow.length > 0 ? `（ポーチがいっぱい：${summarize(capped.overflow)}は入らなかった）` : ''].filter(Boolean).join('　')}`,
+      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[got.length > 0 ? summarize(got) : '（記憶がかすれて、何も残っていなかった）', lostByFade > 0 && got.length > 0 ? `（記憶が薄れて、${lostByFade}つは砂に戻った）` : '', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : '', capped.overflow.length > 0 ? `（ポーチがいっぱい：${summarize(capped.overflow)}は入らなかった）` : ''].filter(Boolean).join('　')}`,
     );
     this.keep(this.state);
   }
