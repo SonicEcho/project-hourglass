@@ -134,6 +134,8 @@ export interface MainChainBattleInput {
   teeth?: ChainBattleDef['teeth'];
   /** 手拍子（段階173） */
   clap?: ChainBattleDef['clap'];
+  /** 打ち返す（段階175） */
+  pitch?: ChainBattleDef['pitch'];
   gradeAt?: { high: number; mid: number };
 }
 
@@ -158,6 +160,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.sunset ? { sunset: input.sunset } : {}),
     ...(input.teeth ? { teeth: input.teeth } : {}),
     ...(input.clap ? { clap: input.clap } : {}),
+    ...(input.pitch ? { pitch: input.pitch } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -256,6 +259,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.teeth) out.push('chain_teeth');
   // アンプのぬしの思い出の再演（段階173）
   if (s.def.clap) out.push('chain_clap');
+  // スコアボードのぬしの思い出の再演（段階175）
+  if (s.def.pitch) out.push('chain_pitch');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時

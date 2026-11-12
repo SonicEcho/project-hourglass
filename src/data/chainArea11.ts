@@ -171,6 +171,8 @@ export interface ChainAreaSetup {
   teeth?: ChainBattleDef['teeth'];
   /** 手拍子（段階173。2-2 のぬしの思い出の再演） */
   clap?: ChainBattleDef['clap'];
+  /** 打ち返す（段階175。2-3 のぬしの思い出の再演） */
+  pitch?: ChainBattleDef['pitch'];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }
