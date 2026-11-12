@@ -112,6 +112,8 @@ export type ChainEffect =
       firstMult?: number;
       /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
       exposure?: number;
+      /** このラウンドに味方が当てた回数と同じ回数当てる（段階171。旋盤のぬしのスナップ「歯車の仕上げ」。上限 12） */
+      hitsByRoundHits?: boolean;
       /** 息を合わせていれば（このラウンドに、2人の行動の間に敵の行動がなかった）威力がこの倍（段階169。自転車のぬしのスナップ「二人乗り」） */
       syncMult?: number;
       /** 当てると、この後に動く仲間の時刻がこの数だけ早まる（段階168。ラムネノイズのスナップ「ビー玉はじき」） */
@@ -371,6 +373,11 @@ export interface ChainBattleDef {
    * そのラウンドに息を合わせていれば（roundSynced）1戻る（rounds より多くは戻らない）。0 になると負け（finish は 'sunset'）
    */
   sunset?: { rounds: number };
+  /**
+   * 歯をそろえる（段階171。2-1 のぬしの思い出の再演）：1ラウンドに、仲間が target（敵の定義の id）に need 回当てると「歯がそろった」として、
+   * その敵がダウンする（残りの予定が消える。警戒中はダウンしない）。1ラウンドに1回
+   */
+  teeth?: { target: string; need: number };
 }
 
 export interface ChainUnit {
@@ -498,6 +505,8 @@ export type ChainEvent =
   /** 段階169：息を合わせた（uids は合わせた2人）・夕日が傾いた（left は残り。synced なら息を合わせて1戻った） */
   | { type: 'sync'; uids: string[] }
   | { type: 'sunset'; left: number; synced: boolean }
+  /** 段階171：歯がそろった（1ラウンドに need 回当てた） */
+  | { type: 'teeth'; uid: string }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -1114,6 +1123,12 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   }
   if (e.hp === 0) defeatEnemy(s, e, ev);
   else if (aff.weak && !opts.noChain) knockDown(s, e, ev);
+  // 歯をそろえる（段階171）：このラウンドに決まった回数当てると、ダウン（警戒中はしない）
+  const teeth = s.def.teeth;
+  if (teeth && actor.side === 'ally' && e.hp > 0 && e.defId === teeth.target && (e.roundTaken ?? 0) === teeth.need) {
+    ev.push({ type: 'teeth', uid: e.uid });
+    knockDown(s, e, ev);
+  }
   // ねばねば：この行動の後、まだ動いていない仲間が遅れる
   if (e.trait === 'sticky' && !ctx.stuck) {
     ctx.stuck = true;
@@ -1240,7 +1255,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
   if (eff.firstMult && acted === 0) power *= eff.firstMult;
   if (eff.syncMult && s.roundSynced) power *= eff.syncMult;
-  let hits = eff.hitsPerActed ? acted + 1 : (eff.hits ?? 1);
+  let hits = eff.hitsPerActed ? acted + 1 : eff.hitsByRoundHits ? Math.max(1, Math.min(12, s.roundHits)) : (eff.hits ?? 1);
   if (eff.exposure) {
     s.exposure += eff.exposure;
     ev.push({ type: 'exposure', total: s.exposure });
@@ -1460,6 +1475,16 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
 
 /** 動く順番の1つ（仲間なら計画の何行目か、敵なら予定）。key は実行のコマと同じ */
 export type ChainOrderEntry = { at: number; key: string; kind: 'ally'; i: number } | { at: number; key: string; kind: 'enemy'; intent: ChainIntent };
+
+/** 並べた予定で、このラウンドに歯をそろえる相手に当たる見込みの回数（段階171。画面の見込みの表示。実際に動かして見る） */
+export function chainPlanTeethHits(s: ChainState, plan: ChainPlanStep[]): number {
+  const t = s.def.teeth;
+  if (!t || plan.length === 0) return 0;
+  const r = runChainRound(s, plan);
+  let n = 0;
+  for (const f of r.frames) for (const e of f.events) if (e.type === 'damage' && e.from !== e.to && s.allies.some((a) => a.uid === e.from) && s.enemies.some((x) => x.uid === e.to && x.defId === t.target)) n++;
+  return n;
+}
 
 /** 並べた予定で、このラウンドに息が合う見込みか（段階169。画面の見込みの表示。実際に動かして見るので、押す・ダウンで敵の予定が動くのも入る） */
 export function chainPlanSyncs(s: ChainState, plan: ChainPlanStep[]): boolean {

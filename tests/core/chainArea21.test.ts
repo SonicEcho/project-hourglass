@@ -10,10 +10,10 @@ const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a21_n') || 
 const PARTY = [HERO, AKARI, MIO];
 
 describe('2-1 の雑魚を新しい戦闘に（段階170）', () => {
-  it('2-1 の雑魚は全部新しい戦闘。ぬしはまだ今の戦闘（段階F2b）', () => {
+  it('2-1 の雑魚は全部新しい戦闘（段階171 でぬしも）', () => {
     expect(ids.length).toBe(16);
     for (const id of ids) expect(CHAIN_AREA_BATTLES).toContain(id);
-    expect(CHAIN_AREA_BATTLES).not.toContain('a21_boss');
+    expect(CHAIN_AREA_BATTLES).toContain('a21_boss');
   });
   it('敵ごとの性質：歯車＝かたい・そろばん＝バリア（2発）・ネジ＝分裂・真空管＝なし。敵の id は今の敵のまま', () => {
     const trait: Record<string, string | undefined> = { gearNoise: 'hard', abacusNoise: 'shell', screwNoise: 'split', tubeNoise: undefined };
@@ -62,5 +62,24 @@ describe('性質の名前（段階170）', () => {
   it('新しい戦闘の区画に出る性質は、どれも名前と説明がある', async () => {
     const { CHAIN_TRAIT_TEXT } = await import('../../src/data');
     for (const st of Object.values(CHAIN_AREA_SETUPS)) for (const e of st.enemies) if (e.trait) expect(CHAIN_TRAIT_TEXT[e.trait]?.name).toBeTruthy();
+  });
+});
+
+describe('2-1 のぬし「歯をそろえる」（段階171）', () => {
+  it('ぬしは「かたい」。8回でそろう。部位は刃物台とベルト（ベルトを壊すと物理の弱点）。スナップは歯車の仕上げ', () => {
+    const st = CHAIN_AREA_SETUPS.a21_boss;
+    expect(st.teeth).toEqual({ target: 'latheLord', need: 8 });
+    const body = st.enemies.find((e) => !e.part)!;
+    expect(body.trait).toBe('hard');
+    const parts = st.enemies.filter((e) => e.part);
+    expect(parts.map((p) => p.id).sort()).toEqual(['latheLord_belt', 'latheLord_toolPost']);
+    expect(parts.find((p) => p.id === 'latheLord_belt')?.part?.reveals).toEqual(['physical']);
+    expect(CHAIN_SNAPS[CHAIN_ENEMY_SNAPS.latheLord]?.name).toBe('歯車の仕上げ');
+    for (const id of st.snaps ?? []) expect(CHAIN_SNAPS[id]).toBeDefined();
+  });
+  it('最初のぬし戦で、歯をそろえるの説明が出る', () => {
+    const st = CHAIN_AREA_SETUPS.a21_boss;
+    const def = buildMainChainBattle({ id: 'a21_boss', name: 'x', party: PARTY, enemies: AREA_BATTLES.a21_boss.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, teeth: st.teeth });
+    expect(chainTipTriggers(createChainBattle(def, CHAIN_RULES, 1))).toContain('chain_teeth');
   });
 });

@@ -130,6 +130,8 @@ export interface MainChainBattleInput {
   poi?: ChainBattleDef['poi'];
   /** 夕日（段階169） */
   sunset?: ChainBattleDef['sunset'];
+  /** 歯をそろえる（段階171） */
+  teeth?: ChainBattleDef['teeth'];
   gradeAt?: { high: number; mid: number };
 }
 
@@ -152,6 +154,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.cutoffRounds ? { cutoff: { rounds: input.cutoffRounds } } : {}),
     ...(input.poi ? { poi: input.poi } : {}),
     ...(input.sunset ? { sunset: input.sunset } : {}),
+    ...(input.teeth ? { teeth: input.teeth } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -246,6 +249,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.poi) out.push('chain_boss');
   // 自転車のぬしの思い出の再演（段階169）：夕日のある戦闘
   if (s.def.sunset) out.push('chain_sunset');
+  // 旋盤のぬしの思い出の再演（段階171）
+  if (s.def.teeth) out.push('chain_teeth');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時

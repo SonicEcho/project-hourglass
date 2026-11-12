@@ -167,6 +167,8 @@ export interface ChainAreaSetup {
   poi?: ChainBattleDef['poi'];
   /** 夕日（段階169。1-2 のぬしの思い出の再演） */
   sunset?: ChainBattleDef['sunset'];
+  /** 歯をそろえる（段階171。2-1 のぬしの思い出の再演） */
+  teeth?: ChainBattleDef['teeth'];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }
