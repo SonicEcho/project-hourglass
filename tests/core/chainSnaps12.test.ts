@@ -75,3 +75,30 @@ describe('1-2 の敵のスナップの仕組み（段階168）', () => {
     expect(events(runChainRound(t, [mv('hero', t.enemies[0].uid, [0])])).some((e) => e.type === 'blast')).toBe(false);
   });
 });
+
+describe('2-1 の敵のスナップの仕組み（段階170）', () => {
+  const ARMOR: ChainMove = { id: 'armor', name: '歯車の鎧', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', armor: 0.4 }, text: '' };
+  const WALL: ChainMove = { id: 'wall', name: '珠の壁', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', wall: 2 }, text: '' };
+  const hitter = (at: number[]): ChainEnemyDef => dummy({ atk: 10, pattern: [{ id: 'jab', name: 'つつく', at: at[0], at2: at[1], element: 'physical', power: 40 }] });
+  const build = (enemy: ChainEnemyDef, hand: string[]): ChainState => {
+    const def: ChainBattleDef = { ...BASE, enemies: [enemy], variants: undefined, cards: { ...BASE.cards, ...CARDS, armor: ARMOR, wall: WALL } };
+    const s = createChainBattle(def, CHAIN_RULES, 7);
+    s.hand = [...hand];
+    s.intents = s.intents.map((i) => ({ ...i, target: 'hero' }));
+    return s;
+  };
+  it('歯車の鎧：構えた後は、受けるダメージが4割減る。ラウンドの終わりで解ける', () => {
+    const s = build(hitter([8, 9]), ['armor']);
+    const def = s.allies.find((a) => a.uid === 'hero')!.def;
+    const r = runChainRound(s, [mv('hero', s.enemies[0].uid, [0])]);
+    const taken = events(r).filter((e): e is Extract<ChainEvent, { type: 'damage' }> => e.type === 'damage' && e.to === 'hero');
+    expect(taken.map((e) => e.amount)).toEqual([Math.floor(((40 * 10) / def) * 0.6), Math.floor(((40 * 10) / def) * 0.6)]);
+    expect(r.state.allies.every((a) => !a.armor)).toBe(true);
+  });
+  it('珠の壁：構えた後の攻撃を2回まで消す', () => {
+    const s = build(hitter([8, 9]), ['wall']);
+    const ev = events(runChainRound(s, [mv('hero', s.enemies[0].uid, [0])]));
+    expect(ev.filter((e) => e.type === 'allyWall')).toHaveLength(2);
+    expect(ev.some((e) => e.type === 'damage' && e.to === 'hero')).toBe(false);
+  });
+});

@@ -539,6 +539,8 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_hard':
+      case 'trait_shell':
       case 'trait_shield':
       case 'trait_flee':
       case 'trait_split':
@@ -2311,6 +2313,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
     else if (ev.type === 'sync') parts.push(`${ev.uids.map(name).join('と')}が息を合わせた！`);
     else if (ev.type === 'sunset') parts.push(ev.synced ? `息を合わせて、日が持ちこたえた（あと${ev.left}ラウンド）` : ev.left > 0 ? `日が傾いた…（あと${ev.left}ラウンド）` : '日が沈んだ…');
+    else if (ev.type === 'allyArmor') parts.push(`${name(ev.uid)}が守りを固めた（${[ev.armor ? `受けるダメージ −${Math.round(ev.armor * 100)}%` : '', ev.wall ? `攻撃を${ev.wall}回まで消す` : ''].filter(Boolean).join('・')}）`);
+    else if (ev.type === 'allyWall') parts.push(`珠の壁が攻撃を消した！（あと${ev.left}回）`);
     else if (ev.type === 'allyGuard') parts.push(`${name(ev.uid)}が盾の構え（ラウンドの終わりまで、仲間をかばう）`);
     else if (ev.type === 'allyCover') parts.push(`${name(ev.uid)}が${name(ev.for)}をかばった！`);
     else if (ev.type === 'haste') parts.push(`この後の仲間が${ev.by}マス早まる！`);
