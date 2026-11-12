@@ -776,7 +776,9 @@ export function nightOf(state: ExploreState): number {
 export function startNight(area: AreaDef, state: ExploreState, night: number): ExploreState {
   if (!area.nights || nightOf(state) >= night) return state;
   const start = area.nights[night - 1]?.start;
-  const { vitals: _, ...rest } = state;
+  const { vitals: _, ...prev } = state;
+  // 前の晩までのコマ（段階173 の後の直し）：ふつうは前の晩でそろっているが、デバッグの「出来事へ飛ぶ」で途中の晩から始めた時に、0のままにしない
+  const rest = { ...prev, koma: Math.max(prev.koma, area.nights[night - 2]?.koma ?? 0) };
   if (!start) return { ...rest, night };
   const room = start.room ?? startRoom(area);
   const visited = state.visited.includes(room) ? state.visited : [...state.visited, room];

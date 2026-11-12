@@ -82,6 +82,13 @@ describe('晩に分けた区画（段階63）', () => {
     expect(startNight(area, moved, 2)).toBe(moved);
   });
 
+  it('途中の晩から始めた時（デバッグの出来事へ飛ぶ）は、前の晩までのコマを補う。もっと持っていれば、そのまま', () => {
+    const fresh = startExplore(area);
+    expect(startNight(area, fresh, 2).koma).toBe(area.nights![0].koma);
+    expect(startNight(area, fresh, 3).koma).toBe(area.nights![1].koma);
+    expect(startNight(area, { ...fresh, koma: 9 }, 3).koma).toBe(9);
+  });
+
   it('その晩のコマがそろうと、その晩は終わる。最後の晩は、コマでは終わらない', () => {
     const s = startExplore(area);
     expect(nightDone(area, s, 1)).toBe(false);

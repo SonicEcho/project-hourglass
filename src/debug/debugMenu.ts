@@ -311,6 +311,16 @@ export function installDebugMenu(nav: DebugNavigator): void {
           setExplore(exArea.enemies.reduce((st, e) => (st.defeated.includes(e.id) ? st : addKoma(defeatEnemy(st, e.id), AREA_BATTLES[e.battle]?.koma ?? 0)), ex));
           nav.openExplore(exArea.id);
         }),
+        // 段階173 の後（開発者：ぬしを試したい時に、コマが足りずぬしが眠ったまま）：ぬしに挑めるだけのコマにして、手前へ
+        button('探索：ぬしに挑めるだけコマをそろえて、ボスの手前へ移る', () => {
+          close();
+          const [c, r] = exArea.boss.cell;
+          const room = exArea.boss.room ?? exArea.rooms[0].id;
+          const bossKoma = AREA_BATTLES[exArea.boss.battle]?.koma ?? 0;
+          const koma = Math.max(ex.koma, exArea.komaNeed - bossKoma);
+          setExplore({ ...ex, koma, room, cell: [c, r + 2], visited: ex.visited.includes(room) ? ex.visited : [...ex.visited, room] });
+          nav.openExplore(exArea.id);
+        }),
         button('探索：ボスの手前へ移る', () => {
           close();
           const [c, r] = exArea.boss.cell;
