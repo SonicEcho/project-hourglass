@@ -49,6 +49,12 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'film', text: 'ハルトとあかりの行動が続けて終わり、\nその間に敵の行動が入らなければ「息を合わせた」！\nそのラウンドは、日が傾きません。\n重さや順番、「押す」で隙間を作りましょう。' },
     { target: 'parts', text: '前輪とベルは「部位」です。\n壊すと、その部位を使う大技が来なくなります。\nベルを壊すと、隠れた弱点も見えるかも？' },
   ],
+  // 段階171：2-1 のぬし「歯をそろえる」
+  chain_teeth: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「歯をそろえる」がはじまります。\n歯車の歯を、1枚ずつ削り出しましょう。' },
+    { target: 'poiBar', text: '1ラウンドのうちに、ぬしに8回当てると「歯がそろった」！\nぬしがダウンして、そのラウンドの残りの予定が止まります。\n連写や複数攻撃化で、回数を稼ぎましょう。' },
+    { target: 'parts', text: 'ぬしは「かたい」ので、1発のダメージは小さくなります。\nでも、歯をそろえる回数はちゃんと数えます。\n刃物台とベルトは部位。壊すと大技が来なくなります。' },
+  ],
   chain_weak: [
     {
       target: 'weak',
@@ -112,7 +118,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

@@ -13,6 +13,8 @@ export const A21_ENEMY_SNAP = {
   gearArmor: { id: 'a21_gearArmor', name: '歯車の鎧', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', armor: 0.4 }, text: '添えた行動の後、ラウンドの終わりまで、この仲間が受けるダメージを4割減らす' },
   beadWall: { id: 'a21_beadWall', name: '珠の壁', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', wall: 2 }, text: '添えた行動の後、ラウンドの終わりまで、この仲間が受ける攻撃を2回まで消す' },
   scatter: { id: 'a21_scatter', name: 'ばらまき', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, extra: [{ element: 'physical', power: 15, hits: 2 }] }, text: '敵1体に物理30、さらに物理15を2回（ネジとナットに分かれて当たる）' },
+  // 段階171：旋盤のぬし（思い出の再演「歯をそろえる」の決まりを、こちら向けに）
+  finishGear: { id: 'a21_finishGear', name: '歯車の仕上げ', type: 'finish', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 12, hitsByRoundHits: true }, text: '敵1体に物理12を、このラウンドに味方が当てた回数と同じ回数（12回まで。クライマックス）' },
   discharge: { id: 'a21_discharge', name: '放電', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 15, downMult: 2 }, text: '敵全体に雷15。ダウンしている敵には2倍' },
 } satisfies Record<string, ChainMove>;
 
@@ -21,6 +23,7 @@ export const A21_ENEMY_SNAPS: Record<string, string> = {
   abacusNoise: A21_ENEMY_SNAP.beadWall.id,
   screwNoise: A21_ENEMY_SNAP.scatter.id,
   tubeNoise: A21_ENEMY_SNAP.discharge.id,
+  latheLord: A21_ENEMY_SNAP.finishGear.id,
 };
 
 export const A21_CARD_ART: Record<string, string> = {
@@ -28,19 +31,21 @@ export const A21_CARD_ART: Record<string, string> = {
   a21_beadWall: 'snap.encore',
   a21_scatter: 'snap.quickStep',
   a21_discharge: 'snap.thunderChip',
+  a21_finishGear: 'snap.joker',
 };
 export const A21_SHORT_TEXT: Record<string, string> = {
   a21_gearArmor: '添える\n受けるダメ−4割',
   a21_beadWall: '添える\n攻撃を2回消す',
   a21_scatter: '物理30\n＋15×2',
   a21_discharge: '全体に雷15\nダウンに2倍',
+  a21_finishGear: '物理12を\n当てた回数だけ',
 };
 
 /** 2-1 で増えるコンボ（1-1 の3つに足す）：クロスドライブ（ハルトとみお）・ビリビリ（みお）・雷の雨 */
 export const A21_COMBOS: ChainLinkDef[] = [...A11_COMBOS, ...CHAIN17_COMBOS.filter((l) => ['crossDrive', 'biribiri', 'thunderRain'].includes(l.id))];
 
 /** 2-1 の宝箱と、ぬしの報酬で渡す札（2-1 の答えになる札）。アルバムに入れられる札の一覧に足す */
-export const A21_NEW_SNAPS: ChainMove[] = [C.bigShot, C.burst, C.split];
+export const A21_NEW_SNAPS: ChainMove[] = [C.bigShot, C.burst, C.split, C.plus20];
 
 /** 敵ごとの性質と予定の癖（1ラウンドに1つ。順にくり返す）。magic は、その敵の魔法の属性 */
 const FACTORY: Record<string, { trait?: ChainTrait; pattern: { action: string; at: number; all?: boolean }[]; magic: Element; hp?: number; shellHits?: number }> = {
@@ -115,11 +120,61 @@ const A21_IDS = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a21_n')
 /** 1晩目の HP の戦闘（寄り道の銭湯の裏の路地も1晩目） */
 const NIGHT1 = (id: string) => id.startsWith('a21_n1_') || id === 'a21_alley';
 
+// ---- 段階171（段階F2b）：ぬし「旋盤のぬし」。思い出の再演「歯をそろえる」 ----
+
+/**
+ * ぬしと部位の HP の倍率と、ぬしの攻撃の倍率（今の区画の戦闘の値にかける）と、歯をそろえる回数（1ラウンドに、ぬしに当てる回数）。
+ * 自動対戦（考える方針・2-1 に入る時点の控えめ／ふつうの育ち具合・宝箱の連写と複数攻撃化を入れた山札・40戦）で、
+ * 36〜38勝・中ほど4〜5ラウンド。8回は、狙わなければ約3%のラウンドでしか届かず、連写＋紙鉄砲・複数攻撃化を組めば届く回数（段階171）
+ */
+export const A21_LORD = { body: 0.55, part: 0.3, atk: 0.64, teeth: 8 };
+
+function a21Lord(): ChainEnemyDef[] {
+  const lord = AREA_BATTLES.a21_boss.enemies[0];
+  const act = (id: string) => lord.actions.find((a) => a.id === id)!;
+  const move = (id: string, at: number, extra: Partial<ChainEnemyMove> = {}): ChainEnemyMove => {
+    const a = act(id);
+    return { id: a.id, name: a.name, at, ...(a.target === 'allies' ? { all: true } : {}), element: a.type === 'magic' ? 'physical' : a.type, power: a.power, ...extra };
+  };
+  const partId = (id: string) => `${lord.id}_${id}`;
+  const body: ChainEnemyDef = {
+    id: lord.id,
+    name: lord.name,
+    hp: Math.round(lord.stats.hp * A21_LORD.body),
+    atk: Math.round(Math.max(lord.stats.atk, lord.stats.mag) * A21_LORD.atk),
+    def: lord.stats.def,
+    weak: [],
+    resist: [],
+    // かたい：1発ごとのダメージは減るが、歯をそろえる回数は数える
+    trait: 'hard',
+    // 予定の癖：削りくず飛ばし（2回）→ 削り出し（刃物台）→ 削りくずの嵐（全体）→ 空回り（全体・ベルト）。大技は遅めにして、歯をそろえて止める間を作る
+    pattern: [move('shavings', 3, { at2: 7 }), move('carveOut', 6, { requiresPart: partId('toolPost') }), move('shavingStorm', 8), move('spinOut', 7, { requiresPart: partId('belt') })],
+  };
+  const parts = (['toolPost', 'belt'] as const).map((id): ChainEnemyDef => {
+    const p = lord.parts!.find((x) => x.id === id)!;
+    return {
+      id: partId(id),
+      name: p.name,
+      hp: Math.round(p.hp * A21_LORD.part),
+      atk: 0,
+      def: lord.stats.def,
+      weak: [],
+      resist: [],
+      pattern: [],
+      part: { of: lord.id, ...(p.revealsWeakness ? { reveals: [...p.revealsWeakness] } : {}) },
+      ...(p.drop ? { drop: p.drop } : {}),
+    };
+  });
+  return [parts[1], body, parts[0]];
+}
+
 /** 2-1 の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
-export const A21_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries(
-  A21_IDS.map((id) => {
+export const A21_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
+  // ぬしの報酬：渾身の一枚と、アタック+20（2章の札）
+  ['a21_boss', { enemies: a21Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, teeth: { target: 'latheLord', need: A21_LORD.teeth }, snaps: [C.bigShot.id, C.plus20.id] }],
+  ...A21_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = NIGHT1(id) ? A21_CHAIN_HP_RATE.night1 : A21_CHAIN_HP_RATE.later;
     return [id, { enemies: b.enemies.map((e) => a21ChainEnemy(e, rate)), variants: variantsOf(b.enemies), deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 13, mid: 20 } }];
   }),
-);
+]);

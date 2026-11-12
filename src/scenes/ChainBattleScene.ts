@@ -7,6 +7,7 @@ import {
   chainOrder,
   chainPlanError,
   chainPlanSyncs,
+  chainPlanTeethHits,
   createChainBattle,
   isWeakKnown,
   findChainUnit,
@@ -255,6 +256,7 @@ export class ChainBattleScene extends Phaser.Scene {
         variants: setup?.variants,
         poi: setup?.poi,
         sunset: setup?.sunset,
+        teeth: setup?.teeth,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -405,6 +407,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawEnemies(view);
     this.drawPoi(view);
     this.drawSunset(view);
+    this.drawTeeth(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -832,6 +835,43 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(addText(this, 16, y + 2, `夕日 あと${left}ラウンド${synced ? '（息を合わせた！）' : syncs === null ? '' : syncs ? '（息が合う ◎）' : ''}`, { size: 12, bold: true, color: '#ffc27a' }).setOrigin(0, 0.5));
   }
 
+  /**
+   * 歯をそろえる（段階171。2-1 のぬしの思い出の再演）：歯車の絵の歯を、このラウンドにぬしへ当てた回数だけ光らせる。
+   * 並べている間は、並べた予定で当たる見込みの回数を薄く
+   */
+  private drawTeeth(view: ChainState): void {
+    const t = view.def.teeth;
+    if (!t) return;
+    const r = this.root;
+    const body = view.enemies.find((e) => e.defId === t.target);
+    const now = this.busy ? Math.min(t.need, body?.roundTaken ?? 0) : 0;
+    const plan = this.busy ? 0 : Math.min(t.need, chainPlanTeethHits(this.s, this.plan));
+    const done = this.busy ? now >= t.need : plan >= t.need;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 40;
+    const cy = lay ? STAGE_Y + 76 : STAGE_Y + 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '歯をそろえる', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    // 歯車：外の歯（need 枚）を、当てた回数だけ黄色に。見込みは薄い黄色
+    const R = 26;
+    for (let k = 0; k < t.need; k++) {
+      const a = -Math.PI / 2 + (k / t.need) * Math.PI * 2;
+      const x = cx + Math.cos(a) * R;
+      const y = cy + Math.sin(a) * R;
+      const lit = k < now;
+      const ghost = !lit && k < plan;
+      const tooth = this.add.rectangle(x, y, 11, 11, lit ? 0xffd23f : ghost ? 0x8a7a30 : 0x2a2a38).setRotation(a).setStrokeStyle(1, lit ? 0xfff0b0 : 0x5a5a70);
+      r.add(tooth);
+    }
+    r.add(this.add.circle(cx, cy, R - 6, done ? 0xffd23f : 0x3a3a4a).setStrokeStyle(2, 0x9aa3c0));
+    r.add(this.add.circle(cx, cy, 6, 0x101820));
+    const count = this.busy ? now : plan;
+    r.add(addText(this, cx, cy + R + 16, `${count}/${t.need}`, { size: 13, bold: true, color: done ? '#ffd23f' : '#c9d0ea' }).setOrigin(0.5));
+    if (lay) r.add(addText(this, cx, STAGE_Y + 144, done ? (this.busy ? 'そろった！' : 'そろう ◎') : this.busy ? '' : '当てる回数\nの見込み', { size: 9, bold: true, align: 'center', color: done ? '#8fffc0' : '#9aa3c0' }).setOrigin(0.5));
+  }
+
   private foeColor(s: ChainState, uid: string): number {
     const i = s.enemies.findIndex((e) => e.uid === uid);
     return FOE_COLORS[(i < 0 ? 0 : i) % FOE_COLORS.length];
@@ -993,7 +1033,10 @@ export class ChainBattleScene extends Phaser.Scene {
       if (e.trait) {
         const t = CHAIN_TRAIT_TEXT[e.trait];
         const extra = e.trait === 'timer' && alive ? ` あと${e.timer}` : e.trait === 'shell' && alive ? (e.shell ? '' : '（割れた）') : '';
-        r.add(this.sticker(x0 + 30, STAGE_Y + 56, t.name + extra, e.trait === 'timer' ? 0xff8a5a : YELLOW, '#000000', -8, 10));
+        // ぬし戦（段階171 の後の直し）：左の柱（ポイ・夕日・歯車）に重ならないよう、ぬしの絵の左上に
+        const sx = boss ? boss.x - boss.size / 2 + 30 : x0 + 30;
+        const sy = boss ? boss.y - boss.size / 2 + 14 : STAGE_Y + 56;
+        r.add(this.sticker(sx, sy, t.name + extra, e.trait === 'timer' ? 0xff8a5a : YELLOW, '#000000', -8, 10));
       }
       if (e.gone) {
         r.add(this.sticker(cx, ART_Y, e.trait === 'timer' ? '消えた' : '逃げた', 0xffffff, '#ff2d55', -6, 14));
@@ -1956,7 +1999,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2311,6 +2354,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);
     else if (ev.type === 'push') parts.push(!ev.moved ? '' : ev.out ? `${name(ev.uid)}の予定をラウンドの外へ押し出した！` : `${name(ev.uid)}の予定を${ev.by}マス押した`);
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
+    else if (ev.type === 'teeth') parts.push(`歯がそろった！ ${name(ev.uid)}の手が止まる`);
     else if (ev.type === 'sync') parts.push(`${ev.uids.map(name).join('と')}が息を合わせた！`);
     else if (ev.type === 'sunset') parts.push(ev.synced ? `息を合わせて、日が持ちこたえた（あと${ev.left}ラウンド）` : ev.left > 0 ? `日が傾いた…（あと${ev.left}ラウンド）` : '日が沈んだ…');
     else if (ev.type === 'allyArmor') parts.push(`${name(ev.uid)}が守りを固めた（${[ev.armor ? `受けるダメージ −${Math.round(ev.armor * 100)}%` : '', ev.wall ? `攻撃を${ev.wall}回まで消す` : ''].filter(Boolean).join('・')}）`);

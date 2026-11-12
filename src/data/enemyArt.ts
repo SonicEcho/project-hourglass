@@ -79,7 +79,8 @@ export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: numb
   // 段階96：本気のカイの枠の刃（絵の左上で掲げている四角い枠の、左下の角）
   kaiRevenge: { frameBlade: [0.3, 0.2, 'left'] },
   // 2026-10-26：届いた絵に合わせた（旋盤は右の刃物台と真ん中のベルト、アンプは真ん中の大きなスピーカーと左のコード、スコアボードは上の得点板と左のネット）
-  latheLord: { toolPost: [0.86, 0.6], belt: [0.42, 0.66, 'left'] },
+  // 段階171：新しい戦闘のぬし戦は、左に柱・右に予定の札があり横に札を出せないので、印の下に（今の戦闘では 'below' は右に出す）
+  latheLord: { toolPost: [0.86, 0.6, 'below'], belt: [0.42, 0.66, 'below'] },
   ampLord: { speaker: [0.52, 0.3], cord: [0.14, 0.42, 'left'] },
   scoreboardLord: { scoreboard: [0.6, 0.27], backstop: [0.24, 0.6, 'left'] },
   trainLord: { chimney: [0.3, 0.2], wheel: [0.62, 0.74] },
