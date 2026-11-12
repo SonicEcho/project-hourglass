@@ -169,6 +169,8 @@ export interface ChainAreaSetup {
   sunset?: ChainBattleDef['sunset'];
   /** 歯をそろえる（段階171。2-1 のぬしの思い出の再演） */
   teeth?: ChainBattleDef['teeth'];
+  /** 手拍子（段階173。2-2 のぬしの思い出の再演） */
+  clap?: ChainBattleDef['clap'];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }

@@ -16,6 +16,8 @@ export const A22_ENEMY_SNAP = {
   sticker: { id: 'a22_sticker', name: 'シール貼り', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'status', status: 'slow', rounds: 2, element: 'fire', power: 20 }, text: '敵1体に火20。2ラウンドの間、その敵の予定が1マス遅れる' },
   riposte: { id: 'a22_riposte', name: '振り子返し', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', riposte: 25 }, text: '添えた行動の後、ラウンドの終わりまで、この仲間が攻撃を受けると物理25でやり返す' },
   bass: { id: 'a22_bass', name: '重低音', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 18, scale: { by: 'hits', per: 3 } }, text: '敵全体に物理18。このラウンドに味方が当てた回数1回につき+3' },
+  // 段階173：アンプのぬし（思い出の再演「手拍子」の決まりを、こちら向けに）
+  justBeat: { id: 'a22_justBeat', name: 'ジャストビート', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 35, beatMult: 2 }, text: '敵1体に物理35。拍（時刻2・4・6・8）でちょうど終わると威力2倍' },
   ringtone: { id: 'a22_ringtone', name: '着信音', type: 'attack', weight: 1, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 10 }, text: '重さ1で、敵全体に氷10' },
 } satisfies Record<string, ChainMove>;
 
@@ -24,6 +26,7 @@ export const A22_ENEMY_SNAPS: Record<string, string> = {
   metronomeNoise: A22_ENEMY_SNAP.riposte.id,
   boomboxNoise: A22_ENEMY_SNAP.bass.id,
   flipPhoneNoise: A22_ENEMY_SNAP.ringtone.id,
+  ampLord: A22_ENEMY_SNAP.justBeat.id,
 };
 
 export const A22_CARD_ART: Record<string, string> = {
@@ -32,6 +35,7 @@ export const A22_CARD_ART: Record<string, string> = {
   a22_bass: 'snap.wideShot',
   a22_ringtone: 'snap.iceChip',
   a22_snowscape: 'snap.iceChip',
+  a22_justBeat: 'snap.encore',
 };
 export const A22_SHORT_TEXT: Record<string, string> = {
   a22_sticker: '火20\n予定を遅らせる',
@@ -39,13 +43,14 @@ export const A22_SHORT_TEXT: Record<string, string> = {
   a22_bass: '全体に物理18\n当てた回数×3',
   a22_ringtone: '重さ1\n全体に氷10',
   a22_snowscape: '敵全体に\n氷20',
+  a22_justBeat: '物理35\n拍で終わると2倍',
 };
 
 /** 雪景色（2-2 の宝箱。一覧の 2.）：全体に氷20 */
 const SNOWSCAPE: ChainMove = { id: 'a22_snowscape', name: '雪景色', type: 'attack', weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 20 }, text: '敵全体に氷20（弱点ならダウン）' };
 
 /** 2-2 の宝箱で渡す札（アルバムに入れられる札の一覧に足す） */
-export const A22_NEW_SNAPS: ChainMove[] = [C.highlight, C.flash, SNOWSCAPE];
+export const A22_NEW_SNAPS: ChainMove[] = [C.highlight, C.flash, SNOWSCAPE, C.sparkler];
 
 /** 敵ごとの性質と予定の癖（1ラウンドに1つ。順にくり返す）。magic は、その敵の魔法の属性 */
 const SCHOOL: Record<string, { trait?: ChainTrait; pattern: { action: string; at: number; all?: boolean }[]; magic: Element; hp?: number; shellHits?: number }> = {
@@ -102,11 +107,62 @@ function variantsOf(enemies: EnemyDef[]): ChainVariant[] {
 /** 2-2 の雑魚の戦闘（ぬしは段階F3b） */
 const A22_IDS = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a22_n') || id === 'a22_runner') && !AREA_BATTLES[id].boss);
 
+// ---- 段階173（段階F3b）：ぬし「アンプのぬし」。思い出の再演「手拍子」 ----
+
+/**
+ * ぬしと部位の HP・攻撃の倍率と、手拍子（拍・満タンの数・客席が歌った時の回復の割合）。
+ * 自動対戦（考える方針・2-2 に入る時点の控えめ／ふつうの育ち具合・宝箱の札を入れた山札・40戦）で、37〜39勝・中ほど5ラウンドになるように決めた。
+ * 考える方針は拍を狙わないが、1戦で平均0.6回ほど客席が歌う（段階173）
+ */
+export const A22_LORD = { body: 0.625, part: 0.3, atk: 0.9, beats: [2, 4, 6, 8], need: 6, heal: 0.15 };
+
+function a22Lord(): ChainEnemyDef[] {
+  const lord = AREA_BATTLES.a22_boss.enemies[0];
+  const act = (id: string) => lord.actions.find((a) => a.id === id)!;
+  const move = (id: string, at: number, extra: Partial<ChainEnemyMove> = {}): ChainEnemyMove => {
+    const a = act(id);
+    return { id: a.id, name: a.name, at, ...(a.target === 'allies' ? { all: true } : {}), element: a.type === 'magic' ? 'thunder' : a.type, power: a.power, ...extra };
+  };
+  const partId = (id: string) => `${lord.id}_${id}`;
+  const body: ChainEnemyDef = {
+    id: lord.id,
+    name: lord.name,
+    hp: Math.round(lord.stats.hp * A22_LORD.body),
+    atk: Math.round(Math.max(lord.stats.atk, lord.stats.mag) * A22_LORD.atk),
+    def: lord.stats.def,
+    weak: [],
+    resist: [],
+    // 予定の癖：音の壁（2回）→ からみつき（コード）→ 大音量（全体・スピーカー）→ ハウリング（全体）。アンコールは新しい戦闘では使わない
+    pattern: [move('feedback', 3, { at2: 7 }), move('entangle', 5, { requiresPart: partId('cord') }), move('fullVolume', 6, { requiresPart: partId('speaker') }), move('howling', 7)],
+  };
+  const parts = (['speaker', 'cord'] as const).map((id): ChainEnemyDef => {
+    const p = lord.parts!.find((x) => x.id === id)!;
+    return {
+      id: partId(id),
+      name: p.name,
+      hp: Math.round(p.hp * A22_LORD.part),
+      atk: 0,
+      def: lord.stats.def,
+      weak: [],
+      resist: [],
+      pattern: [],
+      part: { of: lord.id, ...(p.revealsWeakness ? { reveals: [...p.revealsWeakness] } : {}) },
+      ...(p.drop ? { drop: p.drop } : {}),
+    };
+  });
+  return [parts[1], body, parts[0]];
+}
+
 /** 2-2 の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
-export const A22_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries(
-  A22_IDS.map((id) => {
+export const A22_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
+  // ぬしの報酬：線香花火（全体に火の連続）と雪景色（2章の札）
+  [
+    'a22_boss',
+    { enemies: a22Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, clap: { beats: A22_LORD.beats, need: A22_LORD.need, target: 'ampLord', heal: A22_LORD.heal }, snaps: [C.sparkler.id, SNOWSCAPE.id] },
+  ],
+  ...A22_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a22_n1_') ? A22_CHAIN_HP_RATE.night1 : A22_CHAIN_HP_RATE.later;
     return [id, { enemies: b.enemies.map((e) => a22ChainEnemy(e, rate)), variants: variantsOf(b.enemies), deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 13, mid: 20 } }];
   }),
-);
+]);

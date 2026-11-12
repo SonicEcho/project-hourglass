@@ -25,8 +25,8 @@ describe('ライブラリの記録（段階167）', () => {
 });
 
 describe('ライブラリに載る物（1-1・1-2）', () => {
-  it('敵：1-1 の4種類の雑魚とぬし（部位はぬしの項目に）、1-2 の4種類の雑魚（段階168）とぬし（段階169）、2-1 の4種類の雑魚（段階170）とぬし（段階171）、2-2 の4種類の雑魚（段階172）。ぬしは後ろ', () => {
-    expect(LIBRARY_ENEMIES.map((e) => e.id).sort()).toEqual(['abacusNoise', 'balloonNoise', 'bicycleLord', 'cottonNoise', 'gearNoise', 'goldfishBowlLord', 'boomboxNoise', 'flipPhoneNoise', 'goldfishNoise', 'latheLord', 'maskNoise', 'menkoNoise', 'metronomeNoise', 'phoneNoise', 'ramuneNoise', 'screwNoise', 'stickerNoise', 'tinNoise', 'tubeNoise'].sort());
+  it('敵：1-1 の4種類の雑魚とぬし（部位はぬしの項目に）、1-2 の4種類の雑魚（段階168）とぬし（段階169）、2-1 の4種類の雑魚（段階170）とぬし（段階171）、2-2 の4種類の雑魚（段階172）とぬし（段階173）。ぬしは後ろ', () => {
+    expect(LIBRARY_ENEMIES.map((e) => e.id).sort()).toEqual(['abacusNoise', 'ampLord', 'balloonNoise', 'bicycleLord', 'cottonNoise', 'gearNoise', 'goldfishBowlLord', 'boomboxNoise', 'flipPhoneNoise', 'goldfishNoise', 'latheLord', 'maskNoise', 'menkoNoise', 'metronomeNoise', 'phoneNoise', 'ramuneNoise', 'screwNoise', 'stickerNoise', 'tinNoise', 'tubeNoise'].sort());
     expect(LIBRARY_ENEMIES[LIBRARY_ENEMIES.length - 1].boss).toBe(true);
     const lord = LIBRARY_ENEMIES.find((e) => e.id === 'goldfishBowlLord')!;
     expect(lord.boss).toBe(true);

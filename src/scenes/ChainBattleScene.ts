@@ -8,6 +8,7 @@ import {
   chainPlanError,
   chainPlanSyncs,
   chainPlanTeethHits,
+  chainPlanClaps,
   createChainBattle,
   isWeakKnown,
   findChainUnit,
@@ -257,6 +258,7 @@ export class ChainBattleScene extends Phaser.Scene {
         poi: setup?.poi,
         sunset: setup?.sunset,
         teeth: setup?.teeth,
+        clap: setup?.clap,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -408,6 +410,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawPoi(view);
     this.drawSunset(view);
     this.drawTeeth(view);
+    this.drawClap(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -874,6 +877,38 @@ export class ChainBattleScene extends Phaser.Scene {
     if (lay) r.add(addText(this, cx, STAGE_Y + 144, done ? (this.busy ? 'そろった！' : 'そろう ◎') : this.busy ? '' : '当てる回数\nの見込み', { size: 9, bold: true, align: 'center', color: done ? '#8fffc0' : '#9aa3c0' }).setOrigin(0.5));
   }
 
+  /**
+   * 手拍子（段階173。2-2 のぬしの思い出の再演）：貯まった手拍子を丸で（満タンで客席が歌う）。並べている間は、増える見込みを薄く
+   */
+  private drawClap(view: ChainState): void {
+    const c = view.def.clap;
+    if (!c) return;
+    const r = this.root;
+    const have = Math.min(c.need, view.claps ?? 0);
+    const plan = this.busy ? 0 : chainPlanClaps(this.s, this.plan);
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '手拍子', { size: 13, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    // 2列に丸を並べる（下から貯まる）
+    const cols = 2;
+    const rows = Math.ceil(c.need / cols);
+    for (let k = 0; k < c.need; k++) {
+      const row = rows - 1 - Math.floor(k / cols);
+      const x = cx + (k % cols === 0 ? -14 : 14);
+      const y = STAGE_Y + 40 + row * 22;
+      const lit = k < have;
+      const ghost = !lit && k < have + plan;
+      r.add(this.add.circle(x, y, 9, lit ? 0xffd23f : ghost ? 0x8a7a30 : 0x2a2a38).setStrokeStyle(1.5, lit ? 0xfff0b0 : 0x5a5a70));
+      if (lit) r.add(addText(this, x, y, '♪', { size: 10, bold: true, color: '#3a2a00' }).setOrigin(0.5));
+    }
+    const full = have + plan >= c.need;
+    r.add(addText(this, cx, STAGE_Y + 40 + rows * 22 + 2, `${have}${plan ? `（+${plan}）` : ''}/${c.need}`, { size: 12, bold: true, color: full ? '#8fffc0' : '#c9d0ea' }).setOrigin(0.5));
+    if (lay) r.add(addText(this, cx, STAGE_Y + 146, full && !this.busy ? '客席が\n歌う ◎' : '♪の時刻で\n終わると＋1', { size: 9, bold: true, align: 'center', color: full && !this.busy ? '#8fffc0' : '#9aa3c0' }).setOrigin(0.5));
+  }
+
   private foeColor(s: ChainState, uid: string): number {
     const i = s.enemies.findIndex((e) => e.uid === uid);
     return FOE_COLORS[(i < 0 ? 0 : i) % FOE_COLORS.length];
@@ -1157,9 +1192,12 @@ export class ChainBattleScene extends Phaser.Scene {
     g.fillStyle(0x1e2230, 1).fillRect(x0, FOE_TRACK, CELL * len, 1).fillRect(x0, CLIP_TOP + CLIP_H / 2, CELL * len, 1);
     r.add(g);
     // 時刻はマスの境目（調整8。味方の帯の右端・敵の丸・再生位置の線が、同じ所にそろう）
+    // 手拍子の拍（段階173）：拍の時刻は黄色の線と数字
+    const beats = s.def.clap?.beats ?? [];
     for (let t = 0; t <= len; t++) {
-      r.add(this.add.rectangle(x0 + CELL * t, top + 26, 1, FILM_H - 38, 0x8a93ad, 0.12).setOrigin(0.5, 0));
-      r.add(addText(this, x0 + CELL * t, top + 13, String(t), { size: 10, bold: true, color: '#8a93ad' }).setOrigin(0.5, 0));
+      const beat = beats.includes(t);
+      r.add(this.add.rectangle(x0 + CELL * t, top + 26, beat ? 2 : 1, FILM_H - 38, beat ? 0xffd23f : 0x8a93ad, beat ? 0.45 : 0.12).setOrigin(0.5, 0));
+      r.add(addText(this, x0 + CELL * t, top + 13, beat ? `♪${t}` : String(t), { size: 10, bold: true, color: beat ? '#ffd23f' : '#8a93ad' }).setOrigin(0.5, 0));
     }
     r.add(addText(this, 4, FOE_TRACK, '敵', { size: 9, bold: true, color: '#ff9db0' }).setOrigin(0, 0.5));
     r.add(addText(this, 2, CLIP_TOP + CLIP_H / 2, '味方', { size: 8, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
@@ -2001,7 +2039,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte', 'chorus'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2356,6 +2394,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);
     else if (ev.type === 'push') parts.push(!ev.moved ? '' : ev.out ? `${name(ev.uid)}の予定をラウンドの外へ押し出した！` : `${name(ev.uid)}の予定を${ev.by}マス押した`);
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
+    else if (ev.type === 'clap') parts.push(`手拍子！（${ev.total}）`);
+    else if (ev.type === 'chorus') parts.push(`客席が歌い出した！${ev.uid ? ` ${name(ev.uid)}の手が止まる` : ''}`);
     else if (ev.type === 'teeth') parts.push(`歯がそろった！ ${name(ev.uid)}の手が止まる`);
     else if (ev.type === 'sync') parts.push(`${ev.uids.map(name).join('と')}が息を合わせた！`);
     else if (ev.type === 'sunset') parts.push(ev.synced ? `息を合わせて、日が持ちこたえた（あと${ev.left}ラウンド）` : ev.left > 0 ? `日が傾いた…（あと${ev.left}ラウンド）` : '日が沈んだ…');

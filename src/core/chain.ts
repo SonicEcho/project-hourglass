@@ -112,6 +112,8 @@ export type ChainEffect =
       firstMult?: number;
       /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
       exposure?: number;
+      /** 拍（手拍子の時刻。決まりが無ければ 2・4・6・8）でちょうど終わると、威力がこの倍（段階173。アンプのぬしのスナップ） */
+      beatMult?: number;
       /** このラウンドに味方が当てた回数と同じ回数当てる（段階171。旋盤のぬしのスナップ「歯車の仕上げ」。上限 12） */
       hitsByRoundHits?: boolean;
       /** 息を合わせていれば（このラウンドに、2人の行動の間に敵の行動がなかった）威力がこの倍（段階169。自転車のぬしのスナップ「二人乗り」） */
@@ -380,6 +382,11 @@ export interface ChainBattleDef {
    * その敵がダウンする（残りの予定が消える。警戒中はダウンしない）。1ラウンドに1回
    */
   teeth?: { target: string; need: number };
+  /**
+   * 手拍子（段階173。2-2 のぬしの思い出の再演）：仲間の行動が拍（beats の時刻）でちょうど終わると、手拍子が1つ増える（ラウンドをまたいで貯まる）。
+   * need 貯まると「客席が歌う」：target（敵の定義の id）がダウンし（警戒中はしない）、仲間の HP が最大の heal の割合だけ戻る。手拍子は0から
+   */
+  clap?: { beats: number[]; need: number; target: string; heal: number };
 }
 
 export interface ChainUnit {
@@ -514,6 +521,9 @@ export type ChainEvent =
   | { type: 'sunset'; left: number; synced: boolean }
   /** 段階171：歯がそろった（1ラウンドに need 回当てた） */
   | { type: 'teeth'; uid: string }
+  /** 段階173：手拍子（total は貯まった数）・客席が歌った（uid はダウンさせたぬし） */
+  | { type: 'clap'; total: number }
+  | { type: 'chorus'; uid?: string }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -566,6 +576,8 @@ export interface ChainState {
   roundSynced?: boolean;
   /** 夕日の残り（段階169） */
   sunset?: number;
+  /** 手拍子の数（段階173） */
+  claps?: number;
   /** cutoff：負け戦の打ち切り（段階158） */
   outcome: 'ongoing' | 'win' | 'lose' | 'cutoff';
   /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
@@ -768,6 +780,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     outcome: 'ongoing',
     ...(def.poi ? { poi: def.poi.total } : {}),
     ...(def.sunset ? { sunset: def.sunset.rounds } : {}),
+    ...(def.clap ? { claps: 0 } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -1267,6 +1280,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
   if (eff.firstMult && acted === 0) power *= eff.firstMult;
   if (eff.syncMult && s.roundSynced) power *= eff.syncMult;
+  if (eff.beatMult && (s.def.clap?.beats ?? CHAIN_BEATS).includes(at)) power *= eff.beatMult;
   let hits = eff.hitsPerActed ? acted + 1 : eff.hitsByRoundHits ? Math.max(1, Math.min(12, s.roundHits)) : (eff.hits ?? 1);
   if (eff.exposure) {
     s.exposure += eff.exposure;
@@ -1451,6 +1465,28 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
   }
 }
 
+/** 手拍子の拍（決まりが無い時。段階173） */
+export const CHAIN_BEATS = [2, 4, 6, 8];
+
+/** 手拍子を1つ足す。貯まったら客席が歌う：ぬしがダウン、仲間が回復、手拍子は0から（段階173） */
+function clap(s: ChainState, ev: ChainEvent[]): void {
+  const c = s.def.clap!;
+  s.claps = (s.claps ?? 0) + 1;
+  ev.push({ type: 'clap', total: s.claps });
+  if (s.claps < c.need) return;
+  s.claps = 0;
+  const body = living(s.enemies).find((e) => e.defId === c.target);
+  ev.push({ type: 'chorus', ...(body ? { uid: body.uid } : {}) });
+  for (const a of s.allies.filter((x) => x.hp > 0)) {
+    const amount = Math.min(a.maxHp - a.hp, Math.floor(a.maxHp * c.heal));
+    if (amount > 0) {
+      a.hp += amount;
+      ev.push({ type: 'heal', to: a.uid, amount });
+    }
+  }
+  if (body) knockDown(s, body, ev);
+}
+
 /** ポイを濡らす（段階162） */
 function wetPoi(s: ChainState, by: number, ev: ChainEvent[]): void {
   if (!s.def.poi || by <= 0) return;
@@ -1503,6 +1539,12 @@ export function chainPlanTeethHits(s: ChainState, plan: ChainPlanStep[]): number
   let n = 0;
   for (const f of r.frames) for (const e of f.events) if (e.type === 'damage' && e.from !== e.to && s.allies.some((a) => a.uid === e.from) && s.enemies.some((x) => x.uid === e.to && x.defId === t.target)) n++;
   return n;
+}
+
+/** 並べた予定で、このラウンドに増える手拍子の見込みの数（段階173。画面の見込みの表示。実際に動かして見る） */
+export function chainPlanClaps(s: ChainState, plan: ChainPlanStep[]): number {
+  if (!s.def.clap || plan.length === 0) return 0;
+  return runChainRound(s, plan).frames.reduce((a, f) => a + f.events.filter((e) => e.type === 'clap').length, 0);
 }
 
 /** 並べた予定で、このラウンドに息が合う見込みか（段階169。画面の見込みの表示。実際に動かして見るので、押す・ダウンで敵の予定が動くのも入る） */
@@ -1643,6 +1685,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       lastAlly = actors[actors.length - 1].uid;
       enemySince = false;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
+      // 手拍子（段階173）：拍でちょうど終わった行動。貯まったら客席が歌う
+      if (s.def.clap && s.def.clap.beats.includes(at)) clap(s, ev);
       if (poiBy) wetPoi(s, poiBy, ev);
       prev.weak = ev.some((e) => e.type === 'damage' && e.weak && e.from === doer.uid);
       // 連携技の計算用に写した仲間のダメージ（反撃・破片）は、1人目に戻す

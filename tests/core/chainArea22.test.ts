@@ -10,10 +10,10 @@ const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a22_n') || 
 const PARTY = [HERO, AKARI, MIO];
 
 describe('2-2 の雑魚を新しい戦闘に（段階172）', () => {
-  it('2-2 の雑魚は全部新しい戦闘。ぬしはまだ今の戦闘', () => {
+  it('2-2 の雑魚は全部新しい戦闘（段階173 でぬしも）', () => {
     expect(ids.length).toBe(16);
     for (const id of ids) expect(CHAIN_AREA_BATTLES).toContain(id);
-    expect(CHAIN_AREA_BATTLES).not.toContain('a22_boss');
+    expect(CHAIN_AREA_BATTLES).toContain('a22_boss');
   });
   it('敵ごとの性質：シール＝足止め・メトロノーム＝カウンター・ラジカセ＝かばう・ガラケー＝なし。敵の id は今の敵のまま', () => {
     const trait: Record<string, string | undefined> = { stickerNoise: 'sticky', metronomeNoise: 'counter', boomboxNoise: 'shield', flipPhoneNoise: undefined };
@@ -57,4 +57,21 @@ describe('2-2 の雑魚を新しい戦闘に（段階172）', () => {
       expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
     }
   }, 60000);
+});
+
+describe('2-2 のぬし「手拍子」（段階173）', () => {
+  it('拍は2・4・6・8、6つで客席が歌う。部位はスピーカーとコード（コードを壊すと火の弱点）。スナップはジャストビート', () => {
+    const st = CHAIN_AREA_SETUPS.a22_boss;
+    expect(st.clap).toMatchObject({ beats: [2, 4, 6, 8], need: 6, target: 'ampLord' });
+    const parts = st.enemies.filter((e) => e.part);
+    expect(parts.map((p) => p.id).sort()).toEqual(['ampLord_cord', 'ampLord_speaker']);
+    expect(parts.find((p) => p.id === 'ampLord_cord')?.part?.reveals).toEqual(['fire']);
+    expect(CHAIN_SNAPS[CHAIN_ENEMY_SNAPS.ampLord]?.name).toBe('ジャストビート');
+    for (const id of st.snaps ?? []) expect(CHAIN_SNAPS[id]).toBeDefined();
+  });
+  it('最初のぬし戦で、手拍子の説明が出る', () => {
+    const st = CHAIN_AREA_SETUPS.a22_boss;
+    const def = buildMainChainBattle({ id: 'a22_boss', name: 'x', party: PARTY, enemies: AREA_BATTLES.a22_boss.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, clap: st.clap });
+    expect(chainTipTriggers(createChainBattle(def, CHAIN_RULES, 1))).toContain('chain_clap');
+  });
 });
