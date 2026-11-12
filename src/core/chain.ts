@@ -136,6 +136,10 @@ export type ChainEffect =
       cover?: number;
       /** 段階168（黒電話ノイズのスナップ「非常ベル」）：添えた攻撃で敵を倒すと、ほかの敵全体にこの威力で当たる（攻撃の属性。ダウンしない） */
       blast?: number;
+      /** 段階170（歯車ノイズのスナップ「歯車の鎧」）：添えた行動の後、ラウンドの終わりまで、この仲間が受ける敵の攻撃のダメージを1発ごとに減らす（割合） */
+      armor?: number;
+      /** 段階170（そろばんノイズのスナップ「珠の壁」）：添えた行動の後、ラウンドの終わりまで、この仲間が受ける敵の攻撃をこの回数まで消す */
+      wall?: number;
     }
   /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理）。直前が弱点を突いていれば × weakMult（調整16） */
   | { kind: 'layer'; power: number; mult: number; weakMult?: number }
@@ -370,6 +374,9 @@ export interface ChainBattleDef {
 }
 
 export interface ChainUnit {
+  /** 段階170：受ける敵の攻撃のダメージの減り（割合）と、消せる残りの回数。ラウンドの終わりに消える */
+  armor?: number;
+  wall?: number;
   /** 段階168：ほかの仲間への単体攻撃を代わりに受けている（受けるダメージの割合。ラウンドの終わりに消える） */
   covering?: number;
   uid: string;
@@ -464,6 +471,9 @@ export type ChainEvent =
   | { type: 'sticky'; uid: string; delay: number }
   /** 段階168：仲間が盾の構え（ブリキの盾）・仲間が代わりに受けた・この後の仲間が早まる・欠片が散った・倒した敵からベルが広がった */
   | { type: 'allyGuard'; uid: string }
+  /** 段階170：仲間が守りを固めた（鎧・壁）・壁で攻撃を消した */
+  | { type: 'allyArmor'; uid: string; armor?: number; wall?: number }
+  | { type: 'allyWall'; uid: string; left: number }
   | { type: 'allyCover'; uid: string; from: string; for: string }
   | { type: 'haste'; uid: string; by: number }
   | { type: 'scatter'; uid: string; to: string[] }
@@ -1154,6 +1164,12 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     actor.covering = mods.cover;
     ev.push({ type: 'allyGuard', uid: actor.uid });
   }
+  // 歯車の鎧・珠の壁（段階170）：添えた行動の後、ラウンドの終わりまで、この仲間の守りを固める
+  if ((mods.armor || mods.wall) && actor.hp > 0) {
+    if (mods.armor) actor.armor = Math.max(actor.armor ?? 0, mods.armor);
+    if (mods.wall) actor.wall = (actor.wall ?? 0) + mods.wall;
+    ev.push({ type: 'allyArmor', uid: actor.uid, ...(mods.armor ? { armor: mods.armor } : {}), ...(mods.wall ? { wall: mods.wall } : {}) });
+  }
   const pierce = eff.kind === 'damage' && !!eff.pierce;
   const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid, pierce)].filter((x): x is ChainUnit => !!x));
   // 手札に触れる技（段階164）
@@ -1325,10 +1341,12 @@ export interface ChainAddonMods {
   exposure: number;
   cover: number;
   blast: number;
+  armor: number;
+  wall: number;
 }
 
 export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
-  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0 };
+  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0 };
   for (const c of cards) {
     const e = c?.effect;
     if (!e || e.kind !== 'addon') continue;
@@ -1344,6 +1362,8 @@ export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
     m.exposure += e.exposure ?? 0;
     if (e.cover) m.cover = m.cover ? Math.min(m.cover, e.cover) : e.cover;
     m.blast += e.blast ?? 0;
+    m.armor = Math.max(m.armor, e.armor ?? 0);
+    m.wall += e.wall ?? 0;
   }
   return m;
 }
@@ -1378,7 +1398,15 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
     coverRate = guard.covering!;
     targets = [guard];
   }
-  for (const a of targets) hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate)), ev);
+  for (const a of targets) {
+    // 珠の壁（段階170）：消せる回数が残っていれば、この攻撃を消す
+    if ((a.wall ?? 0) > 0) {
+      a.wall = a.wall! - 1;
+      ev.push({ type: 'allyWall', uid: a.uid, left: a.wall });
+      continue;
+    }
+    hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate * (1 - (a.armor ?? 0)))), ev);
+  }
   // ポイ（段階162）：決まった行動が当たると、1発ごとに濡れる
   if (s.def.poi && s.def.poi.hitMoves.includes(m.id) && targets.length) wetPoi(s, s.def.poi.hitCost * targets.length, ev);
   // 起こし役：ダウンしているほかの敵を起こす
@@ -1719,7 +1747,11 @@ function endRound(s: ChainState): void {
     const cycle = e.trait === 'shift' ? chainEnemyDef(s, e.defId)?.weakCycle : undefined;
     if (cycle?.length) e.weak = [cycle[e.step % cycle.length]];
   }
-  for (const a of s.allies) a.covering = undefined;
+  for (const a of s.allies) {
+    a.covering = undefined;
+    a.armor = undefined;
+    a.wall = undefined;
+  }
   s.round++;
   s.elapsed += s.rules.roundLen;
   s.timeShift = 0;

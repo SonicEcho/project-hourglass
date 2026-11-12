@@ -128,15 +128,16 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 1晩目は路地の入口から銭湯の前と銭湯の裏、2晩目は雪の資材置き場と左右の道から工場の門（番人）、3晩目は工場の門の先と工場の中。
   // コマは晩ごとに 3・3・3＋ぬし（返すのに10）。1-1・1-2 と同じく、攻撃の強さは変えずに HP を上げる（1晩目は 1.4倍、ほかは 1.8倍。段階65）。
   // 星の砂は1戦あたりを減らし、区画の合計は前（8戦）と同じくらい。ギアは落とさない（宝箱と出来事のごほうび。段階38）
-  a21_n1_gate: { id: 'a21_n1_gate', name: '砂嵐', enemies: tough([GEAR_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
-  a21_n1_lower: { id: 'a21_n1_lower', name: '砂嵐', enemies: tough([SCREW_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a21_n1_road: { id: 'a21_n1_road', name: '砂嵐', enemies: tough([TUBE_NOISE, SCREW_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
-  a21_n1_plaza: { id: 'a21_n1_plaza', name: '砂嵐', enemies: tough([GEAR_NOISE, TUBE_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
-  a21_n1_bath1: { id: 'a21_n1_bath1', name: '砂嵐', enemies: tough([TUBE_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a21_n2_yard1: { id: 'a21_n2_yard1', name: '砂嵐', enemies: tough([ABACUS_NOISE, TUBE_NOISE, SCREW_NOISE]), reward: 3, koma: 1 },
-  a21_n2_yard2: { id: 'a21_n2_yard2', name: '砂嵐', enemies: tough([GEAR_NOISE, GEAR_NOISE, TUBE_NOISE]), reward: 2 },
-  a21_n2_left: { id: 'a21_n2_left', name: '砂嵐', enemies: tough([GEAR_NOISE, ABACUS_NOISE, TUBE_NOISE]), reward: 4, item: ITEMS.hiPotion.id, koma: 1 },
-  a21_n2_right: { id: 'a21_n2_right', name: '砂嵐', enemies: tough([SCREW_NOISE, SCREW_NOISE, ABACUS_NOISE]), reward: 2 },
+  // 段階170（段取りの段階F2a）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目は歯車（かたい）とそろばん（バリア）だけ、2晩目にネジ（分裂）と真空管（性質なし）、3晩目は組み合わせ）
+  a21_n1_gate: { id: 'a21_n1_gate', name: '砂嵐', enemies: tough([GEAR_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a21_n1_lower: { id: 'a21_n1_lower', name: '砂嵐', enemies: tough([ABACUS_NOISE, ABACUS_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a21_n1_road: { id: 'a21_n1_road', name: '砂嵐', enemies: tough([GEAR_NOISE, ABACUS_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a21_n1_plaza: { id: 'a21_n1_plaza', name: '砂嵐', enemies: tough([ABACUS_NOISE, GEAR_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
+  a21_n1_bath1: { id: 'a21_n1_bath1', name: '砂嵐', enemies: tough([GEAR_NOISE, ABACUS_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a21_n2_yard1: { id: 'a21_n2_yard1', name: '砂嵐', enemies: tough([SCREW_NOISE, SCREW_NOISE]), reward: 3, koma: 1 },
+  a21_n2_yard2: { id: 'a21_n2_yard2', name: '砂嵐', enemies: tough([TUBE_NOISE, GEAR_NOISE, TUBE_NOISE]), reward: 2 },
+  a21_n2_left: { id: 'a21_n2_left', name: '砂嵐', enemies: tough([SCREW_NOISE, ABACUS_NOISE, TUBE_NOISE]), reward: 4, item: ITEMS.hiPotion.id, koma: 1 },
+  a21_n2_right: { id: 'a21_n2_right', name: '砂嵐', enemies: tough([TUBE_NOISE, SCREW_NOISE, GEAR_NOISE]), reward: 2 },
   // 工場の門の番人（2晩目の山場。戦う前の会話）。そろばんノイズの守りの固い番人
   a21_n2_guard: { id: 'a21_n2_guard', name: '砂嵐', enemies: tough([ABACUS_NOISE, SCREW_NOISE, GEAR_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
   a21_n3_top: { id: 'a21_n3_top', name: '砂嵐', enemies: tough([TUBE_NOISE, ABACUS_NOISE, GEAR_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
@@ -145,7 +146,7 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a21_n3_inner: { id: 'a21_n3_inner', name: '砂嵐', enemies: tough([GEAR_NOISE, TUBE_NOISE, ABACUS_NOISE].map((e) => scaleEnemy(e, 1.25))), reward: 2 },
   // 2-1 の寄り道の部屋（地図の絵の手直しと一緒に。2026-10-17）：コマなし。資材置き場の逃げる敵はレアの素材「万博のきっぷ」、銭湯の裏の追ってくる敵は真鍮のボルト（消費アイテムは区画で2〜3つのままにする。economy.md の 3.）
   a21_runner: { id: 'a21_runner', name: '砂嵐', enemies: [GEAR_NOISE, TUBE_NOISE, GEAR_NOISE], reward: 3, item: ITEMS.expoTicket.id },
-  a21_alley: { id: 'a21_alley', name: '砂嵐', enemies: tough([SCREW_NOISE, ABACUS_NOISE, SCREW_NOISE], A11_STORM_HP.night1), reward: 3, item: ITEMS.brassBolt.id },
+  a21_alley: { id: 'a21_alley', name: '砂嵐', enemies: tough([GEAR_NOISE, ABACUS_NOISE, GEAR_NOISE], A11_STORM_HP.night1), reward: 3, item: ITEMS.brassBolt.id },
   // 1-2 のぬしと同じく、攻撃は元のまま HP 1.3倍。コマは1つ
   a21_boss: { id: 'a21_boss', name: '旋盤のぬし', enemies: [toughenEnemy(LATHE_LORD, 1.3)], reward: 10, boss: true, koma: 1, snaps: ['heavyBlow'] },
   // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。段階82で、3晩に分けて入る区画に作り直した（脚本 docs/script/2-2_rework.md）。並びは出会う順。
@@ -570,9 +571,9 @@ export const AREAS: Record<string, AreaDef> = {
     },
     // 資材置き場の左上の行き止まり、銭湯の右の道の奥、銭湯の裏の路地の行き止まり。ムーブメントのギアも入っている（段階38）
     chests: [
-      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], night: 2, items: [ITEMS.rustyScrew.id], gears: ['thunderBoost'] },
-      { id: 'a21_chest_right', cell: [19, 12], night: 2, items: [ITEMS.ether.id], gears: ['firstAid'] },
-      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id], snaps: ['thunderChip'] },
+      { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], night: 2, items: [ITEMS.rustyScrew.id], gears: ['thunderBoost'], chainSnaps: ['c17_burst'] },
+      { id: 'a21_chest_right', cell: [19, 12], night: 2, items: [ITEMS.ether.id], gears: ['firstAid'], chainSnaps: ['c17_split'] },
+      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id], snaps: ['thunderChip'], chainSnaps: ['c17_bigShot'] },
     ],
     enemies: [
       // ---- 1晩目（路地の入口から銭湯の前と、銭湯の裏） ----

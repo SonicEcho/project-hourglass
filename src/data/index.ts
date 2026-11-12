@@ -20,6 +20,7 @@ export * from './chainTrial';
 export * from './chainTrial17';
 export * from './chainArea11';
 export * from './chainArea12';
+export * from './chainArea21';
 export * from './chainAreas';
 export * from './chainTutorial';
 export * from './snapTrial';
