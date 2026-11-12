@@ -71,10 +71,11 @@ export const ENEMY_ART_BIG: string[] = ['kai'];
  * ぬしの部位の印を置く所（段階89）：ボスの絵（正方形）の中の位置を、幅・高さに対する割合で。3つめは名前の札を出す向き（書かなければ右）。
  * ここにないぬし（絵がまだない）は、丸い体の上のほうに部位を横に並べる
  */
-export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: number, side?: 'left' | 'right']>> = {
+export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: number, side?: 'left' | 'right' | 'below']>> = {
   // ポイの腕の札は、絵に重ならないよう左に出す（段階108。テストプレイのメモ 10）
   goldfishBowlLord: { poiArm: [0.13, 0.66, 'left'], bowl: [0.47, 0.42] },
-  bicycleLord: { frontWheel: [0.24, 0.5], bell: [0.3, 0.14] },
+  // 段階169 の後の直し（開発者：前輪の札が絵の真ん中にかかって邪魔）：新しい戦闘のぬし戦は左に夕日の柱があり、左に札を出せないので、前輪の札は印の下に
+  bicycleLord: { frontWheel: [0.24, 0.5, 'below'], bell: [0.3, 0.14] },
   // 段階96：本気のカイの枠の刃（絵の左上で掲げている四角い枠の、左下の角）
   kaiRevenge: { frameBlade: [0.3, 0.2, 'left'] },
   // 2026-10-26：届いた絵に合わせた（旋盤は右の刃物台と真ん中のベルト、アンプは真ん中の大きなスピーカーと左のコード、スコアボードは上の得点板と左のネット）

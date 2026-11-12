@@ -459,7 +459,9 @@ function drawParts(scene: Phaser.Scene, root: Phaser.GameObjects.Container, vm: 
     const targetable = usable && vm.interactive && vm.scope === 'enemy';
     const sel = vm.selectedTarget;
     const selected = sel?.kind === 'enemy' && sel.id === enemy.uid && sel.partId === part.id;
-    const side = ENEMY_PART_SPOTS[enemy.defId]?.[part.id]?.[2] ?? 'right';
+    // 印の下に札を出す形（段階169 の後。新しい戦闘だけ）は、今の戦闘では右に出す
+    const spotSide = ENEMY_PART_SPOTS[enemy.defId]?.[part.id]?.[2];
+    const side = spotSide === 'left' ? 'left' : 'right';
     if (stage === 3) {
       drawBrokenPart(scene, root, x, y);
       drawPartTag(scene, root, x, y, `${part.name}（破壊）`, RETICLE.broken, side);
