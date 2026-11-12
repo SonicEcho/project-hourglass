@@ -7,10 +7,10 @@ import { autoChainBattle } from '../../src/sim/chainAuto';
 const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a12_n') || id === 'a12_runner') && !AREA_BATTLES[id].boss);
 
 describe('1-2 の雑魚を新しい戦闘に（段階168）', () => {
-  it('1-2 の雑魚は全部新しい戦闘。ぬしはまだ今の戦闘（段階F1b）', () => {
+  it('1-2 の雑魚は全部新しい戦闘（段階169 でぬしも）', () => {
     expect(ids.length).toBe(16);
     for (const id of ids) expect(CHAIN_AREA_BATTLES).toContain(id);
-    expect(CHAIN_AREA_BATTLES).not.toContain('a12_boss');
+    expect(CHAIN_AREA_BATTLES).toContain('a12_boss');
   });
   it('敵ごとの性質：ブリキ＝かばう・ラムネ＝逃げ足・めんこ＝分裂・黒電話＝ダウン時爆発。落とし物のため、敵の id は今の敵のまま', () => {
     const trait: Record<string, string> = { tinNoise: 'shield', ramuneNoise: 'flee', menkoNoise: 'split', phoneNoise: 'pop' };
@@ -63,5 +63,25 @@ describe('1-2 の性質の説明と宝箱（段階168）', () => {
     expect(chests.length).toBeGreaterThan(0);
     for (const c of chests) for (const id of c.chainSnaps ?? []) expect(CHAIN_SNAPS[id]).toBeDefined();
     expect(chests.every((c) => c.chainSnaps?.length)).toBe(true);
+  });
+});
+
+describe('1-2 のぬし「日が沈む前に」（段階169）', () => {
+  it('夕日は4ラウンド。部位は前輪とベル（ベルを壊すと雷の弱点）。報酬はストロボとワイドショット', () => {
+    const st = CHAIN_AREA_SETUPS.a12_boss;
+    expect(st.sunset).toEqual({ rounds: 4 });
+    const parts = st.enemies.filter((e) => e.part);
+    expect(parts.map((p) => p.id)).toEqual(['bicycleLord_frontWheel', 'bicycleLord_bell']);
+    expect(parts[1].part?.reveals).toEqual(['thunder']);
+    const body = st.enemies.find((e) => !e.part)!;
+    expect(body.pattern.filter((m) => m.requiresPart).map((m) => m.requiresPart)).toEqual(['bicycleLord_frontWheel', 'bicycleLord_bell']);
+    expect(st.snaps).toEqual(['c17_strobe', 'c17_wide']);
+    expect(CHAIN_SNAPS[CHAIN_ENEMY_SNAPS.bicycleLord]?.name).toBe('二人乗り');
+  });
+  it('最初のぬし戦で、日が沈む前にの説明が出る', async () => {
+    const { chainTipTriggers, createChainBattle } = await import('../../src/core');
+    const st = CHAIN_AREA_SETUPS.a12_boss;
+    const def = buildMainChainBattle({ id: 'a12_boss', name: 'x', party: [HERO, AKARI], enemies: AREA_BATTLES.a12_boss.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, sunset: st.sunset });
+    expect(chainTipTriggers(createChainBattle(def, CHAIN_RULES, 1))).toContain('chain_sunset');
   });
 });

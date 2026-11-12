@@ -128,6 +128,8 @@ export interface MainChainBattleInput {
   variants?: ChainVariant[];
   /** ポイ（段階162。思い出の再演「ポイが破れる前に」） */
   poi?: ChainBattleDef['poi'];
+  /** 夕日（段階169） */
+  sunset?: ChainBattleDef['sunset'];
   gradeAt?: { high: number; mid: number };
 }
 
@@ -149,6 +151,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     finishLast: true,
     ...(input.cutoffRounds ? { cutoff: { rounds: input.cutoffRounds } } : {}),
     ...(input.poi ? { poi: input.poi } : {}),
+    ...(input.sunset ? { sunset: input.sunset } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -241,6 +244,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   const out = ['chain_plan'];
   // ぬしの思い出の再演（段階162）：ポイのある戦闘
   if (s.def.poi) out.push('chain_boss');
+  // 自転車のぬしの思い出の再演（段階169）：夕日のある戦闘
+  if (s.def.sunset) out.push('chain_sunset');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時

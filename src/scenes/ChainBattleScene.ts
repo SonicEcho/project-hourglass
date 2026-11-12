@@ -6,6 +6,7 @@ import {
   chainMoveOf,
   chainOrder,
   chainPlanError,
+  chainPlanSyncs,
   createChainBattle,
   isWeakKnown,
   findChainUnit,
@@ -251,6 +252,7 @@ export class ChainBattleScene extends Phaser.Scene {
         chainEnemies: setup?.enemies,
         variants: setup?.variants,
         poi: setup?.poi,
+        sunset: setup?.sunset,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -399,6 +401,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawTop(view);
     this.drawEnemies(view);
     this.drawPoi(view);
+    this.drawSunset(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -688,6 +691,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const nm = (uid?: string) => (uid ? ((findChainUnit(f.state, uid) ?? findChainUnit(this.s, uid))?.name.replace('ノイズ', '') ?? '') : '');
     const link = f.events.find((e) => e.type === 'link') as { uids: string[] } | undefined;
     const who = link ? link.uids.map(nm).join('＋') : nm(f.uid);
+    if (f.key === 'end:sunset') return '夕日';
     if (isRoundEnd(f.key)) return `${who}：${f.name}`;
     return `${who}：${f.name}${f.target && !f.all ? ` → ${nm(f.target)}` : f.all ? '（全体）' : ''}`;
   }
@@ -764,6 +768,39 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(this.add.rectangle(x, y - 3, (w * left) / poi.total, 10, 0x6bc8ff, 0.35).setOrigin(0));
     r.add(this.add.rectangle(x, y - 3, (w * after) / poi.total, 10, after <= 6 ? 0xff6b8a : 0x6bc8ff).setOrigin(0));
     r.add(addText(this, GAME_WIDTH - 16, y + 2, `${after}${planned ? `（−${planned}）` : ''}/${poi.total}`, { size: 11, bold: true, color: after <= 6 ? '#ff9db0' : '#c9e6ff' }).setOrigin(1, 0.5));
+  }
+
+  /**
+   * 夕日（段階169。1-2 のぬしの思い出の再演「日が沈む前に」）：残りのラウンドを夕日の丸で。
+   * 並べている間は、並べた予定で息が合う見込み（2人の行動の間に敵の行動がない）を出す
+   */
+  private drawSunset(view: ChainState): void {
+    const sun = view.def.sunset;
+    if (!sun) return;
+    const r = this.root;
+    const left = Math.max(0, view.sunset ?? sun.rounds);
+    const syncs = !this.busy && this.plan.length >= 2 ? chainPlanSyncs(this.s, this.plan) : null;
+    const synced = this.busy && !!view.roundSynced;
+    const ORANGE = 0xff9a3c;
+    if (this.bossLayout(view)) {
+      const cx = BOSS_COL / 2 + 2;
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '夕日', { size: 13, bold: true, color: '#ffc27a' }).setOrigin(0.5));
+      // 丸を上から並べる。沈んだ分は暗く
+      for (let k = 0; k < sun.rounds; k++) {
+        const y = STAGE_Y + 38 + k * 18;
+        const lit = k >= sun.rounds - left;
+        r.add(this.add.circle(cx, y, 8, lit ? ORANGE : 0x2a2030).setStrokeStyle(1.5, lit ? 0xffe0b0 : 0x5a4a60));
+      }
+      const col = left <= 1 ? '#ff9db0' : '#ffc27a';
+      r.add(addText(this, cx, STAGE_Y + 38 + sun.rounds * 18 + 2, `あと${left}`, { size: 12, bold: true, color: col }).setOrigin(0.5));
+      const hint = synced ? '息を\n合わせた！' : syncs === null ? '' : syncs ? '息が\n合う ◎' : '間に敵が\n入る';
+      if (hint) r.add(addText(this, cx, STAGE_Y + 142, hint, { size: 10, bold: true, align: 'center', color: synced || syncs ? '#8fffc0' : '#c9d0ea' }).setOrigin(0.5));
+      return;
+    }
+    const y = STAGE_Y + 50;
+    r.add(this.para(8, y - 9, GAME_WIDTH - 16, 22, 0x000000, 0.65, 6));
+    r.add(addText(this, 16, y + 2, `夕日 あと${left}ラウンド${synced ? '（息を合わせた！）' : syncs === null ? '' : syncs ? '（息が合う ◎）' : ''}`, { size: 12, bold: true, color: '#ffc27a' }).setOrigin(0, 0.5));
   }
 
   private foeColor(s: ChainState, uid: string): number {
@@ -1877,7 +1914,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2054,7 +2091,7 @@ export class ChainBattleScene extends Phaser.Scene {
     title.setShadow(5, 5, '#ff2d55', 0, false, true);
     o.add(title);
     if (!win) {
-      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
+      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
         const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
         o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
@@ -2232,6 +2269,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);
     else if (ev.type === 'push') parts.push(!ev.moved ? '' : ev.out ? `${name(ev.uid)}の予定をラウンドの外へ押し出した！` : `${name(ev.uid)}の予定を${ev.by}マス押した`);
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
+    else if (ev.type === 'sync') parts.push(`${ev.uids.map(name).join('と')}が息を合わせた！`);
+    else if (ev.type === 'sunset') parts.push(ev.synced ? `息を合わせて、日が持ちこたえた（あと${ev.left}ラウンド）` : ev.left > 0 ? `日が傾いた…（あと${ev.left}ラウンド）` : '日が沈んだ…');
     else if (ev.type === 'allyGuard') parts.push(`${name(ev.uid)}が盾の構え（ラウンドの終わりまで、仲間をかばう）`);
     else if (ev.type === 'allyCover') parts.push(`${name(ev.uid)}が${name(ev.for)}をかばった！`);
     else if (ev.type === 'haste') parts.push(`この後の仲間が${ev.by}マス早まる！`);
