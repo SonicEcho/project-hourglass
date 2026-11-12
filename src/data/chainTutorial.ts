@@ -55,6 +55,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '1ラウンドのうちに、ぬしに8回当てると「歯がそろった」！\nぬしがダウンして、そのラウンドの残りの予定が止まります。\n連写や複数攻撃化で、回数を稼ぎましょう。' },
     { target: 'parts', text: 'ぬしは「かたい」ので、1発のダメージは小さくなります。\nでも、歯をそろえる回数はちゃんと数えます。\n刃物台とベルトは部位。壊すと大技が来なくなります。' },
   ],
+  // 段階173：2-2 のぬし「手拍子」
+  chain_clap: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「手拍子」がはじまります。\n客席といっしょに、最後の曲を歌いきりましょう。' },
+    { target: 'film', text: 'タイムラインの「♪」の時刻（2・4・6・8）が「拍」です。\n行動がちょうど拍で終わると、客席の手拍子が1つ増えます。\n重さと並べる順で、終わる時刻を合わせましょう。' },
+    { target: 'poiBar', text: '手拍子が6つ貯まると「客席が歌う」！\nぬしの手が止まり、仲間の HP も少し戻ります。\n手拍子はラウンドをまたいで貯まります。' },
+    { target: 'parts', text: 'スピーカーとコードは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
+  ],
   chain_weak: [
     {
       target: 'weak',
@@ -125,7 +132,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
