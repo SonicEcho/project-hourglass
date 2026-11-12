@@ -256,7 +256,7 @@ export function chainTipTriggers(s: ChainState): string[] {
   // 警戒（段階162 調整8）：敵に警戒が付いている時
   if (s.enemies.some((e) => e.hp > 0 && !e.gone && (e.guard ?? 0) > 0)) out.push('chain_guard');
   // 敵の性質（段階168。1-2 から。段階170 で 2-1 のかたい・バリア）：その性質の敵が場にいる時
-  for (const t of ['flee', 'shield', 'split', 'pop', 'hard', 'shell'] as const) if (s.enemies.some((e) => e.hp > 0 && !e.gone && e.trait === t)) out.push(`chain_${t}`);
+  for (const t of ['flee', 'shield', 'split', 'pop', 'hard', 'shell', 'sticky', 'counter'] as const) if (s.enemies.some((e) => e.hp > 0 && !e.gone && e.trait === t)) out.push(`chain_${t}`);
   const hand = s.hand.map((id) => s.def.cards[id]).filter((m): m is ChainMove => !!m);
   if (hand.some((m) => m.effect.kind === 'addon')) out.push('chain_addon');
   if (s.def.finishLast && hand.some((m) => isChainFinish(m))) out.push('chain_climax');

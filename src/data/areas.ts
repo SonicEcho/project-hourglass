@@ -152,16 +152,17 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 2-2 の文化祭の高校（段階39b。部屋をつなぐ形）。段階82で、3晩に分けて入る区画に作り直した（脚本 docs/script/2-2_rework.md）。並びは出会う順。
   // 1晩目は校門・中庭・駐輪場、2晩目は渡り廊下・お化け屋敷の教室と番人、3晩目は渡り廊下の上と体育館。コマは晩ごとに 3・3・3＋ぬし（返すのに10）。
   // 2-1 と同じく、攻撃の強さは変えずに HP を上げる（1晩目は 1.4倍、ほかは 1.8倍。段階65）。星の砂は1戦あたりを減らし、区画の合計は前と同じくらい
-  a22_n1_gate: { id: 'a22_n1_gate', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
-  a22_n1_gate2: { id: 'a22_n1_gate2', name: '砂嵐', enemies: tough([STICKER_NOISE, BOOMBOX_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a22_n1_stalls: { id: 'a22_n1_stalls', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, FLIP_PHONE_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
-  a22_n1_west: { id: 'a22_n1_west', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, FLIP_PHONE_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a22_n1_upper: { id: 'a22_n1_upper', name: '砂嵐', enemies: tough([METRONOME_NOISE, STICKER_NOISE, BOOMBOX_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
-  a22_n1_bikes: { id: 'a22_n1_bikes', name: '砂嵐', enemies: tough([STICKER_NOISE, METRONOME_NOISE], A11_STORM_HP.night1), reward: 2 },
-  a22_n2_hall: { id: 'a22_n2_hall', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, METRONOME_NOISE, BOOMBOX_NOISE]), reward: 3, koma: 1 },
-  a22_n2_east: { id: 'a22_n2_east', name: '砂嵐', enemies: tough([STICKER_NOISE, STICKER_NOISE, FLIP_PHONE_NOISE]), reward: 2 },
-  a22_n2_haunted: { id: 'a22_n2_haunted', name: '砂嵐', enemies: tough([METRONOME_NOISE, BOOMBOX_NOISE, STICKER_NOISE]), reward: 4, koma: 1 },
-  a22_n2_room: { id: 'a22_n2_room', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, BOOMBOX_NOISE, METRONOME_NOISE]), reward: 2 },
+  // 段階172（段取りの段階F3a）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目はシール（足止め）とメトロノーム（カウンター）だけ、2晩目にラジカセ（かばう）とガラケー（性質なし）、3晩目は組み合わせ）
+  a22_n1_gate: { id: 'a22_n1_gate', name: '砂嵐', enemies: tough([STICKER_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a22_n1_gate2: { id: 'a22_n1_gate2', name: '砂嵐', enemies: tough([METRONOME_NOISE, METRONOME_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a22_n1_stalls: { id: 'a22_n1_stalls', name: '砂嵐', enemies: tough([STICKER_NOISE, METRONOME_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a22_n1_west: { id: 'a22_n1_west', name: '砂嵐', enemies: tough([METRONOME_NOISE, STICKER_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a22_n1_upper: { id: 'a22_n1_upper', name: '砂嵐', enemies: tough([STICKER_NOISE, METRONOME_NOISE, METRONOME_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  a22_n1_bikes: { id: 'a22_n1_bikes', name: '砂嵐', enemies: tough([METRONOME_NOISE, STICKER_NOISE], A11_STORM_HP.night1), reward: 2 },
+  a22_n2_hall: { id: 'a22_n2_hall', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, FLIP_PHONE_NOISE]), reward: 3, koma: 1 },
+  a22_n2_east: { id: 'a22_n2_east', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, FLIP_PHONE_NOISE, STICKER_NOISE]), reward: 2 },
+  a22_n2_haunted: { id: 'a22_n2_haunted', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, METRONOME_NOISE, FLIP_PHONE_NOISE]), reward: 4, koma: 1 },
+  a22_n2_room: { id: 'a22_n2_room', name: '砂嵐', enemies: tough([BOOMBOX_NOISE, STICKER_NOISE, FLIP_PHONE_NOISE]), reward: 2 },
   // 渡り廊下の上の番人（2晩目の山場。戦う前の会話）。メトロノームのように同じ速さで鳴り続ける
   a22_n2_guard: { id: 'a22_n2_guard', name: '砂嵐', enemies: tough([METRONOME_NOISE, BOOMBOX_NOISE, FLIP_PHONE_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 5, koma: 1 },
   a22_n3_hall: { id: 'a22_n3_hall', name: '砂嵐', enemies: tough([FLIP_PHONE_NOISE, STICKER_NOISE, METRONOME_NOISE].map((e) => scaleEnemy(e, 1.2))), reward: 3, koma: 1 },
@@ -678,9 +679,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 17], items: [ITEMS.potion.id], snaps: ['fireChip'] },
-      { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id], gears: ['iceBoost'] },
-      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [19, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['comboBoost'] },
+      { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 17], items: [ITEMS.potion.id], snaps: ['fireChip'], chainSnaps: ['c17_highlight'] },
+      { id: 'a22_chest_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id], gears: ['iceBoost'], chainSnaps: ['c17_flash'] },
+      { id: 'a22_chest_haunted', room: 'school_classroom', cell: [19, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['comboBoost'], chainSnaps: ['a22_snowscape'] },
     ],
     enemies: [
       // ---- 1晩目（校門・中庭・駐輪場） ----

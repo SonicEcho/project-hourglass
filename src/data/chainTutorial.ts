@@ -2,7 +2,7 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'trait_hard' | 'trait_shell' | 'trait_shield' | 'trait_flee' | 'trait_split' | 'trait_pop' | 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'trait_sticky' | 'trait_counter' | 'trait_hard' | 'trait_shell' | 'trait_shield' | 'trait_flee' | 'trait_split' | 'trait_pop' | 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
@@ -88,6 +88,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
   chain_shell: [
     { target: 'trait_shell', text: '「バリア」の敵は、最初の2発を消してしまいます。\n連続攻撃や複数攻撃化で割ってから、本命を当てましょう。\n重い一撃なら、1発で割れます！' },
   ],
+  // 段階172：2-2 の敵の性質
+  chain_sticky: [
+    { target: 'trait_sticky', text: 'この敵は「足止め」！\n攻撃を当てると、まだ動いていない仲間の行動が2マス遅れます。\n最後の方で当てるか、重さの軽い札で動きましょう。' },
+  ],
+  chain_counter: [
+    { target: 'trait_counter', text: '「カウンター」の敵は、攻撃を受けるとやり返してきます！\n先にダウンさせれば反撃しません。\n1回で大きく当てて、反撃の回数を減らすのも手です。' },
+  ],
   chain_addon: [
     {
       target: 'addonCard',
@@ -118,7 +125,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
