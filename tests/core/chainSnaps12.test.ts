@@ -119,3 +119,28 @@ describe('2-2 の敵のスナップの仕組み（段階172）', () => {
     expect(r.state.allies.every((a) => !a.riposte)).toBe(true);
   });
 });
+
+describe('2-3 の宝箱の札の仕組み（段階174）', () => {
+  const REVIVE: ChainMove = { id: 'revive', name: '気付け', type: 'support', weight: 2, target: 'allies', effect: { kind: 'heal', power: 0, revive: 0.3 }, text: '' };
+  const BREATH: ChainMove = { id: 'breath', name: '一息', type: 'support', weight: 1, target: 'allies', effect: { kind: 'heal', power: 0, mp: 6 }, text: '' };
+  const build = (hand: string[]): ChainState => {
+    const def: ChainBattleDef = { ...BASE, enemies: [dummy()], variants: undefined, cards: { ...BASE.cards, revive: REVIVE, breath: BREATH } };
+    const s = createChainBattle(def, CHAIN_RULES, 7);
+    s.hand = [...hand];
+    return s;
+  };
+  it('気付け：倒れた仲間を、最大 HP の3割で起こす', () => {
+    const s = build(['revive']);
+    const akari = s.allies.find((a) => a.uid === 'akari')!;
+    akari.hp = 0;
+    const r = runChainRound(s, [card('hero', 0)]);
+    expect(r.state.allies.find((a) => a.uid === 'akari')!.hp).toBe(Math.floor(akari.maxHp * 0.3));
+    expect(events(r).some((e) => e.type === 'revive')).toBe(true);
+  });
+  it('一息：立っている仲間の MP を戻す（最大まで）', () => {
+    const s = build(['breath']);
+    for (const a of s.allies) a.mp = 0;
+    const r = runChainRound(s, [card('hero', 0)]);
+    for (const a of r.state.allies) expect(a.mp).toBe(Math.min(a.maxMp ?? 0, 6));
+  });
+});
