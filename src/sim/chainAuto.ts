@@ -123,7 +123,7 @@ export function deepChainPlan(s: ChainState, pick: (n: number) => number, tries 
 }
 
 export type ChainPolicy = 'random' | 'smart' | 'deep';
-const planBy = (policy: ChainPolicy, s: ChainState, pick: (n: number) => number): ChainPlanStep[] =>
+export const planBy = (policy: ChainPolicy, s: ChainState, pick: (n: number) => number): ChainPlanStep[] =>
   policy === 'deep' ? deepChainPlan(s, pick) : policy === 'smart' ? smartChainPlan(s, pick) : randomChainPlan(s, pick);
 
 export interface ChainAutoResult {

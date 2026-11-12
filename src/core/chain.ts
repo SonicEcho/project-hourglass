@@ -112,6 +112,8 @@ export type ChainEffect =
       firstMult?: number;
       /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
       exposure?: number;
+      /** 息を合わせていれば（このラウンドに、2人の行動の間に敵の行動がなかった）威力がこの倍（段階169。自転車のぬしのスナップ「二人乗り」） */
+      syncMult?: number;
       /** 当てると、この後に動く仲間の時刻がこの数だけ早まる（段階168。ラムネノイズのスナップ「ビー玉はじき」） */
       haste?: number;
       /** 当たった後、威力 power の欠片が、ほかの敵へ hits 回散る（段階168。めんこノイズのスナップ「めんこ吹雪」。散った先ではダウンしない） */
@@ -360,6 +362,11 @@ export interface ChainBattleDef {
    * hitMoves の行動が仲間に当たると1発ごとに hitCost 減る。0 になると負け（finish は 'poi'）
    */
   poi?: { total: number; hitCost: number; hitMoves: string[] };
+  /**
+   * 夕日（段階169。1-2 のぬしの思い出の再演「日が沈む前に」）：始めは rounds。ラウンドが終わるたびに1減り、
+   * そのラウンドに息を合わせていれば（roundSynced）1戻る（rounds より多くは戻らない）。0 になると負け（finish は 'sunset'）
+   */
+  sunset?: { rounds: number };
 }
 
 export interface ChainUnit {
@@ -478,6 +485,9 @@ export type ChainEvent =
   | { type: 'partBreak'; uid: string; of: string; reveals: Element[] }
   /** ポイが濡れた（段階162）。left は残り */
   | { type: 'poi'; by: number; left: number }
+  /** 段階169：息を合わせた（uids は合わせた2人）・夕日が傾いた（left は残り。synced なら息を合わせて1戻った） */
+  | { type: 'sync'; uids: string[] }
+  | { type: 'sunset'; left: number; synced: boolean }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -523,12 +533,19 @@ export interface ChainState {
   exposure: number;
   roundHits: number;
   roundSupports: number;
+  /**
+   * このラウンドに、息を合わせたか（段階169）：2人の仲間の行動が続けて終わり、その間に敵の行動がなかった。
+   * 2人の手番を使うコンボも、それだけで息を合わせたことにする
+   */
+  roundSynced?: boolean;
+  /** 夕日の残り（段階169） */
+  sunset?: number;
   /** cutoff：負け戦の打ち切り（段階158） */
   outcome: 'ongoing' | 'win' | 'lose' | 'cutoff';
   /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
   acted?: Record<string, number>;
   /** 決着の仕方 */
-  finish?: 'shutter' | 'defeat' | 'poi';
+  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset';
   /** ポイの残り（段階162） */
   poi?: number;
   /** 決着したラウンド */
@@ -724,6 +741,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     roundSupports: 0,
     outcome: 'ongoing',
     ...(def.poi ? { poi: def.poi.total } : {}),
+    ...(def.sunset ? { sunset: def.sunset.rounds } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -1205,6 +1223,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   const isFinish = isChainFinish(move);
   let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
   if (eff.firstMult && acted === 0) power *= eff.firstMult;
+  if (eff.syncMult && s.roundSynced) power *= eff.syncMult;
   let hits = eff.hitsPerActed ? acted + 1 : (eff.hits ?? 1);
   if (eff.exposure) {
     s.exposure += eff.exposure;
@@ -1414,6 +1433,12 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
 /** 動く順番の1つ（仲間なら計画の何行目か、敵なら予定）。key は実行のコマと同じ */
 export type ChainOrderEntry = { at: number; key: string; kind: 'ally'; i: number } | { at: number; key: string; kind: 'enemy'; intent: ChainIntent };
 
+/** 並べた予定で、このラウンドに息が合う見込みか（段階169。画面の見込みの表示。実際に動かして見るので、押す・ダウンで敵の予定が動くのも入る） */
+export function chainPlanSyncs(s: ChainState, plan: ChainPlanStep[]): boolean {
+  if (plan.length === 0) return false;
+  return runChainRound(s, plan).frames.some((f) => f.events.some((e) => e.type === 'sync'));
+}
+
 /** 早い時刻から。同じ時刻なら仲間が先、仲間どうしは並べた順、敵どうしは予定の順 */
 function byTime(a: ChainOrderEntry, b: ChainOrderEntry): number {
   return a.at - b.at || (a.kind === b.kind ? 0 : a.kind === 'ally' ? -1 : 1);
@@ -1451,6 +1476,9 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
   let stopped = false;
   /** このラウンドに敵が実際に動いた時刻（邪魔されなければ強い攻撃の中断に使う。調整17） */
   const enemyActs: number[] = [];
+  /** 息を合わせる（段階169）：直前に動き終えた仲間と、その後に敵が動いたか */
+  let lastAlly: string | null = null;
+  let enemySince = false;
   const push = (q: ChainOrderEntry | null, key: string, at: number, uid: string, name: string, ev: ChainEvent[], target?: string, all?: boolean) =>
     frames.push({ order: frames.length + 1, key: q?.key ?? key, target, all, at, uid, name, events: ev, state: cloneChain(s) });
   // ラウンドの始め（段階158）：ラウンドの始めの回復（特性）と、狂い（HP を失う。1より下がらない）
@@ -1487,6 +1515,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
           pending.splice(qi, 1);
           const iev: ChainEvent[] = [{ type: 'interrupt', uid: aimed.uid, by: actor.uid }, { type: 'act', uid: aimed.uid, name: eq.intent.move.name, at }];
           enemyActs.push(at);
+          enemySince = true;
           doEnemyMove(s, aimed, eq.intent, iev);
           push(eq, '', at, aimed.uid, eq.intent.move.name, iev, eq.intent.target, eq.intent.move.all);
           if (checkEnd(s, iev, at)) {
@@ -1534,6 +1563,13 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       // 連携技は、動く仲間の攻撃・魔力の平均で
       const avg = (k: 'atk' | 'mag') => Math.round(actors.reduce((a, u) => a + u[k], 0) / actors.length);
       const doer = actors.length > 1 ? { ...actor, atk: avg('atk'), mag: avg('mag') } : actor;
+      // 息を合わせる（段階169）：ほかの仲間の行動のすぐ後で、その間に敵が動いていない。2人の手番を使うコンボはそれだけで
+      if (!s.roundSynced && (actors.length >= 2 || (lastAlly !== null && lastAlly !== actor.uid && !enemySince))) {
+        s.roundSynced = true;
+        ev.push({ type: 'sync', uids: actors.length >= 2 ? actors.map((a) => a.uid) : [lastAlly!, actor.uid] });
+      }
+      lastAlly = actors[actors.length - 1].uid;
+      enemySince = false;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
       if (poiBy) wetPoi(s, poiBy, ev);
       prev.weak = ev.some((e) => e.type === 'damage' && e.weak && e.from === doer.uid);
@@ -1579,6 +1615,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       }
       ev.push({ type: 'act', uid: e.uid, name: q.intent.move.name, at: q.at });
       enemyActs.push(q.at);
+      enemySince = true;
       doEnemyMove(s, e, q.intent, ev);
       push(q, '', q.at, e.uid, q.intent.move.name, ev, q.intent.target, q.intent.move.all);
     }
@@ -1632,7 +1669,22 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       e.hp = e.roundHp!;
       push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻し', [{ type: 'rewind', uid: e.uid, amount }], undefined, true);
     }
+    // 夕日（段階169）：ラウンドの終わりに1傾き、息を合わせていれば1戻る
+    let sunsetOut = false;
+    if (s.def.sunset && s.outcome === 'ongoing') {
+      const synced = !!s.roundSynced;
+      s.sunset = Math.min(s.def.sunset.rounds, (s.sunset ?? s.def.sunset.rounds) - 1 + (synced ? 1 : 0));
+      sunsetOut = s.sunset <= 0;
+      push(null, 'end:sunset', s.rules.roundLen, '', '夕日', [{ type: 'sunset', left: s.sunset, synced }], undefined, true);
+    }
     endRound(s);
+    if (sunsetOut) {
+      s.outcome = 'lose';
+      s.finish = 'sunset';
+      s.finishRound = s.round - 1;
+      s.finishTime = s.elapsed;
+      frames[frames.length - 1].state = cloneChain(s);
+    }
     // 負け戦の打ち切り（段階158）
     if (s.def.cutoff && s.outcome === 'ongoing' && s.round > s.def.cutoff.rounds) {
       s.outcome = 'cutoff';
@@ -1647,6 +1699,7 @@ function endRound(s: ChainState): void {
   s.exposure = 0;
   s.roundHits = 0;
   s.roundSupports = 0;
+  s.roundSynced = false;
   for (const e of s.enemies) {
     // 警戒（段階162 調整6）：このラウンドにダウンした敵は、次のラウンドから「ダウンの回数」ラウンド（上限 guardMax）警戒する
     if (s.rules.guardMax) {

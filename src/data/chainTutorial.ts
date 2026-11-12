@@ -42,6 +42,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
       text: 'ポイの腕と金魚鉢は「部位」です。\n壊すと、その部位を使う大技が使えなくなります。\nでも、ポイには限りがあるので、壊すかどうかはよく考えて！',
     },
   ],
+  // 段階169：1-2 のぬし「日が沈む前に」
+  chain_sunset: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「日が沈む前に」がはじまります。\n夕暮れの坂を、二人乗りで上りきりましょう。' },
+    { target: 'poiBar', text: 'これは「夕日」のゲージです。\nラウンドが終わるたびに、日が傾いていきます。\n沈みきる前に、ぬしを倒しましょう！' },
+    { target: 'film', text: 'ハルトとあかりの行動が続けて終わり、\nその間に敵の行動が入らなければ「息を合わせた」！\nそのラウンドは、日が傾きません。\n重さや順番、「押す」で隙間を作りましょう。' },
+    { target: 'parts', text: '前輪とベルは「部位」です。\n壊すと、その部位を使う大技が来なくなります。\nベルを壊すと、隠れた弱点も見えるかも？' },
+  ],
   chain_weak: [
     {
       target: 'weak',
@@ -98,7 +105,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
