@@ -142,6 +142,8 @@ export type ChainEffect =
       armor?: number;
       /** 段階170（そろばんノイズのスナップ「珠の壁」）：添えた行動の後、ラウンドの終わりまで、この仲間が受ける敵の攻撃をこの回数まで消す */
       wall?: number;
+      /** 段階172（メトロノームノイズのスナップ「振り子返し」）：添えた行動の後、ラウンドの終わりまで、この仲間が敵の攻撃を受けると、この威力の物理でやり返す */
+      riposte?: number;
     }
   /** 重ね撮り：直前に動いた仲間の攻撃と同じ属性で当てる。直前が攻撃なら威力 × mult（攻撃でなければ物理）。直前が弱点を突いていれば × weakMult（調整16） */
   | { kind: 'layer'; power: number; mult: number; weakMult?: number }
@@ -384,6 +386,8 @@ export interface ChainUnit {
   /** 段階170：受ける敵の攻撃のダメージの減り（割合）と、消せる残りの回数。ラウンドの終わりに消える */
   armor?: number;
   wall?: number;
+  /** 段階172：敵の攻撃を受けるとやり返す威力（振り子返し。ラウンドの終わりに消える） */
+  riposte?: number;
   /** 段階168：ほかの仲間への単体攻撃を代わりに受けている（受けるダメージの割合。ラウンドの終わりに消える） */
   covering?: number;
   uid: string;
@@ -481,6 +485,9 @@ export type ChainEvent =
   /** 段階170：仲間が守りを固めた（鎧・壁）・壁で攻撃を消した */
   | { type: 'allyArmor'; uid: string; armor?: number; wall?: number }
   | { type: 'allyWall'; uid: string; left: number }
+  /** 段階172：仲間が反撃の構え（振り子返し）・やり返した */
+  | { type: 'allyRiposteReady'; uid: string }
+  | { type: 'allyRiposte'; uid: string; to: string }
   | { type: 'allyCover'; uid: string; from: string; for: string }
   | { type: 'haste'; uid: string; by: number }
   | { type: 'scatter'; uid: string; to: string[] }
@@ -1185,6 +1192,11 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     if (mods.wall) actor.wall = (actor.wall ?? 0) + mods.wall;
     ev.push({ type: 'allyArmor', uid: actor.uid, ...(mods.armor ? { armor: mods.armor } : {}), ...(mods.wall ? { wall: mods.wall } : {}) });
   }
+  // 振り子返し（段階172）：添えた行動の後、ラウンドの終わりまで、攻撃を受けるとやり返す
+  if (mods.riposte && actor.hp > 0) {
+    actor.riposte = Math.max(actor.riposte ?? 0, mods.riposte);
+    ev.push({ type: 'allyRiposteReady', uid: actor.uid });
+  }
   const pierce = eff.kind === 'damage' && !!eff.pierce;
   const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid, pierce)].filter((x): x is ChainUnit => !!x));
   // 手札に触れる技（段階164）
@@ -1358,10 +1370,11 @@ export interface ChainAddonMods {
   blast: number;
   armor: number;
   wall: number;
+  riposte: number;
 }
 
 export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
-  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0 };
+  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0, riposte: 0 };
   for (const c of cards) {
     const e = c?.effect;
     if (!e || e.kind !== 'addon') continue;
@@ -1379,6 +1392,7 @@ export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
     m.blast += e.blast ?? 0;
     m.armor = Math.max(m.armor, e.armor ?? 0);
     m.wall += e.wall ?? 0;
+    m.riposte = Math.max(m.riposte, e.riposte ?? 0);
   }
   return m;
 }
@@ -1421,6 +1435,11 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
       continue;
     }
     hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate * (1 - (a.armor ?? 0)))), ev);
+    // 振り子返し（段階172）：受けた仲間が立っていれば、やり返す（ダウンはさせない）
+    if ((a.riposte ?? 0) > 0 && a.hp > 0 && e.hp > 0 && !e.gone) {
+      ev.push({ type: 'allyRiposte', uid: a.uid, to: e.uid });
+      hitEnemy(s, a, e, 'physical', a.riposte!, { noChain: true }, { countered: new Set(), stuck: true }, ev);
+    }
   }
   // ポイ（段階162）：決まった行動が当たると、1発ごとに濡れる
   if (s.def.poi && s.def.poi.hitMoves.includes(m.id) && targets.length) wetPoi(s, s.def.poi.hitCost * targets.length, ev);
@@ -1776,6 +1795,7 @@ function endRound(s: ChainState): void {
     a.covering = undefined;
     a.armor = undefined;
     a.wall = undefined;
+    a.riposte = undefined;
   }
   s.round++;
   s.elapsed += s.rules.roundLen;

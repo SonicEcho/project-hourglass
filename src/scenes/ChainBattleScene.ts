@@ -542,6 +542,8 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_sticky':
+      case 'trait_counter':
       case 'trait_hard':
       case 'trait_shell':
       case 'trait_shield':
@@ -1999,7 +2001,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2357,6 +2359,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'teeth') parts.push(`歯がそろった！ ${name(ev.uid)}の手が止まる`);
     else if (ev.type === 'sync') parts.push(`${ev.uids.map(name).join('と')}が息を合わせた！`);
     else if (ev.type === 'sunset') parts.push(ev.synced ? `息を合わせて、日が持ちこたえた（あと${ev.left}ラウンド）` : ev.left > 0 ? `日が傾いた…（あと${ev.left}ラウンド）` : '日が沈んだ…');
+    else if (ev.type === 'allyRiposteReady') parts.push(`${name(ev.uid)}が反撃の構え`);
+    else if (ev.type === 'allyRiposte') parts.push(`${name(ev.uid)}が${name(ev.to)}にやり返した！`);
     else if (ev.type === 'allyArmor') parts.push(`${name(ev.uid)}が守りを固めた（${[ev.armor ? `受けるダメージ −${Math.round(ev.armor * 100)}%` : '', ev.wall ? `攻撃を${ev.wall}回まで消す` : ''].filter(Boolean).join('・')}）`);
     else if (ev.type === 'allyWall') parts.push(`珠の壁が攻撃を消した！（あと${ev.left}回）`);
     else if (ev.type === 'allyGuard') parts.push(`${name(ev.uid)}が盾の構え（ラウンドの終わりまで、仲間をかばう）`);

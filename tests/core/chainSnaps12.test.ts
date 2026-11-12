@@ -102,3 +102,20 @@ describe('2-1 の敵のスナップの仕組み（段階170）', () => {
     expect(ev.some((e) => e.type === 'damage' && e.to === 'hero')).toBe(false);
   });
 });
+
+describe('2-2 の敵のスナップの仕組み（段階172）', () => {
+  const RIPOSTE: ChainMove = { id: 'riposte', name: '振り子返し', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', riposte: 25 }, text: '' };
+  it('振り子返し：構えた後に攻撃を受けると、やり返す。ラウンドの終わりで解ける', () => {
+    const enemy = dummy({ atk: 10, pattern: [{ id: 'jab', name: 'つつく', at: 8, element: 'physical', power: 20 }] });
+    const def: ChainBattleDef = { ...BASE, enemies: [enemy], variants: undefined, cards: { ...BASE.cards, ...CARDS, riposte: RIPOSTE } };
+    const s = createChainBattle(def, CHAIN_RULES, 7);
+    s.hand = ['riposte'];
+    s.intents = s.intents.map((i) => ({ ...i, target: 'hero' }));
+    const t = s.enemies[0].uid;
+    const r = runChainRound(s, [mv('hero', t, [0])]);
+    const ev = events(r);
+    expect(ev.find((e) => e.type === 'allyRiposte')).toMatchObject({ uid: 'hero', to: t });
+    expect(ev.filter((e) => e.type === 'damage' && e.from === 'hero' && e.to === t)).toHaveLength(2);
+    expect(r.state.allies.every((a) => !a.riposte)).toBe(true);
+  });
+});
