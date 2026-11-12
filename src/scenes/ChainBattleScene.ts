@@ -9,6 +9,7 @@ import {
   chainPlanSyncs,
   chainPlanTeethHits,
   chainPlanClaps,
+  chainPlanPitch,
   createChainBattle,
   isWeakKnown,
   findChainUnit,
@@ -259,6 +260,7 @@ export class ChainBattleScene extends Phaser.Scene {
         sunset: setup?.sunset,
         teeth: setup?.teeth,
         clap: setup?.clap,
+        pitch: setup?.pitch,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -411,6 +413,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawSunset(view);
     this.drawTeeth(view);
     this.drawClap(view);
+    this.drawPitch(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -909,6 +912,38 @@ export class ChainBattleScene extends Phaser.Scene {
     if (lay) r.add(addText(this, cx, STAGE_Y + 146, full && !this.busy ? '客席が\n歌う ◎' : '♪の時刻で\n終わると＋1', { size: 9, bold: true, align: 'center', color: full && !this.busy ? '#8fffc0' : '#9aa3c0' }).setOrigin(0.5));
   }
 
+  /**
+   * 打ち返す（段階175。2-3 のぬしの思い出の再演）：ストライクの数（3つで三振）と、このラウンドの投球の時刻。
+   * 並べている間は、打ち返す見込みとストライクになる見込み
+   */
+  private drawPitch(view: ChainState): void {
+    const p = view.def.pitch;
+    if (!p) return;
+    const r = this.root;
+    const strikes = Math.min(p.out, view.strikes ?? 0);
+    const look = this.busy ? null : chainPlanPitch(this.s, this.plan);
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '打席', { size: 13, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    r.add(addText(this, cx, STAGE_Y + 38, 'ストライク', { size: 9, bold: true, color: '#ff9db0' }).setOrigin(0.5));
+    for (let k = 0; k < p.out; k++) {
+      const x = cx + (k - (p.out - 1) / 2) * 22;
+      const on = k < strikes;
+      const ghost = !on && look !== null && k < strikes + look.strikes;
+      r.add(this.add.circle(x, STAGE_Y + 56, 8, on ? 0xff4a5a : ghost ? 0x7a3040 : 0x2a2a38).setStrokeStyle(1.5, on ? 0xffb0b8 : 0x5a5a70));
+    }
+    // このラウンドの投球の時刻
+    const times = view.intents.filter((it) => it.move.pitch && view.enemies.some((e) => e.uid === it.enemy && e.hp > 0 && !e.down)).map((it) => it.at);
+    r.add(addText(this, cx, STAGE_Y + 82, `投球\n${times.length ? times.map((t) => `時刻${t}`).join('・') : 'なし'}`, { size: 10, bold: true, align: 'center', color: '#c9d0ea' }).setOrigin(0.5));
+    if (look && this.plan.length) {
+      const ok = look.strikes === 0;
+      r.add(addText(this, cx, STAGE_Y + 126, `打ち返す ${look.hits}\nストライク ${look.strikes}`, { size: 10, bold: true, align: 'center', color: ok ? '#8fffc0' : '#ff9db0' }).setOrigin(0.5));
+    } else if (lay) r.add(addText(this, cx, STAGE_Y + 130, '同じ時刻に\n終わると打ち返す', { size: 9, bold: true, align: 'center', color: '#9aa3c0' }).setOrigin(0.5));
+  }
+
   private foeColor(s: ChainState, uid: string): number {
     const i = s.enemies.findIndex((e) => e.uid === uid);
     return FOE_COLORS[(i < 0 ? 0 : i) % FOE_COLORS.length];
@@ -1103,7 +1138,9 @@ export class ChainBattleScene extends Phaser.Scene {
       // 警戒（段階162 調整6）：ダウンから起きた敵は、しばらくダウンしない
       else if (alive && (e.guard ?? 0) > 0) r.add(this.sticker(artX + 6, boss ? artY - size / 2 + 16 : artY + 34, guardLabel(e.guard!), 0x6bc8ff, '#06203a', -6, 11));
       // 予定：黒い斜めの札に、赤い丸の時刻（大技・全体・逃げるは黄色）。すばやい敵は2つの時刻
-      const intents = s.intents.filter((it) => it.enemy === e.uid);
+      // 投球（段階175）は左の「打席」の欄とタイムラインの「球」の札で見せるので、予定の札にはぬしの行動だけ
+      const own = s.intents.filter((it) => it.enemy === e.uid);
+      const intents = own.some((it) => !it.move.pitch) ? own.filter((it) => !it.move.pitch) : own;
       if (intents.length) {
         const it = intents[0];
         const tgt = it.target ? findChainUnit(s, it.target)?.name : '';
@@ -1230,6 +1267,8 @@ export class ChainBattleScene extends Phaser.Scene {
         r.add(img);
       }
       if (e.down) r.add(addText(this, cx, cy, '×', { size: 26, bold: true, color: '#ff2d55' }).setOrigin(0.5));
+      // 投球（段階175）：「球」の札
+      if (it.move.pitch && !e.down) r.add(this.sticker(cx + 12, cy + 13, '球', 0xffffff, '#c0303a', 0, 9));
       badge(cx - 15, cy - 14, numOf(`e${k}`));
     });
     // 下の段：並べた行動のクリップ（重さの分の長さ。札・技の絵を正方形のコマにして並べる。調整9）
@@ -2039,7 +2078,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte', 'chorus'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte', 'chorus', 'hitBack'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2216,7 +2255,7 @@ export class ChainBattleScene extends Phaser.Scene {
     title.setShadow(5, 5, '#ff2d55', 0, false, true);
     o.add(title);
     if (!win) {
-      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
+      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : s.finish === 'strikeout' ? '三振… 打ち返せなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
         const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
         o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
@@ -2396,6 +2435,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
     else if (ev.type === 'revive') parts.push(`${name(ev.to)}が起き上がった！（HP ${ev.amount}）`);
     else if (ev.type === 'mpGain') parts.push(`${name(ev.to)}の MP +${ev.amount}`);
+    else if (ev.type === 'hitBack') parts.push(`打ち返した！（${ev.name}が消えて、威力2倍）`);
+    else if (ev.type === 'strike') parts.push(`ストライク！（${ev.total}つ目）`);
     else if (ev.type === 'clap') parts.push(`手拍子！（${ev.total}）`);
     else if (ev.type === 'chorus') parts.push(`客席が歌い出した！${ev.uid ? ` ${name(ev.uid)}の手が止まる` : ''}`);
     else if (ev.type === 'teeth') parts.push(`歯がそろった！ ${name(ev.uid)}の手が止まる`);

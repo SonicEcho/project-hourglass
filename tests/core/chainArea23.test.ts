@@ -10,11 +10,11 @@ const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a23_n') || 
 const PARTY = [HERO, AKARI, MIO];
 
 describe('2-3 の雑魚を新しい戦闘に（段階174）', () => {
-  it('2-3 の雑魚は全部新しい戦闘。ぬしとカイはまだ今の戦闘', () => {
+  it('2-3 の雑魚は全部新しい戦闘（段階175 でぬしとカイも）', () => {
     expect(ids.length).toBe(15);
     for (const id of ids) expect(CHAIN_AREA_BATTLES).toContain(id);
-    expect(CHAIN_AREA_BATTLES).not.toContain('a23_boss');
-    expect(CHAIN_AREA_BATTLES).not.toContain('a23_kai');
+    expect(CHAIN_AREA_BATTLES).toContain('a23_boss');
+    expect(CHAIN_AREA_BATTLES).toContain('a23_kai');
   });
   it('敵ごとの性質：水筒＝かたい・メガホン＝カウンター・ボール＝逃げ足・電子ペット＝なし。敵の id は今の敵のまま', () => {
     const trait: Record<string, string | undefined> = { jugNoise: 'hard', megaphoneNoise: 'counter', ballNoise: 'flee', petNoise: undefined };
@@ -58,3 +58,29 @@ describe('2-3 の雑魚を新しい戦闘に（段階174）', () => {
   }, 60000);
 });
 
+
+describe('2-3 のぬし「打ち返す」とカイの負け戦（段階175）', () => {
+  it('毎ラウンド投球が1〜2球。3つで三振。部位は得点板とバックネット（バックネットを壊すと氷の弱点）。スナップはジャストミート', () => {
+    const st = CHAIN_AREA_SETUPS.a23_boss;
+    expect(st.pitch).toEqual({ out: 3, mult: 2 });
+    const body = st.enemies.find((e) => !e.part)!;
+    for (const m of body.pattern) expect((m.with ?? []).filter((w) => w.pitch).length).toBeGreaterThanOrEqual(1);
+    const parts = st.enemies.filter((e) => e.part);
+    expect(parts.map((p) => p.id).sort()).toEqual(['scoreboardLord_backstop', 'scoreboardLord_scoreboard']);
+    expect(parts.find((p) => p.id === 'scoreboardLord_backstop')?.part?.reveals).toEqual(['ice']);
+    expect(CHAIN_SNAPS[CHAIN_ENEMY_SNAPS.scoreboardLord]?.name).toBe('ジャストミート');
+    for (const id of st.snaps ?? []) expect(CHAIN_SNAPS[id]).toBeDefined();
+  });
+  it('最初のぬし戦で、打ち返すの説明が出る', () => {
+    const st = CHAIN_AREA_SETUPS.a23_boss;
+    const def = buildMainChainBattle({ id: 'a23_boss', name: 'x', party: PARTY, enemies: AREA_BATTLES.a23_boss.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, pitch: st.pitch });
+    expect(chainTipTriggers(createChainBattle(def, CHAIN_RULES, 1))).toContain('chain_pitch');
+  });
+  it('カイの負け戦：決まったラウンドで打ち切られる（2-3 に入る時点の育ち具合では倒しきれない）', () => {
+    const st = CHAIN_AREA_SETUPS.a23_kai;
+    const pre = growthPreset('a23_enter', 'normal');
+    const party = grownParty(pre.carry.growth, pre.carry.armory, PARTY, pre.carry.navi);
+    const def = buildMainChainBattle({ id: 'a23_kai', name: 'x', party, enemies: AREA_BATTLES.a23_kai.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, cutoffRounds: AREA_BATTLES.a23_kai.cutoff?.rounds });
+    for (let k = 0; k < 5; k++) expect(autoChainBattle(def, CHAIN_RULES, k, 'smart').outcome).not.toBe('win');
+  }, 60000);
+});

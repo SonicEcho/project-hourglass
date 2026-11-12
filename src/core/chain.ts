@@ -112,6 +112,8 @@ export type ChainEffect =
       firstMult?: number;
       /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
       exposure?: number;
+      /** 敵の行動（まだ動いていない物）と同じ時刻にちょうど終わると、その行動を消して威力がこの倍（段階175。スコアボードのぬしのスナップ「ジャストミート」） */
+      parry?: number;
       /** 拍（手拍子の時刻。決まりが無ければ 2・4・6・8）でちょうど終わると、威力がこの倍（段階173。アンプのぬしのスナップ） */
       beatMult?: number;
       /** このラウンドに味方が当てた回数と同じ回数当てる（段階171。旋盤のぬしのスナップ「歯車の仕上げ」。上限 12） */
@@ -253,6 +255,10 @@ export interface ChainEnemyMove {
   flee?: boolean;
   /** この部位（敵の定義の id）が壊れていると使えない（段階162。予定の癖の次の行動にする） */
   requiresPart?: string;
+  /** 同じラウンドに、一緒に予定に入る行動（段階175。スコアボードのぬしの投球） */
+  with?: ChainEnemyMove[];
+  /** 投球（段階175。打ち返す決まりの戦闘で、打ち返せないと当たってストライク） */
+  pitch?: boolean;
 }
 
 export interface ChainEnemyDef {
@@ -391,6 +397,11 @@ export interface ChainBattleDef {
    * need 貯まると「客席が歌う」：target（敵の定義の id）がダウンし（警戒中はしない）、仲間の HP が最大の heal の割合だけ戻る。手拍子は0から
    */
   clap?: { beats: number[]; need: number; target: string; heal: number };
+  /**
+   * 打ち返す（段階175。2-3 のぬしの思い出の再演）：仲間の攻撃が、まだ動いていない投球（pitch の行動）と同じ時刻にちょうど終わると「打ち返した」：
+   * その投球は消え、その攻撃の威力が mult 倍。打ち返せなかった投球が動くと「ストライク」。out つで三振（負け。finish は 'strikeout'）
+   */
+  pitch?: { out: number; mult: number };
 }
 
 export interface ChainUnit {
@@ -531,6 +542,9 @@ export type ChainEvent =
   | { type: 'revive'; to: string; amount: number }
   | { type: 'mpGain'; to: string; amount: number }
   | { type: 'chorus'; uid?: string }
+  /** 段階175：打ち返した（uid は投げた敵・name は消した行動）・ストライク（total は数） */
+  | { type: 'hitBack'; uid: string; name: string }
+  | { type: 'strike'; total: number }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -585,12 +599,16 @@ export interface ChainState {
   sunset?: number;
   /** 手拍子の数（段階173） */
   claps?: number;
+  /** ストライクの数（段階175） */
+  strikes?: number;
+  /** 今動いている仲間の攻撃の、打ち返しの倍率（段階175。runChainRound の中だけ） */
+  hitBackMult?: number;
   /** cutoff：負け戦の打ち切り（段階158） */
   outcome: 'ongoing' | 'win' | 'lose' | 'cutoff';
   /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
   acted?: Record<string, number>;
   /** 決着の仕方 */
-  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset';
+  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout';
   /** ポイの残り（段階162） */
   poi?: number;
   /** 決着したラウンド */
@@ -725,6 +743,11 @@ function planIntents(s: ChainState): void {
     };
     add(move.at);
     if (move.at2 !== undefined) add(move.at2);
+    // 一緒に予定に入る行動（段階175。投球）
+    for (const w of move.with ?? []) {
+      const it: ChainIntent = { enemy: e.uid, move: w, at: w.at, target: w.all ? undefined : pick() };
+      s.intents.push(e.status ? statusIntent(s, e, it, e.status.kind) : it);
+    }
   }
 }
 
@@ -788,6 +811,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     ...(def.poi ? { poi: def.poi.total } : {}),
     ...(def.sunset ? { sunset: def.sunset.rounds } : {}),
     ...(def.clap ? { claps: 0 } : {}),
+    ...(def.pitch ? { strikes: 0 } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -1307,6 +1331,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   if (eff.firstMult && acted === 0) power *= eff.firstMult;
   if (eff.syncMult && s.roundSynced) power *= eff.syncMult;
   if (eff.beatMult && (s.def.clap?.beats ?? CHAIN_BEATS).includes(at)) power *= eff.beatMult;
+  if (s.hitBackMult) power *= s.hitBackMult;
   let hits = eff.hitsPerActed ? acted + 1 : eff.hitsByRoundHits ? Math.max(1, Math.min(12, s.roundHits)) : (eff.hits ?? 1);
   if (eff.exposure) {
     s.exposure += eff.exposure;
@@ -1537,6 +1562,14 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
     done();
     return true;
   }
+  // 三振（段階175）
+  if (s.def.pitch && (s.strikes ?? 0) >= s.def.pitch.out) {
+    done();
+    s.outcome = 'lose';
+    s.finish = 'strikeout';
+    s.finishRound = s.round;
+    return true;
+  }
   // ポイが破れた（段階162。ぬしを倒した一撃で破れた時は、勝ちを先に）
   if (s.def.poi && (s.poi ?? 0) <= 0) {
     done();
@@ -1565,6 +1598,13 @@ export function chainPlanTeethHits(s: ChainState, plan: ChainPlanStep[]): number
   let n = 0;
   for (const f of r.frames) for (const e of f.events) if (e.type === 'damage' && e.from !== e.to && s.allies.some((a) => a.uid === e.from) && s.enemies.some((x) => x.uid === e.to && x.defId === t.target)) n++;
   return n;
+}
+
+/** 並べた予定で、このラウンドに打ち返す見込みの数と、ストライクになる見込みの数（段階175。実際に動かして見る） */
+export function chainPlanPitch(s: ChainState, plan: ChainPlanStep[]): { hits: number; strikes: number } {
+  if (!s.def.pitch || plan.length === 0) return { hits: 0, strikes: 0 };
+  const ev = runChainRound(s, plan).frames.flatMap((f) => f.events);
+  return { hits: ev.filter((e) => e.type === 'hitBack').length, strikes: ev.filter((e) => e.type === 'strike').length };
 }
 
 /** 並べた予定で、このラウンドに増える手拍子の見込みの数（段階173。画面の見込みの表示。実際に動かして見る） */
@@ -1703,6 +1743,17 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       // 連携技は、動く仲間の攻撃・魔力の平均で
       const avg = (k: 'atk' | 'mag') => Math.round(actors.reduce((a, u) => a + u[k], 0) / actors.length);
       const doer = actors.length > 1 ? { ...actor, atk: avg('atk'), mag: avg('mag') } : actor;
+      // 打ち返す（段階175）：同じ時刻にちょうど終わる、まだ動いていない投球（決まりのある戦闘）か、ジャストミートなら敵の行動を消して、威力を上げる
+      const parry = move.effect.kind === 'damage' ? move.effect.parry : undefined;
+      if ((s.def.pitch || parry) && move.effect.kind === 'damage') {
+        const qi = pending.findIndex((x) => x.kind === 'enemy' && x.at === at && (parry ? true : !!x.intent.move.pitch) && !!s.enemies.find((e) => e.uid === x.intent.enemy && e.hp > 0 && !e.gone && !e.down));
+        const eq = qi >= 0 ? pending[qi] : undefined;
+        if (eq && eq.kind === 'enemy') {
+          pending.splice(qi, 1);
+          s.hitBackMult = parry ?? s.def.pitch!.mult;
+          ev.push({ type: 'hitBack', uid: eq.intent.enemy, name: eq.intent.move.name });
+        }
+      }
       // 息を合わせる（段階169）：ほかの仲間の行動のすぐ後で、その間に敵が動いていない。2人の手番を使うコンボはそれだけで
       if (!s.roundSynced && (actors.length >= 2 || (lastAlly !== null && lastAlly !== actor.uid && !enemySince))) {
         s.roundSynced = true;
@@ -1711,6 +1762,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       lastAlly = actors[actors.length - 1].uid;
       enemySince = false;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
+      s.hitBackMult = undefined;
       // 手拍子（段階173）：拍でちょうど終わった行動。貯まったら客席が歌う
       if (s.def.clap && s.def.clap.beats.includes(at)) clap(s, ev);
       if (poiBy) wetPoi(s, poiBy, ev);
@@ -1759,6 +1811,11 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       enemyActs.push(q.at);
       enemySince = true;
       doEnemyMove(s, e, q.intent, ev);
+      // ストライク（段階175）：打ち返せなかった投球が動いた
+      if (s.def.pitch && q.intent.move.pitch) {
+        s.strikes = (s.strikes ?? 0) + 1;
+        ev.push({ type: 'strike', total: s.strikes });
+      }
       push(q, '', q.at, e.uid, q.intent.move.name, ev, q.intent.target, q.intent.move.all);
     }
     if (checkEnd(s, frames[frames.length - 1].events, frames[frames.length - 1].at)) {

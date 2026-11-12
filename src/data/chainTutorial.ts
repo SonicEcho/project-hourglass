@@ -62,6 +62,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '手拍子が6つ貯まると「客席が歌う」！\nぬしの手が止まり、仲間の HP も少し戻ります。\n手拍子はラウンドをまたいで貯まります。' },
     { target: 'parts', text: 'スピーカーとコードは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
   ],
+  // 段階175：2-3 のぬし「打ち返す」
+  chain_pitch: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「打ち返す」がはじまります。\n最後の打席、ぬしの投球を打ち返しましょう！' },
+    { target: 'film', text: '「球」の札が付いた予定が、ぬしの投球です。\n投球と同じ時刻にちょうど終わる攻撃は「打ち返した！」\n投球は消えて、その攻撃は2倍になります。' },
+    { target: 'poiBar', text: '打ち返せなかった投球が当たると「ストライク」。\n3つで三振、負けになってしまいます。\n押す・ダウンで投球を止めるのも手です。' },
+    { target: 'parts', text: '得点板とバックネットは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
+  ],
   chain_weak: [
     {
       target: 'weak',
@@ -132,7 +139,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

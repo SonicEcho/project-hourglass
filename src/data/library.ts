@@ -22,7 +22,8 @@ export interface LibraryEnemy {
 
 /** 区画の戦闘の id → 区画の名前 */
 function areaOfBattle(battleId: string): string | undefined {
-  return Object.values(AREAS).find((a) => a.enemies.some((e) => e.battle === battleId) || a.boss?.battle === battleId)?.name;
+  // 地図に置かれていない物語の戦闘（カイの負け戦など）は、戦闘の id の頭（a23 など）の区画（段階175）
+  return Object.values(AREAS).find((a) => a.enemies.some((e) => e.battle === battleId) || a.boss?.battle === battleId)?.name ?? AREAS[battleId.split('_')[0]]?.name;
 }
 
 function collectEnemies(): LibraryEnemy[] {
