@@ -2394,6 +2394,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shellBreak') parts.push(`${name(ev.uid)}の殻が割れた（効かなかった）`);
     else if (ev.type === 'push') parts.push(!ev.moved ? '' : ev.out ? `${name(ev.uid)}の予定をラウンドの外へ押し出した！` : `${name(ev.uid)}の予定を${ev.by}マス押した`);
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
+    else if (ev.type === 'revive') parts.push(`${name(ev.to)}が起き上がった！（HP ${ev.amount}）`);
+    else if (ev.type === 'mpGain') parts.push(`${name(ev.to)}の MP +${ev.amount}`);
     else if (ev.type === 'clap') parts.push(`手拍子！（${ev.total}）`);
     else if (ev.type === 'chorus') parts.push(`客席が歌い出した！${ev.uid ? ` ${name(ev.uid)}の手が止まる` : ''}`);
     else if (ev.type === 'teeth') parts.push(`歯がそろった！ ${name(ev.uid)}の手が止まる`);

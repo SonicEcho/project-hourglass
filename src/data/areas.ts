@@ -176,16 +176,17 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 2-3 の河川敷のグラウンド（段階40。部屋をつなぐ形）。段階85 で3晩に分けた（脚本 docs/script/2-3_rework.md）。2-2 と同じく、晩ごとに 3・3・3＋ぬし（返すのに10）。
   // 1晩目は土手の道・ベンチの裏の木陰・川べり、2晩目は売店のテント・用具小屋の裏と番人、3晩目はダイヤモンド。川べりの逃げる敵はコマなしで、勝つとレアの素材「最後のスコアブック」。
   // 2-3 の砂嵐は元が軽い（2-2 と同じ倍率では1〜3ラウンドで終わった）ので、晩ごとに ×1.15・×1.3・×1.45〜1.5 を重ねた
-  a23_n1_slope: { id: 'a23_n1_slope', name: '砂嵐', enemies: tough([BALL_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2, koma: 1 },
-  a23_n1_levee: { id: 'a23_n1_levee', name: '砂嵐', enemies: tough([PET_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2 },
-  a23_n1_bench: { id: 'a23_n1_bench', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, BALL_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 3, koma: 1 },
-  a23_n1_shade: { id: 'a23_n1_shade', name: '砂嵐', enemies: tough([JUG_NOISE, PET_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 3, koma: 1 },
-  a23_n1_bank: { id: 'a23_n1_bank', name: '砂嵐', enemies: tough([BALL_NOISE, BALL_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2 },
-  a23_runner: { id: 'a23_runner', name: '砂嵐', enemies: [PET_NOISE, PET_NOISE, PET_NOISE], reward: 3, item: ITEMS.scorebook.id },
-  a23_n2_stand: { id: 'a23_n2_stand', name: '砂嵐', enemies: tough([BALL_NOISE, MEGAPHONE_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3, koma: 1 },
-  a23_n2_west: { id: 'a23_n2_west', name: '砂嵐', enemies: tough([JUG_NOISE, JUG_NOISE, BALL_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 2 },
-  a23_n2_shed: { id: 'a23_n2_shed', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, PET_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 4, koma: 1 },
-  a23_n2_shed2: { id: 'a23_n2_shed2', name: '砂嵐', enemies: tough([PET_NOISE, BALL_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 2 },
+  // 段階174（段取りの段階F4a）：新しい戦闘の性質を晩ごとに出すよう、敵の組み合わせを入れ替えた（1晩目は水筒（かたい）とメガホン（カウンター）だけ、2晩目にボール（逃げ足）と電子ペット（性質なし）、3晩目は組み合わせ）
+  a23_n1_slope: { id: 'a23_n1_slope', name: '砂嵐', enemies: tough([JUG_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2, koma: 1 },
+  a23_n1_levee: { id: 'a23_n1_levee', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2 },
+  a23_n1_bench: { id: 'a23_n1_bench', name: '砂嵐', enemies: tough([JUG_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 3, koma: 1 },
+  a23_n1_shade: { id: 'a23_n1_shade', name: '砂嵐', enemies: tough([MEGAPHONE_NOISE, JUG_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 3, koma: 1 },
+  a23_n1_bank: { id: 'a23_n1_bank', name: '砂嵐', enemies: tough([JUG_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.15))), reward: 2 },
+  a23_runner: { id: 'a23_runner', name: '砂嵐', enemies: [BALL_NOISE, BALL_NOISE, BALL_NOISE], reward: 3, item: ITEMS.scorebook.id },
+  a23_n2_stand: { id: 'a23_n2_stand', name: '砂嵐', enemies: tough([BALL_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 3, koma: 1 },
+  a23_n2_west: { id: 'a23_n2_west', name: '砂嵐', enemies: tough([PET_NOISE, PET_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 2 },
+  a23_n2_shed: { id: 'a23_n2_shed', name: '砂嵐', enemies: tough([BALL_NOISE, MEGAPHONE_NOISE, PET_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 4, koma: 1 },
+  a23_n2_shed2: { id: 'a23_n2_shed2', name: '砂嵐', enemies: tough([PET_NOISE, BALL_NOISE, JUG_NOISE].map((e) => scaleEnemy(e, 1.3))), reward: 2 },
   // 売店の上の番人（2晩目の山場。戦う前の会話）。「あと一人」をくり返す
   a23_n2_guard: { id: 'a23_n2_guard', name: '砂嵐', enemies: tough([JUG_NOISE, BALL_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.45))), reward: 5, koma: 1 },
   a23_n3_stand: { id: 'a23_n3_stand', name: '砂嵐', enemies: tough([BALL_NOISE, PET_NOISE, MEGAPHONE_NOISE].map((e) => scaleEnemy(e, 1.45))), reward: 3, koma: 1 },
@@ -784,9 +785,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.potion.id], snaps: ['iceChip'] },
-      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id], gears: ['startDash'] },
-      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [6, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['breaker'] },
+      { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.potion.id], snaps: ['iceChip'], chainSnaps: ['c17_imprint'] },
+      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id], gears: ['startDash'], chainSnaps: ['a23_kitsuke'] },
+      { id: 'a23_chest_shed', room: 'riverside_shed', cell: [6, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['breaker'], chainSnaps: ['a23_hitoiki'] },
     ],
     enemies: [
       // ---- 1晩目（土手の道・ベンチの裏の木陰・川べり） ----

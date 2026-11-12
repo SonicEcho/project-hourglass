@@ -155,7 +155,11 @@ export type ChainEffect =
   | { kind: 'trick'; trick: ChainTrick; element?: Element; power?: number }
   /** 状態：rounds ラウンド続く。power があれば、その属性で小さく当ててから付ける */
   | { kind: 'status'; status: ChainStatusKind; rounds: number; element?: Element; power?: number }
-  | { kind: 'heal'; power: number }
+  /**
+   * 回復（味方全体）。revive（段階174「気付け」）：倒れた仲間を、最大 HP のこの割合で起こす（立っている仲間は回復しない）。
+   * mp（段階174「一息」）：立っている仲間の MP をこの数だけ戻す
+   */
+  | { kind: 'heal'; power: number; revive?: number; mp?: number }
   /**
    * 手札に触れる技（段階164。今の星図の ひらめき・シャッフル・すりかえ を、新しい戦闘でも使えるように）。
    * 動いた時に効く（並べ終えた後なので、次のラウンドの手札が変わる）：draw は count 枚引く（手札の上限を超えてよい）、
@@ -523,6 +527,9 @@ export type ChainEvent =
   | { type: 'teeth'; uid: string }
   /** 段階173：手拍子（total は貯まった数）・客席が歌った（uid はダウンさせたぬし） */
   | { type: 'clap'; total: number }
+  /** 段階174：倒れた仲間が起きた（気付け）・MP が戻った（一息） */
+  | { type: 'revive'; to: string; amount: number }
+  | { type: 'mpGain'; to: string; amount: number }
   | { type: 'chorus'; uid?: string }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
@@ -1238,10 +1245,29 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     return { ally: actor.uid, element: null, power: 0 };
   }
   if (eff.kind === 'heal') {
-    for (const a of s.allies.filter((x) => x.hp > 0)) {
-      const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.power * actor.mag) / s.rules.healDiv));
-      a.hp += amount;
-      ev.push({ type: 'heal', to: a.uid, amount });
+    // 気付け（段階174）：倒れた仲間を起こす
+    if (eff.revive) {
+      for (const a of s.allies.filter((x) => x.hp <= 0)) {
+        a.hp = Math.max(1, Math.floor(a.maxHp * eff.revive));
+        ev.push({ type: 'revive', to: a.uid, amount: a.hp });
+      }
+      return { ally: actor.uid, element: null, power: 0 };
+    }
+    if (eff.power > 0) {
+      for (const a of s.allies.filter((x) => x.hp > 0)) {
+        const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.power * actor.mag) / s.rules.healDiv));
+        a.hp += amount;
+        ev.push({ type: 'heal', to: a.uid, amount });
+      }
+    }
+    // 一息（段階174）：MP を戻す
+    if (eff.mp) {
+      for (const a of s.allies.filter((x) => x.hp > 0 && x.maxMp !== undefined)) {
+        const amount = Math.min((a.maxMp ?? 0) - (a.mp ?? 0), eff.mp);
+        if (amount <= 0) continue;
+        a.mp = (a.mp ?? 0) + amount;
+        ev.push({ type: 'mpGain', to: a.uid, amount });
+      }
     }
     return { ally: actor.uid, element: null, power: 0 };
   }
