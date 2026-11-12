@@ -190,6 +190,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private enemyImages = new Map<string, Phaser.GameObjects.Image>();
   /** 実行中：このラウンドのコマと、済んだコマの結果（コマの番号ごと） */
   private runFrames: ChainFrame[] = [];
+  /** 夕日の、前に描いた残り（段階169 の後。日が傾いた時に沈む動きを付ける） */
+  private sunShown: number | null = null;
   private runResults = new Map<number, string>();
   /** 実行中：今のコマの番号（0 は実行していない） */
   private currentOrder = 0;
@@ -291,6 +293,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.head = null;
     this.ally = this.firstFreeAlly();
     this.runFrames = [];
+    this.sunShown = null;
     this.runResults = new Map();
     this.currentOrder = 0;
     this.actorUid = '';
@@ -562,6 +565,7 @@ export class ChainBattleScene extends Phaser.Scene {
         const boxes = parts.flatMap((e) => {
           const p = this.partSpot(this.s, e);
           if (!p) return [];
+          if (p.side === 'below') return [{ l: p.x - 44, r: p.x + 44, t: p.y - 26, b: p.y + 56 }];
           const labelLeft = p.side === 'left' && p.x - 110 > (this.bossLayout(this.s) ? BOSS_COL : 0);
           return [{ l: p.x - 26 - (labelLeft ? 104 : 0), r: p.x + 26 + (labelLeft ? 0 : 104), t: p.y - 30, b: p.y + 28 }];
         });
@@ -781,19 +785,42 @@ export class ChainBattleScene extends Phaser.Scene {
     const left = Math.max(0, view.sunset ?? sun.rounds);
     const syncs = !this.busy && this.plan.length >= 2 ? chainPlanSyncs(this.s, this.plan) : null;
     const synced = this.busy && !!view.roundSynced;
-    const ORANGE = 0xff9a3c;
     if (this.bossLayout(view)) {
+      // 段階169 の後の直し（開発者：ゲージっぽくせず、丸い日が沈んでいくように）：空と地平線を描き、日が残りに合わせて地平線へ下がる
       const cx = BOSS_COL / 2 + 2;
+      const w = BOSS_COL - 14;
+      const skyTop = STAGE_Y + 30;
+      const horizon = STAGE_Y + 112;
       r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
       r.add(addText(this, cx, STAGE_Y + 18, '夕日', { size: 13, bold: true, color: '#ffc27a' }).setOrigin(0.5));
-      // 丸を上から並べる。沈んだ分は暗く
-      for (let k = 0; k < sun.rounds; k++) {
-        const y = STAGE_Y + 38 + k * 18;
-        const lit = k >= sun.rounds - left;
-        r.add(this.add.circle(cx, y, 8, lit ? ORANGE : 0x2a2030).setStrokeStyle(1.5, lit ? 0xffe0b0 : 0x5a4a60));
+      const t = left / sun.rounds;
+      const sky = this.add.graphics();
+      // 日が低いほど、空が赤く暗くなる
+      const topCol = Phaser.Display.Color.Interpolate.ColorWithColor(Phaser.Display.Color.ValueToColor(0x1a1030), Phaser.Display.Color.ValueToColor(0x2a4a8a), 100, Math.round(t * 100));
+      const lowCol = Phaser.Display.Color.Interpolate.ColorWithColor(Phaser.Display.Color.ValueToColor(0x5a1a2a), Phaser.Display.Color.ValueToColor(0xff9a5a), 100, Math.round(t * 100));
+      const tc = Phaser.Display.Color.GetColor(topCol.r, topCol.g, topCol.b);
+      const lc = Phaser.Display.Color.GetColor(lowCol.r, lowCol.g, lowCol.b);
+      sky.fillGradientStyle(tc, tc, lc, lc, 1).fillRect(cx - w / 2, skyTop, w, horizon - skyTop);
+      r.add(sky);
+      const sunY = (n: number) => horizon - (n / sun.rounds) * (horizon - skyTop - 16);
+      const c = Phaser.Display.Color.Interpolate.ColorWithColor(Phaser.Display.Color.ValueToColor(0xff4a2a), Phaser.Display.Color.ValueToColor(0xffe070), 100, Math.round(t * 100));
+      const sunCol = Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+      const glow = this.add.circle(cx, sunY(left), 19, sunCol, 0.3);
+      const disc = this.add.circle(cx, sunY(left), 12, sunCol);
+      r.add([glow, disc]);
+      // 日が傾いた時は、前の高さから沈ませる
+      if (this.sunShown !== null && this.sunShown !== left) {
+        const from = sunY(this.sunShown);
+        glow.setY(from);
+        disc.setY(from);
+        this.tweens.add({ targets: [glow, disc], y: sunY(left), duration: 900, ease: 'Sine.easeInOut' });
       }
+      this.sunShown = left;
+      // 地平線と、その下の町（日の下の部分を隠す）
+      r.add(this.add.rectangle(cx, horizon, w, 24, 0x140c1c).setOrigin(0.5, 0));
+      r.add(this.add.rectangle(cx, horizon, w, 2, 0xffc27a));
       const col = left <= 1 ? '#ff9db0' : '#ffc27a';
-      r.add(addText(this, cx, STAGE_Y + 38 + sun.rounds * 18 + 2, `あと${left}`, { size: 12, bold: true, color: col }).setOrigin(0.5));
+      r.add(addText(this, cx, horizon + 12, left > 0 ? `あと${left}` : '日が沈んだ', { size: 12, bold: true, color: col }).setOrigin(0.5));
       const hint = synced ? '息を\n合わせた！' : syncs === null ? '' : syncs ? '息が\n合う ◎' : '間に敵が\n入る';
       if (hint) r.add(addText(this, cx, STAGE_Y + 142, hint, { size: 10, bold: true, align: 'center', color: synced || syncs ? '#8fffc0' : '#c9d0ea' }).setOrigin(0.5));
       return;
@@ -834,7 +861,7 @@ export class ChainBattleScene extends Phaser.Scene {
   }
 
   /** 部位の印の位置（ぬしの絵の中の割合 ENEMY_PART_SPOTS。書いていなければ絵の上のほうに横に並べる） */
-  private partSpot(s: ChainState, part: ChainUnit): { x: number; y: number; side: 'left' | 'right' } | null {
+  private partSpot(s: ChainState, part: ChainUnit): { x: number; y: number; side: 'left' | 'right' | 'below' } | null {
     const bodyId = chainEnemyDef(s, part.defId)?.part?.of;
     const list = this.shownEnemies(s);
     const k = list.findIndex((x) => x.defId === bodyId);
@@ -862,6 +889,19 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(ring);
     if (targetable) this.tweens.add({ targets: ring, alpha: 0.4, duration: 500, yoyo: true, repeat: -1 });
     if (!alive) r.add(addText(this, p.x, p.y, '×', { size: 26, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
+    // 札を印の下に出す部位（段階169 の後の直し）：名前の札と HP を、印の真下に
+    if (p.side === 'below') {
+      r.add(this.sticker(p.x, p.y + 32, alive ? part.name : `${part.name} BREAK`, alive ? YELLOW : 0x808080, '#000000', -4, 10));
+      if (alive) {
+        const bw = 52;
+        r.add(this.add.rectangle(p.x - bw / 2, p.y + 47, bw, 6, 0x2a0a12).setOrigin(0, 0.5));
+        r.add(this.add.rectangle(p.x - bw / 2, p.y + 47, Math.max(3, (bw * part.hp) / part.maxHp), 6, YELLOW).setOrigin(0, 0.5));
+      }
+      const hitB = this.add.circle(p.x, p.y, 28, 0xffffff, 0.001);
+      r.add(hitB);
+      makePressable(hitB, { onTap: () => this.pickEnemy(part.uid), onLongPress: () => this.explainEnemy(part) });
+      return;
+    }
     const left = p.side === 'left' && p.x - 110 > (this.bossLayout(s) ? BOSS_COL : 0);
     const lx = left ? p.x - 26 : p.x + 26;
     const label = this.sticker(lx + (left ? -34 : 34), p.y - 10, alive ? part.name : `${part.name} BREAK`, alive ? YELLOW : 0x808080, '#000000', left ? 4 : -4, 10);
