@@ -41,8 +41,8 @@ export const A3S_SHORT_TEXT: Record<string, string> = {
   a3s_refrain: '直前の攻撃を\n全体にもう一度',
 };
 
-/** 祭りの夜で渡す札（宝箱：パノラマ・リワインド。小夜子の専用の札。段階182 のぬしの報酬のアタック+30）。アルバムに入れられる札の一覧に足す（専用の札は除かれる） */
-export const A3S_NEW_SNAPS: ChainMove[] = [C.panorama, C.rewind, C.twinCut, C.plus30];
+/** 祭りの夜で渡す札（宝箱：パノラマ・リワインド。小夜子の専用の札。段階182 のぬしの報酬のアタック+30。段階183 の祭りの夜（カイ）の宝箱の黄フィルター）。アルバムに入れられる札の一覧に足す（専用の札は除かれる） */
+export const A3S_NEW_SNAPS: ChainMove[] = [C.panorama, C.rewind, C.twinCut, C.plus30, C.filterYellow];
 
 /** 祭りの夜のコンボ：3-1 までに足して、あかりと小夜子の「デジャヴ」 */
 export const A3S_COMBOS: ChainLinkDef[] = [...A31_COMBOS, ...CHAIN17_COMBOS.filter((l) => l.id === 'dejaVu')];
