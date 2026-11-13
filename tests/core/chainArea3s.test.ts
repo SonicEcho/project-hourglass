@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle, runChainRound, type ChainBattleDef, type ChainEnemyDef, type ChainEvent, type ChainMove } from '../../src/core';
-import { A3S_LORD, CHAIN_BOSS_GRADE, A3S_COMBOS, A3S_ENEMY_SNAP, A3S_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_ALLY_SPECIALS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_MAIN_CARDS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, HERO, MIO, SAYOKO } from '../../src/data';
+import { A3K_KAI, A3S_LORD, CHAIN_BOSS_GRADE, A3S_COMBOS, A3S_ENEMY_SNAP, A3S_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_ALLY_SPECIALS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_MAIN_CARDS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, HERO, MIO, SAYOKO } from '../../src/data';
 
 // 段階181（段取りの段階F6a）：祭りの夜の雑魚の戦闘を新しい戦闘に
 const ids = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a3s') && !AREA_BATTLES[id].boss);
@@ -111,5 +111,33 @@ describe('祭りの夜（カイ）の砂嵐を新しい戦闘に（段階183）'
     }
     expect(AREAS.a3k.chests.flatMap((c) => c.chainSnaps ?? [])).toEqual(['c17_filterYellow']);
     expect(CHAIN_SNAPS.c17_filterYellow).toBeDefined();
+  });
+});
+
+describe('本気のカイ「フィルムを使い切らせる」（段階184）', () => {
+  const st = CHAIN_AREA_SETUPS.a3k_kai;
+  const kai = st.enemies.find((e) => e.id === 'kaiRevenge')!;
+  it('カイと部位（枠の刃＝雷の弱点）。フィルムの枚数。型は3つ（構図 → 露出（割り込み）→ 連写（2回行動））。報酬は ★3 の現像', () => {
+    expect(CHAIN_AREA_BATTLES).toContain('a3k_kai');
+    expect(st.film).toEqual({ total: A3K_KAI.film });
+    expect(st.enemies.find((e) => e.part)!.part).toEqual({ of: 'kaiRevenge', reveals: ['thunder'] });
+    expect(kai.phaseName).toBe('構図');
+    expect(kai.phases!.map((p) => [p.name, p.trait])).toEqual([['露出', 'interrupt'], ['連写', 'swift']]);
+    expect(st.snaps).toEqual(['c17_develop']);
+    expect(CHAIN_SNAPS.c17_develop).toBeDefined();
+    expect(st.gradeAt).toEqual(CHAIN_BOSS_GRADE.a3k_kai);
+  });
+  it('どの型の予定にも、部位を使わない撮る行動がある（枠の刃を壊しても、フィルムが減り続ける）', () => {
+    for (const pattern of [kai.pattern, ...kai.phases!.map((p) => p.pattern)]) {
+      const free = pattern.flatMap((m) => [m, ...(m.with ?? [])]).filter((m) => m.film && !m.requiresPart);
+      expect(free.length).toBeGreaterThan(0);
+      expect(pattern.some((m) => !m.requiresPart)).toBe(true);
+    }
+  });
+  it('最初のカイ戦で、フィルムの説明が出る', () => {
+    const def = buildMainChainBattle({ id: 'a3k_kai', name: 'x', party: [HERO, SAYOKO, AKARI], enemies: AREA_BATTLES.a3k_kai.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, film: st.film });
+    const s = createChainBattle(def, CHAIN_RULES, 1);
+    expect(s.film).toBe(A3K_KAI.film);
+    expect(chainTipTriggers(s)).toContain('chain_film');
   });
 });

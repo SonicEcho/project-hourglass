@@ -140,6 +140,8 @@ export interface MainChainBattleInput {
   watch?: ChainBattleDef['watch'];
   /** くり返しを越える（段階182） */
   repeat?: ChainBattleDef['repeat'];
+  /** フィルム（段階184。本気のカイ） */
+  film?: ChainBattleDef['film'];
   /** 全員に足す技（段階179。ねじを巻く） */
   allyMoves?: ChainMove[];
   gradeAt?: { high: number; mid: number };
@@ -169,6 +171,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.pitch ? { pitch: input.pitch } : {}),
     ...(input.watch ? { watch: input.watch } : {}),
     ...(input.repeat ? { repeat: input.repeat } : {}),
+    ...(input.film ? { film: input.film } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -273,6 +276,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.watch) out.push('chain_watch');
   // やぐらのぬし（段階182）
   if (s.def.repeat) out.push('chain_repeat');
+  // 本気のカイ（段階184）
+  if (s.def.film) out.push('chain_film');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時
