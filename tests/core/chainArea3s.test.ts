@@ -96,3 +96,20 @@ describe('やぐらのぬし「くり返しを越える」（段階182）', () =
     expect(chainTipTriggers(s)).toContain('chain_repeat');
   });
 });
+
+describe('祭りの夜（カイ）の砂嵐を新しい戦闘に（段階183）', () => {
+  const kIds = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a3k_') && !AREA_BATTLES[id].boss);
+  it('砂嵐は全部新しい戦闘。祭りの夜の敵が、祭りの夜の性質のまま。宝箱に黄フィルター', () => {
+    expect(kIds.length).toBe(4);
+    const trait: Record<string, string | undefined> = { pinwheelNoise: 'interrupt', candyNoise: 'sticky', lanternNoise: 'pop', phonographNoise: undefined };
+    for (const id of kIds) {
+      expect(CHAIN_AREA_BATTLES).toContain(id);
+      const st = CHAIN_AREA_SETUPS[id];
+      expect(st.enemies.map((e) => e.id)).toEqual(AREA_BATTLES[id].enemies.map((e) => e.id));
+      for (const e of st.enemies) expect(e.trait).toBe(trait[e.id]);
+      expect(st.deck.every((c) => !!st.cards[c])).toBe(true);
+    }
+    expect(AREAS.a3k.chests.flatMap((c) => c.chainSnaps ?? [])).toEqual(['c17_filterYellow']);
+    expect(CHAIN_SNAPS.c17_filterYellow).toBeDefined();
+  });
+});

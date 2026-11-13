@@ -1118,7 +1118,7 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：やぐらの裏の暗がり', guide: 'カイの枠は光を写す。小夜子が、提灯の届かない暗がりへ案内する' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.candyStick.id], gears: ['comboBoost'] }],
+    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.candyStick.id], gears: ['comboBoost'], chainSnaps: ['c17_filterYellow'] }],
     enemies: [
       { id: 'a3k_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3k_torii' },
       { id: 'a3k_e_torii2', move: 'chase', patrol: [[15, 7], [15, 13]], battle: 'a3k_torii2' },
