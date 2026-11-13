@@ -246,11 +246,12 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 段階113：祭りの夜の端の宝箱からあふれたリカバーを、ぬしの報酬に移した
   a3s2_boss: { id: 'a3s2_boss', name: 'やぐらのぬし', enemies: [toughenEnemy(YAGURA_LORD, A3S_SCALE.boss)], reward: 10, boss: true, snaps: ['breakArm', 'recover'] },
   // ---- 3-2「言えなかった卒業式」（段階94。gradEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし。3晩目の踏切の部屋は、敵を2つに減らした（レビューの D1） ----
-  a32_n1_gate: { id: 'a32_n1_gate', name: '砂嵐', enemies: tough([EARPHONE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
+  // 段階185（段取りの段階F8a）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目は自撮り棒（割り込み）と卒業証書の筒（2回行動）だけ、2晩目にイヤホン（ダウン解除）とタピオカ（自爆）、3晩目は組み合わせ）
+  a32_n1_gate: { id: 'a32_n1_gate', name: '砂嵐', enemies: tough([SELFIE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
   a32_n1_slope: { id: 'a32_n1_slope', name: '砂嵐', enemies: tough([SELFIE_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 2 },
-  a32_n1_tree: { id: 'a32_n1_tree', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, EARPHONE_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
-  a32_n1_bus: { id: 'a32_n1_bus', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, SELFIE_NOISE, EARPHONE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
-  a32_n1_gym: { id: 'a32_n1_gym', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 2 },
+  a32_n1_tree: { id: 'a32_n1_tree', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, SELFIE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
+  a32_n1_bus: { id: 'a32_n1_bus', name: '砂嵐', enemies: tough([DIPLOMA_NOISE, SELFIE_NOISE, SELFIE_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 3, koma: 1 },
+  a32_n1_gym: { id: 'a32_n1_gym', name: '砂嵐', enemies: tough([SELFIE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n1))), reward: 2 },
   a32_runner: { id: 'a32_runner', name: '砂嵐', enemies: [SELFIE_NOISE, SELFIE_NOISE, SELFIE_NOISE], reward: 3, item: ITEMS.lostTicket.id },
   a32_n2_arcade: { id: 'a32_n2_arcade', name: '砂嵐', enemies: tough([TAPIOCA_NOISE, EARPHONE_NOISE, DIPLOMA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2))), reward: 3, koma: 1 },
   a32_n2_shops: { id: 'a32_n2_shops', name: '砂嵐', enemies: tough([SELFIE_NOISE, SELFIE_NOISE, TAPIOCA_NOISE].map((e) => scaleEnemy(e, A32_SCALE.n2))), reward: 2 },
@@ -1043,9 +1044,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a32_chest_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.potion.id], snaps: ['fireChip'] },
-      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id], gears: ['iceBoost'] },
-      { id: 'a32_chest_levee', room: 'grad_levee', cell: [2, 2], night: 2, items: [ITEMS.hiPotion.id], gears: ['startDash'] },
+      { id: 'a32_chest_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.potion.id], snaps: ['fireChip'], chainSnaps: ['c17_rainbow'] },
+      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id], gears: ['iceBoost'], chainSnaps: ['c17_pinpoint'] },
+      { id: 'a32_chest_levee', room: 'grad_levee', cell: [2, 2], night: 2, items: [ITEMS.hiPotion.id], gears: ['startDash'], chainSnaps: ['c17_filterBlue'] },
     ],
     enemies: [
       // ---- 1晩目（校門の坂・体育館の裏） ----
