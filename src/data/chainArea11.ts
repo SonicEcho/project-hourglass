@@ -173,6 +173,9 @@ export interface ChainAreaSetup {
   clap?: ChainBattleDef['clap'];
   /** 打ち返す（段階175。2-3 のぬしの思い出の再演） */
   pitch?: ChainBattleDef['pitch'];
+  /** 腕時計を守る（段階179。3-1 のぬしの思い出の再演）と、全員に足す技（ねじを巻く） */
+  watch?: ChainBattleDef['watch'];
+  allyMoves?: ChainMove[];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }

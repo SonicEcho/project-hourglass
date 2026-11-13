@@ -898,6 +898,8 @@ export const AREAS: Record<string, AreaDef> = {
     name: '3-1「はじめての仕送り」',
     // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
     returnSnaps: ['recover'],
+    // 段階179：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_margin'],
     rooms: [ROOMS.village_station, ROOMS.village_paddy, ROOMS.village_shrine, ROOMS.village_house, ROOMS.village_river, ROOMS.village_platform],
     links: [
       { a: { room: 'village_station', side: 'top' }, b: { room: 'village_paddy', side: 'bottom' } },

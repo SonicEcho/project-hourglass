@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle } from '../../src/core';
-import { A31_COMBOS, A31_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, HERO, MIO } from '../../src/data';
+import { A31_COMBOS, A31_ENEMY_SNAPS, A31_LORD, A31_SHORT_TEXT, A31_WIND, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, HERO, MIO } from '../../src/data';
 import { grownParty } from '../../src/sim/autoArea';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 import { growthPreset } from '../../src/sim/presets';
@@ -10,10 +10,10 @@ const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a31_n') || 
 const PARTY = [HERO, AKARI, MIO];
 
 describe('3-1 の雑魚を新しい戦闘に（段階178）', () => {
-  it('3-1 の雑魚は全部新しい戦闘（ぬしはまだ）', () => {
+  it('3-1 の雑魚は全部新しい戦闘（段階179 でぬしも）', () => {
     expect(ids.length).toBeGreaterThan(8);
     for (const id of ids) expect(CHAIN_AREA_BATTLES).toContain(id);
-    expect(CHAIN_AREA_BATTLES).not.toContain('a31_boss');
+    expect(CHAIN_AREA_BATTLES).toContain('a31_boss');
   });
   it('敵ごとの性質：扇風機＝2回行動・蚊取り線香＝自爆・ラジオ＝ダウン解除・ちゃぶ台とポスト＝なし', () => {
     const trait: Record<string, string | undefined> = { fanNoise: 'swift', coilNoise: 'timer', radioNoise: 'waker', tableNoise: undefined, postboxNoise: undefined };
@@ -65,4 +65,35 @@ describe('3-1 の雑魚を新しい戦闘に（段階178）', () => {
       expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome, id).toBe('win');
     }
   }, 60000);
+});
+
+describe('3-1 のぬし「腕時計を守る」（段階179）', () => {
+  const st = CHAIN_AREA_SETUPS.a31_boss;
+  it('ぬしと部位（煙突＝雷の弱点・車輪）。毎ラウンド、急かすが1〜2つ。報酬は部位を壊した時のポーズ1枚、返した時は余白', () => {
+    const body = st.enemies.find((e) => e.id === 'trainLord')!;
+    const parts = st.enemies.filter((e) => e.part);
+    expect(parts.map((p) => p.id).sort()).toEqual(['trainLord_chimney', 'trainLord_wheel']);
+    expect(parts.find((p) => p.id === 'trainLord_chimney')!.part!.reveals).toEqual(['thunder']);
+    for (const m of body.pattern) {
+      const hurry = (m.with ?? []).filter((w) => w.watch);
+      expect(hurry.length).toBeGreaterThanOrEqual(1);
+      expect(hurry.length).toBeLessThanOrEqual(2);
+      // with は時刻の順（ねじを巻いた次のラウンドは、先の物からそれる）
+      expect(hurry.map((w) => w.at)).toEqual([...hurry.map((w) => w.at)].sort((a, b) => a - b));
+    }
+    expect(st.watch).toEqual({ hp: A31_LORD.watchHp, ease: A31_LORD.ease });
+    expect(st.allyMoves).toEqual([A31_WIND]);
+    expect(A31_SHORT_TEXT[A31_WIND.id]).toContain(`+${A31_LORD.wind}`);
+    expect(st.snaps).toEqual(['c17_pause']);
+    expect(CHAIN_SNAPS.c17_pause).toBeDefined();
+    expect(AREAS.a31.chainReturnSnaps).toEqual(['c17_margin']);
+    expect(CHAIN_SNAPS.c17_margin).toBeDefined();
+  });
+  it('本番の戦闘：全員が「ねじを巻く」を使え、最初のぬし戦で腕時計の説明が出る', () => {
+    const def = buildMainChainBattle({ id: 'a31_boss', name: 'x', party: PARTY, enemies: AREA_BATTLES.a31_boss.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, watch: st.watch, allyMoves: st.allyMoves });
+    expect(def.allies.every((a) => a.moves.some((m) => m.id === A31_WIND.id))).toBe(true);
+    const s = createChainBattle(def, CHAIN_RULES, 1);
+    expect(s.watch).toBe(A31_LORD.watchHp);
+    expect(chainTipTriggers(s)).toContain('chain_watch');
+  });
 });

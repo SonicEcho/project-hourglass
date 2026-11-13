@@ -10,6 +10,7 @@ import {
   chainPlanTeethHits,
   chainPlanClaps,
   chainPlanPitch,
+  chainPlanWatch,
   createChainBattle,
   isWeakKnown,
   findChainUnit,
@@ -30,6 +31,7 @@ import {
   type ChainSource,
   type ChainStatusKind,
   type ChainTrick,
+  type ChainIntent,
   type ChainState,
   type ChainUnit,
 } from '../core';
@@ -144,7 +146,8 @@ const WAIT = { announce: 350, result: 750, big: 1100, cancel: 600, end: 150 } as
 
 /** 札・技の絵と短い効果（調整17の札も） */
 const CHAIN_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART_16, ...CHAIN17_CARD_ART, ...CHAIN_MAIN_CARD_ART };
-const CHAIN_MOVE_ART: Record<string, string> = { ...CHAIN_MOVE_ART_16, ...CHAIN17_MOVE_ART };
+// 段階179：区画で全員に足す技（ねじを巻く）の絵も、本番の札の絵の表から
+const CHAIN_MOVE_ART: Record<string, string> = { ...CHAIN_MOVE_ART_16, ...CHAIN17_MOVE_ART, ...CHAIN_MAIN_CARD_ART };
 const CHAIN_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT_16, ...CHAIN17_SHORT_TEXT, ...CHAIN_MAIN_SHORT_TEXT };
 /** 見つけたコンボ（調整17。端末に覚える） */
 const RED = 0xff2d55;
@@ -205,6 +208,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private advance: (() => void) | null = null;
   /** 探索から来た戦闘（段階159） */
   private encounter?: BattleSceneData['encounter'];
+  /** 腕時計の長針の回転（段階179。描き直すたびに止める） */
+  private watchTween?: Phaser.Tweens.Tween;
   private areaBattle?: CampaignBattle;
   private lineup?: Lineup;
   private seed = 0;
@@ -265,6 +270,8 @@ export class ChainBattleScene extends Phaser.Scene {
         teeth: setup?.teeth,
         clap: setup?.clap,
         pitch: setup?.pitch,
+        watch: setup?.watch,
+        allyMoves: setup?.allyMoves,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -418,6 +425,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawTeeth(view);
     this.drawClap(view);
     this.drawPitch(view);
+    this.drawWatch(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -712,7 +720,7 @@ export class ChainBattleScene extends Phaser.Scene {
 
   /** コマを1行の言葉で（「ハルト：斬る → 金魚」） */
   private frameLabel(f: ChainFrame): string {
-    const nm = (uid?: string) => (uid ? ((findChainUnit(f.state, uid) ?? findChainUnit(this.s, uid))?.name.replace('ノイズ', '') ?? '') : '');
+    const nm = (uid?: string) => (uid === 'watch' ? '腕時計' : uid ? ((findChainUnit(f.state, uid) ?? findChainUnit(this.s, uid))?.name.replace('ノイズ', '') ?? '') : '');
     const link = f.events.find((e) => e.type === 'link') as { uids: string[] } | undefined;
     const who = link ? link.uids.map(nm).join('＋') : nm(f.uid);
     if (f.key === 'end:sunset') return '夕日';
@@ -951,6 +959,60 @@ export class ChainBattleScene extends Phaser.Scene {
     } else if (lay) r.add(addText(this, cx, STAGE_Y + 130, '同じ時刻に\n終わると打ち返す', { size: 9, bold: true, align: 'center', color: '#9aa3c0' }).setOrigin(0.5));
   }
 
+  /**
+   * 腕時計を守る（段階179。3-1 のぬしの思い出の再演）：左の柱に、針の動く腕時計と HP、このラウンドの急かすの時刻。
+   * 並べている間は、急かされて減る量・巻いて戻る量の見込み
+   */
+  private drawWatch(view: ChainState): void {
+    this.watchTween?.remove();
+    this.watchTween = undefined;
+    const w = view.def.watch;
+    if (!w) return;
+    const r = this.root;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '母の腕時計', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    const hp = Math.max(0, view.watch ?? 0);
+    const rate = hp / w.hp;
+    // 文字盤：12の目盛りと、短針・長針（長針がゆっくり回る。止まると動かない）
+    const fy = STAGE_Y + 54;
+    const rad = 20;
+    r.add(this.add.circle(cx, fy - rad - 3, 4, 0xc9a24a));
+    r.add(this.add.circle(cx, fy, rad + 3, 0xc9a24a));
+    r.add(this.add.circle(cx, fy, rad, rate > 0.3 ? 0xfff6e0 : 0xffd0d0).setStrokeStyle(1, 0x7a5a20));
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2;
+      const len = k % 3 === 0 ? 5 : 3;
+      r.add(this.add.line(0, 0, cx + Math.sin(a) * (rad - 2), fy - Math.cos(a) * (rad - 2), cx + Math.sin(a) * (rad - 2 - len), fy - Math.cos(a) * (rad - 2 - len), 0x3a2a10).setOrigin(0, 0).setLineWidth(k % 3 === 0 ? 1.5 : 1));
+    }
+    const hour = this.add.rectangle(cx, fy, 3, 11, 0x3a2a10).setOrigin(0.5, 1).setAngle(300);
+    const minute = this.add.rectangle(cx, fy, 2, 16, 0x3a2a10).setOrigin(0.5, 1).setAngle(((view.round * 47) % 360));
+    r.add(hour);
+    r.add(minute);
+    r.add(this.add.circle(cx, fy, 2, 0xc0303a));
+    if (hp > 0) this.watchTween = this.tweens.add({ targets: minute, angle: '+=360', duration: 12000, repeat: -1 });
+    // HP
+    const look = this.busy || this.plan.length === 0 ? null : chainPlanWatch(this.s, this.plan);
+    const barW = (lay ? BOSS_COL : 100) - 22;
+    const by = STAGE_Y + 86;
+    r.add(this.add.rectangle(cx - barW / 2, by, barW, 7, 0x2a2a38).setOrigin(0, 0.5));
+    r.add(this.add.rectangle(cx - barW / 2, by, barW * rate, 7, rate > 0.3 ? 0xffd23f : 0xff4a5a).setOrigin(0, 0.5));
+    if (look) r.add(this.add.rectangle(cx - barW / 2, by, (barW * Math.max(0, look.left)) / w.hp, 7, 0xffffff, 0.35).setOrigin(0, 0.5));
+    r.add(addText(this, cx, by + 12, `${hp}/${w.hp}`, { size: 11, bold: true, color: rate > 0.3 ? '#fff0b0' : '#ff9db0' }).setOrigin(0.5));
+    // このラウンドの急かすの時刻（ねじを巻いたので、それた物は除く）
+    const alive = (it: ChainIntent) => view.enemies.some((e) => e.uid === it.enemy && e.hp > 0 && !e.down);
+    const times = view.intents.filter((it) => it.move.watch && it.target === 'watch' && alive(it)).map((it) => it.at);
+    const eased = view.intents.some((it) => it.eased && alive(it));
+    r.add(addText(this, cx, by + 32, `急かす\n${times.length ? times.map((t) => `時刻${t}`).join('・') : 'なし'}${eased ? '\n（1つそれた）' : ''}`, { size: 9, bold: true, align: 'center', color: '#c9d0ea' }).setOrigin(0.5));
+    if (look) {
+      const ok = look.left > 0;
+      r.add(addText(this, cx, STAGE_Y + 144, `${look.lost ? `−${look.lost}` : '±0'}${look.wound ? ` +${look.wound}` : ''} → ${look.left}`, { size: 10, bold: true, color: ok ? (look.lost ? '#ffd23f' : '#8fffc0') : '#ff9db0' }).setOrigin(0.5));
+    } else if (lay) r.add(addText(this, cx, STAGE_Y + 144, '技「ねじを巻く」', { size: 9, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
+  }
+
   private foeColor(s: ChainState, uid: string): number {
     const i = s.enemies.findIndex((e) => e.uid === uid);
     return FOE_COLORS[(i < 0 ? 0 : i) % FOE_COLORS.length];
@@ -1148,7 +1210,9 @@ export class ChainBattleScene extends Phaser.Scene {
       // 予定：黒い斜めの札に、赤い丸の時刻（大技・全体・逃げるは黄色）。すばやい敵は2つの時刻
       // 投球（段階175）は左の「打席」の欄とタイムラインの「球」の札で見せるので、予定の札にはぬしの行動だけ
       const own = s.intents.filter((it) => it.enemy === e.uid);
-      const intents = own.some((it) => !it.move.pitch) ? own.filter((it) => !it.move.pitch) : own;
+      // 急かす（段階179）も、左の「腕時計」の欄とタイムラインの「時」の札で見せる
+      const side = (it: ChainIntent) => !!it.move.pitch || !!it.move.watch;
+      const intents = own.some((it) => !side(it)) ? own.filter((it) => !side(it)) : own;
       if (intents.length) {
         const it = intents[0];
         const tgt = it.target ? findChainUnit(s, it.target)?.name : '';
@@ -1303,6 +1367,8 @@ export class ChainBattleScene extends Phaser.Scene {
       if (e.down) r.add(addText(this, cx, cy, '×', { size: 26, bold: true, color: '#ff2d55' }).setOrigin(0.5));
       // 投球（段階175）：「球」の札
       if (it.move.pitch && !e.down) r.add(this.sticker(cx + 12, cy + 13, '球', 0xffffff, '#c0303a', 0, 9));
+      // 急かす（段階179）：腕時計をねらう物は「時」、ねじを巻いて仲間へそれた物は「そ」
+      if (it.move.watch && !e.down) r.add(this.sticker(cx + 12, cy + 13, it.eased ? 'そ' : '時', it.eased ? 0x6bc8ff : 0xffd23f, it.eased ? '#06203a' : '#3a2a00', 0, 9));
       badge(cx - 15, cy - 14, numOf(`e${k}`));
     });
     // 下の段：並べた行動のクリップ（重さの分の長さ。札・技の絵を正方形のコマにして並べる。調整9）
@@ -2432,7 +2498,7 @@ export class ChainBattleScene extends Phaser.Scene {
     title.setShadow(5, 5, '#ff2d55', 0, false, true);
     o.add(title);
     if (!win) {
-      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : s.finish === 'strikeout' ? '三振… 打ち返せなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
+      o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : s.finish === 'strikeout' ? '三振… 打ち返せなかった' : s.finish === 'watch' ? '腕時計が止まった… 守りきれなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
         const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
         o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
@@ -2618,6 +2684,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'frameCut') parts.push(`切り取り！ ${name(ev.to)}の「${ev.name}」が抜き取られた（札は手札に戻る）`);
     else if (ev.type === 'hitBack') parts.push(`打ち返した！（${ev.name}が消えて、威力2倍）`);
     else if (ev.type === 'strike') parts.push(`ストライク！（${ev.total}つ目）`);
+    else if (ev.type === 'watchHit') parts.push(ev.left > 0 ? `腕時計が急かされた！ −${ev.amount}（あと${ev.left}）` : '腕時計が止まった…');
+    else if (ev.type === 'watchWind') parts.push(`${name(ev.uid)}がねじを巻いた！ +${ev.amount}（次のラウンドの急かすが1つそれる）`);
     else if (ev.type === 'clap') parts.push(`手拍子！（${ev.total}）`);
     else if (ev.type === 'chorus') parts.push(`客席が歌い出した！${ev.uid ? ` ${name(ev.uid)}の手が止まる` : ''}`);
     else if (ev.type === 'teeth') parts.push(`歯がそろった！ ${name(ev.uid)}の手が止まる`);
