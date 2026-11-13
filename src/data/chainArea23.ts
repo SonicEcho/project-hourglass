@@ -1,7 +1,9 @@
 import type { ChainEnemyDef, ChainEnemyMove, ChainMove, ChainTrait, ChainVariant, Element, EnemyDef } from '../core';
 import { AREA_BATTLES } from './areas';
-import { A11_DECK, type ChainAreaSetup } from './chainArea11';
-import { A21_COMBOS } from './chainArea21';
+import { A11_DECK, a11ChainEnemy, type ChainAreaSetup } from './chainArea11';
+import { a12ChainEnemy } from './chainArea12';
+import { a22ChainEnemy } from './chainArea22';
+import { A21_COMBOS, a21ChainEnemy } from './chainArea21';
 import { CHAIN17_CARDS as C } from './chainTrial17';
 
 // 段階174（段取りの段階F4a）：2-3「最後の打席」の雑魚の戦闘を、新しい戦闘にする（docs/milestones/M3_battle_migration.md の 13-10）。
@@ -182,9 +184,28 @@ function a23Kai(): ChainEnemyDef[] {
       weak: [],
       resist: [],
       // 速く、手ごわい：切り取り（1人に重い一撃）→ フレームの雨（全体）→ シャッター（全体）を、1ラウンドに2回ずつ
-      pattern: [move('frameCut', 2, { at2: 6 }), move('frameRain', 3, { at2: 7 }), move('shutter', 4, { at2: 8 })],
+      // 切り取り（段階176）：ねらった仲間の、まだ終わっていない行動を抜き取る
+      pattern: [move('frameCut', 2, { at2: 6, cutsFrame: true }), move('frameRain', 3, { at2: 7 }), move('shutter', 4, { at2: 8 })],
     },
   ];
+}
+
+/** 2-3x の砂嵐（段階176） */
+const A23X_IDS = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a23x_') && !AREA_BATTLES[id].boss);
+
+/**
+ * 2-3x の砂嵐の HP の倍率（今の区画の戦闘の HP にかける）。2-3x に入る時点の控えめな育ち具合で自動対戦して測った：
+ * 1.4〜3.1 ラウンド（30戦中30勝）。カイの2つの戦闘は、どれも倒れずに打ち切りまで耐えられた（段階176）
+ */
+export const A23X_HP_RATE = 1.2;
+
+/** 過去の区画の敵を、その区画の新しい戦闘の敵の作り（性質・予定の癖）で作る（段階176） */
+function pastChainEnemy(e: EnemyDef, rate: number): ChainEnemyDef {
+  if (['goldfishNoise', 'balloonNoise', 'maskNoise', 'cottonNoise'].includes(e.id)) return a11ChainEnemy(e, rate);
+  if (['tinNoise', 'phoneNoise', 'ramuneNoise', 'menkoNoise'].includes(e.id)) return a12ChainEnemy(e, rate);
+  if (['gearNoise', 'screwNoise', 'tubeNoise', 'abacusNoise'].includes(e.id)) return a21ChainEnemy(e, rate);
+  if (['flipPhoneNoise', 'boomboxNoise', 'metronomeNoise', 'stickerNoise'].includes(e.id)) return a22ChainEnemy(e, rate);
+  return a23ChainEnemy(e, rate);
 }
 
 /** 2-3 の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
@@ -192,6 +213,15 @@ export const A23_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
   // ぬしの報酬：渾身の一枚とクローズアップ（打ち返しに使える重さ2の札）
   ['a23_boss', { enemies: a23Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, pitch: { out: A23_LORD.out, mult: A23_LORD.mult }, snaps: [C.bigShot.id, C.closeUp.id] }],
   ['a23_kai', { enemies: a23Kai(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 } }],
+  // 2-3x（段階176）：書庫を見回るカイ（2ラウンドで打ち切り、チェックポイントへ）と、棚の砂時計を取った後のカイ（3ラウンド耐えると逃げきる）
+  ['a23x_kai_patrol', { enemies: a23Kai(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 } }],
+  ['a23x_kai', { enemies: a23Kai(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 } }],
+  // 2-3x の砂嵐（段階176）：過去の区画の敵が、その区画で決めた性質・予定の癖のまま出る
+  ...A23X_IDS.map((id) => {
+    const b = AREA_BATTLES[id];
+    const enemies = b.enemies.map((e) => pastChainEnemy(e, A23X_HP_RATE));
+    return [id, { enemies, variants: [{ id: 'normal', name: 'ふつう', patterns: enemies.map((e) => e.pattern) }], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 13, mid: 20 } }];
+  }),
   ...A23_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a23_n1_') ? A23_CHAIN_HP_RATE.night1 : A23_CHAIN_HP_RATE.later;

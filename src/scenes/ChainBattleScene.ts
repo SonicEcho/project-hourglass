@@ -2078,7 +2078,7 @@ export class ChainBattleScene extends Phaser.Scene {
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
-      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte', 'chorus', 'hitBack'].includes(e.type));
+      const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte', 'chorus', 'hitBack', 'frameCut'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
   }
@@ -2099,6 +2099,12 @@ export class ChainBattleScene extends Phaser.Scene {
       return;
     }
     if (f.events.some((e) => e.type === 'shutterReady')) this.cutIn('ALL DOWN!', '全員ダウン。シャッターのチャンス', RED, []);
+    // カイの切り取り（段階176）：仲間の行動が抜き取られた
+    const cut = f.events.find((e) => e.type === 'frameCut');
+    if (cut && cut.type === 'frameCut') {
+      this.cutIn('CUT!', `切り取り！ ${findChainUnit(before, cut.to)?.name ?? ''}の「${cut.name}」が抜き取られた`, 0x3a8dff, []);
+      return;
+    }
     const broke = f.events.find((e) => e.type === 'partBreak');
     if (broke && broke.type === 'partBreak') this.cutIn('BREAK!', `${findChainUnit(before, broke.uid)?.name ?? ''}を壊した！ その大技はもう来ない`, 0xc88a10, actor?.side === 'ally' ? [actor.defId] : []);
   }
@@ -2435,6 +2441,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
     else if (ev.type === 'revive') parts.push(`${name(ev.to)}が起き上がった！（HP ${ev.amount}）`);
     else if (ev.type === 'mpGain') parts.push(`${name(ev.to)}の MP +${ev.amount}`);
+    else if (ev.type === 'frameCut') parts.push(`切り取り！ ${name(ev.to)}の「${ev.name}」が抜き取られた（札は手札に戻る）`);
     else if (ev.type === 'hitBack') parts.push(`打ち返した！（${ev.name}が消えて、威力2倍）`);
     else if (ev.type === 'strike') parts.push(`ストライク！（${ev.total}つ目）`);
     else if (ev.type === 'clap') parts.push(`手拍子！（${ev.total}）`);

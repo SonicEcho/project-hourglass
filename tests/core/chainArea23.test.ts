@@ -84,3 +84,23 @@ describe('2-3 のぬし「打ち返す」とカイの負け戦（段階175）', 
     for (let k = 0; k < 5; k++) expect(autoChainBattle(def, CHAIN_RULES, k, 'smart').outcome).not.toBe('win');
   }, 60000);
 });
+
+describe('2-3x の書庫とカイの切り取り（段階176）', () => {
+  it('砂嵐は過去の区画の性質のまま。カイの戦闘は2つとも新しい戦闘で、切り取りを持つ', () => {
+    const xs = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a23x_'));
+    for (const id of xs) expect(CHAIN_AREA_BATTLES).toContain(id);
+    const alcove = CHAIN_AREA_SETUPS.a23x_alcove.enemies;
+    expect(alcove.find((e) => e.id === 'tinNoise')?.trait).toBe('shield');
+    expect(CHAIN_AREA_SETUPS.a23x_reading1.enemies.find((e) => e.id === 'gearNoise')?.trait).toBe('hard');
+    for (const id of ['a23x_kai', 'a23x_kai_patrol', 'a23_kai']) expect(CHAIN_AREA_SETUPS[id].enemies[0].pattern.some((m) => m.cutsFrame)).toBe(true);
+  });
+  it('2-3x に入る時点の控えめな育ち具合で、砂嵐に勝てる（考える方針）', () => {
+    const pre = growthPreset('a23x_enter', 'low');
+    const party = grownParty(pre.carry.growth, pre.carry.armory, PARTY, pre.carry.navi);
+    for (const id of Object.keys(AREA_BATTLES).filter((x) => x.startsWith('a23x_') && !AREA_BATTLES[x].boss)) {
+      const st = CHAIN_AREA_SETUPS[id];
+      const def = buildMainChainBattle({ id, name: id, party, enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
+      expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
+    }
+  }, 60000);
+});
