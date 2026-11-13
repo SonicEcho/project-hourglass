@@ -112,6 +112,8 @@ export type ChainEffect =
       firstMult?: number;
       /** 使う時に、このラウンドの露出補正に足す（調整17。二刀流） */
       exposure?: number;
+      /** 次のラウンドの始めに、敵全体に当たる（段階178。蚊取り線香ノイズのスナップ「時限の煙」。今は当たらない） */
+      delayed?: boolean;
       /** 敵の行動（まだ動いていない物）と同じ時刻にちょうど終わると、その行動を消して威力がこの倍（段階175。スコアボードのぬしのスナップ「ジャストミート」） */
       parry?: number;
       /** 拍（手拍子の時刻。決まりが無ければ 2・4・6・8）でちょうど終わると、威力がこの倍（段階173。アンプのぬしのスナップ） */
@@ -146,6 +148,8 @@ export type ChainEffect =
       armor?: number;
       /** 段階170（そろばんノイズのスナップ「珠の壁」）：添えた行動の後、ラウンドの終わりまで、この仲間が受ける敵の攻撃をこの回数まで消す */
       wall?: number;
+      /** 段階178（トランジスタラジオノイズのスナップ「目覚まし」）：添えた攻撃が当たった敵の「警戒」を解く（またダウンさせられる） */
+      unguard?: boolean;
       /** 段階172（メトロノームノイズのスナップ「振り子返し」）：添えた行動の後、ラウンドの終わりまで、この仲間が敵の攻撃を受けると、この威力の物理でやり返す */
       riposte?: number;
     }
@@ -276,6 +280,8 @@ export interface ChainEnemyDef {
   pattern: ChainEnemyMove[];
   /** 分裂：倒すと出てくる敵（2体） */
   splitInto?: ChainEnemyDef;
+  /** 自爆の強さ（段階178。威力 × この敵の攻撃 ÷ 仲間の防御。書かなければ決まりの timerDamage） */
+  timerPower?: number;
   /** ダウン時爆発の強さ（段階168。威力 × この敵の攻撃 ÷ 仲間の防御。書かなければ決まりの popDamage） */
   popPower?: number;
   /** 時限：始めの数（ラウンドの終わりごとに1減る） */
@@ -549,6 +555,10 @@ export type ChainEvent =
   | { type: 'strike'; total: number }
   /** 段階176：カイの切り取りで、仲間の行動が抜き取られた（name は抜き取った行動） */
   | { type: 'frameCut'; uid: string; to: string; name: string }
+  /** 段階178：時限の煙を仕掛けた・時限の煙が爆発した・警戒を解いた */
+  | { type: 'delaySet'; uid: string }
+  | { type: 'delayBlast'; uid: string }
+  | { type: 'unguard'; uid: string }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -603,6 +613,8 @@ export interface ChainState {
   sunset?: number;
   /** 手拍子の数（段階173） */
   claps?: number;
+  /** 次のラウンドの始めに敵全体へ当たる攻撃（段階178。時限の煙） */
+  delayedBlasts?: { from: string; element: Element; power: number }[];
   /** ストライクの数（段階175） */
   strikes?: number;
   /** 今動いている仲間の攻撃の、打ち返しの倍率（段階175。runChainRound の中だけ） */
@@ -981,7 +993,7 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
       if (!c || c.effect.kind !== 'addon') return '添えられるのは、エフェクトの札だけ';
       if (usedCards.has(a) || (step.source.kind === 'card' && step.source.index === a)) return 'その札は、もう使う予定';
       if (c.effect.split && (move.effect.kind !== 'damage' || (move.effect.hits ?? 1) > 1 || move.effect.unsplittable)) return `${c.name}は、分けられる単発の攻撃にだけ添えられる`;
-      if (c.effect.kind === 'addon' && move.effect.kind !== 'damage' && (c.effect.add || c.effect.spread || c.effect.expose || c.effect.element || c.effect.pinpoint || c.effect.push || c.effect.seal || c.effect.drain || c.effect.blast)) return `${c.name}は、攻撃にだけ添えられる`;
+      if (c.effect.kind === 'addon' && move.effect.kind !== 'damage' && (c.effect.add || c.effect.spread || c.effect.expose || c.effect.element || c.effect.pinpoint || c.effect.push || c.effect.seal || c.effect.drain || c.effect.blast || c.effect.unguard)) return `${c.name}は、攻撃にだけ添えられる`;
     }
   }
   const me = s.allies.find((a) => a.uid === step.ally);
@@ -1329,6 +1341,12 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     return { ally: actor.uid, element: el, power };
   }
   if (eff.kind === 'addon') return { ally: actor.uid, element: null, power: 0 };
+  // 時限の煙（段階178）：今は当てず、次のラウンドの始めに敵全体へ
+  if (eff.kind === 'damage' && eff.delayed) {
+    s.delayedBlasts = [...(s.delayedBlasts ?? []), { from: actor.uid, element: eff.element, power: eff.power }];
+    ev.push({ type: 'delaySet', uid: actor.uid });
+    return { ally: actor.uid, element: null, power: 0 };
+  }
   // damage（調整17：連続攻撃・複数攻撃化・添える札・露出補正・フィニッシュの伸び方）
   const isFinish = isChainFinish(move);
   let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
@@ -1367,6 +1385,11 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     const push = (eff.push ?? 0) + mods.push;
     if (push) ev.push({ type: 'push', uid: e.uid, by: push, out: false, moved: false });
     if (mods.pinpoint) e.pinpoint = true;
+    // 目覚まし（段階178）：当たった敵の警戒を解く
+    if (mods.unguard && (e.guard ?? 0) > 0) {
+      e.guard = 0;
+      ev.push({ type: 'unguard', uid: e.uid });
+    }
     if (mods.seal) {
       e.status = { kind: 'seal', left: 1, stacks: 0 };
       ev.push({ type: 'status', to: e.uid, status: 'seal', left: 1 });
@@ -1440,10 +1463,11 @@ export interface ChainAddonMods {
   armor: number;
   wall: number;
   riposte: number;
+  unguard: boolean;
 }
 
 export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
-  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0, riposte: 0 };
+  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0, riposte: 0, unguard: false };
   for (const c of cards) {
     const e = c?.effect;
     if (!e || e.kind !== 'addon') continue;
@@ -1462,6 +1486,7 @@ export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
     m.armor = Math.max(m.armor, e.armor ?? 0);
     m.wall += e.wall ?? 0;
     m.riposte = Math.max(m.riposte, e.riposte ?? 0);
+    m.unguard ||= !!e.unguard;
   }
   return m;
 }
@@ -1665,6 +1690,23 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
   let enemySince = false;
   const push = (q: ChainOrderEntry | null, key: string, at: number, uid: string, name: string, ev: ChainEvent[], target?: string, all?: boolean) =>
     frames.push({ order: frames.length + 1, key: q?.key ?? key, target, all, at, uid, name, events: ev, state: cloneChain(s) });
+  // ラウンドの始め（段階178）：前のラウンドに仕掛けた時限の煙が、敵全体に当たる
+  if (s.delayedBlasts?.length) {
+    const blasts = s.delayedBlasts;
+    s.delayedBlasts = [];
+    for (const b of blasts) {
+      const actor = s.allies.find((a) => a.uid === b.from);
+      if (!actor) continue;
+      const ev: ChainEvent[] = [{ type: 'delayBlast', uid: actor.uid }];
+      const ctx: ActCtx = { countered: new Set(), stuck: true };
+      for (const e of living(s.enemies)) hitEnemy(s, actor, e, b.element, b.power, {}, ctx, ev);
+      push(null, `start:blast:${actor.uid}`, 0, actor.uid, '時限の煙', ev, undefined, true);
+      if (checkEnd(s, ev, 0)) {
+        frames[frames.length - 1].state = cloneChain(s);
+        return { state: s, frames };
+      }
+    }
+  }
   // ラウンドの始め（段階158）：ラウンドの始めの回復（特性）と、狂い（HP を失う。1より下がらない）
   for (const a of s.allies.filter((x) => x.hp > 0)) {
     const ev: ChainEvent[] = [];
@@ -1863,7 +1905,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       ev.push({ type: 'timerTick', uid: e.uid, left: e.timer });
       if (e.timer <= 0) {
         ev.push({ type: 'timerBlast', uid: e.uid });
-        for (const a of s.allies.filter((x) => x.hp > 0)) hurtAlly(e.uid, a, s.rules.timerDamage, ev);
+        const tp = chainEnemyDef(s, e.defId)?.timerPower;
+        for (const a of s.allies.filter((x) => x.hp > 0)) hurtAlly(e.uid, a, tp ? Math.max(1, Math.floor((tp * e.atk) / Math.max(1, a.def))) : s.rules.timerDamage, ev);
         e.gone = true;
       }
       push(null, `end:${e.uid}`, s.rules.roundLen, e.uid, e.timer <= 0 ? '大爆発' : `あと${e.timer}`, ev, undefined, true);

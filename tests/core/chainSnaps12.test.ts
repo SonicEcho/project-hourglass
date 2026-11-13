@@ -144,3 +144,31 @@ describe('2-3 の宝箱の札の仕組み（段階174）', () => {
     for (const a of r.state.allies) expect(a.mp).toBe(Math.min(a.maxMp ?? 0, 6));
   });
 });
+
+describe('3-1 の敵のスナップの仕組み（段階178）', () => {
+  const SMOKE: ChainMove = { id: 'smoke', name: '時限の煙', type: 'attack', weight: 2, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 40, delayed: true }, text: '' };
+  const WAKE: ChainMove = { id: 'wake', name: '目覚まし', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', unguard: true }, text: '' };
+  const build = (enemies: ChainEnemyDef[], hand: string[]): ChainState => {
+    const def: ChainBattleDef = { ...BASE, enemies, variants: undefined, cards: { ...BASE.cards, ...CARDS, smoke: SMOKE, wake: WAKE } };
+    const s = createChainBattle(def, CHAIN_RULES, 7);
+    s.hand = [...hand];
+    return s;
+  };
+  it('時限の煙：今は当たらず、次のラウンドの始めに敵全体へ', () => {
+    const s = build([dummy(), dummy({ id: 'd2' })], ['smoke']);
+    const r1 = runChainRound(s, [card('hero', 0)]);
+    expect(events(r1).some((e) => e.type === 'damage' && e.from === 'hero')).toBe(false);
+    const r2 = runChainRound(r1.state, []);
+    const hits = events(r2).filter((e) => e.type === 'damage' && e.from === 'hero');
+    expect(hits).toHaveLength(2);
+    expect(events(r2).some((e) => e.type === 'delayBlast')).toBe(true);
+    expect(r2.state.delayedBlasts ?? []).toHaveLength(0);
+  });
+  it('目覚まし：当たった敵の警戒を解く', () => {
+    const s = build([dummy()], ['wake']);
+    s.enemies[0].guard = 2;
+    const r = runChainRound(s, [mv('hero', s.enemies[0].uid, [0])]);
+    expect(events(r).some((e) => e.type === 'unguard')).toBe(true);
+    expect(r.state.enemies[0].guard ?? 0).toBe(0);
+  });
+});

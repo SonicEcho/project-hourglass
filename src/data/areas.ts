@@ -210,16 +210,17 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   // 棚の砂時計を手に取った後のカイ（段階85）：決まったラウンドを耐えると、逃げきる（区画の奥の印の戦闘。打ち切りで区画を終える）
   a23x_kai: { id: 'a23x_kai', name: 'カイ', enemies: [KAI], reward: 0, boss: true, cutoff: { rounds: 3, enemyHpRatio: 0.5, afterRound: 2 } },
   // ---- 3-1「はじめての仕送り」：昭和41年の夏の村（段階88。villageEnemies.ts）。晩ごとに少しずつ強める（数値は npm run measure の「3-1」で測った） ----
-  a31_n1_station: { id: 'a31_n1_station', name: '砂嵐', enemies: tough([FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
+  // 段階178（段取りの段階F5a）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目は扇風機（2回行動）と蚊取り線香（自爆）だけ、2晩目にラジオ（ダウン解除）とちゃぶ台（性質なし）、3晩目は組み合わせ）
+  a31_n1_station: { id: 'a31_n1_station', name: '砂嵐', enemies: tough([FAN_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
   a31_n1_square: { id: 'a31_n1_square', name: '砂嵐', enemies: tough([COIL_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
-  a31_n1_paddy: { id: 'a31_n1_paddy', name: '砂嵐', enemies: tough([RADIO_NOISE, FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
-  a31_n1_ridge: { id: 'a31_n1_ridge', name: '砂嵐', enemies: tough([FAN_NOISE, RADIO_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
-  a31_n1_shrine: { id: 'a31_n1_shrine', name: '砂嵐', enemies: tough([TABLE_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
+  a31_n1_paddy: { id: 'a31_n1_paddy', name: '砂嵐', enemies: tough([FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
+  a31_n1_ridge: { id: 'a31_n1_ridge', name: '砂嵐', enemies: tough([COIL_NOISE, FAN_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 3, koma: 1 },
+  a31_n1_shrine: { id: 'a31_n1_shrine', name: '砂嵐', enemies: tough([FAN_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n1))), reward: 2 },
   a31_runner: { id: 'a31_runner', name: '砂嵐', enemies: [FAN_NOISE, FAN_NOISE, FAN_NOISE], reward: 3, item: ITEMS.oldTicket.id },
-  a31_n2_yard: { id: 'a31_n2_yard', name: '砂嵐', enemies: tough([TABLE_NOISE, RADIO_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 3, koma: 1 },
-  a31_n2_east: { id: 'a31_n2_east', name: '砂嵐', enemies: tough([FAN_NOISE, FAN_NOISE, TABLE_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 2 },
-  a31_n2_river: { id: 'a31_n2_river', name: '砂嵐', enemies: tough([RADIO_NOISE, COIL_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 4, koma: 1 },
-  a31_n2_river2: { id: 'a31_n2_river2', name: '砂嵐', enemies: tough([COIL_NOISE, TABLE_NOISE, COIL_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 2 },
+  a31_n2_yard: { id: 'a31_n2_yard', name: '砂嵐', enemies: tough([RADIO_NOISE, TABLE_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 3, koma: 1 },
+  a31_n2_east: { id: 'a31_n2_east', name: '砂嵐', enemies: tough([TABLE_NOISE, FAN_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 2 },
+  a31_n2_river: { id: 'a31_n2_river', name: '砂嵐', enemies: tough([RADIO_NOISE, COIL_NOISE, TABLE_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 4, koma: 1 },
+  a31_n2_river2: { id: 'a31_n2_river2', name: '砂嵐', enemies: tough([TABLE_NOISE, TABLE_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2))), reward: 2 },
   // 実家の門の番人（倒すと夕暮れの駅への道が開く。3晩目から）
   a31_n2_guard: { id: 'a31_n2_guard', name: '郵便ポストノイズ', enemies: [toughenEnemy(POSTBOX_NOISE, A31_SCALE.guard), ...tough([COIL_NOISE, FAN_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n2)))], reward: 5, koma: 1 },
   a31_n3_yard: { id: 'a31_n3_yard', name: '砂嵐', enemies: tough([TABLE_NOISE, FAN_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 3, koma: 1 },
@@ -936,9 +937,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
-      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id], gears: ['fireBoost'] },
-      { id: 'a31_chest_river', room: 'village_river', cell: [13, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['oneMoreDraw'] },
+      { id: 'a31_chest_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.potion.id], snaps: ['thunderChip'], chainSnaps: ['c17_longTake'] },
+      { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id], gears: ['fireBoost'], chainSnaps: ['c17_firstCut'] },
+      { id: 'a31_chest_river', room: 'village_river', cell: [13, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['oneMoreDraw'], chainSnaps: ['c17_exposure'] },
     ],
     enemies: [
       // ---- 1晩目（駅前・田んぼ道・鎮守の森の石段） ----
