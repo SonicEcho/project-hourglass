@@ -180,6 +180,9 @@ export interface ChainAreaSetup {
   repeat?: ChainBattleDef['repeat'];
   /** フィルム（段階184。本気のカイ） */
   film?: ChainBattleDef['film'];
+  /** 言えなかった言葉（段階186。踏切のぬし）と、言わずに勝った時のスナップ */
+  word?: ChainBattleDef['word'];
+  quietSnaps?: string[];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }

@@ -6,7 +6,7 @@ import { A22_CARD_ART, A22_ENEMY_SNAP, A22_ENEMY_SNAPS, A22_NEW_SNAPS, A22_SETUP
 import { A23_CARD_ART, A23_ENEMY_SNAP, A23_ENEMY_SNAPS, A23_NEW_SNAPS, A23_SETUPS, A23_SHORT_TEXT } from './chainArea23';
 import { A3S_CARD_ART, A3S_ENEMY_SNAP, A3S_ENEMY_SNAPS, A3S_NEW_SNAPS, A3S_SETUPS, A3S_SHORT_TEXT } from './chainArea3s';
 import { A3K_NEW_SNAPS, A3K_SETUPS } from './chainArea3k';
-import { A32_CARD_ART, A32_ENEMY_SNAP, A32_ENEMY_SNAPS, A32_NEW_SNAPS, A32_SETUPS, A32_SHORT_TEXT } from './chainArea32';
+import { A32_BATTLE_ONLY, A32_CARD_ART, A32_ENEMY_SNAP, A32_ENEMY_SNAPS, A32_NEW_SNAPS, A32_SETUPS, A32_SHORT_TEXT } from './chainArea32';
 import { A31_CARD_ART, A31_ENEMY_SNAP, A31_ENEMY_SNAPS, A31_NEW_SNAPS, A31_SETUPS, A31_SHORT_TEXT } from './chainArea31';
 
 // 新しい戦闘の区画をまとめる（段階168）。区画ごとのファイル（chainArea11・chainArea12…）の札・敵のスナップ・戦闘の中身を、ここで1つにする。
@@ -15,13 +15,15 @@ import { A31_CARD_ART, A31_ENEMY_SNAP, A31_ENEMY_SNAPS, A31_NEW_SNAPS, A31_SETUP
 /** 新しい戦闘の本番の札（スペシャルを含む） */
 export const CHAIN_MAIN_CARDS: Record<string, ChainMove> = {
   ...A11_CARDS,
-  ...Object.fromEntries([...Object.values(A12_ENEMY_SNAP), ...A21_NEW_SNAPS, ...Object.values(A21_ENEMY_SNAP), ...A22_NEW_SNAPS, ...Object.values(A22_ENEMY_SNAP), ...A23_NEW_SNAPS, ...Object.values(A23_ENEMY_SNAP), ...A31_NEW_SNAPS, ...Object.values(A31_ENEMY_SNAP), ...A3S_NEW_SNAPS, ...Object.values(A3S_ENEMY_SNAP), ...A3K_NEW_SNAPS, ...A32_NEW_SNAPS, ...Object.values(A32_ENEMY_SNAP)].map((m) => [m.id, m])),
+  ...Object.fromEntries([...Object.values(A12_ENEMY_SNAP), ...A21_NEW_SNAPS, ...Object.values(A21_ENEMY_SNAP), ...A22_NEW_SNAPS, ...Object.values(A22_ENEMY_SNAP), ...A23_NEW_SNAPS, ...Object.values(A23_ENEMY_SNAP), ...A31_NEW_SNAPS, ...Object.values(A31_ENEMY_SNAP), ...A3S_NEW_SNAPS, ...Object.values(A3S_ENEMY_SNAP), ...A3K_NEW_SNAPS, ...A32_NEW_SNAPS, ...Object.values(A32_ENEMY_SNAP), ...A32_BATTLE_ONLY].map((m) => [m.id, m])),
 };
 
 /**
  * 新しい戦闘のスナップ（段階163）：アルバムに入れられる札の一覧（スペシャルを除く）。章ごとに足していく。並びはアルバムの画面の並び
  */
-export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_MAIN_CARDS).filter((m) => !m.owner).map((m) => [m.id, m]));
+/** ぬし戦だけの札（段階186。踏切のぬしの「あのね」）はアルバムに入れない */
+const BATTLE_ONLY = new Set(A32_BATTLE_ONLY.map((m) => m.id));
+export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_MAIN_CARDS).filter((m) => !m.owner && !BATTLE_ONLY.has(m.id)).map((m) => [m.id, m]));
 
 /** 敵の種類 → その敵のスナップ（段階165） */
 export const CHAIN_ENEMY_SNAPS: Record<string, string> = { ...A11_ENEMY_SNAPS, ...A12_ENEMY_SNAPS, ...A21_ENEMY_SNAPS, ...A22_ENEMY_SNAPS, ...A23_ENEMY_SNAPS, ...A31_ENEMY_SNAPS, ...A3S_ENEMY_SNAPS, ...A32_ENEMY_SNAPS };
@@ -46,6 +48,8 @@ export const CHAIN_BOSS_GRADE: Record<string, { high: number; mid: number }> = {
   a3s2_boss: { high: 46, mid: 61 },
   // 段階184：本気のカイ（フィルム切れの勝ちは 63〜64 にそろうので、それより速い勝ち方を ★3 に）
   a3k_kai: { high: 63, mid: 78 },
+  // 段階186：踏切のぬし（勝った戦いの決着 69〜192）
+  a32_boss: { high: 73, mid: 88 },
 };
 
 /** 区画の戦闘を新しい戦闘で戦う時の中身（AREA_BATTLES の id → 中身）。札は全部の札 */

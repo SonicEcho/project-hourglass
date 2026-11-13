@@ -114,6 +114,8 @@ export type ChainEffect =
       exposure?: number;
       /** 次のラウンドの始めに、敵全体に当たる（段階178。蚊取り線香ノイズのスナップ「時限の煙」。今は当たらない） */
       delayed?: boolean;
+      /** ラウンドが進むほど強い（段階186。踏切のぬしの「あのね」）：威力に（ラウンド - 1）× この数を足す */
+      perRound?: number;
       /** ねらった敵に、このラウンドのまだ動いていない予定があれば（ダウンしていない）、威力がこの倍（段階181。風車ノイズのスナップ「先回り」） */
       beforeMult?: number;
       /** 敵の行動（まだ動いていない物）と同じ時刻にちょうど終わると、その行動を消して威力がこの倍（段階175。スコアボードのぬしのスナップ「ジャストミート」） */
@@ -437,6 +439,11 @@ export interface ChainBattleDef {
   repeat?: { target: string; rate: number; need: number };
   /** フィルム（段階184。本気のカイ）：始めの枚数。撮る行動（film）が動くと減り、0 で「フィルムが、もうない」：敵が引いて勝ち（finish は 'film'） */
   film?: { total: number };
+  /**
+   * 言えなかった言葉（段階186。3-2 の踏切のぬしの思い出の再演）：戦闘の始めに、手札に card（札の id）が1枚入る（山札には入らない。シャッフルでも手札に残る）。
+   * part（敵の定義の id）が立っている間に出すと「警報にのまれて」不発（札は手札に戻る）。出せたら、その札はこの戦闘から消える（wordSaid）
+   */
+  word?: { card: string; part: string };
 }
 
 export interface ChainUnit {
@@ -559,6 +566,9 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** 言えなかった言葉（段階186）：警報にのまれた・言えた */
+  | { type: 'wordSwallowed'; uid: string }
+  | { type: 'wordSaid'; uid: string }
   /** フィルム（段階184）：撮って減った・手札が焼かれた・型が変わった */
   | { type: 'filmUse'; uid: string; used: number; left: number }
   | { type: 'cardErase'; uid: string; card: string }
@@ -670,6 +680,8 @@ export interface ChainState {
   finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout' | 'watch' | 'film';
   /** フィルムの残り（段階184） */
   film?: number;
+  /** 言えなかった言葉を、言えた（段階186） */
+  wordSaid?: boolean;
   /** 上がった花火の数（段階182。くり返しを越える） */
   fireworks?: number;
   /** 腕時計の HP（段階179）と、このラウンドにねじを巻いたか（次のラウンドの急かすがそれる） */
@@ -900,6 +912,8 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
   }
   s.deck = shuffle(s, def.deck);
   for (let i = 0; i < handLimit(s); i++) draw(s);
+  // 言えなかった言葉（段階186）：手札に1枚
+  if (def.word) s.hand.push(def.word.card);
   planIntents(s);
   return s;
 }
@@ -1329,9 +1343,11 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
         n += s.hand.length - before;
       }
     } else if (eff.kind === 'cycle') {
-      const back = s.hand.length;
-      s.deck = shuffle(s, [...s.deck, ...s.hand]);
-      s.hand = [];
+      // 言えなかった言葉（段階186）は手札に残す
+      const keep = s.def.word ? s.hand.filter((c) => c === s.def.word!.card) : [];
+      const back = s.hand.length - keep.length;
+      s.deck = shuffle(s, [...s.deck, ...s.hand.filter((c) => !keep.includes(c))]);
+      s.hand = [...keep];
       for (let k = 0; k < back; k++) draw(s);
       n = s.hand.length;
     } else {
@@ -1421,7 +1437,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   }
   // damage（調整17：連続攻撃・複数攻撃化・添える札・露出補正・フィニッシュの伸び方）
   const isFinish = isChainFinish(move);
-  let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted);
+  let power = Math.max(1, eff.power + (eff.perActed ?? 0) * acted + (eff.perRound ?? 0) * (s.round - 1));
   if (eff.firstMult && acted === 0) power *= eff.firstMult;
   if (eff.syncMult && s.roundSynced) power *= eff.syncMult;
   if (eff.beatMult && (s.def.clap?.beats ?? CHAIN_BEATS).includes(at)) power *= eff.beatMult;
@@ -1894,6 +1910,14 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         push(q, '', at, actor.uid, move?.name ?? '', ev, step.target, move?.target !== 'enemy');
         continue;
       }
+      // 言えなかった言葉（段階186）：警報機が立っている間は、警報にのまれて不発（札は手札に戻す）
+      const wordHere = !!s.def.word && cardIds[q.i].includes(s.def.word.card);
+      if (wordHere && s.enemies.some((e) => e.defId === s.def.word!.part && e.hp > 0 && !e.gone)) {
+        s.hand.push(...cardIds[q.i]);
+        ev.push({ type: 'wordSwallowed', uid: actor.uid });
+        push(q, '', at, actor.uid, move.name, ev, step.target, move.target !== 'enemy');
+        continue;
+      }
       // 邪魔されなければ強い（調整17）：動き始めてから効くまでの間（始めの時刻を含み、終わりの時刻は含まない）に敵が動いていたら不発。札は手札に戻す
       if (move.effect.kind === 'damage' && move.effect.fragile && enemyActs.some((t) => t >= at - move.weight && t < at)) {
         s.hand.push(...cardIds[q.i]);
@@ -1901,7 +1925,12 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
         push(q, '', at, actor.uid, move.name, ev, step.target, move.target !== 'enemy');
         continue;
       }
-      s.discard.push(...cardIds[q.i]);
+      // 言えた言葉は、この戦闘から消える（捨て札に入れない）
+      s.discard.push(...cardIds[q.i].filter((c) => !wordHere || c !== s.def.word!.card));
+      if (wordHere) {
+        s.wordSaid = true;
+        ev.push({ type: 'wordSaid', uid: actor.uid });
+      }
       s.actedAt[q.i] = at;
       // 動いた回数（段階159。武器の経験値。コンボは動いた仲間みんな）
       s.acted ??= {};

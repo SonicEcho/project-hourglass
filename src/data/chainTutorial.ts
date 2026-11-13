@@ -69,6 +69,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '打ち返せなかった投球が当たると「ストライク」。\n3つで三振、負けになってしまいます。\n押す・ダウンで投球を止めるのも手です。' },
     { target: 'parts', text: '得点板とバックネットは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
   ],
+  // 段階186：3-2 の踏切のぬし「言えなかった言葉」
+  chain_word: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「言えなかった言葉」がはじまります。\n夕暮れの踏切。しおりは、何かを言いかけていました。' },
+    { target: 'poiBar', text: '手札に「あのね」が1枚あります。\n持っているラウンドが長いほど、強くなります。' },
+    { target: 'parts', text: '警報機が鳴っている（壊れていない）間に出すと、\n警報にのまれて言えません（札は手札に戻ります）。\n先に警報機を壊すか、待つか。' },
+    { target: 'poiBar', text: '最後まで言わずに勝っても、かまいません。\nその時は「なんでもない」が手に入ります。' },
+  ],
   // 段階184：本気のカイ「フィルムを使い切らせる」
   chain_film: [
     { target: 'intro', text: '本気のカイ！\n今度は逃げずに勝ちましょう。\nカイを倒すか、フィルムを使い切らせれば勝ちです。' },
@@ -175,7 +182,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

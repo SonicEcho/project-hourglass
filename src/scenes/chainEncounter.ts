@@ -146,6 +146,8 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   const setup = CHAIN_AREA_SETUPS[def.id];
   // ぬしのスナップ（段階180：早く倒した時＝★3 だけ。部位を壊すと部位の素材）
   const chainSnaps = enc.hunt || !setup ? [] : chainBossSnaps(result, setup.snaps);
+  // なんでもない（段階186）：言えなかった言葉を、最後まで言わずに勝った時のスナップ
+  if (!enc.hunt && setup && result.quiet) chainSnaps.push(...(setup.quietSnaps ?? []));
   const snaps = enc.hunt || setup ? [] : (def.snaps ?? []);
   if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
   // 早く勝った時の敵のスナップ（段階165。狩りでも）
