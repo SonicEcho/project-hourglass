@@ -579,6 +579,7 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_rewind':
       case 'trait_veil':
       case 'trait_healer':
       case 'trait_fast':

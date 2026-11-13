@@ -83,7 +83,7 @@ export const A11_DECK: string[] = [
 
 
 /** スペシャル（段階163）：アルバムに入れず、並びの仲間ごとに2枚ずつ山札に加わる */
-export const CHAIN_ALLY_SPECIALS: Record<string, string[]> = { hero: [C.swing.id, C.swing.id], akari: [C.snow.id, C.snow.id], mio: [C.paperGun.id, C.paperGun.id], sayoko: [C.twinCut.id, C.twinCut.id] };
+export const CHAIN_ALLY_SPECIALS: Record<string, string[]> = { hero: [C.swing.id, C.swing.id], akari: [C.snow.id, C.snow.id], mio: [C.paperGun.id, C.paperGun.id], sayoko: [C.twinCut.id, C.twinCut.id], hayase: [C.repairFire.id, C.repairFire.id] };
 
 /** 最初のアルバム（段階163。A11_DECK からスペシャルを除いた20枚） */
 export const CHAIN_START_ALBUM: string[] = A11_DECK.filter((id) => !A11_CARDS[id]?.owner);

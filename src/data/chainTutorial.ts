@@ -2,7 +2,7 @@
 // 文はよくあるゲームのチュートリアルの言い回しにする（開発者の頼み）。どこを照らすかは画面（ChainBattleScene）が決める
 
 /** 照らす場所 */
-export type ChainCoachTarget = 'trait_veil' | 'trait_healer' | 'trait_fast' | 'trait_interrupt' | 'trait_swift' | 'trait_timer' | 'trait_waker' | 'trait_sticky' | 'trait_counter' | 'trait_hard' | 'trait_shell' | 'trait_shield' | 'trait_flee' | 'trait_split' | 'trait_pop' | 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
+export type ChainCoachTarget = 'trait_rewind' | 'trait_veil' | 'trait_healer' | 'trait_fast' | 'trait_interrupt' | 'trait_swift' | 'trait_timer' | 'trait_waker' | 'trait_sticky' | 'trait_counter' | 'trait_hard' | 'trait_shell' | 'trait_shield' | 'trait_flee' | 'trait_split' | 'trait_pop' | 'guard' | 'poiBar' | 'parts' | 'specialCard' | 'intro' | 'intent' | 'film' | 'card' | 'enemy' | 'ally2' | 'movesTab' | 'move' | 'exec' | 'weak' | 'addonCard' | 'climaxCard' | 'comboBar';
 
 export interface ChainCoachStep {
   target: ChainCoachTarget;
@@ -145,6 +145,10 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
   chain_counter: [
     { target: 'trait_counter', text: '「カウンター」の敵は、攻撃を受けるとやり返してきます！\n先にダウンさせれば反撃しません。\n1回で大きく当てて、反撃の回数を減らすのも手です。' },
   ],
+  // 段階189：4-2 の敵の性質
+  chain_rewind: [
+    { target: 'trait_rewind', text: 'この敵は「巻き戻し」！\nラウンドの終わりに、そのラウンドに受けたダメージを戻してしまいます。\n1ラウンドで倒しきるか、ダウンさせると戻せません。' },
+  ],
   // 段階187：4-1 の敵の性質
   chain_veil: [
     { target: 'trait_veil', text: 'この敵は「予定隠し」！\nラウンドの始めは、予定が見えません。\n攻撃を当てると、何をしてくるかが見えます。' },
@@ -199,7 +203,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_heat', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_heat', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_rewind', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
