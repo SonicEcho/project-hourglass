@@ -229,11 +229,12 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a31_n3_front: { id: 'a31_n3_front', name: '砂嵐', enemies: tough([COIL_NOISE, FAN_NOISE, RADIO_NOISE].map((e) => scaleEnemy(e, A31_SCALE.n3))), reward: 2 },
   a31_boss: { id: 'a31_boss', name: '汽車のぬし', enemies: [toughenEnemy(TRAIN_LORD, A31_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['quickStep'] },
   // ---- 大正の祭りの夜（段階91b。taishoEnemies.ts）。コマはない（返す話ではない）。1晩目は3人、2晩目は小夜子が入る ----
-  a3s1_torii: { id: 'a3s1_torii', name: '砂嵐', enemies: tough([LANTERN_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
-  a3s1_torii2: { id: 'a3s1_torii2', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, PINWHEEL_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 2 },
-  a3s1_stalls: { id: 'a3s1_stalls', name: '砂嵐', enemies: tough([CANDY_NOISE, LANTERN_NOISE, PHONOGRAPH_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3, item: ITEMS.potion.id },
-  a3s1_stalls2: { id: 'a3s1_stalls2', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, PINWHEEL_NOISE, CANDY_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
-  a3s1_yagura: { id: 'a3s1_yagura', name: '砂嵐', enemies: tough([LANTERN_NOISE, CANDY_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
+  // 段階181（段取りの段階F6a）：新しい戦闘の性質を覚える順に、敵の組み合わせを入れ替えた（1晩目は風車（割り込み）と提灯（ダウン時爆発）から、やぐらの広場で飴細工（足止め）、1晩目の終わりに蓄音機。2晩目は組み合わせ）
+  a3s1_torii: { id: 'a3s1_torii', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
+  a3s1_torii2: { id: 'a3s1_torii2', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 2 },
+  a3s1_stalls: { id: 'a3s1_stalls', name: '砂嵐', enemies: tough([LANTERN_NOISE, PINWHEEL_NOISE, LANTERN_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3, item: ITEMS.potion.id },
+  a3s1_stalls2: { id: 'a3s1_stalls2', name: '砂嵐', enemies: tough([PINWHEEL_NOISE, LANTERN_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
+  a3s1_yagura: { id: 'a3s1_yagura', name: '砂嵐', enemies: tough([CANDY_NOISE, LANTERN_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n1))), reward: 3 },
   // 1晩目の終わり：花火の前に、やぐらの影から湧く砂嵐（区画の奥の印。勝つと夜が巻き戻る）
   a3s1_end: { id: 'a3s1_end', name: '砂嵐', enemies: tough([PHONOGRAPH_NOISE, LANTERN_NOISE, CANDY_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.end))), reward: 5, snaps: ['iceChip'] },
   a3s2_torii: { id: 'a3s2_torii', name: '砂嵐', enemies: tough([LANTERN_NOISE, PINWHEEL_NOISE, PINWHEEL_NOISE].map((e) => scaleEnemy(e, A3S_SCALE.n2))), reward: 3 },
@@ -1346,7 +1347,7 @@ export const AREAS: Record<string, AreaDef> = {
     bgm: BGM.prologue,
     komaNeed: 0,
     goal: { band: '目当て：やぐらの広場', guide: '小夜子についていく。花火は、やぐらの広場から見るのが一番きれいらしい' },
-    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.lanternPaper.id], gears: ['hpMemory'] }],
+    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.lanternPaper.id], gears: ['hpMemory'], chainSnaps: ['c17_panorama'] }],
     enemies: [
       { id: 'a3s1_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3s1_torii' },
       { id: 'a3s1_e_torii2', patrol: [[15, 7], [15, 13]], battle: 'a3s1_torii2' },
@@ -1383,7 +1384,7 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：夜の端', guide: '昨日とまったく同じ夜。小夜子と一緒に、やぐらの先の夜の端へ' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [2, 9], items: [ITEMS.recordNeedle.id], gears: ['guardMemory'] }],
+    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [2, 9], items: [ITEMS.recordNeedle.id], gears: ['guardMemory'], chainSnaps: ['c17_rewind'] }],
     enemies: [
       { id: 'a3s2_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3s2_torii' },
       { id: 'a3s2_e_stalls', room: 'matsuri_stalls', patrol: [[8, 7], [15, 7]], battle: 'a3s2_stalls' },

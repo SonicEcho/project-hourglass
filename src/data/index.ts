@@ -24,6 +24,7 @@ export * from './chainArea21';
 export * from './chainArea22';
 export * from './chainArea23';
 export * from './chainArea31';
+export * from './chainArea3s';
 export * from './chainAreas';
 export * from './chainTutorial';
 export * from './snapTrial';

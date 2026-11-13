@@ -50,6 +50,8 @@ export const CHAIN17_CARDS = {
   // 仲間の専用の札（スペシャル。連れていく仲間の分だけ山札に入る）
   swing: m({ id: 'c17_swing', name: '全力スイング', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 70 }, text: 'ハルト専用。敵1体に物理70', owner: 'hero' }),
   snow: m({ id: 'c17_snow', name: '雪の結晶', type: 'attack', weight: 2, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 15 }, text: 'あかり専用。敵全体に氷15', owner: 'akari' }),
+  // 段階181：小夜子（3章の祭りの夜の2晩目から）。重い物理の2回攻撃（かたい敵に1.5倍・バリアを割る）
+  twinCut: m({ id: 'c17_twinCut', name: '二段斬り', type: 'attack', weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 25, hits: 2, heavy: true }, text: '小夜子専用。敵1体に物理25を2回（重い一撃）', owner: 'sayoko' }),
   paperGun: m({ id: 'c17_paperGun', name: '紙鉄砲', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 10, hits: 3 }, text: 'みお専用。敵1体に雷10を3回', owner: 'mio' }),
 } satisfies Record<string, ChainMove>;
 
@@ -64,13 +66,13 @@ export const CHAIN17_CARD_ART: Record<string, string> = {
   c17_highlight: 'snap.joker', c17_filterRed: 'snap.fireChip', c17_filterBlue: 'snap.iceChip', c17_filterYellow: 'snap.thunderChip', c17_pinpoint: 'snap.breakArm',
   c17_push: 'snap.quickStep', c17_pause: 'snap.encore', c17_rewind: 'snap.recover',
   c17_decisive: 'snap.breakArm', c17_group: 'snap.wideShot', c17_imprint: 'snap.heavyBlow', c17_margin: 'snap.search', c17_develop: 'snap.draw', c17_reel: 'snap.quickStep', c17_rainbow: 'snap.joker',
-  c17_swing: 'snap.pinchHitter', c17_snow: 'snap.iceChip', c17_paperGun: 'snap.thunderChip',
+  c17_swing: 'snap.pinchHitter', c17_snow: 'snap.iceChip', c17_paperGun: 'snap.thunderChip', c17_twinCut: 'snap.sword',
 };
 
 /** 技とコンボの絵 */
 export const CHAIN17_MOVE_ART: Record<string, string> = {
   flurry: 'snap.sword', iceShard: 'snap.iceChip', tricolor: 'snap.joker', burstStorm: 'snap.quickStep', timeStop: 'snap.encore', homerun: 'snap.pinchHitter',
-  diamondDust: 'snap.iceChip', thunderDrum: 'snap.thunderChip', twoSwords: 'snap.sword', threeTimes: 'snap.joker',
+  diamondDust: 'snap.iceChip', thunderDrum: 'snap.thunderChip', twoSwords: 'snap.sword', threeTimes: 'snap.joker', dejaVu: 'snap.encore',
   flashback: 'snap.fireChip', thunderRain: 'snap.thunderChip', onceInLife: 'snap.heavyBlow', thousandKnock: 'snap.pinchHitter', iceFlower: 'snap.iceChip', biribiri: 'snap.thunderChip', inSync: 'snap.joker',
 };
 
@@ -84,7 +86,7 @@ export const CHAIN17_SHORT_TEXT: Record<string, string> = {
   c17_pinpoint: '添える\nフィニッシュ1.5倍', c17_push: '添える\n予定を2マス後へ', c17_pause: '添える\n大技を封じる', c17_rewind: '添える\n30%回復',
   c17_decisive: '物理60\n当てた回数×10', c17_group: '全体に物理30\n当てた回数×4', c17_imprint: '物理40\nその敵へ×15', c17_margin: '物理40\n残りマス×20',
   c17_develop: '物理40\nサポート×25', c17_reel: '物理15×5\n当てた回数×2', c17_rainbow: '全体に一番効く\n属性で20',
-  c17_swing: '敵1体に\n物理70', c17_snow: '敵全体に\n氷15', c17_paperGun: '雷10×3回',
+  c17_swing: '敵1体に\n物理70', c17_snow: '敵全体に\n氷15', c17_paperGun: '雷10×3回', c17_twinCut: '物理25×2回\n重い一撃',
   basic: '敵1体に\n物理20', slash: '敵1体に\n物理35', flurry: '物理12×3回', ice: '敵1体に\n氷35', iceShard: '氷10×2回', heal: '味方全体の\nHPを回復', zap: '雷12×2回', thunder: '敵1体に\n雷35',
 };
 
@@ -166,6 +168,8 @@ export const CHAIN17_COMBOS: ChainLinkDef[] = [
   combo('inSync', '息ぴったり', [C.swing, C.snow], ['hero', 'akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 40, extra: [{ element: 'ice', power: 40 }] }, text: 'ハルトとあかり。敵全体に物理40と氷40' }),
   // 専用2（同じ仲間）＋通常1
   combo('twoSwords', '二刀流', [C.swing, C.swing, C.exposure], ['hero'], { weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 100, hits: 2, exposure: 20 }, text: 'ハルト。敵1体に物理100を2回。使う時に、このラウンドの露出補正に+20' }),
+  // 段階181：あかりと小夜子（あかりのデジャヴと、小夜子のくり返す祭りの夜が重なる）。同じ攻撃をもう一度
+  combo('dejaVu', 'デジャヴ', [C.snow, C.twinCut], ['akari', 'sayoko'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 30, hits: 2, extra: [{ element: 'physical', power: 30, hits: 2 }] }, text: 'あかりと小夜子。敵全体に氷30を2回と、物理30を2回（同じ夜を、もう一度）' }),
   // 専用3（3人技）
   combo('threeTimes', '三人の時間', [C.swing, C.snow, C.paperGun], ['hero', 'akari', 'mio'], { weight: 4, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 80, extra: [{ element: 'ice', power: 80 }, { element: 'thunder', power: 80 }] }, text: '3人で。敵全体に物理80・氷80・雷80' }),
 ];
@@ -183,6 +187,7 @@ export const CHAIN17_COMBO_HINT: Record<string, string> = {
   shower: 'あかりとみおの専用の札＋全体の札',
   twoSwords: 'ハルトの専用の札2枚＋添える札',
   threeTimes: '3人の専用の札',
+  dejaVu: 'あかりと小夜子の専用の札',
   flashback: '火と雷のアタック',
   thunderRain: '全体の札＋雷のアタック',
   onceInLife: '重い一撃＋邪魔されると不発の札',

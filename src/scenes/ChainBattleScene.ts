@@ -560,6 +560,7 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_interrupt':
       case 'trait_swift':
       case 'trait_timer':
       case 'trait_waker':
@@ -2724,6 +2725,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'preempt') parts.push(`先回り！ ${name(ev.uid)}が動く前に当てた（2倍）`);
     else if (ev.type === 'unveil') parts.push(`${name(ev.uid)}の予定が見えた`);
     else if (ev.type === 'rewind') parts.push(`${name(ev.uid)}が巻き戻しで${ev.amount}回復`);
     else if (ev.type === 'panic') parts.push(`リーダーを倒した！ ${ev.downed.map(name).join('・')}が動揺してダウン`);
