@@ -283,6 +283,7 @@ export class ChainBattleScene extends Phaser.Scene {
         allyMoves: setup?.allyMoves,
         repeat: setup?.repeat,
         film: setup?.film,
+        word: setup?.word,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -439,6 +440,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawWatch(view);
     this.drawRepeat(view);
     this.drawKaiFilm(view);
+    this.drawWord(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -539,8 +541,10 @@ export class ChainBattleScene extends Phaser.Scene {
     const links = this.tab === 'cards' ? availableLinks(this.s, this.plan) : [];
     const top = links.length ? LINK_Y + 64 : LINK_Y + 4;
     const cardH = links.length ? CARD_H_LINK : CARD_H;
-    const step = (GAME_WIDTH - 8) / 5;
-    const card = (i: number) => (i < 0 || i > 4 ? null : { x: 4 + step * i + step / 2 - CARD_W / 2 - 8, y: top - 8, w: CARD_W + 16, h: cardH + 16 });
+    // 手札の並べ方と同じ間隔（6枚以上は詰める。段階186）
+    const n = this.tab === 'cards' ? Math.min(7, Math.max(5, this.s.hand.length)) : 5;
+    const step = (GAME_WIDTH - 8) / n;
+    const card = (i: number) => (i < 0 || i >= n ? null : { x: 4 + step * i + step / 2 - CARD_W / 2 - 8, y: top - 8, w: CARD_W + 16, h: cardH + 16 });
     const foes = this.shownEnemies(this.s);
     const colW = GAME_WIDTH / Math.max(1, foes.length);
     switch (t) {
@@ -1133,6 +1137,37 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(addText(this, cx, y0 + h * 2 + 22, `あと ${left}枚`, { size: 12, bold: true, color: left <= 3 ? '#8fffc0' : '#fff0b0' }).setOrigin(0.5));
     const msg = look ? `撮らせる −${look.used}${look.erased ? `\n手札が${look.erased}枚焼ける` : ''}` : this.busy ? '' : '0枚でカイが引く';
     if (msg) r.add(addText(this, cx, STAGE_Y + 138, msg, { size: 9, bold: true, align: 'center', color: look ? (look.used ? '#ffb070' : '#9aa3c0') : '#9aa3c0' }).setOrigin(0.5));
+  }
+
+  /**
+   * 言えなかった言葉（段階186。3-2 の踏切のぬし）：左の柱に、手札の「あのね」の今の威力と次のラウンドの威力、警報機が鳴っているか（鳴っている間は言えない）
+   */
+  private drawWord(view: ChainState): void {
+    const w = view.def.word;
+    if (!w) return;
+    const r = this.root;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '言えなかった言葉', { size: 10, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    const card = view.def.cards[w.card];
+    // 札の形：「あのね」
+    r.add(this.add.rectangle(cx, STAGE_Y + 52, 60, 40, view.wordSaid ? 0x2a2a38 : 0xfff6e0).setStrokeStyle(2, view.wordSaid ? 0x5a5a70 : 0xff9ab0));
+    r.add(addText(this, cx, STAGE_Y + 46, card?.name ?? '', { size: 14, bold: true, hand: true, color: view.wordSaid ? '#7f88a8' : '#3a2030' }).setOrigin(0.5));
+    if (view.wordSaid) {
+      r.add(addText(this, cx, STAGE_Y + 62, '言えた', { size: 10, bold: true, color: '#8fffc0' }).setOrigin(0.5));
+      return;
+    }
+    const eff = card?.effect;
+    const per = eff?.kind === 'damage' ? (eff.perRound ?? 0) : 0;
+    const now = eff?.kind === 'damage' ? eff.power + per * (view.round - 1) : 0;
+    r.add(addText(this, cx, STAGE_Y + 62, `威力 ${now}`, { size: 10, bold: true, color: '#c0306a' }).setOrigin(0.5));
+    r.add(addText(this, cx, STAGE_Y + 84, `次のラウンド ${now + per}`, { size: 9, bold: true, color: '#c9d0ea' }).setOrigin(0.5));
+    const ringing = view.enemies.some((e) => e.defId === w.part && e.hp > 0 && !e.gone);
+    r.add(addText(this, cx, STAGE_Y + 112, ringing ? '警報機が鳴っている\n出すと、のまれる' : '警報機が止まった\nもう言える', { size: 9, bold: true, align: 'center', color: ringing ? '#ff9db0' : '#8fffc0' }).setOrigin(0.5));
+    if (lay) r.add(addText(this, cx, STAGE_Y + 142, '言わずに勝っても、いい', { size: 8, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
   }
 
   /** 開いた花火（二重の輪の点と、真ん中の光とにじみ）。size は大きさの倍率 */
@@ -1743,11 +1778,12 @@ export class ChainBattleScene extends Phaser.Scene {
       for (const m of def?.moves ?? []) items.push({ source: { kind: 'move', moveId: m.id }, move: m, art: CHAIN_MOVE_ART[m.id], key: m.id, used: usedMove(m.id) });
     }
     const me = this.ally ? findChainUnit(s, this.ally) : undefined;
-    const shown = items.slice(0, 5);
+    // 段階186：手札が6枚以上の時（手札の上限+1、踏切のぬしの「あのね」）は、間隔を詰めて全部並べる（7枚まで）
+    const shown = items.slice(0, 7);
     // コンボがある時は、木を描く場所を空けて札を下げ、少し低くする（下のボタンにかからないように）
     const cardH = links.length ? CARD_H_LINK : CARD_H;
     const top = links.length ? LINK_Y + 64 : LINK_Y + 4;
-    const step = (GAME_WIDTH - 8) / 5;
+    const step = (GAME_WIDTH - 8) / Math.max(5, shown.length);
     // コンボの帯から、材料の札へトーナメント表のような木（帯の真ん中から1本下ろし、横に分かれて、札へ縦に下りる。札の下に描く）。
     // コンボが2つ以上なら、横の線の高さと色を分ける。選んだコンボは太く
     if (this.tab === 'cards' && linkSpots.length) {
@@ -1786,7 +1822,7 @@ export class ChainBattleScene extends Phaser.Scene {
       // コンボの材料の札は、後ろを金色に光らせる
       if (it.source.kind === 'card' && linkedIdx.has(it.source.index)) r.add(this.add.rectangle(cx, cy, CARD_W + 16, cardH + 16, GOLD, 0.55));
       this.drawCard(cx, cy, it, (i - (shown.length - 1) / 2) * 2.5, sel, !!it.move.owner && me?.defId !== it.move.owner, cardH);
-      const hit = this.add.rectangle(cx, cy, CARD_W, cardH, 0xffffff, 0.001);
+      const hit = this.add.rectangle(cx, cy, Math.min(CARD_W, step - 2), cardH, 0xffffff, 0.001);
       r.add(hit);
       makePressable(hit, {
         onTap: () => !it.used && this.pickOption(it.source, it.move),
@@ -2700,7 +2736,7 @@ export class ChainBattleScene extends Phaser.Scene {
     });
     const d = new Date();
     photo.push(addText(this, pw / 2 - 18, ph / 2 - 62, `'${String(d.getFullYear()).slice(2)} ${d.getMonth() + 1} ${d.getDate()}`, { size: 15, bold: true, color: '#ff8a1a' }).setOrigin(1, 0.5));
-    photo.push(addText(this, -pw / 2 + 16, ph / 2 - 24, s.finish === 'shutter' ? `${foes.length}体まとめて、はい チーズ。` : s.finish === 'film' ? 'フィルムが、もうない。' : '全部倒した。', { size: 17, hand: true, color: '#333333' }).setOrigin(0, 0.5));
+    photo.push(addText(this, -pw / 2 + 16, ph / 2 - 24, s.finish === 'shutter' ? `${foes.length}体まとめて、はい チーズ。` : s.finish === 'film' ? 'フィルムが、もうない。' : s.def.word && !s.wordSaid ? '……なんでもない。' : '全部倒した。', { size: 17, hand: true, color: '#333333' }).setOrigin(0, 0.5));
     o.add(this.add.container(GAME_WIDTH / 2, 260, photo).setAngle(-4));
     o.add(this.add.rectangle(GAME_WIDTH / 2, 112, 90, 22, YELLOW, 0.75).setAngle(-8));
     // 評価の星と決着の時刻
@@ -2885,6 +2921,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'wordSwallowed') parts.push(`カン、カン、カン——「あのね」は、警報にのまれた（札は手札に戻った）`);
+    else if (ev.type === 'wordSaid') parts.push(`「とうや。……あのね」言えた！`);
     else if (ev.type === 'filmUse') parts.push(ev.left > 0 ? `カイがフィルムを${ev.used}枚使った（あと${ev.left}枚）` : 'カイ「……フィルムが、もうない」');
     else if (ev.type === 'cardErase') parts.push(`露出！ 手札の「${f.state.def.cards[ev.card]?.name ?? ev.card}」が焼けて、この戦闘から消えた`);
     else if (ev.type === 'phaseShift') parts.push(`${name(ev.uid)}の型が変わった：「${ev.name}」`);

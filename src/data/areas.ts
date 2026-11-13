@@ -1007,6 +1007,8 @@ export const AREAS: Record<string, AreaDef> = {
     name: '3-2「言えなかった卒業式」',
     // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
     returnSnaps: ['joker'],
+    // 段階186：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_reel'],
     rooms: [ROOMS.grad_slope, ROOMS.grad_gym_back, ROOMS.grad_street, ROOMS.grad_levee, ROOMS.grad_crossing],
     links: [
       { a: { room: 'grad_slope', side: 'right' }, b: { room: 'grad_gym_back', side: 'left' } },

@@ -142,6 +142,8 @@ export interface MainChainBattleInput {
   repeat?: ChainBattleDef['repeat'];
   /** フィルム（段階184。本気のカイ） */
   film?: ChainBattleDef['film'];
+  /** 言えなかった言葉（段階186。踏切のぬし） */
+  word?: ChainBattleDef['word'];
   /** 全員に足す技（段階179。ねじを巻く） */
   allyMoves?: ChainMove[];
   gradeAt?: { high: number; mid: number };
@@ -172,6 +174,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.watch ? { watch: input.watch } : {}),
     ...(input.repeat ? { repeat: input.repeat } : {}),
     ...(input.film ? { film: input.film } : {}),
+    ...(input.word ? { word: input.word } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -194,6 +197,8 @@ export interface ChainEncounterResult {
   vitals: Record<string, ChainVitals>;
   /** 手に入った敵のスナップ（段階165。★3 の時に確率で） */
   snap?: string;
+  /** 言えなかった言葉を、最後まで言わずに勝った（段階186。「なんでもない」） */
+  quiet?: boolean;
 }
 
 /** 敵のスナップの決まり（段階165）：敵の種類 → スナップ、確率（雑魚・ぬし）、持っている枚数と上限 */
@@ -252,7 +257,9 @@ export function chainEncounterResult(s: ChainState, enemies: EnemyDef[], seed: n
     };
     if (kinds.length && roll() < (snapRule.boss ? snapRule.rate.boss : snapRule.rate.normal)) snap = kinds[Math.floor(roll() * kinds.length)];
   }
-  return { outcome, grade, drops, actionCounts, vitals: chainVitals(s), ...(snap ? { snap } : {}) };
+  // なんでもない（段階186）：言えなかった言葉を、最後まで言わずに勝った
+  const quiet = outcome === 'victory' && !!s.def.word && !s.wordSaid;
+  return { outcome, grade, drops, actionCounts, vitals: chainVitals(s), ...(snap ? { snap } : {}), ...(quiet ? { quiet } : {}) };
 }
 
 /**
@@ -278,6 +285,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.repeat) out.push('chain_repeat');
   // 本気のカイ（段階184）
   if (s.def.film) out.push('chain_film');
+  // 踏切のぬし（段階186）
+  if (s.def.word) out.push('chain_word');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時
