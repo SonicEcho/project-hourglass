@@ -552,6 +552,9 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_swift':
+      case 'trait_timer':
+      case 'trait_waker':
       case 'trait_sticky':
       case 'trait_counter':
       case 'trait_hard':
@@ -2609,6 +2612,9 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'sticky') parts.push(`ねばねば！ まだ動いていない仲間が${ev.delay}遅れる`);
     else if (ev.type === 'revive') parts.push(`${name(ev.to)}が起き上がった！（HP ${ev.amount}）`);
     else if (ev.type === 'mpGain') parts.push(`${name(ev.to)}の MP +${ev.amount}`);
+    else if (ev.type === 'delaySet') parts.push('時限の煙を仕掛けた（次のラウンドの始めに、敵全体へ）');
+    else if (ev.type === 'delayBlast') parts.push('時限の煙が、敵全体に広がった！');
+    else if (ev.type === 'unguard') parts.push(`${name(ev.uid)}の警戒が解けた（またダウンさせられる）`);
     else if (ev.type === 'frameCut') parts.push(`切り取り！ ${name(ev.to)}の「${ev.name}」が抜き取られた（札は手札に戻る）`);
     else if (ev.type === 'hitBack') parts.push(`打ち返した！（${ev.name}が消えて、威力2倍）`);
     else if (ev.type === 'strike') parts.push(`ストライク！（${ev.total}つ目）`);
