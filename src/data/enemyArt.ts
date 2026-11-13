@@ -89,7 +89,8 @@ export const ENEMY_PART_SPOTS: Record<string, Record<string, [x: number, y: numb
   // 段階186：新しい戦闘のぬし戦は左に柱があるので、遮断機の札は印の下に
   crossingLord: { alarm: [0.55, 0.2], barrier: [0.12, 0.42, 'below'] },
   // 2026-11-04：川のぬしは上の麦わらのつばと下の流れ、シャッターのぬしは真ん中の板と上の巻き上げ機
-  riverLord: { brim: [0.3, 0.22, 'left'], current: [0.5, 0.68] },
+  // 段階188：新しい戦闘のぬし戦は左に柱があるので、つばの札は印の下に
+  riverLord: { brim: [0.3, 0.22, 'below'], current: [0.5, 0.68] },
   shutterLord: { slats: [0.5, 0.62], winch: [0.6, 0.14] },
 };
 

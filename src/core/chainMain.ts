@@ -144,6 +144,8 @@ export interface MainChainBattleInput {
   film?: ChainBattleDef['film'];
   /** 言えなかった言葉（段階186。踏切のぬし） */
   word?: ChainBattleDef['word'];
+  /** 夏の照り返し（段階188。川のぬし） */
+  heat?: ChainBattleDef['heat'];
   /** 全員に足す技（段階179。ねじを巻く） */
   allyMoves?: ChainMove[];
   gradeAt?: { high: number; mid: number };
@@ -175,6 +177,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.repeat ? { repeat: input.repeat } : {}),
     ...(input.film ? { film: input.film } : {}),
     ...(input.word ? { word: input.word } : {}),
+    ...(input.heat ? { heat: input.heat } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -287,6 +290,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.film) out.push('chain_film');
   // 踏切のぬし（段階186）
   if (s.def.word) out.push('chain_word');
+  // 川のぬし（段階188）
+  if (s.def.heat) out.push('chain_heat');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時
