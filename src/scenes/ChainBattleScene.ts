@@ -218,6 +218,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private cutInBox: Phaser.GameObjects.Container | null = null;
   private cutInMasks: Phaser.GameObjects.Graphics[] = [];
   private cutInShown = new Set<number>();
+  /** 切り取りで抜き取られた、このラウンドの計画の番号（段階176 の後。帯から消す） */
+  private cutSteps = new Set<number>();
 
   private warn(text: string): void {
     this.message = text;
@@ -962,12 +964,13 @@ export class ChainBattleScene extends Phaser.Scene {
   /** ぬし戦の並べ方（段階162 調整3）：場に出る敵が部位のある本体1体だけ */
   private bossLayout(s: ChainState): boolean {
     const list = this.shownEnemies(s);
-    return list.length === 1 && this.partsOf(s, list[0]).length > 0;
+    // 段階176 の後の直し（開発者：カイの絵が小さい）：部位のない敵でも、場に1体だけなら同じ並べ方（絵を真ん中に大きく）
+    return list.length === 1 && (this.partsOf(s, list[0]).length > 0 || s.def.enemies.filter((d) => !d.part).length === 1);
   }
 
   /** 部位がある本体（ぬし）の絵の大きさと中心 */
   private bossArt(s: ChainState, e: ChainUnit, cx: number): { x: number; y: number; size: number } | null {
-    if (!(this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part)) return null;
+    if (!(this.partsOf(s, e).length > 0 || chainEnemyDef(s, e.defId)?.part || this.bossLayout(s))) return null;
     // ぬしが1体の時（段階162 調整4）：真ん中に、敵の場の高さいっぱいで（ポイは左の柱、予定の札は右の柱。名前と HP は下に重ねる）
     if (this.bossLayout(s)) return { x: GAME_WIDTH / 2, y: (STAGE_Y + MSG_TOP) / 2, size: BOSS_ART };
     const size = 120;
@@ -1283,6 +1286,8 @@ export class ChainBattleScene extends Phaser.Scene {
     this.plan.forEach((step, i) => {
       const move = chainMoveOf(this.s, step);
       if (!move) return;
+      // 切り取りで抜き取られた行動（段階176 の後）は、帯から消す
+      if (this.busy && this.cutSteps.has(i)) return;
       const members = stepAllies(this.s, step).map((u) => findChainUnit(s, u)!);
       // 帯は動き始めから終わり（効く時刻）まで。実行中は、本当に効いた時刻・ねばねばで遅れた時刻に
       const at = this.busy ? (s.actedAt[i] !== undefined ? s.actedAt[i] - move.weight : starts[i] + s.timeShift) : starts[i];
@@ -1817,6 +1822,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.coachLayer?.destroy(true);
     this.coachLayer = null;
     this.cutInShown = new Set();
+    this.cutSteps = new Set();
     const { state, frames } = runChainRound(this.s, this.plan);
     this.runFinal = state;
     this.runFrames = frames;
@@ -1987,6 +1993,125 @@ export class ChainBattleScene extends Phaser.Scene {
     this.wait(1400, finish);
   }
 
+  /**
+   * 敵の大技の全画面のカットイン（段階176 の後。カイの切り取り）：仲間のコンボと同じく、斜めの帯に敵の絵を大きく、真ん中に技名
+   */
+  private enemyCutIn(name: string, tag: string, who: string, art: string | undefined, next: () => void): void {
+    const c = this.add.container(0, 0).setDepth(90);
+    this.cutInBox = c;
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0));
+    const rad = Phaser.Math.DegToRad(-12);
+    const bandH = 330;
+    const bandW = GAME_WIDTH + 260;
+    const cy = GAME_HEIGHT / 2 - 50;
+    const at = (lx: number, ly: number) => new Phaser.Math.Vector2(GAME_WIDTH / 2 + lx * Math.cos(rad) - ly * Math.sin(rad), cy + lx * Math.sin(rad) + ly * Math.cos(rad));
+    const corners = [at(-bandW / 2, -bandH / 2), at(bandW / 2, -bandH / 2), at(bandW / 2, bandH / 2), at(-bandW / 2, bandH / 2)];
+    const mask = this.make.graphics({}, false).fillStyle(0xffffff).fillPoints(corners, true);
+    this.cutInMasks.push(mask);
+    const inner = this.add.container(0, 0);
+    inner.setMask(mask.createGeometryMask());
+    c.add(inner);
+    inner.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1a4a9a).setOrigin(0));
+    const lines = this.add.graphics().lineStyle(2, 0xffffff, 0.14);
+    for (let x = -200; x < GAME_WIDTH + 200; x += 22) lines.lineBetween(x, cy - bandH, x + 60, cy + bandH);
+    inner.add(lines);
+    if (art && hasImage(this, art)) {
+      const img = this.add.image(0, 0, art).setOrigin(0.5, 0);
+      img.setScale((bandH * 1.45) / img.height);
+      const px = GAME_WIDTH * 0.62;
+      img.setPosition(px + 90, cy - bandH / 2 - 30).setAlpha(0);
+      inner.add(img);
+      this.tweens.add({ targets: img, x: px, alpha: 1, duration: 280, ease: 'Cubic.easeOut' });
+    }
+    c.add(this.add.graphics().lineStyle(10, 0x000000).strokePoints(corners, true).lineStyle(4, 0xffffff).strokePoints(corners, true));
+    const np = at(-GAME_WIDTH / 2 + 30, -bandH / 2 + 50);
+    const nm = addText(this, np.x, np.y, who, { size: 24, bold: true }).setOrigin(0, 0.5).setAngle(-12);
+    nm.setFontStyle('bold italic').setShadow(3, 3, '#000000', 0, false, true);
+    c.add(nm);
+    const title = this.add.container(GAME_WIDTH / 2, cy + bandH / 2 + 64).setAngle(-8);
+    const label = addText(this, 0, 0, name, { size: 40, bold: true }).setOrigin(0.5);
+    label.setFontStyle('bold italic').setShadow(4, 4, '#3a8dff', 0, false, true);
+    const boxW = Math.max(240, label.displayWidth + 48);
+    title.add(this.add.rectangle(0, 4, boxW, 70, 0x000000).setStrokeStyle(2, 0xffffff, 0.5));
+    title.add(label);
+    const tg = addText(this, -boxW / 2 + 12, -48, tag, { size: 13, bold: true, color: '#9ad0ff' });
+    tg.setFontStyle('bold italic').setShadow(2, 2, '#000000', 0, false, true);
+    title.add(tg);
+    title.setScale(2.2).setAlpha(0);
+    c.add(title);
+    this.tweens.add({ targets: title, scale: 1, alpha: 1, delay: 380, duration: 260, ease: 'Back.easeOut' });
+    playSe(this, SE.slash);
+    this.wait(1300, () => {
+      if (this.cutInBox !== c) return;
+      c.destroy(true);
+      for (const m of this.cutInMasks) m.destroy();
+      this.cutInMasks = [];
+      this.cutInBox = null;
+      next();
+    });
+  }
+
+  /**
+   * 時間の帯ごと切り取る（段階176 の後。カイの切り取り）：今の画面のタイムラインを写し取り、抜き取られた行動の所で2か所切って、
+   * 真ん中の切れ端を飛ばし、右側を左へ寄せて切り口をくっつける（メタ的な演出）。終わったら next
+   */
+  private filmCut(stepIndex: number, next: () => void): void {
+    const move = stepIndex >= 0 ? chainMoveOf(this.s, this.plan[stepIndex]) : null;
+    if (!move) {
+      next();
+      return;
+    }
+    const start = planStarts(this.s, this.plan)[stepIndex];
+    const x1 = FILM_X + CELL * start;
+    const x2 = Math.min(GAME_WIDTH, x1 + CELL * Math.max(1, move.weight));
+    const canvas = this.game.canvas;
+    const z = canvas.width / GAME_WIDTH;
+    const key = '__filmCut';
+    this.game.renderer.snapshotArea(0, Math.round(FILM_Y * z), canvas.width, Math.round(FILM_H * z), (img) => {
+      if (this.textures.exists(key)) this.textures.remove(key);
+      this.textures.addImage(key, img as HTMLImageElement);
+      const layer = this.add.container(0, 0).setDepth(85);
+      layer.add(this.add.rectangle(0, FILM_Y, GAME_WIDTH, FILM_H, 0x0b1020).setOrigin(0));
+      const piece = (from: number, to: number) => {
+        const im = this.add.image(0, FILM_Y, key).setOrigin(0).setScale(1 / z);
+        im.setCrop(from * z, 0, Math.max(1, (to - from) * z), FILM_H * z);
+        layer.add(im);
+        return im;
+      };
+      piece(0, x1);
+      const mid = piece(x1, x2);
+      const right = piece(x2, GAME_WIDTH);
+      // 切る線（2本が赤く走る）
+      const blades = this.add.graphics().lineStyle(4, 0xff2d55, 1);
+      for (const x of [x1, x2]) blades.lineBetween(x, FILM_Y - 6, x, FILM_Y + FILM_H + 6);
+      layer.add(blades);
+      this.tweens.add({ targets: blades, alpha: 0.2, duration: 90, yoyo: true, repeat: 2 });
+      playSe(this, SE.slash);
+      // 切れ端は回りながら上へ飛んで消える
+      this.tweens.add({ targets: mid, y: FILM_Y - 160, x: 40, angle: -24, alpha: 0, delay: 300, duration: 520, ease: 'Cubic.easeIn' });
+      // 右側を左へ寄せて、切り口をくっつける
+      this.tweens.add({
+        targets: right,
+        x: -(x2 - x1),
+        delay: 560,
+        duration: 320,
+        ease: 'Back.easeIn',
+        onComplete: () => {
+          blades.clear();
+          const seam = this.add.rectangle(x1, FILM_Y + FILM_H / 2, 6, FILM_H + 14, 0xffffff, 1);
+          layer.add(seam);
+          this.tweens.add({ targets: seam, alpha: 0, scaleX: 3, duration: 260 });
+          this.cameras.main.shake(220, 0.01);
+          this.wait(420, () => {
+            layer.destroy(true);
+            if (this.textures.exists(key)) this.textures.remove(key);
+            next();
+          });
+        },
+      });
+    });
+  }
+
   /** 差し込みの帯（パノラマ・連携技など。斜めの帯が右から入って、少しして消える） */
   private cutIn(text: string, sub: string, color: number, faces: string[]): void {
     const y = STAGE_Y + 196;
@@ -2066,6 +2191,22 @@ export class ChainBattleScene extends Phaser.Scene {
       this.comboCutIn(link.name, ids, () => this.playFrames(frames, i, final, before));
       return;
     }
+    // カイの切り取り（段階176 の後の直し）：全画面のカットイン → 時間の帯ごと切り抜いて、切り口をくっつける。その後で結果を見せる
+    const cutEv = f.events.find((e) => e.type === 'frameCut');
+    if (cutEv && cutEv.type === 'frameCut' && !this.cutInShown.has(f.order)) {
+      this.cutInShown.add(f.order);
+      this.message = `${when}　${label}`;
+      this.render(before);
+      const enemyArt = artOfEnemy(findChainUnit(before, cutEv.uid)?.defId ?? '');
+      this.enemyCutIn('CUT!', 'F R A M E   C U T', findChainUnit(before, cutEv.uid)?.name ?? '', enemyArt, () => {
+        const idx = this.plan.findIndex((p) => stepAllies(this.s, p).includes(cutEv.to));
+        this.filmCut(idx, () => {
+          if (idx >= 0) this.cutSteps.add(idx);
+          this.playFrames(frames, i, final, before);
+        });
+      });
+      return;
+    }
     this.message = `${when}　${label}`;
     this.render(before);
     this.flyEffects(f, before);
@@ -2099,12 +2240,6 @@ export class ChainBattleScene extends Phaser.Scene {
       return;
     }
     if (f.events.some((e) => e.type === 'shutterReady')) this.cutIn('ALL DOWN!', '全員ダウン。シャッターのチャンス', RED, []);
-    // カイの切り取り（段階176）：仲間の行動が抜き取られた
-    const cut = f.events.find((e) => e.type === 'frameCut');
-    if (cut && cut.type === 'frameCut') {
-      this.cutIn('CUT!', `切り取り！ ${findChainUnit(before, cut.to)?.name ?? ''}の「${cut.name}」が抜き取られた`, 0x3a8dff, []);
-      return;
-    }
     const broke = f.events.find((e) => e.type === 'partBreak');
     if (broke && broke.type === 'partBreak') this.cutIn('BREAK!', `${findChainUnit(before, broke.uid)?.name ?? ''}を壊した！ その大技はもう来ない`, 0xc88a10, actor?.side === 'ally' ? [actor.defId] : []);
   }
