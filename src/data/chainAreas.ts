@@ -27,9 +27,23 @@ export const CHAIN_ENEMY_SNAPS: Record<string, string> = { ...A11_ENEMY_SNAPS, .
 export const CHAIN_MAIN_CARD_ART: Record<string, string> = { ...A11_CARD_ART, ...A12_CARD_ART, ...A21_CARD_ART, ...A22_CARD_ART, ...A23_CARD_ART, ...A31_CARD_ART };
 export const CHAIN_MAIN_SHORT_TEXT: Record<string, string> = { ...A11_SHORT_TEXT, ...A12_SHORT_TEXT, ...A21_SHORT_TEXT, ...A22_SHORT_TEXT, ...A23_SHORT_TEXT, ...A31_SHORT_TEXT };
 
+/**
+ * ぬし戦の評価の基準（段階180。決着した時刻のマス。★3＝high 以内、★2＝mid 以内）。ぬしのスナップは ★3 の時だけ。
+ * 自動対戦（考える方針・1章は育成なしの2人、2章からはその区画に入る時点の控えめな育ち具合の3人・20戦）で、勝った戦いの速いほう 35〜50% が ★3 に届くように決めた。
+ * 勝った戦いの決着の時刻：1-1 23〜35、1-2 22〜55、2-1 36〜84、2-2 42〜62、2-3 43〜63、3-1 49〜64（それまでの基準 35 では、2章から誰も届かなかった）
+ */
+export const CHAIN_BOSS_GRADE: Record<string, { high: number; mid: number }> = {
+  a11_boss: { high: 27, mid: 40 },
+  a12_boss: { high: 33, mid: 48 },
+  a21_boss: { high: 51, mid: 66 },
+  a22_boss: { high: 51, mid: 66 },
+  a23_boss: { high: 53, mid: 68 },
+  a31_boss: { high: 59, mid: 74 },
+};
+
 /** 区画の戦闘を新しい戦闘で戦う時の中身（AREA_BATTLES の id → 中身）。札は全部の札 */
 export const CHAIN_AREA_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries(
-  Object.entries({ ...A11_SETUPS, ...A12_SETUPS, ...A21_SETUPS, ...A22_SETUPS, ...A23_SETUPS, ...A31_SETUPS }).map(([id, s]) => [id, { ...s, cards: CHAIN_MAIN_CARDS }]),
+  Object.entries({ ...A11_SETUPS, ...A12_SETUPS, ...A21_SETUPS, ...A22_SETUPS, ...A23_SETUPS, ...A31_SETUPS }).map(([id, s]) => [id, { ...s, cards: CHAIN_MAIN_CARDS, ...(CHAIN_BOSS_GRADE[id] ? { gradeAt: CHAIN_BOSS_GRADE[id] } : {}) }]),
 );
 
 /**

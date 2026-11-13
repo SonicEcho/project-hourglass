@@ -357,3 +357,11 @@ export function chainComboMaterials(links: readonly ChainLinkDef[], found: reado
   }
   return out;
 }
+
+/**
+ * ぬしのスナップ（段階180。2026-11-13 開発者と決めた）：雑魚戦と同じく、早く倒した時（★3）だけ1枚もらえる（必ず）。
+ * 部位を壊すと部位の素材（必ず落ちる）。段階177 では「部位を1つでも壊した時」だった
+ */
+export function chainBossSnaps(result: Pick<ChainEncounterResult, 'outcome' | 'grade'>, snaps: string[] | undefined): string[] {
+  return result.outcome === 'victory' && result.grade === 'high' ? [...(snaps ?? [])] : [];
+}

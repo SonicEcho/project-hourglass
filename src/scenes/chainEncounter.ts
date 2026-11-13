@@ -1,4 +1,4 @@
-import { battleReward, boardColorCells, capItems, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
+import { battleReward, boardColorCells, capItems, chainBossSnaps, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
 import { AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
@@ -144,9 +144,8 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   run.armory = capped.armory;
   // スナップ：区画を作り直した戦闘は、新しい戦闘のスナップを新しいアルバムへ（段階163）。まだの戦闘は今のアルバムへ
   const setup = CHAIN_AREA_SETUPS[def.id];
-  // ぬしのスナップ（段階177：部位を1つでも壊して勝った時だけ。ふつうに勝つと素材だけ）
-  const partBroken = result.drops.some((d) => d.kind === 'part');
-  const chainSnaps = enc.hunt || !setup || !partBroken ? [] : [...(setup.snaps ?? [])];
+  // ぬしのスナップ（段階180：早く倒した時＝★3 だけ。部位を壊すと部位の素材）
+  const chainSnaps = enc.hunt || !setup ? [] : chainBossSnaps(result, setup.snaps);
   const snaps = enc.hunt || setup ? [] : (def.snaps ?? []);
   if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
   // 早く勝った時の敵のスナップ（段階165。狩りでも）

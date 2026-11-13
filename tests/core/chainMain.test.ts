@@ -3,6 +3,7 @@ import {
   addToAlbum,
   albumFromIds,
   buildMainChainBattle,
+  chainBossSnaps,
   chainAlbumAddError,
   chainAlbumDeck,
   chainAlbumCounts,
@@ -186,7 +187,8 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
       const def = buildMainChainBattle({ id, name: id, party: [HERO, AKARI], enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
       expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
     }
-  });
+    // 自動対戦は重いので、ほかの区画の同じテストと同じく時間を長めに（段階180：CI で5秒を超えた）
+  }, 60000);
 
   it('説明の窓：予定と帯はいつも、エフェクト・クライマックス・コンボは手札にある時', () => {
     const st = CHAIN_AREA_SETUPS.a11_n1_gate;
@@ -317,9 +319,16 @@ describe('新しい戦闘のアルバム（段階163）', () => {
     expect(chainAlbumAddError(albumFromIds(CHAIN_START_ALBUM), 'c17_quick', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('no spare copy');
   });
 
-  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（段階177：部位を壊した時だけ集合写真1枚。リカバリーは返した時）', () => {
+  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（段階180：★3 で倒した時だけ集合写真1枚。リカバリーは返した時）', () => {
     expect(CHAIN_AREA_SETUPS.a11_boss.snaps).toEqual(['c17_group']);
     for (const id of CHAIN_AREA_SETUPS.a11_boss.snaps!) expect(CHAIN_SNAPS[id]).toBeTruthy();
+  });
+  it('ぬしのスナップは ★3 で勝った時だけ（段階180。部位を壊したかによらない）', () => {
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'high' }, ['c17_group'])).toEqual(['c17_group']);
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'mid' }, ['c17_group'])).toEqual([]);
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'low' }, ['c17_group'])).toEqual([]);
+    expect(chainBossSnaps({ outcome: 'defeat', grade: null }, ['c17_group'])).toEqual([]);
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'high' }, undefined)).toEqual([]);
   });
 });
 
