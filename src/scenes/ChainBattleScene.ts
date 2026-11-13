@@ -577,6 +577,9 @@ export class ChainBattleScene extends Phaser.Scene {
       }
       case 'intro':
         return null;
+      case 'trait_veil':
+      case 'trait_healer':
+      case 'trait_fast':
       case 'trait_interrupt':
       case 'trait_swift':
       case 'trait_timer':
@@ -2921,6 +2924,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'enemyHeal') parts.push(`${name(ev.uid)}が${name(ev.to)}を回復した（+${ev.amount}）`);
     else if (ev.type === 'wordSwallowed') parts.push(`カン、カン、カン——「あのね」は、警報にのまれた（札は手札に戻った）`);
     else if (ev.type === 'wordSaid') parts.push(`「とうや。……あのね」言えた！`);
     else if (ev.type === 'filmUse') parts.push(ev.left > 0 ? `カイがフィルムを${ev.used}枚使った（あと${ev.left}枚）` : 'カイ「……フィルムが、もうない」');
