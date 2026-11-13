@@ -419,6 +419,12 @@ export interface ChainBattleDef {
    * 仲間の「ねじを巻く」（heal の watch）で戻り、次のラウンドの最初の ease 個の「急かす」は仲間へそれる
    */
   watch?: { hp: number; ease: number };
+  /**
+   * くり返しを越える（段階182。祭りの夜のやぐらのぬし）：ラウンドの終わりに、target（敵の定義の id）がそのラウンドに受けたダメージが
+   * 最大 HP × rate より少なければ、ラウンドの始めの HP に戻す（夜のくり返し。ダウン・部位・仲間の回復はそのまま）。
+   * rate 以上なら戻さず、花火が1つ上がる。need 上がると、もう戻さない（最後の花火）
+   */
+  repeat?: { target: string; rate: number; need: number };
 }
 
 export interface ChainUnit {
@@ -539,6 +545,9 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** くり返しを越える（段階182）：ラウンドの終わりに、受けたダメージを戻した・越えて花火が上がった（total は上がった数） */
+  | { type: 'repeatNight'; uid: string; dealt: number; need: number }
+  | { type: 'firework'; uid: string; dealt: number; total: number }
   /** 先回り（段階181）：まだ動いていない敵に先に当てた */
   | { type: 'preempt'; uid: string }
   /** 腕時計（段階179）：急かされて減った・ねじを巻いて戻った */
@@ -641,6 +650,8 @@ export interface ChainState {
   acted?: Record<string, number>;
   /** 決着の仕方 */
   finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout' | 'watch';
+  /** 上がった花火の数（段階182。くり返しを越える） */
+  fireworks?: number;
   /** 腕時計の HP（段階179）と、このラウンドにねじを巻いたか（次のラウンドの急かすがそれる） */
   watch?: number;
   watchWound?: boolean;
@@ -854,6 +865,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     ...(def.clap ? { claps: 0 } : {}),
     ...(def.pitch ? { strikes: 0 } : {}),
     ...(def.watch ? { watch: def.watch.hp } : {}),
+    ...(def.repeat ? { fireworks: 0 } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -1689,6 +1701,25 @@ export function chainPlanPitch(s: ChainState, plan: ChainPlanStep[]): { hits: nu
   return { hits: ev.filter((e) => e.type === 'hitBack').length, strikes: ev.filter((e) => e.type === 'strike').length };
 }
 
+/** くり返しを越えるのに、1ラウンドに当てる量（段階182。ぬしの最大 HP × rate。切り上げ） */
+export function chainRepeatNeed(s: ChainState, boss: ChainUnit): number {
+  return Math.ceil(boss.maxHp * (s.def.repeat?.rate ?? 0));
+}
+
+/** 並べた予定で、このラウンドにぬしへ当てる見込み（段階182。画面の表示。実際に動かして見る）：当てる量・越えるのに要る量・越えるか */
+export function chainPlanRepeat(s: ChainState, plan: ChainPlanStep[]): { dealt: number; need: number; over: boolean; win: boolean } {
+  const rp = s.def.repeat;
+  const b = rp ? living(s.enemies).find((x) => x.defId === rp.target) : undefined;
+  if (!rp || !b) return { dealt: 0, need: 0, over: false, win: false };
+  const need = chainRepeatNeed(s, b);
+  const r = runChainRound(s, plan);
+  const ev = r.frames.flatMap((f) => f.events);
+  const end = ev.find((e) => e.type === 'firework' || e.type === 'repeatNight') as Extract<ChainEvent, { type: 'firework' | 'repeatNight' }> | undefined;
+  const after = r.state.enemies.find((x) => x.uid === b.uid);
+  const dealt = end ? end.dealt : Math.max(0, b.hp - Math.max(0, after?.hp ?? 0));
+  return { dealt, need, over: dealt >= need, win: r.state.outcome === 'win' };
+}
+
 /** 並べた予定で、このラウンドの腕時計の見込み（段階179。画面の表示。実際に動かして見る）：急かされて減る量・巻いて戻る量・残り */
 export function chainPlanWatch(s: ChainState, plan: ChainPlanStep[]): { lost: number; wound: number; left: number } {
   if (!s.def.watch) return { lost: 0, wound: 0, left: 0 };
@@ -1998,6 +2029,22 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       const amount = e.roundHp! - e.hp;
       e.hp = e.roundHp!;
       push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻し', [{ type: 'rewind', uid: e.uid, amount }], undefined, true);
+    }
+    // くり返しを越える（段階182）：受けたダメージが足りなければ、ラウンドの始めの HP に戻す。越えれば花火
+    if (s.def.repeat && s.outcome === 'ongoing' && (s.fireworks ?? 0) < s.def.repeat.need) {
+      const rp = s.def.repeat;
+      const b = living(s.enemies).find((x) => x.defId === rp.target && x.roundHp !== undefined);
+      if (b) {
+        const dealt = Math.max(0, b.roundHp! - b.hp);
+        const need = chainRepeatNeed(s, b);
+        if (dealt >= need) {
+          s.fireworks = (s.fireworks ?? 0) + 1;
+          push(null, 'end:repeat', s.rules.roundLen, b.uid, '花火', [{ type: 'firework', uid: b.uid, dealt, total: s.fireworks }], undefined, true);
+        } else {
+          b.hp = b.roundHp!;
+          push(null, 'end:repeat', s.rules.roundLen, b.uid, 'くり返し', [{ type: 'repeatNight', uid: b.uid, dealt, need }], undefined, true);
+        }
+      }
     }
     // 夕日（段階169）：ラウンドの終わりに1傾き、息を合わせていれば1戻る
     let sunsetOut = false;

@@ -69,6 +69,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '打ち返せなかった投球が当たると「ストライク」。\n3つで三振、負けになってしまいます。\n押す・ダウンで投球を止めるのも手です。' },
     { target: 'parts', text: '得点板とバックネットは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
   ],
+  // 段階182：祭りの夜のやぐらのぬし「くり返しを越える」
+  chain_repeat: [
+    { target: 'intro', text: 'ぬし戦！\nやぐらのぬしは、百年続く夜を「くり返し」ます。\nくり返しを越えて、夜を先へ進めましょう。' },
+    { target: 'poiBar', text: '1ラウンドに当てた量が、このゲージに届かないと、\nラウンドの終わりに、ぬしの傷が全部戻されます。\n届けば戻らず、花火が1つ上がります。' },
+    { target: 'poiBar', text: '花火が3つ上がると「最後の花火」。\nもう傷は戻りません。\nコンボや露出補正をため、ここぞのラウンドで一気に出しましょう。' },
+    { target: 'parts', text: '大太鼓と提灯の綱は「部位」です。\n部位の傷は戻りません。壊すと、その部位を使う大技が来なくなります。' },
+  ],
   // 段階179：3-1 のぬし「腕時計を守る」
   chain_watch: [
     { target: 'intro', text: 'ぬし戦！\n思い出の再演「腕時計を守る」がはじまります。\nお母さんの腕時計を、最後まで止めないで。' },
@@ -161,7 +168,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

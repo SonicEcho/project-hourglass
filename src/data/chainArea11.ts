@@ -176,6 +176,8 @@ export interface ChainAreaSetup {
   /** 腕時計を守る（段階179。3-1 のぬしの思い出の再演）と、全員に足す技（ねじを巻く） */
   watch?: ChainBattleDef['watch'];
   allyMoves?: ChainMove[];
+  /** くり返しを越える（段階182。祭りの夜のやぐらのぬし） */
+  repeat?: ChainBattleDef['repeat'];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }

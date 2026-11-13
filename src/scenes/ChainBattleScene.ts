@@ -11,6 +11,8 @@ import {
   chainPlanClaps,
   chainPlanPitch,
   chainPlanWatch,
+  chainPlanRepeat,
+  chainRepeatNeed,
   createChainBattle,
   isWeakKnown,
   findChainUnit,
@@ -272,6 +274,7 @@ export class ChainBattleScene extends Phaser.Scene {
         pitch: setup?.pitch,
         watch: setup?.watch,
         allyMoves: setup?.allyMoves,
+        repeat: setup?.repeat,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -426,6 +429,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawClap(view);
     this.drawPitch(view);
     this.drawWatch(view);
+    this.drawRepeat(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -1012,6 +1016,55 @@ export class ChainBattleScene extends Phaser.Scene {
       const ok = look.left > 0;
       r.add(addText(this, cx, STAGE_Y + 144, `${look.lost ? `−${look.lost}` : '±0'}${look.wound ? ` +${look.wound}` : ''} → ${look.left}`, { size: 10, bold: true, color: ok ? (look.lost ? '#ffd23f' : '#8fffc0') : '#ff9db0' }).setOrigin(0.5));
     } else if (lay) r.add(addText(this, cx, STAGE_Y + 144, '技「ねじを巻く」', { size: 9, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
+  }
+
+  /**
+   * くり返しを越える（段階182。祭りの夜のやぐらのぬし）：左の柱に、上がった花火と、このラウンドに当てる量（越えるのに要る量まで）。
+   * 並べている間は、当てる見込みで「越える」「戻される」
+   */
+  private drawRepeat(view: ChainState): void {
+    const rp = view.def.repeat;
+    if (!rp) return;
+    const r = this.root;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '夜のくり返し', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    // 花火（下から上がる）
+    const fw = Math.min(rp.need, view.fireworks ?? 0);
+    for (let k = 0; k < rp.need; k++) {
+      const x = cx + (k - (rp.need - 1) / 2) * 24;
+      const y = STAGE_Y + 44;
+      const on = k < fw;
+      if (on) {
+        const color = [0xff5a7a, 0xffd23f, 0x6bc8ff][k % 3];
+        for (let a = 0; a < 8; a++) {
+          const ang = (a / 8) * Math.PI * 2;
+          r.add(this.add.line(0, 0, x + Math.cos(ang) * 3, y + Math.sin(ang) * 3, x + Math.cos(ang) * 10, y + Math.sin(ang) * 10, color).setOrigin(0, 0).setLineWidth(2));
+        }
+        r.add(this.add.circle(x, y, 3, 0xffffff));
+      } else r.add(this.add.circle(x, y, 9, 0x2a2a38).setStrokeStyle(1.5, 0x5a5a70));
+    }
+    const done = fw >= rp.need;
+    const boss = view.enemies.find((e) => e.defId === rp.target && e.hp > 0 && !e.gone);
+    if (done || !boss) {
+      r.add(addText(this, cx, STAGE_Y + 80, '最後の花火！\nもう戻らない', { size: 10, bold: true, align: 'center', color: '#8fffc0' }).setOrigin(0.5));
+      return;
+    }
+    const need = chainRepeatNeed(view, boss);
+    const look = this.busy || this.plan.length === 0 ? null : chainPlanRepeat(this.s, this.plan);
+    const dealt = look ? look.dealt : this.busy ? Math.max(0, (boss.roundHp ?? boss.hp) - boss.hp) : 0;
+    const barW = (lay ? BOSS_COL : 100) - 22;
+    const by = STAGE_Y + 76;
+    r.add(addText(this, cx, by - 10, 'このラウンド', { size: 9, bold: true, color: '#c9d0ea' }).setOrigin(0.5));
+    r.add(this.add.rectangle(cx - barW / 2, by + 4, barW, 8, 0x2a2a38).setOrigin(0, 0.5));
+    const over = dealt >= need;
+    r.add(this.add.rectangle(cx - barW / 2, by + 4, Math.min(1, dealt / need) * barW, 8, over ? 0x8fffc0 : 0xffd23f).setOrigin(0, 0.5));
+    r.add(addText(this, cx, by + 18, `${dealt}/${need}`, { size: 11, bold: true, color: over ? '#8fffc0' : '#fff0b0' }).setOrigin(0.5));
+    const msg = look ? (look.win ? '倒せる ◎' : over ? '越える ◎\n花火が上がる' : '足りない\n傷が戻される') : this.busy ? '' : `${need}以上当てると\n花火が上がる`;
+    if (msg) r.add(addText(this, cx, STAGE_Y + 136, msg, { size: 9, bold: true, align: 'center', color: look ? (over || look.win ? '#8fffc0' : '#ff9db0') : '#9aa3c0' }).setOrigin(0.5));
   }
 
   private foeColor(s: ChainState, uid: string): number {
@@ -2725,6 +2778,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'repeatNight') parts.push(`夜がくり返す… ${name(ev.uid)}の傷が戻った（このラウンド ${ev.dealt}／越えるには ${ev.need}）`);
+    else if (ev.type === 'firework') parts.push(`くり返しを越えた！ 花火が上がる（${ev.total}つ目）`);
     else if (ev.type === 'preempt') parts.push(`先回り！ ${name(ev.uid)}が動く前に当てた（2倍）`);
     else if (ev.type === 'unveil') parts.push(`${name(ev.uid)}の予定が見えた`);
     else if (ev.type === 'rewind') parts.push(`${name(ev.uid)}が巻き戻しで${ev.amount}回復`);
