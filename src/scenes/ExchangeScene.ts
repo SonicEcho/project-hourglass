@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { ExchangeGood } from '../core';
-import { addParts, eventPassed, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen, nextKeeperTalk } from '../core';
-import { BACKDROPS, BGM, DECOMPOSE_VAR, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { addParts, eventPassed, exchange, gainSnaps, recordLibraryFinds, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen, nextKeeperTalk } from '../core';
+import { BACKDROPS, BGM, CHAIN_ALBUM, CHAIN_SNAPS, DECOMPOSE_VAR, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -17,11 +17,12 @@ import { run, saveRun, setStoryVars, storyLineup } from './run';
 // 初めて開いた時は、ペトラの会話（exchange_intro）を先に見る。日も昼の回数も使わない
 
 const INTRO = EXCHANGE_INTRO.scene;
-type Tab = 'pouch' | 'material' | 'gear';
+type Tab = 'pouch' | 'material' | 'gear' | 'snap';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'pouch', label: 'ポーチ' },
   { id: 'material', label: '素材' },
   { id: 'gear', label: 'ギア' },
+  { id: 'snap', label: 'スナップ' },
 ];
 const PER_PAGE = 7;
 const FRAGMENT_ORDER = Object.keys(FRAGMENTS);
@@ -29,21 +30,30 @@ const FRAGMENT_ORDER = Object.keys(FRAGMENTS);
 /** 品物の札 */
 function tabOf(g: ExchangeGood): Tab {
   if (g.kind === 'gear') return 'gear';
+  if (g.kind === 'snap') return 'snap';
   return WEAPON_DATA.items[g.ref]?.kind === 'item' ? 'pouch' : 'material';
 }
 
 function goodName(g: ExchangeGood): string {
+  if (g.kind === 'snap') return CHAIN_SNAPS[g.ref]?.name ?? g.ref;
   return g.kind === 'gear' ? (NAVI_PARTS[g.ref as keyof typeof NAVI_PARTS]?.name ?? g.ref) : (WEAPON_DATA.items[g.ref]?.name ?? g.ref);
 }
 
 /** 持てる数（ポーチの消費アイテムだけ） */
 function maxOf(g: ExchangeGood): number | undefined {
+  if (g.kind === 'snap') return CHAIN_ALBUM.copyMax;
   return g.kind === 'item' ? WEAPON_DATA.items[g.ref]?.max : undefined;
+}
+
+/** 今持っている数（素材・アイテム・スナップ） */
+function haveOf(g: ExchangeGood): number {
+  return g.kind === 'snap' ? (run.chainAlbum.owned[g.ref] ?? 0) : (run.armory.items[g.ref] ?? 0);
 }
 
 const ERROR_TEXT: Record<string, string> = {
   'already exchanged': 'この品物は、もう交換した（1回だけ）',
   'pouch is full': 'ポーチがいっぱい',
+  'too many copies': '同じスナップは4枚まで',
   'not enough fragments': '記憶の欠片が足りない（素材を時分解すると手に入る）',
 };
 
@@ -116,8 +126,8 @@ export class ExchangeScene extends Phaser.Scene {
     const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
     this.page = Math.min(this.page, pages - 1);
     list.slice(this.page * PER_PAGE, (this.page + 1) * PER_PAGE).forEach((g, i) => {
-      const err = getExchangeError(g, run.armory, run.vars, maxOf(g));
-      const have = g.kind === 'gear' ? '' : `　持っている ${run.armory.items[g.ref] ?? 0}${maxOf(g) !== undefined ? `/${maxOf(g)}` : ''}`;
+      const err = getExchangeError(g, run.armory, run.vars, maxOf(g), haveOf(g));
+      const have = g.kind === 'gear' ? '' : `　持っている ${haveOf(g)}${maxOf(g) !== undefined ? `/${maxOf(g)}` : ''}`;
       const note = g.once ? (run.vars[exchangedKey(g.id)] ? '　交換した' : '　1回だけ') : '';
       addButton(this, root, GAME_WIDTH / 2, 190 + i * 60, GAME_WIDTH - 40, 52, `${goodName(g)}　欠片 ${g.price}\n${have}${note}`.replace('\n　', '\n'), { onTap: () => this.confirm(g) }, {
         size: 13,
@@ -188,10 +198,15 @@ export class ExchangeScene extends Phaser.Scene {
   }
 
   private buy(g: ExchangeGood): void {
-    const r = exchange(g, run.armory, run.vars, FRAGMENT_ORDER, maxOf(g));
+    const r = exchange(g, run.armory, run.vars, FRAGMENT_ORDER, maxOf(g), haveOf(g));
     run.armory = r.armory;
     if (r.vars !== run.vars) setStoryVars(r.vars);
     if (r.gear) run.navi = addParts(run.navi, [r.gear]);
+    // スナップ（段階177）：新しい戦闘のアルバムの持ち物に足す（ライブラリにも記録）
+    if (r.snap) {
+      run.chainAlbum = gainSnaps(run.chainAlbum, [r.snap]);
+      run.library = recordLibraryFinds(run.library, { snaps: [r.snap] });
+    }
     saveRun();
     notePlayCount('exchange');
     playSe(this, SE.chest);

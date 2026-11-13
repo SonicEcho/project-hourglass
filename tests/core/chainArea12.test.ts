@@ -67,7 +67,7 @@ describe('1-2 の性質の説明と宝箱（段階168）', () => {
 });
 
 describe('1-2 のぬし「日が沈む前に」（段階169）', () => {
-  it('夕日は4ラウンド。部位は前輪とベル（ベルを壊すと雷の弱点）。報酬はストロボとワイドショット', () => {
+  it('夕日は4ラウンド。部位は前輪とベル（ベルを壊すと雷の弱点）。報酬はワイドショット（段階177）', () => {
     const st = CHAIN_AREA_SETUPS.a12_boss;
     expect(st.sunset).toEqual({ rounds: 4 });
     const parts = st.enemies.filter((e) => e.part);
@@ -75,7 +75,7 @@ describe('1-2 のぬし「日が沈む前に」（段階169）', () => {
     expect(parts[1].part?.reveals).toEqual(['thunder']);
     const body = st.enemies.find((e) => !e.part)!;
     expect(body.pattern.filter((m) => m.requiresPart).map((m) => m.requiresPart)).toEqual(['bicycleLord_frontWheel', 'bicycleLord_bell']);
-    expect(st.snaps).toEqual(['c17_strobe', 'c17_wide']);
+    expect(st.snaps).toEqual(['c17_wide']);
     expect(CHAIN_SNAPS[CHAIN_ENEMY_SNAPS.bicycleLord]?.name).toBe('二人乗り');
   });
   it('最初のぬし戦で、日が沈む前にの説明が出る', async () => {

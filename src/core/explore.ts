@@ -185,6 +185,8 @@ export interface AreaDef {
   memory?: string;
   /** 返した時に持ち主からもらうスナップ（段階41。返した報酬） */
   returnSnaps?: string[];
+  /** 返した時に手に入る、新しい戦闘のスナップ（段階177。区画の戦闘が新しい戦闘の区画。returnSnaps の代わり） */
+  chainReturnSnaps?: string[];
   /** 返し終えた後に入り直す、狩りの中身（段階43。core/hunt.ts） */
   hunt?: AreaHunt;
   /** 晩に分けて入る区画（段階63）：晩ごとの区切り（1晩目から順に） */

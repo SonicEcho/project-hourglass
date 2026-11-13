@@ -214,7 +214,7 @@ function pastChainEnemy(e: EnemyDef, rate: number): ChainEnemyDef {
 /** 2-3 の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
 export const A23_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
   // ぬしの報酬：渾身の一枚とクローズアップ（打ち返しに使える重さ2の札）
-  ['a23_boss', { enemies: a23Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, pitch: { out: A23_LORD.out, mult: A23_LORD.mult }, snaps: [C.bigShot.id, C.closeUp.id] }],
+  ['a23_boss', { enemies: a23Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, pitch: { out: A23_LORD.out, mult: A23_LORD.mult }, snaps: [C.plus20.id] }],
   ['a23_kai', { enemies: a23Kai(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 } }],
   // 2-3x（段階176）：書庫を見回るカイ（2ラウンドで打ち切り、チェックポイントへ）と、棚の砂時計を取った後のカイ（3ラウンド耐えると逃げきる）
   ['a23x_kai_patrol', { enemies: a23Kai(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 } }],

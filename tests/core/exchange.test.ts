@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ExchangeGood } from '../../src/core';
 import { createArmory, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, payFragments } from '../../src/core';
-import { areaCommonItems, AREAS, EXCHANGE_GOODS, FRAGMENTS, ITEMS, NAVI_PARTS, POUCH_MAX, WEAPON_DATA } from '../../src/data';
+import { areaCommonItems, AREAS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, EXCHANGE_GOODS, FRAGMENTS, ITEMS, NAVI_PARTS, POUCH_MAX, WEAPON_DATA } from '../../src/data';
 
 // 交換所（段階52。docs/design/economy.md の 5-2）
 const ORDER = Object.keys(FRAGMENTS);
@@ -47,6 +47,7 @@ describe('交換所（段階52）', () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const g of EXCHANGE_GOODS) {
       if (g.kind === 'gear') expect(NAVI_PARTS[g.ref as keyof typeof NAVI_PARTS], g.id).toBeDefined();
+      else if (g.kind === 'snap') expect(CHAIN_SNAPS[g.ref], g.id).toBeDefined();
       else {
         const it = WEAPON_DATA.items[g.ref];
         expect(it, g.id).toBeDefined();
@@ -59,5 +60,24 @@ describe('交換所（段階52）', () => {
     expect(areaCommonItems('nowhere')).toEqual([]);
     // ポーション 1、ハイポーション 2、エーテル 2（5-2 の目安）
     expect(['pouch_potion', 'pouch_hiPotion', 'pouch_ether'].map((id) => EXCHANGE_GOODS.find((g) => g.id === id)?.price)).toEqual([1, 2, 2]);
+  });
+});
+
+describe('交換所のスナップ（段階177）', () => {
+  it('弱めの札だけ。2章から基本の札、3章から少し強い札。レア・クライマックス・敵のスナップは並べない', () => {
+    const snaps = EXCHANGE_GOODS.filter((g) => g.kind === 'snap');
+    expect(snaps.length).toBeGreaterThan(0);
+    for (const g of snaps) {
+      const m = CHAIN_SNAPS[g.ref];
+      expect(m.type === 'finish').toBe(false);
+      expect(Object.values(CHAIN_ENEMY_SNAPS)).not.toContain(g.ref);
+      expect(g.chapter).toBeGreaterThanOrEqual(2);
+    }
+  });
+  it('交換すると増えるスナップを返す。同じ札は上限まで', () => {
+    const g = EXCHANGE_GOODS.find((x) => x.kind === 'snap')!;
+    const armory = { weapons: {}, items: {}, fragments: { f: 10 } };
+    expect(exchange(g, armory, {}, ['f'], 4, 1).snap).toBe(g.ref);
+    expect(getExchangeError(g, armory, {}, 4, 4)).toBe('too many copies');
   });
 });
