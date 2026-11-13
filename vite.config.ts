@@ -51,5 +51,7 @@ export default defineConfig({
   },
   test: {
     include: ['tests/**/*.test.ts'],
+    // 自動対戦のテストが増え、GitHub Actions では5秒（決まり）を超えることがあるので長めに（段階184。落ちるのは時間切れで、結果ではない）
+    testTimeout: 30000,
   },
 });
