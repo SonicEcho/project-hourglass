@@ -290,11 +290,12 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a41_n3_shallows2: { id: 'a41_n3_shallows2', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, FIREWORK_NOISE, WATERMELON_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n3))), reward: 4, koma: 1 },
   a41_boss: { id: 'a41_boss', name: '川のぬし', enemies: [toughenEnemy(RIVER_LORD, A41_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['pinchHitter'] },
   // ---- 4-2「早瀬の時間」（段階140a。openingEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし。部屋と敵の置き場所は 1-2 と同じ（坂の上の代わりに店内） ----
+  // 段階189（段取りの段階F10a）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目はヨーヨー（巻き戻し）と紙風船だけ、2晩目にポケベル（予定隠し）と鳩時計（速い）、3晩目は組み合わせ）
   a42_n1_gate: { id: 'a42_n1_gate', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
-  a42_n1_entry: { id: 'a42_n1_entry', name: '砂嵐', enemies: tough([CUCKOO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
-  a42_n1_lower: { id: 'a42_n1_lower', name: '砂嵐', enemies: tough([PAGER_NOISE, PAPERBALLOON_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
-  a42_n1_tobacco: { id: 'a42_n1_tobacco', name: '砂嵐', enemies: tough([YOYO_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
-  a42_n1_mid: { id: 'a42_n1_mid', name: '砂嵐', enemies: tough([CUCKOO_NOISE, PAGER_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_entry: { id: 'a42_n1_entry', name: '砂嵐', enemies: tough([YOYO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
+  a42_n1_lower: { id: 'a42_n1_lower', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, YOYO_NOISE, PAPERBALLOON_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
+  a42_n1_tobacco: { id: 'a42_n1_tobacco', name: '砂嵐', enemies: tough([YOYO_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 2 },
+  a42_n1_mid: { id: 'a42_n1_mid', name: '砂嵐', enemies: tough([YOYO_NOISE, PAPERBALLOON_NOISE, YOYO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n1))), reward: 3, koma: 1 },
   a42_runner: { id: 'a42_runner', name: '砂嵐', enemies: [PAPERBALLOON_NOISE, PAPERBALLOON_NOISE, PAPERBALLOON_NOISE], reward: 3, item: ITEMS.brushSign.id },
   a42_n2_upper: { id: 'a42_n2_upper', name: '砂嵐', enemies: tough([YOYO_NOISE, PAGER_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 3, koma: 1 },
   a42_n2_alley1: { id: 'a42_n2_alley1', name: '砂嵐', enemies: tough([PAPERBALLOON_NOISE, PAPERBALLOON_NOISE, CUCKOO_NOISE].map((e) => scaleEnemy(e, A42_SCALE.n2))), reward: 2 },
@@ -1285,9 +1286,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a42_chest_clock', cell: [18, 30], items: [ITEMS.potion.id], snaps: ['thunderChip'] },
-      { id: 'a42_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.cubeCore.id], gears: ['fireBoost'] },
-      { id: 'a42_chest_shop', room: 'opening_shop', cell: [4, 17], night: 3, items: [ITEMS.hiPotion.id], gears: ['mpSave'] },
+      { id: 'a42_chest_clock', cell: [18, 30], items: [ITEMS.potion.id], snaps: ['thunderChip'], chainSnaps: ['c17_pinpoint'] },
+      { id: 'a42_chest_alley', room: 'showa_alley', cell: [6, 2], night: 2, items: [ITEMS.cubeCore.id], gears: ['fireBoost'], chainSnaps: ['c17_filterRed'] },
+      { id: 'a42_chest_shop', room: 'opening_shop', cell: [4, 17], night: 3, items: [ITEMS.hiPotion.id], gears: ['mpSave'], chainSnaps: ['c17_zoom'] },
     ],
     enemies: [
       // ---- 1晩目（入口から時計屋の前） ----
