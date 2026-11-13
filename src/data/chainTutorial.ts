@@ -69,6 +69,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '打ち返せなかった投球が当たると「ストライク」。\n3つで三振、負けになってしまいます。\n押す・ダウンで投球を止めるのも手です。' },
     { target: 'parts', text: '得点板とバックネットは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
   ],
+  // 段階184：本気のカイ「フィルムを使い切らせる」
+  chain_film: [
+    { target: 'intro', text: '本気のカイ！\n今度は逃げずに勝ちましょう。\nカイを倒すか、フィルムを使い切らせれば勝ちです。' },
+    { target: 'poiBar', text: 'カイのフィルム。\nカイの「撮る」行動（切り取り・フレームの雨・\n露出・シャッター）が動くたびに減ります。\n0 になると、カイは引きます。' },
+    { target: 'poiBar', text: '止めれば痛くないが、フィルムは減らない。\n撮らせればフィルムは減るが、行動を抜かれたり、手札を焼かれたりする。\nどちらを取るか、考えて並べましょう。' },
+    { target: 'parts', text: '枠の刃は「部位」です。\n壊すと切り取りとシャッターが来なくなり、雷の弱点が出ます。\n（フィルムの減りは遅くなります）' },
+  ],
   // 段階182：祭りの夜のやぐらのぬし「くり返しを越える」
   chain_repeat: [
     { target: 'intro', text: 'ぬし戦！\nやぐらのぬしは、百年続く夜を「くり返し」ます。\nくり返しを越えて、夜を先へ進めましょう。' },
@@ -168,7 +175,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

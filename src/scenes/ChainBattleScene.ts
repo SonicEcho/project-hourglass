@@ -12,6 +12,7 @@ import {
   chainPlanPitch,
   chainPlanWatch,
   chainPlanRepeat,
+  chainPlanFilm,
   chainRepeatNeed,
   createChainBattle,
   isWeakKnown,
@@ -281,6 +282,7 @@ export class ChainBattleScene extends Phaser.Scene {
         watch: setup?.watch,
         allyMoves: setup?.allyMoves,
         repeat: setup?.repeat,
+        film: setup?.film,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -436,6 +438,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawPitch(view);
     this.drawWatch(view);
     this.drawRepeat(view);
+    this.drawKaiFilm(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -1085,6 +1088,51 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(addText(this, cx, by + 18, `${dealt}/${need}`, { size: 11, bold: true, color: over ? '#8fffc0' : '#fff0b0' }).setOrigin(0.5));
     const msg = look ? (look.win ? '倒せる ◎' : over ? '越える ◎\n花火が上がる' : '足りない\n傷が戻される') : this.busy ? '' : `${need}以上当てると\n花火が上がる`;
     if (msg) r.add(addText(this, cx, STAGE_Y + 136, msg, { size: 9, bold: true, align: 'center', color: look ? (over || look.win ? '#8fffc0' : '#ff9db0') : '#9aa3c0' }).setOrigin(0.5));
+  }
+
+  /**
+   * フィルムを使い切らせる（段階184。本気のカイ）：左の柱に、コマの並んだフィルム（使ったコマは焼ける）・残りの枚数・今の型。
+   * 並べている間は、このラウンドに撮らせる見込み（減るコマを橙の枠で）
+   */
+  private drawKaiFilm(view: ChainState): void {
+    const f = view.def.film;
+    if (!f) return;
+    const r = this.root;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    const kai = view.enemies.find((e) => chainEnemyDef(view, e.defId)?.phases?.length);
+    const kd = kai ? chainEnemyDef(view, kai.defId) : undefined;
+    const phaseName = kai && kd ? ((kai.phase ?? 0) > 0 ? kd.phases![(kai.phase ?? 1) - 1].name : (kd.phaseName ?? '')) : '';
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, 'カイのフィルム', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+      if (phaseName) r.add(addText(this, cx, STAGE_Y + 32, `型「${phaseName}」`, { size: 9, bold: true, color: '#9ad0ff' }).setOrigin(0.5));
+    }
+    const left = Math.max(0, view.film ?? 0);
+    const look = this.busy || this.plan.length === 0 ? null : chainPlanFilm(this.s, this.plan);
+    // コマ：2段に並べる（左上から使っていく）。帯の上下にフィルムの穴
+    const cols = Math.ceil(f.total / 2);
+    const w = Math.min(12, ((lay ? BOSS_COL : 100) - 22) / cols - 2);
+    const h = 13;
+    const x0 = cx - (cols * (w + 2) - 2) / 2;
+    const y0 = STAGE_Y + 44;
+    r.add(this.add.rectangle(cx, y0 - 5, cols * (w + 2) + 6, h * 2 + 16, 0x15110c).setOrigin(0.5, 0).setStrokeStyle(1, 0x4a3a24));
+    for (let k = 0; k < cols; k++) {
+      r.add(this.add.rectangle(x0 + k * (w + 2) + w / 2, y0 - 2, 3, 2, 0x6a5a40));
+      r.add(this.add.rectangle(x0 + k * (w + 2) + w / 2, y0 + h * 2 + 7, 3, 2, 0x6a5a40));
+    }
+    const used = f.total - left;
+    for (let k = 0; k < f.total; k++) {
+      const x = x0 + (k % cols) * (w + 2);
+      const y = y0 + 1 + Math.floor(k / cols) * (h + 3);
+      const burnt = k < used;
+      const soon = !burnt && look !== null && k < used + look.used;
+      r.add(this.add.rectangle(x, y, w, h, burnt ? 0x2a1a10 : 0xd8c8a0, 1).setOrigin(0).setStrokeStyle(soon ? 2 : 1, soon ? 0xff9a3a : burnt ? 0x3a2a18 : 0x8a7a5a));
+      if (burnt) r.add(addText(this, x + w / 2, y + h / 2, '×', { size: 9, bold: true, color: '#7a4a2a' }).setOrigin(0.5));
+    }
+    r.add(addText(this, cx, y0 + h * 2 + 22, `あと ${left}枚`, { size: 12, bold: true, color: left <= 3 ? '#8fffc0' : '#fff0b0' }).setOrigin(0.5));
+    const msg = look ? `撮らせる −${look.used}${look.erased ? `\n手札が${look.erased}枚焼ける` : ''}` : this.busy ? '' : '0枚でカイが引く';
+    if (msg) r.add(addText(this, cx, STAGE_Y + 138, msg, { size: 9, bold: true, align: 'center', color: look ? (look.used ? '#ffb070' : '#9aa3c0') : '#9aa3c0' }).setOrigin(0.5));
   }
 
   /** 開いた花火（二重の輪の点と、真ん中の光とにじみ）。size は大きさの倍率 */
@@ -2652,7 +2700,7 @@ export class ChainBattleScene extends Phaser.Scene {
     });
     const d = new Date();
     photo.push(addText(this, pw / 2 - 18, ph / 2 - 62, `'${String(d.getFullYear()).slice(2)} ${d.getMonth() + 1} ${d.getDate()}`, { size: 15, bold: true, color: '#ff8a1a' }).setOrigin(1, 0.5));
-    photo.push(addText(this, -pw / 2 + 16, ph / 2 - 24, s.finish === 'shutter' ? `${foes.length}体まとめて、はい チーズ。` : '全部倒した。', { size: 17, hand: true, color: '#333333' }).setOrigin(0, 0.5));
+    photo.push(addText(this, -pw / 2 + 16, ph / 2 - 24, s.finish === 'shutter' ? `${foes.length}体まとめて、はい チーズ。` : s.finish === 'film' ? 'フィルムが、もうない。' : '全部倒した。', { size: 17, hand: true, color: '#333333' }).setOrigin(0, 0.5));
     o.add(this.add.container(GAME_WIDTH / 2, 260, photo).setAngle(-4));
     o.add(this.add.rectangle(GAME_WIDTH / 2, 112, 90, 22, YELLOW, 0.75).setAngle(-8));
     // 評価の星と決着の時刻
@@ -2837,6 +2885,9 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'filmUse') parts.push(ev.left > 0 ? `カイがフィルムを${ev.used}枚使った（あと${ev.left}枚）` : 'カイ「……フィルムが、もうない」');
+    else if (ev.type === 'cardErase') parts.push(`露出！ 手札の「${f.state.def.cards[ev.card]?.name ?? ev.card}」が焼けて、この戦闘から消えた`);
+    else if (ev.type === 'phaseShift') parts.push(`${name(ev.uid)}の型が変わった：「${ev.name}」`);
     else if (ev.type === 'repeatNight') parts.push(`夜がくり返す… ${name(ev.uid)}の傷が戻った（このラウンド ${ev.dealt}／越えるには ${ev.need}）`);
     else if (ev.type === 'firework') parts.push(`くり返しを越えた！ 花火が上がる（${ev.total}つ目）`);
     else if (ev.type === 'preempt') parts.push(`先回り！ ${name(ev.uid)}が動く前に当てた（2倍）`);

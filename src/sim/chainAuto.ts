@@ -84,7 +84,9 @@ function score(before: ChainState, after: ChainState): number {
   const watch = before.def.watch ? ((after.watch ?? 0) - (before.watch ?? 0)) * 4 + (after.intents.some((i) => i.eased) && (after.watch ?? 0) < before.def.watch.hp * 0.6 ? 40 : 0) : 0;
   // くり返しを越える（段階182）：戻されたラウンドの削りは点にならない（HP が戻るため）。花火を1つ上げるのを重く見る
   const fire = ((after.fireworks ?? 0) - (before.fireworks ?? 0)) * 800;
-  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300 + watch + fire;
+  // フィルムを使い切らせる（段階184）：撮らせて減ったフィルム1枚を、HP を削るのと同じくらいに見る
+  const film = before.def.film ? ((before.film ?? 0) - (after.film ?? 0)) * 300 : 0;
+  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300 + watch + fire + film;
 }
 
 /** 1ラウンド動かす（シャッターが光ったら押す。調整15：シャッターは総攻撃なので、押した後も続くことがある） */

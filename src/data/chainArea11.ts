@@ -178,6 +178,8 @@ export interface ChainAreaSetup {
   allyMoves?: ChainMove[];
   /** くり返しを越える（段階182。祭りの夜のやぐらのぬし） */
   repeat?: ChainBattleDef['repeat'];
+  /** フィルム（段階184。本気のカイ） */
+  film?: ChainBattleDef['film'];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }

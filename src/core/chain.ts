@@ -269,6 +269,10 @@ export interface ChainEnemyMove {
   cutsFrame?: boolean;
   /** 急かす（段階179。腕時計を守る決まりの戦闘で、腕時計をねらう。当たると威力の分だけ腕時計の HP が減る） */
   watch?: boolean;
+  /** 撮る（段階184。フィルムの決まりの戦闘で、実際に動くとフィルムがこの枚数減る。本気のカイ） */
+  film?: number;
+  /** 露出（段階184。本気のカイ）：動くと、まだ使っていない手札を1枚、この戦闘から消す */
+  erasesCard?: boolean;
 }
 
 export interface ChainEnemyDef {
@@ -301,6 +305,12 @@ export interface ChainEnemyDef {
   part?: { of: string; reveals?: Element[] };
   /** 倒すと必ず落とす素材（段階162。部位の素材） */
   drop?: string;
+  /**
+   * 型（段階184。本気のカイ）：HP の割合が below を切ると、次のラウンドから予定の癖と性質がこの型になる（below の大きい順に書く）。
+   * phaseName は最初の型の名前
+   */
+  phases?: { below: number; name: string; pattern: ChainEnemyMove[]; trait?: ChainTrait }[];
+  phaseName?: string;
 }
 
 /**
@@ -425,6 +435,8 @@ export interface ChainBattleDef {
    * rate 以上なら戻さず、花火が1つ上がる。need 上がると、もう戻さない（最後の花火）
    */
   repeat?: { target: string; rate: number; need: number };
+  /** フィルム（段階184。本気のカイ）：始めの枚数。撮る行動（film）が動くと減り、0 で「フィルムが、もうない」：敵が引いて勝ち（finish は 'film'） */
+  film?: { total: number };
 }
 
 export interface ChainUnit {
@@ -479,6 +491,8 @@ export interface ChainUnit {
   mp?: number;
   maxMp?: number;
   passives?: ChainPassive[];
+  /** 型の番号（段階184。0 が最初の型） */
+  phase?: number;
 }
 
 /** 敵の予定（ラウンドの始めに決まる） */
@@ -545,6 +559,10 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** フィルム（段階184）：撮って減った・手札が焼かれた・型が変わった */
+  | { type: 'filmUse'; uid: string; used: number; left: number }
+  | { type: 'cardErase'; uid: string; card: string }
+  | { type: 'phaseShift'; uid: string; name: string }
   /** くり返しを越える（段階182）：ラウンドの終わりに、受けたダメージを戻した・越えて花火が上がった（total は上がった数） */
   | { type: 'repeatNight'; uid: string; dealt: number; need: number }
   | { type: 'firework'; uid: string; dealt: number; total: number }
@@ -649,7 +667,9 @@ export interface ChainState {
   /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
   acted?: Record<string, number>;
   /** 決着の仕方 */
-  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout' | 'watch';
+  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout' | 'watch' | 'film';
+  /** フィルムの残り（段階184） */
+  film?: number;
   /** 上がった花火の数（段階182。くり返しを越える） */
   fireworks?: number;
   /** 腕時計の HP（段階179）と、このラウンドにねじを巻いたか（次のラウンドの急かすがそれる） */
@@ -793,7 +813,8 @@ function planIntents(s: ChainState): void {
     add(move.at);
     if (move.at2 !== undefined) add(move.at2);
     // 一緒に予定に入る行動（段階175。投球）
-    for (const w of move.with ?? []) {
+    // 一緒に入る行動も、壊れた部位を使う物は入れない（段階184）
+    for (const w of (move.with ?? []).filter(ok)) {
       // 急かす（段階179）：腕時計をねらう。前のラウンドにねじを巻いていれば、最初の ease 個は仲間へそれる
       const easedNow = !!(w.watch && s.def.watch && ease > 0);
       if (easedNow) ease--;
@@ -866,6 +887,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     ...(def.pitch ? { strikes: 0 } : {}),
     ...(def.watch ? { watch: def.watch.hp } : {}),
     ...(def.repeat ? { fireworks: 0 } : {}),
+    ...(def.film ? { film: def.film.total } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -1648,6 +1670,14 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
     done();
     return true;
   }
+  // フィルムが、もうない（段階184）：敵が引いて勝ち
+  if (s.def.film && (s.film ?? 0) <= 0) {
+    s.outcome = 'win';
+    s.finish = 'film';
+    s.finishRound = s.round;
+    done();
+    return true;
+  }
   // 腕時計が止まった（段階179）
   if (s.def.watch && (s.watch ?? 0) <= 0) {
     done();
@@ -1699,6 +1729,15 @@ export function chainPlanPitch(s: ChainState, plan: ChainPlanStep[]): { hits: nu
   if (!s.def.pitch || plan.length === 0) return { hits: 0, strikes: 0 };
   const ev = runChainRound(s, plan).frames.flatMap((f) => f.events);
   return { hits: ev.filter((e) => e.type === 'hitBack').length, strikes: ev.filter((e) => e.type === 'strike').length };
+}
+
+/** 並べた予定で、このラウンドに撮らせる見込み（段階184。画面の表示。実際に動かして見る）：減るフィルムの枚数・残り・焼かれる手札の数 */
+export function chainPlanFilm(s: ChainState, plan: ChainPlanStep[]): { used: number; left: number; erased: number } {
+  if (!s.def.film) return { used: 0, left: 0, erased: 0 };
+  const ev = runChainRound(s, plan).frames.flatMap((f) => f.events);
+  let used = 0;
+  for (const e of ev) if (e.type === 'filmUse') used += e.used;
+  return { used, left: Math.max(0, (s.film ?? 0) - used), erased: ev.filter((e) => e.type === 'cardErase').length };
 }
 
 /** くり返しを越えるのに、1ラウンドに当てる量（段階182。ぬしの最大 HP × rate。切り上げ） */
@@ -1972,6 +2011,18 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
           ev.push({ type: 'frameCut', uid: e.uid, to: q.intent.target, name: moves[pq.i]?.name ?? '' });
         }
       }
+      // 露出（段階184）：まだ使っていない手札を1枚、この戦闘から消す
+      if (q.intent.move.erasesCard && s.hand.length > 0) {
+        const k = Math.floor(rand(s) * s.hand.length);
+        const [card] = s.hand.splice(k, 1);
+        ev.push({ type: 'cardErase', uid: e.uid, card });
+      }
+      // 撮る（段階184）：実際に動いた分だけフィルムが減る
+      if (s.def.film && q.intent.move.film) {
+        const used = Math.min(s.film ?? 0, q.intent.move.film);
+        s.film = (s.film ?? 0) - used;
+        ev.push({ type: 'filmUse', uid: e.uid, used, left: s.film });
+      }
       // ストライク（段階175）：打ち返せなかった投球が動いた
       if (s.def.pitch && q.intent.move.pitch) {
         s.strikes = (s.strikes ?? 0) + 1;
@@ -2029,6 +2080,20 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       const amount = e.roundHp! - e.hp;
       e.hp = e.roundHp!;
       push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻し', [{ type: 'rewind', uid: e.uid, amount }], undefined, true);
+    }
+    // 型（段階184）：HP の割合が決まった所を切ると、次のラウンドから型が変わる（癖は最初から）
+    for (const e of living(s.enemies)) {
+      const phases = chainEnemyDef(s, e.defId)?.phases;
+      if (!phases?.length) continue;
+      const reached = phases.filter((p) => e.hp / e.maxHp < p.below).length;
+      if (reached <= (e.phase ?? 0)) continue;
+      const ph = phases[reached - 1];
+      e.phase = reached;
+      e.pattern = ph.pattern;
+      // ラウンドの終わり（endRound）で癖が1つ進むので、その手前に置く
+      e.step = -1;
+      e.trait = ph.trait;
+      push(null, `end:phase:${e.uid}`, s.rules.roundLen, e.uid, ph.name, [{ type: 'phaseShift', uid: e.uid, name: ph.name }], undefined, true);
     }
     // くり返しを越える（段階182）：受けたダメージが足りなければ、ラウンドの始めの HP に戻す。越えれば花火
     if (s.def.repeat && s.outcome === 'ongoing' && (s.fireworks ?? 0) < s.def.repeat.need) {

@@ -5,7 +5,7 @@ import { A21_CARD_ART, A21_ENEMY_SNAP, A21_ENEMY_SNAPS, A21_NEW_SNAPS, A21_SETUP
 import { A22_CARD_ART, A22_ENEMY_SNAP, A22_ENEMY_SNAPS, A22_NEW_SNAPS, A22_SETUPS, A22_SHORT_TEXT } from './chainArea22';
 import { A23_CARD_ART, A23_ENEMY_SNAP, A23_ENEMY_SNAPS, A23_NEW_SNAPS, A23_SETUPS, A23_SHORT_TEXT } from './chainArea23';
 import { A3S_CARD_ART, A3S_ENEMY_SNAP, A3S_ENEMY_SNAPS, A3S_NEW_SNAPS, A3S_SETUPS, A3S_SHORT_TEXT } from './chainArea3s';
-import { A3K_SETUPS } from './chainArea3k';
+import { A3K_NEW_SNAPS, A3K_SETUPS } from './chainArea3k';
 import { A31_CARD_ART, A31_ENEMY_SNAP, A31_ENEMY_SNAPS, A31_NEW_SNAPS, A31_SETUPS, A31_SHORT_TEXT } from './chainArea31';
 
 // 新しい戦闘の区画をまとめる（段階168）。区画ごとのファイル（chainArea11・chainArea12…）の札・敵のスナップ・戦闘の中身を、ここで1つにする。
@@ -14,7 +14,7 @@ import { A31_CARD_ART, A31_ENEMY_SNAP, A31_ENEMY_SNAPS, A31_NEW_SNAPS, A31_SETUP
 /** 新しい戦闘の本番の札（スペシャルを含む） */
 export const CHAIN_MAIN_CARDS: Record<string, ChainMove> = {
   ...A11_CARDS,
-  ...Object.fromEntries([...Object.values(A12_ENEMY_SNAP), ...A21_NEW_SNAPS, ...Object.values(A21_ENEMY_SNAP), ...A22_NEW_SNAPS, ...Object.values(A22_ENEMY_SNAP), ...A23_NEW_SNAPS, ...Object.values(A23_ENEMY_SNAP), ...A31_NEW_SNAPS, ...Object.values(A31_ENEMY_SNAP), ...A3S_NEW_SNAPS, ...Object.values(A3S_ENEMY_SNAP)].map((m) => [m.id, m])),
+  ...Object.fromEntries([...Object.values(A12_ENEMY_SNAP), ...A21_NEW_SNAPS, ...Object.values(A21_ENEMY_SNAP), ...A22_NEW_SNAPS, ...Object.values(A22_ENEMY_SNAP), ...A23_NEW_SNAPS, ...Object.values(A23_ENEMY_SNAP), ...A31_NEW_SNAPS, ...Object.values(A31_ENEMY_SNAP), ...A3S_NEW_SNAPS, ...Object.values(A3S_ENEMY_SNAP), ...A3K_NEW_SNAPS].map((m) => [m.id, m])),
 };
 
 /**
@@ -43,6 +43,8 @@ export const CHAIN_BOSS_GRADE: Record<string, { high: number; mid: number }> = {
   a31_boss: { high: 59, mid: 74 },
   // 段階182：祭りの夜のやぐらのぬし（勝った戦いの決着 39〜93）
   a3s2_boss: { high: 46, mid: 61 },
+  // 段階184：本気のカイ（フィルム切れの勝ちは 63〜64 にそろうので、それより速い勝ち方を ★3 に）
+  a3k_kai: { high: 63, mid: 78 },
 };
 
 /** 区画の戦闘を新しい戦闘で戦う時の中身（AREA_BATTLES の id → 中身）。札は全部の札 */
