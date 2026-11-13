@@ -351,6 +351,8 @@ export const CHAIN_TRAIT_TEXT: Record<string, { name: string; text: string }> = 
   flee: { name: '逃げ足', text: '「逃げる」の予定の時刻になると、戦闘からいなくなる' },
   interrupt: { name: '割り込み', text: '単体攻撃で狙われると、その攻撃の前に自分の行動を1つ割り込ませる' },
   veil: { name: '予定隠し', text: 'ラウンドの始めは行動の予定が見えない。攻撃を当てると見える' },
+  healer: { name: '回復役', text: '動くと、ほかの敵の HP を回復する' },
+  fast: { name: '速い', text: '予定がいつも時刻1〜2（止めにくい）' },
   rewind: { name: '巻き戻し', text: 'ラウンド終了時、そのラウンドに受けたダメージを回復する。ダウン中は回復しない' },
   shift: { name: '属性チェンジ', text: 'ラウンドごとに弱点が変わる（今の弱点は見えている）' },
   // 段階170：本番の 2-1 で初めて出す（試しでは名前の札を出していなかった）

@@ -271,10 +271,11 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a3k_kai: { id: 'a3k_kai', name: 'カイ', enemies: [toughenEnemy(KAI_REVENGE, A3K_SCALE.kai)], reward: 12, boss: true, snaps: ['encore'] },
   a32_boss: { id: 'a32_boss', name: '踏切のぬし', enemies: [toughenEnemy(CROSSING_LORD, A32_SCALE.boss)], reward: 10, boss: true, koma: 1, snaps: ['wideShot'] },
   // ---- 4-1「シロのいた夏」（段階137a。summerEnemies.ts）。コマは晩ごとに 3・3・3＋ぬし ----
+  // 段階187（段取りの段階F9a）：新しい戦闘の性質を晩ごとに覚えるよう、敵の組み合わせを入れ替えた（1晩目は虫かご（予定隠し）と水鉄砲（速い）だけ、2晩目にすいか（回復役）と花火の燃えかす、3晩目は組み合わせ）
   a41_n1_gate: { id: 'a41_n1_gate', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
-  a41_n1_well: { id: 'a41_n1_well', name: '砂嵐', enemies: tough([WATERMELON_NOISE, BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
-  a41_n1_yard: { id: 'a41_n1_yard', name: '砂嵐', enemies: tough([FIREWORK_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 2 },
-  a41_n1_shed: { id: 'a41_n1_shed', name: '砂嵐', enemies: tough([FIREWORK_NOISE, WATERMELON_NOISE, BUGCAGE_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
+  a41_n1_well: { id: 'a41_n1_well', name: '砂嵐', enemies: tough([WATERGUN_NOISE, BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
+  a41_n1_yard: { id: 'a41_n1_yard', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 2 },
+  a41_n1_shed: { id: 'a41_n1_shed', name: '砂嵐', enemies: tough([BUGCAGE_NOISE, BUGCAGE_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 3, koma: 1 },
   a41_n1_shed2: { id: 'a41_n1_shed2', name: '砂嵐', enemies: tough([WATERGUN_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n1))), reward: 2 },
   a41_runner: { id: 'a41_runner', name: '砂嵐', enemies: [WATERGUN_NOISE, WATERGUN_NOISE, WATERGUN_NOISE], reward: 3, item: ITEMS.radioCard.id },
   a41_n2_ridge: { id: 'a41_n2_ridge', name: '砂嵐', enemies: tough([WATERMELON_NOISE, FIREWORK_NOISE, WATERGUN_NOISE].map((e) => scaleEnemy(e, A41_SCALE.n2))), reward: 3, koma: 1 },
@@ -1184,9 +1185,9 @@ export const AREAS: Record<string, AreaDef> = {
       },
     },
     chests: [
-      { id: 'a41_chest_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.potion.id], snaps: ['iceChip'] },
-      { id: 'a41_chest_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.melonSeed.id], gears: ['thunderBoost'] },
-      { id: 'a41_chest_canal', room: 'summer_canal', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['hpMemory'] },
+      { id: 'a41_chest_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.potion.id], snaps: ['iceChip'], chainSnaps: ['c17_filterRed'] },
+      { id: 'a41_chest_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.melonSeed.id], gears: ['thunderBoost'], chainSnaps: ['c17_firstCut'] },
+      { id: 'a41_chest_canal', room: 'summer_canal', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['hpMemory'], chainSnaps: ['c17_exposure'] },
     ],
     enemies: [
       // ---- 1晩目（庭・物置） ----

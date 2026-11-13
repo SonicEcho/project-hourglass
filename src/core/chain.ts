@@ -44,6 +44,10 @@ export type ChainTrait =
   | 'interrupt'
   /** 予定隠し：ラウンドの始めは予定が隠れている（画面で「？」）。攻撃が当たると見える */
   | 'veil'
+  /** 回復役（段階187）：動くと、ほかの敵（部位を除く）の HP を、それぞれの最大 HP × healRate 回復する */
+  | 'healer'
+  /** 速い（段階187）：予定がいつも時刻1〜2（止めにくい）。仕組みは予定の癖で、性質は印と説明のため */
+  | 'fast'
   /** 巻き戻し：ラウンドの終わりに、そのラウンドに受けたダメージを回復する（ダウン中なら回復しない） */
   | 'rewind'
   /** 属性チェンジ：ラウンドごとに弱点が変わる（weakCycle の順。今の弱点は画面に出る） */
@@ -290,6 +294,8 @@ export interface ChainEnemyDef {
   pattern: ChainEnemyMove[];
   /** 分裂：倒すと出てくる敵（2体） */
   splitInto?: ChainEnemyDef;
+  /** 回復役の回復の割合（段階187。書かなければ 0.12） */
+  healRate?: number;
   /** 自爆の強さ（段階178。威力 × この敵の攻撃 ÷ 仲間の防御。書かなければ決まりの timerDamage） */
   timerPower?: number;
   /** ダウン時爆発の強さ（段階168。威力 × この敵の攻撃 ÷ 仲間の防御。書かなければ決まりの popDamage） */
@@ -566,6 +572,8 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** 回復役（段階187）：ほかの敵を回復した */
+  | { type: 'enemyHeal'; uid: string; to: string; amount: number }
   /** 言えなかった言葉（段階186）：警報にのまれた・言えた */
   | { type: 'wordSwallowed'; uid: string }
   | { type: 'wordSaid'; uid: string }
@@ -2038,6 +2046,15 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
           pending.splice(pending.indexOf(pq), 1);
           s.hand.push(...cardIds[pq.i]);
           ev.push({ type: 'frameCut', uid: e.uid, to: q.intent.target, name: moves[pq.i]?.name ?? '' });
+        }
+      }
+      // 回復役（段階187）：動くと、ほかの敵の HP を回復する
+      if (e.trait === 'healer') {
+        const rate = chainEnemyDef(s, e.defId)?.healRate ?? 0.12;
+        for (const o of living(s.enemies).filter((x) => x.uid !== e.uid && !chainEnemyDef(s, x.defId)?.part && x.hp < x.maxHp)) {
+          const amount = Math.min(o.maxHp - o.hp, Math.max(1, Math.round(o.maxHp * rate)));
+          o.hp += amount;
+          ev.push({ type: 'enemyHeal', uid: e.uid, to: o.uid, amount });
         }
       }
       // 露出（段階184）：まだ使っていない手札を1枚、この戦闘から消す
