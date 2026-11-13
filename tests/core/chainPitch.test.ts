@@ -50,3 +50,28 @@ describe('打ち返す（段階175）', () => {
     expect(events(r).some((e) => e.type === 'damage' && e.from === t)).toBe(false);
   });
 });
+
+describe('カイの切り取り（段階176）', () => {
+  const kai: ChainEnemyDef = { id: 'kai', name: 'カイ', hp: 9999, atk: 5, def: 10, weak: [], resist: [], pattern: [{ id: 'frameCut', name: '切り取り', at: 3, element: 'physical', power: 10, cutsFrame: true }] };
+  const build = () => {
+    const def: ChainBattleDef = { ...BASE, enemies: [kai], variants: undefined, cards: { ...BASE.cards, meet: MEET } };
+    const s = createChainBattle(def, CHAIN_RULES, 3);
+    s.intents = s.intents.map((i) => ({ ...i, target: 'akari' }));
+    return s;
+  };
+  it('ねらった仲間の、まだ終わっていない行動を抜き取る（札は手札に戻る）。先に終わった行動は抜かれない', () => {
+    const s = build();
+    s.hand = ['meet'];
+    const t = s.enemies[0].uid;
+    // ハルト（時刻2）→ あかり（ジャストミートの札・時刻4）：あかりは時刻3の切り取りで抜かれる
+    const r = runChainRound(s, [mv('hero', t), { ally: 'akari', source: { kind: 'card', index: 0 }, target: t, addons: [] }]);
+    const ev = events(r);
+    expect(ev.find((e) => e.type === 'frameCut')).toMatchObject({ to: 'akari', name: 'ジャストミート' });
+    expect(ev.some((e) => e.type === 'damage' && e.from === 'akari')).toBe(false);
+    expect(r.state.hand).toContain('meet');
+    // あかりが先（時刻2）なら、抜かれない
+    const s2 = build();
+    const r2 = runChainRound(s2, [mv('akari', t), mv('hero', t)]);
+    expect(events(r2).some((e) => e.type === 'frameCut')).toBe(false);
+  });
+});

@@ -259,6 +259,8 @@ export interface ChainEnemyMove {
   with?: ChainEnemyMove[];
   /** 投球（段階175。打ち返す決まりの戦闘で、打ち返せないと当たってストライク） */
   pitch?: boolean;
+  /** 切り取り（段階176。カイ）：動いた時、ねらった仲間の、まだ終わっていないこのラウンドの行動を抜き取る（動かない。札は手札に戻る） */
+  cutsFrame?: boolean;
 }
 
 export interface ChainEnemyDef {
@@ -545,6 +547,8 @@ export type ChainEvent =
   /** 段階175：打ち返した（uid は投げた敵・name は消した行動）・ストライク（total は数） */
   | { type: 'hitBack'; uid: string; name: string }
   | { type: 'strike'; total: number }
+  /** 段階176：カイの切り取りで、仲間の行動が抜き取られた（name は抜き取った行動） */
+  | { type: 'frameCut'; uid: string; to: string; name: string }
   | { type: 'stand'; uid: string }
   | { type: 'defeat'; uid: string }
   | { type: 'fizzle'; uid: string }
@@ -1811,6 +1815,15 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       enemyActs.push(q.at);
       enemySince = true;
       doEnemyMove(s, e, q.intent, ev);
+      // 切り取り（段階176）：ねらった仲間の、まだ終わっていない行動を抜き取る（札は手札に戻す）
+      if (q.intent.move.cutsFrame && q.intent.target) {
+        for (const pq of pending.filter((x) => x.kind === 'ally' && stepAllies(s, plan[x.i]).includes(q.intent.target!))) {
+          if (pq.kind !== 'ally') continue;
+          pending.splice(pending.indexOf(pq), 1);
+          s.hand.push(...cardIds[pq.i]);
+          ev.push({ type: 'frameCut', uid: e.uid, to: q.intent.target, name: moves[pq.i]?.name ?? '' });
+        }
+      }
       // ストライク（段階175）：打ち返せなかった投球が動いた
       if (s.def.pitch && q.intent.move.pitch) {
         s.strikes = (s.strikes ?? 0) + 1;
