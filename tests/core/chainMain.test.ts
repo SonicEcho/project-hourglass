@@ -187,7 +187,8 @@ describe('1-1 を新しい戦闘に（段階160）', () => {
       const def = buildMainChainBattle({ id, name: id, party: [HERO, AKARI], enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
       expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
     }
-  });
+    // 自動対戦は重いので、ほかの区画の同じテストと同じく時間を長めに（段階180：CI で5秒を超えた）
+  }, 60000);
 
   it('説明の窓：予定と帯はいつも、エフェクト・クライマックス・コンボは手札にある時', () => {
     const st = CHAIN_AREA_SETUPS.a11_n1_gate;
