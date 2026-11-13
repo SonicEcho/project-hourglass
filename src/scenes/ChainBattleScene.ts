@@ -1335,6 +1335,15 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(addText(this, px, top + 13, beat ? `♪${t}` : String(t), { size: 10, bold: true, color: beat ? '#ffd23f' : '#8a93ad' }).setOrigin(0.5, 0));
     }
     r.add(addText(this, 4, FOE_TRACK, '敵', { size: 9, bold: true, color: '#ff9db0' }).setOrigin(0, 0.5));
+    // ぬしのスナップの目標（段階180）：★3（早く倒した時）だけもらえるので、あと何マスで倒せば届くか
+    const bossSnap = this.encounter && !this.encounter.hunt && this.areaBattle?.boss && (CHAIN_AREA_SETUPS[this.areaBattle.id]?.snaps?.length ?? 0) > 0;
+    if (bossSnap && s.def.gradeAt && s.outcome === 'ongoing') {
+      const left = s.def.gradeAt.high - s.elapsed;
+      const label = left > 0 ? `★3・スナップまで あと${left}マス` : '★3（スナップ）には届かない';
+      const tag = addText(this, GAME_WIDTH - 8, FILM_Y + FILM_H - 13, label, { size: 9, bold: true, color: left > 0 ? '#2a1300' : '#9aa3c0' }).setOrigin(1, 0.5);
+      r.add(this.add.rectangle(GAME_WIDTH - 4, FILM_Y + FILM_H - 13, tag.width + 10, 14, left > 0 ? GOLD : 0x1a2040, 0.95).setOrigin(1, 0.5));
+      r.add(tag);
+    }
     r.add(addText(this, 2, CLIP_TOP + CLIP_H / 2, '味方', { size: 8, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
     // 動く順の番号（同じ時刻なら味方が先）。計画の時は見込み、実行中は本当のコマの番号。済んだ番号は薄く、今の番号を赤く
     const planOrder = chainOrder(this.s, this.plan);
@@ -2585,7 +2594,7 @@ export class ChainBattleScene extends Phaser.Scene {
       ? [
           { g: 'low', label: '★\n素材' },
           { g: 'mid', label: `★★ ${at?.mid ?? ''}マス以内\n素材` },
-          { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\nレア・敵のスナップ` },
+          { g: 'high', label: `★★★ ${at?.high ?? ''}マス以内\n${this.areaBattle?.boss && !this.encounter.hunt ? 'ぬしのスナップ' : 'レア・敵のスナップ'}` },
         ]
       : [
           { g: 'low', label: '★\n素材' },

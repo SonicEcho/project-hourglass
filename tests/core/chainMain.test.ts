@@ -3,6 +3,7 @@ import {
   addToAlbum,
   albumFromIds,
   buildMainChainBattle,
+  chainBossSnaps,
   chainAlbumAddError,
   chainAlbumDeck,
   chainAlbumCounts,
@@ -317,9 +318,16 @@ describe('新しい戦闘のアルバム（段階163）', () => {
     expect(chainAlbumAddError(albumFromIds(CHAIN_START_ALBUM), 'c17_quick', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('no spare copy');
   });
 
-  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（段階177：部位を壊した時だけ集合写真1枚。リカバリーは返した時）', () => {
+  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（段階180：★3 で倒した時だけ集合写真1枚。リカバリーは返した時）', () => {
     expect(CHAIN_AREA_SETUPS.a11_boss.snaps).toEqual(['c17_group']);
     for (const id of CHAIN_AREA_SETUPS.a11_boss.snaps!) expect(CHAIN_SNAPS[id]).toBeTruthy();
+  });
+  it('ぬしのスナップは ★3 で勝った時だけ（段階180。部位を壊したかによらない）', () => {
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'high' }, ['c17_group'])).toEqual(['c17_group']);
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'mid' }, ['c17_group'])).toEqual([]);
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'low' }, ['c17_group'])).toEqual([]);
+    expect(chainBossSnaps({ outcome: 'defeat', grade: null }, ['c17_group'])).toEqual([]);
+    expect(chainBossSnaps({ outcome: 'victory', grade: 'high' }, undefined)).toEqual([]);
   });
 });
 
