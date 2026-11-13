@@ -104,3 +104,14 @@ describe('2-3x の書庫とカイの切り取り（段階176）', () => {
     }
   }, 60000);
 });
+
+describe('スナップの入手の直し（段階177）', () => {
+  it('ぬしの報酬は1枚。返した時は新しい戦闘のスナップ（1・2章の区画）', async () => {
+    for (const id of ['a11_boss', 'a12_boss', 'a21_boss', 'a22_boss', 'a23_boss']) expect(CHAIN_AREA_SETUPS[id].snaps).toHaveLength(1);
+    const { AREAS: areas } = await import('../../src/data');
+    for (const a of ['a11', 'a12', 'a21', 'a22', 'a23']) {
+      expect(areas[a].chainReturnSnaps?.length).toBe(1);
+      for (const id of areas[a].chainReturnSnaps!) expect(CHAIN_SNAPS[id]).toBeDefined();
+    }
+  });
+});

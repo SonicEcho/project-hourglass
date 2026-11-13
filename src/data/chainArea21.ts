@@ -171,7 +171,7 @@ function a21Lord(): ChainEnemyDef[] {
 /** 2-1 の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
 export const A21_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
   // ぬしの報酬：渾身の一枚と、アタック+20（2章の札）
-  ['a21_boss', { enemies: a21Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, teeth: { target: 'latheLord', need: A21_LORD.teeth }, snaps: [C.bigShot.id, C.plus20.id] }],
+  ['a21_boss', { enemies: a21Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, teeth: { target: 'latheLord', need: A21_LORD.teeth }, snaps: [C.bigShot.id] }],
   ...A21_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = NIGHT1(id) ? A21_CHAIN_HP_RATE.night1 : A21_CHAIN_HP_RATE.later;

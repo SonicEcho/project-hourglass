@@ -144,7 +144,9 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   run.armory = capped.armory;
   // スナップ：区画を作り直した戦闘は、新しい戦闘のスナップを新しいアルバムへ（段階163）。まだの戦闘は今のアルバムへ
   const setup = CHAIN_AREA_SETUPS[def.id];
-  const chainSnaps = enc.hunt || !setup ? [] : [...(setup.snaps ?? [])];
+  // ぬしのスナップ（段階177：部位を1つでも壊して勝った時だけ。ふつうに勝つと素材だけ）
+  const partBroken = result.drops.some((d) => d.kind === 'part');
+  const chainSnaps = enc.hunt || !setup || !partBroken ? [] : [...(setup.snaps ?? [])];
   const snaps = enc.hunt || setup ? [] : (def.snaps ?? []);
   if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
   // 早く勝った時の敵のスナップ（段階165。狩りでも）

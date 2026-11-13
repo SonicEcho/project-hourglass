@@ -229,7 +229,7 @@ function a11Lord(): ChainEnemyDef[] {
 
 /** 1-1 の区画の戦闘の中身（全部の区画の分は chainAreas.ts の CHAIN_AREA_SETUPS） */
 export const A11_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
-  ['a11_boss', { enemies: a11Lord(), variants: [], deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, poi: A11_POI, snaps: [C.group.id, RECOVERY.id] }],
+  ['a11_boss', { enemies: a11Lord(), variants: [], deck: A11_DECK, cards: A11_CARDS, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, poi: A11_POI, snaps: [C.group.id] }],
   ...A11_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a11_n1_') ? A11_CHAIN_HP_RATE.night1 : A11_CHAIN_HP_RATE.later;

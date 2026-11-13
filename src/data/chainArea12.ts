@@ -168,7 +168,7 @@ function a12Lord(): ChainEnemyDef[] {
 /** 1-2 の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
 export const A12_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
   // ぬしの報酬：1-2 の答えになる札（雷のストロボ・全体のワイドショット）
-  ['a12_boss', { enemies: a12Lord(), variants: [], deck: A11_DECK, cards: {}, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, sunset: A12_SUNSET, snaps: ['c17_strobe', 'c17_wide'] }],
+  ['a12_boss', { enemies: a12Lord(), variants: [], deck: A11_DECK, cards: {}, links: A11_COMBOS, gradeAt: { high: 35, mid: 50 }, sunset: A12_SUNSET, snaps: ['c17_wide'] }],
   ...A12_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a12_n1_') ? A12_CHAIN_HP_RATE.night1 : A12_CHAIN_HP_RATE.later;

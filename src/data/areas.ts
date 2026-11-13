@@ -328,6 +328,8 @@ export const AREAS: Record<string, AreaDef> = {
   a11: {
     id: 'a11',
     name: '1-1「金魚の名前」',
+    // 段階177：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['a11_recovery'],
     rooms: [ROOMS.fest_gate, ROOMS.fest_backyard, ROOMS.festival_night, ROOMS.fest_east, ROOMS.fest_woods],
     links: [
       { a: { room: 'fest_gate', side: 'top' }, b: { room: 'festival_night', side: 'bottom' } },
@@ -450,6 +452,8 @@ export const AREAS: Record<string, AreaDef> = {
     memory: 'showa_street',
     // 返した報酬のスナップ（段階41）
     returnSnaps: ['recover'],
+    // 段階177：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_push'],
     // 晩の区切り（段階66）：2晩目は時計屋の前から、3晩目は坂の手前から
     nights: [{ koma: 3 }, { koma: 6, start: { cell: [16, 23] } }, { start: { cell: [12, 13] } }],
     // ノイズの壁：時計屋の先（2晩目から開く）と、坂の上（3晩目から開く）
@@ -550,6 +554,8 @@ export const AREAS: Record<string, AreaDef> = {
     // 返した報酬のスナップ（段階41）
     // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
     returnSnaps: ['joker', 'draw'],
+    // 段階177：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_burst'],
     // 晩の区切り（段階78）：2晩目は銭湯の前の長いすから、3晩目は工場の門から
     nights: [{ koma: 3 }, { koma: 6, start: { cell: [9, 21] } }, { start: { cell: [15, 11] } }],
     // ノイズの壁：資材置き場への出入口と、銭湯の左右の道（2晩目から開く）。工場の中への入口（3晩目から開く）
@@ -655,6 +661,8 @@ export const AREAS: Record<string, AreaDef> = {
     // 返した報酬のスナップ（段階41）
     // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
     returnSnaps: ['joker', 'search'],
+    // 段階177：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['a22_snowscape'],
     // 晩の区切り（段階82）：2晩目は中庭のベンチ（チェックポイント）から、3晩目は音楽室の前の廊下から
     nights: [{ koma: 3 }, { koma: 6, start: { room: 'school_courtyard', cell: [9, 19] } }, { start: { room: 'school_corridor', cell: [5, 4] } }],
     // ノイズの壁：中庭から渡り廊下への出入口（2晩目から開く）と、渡り廊下から体育館への出入口（3晩目から開く）
@@ -746,6 +754,8 @@ export const AREAS: Record<string, AreaDef> = {
     name: '2-3「最後の打席」',
     // 段階113：宝箱は「目玉1つ＋素材1つ」までにしたので、宝箱からあふれたスナップを返した報酬に移した
     returnSnaps: ['wideShot'],
+    // 段階177：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_closeUp'],
     rooms: [ROOMS.riverside_levee, ROOMS.riverside_bench, ROOMS.riverside_bank, ROOMS.riverside_stand, ROOMS.riverside_shed, ROOMS.riverside_diamond],
     links: [
       { a: { room: 'riverside_levee', side: 'top' }, b: { room: 'riverside_bench', side: 'bottom' } },

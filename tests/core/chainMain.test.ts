@@ -317,8 +317,8 @@ describe('新しい戦闘のアルバム（段階163）', () => {
     expect(chainAlbumAddError(albumFromIds(CHAIN_START_ALBUM), 'c17_quick', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('no spare copy');
   });
 
-  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（集合写真・リカバリー）', () => {
-    expect(CHAIN_AREA_SETUPS.a11_boss.snaps).toEqual(['c17_group', 'a11_recovery']);
+  it('1-1 のぬしの報酬は、新しい戦闘のスナップ（段階177：部位を壊した時だけ集合写真1枚。リカバリーは返した時）', () => {
+    expect(CHAIN_AREA_SETUPS.a11_boss.snaps).toEqual(['c17_group']);
     for (const id of CHAIN_AREA_SETUPS.a11_boss.snaps!) expect(CHAIN_SNAPS[id]).toBeTruthy();
   });
 });

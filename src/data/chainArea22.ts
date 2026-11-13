@@ -158,7 +158,7 @@ export const A22_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
   // ぬしの報酬：線香花火（全体に火の連続）と雪景色（2章の札）
   [
     'a22_boss',
-    { enemies: a22Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, clap: { beats: A22_LORD.beats, need: A22_LORD.need, target: 'ampLord', heal: A22_LORD.heal }, snaps: [C.sparkler.id, SNOWSCAPE.id] },
+    { enemies: a22Lord(), variants: [], deck: A11_DECK, cards: {}, links: A21_COMBOS, gradeAt: { high: 35, mid: 50 }, clap: { beats: A22_LORD.beats, need: A22_LORD.need, target: 'ampLord', heal: A22_LORD.heal }, snaps: [C.sparkler.id] },
   ],
   ...A22_IDS.map((id) => {
     const b = AREA_BATTLES[id];
