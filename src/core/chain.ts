@@ -114,6 +114,8 @@ export type ChainEffect =
       exposure?: number;
       /** 次のラウンドの始めに、敵全体に当たる（段階178。蚊取り線香ノイズのスナップ「時限の煙」。今は当たらない） */
       delayed?: boolean;
+      /** ねらった敵に、このラウンドのまだ動いていない予定があれば（ダウンしていない）、威力がこの倍（段階181。風車ノイズのスナップ「先回り」） */
+      beforeMult?: number;
       /** 敵の行動（まだ動いていない物）と同じ時刻にちょうど終わると、その行動を消して威力がこの倍（段階175。スコアボードのぬしのスナップ「ジャストミート」） */
       parry?: number;
       /** 拍（手拍子の時刻。決まりが無ければ 2・4・6・8）でちょうど終わると、威力がこの倍（段階173。アンプのぬしのスナップ） */
@@ -537,6 +539,8 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** 先回り（段階181）：まだ動いていない敵に先に当てた */
+  | { type: 'preempt'; uid: string }
   /** 腕時計（段階179）：急かされて減った・ねじを巻いて戻った */
   | { type: 'watchHit'; from: string; amount: number; left: number }
   | { type: 'watchWind'; uid: string; amount: number; left: number }
@@ -1861,6 +1865,14 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
           pending.splice(qi, 1);
           s.hitBackMult = parry ?? s.def.pitch!.mult;
           ev.push({ type: 'hitBack', uid: eq.intent.enemy, name: eq.intent.move.name });
+        }
+      }
+      // 先回り（段階181）：ねらった敵が、このラウンドにまだ動いていない（ダウンしていない）
+      if (move.effect.kind === 'damage' && move.effect.beforeMult && step.target) {
+        const foe = s.enemies.find((e) => e.uid === step.target && e.hp > 0 && !e.gone && !e.down);
+        if (foe && pending.some((x) => x.kind === 'enemy' && x.intent.enemy === foe.uid)) {
+          s.hitBackMult = (s.hitBackMult ?? 1) * move.effect.beforeMult;
+          ev.push({ type: 'preempt', uid: foe.uid });
         }
       }
       // 息を合わせる（段階169）：ほかの仲間の行動のすぐ後で、その間に敵が動いていない。2人の手番を使うコンボはそれだけで
