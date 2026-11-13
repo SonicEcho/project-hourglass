@@ -1148,6 +1148,8 @@ export const AREAS: Record<string, AreaDef> = {
     id: 'a41',
     name: '4-1「シロのいた夏」',
     returnSnaps: ['search'],
+    // 段階188：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_longTake'],
     rooms: [ROOMS.summer_garden, ROOMS.summer_shed, ROOMS.summer_ridge, ROOMS.summer_canal, ROOMS.summer_shallows],
     links: [
       { a: { room: 'summer_garden', side: 'left' }, b: { room: 'summer_shed', side: 'right' } },

@@ -51,6 +51,8 @@ export const CHAIN_BOSS_GRADE: Record<string, { high: number; mid: number }> = {
   a3k_kai: { high: 63, mid: 78 },
   // 段階186：踏切のぬし（勝った戦いの決着 69〜192）
   a32_boss: { high: 73, mid: 88 },
+  // 段階188：川のぬし（勝った戦いの決着 53〜143）
+  a41_boss: { high: 64, mid: 79 },
 };
 
 /** 区画の戦闘を新しい戦闘で戦う時の中身（AREA_BATTLES の id → 中身）。札は全部の札 */

@@ -284,6 +284,7 @@ export class ChainBattleScene extends Phaser.Scene {
         repeat: setup?.repeat,
         film: setup?.film,
         word: setup?.word,
+        heat: setup?.heat,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -441,6 +442,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawRepeat(view);
     this.drawKaiFilm(view);
     this.drawWord(view);
+    this.drawHeat(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -1173,6 +1175,34 @@ export class ChainBattleScene extends Phaser.Scene {
     if (lay) r.add(addText(this, cx, STAGE_Y + 142, '言わずに勝っても、いい', { size: 8, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
   }
 
+  /**
+   * 夏の照り返し（段階188。4-1 の川のぬし）：左の柱に、仲間ごとの暑さ（太陽の印で 0〜上限）と、冷やし方
+   */
+  private drawHeat(view: ChainState): void {
+    const h = view.def.heat;
+    if (!h) return;
+    const r = this.root;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '夏の照り返し', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    const left = cx - (lay ? BOSS_COL : 100) / 2 + 8;
+    view.allies.forEach((a, i) => {
+      const y = STAGE_Y + 38 + i * 22;
+      const heat = a.heat ?? 0;
+      r.add(addText(this, left, y, a.name, { size: 9, bold: true, color: a.hp > 0 ? '#e6e9f5' : '#7f88a8' }).setOrigin(0, 0.5));
+      for (let k = 0; k < h.max; k++) {
+        const on = k < heat;
+        r.add(this.add.circle(left + 46 + k * 13, y, 5, on ? 0xff7a2a : 0x2a2a38).setStrokeStyle(1, on ? 0xffd090 : 0x5a5a70));
+      }
+    });
+    const hot = view.allies.some((a) => (a.heat ?? 0) > 0 && a.hp > 0);
+    r.add(addText(this, cx, STAGE_Y + 126, hot ? '暑いと行動が重い\n氷・水をかけるで冷える' : '照り返しで暑くなる', { size: 8, bold: true, align: 'center', color: hot ? '#ffb070' : '#9aa3c0' }).setOrigin(0.5));
+    if (view.lighten) r.add(addText(this, cx, STAGE_Y + 146, '永遠の夏：重さ−1', { size: 8, bold: true, color: '#8fffc0' }).setOrigin(0.5));
+  }
+
   /** 開いた花火（二重の輪の点と、真ん中の光とにじみ）。size は大きさの倍率 */
   private fireworkBurst(x: number, y: number, color: number, size = 1): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
@@ -1680,7 +1710,10 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(this.para(x + 6, ALLY_Y, 5, ALLY_H, color, 1, 2));
       const face = this.faceSquare(u.defId, x + 34, ALLY_Y + ALLY_H / 2, ALLY_H - 8);
       if (face) r.add(face.setAlpha(u.hp > 0 ? 1 : 0.3));
-      r.add(addText(this, x + 62, ALLY_Y + 12, u.name, { size: 13, bold: true, color: u.hp > 0 ? '#ffffff' : COLORS.dimText }).setOrigin(0, 0.5));
+      const nameText = addText(this, x + 62, ALLY_Y + 12, u.name, { size: 13, bold: true, color: u.hp > 0 ? '#ffffff' : COLORS.dimText }).setOrigin(0, 0.5);
+      r.add(nameText);
+      // 暑さ（段階188）：名前の右に「暑さ+N」（行動が N 重い）
+      if (s.def.heat && (u.heat ?? 0) > 0 && u.hp > 0) r.add(this.sticker(x + 62 + nameText.width + 26, ALLY_Y + 12, `暑さ+${u.heat}`, 0xff7a2a, '#ffffff', 0, 9));
       const bw = w - 70;
       r.add(this.para(x + 60, ALLY_Y + 24, bw, 6, 0x222838, 1, 3));
       if (u.hp > 0) r.add(this.para(x + 60, ALLY_Y + 24, Math.max(4, bw * (u.hp / u.maxHp)), 6, u.hp < u.maxHp * 0.3 ? COLORS.hpLow : color, 1, 3));
@@ -2924,6 +2957,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'allyHeat') parts.push(ev.by > 0 ? `${name(ev.to)}が暑くなった（暑さ${ev.heat}：行動が${ev.heat}重い）` : `${name(ev.to)}が涼しくなった（暑さ${ev.heat}）`);
+    else if (ev.type === 'lighten') parts.push('永遠の夏！ この戦闘の終わりまで、みんなの行動が1軽い');
     else if (ev.type === 'enemyHeal') parts.push(`${name(ev.uid)}が${name(ev.to)}を回復した（+${ev.amount}）`);
     else if (ev.type === 'wordSwallowed') parts.push(`カン、カン、カン——「あのね」は、警報にのまれた（札は手札に戻った）`);
     else if (ev.type === 'wordSaid') parts.push(`「とうや。……あのね」言えた！`);

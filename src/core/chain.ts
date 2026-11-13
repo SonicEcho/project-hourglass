@@ -156,6 +156,8 @@ export type ChainEffect =
       armor?: number;
       /** 段階170（そろばんノイズのスナップ「珠の壁」）：添えた行動の後、ラウンドの終わりまで、この仲間が受ける敵の攻撃をこの回数まで消す */
       wall?: number;
+      /** 段階188（川のぬしの ★3 の報酬「永遠の夏」）：添えた行動から、この戦闘の終わりまで、味方全員の行動の重さ −1（1より下がらない。重ねても −1） */
+      lighten?: boolean;
       /** 段階178（トランジスタラジオノイズのスナップ「目覚まし」）：添えた攻撃が当たった敵の「警戒」を解く（またダウンさせられる） */
       unguard?: boolean;
       /** 段階172（メトロノームノイズのスナップ「振り子返し」）：添えた行動の後、ラウンドの終わりまで、この仲間が敵の攻撃を受けると、この威力の物理でやり返す */
@@ -173,7 +175,7 @@ export type ChainEffect =
    * 回復（味方全体）。revive（段階174「気付け」）：倒れた仲間を、最大 HP のこの割合で起こす（立っている仲間は回復しない）。
    * mp（段階174「一息」）：立っている仲間の MP をこの数だけ戻す
    */
-  | { kind: 'heal'; power: number; revive?: number; mp?: number; watch?: number }
+  | { kind: 'heal'; power: number; revive?: number; mp?: number; watch?: number; cool?: number }
   /**
    * 手札に触れる技（段階164。今の星図の ひらめき・シャッフル・すりかえ を、新しい戦闘でも使えるように）。
    * 動いた時に効く（並べ終えた後なので、次のラウンドの手札が変わる）：draw は count 枚引く（手札の上限を超えてよい）、
@@ -208,7 +210,7 @@ export function chainCardCategory(m: ChainMove): ChainCardCategory {
   if (m.type === 'finish') return 'finish';
   if (m.type === 'attack') return 'attack';
   // 回復の札・技は、アクション（攻撃と同じ分類。2026-11-07 開発者と決めた）
-  if (m.effect.kind === 'heal' && m.effect.watch === undefined) return 'attack';
+  if (m.effect.kind === 'heal' && m.effect.watch === undefined && m.effect.cool === undefined) return 'attack';
   return 'support';
 }
 
@@ -275,6 +277,9 @@ export interface ChainEnemyMove {
   cutsFrame?: boolean;
   /** 急かす（段階179。腕時計を守る決まりの戦闘で、腕時計をねらう。当たると威力の分だけ腕時計の HP が減る） */
   watch?: boolean;
+  /** 照り返し（段階188。暑さの決まりの戦闘で、当たった仲間の暑さがこの数だけ上がる）・水しぶき（下がる） */
+  heats?: number;
+  cools?: number;
   /** 撮る（段階184。フィルムの決まりの戦闘で、実際に動くとフィルムがこの枚数減る。本気のカイ） */
   film?: number;
   /** 露出（段階184。本気のカイ）：動くと、まだ使っていない手札を1枚、この戦闘から消す */
@@ -450,6 +455,11 @@ export interface ChainBattleDef {
    * part（敵の定義の id）が立っている間に出すと「警報にのまれて」不発（札は手札に戻る）。出せたら、その札はこの戦闘から消える（wordSaid）
    */
   word?: { card: string; part: string };
+  /**
+   * 夏の照り返し（段階188。4-1 の川のぬしの思い出の再演）：仲間ごとの暑さ（0〜max）。暑い仲間の行動は暑さの分だけ重い。
+   * 敵の行動の heats で上がり、cools で下がる。氷の攻撃をした仲間は0に。回復の効果の cool で仲間全員が下がる
+   */
+  heat?: { max: number };
 }
 
 export interface ChainUnit {
@@ -506,6 +516,8 @@ export interface ChainUnit {
   passives?: ChainPassive[];
   /** 型の番号（段階184。0 が最初の型） */
   phase?: number;
+  /** 暑さ（段階188。仲間） */
+  heat?: number;
 }
 
 /** 敵の予定（ラウンドの始めに決まる） */
@@ -572,6 +584,10 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** 永遠の夏（段階188）：この戦闘の終わりまで、味方全員の重さ −1 */
+  | { type: 'lighten'; uid: string }
+  /** 暑さ（段階188）：仲間の暑さが変わった（heat は変わった後） */
+  | { type: 'allyHeat'; to: string; heat: number; by: number }
   /** 回復役（段階187）：ほかの敵を回復した */
   | { type: 'enemyHeal'; uid: string; to: string; amount: number }
   /** 言えなかった言葉（段階186）：警報にのまれた・言えた */
@@ -690,6 +706,8 @@ export interface ChainState {
   film?: number;
   /** 言えなかった言葉を、言えた（段階186） */
   wordSaid?: boolean;
+  /** 永遠の夏（段階188）：この戦闘の終わりまで、味方全員の重さ −1 */
+  lighten?: boolean;
   /** 上がった花火の数（段階182。くり返しを越える） */
   fireworks?: number;
   /** 腕時計の HP（段階179）と、このラウンドにねじを巻いたか（次のラウンドの急かすがそれる） */
@@ -796,6 +814,15 @@ function enemyUnit(d: ChainEnemyDef, uid: string): ChainUnit {
     veiled: d.trait === 'veil' ? true : undefined,
     roundHp: d.hp,
   };
+}
+
+/** 仲間の暑さを決める（段階188。0〜上限）。変わった時だけ知らせる */
+function setHeat(s: ChainState, a: ChainUnit, next: number, ev: ChainEvent[]): void {
+  const v = Math.max(0, Math.min(s.def.heat?.max ?? 0, next));
+  const by = v - (a.heat ?? 0);
+  if (by === 0) return;
+  a.heat = v;
+  ev.push({ type: 'allyHeat', to: a.uid, heat: v, by });
 }
 
 /** 敵の定義（分裂で出てきた敵も探す） */
@@ -970,6 +997,15 @@ function living(list: ChainUnit[]): ChainUnit[] {
 
 /** 計画の1行の行動。使えなければ null */
 export function chainMoveOf(s: ChainState, step: ChainPlanStep): ChainMove | null {
+  const m = rawMoveOf(s, step);
+  // 暑さ（段階188。川のぬしの「夏の照り返し」）：暑い仲間の行動は、暑さの分だけ重い
+  const heat = m && s.def.heat ? (s.allies.find((a) => a.uid === step.ally)?.heat ?? 0) : 0;
+  // 永遠の夏（段階188）：この戦闘の終わりまで、重さ −1（1より下がらない）
+  const light = m && s.lighten && m.weight > 1 ? 1 : 0;
+  return m && (heat > 0 || light > 0) ? { ...m, weight: m.weight + heat - light } : m;
+}
+
+function rawMoveOf(s: ChainState, step: ChainPlanStep): ChainMove | null {
   const src = step.source;
   if (src.kind === 'card') {
     const id = s.hand[src.index];
@@ -1329,6 +1365,11 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     ev.push({ type: 'allyGuard', uid: actor.uid });
   }
   // 歯車の鎧・珠の壁（段階170）：添えた行動の後、ラウンドの終わりまで、この仲間の守りを固める
+  // 永遠の夏（段階188）：この戦闘の終わりまで、味方全員の重さ −1
+  if (mods.lighten && !s.lighten) {
+    s.lighten = true;
+    ev.push({ type: 'lighten', uid: actor.uid });
+  }
   if ((mods.armor || mods.wall) && actor.hp > 0) {
     if (mods.armor) actor.armor = Math.max(actor.armor ?? 0, mods.armor);
     if (mods.wall) actor.wall = (actor.wall ?? 0) + mods.wall;
@@ -1369,6 +1410,15 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     return { ally: actor.uid, element: null, power: 0 };
   }
   if (eff.kind === 'heal') {
+    // 水をかける（段階188）：仲間全員の暑さが下がる
+    if (eff.cool !== undefined) {
+      if (!s.def.heat) {
+        ev.push({ type: 'fizzle', uid: actor.uid });
+        return { ally: actor.uid, element: null, power: 0 };
+      }
+      for (const a of s.allies.filter((x) => x.hp > 0)) setHeat(s, a, (a.heat ?? 0) - eff.cool, ev);
+      return { ally: actor.uid, element: null, power: 0 };
+    }
     // ねじを巻く（段階179）：腕時計の HP が戻り、次のラウンドの最初の急かすがそれる
     if (eff.watch !== undefined) {
       if (!s.def.watch) {
@@ -1560,10 +1610,11 @@ export interface ChainAddonMods {
   wall: number;
   riposte: number;
   unguard: boolean;
+  lighten: boolean;
 }
 
 export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
-  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0, riposte: 0, unguard: false };
+  const m: ChainAddonMods = { add: 0, split: false, spread: false, expose: false, pinpoint: false, push: 0, seal: false, drain: 0, exposure: 0, cover: 0, blast: 0, armor: 0, wall: 0, riposte: 0, unguard: false, lighten: false };
   for (const c of cards) {
     const e = c?.effect;
     if (!e || e.kind !== 'addon') continue;
@@ -1583,6 +1634,7 @@ export function addonMods(cards: (ChainMove | undefined)[]): ChainAddonMods {
     m.wall += e.wall ?? 0;
     m.riposte = Math.max(m.riposte, e.riposte ?? 0);
     m.unguard ||= !!e.unguard;
+    m.lighten ||= !!e.lighten;
   }
   return m;
 }
@@ -1632,6 +1684,8 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
       continue;
     }
     hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate * (1 - (a.armor ?? 0)))), ev);
+    // 暑さ（段階188）：照り返しで上がり、水しぶきで下がる
+    if (s.def.heat && a.hp > 0 && (m.heats || m.cools)) setHeat(s, a, (a.heat ?? 0) + (m.heats ?? 0) - (m.cools ?? 0), ev);
     // 振り子返し（段階172）：受けた仲間が立っていれば、やり返す（ダウンはさせない）
     if ((a.riposte ?? 0) > 0 && a.hp > 0 && e.hp > 0 && !e.gone) {
       ev.push({ type: 'allyRiposte', uid: a.uid, to: e.uid });
@@ -1990,6 +2044,8 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       lastAlly = actors[actors.length - 1].uid;
       enemySince = false;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
+      // 暑さ（段階188）：氷の攻撃をした仲間は、自分の暑さが0になる
+      if (s.def.heat && move.effect.kind === 'damage' && (move.effect.element === 'ice' || move.effect.extra?.some((x) => x.element === 'ice'))) for (const a of actors) if (a.hp > 0) setHeat(s, a, 0, ev);
       s.hitBackMult = undefined;
       // 手拍子（段階173）：拍でちょうど終わった行動。貯まったら客席が歌う
       if (s.def.clap && s.def.clap.beats.includes(at)) clap(s, ev);

@@ -85,8 +85,10 @@ function score(before: ChainState, after: ChainState): number {
   // くり返しを越える（段階182）：戻されたラウンドの削りは点にならない（HP が戻るため）。花火を1つ上げるのを重く見る
   const fire = ((after.fireworks ?? 0) - (before.fireworks ?? 0)) * 800;
   // フィルムを使い切らせる（段階184）：撮らせて減ったフィルム1枚を、HP を削るのと同じくらいに見る
+  // 夏の照り返し（段階188）：暑さは次のラウンドの重さになるので、少し悪く見る
+  const heat = before.def.heat ? after.allies.reduce((acc, a) => acc + (a.hp > 0 ? (a.heat ?? 0) : 0), 0) * -40 : 0;
   const film = before.def.film ? ((before.film ?? 0) - (after.film ?? 0)) * 300 : 0;
-  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300 + watch + fire + film;
+  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300 + watch + fire + film + heat;
 }
 
 /** 1ラウンド動かす（シャッターが光ったら押す。調整15：シャッターは総攻撃なので、押した後も続くことがある） */

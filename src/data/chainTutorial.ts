@@ -69,6 +69,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '打ち返せなかった投球が当たると「ストライク」。\n3つで三振、負けになってしまいます。\n押す・ダウンで投球を止めるのも手です。' },
     { target: 'parts', text: '得点板とバックネットは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
   ],
+  // 段階188：4-1 の川のぬし「夏の照り返し」
+  chain_heat: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「夏の照り返し」がはじまります。\n最後の夏の日。シロと、川の浅瀬で。' },
+    { target: 'poiBar', text: 'ぬしの「照り返し」が当たると、仲間に「暑さ」がたまります。\n暑い仲間は、暑さの分だけ行動が重くなります。' },
+    { target: 'movesTab', text: '氷の攻撃をすると、その仲間は涼しくなります。\n技の「水をかける」（重さ1）で、仲間全員の暑さが1下がります。' },
+    { target: 'parts', text: 'つばと流れは「部位」です。\nつばを壊すと、照り返しが来なくなります（火の弱点も出ます）。' },
+  ],
   // 段階186：3-2 の踏切のぬし「言えなかった言葉」
   chain_word: [
     { target: 'intro', text: 'ぬし戦！\n思い出の再演「言えなかった言葉」がはじまります。\n夕暮れの踏切。しおりは、何かを言いかけていました。' },
@@ -192,7 +199,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_heat', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
