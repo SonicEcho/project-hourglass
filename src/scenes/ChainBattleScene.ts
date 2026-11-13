@@ -33,7 +33,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { KAI_CUT_LINES, ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
 import { buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef } from '../core';
 import { currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './BattleScene';
@@ -220,6 +220,8 @@ export class ChainBattleScene extends Phaser.Scene {
   private cutInShown = new Set<number>();
   /** 切り取りで抜き取られた、このラウンドの計画の番号（段階176 の後。帯から消す） */
   private cutSteps = new Set<number>();
+  /** 切り取られた時間（段階176 の後。このラウンドの間、タイムラインはこの分だけ縮んだまま） */
+  private cutRanges: { a: number; b: number }[] = [];
 
   private warn(text: string): void {
     this.message = text;
@@ -1213,6 +1215,13 @@ export class ChainBattleScene extends Phaser.Scene {
     this.render();
   }
 
+  /** タイムラインの上の位置（時刻 t）。切り取られた時間（段階176 の後）の分だけ、後ろが左へ詰まる */
+  private tx(t: number): number {
+    let x = t;
+    for (const c of this.busy ? this.cutRanges : []) if (t > c.a) x -= Math.min(t, c.b) - c.a;
+    return FILM_X + CELL * x;
+  }
+
   /** フィルム：穴の空いた帯に時刻の目盛り。上の段に敵の予定、下の段に並べた行動のクリップ */
   private drawFilm(s: ChainState): void {
     const r = this.root;
@@ -1229,15 +1238,34 @@ export class ChainBattleScene extends Phaser.Scene {
       g.fillRect(x, top + FILM_H - 10, 8, 6);
     }
     // 段の線
-    g.fillStyle(0x1e2230, 1).fillRect(x0, FOE_TRACK, CELL * len, 1).fillRect(x0, CLIP_TOP + CLIP_H / 2, CELL * len, 1);
+    g.fillStyle(0x1e2230, 1).fillRect(x0, FOE_TRACK, this.tx(len) - x0, 1).fillRect(x0, CLIP_TOP + CLIP_H / 2, this.tx(len) - x0, 1);
     r.add(g);
+    // 切り取られた時間（段階176 の後）：縮んだ後ろの端から先は、切り取られて無くなった所（暗く、斜めの線）。切り口に印
+    if (this.busy && this.cutRanges.length) {
+      const end = this.tx(len);
+      const lost = this.add.graphics();
+      lost.fillStyle(0x000000, 0.85).fillRect(end + 2, top + 2, GAME_WIDTH - end - 2, FILM_H - 4);
+      lost.lineStyle(1, 0x3a8dff, 0.35);
+      for (let x = end - FILM_H; x < GAME_WIDTH; x += 10) lost.lineBetween(Math.max(end + 2, x), top + 2 + Math.max(0, end + 2 - x), Math.min(GAME_WIDTH, x + FILM_H - 4), top + FILM_H - 2);
+      lost.lineStyle(3, 0xff2d55, 1).lineBetween(end + 1, top + 2, end + 1, top + FILM_H - 2);
+      r.add(lost);
+      for (const c of this.cutRanges) {
+        const cx = this.tx(c.a);
+        r.add(this.add.graphics().lineStyle(2, 0xff2d55, 0.9).lineBetween(cx - 4, top + 2, cx + 4, top + 16).lineBetween(cx + 4, top + 16, cx - 4, top + 30).lineBetween(cx - 4, top + 30, cx, top + FILM_H - 2));
+      }
+    }
     // 時刻はマスの境目（調整8。味方の帯の右端・敵の丸・再生位置の線が、同じ所にそろう）
     // 手拍子の拍（段階173）：拍の時刻は黄色の線と数字
     const beats = s.def.clap?.beats ?? [];
     for (let t = 0; t <= len; t++) {
       const beat = beats.includes(t);
-      r.add(this.add.rectangle(x0 + CELL * t, top + 26, beat ? 2 : 1, FILM_H - 38, beat ? 0xffd23f : 0x8a93ad, beat ? 0.45 : 0.12).setOrigin(0.5, 0));
-      r.add(addText(this, x0 + CELL * t, top + 13, beat ? `♪${t}` : String(t), { size: 10, bold: true, color: beat ? '#ffd23f' : '#8a93ad' }).setOrigin(0.5, 0));
+      // 切り取られた時間の中の目盛りは出さない（切り口の後ろの数字は、切り口より少し右に）
+      const inside = this.busy && this.cutRanges.some((c) => t > c.a && t < c.b);
+      if (inside) continue;
+      const joint = this.busy && this.cutRanges.some((c) => t === c.b && c.b > c.a);
+      const px = this.tx(t) + (joint ? 9 : 0);
+      r.add(this.add.rectangle(px, top + 26, beat ? 2 : 1, FILM_H - 38, beat ? 0xffd23f : 0x8a93ad, beat ? 0.45 : 0.12).setOrigin(0.5, 0));
+      r.add(addText(this, px, top + 13, beat ? `♪${t}` : String(t), { size: 10, bold: true, color: beat ? '#ffd23f' : '#8a93ad' }).setOrigin(0.5, 0));
     }
     r.add(addText(this, 4, FOE_TRACK, '敵', { size: 9, bold: true, color: '#ff9db0' }).setOrigin(0, 0.5));
     r.add(addText(this, 2, CLIP_TOP + CLIP_H / 2, '味方', { size: 8, bold: true, color: '#9ad0ff' }).setOrigin(0, 0.5));
@@ -1257,7 +1285,7 @@ export class ChainBattleScene extends Phaser.Scene {
       const e = s.enemies.find((x) => x.uid === it.enemy);
       if (!e || e.hp <= 0 || e.gone || e.veiled) return;
       const row = (slots[it.at] = (slots[it.at] ?? 0) + 1) - 1;
-      const cx = x0 + CELL * it.at + row * 9;
+      const cx = this.tx(it.at) + row * 9;
       const cy = FOE_TRACK + row * 7 - (slots[it.at] > 1 ? 3 : 0);
       const big = it.move.all || it.move.flee || it.move.power >= CHAIN_RULES.sealBig;
       const a = e.down ? 0.3 : 1;
@@ -1296,8 +1324,8 @@ export class ChainBattleScene extends Phaser.Scene {
         return;
       }
       const w = Math.min(move.weight, len - at);
-      const bx = x0 + CELL * at + 1;
-      const bw = CELL * w - 2;
+      const bx = this.tx(at) + 1;
+      const bw = Math.max(2, this.tx(at + w) - this.tx(at) - 2);
       const isLink = step.source.kind === 'link';
       const color = isLink ? GOLD : (ALLY_COLOR[members[0].defId] ?? COLORS.ally);
       if (isLink) r.add(this.add.rectangle(bx - 2, CLIP_TOP - 2, bw + 4, CLIP_H + 4, GOLD, 0.35).setOrigin(0));
@@ -1343,7 +1371,7 @@ export class ChainBattleScene extends Phaser.Scene {
     if (!this.busy && s.outcome === 'ongoing' && !s.shutter) {
       const at = nextStart(this.s, this.plan);
       if (at < len && this.ally) {
-        const cur = this.add.rectangle(x0 + CELL * at + 1, CLIP_TOP - 2, 3, CLIP_H + 4, YELLOW).setOrigin(0);
+        const cur = this.add.rectangle(this.tx(at) + 1, CLIP_TOP - 2, 3, CLIP_H + 4, YELLOW).setOrigin(0);
         this.tweens.add({ targets: cur, alpha: 0.2, duration: 450, yoyo: true, repeat: -1 });
         r.add(cur);
       } else if (at >= len) r.add(addText(this, GAME_WIDTH - 6, FILM_Y + FILM_H - 16, '時間はいっぱい', { size: 9, color: '#ff9db0' }).setOrigin(1, 0.5));
@@ -1823,6 +1851,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.coachLayer = null;
     this.cutInShown = new Set();
     this.cutSteps = new Set();
+    this.cutRanges = [];
     const { state, frames } = runChainRound(this.s, this.plan);
     this.runFinal = state;
     this.runFrames = frames;
@@ -1847,7 +1876,7 @@ export class ChainBattleScene extends Phaser.Scene {
       next();
       return;
     }
-    const x = FILM_X + CELL * t;
+    const x = this.tx(t);
     const ms = Math.max(0, ((x - head.x) / CELL) * TICK_MS) / this.speed;
     if (ms < 30) {
       head.x = Math.max(head.x, x);
@@ -2029,8 +2058,9 @@ export class ChainBattleScene extends Phaser.Scene {
     nm.setFontStyle('bold italic').setShadow(3, 3, '#000000', 0, false, true);
     c.add(nm);
     const title = this.add.container(GAME_WIDTH / 2, cy + bandH / 2 + 64).setAngle(-8);
-    const label = addText(this, 0, 0, name, { size: 40, bold: true }).setOrigin(0.5);
+    const label = addText(this, 0, 0, name, { size: name.length > 6 ? 26 : 40, bold: true }).setOrigin(0.5);
     label.setFontStyle('bold italic').setShadow(4, 4, '#3a8dff', 0, false, true);
+    if (label.width > GAME_WIDTH - 60) label.setScale((GAME_WIDTH - 60) / label.width);
     const boxW = Math.max(240, label.displayWidth + 48);
     title.add(this.add.rectangle(0, 4, boxW, 70, 0x000000).setStrokeStyle(2, 0xffffff, 0.5));
     title.add(label);
@@ -2061,9 +2091,10 @@ export class ChainBattleScene extends Phaser.Scene {
       next();
       return;
     }
-    const start = planStarts(this.s, this.plan)[stepIndex];
-    const x1 = FILM_X + CELL * start;
-    const x2 = Math.min(GAME_WIDTH, x1 + CELL * Math.max(1, move.weight));
+    const start = planStarts(this.s, this.plan)[stepIndex] + this.s.timeShift;
+    const end = Math.min(CHAIN_RULES.roundLen, start + Math.max(1, move.weight));
+    const x1 = this.tx(start);
+    const x2 = this.tx(end);
     const canvas = this.game.canvas;
     const z = canvas.width / GAME_WIDTH;
     const key = '__filmCut';
@@ -2105,6 +2136,8 @@ export class ChainBattleScene extends Phaser.Scene {
           this.wait(420, () => {
             layer.destroy(true);
             if (this.textures.exists(key)) this.textures.remove(key);
+            // このラウンドの間、タイムラインは切り取った分だけ縮んだまま
+            this.cutRanges.push({ a: start, b: end });
             next();
           });
         },
@@ -2163,7 +2196,7 @@ export class ChainBattleScene extends Phaser.Scene {
     }
     const f = frames[i];
     // 再生位置がその行動の時刻に来るまで、線を進める
-    if (this.head && this.head.x < FILM_X + CELL * f.at - 1) {
+    if (this.head && this.head.x < this.tx(f.at) - 1) {
       this.moveHead(f.at, () => this.playFrames(frames, i, final, before));
       return;
     }
@@ -2198,7 +2231,7 @@ export class ChainBattleScene extends Phaser.Scene {
       this.message = `${when}　${label}`;
       this.render(before);
       const enemyArt = artOfEnemy(findChainUnit(before, cutEv.uid)?.defId ?? '');
-      this.enemyCutIn('CUT!', 'F R A M E   C U T', findChainUnit(before, cutEv.uid)?.name ?? '', enemyArt, () => {
+      this.enemyCutIn(KAI_CUT_LINES[(this.s.round - 1) % KAI_CUT_LINES.length], 'F R A M E   C U T', findChainUnit(before, cutEv.uid)?.name ?? '', enemyArt, () => {
         const idx = this.plan.findIndex((p) => stepAllies(this.s, p).includes(cutEv.to));
         this.filmCut(idx, () => {
           if (idx >= 0) this.cutSteps.add(idx);
