@@ -137,6 +137,8 @@ const CARD_H_LINK = 156;
 /** コンボの木の線の色（1つ目・2つ目・3つ目） */
 const LINK_COLORS = [0xffcf5a, 0x7fe0ff, 0xff8ac8];
 /** 敵ごとの色（上の予定の札・敵の足元・時間の帯の印を同じ色でつなぐ） */
+/** 3つの花火の色（段階182 の後。赤・金・青） */
+const FIREWORK_COLORS = [0xff5a7a, 0xffd23f, 0x6bc8ff];
 const FOE_COLORS = [0xff6b8a, 0x5ac8ff, 0xb98aff, 0x7ee08a, 0xffa860];
 /** 下のボタンの上の端（右下のビルド日時の上に収める） */
 const CMD_Y = 778;
@@ -212,6 +214,9 @@ export class ChainBattleScene extends Phaser.Scene {
   private encounter?: BattleSceneData['encounter'];
   /** 腕時計の長針の回転（段階179。描き直すたびに止める） */
   private watchTween?: Phaser.Tweens.Tween;
+  /** 花火のまたたき（段階182 の後。描き直すたびに止める）と、画面に出した花火の数（増えた時だけ打ち上げの動き） */
+  private fireworkTweens: Phaser.Tweens.Tween[] = [];
+  private shownFireworks?: number;
   private areaBattle?: CampaignBattle;
   private lineup?: Lineup;
   private seed = 0;
@@ -247,6 +252,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.stage = data.stage ?? 'mid';
     this.encounter = data.encounter;
     this.firstTutorialBattle = false;
+    this.shownFireworks = undefined;
     this.speed = browserStorage().read(SPEED_KEY) === '2' ? 2 : 1;
     const area = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
     if (data.encounter && !area) throw new Error(`unknown area battle ${data.encounter.battle}`);
@@ -1032,21 +1038,35 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
       r.add(addText(this, cx, STAGE_Y + 18, '夜のくり返し', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
     }
-    // 花火（下から上がる）
+    // 花火（段階182 の後の直し。開発者：もう少し3つの花火っぽく）：夜空に、上がる前は導火線の付いた玉、上がった後は色ちがいの大輪
     const fw = Math.min(rp.need, view.fireworks ?? 0);
+    for (const t of this.fireworkTweens) t.remove();
+    this.fireworkTweens = [];
+    const skyTop = STAGE_Y + 27;
+    const skyH = 38;
+    r.add(this.add.rectangle(cx, skyTop, (lay ? BOSS_COL : 100) - 14, skyH, 0x0a1030, 1).setOrigin(0.5, 0).setStrokeStyle(1, 0x2a3360));
+    const step = rp.need > 1 ? Math.min(28, ((lay ? BOSS_COL : 100) - 34) / (rp.need - 1)) : 0;
+    const burstY = skyTop + 16;
+    const groundY = skyTop + skyH - 4;
     for (let k = 0; k < rp.need; k++) {
-      const x = cx + (k - (rp.need - 1) / 2) * 24;
-      const y = STAGE_Y + 44;
-      const on = k < fw;
-      if (on) {
-        const color = [0xff5a7a, 0xffd23f, 0x6bc8ff][k % 3];
-        for (let a = 0; a < 8; a++) {
-          const ang = (a / 8) * Math.PI * 2;
-          r.add(this.add.line(0, 0, x + Math.cos(ang) * 3, y + Math.sin(ang) * 3, x + Math.cos(ang) * 10, y + Math.sin(ang) * 10, color).setOrigin(0, 0).setLineWidth(2));
-        }
-        r.add(this.add.circle(x, y, 3, 0xffffff));
-      } else r.add(this.add.circle(x, y, 9, 0x2a2a38).setStrokeStyle(1.5, 0x5a5a70));
+      const x = cx + (k - (rp.need - 1) / 2) * step;
+      const color = FIREWORK_COLORS[k % FIREWORK_COLORS.length];
+      if (k < fw) {
+        const burst = this.fireworkBurst(x, burstY, color);
+        r.add(burst);
+        this.fireworkTweens.push(this.tweens.add({ targets: burst, alpha: { from: 1, to: 0.65 }, duration: 700 + k * 130, yoyo: true, repeat: -1 }));
+      } else {
+        // 上がる道すじ（薄い点）と、導火線の付いた玉
+        for (let d = 0; d < 3; d++) r.add(this.add.circle(x, groundY - 8 - d * 6, 1, 0xffffff, 0.18));
+        r.add(this.add.circle(x, groundY, 4, 0x8a5a2a).setStrokeStyle(1, 0xc9a24a));
+        r.add(this.add.line(0, 0, x + 2, groundY - 3, x + 5, groundY - 7, 0xc9a24a).setOrigin(0, 0).setLineWidth(1));
+      }
     }
+    // 上がった瞬間：玉から光が昇って、大きく開いて散る（描き直しで消えないよう、場の上に別に出して終わったら消す）
+    if (this.shownFireworks !== undefined && fw > this.shownFireworks) {
+      for (let k = this.shownFireworks; k < fw; k++) this.launchFirework(cx + (k - (rp.need - 1) / 2) * step, groundY, burstY, FIREWORK_COLORS[k % FIREWORK_COLORS.length], (k - this.shownFireworks) * 250);
+    }
+    this.shownFireworks = fw;
     const done = fw >= rp.need;
     const boss = view.enemies.find((e) => e.defId === rp.target && e.hp > 0 && !e.gone);
     if (done || !boss) {
@@ -1057,7 +1077,7 @@ export class ChainBattleScene extends Phaser.Scene {
     const look = this.busy || this.plan.length === 0 ? null : chainPlanRepeat(this.s, this.plan);
     const dealt = look ? look.dealt : this.busy ? Math.max(0, (boss.roundHp ?? boss.hp) - boss.hp) : 0;
     const barW = (lay ? BOSS_COL : 100) - 22;
-    const by = STAGE_Y + 76;
+    const by = STAGE_Y + 82;
     r.add(addText(this, cx, by - 10, 'このラウンド', { size: 9, bold: true, color: '#c9d0ea' }).setOrigin(0.5));
     r.add(this.add.rectangle(cx - barW / 2, by + 4, barW, 8, 0x2a2a38).setOrigin(0, 0.5));
     const over = dealt >= need;
@@ -1065,6 +1085,45 @@ export class ChainBattleScene extends Phaser.Scene {
     r.add(addText(this, cx, by + 18, `${dealt}/${need}`, { size: 11, bold: true, color: over ? '#8fffc0' : '#fff0b0' }).setOrigin(0.5));
     const msg = look ? (look.win ? '倒せる ◎' : over ? '越える ◎\n花火が上がる' : '足りない\n傷が戻される') : this.busy ? '' : `${need}以上当てると\n花火が上がる`;
     if (msg) r.add(addText(this, cx, STAGE_Y + 136, msg, { size: 9, bold: true, align: 'center', color: look ? (over || look.win ? '#8fffc0' : '#ff9db0') : '#9aa3c0' }).setOrigin(0.5));
+  }
+
+  /** 開いた花火（二重の輪の点と、真ん中の光とにじみ）。size は大きさの倍率 */
+  private fireworkBurst(x: number, y: number, color: number, size = 1): Phaser.GameObjects.Container {
+    const c = this.add.container(x, y);
+    c.add(this.add.circle(0, 0, 15 * size, color, 0.16));
+    for (let a = 0; a < 12; a++) {
+      const ang = (a / 12) * Math.PI * 2;
+      c.add(this.add.line(0, 0, Math.cos(ang) * 4 * size, Math.sin(ang) * 4 * size, Math.cos(ang) * 11 * size, Math.sin(ang) * 11 * size, color, 0.55).setOrigin(0, 0).setLineWidth(1));
+      c.add(this.add.circle(Math.cos(ang) * 12 * size, Math.sin(ang) * 12 * size, 1.6 * size, color));
+    }
+    for (let a = 0; a < 8; a++) {
+      const ang = (a / 8) * Math.PI * 2 + Math.PI / 8;
+      c.add(this.add.circle(Math.cos(ang) * 6.5 * size, Math.sin(ang) * 6.5 * size, 1.3 * size, 0xfff6d0));
+    }
+    c.add(this.add.circle(0, 0, 2.2 * size, 0xffffff));
+    return c;
+  }
+
+  /** 花火を打ち上げる動き（段階182 の後）：光が昇り、大きく開いてから小さくなって散る。場の上に出して、終わったら消す */
+  private launchFirework(x: number, fromY: number, toY: number, color: number, delay: number): void {
+    const spark = this.add.circle(x, fromY, 2.5, 0xfff0b0).setDepth(900).setAlpha(0);
+    const tail = this.add.rectangle(x, fromY, 1.5, 8, 0xfff0b0, 0.6).setOrigin(0.5, 0).setDepth(900).setAlpha(0);
+    this.tweens.add({
+      targets: [spark, tail],
+      y: toY,
+      alpha: 1,
+      delay,
+      duration: 520,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        spark.destroy();
+        tail.destroy();
+        const burst = this.fireworkBurst(x, toY, color, 2.2).setDepth(900).setScale(0.2);
+        this.tweens.add({ targets: burst, scale: 1, duration: 320, ease: 'Back.easeOut' });
+        this.tweens.add({ targets: burst, alpha: 0, scale: 1.3, delay: 900, duration: 700, onComplete: () => burst.destroy() });
+        this.cameras.main.flash(120, 255, 240, 200, false);
+      },
+    });
   }
 
   private foeColor(s: ChainState, uid: string): number {
