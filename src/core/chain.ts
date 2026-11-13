@@ -165,7 +165,7 @@ export type ChainEffect =
    * 回復（味方全体）。revive（段階174「気付け」）：倒れた仲間を、最大 HP のこの割合で起こす（立っている仲間は回復しない）。
    * mp（段階174「一息」）：立っている仲間の MP をこの数だけ戻す
    */
-  | { kind: 'heal'; power: number; revive?: number; mp?: number }
+  | { kind: 'heal'; power: number; revive?: number; mp?: number; watch?: number }
   /**
    * 手札に触れる技（段階164。今の星図の ひらめき・シャッフル・すりかえ を、新しい戦闘でも使えるように）。
    * 動いた時に効く（並べ終えた後なので、次のラウンドの手札が変わる）：draw は count 枚引く（手札の上限を超えてよい）、
@@ -200,7 +200,7 @@ export function chainCardCategory(m: ChainMove): ChainCardCategory {
   if (m.type === 'finish') return 'finish';
   if (m.type === 'attack') return 'attack';
   // 回復の札・技は、アクション（攻撃と同じ分類。2026-11-07 開発者と決めた）
-  if (m.effect.kind === 'heal') return 'attack';
+  if (m.effect.kind === 'heal' && m.effect.watch === undefined) return 'attack';
   return 'support';
 }
 
@@ -265,6 +265,8 @@ export interface ChainEnemyMove {
   pitch?: boolean;
   /** 切り取り（段階176。カイ）：動いた時、ねらった仲間の、まだ終わっていないこのラウンドの行動を抜き取る（動かない。札は手札に戻る） */
   cutsFrame?: boolean;
+  /** 急かす（段階179。腕時計を守る決まりの戦闘で、腕時計をねらう。当たると威力の分だけ腕時計の HP が減る） */
+  watch?: boolean;
 }
 
 export interface ChainEnemyDef {
@@ -410,6 +412,11 @@ export interface ChainBattleDef {
    * その投球は消え、その攻撃の威力が mult 倍。打ち返せなかった投球が動くと「ストライク」。out つで三振（負け。finish は 'strikeout'）
    */
   pitch?: { out: number; mult: number };
+  /**
+   * 腕時計を守る（段階179。3-1 のぬしの思い出の再演）：場に腕時計（HP hp）。ぬしの「急かす」（watch の行動）が動くと、その威力の分だけ減り、0 で負け（finish は 'watch'）。
+   * 仲間の「ねじを巻く」（heal の watch）で戻り、次のラウンドの最初の ease 個の「急かす」は仲間へそれる
+   */
+  watch?: { hp: number; ease: number };
 }
 
 export interface ChainUnit {
@@ -475,6 +482,8 @@ export interface ChainIntent {
   target?: string;
   /** 混乱：代わりにねらうほかの敵 */
   confused?: string;
+  /** 急かす（段階179）が、ねじを巻いたので仲間へそれた */
+  eased?: boolean;
 }
 
 export type ChainSource =
@@ -528,6 +537,9 @@ export type ChainEvent =
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
   | { type: 'timerTick'; uid: string; left: number }
+  /** 腕時計（段階179）：急かされて減った・ねじを巻いて戻った */
+  | { type: 'watchHit'; from: string; amount: number; left: number }
+  | { type: 'watchWind'; uid: string; amount: number; left: number }
   | { type: 'timerBlast'; uid: string }
   | { type: 'flee'; uid: string }
   | { type: 'down'; uid: string }
@@ -624,7 +636,10 @@ export interface ChainState {
   /** 仲間ごとの、この戦闘で動いた回数（段階159。武器の経験値に使う。仲間の定義の id → 回数） */
   acted?: Record<string, number>;
   /** 決着の仕方 */
-  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout';
+  finish?: 'shutter' | 'defeat' | 'poi' | 'sunset' | 'strikeout' | 'watch';
+  /** 腕時計の HP（段階179）と、このラウンドにねじを巻いたか（次のラウンドの急かすがそれる） */
+  watch?: number;
+  watchWound?: boolean;
   /** ポイの残り（段階162） */
   poi?: number;
   /** 決着したラウンド */
@@ -741,6 +756,9 @@ export function chainEnemyDef(s: ChainState, defId: string): ChainEnemyDef | und
 function planIntents(s: ChainState): void {
   const allies = s.allies.filter((a) => a.hp > 0);
   s.intents = [];
+  let ease = s.watchWound && s.def.watch ? s.def.watch.ease : 0;
+  s.watchWound = false;
+  // それる急かすは、ぬしの予定の with に書いた順（データは時刻の順に書く）
   for (const e of living(s.enemies)) {
     const d = chainEnemyDef(s, e.defId);
     if (!d) continue;
@@ -761,7 +779,10 @@ function planIntents(s: ChainState): void {
     if (move.at2 !== undefined) add(move.at2);
     // 一緒に予定に入る行動（段階175。投球）
     for (const w of move.with ?? []) {
-      const it: ChainIntent = { enemy: e.uid, move: w, at: w.at, target: w.all ? undefined : pick() };
+      // 急かす（段階179）：腕時計をねらう。前のラウンドにねじを巻いていれば、最初の ease 個は仲間へそれる
+      const easedNow = !!(w.watch && s.def.watch && ease > 0);
+      if (easedNow) ease--;
+      const it: ChainIntent = { enemy: e.uid, move: w, at: w.at, target: w.all ? undefined : w.watch && s.def.watch && !easedNow ? 'watch' : pick(), ...(easedNow ? { eased: true } : {}) };
       s.intents.push(e.status ? statusIntent(s, e, it, e.status.kind) : it);
     }
   }
@@ -828,6 +849,7 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
     ...(def.sunset ? { sunset: def.sunset.rounds } : {}),
     ...(def.clap ? { claps: 0 } : {}),
     ...(def.pitch ? { strikes: 0 } : {}),
+    ...(def.watch ? { watch: def.watch.hp } : {}),
     known: Object.fromEntries(Object.entries(known).map(([k, v]) => [k, [...v]])),
   };
   // 組み合わせの型を1つ選ぶ
@@ -1285,6 +1307,18 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     return { ally: actor.uid, element: null, power: 0 };
   }
   if (eff.kind === 'heal') {
+    // ねじを巻く（段階179）：腕時計の HP が戻り、次のラウンドの最初の急かすがそれる
+    if (eff.watch !== undefined) {
+      if (!s.def.watch) {
+        ev.push({ type: 'fizzle', uid: actor.uid });
+        return { ally: actor.uid, element: null, power: 0 };
+      }
+      const amount = Math.min(s.def.watch.hp - (s.watch ?? 0), eff.watch);
+      s.watch = (s.watch ?? 0) + amount;
+      s.watchWound = true;
+      ev.push({ type: 'watchWind', uid: actor.uid, amount, left: s.watch });
+      return { ally: actor.uid, element: null, power: 0 };
+    }
     // 気付け（段階174）：倒れた仲間を起こす
     if (eff.revive) {
       for (const a of s.allies.filter((x) => x.hp <= 0)) {
@@ -1511,6 +1545,13 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
     if (foe.hp === 0) defeatEnemy(s, foe, ev);
     return;
   }
+  // 急かす（段階179）：腕時計の HP が威力の分だけ減る（仲間の守りの札は効かない）
+  if (intent.target === 'watch' && s.def.watch) {
+    const amount = Math.min(s.watch ?? 0, Math.max(1, Math.round(m.power * rate)));
+    s.watch = (s.watch ?? 0) - amount;
+    ev.push({ type: 'watchHit', from: e.uid, amount, left: s.watch });
+    return;
+  }
   const allies = s.allies.filter((a) => a.hp > 0);
   let targets = m.all ? allies : [s.allies.find((a) => a.uid === intent.target && a.hp > 0) ?? allies[0]].filter((x): x is ChainUnit => !!x);
   // ブリキの盾（段階168）：ほかの仲間への単体攻撃は、構えている仲間が代わりに受ける（ダメージは割合を掛ける）
@@ -1591,6 +1632,14 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
     done();
     return true;
   }
+  // 腕時計が止まった（段階179）
+  if (s.def.watch && (s.watch ?? 0) <= 0) {
+    done();
+    s.outcome = 'lose';
+    s.finish = 'watch';
+    s.finishRound = s.round;
+    return true;
+  }
   // 三振（段階175）
   if (s.def.pitch && (s.strikes ?? 0) >= s.def.pitch.out) {
     done();
@@ -1634,6 +1683,20 @@ export function chainPlanPitch(s: ChainState, plan: ChainPlanStep[]): { hits: nu
   if (!s.def.pitch || plan.length === 0) return { hits: 0, strikes: 0 };
   const ev = runChainRound(s, plan).frames.flatMap((f) => f.events);
   return { hits: ev.filter((e) => e.type === 'hitBack').length, strikes: ev.filter((e) => e.type === 'strike').length };
+}
+
+/** 並べた予定で、このラウンドの腕時計の見込み（段階179。画面の表示。実際に動かして見る）：急かされて減る量・巻いて戻る量・残り */
+export function chainPlanWatch(s: ChainState, plan: ChainPlanStep[]): { lost: number; wound: number; left: number } {
+  if (!s.def.watch) return { lost: 0, wound: 0, left: 0 };
+  const r = runChainRound(s, plan);
+  const ev = r.frames.flatMap((f) => f.events);
+  let lost = 0;
+  let wound = 0;
+  for (const e of ev) {
+    if (e.type === 'watchHit') lost += e.amount;
+    if (e.type === 'watchWind') wound += e.amount;
+  }
+  return { lost, wound, left: r.state.watch ?? 0 };
 }
 
 /** 並べた予定で、このラウンドに増える手拍子の見込みの数（段階173。画面の見込みの表示。実際に動かして見る） */

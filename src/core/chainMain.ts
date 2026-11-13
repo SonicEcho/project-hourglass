@@ -136,6 +136,10 @@ export interface MainChainBattleInput {
   clap?: ChainBattleDef['clap'];
   /** 打ち返す（段階175） */
   pitch?: ChainBattleDef['pitch'];
+  /** 腕時計を守る（段階179） */
+  watch?: ChainBattleDef['watch'];
+  /** 全員に足す技（段階179。ねじを巻く） */
+  allyMoves?: ChainMove[];
   gradeAt?: { high: number; mid: number };
 }
 
@@ -145,7 +149,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
   return {
     id: input.id,
     name: input.name,
-    allies: input.party.map(chainAllyFromCharacter),
+    allies: input.party.map(chainAllyFromCharacter).map((a) => (input.allyMoves?.length ? { ...a, moves: [...a.moves, ...input.allyMoves] } : a)),
     enemies: input.chainEnemies ?? input.enemies.map(chainEnemyFromMain),
     ...(input.variants?.length ? { variants: input.variants } : {}),
     // 並びにいない仲間の専用の札（スペシャル）は、山札から外す
@@ -161,6 +165,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.teeth ? { teeth: input.teeth } : {}),
     ...(input.clap ? { clap: input.clap } : {}),
     ...(input.pitch ? { pitch: input.pitch } : {}),
+    ...(input.watch ? { watch: input.watch } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -261,6 +266,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.clap) out.push('chain_clap');
   // スコアボードのぬしの思い出の再演（段階175）
   if (s.def.pitch) out.push('chain_pitch');
+  // 汽車のぬしの思い出の再演（段階179）
+  if (s.def.watch) out.push('chain_watch');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時

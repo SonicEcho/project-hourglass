@@ -80,7 +80,9 @@ function score(before: ChainState, after: ChainState): number {
   const allyHp = (s: ChainState) => s.allies.reduce((a, u) => a + u.hp, 0);
   const kills = after.enemies.filter((e) => e.hp <= 0).length - before.enemies.filter((e) => e.hp <= 0).length;
   const deadAllies = after.allies.filter((a) => a.hp <= 0).length;
-  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300;
+  // 腕時計を守る（段階179）：腕時計の HP の増減を重く見る。残りが少ない時は、次のラウンドにそらせること（ねじを巻いた）も買う
+  const watch = before.def.watch ? ((after.watch ?? 0) - (before.watch ?? 0)) * 4 + (after.intents.some((i) => i.eased) && (after.watch ?? 0) < before.def.watch.hp * 0.6 ? 40 : 0) : 0;
+  return (foeHp(before) - foeHp(after)) * 2 + kills * 150 - (allyHp(before) - allyHp(after)) - deadAllies * 300 + watch;
 }
 
 /** 1ラウンド動かす（シャッターが光ったら押す。調整15：シャッターは総攻撃なので、押した後も続くことがある） */
