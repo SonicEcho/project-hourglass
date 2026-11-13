@@ -4,7 +4,7 @@ import { A11_DECK, type ChainAreaSetup } from './chainArea11';
 import { A31_COMBOS } from './chainArea31';
 import { CHAIN17_CARDS as C, CHAIN17_COMBOS } from './chainTrial17';
 
-// 段階181（段取りの段階F6a）：大正の祭りの夜（3-s1・3-s2）の雑魚の戦闘を、新しい戦闘にする（docs/milestones/M3_battle_migration.md の 14-3）。
+// 段階181（段取りの段階F6a）：大正の祭りの夜（3-s1・3-s2）の雑魚の戦闘を、段階182（F6b）でやぐらのぬしを、新しい戦闘にする（docs/milestones/M3_battle_migration.md の 14-3）。
 // 新しい性質「割り込み」と、2章までの性質（足止め・ダウン時爆発）。2晩目から小夜子が加わる（専用の札「二段斬り」と、あかりとのコンボ「デジャヴ」）。
 // 敵の数値（HP・攻撃・防御・弱点・耐性・落とし物）は今の区画の戦闘のまま使い、性質・予定の癖と型だけをここで書く。
 // 敵の組み合わせは、割り込みを先に覚えるよう AREA_BATTLES の側で入れ替えた
@@ -41,8 +41,8 @@ export const A3S_SHORT_TEXT: Record<string, string> = {
   a3s_refrain: '直前の攻撃を\n全体にもう一度',
 };
 
-/** 祭りの夜で渡す札（宝箱：パノラマ・リワインド。小夜子の専用の札）。アルバムに入れられる札の一覧に足す（専用の札は除かれる） */
-export const A3S_NEW_SNAPS: ChainMove[] = [C.panorama, C.rewind, C.twinCut];
+/** 祭りの夜で渡す札（宝箱：パノラマ・リワインド。小夜子の専用の札。段階182 のぬしの報酬のアタック+30）。アルバムに入れられる札の一覧に足す（専用の札は除かれる） */
+export const A3S_NEW_SNAPS: ChainMove[] = [C.panorama, C.rewind, C.twinCut, C.plus30];
 
 /** 祭りの夜のコンボ：3-1 までに足して、あかりと小夜子の「デジャヴ」 */
 export const A3S_COMBOS: ChainLinkDef[] = [...A31_COMBOS, ...CHAIN17_COMBOS.filter((l) => l.id === 'dejaVu')];
@@ -102,14 +102,67 @@ function variantsOf(enemies: EnemyDef[]): ChainVariant[] {
   ];
 }
 
-/** 祭りの夜の雑魚の戦闘（1晩目の終わりの砂嵐も。やぐらのぬしは段階F6b） */
+// ---- 段階182（段階F6b）：やぐらのぬし。くり返しを越える ----
+
+/**
+ * ぬしと部位の HP・攻撃の倍率と、くり返しを越える決まり（1ラウンドに当てる量の割合・上げる花火の数）。
+ * 自動対戦（考える方針・2晩目に入る時点の控えめな育ち具合・ハルト・小夜子・あかり・宝箱の札入り・20戦）で、17勝（負け3）・決着は 39〜93マス（中ほど 53）（段階182）。
+ * 越える量はぬしの HP に比例するので、HP を上げると1ラウンドの壁も上がる：HP を今の ×0.6 から ×0.9 にすると1戦も勝てず、割合を下げて釣り合わせた
+ */
+export const A3S_LORD = { body: 0.78, part: 0.3, atk: 1.2, rate: 0.2, need: 3 };
+
+function a3sLord(): ChainEnemyDef[] {
+  const lord = AREA_BATTLES.a3s2_boss.enemies[0];
+  const act = (id: string) => lord.actions.find((a) => a.id === id)!;
+  const move = (id: string, at: number, extra: Partial<ChainEnemyMove> = {}): ChainEnemyMove => {
+    const a = act(id);
+    return { id: a.id, name: a.name, at, ...(a.target === 'allies' ? { all: true } : {}), element: a.type === 'magic' ? 'fire' : a.type, power: a.power, ...extra };
+  };
+  const partId = (id: string) => `${lord.id}_${id}`;
+  const body: ChainEnemyDef = {
+    id: lord.id,
+    name: lord.name,
+    hp: Math.round(lord.stats.hp * A3S_LORD.body),
+    atk: Math.round(Math.max(lord.stats.atk, lord.stats.mag) * A3S_LORD.atk),
+    def: lord.stats.def,
+    weak: [],
+    resist: [],
+    // 予定の癖：音頭（単体）を挟みながら、打ち鳴らし（大太鼓）・灯の雨（提灯の綱）・くり返し（全体の大技）を順に
+    pattern: [
+      move('chant', 4, { with: [move('chant', 8)] }),
+      move('drumBeat', 5, { requiresPart: partId('drum'), with: [move('chant', 2)] }),
+      move('lanternRain', 6, { requiresPart: partId('lanternRope'), with: [move('chant', 3)] }),
+      move('rewind', 8),
+    ],
+  };
+  const parts = (['drum', 'lanternRope'] as const).map((id): ChainEnemyDef => {
+    const p = lord.parts!.find((x) => x.id === id)!;
+    return {
+      id: partId(id),
+      name: p.name,
+      hp: Math.round(p.hp * A3S_LORD.part),
+      atk: 0,
+      def: lord.stats.def,
+      weak: [],
+      resist: [],
+      pattern: [],
+      part: { of: lord.id, ...(p.revealsWeakness ? { reveals: [...p.revealsWeakness] } : {}) },
+      ...(p.drop ? { drop: p.drop } : {}),
+    };
+  });
+  return [parts[0], body, parts[1]];
+}
+
+/** 祭りの夜の雑魚の戦闘（1晩目の終わりの砂嵐も） */
 const A3S_IDS = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a3s') && !AREA_BATTLES[id].boss);
 
 /** 祭りの夜の区画の戦闘の中身。札（cards）は chainAreas.ts で、全部の区画の札に差し替える */
-export const A3S_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries(
-  A3S_IDS.map((id) => {
+export const A3S_SETUPS: Record<string, ChainAreaSetup> = Object.fromEntries([
+  // ぬしの報酬（★3）：アタック+30（ためて一気に出す札）
+  ['a3s2_boss', { enemies: a3sLord(), variants: [], deck: A3S_DECK, cards: {}, links: A3S_COMBOS, gradeAt: { high: 35, mid: 50 }, repeat: { target: 'yaguraLord', rate: A3S_LORD.rate, need: A3S_LORD.need }, snaps: [C.plus30.id] }],
+  ...A3S_IDS.map((id) => {
     const b = AREA_BATTLES[id];
     const rate = id.startsWith('a3s1_') ? A3S_CHAIN_HP_RATE.night1 : A3S_CHAIN_HP_RATE.night2;
     return [id, { enemies: b.enemies.map((e) => a3sChainEnemy(e, rate)), variants: variantsOf(b.enemies), deck: A3S_DECK, cards: {}, links: A3S_COMBOS, gradeAt: { high: 13, mid: 20 } }];
   }),
-);
+]);

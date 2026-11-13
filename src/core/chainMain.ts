@@ -138,6 +138,8 @@ export interface MainChainBattleInput {
   pitch?: ChainBattleDef['pitch'];
   /** 腕時計を守る（段階179） */
   watch?: ChainBattleDef['watch'];
+  /** くり返しを越える（段階182） */
+  repeat?: ChainBattleDef['repeat'];
   /** 全員に足す技（段階179。ねじを巻く） */
   allyMoves?: ChainMove[];
   gradeAt?: { high: number; mid: number };
@@ -166,6 +168,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     ...(input.clap ? { clap: input.clap } : {}),
     ...(input.pitch ? { pitch: input.pitch } : {}),
     ...(input.watch ? { watch: input.watch } : {}),
+    ...(input.repeat ? { repeat: input.repeat } : {}),
     ...(input.gradeAt ? { gradeAt: input.gradeAt } : {}),
   };
 }
@@ -268,6 +271,8 @@ export function chainTipTriggers(s: ChainState): string[] {
   if (s.def.pitch) out.push('chain_pitch');
   // 汽車のぬしの思い出の再演（段階179）
   if (s.def.watch) out.push('chain_watch');
+  // やぐらのぬし（段階182）
+  if (s.def.repeat) out.push('chain_repeat');
   // 弱点とダウン（段階161）：2ラウンド目の始めから
   if (s.round >= 2) out.push('chain_weak');
   // 警戒（段階162 調整8）：敵に警戒が付いている時

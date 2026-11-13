@@ -40,6 +40,8 @@ export const CHAIN_BOSS_GRADE: Record<string, { high: number; mid: number }> = {
   a22_boss: { high: 51, mid: 66 },
   a23_boss: { high: 53, mid: 68 },
   a31_boss: { high: 59, mid: 74 },
+  // 段階182：祭りの夜のやぐらのぬし（勝った戦いの決着 39〜93）
+  a3s2_boss: { high: 46, mid: 61 },
 };
 
 /** 区画の戦闘を新しい戦闘で戦う時の中身（AREA_BATTLES の id → 中身）。札は全部の札 */
