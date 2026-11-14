@@ -1,6 +1,6 @@
-import type { AlbumState, ArmoryState, GrowthState } from '../core';
-import { createGrowth, evolveWeapon, flowEvents, gainSnaps, getEvolveError, nextEvolutions, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, renameV15Gears, resetV14Evolutions, weaponLevel } from '../core';
-import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, PARTY, SLICE_FLOW, START_MEMORY_POINTS, WEAPON_DATA } from '../data';
+import type { AlbumState, ArmoryState, GrowthState, NaviState } from '../core';
+import { addParts, arrangeBoards, createGrowth, createNavi, evolveWeapon, naviDataWithWeapons, flowEvents, gainSnaps, getEvolveError, nextEvolutions, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, resetV14Evolutions, weaponLevel } from '../core';
+import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, NAVI_DATA, PARTY, RETURN_VISITS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 import type { Carry } from './autoArea';
 import { areaBattleOrder, grownParty, newCarry } from './autoArea';
 import presetCarryTable from './presetCarry.json';
@@ -61,9 +61,9 @@ export function growthPreset(eventId: string, tier: GrowthTier): GrowthPreset {
   // 段階194（段階G3b）：表の星図は入れ替える前の物なので、使った星の砂を返し、今の星図でおすすめの道に沿って開け直す
   if (row) carry.growth = respendGrowth(carry.growth, eventId);
   // 段階197（段階G4b）：表の武器の進化は入れ替える前の木の物なので、進化を外す。段階198（G4c）：今の木で進化させ直す
-  // 段階200（段階G5b）：なくなったギアを置き換える（G5d で並べ方を作り直す）
-  if (row) carry.navi = renameV15Gears(carry.navi as unknown as Record<string, unknown>) as unknown as Carry['navi'];
   if (row) carry.armory = reEvolve(resetV14Evolutions(carry.armory as unknown as Record<string, unknown>) as unknown as ArmoryState);
+  // 段階202（段階G5d）：ギアは、そこまでに手に入る物を持ち、その章の並びの仲間の盤におまかせで並べる（表のギアは使わない）
+  if (row) carry.navi = presetNavi(areas, eventId, carry.armory);
   return { tier, areas, seed: row?.seed ?? 0, carry, snaps: areas.flatMap(areaSnaps) };
 }
 
@@ -96,24 +96,52 @@ function respendGrowth(old: GrowthState, eventId: string): GrowthState {
 function reEvolve(armory: ArmoryState): ArmoryState {
   let a = armory;
   for (const charId of Object.keys(a.weapons)) {
-    for (let k = 0; k < 10; k++) {
-      const w = a.weapons[charId];
-      const candidates = nextEvolutions(WEAPON_DATA, w).filter((e) => !e.sealed && !e.detour);
-      const keys = (id: string) => candidates.find((e) => e.id === id)!.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []));
-      const withKeys = (id: string): ArmoryState => {
-        const items = { ...a.items };
-        for (const item of keys(id)) items[item] = Math.max(1, items[item] ?? 0);
-        return { ...a, items };
-      };
-      const next = candidates.find((e) => getEvolveError(WEAPON_DATA, withKeys(e.id), charId, e.id, 0) === null);
-      if (!next) break;
-      const before = a.items;
-      a = evolveWeapon(WEAPON_DATA, withKeys(next.id), charId, next.id, 0);
-      // そろっているものとした鍵は、持ち物に残さない（もともと持っていた数に戻す）
-      a = { ...a, items: { ...before } };
-    }
+    const before = a.items;
+    a = { ...deepest(a, charId), items: { ...before } };
   }
   return a;
+}
+
+/**
+ * 一番先まで進める道（段階202。G4c は木の並びの順に1つずつ選んでいたので、能力値が足りない枝に入ると止まった）。
+ * 進化できる本道の先を全部試し、一番多く進化できる道を選ぶ（同じなら木の並びの順）。鍵はそろっているものとする
+ */
+function deepest(a: ArmoryState, charId: string): ArmoryState {
+  const w = a.weapons[charId];
+  let best = a;
+  for (const e of nextEvolutions(WEAPON_DATA, w).filter((x) => !x.sealed && !x.detour)) {
+    const items = { ...a.items };
+    for (const c of e.conditions) if (c.kind === 'key') items[c.item] = Math.max(1, items[c.item] ?? 0);
+    const withKeys = { ...a, items };
+    if (getEvolveError(WEAPON_DATA, withKeys, charId, e.id, 0) !== null) continue;
+    const next = deepest(evolveWeapon(WEAPON_DATA, withKeys, charId, e.id, 0), charId);
+    if (next.weapons[charId].path.length > best.weapons[charId].path.length) best = next;
+  }
+  return best;
+}
+
+/** 場面を選ぶので、育ち具合では並べない両刃のギア（段階202） */
+const PRESET_UNPLACED = new Set(['reckless', 'pinpointFocus']);
+
+/**
+ * 育ち具合のギア（段階202）：周回の始めの持ち物と、通し終えた区画の宝箱・会話・返した翌日の出来事で手に入るギア（依頼と狩りの分は数えない）。
+ * その出来事の章の並びの仲間の盤に、おまかせで並べる（武器の進化で広がった盤で）。両刃のギアは持つだけ
+ */
+function presetNavi(areas: string[], eventId: string, armory: ArmoryState): NaviState {
+  const gears: string[] = [...START_NAVI_PARTS];
+  for (const id of areas) {
+    const area = AREAS[id];
+    if (!area) continue;
+    for (const c of area.chests) gears.push(...(c.gears ?? []));
+    for (const t of area.triggers) gears.push(...(t.gears ?? []));
+    for (const v of RETURN_VISITS) if (v.area === id) gears.push(...(v.gears ?? []));
+  }
+  const placed = gears.filter((g) => NAVI_DATA.parts[g] && !PRESET_UNPLACED.has(g));
+  const lineup = lineupAt(SLICE_FLOW, eventId, CHAPTER1_LINEUP);
+  const members = lineupMembers(PARTY, lineup).map((c) => c.id);
+  const data = naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, armory);
+  const arranged = lineup.unlocks.navi ? arrangeBoards(data, createNavi(placed), members) : createNavi(placed);
+  return addParts(arranged, gears.filter((g) => PRESET_UNPLACED.has(g)));
 }
 
 /** 区画で手に入るスナップ（戦闘の勝ち・宝箱・返した時） */

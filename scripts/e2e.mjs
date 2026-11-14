@@ -291,8 +291,9 @@ try {
   // 初めて入ると、拠点の会話（自分たちの記憶の棚）を先に見る。デバッグ中は早送りで最後まで進む
   await waitScene('Dialogue');
   await tap('^早送り$');
+  // 段階202：会話を進めるタップは左の端で（拠点が出た瞬間に押すと、拠点の「落とし物の棚」に当たることがあった）
   for (let i = 0; i < 40 && !(await scenes()).includes('Hub'); i++) {
-    await tapAt(195, 650);
+    await tapAt(12, 420);
     await page.waitForTimeout(300);
   }
   await waitScene('Hub');
@@ -301,7 +302,11 @@ try {
   await tap('^星図$');
   await waitScene('Growth');
   await skipTips();
-  await tap('^レストピアへ戻る$');
+  // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
+  for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
+    await tap('^レストピアへ戻る$').catch(() => {});
+    await page.waitForTimeout(1500);
+  }
   await waitScene('Hub');
   // 交換所（段階52）：初めてはペトラの会話。ポーチが満タンならポーションは交換できず、ギアは欠片で1回だけ交換できる
   await tap('^交換所$');
@@ -335,7 +340,11 @@ try {
   await until('交換した印', () => findText('^MPギア　欠片 10\\n交換した$'));
   await tap('^MPギア　欠片 10');
   await until('2回目はできない', () => findText('もう交換した'));
-  await tap('^レストピアへ戻る$');
+  // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
+  for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
+    await tap('^レストピアへ戻る$').catch(() => {});
+    await page.waitForTimeout(1500);
+  }
   await waitScene('Hub');
   // 落とし物（段階53）：初めては棚の会話。1-1 の「金魚のヘアピン」を受ける
   await tap('^落とし物の棚$');
@@ -349,7 +358,11 @@ try {
   await tap('^金魚のヘアピン');
   await tap('^受ける$');
   await until('受けた', () => findText('^金魚のヘアピン　→ ゆうまさん\\n記憶をたどって探す$'));
-  await tap('^レストピアへ戻る$');
+  // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
+  for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
+    await tap('^レストピアへ戻る$').catch(() => {});
+    await page.waitForTimeout(1500);
+  }
   await waitScene('Hub');
   await tap('^記憶をたどる$');
   // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
@@ -388,7 +401,11 @@ try {
   }
   await waitScene('Lost');
   await until('届けた', () => findText('^届けた！'));
-  await tap('^レストピアへ戻る$');
+  // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
+  for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
+    await tap('^レストピアへ戻る$').catch(() => {});
+    await page.waitForTimeout(1500);
+  }
   await waitScene('Hub');
   // 記憶の薄れ（段階57）：一度たどった 1-1 は、同じ日のうちは少し薄れている
   await tap('^記憶をたどる$');

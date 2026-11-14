@@ -48,4 +48,18 @@ describe('育ち具合で飛ぶ（段階92）', () => {
     expect(p.carry.armory.weapons.sayoko.path).toHaveLength(1);
     expect(p.carry.armory.weapons.hayase.path).toHaveLength(2);
   });
+
+  it('段階202：ギアは、そこまでに手に入る物を持ち、並びの仲間の盤におまかせで並べる（両刃は持つだけ）', async () => {
+    const { activeBondLinks, findBugs } = await import('../src/core');
+    const { NAVI_DATA } = await import('../src/data');
+    const p = growthPreset('a32_enter', 'low');
+    const parts = p.carry.navi.parts;
+    expect(parts.some((x) => x.partId === 'fairBond')).toBe(true);
+    expect(parts.filter((x) => x.placement).length).toBeGreaterThan(5);
+    for (const id of ['hero', 'akari', 'mio']) expect(findBugs(NAVI_DATA, p.carry.navi, id)).toEqual([]);
+    expect(parts.find((x) => x.partId === 'reckless')?.placement ?? null).toBeNull();
+    // 縁日のギアがブリッジに乗り、三人の時間が開いている（武器で広がった盤ではなく、元の盤で確かめる）
+    expect(activeBondLinks(NAVI_DATA, p.carry.navi, ['hero', 'akari', 'mio'])).toContain('threeTimes');
+  });
 });
+
