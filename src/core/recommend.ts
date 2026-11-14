@@ -127,7 +127,8 @@ export function arrangeBoards(data: NaviData, navi0: NaviState, charIds: string[
   const order = navi.parts.filter((p) => !p.placement).sort((a, b) => data.parts[b.partId].cells.length - data.parts[a.partId].cells.length || a.uid - b.uid);
   let turn = 0;
   for (const part of order) {
-    const isEffect = data.parts[part.partId].kind === 'effect';
+    // 効果ギアと絆のギア（段階202）は、ブリッジに乗る所を先に探す
+    const isEffect = data.parts[part.partId].kind !== 'stat';
     for (let k = 0; k < charIds.length; k++) {
       const charId = charIds[(turn + k) % charIds.length];
       const spot = bestSpot(data, navi, part.uid, charId, isEffect);
