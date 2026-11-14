@@ -29,6 +29,7 @@ export * from './chainArea41';
 export * from './chainArea42';
 export * from './chainSkills';
 export * from './gearCounters';
+export * from './naviTutorial';
 export * from './chainAreas';
 export * from './chainTutorial';
 export * from './enemyArt';
