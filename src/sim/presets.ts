@@ -1,6 +1,6 @@
-import type { AlbumState } from '../core';
-import { flowEvents, gainSnaps, lineupAt, lineupMembers, weaponLevel } from '../core';
-import { AREAS, CHAPTER1_LINEUP, PARTY, SLICE_FLOW, WEAPON_DATA } from '../data';
+import type { AlbumState, GrowthState } from '../core';
+import { createGrowth, flowEvents, gainSnaps, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, weaponLevel } from '../core';
+import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, PARTY, SLICE_FLOW, START_MEMORY_POINTS, WEAPON_DATA } from '../data';
 import type { Carry } from './autoArea';
 import { areaBattleOrder, grownParty, newCarry } from './autoArea';
 import presetCarryTable from './presetCarry.json';
@@ -38,7 +38,7 @@ export function areasBefore(eventId: string): string[] {
 
 /** 育ち具合の強さの目安（並べるため）：仲間全員の、育ちを足した後の能力値の合計（HP は 1/5、MP は 1/2 にして足す） */
 export function carryScore(carry: Carry): number {
-  return grownParty(carry.growth, carry.armory, PARTY, carry.navi).reduce((a, c) => a + c.stats.hp / 5 + c.stats.mp / 2 + c.stats.atk + c.stats.mag + c.stats.def + c.stats.spd, 0);
+  return grownParty(carry.growth, carry.armory, PARTY, carry.navi).reduce((a, c) => a + c.stats.hp / 5 + c.stats.mp / 2 + c.stats.atk + c.stats.mag + c.stats.def, 0);
 }
 
 export interface GrowthPreset {
@@ -58,7 +58,31 @@ export function growthPreset(eventId: string, tier: GrowthTier): GrowthPreset {
   const row = PRESET_CARRY[areas.join(',')]?.[tier];
   // 表にない並び（区画を足した時など）は、始めの育ち具合（段階G3〜G5 で作り方を作り直すまでの間）
   const carry: Carry = row ? (JSON.parse(JSON.stringify(row.carry)) as Carry) : newCarry();
+  // 段階194（段階G3b）：表の星図は入れ替える前の物なので、使った星の砂を返し、今の星図でおすすめの道に沿って開け直す
+  if (row) carry.growth = respendGrowth(carry.growth, eventId);
   return { tier, areas, seed: row?.seed ?? 0, carry, snaps: areas.flatMap(areaSnaps) };
+}
+
+/**
+ * 入れ替える前の星図の開け方を、今の星図に開け直す（段階194）：星の砂を全部返し、その出来事の章の仲間が、
+ * 順番に「おすすめの道」の次の星を1つずつ開ける（払えなくなるまで）。G3c で作り方を見直す
+ */
+function respendGrowth(old: GrowthState, eventId: string): GrowthState {
+  const back = refundV13Growth(old.points, old.opened);
+  let growth = { ...createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS), points: back.points };
+  const lineup = lineupAt(SLICE_FLOW, eventId, CHAPTER1_LINEUP);
+  const members = lineupMembers(PARTY, lineup);
+  const chapter = lineup.chapter ?? Infinity;
+  for (let moved = true; moved; ) {
+    moved = false;
+    for (const c of members) {
+      const next = recommendStar(GROWTH_MAP, growth, c, GROWTH_RECOMMEND, chapter)?.path[0];
+      if (!next || growth.points < nodeCost(GROWTH_MAP, growth, c, next)) continue;
+      growth = openNode(GROWTH_MAP, growth, c, next, chapter);
+      moved = true;
+    }
+  }
+  return growth;
 }
 
 /** 区画で手に入るスナップ（戦闘の勝ち・宝箱・返した時） */

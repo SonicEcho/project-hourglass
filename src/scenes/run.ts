@@ -30,7 +30,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, FOLDER, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, FOLDER, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -606,7 +606,7 @@ export function lineupBase(lineup: Lineup): CharacterDef[] {
 export function currentParty(lineup: Lineup = PROTOTYPE_LINEUP, naviState: NaviState = run.navi): CharacterDef[] {
   const base = lineupBase(lineup);
   const u = lineup.unlocks;
-  const grown = u.growth ? applyGrowth(GROWTH_MAP, run.growth, base, SKILLS) : base;
+  const grown = u.growth ? applyGrowth(GROWTH_MAP, run.growth, base, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES) : base;
   // naviState：ムーブメントの画面で、仮置きした時の盤で計算する（段階126）
   const navi = u.navi ? applyNavi(currentNaviData(), naviState, grown) : grown;
   return u.weapon ? applyWeapons(WEAPON_DATA, run.armory, navi) : navi;

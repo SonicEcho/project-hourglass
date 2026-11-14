@@ -1,26 +1,29 @@
 import type { CharacterDef } from '../core/types';
-import { SKILLS } from './skills';
+import { CHAIN_SKILLS, CHAIN_START_SKILLS } from './chainSkills';
+
+/** 最初から持つ技（段階194：新しい戦闘の技。星図で覚える技は CHAIN_SKILLS） */
+const startSkills = (id: string) => CHAIN_START_SKILLS[id].map((k) => CHAIN_SKILLS[k]);
 
 // 段階5（調整3回目）：HPを1.2倍にした（元は 120 / 100 / 85）
 export const HERO: CharacterDef = {
   id: 'hero',
   name: 'ハルト',
   stats: { hp: 144, mp: 24, atk: 18, mag: 16, def: 12, spd: 12 },
-  skills: [SKILLS.fire, SKILLS.breakSlash],
+  skills: startSkills('hero'),
 };
 
 export const AKARI: CharacterDef = {
   id: 'akari',
   name: 'あかり',
   stats: { hp: 120, mp: 36, atk: 12, mag: 20, def: 10, spd: 10 },
-  skills: [SKILLS.care, SKILLS.careAll, SKILLS.ice],
+  skills: startSkills('akari'),
 };
 
 export const MIO: CharacterDef = {
   id: 'mio',
   name: 'みお',
   stats: { hp: 102, mp: 24, atk: 14, mag: 14, def: 8, spd: 16 },
-  skills: [SKILLS.thunder, SKILLS.shuffle, SKILLS.swap],
+  skills: startSkills('mio'),
 };
 
 /**
@@ -31,18 +34,18 @@ export const SAYOKO: CharacterDef = {
   id: 'sayoko',
   name: '小夜子',
   stats: { hp: 190, mp: 30, atk: 30, mag: 14, def: 16, spd: 16 },
-  skills: [SKILLS.kabutoWari, SKILLS.tsukiBarai],
+  skills: startSkills('sayoko'),
 };
 
 /**
  * 早瀬（段階140a。4章の 4-2 から戦う）。属性魔法の職人（docs/CONCEPT.md の仲間の表。小夜子の物理・部位破壊とは重ねない）。
- * 火・氷・雷を使い分けて弱点を突く。4章から加わるので、星図の分を見こんで元の能力値を高くした（数値は npm run measure の「4-2」で測った）
+ * 段階194 から火と時間の扱い（一覧の 16-2）。4章から加わるので、星図の分を見こんで元の能力値を高くした（数値は npm run measure の「4-2」で測った）
  */
 export const HAYASE: CharacterDef = {
   id: 'hayase',
   name: '早瀬',
   stats: { hp: 180, mp: 54, atk: 14, mag: 34, def: 14, spd: 11 },
-  skills: [SKILLS.yakiire, SKILLS.reikyaku, SKILLS.tsuden, SKILLS.short],
+  skills: startSkills('hayase'),
 };
 
 export const PARTY: CharacterDef[] = [HERO, AKARI, MIO, SAYOKO, HAYASE];

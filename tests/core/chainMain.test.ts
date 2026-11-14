@@ -16,7 +16,6 @@ import {
   chainTipTriggers,
   chainAllyFromCharacter,
   chainEnemyFromMain,
-  chainMoveFromSkill,
   chainMoveMp,
   chainPlanError,
   chainVitals,
@@ -29,7 +28,7 @@ import {
   type ChainState,
   type CharacterDef,
 } from '../../src/core';
-import { A11_COMBOS, CHAIN_ENEMY_SNAPS, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, SKILLS, TIPS } from '../../src/data';
+import { A11_COMBOS, CHAIN_ENEMY_SNAPS, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAIN_COACH, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_RULES, CHAIN_TRIALS, GOLDFISH_NOISE, HERO, CHAIN_SKILLS, CHAIN_TRAIT_STARS, TIPS } from '../../src/data';
 import { autoChainBattle, smartChainPlan } from '../../src/sim/chainAuto';
 
 let seedPick = 1;
@@ -120,15 +119,10 @@ describe('新しい戦闘を本番用に（段階158）', () => {
     expect(b.enemies[0].hp).toBe(a.enemies[0].hp);
   });
 
-  it('本番の技を変える：重さは時刻に、同じ属性が並ぶ技は連続攻撃に、1人向けの回復は全体に（半分）、手札に触れる技は今は使わない', () => {
-    expect(chainMoveFromSkill(SKILLS.fire)).toMatchObject({ weight: 3, mp: 6, effect: { kind: 'damage', element: 'fire', power: 40 } });
-    expect(chainMoveFromSkill(SKILLS.doubleSlash)?.effect).toMatchObject({ hits: 2, power: 30 });
-    expect(chainMoveFromSkill(SKILLS.care)).toMatchObject({ weight: 1, target: 'allies', effect: { kind: 'heal', power: 23 } });
-    expect(chainMoveFromSkill(SKILLS.tsukiBarai)?.target).toBe('enemies');
-    // 段階164：手札に触れる技も使える
-    expect(chainMoveFromSkill(SKILLS.shuffle)).toMatchObject({ effect: { kind: 'cycle' }, mp: SKILLS.shuffle.mp, target: 'allies' });
-    expect(chainMoveFromSkill(SKILLS.inspiration)).toMatchObject({ effect: { kind: 'draw', count: 2 } });
-    expect(chainMoveFromSkill(SKILLS.swap)).toMatchObject({ effect: { kind: 'retrieve' } });
+  it('段階194：仲間の技は新しい戦闘の技のまま。星図の特性の星も、そのまま特性に', () => {
+    const a = chainAllyFromCharacter({ ...HERO, skills: [CHAIN_SKILLS.slash], traits: [CHAIN_TRAIT_STARS.snapBoost.passive] });
+    expect(a.moves.map((m) => m.id)).toEqual(['basic', 'slash']);
+    expect(a.passives).toContainEqual({ kind: 'snapBoost', rate: 0.1 });
   });
 
   it('本番の仲間と敵を変える：通常攻撃に武器の属性、MP と特性を持つ。敵は行動から予定の癖を作る', () => {
@@ -146,7 +140,7 @@ describe('新しい戦闘を本番用に（段階158）', () => {
   });
 
   it('本番の仲間と 1-1 の敵で、最後まで戦える（考える方針）', () => {
-    const party = [HERO, AKARI].map((c) => ({ ...c, skills: [SKILLS.fire, SKILLS.care] }));
+    const party = [HERO, AKARI].map((c) => ({ ...c, skills: [CHAIN_SKILLS.ice, CHAIN_SKILLS.care] }));
     const def = buildMainChainBattle({ id: 'm', name: '砂嵐', party, enemies: [GOLDFISH_NOISE, GOLDFISH_NOISE], deck: BASE.deck, cards: BASE.cards, links: BASE.links });
     // みおのいないコンボは外れる
     expect(def.links.every((l) => l.members.every((m) => m === 'hero' || m === 'akari'))).toBe(true);
@@ -157,7 +151,7 @@ describe('新しい戦闘を本番用に（段階158）', () => {
   });
 
   it('探索の戦闘の結果（段階159）：倒した敵の落とし物・動いた回数・持ち越す HP と MP。負けは落とし物なし', () => {
-    const party = [HERO, AKARI].map((c) => ({ ...c, skills: [SKILLS.fire, SKILLS.care] }));
+    const party = [HERO, AKARI].map((c) => ({ ...c, skills: [CHAIN_SKILLS.ice, CHAIN_SKILLS.care] }));
     const enemies = [GOLDFISH_NOISE, GOLDFISH_NOISE];
     const def = buildMainChainBattle({ id: 'm', name: '砂嵐', party, enemies, deck: BASE.deck, cards: BASE.cards, links: BASE.links });
     // 自動対戦の最後の状態を作る（考える方針）
@@ -343,7 +337,7 @@ describe('新しい戦闘のアルバム（段階163）', () => {
 });
 
 describe('新しい戦闘にない育成の効果を、近い効果で効かせる（段階164。仮の置き換え）', () => {
-  const party = [HERO, AKARI].map((c) => ({ ...c, skills: [SKILLS.inspiration, SKILLS.shuffle, SKILLS.swap] }));
+  const party = [HERO, AKARI].map((c) => ({ ...c, skills: [{ ...CHAIN_SKILLS.hirameki, id: 'inspiration', effect: { kind: 'draw' as const, count: 2 } }, CHAIN_SKILLS.shuffle, { ...CHAIN_SKILLS.shuffle, id: 'swap', effect: { kind: 'retrieve' as const } }] }));
   const make = (passives: CharacterDef['passives'] = []) => {
     const ps = party.map((c, i) => (i === 0 ? { ...c, passives } : c));
     const def = buildMainChainBattle({ id: 'm', name: 'm', party: ps, enemies: [GOLDFISH_NOISE], chainEnemies: [dummy()], deck: BASE.deck, cards: BASE.cards, links: [] });

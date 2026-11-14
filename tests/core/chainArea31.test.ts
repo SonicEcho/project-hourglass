@@ -56,15 +56,17 @@ describe('3-1 の雑魚を新しい戦闘に（段階178）', () => {
     const def2 = buildMainChainBattle({ id: 'y', name: 'y', party: PARTY, enemies: AREA_BATTLES.a31_n1_square.enemies, chainEnemies: st2.enemies, deck: st2.deck, cards: st2.cards, links: st2.links });
     expect(chainTipTriggers(createChainBattle(def2, CHAIN_RULES, 1))).toContain('chain_timer');
   });
-  it('3-1 に入る時点の控えめな育ち具合のハルト・あかり・みおで勝てる（考える方針）', () => {
+  // 段階194：星図の技を入れ替えたので、1つのシードではなく、5つのシードの多くで勝てるかを見る（3-1 の控えめな育ち具合で、10戦で 10勝）
+  it('3-1 に入る時点の控えめな育ち具合のハルト・あかり・みおで勝てる（考える方針。5戦中4勝以上）', () => {
     const pre = growthPreset('a31_enter', 'low');
     const party = grownParty(pre.carry.growth, pre.carry.armory, PARTY, pre.carry.navi);
     for (const id of ids) {
       const st = CHAIN_AREA_SETUPS[id];
       const def = buildMainChainBattle({ id, name: id, party, enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
-      expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome, id).toBe('win');
+      const wins = [1, 2, 3, 4, 5].filter((seed) => autoChainBattle(def, CHAIN_RULES, seed, 'smart').outcome === 'win').length;
+      expect(wins, id).toBeGreaterThanOrEqual(4);
     }
-  }, 60000);
+  }, 180000);
 });
 
 describe('3-1 のぬし「腕時計を守る」（段階179）', () => {

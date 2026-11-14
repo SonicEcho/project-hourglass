@@ -1,4 +1,5 @@
-import type { CharacterDef, SkillDef, Stats } from './types';
+import type { ChainMove, ChainPassive } from './chain';
+import type { CharacterDef, Stats } from './types';
 
 // 星図（段階7）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
@@ -11,8 +12,12 @@ export type StatKey = keyof Stats;
  */
 type NodeBase = { id: string; x: number; y: number; name?: string; con?: string; chapter?: number };
 
-/** マスの効果（出発点・能力値・魔法・スキル） */
-export type GrowthNodeEffect = { kind: 'start'; owner: string } | { kind: 'stat' | 'statBig'; stat: StatKey; amount: number } | { kind: 'skill'; skillId: string };
+/** マスの効果（出発点・能力値・技・特性。段階194：特性の星を足した。技は新しい戦闘の技 CHAIN_SKILLS の id） */
+export type GrowthNodeEffect =
+  | { kind: 'start'; owner: string }
+  | { kind: 'stat' | 'statBig'; stat: StatKey; amount: number }
+  | { kind: 'skill'; skillId: string }
+  | { kind: 'trait'; traitId: string };
 
 export type GrowthNodeDef = NodeBase & GrowthNodeEffect;
 
@@ -94,6 +99,8 @@ export function nodeCost(map: GrowthMap, growth: GrowthState, base: CharacterDef
       return map.costs.statBig;
     case 'skill':
       return knownSkillIds(map, growth, base).includes(n.skillId) ? map.costs.passThrough : map.costs.skill;
+    case 'trait':
+      return map.costs.skill;
   }
 }
 
@@ -136,13 +143,14 @@ export function openNode(map: GrowthMap, growth: GrowthState, base: CharacterDef
 }
 
 /**
- * 成長を反映したキャラ（戦闘に使う）。能力値を足し、マップで覚えた魔法・スキルを後ろに加える。
- * skills は id → 魔法・スキルの定義
+ * 成長を反映したキャラ（戦闘に使う）。能力値を足し、マップで覚えた技を後ろに加え、特性の星を traits に加える。
+ * skills は id → 技（新しい戦闘の技）、traits は id → 特性（段階194）
  */
-export function applyGrowth(map: GrowthMap, growth: GrowthState, bases: CharacterDef[], skills: Record<string, SkillDef>): CharacterDef[] {
+export function applyGrowth(map: GrowthMap, growth: GrowthState, bases: CharacterDef[], skills: Record<string, ChainMove>, traits: Record<string, ChainPassive> = {}): CharacterDef[] {
   return bases.map((base) => {
     const stats = { ...base.stats };
-    const learned: SkillDef[] = [];
+    const learned: ChainMove[] = [];
+    const gained: ChainPassive[] = [];
     const known = new Set(base.skills.map((k) => k.id));
     for (const nodeId of growth.opened[base.id] ?? []) {
       const n = findNode(map, nodeId);
@@ -155,8 +163,9 @@ export function applyGrowth(map: GrowthMap, growth: GrowthState, bases: Characte
           known.add(n.skillId);
         }
       }
+      if (n.kind === 'trait' && traits[n.traitId]) gained.push(traits[n.traitId]);
     }
-    return { ...base, stats, skills: [...base.skills, ...learned] };
+    return { ...base, stats, skills: [...base.skills, ...learned], ...(gained.length || base.traits ? { traits: [...(base.traits ?? []), ...gained] } : {}) };
   });
 }
 
@@ -212,7 +221,7 @@ export function checkGrowthMap(map: GrowthMap, opts: { minGap: number; frontier:
   }
   for (const n of map.nodes) {
     if (neighbors(map, n.id).length !== 1 || opts.frontier.includes(n.id)) continue;
-    if (n.kind !== 'skill' && n.kind !== 'statBig' && n.kind !== 'start') errors.push(`行き止まりの星が小さな能力値：${n.id}`);
+    if (n.kind !== 'skill' && n.kind !== 'trait' && n.kind !== 'statBig' && n.kind !== 'start') errors.push(`行き止まりの星が小さな能力値：${n.id}`);
   }
   return errors;
 }

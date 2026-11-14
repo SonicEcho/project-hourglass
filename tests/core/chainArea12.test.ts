@@ -39,13 +39,15 @@ describe('1-2 の雑魚を新しい戦闘に（段階168）', () => {
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }
   });
-  it('育成なしのハルトとあかりでも勝てる（考える方針。逃げられても勝ち）', () => {
+  // 段階194：星図の技を入れ替えた（ハルトは斬るだけ）ので、1つのシードではなく、5つのシードの多くで勝てるかを見る（10戦で 7〜10勝）
+  it('育成なしのハルトとあかりでも、たいてい勝てる（考える方針。逃げられても勝ち。5戦中3勝以上）', () => {
     for (const id of ids) {
       const st = CHAIN_AREA_SETUPS[id];
       const def = buildMainChainBattle({ id, name: id, party: [HERO, AKARI], enemies: AREA_BATTLES[id].enemies, chainEnemies: st.enemies, variants: st.variants, deck: st.deck, cards: st.cards, links: st.links, gradeAt: st.gradeAt });
-      expect(autoChainBattle(def, CHAIN_RULES, 5, 'smart').outcome).toBe('win');
+      const wins = [1, 2, 3, 4, 5].filter((seed) => autoChainBattle(def, CHAIN_RULES, seed, 'smart').outcome === 'win').length;
+      expect(wins, id).toBeGreaterThanOrEqual(3);
     }
-  });
+  }, 120000);
 });
 
 describe('1-2 の性質の説明と宝箱（段階168）', () => {

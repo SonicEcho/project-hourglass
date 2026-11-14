@@ -59,3 +59,6 @@ export const CHAIN_TRAIT_STARS: Record<string, { name: string; text: string; pas
   timeMpSave: { name: '時間の技の MP−', text: '時間の技（時計合わせ・振り子）の MP −2（最低1）', passive: { kind: 'timeMpSave', amount: 2 } },
   fireBoost: { name: '火の威力+', text: '火の攻撃の威力 +20%', passive: { kind: 'elementBoost', element: 'fire', rate: 0.2 } },
 };
+
+/** 特性の星の id → 特性（星図を反映する時に渡す） */
+export const CHAIN_TRAIT_PASSIVES: Record<string, ChainPassive> = Object.fromEntries(Object.entries(CHAIN_TRAIT_STARS).map(([id, t]) => [id, t.passive]));

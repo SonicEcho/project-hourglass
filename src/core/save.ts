@@ -21,7 +21,7 @@ import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -152,7 +152,57 @@ export const MIGRATIONS: SaveMigrations = {
   11: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, battle: null } } : raw),
   // 版12 → 版13（段階91a）：選んだ戦闘の並び（party）を足した。前の版は選んでいない
   12: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, party: [] } } : raw),
+  // 版13 → 版14（段階194（段階G3b））：星図を全体図の3版に入れ替えた。開けた星は、使った星の砂を全部返して、まっさらにする（開発者と決めた）
+  13: (raw) => {
+    if (!isObject(raw.run) || !isObject(raw.run.growth) || !isInt(raw.run.growth.points) || !isObject(raw.run.growth.opened)) return raw;
+    const growth = refundV13Growth(raw.run.growth.points, raw.run.growth.opened);
+    return { ...raw, run: { ...raw.run, growth } };
+  },
 };
+
+/** 版13 の星図の星（id → 効果。段階194 で入れ替える前の物。使った星の砂を返すために、値段を数える） */
+const V13_STARS: Record<string, string> = {
+  altair: 'start:hero', tarazed: 'skill:doubleSlash', alshain: 'skill:fire', muAql: 'a', deltaAql: 'h', zetaAql: 'a', epsAql: 'h', lambdaAql: 'a', iotaAql: 'D', etaAql: 'a', thetaAql: 'h',
+  vega: 'start:akari', epsLyr: 'skill:cure', zetaLyr: 'm', deltaLyr: 'p', sulafat: 'm', sheliak: 'skill:care', thetaLyr: 'skill:ice', kappaLyr: 'h', anser: 'p', alphaSge: 'a', betaSge: 'p', deltaSge: 's', gammaSge: 's',
+  sualocin: 'start:mio', rotanev: 'skill:thunder', gammaDel: 's', deltaDel: 's', epsDel: 'skill:inspiration', etaDel: 's', kappaDel: 'd',
+  deneb: 'skill:fira', sadr: 'A', etaCyg: 'h', phiCyg: 'd', albireo: 's', deltaCyg: 'm', thetaCyg: 'm', iotaCyg: 'P', kappaCyg: 'skill:blizzara', gienah: 'H', c41: 'M', zetaCyg: 'skill:thundara', tauCyg: 's', nuCyg: 's', xiCyg: 'D', rhoCyg: 'S', omiCyg: 'p',
+  piHer: 'start:sayoko', etaHer: 'a', zetaHer: 'h', epsHer: 'A', rhoHer: 'd', thetaHer: 's', iotaHer: 'S', deltaHer: 'H', muHer: 'P', betaHer: 'skill:doubleSlash', alphaHer: 'M',
+  alderamin: 'start:hayase', muCep: 'm', etaCep: 'p', thetaCep: 'M', alfirk: 'skill:thundara', iotaCep: 'H', zetaCep: 'd', epsCep: 'S', deltaCep: 'A',
+};
+/** 版13 の仲間が最初から覚えていた魔法・スキル（その星は「通るだけ」の値段だった） */
+const V13_START_SKILLS: Record<string, string[]> = {
+  hero: ['fire', 'breakSlash'],
+  akari: ['care', 'careAll', 'ice'],
+  mio: ['thunder', 'shuffle', 'swap'],
+  sayoko: ['kabutoWari', 'tsukiBarai'],
+  hayase: ['yakiire', 'reikyaku', 'tsuden', 'short'],
+};
+
+/**
+ * 版13 の星図で開けた星の、使った星の砂を返す（段階194）。返した後の星の砂と、まっさらな開けた星（出発点は整える時に補う）。
+ * 値段は版13 のまま：能力値3・大6・魔法・スキル8、もう覚えている魔法・スキルとほかの仲間の出発点は「通るだけ」3。知らない星は3
+ */
+export function refundV13Growth(points: number, opened: Record<string, unknown>): { points: number; opened: Record<string, string[]> } {
+  let back = 0;
+  for (const [charId, list] of Object.entries(opened)) {
+    if (!Array.isArray(list)) continue;
+    const known = new Set(V13_START_SKILLS[charId] ?? []);
+    for (const id of list) {
+      const code = typeof id === 'string' ? V13_STARS[id] : undefined;
+      if (code === undefined) {
+        back += 3;
+        continue;
+      }
+      const [kind, value] = code.split(':');
+      if (kind === 'start') back += value === charId ? 0 : 3;
+      else if (kind === 'skill') {
+        back += known.has(value) ? 3 : 8;
+        known.add(value);
+      } else back += code === code.toUpperCase() ? 6 : 3;
+    }
+  }
+  return { points: Math.max(0, points) + back, opened: {} };
+}
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
 export type LoadResult = { ok: true; save: SaveData } | { ok: false; error: string; old?: true };

@@ -16,7 +16,8 @@ import {
   NAVI_REWARD_PICKS,
   PART_BREAK_POINTS,
   PARTY,
-  SKILLS,
+  CHAIN_SKILLS,
+  CHAIN_TRAIT_STARS,
   START_MEMORY_POINTS,
   START_NAVI_PARTS,
   STORY,
@@ -53,20 +54,21 @@ const cardName = (id: string) => (CARDS as Record<string, { name: string }>)[id]
 const actionRow = (a: ActionDef) => [a.name, describeAction(a), `${weightLabel(a.weight)}（${formatWeight(a.weight)}）`];
 
 function charactersPage(): string {
+  // 段階194：技は新しい戦闘の技（星図で覚える）。速さはなくなった
+  const keys = STAT_KEYS.filter((k) => k !== 'spd');
   const skillOwner = (id: string) => PARTY.filter((c: CharacterDef) => c.skills.some((s) => s.id === id)).map((c) => c.name);
-  const skillNodes = (id: string) => GROWTH_MAP.nodes.filter((n) => n.kind === 'skill' && n.skillId === id).length;
-  return page('仲間と魔法・スキル', '正は `src/data/characters.ts`・`src/data/skills.ts`。仕組みは `docs/design/battle.md`・`docs/design/growth.md`。', [
-    ['仲間', table(['名前', ...STAT_KEYS.map((k) => STAT_LABEL[k]), '最初の魔法・スキル'], PARTY.map((c) => [c.name, ...STAT_KEYS.map((k) => c.stats[k]), c.skills.map((s) => s.name).join('、')]))],
+  const skillNodes = (id: string) => GROWTH_MAP.nodes.filter((n) => n.kind === 'skill' && n.skillId === id).map((n) => `${n.chapter ?? 1}章`);
+  const traitNodes = (id: string) => GROWTH_MAP.nodes.filter((n) => n.kind === 'trait' && n.traitId === id).map((n) => `${n.chapter ?? 1}章`);
+  return page('仲間と技', '正は `src/data/characters.ts`・`src/data/chainSkills.ts`。仕組みは `docs/design/battle.md`・`docs/design/growth.md`。', [
+    ['仲間', table(['名前', ...keys.map((k) => STAT_LABEL[k]), '最初の技'], PARTY.map((c) => [c.name, ...keys.map((k) => c.stats[k]), c.skills.map((s) => s.name).join('、')]))],
     [
-      '魔法・スキル',
+      '技',
       table(
-        ['名前', 'MP', '効果', '重さ', '最初から持っている', '星図のマス'],
-        Object.values(SKILLS).map((s) => {
-          const [name, effect, weight] = actionRow(s);
-          return [name, s.mp, effect, weight, skillOwner(s.id).join('、') || '―', skillNodes(s.id) || '―'];
-        }),
+        ['名前', 'MP', '効果', '重さ', '最初から持っている', '星図'],
+        Object.values(CHAIN_SKILLS).map((s) => [s.name, s.mp ?? 0, s.text, s.weight, skillOwner(s.id).join('、') || '―', skillNodes(s.id).join('、') || '―']),
       ),
     ],
+    ['特性の星', table(['名前', '効果', '星図'], Object.entries(CHAIN_TRAIT_STARS).map(([id, t]) => [t.name, t.text, traitNodes(id).join('、') || '―']))],
   ]);
 }
 
