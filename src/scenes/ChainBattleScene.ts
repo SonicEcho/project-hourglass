@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { drawCoach } from '../ui/coach';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import {
   availableLinks,
@@ -650,55 +651,13 @@ export class ChainBattleScene extends Phaser.Scene {
    * guide：照らした所だけ押せる（まわりの暗い所は押せない）。それ以外は、画面のどこかをタップで次へ
    */
   private drawCoach(hole: { x: number; y: number; w: number; h: number } | null, text: string, guide: boolean): void {
-    // 照らす所がない手順（はじめのあいさつ）は、画面のまん中に吹き出しだけ
-    const h = hole ?? { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2 - 120, w: 0, h: 0 };
-    const o = this.add.container(0, 0).setDepth(120);
-    this.coachLayer = o;
-    const dim = 0x000000;
-    const a = 0.62;
-    const parts = [
-      this.add.rectangle(0, 0, GAME_WIDTH, h.y, dim, a),
-      this.add.rectangle(0, h.y + h.h, GAME_WIDTH, GAME_HEIGHT - h.y - h.h, dim, a),
-      this.add.rectangle(0, h.y, h.x, h.h, dim, a),
-      this.add.rectangle(h.x + h.w, h.y, GAME_WIDTH - h.x - h.w, h.h, dim, a),
-    ].map((r) => r.setOrigin(0));
-    for (const r of parts) {
-      if (guide) r.setInteractive();
-      o.add(r);
-    }
-    if (hole) {
-      const frame = this.add.rectangle(h.x, h.y, h.w, h.h).setOrigin(0).setStrokeStyle(3, YELLOW);
-      o.add(frame);
-      this.tweens.add({ targets: frame, alpha: 0.35, duration: 520, yoyo: true, repeat: -1 });
-    }
-    // 吹き出し：照らした所が上半分なら下に、下半分なら上に
-    const below = h.y + h.h / 2 < GAME_HEIGHT / 2;
-    const bw = GAME_WIDTH - 32;
-    const t = addText(this, 0, 0, text, { size: 14, bold: true, color: '#1a1300', wrap: bw - 28, ja: true }).setLineSpacing(4);
-    const hint = guide ? '' : 'タップで次へ ▶';
-    const bh = t.height + (hint ? 40 : 24);
-    const by = below ? Math.min(h.y + h.h + 14, GAME_HEIGHT - bh - 12) : Math.max(h.y - bh - 14, 12);
-    const box = this.add.container(16, by);
-    box.add(this.add.rectangle(4, 5, bw, bh, 0x000000, 0.5).setOrigin(0));
-    box.add(this.add.rectangle(0, 0, bw, bh, 0xfff6d8).setOrigin(0).setStrokeStyle(3, YELLOW));
-    const tip = below ? [h.x + h.w / 2 - 16 - 10, 0, h.x + h.w / 2 - 16 + 10, 0, h.x + h.w / 2 - 16, -12] : [h.x + h.w / 2 - 16 - 10, bh, h.x + h.w / 2 - 16 + 10, bh, h.x + h.w / 2 - 16, bh + 12];
-    if (hole) box.add(this.add.triangle(0, 0, tip[0], tip[1], tip[2], tip[3], tip[4], tip[5], 0xfff6d8).setOrigin(0));
-    else box.add(addText(this, bw / 2, -2, 'TUTORIAL', { size: 12, bold: true, color: '#ffffff' }).setOrigin(0.5, 1).setFontStyle('bold italic').setShadow(2, 2, '#ff2d55', 0, false, true));
-    t.setPosition(14, 12);
-    box.add(t);
-    if (hint) box.add(addText(this, bw - 14, bh - 14, hint, { size: 11, bold: true, color: '#a06a00' }).setOrigin(1, 0.5));
-    o.add(box);
-    if (!guide) {
-      // 説明だけの手順：画面のどこをタップしても次へ（下の物は押せない）
-      const all = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff, 0.001).setOrigin(0).setInteractive();
-      all.on('pointerup', () => {
-        if (!this.coach || this.time.now - this.coachSince.at < 600) return;
-        this.coach.i++;
-        if (!CHAIN_COACH[this.coach.id][this.coach.i]) this.endCoach();
-        this.render();
-      });
-      o.add(all);
-    }
+    // 段階203：描き方は共通の部品（src/ui/coach.ts）に移した
+    this.coachLayer = drawCoach(this, hole, text, guide, () => {
+      if (!this.coach || this.time.now - this.coachSince.at < 600) return;
+      this.coach.i++;
+      if (!CHAIN_COACH[this.coach.id][this.coach.i]) this.endCoach();
+      this.render();
+    });
   }
 
   /** 上の帯：● REC・ROUND・組み合わせと型 */

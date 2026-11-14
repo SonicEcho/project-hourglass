@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { maybeShowTip } from '../ui/tipPanel';
+import { drawCoach, type CoachHole } from '../ui/coach';
+import { markTipSeenNow, seenTips } from '../ui/tipPanel';
 import type { Cell, CharacterDef, NaviState, OwnedPart, Placement, Rotation } from '../core';
 import { applyLoadout, LOADOUT_MAX, loadoutConflicts, saveLoadout, boardParts, boardPassives, boardStats, bugHpLoss, findBugs, passiveRate, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { gearCounterTraits, PARTY, traitName } from '../data';
+import { gearCounterTraits, NAVI_COACH, PARTY, traitName, type NaviCoachTarget } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizeTraits } from '../ui/naviText';
 import { addBalanceWheel, drawGear, drawMovementBg, drawPartShape, METAL, PART_COLOR, PART_SHORT } from '../ui/naviViews';
@@ -75,8 +76,9 @@ export class NaviScene extends Phaser.Scene {
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
-    // 初めて開いた時の説明（段階38。2-1 の銭湯の前で、ムーブメントが開いた後）
-    maybeShowTip(this, ['growth_navi']);
+    // 初めて開いた時の説明（段階38。2-1 の銭湯の前で、ムーブメントが開いた後）。段階203：画面の場所を照らして順に説明する
+    this.coachStep = seenTips().includes('growth_navi') ? null : 0;
+    this.render();
   }
 
   /** デバッグメニューからギアが増えた時に描き直す */
@@ -224,6 +226,52 @@ export class NaviScene extends Phaser.Scene {
     this.drawInfo();
     this.drawList();
     backButton(this, this.root, hubBack()?.label ?? '星図へ戻る', () => this.leave());
+    this.drawNaviCoach();
+  }
+
+  /** チュートリアルの今の手順（段階203。null なら出していない） */
+  private coachStep: number | null = null;
+  private coachLayer: Phaser.GameObjects.Container | null = null;
+
+  private drawNaviCoach(): void {
+    this.coachLayer?.destroy(true);
+    this.coachLayer = null;
+    if (this.coachStep === null) return;
+    const step = NAVI_COACH[this.coachStep];
+    if (!step) {
+      markTipSeenNow('growth_navi');
+      this.coachStep = null;
+      return;
+    }
+    this.coachLayer = drawCoach(this, this.naviCoachRect(step.target), step.text, false, () => {
+      this.coachStep = (this.coachStep ?? 0) + 1;
+      this.drawNaviCoach();
+    }, 300);
+  }
+
+  /** 照らす所（段階203） */
+  private naviCoachRect(t: NaviCoachTarget): CoachHole | null {
+    const b = this.board();
+    const o = this.boardOrigin();
+    const w = GAME_WIDTH - SIDE_PADDING * 2;
+    switch (t) {
+      case 'intro':
+        return null;
+      case 'tabs':
+        return { x: 4, y: FRAME.tabsTop - 3, w: GAME_WIDTH - 8, h: FRAME.tabsH + 6 };
+      case 'board':
+        return { x: o.x - 30, y: BOARD_TOP - 4, w: this.cell * b.cols + 60, h: BOARD_H + 8 };
+      case 'bridge':
+        return { x: o.x + b.commandCol * this.cell - 4, y: o.y - 4, w: this.cell + 8, h: this.cell * b.rows + 8 };
+      case 'list':
+        return { x: 4, y: LIST_TOP - 4, w: GAME_WIDTH - 8, h: LIST_BOTTOM - LIST_TOP + 8 };
+      case 'buttons':
+        return { x: SIDE_PADDING - 3, y: INFO_TOP - 3, w: w + 6, h: INFO_H + 6 };
+      case 'status':
+        return { x: SIDE_PADDING - 3, y: BOARD_TOP + BOARD_H + 2, w: w + 6, h: 38 };
+      case 'sets':
+        return { x: SIDE_PADDING + 4, y: INFO_TOP + INFO_H - 40, w: w - 8, h: 36 };
+    }
   }
 
   /** 戻る：拠点から開いた時は拠点へ（段階45）、それ以外は星図へ */
@@ -477,7 +525,7 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
-      const text = this.message || '一覧からギアを選び、マスをタップして置く。同じ金属が隣だと狂い。下の並べ方：タップで付け替え、長押しで今の並べ方を保存';
+      const text = this.message || '一覧からギアを選び、マスをタップして置く。同じ金属が隣だと狂い。下のセット：タップで付け替え、長押しで今の並べ方を保存';
       this.root.add(addText(this, SIDE_PADDING + 10, top + 8, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
       this.drawLoadouts(top + h - 22);
       return;
@@ -522,14 +570,14 @@ export class NaviScene extends Phaser.Scene {
     addButton(this, this.root, bx, top + 76, 108, 26, '外す', { onTap: () => this.remove() }, { ...PLAIN_BUTTON, enabled: !!sel.placement, size: 12 });
   }
 
-  /** 並べ方の保存（段階201。一覧の 18-3）：仲間ごとに3つ。タップで付け替え（空きなら保存）、長押しで今の並べ方を保存（上書き） */
+  /** 並べ方の保存（段階201。一覧の 18-3。段階203 で「セット」と呼ぶことにした）：仲間ごとに3つ。タップで付け替え（空きなら保存）、長押しで今の並べ方を保存（上書き） */
   private drawLoadouts(cy: number): void {
     const list = run.navi.loadouts?.[this.charId] ?? [];
     const w = (GAME_WIDTH - SIDE_PADDING * 2 - 20 - 12) / LOADOUT_MAX;
     for (let i = 0; i < LOADOUT_MAX; i++) {
       const saved = list[i] ?? null;
       const x = SIDE_PADDING + 10 + w / 2 + i * (w + 6);
-      const label = saved ? `${saved.name}（${saved.parts.length}）` : `並べ方${i + 1}（空き）`;
+      const label = saved ? `${saved.name.replace(/^並べ方/, 'セット')}（${saved.parts.length}）` : `セット${i + 1}（空き）`;
       addButton(
         this,
         this.root,
@@ -545,9 +593,9 @@ export class NaviScene extends Phaser.Scene {
   }
 
   private keepLoadout(slot: number): void {
-    const name = run.navi.loadouts?.[this.charId]?.[slot]?.name ?? `並べ方${slot + 1}`;
+    const name = (run.navi.loadouts?.[this.charId]?.[slot]?.name ?? `セット${slot + 1}`).replace(/^並べ方/, 'セット');
     run.navi = saveLoadout(run.navi, this.charId, slot, name);
-    this.message = `${name}に、今の並べ方を保存した（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書き`;
+    this.message = `${name}に、今の並べ方を保存した（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書き保存`;
     this.render();
   }
 
@@ -561,7 +609,7 @@ export class NaviScene extends Phaser.Scene {
     }
     const r = applyLoadout(currentNaviData(), run.navi, this.charId, slot);
     run.navi = r.navi;
-    const name = run.navi.loadouts?.[this.charId]?.[slot]?.name ?? '';
+    const name = (run.navi.loadouts?.[this.charId]?.[slot]?.name ?? '').replace(/^並べ方/, 'セット');
     this.message = `${name}に付け替えた${r.missing ? `（置けなかったギアが${r.missing}つ）` : ''}`;
     this.clearSelection();
     this.render();
