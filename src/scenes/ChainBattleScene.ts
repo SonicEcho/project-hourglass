@@ -290,6 +290,7 @@ export class ChainBattleScene extends Phaser.Scene {
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
         cutoffRounds: area.cutoff?.rounds,
+        boss: !!area.boss,
         gradeAt: setup?.gradeAt ?? (area.boss ? { high: 35, mid: 50 } : { high: 13, mid: 20 }),
       });
       this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
