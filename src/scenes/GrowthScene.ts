@@ -178,7 +178,8 @@ export class GrowthScene extends Phaser.Scene {
     const lineup = hubLineup();
     const members = lineupBase(lineup);
     const party = currentParty(lineup);
-    const back = getHubReturn();
+    // 段階G1（2026-11-14）：戻り先が分からない時は拠点へ（試作の5戦の「次の戦闘へ」は出さない）
+    const back = getHubReturn() ?? { key: 'Hub', data: {}, label: '拠点へ戻る' };
     this.root.add(frameBg(this, SKY_COLORS.top, SKY_COLORS.bottom));
 
     // 上：見出しと星の砂（段階141：共通の枠。今いる場所の一言は、下のボタンの名前と重なるので出さない）
