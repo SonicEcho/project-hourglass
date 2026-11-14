@@ -566,7 +566,7 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱とラジオの所
     hunt: {
       gathers: [
-        { id: 'a21_gather_left', room: 'factory_yard', cell: [4, 3], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id] },
+        { id: 'a21_gather_left', room: 'factory_yard', cell: [4, 3], items: [ITEMS.rustyScrew.id, ITEMS.tubeGlass.id], gears: ['comboBoost'] },
         { id: 'a21_gather_right', cell: [19, 12], items: [ITEMS.abacusBead.id, ITEMS.wornGear.id] },
         { id: 'a21_gather_radio', cell: [11, 27], items: [ITEMS.tubeGlass.id] },
         { id: 'a21_gather_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.rustyScrew.id, ITEMS.filament.id] },
@@ -629,7 +629,7 @@ export const AREAS: Record<string, AreaDef> = {
       { on: 'koma', count: 3, scene: 'a21_koma3' },
       { on: 'koma', count: 4, scene: 'a21_koma4' },
       { on: 'koma', count: 5, scene: 'a21_koma5' },
-      { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate', gears: ['armorPierce'] },
+      { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
       { on: 'koma', count: 6, scene: 'a21_koma6' },
       { on: 'koma', count: 7, scene: 'a21_koma7' },
       // あとコマが1つの時（台本の「あと{komaLeft}つ」に本当の数が入る。段階28）
@@ -674,9 +674,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（渡り廊下）は出ないので、番人の戦闘は教室の表に入れる
     hunt: {
       gathers: [
-        { id: 'a22_gather_stall', room: 'school_courtyard', cell: [20, 17], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id] },
-        { id: 'a22_gather_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id] },
-        { id: 'a22_gather_haunted', room: 'school_classroom', cell: [19, 5], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id] },
+        { id: 'a22_gather_stall', room: 'school_courtyard', cell: [20, 17], items: [ITEMS.photoSticker.id, ITEMS.phoneStrap.id], gears: ['powerMemory'] },
+        { id: 'a22_gather_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id], gears: ['mpMemory2'] },
+        { id: 'a22_gather_haunted', room: 'school_classroom', cell: [19, 5], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id], gears: ['guardMemory'] },
       ],
       tables: {
         school_gate: ['a22_n1_gate', 'a22_n1_gate2'],
@@ -733,7 +733,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む（段階82）
     triggers: [
       { on: 'koma', count: 1, scene: 'a22_first_koma' },
-      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 19], scene: 'a22_checkpoint', gears: ['shellCrack'] },
+      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 19], scene: 'a22_checkpoint' },
       { on: 'koma', count: 2, scene: 'a22_koma2' },
       { on: 'koma', count: 3, scene: 'a22_koma3' },
       { on: 'koma', count: 4, scene: 'a22_koma4' },
@@ -781,8 +781,8 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（売店の上）は出ないので、番人の戦闘は売店の表に入れる
     hunt: {
       gathers: [
-        { id: 'a23_gather_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id] },
-        { id: 'a23_gather_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id] },
+        { id: 'a23_gather_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.ballSeam.id, ITEMS.jugIce.id], gears: ['splash'] },
+        { id: 'a23_gather_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id], gears: ['mirrorGuard'] },
         { id: 'a23_gather_shed', room: 'riverside_shed', cell: [6, 4], items: [ITEMS.ballSeam.id, ITEMS.petEgg.id] },
       ],
       tables: {
@@ -838,7 +838,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む（段階85）
     triggers: [
       { on: 'koma', count: 1, scene: 'a23_first_koma' },
-      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 18], scene: 'a23_checkpoint', gears: ['splash'] },
+      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 18], scene: 'a23_checkpoint' },
       { on: 'koma', count: 2, scene: 'a23_koma2' },
       { on: 'koma', count: 3, scene: 'a23_koma3' },
       { on: 'koma', count: 4, scene: 'a23_koma4' },
@@ -885,7 +885,7 @@ export const AREAS: Record<string, AreaDef> = {
     boss: { id: 'a23x_shelf', room: 'archive_stacks', cell: [11, 7], battle: 'a23x_kai', label: '砂時計' },
     talkers: [{ id: 'a23x_door', room: 'archive_vault', cell: [17, 5], scene: 'a23x_door', label: '黒い扉' }],
     triggers: [
-      { on: 'checkpoint', room: 'archive_reading', cell: [11, 17], scene: 'a23x_reading', gears: ['mirrorGuard'] },
+      { on: 'checkpoint', room: 'archive_reading', cell: [11, 17], scene: 'a23x_reading' },
       { on: 'boss', scene: 'a23x_found' },
       { on: 'cleared', scene: 'a23x_escape' },
     ],
@@ -924,9 +924,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人（実家の門）は出ないので、番人の戦闘は実家の庭の表に入れる
     hunt: {
       gathers: [
-        { id: 'a31_gather_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id] },
-        { id: 'a31_gather_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id] },
-        { id: 'a31_gather_river', room: 'village_river', cell: [13, 5], items: [ITEMS.coilAsh.id, ITEMS.radioDial.id] },
+        { id: 'a31_gather_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.fanBlade.id, ITEMS.coilAsh.id], gears: ['timeKeeper'] },
+        { id: 'a31_gather_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id], gears: ['reckless'] },
+        { id: 'a31_gather_river', room: 'village_river', cell: [13, 5], items: [ITEMS.coilAsh.id, ITEMS.radioDial.id], gears: ['hpMemory2'] },
       ],
       tables: {
         village_station: ['a31_n1_station', 'a31_n1_square'],
@@ -984,7 +984,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a31_first_koma', gears: ['fairBond'] },
-      { on: 'checkpoint', room: 'village_paddy', cell: [10, 14], scene: 'a31_checkpoint', gears: ['timeKeeper', 'reckless', 'hpMemory2'] },
+      { on: 'checkpoint', room: 'village_paddy', cell: [10, 14], scene: 'a31_checkpoint' },
       { on: 'koma', count: 2, scene: 'a31_koma2' },
       { on: 'koma', count: 3, scene: 'a31_koma3' },
       { on: 'koma', count: 4, scene: 'a31_koma4' },
@@ -1030,9 +1030,9 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘は商店街の表に入れる
     hunt: {
       gathers: [
-        { id: 'a32_gather_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id] },
-        { id: 'a32_gather_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id] },
-        { id: 'a32_gather_levee', room: 'grad_levee', cell: [2, 2], items: [ITEMS.earphoneCord.id, ITEMS.diplomaCap.id] },
+        { id: 'a32_gather_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.diplomaCap.id, ITEMS.tapiocaPearl.id], gears: ['breakTime'] },
+        { id: 'a32_gather_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id], gears: ['magicMemory'] },
+        { id: 'a32_gather_levee', room: 'grad_levee', cell: [2, 2], items: [ITEMS.earphoneCord.id, ITEMS.diplomaCap.id], gears: ['effectBoost'] },
       ],
       tables: {
         grad_slope: ['a32_n1_gate', 'a32_n1_slope', 'a32_n1_tree', 'a32_n1_bus'],
@@ -1089,7 +1089,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a32_first_koma' },
-      { on: 'checkpoint', room: 'grad_slope', cell: [13, 16], scene: 'a32_checkpoint', gears: ['magicMemory', 'effectBoost', 'breakTime'] },
+      { on: 'checkpoint', room: 'grad_slope', cell: [13, 16], scene: 'a32_checkpoint' },
       { on: 'room', room: 'grad_gym_back', scene: 'a32_gym' },
       { on: 'koma', count: 2, scene: 'a32_koma2' },
       { on: 'koma', count: 3, scene: 'a32_koma3' },
@@ -1133,7 +1133,7 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a3k_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3k_voice_ondo', label: '音頭取り' },
     ],
     triggers: [
-      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3k_stalls', gears: ['comboBoost', 'powerMemory'] },
+      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3k_stalls' },
       { on: 'boss', scene: 'a3k_dark' },
       { on: 'cleared', scene: 'a3k_fireworks' },
     ],
@@ -1170,8 +1170,8 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘はあぜ道の表に入れる
     hunt: {
       gathers: [
-        { id: 'a41_gather_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.melonRind.id, ITEMS.cageMesh.id] },
-        { id: 'a41_gather_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.pumpHandle.id, ITEMS.fireworkStick.id] },
+        { id: 'a41_gather_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.melonRind.id, ITEMS.cageMesh.id], gears: ['longTake'] },
+        { id: 'a41_gather_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.pumpHandle.id, ITEMS.fireworkStick.id], gears: ['finder'] },
         { id: 'a41_gather_canal', room: 'summer_canal', cell: [5, 4], items: [ITEMS.cageMesh.id, ITEMS.pumpHandle.id] },
       ],
       tables: {
@@ -1224,7 +1224,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a41_first_koma' },
-      { on: 'checkpoint', room: 'summer_garden', cell: [9, 9], scene: 'a41_checkpoint', gears: ['longTake', 'finder'] },
+      { on: 'checkpoint', room: 'summer_garden', cell: [9, 9], scene: 'a41_checkpoint' },
       { on: 'koma', count: 2, scene: 'a41_koma2' },
       { on: 'koma', count: 3, scene: 'a41_koma3' },
       { on: 'koma', count: 4, scene: 'a41_koma4' },
@@ -1271,8 +1271,8 @@ export const AREAS: Record<string, AreaDef> = {
     // 狩り（段階43）：採取の場所は、1回目の宝箱の所。番人は出ないので、番人の戦闘は通りの表に入れる
     hunt: {
       gathers: [
-        { id: 'a42_gather_clock', cell: [18, 30], items: [ITEMS.balloonPaper.id, ITEMS.cubeTile.id] },
-        { id: 'a42_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.gameButton.id, ITEMS.cuckooBird.id] },
+        { id: 'a42_gather_clock', cell: [18, 30], items: [ITEMS.balloonPaper.id, ITEMS.cubeTile.id], gears: ['pinpointFocus'] },
+        { id: 'a42_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.gameButton.id, ITEMS.cuckooBird.id], gears: ['startDash'] },
         { id: 'a42_gather_shop', room: 'opening_shop', cell: [4, 17], items: [ITEMS.cuckooBird.id, ITEMS.balloonPaper.id] },
       ],
       tables: {
@@ -1323,7 +1323,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a42_first_koma' },
-      { on: 'checkpoint', cell: [16, 23], scene: 'a42_checkpoint', gears: ['pinpointFocus', 'startDash'] },
+      { on: 'checkpoint', cell: [16, 23], scene: 'a42_checkpoint' },
       { on: 'koma', count: 2, scene: 'a42_koma2' },
       { on: 'koma', count: 3, scene: 'a42_koma3' },
       { on: 'koma', count: 4, scene: 'a42_koma4' },
@@ -1368,7 +1368,7 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a3s_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3s_voice_ondo', label: '音頭取り' },
     ],
     triggers: [
-      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3s_stalls', gears: ['mpMemory2'] },
+      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3s_stalls' },
       { on: 'room', room: 'matsuri_yagura1', scene: 'a3s_dejavu' },
       { on: 'boss', scene: 'a3s_yagura' },
       { on: 'cleared', scene: 'a3s_rewind' },
@@ -1406,7 +1406,7 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     triggers: [
       { on: 'room', room: 'matsuri_stalls', scene: 'a3s_kuji' },
-      { on: 'checkpoint', room: 'matsuri_yagura', cell: [12, 14], scene: 'a3s_hundred', gears: ['guardMemory'] },
+      { on: 'checkpoint', room: 'matsuri_yagura', cell: [12, 14], scene: 'a3s_hundred' },
       { on: 'room', room: 'matsuri_edge', scene: 'a3s_riku_page' },
       { on: 'boss', scene: 'a3s_edge' },
       { on: 'cleared', scene: 'a3s_fireworks' },

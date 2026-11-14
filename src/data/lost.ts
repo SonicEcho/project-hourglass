@@ -17,7 +17,7 @@ export const LOST_ITEMS: LostItemDef[] = [
     kind: 'find',
     spot: { room: 'festival_night', cell: [16, 12] },
     deliverScene: 'lost_a11_deliver',
-    reward: { fragments: ['elation', 'elation', 'relief'], snaps: ['quickStep'] },
+    reward: { fragments: ['elation', 'elation', 'relief'], snaps: ['quickStep'], gears: ['armorPierce'] },
   },
   {
     id: 'a12_bell',
@@ -51,6 +51,6 @@ export const LOST_ITEMS: LostItemDef[] = [
     kind: 'bring',
     bring: { item: ITEMS.cassetteTape.id, count: 3 },
     deliverScene: 'lost_a22_deliver',
-    reward: { snaps: ['encore'], items: [ITEMS.ether.id] },
+    reward: { snaps: ['encore'], items: [ITEMS.ether.id], gears: ['shellCrack'] },
   },
 ];
