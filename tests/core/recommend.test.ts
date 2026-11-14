@@ -110,6 +110,24 @@ describe('星図のおすすめの道', () => {
     expect(seen.size).toBeGreaterThanOrEqual(5);
   });
 
+  it('ほかの仲間の星座の技は価値が半分（段階195）：同じ近さなら、だれの星座でもない技を目指す', () => {
+    const map = {
+      width: 500,
+      height: 500,
+      costs: GROWTH_MAP.costs,
+      nodes: [
+        { id: 'h', x: 250, y: 250, con: 'A', kind: 'start' as const, owner: 'hero' },
+        { id: 'k', x: 400, y: 250, con: 'B', kind: 'start' as const, owner: 'akari' },
+        { id: 'sB', x: 300, y: 250, con: 'B', kind: 'skill' as const, skillId: 'guardSong' },
+        { id: 'sC', x: 200, y: 250, con: 'C', kind: 'skill' as const, skillId: 'shuffle' },
+      ],
+      edges: [['h', 'sB'], ['h', 'sC'], ['sB', 'k']] as [string, string][],
+    };
+    const g = createGrowth(map, ['hero', 'akari'], 0);
+    expect(recommendStar(map, g, PARTY[0], GROWTH_RECOMMEND)!.target.id).toBe('sC');
+    expect(recommendStar(map, g, PARTY[0], { ...GROWTH_RECOMMEND, away: 1 })!.target.id).toBe('sB');
+  });
+
   it('自分の星座の、まだ覚えていない魔法・スキルが近ければ、それを目指す', () => {
     const g = createGrowth(GROWTH_MAP, ids, 0);
     const advice = recommendStar(GROWTH_MAP, g, PARTY[0], GROWTH_RECOMMEND, 1)!;

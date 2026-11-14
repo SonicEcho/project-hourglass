@@ -272,7 +272,8 @@ export const GROWTH_MAP: GrowthMap = buildMap();
  * まだ覚えていない魔法・スキル ＞ 大きな能力値 ＞ 能力値。その仲間の星座（出発点のある星座）の星は home 倍
  */
 // 段階194：技・特性の手前に能力値の星をはさんだので、技までの値段が上がった。技を目指すよう、技と特性の価値を上げた（10 → 14、特性 12）
-export const GROWTH_RECOMMEND: StarValues = { stat: 3, statBig: 7, skill: 14, trait: 12, home: 1.5 };
+// 段階195：ほかの仲間の星座の技と特性は、価値を半分に（自分の技を取り終えるまで、ほかの仲間の技を目指さない）
+export const GROWTH_RECOMMEND: StarValues = { stat: 3, statBig: 7, skill: 14, trait: 12, home: 1.5, away: 0.5 };
 
 /** 周回の始めに持っている星の砂（段階62で 3→8。最初の魔法・スキルを1つ開けられる） */
 export const START_MEMORY_POINTS = 8;

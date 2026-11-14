@@ -36,6 +36,8 @@ export interface StarValues {
   trait: number;
   /** その仲間の星座（出発点のある星座）の星の価値に掛ける */
   home: number;
+  /** ほかの仲間の星座の技と特性の価値に掛ける（段階195。自分の技を取り終えるまで、ほかの仲間の技を目指さない） */
+  away?: number;
 }
 
 export interface StarAdvice {
@@ -48,7 +50,7 @@ export interface StarAdvice {
 }
 
 /** 星の価値（もう覚えた魔法・スキルと出発点は 0） */
-function starValue(map: GrowthMap, growth: GrowthState, base: CharacterDef, node: GrowthNodeDef, values: StarValues, home: string | undefined): number {
+function starValue(map: GrowthMap, growth: GrowthState, base: CharacterDef, node: GrowthNodeDef, values: StarValues, home: string | undefined, others: Set<string>): number {
   const v =
     node.kind === 'stat'
       ? values.stat
@@ -59,7 +61,8 @@ function starValue(map: GrowthMap, growth: GrowthState, base: CharacterDef, node
           : node.kind === 'trait'
             ? values.trait
             : 0;
-  return v * (home && node.con === home ? values.home : 1);
+  const away = (node.kind === 'skill' || node.kind === 'trait') && node.con !== undefined && others.has(node.con) ? (values.away ?? 1) : 1;
+  return v * (home && node.con === home ? values.home : 1) * away;
 }
 
 /**
@@ -68,6 +71,7 @@ function starValue(map: GrowthMap, growth: GrowthState, base: CharacterDef, node
  */
 export function recommendStar(map: GrowthMap, growth: GrowthState, base: CharacterDef, values: StarValues, chapter = Infinity): StarAdvice | null {
   const home = map.nodes.find((n) => n.kind === 'start' && n.owner === base.id)?.con;
+  const others = new Set(map.nodes.flatMap((n) => (n.kind === 'start' && n.owner !== base.id && n.con && n.con !== home ? [n.con] : [])));
   const dist = new Map<string, number>();
   const prev = new Map<string, string | null>();
   const queue: string[] = [];
@@ -97,7 +101,7 @@ export function recommendStar(map: GrowthMap, growth: GrowthState, base: Charact
   for (const node of map.nodes) {
     const cost = dist.get(node.id);
     if (cost === undefined || cost === 0 || isOpened(growth, base.id, node.id)) continue;
-    const score = starValue(map, growth, base, node, values, home) / cost;
+    const score = starValue(map, growth, base, node, values, home, others) / cost;
     if (score <= 0) continue;
     if (!best || score > best.score || (score === best.score && cost < best.cost)) best = { node, score, cost };
   }
