@@ -1,3 +1,4 @@
+import type { ChainMove, ChainPassive } from './chain';
 /** 属性。物理・火・氷・雷の4種類 */
 export type Element = 'physical' | 'fire' | 'ice' | 'thunder';
 
@@ -133,9 +134,12 @@ export interface CharacterDef {
   id: string;
   name: string;
   stats: Stats;
-  skills: SkillDef[];
+  /** 技（段階193：新しい戦闘の技。最初から持つ物と、星図で覚えた物） */
+  skills: ChainMove[];
   /** 特性（ムーブメント・武器で付く） */
   passives?: PassiveEffect[];
+  /** 星図の特性の星（段階193。新しい戦闘の特性のまま渡す） */
+  traits?: ChainPassive[];
   /** 通常攻撃の属性（武器の進化で変わる。なければ物理） */
   attackElement?: Element;
 }

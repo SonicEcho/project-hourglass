@@ -2,7 +2,7 @@ import { DROP_RATES } from '../data/constants';
 import { countOf, getAddError, type AlbumState } from './album';
 import { availableLinks, chainGrade, chainVitals, isChainFinish, type ChainAllyDef, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVariant, type ChainVitals } from './chain';
 import { nextRandom } from './rng';
-import type { CharacterDef, DamageType, Element, EnemyDef, SkillDef } from './types';
+import type { CharacterDef, DamageType, Element, EnemyDef } from './types';
 
 // 新しい戦闘（並べてつなぐ戦闘）を本番で使うための変換（段階158。docs/milestones/M3_battle_migration.md の段階B）。
 // 本番の仲間（星図・武器・ムーブメントを反映した CharacterDef）と本番の敵（EnemyDef）を、新しい戦闘の仲間と敵に変える。
@@ -18,45 +18,6 @@ function chainElement(t: DamageType): Element {
   return t === 'magic' ? 'physical' : t;
 }
 
-/**
- * 本番の技（星図で覚える魔法・スキル）を、新しい戦闘の技にする。MP はそのまま。
- * ダメージ（同じ属性が並ぶ物は連続攻撃に）・回復・手札に触れる技（段階164）を変える。どれでもない技は null
- */
-export function chainMoveFromSkill(skill: SkillDef): ChainMove | null {
-  const dmg = skill.effects.filter((e) => e.kind === 'damage');
-  const heal = skill.effects.find((e) => e.kind === 'heal');
-  const weight = chainWeight(skill.weight);
-  if (dmg.length && dmg[0].kind === 'damage') {
-    const first = dmg[0];
-    const element = chainElement(first.type);
-    const hits = dmg.length;
-    const target = skill.target === 'enemies' ? 'enemies' : 'enemy';
-    const label = element === 'physical' ? '物理' : element === 'fire' ? '火' : element === 'ice' ? '氷' : '雷';
-    return {
-      id: skill.id,
-      name: skill.name,
-      type: 'attack',
-      weight,
-      target,
-      effect: { kind: 'damage', element, power: first.power, ...(hits > 1 ? { hits } : {}) },
-      text: `${target === 'enemies' ? '敵全体' : '敵1体'}に${label}${first.power}${hits > 1 ? `を${hits}回` : ''}`,
-      mp: skill.mp,
-    };
-  }
-  // 手札に触れる技（段階164）：ひらめき（引く）・シャッフル（引き直す）・すりかえ（捨て札から戻す）。効くのは次のラウンドの手札
-  const hand = skill.effects.find((e) => e.kind === 'draw' || e.kind === 'redraw' || e.kind === 'retrieve');
-  if (hand) {
-    const effect = hand.kind === 'draw' ? { kind: 'draw' as const, count: hand.count } : hand.kind === 'redraw' ? { kind: 'cycle' as const } : { kind: 'retrieve' as const };
-    const text = hand.kind === 'draw' ? `スナップを${hand.count}枚引く（次のラウンドの手札に）` : hand.kind === 'redraw' ? '残った手札を山札に戻して、同じ枚数引き直す' : '最後に使ったスナップを1枚、手札に戻す';
-    return { id: skill.id, name: skill.name, type: 'support', weight, target: 'allies', effect, text, mp: skill.mp };
-  }
-  if (heal && heal.kind === 'heal') {
-    // 新しい戦闘の回復は味方全体。1人向けの回復は、全体に直す分だけ半分に
-    const power = skill.target === 'ally' ? Math.round(heal.power / 2) : heal.power;
-    return { id: skill.id, name: skill.name, type: 'support', weight, target: 'allies', effect: { kind: 'heal', power }, text: `味方全体の HP を回復（${power}）`, mp: skill.mp };
-  }
-  return null;
-}
 
 /** 通常攻撃（どの仲間も持つ。MP なし）。武器の進化で属性が乗る */
 export function chainBasicAttack(element: Element = 'physical'): ChainMove {
@@ -80,8 +41,9 @@ export function chainPassives(c: CharacterDef): ChainPassive[] {
 
 /** 本番の仲間を、新しい戦闘の仲間にする */
 export function chainAllyFromCharacter(c: CharacterDef): ChainAllyDef {
-  const moves = [chainBasicAttack(c.attackElement), ...c.skills.map(chainMoveFromSkill).filter((m): m is ChainMove => !!m)];
-  return { id: c.id, name: c.name, hp: c.stats.hp, mp: c.stats.mp, atk: c.stats.atk, mag: c.stats.mag, def: c.stats.def, moves, passives: chainPassives(c) };
+  // 段階194：技は新しい戦闘の技のまま（星図の技）。星図の特性の星も、そのまま渡す
+  const moves = [chainBasicAttack(c.attackElement), ...c.skills];
+  return { id: c.id, name: c.name, hp: c.stats.hp, mp: c.stats.mp, atk: c.stats.atk, mag: c.stats.mag, def: c.stats.def, moves, passives: [...chainPassives(c), ...(c.traits ?? [])] };
 }
 
 /**

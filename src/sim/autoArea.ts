@@ -1,7 +1,7 @@
 import type { ArmoryState, CharacterDef, GrowthState, Lineup, NaviState } from '../core';
 import { applyGrowth, applyNavi, applyWeapons, battleLineup, createArmory, createGrowth, createNavi, lineupAt, naviDataWithWeapons } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, SKILLS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CHAPTER1_LINEUP, GROWTH_MAP, NAVI_DATA, PARTY, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 
 // 区画と育ち具合の道具（段階27 からの区画の自動対戦の残り）。段階192（段階G2）で古い戦闘を外した時に、古い戦闘で区画を通す自動対戦は外し、
 // 育ち具合（presets.ts の表）を仲間の能力値にする所と、区画の戦闘の並び・章の並びだけを残した
@@ -39,7 +39,7 @@ export function newCarry(): Carry {
 
 /** 育ち具合を反映した仲間（星図・ムーブメント・武器） */
 export function grownParty(growth: GrowthState, armory: ArmoryState, members: CharacterDef[], navi: NaviState | null): CharacterDef[] {
-  const grown = applyGrowth(GROWTH_MAP, growth, members, SKILLS);
+  const grown = applyGrowth(GROWTH_MAP, growth, members, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES);
   const withNavi = navi ? applyNavi(naviDataWithWeapons(NAVI_DATA, WEAPON_DATA, armory), navi, grown) : grown;
   return applyWeapons(WEAPON_DATA, armory, withNavi);
 }

@@ -32,6 +32,8 @@ export interface StarValues {
   stat: number;
   statBig: number;
   skill: number;
+  /** 特性の星（段階194） */
+  trait: number;
   /** その仲間の星座（出発点のある星座）の星の価値に掛ける */
   home: number;
 }
@@ -54,7 +56,9 @@ function starValue(map: GrowthMap, growth: GrowthState, base: CharacterDef, node
         ? values.statBig
         : node.kind === 'skill' && !knownSkillIds(map, growth, base).includes(node.skillId)
           ? values.skill
-          : 0;
+          : node.kind === 'trait'
+            ? values.trait
+            : 0;
   return v * (home && node.con === home ? values.home : 1);
 }
 

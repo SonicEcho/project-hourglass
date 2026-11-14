@@ -14,7 +14,7 @@ import {
   NAVI_PARTS,
   NAVI_REWARD_CANDIDATES,
   PARTY,
-  SKILLS,
+  CHAIN_SKILLS,
   START_NAVI_PARTS,
   STORY,
   WEAPON_DATA,
@@ -30,7 +30,7 @@ const enemies: EnemyDef[] = battles.flatMap((b) => b.enemies);
 describe('名前（id）がそろっている', () => {
   it.each([
     ['スナップ', CARDS],
-    ['魔法・スキル', SKILLS],
+    ['技', CHAIN_SKILLS],
     ['ギア', NAVI_PARTS],
     ['素材・アイテム', ITEMS],
     ['記憶の欠片', FRAGMENTS],
@@ -88,9 +88,9 @@ describe('参照している名前が本当にある', () => {
   });
 
   it('仲間の最初の魔法・スキルと、星図のマスの魔法・スキル・出発点', () => {
-    for (const c of PARTY) for (const s of c.skills) expect(SKILLS[s.id as keyof typeof SKILLS], `${c.name}：${s.id}`).toBe(s);
+    for (const c of PARTY) for (const s of c.skills) expect(CHAIN_SKILLS[s.id as keyof typeof CHAIN_SKILLS], `${c.name}：${s.id}`).toBe(s);
     for (const n of GROWTH_MAP.nodes) {
-      if (n.kind === 'skill') expect(has(SKILLS, n.skillId), n.id).toBe(true);
+      if (n.kind === 'skill') expect(has(CHAIN_SKILLS, n.skillId), n.id).toBe(true);
       if (n.kind === 'start') expect(partyIds, n.id).toContain(n.owner);
     }
     // 出発点は仲間1人に1つ

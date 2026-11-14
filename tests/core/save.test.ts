@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RunSnapshot, SaveContext } from '../../src/core';
 import {
+  refundV13Growth,
   createLibrary,
   recordLibraryBattle,
   recordLibraryFinds,
@@ -205,7 +206,21 @@ describe('セーブ：古い版から直す', () => {
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.save.version).toBe(SAVE_VERSION);
-    expect(res.save.run.growth.points).toBe(playedRun().growth.points + 5);
+    // 段階194：版13 → 版14 で、開けた星の星の砂を返す
+    expect(res.save.run.growth.points).toBe(refundV13Growth(playedRun().growth.points + 5, playedRun().growth.opened).points);
+  });
+
+  it('版13のセーブ（段階194 で星図を入れ替える前）は、開けた星の星の砂を全部返して、星図をまっさらにする', () => {
+    const v13 = JSON.parse(serializeSave(playedRun(), AT));
+    v13.version = 13;
+    // ハルト：ダブルスラッシュ（8）・ファイア（元から覚えている。3）・攻撃（3）。あかり：大きい能力値（6）。みお：ハルトの出発点（3）
+    v13.run.growth = { points: 10, opened: { hero: ['altair', 'tarazed', 'alshain', 'muAql'], akari: ['vega', 'sadr'], mio: ['sualocin', 'altair'] } };
+    const res = parseSave(JSON.stringify(v13), ctx);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.save.run.growth.points).toBe(10 + 8 + 3 + 3 + 6 + 3);
+    expect(res.save.run.growth.opened.hero).toEqual(['altair']);
+    expect(res.save.run.growth.opened.akari).toEqual(['vega']);
   });
 
   it('版1・2のセーブ（試作の5戦だけ）は、古い版として読まない（段階23で引き継がないと決めた）', () => {

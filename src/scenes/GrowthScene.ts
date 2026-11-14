@@ -1,12 +1,10 @@
 import Phaser from 'phaser';
-import type { CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
+import type { ChainMove, CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
 import { canEvolveAny, chapterLocked, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, SKILLS, STORY, WEAPON_DATA } from '../data';
-import { describeAction } from '../ui/describe';
+import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, STORY, WEAPON_DATA } from '../data';
 import { describePart, partKindText } from '../ui/naviText';
 import { drawPartShape } from '../ui/naviViews';
-import { weightLabel } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -53,19 +51,8 @@ const STAT_COLOR: Record<StatKey, number> = {
   def: 0x9aa5b1,
   spd: 0xffc83a,
 };
-/** マスに書く魔法・スキルの短い名前 */
-const SKILL_SHORT: Record<string, string> = {
-  fire: 'ファイア',
-  fira: 'ファイラ',
-  ice: 'アイス',
-  blizzara: 'ブリザラ',
-  thunder: 'サンダー',
-  thundara: 'サンダラ',
-  care: 'ケア',
-  cure: 'ケアル',
-  doubleSlash: 'Wスラッシュ',
-  inspiration: 'ひらめき',
-};
+/** 特性の星の色（段階194） */
+const TRAIT_COLOR = 0x7fe3c4;
 
 
 export class GrowthScene extends Phaser.Scene {
@@ -496,7 +483,11 @@ export class GrowthScene extends Phaser.Scene {
     } else if (n.kind === 'skill') {
       color = 0xffd76a;
       r = 10;
-      label = SKILL_SHORT[n.skillId] ?? n.skillId;
+      label = skillOf(n.skillId)?.name ?? n.skillId;
+    } else if (n.kind === 'trait') {
+      color = TRAIT_COLOR;
+      r = 9;
+      label = CHAIN_TRAIT_STARS[n.traitId]?.name ?? n.traitId;
     } else {
       color = STAT_COLOR[n.stat];
       r = n.kind === 'statBig' ? 8.5 : 6;
@@ -518,6 +509,10 @@ export class GrowthScene extends Phaser.Scene {
         [[x, y - a], [x + w, y - w], [x + a, y], [x + w, y + w], [x, y + a], [x - w, y + w], [x - a, y], [x - w, y - w]].map(([px, py]) => new Phaser.Math.Vector2(px, py)),
         true,
       );
+    } else if (n.kind === 'trait') {
+      // 特性の星（段階194）：ひし形の枠
+      shape.fillStyle(0x0b1020, alpha).fillPoints([[x, y - r], [x + r, y], [x, y + r], [x - r, y]].map(([px, py]) => new Phaser.Math.Vector2(px, py)), true);
+      shape.lineStyle(3, color, alpha).strokePoints([[x, y - r], [x + r, y], [x, y + r], [x - r, y]].map(([px, py]) => new Phaser.Math.Vector2(px, py)), true);
     } else {
       shape.fillStyle(color, alpha).fillCircle(x, y, r);
       shape.fillStyle(0xffffff, alpha).fillCircle(x, y, r * 0.45);
@@ -532,7 +527,7 @@ export class GrowthScene extends Phaser.Scene {
     layer.add(shape);
     layer.add(
       addText(this, x, y + r + 11, label, {
-        size: n.kind === 'start' || n.kind === 'skill' ? 11 : 10,
+        size: n.kind === 'start' || n.kind === 'skill' || n.kind === 'trait' ? 11 : 10,
         bold: opened || openable,
         color: opened || openable ? '#e8eefc' : '#a9bbd0',
       }).setOrigin(0.5).setAlpha(Math.max(0.7, alpha)),
@@ -566,7 +561,7 @@ export class GrowthScene extends Phaser.Scene {
         advice
           ? `おすすめ：${nodeTitle(advice.target, base)}（金の道・あと${advice.cost}pt）`
           : `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
-        `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}　速さ ${grown.stats.spd}`,
+        `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}`,
       ];
       const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
@@ -725,31 +720,43 @@ function nodeTitle(n: GrowthNodeDef, base: CharacterDef): string {
     const owner = lineupBase(hubLineup()).find((c) => c.id === n.owner);
     return owner ? `${owner.name}の出発点` : 'まだいない仲間の出発点';
   }
-  if (n.kind === 'skill') return SKILLS[n.skillId as keyof typeof SKILLS]?.name ?? n.skillId;
+  if (n.kind === 'skill') return skillOf(n.skillId)?.name ?? n.skillId;
+  if (n.kind === 'trait') return `特性：${CHAIN_TRAIT_STARS[n.traitId]?.name ?? n.traitId}`;
   return `${STAT_LABEL[n.stat]}+${n.amount}${n.kind === 'statBig' ? '（大）' : ''}`;
 }
 
 function nodeDetail(n: GrowthNodeDef, base: CharacterDef): string {
   if (n.kind === 'start') return n.owner === base.id ? 'ここから駒を進める' : '他のキャラの出発点。通るだけ（効果なし）';
   if (n.kind === 'skill') {
-    const def = SKILLS[n.skillId as keyof typeof SKILLS];
+    const def = skillOf(n.skillId);
     if (!def) return '';
     const known = currentParty(hubLineup())
       .find((c) => c.id === base.id)
       ?.skills.some((k) => k.id === def.id);
-    return `${known ? '（もう覚えている。通るだけ）\n' : ''}MP${def.mp}　${describeAction(def)}　${weightLabel(def.weight)}`;
+    return `${known ? '（もう覚えている。通るだけ）\n' : ''}技　MP${def.mp}・重さ${def.weight}　${def.text}`;
   }
+  if (n.kind === 'trait') return `${base.name}の特性：${CHAIN_TRAIT_STARS[n.traitId]?.text ?? ''}`;
   return `${base.name}の${STAT_LABEL[n.stat]}が${n.amount}上がる`;
 }
 
 function characterDetail(c: CharacterDef, base: CharacterDef): string {
   const diff = (k: StatKey) => (c.stats[k] > base.stats[k] ? `（+${c.stats[k] - base.stats[k]}）` : '');
-  const keys: StatKey[] = ['hp', 'mp', 'atk', 'mag', 'def', 'spd'];
+  // 段階194：新しい戦闘に速さはないので出さない。技と、星図の特性
+  const keys: StatKey[] = ['hp', 'mp', 'atk', 'mag', 'def'];
+  const traitNames = Object.entries(CHAIN_TRAIT_STARS)
+    .filter(([, t]) => (c.traits ?? []).includes(t.passive))
+    .map(([, t]) => t.name);
   return [
     keys.map((k) => `${STAT_LABEL[k]} ${c.stats[k]}${diff(k)}`).join('　'),
     '',
-    `魔法・スキル：${c.skills.map((k) => k.name).join('、')}`,
+    `技：${c.skills.map((k) => k.name).join('、')}`,
+    ...(traitNames.length ? [`特性：${traitNames.join('、')}`] : []),
   ].join('\n');
+}
+
+/** 星図の技（段階194：新しい戦闘の技） */
+function skillOf(id: string): ChainMove | undefined {
+  return (CHAIN_SKILLS as Record<string, ChainMove>)[id];
 }
 
 /** 点線（段階56。星座と星座をつなぐ橋、将来の星座への道） */

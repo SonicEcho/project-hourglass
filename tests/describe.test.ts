@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ActionDef } from '../src/core';
-import { CARDS, SKILLS } from '../src/data';
+import { CARDS } from '../src/data';
 import { targetNote } from '../src/ui/describe';
 
 // 段階125（レビューの項目19）：相手が先に倒れた時の説明を、core の動き（向け直し・回復の不発）と合わせる
 
 describe('相手が先に倒れた時の説明', () => {
-  const all = [...Object.values(CARDS), ...Object.values(SKILLS)] as ActionDef[];
+  const all = [...Object.values(CARDS)] as ActionDef[];
 
   it('敵単体の攻撃は向け直し、味方単体の回復は不発と書く', () => {
     const attack = all.find((d) => d.target === 'enemy' && d.effects.some((e) => e.kind === 'damage'))!;
