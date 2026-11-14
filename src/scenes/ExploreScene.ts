@@ -62,7 +62,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
@@ -304,7 +304,9 @@ export class ExploreScene extends Phaser.Scene {
             ? '記憶をたどる：砂嵐の名残とぬしから素材を集める。光る所をタップすると素材を拾える'
             : this.night > 0
               ? this.nightGuide()
-              : (area.goal?.guide ?? 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘')),
+              : (area.goal?.guide ?? 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘')) +
+        // 区画の予告（段階201）：入った時に、この先に多い性質と効くギア
+        (note || data.won || data.lost ? '' : this.traitForecast(false)),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
@@ -811,7 +813,7 @@ export class ExploreScene extends Phaser.Scene {
     }
     if (r.event.type === 'checkpoint') {
       playSe(this, SE.heal);
-      this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。${storyLineup().unlocks.growth || storyLineup().unlocks.weapon ? '「休憩する」で育成できる' : ''}`);
+      this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。${storyLineup().unlocks.growth || storyLineup().unlocks.weapon ? '「休憩する」で育成できる' : ''}${this.traitForecast(true)}`);
       if (r.event.healed) this.refreshVitals();
     }
     if (this.atExit(cell)) this.say('光る砂時計：今夜はここまで\n下のボタンで時計屋へ帰る');
@@ -1199,6 +1201,18 @@ export class ExploreScene extends Phaser.Scene {
       box.add(this.add.rectangle(x, y, w, h, now ? 0xffd84a : 0x3a4a5a).setStrokeStyle(exit ? 3 : 1, exit ? 0xffb020 : now ? 0xffffff : 0x8a9aaa));
     }
     return box;
+  }
+
+  /**
+   * 区画の予告（段階201。一覧の 18-3）：この区画の砂嵐に多い性質と、効くギア。withBoss ならぬしの性質も。
+   * ムーブメントが開く前（1章）は出さない
+   */
+  private traitForecast(withBoss: boolean): string {
+    if (!storyLineup().unlocks.navi) return '';
+    const hints = areaTraitHints(this.area.id.replace(/^hunt_/, ''));
+    const name = (id: string) => NAVI_DATA.parts[id]?.name ?? id;
+    const lines = [traitHintLine('この先', hints.field, name), withBoss ? traitHintLine('ぬし', hints.boss, name) : ''].filter((x) => x);
+    return lines.length ? `\n${lines.join('\n')}` : '';
   }
 
   private say(text: string): void {

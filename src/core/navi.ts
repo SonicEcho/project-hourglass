@@ -57,7 +57,18 @@ export interface OwnedPart {
 export interface NaviState {
   parts: OwnedPart[];
   nextUid: number;
+  /** 保存した並べ方（段階201。仲間ごとに LOADOUT_MAX まで。空いている所は null） */
+  loadouts?: Record<string, (NaviLoadout | null)[]>;
 }
+
+/** 保存した盤の並べ方（段階201。一覧の 18-3）：名前と、はめたギア（持ち物の uid）と置き方 */
+export interface NaviLoadout {
+  name: string;
+  parts: { uid: number; col: number; row: number; rotation: Rotation }[];
+}
+
+/** 仲間1人が保存できる並べ方の数 */
+export const LOADOUT_MAX = 3;
 
 export interface NaviData {
   parts: Record<string, NaviPartDef>;
@@ -78,7 +89,7 @@ export function createNavi(partIds: string[]): NaviState {
 /** ギアを手に入れる（どの盤にもはめていない状態で加わる） */
 export function addParts(navi: NaviState, partIds: string[]): NaviState {
   const added = partIds.map((partId, i) => ({ uid: navi.nextUid + i, partId, placement: null }));
-  return { parts: [...navi.parts, ...added], nextUid: navi.nextUid + partIds.length };
+  return { ...navi, parts: [...navi.parts, ...added], nextUid: navi.nextUid + partIds.length };
 }
 
 /** 形を回転し、左上が [0, 0] になるようにそろえる */
@@ -141,6 +152,46 @@ export function isPartActive(data: NaviData, part: OwnedPart): boolean {
   if (def.kind === 'stat') return true;
   const board = data.boards[part.placement.charId];
   return placedCells(def, part.placement).some(([c]) => c === board.commandCol);
+}
+
+/** 今の盤の並べ方を、slot 番目に名前を付けて保存する（段階201） */
+export function saveLoadout(navi: NaviState, charId: string, slot: number, name: string): NaviState {
+  if (slot < 0 || slot >= LOADOUT_MAX) throw new Error('unknown slot');
+  const parts = boardParts(navi, charId).map((p) => ({ uid: p.uid, col: p.placement!.col, row: p.placement!.row, rotation: p.placement!.rotation }));
+  const list = [...(navi.loadouts?.[charId] ?? [])];
+  while (list.length < LOADOUT_MAX) list.push(null);
+  list[slot] = { name, parts };
+  return { ...navi, loadouts: { ...(navi.loadouts ?? {}), [charId]: list } };
+}
+
+/** 保存した並べ方に入っているギアのうち、今ほかの仲間の盤にはまっている物（段階201。付ける前に確かめる） */
+export function loadoutConflicts(navi: NaviState, charId: string, slot: number): OwnedPart[] {
+  const saved = navi.loadouts?.[charId]?.[slot];
+  if (!saved) return [];
+  return saved.parts.flatMap((sp) => navi.parts.filter((p) => p.uid === sp.uid && p.placement && p.placement.charId !== charId));
+}
+
+/**
+ * 保存した並べ方に付け替える（段階201）：その仲間の盤をいったん全部外し、保存したとおりに置く。
+ * ほかの仲間の盤にはまっているギアは、そこから外して付ける。もう持っていない・置けないギアは飛ばす（missing に数える）
+ */
+export function applyLoadout(data: NaviData, navi: NaviState, charId: string, slot: number): { navi: NaviState; missing: number } {
+  const saved = navi.loadouts?.[charId]?.[slot];
+  if (!saved) return { navi, missing: 0 };
+  let n: NaviState = { ...navi, parts: navi.parts.map((p) => (p.placement?.charId === charId ? { ...p, placement: null } : p)) };
+  let missing = 0;
+  for (const sp of saved.parts) {
+    const owned = n.parts.find((p) => p.uid === sp.uid);
+    if (!owned) {
+      missing++;
+      continue;
+    }
+    if (owned.placement) n = removePart(n, owned.uid);
+    const placement: Placement = { charId, col: sp.col, row: sp.row, rotation: sp.rotation };
+    if (getPlaceError(data, n, sp.uid, placement)) missing++;
+    else n = placePart(data, n, sp.uid, placement);
+  }
+  return { navi: n, missing };
 }
 
 /** 並びの仲間の盤で、ブリッジに乗っている絆のギアが開くコンボ（段階200） */

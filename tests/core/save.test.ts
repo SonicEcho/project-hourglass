@@ -393,6 +393,17 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(parts[3].placement).toBeNull();
   });
 
+  it('保存した並べ方（段階201）は、セーブを読み直しても残る（形の合わない物は捨てる）', () => {
+    const res = parseEdited((raw) => {
+      raw.run.navi.loadouts = { hero: [{ name: 'ボス用', parts: [{ uid: 0, col: 0, row: 0, rotation: 0 }, { uid: 'x', col: 1 }] }, null, 'broken'] };
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.save.run.navi.loadouts?.hero?.[0]).toEqual({ name: 'ボス用', parts: [{ uid: 0, col: 0, row: 0, rotation: 0 }] });
+    expect(res.save.run.navi.loadouts?.hero?.[1]).toBeNull();
+    expect(res.save.run.navi.loadouts?.hero?.[2]).toBeNull();
+  });
+
   it('版15のセーブ（段階200 でギアを入れ替える前）は、なくなったギアを近いギアに置き換えて盤から外す', () => {
     const v15 = JSON.parse(serializeSave(playedRun(), AT));
     v15.version = 15;
