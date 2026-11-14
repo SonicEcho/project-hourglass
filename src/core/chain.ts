@@ -138,6 +138,8 @@ export type ChainEffect =
       partMult?: number;
       /** かたいを無視（段階193。小夜子の「鎧通し」）：かたい敵の1発ごとの減りがない（バリアは割れるだけ） */
       pierceHard?: boolean;
+      /** 当てた後、ラウンドの終わりまで、味方全体の受けるダメージをこの割合で減らす（段階196。あかりの歌の杖の通常攻撃） */
+      guardAll?: number;
     }
   /** 添える札（調整17）：行動に添えて使う。重さ0で、手番も時間も使わない。1つの行動に addonMax 枚まで（フィニッシュ・コンボには付けられない） */
   | {
@@ -268,10 +270,38 @@ export type ChainPassive =
   | { kind: 'healBoost'; rate: number }
   | { kind: 'pushPlus'; count: number }
   | { kind: 'heavyBoost'; rate: number }
-  | { kind: 'timeMpSave'; amount: number };
+  | { kind: 'timeMpSave'; amount: number }
+  /**
+   * 段階196（武器の効果と型）：effectBoost エフェクト（添える札）の効き、climaxBoost クライマックスの威力、lightBoost 重さ1の行動の威力、
+   * fragileBoost 邪魔されなければ強い行動の威力、quickStart 最初のラウンドだけ通常攻撃の重さ −1（型「早」）
+   */
+  | { kind: 'effectBoost'; rate: number }
+  | { kind: 'climaxBoost'; rate: number }
+  | { kind: 'lightBoost'; rate: number }
+  | { kind: 'fragileBoost'; rate: number }
+  | { kind: 'quickStart'; count: number };
+
+/**
+ * 通常攻撃の形（段階196。武器が育つと変わる。docs/milestones/M3_catalog.md の 17-2）。
+ * hits 回数・push 押す・partMult 部位の倍率・pierceHard かたいを無視・heavy 重い一撃・healAll 当てると味方全体を回復（威力）・
+ * guardAll 当てると味方全体の守り（減る割合）・bestOf 敵ごとに一番効く属性・exposure 当てると露出補正・lighter 重さを減らす・fragile 邪魔されなければ威力がこの倍
+ */
+export interface ChainBasicMod {
+  hits?: number;
+  push?: number;
+  partMult?: number;
+  pierceHard?: boolean;
+  heavy?: boolean;
+  healAll?: number;
+  guardAll?: number;
+  bestOf?: Element[];
+  exposure?: number;
+  lighter?: number;
+  fragile?: number;
+}
 
 /** 割合の特性の上限（段階158。今の本番の PASSIVE_CAPS と同じ考え） */
-export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1, snapBoost: 0.5, healBoost: 0.6, pushPlus: 1, heavyBoost: 0.6, timeMpSave: 2 };
+export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1, snapBoost: 0.5, healBoost: 0.6, pushPlus: 1, heavyBoost: 0.6, timeMpSave: 2, effectBoost: 0.6, climaxBoost: 0.6, lightBoost: 0.6, fragileBoost: 0.6, quickStart: 1 };
 
 /** 重い技・札（段階193。重い技の威力の特性が効く重さ） */
 export const CHAIN_HEAVY_WEIGHT = 4;
@@ -1046,7 +1076,10 @@ export function chainMoveOf(s: ChainState, step: ChainPlanStep): ChainMove | nul
   const heat = m && s.def.heat ? (s.allies.find((a) => a.uid === step.ally)?.heat ?? 0) : 0;
   // 永遠の夏（段階188）：この戦闘の終わりまで、重さ −1（1より下がらない）
   const light = m && s.lighten && m.weight > 1 ? 1 : 0;
-  return m && (heat > 0 || light > 0) ? { ...m, weight: m.weight + heat - light } : m;
+  // 型「早」（段階196）：最初のラウンドだけ、通常攻撃の重さ −1（1より下がらない）
+  const me = m && m.id === 'basic' && s.round === 1 ? s.allies.find((a) => a.uid === step.ally) : undefined;
+  const quick = me && m!.weight - light > 1 && passiveSum(me, 'quickStart') > 0 ? 1 : 0;
+  return m && (heat > 0 || light > 0 || quick > 0) ? { ...m, weight: m.weight + heat - light - quick } : m;
 }
 
 function rawMoveOf(s: ChainState, step: ChainPlanStep): ChainMove | null {
@@ -1229,6 +1262,9 @@ interface HitOpts {
   /** 段階193：スナップ（札）の攻撃・重さ4以上の行動（特性が効く）、部位への倍率、かたいを無視 */
   card?: boolean;
   heavyMove?: boolean;
+  /** 段階196：重さ1の行動・邪魔されなければ強い行動（特性が効く） */
+  lightMove?: boolean;
+  fragileMove?: boolean;
   partMult?: number;
   pierceHard?: boolean;
 }
@@ -1329,6 +1365,10 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     // 段階193：スナップの威力・重い技の威力
     if (opts.card) mult *= 1 + passiveSum(actor, 'snapBoost');
     if (opts.heavyMove) mult *= 1 + passiveSum(actor, 'heavyBoost');
+    // 段階196：クライマックスの伸び・重さ1の行動・邪魔されなければ強い行動
+    if (opts.finish) mult *= 1 + passiveSum(actor, 'climaxBoost');
+    if (opts.lightMove) mult *= 1 + passiveSum(actor, 'lightBoost');
+    if (opts.fragileMove) mult *= 1 + passiveSum(actor, 'fragileBoost');
   }
   if (opts.partMult && chainEnemyDef(s, e.defId)?.part) mult *= opts.partMult;
   let raw = ((power + (opts.add ?? 0)) * stat) / Math.max(1, e.def);
@@ -1410,8 +1450,13 @@ function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[
   return t;
 }
 
-function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[], mods: ChainAddonMods = addonMods([]), at = 0, fromCard = false): PrevAct {
+function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[], mods0: ChainAddonMods = addonMods([]), at = 0, fromCard = false): PrevAct {
   const eff = move.effect;
+  // エフェクトの効き（段階196）：添えた札の アタック+・吸い取り・非常ベル・やり返す・守り が増える
+  const boost = passiveSum(actor, 'effectBoost');
+  const mods: ChainAddonMods = boost
+    ? { ...mods0, add: Math.round(mods0.add * (1 + boost)), drain: mods0.drain * (1 + boost), blast: Math.round(mods0.blast * (1 + boost)), riposte: Math.round(mods0.riposte * (1 + boost)), armor: Math.min(0.9, mods0.armor * (1 + boost)) }
+    : mods0;
   // 回復量の特性（段階193）
   const healRate = 1 + passiveSum(actor, 'healBoost');
   const ctx: ActCtx = { countered: new Set(), stuck: false };
@@ -1600,7 +1645,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   const add = mods.add + s.exposure;
   const hitsBefore = s.roundHits;
   const mark = ev.length;
-  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link', card: fromCard, heavyMove: move.weight >= CHAIN_HEAVY_WEIGHT, partMult: eff.partMult, pierceHard: eff.pierceHard };
+  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link', card: fromCard, heavyMove: move.weight >= CHAIN_HEAVY_WEIGHT, lightMove: move.weight <= 1, fragileMove: !!eff.fragile, partMult: eff.partMult, pierceHard: eff.pierceHard };
   const scaled = (e: ChainUnit): number => {
     if (!eff.scale) return 0;
     const unit = eff.scale.by === 'hits' ? hitsBefore : eff.scale.by === 'targetHits' ? (e.roundTaken ?? 0) : eff.scale.by === 'slotsLeft' ? Math.max(0, s.rules.roundLen - at) : s.roundSupports;
@@ -1669,6 +1714,13 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     if (heal > 0) {
       actor.hp += heal;
       ev.push({ type: 'drain', to: actor.uid, amount: heal });
+    }
+  }
+  // 当てると味方の守り（段階196。あかりの歌の杖の通常攻撃）：当たった時だけ
+  if (eff.guardAll && ev.slice(mark).some((x) => x.type === 'damage' && x.from === actor.uid)) {
+    for (const a of s.allies.filter((x) => x.hp > 0)) {
+      a.armor = Math.max(a.armor ?? 0, eff.guardAll);
+      ev.push({ type: 'allyArmor', uid: a.uid, armor: eff.guardAll });
     }
   }
   if (eff.healAll) {

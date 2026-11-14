@@ -1,5 +1,6 @@
 import type { NaviData, PartColor } from './navi';
 import { extendBoard } from './navi';
+import type { ChainBasicMod, ChainPassive } from './chain';
 import type { CharacterDef, Element, PassiveEffect, Stats } from './types';
 
 // 武器ビルドアップ（段階9）。Phaser に依存しない。
@@ -62,6 +63,8 @@ export interface EvolutionStyleDef {
   name: string;
   stats?: Partial<Stats>;
   passives?: PassiveEffect[];
+  /** 新しい戦闘の特性（段階196） */
+  traits?: ChainPassive[];
   /** 盤に足すマスの形：row はブリッジ（縦の列）の下へ、column は盤の右へ横に（2026-10-16 にブリッジを縦にした） */
   board: BoardExtension;
 }
@@ -98,6 +101,10 @@ export interface EvolutionDef {
   attackElement?: Element;
   /** 進化した時に付く特性 */
   passives?: PassiveEffect[];
+  /** 新しい戦闘の特性（段階196） */
+  traits?: ChainPassive[];
+  /** 通常攻撃の形（段階196。前の進化先の形に重ねる。docs/milestones/M3_catalog.md の 17-2） */
+  basic?: ChainBasicMod;
 }
 
 export interface WeaponDef {
@@ -491,13 +498,32 @@ export function applyWeapons(data: WeaponData, armory: ArmoryState, chars: Chara
       if (value > 0) passives.push({ kind: 'elementBoost', element: el, rate: value * data.elementRate });
     }
     let attackElement = c.attackElement;
+    const traits: ChainPassive[] = [...(c.traits ?? [])];
+    let basic = c.basic;
     for (const { evo, style } of pathSteps(data, w)) {
       for (const src of [evo.stats, style?.stats]) for (const [k, v] of Object.entries(src ?? {}) as [keyof Stats, number][]) stats[k] += v;
       passives.push(...(evo.passives ?? []), ...(style?.passives ?? []));
+      traits.push(...(evo.traits ?? []), ...(style?.traits ?? []));
+      if (evo.basic) basic = mergeBasic(basic, evo.basic);
       if (evo.attackElement) attackElement = evo.attackElement;
     }
-    return { ...c, stats, passives, attackElement };
+    return { ...c, stats, passives, attackElement, ...(traits.length ? { traits } : {}), ...(basic ? { basic } : {}) };
   });
+}
+
+/** 通常攻撃の形を重ねる（段階196。回数・押す・倍率などは大きい方、印はどちらか、一番効く属性は合わせる） */
+export function mergeBasic(a: ChainBasicMod | undefined, b: ChainBasicMod): ChainBasicMod {
+  if (!a) return { ...b };
+  const max = (x?: number, y?: number) => (x === undefined ? y : y === undefined ? x : Math.max(x, y));
+  const out: ChainBasicMod = {};
+  for (const k of ['hits', 'push', 'partMult', 'healAll', 'guardAll', 'exposure', 'lighter', 'fragile'] as const) {
+    const v = max(a[k], b[k]);
+    if (v !== undefined) out[k] = v;
+  }
+  if (a.pierceHard || b.pierceHard) out.pierceHard = true;
+  if (a.heavy || b.heavy) out.heavy = true;
+  if (a.bestOf || b.bestOf) out.bestOf = [...new Set([...(a.bestOf ?? []), ...(b.bestOf ?? [])])];
+  return out;
 }
 
 /** 進化した武器の分だけ盤を広げたムーブメントのデータ（通った進化先ごとに、選んだ型の形でマスを足す） */
