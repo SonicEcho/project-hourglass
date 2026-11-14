@@ -1,6 +1,6 @@
 import { DROP_RATES } from '../data/constants';
 import { countOf, getAddError, type AlbumState } from './album';
-import { availableLinks, chainGrade, chainVitals, isChainFinish, type ChainAllyDef, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVariant, type ChainVitals } from './chain';
+import { availableLinks, chainGrade, chainVitals, isChainFinish, type ChainAllyDef, type ChainBasicMod, type ChainBattleDef, type ChainEnemyDef, type ChainEnemyMove, type ChainGrade, type ChainLinkDef, type ChainMove, type ChainPassive, type ChainState, type ChainVariant, type ChainVitals } from './chain';
 import { nextRandom } from './rng';
 import type { CharacterDef, DamageType, Element, EnemyDef } from './types';
 
@@ -19,10 +19,45 @@ function chainElement(t: DamageType): Element {
 }
 
 
-/** 通常攻撃（どの仲間も持つ。MP なし）。武器の進化で属性が乗る */
-export function chainBasicAttack(element: Element = 'physical'): ChainMove {
-  const label = element === 'physical' ? '物理' : element === 'fire' ? '火' : element === 'ice' ? '氷' : '雷';
-  return { id: 'basic', name: '通常攻撃', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element, power: 20 }, text: `敵1体に${label}20（MP なし）` };
+/** 通常攻撃（どの仲間も持つ。MP なし）。武器の進化で属性が乗り、段階196 から形が変わる（mod。武器の進化先の通常攻撃の形を重ねた物） */
+export function chainBasicAttack(element: Element = 'physical', mod: ChainBasicMod = {}): ChainMove {
+  const label = (e: Element) => (e === 'physical' ? '物理' : e === 'fire' ? '火' : e === 'ice' ? '氷' : '雷');
+  const hits = Math.max(1, Math.min(3, mod.hits ?? 1));
+  const power = Math.round(20 * (mod.fragile ?? 1));
+  const notes = [
+    mod.bestOf?.length ? '敵ごとに一番効く属性で' : '',
+    mod.heavy ? '重い一撃（かたい敵に強く、バリアを割る）' : '',
+    mod.partMult ? `部位には${mod.partMult}倍` : '',
+    mod.pierceHard ? 'かたい敵にも減らされない' : '',
+    mod.push ? `当たった敵の予定を${mod.push}マス後ろへ` : '',
+    mod.healAll ? '当てると味方全体を少し回復' : '',
+    mod.guardAll ? `当てると、このラウンドの終わりまで味方全体の受けるダメージ −${Math.round(mod.guardAll * 100)}%` : '',
+    mod.exposure ? `露出補正 +${mod.exposure}` : '',
+    mod.fragile ? '邪魔されると不発' : '',
+  ].filter((x) => x);
+  return {
+    id: 'basic',
+    name: '通常攻撃',
+    type: 'attack',
+    weight: Math.max(1, 2 - (mod.lighter ?? 0)),
+    target: 'enemy',
+    effect: {
+      kind: 'damage',
+      element,
+      power,
+      ...(hits > 1 ? { hits } : {}),
+      ...(mod.push ? { push: mod.push } : {}),
+      ...(mod.partMult ? { partMult: mod.partMult } : {}),
+      ...(mod.pierceHard ? { pierceHard: true } : {}),
+      ...(mod.heavy ? { heavy: true } : {}),
+      ...(mod.healAll ? { healAll: mod.healAll } : {}),
+      ...(mod.guardAll ? { guardAll: mod.guardAll } : {}),
+      ...(mod.bestOf?.length ? { bestOf: [element, ...mod.bestOf.filter((e) => e !== element)] } : {}),
+      ...(mod.exposure ? { exposure: mod.exposure } : {}),
+      ...(mod.fragile ? { fragile: true } : {}),
+    },
+    text: `敵1体に${label(element)}${power}${hits > 1 ? `を${hits}回` : ''}（MP なし）${notes.length ? `。${notes.join('。')}` : ''}`,
+  };
 }
 
 /** 本番の特性を、新しい戦闘の特性にする（段階158。段階164 で、新しい戦闘にない効果も近い効果に置き換えた） */
@@ -42,7 +77,7 @@ export function chainPassives(c: CharacterDef): ChainPassive[] {
 /** 本番の仲間を、新しい戦闘の仲間にする */
 export function chainAllyFromCharacter(c: CharacterDef): ChainAllyDef {
   // 段階194：技は新しい戦闘の技のまま（星図の技）。星図の特性の星も、そのまま渡す
-  const moves = [chainBasicAttack(c.attackElement), ...c.skills];
+  const moves = [chainBasicAttack(c.attackElement, c.basic), ...c.skills];
   return { id: c.id, name: c.name, hp: c.stats.hp, mp: c.stats.mp, atk: c.stats.atk, mag: c.stats.mag, def: c.stats.def, moves, passives: [...chainPassives(c), ...(c.traits ?? [])] };
 }
 

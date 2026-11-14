@@ -206,6 +206,13 @@ const STYLES = {
   guard: { name: '堅', stats: { def: 2 }, board: 'column' },
   /** 継：バトンを受けた時 +20%（縦） */
   baton: { name: '継', passives: [{ kind: 'batonBoost', rate: 0.2 }], board: 'column' },
+  // ---- 段階196（一覧の 17-4）：新しい戦闘の型。疾・先・継の代わり（G4b で木に使う） ----
+  /** 伸：クライマックスの威力 +10%（横） */
+  stretch: { name: '伸', traits: [{ kind: 'climaxBoost', rate: 0.1 }], board: 'row' },
+  /** 早：最初のラウンドだけ、通常攻撃の重さ −1（横） */
+  quick: { name: '早', traits: [{ kind: 'quickStart', count: 1 }], board: 'row' },
+  /** 添：エフェクト（添える札）の効き +15%（縦） */
+  attach: { name: '添', traits: [{ kind: 'effectBoost', rate: 0.15 }], board: 'column' },
 } satisfies Record<string, EvolutionStyleDef | ((element: Element) => EvolutionStyleDef)>;
 
 const param = (p: WeaponParamKey, min: number): EvolutionCondition => ({ kind: 'param', param: p, min });
@@ -523,3 +530,4 @@ export const WEAPON_DATA: WeaponData = {
  * 交換所を初めて開いた時（ペトラが時分解を教える）の、早い方から出す
  */
 export const DECOMPOSE_VAR = '武器:時分解';
+export const WEAPON_STYLES = STYLES;
