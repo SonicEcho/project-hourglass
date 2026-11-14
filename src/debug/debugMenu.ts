@@ -1,9 +1,7 @@
-import { formatBattleLog } from './battleLog';
 import { playtimeReport, resetPlaytime } from './playtime';
 import { debugAutoStory, setDebugAutoStory } from './debugFlag';
-import { fillLinkGauge, healAllAllies, setEnemyHpToOne } from './cheats';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
-import { AREA_BATTLES, AREAS, ROOM_NAMES, CARDS, TRIAL_AREAS, ITEMS, LINK_GAUGE_MAX, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
+import { AREA_BATTLES, AREAS, ROOM_NAMES, CARDS, TRIAL_AREAS, ITEMS, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
 import type { GrowthTier } from '../sim/presets';
 import { clearReadLog } from '../scenes/DialogueScene';
 import {
@@ -13,7 +11,6 @@ import {
   currentEvent,
   deleteSave,
   forgetBeforeJump,
-  getActiveBattle,
   readSave,
   readSaveText,
   restoreBeforeJump,
@@ -28,7 +25,7 @@ export interface DebugNavigator {
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
   /** 試作の画面を開く（段階16。エンジンを決めるための探索の試作。段階18b：data で地図を選ぶ。今は縁日の絵の見本だけ） */
-  openPrototype(key: 'ProtoExplore' | 'ClockBattle' | 'ChainBattle' | 'LeapBattle' | 'Battle', data?: object): void;
+  openPrototype(key: 'ProtoExplore' | 'ChainBattle', data?: object): void;
   /** 会話の画面を開く（段階22。DialogueScene の DialogueData） */
   openDialogue(data: { scene: string; queue?: string[] }): void;
   /** 物語の流れの画面を開く（段階23。今の出来事から） */
@@ -174,8 +171,6 @@ export function installDebugMenu(nav: DebugNavigator): void {
 
   const render = (note = '') => {
     panel.replaceChildren();
-    const battle = getActiveBattle();
-    const s = battle?.getState();
     panel.append(el('div', 'font:bold 16px sans-serif;color:#ffd84a;margin-bottom:8px;', 'デバッグメニュー'));
     if (note) panel.append(el('div', 'color:#6dff9e;margin-bottom:8px;', note));
 
@@ -273,30 +268,6 @@ export function installDebugMenu(nav: DebugNavigator): void {
         nav.openMapTune(areaSelect.value, Number(nightSelect.value) || undefined, roomSelect.value);
       }, true, 'background:#3a2f5a;border-color:#b090ff;'),
     );
-
-    // ---- 戦闘中 ----
-    if (battle && s) {
-      section('戦闘中');
-      panel.append(
-        button('味方を全回復する', () => notify(battle.replaceState(healAllAllies(battle.getState())) ? '味方を全回復しました' : '演出中は使えません')),
-        button('つながりゲージを満タンにする（連携技）', () => notify(battle.replaceState(fillLinkGauge(battle.getState(), LINK_GAUGE_MAX)) ? 'つながりゲージを満タンにしました' : '演出中は使えません')),
-        button('自動で1ラウンド戦う（自動対戦の方針）', () => {
-          if (battle.autoRound()) close();
-          else notify('演出中は使えません');
-        }),
-      );
-      for (const e of s.enemies) {
-        if (e.hp <= 0) continue;
-        panel.append(button(`${e.name}のHPを1にする`, () => notify(battle.replaceState(setEnemyHpToOne(battle.getState(), e.uid)) ? `${e.name}のHPを1にしました` : '演出中は使えません')));
-      }
-      panel.append(el('div', 'color:#9fb3c8;font-size:12px;', `戦闘のシード：${s.seed}　戦闘ログ（新しいものが下）`));
-      const log = el('pre', 'white-space:pre-wrap;word-break:break-all;font:11px/1.5 monospace;background:#0b1118;border:1px solid #3e5670;padding:8px;max-height:40vh;overflow-y:auto;margin:6px 0;', formatBattleLog(s).join('\n'));
-      panel.append(log);
-      // 最新のログが見えるように一番下までスクロールする
-      requestAnimationFrame(() => {
-        log.scrollTop = log.scrollHeight;
-      });
-    }
 
     // ---- 探索中（段階25） ----
     const ex = run.explore;
@@ -474,113 +445,20 @@ export function installDebugMenu(nav: DebugNavigator): void {
       }),
     );
 
-    // ---- 古い試作（段階1〜16。本編では使わない。通しの自動確認で使う） ----
+    // ---- 古い試作と試し（本編では使わない） ----
     const proto = section('古い試作（本編では使わない）', true);
     proto.append(
-      button('試作の5戦を最初から（星図から。育成と物語の進み具合もリセット）', () => {
-        close();
-        nav.restartRun();
-      }),
-      button('シードを指定して試作の5戦を最初から', () => {
-        const v = window.prompt('シード（0以上の整数）', String(run.seed));
-        if (v === null || v.trim() === '' || Number.isNaN(Number(v))) return;
-        run.seed = Number(v) >>> 0;
-        run.fixed = true;
-        close();
-        nav.restartRun();
-      }),
+      // 段階192（段階G2）：「試作の5戦を最初から」は古い戦闘の試作なので外した
       button('試作：縁日のマップを歩く（絵の見本）', () => {
         close();
         nav.openPrototype('ProtoExplore', { map: 'festival' });
       }),
-      // 段階157：試し：組んで跳ねる戦闘（docs/milestones/M3_battle_rethink.md の 10.・12.）。今のセーブには触れない
-      ...[
-        ['leap1', '縁日の砂嵐・雑魚'],
-        ['leap2', '商店街の砂嵐・雑魚'],
-        ['leap3', '金魚鉢のぬし・ボス'],
-      ].map(([trial, name]) =>
-        button(`試し：組んで跳ねる（${name}）`, () => {
-          close();
-          nav.openPrototype('LeapBattle', { trial });
-        }, true, 'background:#1f5a3a;border-color:#8affc8;'),
-      ),
       // 段階158：新しい戦闘を本番用に。今の並び（育成を反映）と 1-1 の砂嵐の敵で戦う。今のセーブには触れない
       button('試し：本番の仲間で並べてつなぐ（1-1 の砂嵐）', () => {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain1', main: true });
       }, true, 'background:#5a3a1f;border-color:#ffc88a;'),
-      // 段階156：試し：並べてつなぐ戦闘（docs/milestones/M3_battle_review.md の 12.）。今のセーブには触れない
-      button('試し：並べてつなぐ戦闘（金魚すくいの屋台）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain1' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（からくり時計）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain2' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（夏の縁側）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain3' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（駄菓子屋の店先）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain4' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（水遊び）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain5' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（夏祭りの本部テント）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain6' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      button('試し：並べてつなぐ戦闘（古い電器屋の奥）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain7' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      // 調整17：ボス（金魚鉢のぬし）
-      button('試し：並べてつなぐ戦闘（金魚鉢のぬし・ボス）', () => {
-        close();
-        nav.openPrototype('ChainBattle', { trial: 'chain8' });
-      }, true, 'background:#5a1f3a;border-color:#ff8ac8;'),
-      // 調整14：序盤（技を覚える前）の試し。仲間は通常攻撃だけ、山札はシンプルなアタック中心
-      ...[
-        ['chain1', '金魚すくいの屋台'],
-        ['chain2', 'からくり時計'],
-        ['chain3', '夏の縁側'],
-        ['chain4', '駄菓子屋の店先'],
-        ['chain5', '水遊び'],
-        ['chain6', '夏祭りの本部テント'],
-        ['chain7', '古い電器屋の奥'],
-      ].map(([trial, name]) =>
-        button(`試し：並べてつなぐ戦闘・序盤（${name}）`, () => {
-          close();
-          nav.openPrototype('ChainBattle', { trial, stage: 'early' });
-        }, true, 'background:#1f3a5a;border-color:#8ac8ff;'),
-      ),
-      // 調整16の「連続」（1人1回をやめた試し）は、調整17の後に開発者と決めて入口を外した（仕組みは残している）
-      // 段階155：試し：コンボと現像（今の戦闘に、2枚のコンボと現像する札を入れたアルバムで戦う。今のセーブには触れない）
-      button('試し：コンボと現像（砂嵐3体）', () => {
-        close();
-        nav.openPrototype('Battle', { trial: 'zako' });
-      }, true, 'background:#1f3a5a;border-color:#6bc8ff;'),
-      button('試し：コンボと現像（砂嵐4体）', () => {
-        close();
-        nav.openPrototype('Battle', { trial: 'zako2' });
-      }, true, 'background:#1f3a5a;border-color:#6bc8ff;'),
-      button('試し：コンボと現像（自転車のぬし）', () => {
-        close();
-        nav.openPrototype('Battle', { trial: 'boss' });
-      }, true, 'background:#1f3a5a;border-color:#6bc8ff;'),
-      // 段階154：試し：文字盤の戦闘（docs/milestones/M3_battle_review.md）。今のセーブには触れない
-      button('試し：文字盤の戦闘（砂嵐3体）', () => {
-        close();
-        nav.openPrototype('ClockBattle', { trial: 'trial3' });
-      }, true, 'background:#5a4a10;border-color:#ffd77a;'),
-      button('試し：文字盤の戦闘（紙風船の入った4体）', () => {
-        close();
-        nav.openPrototype('ClockBattle', { trial: 'trial4' });
-      }, true, 'background:#5a4a10;border-color:#ffd77a;'),
+      // 段階G2（段階192）：ほかの試し（並べてつなぐの試しの1〜8・序盤・組んで跳ねる・コンボと現像・文字盤）の入口は外した。遊んで確かめる場は ↑ の1つ
     );
 
     panel.append(button('閉じる', close));

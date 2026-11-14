@@ -1,8 +1,27 @@
 import { battleReward, boardColorCells, capItems, chainBossSnaps, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
 import { CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
 import { browserStorage } from '../save/storage';
-import type { BattleSceneData } from './BattleScene';
 import { currentNaviData, lineupBase, run, saveRun } from './run';
+
+/**
+ * 戦闘の画面に渡す物（段階192：古い戦闘の画面から移した）。encounter は探索・狩り・物語の戦闘。battle は区画の戦闘（AREA_BATTLES）の id。
+ * 勝ったら報酬を受け取って win の画面へ、負けたら lose の画面へ
+ */
+export interface BattleSceneData {
+  encounter?: {
+    battle: string;
+    win: { key: string; data: object };
+    lose: { key: string; data: object };
+    /** 狩りの戦闘（段階43）：HP・MP は狩りの状態（run.hunt）から持ち越し、ぬしのスナップは渡さない */
+    hunt?: boolean;
+    /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
+    seedShift?: number;
+    /** 星の砂と武器の経験値の割合（段階49。狩りで前の章の区画なら半分。段階57から記憶の薄れもかける。書かなければ全部） */
+    rewardRate?: number;
+    /** 落とした素材が残る割合（段階57。記憶の薄れ。書かなければ全部残る） */
+    dropRate?: number;
+  };
+}
 
 // 段階159：新しい戦闘（並べてつなぐ戦闘）を探索から呼ぶ（docs/milestones/M3_battle_migration.md の段階C）。
 // どの区画の戦闘を新しい戦闘にするかと、勝った時の報酬の受け取り（今の本番の戦闘と同じ物）
@@ -16,11 +35,10 @@ export function chainAlbumActive(): boolean {
 }
 
 /**
- * 戦闘の始め方（段階159）。段階G1（2026-11-14）：探索・狩り・物語の戦闘（encounter のある戦闘）は、全部新しい戦闘。
- * 古い戦闘（Battle）は、試作の5戦の名残だけ（段階G2 で外す）
+ * 戦闘の始め方（段階159）。段階G1・G2（2026-11-14）：戦闘は全部、新しい戦闘（古い戦闘は外した）
  */
-export function battleSceneFor(data: BattleSceneData): 'ChainBattle' | 'Battle' {
-  return data.encounter ? 'ChainBattle' : 'Battle';
+export function battleSceneFor(_data: BattleSceneData): 'ChainBattle' {
+  return 'ChainBattle';
 }
 
 /**

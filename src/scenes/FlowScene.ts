@@ -11,7 +11,7 @@ import { addButton, addText } from '../ui/widgets';
 import { stopAmbience } from '../audio/sound';
 import type { DialogueData } from './DialogueScene';
 import { advanceEvent, currentEvent, run, setEvent, setExplore, setStoryVars } from './run';
-import type { BattleSceneData } from './BattleScene';
+import type { BattleSceneData } from './chainEncounter';
 import { screenBg } from '../ui/skin';
 import { notePlayEvent, setPlayTracking } from './playRecord';
 

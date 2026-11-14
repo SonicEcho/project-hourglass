@@ -9,7 +9,6 @@ import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 
-const BATTLES = 5;
 /** 物語の流れの出来事の数の上限（無限に回らないように） */
 const MAX_EVENTS = 280;
 const step = (msg) => console.log(`- ${msg}`);
@@ -68,37 +67,33 @@ async function closeDebugMenu() {
   if (await close.isVisible()) await close.click();
 }
 
-/** 今の戦闘に勝つ：敵のHPを1にしてから、自動で1ラウンドずつ戦う */
-async function winBattle() {
-  await waitScene('Battle');
-  await page.getByText('DBG', { exact: true }).click();
-  const enemies = await page.locator('button', { hasText: 'のHPを1にする' }).count();
-  await closeDebugMenu();
-  for (let i = 0; i < enemies; i++) {
-    await debugButton('のHPを1にする', i);
-    await closeDebugMenu();
+/** 照らす説明（新しい戦闘の「タップで次へ」）が出ていれば、閉じるまで進める */
+async function skipCoach() {
+  for (let i = 0; i < 12 && (await findText('タップで次へ')); i++) {
+    await tapAt(195, 420);
+    await page.waitForTimeout(300);
   }
-  for (let round = 0; round < 40; round++) {
-    if (await findText('^勝利！$')) return;
-    if (await findText('^敗北…$')) throw new Error('戦闘に負けた');
-    await debugButton('自動で1ラウンド戦う');
-    await closeDebugMenu(); // 演出中で受け付けられなかった時はメニューが開いたまま
-    await page.waitForTimeout(400);
-  }
-  await until('「勝利！」', () => findText('^勝利！$'), 60000);
 }
 
-/** 星図で、勝利の報酬のギアを選んで受け取る */
-async function claimReward() {
-  if (!(await findText('^ギアを手に入れた！$'))) return;
-  // 候補は上から並ぶ（GrowthScene.showReward の配置）。上の2つを選ぶ
-  await tapAt(195, 306);
-  await page.waitForTimeout(200);
-  await tapAt(195, 418);
-  await page.waitForTimeout(200);
-  await tap('^受け取る$');
-  await until('報酬の窓が閉じる', async () => !(await findText('^ギアを手に入れた！$')));
+/** 今の戦闘に勝つ（段階192：新しい戦闘）：敵の HP を1にしてから、考える方針で1ラウンドずつ戦う */
+async function winBattle() {
+  await waitScene('ChainBattle');
+  await page.waitForTimeout(800);
+  // 1ラウンドの再生には数秒かかる。再生中の頼みは受け付けられないので、勝つまで頼み続ける
+  for (let round = 0; round < 120; round++) {
+    if (await findText('^CLEAR!$')) return;
+    if (await findText('^GAME OVER$')) throw new Error('戦闘に負けた');
+    await skipCoach();
+    await page.evaluate(() => {
+      const sc = window.__restopia.scene('ChainBattle');
+      for (const e of sc.s.enemies) if (e.hp > 1) e.hp = 1;
+      sc.autoRound();
+    });
+    await page.waitForTimeout(1000);
+  }
+  await until('「CLEAR!」', () => findText('^CLEAR!$'), 60000);
 }
+
 
 // 初めての人向けの説明（段階30）は、流れの途中で窓が出て止まらないよう、最初から全部見たことにしておく（最後に1つだけ出ることを確かめる）
 const TIP_IDS = [...readFileSync(new URL('../src/data/tips.ts', import.meta.url), 'utf8').matchAll(/id: '([a-z_]+)'/g)].map((m) => m[1]);
@@ -166,18 +161,19 @@ try {
       const next = await until('「^次へ$」が出る（返す演出の後）', () => findText('^次へ$'), 45000);
       await tapAt(next.x, next.y);
       sawReturn = true;
-    } else if ((await scenes()).includes('Battle') && (await page.evaluate(() => window.__restopia.scene('Battle').battle?.id)) !== 'a23_kai') {
+    } else if ((await scenes()).includes('ChainBattle') && (await page.evaluate(() => window.__restopia.scene('ChainBattle').areaBattle?.id)) !== 'a23_kai') {
       // 探索の敵に追いつかれて始まった戦闘（段階59から追ってくる敵がいる。探索を飛ばす前に、遅い環境では追いつかれることがある）：次の出来事へ飛ばす
       await debugButton('次の出来事へ飛ばす');
-    } else if ((await scenes()).includes('Battle')) {
-      // 物語の戦闘（段階40。カイの負け戦）：ラウンドを進めると打ち切りの窓が出て、「次へ」で話の続きへ
-      for (let round = 0; round < 12 && !(await findText('^次へ$')); round++) {
-        await debugButton('自動で1ラウンド戦う');
-        await closeDebugMenu();
-        await page.waitForTimeout(800);
+    } else if ((await scenes()).includes('ChainBattle')) {
+      // 物語の戦闘（段階40。カイの負け戦）：ラウンドを進めると打ち切りの窓が出て、「次へ」で話の続きへ（段階192：新しい戦闘）
+      // 1ラウンドの再生には数秒かかる。再生中の頼みは受け付けられないので、打ち切りの窓が出るまで頼み続ける
+      for (let k = 0; k < 120 && !(await findText('動きが、見えない')); k++) {
+        await skipCoach();
+        await page.evaluate(() => window.__restopia.scene('ChainBattle').autoRound());
+        await page.waitForTimeout(1000);
       }
       await until('打ち切りの窓', () => findText('動きが、見えない'), 60000);
-      await tap('^次へ$');
+      await tap('^次へ ▶$');
       sawCutoff = true;
     } else if (await findText('^\\d日目$')) {
       await page.waitForTimeout(700);
@@ -188,7 +184,7 @@ try {
     await page.waitForTimeout(500);
     await until('流れの画面か会話の画面', async () => {
       const s = await scenes();
-      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily') || s.includes('Explore') || s.includes('Return') || s.includes('Battle');
+      return s.includes('Flow') || s.includes('Dialogue') || s.includes('Daily') || s.includes('Explore') || s.includes('Return') || s.includes('ChainBattle');
     });
   }
   if (!sawCutoff) throw new Error('カイの負け戦の打ち切りが出なかった');
@@ -214,33 +210,7 @@ try {
   await tap('^戻る$');
   await waitScene('Title');
 
-  step('試作の5戦を最初から');
-  await debugButton('試作の5戦を最初から');
-  await waitScene('Growth');
-
-  for (let n = 1; n <= BATTLES; n++) {
-    const label = await tap(n === BATTLES ? '（ボス）へ$' : `^戦闘${n}へ$`);
-    step(`${label.replace(/へ$/, '')}`);
-    await waitScene('Battle');
-    const battleBgm = n === BATTLES ? 'bgm.boss' : 'bgm.battle';
-    await until(`戦闘の BGM（${battleBgm}）`, async () => (await page.evaluate(() => window.__restopia.bgm())) === battleBgm);
-    // まだ解いていない曲は頭だけで鳴り始め、全体が解けたら移る（2026-10-11）
-    await until('BGM が曲の全体へ移る', async () => !(await page.evaluate(() => window.__restopia.bgmHead())));
-    await winBattle();
-    if (n === BATTLES) {
-      await tap('^結果へ$');
-      await waitScene('Result');
-      break;
-    }
-    await tap('^星図へ$');
-    await waitScene('Growth');
-    await claimReward();
-  }
-  step('結果の画面まで進んだ');
-
   step('縁日の試作で BGM が切り替わる');
-  await tap('^タイトルへ$');
-  await waitScene('Title');
   await debugButton('試作：縁日のマップを歩く');
   await waitScene('ProtoExplore');
   await until('縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
@@ -249,7 +219,7 @@ try {
   await page.evaluate(() => localStorage.setItem('restopia.tips', '[]'));
   await page.goto(`${base}?debug=1&seed=1`);
   await waitScene('Title');
-  await debugButton('試作の5戦を最初から');
+  await page.evaluate(() => window.__restopia.start('Growth', {}));
   await waitScene('Growth');
   await until('星図の説明', () => findText('^はじめての説明$'));
   await tap('^わかった$');
@@ -277,56 +247,29 @@ try {
 
   step('探索の戦闘に勝って、すぐ会話になる時も縁日の曲に戻る');
   const back = { key: 'Explore', data: { area: 'a11', won: undefined, lost: true, seen: undefined } };
-  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm1', win: b, lose: b } }), back);
+  await page.evaluate((b) => window.__restopia.start('ChainBattle', { encounter: { battle: 'a11_storm1', win: b, lose: b } }), back);
   await until('戦闘の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.battle');
   // 1回目に勝つと「最初のコマ」の会話になる
   await page.evaluate(() => window.__restopia.start('Explore', { area: 'a11', won: 'a11_e_plaza', lost: undefined, seen: undefined }));
   await waitScene('Dialogue');
   await until('会話で縁日の BGM', async () => (await page.evaluate(() => window.__restopia.bgm())) === 'bgm.festival');
 
-  step('ポーチ（段階51）：戦闘の「その他」からポーションを味方に使うと、残りが減る');
-  await debugButton('ポーチを満タンにする');
-  await closeDebugMenu();
-  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm1', win: b, lose: b } }), back);
-  await waitScene('Battle');
-  await page.waitForTimeout(800);
-  for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
-    await tap('^わかった$');
-    await page.waitForTimeout(400);
-  }
-  await tap('^その他$');
-  await tap('^ポーション\\n残り3$');
-  const allies = await page.evaluate(() => window.__restopia.scene('Battle').state.allies.length);
-  // 1人目（ハルト）のタブを2回タップして決める（仲間のタブの真ん中。段階102f の画面）
-  const tabX = 8 + (390 - 16 - 6 * (allies - 1)) / allies / 2;
-  await tapAt(tabX, 476 + 58 / 2);
-  await page.waitForTimeout(300);
-  await tapAt(tabX, 476 + 58 / 2);
-  await until('ポーションを予約した', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.plans.some((p) => p.action.type === 'item'))));
-  await debugButton('自動で1ラウンド戦う');
-  await closeDebugMenu();
-  await until('ポーションを使った', async () => (await page.evaluate(() => window.__restopia.scene('Battle').state.pouch[0]?.used)) === 1, 20000);
-  await winBattle();
-
   step('戦闘の途中で閉じても、「つづきから」でその戦闘の始めから（段階44）');
-  // 前の戦闘の結果の窓から、探索へ戻ってから始める
-  await page.waitForTimeout(800);
-  for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
-    await tap('^わかった$');
-    await page.waitForTimeout(400);
-  }
-  await tap('^探索へ戻る$');
-  await until('戦闘の画面を抜けた', async () => !(await scenes()).includes('Battle'));
-  await page.waitForTimeout(500);
-  await page.evaluate((b) => window.__restopia.start('Battle', { encounter: { battle: 'a11_storm2', win: b, lose: b } }), back);
-  await waitScene('Battle');
+  // 段階192：ポーチ（段階51）は古い戦闘だけの物なので、確かめを外した。ポーチを満たすボタンが周回を始めていたので、代わりに出来事へ飛んで周回を始める（保存されるように）
+  await page.getByText('DBG', { exact: true }).click();
+  await page.locator('#debug-event').selectOption('d6_free');
+  await page.locator('#debug-tier').selectOption('keep');
+  await page.locator('button', { hasText: 'の出来事へ飛ぶ' }).click();
+  await waitScene('Daily');
+  await page.evaluate((b) => window.__restopia.start('ChainBattle', { encounter: { battle: 'a11_storm2', win: b, lose: b } }), back);
+  await waitScene('ChainBattle');
   await page.waitForTimeout(800);
   await page.reload();
   await waitScene('Title');
   await until('「つづきから」の下に戦闘の途中', () => findText('（砂嵐の途中）'));
   await tap('^つづきから$');
-  await waitScene('Battle', 60000);
-  if ((await page.evaluate(() => window.__restopia.scene('Battle').battle.id)) !== 'a11_storm2') throw new Error('別の戦闘に戻った');
+  await waitScene('ChainBattle', 60000);
+  if ((await page.evaluate(() => window.__restopia.scene('ChainBattle').areaBattle.id)) !== 'a11_storm2') throw new Error('別の戦闘に戻った');
   await winBattle();
 
   step('レストピアの拠点（段階50）と記憶をたどる（段階43）・交換所（段階52）・落とし物（段階53）：昼の時計屋から拠点に入り、星図・交換所を開いて戻り、落とし物を受け、返した区画をたどって見つけ、ぬしに勝っても続き、落とし物を届け、拠点から時計屋へ戻っても昼の回数は減らない');
@@ -425,7 +368,7 @@ try {
   // ぬし戦の初めての説明（部位破壊）が出ていれば閉じる（前の確かめで、見た説明を忘れさせている）
   await page.waitForTimeout(800);
   await skipTips();
-  await tap('^探索へ戻る$');
+  await tap('^探索へ戻る ▶$');
   await waitScene('Explore');
   await skipTips();
   await until('ぬしに勝っても狩りが続く', () => findText('^ぬしを倒した。'));

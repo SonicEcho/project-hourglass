@@ -1749,7 +1749,8 @@ function checkEnd(s: ChainState, ev: ChainEvent[], at: number): boolean {
   const done = () => (s.finishTime = s.elapsed + at);
   if (s.allies.every((a) => a.hp <= 0)) {
     done();
-    s.outcome = 'lose';
+    // 負け戦は、仲間が全員倒れても打ち切り（段階40 の決まり。全滅の画面は出さず、話の続きへ。段階192 で戻した）
+    s.outcome = s.def.cutoff ? 'cutoff' : 'lose';
     s.finishRound = s.round;
     return true;
   }

@@ -1,28 +1,23 @@
 import type { AlbumState } from '../core';
 import { flowEvents, gainSnaps, lineupAt, lineupMembers, weaponLevel } from '../core';
 import { AREAS, CHAPTER1_LINEUP, PARTY, SLICE_FLOW, WEAPON_DATA } from '../data';
-import type { AreaPolicy, Carry, StarPolicy } from './autoArea';
-import { areaBattleOrder, grownParty, newCarry, rerunArea, runAreasCarry } from './autoArea';
-import { PRESET_SEEDS } from './presetSeeds';
+import type { Carry } from './autoArea';
+import { areaBattleOrder, grownParty, newCarry } from './autoArea';
+import presetCarryTable from './presetCarry.json';
 
 // 育ち具合で飛ぶ（段階92。docs/design/tech.md の 9.）：デバッグの「出来事へ飛ぶ」で、そこまで遊んだ人と同じくらいの育ち具合にする。
-// 育ち具合は、自動対戦で前の区画を出会う順に通して作る（手は弱点をねらう方針、星図は素直な伸ばし方）。
-// 控えめ・ふつうは、前もって何十回か回した中の、育ちが下の方・真ん中の回のシード（presetSeeds.ts。npm run presets で作り直す）。
-// 飛ぶ時は、そのシードで1回だけ回す。やり込みは、ふつうの後に、最後に通した区画を2つ回り直したもの（狩りの代わり）
+// 育ち具合は、前の区画を出会う順に通した時の物（段階192 からは、古い戦闘の自動対戦で作った物を表にして固めた。PRESET_CARRY）。
+// 控えめ・ふつうは、何十回か回した中の、育ちが下の方・真ん中の回。やり込みは、ふつうの後に、最後に通した区画を2つ回り直したもの（狩りの代わり）
 
 export type GrowthTier = 'low' | 'normal' | 'high';
 export const GROWTH_TIERS: GrowthTier[] = ['low', 'normal', 'high'];
 export const TIER_LABEL: Record<GrowthTier, string> = { low: '控えめ', normal: 'ふつう', high: 'やり込み' };
 
-/** 育ち具合を作る時の手の選び方と、星図の伸ばし方 */
-export const PRESET_POLICY: AreaPolicy = 'smart';
-export const PRESET_STARS: StarPolicy = 'even';
-/** やり込みの段で回り直す区画の数 */
-export const HIGH_RERUNS = 2;
-/** 控えめは、育ちの並びの下からこの割合の回 */
-export const LOW_RANK = 0.1;
-
-export type PresetSeeds = Record<string, { low: number; normal: number }>;
+/**
+ * 育ち具合の表（段階192・段階G2）：古い戦闘を外す前に、古い戦闘の自動対戦で作っていた育ち具合を、通した区画の並びごと・段ごとに書き出して固めた（presetCarry.json）。
+ * これまでの新しい戦闘の測定は、この育ち具合で測っている。星図・武器・ギアを入れ替える段階G3〜G5 で、作り方を新しい戦闘に合わせて作り直す
+ */
+const PRESET_CARRY = presetCarryTable as unknown as Record<string, Partial<Record<GrowthTier, { seed: number; carry: Carry }>>>;
 
 /**
  * その出来事より前に、探索を通し終えた区画（流れに初めて出る順）。晩に分けた区画は、最後の晩がその出来事より前の時だけ入る
@@ -46,26 +41,6 @@ export function carryScore(carry: Carry): number {
   return grownParty(carry.growth, carry.armory, PARTY, carry.navi).reduce((a, c) => a + c.stats.hp / 5 + c.stats.mp / 2 + c.stats.atk + c.stats.mag + c.stats.def + c.stats.spd, 0);
 }
 
-/**
- * 前もって選ぶシード（scripts/presets.mjs）：流れの全部の区画を runs 回通し、区画を通すたびの育ち具合を並べて、
- * 区画ごとに下から LOW_RANK の回（控えめ）と真ん中の回（ふつう）のシードを選ぶ
- */
-export function choosePresetSeeds(runs: number, seed0 = 1): PresetSeeds {
-  const all = areasBefore(flowEvents(SLICE_FLOW).at(-1)!.id);
-  const scores: Record<string, { seed: number; score: number }[]> = {};
-  for (let k = 0; k < runs; k++) {
-    const seed = seed0 + k;
-    runAreasCarry(seed, PRESET_POLICY, all, PRESET_STARS, (area, carry) => (scores[area] ??= []).push({ seed, score: carryScore(carry) }));
-  }
-  const out: PresetSeeds = {};
-  for (const area of all) {
-    const list = [...(scores[area] ?? [])].sort((a, b) => a.score - b.score || a.seed - b.seed);
-    if (list.length === 0) continue;
-    out[area] = { low: list[Math.floor((list.length - 1) * LOW_RANK)].seed, normal: list[Math.floor((list.length - 1) / 2)].seed };
-  }
-  return out;
-}
-
 export interface GrowthPreset {
   tier: GrowthTier;
   /** 通した区画（流れの順） */
@@ -77,14 +52,13 @@ export interface GrowthPreset {
 }
 
 /** その出来事の育ち具合を作る（前の区画がなければ、始めの育ち具合） */
-export function growthPreset(eventId: string, tier: GrowthTier, seeds: PresetSeeds = PRESET_SEEDS): GrowthPreset {
+export function growthPreset(eventId: string, tier: GrowthTier): GrowthPreset {
   const areas = areasBefore(eventId);
   if (areas.length === 0) return { tier, areas, seed: 0, carry: newCarry(), snaps: [] };
-  const picked = seeds[areas[areas.length - 1]];
-  const seed = (tier === 'low' ? picked?.low : picked?.normal) ?? 1;
-  const carry = runAreasCarry(seed, PRESET_POLICY, areas, PRESET_STARS);
-  if (tier === 'high') for (const a of areas.slice(-HIGH_RERUNS)) rerunArea(seed, PRESET_POLICY, a, carry, PRESET_STARS);
-  return { tier, areas, seed, carry, snaps: areas.flatMap(areaSnaps) };
+  const row = PRESET_CARRY[areas.join(',')]?.[tier];
+  // 表にない並び（区画を足した時など）は、始めの育ち具合（段階G3〜G5 で作り方を作り直すまでの間）
+  const carry: Carry = row ? (JSON.parse(JSON.stringify(row.carry)) as Carry) : newCarry();
+  return { tier, areas, seed: row?.seed ?? 0, carry, snaps: areas.flatMap(areaSnaps) };
 }
 
 /** 区画で手に入るスナップ（戦闘の勝ち・宝箱・返した時） */

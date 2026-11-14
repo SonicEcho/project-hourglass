@@ -1,6 +1,4 @@
-import { availableCombos, batonTargets, chargingAction, linkReady, planPool } from './battle';
 import type { ExploreState } from './explore';
-import type { BattleState } from './types';
 
 // 初めての人向けの説明（段階30）。どの場面で、どの説明を出すかを決める。Phaser に依存しない。
 // 説明の文は src/data/tips.ts。見た説明の id はセーブとは別に覚える（はじめからやり直しても、もう出さない）
@@ -39,26 +37,6 @@ export function serializeSeenTips(seen: readonly string[]): string {
   return JSON.stringify(seen);
 }
 
-/**
- * 戦闘で、今の場面に合う説明の id（操作を待っている時に呼ぶ）。
- * autoAvailable：オートの説明を出してよいか（雑魚戦で、最初の戦闘ではない時。画面の側で決める）
- */
-export function battleTipTriggers(s: BattleState, ctx: { autoAvailable: boolean }): string[] {
-  const out: string[] = [];
-  if (s.phase === 'plan') out.push('battle_plan');
-  if (s.log.some((e) => e.type === 'weaknessFound' || e.type === 'down')) out.push('battle_weak');
-  if (s.phase === 'extra') out.push('battle_extend');
-  if (s.phase === 'extra' && batonTargets(s).length > 0) out.push('battle_baton');
-  if (s.phase === 'plan' && s.allies.some((a) => a.hp > 0 && availableCombos(s, planPool(s, a.uid)).length > 0)) out.push('battle_combo');
-  if (s.enemies.some((e) => e.hp > 0 && (e.parts.length > 0 || e.charging))) out.push('battle_boss');
-  // 切り取り（段階107）をためた時（段階125。レビューの項目6：ふつうの大技と止め方が違う）
-  if (s.enemies.some((e) => e.hp > 0 && chargingAction(e)?.cutsFrame)) out.push('battle_cut');
-  if (s.phase === 'plan' && s.links.length > 0 && linkReady(s)) out.push('battle_link');
-  if (s.phase === 'plan' && ctx.autoAvailable) out.push('battle_auto');
-  // ポーチ（段階51。段階45で説明を足した）：ポーチに物がある時の計画
-  if (s.phase === 'plan' && s.pouch.length > 0) out.push('battle_pouch');
-  return out;
-}
 
 /** 探索で、今の場面に合う説明の id。atCheckpoint：チェックポイントに立っている。hunting：記憶をたどっている（段階45） */
 export function exploreTipTriggers(state: ExploreState, ctx: { atCheckpoint: boolean; hunting?: boolean }): string[] {

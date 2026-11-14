@@ -6,14 +6,12 @@ import {
   createAlbum,
   gainSnaps,
   getAddError,
-  getRoundOrder,
   hasSpare,
   isAlbumComplete,
   removeFromAlbum,
   spareSnaps,
 } from '../../src/core';
 import { ALBUM_COPY_MAX, ALBUM_SIZE, AREA_BATTLES, AREAS, CARDS, FOLDER } from '../../src/data';
-import { ally, attackOn, battle, enemy, eventsOf, execute, planAll, withHand } from './helpers';
 
 // 段階41：アルバムの編集と、スナップの入手。新しいスナップ（ジョーカー・アンコール・ピンチヒッター）
 
@@ -72,40 +70,3 @@ describe('アルバムの編集', () => {
   });
 });
 
-describe('新しいスナップ', () => {
-  const two = () => battle({ allies: [ally('hero', { spd: 12 }), ally('mio', { spd: 6 })], enemies: [enemy('e', { spd: 11 }, { weaknesses: ['ice'] })] });
-
-  it('ジョーカー：相手の弱点の属性になる', () => {
-    let s = withHand(two(), [CARDS.joker]);
-    s = planAll(s, { hero: { type: 'card', cardUid: s.hand[0].uid, target: { kind: 'enemy', id: 'enemy0' } }, mio: attackOn('enemy0') });
-    s = execute(s);
-    expect(eventsOf(s, 'damage').find((d) => d.sourceId === 'hero')?.affinity).toBe('weak');
-  });
-
-  it('ピンチヒッター：使う仲間は、このラウンドの最初に動く', () => {
-    let s = withHand(two(), [CARDS.pinchHitter]);
-    s = planAll(s, { mio: { type: 'card', cardUid: s.hand[0].uid, target: { kind: 'enemy', id: 'enemy0' } }, hero: attackOn('enemy0') });
-    expect(getRoundOrder(s).map((e) => e.ids[0])).toEqual(['mio', 'hero', 'enemy0']);
-  });
-
-  it('アンコール：このラウンドに最後に使われたスナップを、同じ相手にもう一度', () => {
-    let s = withHand(two(), [CARDS.heavyBlow, CARDS.encore]);
-    s = planAll(s, {
-      hero: { type: 'card', cardUid: s.hand[0].uid, target: { kind: 'enemy', id: 'enemy0' } },
-      mio: { type: 'card', cardUid: s.hand[1].uid },
-    });
-    const from = s.log.length;
-    s = execute(s);
-    expect(eventsOf(s, 'encore', from)).toEqual([{ type: 'encore', actorId: 'mio', name: 'ヘビーブロウ' }]);
-    const hits = eventsOf(s, 'damage', from).filter((d) => d.targetId === 'enemy0');
-    expect(hits.map((d) => d.sourceId)).toEqual(['hero', 'mio']);
-  });
-
-  it('アンコール：まだ誰もスナップを使っていなければ不発', () => {
-    let s = withHand(two(), [CARDS.encore]);
-    s = planAll(s, { hero: { type: 'card', cardUid: s.hand[0].uid }, mio: attackOn('enemy0') });
-    const from = s.log.length;
-    s = execute(s);
-    expect(eventsOf(s, 'encore', from)).toEqual([{ type: 'encore', actorId: 'hero', name: null }]);
-  });
-});

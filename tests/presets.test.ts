@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { flowEvents } from '../src/core';
 import { SLICE_FLOW } from '../src/data';
-import { PRESET_SEEDS } from '../src/sim/presetSeeds';
 import { areasBefore, carryScore, growthPreset, presetSummary } from '../src/sim/presets';
 
 // 育ち具合で飛ぶ（段階92）
@@ -13,8 +12,10 @@ describe('育ち具合で飛ぶ（段階92）', () => {
     expect(areasBefore('a3s_explore2')).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a23x', 'a31', 'a3s1']);
   });
 
-  it('前もって選んだシードが、流れの全部の区画にある（区画を足したら npm run presets で作り直す）', () => {
-    expect(Object.keys(PRESET_SEEDS)).toEqual(areasBefore(flowEvents(SLICE_FLOW).at(-1)!.id));
+  it('育ち具合の表（段階192。古い戦闘を外す前に書き出して固めた）は、流れの最後までの区画の並びを全部持つ', () => {
+    const last = areasBefore(flowEvents(SLICE_FLOW).at(-1)!.id);
+    for (let k = 1; k <= last.length; k++) expect(growthPreset(flowEvents(SLICE_FLOW).at(-1)!.id, 'low').areas.slice(0, k)).toEqual(last.slice(0, k));
+    expect(growthPreset('a42_enter', 'low').seed).toBeGreaterThan(0);
   });
 
   it('同じ出来事・同じ段なら同じ育ち具合。やり込みは、ふつうより育つ', () => {
