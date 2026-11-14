@@ -120,6 +120,8 @@ export interface MainChainBattleInput {
   links?: ChainLinkDef[];
   /** 負け戦：このラウンドが終わったら打ち切る */
   cutoffRounds?: number;
+  /** ボス戦・ぬし戦（段階199。ギア「ボスキラー」） */
+  boss?: boolean;
   /** 区画ごとに書いた新しい戦闘の敵（段階160。書いていなければ、今の敵から仮に作る）と、組み合わせの型 */
   chainEnemies?: ChainEnemyDef[];
   variants?: ChainVariant[];
@@ -167,6 +169,7 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     noShutter: true,
     finishLast: true,
     ...(input.cutoffRounds ? { cutoff: { rounds: input.cutoffRounds } } : {}),
+    ...(input.boss ? { boss: true } : {}),
     ...(input.poi ? { poi: input.poi } : {}),
     ...(input.sunset ? { sunset: input.sunset } : {}),
     ...(input.teeth ? { teeth: input.teeth } : {}),

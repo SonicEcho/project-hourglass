@@ -279,7 +279,31 @@ export type ChainPassive =
   | { kind: 'climaxBoost'; rate: number }
   | { kind: 'lightBoost'; rate: number }
   | { kind: 'fragileBoost'; rate: number }
-  | { kind: 'quickStart'; count: number };
+  | { kind: 'quickStart'; count: number }
+  /**
+   * 段階199（ギアの効果。docs/milestones/M3_catalog.md の 18-6〜18-8）。
+   * 対策：shellCrack バリアを最初の1発で割って当てる・armorPierce かたいを無視・wideShot 単体の攻撃が盾と割り込みを無視・splash 倒した敵の余ったダメージがほかの敵へ・
+   * blastGuard 爆発（はじける・自爆）のダメージ −rate・counterGuard 反撃のダメージ −rate・timeKeeper ねばねばで遅れない・breakTime 自爆の敵と全体攻撃を控えた敵へ ×(1+rate)・予定1マス後ろ・
+   * hunter 回復役・リーダー・起こし役へ ×(1+rate)・finder 予定隠しと弱点が始めから見える・stopwatch 巻き戻しを1戦に count 回止める。
+   * 条件：bossBoost ボス戦・ぬし戦で威力 +rate・crowdBoost 敵が3体以上の時、全体攻撃 +rate・desperate HP が半分以下の時 +rate。
+   * 両刃：reckless 威力 +rate・受けるダメージ +taken・focus 単体の攻撃 +rate・全体の攻撃 −spread
+   */
+  | { kind: 'shellCrack'; count: number }
+  | { kind: 'armorPierce'; count: number }
+  | { kind: 'wideShot'; count: number }
+  | { kind: 'splash'; count: number }
+  | { kind: 'blastGuard'; rate: number }
+  | { kind: 'counterGuard'; rate: number }
+  | { kind: 'timeKeeper'; count: number }
+  | { kind: 'breakTime'; rate: number }
+  | { kind: 'hunter'; rate: number }
+  | { kind: 'finder'; count: number }
+  | { kind: 'stopwatch'; count: number }
+  | { kind: 'bossBoost'; rate: number }
+  | { kind: 'crowdBoost'; rate: number }
+  | { kind: 'desperate'; rate: number }
+  | { kind: 'reckless'; rate: number; taken: number }
+  | { kind: 'focus'; rate: number; spread: number };
 
 /**
  * 通常攻撃の形（段階196。武器が育つと変わる。docs/milestones/M3_catalog.md の 17-2）。
@@ -301,7 +325,7 @@ export interface ChainBasicMod {
 }
 
 /** 割合の特性の上限（段階158。今の本番の PASSIVE_CAPS と同じ考え） */
-export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1, snapBoost: 0.5, healBoost: 0.6, pushPlus: 1, heavyBoost: 0.6, timeMpSave: 2, effectBoost: 0.6, climaxBoost: 0.6, lightBoost: 0.6, fragileBoost: 0.6, quickStart: 1 };
+export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1, snapBoost: 0.5, healBoost: 0.6, pushPlus: 3, heavyBoost: 0.6, timeMpSave: 2, effectBoost: 0.6, climaxBoost: 0.6, lightBoost: 0.6, fragileBoost: 0.6, quickStart: 1, shellCrack: 1, armorPierce: 1, wideShot: 1, splash: 1, blastGuard: 0.9, counterGuard: 0.9, timeKeeper: 1, breakTime: 1, hunter: 1, finder: 1, stopwatch: 2, bossBoost: 0.6, crowdBoost: 0.6, desperate: 0.6, reckless: 0.6, focus: 0.6 };
 
 /** 重い技・札（段階193。重い技の威力の特性が効く重さ） */
 export const CHAIN_HEAVY_WEIGHT = 4;
@@ -451,6 +475,8 @@ export interface ChainVariant {
 export type ChainGrade = 'high' | 'mid' | 'low';
 
 export interface ChainBattleDef {
+  /** ボス戦・ぬし戦（段階199。ギア「ボスキラー」が効く） */
+  boss?: boolean;
   id: string;
   name: string;
   allies: ChainAllyDef[];
@@ -718,12 +744,16 @@ export type ChainEvent =
   | { type: 'unveil'; uid: string }
   /** 巻き戻し：ラウンドの終わりに、受けたダメージを回復した */
   | { type: 'rewind'; uid: string; amount: number }
+  /** ストップウォッチ（段階199。ギア）：巻き戻しを止めた */
+  | { type: 'rewindStop'; uid: string }
   /** リーダーを倒した：ほかの敵が動揺してダウンした */
   | { type: 'panic'; uid: string; downed: string[] }
   /** 弱点が分かった（その属性で初めて当てた。ハイライトで弱点扱いになっただけでは分からない） */
   | { type: 'reveal'; uid: string; defId: string; element: Element };
 
 export interface ChainState {
+  /** ストップウォッチ（段階199。ギア）で巻き戻しを止めた回数 */
+  rewindStops?: number;
   def: ChainBattleDef;
   rules: ChainRules;
   round: number;
@@ -1021,12 +1051,33 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
   for (let i = 0; i < handLimit(s); i++) draw(s);
   // 言えなかった言葉（段階186）：手札に1枚
   if (def.word) s.hand.push(def.word.card);
+  // ファインダー（段階199。ギア）：予定隠しと弱点が、戦闘の始めから見える
+  if (teamHas(s, 'finder')) {
+    for (const e of s.enemies) {
+      e.veiled = false;
+      const d = chainEnemyDef(s, e.defId);
+      if (d) s.known[e.defId] = [...new Set([...(s.known[e.defId] ?? []), ...d.weak])];
+    }
+  }
   planIntents(s);
   return s;
 }
 
 /** 特性の合計（種類ごと。上限で止める） */
 type SumKind = Exclude<ChainPassive['kind'], 'elementBoost'>;
+
+/** 味方のだれか（立っている仲間）が、その特性を持っているか（段階199。ギアの効果のうち、味方全体に効く物） */
+function teamHas(s: ChainState, kind: SumKind): boolean {
+  return s.allies.some((a) => a.hp > 0 && passiveSum(a, kind) > 0);
+}
+
+/** 両刃のギアの損の側（段階199）：捨て身の受けるダメージ・一点集中の全体攻撃の減り */
+function passiveCost(u: ChainUnit, kind: 'reckless' | 'focus'): number {
+  let sum = 0;
+  for (const p of u.passives ?? []) if (p.kind === 'reckless' && kind === 'reckless') sum += p.taken;
+  else if (p.kind === 'focus' && kind === 'focus') sum += p.spread;
+  return Math.min(sum, 0.9);
+}
 
 function passiveSum(u: ChainUnit, kind: SumKind): number {
   let sum = 0;
@@ -1262,6 +1313,8 @@ interface HitOpts {
   /** 段階193：スナップ（札）の攻撃・重さ4以上の行動（特性が効く）、部位への倍率、かたいを無視 */
   card?: boolean;
   heavyMove?: boolean;
+  /** 段階199：全体攻撃（ギアの群れ払い・一点集中） */
+  aoe?: boolean;
   /** 段階196：重さ1の行動・邪魔されなければ強い行動（特性が効く） */
   lightMove?: boolean;
   fragileMove?: boolean;
@@ -1282,7 +1335,8 @@ function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
   if (e.trait === 'pop') {
     ev.push({ type: 'pop', uid: e.uid });
     const pp = chainEnemyDef(s, e.defId)?.popPower;
-    for (const a of living(s.allies)) hurtAlly(e.uid, a, pp ? Math.max(1, Math.floor((pp * e.atk) / Math.max(1, a.def))) : s.rules.popDamage, ev);
+    // ブラストシェルター（段階199。ギア）：爆発のダメージが減る
+    for (const a of living(s.allies)) hurtAlly(e.uid, a, Math.max(1, Math.floor((pp ? (pp * e.atk) / Math.max(1, a.def) : s.rules.popDamage) * (1 - passiveSum(a, 'blastGuard')))), ev);
   }
 }
 
@@ -1332,12 +1386,14 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   // 殻：最初の1回は割れるだけ（調整17：バリアは shellHits 発まで。重い一撃は1発で割って、そのまま当たる）
   if (e.shell) {
     e.shellLeft = (e.shellLeft ?? 1) - 1;
-    if (opts.heavy || e.shellLeft <= 0) {
+    // シェルクラック（段階199。ギア）：最初の1発で全部割って、そのまま当たる
+    const crack = actor.side === 'ally' && passiveSum(actor, 'shellCrack') > 0;
+    if (opts.heavy || crack || e.shellLeft <= 0) {
       e.shell = false;
       e.shellLeft = 0;
     }
     ev.push({ type: 'shellBreak', uid: e.uid });
-    if (!opts.heavy) return;
+    if (!opts.heavy && !crack) return;
   }
   const stat = el === 'physical' ? actor.atk : actor.mag;
   // 仕掛け：むき出しは弱点になる、すきは締めの札が2倍、目印はほかの敵みんなに広がる（どれも1回で消える。広がった先では使わない）
@@ -1371,16 +1427,39 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     if (opts.fragileMove) mult *= 1 + passiveSum(actor, 'fragileBoost');
   }
   if (opts.partMult && chainEnemyDef(s, e.defId)?.part) mult *= opts.partMult;
+  // ギアの効果（段階199）：対策・条件・両刃
+  let breakPush = false;
+  if (actor.side === 'ally') {
+    if (e.trait === 'healer' || e.trait === 'leader' || e.trait === 'waker') mult *= 1 + passiveSum(actor, 'hunter');
+    const bt = passiveSum(actor, 'breakTime');
+    if (bt > 0 && (e.trait === 'timer' || s.intents.some((it) => it.enemy === e.uid && it.move.all))) {
+      mult *= 1 + bt;
+      breakPush = true;
+    }
+    if (s.def.boss) mult *= 1 + passiveSum(actor, 'bossBoost');
+    if (opts.aoe && living(s.enemies).length >= 3) mult *= 1 + passiveSum(actor, 'crowdBoost');
+    if (actor.hp * 2 <= actor.maxHp) mult *= 1 + passiveSum(actor, 'desperate');
+    mult *= 1 + passiveSum(actor, 'reckless');
+    const focus = passiveSum(actor, 'focus');
+    if (focus > 0) mult *= opts.aoe ? 1 - passiveCost(actor, 'focus') : 1 + focus;
+  }
   let raw = ((power + (opts.add ?? 0)) * stat) / Math.max(1, e.def);
   // かたい：1発ごとに減らす（重い一撃は減らない）
-  if (e.trait === 'hard' && !opts.heavy && !opts.pierceHard) raw = Math.max(0, raw - s.rules.hardCut);
+  const pierceHard = opts.pierceHard || (actor.side === 'ally' && passiveSum(actor, 'armorPierce') > 0);
+  if (e.trait === 'hard' && !opts.heavy && !pierceHard) raw = Math.max(0, raw - s.rules.hardCut);
   const amount = Math.max(1, Math.floor(raw * mult));
   if (actor.side === 'ally') {
     s.roundHits++;
     e.roundTaken = (e.roundTaken ?? 0) + 1;
   }
+  // スプラッシュ（段階199。ギア）：倒した敵の余ったダメージ
+  const over = amount - e.hp;
   e.hp = Math.max(0, e.hp - amount);
   ev.push({ type: 'damage', from: actor.uid, to: e.uid, amount, weak: aff.weak, resist: aff.resist });
+  if (breakPush && !ctx.countered.has(`break:${e.uid}`)) {
+    ctx.countered.add(`break:${e.uid}`);
+    ev.push({ type: 'push', uid: e.uid, by: 1, out: false, moved: false });
+  }
   // 予定隠し：当たると、このラウンドの予定が見える（調整12）
   if (e.veiled) {
     e.veiled = false;
@@ -1400,8 +1479,18 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
       ev.push({ type: 'drain', to: actor.uid, amount: heal });
     }
   }
-  if (e.hp === 0) defeatEnemy(s, e, ev);
-  else if (aff.weak && !opts.noChain) knockDown(s, e, ev);
+  if (e.hp === 0) {
+    defeatEnemy(s, e, ev);
+    if (over > 0 && actor.side === 'ally' && passiveSum(actor, 'splash') > 0) {
+      const next = living(s.enemies).find((x) => x.uid !== e.uid);
+      if (next) {
+        const hit = Math.min(next.hp, over);
+        next.hp -= hit;
+        ev.push({ type: 'damage', from: actor.uid, to: next.uid, amount: hit, weak: false, resist: false });
+        if (next.hp === 0) defeatEnemy(s, next, ev);
+      }
+    }
+  } else if (aff.weak && !opts.noChain) knockDown(s, e, ev);
   // 歯をそろえる（段階171）：このラウンドに決まった回数当てると、ダウン（警戒中はしない）
   const teeth = s.def.teeth;
   if (teeth && actor.side === 'ally' && e.hp > 0 && e.defId === teeth.target && (e.roundTaken ?? 0) === teeth.need) {
@@ -1409,7 +1498,7 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     knockDown(s, e, ev);
   }
   // ねばねば：この行動の後、まだ動いていない仲間が遅れる
-  if (e.trait === 'sticky' && !ctx.stuck) {
+  if (e.trait === 'sticky' && !ctx.stuck && !(actor.side === 'ally' && passiveSum(actor, 'timeKeeper') > 0)) {
     ctx.stuck = true;
     s.timeShift += s.rules.stickyDelay;
     ev.push({ type: 'sticky', uid: e.uid, delay: s.rules.stickyDelay });
@@ -1418,7 +1507,7 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
   if (e.trait === 'counter' && e.hp > 0 && !e.down && !ctx.countered.has(e.uid)) {
     ctx.countered.add(e.uid);
     ev.push({ type: 'counter', uid: e.uid, to: actor.uid });
-    hurtAlly(e.uid, actor, Math.max(1, Math.floor((s.rules.counterPower * e.atk) / Math.max(1, actor.def))), ev);
+    hurtAlly(e.uid, actor, Math.max(1, Math.floor(((s.rules.counterPower * e.atk) / Math.max(1, actor.def)) * (1 - passiveSum(actor, 'counterGuard')))), ev);
   }
   // 目印：ほかの敵みんなに、同じ威力で広がる（広がった先ではダウンしない）
   if (trick === 'spread') {
@@ -1481,7 +1570,8 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     actor.riposte = Math.max(actor.riposte ?? 0, mods.riposte);
     ev.push({ type: 'allyRiposteReady', uid: actor.uid });
   }
-  const pierce = eff.kind === 'damage' && !!eff.pierce;
+  // ワイドショット（段階199。ギア）：単体の攻撃が盾に吸われない
+  const pierce = (eff.kind === 'damage' && !!eff.pierce) || passiveSum(actor, 'wideShot') > 0;
   const targets = (): ChainUnit[] => (move.target === 'enemies' ? living(s.enemies) : [singleTarget(s, target, ev, actor.uid, pierce)].filter((x): x is ChainUnit => !!x));
   // 手札に触れる技（段階164）
   if (eff.kind === 'draw' || eff.kind === 'cycle' || eff.kind === 'retrieve') {
@@ -1645,7 +1735,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   const add = mods.add + s.exposure;
   const hitsBefore = s.roundHits;
   const mark = ev.length;
-  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link', card: fromCard, heavyMove: move.weight >= CHAIN_HEAVY_WEIGHT, lightMove: move.weight <= 1, fragileMove: !!eff.fragile, partMult: eff.partMult, pierceHard: eff.pierceHard };
+  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link', card: fromCard, aoe: move.target === 'enemies', heavyMove: move.weight >= CHAIN_HEAVY_WEIGHT, lightMove: move.weight <= 1, fragileMove: !!eff.fragile, partMult: eff.partMult, pierceHard: eff.pierceHard };
   const scaled = (e: ChainUnit): number => {
     if (!eff.scale) return 0;
     const unit = eff.scale.by === 'hits' ? hitsBefore : eff.scale.by === 'targetHits' ? (e.roundTaken ?? 0) : eff.scale.by === 'slotsLeft' ? Math.max(0, s.rules.roundLen - at) : s.roundSupports;
@@ -1834,7 +1924,8 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
       riposte(a);
       continue;
     }
-    hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate * (1 - (a.armor ?? 0)))), ev);
+    // 捨て身（段階199。ギア）：受けるダメージが増える
+    hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate * (1 - (a.armor ?? 0)) * (1 + passiveCost(a, 'reckless')))), ev);
     // 暑さ（段階188）：照り返しで上がり、水しぶきで下がる
     if (s.def.heat && a.hp > 0 && (m.heats || m.cools)) setHeat(s, a, (a.heat ?? 0) + (m.heats ?? 0) - (m.cools ?? 0), ev);
     riposte(a);
@@ -2097,7 +2188,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       const move = moves[q.i];
       // 割り込み：単体の行動に狙われた敵は、まだ動いていない自分の予定を1つ、その前に動かす（調整12）
       const aimed = move?.target === 'enemy' ? s.enemies.find((x) => x.uid === step.target) : undefined;
-      if (aimed && aimed.trait === 'interrupt' && aimed.hp > 0 && !aimed.gone && !aimed.down && at <= s.rules.roundLen && actors.every((a) => a.hp > 0)) {
+      if (aimed && aimed.trait === 'interrupt' && !actors.some((a) => passiveSum(a, 'wideShot') > 0) && aimed.hp > 0 && !aimed.gone && !aimed.down && at <= s.rules.roundLen && actors.every((a) => a.hp > 0)) {
         const qi = pending.findIndex((x) => x.kind === 'enemy' && x.intent.enemy === aimed.uid);
         const eq = qi >= 0 ? pending[qi] : undefined;
         if (eq && eq.kind === 'enemy') {
@@ -2339,7 +2430,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       if (e.timer <= 0) {
         ev.push({ type: 'timerBlast', uid: e.uid });
         const tp = chainEnemyDef(s, e.defId)?.timerPower;
-        for (const a of s.allies.filter((x) => x.hp > 0)) hurtAlly(e.uid, a, tp ? Math.max(1, Math.floor((tp * e.atk) / Math.max(1, a.def))) : s.rules.timerDamage, ev);
+        for (const a of s.allies.filter((x) => x.hp > 0)) hurtAlly(e.uid, a, Math.max(1, Math.floor((tp ? (tp * e.atk) / Math.max(1, a.def) : s.rules.timerDamage) * (1 - passiveSum(a, 'blastGuard')))), ev);
         e.gone = true;
       }
       push(null, `end:${e.uid}`, s.rules.roundLen, e.uid, e.timer <= 0 ? '大爆発' : `あと${e.timer}`, ev, undefined, true);
@@ -2353,6 +2444,13 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
   if (!stopped) {
     // 巻き戻し：ダウンしていなければ、このラウンドに受けたダメージを回復する（調整12）
     for (const e of living(s.enemies).filter((x) => x.trait === 'rewind' && !x.down && x.roundHp !== undefined && x.hp < x.roundHp)) {
+      // ストップウォッチ（段階199。ギア）：1戦に決まった回数まで、巻き戻しを止める
+      const stops = Math.max(0, ...s.allies.filter((a) => a.hp > 0).map((a) => passiveSum(a, 'stopwatch')));
+      if ((s.rewindStops ?? 0) < stops) {
+        s.rewindStops = (s.rewindStops ?? 0) + 1;
+        push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻しを止めた', [{ type: 'rewindStop', uid: e.uid }], undefined, true);
+        continue;
+      }
       const amount = e.roundHp! - e.hp;
       e.hp = e.roundHp!;
       push(null, `rewind:${e.uid}`, s.rules.roundLen, e.uid, '巻き戻し', [{ type: 'rewind', uid: e.uid, amount }], undefined, true);
@@ -2431,7 +2529,7 @@ function endRound(s: ChainState): void {
     // 状態は、ラウンドの終わりごとに1つ減り、0で消える
     if (e.status && --e.status.left <= 0) e.status = undefined;
     // 予定隠し：次のラウンドの予定はまた隠れる。巻き戻し：次のラウンドの始めの HP を覚える（調整12）
-    if (e.trait === 'veil' && e.hp > 0) e.veiled = true;
+    if (e.trait === 'veil' && e.hp > 0 && !teamHas(s, 'finder')) e.veiled = true;
     e.roundHp = e.hp;
     // 属性チェンジ：弱点が次の属性に変わる（調整12）
     const cycle = e.trait === 'shift' ? chainEnemyDef(s, e.defId)?.weakCycle : undefined;
