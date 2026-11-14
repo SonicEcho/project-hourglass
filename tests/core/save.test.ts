@@ -306,7 +306,8 @@ describe('セーブ：古い版から直す', () => {
       raw.run.armory.weapons.hero.evolvedTo = 'flameBlade';
     });
     expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    expect(res.ok && res.save.run.armory.weapons.hero.path).toEqual([{ id: 'flameBlade', style: 0 }]);
+    // 段階197：版14 → 版15 で、進化は外れて進化前に戻る（レベルと能力値は残る）
+    expect(res.ok && res.save.run.armory.weapons.hero.path).toEqual([]);
     expect(res.ok && res.save.run.armory.weapons.akari.path).toEqual([]);
     expect(res.ok && 'evolvedTo' in res.save.run.armory.weapons.hero).toBe(false);
   });
@@ -316,16 +317,16 @@ describe('セーブ：古い版から直す', () => {
       const res = parseEdited((raw) => (raw.run.armory.weapons.hero.path = path));
       return res.ok ? res.save.run.armory.weapons.hero.path : null;
     };
-    expect(pathOf([{ id: 'flameBlade', style: 1 }, { id: 'crimsonBlade', style: 0 }])).toEqual([{ id: 'flameBlade', style: 1 }, { id: 'crimsonBlade', style: 0 }]);
-    expect(pathOf([{ id: 'flameBlade', style: 5 }])).toEqual([]);
-    expect(pathOf([{ id: 'crimsonBlade', style: 0 }])).toEqual([]);
-    expect(pathOf([{ id: 'flameBlade', style: 0 }, { id: 'glacierBlade', style: 0 }])).toEqual([{ id: 'flameBlade', style: 0 }]);
+    expect(pathOf([{ id: 'breakEdge', style: 1 }, { id: 'crushEdge', style: 0 }])).toEqual([{ id: 'breakEdge', style: 1 }, { id: 'crushEdge', style: 0 }]);
+    expect(pathOf([{ id: 'breakEdge', style: 5 }])).toEqual([]);
+    expect(pathOf([{ id: 'crushEdge', style: 0 }])).toEqual([]);
+    expect(pathOf([{ id: 'breakEdge', style: 0 }, { id: 'mirrorSword', style: 0 }])).toEqual([{ id: 'breakEdge', style: 0 }]);
     expect(
       pathOf([
-        { id: 'flameBlade', style: 0 },
-        { id: 'crimsonBlade', style: 0 },
-        { id: 'blazeBlade', style: 0 },
-        { id: 'blazeBlade_1a', style: 0 },
+        { id: 'breakEdge', style: 0 },
+        { id: 'crushEdge', style: 0 },
+        { id: 'grandEdge', style: 0 },
+        { id: 'grandEdge_1a', style: 0 },
       ]),
     ).toHaveLength(3);
     expect(pathOf('broken')).toEqual([]);
@@ -394,7 +395,7 @@ describe('セーブ：今のデータに合わせて整える', () => {
 
   it('武器の進化で広がったマスに置いたギアは、そのまま残る', () => {
     const r = freshRun();
-    r.armory = { ...r.armory, weapons: { ...r.armory.weapons, hero: { ...r.armory.weapons.hero, path: [{ id: 'flameBlade', style: 0 }] } } };
+    r.armory = { ...r.armory, weapons: { ...r.armory.weapons, hero: { ...r.armory.weapons.hero, path: [{ id: 'breakEdge', style: 0 }] } } };
     const raw = JSON.parse(serializeSave(r, AT));
     // 広がったブリッジの下の端（5行目）に1マスのギア
     raw.run.navi.parts[0].placement = { charId: 'hero', col: 1, row: 4, rotation: 0 };

@@ -52,7 +52,12 @@ export type EvolutionCondition =
   /** 鍵の素材を持っている（進化すると1つ使う。段階27b） */
   | { kind: 'key'; item: string }
   /** パラメータが max 以下（寄り道の、変わった条件。段階42） */
-  | { kind: 'paramMax'; param: WeaponParamKey; max: number };
+  | { kind: 'paramMax'; param: WeaponParamKey; max: number }
+  /** 火・氷・雷のどれかが min 以上（段階197。ハルトの記の系統） */
+  | { kind: 'elementAny'; min: number };
+
+/** 進化の条件の確かめ（レベル、加わった時の選択も含む） */
+export type EvolutionCheck = EvolutionCondition | { kind: 'level'; min: number } | { kind: 'join' };
 
 /**
  * 型（段階42。docs/design/growth.md の 8-1c）：進化するたびに、その進化先の型から1つを選ぶ。
@@ -113,6 +118,11 @@ export interface WeaponDef {
   /** 持ち主のキャラ */
   owner: string;
   evolutions: EvolutionDef[];
+  /**
+   * 遅く加わる仲間（段階197。一覧の 17-5）：この段まで進んだ武器で加わる。この段までの進化は、加わった時に、条件なし・鍵を使わずに選ぶ
+   * （寄り道は選べない）
+   */
+  joinTier?: number;
   /** 始めの経験値（段階91a。物語の途中から加わる仲間の武器を、途中のレベルから始める） */
   startExp?: number;
 }
@@ -412,6 +422,11 @@ export function nextEvolutions(data: WeaponData, w: WeaponState): EvolutionDef[]
   return def ? childEvolutions(def, w.path[w.path.length - 1]?.id) : [];
 }
 
+/** 加わった時の選択がまだ残っているか（段階197。遅く加わる仲間の武器で、joinTier の段まで進化していない） */
+export function isJoinChoice(data: WeaponData, w: WeaponState): boolean {
+  return w.path.length < (data.weapons[w.defId]?.joinTier ?? 0);
+}
+
 /** その段の進化に要るレベル */
 export function evolveLevelFor(data: WeaponData, tier: number): number {
   const list = data.evolveLevels;
@@ -424,9 +439,11 @@ export function evolutionChecks(
   w: WeaponState,
   evo: EvolutionDef,
   items: Record<string, number> = {},
-): { condition: EvolutionCondition | { kind: 'level'; min: number }; ok: boolean }[] {
+): { condition: EvolutionCheck; ok: boolean }[] {
+  // 加わった時の選択（段階197）：条件なし（寄り道は選べない）
+  if (isJoinChoice(data, w)) return [{ condition: { kind: 'join' }, ok: !evo.detour }];
   const level = evolveLevelFor(data, evolutionTier(data.weapons[w.defId], evo.id));
-  const checks: { condition: EvolutionCondition | { kind: 'level'; min: number }; ok: boolean }[] = [
+  const checks: { condition: EvolutionCheck; ok: boolean }[] = [
     { condition: { kind: 'level', min: level }, ok: weaponLevel(data, w.exp) >= level },
   ];
   for (const c of evo.conditions) {
@@ -437,7 +454,9 @@ export function evolutionChecks(
           ? w.params[c.param] <= c.max
           : c.kind === 'key'
             ? (items[c.item] ?? 0) >= 1
-            : tendencyOf(w) === c.color;
+            : c.kind === 'elementAny'
+              ? Math.max(w.params.fire, w.params.ice, w.params.thunder) >= c.min
+              : tendencyOf(w) === c.color;
     checks.push({ condition: c, ok });
   }
   return checks;
@@ -460,9 +479,9 @@ export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: st
 export function evolveWeapon(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0): ArmoryState {
   const err = getEvolveError(data, armory, charId, evolutionId, style);
   if (err) throw new Error(err);
-  // 鍵の素材を使う
+  // 鍵の素材を使う（加わった時の選択は使わない。段階197）
   const items = { ...armory.items };
-  for (const c of findEvolution(data, armory.weapons[charId], evolutionId)!.conditions) if (c.kind === 'key') items[c.item] -= 1;
+  if (!isJoinChoice(data, armory.weapons[charId])) for (const c of findEvolution(data, armory.weapons[charId], evolutionId)!.conditions) if (c.kind === 'key') items[c.item] -= 1;
   const w = armory.weapons[charId];
   return { ...armory, items, weapons: { ...armory.weapons, [charId]: { ...w, path: [...w.path, { id: evolutionId, style }] } } };
 }

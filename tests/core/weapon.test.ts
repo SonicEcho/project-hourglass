@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ArmoryState } from '../../src/core';
 import {
+  isJoinChoice,
   absorbMaterial,
   absorbPicked,
   getAbsorbPickedError,
@@ -218,48 +219,77 @@ describe('武器：経験値とレベル', () => {
 });
 
 describe('武器：進化（能力値＋鍵の素材。段階27b）', () => {
-  /** ハルトの火を12にして、Lv3 にする（お面のひも6つ。段階74で進化の能力値を2倍にした） */
-  const fire6 = () => withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 20);
+  /** ハルトの攻撃値を12にして、Lv3 にする（水風船のゴム6つ。段階197：ハルトの1回目の刃の系統は攻撃） */
+  const atk6 = () => withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('balloonRubber')), 'hero', 20);
 
   it('Lv3、能力値、鍵の素材がそろうと進化でき、鍵を1つ使う', () => {
-    let a = fire6();
-    expect(getEvolveError(D, a, 'hero', 'flameBlade')).toBe('conditions are not met');
-    a = addItems(a, ['maskString']);
-    expect(getEvolveError(D, a, 'hero', 'flameBlade')).toBeNull();
-    a = evolveWeapon(D, a, 'hero', 'flameBlade');
-    // 型を選ばなければ1つ目の型（烈）
-    expect(weaponName(D, a.weapons.hero)).toBe('フレイムブレード・烈');
-    expect(a.weapons.hero.path).toEqual([{ id: 'flameBlade', style: 0 }]);
-    expect(a.items.maskString).toBe(0);
+    let a = atk6();
+    expect(getEvolveError(D, a, 'hero', 'breakEdge')).toBe('conditions are not met');
+    a = addItems(a, ['balloonRubber']);
+    expect(getEvolveError(D, a, 'hero', 'breakEdge')).toBeNull();
+    a = evolveWeapon(D, a, 'hero', 'breakEdge');
+    // 型を選ばなければ1つ目の型（剛）
+    expect(weaponName(D, a.weapons.hero)).toBe('ブレイクエッジ・剛');
+    expect(a.weapons.hero.path).toEqual([{ id: 'breakEdge', style: 0 }]);
+    expect(a.items.balloonRubber).toBe(0);
   });
 
   it('条件を1つずつ確かめられる（レベル、能力値、鍵）', () => {
-    const a = fire6();
-    const evo = D.weapons.recordSword.evolutions.find((e) => e.id === 'flameBlade')!;
+    const a = atk6();
+    const evo = D.weapons.recordSword.evolutions.find((e) => e.id === 'breakEdge')!;
     expect(evolutionChecks(D, a.weapons.hero, evo, a.items).map((c) => c.ok)).toEqual([true, true, false]);
-    expect(evolutionChecks(D, a.weapons.hero, evo, { maskString: 1 }).map((c) => c.ok)).toEqual([true, true, true]);
+    expect(evolutionChecks(D, a.weapons.hero, evo, { balloonRubber: 1 }).map((c) => c.ok)).toEqual([true, true, true]);
   });
 
   it('1回選んだら、ほかの枝には進化できない（段階42）', () => {
-    let a = addItems(fire6(), ['maskString', 'goldfishFin']);
-    a = evolveWeapon(D, a, 'hero', 'flameBlade');
-    expect(getEvolveError(D, a, 'hero', 'frostBlade')).toBe('not the next evolution');
-    expect(getEvolveError(D, a, 'hero', 'flameBlade')).toBe('not the next evolution');
+    let a = addItems(atk6(), ['balloonRubber', 'cottonStick']);
+    a = evolveWeapon(D, a, 'hero', 'breakEdge');
+    expect(getEvolveError(D, a, 'hero', 'copySword')).toBe('not the next evolution');
+    expect(getEvolveError(D, a, 'hero', 'breakEdge')).toBe('not the next evolution');
   });
 
   it('レベルが足りなければ進化できない', () => {
-    const a = addItems(withExp(fire6(), 'hero', D.levelExp[1] - 1), ['maskString']);
-    expect(() => evolveWeapon(D, a, 'hero', 'flameBlade')).toThrow();
+    const a = addItems(withExp(atk6(), 'hero', D.levelExp[1] - 1), ['balloonRubber']);
+    expect(() => evolveWeapon(D, a, 'hero', 'breakEdge')).toThrow();
   });
 
-  it('1章のハルトとあかりの進化先は、どれも鍵の素材が要る（ギアの傾向は使わない）', () => {
+  it('1章のハルトの進化先は、どれも鍵の素材が要る。あかりの歌の系統だけは、ギアの傾向（2章から）', () => {
     for (const w of [D.weapons.recordSword, D.weapons.prayerRod]) {
       for (const e of w.evolutions.filter((x) => !x.sealed)) {
-        expect(e.conditions.some((c) => c.kind === 'key'), e.id).toBe(true);
-        expect(e.conditions.some((c) => c.kind === 'tendency'), e.id).toBe(false);
+        const tendency = e.conditions.some((c) => c.kind === 'tendency');
+        expect(tendency, e.id).toBe(['bellRod', 'chimeRod', 'templeBellRod'].includes(e.id));
+        if (!tendency) expect(e.conditions.some((c) => c.kind === 'key'), e.id).toBe(true);
         for (const c of e.conditions) if (c.kind === 'key') expect(D.items[c.item]?.kind, c.item).toBe('material');
       }
     }
+  });
+
+  it('条件「どれかの属性が◯以上」（段階197。ハルトの記の系統）', () => {
+    const a = withExp(absorbMany(createArmory(D), 'hero', Array<string>(4).fill('balloonRubber')), 'hero', 20);
+    const evo = D.weapons.recordSword.evolutions.find((e) => e.id === 'bookmarkSword')!;
+    // 攻撃 8・雷 4 では、どれかの属性 6 に届かない
+    expect(evolutionChecks(D, a.weapons.hero, evo, { maskString: 1 }).map((c) => c.ok)).toEqual([true, true, false, true]);
+    const b = absorbMany(a, 'hero', ['cottonStick']);
+    expect(evolutionChecks(D, b.weapons.hero, evo, { maskString: 1 }).every((c) => c.ok)).toBe(true);
+  });
+
+  it('遅く加わる仲間（段階197）：小夜子は1回目、早瀬は2回目までを、条件なし・鍵を使わずに選べる（寄り道は選べない）', () => {
+    let a = createArmory(D);
+    expect(isJoinChoice(D, a.weapons.sayoko)).toBe(true);
+    expect(getEvolveError(D, a, 'sayoko', 'duskNaginata')).toBeNull();
+    a = evolveWeapon(D, a, 'sayoko', 'duskNaginata');
+    expect(isJoinChoice(D, a.weapons.sayoko)).toBe(false);
+    expect(getEvolveError(D, a, 'sayoko', 'midnightNaginata')).toBe('conditions are not met');
+    a = evolveWeapon(D, a, 'hayase', 'secondDriver');
+    expect(getEvolveError(D, a, 'hayase', 'coolDriver')).toBe('not the next evolution');
+    a = evolveWeapon(D, a, 'hayase', 'pendulumDriver');
+    expect(a.weapons.hayase.path.map((p) => p.id)).toEqual(['secondDriver', 'pendulumDriver']);
+    expect(isJoinChoice(D, a.weapons.hayase)).toBe(false);
+    expect(a.items).toEqual({});
+    // 寄り道は選べない
+    const h = evolveWeapon(D, createArmory(D), 'hayase', 'temperDriver');
+    expect(getEvolveError(D, h, 'hayase', 'coolDriver')).toBe('conditions are not met');
+    expect(isJoinChoice(D, a.weapons.hero)).toBe(false);
   });
 });
 
@@ -271,12 +301,13 @@ describe('武器：キャラへの反映', () => {
     expect(hero.passives).toEqual([{ kind: 'elementBoost', element: 'fire', rate: 6 * D.elementRate }]);
   });
 
-  it('進化先の能力値・特性・通常攻撃の属性が付く', () => {
-    let a = addItems(withExp(absorbMany(createArmory(D), 'akari', Array<string>(6).fill('maskString')), 'akari', 20), ['maskString']);
-    a = evolveWeapon(D, a, 'akari', 'flameRod');
+  it('進化先の能力値・通常攻撃の属性と形が付く', () => {
+    let a = addItems(withExp(absorbMany(createArmory(D), 'akari', Array<string>(4).fill('goldfishFin')), 'akari', 20), ['goldfishFin']);
+    a = evolveWeapon(D, a, 'akari', 'iceRod');
     const akari = applyWeapons(D, a, PARTY).find((c) => c.id === 'akari')!;
-    expect(akari.attackElement).toBe('fire');
+    expect(akari.attackElement).toBe('ice');
     expect(akari.stats.mag).toBe(PARTY[1].stats.mag + 3);
+    expect(akari.basic).toEqual({ hits: 2 });
   });
 
 
@@ -286,8 +317,8 @@ describe('武器：キャラへの反映', () => {
   });
 
   it('ブリッジが伸びる型で進化すると、盤のすぐ下に、ブリッジの真下から1マス増える（段階100b。段階111 から1マス）', () => {
-    let a = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 20), ['maskString']);
-    a = evolveWeapon(D, a, 'hero', 'flameBlade');
+    let a = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('balloonRubber')), 'hero', 20), ['balloonRubber']);
+    a = evolveWeapon(D, a, 'hero', 'breakEdge');
     const data = naviDataWithWeapons(NAVI_DATA, D, a);
     const board = data.boards.hero;
     expect(board.rows).toBe(NAVI_DATA.boards.hero.rows + 1);
@@ -332,10 +363,12 @@ describe('武器：表示の文字', () => {
     expect(describeCondition({ kind: 'key', item: 'maskString' }, D)).toBe('鍵：お面のひも');
     expect(describeCondition({ kind: 'level', min: 3 })).toBe('Lv3');
     expect(describeFragment(FRAGMENTS.elation)).toBe('火 +1');
-    const flame = D.weapons.recordSword.evolutions[0];
+    const edge = D.weapons.recordSword.evolutions[0];
     const { describeGains } = await import('../../src/ui/weaponText');
     expect(describeGains(ITEMS.goldfishFin.gains)).toBe('氷+3、火−1');
-    expect(describeEvolution(flame)).toBe('通常攻撃が火になる。攻撃 +3');
+    expect(describeEvolution(edge)).toBe('通常攻撃が2回当たる。攻撃 +4');
+    expect(describeCondition({ kind: 'elementAny', min: 6 })).toBe('火・氷・雷のどれか 6以上');
+    expect(describeCondition({ kind: 'join' })).toBe('加わった時の選択（条件なし）');
   });
 });
 
@@ -352,20 +385,21 @@ describe('武器：進化ツリー（段階42）', () => {
     return a;
   };
 
-  it('ツリーの形：合流せず、本道は 3 → 3 → 4 → 5 → 5 → 6、寄り道は1本。3回目までは作ってあり、その先は影', () => {
+  it('ツリーの形（段階197）：合流せず、本道は 3 → 3 → 4。寄り道は作った物2本と言い伝え。3回目までは作ってあり、その先は影', () => {
     for (const w of Object.values(D.weapons)) {
       const ids = new Set(w.evolutions.map((e) => e.id));
       expect(ids.size, w.id).toBe(w.evolutions.length);
       for (const e of w.evolutions) if (e.from) expect(ids.has(e.from), e.id).toBe(true);
       const main = w.evolutions.filter((e) => !e.detour);
-      const perTier = [1, 2, 3, 4, 5, 6].map((t) => main.filter((e) => evolutionTier(w, e.id) === t).length);
-      expect(perTier, w.id).toEqual([3, 3, 4, 5, 5, 6]);
+      const perTier = [1, 2, 3].map((t) => main.filter((e) => evolutionTier(w, e.id) === t).length);
+      expect(perTier, w.id).toEqual([3, 3, 4]);
       const detours = w.evolutions.filter((e) => e.detour);
-      expect(detours, w.id).toHaveLength(1);
+      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(2);
+      for (const e of detours.filter((x) => x.sealed)) expect(e.legend, e.id).toBeTruthy();
       for (const e of w.evolutions) {
         const tier = evolutionTier(w, e.id);
         const kids = w.evolutions.filter((x) => x.from === e.id);
-        if (tier <= 3 || e.detour) {
+        if ((tier <= 3 && !e.detour) || (e.detour && !e.sealed)) {
           // 作った進化先：名前・型2つ（横と縦を1つずつ）・鍵の素材
           expect(e.sealed, e.id).toBeFalsy();
           expect(e.name, e.id).not.toBe('');
@@ -385,43 +419,46 @@ describe('武器：進化ツリー（段階42）', () => {
   });
 
   it('2回目は Lv5、3回目は Lv7 で、能力値と鍵がそろうと進化できる', () => {
-    let a = evolveAlong([['flameBlade', 0]]);
+    let a = evolveAlong([['breakEdge', 0]]);
     a = withExp(a, 'hero', D.levelExp[2]);
-    const crimson = D.weapons.recordSword.evolutions.find((e) => e.id === 'crimsonBlade')!;
-    a = addItems(a, ['beigoma']);
-    expect(evolutionChecks(D, a.weapons.hero, crimson, a.items)[0]).toEqual({ condition: { kind: 'level', min: 5 }, ok: false });
-    expect(getEvolveError(D, a, 'hero', 'crimsonBlade')).toBe('conditions are not met');
+    const crush = D.weapons.recordSword.evolutions.find((e) => e.id === 'crushEdge')!;
+    a = addItems(a, ['tinKey']);
+    expect(evolutionChecks(D, a.weapons.hero, crush, a.items)[0]).toEqual({ condition: { kind: 'level', min: 5 }, ok: false });
+    expect(getEvolveError(D, a, 'hero', 'crushEdge')).toBe('conditions are not met');
     a = withExp(a, 'hero', D.levelExp[3]);
-    expect(getEvolveError(D, a, 'hero', 'crimsonBlade')).toBeNull();
-    a = evolveWeapon(D, a, 'hero', 'crimsonBlade', 1);
-    expect(weaponName(D, a.weapons.hero)).toBe('紅蓮の刃・灯');
+    expect(getEvolveError(D, a, 'hero', 'crushEdge')).toBeNull();
+    a = evolveWeapon(D, a, 'hero', 'crushEdge', 1);
+    expect(weaponName(D, a.weapons.hero)).toBe('クラッシュエッジ・砕');
     expect(a.weapons.hero.path).toHaveLength(2);
-    const blaze = D.weapons.recordSword.evolutions.find((e) => e.id === 'blazeBlade')!;
-    expect(evolutionChecks(D, a.weapons.hero, blaze, {})[0].condition).toEqual({ kind: 'level', min: 7 });
+    const grand = D.weapons.recordSword.evolutions.find((e) => e.id === 'grandEdge')!;
+    expect(evolutionChecks(D, a.weapons.hero, grand, {})[0].condition).toEqual({ kind: 'level', min: 7 });
   });
 
   it('型は選べ、知らない型では進化できない。まだ作っていない先には進化できない', () => {
-    const base = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('maskString')), 'hero', 999), ['maskString']);
-    expect(getEvolveError(D, base, 'hero', 'flameBlade', 2)).toBe('unknown style');
-    expect(getEvolveError(D, base, 'hero', 'flameBlade', 1)).toBeNull();
-    const a = evolveAlong([['flameBlade', 0], ['crimsonBlade', 0], ['blazeBlade', 0]], Array<string>(9).fill('expoTicket'));
+    const base = addItems(withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('balloonRubber')), 'hero', 999), ['balloonRubber']);
+    expect(getEvolveError(D, base, 'hero', 'breakEdge', 2)).toBe('unknown style');
+    expect(getEvolveError(D, base, 'hero', 'breakEdge', 1)).toBeNull();
+    const a = evolveAlong([['breakEdge', 0], ['crushEdge', 0], ['grandEdge', 0]]);
     expect(nextEvolutions(D, a.weapons.hero).every((e) => e.sealed)).toBe(true);
-    expect(getEvolveError(D, a, 'hero', 'blazeBlade_1a')).toBe('sealed');
+    expect(getEvolveError(D, a, 'hero', 'grandEdge_1a')).toBe('sealed');
     expect(canEvolveAny(D, a, 'hero')).toBe(false);
   });
 
   it('通った進化先と型の能力値・特性は全部足し、通常攻撃の属性は一番新しいもの', () => {
-    const a = evolveAlong([['flameBlade', 1], ['crimsonBlade', 0]]);
+    const a = evolveAlong([['breakEdge', 1], ['crushEdge', 1], ['grandEdge', 0]]);
     const [hero] = applyWeapons(D, a, [PARTY[0]]);
-    // 攻撃：刻んだ素材（お面のひも 18個で +36）＋ フレイムブレード 3 ＋ 紅蓮の刃 4 ＋ 剛 3
-    expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 36 + 3 + 4 + 3);
-    // 灯（フレイムブレードの型）の再生
-    expect(hero.passives).toContainEqual({ kind: 'regen', rate: 0.03 });
-    expect(hero.attackElement).toBe('fire');
+    // 攻撃：刻んだ素材（お面のひも 18個で +36）＋ ブレイクエッジ 4 ＋ クラッシュエッジ 5 ＋ グランドエッジ 6 ＋ 剛 3
+    expect(hero.stats.atk).toBe(PARTY[0].stats.atk + 36 + 4 + 5 + 6 + 3);
+    // 砕（型）の部位の割増しと、クラッシュエッジの部位の割増し
+    expect(hero.passives).toContainEqual({ kind: 'partBoost', rate: 0.2 });
+    expect(hero.traits).toContainEqual({ kind: 'partBoost', rate: 0.2 });
+    // 通常攻撃の形は重ねる：2回 → 3回・部位に1.5倍
+    expect(hero.basic).toEqual({ hits: 3, partMult: 1.5 });
+    expect(hero.attackElement).toBeUndefined();
   });
 
   it('型の形で盤が広がる：ブリッジが伸びる型は下の行へ、盤が広がる型は右の列へ（上から。段階100b）', () => {
-    const a = evolveAlong([['flameBlade', 0], ['crimsonBlade', 1]]);
+    const a = evolveAlong([['breakEdge', 0], ['crushEdge', 1]]);
     const board = naviDataWithWeapons(NAVI_DATA, D, a).boards.hero;
     const base = NAVI_DATA.boards.hero;
     expect(board.cells.length).toBe(base.cells.length + 2);
@@ -447,32 +484,34 @@ describe('武器：進化ツリー（段階42）', () => {
   it('見せ方：次は全部、2段先は伏せる、その先は影、一番先は言い伝え、行けない枝は薄く（8-2）', () => {
     const fresh = createArmory(D).weapons.hero;
     const vis = (w: typeof fresh, id: string) => evolutionVisibility(D, w, id);
-    expect(vis(fresh, 'flameBlade')).toBe('next');
-    expect(vis(fresh, 'crimsonBlade')).toBe('hint');
+    expect(vis(fresh, 'breakEdge')).toBe('next');
+    expect(vis(fresh, 'crushEdge')).toBe('hint');
     expect(vis(fresh, 'strayEdge')).toBe('hint');
-    expect(vis(fresh, 'blazeBlade')).toBe('shadow');
-    expect(vis(fresh, 'blazeBlade_1a')).toBe('shadow');
-    expect(vis(fresh, 'blazeBlade_1c1')).toBe('legend');
-    const w = evolveAlong([['flameBlade', 0], ['crimsonBlade', 0]]).weapons.hero;
-    expect(vis(w, 'flameBlade')).toBe('passed');
-    expect(vis(w, 'crimsonBlade')).toBe('passed');
-    expect(vis(w, 'blazeBlade')).toBe('next');
-    expect(vis(w, 'blazeBlade_1a')).toBe('shadow');
-    expect(vis(w, 'frostBlade')).toBe('unreachable');
-    expect(vis(w, 'grandEdge_1c1')).toBe('unreachable');
+    expect(vis(fresh, 'grandEdge')).toBe('shadow');
+    expect(vis(fresh, 'grandEdge_1a')).toBe('shadow');
+    expect(vis(fresh, 'grandEdge_1c1')).toBe('legend');
+    const w = evolveAlong([['breakEdge', 0], ['crushEdge', 0]]).weapons.hero;
+    expect(vis(w, 'breakEdge')).toBe('passed');
+    expect(vis(w, 'crushEdge')).toBe('passed');
+    expect(vis(w, 'grandEdge')).toBe('next');
+    expect(vis(w, 'grandEdge_1a')).toBe('shadow');
+    expect(vis(w, 'copySword')).toBe('unreachable');
+    expect(vis(w, 'diarySword_1c1')).toBe('unreachable');
   });
 
   it('伸びる方向・型・鍵の手がかりを、日本語で説明する', async () => {
     const { describeDirection, describeStyle, describeCondition } = await import('../../src/ui/weaponText');
     const { itemHint } = await import('../../src/data');
     const find = (id: string) => Object.values(D.weapons).flatMap((w) => w.evolutions).find((e) => e.id === id)!;
-    expect(describeDirection(find('sunsetBlade'))).toBe('火↑↑ 攻↑↑');
-    expect(describeDirection(find('blessRod'))).toBe('氷↑↑ 火↑↑');
+    expect(describeDirection(find('grandEdge'))).toBe('攻↑↑');
+    expect(describeDirection(find('blessRod'))).toBe('氷↑↑ 攻↓');
+    expect(describeDirection(find('bookmarkSword'))).toBe('攻↑↑ 属性どれか↑');
     expect(describeDirection(find('magicianCards'))).toBe('雷↑↑ 傾向 真鍮');
     expect(describeDirection(find('strayEdge'))).toBe('雷↓');
     expect(describeCondition({ kind: 'paramMax', param: 'thunder', max: 2 })).toBe('雷 2以下');
-    expect(describeStyle(find('flameBlade').styles![1], 2)).toBe('灯：ラウンドの始めに最大HPの3%を回復。盤の右に2マス増える');
-    expect(describeStyle(find('flameBlade').styles![1], 0)).toBe('灯：ラウンドの始めに最大HPの3%を回復');
+    expect(describeStyle(find('healingRod').styles![1], 2)).toBe('灯：ラウンドの始めに最大HPの3%を回復。盤の右に2マス増える');
+    expect(describeStyle(find('healingRod').styles![1], 0)).toBe('灯：ラウンドの始めに最大HPの3%を回復');
+    expect(describeStyle(find('bookmarkSword').styles![0], 0)).toBe('結：自分が使うコンボのダメージ・回復量 +10%');
     expect(itemHint('beigoma')).toBe('1-2 の砂嵐が落とすらしい');
     expect(itemHint('brokenBelt')).toBe('2-1 のぬしの体から取れるらしい');
     expect(itemHint('sunsetMarble')).toBe('1-2 の砂嵐が、ごくまれに落とすらしい');

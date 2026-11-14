@@ -177,33 +177,35 @@ describe('武器に刻む素材のおすすめ', () => {
   });
 
   it('一番近い進化先の条件の能力値を上げる素材が先。その能力値を下げる素材は勧めない', () => {
-    const armory = addItems(createArmory(D), ['goldfishScale', 'maskShard', 'goldfishFin', 'tornPoi']);
+    const armory = addItems(createArmory(D), ['goldfishScale', 'tornPoi', 'cottonThread']);
     const near = nearestEvolution(D, armory, 'hero')!;
-    expect(near.params).toEqual(['fire']);
+    // 段階197：ハルトの一番近い進化先は、攻撃の刃の系統（ブレイクエッジ）
+    expect(near.params).toEqual(['atk']);
     const list = recommendMaterials(D, armory, 'hero');
-    // 火を上げる仮面のかけらが先。火を下げる金魚のひれは入れない
-    expect(list[0]).toBe('maskShard');
-    expect(list).not.toContain('goldfishFin');
+    // 攻撃を上げる破れたポイが先。攻撃を下げるわたあめの糸は入れない
+    expect(list[0]).toBe('tornPoi');
+    expect(list).not.toContain('cottonThread');
   });
 
   it('画面では、これから要る数の鍵は残し、それより多く持っている分だけ勧める', () => {
     const fresh = createArmory(D);
     const reserve = upcomingKeys(D, fresh);
-    // 始めは、仮面のひも（フレイムブレードとフレイムロッドの鍵）を2つ残す
-    expect(reserve.get('maskString')).toBe(2);
-    const two = addItems(fresh, ['maskString', 'maskString']);
-    expect(recommendMaterials(D, two, 'hero', undefined, reserve)).not.toContain('maskString');
-    const three = addItems(two, ['maskString']);
-    expect(recommendMaterials(D, three, 'hero', undefined, reserve)).toContain('maskString');
+    // 始めは、わたあめの棒（写しの剣と癒しの杖の鍵）を2つ残す
+    expect(reserve.get('cottonStick')).toBe(2);
+    const two = addItems(fresh, ['cottonStick', 'cottonStick']);
+    expect(recommendMaterials(D, two, 'hero', undefined, reserve)).not.toContain('cottonStick');
+    const three = addItems(two, ['cottonStick']);
+    expect(recommendMaterials(D, three, 'hero', undefined, reserve)).toContain('cottonStick');
     // 残しておく数を渡さない時（自動対戦）は、鍵は勧めない
-    expect(recommendMaterials(D, three, 'hero')).not.toContain('maskString');
+    expect(recommendMaterials(D, three, 'hero')).not.toContain('cottonStick');
   });
 
   it('進化を終えた武器の、通り過ぎた進化先の鍵は数えない', () => {
     const fresh = createArmory(D);
     const hero = fresh.weapons.hero;
-    const passed = { ...fresh, weapons: { ...fresh.weapons, hero: { ...hero, path: [{ id: 'flameBlade', style: 0 }] } } };
-    expect(upcomingKeys(D, passed).get('maskString')).toBe(1);
+    expect(upcomingKeys(D, fresh).get('cottonStick')).toBe(2);
+    const passed = { ...fresh, weapons: { ...fresh.weapons, hero: { ...hero, path: [{ id: 'breakEdge', style: 0 }] } } };
+    expect(upcomingKeys(D, passed).get('cottonStick')).toBe(1);
   });
 
   it('持っていない素材は勧めない', () => {
