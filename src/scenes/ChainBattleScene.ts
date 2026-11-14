@@ -38,7 +38,7 @@ import {
   type ChainState,
   type ChainUnit,
 } from '../core';
-import { KAI_CUT_LINES, ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, SE } from '../data';
+import { KAI_CUT_LINES, ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, GEAR_COUNTERS, NAVI_DATA, SE, traitName } from '../data';
 import { activeBondLinks, buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef } from '../core';
 import { currentNaviData, currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
 import type { BattleSceneData } from './chainEncounter';
@@ -2805,6 +2805,9 @@ export class ChainBattleScene extends Phaser.Scene {
       if (this.encounter) {
         const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
         o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
+        // 負けた時の手がかり（段階201。一覧の 18-3）：この戦闘の敵の性質に効くギアを1行
+        const hint = this.lineup?.unlocks.navi ? this.counterHint() : '';
+        if (hint) o.add(addText(this, GAME_WIDTH / 2, 470, hint, { size: 13, align: 'center', color: '#ffd77a', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0));
       }
       this.endButtons(o);
       return;
@@ -2917,6 +2920,21 @@ export class ChainBattleScene extends Phaser.Scene {
     o.add(addText(this, GAME_WIDTH / 2, 300, `${this.s.enemies[0]?.name ?? ''}の動きが、見えない……${def.cutoffBack ? '\n最後に記録したチェックポイントへ戻される' : ''}`, { size: 15, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5));
     const to = def.cutoffBack ? enc.lose : enc.win;
     this.slantButton(GAME_WIDTH / 2 - 130, 744, 260, 46, def.cutoffBack ? 'チェックポイントへ' : '次へ ▶', () => this.scene.start(to.key, to.data), { into: o, go: true, size: 15 });
+  }
+
+  /** 負けた時の手がかり（段階201）：敵の性質のうち、効くギアがある最初の物。持っていなければ、どこかで手に入るらしい */
+  private counterHint(): string {
+    for (const d of this.s.def.enemies) {
+      if (!d.trait || d.part) continue;
+      const gears = GEAR_COUNTERS[d.trait];
+      if (!gears?.length) continue;
+      const owned = gears.filter((g) => run.navi.parts.some((p) => p.partId === g));
+      const name = (id: string) => NAVI_DATA.parts[id]?.name ?? id;
+      return owned.length
+        ? `手がかり：${d.name}の「${traitName(d.trait)}」には、${owned.map(name).join('・')}が効く（ムーブメントのブリッジに乗せる）`
+        : `手がかり：${d.name}の「${traitName(d.trait)}」には、${gears.map(name).join('・')}が効くらしい（どこかで手に入るらしい）`;
+    }
+    return '';
   }
 
   private endButtons(o: Phaser.GameObjects.Container): void {

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
+import { CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainSnapLook, comboDetailLines, comboMaterialNames, ENEMY_OF_SNAP, snapDetailLines } from '../ui/chainSnapText';
 import { addIcon } from '../ui/icons';
@@ -231,6 +231,8 @@ export class LibraryScene extends Phaser.Scene {
         `弱点：${weak}`,
         `耐性：${resist}`,
         `特徴：${trait}`,
+        // 効くギア（段階201）
+        ...(e.chain.trait && GEAR_COUNTERS[e.chain.trait]?.length ? [`効くギア：${GEAR_COUNTERS[e.chain.trait]!.map((g) => NAVI_DATA.parts[g]?.name ?? g).join('・')}`] : []),
         `予定の癖：${plan}`,
         ...e.parts.map((p) => {
           const stops = e.chain.pattern.filter((m) => m.requiresPart === p.id).map((m) => `「${m.name}」が来ない`);

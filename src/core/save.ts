@@ -9,6 +9,7 @@ import type { ChapterGauge } from './lineup';
 import { LINK_GAUGE_MAX } from '../data/constants';
 import type { GrowthMap, GrowthState } from './growth';
 import { createGrowth, renameNode } from './growth';
+import { LOADOUT_MAX, type Rotation } from './navi';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
 import { getPlaceError, placePart } from './navi';
 import type { Progress, Story } from './progress';
@@ -383,7 +384,28 @@ function sanitizeNavi(raw: Record<string, unknown>, data: NaviData): NaviState |
   for (const p of owned) {
     if (p.placement && !getPlaceError(data, navi, p.uid, p.placement)) navi = placePart(data, navi, p.uid, p.placement);
   }
-  return navi;
+  // 保存した並べ方（段階201）：形の合う物だけ残す（ギアを持っていない・置けない物は、付け替える時に飛ばす）
+  const loadouts = sanitizeLoadouts(raw.loadouts);
+  return loadouts ? { ...navi, loadouts } : navi;
+}
+
+function sanitizeLoadouts(raw: unknown): NaviState['loadouts'] | undefined {
+  if (!isObject(raw)) return undefined;
+  const out: NonNullable<NaviState['loadouts']> = {};
+  for (const [charId, list] of Object.entries(raw)) {
+    if (!Array.isArray(list)) continue;
+    out[charId] = list.slice(0, LOADOUT_MAX).map((l) => {
+      if (!isObject(l) || typeof l.name !== 'string' || !Array.isArray(l.parts)) return null;
+      const parts = l.parts.flatMap((p) => {
+        if (!isObject(p) || !isInt(p.uid) || !isInt(p.col) || !isInt(p.row)) return [];
+        const rotation = p.rotation;
+        if (rotation !== 0 && rotation !== 1 && rotation !== 2 && rotation !== 3) return [];
+        return [{ uid: p.uid, col: p.col, row: p.row, rotation: rotation as Rotation }];
+      });
+      return { name: l.name.slice(0, 20), parts };
+    });
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 function toPlacement(raw: unknown): Placement | null {

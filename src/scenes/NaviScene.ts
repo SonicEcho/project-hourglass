@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { Cell, CharacterDef, NaviState, OwnedPart, Placement, Rotation } from '../core';
-import { boardParts, boardPassives, boardStats, bugHpLoss, findBugs, passiveRate, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
+import { applyLoadout, LOADOUT_MAX, loadoutConflicts, saveLoadout, boardParts, boardPassives, boardStats, bugHpLoss, findBugs, passiveRate, getPlaceError, isPartActive, placedCells, placePart, removePart, rotateCells } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { PARTY } from '../data';
+import { gearCounterTraits, PARTY, traitName } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizeTraits } from '../ui/naviText';
 import { addBalanceWheel, drawGear, drawMovementBg, drawPartShape, METAL, PART_COLOR, PART_SHORT } from '../ui/naviViews';
@@ -477,8 +477,9 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
-      const text = this.message || '下の一覧からギアを選び、ムーブメントのマスをタップして置き場所を決める。同じ金属を隣に置くと焼き付いて狂いになる';
-      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, text, { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
+      const text = this.message || '一覧からギアを選び、マスをタップして置く。同じ金属が隣だと狂い。下の並べ方：タップで付け替え、長押しで今の並べ方を保存';
+      this.root.add(addText(this, SIDE_PADDING + 10, top + 8, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
+      this.drawLoadouts(top + h - 22);
       return;
     }
     const def = currentNaviData().parts[sel.partId];
@@ -519,6 +520,68 @@ export class NaviScene extends Phaser.Scene {
       { ...GOLD_BUTTON, enabled: !!ghost && !err, size: 12 },
     );
     addButton(this, this.root, bx, top + 76, 108, 26, '外す', { onTap: () => this.remove() }, { ...PLAIN_BUTTON, enabled: !!sel.placement, size: 12 });
+  }
+
+  /** 並べ方の保存（段階201。一覧の 18-3）：仲間ごとに3つ。タップで付け替え（空きなら保存）、長押しで今の並べ方を保存（上書き） */
+  private drawLoadouts(cy: number): void {
+    const list = run.navi.loadouts?.[this.charId] ?? [];
+    const w = (GAME_WIDTH - SIDE_PADDING * 2 - 20 - 12) / LOADOUT_MAX;
+    for (let i = 0; i < LOADOUT_MAX; i++) {
+      const saved = list[i] ?? null;
+      const x = SIDE_PADDING + 10 + w / 2 + i * (w + 6);
+      const label = saved ? `${saved.name}（${saved.parts.length}）` : `並べ方${i + 1}（空き）`;
+      addButton(
+        this,
+        this.root,
+        x,
+        cy,
+        w,
+        28,
+        label,
+        { onTap: () => (saved ? this.useLoadout(i) : this.keepLoadout(i)), onLongPress: () => this.keepLoadout(i) },
+        { ...(saved ? GOLD_BUTTON : PLAIN_BUTTON), size: 11, bold: true },
+      );
+    }
+  }
+
+  private keepLoadout(slot: number): void {
+    const name = run.navi.loadouts?.[this.charId]?.[slot]?.name ?? `並べ方${slot + 1}`;
+    run.navi = saveLoadout(run.navi, this.charId, slot, name);
+    this.message = `${name}に、今の並べ方を保存した（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書き`;
+    this.render();
+  }
+
+  /** 保存した並べ方に付け替える。ほかの仲間の盤にはまっているギアがあれば、外して付けるか確かめる */
+  private useLoadout(slot: number, confirmed = false): void {
+    const conflicts = loadoutConflicts(run.navi, this.charId, slot);
+    if (conflicts.length && !confirmed) {
+      const names = conflicts.map((p) => `${PARTY.find((c) => c.id === p.placement!.charId)?.name ?? ''}の盤の${currentNaviData().parts[p.partId].name}`);
+      this.confirmBox(`${names.join('、')}を外して付ける？`, () => this.useLoadout(slot, true));
+      return;
+    }
+    const r = applyLoadout(currentNaviData(), run.navi, this.charId, slot);
+    run.navi = r.navi;
+    const name = run.navi.loadouts?.[this.charId]?.[slot]?.name ?? '';
+    this.message = `${name}に付け替えた${r.missing ? `（置けなかったギアが${r.missing}つ）` : ''}`;
+    this.clearSelection();
+    this.render();
+  }
+
+  private confirmBox(text: string, onYes: () => void): void {
+    this.closeOverlay();
+    const c = this.add.container(0, 0).setDepth(200);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
+    const w = GAME_WIDTH - 40;
+    const body = addText(this, GAME_WIDTH / 2, 0, text, { size: 14, wrap: w - 32, align: 'center' }).setOrigin(0.5, 0);
+    const h = body.height + 100;
+    const y = GAME_HEIGHT / 2 - h / 2;
+    c.add(this.add.rectangle(20, y, w, h, FRAME_COLORS.panel, 0.98).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.line));
+    body.setY(y + 20);
+    c.add(body);
+    const bw = (w - 40) / 2;
+    addButton(this, c, 30 + bw / 2, y + h - 34, bw, 40, '付ける', { onTap: () => { this.closeOverlay(); onYes(); } }, { ...GOLD_BUTTON, size: 14 });
+    addButton(this, c, GAME_WIDTH - 30 - bw / 2, y + h - 34, bw, 40, 'やめる', { onTap: () => this.closeOverlay() }, { ...PLAIN_BUTTON, size: 14 });
+    this.overlay = c;
   }
 
   /** 一覧の見える範囲（段階127。ギアが多い時は、この中を上下にずらす） */
@@ -627,6 +690,9 @@ export class NaviScene extends Phaser.Scene {
     const def = currentNaviData().parts[p.partId];
     const owner: CharacterDef | undefined = p.placement ? PARTY.find((c) => c.id === p.placement!.charId) : undefined;
     const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと焼き付いて狂い）`, `大きさ：${def.cells.length}マス`];
+    // 効く性質（段階201）：対策のギアは、効く敵の性質を出す
+    const counters = gearCounterTraits(def.id);
+    if (counters.length) lines.push(`効く性質：${counters.map(traitName).join('・')}`);
     if (owner) {
       lines.push('', `${owner.name}のムーブメントにはまっている`);
       if (def.kind !== 'stat' && !isPartActive(currentNaviData(), p)) lines.push('ブリッジに乗っていないので、今は効かない');
