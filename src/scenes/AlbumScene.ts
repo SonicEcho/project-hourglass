@@ -7,7 +7,6 @@ import { chainSnapLook as chainLook, comboDetailLines, comboMaterialNames, isCom
 import { addBand, addChip, addListRow, addPager, addRowName, addTabs, LIST_COLORS, ROW_GAP, ROW_H, SNAP_CATEGORY, type TabDef } from '../ui/listKit';
 import type { IconKind } from '../ui/icons';
 import { chainAlbumActive, foundChainCombos } from './chainEncounter';
-import { snapLook } from '../ui/battleViews';
 import { describeAction } from '../ui/describe';
 import { addIcon } from '../ui/icons';
 import { ELEMENT_LABEL, weightLabel } from '../ui/labels';
@@ -114,7 +113,7 @@ export class AlbumScene extends Phaser.Scene {
         .filter((m) => (this.draft.owned[m.id] ?? 0) > 0 && chainSnapMatches(m, tab, this.element, ENEMY_SNAP_IDS))
         .map((m) => ({ id: m.id, name: m.name, look: chainLook(m) }));
     }
-    return Object.values(CARDS as Record<string, CardDef>).filter((c) => (this.draft.owned[c.id] ?? 0) > 0).map((c) => ({ id: c.id, name: c.name, look: snapLook(c) }));
+    return Object.values(CARDS as Record<string, CardDef>).filter((c) => (this.draft.owned[c.id] ?? 0) > 0).map((c) => ({ id: c.id, name: c.name, look: { label: '札', icon: 'support' as const, color: 0xa98be0 } }));
   }
 
   private insert(id: string): void {

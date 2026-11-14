@@ -8,7 +8,6 @@ import {
   addFragments,
   addItems,
   applyWeapons,
-  basicAttackFor,
   createArmory,
   decomposeFragment,
   evolutionChecks,
@@ -21,22 +20,19 @@ import {
   nextEvolutions,
   feedFragment,
   fragmentItem,
-  getBattleResult,
   getEvolveError,
   getFeedError,
   getAbsorbError,
   getFragmentError,
   naviDataWithWeapons,
   paramsAfter,
-  previewAction,
   recordVictory,
   tendencyOf,
   weaponLevel,
   weaponName,
   weaponSlots,
 } from '../../src/core';
-import { CAMPAIGN, FRAGMENTS, ITEMS, NAVI_DATA, PARTY, WEAPON_DATA } from '../../src/data';
-import { ally, attackOn, battle, enemy, execute, guard, planAll } from './helpers';
+import { FRAGMENTS, ITEMS, NAVI_DATA, PARTY, WEAPON_DATA } from '../../src/data';
 
 const D = WEAPON_DATA;
 
@@ -283,6 +279,7 @@ describe('武器：キャラへの反映', () => {
     expect(akari.stats.mag).toBe(PARTY[1].stats.mag + 3);
   });
 
+
   it('進化していない武器では、通常攻撃は物理のまま', () => {
     const [hero] = applyWeapons(D, createArmory(D), [PARTY[0]]);
     expect(hero.attackElement).toBeUndefined();
@@ -326,40 +323,6 @@ describe('武器：キャラへの反映', () => {
   });
 });
 
-describe('武器：戦闘', () => {
-  it('通常攻撃に属性が乗ると、その属性で弱点を突ける（魔力で計算）', () => {
-    const s = battle({
-      allies: [{ ...ally('hero', { atk: 1, mag: 30 }), attackElement: 'fire' }],
-      enemies: [enemy('a', {}, { weaknesses: ['fire'] })],
-    });
-    const p = previewAction(s, 'hero', attackOn('enemy0'));
-    // 弱点はまだ判明していないので相性は通常で見せるが、魔力で計算している
-    expect(p.targets[0].min).toBeGreaterThan(20);
-    const after = execute(planAll(s, { hero: attackOn('enemy0') }));
-    expect(after.enemies[0].down).toBe(true);
-    expect(basicAttackFor({ attackElement: 'fire' }).effects[0]).toMatchObject({ kind: 'damage', type: 'fire' });
-    expect(basicAttackFor({}).effects[0]).toMatchObject({ type: 'physical' });
-  });
-
-  it('結果に、倒した敵が落とした素材と、仲間ごとの行動の回数が出る（防御は数えない）', () => {
-    let s = battle({
-      allies: [ally('hero', { atk: 999, spd: 50 }), ally('akari')],
-      enemies: [enemy('a', { hp: 1 }, { drops: ['slimeJelly'] }), enemy('b', {}, { drops: ['hardFur'] })],
-    });
-    s = execute(planAll(s, { hero: attackOn('enemy0'), akari: guard }));
-    const r = getBattleResult(s);
-    expect(r.drops).toEqual(['slimeJelly']);
-    expect(r.actionCounts).toEqual({ hero: 1, akari: 0 });
-  });
-
-  it('周回の敵は素材を落とす。戦闘4の敵は鋼の爪も落とす。勝利でアイテムももらえる', () => {
-    expect(CAMPAIGN[0].enemies.flatMap((e) => e.drops ?? [])).toEqual(['slimeJelly', 'slimeJelly']);
-    expect(CAMPAIGN[3].enemies.flatMap((e) => e.drops ?? []).filter((d) => d === ITEMS.steelClaw.id)).toHaveLength(3);
-    for (const id of CAMPAIGN.flatMap((b) => b.enemies.flatMap((e) => e.drops ?? []))) expect(D.items[id]?.kind).toBe('material');
-    expect(CAMPAIGN.slice(0, 4).map((b) => b.item)).toEqual(['potion', 'ether', 'potion', 'hiPotion']);
-    for (const b of CAMPAIGN) if (b.item) expect(D.items[b.item].kind).toBe('item');
-  });
-});
 
 describe('武器：表示の文字', () => {
   it('条件と進化先の効果を、日本語で説明する', async () => {

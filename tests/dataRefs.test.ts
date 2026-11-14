@@ -374,20 +374,6 @@ describe('パーティと育成の開放（段階26）', () => {
     expect(events.filter((e) => isPlaceholder(e)).map((e) => e.id)).toEqual([]);
   });
 
-  it('1章の2人で、区画の戦闘が最後まで進み、勝敗がつく', async () => {
-    const { AREA_BATTLES, CHAPTER1_LINEUP, PARTY, createCampaignSetup } = await import('../src/data');
-    const { createBattle, lineupMembers } = await import('../src/core');
-    const { autoPlay } = await import('../src/sim/autoBattle');
-    const two = lineupMembers(PARTY, CHAPTER1_LINEUP);
-    for (const battle of Object.values(AREA_BATTLES)) {
-      for (const seed of [1, 2, 3]) {
-        const s = autoPlay(createBattle(createCampaignSetup(battle, seed, two)), seed);
-        expect(s.allies.map((a) => a.uid), battle.id).toEqual(['hero', 'akari']);
-        expect(s.links.map((l) => l.id), battle.id).toEqual(['afterglow']);
-        expect(s.outcome, `${battle.id} ${seed}`).not.toBe('ongoing');
-      }
-    }
-  });
 });
 
 describe('台本（段階22。M1・M2）', () => {

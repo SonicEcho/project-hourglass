@@ -8,7 +8,6 @@ import { loadEruda } from './debug/eruda';
 import { installTestHook } from './debug/testHook';
 import { installMemoPanel } from './debug/memoPanel';
 import type { MemoPlace } from './debug/memos';
-import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
 import { PreloadScene } from './scenes/PreloadScene';
 import { CreditsScene } from './scenes/CreditsScene';
@@ -16,9 +15,7 @@ import { DialogueScene } from './scenes/DialogueScene';
 import { FlowScene } from './scenes/FlowScene';
 import { DailyScene } from './scenes/DailyScene';
 import { ChestMapScene } from './scenes/ChestMapScene';
-import { ClockBattleScene } from './scenes/ClockBattleScene';
 import { ChainBattleScene } from './scenes/ChainBattleScene';
-import { LeapBattleScene } from './scenes/LeapBattleScene';
 import { ExploreScene } from './scenes/ExploreScene';
 import { ReturnScene } from './scenes/ReturnScene';
 import { ProtoExploreScene } from './scenes/ProtoExploreScene';
@@ -33,10 +30,9 @@ import { CampScene } from './scenes/CampScene';
 import { ExchangeScene } from './scenes/ExchangeScene';
 import { LostScene } from './scenes/LostScene';
 import { TalkArchiveScene } from './scenes/TalkArchiveScene';
-import { ResultScene } from './scenes/ResultScene';
 import { findEvent } from './core';
 import { SLICE_FLOW } from './data';
-import { getActiveBattle, initRunFromUrl, isSaveFailing, markStaleByOtherTab, onSaveStatus, run, SAVE_KEY, saveRun, setHubReturn, startNewRun } from './scenes/run';
+import { initRunFromUrl, isSaveFailing, markStaleByOtherTab, onSaveStatus, run, SAVE_KEY, saveRun, setHubReturn, startNewRun } from './scenes/run';
 import { installSaveNotice, showStaleNotice } from './ui/saveNotice';
 import { notePlayInput, tickPlayRecord } from './scenes/playRecord';
 import { PlayLogScene } from './scenes/PlayLogScene';
@@ -101,7 +97,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, LibraryScene, PartyScene, BattleScene, ResultScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene, ClockBattleScene, ChainBattleScene, LeapBattleScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, LibraryScene, PartyScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene, ChainBattleScene],
 });
 
 if (debug) {
@@ -144,11 +140,6 @@ if (debug) {
     if (keys.includes('Dialogue')) {
       const line = (game.scene.getScene('Dialogue') as DialogueScene).memoLine();
       if (line) Object.assign(place, line);
-    }
-    const battle = keys.includes('Battle') ? getActiveBattle()?.getState() : undefined;
-    if (battle) {
-      place.battle = battle.enemies.map((e) => e.name).join('・');
-      place.round = battle.round;
     }
     if (keys.includes('Explore') && run.explore) {
       place.area = run.explore.area;

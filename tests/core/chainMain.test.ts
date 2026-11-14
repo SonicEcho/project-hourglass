@@ -100,6 +100,16 @@ describe('新しい戦闘を本番用に（段階158）', () => {
     expect(s.outcome).toBe('cutoff');
   });
 
+  it('負け戦は、仲間が全員倒れても打ち切り（全滅にしない。ふつうの戦闘は負け）', () => {
+    const wipe = (over: Partial<ChainBattleDef>) => {
+      const s = make(over);
+      for (const a of s.allies) a.hp = 0;
+      return runChainRound(s, []).state.outcome;
+    };
+    expect(wipe({ cutoff: { rounds: 4 } })).toBe('cutoff');
+    expect(wipe({})).toBe('lose');
+  });
+
   it('戦闘の状態は文字にして戻せる（セーブできる）', () => {
     const s = runChainRound(make(), [mv('hero', 'cost', 'dummy#0')]).state;
     const back = JSON.parse(JSON.stringify(s)) as ChainState;

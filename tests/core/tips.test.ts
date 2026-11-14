@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { BattleState, EnemyActionDef } from '../../src/core';
-import { battleTipTriggers, createBattle, exploreTipTriggers, markTipSeen, nextTip, parseSeenTips, serializeSeenTips, startExplore } from '../../src/core';
-import { AREA_BATTLES, AREAS, CHAPTER1_LINEUP, createCampaignSetup, PARTY, TIPS } from '../../src/data';
-import { lineupMembers } from '../../src/core';
+import { exploreTipTriggers, markTipSeen, nextTip, parseSeenTips, serializeSeenTips, startExplore } from '../../src/core';
+import { AREAS, TIPS } from '../../src/data';
 
 // 初めての人向けの説明（段階30）
 
-const members = lineupMembers(PARTY, CHAPTER1_LINEUP);
-const storm = (seed = 1): BattleState => createBattle(createCampaignSetup(AREA_BATTLES.a11_storm1, seed, members));
-const boss = (seed = 1): BattleState => createBattle(createCampaignSetup(AREA_BATTLES.a11_boss, seed, members));
 
 describe('説明（段階30）', () => {
   it('説明の id は重ならず、文がある', () => {
@@ -36,51 +31,10 @@ describe('説明（段階30）', () => {
     expect(parseSeenTips(null)).toEqual([]);
   });
 
-  it('戦闘：計画の始めは「行動を選んで実行」。オートは画面が許した時だけ', () => {
-    const s = storm();
-    expect(battleTipTriggers(s, { autoAvailable: false })).toContain('battle_plan');
-    expect(battleTipTriggers(s, { autoAvailable: false })).not.toContain('battle_auto');
-    expect(battleTipTriggers(s, { autoAvailable: true })).toContain('battle_auto');
-    // 雑魚戦の始めは、弱点・延長・大技の説明は出さない
-    const t = battleTipTriggers(s, { autoAvailable: false });
-    for (const id of ['battle_weak', 'battle_extend', 'battle_baton', 'battle_boss']) expect(t).not.toContain(id);
-  });
 
-  it('戦闘：ダウンや弱点が見つかった後は「弱点とダウン」、追加行動では「延長」と「バトンタッチ」', () => {
-    const s = storm();
-    const downed: BattleState = { ...s, log: [...s.log, { type: 'down', enemyId: s.enemies[0].uid }] };
-    expect(battleTipTriggers(downed, { autoAvailable: false })).toContain('battle_weak');
-    const extra: BattleState = { ...s, phase: 'extra', extra: { actorId: s.allies[0].uid, chain: [], boost: false } };
-    const t = battleTipTriggers(extra, { autoAvailable: false });
-    expect(t).toContain('battle_extend');
-    expect(t).toContain('battle_baton');
-    expect(t).not.toContain('battle_plan');
-  });
 
-  it('戦闘：部位のあるボスでは「部位破壊と大技」、ゲージが満タンなら「連携技」', () => {
-    expect(battleTipTriggers(boss(), { autoAvailable: false })).toContain('battle_boss');
-    expect(battleTipTriggers(storm(), { autoAvailable: false })).not.toContain('battle_link');
-    expect(battleTipTriggers({ ...storm(), linkGauge: 100 }, { autoAvailable: false })).toContain('battle_link');
-  });
 
-  it('戦闘：切り取りをためた時だけ「切り取り」（段階125）。ほかの大技のためでは出さない', () => {
-    const cut: EnemyActionDef = { id: 'frameCut', name: '切り取り', target: 'ally', type: 'physical', power: 10, weight: 1.0, charge: true, cutsFrame: true };
-    const s = boss();
-    expect(battleTipTriggers(s, { autoAvailable: false })).not.toContain('battle_cut');
-    const kai = { ...s.enemies[0], actions: [...s.enemies[0].actions, cut], charging: 'frameCut' };
-    expect(battleTipTriggers({ ...s, enemies: [kai] }, { autoAvailable: false })).toContain('battle_cut');
-    const big = s.enemies[0].actions.find((a) => a.charge);
-    if (big) expect(battleTipTriggers({ ...s, enemies: [{ ...s.enemies[0], charging: big.id }] }, { autoAvailable: false })).not.toContain('battle_cut');
-    // 倒れた敵のためでは出さない
-    expect(battleTipTriggers({ ...s, enemies: [{ ...kai, hp: 0 }] }, { autoAvailable: false })).not.toContain('battle_cut');
-  });
 
-  it('戦闘：出したい説明は、どれも説明の文がある', () => {
-    const ids = new Set(TIPS.map((t) => t.id));
-    const s = { ...boss(), linkGauge: 100 };
-    for (const id of battleTipTriggers(s, { autoAvailable: true })) expect(ids.has(id)).toBe(true);
-    for (const id of exploreTipTriggers({ ...startExplore(AREAS.a11), koma: 1 }, { atCheckpoint: true })) expect(ids.has(id)).toBe(true);
-  });
 
   it('探索：はじめは「探索」、チェックポイントで「チェックポイント」、コマを持つと「コマ集め」', () => {
     const s = startExplore(AREAS.a11);
@@ -91,10 +45,4 @@ describe('説明（段階30）', () => {
     expect(exploreTipTriggers(s, { atCheckpoint: false, hunting: true })).toEqual(['explore_basic', 'explore_hunt']);
   });
 
-  it('戦闘：ポーチに物がある時の計画で「ポーチ」（段階45）', () => {
-    const s = storm();
-    expect(battleTipTriggers(s, { autoAvailable: false })).not.toContain('battle_pouch');
-    const withPouch: BattleState = { ...s, pouch: [{ item: { id: 'potion', name: 'ポーション', weight: 1, target: 'ally', effects: [] }, count: 1, used: 0 }] };
-    expect(battleTipTriggers(withPouch, { autoAvailable: false })).toContain('battle_pouch');
-  });
 });

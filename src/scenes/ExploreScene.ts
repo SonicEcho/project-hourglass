@@ -69,7 +69,7 @@ import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { GOLD_BUTTON } from '../ui/frame';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import type { BattleSceneData } from './BattleScene';
+import type { BattleSceneData } from './chainEncounter';
 import type { DialogueData } from './DialogueScene';
 import { currentParty, nextHuntCount, run, setCampReturn, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup, storyLinkGauge } from './run';
 import { notePlayBattle } from './playRecord';

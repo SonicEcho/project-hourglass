@@ -12,7 +12,7 @@ import { AREA_BATTLES, BGM, SLICE_FLOW, TIPS } from '../data';
 import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, currentEvent, deleteSave, moveBrokenSave, readSave, run, startNewRun } from './run';
-import type { BattleSceneData } from './BattleScene';
+import type { BattleSceneData } from './chainEncounter';
 import { enterScreen, fadeOutAndDestroy, screenBg } from '../ui/skin';
 import { openOptions } from '../ui/options';
 import { canToggleFullscreen, isFullscreen, onFullscreenChange, toggleFullscreen } from '../ui/fullscreen';
