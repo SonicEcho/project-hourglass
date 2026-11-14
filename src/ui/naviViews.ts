@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { NaviPartDef, PartColor, Rotation } from '../core';
+import type { NaviPartDef, GearColor, Rotation } from '../core';
 import { rotateCells } from '../core';
 
 // ムーブメントのギアの見た目（段階8）
@@ -8,38 +8,65 @@ import { rotateCells } from '../core';
  * ギアの色＝金属（段階146。docs/ART.md の 5-9「時計の機械」）：赤＝銅、青＝鋼（青焼き）、緑＝青銅（緑青）、黄＝真鍮。
  * 決まり（同じ色＝同じ金属が辺で接すると狂い）は今のまま。PART_COLOR は金属のいちばん明るい面の色
  */
-export const METAL: Record<PartColor, { base: number; light: number; dark: number }> = {
+export const METAL: Record<GearColor, { base: number; light: number; dark: number }> = {
   red: { base: 0xc8683e, light: 0xf0a878, dark: 0x6a2a14 },
   blue: { base: 0x5a7eb8, light: 0xa8c4ec, dark: 0x1e2e52 },
   green: { base: 0x4f9a7a, light: 0x9ad8b8, dark: 0x1a4434 },
   yellow: { base: 0xd8b048, light: 0xfff0a0, dark: 0x6a5014 },
+  // 段階200：絆のギア（銀）
+  silver: { base: 0xb8c0cc, light: 0xf2f6fa, dark: 0x4a525e },
 };
 
-export const PART_COLOR: Record<PartColor, number> = {
+export const PART_COLOR: Record<GearColor, number> = {
   red: METAL.red.base,
   blue: METAL.blue.base,
   green: METAL.green.base,
   yellow: METAL.yellow.base,
+  silver: METAL.silver.base,
 };
 
 /** 盤のマスに書く短い名前 */
 export const PART_SHORT: Record<string, string> = {
   hpMemory: 'HP',
+  hpMemory2: 'HP',
   mpMemory: 'MP',
+  mpMemory2: 'MP',
   powerMemory: '攻',
+  powerMemory1: '攻',
   magicMemory: '魔',
+  magicMemory1: '魔',
   guardMemory: '防',
-  speedMemory: '速',
+  guardMemory1: '防',
   fireBoost: '火',
   iceBoost: '氷',
   thunderBoost: '雷',
-  breaker: '破',
-  oneMoreDraw: 'ワ',
-  batonReceiver: 'バ',
-  comboBoost: 'コ',
-  firstAid: '救',
   mpSave: '節',
+  firstAid: '救',
+  comboBoost: 'コ',
+  pushGear: '押',
+  snapBoost: '写',
+  effectBoost: '添',
+  longTake: '長',
+  shellCrack: '殻',
+  armorPierce: '貫',
+  wideShot: '広',
+  splash: '散',
+  blastShelter: '爆',
+  mirrorGuard: '鏡',
+  timeKeeper: '時',
+  anchor: '錨',
+  breakTime: '崩',
+  hunter: '狩',
+  finder: '見',
+  stopwatch: '止',
+  breaker: '破',
+  bossKiller: '主',
+  crowdSweep: '群',
   startDash: '先',
+  lastStand: '背',
+  reckless: '捨',
+  pinpointFocus: '一',
+  fairBond: '絆',
 };
 
 /** ギアの形を小さく描く（左上を x, y に合わせる）。1マスに小さな金属の歯車を1つずつ（段階146） */
@@ -56,7 +83,7 @@ export function drawPartShape(
   const g = scene.add.graphics();
   const cells = rotateCells(def.cells, rotation);
   // 効果のギア（ブリッジが要る）は、歯車の後ろに金の輪（段階146 の調整。盤の上の金のふちと同じ印）
-  if (def.kind === 'effect') for (const [c, r] of cells) g.fillStyle(0xffd77a, alpha).fillCircle(x + c * cell + cell / 2, y + r * cell + cell / 2, cell * 0.74);
+  if (def.kind !== 'stat') for (const [c, r] of cells) g.fillStyle(0xffd77a, alpha).fillCircle(x + c * cell + cell / 2, y + r * cell + cell / 2, cell * 0.74);
   for (const [c, r] of cells) drawGear(g, x + c * cell + cell / 2, y + r * cell + cell / 2, cell * 0.5, def.color, alpha, cell >= 14);
   parent.add(g);
 }
@@ -65,7 +92,7 @@ export function drawPartShape(
  * 金属の歯車を1つ描く（中心 cx, cy、歯の先までの半径 r）。detail が true なら、肉抜きの穴・軸の赤い石・照り返しも描く。
  * lit が true なら軸の石が光る（ブリッジに乗って効いている効果のギア）
  */
-export function drawGear(g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number, color: PartColor, alpha = 1, detail = true, lit = false): void {
+export function drawGear(g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number, color: GearColor, alpha = 1, detail = true, lit = false): void {
   const m = METAL[color];
   const teeth = 10;
   const body = r * 0.78;

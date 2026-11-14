@@ -624,12 +624,12 @@ export const AREAS: Record<string, AreaDef> = {
     triggers: [
       { on: 'koma', count: 1, scene: 'a21_first_koma' },
       // ムーブメントの開放（2-1-3）。みおが拾った歯車を、ごほうびのギアとして渡す
-      { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint', gears: ['speedMemory'] },
+      { on: 'checkpoint', cell: [9, 21], scene: 'a21_checkpoint', gears: ['mpMemory'] },
       { on: 'koma', count: 2, scene: 'a21_koma2' },
       { on: 'koma', count: 3, scene: 'a21_koma3' },
       { on: 'koma', count: 4, scene: 'a21_koma4' },
       { on: 'koma', count: 5, scene: 'a21_koma5' },
-      { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate' },
+      { on: 'checkpoint', cell: [15, 11], scene: 'a21_gate', gears: ['armorPierce'] },
       { on: 'koma', count: 6, scene: 'a21_koma6' },
       { on: 'koma', count: 7, scene: 'a21_koma7' },
       // あとコマが1つの時（台本の「あと{komaLeft}つ」に本当の数が入る。段階28）
@@ -733,7 +733,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む（段階82）
     triggers: [
       { on: 'koma', count: 1, scene: 'a22_first_koma' },
-      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 19], scene: 'a22_checkpoint' },
+      { on: 'checkpoint', room: 'school_courtyard', cell: [9, 19], scene: 'a22_checkpoint', gears: ['shellCrack'] },
       { on: 'koma', count: 2, scene: 'a22_koma2' },
       { on: 'koma', count: 3, scene: 'a22_koma3' },
       { on: 'koma', count: 4, scene: 'a22_koma4' },
@@ -796,7 +796,7 @@ export const AREAS: Record<string, AreaDef> = {
     },
     chests: [
       { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 13], items: [ITEMS.potion.id], snaps: ['iceChip'], chainSnaps: ['c17_imprint'] },
-      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id], gears: ['startDash'], chainSnaps: ['a23_kitsuke'] },
+      { id: 'a23_chest_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id], gears: ['blastShelter'], chainSnaps: ['a23_kitsuke'] },
       { id: 'a23_chest_shed', room: 'riverside_shed', cell: [6, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['breaker'], chainSnaps: ['a23_hitoiki'] },
     ],
     enemies: [
@@ -838,7 +838,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む（段階85）
     triggers: [
       { on: 'koma', count: 1, scene: 'a23_first_koma' },
-      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 18], scene: 'a23_checkpoint' },
+      { on: 'checkpoint', room: 'riverside_bench', cell: [9, 18], scene: 'a23_checkpoint', gears: ['splash'] },
       { on: 'koma', count: 2, scene: 'a23_koma2' },
       { on: 'koma', count: 3, scene: 'a23_koma3' },
       { on: 'koma', count: 4, scene: 'a23_koma4' },
@@ -885,7 +885,7 @@ export const AREAS: Record<string, AreaDef> = {
     boss: { id: 'a23x_shelf', room: 'archive_stacks', cell: [11, 7], battle: 'a23x_kai', label: '砂時計' },
     talkers: [{ id: 'a23x_door', room: 'archive_vault', cell: [17, 5], scene: 'a23x_door', label: '黒い扉' }],
     triggers: [
-      { on: 'checkpoint', room: 'archive_reading', cell: [11, 17], scene: 'a23x_reading' },
+      { on: 'checkpoint', room: 'archive_reading', cell: [11, 17], scene: 'a23x_reading', gears: ['mirrorGuard'] },
       { on: 'boss', scene: 'a23x_found' },
       { on: 'cleared', scene: 'a23x_escape' },
     ],
@@ -940,7 +940,7 @@ export const AREAS: Record<string, AreaDef> = {
     chests: [
       { id: 'a31_chest_paddy', room: 'village_paddy', cell: [21, 12], items: [ITEMS.potion.id], snaps: ['thunderChip'], chainSnaps: ['c17_longTake'] },
       { id: 'a31_chest_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id], gears: ['fireBoost'], chainSnaps: ['c17_firstCut'] },
-      { id: 'a31_chest_river', room: 'village_river', cell: [13, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['oneMoreDraw'], chainSnaps: ['c17_exposure'] },
+      { id: 'a31_chest_river', room: 'village_river', cell: [13, 5], night: 2, items: [ITEMS.hiPotion.id], gears: ['snapBoost'], chainSnaps: ['c17_exposure'] },
     ],
     enemies: [
       // ---- 1晩目（駅前・田んぼ道・鎮守の森の石段） ----
@@ -983,8 +983,8 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
-      { on: 'koma', count: 1, scene: 'a31_first_koma' },
-      { on: 'checkpoint', room: 'village_paddy', cell: [10, 14], scene: 'a31_checkpoint' },
+      { on: 'koma', count: 1, scene: 'a31_first_koma', gears: ['fairBond'] },
+      { on: 'checkpoint', room: 'village_paddy', cell: [10, 14], scene: 'a31_checkpoint', gears: ['timeKeeper', 'reckless', 'hpMemory2'] },
       { on: 'koma', count: 2, scene: 'a31_koma2' },
       { on: 'koma', count: 3, scene: 'a31_koma3' },
       { on: 'koma', count: 4, scene: 'a31_koma4' },
@@ -1044,8 +1044,8 @@ export const AREAS: Record<string, AreaDef> = {
     },
     chests: [
       { id: 'a32_chest_slope', room: 'grad_slope', cell: [18, 34], items: [ITEMS.potion.id], snaps: ['fireChip'], chainSnaps: ['c17_rainbow'] },
-      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id], gears: ['iceBoost'], chainSnaps: ['c17_pinpoint'] },
-      { id: 'a32_chest_levee', room: 'grad_levee', cell: [2, 2], night: 2, items: [ITEMS.hiPotion.id], gears: ['startDash'], chainSnaps: ['c17_filterBlue'] },
+      { id: 'a32_chest_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id], gears: ['bossKiller'], chainSnaps: ['c17_pinpoint'] },
+      { id: 'a32_chest_levee', room: 'grad_levee', cell: [2, 2], night: 2, items: [ITEMS.hiPotion.id], gears: ['crowdSweep'], chainSnaps: ['c17_filterBlue'] },
     ],
     enemies: [
       // ---- 1晩目（校門の坂・体育館の裏） ----
@@ -1089,7 +1089,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a32_first_koma' },
-      { on: 'checkpoint', room: 'grad_slope', cell: [13, 16], scene: 'a32_checkpoint' },
+      { on: 'checkpoint', room: 'grad_slope', cell: [13, 16], scene: 'a32_checkpoint', gears: ['magicMemory', 'effectBoost', 'breakTime'] },
       { on: 'room', room: 'grad_gym_back', scene: 'a32_gym' },
       { on: 'koma', count: 2, scene: 'a32_koma2' },
       { on: 'koma', count: 3, scene: 'a32_koma3' },
@@ -1118,7 +1118,7 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：やぐらの裏の暗がり', guide: 'カイの枠は光を写す。小夜子が、提灯の届かない暗がりへ案内する' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.candyStick.id], gears: ['comboBoost'], chainSnaps: ['c17_filterYellow'] }],
+    chests: [{ id: 'a3k_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.candyStick.id], gears: ['hunter'], chainSnaps: ['c17_filterYellow'] }],
     enemies: [
       { id: 'a3k_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3k_torii' },
       { id: 'a3k_e_torii2', move: 'chase', patrol: [[15, 7], [15, 13]], battle: 'a3k_torii2' },
@@ -1133,7 +1133,7 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a3k_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3k_voice_ondo', label: '音頭取り' },
     ],
     triggers: [
-      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3k_stalls' },
+      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3k_stalls', gears: ['comboBoost', 'powerMemory'] },
       { on: 'boss', scene: 'a3k_dark' },
       { on: 'cleared', scene: 'a3k_fireworks' },
     ],
@@ -1184,8 +1184,8 @@ export const AREAS: Record<string, AreaDef> = {
     },
     chests: [
       { id: 'a41_chest_garden', room: 'summer_garden', cell: [6, 5], items: [ITEMS.potion.id], snaps: ['iceChip'], chainSnaps: ['c17_filterRed'] },
-      { id: 'a41_chest_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.melonSeed.id], gears: ['thunderBoost'], chainSnaps: ['c17_firstCut'] },
-      { id: 'a41_chest_canal', room: 'summer_canal', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['hpMemory'], chainSnaps: ['c17_exposure'] },
+      { id: 'a41_chest_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.melonSeed.id], gears: ['lastStand'], chainSnaps: ['c17_firstCut'] },
+      { id: 'a41_chest_canal', room: 'summer_canal', cell: [5, 4], night: 2, items: [ITEMS.hiPotion.id], gears: ['stopwatch'], chainSnaps: ['c17_exposure'] },
     ],
     enemies: [
       // ---- 1晩目（庭・物置） ----
@@ -1224,7 +1224,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a41_first_koma' },
-      { on: 'checkpoint', room: 'summer_garden', cell: [9, 9], scene: 'a41_checkpoint' },
+      { on: 'checkpoint', room: 'summer_garden', cell: [9, 9], scene: 'a41_checkpoint', gears: ['longTake', 'finder'] },
       { on: 'koma', count: 2, scene: 'a41_koma2' },
       { on: 'koma', count: 3, scene: 'a41_koma3' },
       { on: 'koma', count: 4, scene: 'a41_koma4' },
@@ -1323,7 +1323,7 @@ export const AREAS: Record<string, AreaDef> = {
     // コマが戻るたびに、過去の場面が1つずつ進む
     triggers: [
       { on: 'koma', count: 1, scene: 'a42_first_koma' },
-      { on: 'checkpoint', cell: [16, 23], scene: 'a42_checkpoint' },
+      { on: 'checkpoint', cell: [16, 23], scene: 'a42_checkpoint', gears: ['pinpointFocus', 'startDash'] },
       { on: 'koma', count: 2, scene: 'a42_koma2' },
       { on: 'koma', count: 3, scene: 'a42_koma3' },
       { on: 'koma', count: 4, scene: 'a42_koma4' },
@@ -1351,7 +1351,7 @@ export const AREAS: Record<string, AreaDef> = {
     bgm: BGM.prologue,
     komaNeed: 0,
     goal: { band: '目当て：やぐらの広場', guide: '小夜子についていく。花火は、やぐらの広場から見るのが一番きれいらしい' },
-    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.lanternPaper.id], gears: ['hpMemory'], chainSnaps: ['c17_panorama'] }],
+    chests: [{ id: 'a3s1_chest_stalls', room: 'matsuri_stalls', cell: [8, 19], items: [ITEMS.lanternPaper.id], gears: ['pushGear'], chainSnaps: ['c17_panorama'] }],
     enemies: [
       { id: 'a3s1_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3s1_torii' },
       { id: 'a3s1_e_torii2', patrol: [[15, 7], [15, 13]], battle: 'a3s1_torii2' },
@@ -1368,7 +1368,7 @@ export const AREAS: Record<string, AreaDef> = {
       { id: 'a3s_voice_ondo', room: 'matsuri_yagura1', cell: [17, 13], scene: 'a3s_voice_ondo', label: '音頭取り' },
     ],
     triggers: [
-      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3s_stalls' },
+      { on: 'checkpoint', room: 'matsuri_stalls', cell: [12, 12], scene: 'a3s_stalls', gears: ['mpMemory2'] },
       { on: 'room', room: 'matsuri_yagura1', scene: 'a3s_dejavu' },
       { on: 'boss', scene: 'a3s_yagura' },
       { on: 'cleared', scene: 'a3s_rewind' },
@@ -1388,7 +1388,7 @@ export const AREAS: Record<string, AreaDef> = {
     komaNeed: 0,
     goal: { band: '目当て：夜の端', guide: '昨日とまったく同じ夜。小夜子と一緒に、やぐらの先の夜の端へ' },
     partyFixed: ['sayoko'],
-    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [2, 9], items: [ITEMS.recordNeedle.id], gears: ['guardMemory'], chainSnaps: ['c17_rewind'] }],
+    chests: [{ id: 'a3s2_chest_edge', room: 'matsuri_edge', cell: [2, 9], items: [ITEMS.recordNeedle.id], gears: ['anchor'], chainSnaps: ['c17_rewind'] }],
     enemies: [
       { id: 'a3s2_e_torii', patrol: [[8, 7], [8, 13]], battle: 'a3s2_torii' },
       { id: 'a3s2_e_stalls', room: 'matsuri_stalls', patrol: [[8, 7], [15, 7]], battle: 'a3s2_stalls' },
@@ -1406,7 +1406,7 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     triggers: [
       { on: 'room', room: 'matsuri_stalls', scene: 'a3s_kuji' },
-      { on: 'checkpoint', room: 'matsuri_yagura', cell: [12, 14], scene: 'a3s_hundred' },
+      { on: 'checkpoint', room: 'matsuri_yagura', cell: [12, 14], scene: 'a3s_hundred', gears: ['guardMemory'] },
       { on: 'room', room: 'matsuri_edge', scene: 'a3s_riku_page' },
       { on: 'boss', scene: 'a3s_edge' },
       { on: 'cleared', scene: 'a3s_fireworks' },

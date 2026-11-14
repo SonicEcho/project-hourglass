@@ -123,3 +123,15 @@ describe('条件と両刃のギア（段階199）', () => {
     expect(dmg(hit(solo(g), 'all'))).toBeLessThan(dmg(hit(solo(), 'all')));
   });
 });
+
+describe('絆のギアで3人のコンボを開く（段階200）', () => {
+  it('3人のコンボは、bondLinks にある時だけ使える（2人のコンボはいつも）', async () => {
+    const { buildMainChainBattle } = await import('../../src/core');
+    const { A31_COMBOS, AKARI, HERO, MIO, GOLDFISH_NOISE } = await import('../../src/data');
+    const make = (bondLinks?: string[]) =>
+      buildMainChainBattle({ id: 'm', name: 'm', party: [HERO, AKARI, MIO], enemies: [GOLDFISH_NOISE], deck: BASE.deck, cards: BASE.cards, links: A31_COMBOS, bondLinks });
+    expect(make().links.map((l) => l.id)).not.toContain('threeTimes');
+    expect(make(['threeTimes']).links.map((l) => l.id)).toContain('threeTimes');
+    expect(make().links.some((l) => l.members.length === 2)).toBe(true);
+  });
+});

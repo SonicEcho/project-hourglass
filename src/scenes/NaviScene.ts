@@ -5,7 +5,7 @@ import { boardParts, boardPassives, boardStats, bugHpLoss, findBugs, passiveRate
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { PARTY } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
-import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizePassives } from '../ui/naviText';
+import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizeTraits } from '../ui/naviText';
 import { addBalanceWheel, drawGear, drawMovementBg, drawPartShape, METAL, PART_COLOR, PART_SHORT } from '../ui/naviViews';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -182,7 +182,7 @@ export class NaviScene extends Phaser.Scene {
     run.navi = placePart(currentNaviData(), run.navi, sel.uid, ghost);
     const def = currentNaviData().parts[sel.partId];
     const placed = run.navi.parts.find((p) => p.uid === sel.uid)!;
-    this.message = `${def.name}をはめた${def.kind === 'effect' && !isPartActive(currentNaviData(), placed) ? '（ブリッジに乗っていないので効かない）' : ''}`;
+    this.message = `${def.name}をはめた${def.kind !== 'stat' && !isPartActive(currentNaviData(), placed) ? '（ブリッジに乗っていないので効かない）' : ''}`;
     console.log('[navi] place', this.charId, sel.partId, JSON.stringify(ghost));
     this.clearSelection();
     this.render();
@@ -310,7 +310,7 @@ export class NaviScene extends Phaser.Scene {
       // （同じギアのマスどうしは、つないで1つの台座に）
       const layers: [number, number, number][] = [
         ...(selected ? ([[7, 0xffffff, 1]] as [number, number, number][]) : []),
-        ...(def.kind === 'effect' ? ([[4.5, FRAME_COLORS.gold, active ? 1 : 0.55]] as [number, number, number][]) : []),
+        ...(def.kind !== 'stat' ? ([[4.5, FRAME_COLORS.gold, active ? 1 : 0.55]] as [number, number, number][]) : []),
         [2.5, 0x000000, 0.85],
         [0, m.dark, active ? 1 : 0.5],
       ];
@@ -326,7 +326,7 @@ export class NaviScene extends Phaser.Scene {
       }
       this.root.add(base);
       const gears = this.add.graphics();
-      for (const [c, r] of cells) drawGear(gears, o.x + c * cell + cell / 2, o.y + r * cell + cell / 2, cell * 0.4, def.color, active ? 1 : 0.4, true, def.kind === 'effect' && active);
+      for (const [c, r] of cells) drawGear(gears, o.x + c * cell + cell / 2, o.y + r * cell + cell / 2, cell * 0.4, def.color, active ? 1 : 0.4, true, def.kind !== 'stat' && active);
       this.root.add(gears);
       const [c0, r0] = cells[0];
       const x = o.x + c0 * cell;
@@ -334,7 +334,7 @@ export class NaviScene extends Phaser.Scene {
       // ギアの印（刻印のように、暗い字に明るい縁）
       this.root.add(addText(this, x + cell / 2, y + cell / 2, PART_SHORT[def.id] ?? '', { size: 15, bold: true, color: '#ffffff' }).setOrigin(0.5).setStroke(toCss(m.dark), 4).setAlpha(active ? 1 : 0.6));
       // 段階126（レビューの項目35）：ブリッジの外で効かない効果ギアは、暗さだけでなく × の印でも分かるように
-      if (def.kind === 'effect' && !active) {
+      if (def.kind !== 'stat' && !active) {
         this.root.add(this.add.circle(x + cell - 11, y + 11, 8, 0x401010).setStrokeStyle(1, 0xff8a7a));
         this.root.add(addText(this, x + cell - 11, y + 11, '×', { size: 11, bold: true, color: '#ff8a7a' }).setOrigin(0.5));
       }
@@ -411,7 +411,7 @@ export class NaviScene extends Phaser.Scene {
       // 段階126：効果ギアの影に、その位置で効くかを出す
       const def = currentNaviData().parts[sel.partId];
       const preview = this.previewNavi();
-      if (preview && def.kind === 'effect') {
+      if (preview && def.kind !== 'stat') {
         const on = isPartActive(currentNaviData(), preview.parts.find((p) => p.uid === sel.uid)!);
         const [c, r] = placedCells(def, ghost)[0];
         const tag = addText(this, o.x + c * this.cell + this.cell / 2, o.y + r * this.cell + this.cell - 12, on ? '効く' : '効かない', {
@@ -434,10 +434,10 @@ export class NaviScene extends Phaser.Scene {
     const nv = preview ?? run.navi;
     const data = currentNaviData();
     const passives = boardPassives(data, nv, this.charId);
-    const effects = summarizePassives(passives.filter((p) => p.kind !== 'bug'));
+    const effects = summarizeTraits(passives.filter((p) => p.kind !== 'bug'));
     const bugs = findBugs(data, nv, this.charId).length;
     const stats = Object.entries(boardStats(data, nv, this.charId)).map(([k, v]) => `${STAT_LABEL[k as keyof typeof STAT_LABEL]}+${v}`);
-    const idle = boardParts(nv, this.charId).filter((p) => data.parts[p.partId].kind === 'effect' && !isPartActive(data, p));
+    const idle = boardParts(nv, this.charId).filter((p) => data.parts[p.partId].kind !== 'stat' && !isPartActive(data, p));
     const lines: { text: string; color: string }[] = [];
     lines.push({ text: `${preview ? '置いた時▶ ' : ''}能力値：${stats.length > 0 ? stats.join('　') : 'なし'}`, color: preview ? COLORS.accentText : COLORS.subText });
     lines.push({ text: `効果：${effects.length > 0 ? effects.join('／') : 'なし'}`, color: COLORS.subText });
@@ -445,8 +445,10 @@ export class NaviScene extends Phaser.Scene {
     if (bugs > 0) {
       const ch = currentParty(hubLineup(), nv).find((c) => c.id === this.charId);
       const maxHp = ch?.stats.hp ?? 0;
-      const loss = ch ? bugHpLoss(maxHp, ch.passives) : 0;
-      const rate = Math.round(passiveRate({ passives: ch?.passives }, 'bug') * 100);
+      // 段階200：狂いは新しい戦闘の特性（traits）に入る
+      const bugs0 = (ch?.traits ?? []).filter((t): t is { kind: 'bug'; rate: number } => t.kind === 'bug');
+      const loss = ch ? bugHpLoss(maxHp, bugs0) : 0;
+      const rate = Math.round(passiveRate({ passives: bugs0 }, 'bug') * 100);
       lines.push({ text: `狂い×${bugs}：毎ラウンドの始めに HP−${loss}（最大HP ${maxHp}×${rate}%、切り捨て）`, color: '#ff8a7a' });
     }
     // 説明の窓（drawInfo の top）の上に収める。収まらない時は字を1段小さくする
@@ -627,7 +629,7 @@ export class NaviScene extends Phaser.Scene {
     const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと焼き付いて狂い）`, `大きさ：${def.cells.length}マス`];
     if (owner) {
       lines.push('', `${owner.name}のムーブメントにはまっている`);
-      if (def.kind === 'effect' && !isPartActive(currentNaviData(), p)) lines.push('ブリッジに乗っていないので、今は効かない');
+      if (def.kind !== 'stat' && !isPartActive(currentNaviData(), p)) lines.push('ブリッジに乗っていないので、今は効かない');
     }
     this.showDetail(def.name, lines.join('\n'));
   }

@@ -1,4 +1,5 @@
-import type { CharacterDef, PassiveEffect, Stats } from './types';
+import type { ChainPassive } from './chain';
+import type { CharacterDef, Stats } from './types';
 
 // ムーブメント（段階8）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
@@ -8,6 +9,8 @@ import type { CharacterDef, PassiveEffect, Stats } from './types';
 export type Cell = [number, number];
 
 export type PartColor = 'red' | 'blue' | 'green' | 'yellow';
+/** ギアの色（段階200：絆のギアは銀。狂いを起こさず、傾向にも数えない） */
+export type GearColor = PartColor | 'silver';
 
 /** 回転（時計回りに 90度 × rotation） */
 export type Rotation = 0 | 1 | 2 | 3;
@@ -15,8 +18,13 @@ export type Rotation = 0 | 1 | 2 | 3;
 export type NaviPartDef =
   /** 能力値ギア：盤のどこに置いても効く */
   | { id: string; name: string; color: PartColor; cells: Cell[]; kind: 'stat'; stats: Partial<Stats> }
-  /** 効果ギア：ブリッジに1マス以上乗っている時だけ効く */
-  | { id: string; name: string; color: PartColor; cells: Cell[]; kind: 'effect'; effect: PassiveEffect };
+  /** 効果ギア：ブリッジに1マス以上乗っている時だけ効く（段階200：効き目は新しい戦闘の特性） */
+  | { id: string; name: string; color: PartColor; cells: Cell[]; kind: 'effect'; effect: ChainPassive }
+  /**
+   * 絆のギア（段階200。docs/milestones/M3_catalog.md の 18-9）：色なし（銀。狂いを起こさず、傾向にも数えない）。
+   * ブリッジに乗っている時、links の3人のコンボを開く
+   */
+  | { id: string; name: string; color: 'silver'; cells: Cell[]; kind: 'bond'; links: string[] };
 
 export interface NaviBoardDef {
   cols: number;
@@ -26,7 +34,7 @@ export interface NaviBoardDef {
   /** ブリッジの列（2026-10-16 から縦。横一本だとナビカスのコマンドラインに似すぎるため） */
   commandCol: number;
   /** 狂い1つにつき付く特性（キャラごとに差し替えられるようにしておく） */
-  bugEffect: PassiveEffect;
+  bugEffect: ChainPassive;
   /** 進化で埋めている途中の行・列（段階100b。extendBoard が使う） */
   growRow?: number;
   growCol?: number;
@@ -135,6 +143,18 @@ export function isPartActive(data: NaviData, part: OwnedPart): boolean {
   return placedCells(def, part.placement).some(([c]) => c === board.commandCol);
 }
 
+/** 並びの仲間の盤で、ブリッジに乗っている絆のギアが開くコンボ（段階200） */
+export function activeBondLinks(data: NaviData, navi: NaviState, charIds: string[]): string[] {
+  const out = new Set<string>();
+  for (const id of charIds) {
+    for (const p of boardParts(navi, id)) {
+      const def = data.parts[p.partId];
+      if (def?.kind === 'bond' && isPartActive(data, p)) for (const l of def.links) out.add(l);
+    }
+  }
+  return [...out];
+}
+
 /** 狂い：同じ色の別々のギアが辺で接している組。uid の組で返す */
 export function findBugs(data: NaviData, navi: NaviState, charId: string): [number, number][] {
   const parts = boardParts(navi, charId);
@@ -145,7 +165,7 @@ export function findBugs(data: NaviData, navi: NaviState, charId: string): [numb
       const b = parts[j];
       const da = data.parts[a.partId];
       const db = data.parts[b.partId];
-      if (da.color !== db.color) continue;
+      if (da.color !== db.color || da.kind === 'bond') continue;
       const bCells = new Set(placedCells(db, b.placement!).map(key));
       const touching = placedCells(da, a.placement!).some(([c, r]) =>
         [[c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]].some((n) => bCells.has(key(n as Cell))),
@@ -157,8 +177,8 @@ export function findBugs(data: NaviData, navi: NaviState, charId: string): [numb
 }
 
 /** そのキャラの盤で効いている特性（効いている効果ギアと、狂いの数だけの狂いの効果） */
-export function boardPassives(data: NaviData, navi: NaviState, charId: string): PassiveEffect[] {
-  const out: PassiveEffect[] = [];
+export function boardPassives(data: NaviData, navi: NaviState, charId: string): ChainPassive[] {
+  const out: ChainPassive[] = [];
   for (const p of boardParts(navi, charId)) {
     const def = data.parts[p.partId];
     if (def.kind === 'effect' && isPartActive(data, p)) out.push(def.effect);
@@ -184,7 +204,9 @@ export function applyNavi(data: NaviData, navi: NaviState, chars: CharacterDef[]
   return chars.map((c) => {
     const stats = { ...c.stats };
     for (const [k, v] of Object.entries(boardStats(data, navi, c.id)) as [keyof Stats, number][]) stats[k] += v;
-    return { ...c, stats, passives: [...(c.passives ?? []), ...boardPassives(data, navi, c.id)] };
+    // 段階200：効果ギアと狂いは、新しい戦闘の特性（traits）に
+    const traits = [...(c.traits ?? []), ...boardPassives(data, navi, c.id)];
+    return { ...c, stats, ...(traits.length ? { traits } : {}) };
   });
 }
 
@@ -234,6 +256,7 @@ export function boardColorCells(data: NaviData, navi: NaviState, charId: string)
   const out: Record<PartColor, number> = { red: 0, blue: 0, green: 0, yellow: 0 };
   for (const p of boardParts(navi, charId)) {
     const def = data.parts[p.partId];
+    if (def.kind === 'bond') continue;
     out[def.color] += def.cells.length;
   }
   return out;
