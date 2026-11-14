@@ -280,6 +280,8 @@ export interface ChainEnemyMove {
   /** 照り返し（段階188。暑さの決まりの戦闘で、当たった仲間の暑さがこの数だけ上がる）・水しぶき（下がる） */
   heats?: number;
   cools?: number;
+  /** 巻きこみ（段階190。壊れた札の決まりの戦闘で、仲間に当たると、まだ使っていない手札の札を1枚「壊れた札」にする。1ラウンドに1枚まで） */
+  breaksCard?: boolean;
   /** 撮る（段階184。フィルムの決まりの戦闘で、実際に動くとフィルムがこの枚数減る。本気のカイ） */
   film?: number;
   /** 露出（段階184。本気のカイ）：動くと、まだ使っていない手札を1枚、この戦闘から消す */
@@ -460,6 +462,11 @@ export interface ChainBattleDef {
    * 敵の行動の heats で上がり、cools で下がる。氷の攻撃をした仲間は0に。回復の効果の cool で仲間全員が下がる
    */
   heat?: { max: number };
+  /**
+   * 時計を直す（段階190。4-2 のシャッターのぬしの思い出の再演）：card は壊れた札の id（並べられない。手札の1枠をふさぐ）。
+   * 早瀬（fixer）が技を使うか、だれかが火の攻撃をすると、壊れた札を1枚、元の札に直して、さらに1枚引く
+   */
+  broken?: { card: string; fixer: string };
 }
 
 export interface ChainUnit {
@@ -586,6 +593,9 @@ export type ChainEvent =
   | { type: 'timerTick'; uid: string; left: number }
   /** 永遠の夏（段階188）：この戦闘の終わりまで、味方全員の重さ −1 */
   | { type: 'lighten'; uid: string }
+  /** 時計を直す（段階190）：札が壊れた・直した */
+  | { type: 'cardBreak'; uid: string; card: string }
+  | { type: 'cardRepair'; uid: string; card: string }
   /** 暑さ（段階188）：仲間の暑さが変わった（heat は変わった後） */
   | { type: 'allyHeat'; to: string; heat: number; by: number }
   /** 回復役（段階187）：ほかの敵を回復した */
@@ -708,6 +718,9 @@ export interface ChainState {
   wordSaid?: boolean;
   /** 永遠の夏（段階188）：この戦闘の終わりまで、味方全員の重さ −1 */
   lighten?: boolean;
+  /** 壊れた札の元の札（段階190。壊れた順。直す時は先頭から）と、札を壊したラウンド */
+  brokenQueue?: string[];
+  brokeRound?: number;
   /** 上がった花火の数（段階182。くり返しを越える） */
   fireworks?: number;
   /** 腕時計の HP（段階179）と、このラウンドにねじを巻いたか（次のラウンドの急かすがそれる） */
@@ -1090,6 +1103,7 @@ export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: Chain
   const usedCards = new Set(plan.flatMap(stepCards));
   for (const idx of stepCards(step)) {
     if (!s.hand[idx]) return 'その札は手札にない';
+    if (s.def.broken && s.hand[idx] === s.def.broken.card) return '壊れた札は使えない（早瀬の技か、火の攻撃で直る）';
     if (usedCards.has(idx)) return 'その札は、もう使う予定';
   }
   if (step.source.kind === 'link') {
@@ -1393,7 +1407,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
       }
     } else if (eff.kind === 'cycle') {
       // 言えなかった言葉（段階186）は手札に残す
-      const keep = s.def.word ? s.hand.filter((c) => c === s.def.word!.card) : [];
+      const keep = s.hand.filter((c) => c === s.def.word?.card || c === s.def.broken?.card);
       const back = s.hand.length - keep.length;
       s.deck = shuffle(s, [...s.deck, ...s.hand.filter((c) => !keep.includes(c))]);
       s.hand = [...keep];
@@ -2044,6 +2058,19 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       lastAlly = actors[actors.length - 1].uid;
       enemySince = false;
       prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
+      // 時計を直す（段階190）：早瀬の技か、火の攻撃で、壊れた札を1枚直して、さらに1枚引く
+      if (s.def.broken && (s.brokenQueue?.length ?? 0) > 0) {
+        const fixer = actors.some((a) => a.defId === s.def.broken!.fixer) && step.source.kind === 'move';
+        const fire = move.effect.kind === 'damage' && (move.effect.element === 'fire' || !!move.effect.extra?.some((x) => x.element === 'fire'));
+        const k = s.hand.indexOf(s.def.broken.card);
+        if ((fixer || fire) && k >= 0) {
+          const [card, ...rest] = s.brokenQueue!;
+          s.hand[k] = card;
+          s.brokenQueue = rest;
+          draw(s);
+          ev.push({ type: 'cardRepair', uid: actor.uid, card });
+        }
+      }
       // 暑さ（段階188）：氷の攻撃をした仲間は、自分の暑さが0になる
       if (s.def.heat && move.effect.kind === 'damage' && (move.effect.element === 'ice' || move.effect.extra?.some((x) => x.element === 'ice'))) for (const a of actors) if (a.hp > 0) setHeat(s, a, 0, ev);
       s.hitBackMult = undefined;
@@ -2111,6 +2138,19 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
           const amount = Math.min(o.maxHp - o.hp, Math.max(1, Math.round(o.maxHp * rate)));
           o.hp += amount;
           ev.push({ type: 'enemyHeal', uid: e.uid, to: o.uid, amount });
+        }
+      }
+      // 巻きこみ（段階190）：仲間に当たると、まだ使っていない手札を1枚「壊れた札」に（1ラウンドに1枚まで）
+      if (q.intent.move.breaksCard && s.def.broken && s.brokeRound !== s.round && s.allies.some((a) => a.hp > 0)) {
+        const keep = new Set([s.def.broken.card, s.def.word?.card]);
+        const idxs = s.hand.map((c, k) => (keep.has(c) ? -1 : k)).filter((k) => k >= 0);
+        if (idxs.length) {
+          const k = idxs[Math.floor(rand(s) * idxs.length)];
+          const card = s.hand[k];
+          s.hand[k] = s.def.broken.card;
+          s.brokenQueue = [...(s.brokenQueue ?? []), card];
+          s.brokeRound = s.round;
+          ev.push({ type: 'cardBreak', uid: e.uid, card });
         }
       }
       // 露出（段階184）：まだ使っていない手札を1枚、この戦闘から消す
