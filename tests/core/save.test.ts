@@ -380,8 +380,8 @@ describe('セーブ：今のデータに合わせて整える', () => {
 
   it('ギアは今の盤に置き直し、はみ出す・重なるものは外す', () => {
     const res = parseEdited((raw) => {
-      // uid 2（2マスのギア）を盤の外に、uid 3 を uid 0 と同じマスに
-      raw.run.navi.parts[2].placement = { charId: 'hero', col: 3, row: 3, rotation: 0 };
+      // uid 5（3マスのワイドショット）を盤の外にはみ出させ、uid 3 を uid 0 と同じマスに
+      raw.run.navi.parts[5].placement = { charId: 'hero', col: 2, row: 3, rotation: 0 };
       raw.run.navi.parts[3].placement = { charId: 'hero', col: 0, row: 0, rotation: 0 };
     });
     expect(res.ok).toBe(true);
@@ -389,8 +389,25 @@ describe('セーブ：今のデータに合わせて整える', () => {
     const parts = res.save.run.navi.parts;
     expect(parts[0].placement).toEqual({ charId: 'hero', col: 0, row: 0, rotation: 0 });
     expect(parts[1].placement).toEqual({ charId: 'akari', col: 1, row: 1, rotation: 1 });
-    expect(parts[2].placement).toBeNull();
+    expect(parts[5].placement).toBeNull();
     expect(parts[3].placement).toBeNull();
+  });
+
+  it('版15のセーブ（段階200 でギアを入れ替える前）は、なくなったギアを近いギアに置き換えて盤から外す', () => {
+    const v15 = JSON.parse(serializeSave(playedRun(), AT));
+    v15.version = 15;
+    v15.run.navi.parts = [
+      { uid: 0, partId: 'speedMemory', placement: { charId: 'hero', col: 0, row: 0, rotation: 0 } },
+      { uid: 1, partId: 'oneMoreDraw', placement: null },
+      { uid: 2, partId: 'batonReceiver', placement: null },
+      { uid: 3, partId: 'startDash', placement: null },
+    ];
+    v15.run.navi.nextUid = 4;
+    const res = parseSave(JSON.stringify(v15), ctx);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.save.run.navi.parts.map((p) => p.partId)).toEqual(['mpMemory', 'snapBoost', 'effectBoost', 'startDash']);
+    expect(res.save.run.navi.parts[0].placement).toBeNull();
   });
 
   it('武器の進化で広がったマスに置いたギアは、そのまま残る', () => {

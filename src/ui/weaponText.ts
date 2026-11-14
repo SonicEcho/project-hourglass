@@ -1,7 +1,9 @@
-import type { ChainBasicMod, ChainPassive, EvolutionCheck, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, ItemRarity, WeaponData, WeaponParamKey } from '../core';
+import type { ChainBasicMod, EvolutionCheck, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, ItemRarity, WeaponData, WeaponParamKey } from '../core';
 import { decomposeFragment } from '../core';
 import { ELEMENT_LABEL } from './labels';
-import { PART_COLOR_LABEL, STAT_LABEL, summarizePassives } from './naviText';
+import { describeTraits, PART_COLOR_LABEL, STAT_LABEL, summarizePassives } from './naviText';
+
+export { describeTraits };
 
 // 武器の表示用の文字（画面に依存しない。テストからも使う）
 
@@ -41,46 +43,6 @@ export function describeCondition(c: EvolutionCheck, data?: WeaponData): string 
 }
 
 const pct = (r: number) => `${Math.round(r * 100)}%`;
-
-/** 新しい戦闘の特性（段階197。武器の進化先と型） */
-export function describeTraits(traits: ChainPassive[]): string[] {
-  return traits.map((t) => {
-    switch (t.kind) {
-      case 'elementBoost':
-        return `${ELEMENT_LABEL[t.element]}の威力 +${pct(t.rate)}`;
-      case 'comboBoost':
-        return `コンボの威力 +${pct(t.rate)}`;
-      case 'regen':
-        return `ラウンドの始めに HP ${pct(t.rate)} 回復`;
-      case 'mpSave':
-        return `技の MP −${t.amount}`;
-      case 'partBoost':
-        return `部位へのダメージ +${pct(t.rate)}`;
-      case 'snapBoost':
-        return `スナップの威力 +${pct(t.rate)}`;
-      case 'healBoost':
-        return `回復量 +${pct(t.rate)}`;
-      case 'pushPlus':
-        return `押す距離 +${t.count}`;
-      case 'heavyBoost':
-        return `重さ4以上の行動の威力 +${pct(t.rate)}`;
-      case 'timeMpSave':
-        return `時間の技の MP −${t.amount}`;
-      case 'effectBoost':
-        return `エフェクトの効き +${pct(t.rate)}`;
-      case 'climaxBoost':
-        return `クライマックスの威力 +${pct(t.rate)}`;
-      case 'lightBoost':
-        return `重さ1の行動の威力 +${pct(t.rate)}`;
-      case 'fragileBoost':
-        return `邪魔されなければ強い行動の威力 +${pct(t.rate)}`;
-      case 'quickStart':
-        return '最初のラウンドだけ、通常攻撃の重さ −1';
-      default:
-        return '';
-    }
-  }).filter((x) => x);
-}
 
 /** 通常攻撃の形（段階197。進化した時に、通常攻撃がどう変わるか） */
 export function describeBasic(b: ChainBasicMod): string[] {

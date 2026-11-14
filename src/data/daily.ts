@@ -151,7 +151,7 @@ export const RETURN_VISITS: ReturnVisit[] = [
   // 1-1 の翌日のゆうまの電話は、段階63から物語の流れの会話（4日目の朝の d4_yuma。docs/script/1-1_rework.md の 4-A）
   // 1-2 の翌日のふみさんは、段階66から物語の流れの会話（7日目の朝の d4_fumi。docs/script/1-2_rework.md の 7-A）
   // 2-1 の翌日（11日目。段階78）：いさむの工場（docs/script/2-1_rework.md の 11-A。段階39）。いさむが最後に削った歯車をくれる（「一個じゃ、回らんからな」なので、バトンレシーバー）
-  { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['batonReceiver'] },
+  { area: 'a21', id: 'd6_isamu', label: 'いさむの工場', place: 'factory', x: 195, y: ROW1, gears: ['mpSave'] },
   // 2-2 の翌日（15日目。段階82）：閉店後の楽器店で、けんたたち3人（docs/script/2-2_rework.md の 15-A。段階39b）
   { area: 'a22', id: 'd7_kenta', label: '閉店後の楽器店', place: 'music_shop', x: 195, y: ROW1 },
   // 2-3 の翌日（21日目。段階85・103）：祝日の河川敷で、そうたの準決勝（docs/script/2-3_rework.md の 20-A）。河川敷の上の段は、みおの絆の出来事

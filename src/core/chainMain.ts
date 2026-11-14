@@ -118,6 +118,8 @@ export interface MainChainBattleInput {
   deck: string[];
   cards: Record<string, ChainMove>;
   links?: ChainLinkDef[];
+  /** 絆のギアで開いた3人のコンボ（段階200。3人以上のコンボは、ここにある物だけ使える） */
+  bondLinks?: string[];
   /** 負け戦：このラウンドが終わったら打ち切る */
   cutoffRounds?: number;
   /** ボス戦・ぬし戦（段階199。ギア「ボスキラー」） */
@@ -165,7 +167,8 @@ export function buildMainChainBattle(input: MainChainBattleInput): ChainBattleDe
     deck: input.deck.filter((id) => !input.cards[id]?.owner || ids.has(input.cards[id].owner!)),
     cards: input.cards,
     // 並びにいない仲間が要るコンボは外す
-    links: (input.links ?? []).filter((l) => l.members.every((m) => ids.has(m))),
+    // 段階200（段階G5b）：3人以上のコンボは、並びの誰かの盤の絆のギアで開いている時だけ
+    links: (input.links ?? []).filter((l) => l.members.every((m) => ids.has(m)) && (l.members.length < 3 || (input.bondLinks ?? []).includes(l.id))),
     noShutter: true,
     finishLast: true,
     ...(input.cutoffRounds ? { cutoff: { rounds: input.cutoffRounds } } : {}),

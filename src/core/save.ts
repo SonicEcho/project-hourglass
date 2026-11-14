@@ -21,7 +21,7 @@ import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -160,7 +160,22 @@ export const MIGRATIONS: SaveMigrations = {
   },
   // 版14 → 版15（段階197・段階G4b）：武器の進化ツリーを入れ替えた。進化した武器は、進化を外して進化前に戻す（レベルと刻んだ能力値は残す。開発者と決めた）
   14: (raw) => (isObject(raw.run) && isObject(raw.run.armory) ? { ...raw, run: { ...raw.run, armory: resetV14Evolutions(raw.run.armory) } } : raw),
+  // 版15 → 版16（段階200・段階G5b）：ギアを入れ替えた。新しい戦闘にないギアは、近いギアに置き換える（開発者と決めた）。盤から外す（形が変わるため）
+  15: (raw) => (isObject(raw.run) && isObject(raw.run.navi) ? { ...raw, run: { ...raw.run, navi: renameV15Gears(raw.run.navi) } } : raw),
 };
+
+/** 版15 のギアのうち、なくなった物の置き換え先（段階200） */
+export const V15_GEAR_RENAMES: Record<string, string> = { speedMemory: 'mpMemory', oneMoreDraw: 'snapBoost', batonReceiver: 'effectBoost' };
+
+/** 版15 のなくなったギアを、置き換え先にする（段階200。置き換えたギアは盤から外す） */
+export function renameV15Gears(navi: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(navi.parts)) return navi;
+  const parts = navi.parts.map((p) => {
+    if (!isObject(p) || typeof p.partId !== 'string' || !(p.partId in V15_GEAR_RENAMES)) return p;
+    return { ...p, partId: V15_GEAR_RENAMES[p.partId], placement: null };
+  });
+  return { ...navi, parts };
+}
 
 /** 版14 の武器の進化を外す（段階197）。武器の状態のほかの物（経験値・能力値・刻印）は残す */
 export function resetV14Evolutions(armory: Record<string, unknown>): Record<string, unknown> {

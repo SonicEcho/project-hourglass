@@ -115,7 +115,8 @@ describe('ムーブメント：ブリッジ', () => {
     const n = owning('powerMemory', 'breaker');
     const [hero] = applyNavi(NAVI_DATA, n, [PARTY[0]]);
     expect(hero.stats).toEqual(PARTY[0].stats);
-    expect(hero.passives).toEqual([]);
+    // 段階200：効果ギアは新しい戦闘の特性（traits）に入る。はまっていなければ何も入らない
+    expect(hero.traits).toBeUndefined();
   });
 });
 
@@ -149,7 +150,7 @@ describe('ムーブメント：狂い', () => {
     n = placePart(NAVI_DATA, n, 2, at('hero', 2, 0));
     expect(findBugs(NAVI_DATA, n, 'hero')).toHaveLength(2);
     const [hero] = applyNavi(NAVI_DATA, n, [PARTY[0]]);
-    expect(hero.passives?.filter((p) => p.kind === 'bug')).toHaveLength(2);
+    expect(hero.traits?.filter((p) => p.kind === 'bug')).toHaveLength(2);
   });
 
   it('別のキャラの盤のギアとは狂いにならない', () => {
@@ -169,7 +170,7 @@ describe('ムーブメント：ギアの入手', () => {
 
   it('候補から決まった数を選んで受け取る', () => {
     const n = claimRewardParts(createNavi(START_NAVI_PARTS), NAVI_REWARD_CANDIDATES[0], [0, 2], NAVI_REWARD_PICKS);
-    expect(n.parts.map((p) => p.partId).slice(-2)).toEqual(['iceBoost', 'speedMemory']);
+    expect(n.parts.map((p) => p.partId).slice(-2)).toEqual(['iceBoost', 'mpMemory']);
     expect(new Set(n.parts.map((p) => p.uid)).size).toBe(n.parts.length);
   });
 
@@ -186,5 +187,36 @@ describe('ムーブメント：ギアの入手', () => {
       expect(board.cells.some(([c]) => c === board.commandCol)).toBe(true);
     }
     expect(Object.keys(NAVI_BOARDS).sort()).toEqual(PARTY.map((c) => c.id).sort());
+  });
+});
+
+describe('ギアの入れ替え（段階200）', () => {
+  it('絆のギアは銀で、狂いを起こさず、ブリッジに乗っている時だけ3人のコンボを開く', async () => {
+    const { activeBondLinks } = await import('../../src/core');
+    expect(NAVI_DATA.parts.fairBond).toMatchObject({ kind: 'bond', color: 'silver', links: ['threeTimes'] });
+    let n = owning('fairBond', 'hpMemory');
+    expect(activeBondLinks(NAVI_DATA, n, ['hero', 'akari', 'mio'])).toEqual([]);
+    // ブリッジ（列1）に乗せる。隣に置いた1マスのギアとは狂いにならない
+    n = placePart(NAVI_DATA, n, 0, at('akari', 0, 0));
+    n = placePart(NAVI_DATA, n, 1, at('akari', 2, 0));
+    expect(activeBondLinks(NAVI_DATA, n, ['hero', 'akari', 'mio'])).toEqual(['threeTimes']);
+    expect(findBugs(NAVI_DATA, n, 'akari')).toEqual([]);
+    // 並びにその仲間がいなければ開かない
+    expect(activeBondLinks(NAVI_DATA, n, ['hero', 'mio'])).toEqual([]);
+  });
+
+  it('どのギアも、どこかで手に入る（周回の始め・宝箱・会話・出来事・落とし物）', async () => {
+    const { AREAS, LOST_ITEMS, RETURN_VISITS, START_NAVI_PARTS } = await import('../../src/data');
+    const got = new Set<string>(START_NAVI_PARTS);
+    for (const a of Object.values(AREAS)) {
+      if (a.id.startsWith('trial')) continue;
+      for (const c of a.chests) for (const g of c.gears ?? []) got.add(g);
+      for (const t of a.triggers) for (const g of t.gears ?? []) got.add(g);
+    }
+    for (const v of RETURN_VISITS) for (const g of v.gears ?? []) got.add(g);
+    for (const l of LOST_ITEMS) for (const g of l.reward.gears ?? []) got.add(g);
+    for (const g of got) expect(NAVI_DATA.parts[g], g).toBeDefined();
+    expect(Object.keys(NAVI_DATA.parts).filter((id) => !got.has(id))).toEqual([]);
+    expect(Object.keys(NAVI_DATA.parts)).toHaveLength(40);
   });
 });
