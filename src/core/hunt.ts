@@ -13,6 +13,13 @@ export interface AreaGather {
   room?: string;
   cell: GridCell;
   items: string[];
+  /** 初めて開けた時だけ手に入るギア（段階200。宝箱に入りきらなかったギア。手に入れたかは物語の変数 huntGearKey に覚える） */
+  gears?: string[];
+}
+
+/** 採取の場所のギアを手に入れたことを覚える物語の変数の名前（段階200） */
+export function huntGearKey(gatherId: string): string {
+  return `狩りのギア:${gatherId}`;
 }
 
 /** 区画の狩りの中身（段階47で形だけ決め、段階43で作った） */
@@ -36,7 +43,7 @@ export function huntableAreas(areas: Readonly<Record<string, AreaDef>>, returned
  * 番人・話せる人・途中の会話・宝箱を除き、閉じた出入口を開け、砂嵐の戦闘を部屋ごとの敵の表から選び、採取の場所を宝箱の形で置く。
  * ぬしはそのまま（狩りではいつでも挑める。呼ぶ側が bossReady を見ない）
  */
-export function huntArea(area: HuntableArea, salt: number): AreaDef {
+export function huntArea(area: HuntableArea, salt: number, vars: Readonly<Record<string, string>> = {}): AreaDef {
   let rng = salt >>> 0;
   const pick = (list: readonly string[]): string => {
     const [v, next] = nextRandom(rng);
@@ -51,7 +58,8 @@ export function huntArea(area: HuntableArea, salt: number): AreaDef {
       const table = area.hunt.tables?.[e.room ?? startRoom(area)];
       return table && table.length > 0 ? { ...e, battle: pick(table) } : e;
     });
-  const chests: AreaChest[] = area.hunt.gathers.map((g) => ({ id: g.id, ...(g.room ? { room: g.room } : {}), cell: g.cell, items: g.items }));
+  // ギアは、まだ手に入れていない時だけ入れる（段階200）
+  const chests: AreaChest[] = area.hunt.gathers.map((g) => ({ id: g.id, ...(g.room ? { room: g.room } : {}), cell: g.cell, items: g.items, ...(g.gears?.length && !vars[huntGearKey(g.id)] ? { gears: g.gears } : {}) }));
   // 晩に分けた区画（段階63）も、記憶をたどる時は壁のない1つの区画（どの晩の敵も出る）
   const { hunt: _, nights: _n, walls: _w, ...rest } = area;
   return {

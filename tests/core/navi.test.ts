@@ -205,18 +205,33 @@ describe('ギアの入れ替え（段階200）', () => {
     expect(activeBondLinks(NAVI_DATA, n, ['hero', 'mio'])).toEqual([]);
   });
 
-  it('どのギアも、どこかで手に入る（周回の始め・宝箱・会話・出来事・落とし物）', async () => {
+  it('どのギアも、どこかで手に入る（周回の始め・宝箱・会話・出来事・落とし物・狩りの採取の場所）', async () => {
     const { AREAS, LOST_ITEMS, RETURN_VISITS, START_NAVI_PARTS } = await import('../../src/data');
     const got = new Set<string>(START_NAVI_PARTS);
     for (const a of Object.values(AREAS)) {
       if (a.id.startsWith('trial')) continue;
       for (const c of a.chests) for (const g of c.gears ?? []) got.add(g);
       for (const t of a.triggers) for (const g of t.gears ?? []) got.add(g);
+      // 記憶をたどる時（狩り）の採取の場所の、初めての1回だけのギア
+      for (const g of a.hunt?.gathers ?? []) for (const id of g.gears ?? []) got.add(id);
     }
     for (const v of RETURN_VISITS) for (const g of v.gears ?? []) got.add(g);
     for (const l of LOST_ITEMS) for (const g of l.reward.gears ?? []) got.add(g);
     for (const g of got) expect(NAVI_DATA.parts[g], g).toBeDefined();
     expect(Object.keys(NAVI_DATA.parts).filter((id) => !got.has(id))).toEqual([]);
     expect(Object.keys(NAVI_DATA.parts)).toHaveLength(40);
+  });
+});
+
+describe('狩りの採取の場所のギア（段階200）', () => {
+  it('初めて開ける時だけギアが入る（手に入れたら物語の変数に覚える）', async () => {
+    const { huntArea, huntGearKey } = await import('../../src/core');
+    const { AREAS } = await import('../../src/data');
+    const a31 = AREAS.a31 as Parameters<typeof huntArea>[0];
+    const first = huntArea(a31, 1).chests.find((c) => c.id === 'a31_gather_paddy')!;
+    expect(first.gears).toEqual(['timeKeeper']);
+    const again = huntArea(a31, 2, { [huntGearKey('a31_gather_paddy')]: '1' }).chests.find((c) => c.id === 'a31_gather_paddy')!;
+    expect(again.gears).toBeUndefined();
+    expect(again.items.length).toBeGreaterThan(0);
   });
 });

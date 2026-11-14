@@ -45,6 +45,7 @@ import {
   usableLinks,
   findLost,
   huntArea,
+  huntGearKey,
   lostOfSpot,
   lostSpots,
   thinItems,
@@ -192,7 +193,7 @@ export class ExploreScene extends Phaser.Scene {
     this.night = !this.hunting && base.nights ? (data.night ?? 1) : 0;
     const area =
       this.hunting && hunt && base.hunt
-        ? huntArea({ ...base, hunt: { ...base.hunt, gathers: [...base.hunt.gathers, ...lostSpots(LOST_ITEMS, run.vars, base.id)] } }, hunt.salt)
+        ? huntArea({ ...base, hunt: { ...base.hunt, gathers: [...base.hunt.gathers, ...lostSpots(LOST_ITEMS, run.vars, base.id)] } }, hunt.salt, run.vars)
         : this.night > 0
           ? nightArea(base, this.night)
           : base;
@@ -931,6 +932,8 @@ export class ExploreScene extends Phaser.Scene {
     run.armory = capped.armory;
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
+    // 記憶をたどる時の採取の場所のギアは、初めての1回だけ（段階200）
+    if (this.hunting && gears.length > 0) run.vars = { ...run.vars, [huntGearKey(r.chest.id)]: '1' };
     // スナップは持ち物に入る（段階41。チェックポイントのアルバムで入れ替える）
     // 段階168：新しい戦闘の区画では、新しい戦闘のスナップ（chainSnaps）を新しい戦闘のアルバムへ（ライブラリにも記録）
     const chainChest = chainAlbumActive() && !!r.chest.chainSnaps;
