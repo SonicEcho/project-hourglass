@@ -1,5 +1,5 @@
-import type { AlbumState, GrowthState } from '../core';
-import { createGrowth, flowEvents, gainSnaps, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, resetV14Evolutions, weaponLevel } from '../core';
+import type { AlbumState, ArmoryState, GrowthState } from '../core';
+import { createGrowth, evolveWeapon, flowEvents, gainSnaps, getEvolveError, nextEvolutions, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, resetV14Evolutions, weaponLevel } from '../core';
 import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, PARTY, SLICE_FLOW, START_MEMORY_POINTS, WEAPON_DATA } from '../data';
 import type { Carry } from './autoArea';
 import { areaBattleOrder, grownParty, newCarry } from './autoArea';
@@ -60,8 +60,8 @@ export function growthPreset(eventId: string, tier: GrowthTier): GrowthPreset {
   const carry: Carry = row ? (JSON.parse(JSON.stringify(row.carry)) as Carry) : newCarry();
   // 段階194（段階G3b）：表の星図は入れ替える前の物なので、使った星の砂を返し、今の星図でおすすめの道に沿って開け直す
   if (row) carry.growth = respendGrowth(carry.growth, eventId);
-  // 段階197（段階G4b）：表の武器の進化は入れ替える前の木の物なので、進化を外す（G4c で作り直す）
-  if (row) carry.armory = resetV14Evolutions(carry.armory as unknown as Record<string, unknown>) as unknown as Carry['armory'];
+  // 段階197（段階G4b）：表の武器の進化は入れ替える前の木の物なので、進化を外す。段階198（G4c）：今の木で進化させ直す
+  if (row) carry.armory = reEvolve(resetV14Evolutions(carry.armory as unknown as Record<string, unknown>) as unknown as ArmoryState);
   return { tier, areas, seed: row?.seed ?? 0, carry, snaps: areas.flatMap(areaSnaps) };
 }
 
@@ -85,6 +85,33 @@ function respendGrowth(old: GrowthState, eventId: string): GrowthState {
     }
   }
   return growth;
+}
+
+/**
+ * 武器を今の木で進化させ直す（段階198）：進化できる先のうち、本道（寄り道でない）を木の並びの順に選ぶ。型は1つ目。
+ * 鍵の素材はそろっているものとする（表は古い木の鍵を使った後の持ち物なので）。遅く加わる仲間の、加わった時の選択も同じ順
+ */
+function reEvolve(armory: ArmoryState): ArmoryState {
+  let a = armory;
+  for (const charId of Object.keys(a.weapons)) {
+    for (let k = 0; k < 10; k++) {
+      const w = a.weapons[charId];
+      const candidates = nextEvolutions(WEAPON_DATA, w).filter((e) => !e.sealed && !e.detour);
+      const keys = (id: string) => candidates.find((e) => e.id === id)!.conditions.flatMap((c) => (c.kind === 'key' ? [c.item] : []));
+      const withKeys = (id: string): ArmoryState => {
+        const items = { ...a.items };
+        for (const item of keys(id)) items[item] = Math.max(1, items[item] ?? 0);
+        return { ...a, items };
+      };
+      const next = candidates.find((e) => getEvolveError(WEAPON_DATA, withKeys(e.id), charId, e.id, 0) === null);
+      if (!next) break;
+      const before = a.items;
+      a = evolveWeapon(WEAPON_DATA, withKeys(next.id), charId, next.id, 0);
+      // そろっているものとした鍵は、持ち物に残さない（もともと持っていた数に戻す）
+      a = { ...a, items: { ...before } };
+    }
+  }
+  return a;
 }
 
 /** 区画で手に入るスナップ（戦闘の勝ち・宝箱・返した時） */
