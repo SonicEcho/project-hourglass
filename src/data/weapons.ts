@@ -1,5 +1,6 @@
 import type { Element } from '../core/types';
 import type { EvolutionCondition, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, WeaponData, WeaponDef, WeaponParamKey } from '../core/weapon';
+import type { PartColor } from '../core/navi';
 import { POUCH_MAX } from './constants';
 
 // 武器ビルドアップ（段階9）。数値・名前はすべて仮
@@ -188,8 +189,6 @@ const STYLES = {
   fierce: (element: Element): EvolutionStyleDef => ({ name: '烈', passives: [{ kind: 'elementBoost', element, rate: 0.1 }], board: 'row' }),
   /** 剛：攻撃 +3（横） */
   might: { name: '剛', stats: { atk: 3 }, board: 'row' },
-  /** 疾：速さ +2（横） */
-  swift: { name: '疾', stats: { spd: 2 }, board: 'row' },
   /** 叡：魔力 +3（横） */
   sage: { name: '叡', stats: { mag: 3 }, board: 'row' },
   /** 結：コンボ +10%（横。段階54で +15% から下げた） */
@@ -198,15 +197,11 @@ const STYLES = {
   ember: { name: '灯', passives: [{ kind: 'regen', rate: 0.03 }], board: 'column' },
   /** 砕：部位へのダメージ +20%（縦） */
   shatter: { name: '砕', passives: [{ kind: 'partBoost', rate: 0.2 }], board: 'column' },
-  /** 先：最初のラウンドに先制（縦） */
-  first: { name: '先', passives: [{ kind: 'startDash' }], board: 'column' },
   /** 静：MP の消費 −1（縦） */
   calm: { name: '静', passives: [{ kind: 'mpSave', amount: 1 }], board: 'column' },
   /** 堅：防御 +2（縦） */
   guard: { name: '堅', stats: { def: 2 }, board: 'column' },
-  /** 継：バトンを受けた時 +20%（縦） */
-  baton: { name: '継', passives: [{ kind: 'batonBoost', rate: 0.2 }], board: 'column' },
-  // ---- 段階196（一覧の 17-4）：新しい戦闘の型。疾・先・継の代わり（G4b で木に使う） ----
+  // ---- 段階196（一覧の 17-4）：新しい戦闘の型。段階197 で、新しい戦闘にない 疾・先・継 を外した ----
   /** 伸：クライマックスの威力 +10%（横） */
   stretch: { name: '伸', traits: [{ kind: 'climaxBoost', rate: 0.1 }], board: 'row' },
   /** 早：最初のラウンドだけ、通常攻撃の重さ −1（横） */
@@ -234,275 +229,174 @@ function beyond(from: string, branches: string[][]): EvolutionDef[] {
   });
 }
 
+/** 言い伝えだけの寄り道（段階197。③日常の遊び ④戦い方。条件を数える仕組みができるまで、影と一文だけ見せる） */
+const legendDetour = (id: string, from: string, legend: string): EvolutionDef => ({ id, name: '', from, detour: true, sealed: true, legend, conditions: [] });
+const low = (p: WeaponParamKey, max: number): EvolutionCondition => ({ kind: 'paramMax', param: p, max });
+const anyElement = (min: number): EvolutionCondition => ({ kind: 'elementAny', min });
+const tendency = (color: PartColor): EvolutionCondition => ({ kind: 'tendency', color });
+
+// ---- 段階197（段取りの段階G4b）：5人の武器の木を、一覧の 17-6 の系統で3回目まで作り直した（docs/milestones/M3_catalog.md）----
+// どの武器も3つの系統（1回目3・2回目3・3回目4。3回目で1つの系統が2つに分かれる）。条件は主の能力値が 12・24・36。
+// 通常攻撃の形（basic）は1回目と3回目で変わる。寄り道は ①ほかの属性の遠い道 ②能力値を低いままの道。③④と4回目より先は言い伝えだけ。数値は仮
+
+// ハルト「記録の剣」（属性なし）：刃（通常攻撃の回数・部位）・写（スナップ・エフェクト。火・氷・雷をそろえる）・記（コンボ・クライマックス）
 const sword: WeaponDef = {
   id: 'recordSword',
   name: '記録の剣',
   owner: 'hero',
   evolutions: [
-    // 1回目（段階27b）：進化の条件は「能力値＋鍵の素材」（鍵は 1-1 の雑魚の珍しい素材）
-    {
-      id: 'flameBlade',
-      name: 'フレイムブレード',
-      conditions: [param('fire', 12), key('maskString')],
-      attackElement: 'fire',
-      stats: { atk: 3 },
-      styles: [STYLES.fierce('fire'), STYLES.ember],
-    },
-    {
-      id: 'breakEdge',
-      name: 'ブレイクエッジ',
-      conditions: [param('atk', 12), key('balloonRubber')],
-      stats: { atk: 4 },
-      passives: [{ kind: 'partBoost', rate: 0.3 }],
-      styles: [STYLES.might, STYLES.shatter],
-    },
-    {
-      id: 'frostBlade',
-      name: 'フロストブレード',
-      conditions: [param('ice', 12), key('goldfishFin')],
-      attackElement: 'ice',
-      stats: { atk: 3 },
-      styles: [STYLES.fierce('ice'), STYLES.guard],
-    },
+    // 1回目（鍵は 1-1 の珍しい素材）
+    { id: 'breakEdge', name: 'ブレイクエッジ', conditions: [param('atk', 12), key('balloonRubber')], stats: { atk: 4 }, basic: { hits: 2 }, styles: [STYLES.might, STYLES.shatter] },
+    { id: 'copySword', name: '写しの剣', conditions: [param('fire', 4), param('ice', 4), param('thunder', 4), key('cottonStick')], stats: { atk: 3 }, basic: { bestOf: ['fire', 'ice', 'thunder'] }, styles: [STYLES.bond, STYLES.attach] },
+    { id: 'bookmarkSword', name: 'しおりの剣', conditions: [param('atk', 8), anyElement(6), key('maskString')], stats: { atk: 3 }, basic: { exposure: 1 }, styles: [STYLES.bond, STYLES.calm] },
     // 2回目（鍵は 1-2 の珍しい素材・部位）
-    { id: 'crimsonBlade', name: '紅蓮の刃', from: 'flameBlade', conditions: [param('fire', 24), key('beigoma')], attackElement: 'fire', stats: { atk: 4 }, styles: [STYLES.might, STYLES.ember] },
-    { id: 'crushEdge', name: 'クラッシュエッジ', from: 'breakEdge', conditions: [param('atk', 24), key('tinKey')], stats: { atk: 5 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.swift, STYLES.shatter] },
-    { id: 'glacierBlade', name: '氷河の刃', from: 'frostBlade', conditions: [param('ice', 24), key('phoneBell')], attackElement: 'ice', stats: { atk: 4, def: 1 }, styles: [STYLES.might, STYLES.guard] },
-    // 寄り道：ブレイクエッジから。雷を低いままにして、刃こぼれを抱えたまま先手を取る剣
-    {
-      id: 'strayEdge',
-      name: '迷い刃',
-      from: 'breakEdge',
-      detour: true,
-      conditions: [{ kind: 'paramMax', param: 'thunder', max: 2 }, key('bentSpoke')],
-      stats: { atk: 3, spd: 3 },
-      passives: [{ kind: 'startDash' }],
-      styles: [STYLES.swift, STYLES.guard],
-    },
+    { id: 'crushEdge', name: 'クラッシュエッジ', from: 'breakEdge', conditions: [param('atk', 24), key('tinKey')], stats: { atk: 5 }, traits: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.quick, STYLES.shatter] },
+    { id: 'mirrorSword', name: '映しの剣', from: 'copySword', conditions: [param('fire', 8), param('ice', 8), param('thunder', 8), key('phoneBell')], stats: { atk: 3 }, traits: [{ kind: 'snapBoost', rate: 0.1 }], styles: [STYLES.might, STYLES.attach] },
+    { id: 'pageSword', name: '頁の剣', from: 'bookmarkSword', conditions: [param('atk', 16), anyElement(16), key('ramuneMarble')], stats: { atk: 4 }, traits: [{ kind: 'comboBoost', rate: 0.1 }], styles: [STYLES.stretch, STYLES.guard] },
+    // 寄り道①：写しの剣から。火を高く、氷と雷を低いまま（属性なしのハルトが、通常攻撃に火を乗せられる唯一の道）
+    { id: 'crimsonBlade', name: '紅蓮の刃', from: 'copySword', detour: true, conditions: [param('fire', 20), low('ice', 6), low('thunder', 6), key('beigoma')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.ember] },
+    // 寄り道②：ブレイクエッジから。雷を低いままにして、刃こぼれを抱えたまま先手を取る剣
+    { id: 'strayEdge', name: '迷い刃', from: 'breakEdge', detour: true, conditions: [low('thunder', 2), key('bentSpoke')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
+    legendDetour('shootingSword', 'copySword', '射的の屋台で、的を全部落とした子の剣だったという'),
     // 3回目（鍵は 2-1・2-2 の素材）
-    { id: 'blazeBlade', name: '煌炎の剣', from: 'crimsonBlade', conditions: [param('fire', 36), key('glitterPen')], attackElement: 'fire', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.first] },
-    { id: 'sunsetBlade', name: '落陽の剣', from: 'crimsonBlade', conditions: [param('fire', 24), param('atk', 24), key('brokenBelt')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.shatter] },
-    { id: 'grandEdge', name: 'グランドエッジ', from: 'crushEdge', conditions: [param('atk', 36), key('tempoSpring')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.first] },
-    { id: 'auroraBlade', name: '極光の剣', from: 'glacierBlade', conditions: [param('ice', 36), key('ringtoneChip')], attackElement: 'ice', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
+    { id: 'grandEdge', name: 'グランドエッジ', from: 'crushEdge', conditions: [param('atk', 36), key('tempoSpring')], stats: { atk: 6 }, basic: { hits: 3, partMult: 1.5 }, styles: [STYLES.might, STYLES.shatter] },
+    { id: 'lanternSword', name: '走馬灯の剣', from: 'mirrorSword', conditions: [param('fire', 12), param('ice', 12), param('thunder', 12), key('glitterPen')], stats: { atk: 4 }, traits: [{ kind: 'snapBoost', rate: 0.15 }], styles: [STYLES.attach, STYLES.stretch] },
+    { id: 'kaleidoSword', name: '万華鏡の剣', from: 'mirrorSword', conditions: [param('fire', 12), param('ice', 12), param('thunder', 12), param('atk', 20), key('ringtoneChip')], stats: { atk: 5 }, traits: [{ kind: 'effectBoost', rate: 0.2 }], styles: [STYLES.attach, STYLES.might] },
+    { id: 'diarySword', name: '日記の剣', from: 'pageSword', conditions: [param('atk', 28), anyElement(24), key('brokenBelt')], stats: { atk: 5 }, traits: [{ kind: 'comboBoost', rate: 0.15 }, { kind: 'climaxBoost', rate: 0.1 }], styles: [STYLES.bond, STYLES.attach] },
+    legendDetour('chippedSword', 'grandEdge', 'ぬしの部位を全部壊して勝つたびに、刃こぼれがひとつ増えたという'),
     // 4回目より先（まだ作っていない）
-    ...beyond('blazeBlade', [['夜明けの色を、刃に閉じこめたという'], ['燃えつきた祭りの灯を、もう一度ともしたという']]),
-    ...beyond('sunsetBlade', [['沈む日を斬って、一日を一刻だけ伸ばしたという']]),
-    ...beyond('grandEdge', [['砂の山を一振りで割り、道を開いたという', '砕いたものを、元の形に組み直したという']]),
-    ...beyond('auroraBlade', [['凍った時間の上を、音もなく歩いたという']]),
+    ...beyond('grandEdge', [['天を割って、砂嵐の向こうに道を開いたという'], ['砂の山を一振りで割り、砂の道標を立てたという']]),
+    ...beyond('lanternSword', [['ひと夏の思い出を、一つ残らず回して見せたという']]),
+    ...beyond('kaleidoSword', [['色ガラスの向こうに、百の景色を閉じこめたという']]),
+    ...beyond('diarySword', [['最後の頁は、白紙のまま残したという', '年表の最後に、まだ来ない日を書いたという']]),
   ],
 };
 
+// あかり「祈りの杖」（氷・回復）：氷（通常攻撃の回数・氷の威力）・癒し（通常攻撃で味方を回復。攻撃を低いまま）・歌（守り・エフェクト。傾向）
 const rod: WeaponDef = {
   id: 'prayerRod',
   name: '祈りの杖',
   owner: 'akari',
   evolutions: [
-    { id: 'iceRod', name: 'アイスロッド', conditions: [param('ice', 12), key('goldfishFin')], attackElement: 'ice', stats: { mag: 3 }, styles: [STYLES.fierce('ice'), STYLES.calm] },
-    {
-      id: 'healingRod',
-      name: '癒しの杖',
-      conditions: [param('ice', 6), param('fire', 6), key('cottonStick')],
-      stats: { mp: 10 },
-      passives: [{ kind: 'regen', rate: 0.03 }],
-      styles: [STYLES.sage, STYLES.ember],
-    },
-    { id: 'flameRod', name: 'フレイムロッド', conditions: [param('fire', 12), key('maskString')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'iceRod', name: 'アイスロッド', conditions: [param('ice', 12), key('goldfishFin')], attackElement: 'ice', stats: { mag: 3 }, basic: { hits: 2 }, styles: [STYLES.fierce('ice'), STYLES.calm] },
+    { id: 'healingRod', name: '癒しの杖', conditions: [param('ice', 6), low('atk', 4), key('cottonStick')], attackElement: 'ice', stats: { mp: 10 }, basic: { healAll: 6 }, styles: [STYLES.sage, STYLES.ember] },
+    { id: 'bellRod', name: '鈴の杖', conditions: [param('ice', 6), tendency('blue')], attackElement: 'ice', stats: { def: 2 }, basic: { guardAll: 0.15 }, styles: [STYLES.bond, STYLES.guard] },
     // 2回目
-    { id: 'sleetRod', name: '氷雨の杖', from: 'iceRod', conditions: [param('ice', 24), key('ramuneMarble')], attackElement: 'ice', stats: { mag: 4 }, styles: [STYLES.sage, STYLES.calm] },
-    {
-      id: 'mercyRod',
-      name: '慈雨の杖',
-      from: 'healingRod',
-      conditions: [param('ice', 16), param('fire', 16), key('rustyBell')],
-      stats: { mp: 10, mag: 2 },
-      passives: [{ kind: 'regen', rate: 0.01 }],
-      styles: [STYLES.sage, STYLES.guard],
-    },
-    { id: 'heatRod', name: '陽炎の杖', from: 'flameRod', conditions: [param('fire', 24), key('beigoma')], attackElement: 'fire', stats: { mag: 4 }, styles: [STYLES.fierce('fire'), STYLES.guard] },
-    // 寄り道：アイスロッドから。火を低いままにして、少ない力で長く祈り続ける杖
-    {
-      id: 'dewRod',
-      name: 'しずくの杖',
-      from: 'iceRod',
-      detour: true,
-      conditions: [{ kind: 'paramMax', param: 'fire', max: 2 }, key('phoneCord')],
-      stats: { mp: 12 },
-      passives: [{ kind: 'mpSave', amount: 1 }],
-      styles: [STYLES.sage, STYLES.ember],
-    },
+    { id: 'sleetRod', name: '氷雨の杖', from: 'iceRod', conditions: [param('ice', 24), key('ramuneMarble')], attackElement: 'ice', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.sage, STYLES.calm] },
+    { id: 'mercyRod', name: '慈雨の杖', from: 'healingRod', conditions: [param('ice', 16), low('atk', 6), key('rustyBell')], attackElement: 'ice', stats: { mp: 10, mag: 2 }, traits: [{ kind: 'healBoost', rate: 0.1 }], styles: [STYLES.sage, STYLES.guard] },
+    { id: 'chimeRod', name: '風鈴の杖', from: 'bellRod', conditions: [param('ice', 16), tendency('blue'), key('tornSpeaker')], attackElement: 'ice', stats: { def: 2, mag: 2 }, traits: [{ kind: 'effectBoost', rate: 0.1 }], styles: [STYLES.quick, STYLES.attach] },
+    // 寄り道①：アイスロッドから。火を高く、氷を低いまま
+    { id: 'ringRod', name: '炎環の杖', from: 'iceRod', detour: true, conditions: [param('fire', 20), low('ice', 14), key('menkoCard')], attackElement: 'fire', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.ember] },
+    // 寄り道②：アイスロッドから。火を低いままにして、少ない力で長く祈り続ける杖
+    { id: 'dewRod', name: 'しずくの杖', from: 'iceRod', detour: true, conditions: [low('fire', 2), key('phoneCord')], attackElement: 'ice', stats: { mp: 12 }, traits: [{ kind: 'mpSave', amount: 1 }], styles: [STYLES.sage, STYLES.calm] },
+    legendDetour('goldfishRod', 'healingRod', '金魚すくいで、ポイを破らずに十匹すくった子の杖だったという'),
     // 3回目
-    { id: 'moonRod', name: '雪月の杖', from: 'sleetRod', conditions: [param('ice', 36), key('abacusFrame')], attackElement: 'ice', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
-    {
-      id: 'blessRod',
-      name: '祝福の杖',
-      from: 'mercyRod',
-      conditions: [param('ice', 24), param('fire', 24), key('lordGear')],
-      stats: { mp: 12, mag: 3 },
-      passives: [{ kind: 'regen', rate: 0.01 }],
-      styles: [STYLES.bond, STYLES.baton],
-    },
-    { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('fire', 24), param('thunder', 16), key('boomboxDial')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'regen', rate: 0.01 }], styles: [STYLES.sage, STYLES.first] },
-    { id: 'ringRod', name: '炎環の杖', from: 'heatRod', conditions: [param('fire', 36), key('glitterPen')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.ember] },
-    ...beyond('moonRod', [['月の光で、なくした名前を照らしたという'], ['降る雪の一粒ずつに、誰かの声が入っていたという']]),
-    ...beyond('blessRod', [['祈った人の数だけ、小さな花が咲いたという']]),
-    ...beyond('sunnyRod', [['冬の日なたを、そのまま持ち歩いたという', '日が落ちても、手のひらだけは温かかったという']]),
-    ...beyond('ringRod', [['燃える輪の中では、誰も泣かなかったという']]),
+    { id: 'moonRod', name: '雪月の杖', from: 'sleetRod', conditions: [param('ice', 36), key('abacusFrame')], attackElement: 'ice', stats: { mag: 5 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.15 }], basic: { hits: 2 }, styles: [STYLES.fierce('ice'), STYLES.ember] },
+    { id: 'blessRod', name: '祝福の杖', from: 'mercyRod', conditions: [param('ice', 24), low('atk', 8), key('lordGear')], attackElement: 'ice', stats: { mp: 12, mag: 3 }, basic: { healAll: 12 }, traits: [{ kind: 'healBoost', rate: 0.1 }], styles: [STYLES.bond, STYLES.ember] },
+    { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('ice', 24), param('fire', 12), key('boomboxDial')], attackElement: 'ice', stats: { mag: 4 }, basic: { healAll: 10 }, traits: [{ kind: 'regen', rate: 0.02 }], styles: [STYLES.sage, STYLES.ember] },
+    { id: 'templeBellRod', name: '鐘の杖', from: 'chimeRod', conditions: [param('ice', 28), tendency('blue'), key('cheerBand')], attackElement: 'ice', stats: { def: 3, mag: 3 }, basic: { guardAll: 0.25 }, traits: [{ kind: 'effectBoost', rate: 0.15 }], styles: [STYLES.stretch, STYLES.attach] },
+    legendDetour('snowmanRod', 'blessRod', '誰も倒れずに勝つたびに、雪だるまがひとつ増えたという'),
+    ...beyond('moonRod', [['月の光で、なくした名前を照らしたという'], ['初雪の朝だけ、杖が少し温かかったという']]),
+    ...beyond('blessRod', [['倒れた仲間が、一度だけ花の中で目を覚ましたという']]),
+    ...beyond('sunnyRod', [['冬の日なたを、そのまま持ち歩いたという']]),
+    ...beyond('templeBellRod', [['祈りの鐘が鳴る間は、誰も泣かなかったという', '静かな夜に、子守唄だけが聞こえたという']]),
   ],
 };
 
-// みおの武器（段階38）：前から大事にしているトランプが、光るカードになったもの。みおの呼び名は「ジョーカーズ」（docs/NAMING.md）。id は前の名前のまま
+// みお「切り札のトランプ」（雷・軽い・押す）：雷（通常攻撃の回数・雷の威力）・手品（押す。傾向 黄）・早撃ち（軽い行動。雷と攻撃）
 const cards: WeaponDef = {
   id: 'throwCards',
   name: '切り札のトランプ',
   owner: 'mio',
   evolutions: [
-    // 1回目（段階39）：鍵は 2-1 の雑魚の珍しい素材。トリックカードは、ムーブメントの開いた2章から加わるので、ギアの傾向のまま（はめ方で目指す進化先）
-    { id: 'thunderCards', name: 'サンダーカード', conditions: [param('thunder', 12), key('filament')], attackElement: 'thunder', stats: { spd: 2 }, styles: [STYLES.fierce('thunder'), STYLES.first] },
-    {
-      id: 'trickCards',
-      name: 'トリックカード',
-      conditions: [{ kind: 'tendency', color: 'yellow' }],
-      stats: { spd: 1 },
-      passives: [{ kind: 'oneMoreDraw', count: 1 }],
-      styles: [STYLES.bond, STYLES.baton],
-    },
-    { id: 'flameCards', name: 'フレイムカード', conditions: [param('fire', 12), key('brassBolt')], attackElement: 'fire', stats: { spd: 1 }, styles: [STYLES.fierce('fire'), STYLES.first] },
+    // 1回目（鍵は 2-1 の珍しい素材。手品は、ムーブメントの開いた2章から加わるので、ギアの傾向のまま）
+    { id: 'thunderCards', name: 'サンダーカード', conditions: [param('thunder', 12), key('filament')], attackElement: 'thunder', stats: { atk: 2 }, basic: { hits: 2 }, styles: [STYLES.fierce('thunder'), STYLES.calm] },
+    { id: 'trickCards', name: 'トリックカード', conditions: [param('thunder', 6), tendency('yellow')], attackElement: 'thunder', stats: { atk: 1 }, basic: { push: 1 }, styles: [STYLES.bond, STYLES.attach] },
+    { id: 'quickCards', name: '早撃ちのカード', conditions: [param('thunder', 6), param('atk', 6), key('masterGear')], attackElement: 'thunder', stats: { atk: 2 }, basic: { lighter: 1 }, styles: [STYLES.quick, STYLES.guard] },
     // 2回目（鍵は 2-2 の素材）
-    { id: 'boltCards', name: '稲妻のカード', from: 'thunderCards', conditions: [param('thunder', 24), key('boomboxDial')], attackElement: 'thunder', stats: { spd: 3, atk: 2 }, styles: [STYLES.might, STYLES.first] },
-    {
-      id: 'mirageCards',
-      name: '幻のカード',
-      from: 'trickCards',
-      conditions: [{ kind: 'tendency', color: 'yellow' }, key('tornSpeaker')],
-      stats: { spd: 2 },
-      passives: [{ kind: 'comboBoost', rate: 0.2 }],
-      styles: [STYLES.bond, STYLES.first],
-    },
-    { id: 'sparkCards', name: '火花のカード', from: 'flameCards', conditions: [param('fire', 24), key('glitterPen')], attackElement: 'fire', stats: { spd: 2, atk: 2 }, styles: [STYLES.might, STYLES.ember] },
-    // 寄り道：サンダーカードから。火を低いままにして、仲間につなぐことだけを考えるカード
-    {
-      id: 'oldMaidCards',
-      name: 'ばば抜きのカード',
-      from: 'thunderCards',
-      detour: true,
-      conditions: [{ kind: 'paramMax', param: 'fire', max: 2 }, key('photoSticker')],
-      stats: { spd: 2 },
-      passives: [
-        { kind: 'comboBoost', rate: 0.3 },
-        { kind: 'batonBoost', rate: 0.25 },
-      ],
-      styles: [STYLES.swift, STYLES.guard],
-    },
+    { id: 'boltCards', name: '稲妻のカード', from: 'thunderCards', conditions: [param('thunder', 24), key('boomboxDial')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.might, STYLES.ember] },
+    { id: 'mirageCards', name: '幻のカード', from: 'trickCards', conditions: [param('thunder', 16), tendency('yellow'), key('tornSpeaker')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'comboBoost', rate: 0.1 }], styles: [STYLES.bond, STYLES.attach] },
+    { id: 'rapidCards', name: '連射のカード', from: 'quickCards', conditions: [param('thunder', 16), param('atk', 16), key('tempoSpring')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'lightBoost', rate: 0.1 }], styles: [STYLES.quick, STYLES.calm] },
+    // 寄り道①：サンダーカードから。火を高く、雷を低いまま
+    { id: 'fireworkCards', name: '花火のカード', from: 'thunderCards', detour: true, conditions: [param('fire', 20), low('thunder', 14), key('brassBolt')], attackElement: 'fire', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.shatter] },
+    // 寄り道②：サンダーカードから。火を低いままにして、仲間につなぐことだけを考えるカード
+    { id: 'oldMaidCards', name: 'ばば抜きのカード', from: 'thunderCards', detour: true, conditions: [low('fire', 2), key('photoSticker')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'comboBoost', rate: 0.2 }], styles: [STYLES.bond, STYLES.guard] },
+    legendDetour('towerCards', 'trickCards', 'トランプで、天井まで届く塔を建てた子のカードだったという'),
+    legendDetour('doodleCards', 'mirageCards', '一つの戦いで、敵の予定を十マスも後ろへ押しやったという'),
     // 3回目（鍵は 2-3 の素材）
-    { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 36), key('cheerBand')], attackElement: 'thunder', stats: { spd: 3, atk: 3 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.baton] },
-    {
-      id: 'magicianCards',
-      name: '奇術師のカード',
-      from: 'mirageCards',
-      conditions: [{ kind: 'tendency', color: 'yellow' }, param('thunder', 20), key('scorePlate')],
-      stats: { spd: 3 },
-      passives: [{ kind: 'batonBoost', rate: 0.25 }],
-      styles: [STYLES.swift, STYLES.baton],
-    },
-    {
-      id: 'jesterCards',
-      name: '道化のカード',
-      from: 'mirageCards',
-      conditions: [{ kind: 'tendency', color: 'yellow' }, param('atk', 24), key('autographBall')],
-      stats: { atk: 4, spd: 2 },
-      passives: [{ kind: 'comboBoost', rate: 0.2 }],
-      styles: [STYLES.might, STYLES.shatter],
-    },
-    { id: 'fireworkCards', name: '花火のカード', from: 'sparkCards', conditions: [param('fire', 36), key('buttonCell')], attackElement: 'fire', stats: { spd: 2, atk: 3 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.shatter] },
+    { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 36), key('cheerBand')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.15 }], styles: [STYLES.fierce('thunder'), STYLES.attach] },
+    { id: 'magicianCards', name: '奇術師のカード', from: 'mirageCards', conditions: [param('thunder', 24), tendency('yellow'), key('scorePlate')], attackElement: 'thunder', stats: { atk: 3 }, basic: { push: 2 }, traits: [{ kind: 'pushPlus', count: 1 }], styles: [STYLES.attach, STYLES.quick] },
+    { id: 'jesterCards', name: '道化のカード', from: 'mirageCards', conditions: [param('thunder', 20), param('atk', 20), key('autographBall')], attackElement: 'thunder', stats: { atk: 4 }, basic: { push: 2 }, traits: [{ kind: 'comboBoost', rate: 0.15 }], styles: [STYLES.bond, STYLES.shatter] },
+    { id: 'meteorCards', name: '流れ星のカード', from: 'rapidCards', conditions: [param('thunder', 28), param('atk', 24), key('jugCap')], attackElement: 'thunder', stats: { atk: 4 }, traits: [{ kind: 'lightBoost', rate: 0.2 }], styles: [STYLES.quick, STYLES.attach] },
     ...beyond('raijinCards', [['雷を一枚のカードにして、空へ返したという'], ['鳴りやんだ拍手を、もう一度呼んだという']]),
     ...beyond('magicianCards', [['引いたカードが、いつも見たい景色だったという']]),
-    ...beyond('jesterCards', [['笑わせたあとで、そっと忘れ物を返したという', 'ばらまいたカードが、町じゅうの灯になったという']]),
-    ...beyond('fireworkCards', [['夜空に、一度きりの花を咲かせたという']]),
+    ...beyond('jesterCards', [['ばらまいたカードが、町じゅうの灯になったという']]),
+    ...beyond('meteorCards', [['七並べのように、流れ星を順に並べたという', '一番星より先に、夜空へ届いたという']]),
   ],
 };
 
-// 小夜子の武器（段階91a。docs/script/3-matsuri.md）：月の簪が変わる薙刀「月影」。3章の途中から加わるので、Lv5 から始める（startExp）。
-// 鍵は、1回目が 3-1 の村の珍しい素材、2回目が 3-1 の部位・番人の素材、3回目が 3-1 のレア・ぬしの素材（3章から加わるので、ほかの仲間より先の区画の素材にはしない）
+// 小夜子「月影」（物理・重い一撃・部位。3章の途中から加わるので Lv5 から。1回目までを加わった時に選ぶ）：月（重い一撃）・影（邪魔されなければ強い。属性を全部低いまま）・砕（部位・かたい）
 const naginata: WeaponDef = {
   id: 'moonNaginata',
   name: '月影',
   owner: 'sayoko',
   startExp: 26,
+  joinTier: 1,
   evolutions: [
-    {
-      id: 'crescentNaginata',
-      name: '三日月',
-      conditions: [param('atk', 12), key('radioEarphone')],
-      stats: { atk: 4 },
-      passives: [{ kind: 'partBoost', rate: 0.3 }],
-      styles: [STYLES.might, STYLES.shatter],
-    },
-    { id: 'heatNaginata', name: '陽炎の薙刀', conditions: [param('fire', 12), key('teacup')], attackElement: 'fire', stats: { atk: 3 }, styles: [STYLES.fierce('fire'), STYLES.first] },
-    { id: 'frostNaginata', name: '霜月の薙刀', conditions: [param('ice', 12), key('coilStand')], attackElement: 'ice', stats: { atk: 3 }, styles: [STYLES.fierce('ice'), STYLES.guard] },
+    { id: 'crescentNaginata', name: '三日月', conditions: [param('atk', 12), key('radioEarphone')], stats: { atk: 4 }, basic: { heavy: true }, styles: [STYLES.might, STYLES.shatter] },
+    { id: 'duskNaginata', name: '宵の薙刀', conditions: [param('atk', 12), low('fire', 4), low('ice', 4), low('thunder', 4), key('teacup')], stats: { atk: 3 }, basic: { fragile: 2 }, styles: [STYLES.might, STYLES.calm] },
+    { id: 'breakMoonNaginata', name: '砕月', conditions: [param('atk', 12), key('trainWheel')], stats: { atk: 3 }, basic: { partMult: 1.5 }, styles: [STYLES.shatter, STYLES.might] },
     // 2回目
-    { id: 'fullMoonNaginata', name: '満月', from: 'crescentNaginata', conditions: [param('atk', 24), key('trainWheel')], stats: { atk: 5 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.first] },
-    { id: 'lanternNaginata', name: '灯籠の薙刀', from: 'heatNaginata', conditions: [param('fire', 24), key('chimneySoot')], attackElement: 'fire', stats: { atk: 4 }, styles: [STYLES.fierce('fire'), STYLES.ember] },
-    { id: 'frostMoonNaginata', name: '霜夜の薙刀', from: 'frostNaginata', conditions: [param('ice', 24), key('postLetter')], attackElement: 'ice', stats: { atk: 4, def: 1 }, styles: [STYLES.might, STYLES.guard] },
-    // 寄り道：三日月から。雷を低いままにして、誰より先に踏みこむ薙刀
-    {
-      id: 'hazyMoonNaginata',
-      name: '朧月',
-      from: 'crescentNaginata',
-      detour: true,
-      conditions: [{ kind: 'paramMax', param: 'thunder', max: 2 }, key('tableLeg')],
-      stats: { atk: 3, spd: 3 },
-      passives: [{ kind: 'startDash' }],
-      styles: [STYLES.swift, STYLES.guard],
-    },
+    { id: 'fullMoonNaginata', name: '満月', from: 'crescentNaginata', conditions: [param('atk', 24), key('postLetter')], stats: { atk: 5 }, traits: [{ kind: 'heavyBoost', rate: 0.1 }], styles: [STYLES.might, STYLES.guard] },
+    { id: 'midnightNaginata', name: '夜半の薙刀', from: 'duskNaginata', conditions: [param('atk', 24), low('fire', 6), low('ice', 6), low('thunder', 6), key('coilStand')], stats: { atk: 4 }, traits: [{ kind: 'fragileBoost', rate: 0.1 }], styles: [STYLES.might, STYLES.calm] },
+    { id: 'splitMoonNaginata', name: '破月', from: 'breakMoonNaginata', conditions: [param('atk', 24), key('chimneySoot')], stats: { atk: 4 }, traits: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.quick, STYLES.shatter] },
+    // 寄り道①：三日月から。火を高く
+    { id: 'eveNaginata', name: '宵宮の薙刀', from: 'crescentNaginata', detour: true, conditions: [param('fire', 20), key('lanternFrame')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.guard] },
+    // 寄り道②：三日月から。雷を低いままにして、誰より先に踏みこむ薙刀
+    { id: 'hazyMoonNaginata', name: '朧月', from: 'crescentNaginata', detour: true, conditions: [low('thunder', 2), key('tableLeg')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
+    legendDetour('lanternNaginata', 'crescentNaginata', '祭りの射的と輪投げで、提灯を全部ともした人の薙刀だったという'),
     // 3回目
-    { id: 'harvestMoonNaginata', name: '名月', from: 'fullMoonNaginata', conditions: [param('atk', 36), key('lordWhistle')], stats: { atk: 6 }, passives: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.shatter] },
-    { id: 'moonlitNaginata', name: '月下の薙刀', from: 'fullMoonNaginata', conditions: [param('atk', 24), param('fire', 16), key('fanTimer')], stats: { atk: 5, spd: 1 }, passives: [{ kind: 'startDash' }], styles: [STYLES.swift, STYLES.first] },
-    { id: 'eveNaginata', name: '宵宮の薙刀', from: 'lanternNaginata', conditions: [param('fire', 36), key('payEnvelope')], attackElement: 'fire', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.first] },
-    { id: 'snowMoonNaginata', name: '雪月花', from: 'frostMoonNaginata', conditions: [param('ice', 36), key('oldTicket')], attackElement: 'ice', stats: { atk: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.ember] },
-    // 4回目より先（まだ作っていない）
+    { id: 'harvestMoonNaginata', name: '名月', from: 'fullMoonNaginata', conditions: [param('atk', 36), key('lordWhistle')], stats: { atk: 7 }, traits: [{ kind: 'heavyBoost', rate: 0.15 }], styles: [STYLES.stretch, STYLES.shatter] },
+    { id: 'moonlitNaginata', name: '月下の薙刀', from: 'midnightNaginata', conditions: [param('atk', 36), low('fire', 8), low('ice', 8), low('thunder', 8), key('fanTimer')], stats: { atk: 5 }, traits: [{ kind: 'fragileBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.calm] },
+    { id: 'shadowStepNaginata', name: '月影踏み', from: 'midnightNaginata', conditions: [param('atk', 30), low('fire', 8), low('ice', 8), low('thunder', 8), key('payEnvelope')], stats: { atk: 4, def: 3 }, traits: [{ kind: 'fragileBoost', rate: 0.15 }], styles: [STYLES.quick, STYLES.guard] },
+    { id: 'crackedMoonNaginata', name: '割れ月', from: 'splitMoonNaginata', conditions: [param('atk', 36), key('oldTicket')], stats: { atk: 5 }, basic: { pierceHard: true }, traits: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.shatter, STYLES.might] },
+    legendDetour('summerNaginata', 'harvestMoonNaginata', 'ぬしの部位を全部壊して勝つたびに、夏が一つ終わったという'),
     ...beyond('harvestMoonNaginata', [['欠けない月の下で、百の夜を一度に終わらせたという'], ['月を斬って、ふたつの夜に分けたという']]),
     ...beyond('moonlitNaginata', [['月の影だけを踏んで、誰にも気づかれずに歩いたという']]),
-    ...beyond('eveNaginata', [['祭りの灯をひとつずつ、持ち主の家へ届けたという', '消えた提灯に、もう一度だけ火をともしたという']]),
-    ...beyond('snowMoonNaginata', [['冷えた夜の端を、そっと縫い合わせたという']]),
+    ...beyond('shadowStepNaginata', [['足音のない刃で、夜道を一人で帰ったという']]),
+    ...beyond('crackedMoonNaginata', [['鬼灯の色の刃で、堰を切って水を流したという']]),
   ],
 };
 
-// 早瀬の武器（段階140a。docs/script/4-2.md）：精密ドライバー。属性魔法の職人なので、どの進化先も魔力と、火・氷・雷のどれかを伸ばす。4章から加わるので、Lv6 から始める。
-// 鍵は、1回目が 3-2 の珍しい素材、2回目が 4-1 の珍しい素材・番人の素材、3回目が 4-1 のレア・部位・ぬしの素材（4章から加わるので、先の区画の素材にはしない）
+// 早瀬「精密ドライバー」（火・時間。4章から加わるので Lv7 から。2回目までを加わった時に選ぶ）：火（通常攻撃の回数・バリア）・時間（時間の技・予定を後ろへ。傾向）・職人（技の MP・魔力。攻撃を低いまま）
 const driver: WeaponDef = {
   id: 'precisionDriver',
   name: '精密ドライバー',
   owner: 'hayase',
   startExp: 38,
+  joinTier: 2,
   evolutions: [
-    { id: 'temperDriver', name: '焼き戻しのドライバー', conditions: [param('fire', 12), key('thickStraw')], attackElement: 'fire', stats: { mag: 3 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
-    { id: 'coolDriver', name: '冷やしのドライバー', conditions: [param('ice', 12), key('flowerRibbon')], attackElement: 'ice', stats: { mag: 3 }, styles: [STYLES.fierce('ice'), STYLES.guard] },
-    { id: 'currentDriver', name: '電流のドライバー', conditions: [param('thunder', 12), key('earbudTip')], attackElement: 'thunder', stats: { mag: 3 }, styles: [STYLES.fierce('thunder'), STYLES.first] },
-    // 2回目
-    { id: 'forgeDriver', name: '鍛冶のドライバー', from: 'temperDriver', conditions: [param('fire', 24), key('cageStrap')], attackElement: 'fire', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.sage, STYLES.calm] },
-    { id: 'frostDriver', name: '霜のドライバー', from: 'coolDriver', conditions: [param('ice', 24), key('fireworkPaper')], attackElement: 'ice', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.sage, STYLES.guard] },
-    { id: 'arcDriver', name: '火花のドライバー', from: 'currentDriver', conditions: [param('thunder', 24), key('waterTank')], attackElement: 'thunder', stats: { mag: 4 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.sage, STYLES.first] },
-    // 寄り道：電流のドライバーから。攻撃を低いままにして、MP を細く長く使うドライバー
-    {
-      id: 'tuningDriver',
-      name: '調律のドライバー',
-      from: 'currentDriver',
-      detour: true,
-      conditions: [{ kind: 'paramMax', param: 'atk', max: 2 }, key('jizoBib')],
-      stats: { mag: 3, spd: 1 },
-      passives: [{ kind: 'mpSave', amount: 1 }],
-      styles: [STYLES.sage, STYLES.calm],
-    },
-    // 3回目
-    { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.calm] },
-    { id: 'icicleDriver', name: '氷柱のドライバー', from: 'frostDriver', conditions: [param('ice', 36), key('hatBrim')], attackElement: 'ice', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
-    { id: 'thunderDriver', name: '雷鳴のドライバー', from: 'arcDriver', conditions: [param('thunder', 36), key('lordStrawHat')], attackElement: 'thunder', stats: { mag: 5 }, passives: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.first] },
-    { id: 'masterDriver', name: '名工のドライバー', from: 'arcDriver', conditions: [param('thunder', 24), param('fire', 16), key('radioCard')], stats: { mag: 5, mp: 6 }, styles: [STYLES.sage, STYLES.calm] },
-    // 4回目より先（まだ作っていない）
-    ...beyond('kilnDriver', [['冷えきった町の時計を、ひと晩で全部あたため直したという', '炉の火で、止まった秒針をもう一度打ち直したという']]),
-    ...beyond('icicleDriver', [['止まった秒針を、凍らせたまま美しく見せたという']]),
-    ...beyond('thunderDriver', [['一本の火花で、百の時計を同時に動かしたという'], ['雷を、ぜんまいの中にしまったという']]),
-    ...beyond('masterDriver', [['直せない時計は、ひとつもなかったという']]),
+    { id: 'temperDriver', name: '焼き戻しのドライバー', conditions: [param('fire', 12), key('thickStraw')], attackElement: 'fire', stats: { mag: 3 }, basic: { hits: 2 }, styles: [STYLES.fierce('fire'), STYLES.calm] },
+    { id: 'secondDriver', name: '秒針のドライバー', conditions: [param('fire', 6), tendency('red')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'timeMpSave', amount: 1 }], styles: [STYLES.quick, STYLES.calm] },
+    { id: 'tuningDriver', name: '調律のドライバー', conditions: [param('fire', 6), low('atk', 4), key('flowerRibbon')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'mpSave', amount: 1 }], styles: [STYLES.sage, STYLES.calm] },
+    // 2回目（鍵は 4-1 の素材）
+    { id: 'forgeDriver', name: '鍛冶のドライバー', from: 'temperDriver', conditions: [param('fire', 24), key('cageStrap')], attackElement: 'fire', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.guard] },
+    { id: 'pendulumDriver', name: '振り子のドライバー', from: 'secondDriver', conditions: [param('fire', 16), tendency('red'), key('waterTank')], attackElement: 'fire', stats: { mag: 3, mp: 6 }, traits: [{ kind: 'timeMpSave', amount: 1 }], styles: [STYLES.quick, STYLES.attach] },
+    { id: 'masterDriver', name: '名工のドライバー', from: 'tuningDriver', conditions: [param('fire', 16), low('atk', 6), key('fireworkPaper')], attackElement: 'fire', stats: { mag: 4, mp: 6 }, styles: [STYLES.sage, STYLES.calm] },
+    // 寄り道①②：焼き戻しのドライバーから。氷を高く／雷を高く（火を低いまま）
+    { id: 'coolDriver', name: '冷やしのドライバー', from: 'temperDriver', detour: true, conditions: [param('ice', 20), low('fire', 14), key('crackedLens')], attackElement: 'ice', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
+    { id: 'currentDriver', name: '電流のドライバー', from: 'temperDriver', detour: true, conditions: [param('thunder', 20), low('fire', 14), key('earbudTip')], attackElement: 'thunder', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.calm] },
+    legendDetour('karakuriDriver', 'tuningDriver', '止まった時計を百個直した人の、からくりのドライバーだったという'),
+    legendDetour('oilDriver', 'secondDriver', '一つの戦いで、敵の行動を三度も空振りさせたという'),
+    // 3回目（鍵は 4-1 のレア・部位・ぬしの素材）
+    { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, basic: { heavy: true }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.15 }], styles: [STYLES.fierce('fire'), STYLES.attach] },
+    { id: 'furnaceDriver', name: '炉のドライバー', from: 'forgeDriver', conditions: [param('fire', 30), param('atk', 16), key('hatBrim')], attackElement: 'fire', stats: { mag: 6 }, basic: { heavy: true }, styles: [STYLES.might, STYLES.calm] },
+    { id: 'springDriver', name: 'ぜんまいのドライバー', from: 'pendulumDriver', conditions: [param('fire', 28), tendency('red'), key('lordStrawHat')], attackElement: 'fire', stats: { mag: 4 }, basic: { push: 1 }, styles: [STYLES.quick, STYLES.attach] },
+    { id: 'artisanDriver', name: '匠のドライバー', from: 'masterDriver', conditions: [param('fire', 28), low('atk', 8), key('radioCard')], attackElement: 'fire', stats: { mag: 6 }, traits: [{ kind: 'mpSave', amount: 1 }], styles: [STYLES.sage, STYLES.calm] },
+    ...beyond('kilnDriver', [['冷えきった町の時計を、ひと晩で全部あたため直したという']]),
+    ...beyond('furnaceDriver', [['炉の火で、止まった秒針をもう一度打ち直したという']]),
+    ...beyond('springDriver', [['一本の火花で、百の時計を同時に動かしたという', '雷を、ぜんまいの中にしまったという']]),
+    ...beyond('artisanDriver', [['直せない時計は、ひとつもなかったという', '最後の一本は、弟子に渡したという']]),
   ],
 };
 

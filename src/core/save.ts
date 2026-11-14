@@ -21,7 +21,7 @@ import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
 export const V1_CHAPTER_ID = 'prototype';
@@ -158,7 +158,16 @@ export const MIGRATIONS: SaveMigrations = {
     const growth = refundV13Growth(raw.run.growth.points, raw.run.growth.opened);
     return { ...raw, run: { ...raw.run, growth } };
   },
+  // 版14 → 版15（段階197・段階G4b）：武器の進化ツリーを入れ替えた。進化した武器は、進化を外して進化前に戻す（レベルと刻んだ能力値は残す。開発者と決めた）
+  14: (raw) => (isObject(raw.run) && isObject(raw.run.armory) ? { ...raw, run: { ...raw.run, armory: resetV14Evolutions(raw.run.armory) } } : raw),
 };
+
+/** 版14 の武器の進化を外す（段階197）。武器の状態のほかの物（経験値・能力値・刻印）は残す */
+export function resetV14Evolutions(armory: Record<string, unknown>): Record<string, unknown> {
+  if (!isObject(armory.weapons)) return armory;
+  const weapons = Object.fromEntries(Object.entries(armory.weapons).map(([k, w]) => [k, isObject(w) ? { ...w, path: [] } : w]));
+  return { ...armory, weapons };
+}
 
 /** 版13 の星図の星（id → 効果。段階194 で入れ替える前の物。使った星の砂を返すために、値段を数える） */
 const V13_STARS: Record<string, string> = {

@@ -1,4 +1,4 @@
-import type { EvolutionCondition, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, ItemRarity, WeaponData, WeaponParamKey } from '../core';
+import type { ChainBasicMod, ChainPassive, EvolutionCheck, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, ItemRarity, WeaponData, WeaponParamKey } from '../core';
 import { decomposeFragment } from '../core';
 import { ELEMENT_LABEL } from './labels';
 import { PART_COLOR_LABEL, STAT_LABEL, summarizePassives } from './naviText';
@@ -30,18 +30,81 @@ export function describeDecompose(data: WeaponData, item: ItemDef): string {
 }
 
 /** 進化の条件 */
-export function describeCondition(c: EvolutionCondition | { kind: 'level'; min: number }, data?: WeaponData): string {
+export function describeCondition(c: EvolutionCheck, data?: WeaponData): string {
   if (c.kind === 'level') return `Lv${c.min}`;
+  if (c.kind === 'join') return '加わった時の選択（条件なし）';
+  if (c.kind === 'elementAny') return `火・氷・雷のどれか ${c.min}以上`;
   if (c.kind === 'param') return `${PARAM_LABEL[c.param]} ${c.min}以上`;
   if (c.kind === 'key') return `鍵：${data?.items[c.item]?.name ?? c.item}`;
   if (c.kind === 'paramMax') return `${PARAM_LABEL[c.param]} ${c.max}以下`;
   return `傾向が${PART_COLOR_LABEL[c.color]}`;
 }
 
+const pct = (r: number) => `${Math.round(r * 100)}%`;
+
+/** 新しい戦闘の特性（段階197。武器の進化先と型） */
+export function describeTraits(traits: ChainPassive[]): string[] {
+  return traits.map((t) => {
+    switch (t.kind) {
+      case 'elementBoost':
+        return `${ELEMENT_LABEL[t.element]}の威力 +${pct(t.rate)}`;
+      case 'comboBoost':
+        return `コンボの威力 +${pct(t.rate)}`;
+      case 'regen':
+        return `ラウンドの始めに HP ${pct(t.rate)} 回復`;
+      case 'mpSave':
+        return `技の MP −${t.amount}`;
+      case 'partBoost':
+        return `部位へのダメージ +${pct(t.rate)}`;
+      case 'snapBoost':
+        return `スナップの威力 +${pct(t.rate)}`;
+      case 'healBoost':
+        return `回復量 +${pct(t.rate)}`;
+      case 'pushPlus':
+        return `押す距離 +${t.count}`;
+      case 'heavyBoost':
+        return `重さ4以上の行動の威力 +${pct(t.rate)}`;
+      case 'timeMpSave':
+        return `時間の技の MP −${t.amount}`;
+      case 'effectBoost':
+        return `エフェクトの効き +${pct(t.rate)}`;
+      case 'climaxBoost':
+        return `クライマックスの威力 +${pct(t.rate)}`;
+      case 'lightBoost':
+        return `重さ1の行動の威力 +${pct(t.rate)}`;
+      case 'fragileBoost':
+        return `邪魔されなければ強い行動の威力 +${pct(t.rate)}`;
+      case 'quickStart':
+        return '最初のラウンドだけ、通常攻撃の重さ −1';
+      default:
+        return '';
+    }
+  }).filter((x) => x);
+}
+
+/** 通常攻撃の形（段階197。進化した時に、通常攻撃がどう変わるか） */
+export function describeBasic(b: ChainBasicMod): string[] {
+  const out: string[] = [];
+  if (b.hits && b.hits > 1) out.push(`通常攻撃が${b.hits}回当たる`);
+  if (b.bestOf?.length) out.push('通常攻撃が、敵ごとに一番効く属性で当たる');
+  if (b.heavy) out.push('通常攻撃が重い一撃に（かたい敵に強く、バリアを割る）');
+  if (b.partMult) out.push(`通常攻撃が部位に${b.partMult}倍`);
+  if (b.pierceHard) out.push('通常攻撃が、かたい敵にも減らされない');
+  if (b.push) out.push(`通常攻撃で、敵の予定を${b.push}マス後ろへ`);
+  if (b.healAll) out.push('通常攻撃を当てると、味方全体を少し回復');
+  if (b.guardAll) out.push(`通常攻撃を当てると、このラウンドの味方の受けるダメージ −${pct(b.guardAll)}`);
+  if (b.exposure) out.push(`通常攻撃で露出補正 +${b.exposure}`);
+  if (b.lighter) out.push(`通常攻撃の重さ −${b.lighter}`);
+  if (b.fragile) out.push(`通常攻撃が、邪魔されなければ威力${b.fragile}倍（邪魔されると不発）`);
+  return out;
+}
+
 /** 進化先の効果（盤に足すマスは型で決まるので、describeStyle に書く） */
 export function describeEvolution(evo: EvolutionDef): string {
   const parts: string[] = [];
   if (evo.attackElement) parts.push(`通常攻撃が${ELEMENT_LABEL[evo.attackElement]}になる`);
+  if (evo.basic) parts.push(...describeBasic(evo.basic));
+  parts.push(...describeTraits(evo.traits ?? []));
   parts.push(...summarizePassives(evo.passives ?? []));
   for (const [k, v] of Object.entries(evo.stats ?? {})) parts.push(`${STAT_LABEL[k as keyof typeof STAT_LABEL]} +${v}`);
   return parts.join('。');
@@ -49,7 +112,7 @@ export function describeEvolution(evo: EvolutionDef): string {
 
 /** 型の効果（段階42。boardExtension が0なら、盤のことは書かない。段階100b：盤は下の行・右の列へ四角に広がる） */
 export function describeStyle(style: EvolutionStyleDef, boardExtension: number): string {
-  const parts: string[] = [...summarizePassives(style.passives ?? [])];
+  const parts: string[] = [...describeTraits(style.traits ?? []), ...summarizePassives(style.passives ?? [])];
   for (const [k, v] of Object.entries(style.stats ?? {})) parts.push(`${STAT_LABEL[k as keyof typeof STAT_LABEL]} +${v}`);
   if (boardExtension > 0) parts.push(style.board === 'row' ? `盤の下に${boardExtension}マス増える（ブリッジの下から）` : `盤の右に${boardExtension}マス増える`);
   return `${style.name}：${parts.join('。')}`;
@@ -66,6 +129,7 @@ export function describeDirection(evo: EvolutionDef): string {
   for (const c of evo.conditions) {
     if (c.kind === 'paramMax') parts.push(`${PARAM_SHORT[c.param]}↓`);
     if (c.kind === 'tendency') parts.push(`傾向 ${PART_COLOR_LABEL[c.color]}`);
+    if (c.kind === 'elementAny') parts.push('属性どれか↑');
   }
   return parts.join(' ');
 }

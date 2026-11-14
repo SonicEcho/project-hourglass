@@ -1,5 +1,5 @@
 import type { AlbumState, GrowthState } from '../core';
-import { createGrowth, flowEvents, gainSnaps, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, weaponLevel } from '../core';
+import { createGrowth, flowEvents, gainSnaps, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, resetV14Evolutions, weaponLevel } from '../core';
 import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, PARTY, SLICE_FLOW, START_MEMORY_POINTS, WEAPON_DATA } from '../data';
 import type { Carry } from './autoArea';
 import { areaBattleOrder, grownParty, newCarry } from './autoArea';
@@ -60,6 +60,8 @@ export function growthPreset(eventId: string, tier: GrowthTier): GrowthPreset {
   const carry: Carry = row ? (JSON.parse(JSON.stringify(row.carry)) as Carry) : newCarry();
   // 段階194（段階G3b）：表の星図は入れ替える前の物なので、使った星の砂を返し、今の星図でおすすめの道に沿って開け直す
   if (row) carry.growth = respendGrowth(carry.growth, eventId);
+  // 段階197（段階G4b）：表の武器の進化は入れ替える前の木の物なので、進化を外す（G4c で作り直す）
+  if (row) carry.armory = resetV14Evolutions(carry.armory as unknown as Record<string, unknown>) as unknown as Carry['armory'];
   return { tier, areas, seed: row?.seed ?? 0, carry, snaps: areas.flatMap(areaSnaps) };
 }
 
