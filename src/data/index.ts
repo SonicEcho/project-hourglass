@@ -28,6 +28,7 @@ export * from './chainArea3k';
 export * from './chainArea32';
 export * from './chainArea41';
 export * from './chainArea42';
+export * from './chainSkills';
 export * from './chainAreas';
 export * from './chainTutorial';
 export * from './enemyArt';

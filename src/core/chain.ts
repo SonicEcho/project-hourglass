@@ -134,6 +134,10 @@ export type ChainEffect =
       haste?: number;
       /** 当たった後、威力 power の欠片が、ほかの敵へ hits 回散る（段階168。めんこノイズのスナップ「めんこ吹雪」。散った先ではダウンしない） */
       scatter?: { power: number; hits: number };
+      /** 部位への倍率（段階193。小夜子の「兜割り」） */
+      partMult?: number;
+      /** かたいを無視（段階193。小夜子の「鎧通し」）：かたい敵の1発ごとの減りがない（バリアは割れるだけ） */
+      pierceHard?: boolean;
     }
   /** 添える札（調整17）：行動に添えて使う。重さ0で、手番も時間も使わない。1つの行動に addonMax 枚まで（フィニッシュ・コンボには付けられない） */
   | {
@@ -183,7 +187,16 @@ export type ChainEffect =
    */
   | { kind: 'draw'; count: number }
   | { kind: 'cycle' }
-  | { kind: 'retrieve' };
+  | { kind: 'retrieve' }
+  /**
+   * 守り（段階193。星図の技）：ラウンドの終わりまで、味方全体（self なら自分だけ）の守りを固める。
+   * armor：受けるダメージの減り（割合）、wall：敵の攻撃を消す回数、riposte：攻撃を受けるとこの威力の物理でやり返す。守りの歌・見切り
+   */
+  | { kind: 'guard'; armor?: number; wall?: number; riposte?: number; self?: boolean }
+  /** 予定をずらす（段階193。星図の技）：ダメージなしで、ねらった敵（全体の技なら敵みんな）のまだ動いていない予定を by マス後ろへ。時計合わせ・振り子・いたずら */
+  | { kind: 'shift'; by: number }
+  /** もう一度（段階193。小夜子の「二の太刀」）：このラウンドに自分が直前にした攻撃（属性・威力・回数）を、ねらった敵へ威力 × rate でもう一度（全体攻撃なら全体へ）。まだ攻撃していなければ不発 */
+  | { kind: 'echo'; rate: number };
 
 export interface ChainMove {
   id: string;
@@ -199,6 +212,8 @@ export interface ChainMove {
   owner?: string;
   /** 技の MP（段階158。星図で覚える技。札と通常攻撃は使わない） */
   mp?: number;
+  /** 時間の技（段階193。早瀬の「時間の技の MP−」の特性が効く） */
+  time?: boolean;
 }
 
 /** 札の分類（画面の帯と説明に出す。調整13：専用の札は、中身にかかわらず「スペシャル」に分ける） */
@@ -244,10 +259,22 @@ export type ChainPassive =
    */
   | { kind: 'partBoost'; rate: number }
   | { kind: 'firstRound'; rate: number }
-  | { kind: 'handPlus'; count: number };
+  | { kind: 'handPlus'; count: number }
+  /**
+   * 段階193（星図の特性）：snapBoost スナップ（札）の攻撃の威力、healBoost 回復量、pushPlus 押す・予定をずらす距離、
+   * heavyBoost 重さ4以上の技と札の威力、timeMpSave 時間の技の MP
+   */
+  | { kind: 'snapBoost'; rate: number }
+  | { kind: 'healBoost'; rate: number }
+  | { kind: 'pushPlus'; count: number }
+  | { kind: 'heavyBoost'; rate: number }
+  | { kind: 'timeMpSave'; amount: number };
 
 /** 割合の特性の上限（段階158。今の本番の PASSIVE_CAPS と同じ考え） */
-export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1 };
+export const CHAIN_PASSIVE_CAPS = { elementBoost: 0.8, comboBoost: 0.6, regen: 0.06, mpSave: 2, partBoost: 1, firstRound: 0.6, handPlus: 1, snapBoost: 0.5, healBoost: 0.6, pushPlus: 1, heavyBoost: 0.6, timeMpSave: 2 };
+
+/** 重い技・札（段階193。重い技の威力の特性が効く重さ） */
+export const CHAIN_HEAVY_WEIGHT = 4;
 
 /** 区画の中で持ち越す HP・MP（仲間の id ごと） */
 export interface ChainVitals {
@@ -525,6 +552,8 @@ export interface ChainUnit {
   phase?: number;
   /** 暑さ（段階188。仲間） */
   heat?: number;
+  /** このラウンドに自分が直前にした攻撃（段階193。二の太刀。ラウンドの終わりに消える） */
+  lastAttack?: { element: Element; power: number; hits: number; target?: string; all: boolean };
 }
 
 /** 敵の予定（ラウンドの始めに決まる） */
@@ -967,9 +996,11 @@ export function createChainBattle(def: ChainBattleDef, rules: ChainRules, seed: 
 }
 
 /** 特性の合計（種類ごと。上限で止める） */
-function passiveSum(u: ChainUnit, kind: 'comboBoost' | 'regen' | 'mpSave' | 'bug' | 'partBoost' | 'firstRound' | 'handPlus'): number {
+type SumKind = Exclude<ChainPassive['kind'], 'elementBoost'>;
+
+function passiveSum(u: ChainUnit, kind: SumKind): number {
   let sum = 0;
-  for (const p of u.passives ?? []) if (p.kind === kind) sum += p.kind === 'mpSave' ? p.amount : p.kind === 'handPlus' ? p.count : 'rate' in p ? p.rate : 0;
+  for (const p of u.passives ?? []) if (p.kind === kind) sum += 'amount' in p ? p.amount : 'count' in p ? p.count : p.rate;
   const cap = kind === 'bug' ? Infinity : CHAIN_PASSIVE_CAPS[kind];
   return Math.min(sum, cap);
 }
@@ -983,7 +1014,7 @@ function elementBoost(u: ChainUnit, el: Element): number {
 /** その仲間が技を使う時の MP（段階158。MP の節約で減る。最低1。MP のない行動は0） */
 export function chainMoveMp(u: ChainUnit | undefined, move: ChainMove | null | undefined): number {
   if (!move?.mp) return 0;
-  return Math.max(1, move.mp - (u ? passiveSum(u, 'mpSave') : 0));
+  return Math.max(1, move.mp - (u ? passiveSum(u, 'mpSave') + (move.time ? passiveSum(u, 'timeMpSave') : 0) : 0));
 }
 
 /** 手札の上限（段階164：仲間の「手札の上限」の特性。合わせて1まで） */
@@ -1195,6 +1226,11 @@ interface HitOpts {
   heavy?: boolean;
   /** コンボ（段階158：コンボの割増しの特性が効く） */
   combo?: boolean;
+  /** 段階193：スナップ（札）の攻撃・重さ4以上の行動（特性が効く）、部位への倍率、かたいを無視 */
+  card?: boolean;
+  heavyMove?: boolean;
+  partMult?: number;
+  pierceHard?: boolean;
 }
 
 function knockDown(s: ChainState, e: ChainUnit, ev: ChainEvent[]): void {
@@ -1290,10 +1326,14 @@ function hitEnemy(s: ChainState, actor: ChainUnit, e: ChainUnit, el: Element, po
     if (chainEnemyDef(s, e.defId)?.part) mult *= 1 + passiveSum(actor, 'partBoost');
     if (s.round === 1) mult *= 1 + passiveSum(actor, 'firstRound');
     if (opts.combo) mult *= 1 + passiveSum(actor, 'comboBoost');
+    // 段階193：スナップの威力・重い技の威力
+    if (opts.card) mult *= 1 + passiveSum(actor, 'snapBoost');
+    if (opts.heavyMove) mult *= 1 + passiveSum(actor, 'heavyBoost');
   }
+  if (opts.partMult && chainEnemyDef(s, e.defId)?.part) mult *= opts.partMult;
   let raw = ((power + (opts.add ?? 0)) * stat) / Math.max(1, e.def);
   // かたい：1発ごとに減らす（重い一撃は減らない）
-  if (e.trait === 'hard' && !opts.heavy) raw = Math.max(0, raw - s.rules.hardCut);
+  if (e.trait === 'hard' && !opts.heavy && !opts.pierceHard) raw = Math.max(0, raw - s.rules.hardCut);
   const amount = Math.max(1, Math.floor(raw * mult));
   if (actor.side === 'ally') {
     s.roundHits++;
@@ -1370,8 +1410,10 @@ function singleTarget(s: ChainState, target: string | undefined, ev: ChainEvent[
   return t;
 }
 
-function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[], mods: ChainAddonMods = addonMods([]), at = 0): PrevAct {
+function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: string | undefined, prev: PrevAct | null, acted: number, ev: ChainEvent[], mods: ChainAddonMods = addonMods([]), at = 0, fromCard = false): PrevAct {
   const eff = move.effect;
+  // 回復量の特性（段階193）
+  const healRate = 1 + passiveSum(actor, 'healBoost');
   const ctx: ActCtx = { countered: new Set(), stuck: false };
   // ブリキの盾（段階168）：添えた行動の後、ラウンドの終わりまで、ほかの仲間をかばう
   if (mods.cover && actor.hp > 0 && s.allies.some((a) => a.uid !== actor.uid && a.hp > 0)) {
@@ -1455,7 +1497,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     }
     if (eff.power > 0) {
       for (const a of s.allies.filter((x) => x.hp > 0)) {
-        const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.power * actor.mag) / s.rules.healDiv));
+        const amount = Math.min(a.maxHp - a.hp, Math.floor(((eff.power * actor.mag) / s.rules.healDiv) * healRate));
         a.hp += amount;
         ev.push({ type: 'heal', to: a.uid, amount });
       }
@@ -1470,6 +1512,38 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
       }
     }
     return { ally: actor.uid, element: null, power: 0 };
+  }
+  // 守り（段階193）：味方全体か自分の守りを、ラウンドの終わりまで固める
+  if (eff.kind === 'guard') {
+    for (const a of eff.self ? [actor] : s.allies.filter((x) => x.hp > 0)) {
+      if (a.hp <= 0) continue;
+      if (eff.armor) a.armor = Math.max(a.armor ?? 0, eff.armor);
+      if (eff.wall) a.wall = (a.wall ?? 0) + eff.wall;
+      if (eff.armor || eff.wall) ev.push({ type: 'allyArmor', uid: a.uid, ...(eff.armor ? { armor: eff.armor } : {}), ...(eff.wall ? { wall: eff.wall } : {}) });
+      if (eff.riposte) {
+        a.riposte = Math.max(a.riposte ?? 0, eff.riposte);
+        ev.push({ type: 'allyRiposteReady', uid: a.uid });
+      }
+    }
+    return { ally: actor.uid, element: null, power: 0 };
+  }
+  // 予定をずらす（段階193）：ダメージなしで押す（実際にずらすのは runChainRound）
+  if (eff.kind === 'shift') {
+    const by = eff.by + mods.push + passiveSum(actor, 'pushPlus');
+    for (const e of targets()) ev.push({ type: 'push', uid: e.uid, by, out: false, moved: false });
+    return { ally: actor.uid, element: null, power: 0 };
+  }
+  // もう一度（段階193。二の太刀）：このラウンドに自分が直前にした攻撃を、威力の割合で
+  if (eff.kind === 'echo') {
+    const last = actor.lastAttack;
+    const list = !last ? [] : last.all ? living(s.enemies) : [singleTarget(s, target ?? last.target, ev, actor.uid)].filter((x): x is ChainUnit => !!x);
+    if (!last || list.length === 0) {
+      ev.push({ type: 'fizzle', uid: actor.uid });
+      return { ally: actor.uid, element: null, power: 0 };
+    }
+    const power = Math.max(1, Math.round(last.power * eff.rate));
+    for (const e of list) for (let k = 0; k < last.hits && e.hp > 0; k++) hitEnemy(s, actor, e, last.element, power + mods.add + s.exposure, { forceWeak: mods.expose }, ctx, ev);
+    return { ally: actor.uid, element: last.element, power };
   }
   if (eff.kind === 'trick' || eff.kind === 'status') {
     for (const e of targets()) {
@@ -1526,7 +1600,7 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   const add = mods.add + s.exposure;
   const hitsBefore = s.roundHits;
   const mark = ev.length;
-  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link' };
+  const opts = { ignoreResist: eff.ignoreResist, downMult: eff.downMult, finish: isFinish, add, forceWeak: mods.expose, heavy: eff.heavy, combo: move.type === 'link', card: fromCard, heavyMove: move.weight >= CHAIN_HEAVY_WEIGHT, partMult: eff.partMult, pierceHard: eff.pierceHard };
   const scaled = (e: ChainUnit): number => {
     if (!eff.scale) return 0;
     const unit = eff.scale.by === 'hits' ? hitsBefore : eff.scale.by === 'targetHits' ? (e.roundTaken ?? 0) : eff.scale.by === 'slotsLeft' ? Math.max(0, s.rules.roundLen - at) : s.roundSupports;
@@ -1542,7 +1616,8 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
     for (const x of eff.extra ?? []) for (let k = 0; k < (x.hits ?? 1) && e.hp > 0; k++) hitEnemy(s, actor, e, x.element, x.power + scaled(e), opts, ctx, ev);
     if (e.hp <= 0 || e.gone) continue;
     // 押す：実際にずらすのは runChainRound（まだ動いていない予定を知っている）
-    const push = (eff.push ?? 0) + mods.push;
+    const push0 = (eff.push ?? 0) + mods.push;
+    const push = push0 ? push0 + passiveSum(actor, 'pushPlus') : 0;
     if (push) ev.push({ type: 'push', uid: e.uid, by: push, out: false, moved: false });
     if (mods.pinpoint) e.pinpoint = true;
     // 目覚まし（段階178）：当たった敵の警戒を解く
@@ -1598,11 +1673,13 @@ function doAllyMove(s: ChainState, actor: ChainUnit, move: ChainMove, target: st
   }
   if (eff.healAll) {
     for (const a of s.allies.filter((x) => x.hp > 0)) {
-      const amount = Math.min(a.maxHp - a.hp, Math.floor((eff.healAll * actor.mag) / s.rules.healDiv));
+      const amount = Math.min(a.maxHp - a.hp, Math.floor(((eff.healAll * actor.mag) / s.rules.healDiv) * healRate));
       a.hp += amount;
       ev.push({ type: 'heal', to: a.uid, amount });
     }
   }
+  // 二の太刀（段階193）のために、自分の直前の攻撃を覚える
+  if (main.length) actor.lastAttack = { element: el, power, hits, target: move.target === 'enemy' ? main[0].uid : undefined, all: move.target === 'enemies' };
   return { ally: actor.uid, element: el, power };
 }
 
@@ -1690,21 +1767,25 @@ function doEnemyMove(s: ChainState, e: ChainUnit, intent: ChainIntent, ev: Chain
     coverRate = guard.covering!;
     targets = [guard];
   }
+  // 振り子返し（段階172）：受けた仲間が立っていれば、やり返す（ダウンはさせない）。段階193：消した攻撃（受け流し）にもやり返す（見切り）
+  const riposte = (a: ChainUnit) => {
+    if ((a.riposte ?? 0) > 0 && a.hp > 0 && e.hp > 0 && !e.gone) {
+      ev.push({ type: 'allyRiposte', uid: a.uid, to: e.uid });
+      hitEnemy(s, a, e, 'physical', a.riposte!, { noChain: true }, { countered: new Set(), stuck: true }, ev);
+    }
+  };
   for (const a of targets) {
     // 珠の壁（段階170）：消せる回数が残っていれば、この攻撃を消す
     if ((a.wall ?? 0) > 0) {
       a.wall = a.wall! - 1;
       ev.push({ type: 'allyWall', uid: a.uid, left: a.wall });
+      riposte(a);
       continue;
     }
     hurtAlly(e.uid, a, Math.max(1, Math.floor(((m.power * e.atk) / Math.max(1, a.def)) * rate * coverRate * (1 - (a.armor ?? 0)))), ev);
     // 暑さ（段階188）：照り返しで上がり、水しぶきで下がる
     if (s.def.heat && a.hp > 0 && (m.heats || m.cools)) setHeat(s, a, (a.heat ?? 0) + (m.heats ?? 0) - (m.cools ?? 0), ev);
-    // 振り子返し（段階172）：受けた仲間が立っていれば、やり返す（ダウンはさせない）
-    if ((a.riposte ?? 0) > 0 && a.hp > 0 && e.hp > 0 && !e.gone) {
-      ev.push({ type: 'allyRiposte', uid: a.uid, to: e.uid });
-      hitEnemy(s, a, e, 'physical', a.riposte!, { noChain: true }, { countered: new Set(), stuck: true }, ev);
-    }
+    riposte(a);
   }
   // ポイ（段階162）：決まった行動が当たると、1発ごとに濡れる
   if (s.def.poi && s.def.poi.hitMoves.includes(m.id) && targets.length) wetPoi(s, s.def.poi.hitCost * targets.length, ev);
@@ -2058,7 +2139,7 @@ export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: C
       }
       lastAlly = actors[actors.length - 1].uid;
       enemySince = false;
-      prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at);
+      prev = doAllyMove(s, doer, move, step.target, prev, acted, ev, mods, at, step.source.kind === 'card');
       // 時計を直す（段階190）：早瀬の技か、火の攻撃で、壊れた札を1枚直して、さらに1枚引く
       if (s.def.broken && (s.brokenQueue?.length ?? 0) > 0) {
         const fixer = actors.some((a) => a.defId === s.def.broken!.fixer) && step.source.kind === 'move';
@@ -2309,6 +2390,7 @@ function endRound(s: ChainState): void {
     a.armor = undefined;
     a.wall = undefined;
     a.riposte = undefined;
+    a.lastAttack = undefined;
   }
   s.round++;
   s.elapsed += s.rules.roundLen;
