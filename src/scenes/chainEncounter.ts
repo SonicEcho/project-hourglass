@@ -1,6 +1,5 @@
 import { battleReward, boardColorCells, capItems, chainBossSnaps, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
-import { AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
-import { isDebugEnabled } from '../debug/debugFlag';
+import { CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
 import { browserStorage } from '../save/storage';
 import type { BattleSceneData } from './BattleScene';
 import { currentNaviData, lineupBase, run, saveRun } from './run';
@@ -8,37 +7,20 @@ import { currentNaviData, lineupBase, run, saveRun } from './run';
 // 段階159：新しい戦闘（並べてつなぐ戦闘）を探索から呼ぶ（docs/milestones/M3_battle_migration.md の段階C）。
 // どの区画の戦闘を新しい戦闘にするかと、勝った時の報酬の受け取り（今の本番の戦闘と同じ物）
 
-/** デバッグメニューの切り替え：探索の戦闘を全部、新しい戦闘にする（?debug=1 の時だけ効く。端末に覚える） */
-const NEW_BATTLE_KEY = 'hourglass.debug.newBattle';
-
-export function debugNewBattle(): boolean {
-  return browserStorage().read(NEW_BATTLE_KEY) === '1';
-}
-
-export function setDebugNewBattle(on: boolean): void {
-  browserStorage().write(NEW_BATTLE_KEY, on ? '1' : '0');
-}
-
-/** その区画の戦闘を、新しい戦闘で戦うか（区画ごとの切り替え CHAIN_AREA_BATTLES か、デバッグの切り替え） */
-export function useNewBattle(battleId: string): boolean {
-  if (CHAIN_AREA_BATTLES.includes(battleId)) return true;
-  return isDebugEnabled(typeof window === 'undefined' ? '' : window.location.search) && debugNewBattle();
+/**
+ * 今いる区画が、新しい戦闘の区画か（段階163。アルバムの画面で、どちらのアルバムを開くか）。
+ * 段階G1（2026-11-14）：区画の戦闘は全部新しい戦闘になったので、いつも新しい戦闘のアルバム（古いアルバムは段階G6 でセーブから外す）
+ */
+export function chainAlbumActive(): boolean {
+  return true;
 }
 
 /**
- * 今いる区画が、新しい戦闘の区画か（段階163。アルバムの画面で、どちらのアルバムを開くか）。
- * 探索の外（拠点など）や、区画の戦闘が今の戦闘のままの区画では false
+ * 戦闘の始め方（段階159）。段階G1（2026-11-14）：探索・狩り・物語の戦闘（encounter のある戦闘）は、全部新しい戦闘。
+ * 古い戦闘（Battle）は、試作の5戦の名残だけ（段階G2 で外す）
  */
-export function chainAlbumActive(): boolean {
-  const area = run.explore ? AREAS[run.explore.area] : undefined;
-  if (!area) return false;
-  const battles = [...area.enemies.map((e) => e.battle), area.boss?.battle].filter((x): x is string => !!x);
-  return battles.some((b) => CHAIN_AREA_BATTLES.includes(b));
-}
-
-/** 探索の戦闘の始め方（新しい戦闘か、今の戦闘か） */
 export function battleSceneFor(data: BattleSceneData): 'ChainBattle' | 'Battle' {
-  return data.encounter && useNewBattle(data.encounter.battle) ? 'ChainBattle' : 'Battle';
+  return data.encounter ? 'ChainBattle' : 'Battle';
 }
 
 /**
