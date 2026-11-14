@@ -1905,18 +1905,24 @@ export class ChainBattleScene extends Phaser.Scene {
   /** 写真の札（上に種類の色の帯、絵、名前、重さの四角、押す） */
   private drawCard(cx: number, cy: number, it: { move: ChainMove; art?: string; used?: boolean; added?: boolean; key?: string }, angle: number, sel: boolean, notMine: boolean, h = CARD_H): void {
     const m = it.move;
-    const color = CATEGORY_COLOR[chainCardCategory(m)];
+    // 壊れた札（段階190 の後の直し。開発者：使えない札はグレーにして、もっと壊れている感じに）
+    const broken = !!this.s.def.broken && it.key === this.s.def.broken.card;
+    const color = broken ? 0x5a5a62 : CATEGORY_COLOR[chainCardCategory(m)];
     const parts: Phaser.GameObjects.GameObject[] = [];
     const w = CARD_W;
     if (sel) parts.push(this.add.rectangle(0, 0, w + 14, h + 14, color, 0.35));
     parts.push(this.add.rectangle(4, 6, w + 6, h + 6, 0x000000, 0.6));
     parts.push(this.add.rectangle(0, 0, w + 6, h + 6, sel ? YELLOW : color));
-    parts.push(this.add.rectangle(0, 0, w, h, m.owner ? 0xffe6a8 : 0xf4efe4));
+    parts.push(this.add.rectangle(0, 0, w, h, broken ? 0x9a9aa0 : m.owner ? 0xffe6a8 : 0xf4efe4));
     parts.push(this.add.rectangle(0, -h / 2 + 10, w + 6, 20, color));
     const label = CATEGORY_LABEL[chainCardCategory(m)];
     parts.push(addText(this, 0, -h / 2 + 10, label, { size: 10, bold: true, color: '#ffffff' }).setOrigin(0.5));
-    if (it.art && hasImage(this, it.art)) parts.push(this.cropImage(it.art, 0, -h / 2 + 54, w - 8, 60));
-    else parts.push(this.add.rectangle(0, -h / 2 + 54, w - 8, 60, 0x2b3560));
+    if (it.art && hasImage(this, it.art)) {
+      const art = this.cropImage(it.art, 0, -h / 2 + 54, w - 8, 60);
+      // 壊れた札は、絵の色を抜いて暗く
+      if (broken && 'setTint' in art) (art as Phaser.GameObjects.Image).setTint(0x6a6a6a);
+      parts.push(art);
+    } else parts.push(this.add.rectangle(0, -h / 2 + 54, w - 8, 60, broken ? 0x3a3a40 : 0x2b3560));
     if (m.owner) {
       const f = this.faceSquare(m.owner, w / 2 - 14, -h / 2 + 72, 22);
       if (f) parts.push(this.add.rectangle(w / 2 - 14, -h / 2 + 72, 25, 25, 0xffffff), f);
@@ -1953,6 +1959,28 @@ export class ChainBattleScene extends Phaser.Scene {
     if (rounds) {
       parts.push(this.add.rectangle(w / 2 - 15, h / 2 - 16, 26, 13, CHIP_LASTING));
       parts.push(addText(this, w / 2 - 15, h / 2 - 16, `${rounds}R`, { size: 9, bold: true, color: '#06201e' }).setOrigin(0.5));
+    }
+    if (broken) {
+      // ひび割れ（札の上から下へ走る2本のぎざぎざ）と、欠けた角、「故障」の札
+      const g = this.add.graphics();
+      g.lineStyle(2.5, 0x1a1a1e, 0.9);
+      const crack = (pts: [number, number][]) => {
+        g.beginPath();
+        g.moveTo(pts[0][0], pts[0][1]);
+        for (const [x, y] of pts.slice(1)) g.lineTo(x, y);
+        g.strokePath();
+      };
+      crack([[-w / 2 + 14, -h / 2], [-6, -h / 2 + 30], [6, -h / 2 + 44], [-4, -h / 2 + 64], [10, -h / 2 + 86], [2, h / 2 - 22], [14, h / 2]]);
+      crack([[6, -h / 2 + 44], [w / 2 - 6, -h / 2 + 58]]);
+      crack([[-4, -h / 2 + 64], [-w / 2 + 4, -h / 2 + 80]]);
+      g.lineStyle(1, 0xd8d8de, 0.6);
+      crack([[-w / 2 + 15, -h / 2], [-5, -h / 2 + 30], [7, -h / 2 + 44], [-3, -h / 2 + 64], [11, -h / 2 + 86], [3, h / 2 - 22], [15, h / 2]]);
+      // 欠けた右上の角（背景の色で切り取ったように）
+      g.fillStyle(0x0b0f22, 1);
+      g.fillTriangle(w / 2 + 3, -h / 2 - 3, w / 2 - 16, -h / 2 - 3, w / 2 + 3, -h / 2 + 18);
+      parts.push(g);
+      parts.push(this.add.rectangle(0, 0, w + 6, h + 6, 0x000000, 0.25));
+      parts.push(this.sticker(0, -6, '故障', 0xc0303a, '#ffffff', -14, 13));
     }
     if (it.used || notMine) parts.push(this.add.rectangle(0, 0, w + 6, h + 6, 0x000000, 0.55));
     if (it.used) parts.push(this.sticker(0, -10, '置いた', 0xffffff, '#000000', -10, 12));
