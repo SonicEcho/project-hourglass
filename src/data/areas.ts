@@ -1250,6 +1250,8 @@ export const AREAS: Record<string, AreaDef> = {
     id: 'a42',
     name: '4-2「早瀬の時間」',
     returnSnaps: ['quickStep'],
+    // 段階190：返した時の新しい戦闘のスナップ
+    chainReturnSnaps: ['c17_reel'],
     rooms: [ROOMS.showa_night, ROOMS.showa_alley, ROOMS.showa_lane, ROOMS.opening_shop],
     links: [
       { a: { room: 'showa_night', side: 'left' }, b: { room: 'showa_alley', side: 'right' } },

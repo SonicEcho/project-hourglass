@@ -185,6 +185,8 @@ export interface ChainAreaSetup {
   quietSnaps?: string[];
   /** 夏の照り返し（段階188。川のぬし） */
   heat?: ChainBattleDef['heat'];
+  /** 時計を直す（段階190。シャッターのぬし） */
+  broken?: ChainBattleDef['broken'];
   /** 勝った時に手に入る新しい戦闘のスナップ（段階163。区画のぬし。狩りではもらえない） */
   snaps?: string[];
 }

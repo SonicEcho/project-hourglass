@@ -69,6 +69,13 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'poiBar', text: '打ち返せなかった投球が当たると「ストライク」。\n3つで三振、負けになってしまいます。\n押す・ダウンで投球を止めるのも手です。' },
     { target: 'parts', text: '得点板とバックネットは「部位」です。\n壊すと、その部位を使う大技が来なくなります。' },
   ],
+  // 段階190：4-2 のシャッターのぬし「時計を直す」
+  chain_broken: [
+    { target: 'intro', text: 'ぬし戦！\n思い出の再演「時計を直す」がはじまります。\n開店の日。何度上げても、シャッターが下りてくる。' },
+    { target: 'poiBar', text: 'ぬしの「巻きこみ」が当たると、手札の札が1枚「壊れた札」になります。\n壊れた札は使えず、手札の1枠をふさぎます。' },
+    { target: 'poiBar', text: '早瀬が技を使うか、だれかが火の攻撃をすると、\n壊れた札を1枚直せます。直すと、さらに1枚引けます。' },
+    { target: 'parts', text: '板と巻き上げ機は「部位」です。\n巻き上げ機を壊すと、巻きこみが来なくなります。' },
+  ],
   // 段階188：4-1 の川のぬし「夏の照り返し」
   chain_heat: [
     { target: 'intro', text: 'ぬし戦！\n思い出の再演「夏の照り返し」がはじまります。\n最後の夏の日。シロと、川の浅瀬で。' },
@@ -203,7 +210,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 };
 
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
-export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_heat', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_rewind', 'chain_addon', 'chain_climax', 'chain_combo'];
+export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_heat', 'chain_broken', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_rewind', 'chain_addon', 'chain_climax', 'chain_combo'];
 
 /** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
 export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];

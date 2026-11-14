@@ -285,6 +285,7 @@ export class ChainBattleScene extends Phaser.Scene {
         film: setup?.film,
         word: setup?.word,
         heat: setup?.heat,
+        broken: setup?.broken,
         deck: albumDeck ?? base.deck,
         cards: setup?.cards ?? base.cards,
         links: setup?.links ?? base.links,
@@ -443,6 +444,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.drawKaiFilm(view);
     this.drawWord(view);
     this.drawHeat(view);
+    this.drawBroken(view);
     this.drawMessage();
     this.drawFilm(view);
     this.drawAllies(view);
@@ -1202,6 +1204,34 @@ export class ChainBattleScene extends Phaser.Scene {
     const hot = view.allies.some((a) => (a.heat ?? 0) > 0 && a.hp > 0);
     r.add(addText(this, cx, STAGE_Y + 126, hot ? '暑いと行動が重い\n氷・水をかけるで冷える' : '照り返しで暑くなる', { size: 8, bold: true, align: 'center', color: hot ? '#ffb070' : '#9aa3c0' }).setOrigin(0.5));
     if (view.lighten) r.add(addText(this, cx, STAGE_Y + 146, '永遠の夏：重さ−1', { size: 8, bold: true, color: '#8fffc0' }).setOrigin(0.5));
+  }
+
+  /**
+   * 時計を直す（段階190。4-2 のシャッターのぬし）：左の柱に、手札の壊れた札の数と、直し方
+   */
+  private drawBroken(view: ChainState): void {
+    const b = view.def.broken;
+    if (!b) return;
+    const r = this.root;
+    const lay = this.bossLayout(view);
+    const cx = lay ? BOSS_COL / 2 + 2 : 60;
+    if (lay) {
+      r.add(this.add.rectangle(cx, STAGE_Y + 6, BOSS_COL - 6, 156, 0x000000, 0.55).setOrigin(0.5, 0));
+      r.add(addText(this, cx, STAGE_Y + 18, '時計を直す', { size: 11, bold: true, color: '#ffd23f' }).setOrigin(0.5));
+    }
+    const n = view.hand.filter((c) => c === b.card).length;
+    // 歯車の印：壊れた札の数だけ割れた歯車
+    for (let k = 0; k < Math.max(1, n); k++) {
+      const x = cx + (k - (Math.max(1, n) - 1) / 2) * 26;
+      const y = STAGE_Y + 52;
+      r.add(this.add.circle(x, y, 10, n ? 0x5a4030 : 0x2a2a38).setStrokeStyle(3, n ? 0xc9a24a : 0x5a5a70));
+      r.add(this.add.circle(x, y, 3, 0x15110c));
+      if (n) r.add(this.add.line(0, 0, x - 8, y - 8, x + 8, y + 8, 0xff6a6a).setOrigin(0, 0).setLineWidth(2));
+    }
+    r.add(addText(this, cx, STAGE_Y + 78, n ? `壊れた札 ${n}枚` : '壊れた札 なし', { size: 11, bold: true, color: n ? '#ff9db0' : '#c9d0ea' }).setOrigin(0.5));
+    const fixer = view.allies.find((a) => a.defId === b.fixer && a.hp > 0);
+    r.add(addText(this, cx, STAGE_Y + 112, `${fixer ? '早瀬の技か、\n' : ''}火の攻撃で直る\n（直すと1枚引く）`, { size: 9, bold: true, align: 'center', color: '#9aa3c0' }).setOrigin(0.5));
+    if (lay) r.add(addText(this, cx, STAGE_Y + 146, '巻きこみで札が壊れる', { size: 8, bold: true, color: '#9aa3c0' }).setOrigin(0.5));
   }
 
   /** 開いた花火（二重の輪の点と、真ん中の光とにじみ）。size は大きさの倍率 */
@@ -2958,6 +2988,8 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'shutterReady') parts.push('全員ダウン！');
     else if (ev.type === 'shutterShot') parts.push('シャッターで総攻撃！');
     else if (ev.type === 'interrupt') parts.push(`${name(ev.uid)}が割り込んだ！`);
+    else if (ev.type === 'cardBreak') parts.push(`巻きこまれた！ 手札の「${f.state.def.cards[ev.card]?.name ?? ev.card}」が壊れた`);
+    else if (ev.type === 'cardRepair') parts.push(`${name(ev.uid)}が「${f.state.def.cards[ev.card]?.name ?? ev.card}」を直した！ さらに1枚引く`);
     else if (ev.type === 'allyHeat') parts.push(ev.by > 0 ? `${name(ev.to)}が暑くなった（暑さ${ev.heat}：行動が${ev.heat}重い）` : `${name(ev.to)}が涼しくなった（暑さ${ev.heat}）`);
     else if (ev.type === 'lighten') parts.push('永遠の夏！ この戦闘の終わりまで、みんなの行動が1軽い');
     else if (ev.type === 'enemyHeal') parts.push(`${name(ev.uid)}が${name(ev.to)}を回復した（+${ev.amount}）`);
