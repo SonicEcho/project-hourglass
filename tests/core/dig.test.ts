@@ -481,8 +481,23 @@ describe('砂の底：道具と技（段階214）', () => {
     for (const t of SAND_BOTTOM.tools!) expect(DIG_TOOLS[t as keyof typeof DIG_TOOLS], t).toBeDefined();
   });
 
-  it('データ：掘る人ごとに技がある。層の帯は 20 マス', () => {
+  it('データ：掘る人ごとに技がある。層の帯は 32 マス', () => {
     for (const d of Object.values(SAND_BOTTOM_DIGGERS)) expect(DIG_SKILLS[d.skill]).toBeDefined();
-    expect(sandBottomFor('ch2').layers.filter((l) => l.group === 'ch1').map((l) => l.rows)).toEqual([20, 20]);
+    expect(sandBottomFor('ch2').layers.filter((l) => l.group === 'ch1').map((l) => l.rows)).toEqual([32, 32]);
+  });
+
+  it('空洞（宝箱・砂嵐の居場所）は帯の中で散らばる：帯を上下に4つに分けると、どこにも空洞がある', () => {
+    const open = new Set(['air', 'chest', 'relic', 'nest']);
+    for (const seed of [1, 2, 3]) {
+      const a = createDig(SAND_BOTTOM, seed);
+      for (const l of SAND_BOTTOM.layers.filter((x) => x.group !== 'deep')) {
+        const top = digLayerTop(SAND_BOTTOM, l.id);
+        const q = l.rows / 4;
+        for (let k = 0; k < 4; k++) {
+          const rows = a.tiles.slice((top + Math.floor(k * q)) * a.width, (top + Math.floor((k + 1) * q)) * a.width);
+          expect(rows.some((t) => open.has(t)), `${seed} ${l.id} ${k}`).toBe(true);
+        }
+      }
+    }
   });
 });

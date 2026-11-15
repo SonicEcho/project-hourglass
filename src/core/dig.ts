@@ -297,11 +297,13 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
     const top = digLayerTop(def, layer.id);
     const caves: { cx: number; cw: number; floor: number }[] = [];
     for (let c = 0; c < layer.caves; c++) {
-      // 空洞：横3〜5・縦2〜3。層の中に収める（境目の行は避ける）
+      // 空洞：横3〜5・縦2〜3。層の中に収める（境目の行は避ける）。
+      // 段階214 の続き（開発者の声：宝箱や敵がもう少しバラけるように）：層を空洞の数だけ上下に区切り、区切りごとに1つ。左右は交互に左寄り・右寄り
       const cw = 3 + Math.floor(rand() * 3);
       const ch = 2 + Math.floor(rand() * 2);
-      const cx = Math.floor(rand() * (w - cw));
-      const cy = top + 1 + Math.floor(rand() * Math.max(1, layer.rows - ch - 1));
+      const cx = Math.floor(((c % 2) * 0.5 + rand() * 0.5) * (w - cw + 1));
+      const seg = (layer.rows - 1) / layer.caves;
+      const cy = top + 1 + Math.min(layer.rows - ch - 1, Math.max(0, Math.floor(c * seg + rand() * Math.max(1, seg - ch))));
       for (let y = cy; y < cy + ch && y < height; y++) for (let x = cx; x < cx + cw; x++) tiles[y * w + x] = 'air';
       const floor = Math.min(cy + ch - 1, height - 1);
       caves.push({ cx, cw, floor });

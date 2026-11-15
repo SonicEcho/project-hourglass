@@ -133,8 +133,8 @@ function stratumLords(st: DigStratum): string[] {
   return st.bands.flatMap((b) => b.areas.map((a) => `${a}_boss`)).filter((b) => AREA_BATTLES[b]);
 }
 
-/** 帯1つの深さ（マス）。段階214：開発者の声で 12 → 20（層をもっと長く） */
-const BAND_ROWS = 20;
+/** 帯1つの深さ（マス）。段階214：開発者の声で 12 → 20 → 32（層をもっと長く） */
+const BAND_ROWS = 32;
 
 const band = (id: string, name: string, areas: string[], color: DigColors): DigBand => ({ id, name, areas, color });
 
@@ -150,7 +150,7 @@ const STRATA: DigStratum[] = [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
       band('futari', '夕暮れの二人乗り', ['a12'], { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d, loose: 0xe8c890 }),
     ],
-    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 6, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 } },
+    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 8, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 } },
   },
   {
     chapter: 'ch2',
@@ -160,7 +160,7 @@ const STRATA: DigStratum[] = [
       band('bunkasai', '最後の文化祭', ['a22'], { sand: 0xbca070, clay: 0x8a7046, rock: 0x6c6f78, air: 0x17130c, loose: 0xd6bc8c }),
       band('daseki', '最後の打席', ['a23'], { sand: 0xc49a62, clay: 0x946a40, rock: 0x6c6f78, air: 0x1a120a, loose: 0xdcb482 }),
     ],
-    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 6, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 } },
+    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 8, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 } },
   },
   {
     chapter: 'ch3',
@@ -170,7 +170,7 @@ const STRATA: DigStratum[] = [
       band('sotsugyo', '言えなかった卒業式', ['a32'], { sand: 0xb08a90, clay: 0x80606a, rock: 0x5e6068, air: 0x161012, loose: 0xcaa8ae }),
       band('taisho', '大正の祭りの夜', ['a3s1', 'a3s2'], { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18, loose: 0x9c7cac }),
     ],
-    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 6, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 } },
+    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 8, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 } },
   },
   {
     chapter: 'ch4',
@@ -179,7 +179,7 @@ const STRATA: DigStratum[] = [
       band('shiro', 'シロのいた夏', ['a41'], { sand: 0x8a9a6a, clay: 0x5e6c46, rock: 0x585c62, air: 0x0f140c, loose: 0xa6b688 }),
       band('hayase', '早瀬の時間', ['a42'], { sand: 0x6a8a8a, clay: 0x46605e, rock: 0x585c62, air: 0x0b1314, loose: 0x88a8a6 }),
     ],
-    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 6, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 } },
+    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 } },
   },
 ];
 
@@ -202,7 +202,7 @@ export function canEnterSandBottom(chapterId: string | undefined): boolean {
 }
 
 /** 砂時計の砂（段階209・212。章ごとに増え、開いている層の底まで行って探れるくらい。数値は仮） */
-export const SAND_BOTTOM_SAND_BY_CHAPTER: Record<string, number> = { ch1: 140, ch2: 220, ch3: 460, ch4: 660 };
+export const SAND_BOTTOM_SAND_BY_CHAPTER: Record<string, number> = { ch1: 200, ch2: 320, ch3: 720, ch4: 1040 };
 
 function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<string, string>>): DigWorldDef {
   const layers: DigLayerDef[] = open.flatMap((st) =>
