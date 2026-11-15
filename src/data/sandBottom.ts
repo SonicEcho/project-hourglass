@@ -1,0 +1,51 @@
+import type { DigLayerDef, DigRarity, DigWorldDef } from '../core/dig';
+import { AREA_BATTLES, AREAS } from './areas';
+
+// 砂の底を掘る（段階207。試作1。docs/milestones/M3_sand_bottom.md）。数値はすべて仮。
+// 上の層ほど今に近い時代。宝箱の中身と砂嵐は、その時代の区画の砂嵐から集める（区画の雑魚の戦闘と、落とす素材）
+
+/** その区画の砂嵐（雑魚）の戦闘の id */
+function areaBattles(areaIds: string[]): string[] {
+  return [...new Set(areaIds.flatMap((id) => AREAS[id]?.enemies.map((e) => e.battle) ?? []))].filter((b) => AREA_BATTLES[b]);
+}
+
+/** その区画の砂嵐が落とす素材（珍しさごと） */
+function areaItems(areaIds: string[]): Record<DigRarity, string[]> {
+  const out: Record<DigRarity, Set<string>> = { common: new Set(), uncommon: new Set(), rare: new Set() };
+  for (const b of areaBattles(areaIds)) {
+    for (const e of AREA_BATTLES[b].enemies) {
+      const t = e.dropTable;
+      if (!t) continue;
+      out.common.add(t.common);
+      if (t.uncommon) out.uncommon.add(t.uncommon);
+      if (t.rare) out.rare.add(t.rare);
+    }
+  }
+  return { common: [...out.common], uncommon: [...out.uncommon], rare: [...out.rare] };
+}
+
+function layer(id: string, name: string, areaIds: string[], rest: Omit<DigLayerDef, 'id' | 'name' | 'items' | 'battles'>): DigLayerDef {
+  return { id, name, items: areaItems(areaIds), battles: areaBattles(areaIds), ...rest };
+}
+
+export const SAND_BOTTOM: DigWorldDef = {
+  width: 15,
+  layers: [
+    layer('heisei', '平成の層', ['a22', 'a23', 'a42'], { rows: 16, rock: 0.06, clay: 0.18, caves: 5, chestRate: 0.8, nestRate: 0.35, weights: { common: 70, uncommon: 25, rare: 5 } }),
+    layer('showa', '昭和の層', ['a12', 'a21'], { rows: 16, rock: 0.12, clay: 0.26, caves: 5, chestRate: 0.8, nestRate: 0.55, weights: { common: 45, uncommon: 40, rare: 15 } }),
+    layer('taisho', '大正の層', ['a3s1', 'a3s2'], { rows: 18, rock: 0.18, clay: 0.32, caves: 5, chestRate: 0.85, nestRate: 0.75, weights: { common: 20, uncommon: 45, rare: 35 } }),
+  ],
+  sand: 160,
+  cost: { walk: 1, dig: 3, battle: 10, back: 1 },
+  bagMax: 10,
+};
+
+/** 深さの見せ方（1マス = 2m） */
+export const SAND_BOTTOM_METERS_PER_ROW = 2;
+
+/** 層の色（試作の四角のタイル。砂・固い土・岩） */
+export const SAND_BOTTOM_COLORS: Record<string, { sand: number; clay: number; rock: number; air: number }> = {
+  heisei: { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d },
+  showa: { sand: 0xb8844a, clay: 0x8a5a36, rock: 0x6c6f78, air: 0x1a110b },
+  taisho: { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18 },
+};

@@ -304,7 +304,7 @@ export class ChainBattleScene extends Phaser.Scene {
         gradeAt: setup?.gradeAt ?? (area.boss ? { high: 35, mid: 50 } : { high: 13, mid: 20 }),
       });
       this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
-      const vitals = data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
+      const vitals = data.encounter.dig ? run.dig?.vitals : data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
       this.s = createChainBattle(def, CHAIN_RULES, this.seed, knownChainWeak(true), vitals ?? {});
       // チュートリアル（段階161）：最初の戦闘は手札を決めておく（2ラウンド目にエフェクトとクライマックスの説明が出るように）
       // 2戦目（最初の戦闘を終えて、スペシャルとコンボをまだ見ていない）は、コンボがそろう手札にする
@@ -2826,8 +2826,9 @@ export class ChainBattleScene extends Phaser.Scene {
     if (!win) {
       o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : s.finish === 'strikeout' ? '三振… 打ち返せなかった' : s.finish === 'watch' ? '腕時計が止まった… 守りきれなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
-        const keep = [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
-        o.add(addText(this, GAME_WIDTH / 2, 340, `最後に記録したチェックポイントから、やり直す\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
+        const keep = this.encounter.dig ? ['かばんの中の半分は、砂に戻る', 'HP・MP は全回復して戻る'] : [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
+        const head = this.encounter.dig ? '砂の底から、地上へ戻される' : '最後に記録したチェックポイントから、やり直す';
+        o.add(addText(this, GAME_WIDTH / 2, 340, `${head}\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
         // 負けた時の手がかり（段階201。一覧の 18-3）：この戦闘の敵の性質に効くギアを1行
         const hint = this.lineup?.unlocks.navi ? this.counterHint() : '';
         if (hint) o.add(addText(this, GAME_WIDTH / 2, 470, hint, { size: 13, align: 'center', color: '#ffd77a', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0));
@@ -2965,7 +2966,7 @@ export class ChainBattleScene extends Phaser.Scene {
     if (this.encounter) {
       const win = this.s.outcome === 'win';
       const to = win ? this.encounter.win : this.encounter.lose;
-      this.slantButton(GAME_WIDTH / 2 - 130, 744, 260, 46, win ? '探索へ戻る ▶' : 'チェックポイントへ', () => this.scene.start(to.key, to.data), { into: o, go: true, size: 15 });
+      this.slantButton(GAME_WIDTH / 2 - 130, 744, 260, 46, win ? (this.encounter?.dig ? '砂の底へ戻る ▶' : '探索へ戻る ▶') : this.encounter?.dig ? '地上へ戻る' : 'チェックポイントへ', () => this.scene.start(to.key, to.data), { into: o, go: true, size: 15 });
       return;
     }
     const idx = CHAIN_TRIALS.findIndex((t) => t.id === this.trial);
