@@ -4,7 +4,7 @@ import { nextRandom } from './rng';
 // 横から見た地面（横 width マス、深さは層の合計）を、上下左右に1マスずつ掘り進む。砂時計の砂は時間ではなく手数で減る。
 // 地面はシードから作る（同じシードなら同じ地面）。
 // 段階208：層の境目の番人（倒さないと下の層へ行けない）、動く砂嵐（近づくと追ってくる）、鉱脈・砂時計の砂粒・崩れる砂を足した。
-// 段階209：空洞に砂嵐が稀に湧く（spawn）
+// 段階209：空洞に砂嵐が稀に湧く（spawn）。段階211：掘る人の特徴（岩を割る rockCost・固い土を1回で clayOnce）
 
 /**
  * マスの種類。clay は2回掘る（1回目で砂になる）。rock は掘れない。chest は宝箱、guard は層の境目の番人。
@@ -58,6 +58,10 @@ export interface DigWorldDef {
   spawn?: { rate: number; min: number; max: number; cap: number };
   /** かばんに入る数 */
   bagMax: number;
+  /** 岩を割れる時の砂（段階211。掘る人の特徴）。書かなければ割れない。層の境目の岩の帯は割れない（番人は避けられない） */
+  rockCost?: number;
+  /** 固い土を1回で掘れる（段階211。掘る人の特徴） */
+  clayOnce?: boolean;
 }
 
 /** 動く砂嵐 */
@@ -130,6 +134,16 @@ export function digLayerTop(def: DigWorldDef, layerId: string): number {
 }
 
 const isOpen = (t: DigTile) => t === 'air';
+
+/** 層の境目の岩の帯の行か（いちばん上の層の上は帯がない） */
+export function isDigGuardRow(def: DigWorldDef, y: number): boolean {
+  return def.layers.slice(1).some((l) => digLayerTop(def, l.id) === y);
+}
+
+/** そのマスの岩を割れるか（岩を割れる人で、境目の帯でない） */
+function canBreakRock(def: DigWorldDef, y: number): boolean {
+  return def.rockCost !== undefined && !isDigGuardRow(def, y);
+}
 
 /** 崩れる砂を落とす：下が空いていれば、空きがなくなるまで落ちる（自分や砂嵐のいるマスには落ちない） */
 function settle(tiles: DigTile[], width: number, height: number, blocked: Set<number>): DigTile[] {
@@ -275,7 +289,8 @@ const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] } as cons
 export type DigDir = keyof typeof DIRS;
 
 /**
- * 1手進む：空なら歩く（walk）、砂・崩れる砂なら掘って進む（dig）、固い土は1回掘って砂にする（dig。進まない）。
+ * 1手進む：空なら歩く（walk）、砂・崩れる砂なら掘って進む（dig）、固い土は1回掘って砂にする（dig。進まない。clayOnce なら1回で進む）。
+ * 岩は、rockCost があれば割って進む（境目の帯は割れない）。
  * 鉱脈は掘って進み、素材をかばんへ（いっぱいなら砂に戻る）。砂粒は掘って進み、砂時計の砂が戻る。岩・画面の外は進めない。
  * 宝箱・番人・砂嵐は進まずに知らせる。進んだ後は、崩れる砂が落ち、砂嵐が1マス動く（追いつかれたら知らせる）
  */
@@ -289,13 +304,13 @@ export function stepDig(def: DigWorldDef, s: DigState, dir: DigDir): { state: Di
   const tile = s.tiles[cell];
   const foe = s.roamers.find((m) => m.x === nx && m.y === ny);
   if (foe) return { state: s, event: { type: 'roamer', id: foe.id, battle: foe.battle } };
-  if (tile === 'rock') return { state: s, event: { type: 'blocked', reason: 'rock' } };
+  if (tile === 'rock' && !canBreakRock(def, ny)) return { state: s, event: { type: 'blocked', reason: 'rock' } };
   if (tile === 'chest') return { state: s, event: { type: 'chest', cell, items: [...(s.chests[cell] ?? [])] } };
   if (tile === 'guard') return { state: s, event: { type: 'guard', cell, battle: s.guards[cell] } };
-  const cost = tile === 'air' ? def.cost.walk : def.cost.dig;
+  const cost = tile === 'air' ? def.cost.walk : tile === 'rock' ? (def.rockCost ?? def.cost.dig) : def.cost.dig;
   if (s.sand < cost) return { state: s, event: { type: 'blocked', reason: 'sand' } };
   const tiles = [...s.tiles];
-  if (tile === 'clay') {
+  if (tile === 'clay' && !def.clayOnce) {
     tiles[cell] = 'sand';
     return afterStep(def, { ...s, tiles, sand: s.sand - cost }, { type: 'dig', through: false });
   }

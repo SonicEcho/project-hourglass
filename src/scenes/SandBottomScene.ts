@@ -1,16 +1,16 @@
 import Phaser from 'phaser';
 import type { DigDir, DigEvent, DigState, DigTile } from '../core';
-import { addItems, chapterOfEvent, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
+import { addItems, chapterOfEvent, isDigGuardRow, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { SAND_BOTTOM, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { PARTY, SAND_BOTTOM, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { waitImages } from '../ui/waitImages';
 import { isSettled } from '../assets/loader';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DigHeroSprite } from './digArt';
-import { DIG_CRACK_FRAME, DIG_HERO_ART, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
-import { currentParty, run, saveRun, setStoryVars, storyBattleLineup } from './run';
+import { digArtId, DIG_CRACK_FRAME, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
+import { currentParty, run, saveRun, setStoryVars, storyBattleLineup, storyLineup } from './run';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2・段階209 本編の入口。docs/milestones/M3_sand_bottom.md）。横から見た地面を、1マスずつ掘り進む。
 // 動かし方は、下の大きな十字のボタン（長押しで続けて進む）か、自分の上下左右のマス（枠が出る）をタップ。自分と砂嵐はマスの間をなめらかに動く。
@@ -88,6 +88,11 @@ export class SandBottomScene extends Phaser.Scene {
     run.dig = { ...run.dig!, state: v };
   }
 
+  /** 掘る人の特徴を入れた砂の底（段階211） */
+  private get def() {
+    return withDigger(SAND_BOTTOM, run.dig?.digger ?? 'hero');
+  }
+
   /** 入った時の砂時計の砂（砂の棒の長さの元） */
   private get sandMax(): number {
     return run.dig?.max ?? SAND_BOTTOM.sand;
@@ -105,38 +110,91 @@ export class SandBottomScene extends Phaser.Scene {
     this.facing = 'right';
     ensureDigTiles(this);
     ensureDigRoamer(this);
-    this.hero = ensureDigHero(this);
     this.input.on('pointerup', () => this.release());
     if (!run.dig || run.dig.state.outcome !== 'diving') {
-      // 潜った回数はセーブに残す（シードをずらす。開き直しても同じ地面にならないように。乱数はシードから決まる）
-      const count = Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1;
-      setStoryVars({ ...run.vars, [DIVE_COUNT_VAR]: String(count) });
-      const def = currentDef();
-      run.dig = { state: createDig(def, (run.seed + count * 7919) >>> 0), vitals: {}, count, max: def.sand };
-      this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂を使わない';
+      // 潜る前に、掘る人を選ぶ（段階211）
+      this.showPicker();
+      return;
     }
+    this.hero = ensureDigHero(this, run.dig.digger);
     if (data.wonGuard !== undefined) {
-      this.s = clearGuard(SAND_BOTTOM, this.s, data.wonGuard);
+      this.s = clearGuard(this.def, this.s, data.wonGuard);
       this.message = `番人を倒した！ 下の層へ進める（砂時計 −${SAND_BOTTOM.cost.battle}）`;
     }
     if (data.wonRoamer !== undefined) {
-      this.s = clearRoamer(SAND_BOTTOM, this.s, data.wonRoamer);
+      this.s = clearRoamer(this.def, this.s, data.wonRoamer);
       this.message = `砂嵐を倒した！（砂時計 −${SAND_BOTTOM.cost.battle}）`;
     }
+    if (data.wonGuard !== undefined || data.wonRoamer !== undefined) this.healAfterWin();
     if (data.lost) {
-      this.s = loseDig(SAND_BOTTOM, this.s);
+      this.s = loseDig(this.def, this.s);
       run.dig = { ...run.dig!, vitals: {} };
     }
     this.render();
     if (this.s.outcome !== 'diving') this.showResult();
-    // 掘る人の絵がまだ読めていなければ（デバッグの入口から入った時・裏の読み込みが間に合わない時）、ここで待って描き直す。
-    // 待つ間は、読み込みの画面が上に出る（段階210。開発者の声：はじめに仮の絵が出た）
-    if (!isSettled(this, DIG_HERO_ART)) {
-      waitImages(this, [DIG_HERO_ART], () => {
-        this.hero = ensureDigHero(this);
-        if (!this.overlay) this.render();
-      });
+    this.waitDiggerArt();
+  }
+
+  /**
+   * 掘る人の絵がまだ読めていなければ（デバッグの入口から入った時・裏の読み込みが間に合わない時）、ここで待って描き直す。
+   * 待つ間は、読み込みの画面が上に出る（段階210。開発者の声：はじめに仮の絵が出た）。まだ届いていない人の絵は、待たずに仮の絵
+   */
+  private waitDiggerArt(): void {
+    const who = run.dig?.digger ?? 'hero';
+    const art = digArtId(who);
+    if (isSettled(this, art)) return;
+    waitImages(this, [art], () => {
+      this.hero = ensureDigHero(this, who);
+      if (!this.overlay) this.render();
+    });
+  }
+
+  /** 今の章の仲間（掘る人に選べる人）。特徴のある人だけ */
+  private diggers(): string[] {
+    return storyLineup().members.filter((id) => SAND_BOTTOM_DIGGERS[id]);
+  }
+
+  /** 潜る前に「誰が掘る？」（段階211）。前に選んだ人が、はじめから選ばれている */
+  private showPicker(): void {
+    const o = this.openOverlay(0.92);
+    const list = this.diggers();
+    const last = run.vars[SAND_BOTTOM_DIGGER_VAR];
+    const chosen = last && list.includes(last) ? last : list[0];
+    o.add(addText(this, GAME_WIDTH / 2, 120, '誰が掘る？', { size: 22, bold: true, color: '#ffd76a' }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 152, '人によって掘り方の得手がある。戦うのは、いつもの並び', { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    list.forEach((id, i) => {
+      const name = PARTY.find((c) => c.id === id)?.name ?? id;
+      const y = 214 + i * 74;
+      const mark = id === chosen ? '▶ ' : '';
+      addButton(this, o, GAME_WIDTH / 2, y, 320, 62, `${mark}${name}\n${SAND_BOTTOM_DIGGERS[id].note}`, { onTap: () => this.startDive(id) }, id === chosen ? { fill: 0xc21f4a, size: 13 } : { size: 13 });
+    });
+    addButton(this, o, GAME_WIDTH / 2, 214 + list.length * 74 + 20, 200, 44, 'やめる', { onTap: () => this.scene.start(run.active ? 'Hub' : 'Title') }, { size: 14 });
+  }
+
+  /** 選んだ人で潜り始める */
+  private startDive(digger: string): void {
+    // 潜った回数はセーブに残す（シードをずらす。開き直しても同じ地面にならないように。乱数はシードから決まる）
+    const count = Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1;
+    setStoryVars({ ...run.vars, [DIVE_COUNT_VAR]: String(count), [SAND_BOTTOM_DIGGER_VAR]: digger });
+    const def = currentDef();
+    run.dig = { state: createDig(def, (run.seed + count * 7919) >>> 0), vitals: {}, count, max: def.sand, digger };
+    this.hero = ensureDigHero(this, digger);
+    this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂を使わない';
+    this.closeOverlay();
+    this.waitDiggerArt();
+  }
+
+  /** あかりが掘る時：砂嵐に勝つたびに、みんなの HP が戻る（段階211） */
+  private healAfterWin(): void {
+    const heal = SAND_BOTTOM_DIGGERS[run.dig?.digger ?? '']?.heal;
+    if (!heal || !run.dig) return;
+    const vitals = { ...run.dig.vitals };
+    for (const c of currentParty(storyBattleLineup())) {
+      const v = vitals[c.id];
+      if (v) vitals[c.id] = { ...v, hp: Math.min(c.stats.hp, v.hp + Math.round(c.stats.hp * heal)) };
     }
+    run.dig = { ...run.dig, vitals };
+    this.message += `　あかりの手当てで、HP が ${Math.round(heal * 100)}% 戻った`;
   }
 
   /**
@@ -220,7 +278,7 @@ export class SandBottomScene extends Phaser.Scene {
       this.tweens.add({ targets: block, x: bx + 1.5, duration: 30, yoyo: true, repeat: 2, delay: DIG_MS * 0.4 });
       this.tweens.add({ targets: block, scale: 0.5, alpha: 0, duration: 110, delay: DIG_MS });
       const color = SAND_BOTTOM_COLORS[lay.id];
-      const chip = dig.tile === 'clay' ? color.clay : dig.tile === 'loose' ? color.loose : dig.tile === 'ore' || dig.tile === 'grain' ? 0xffd76a : color.sand;
+      const chip = dig.tile === 'rock' ? color.rock : dig.tile === 'clay' ? color.clay : dig.tile === 'loose' ? color.loose : dig.tile === 'ore' || dig.tile === 'grain' ? 0xffd76a : color.sand;
       for (let i = 0; i < 7; i++) {
         const a = (i / 7) * Math.PI * 2;
         const piece = this.add.rectangle(bx, by, 3, 3, chip).setAlpha(0);
@@ -281,7 +339,7 @@ export class SandBottomScene extends Phaser.Scene {
         const nx = s.x + dx;
         const ny = s.y + dy;
         if (nx < 0 || nx >= COLS || ny < 0 || ny >= s.height || ny - top < 0 || ny - top >= ROWS) continue;
-        if (s.tiles[ny * s.width + nx] === 'rock') continue;
+        if (s.tiles[ny * s.width + nx] === 'rock' && (this.def.rockCost === undefined || isDigGuardRow(this.def, ny))) continue;
         const frame = this.add.rectangle(nx * T + 1, GRID_Y + (ny - top) * T + 1, T - 2, T - 2, 0xffffff, 0.08).setOrigin(0).setStrokeStyle(2, 0xffffff, 0.75);
         frame.setInteractive();
         frame.on('pointerup', () => this.tryStep(dir));
@@ -301,7 +359,7 @@ export class SandBottomScene extends Phaser.Scene {
     this.root.add(this.add.rectangle(50, 44, bw, 10, 0x333333).setOrigin(0));
     const rate = Phaser.Math.Clamp(s.sand / this.sandMax, 0, 1);
     this.root.add(this.add.rectangle(50, 44, bw * rate, 10, rate < 0.25 ? 0xff6a5a : 0xffd76a).setOrigin(0));
-    const back = digBackCost(SAND_BOTTOM, s);
+    const back = digBackCost(this.def, s);
     const short = s.sand < back;
     this.root.add(addText(this, 50, 62, `帰り道に要る砂 ${back}${short ? '（足りない！）' : ''}`, { size: 11, bold: true, color: short ? '#ff8a7a' : '#ffd76a' }));
     const record = Number(run.vars[SAND_BOTTOM_DEEPEST_VAR] ?? 0);
@@ -327,10 +385,15 @@ export class SandBottomScene extends Phaser.Scene {
     const leftW = PAD.x - PAD.w * 1.5 - PAD.gap - 20;
     const party = currentParty(storyBattleLineup());
     const hp = party.map((c) => `${c.name} ${Math.round(run.dig?.vitals[c.id]?.hp ?? c.stats.hp)}/${c.stats.hp}`).join('\n');
-    this.root.add(addText(this, 12, PANEL_Y + 48, hp, { size: 11, color: COLORS.subText }).setLineSpacing(2));
-    if (this.message) this.root.add(addText(this, 12, PANEL_Y + 52 + party.length * 15, this.message, { size: 11, bold: true, color: '#ffe9a8', wrap: leftW, ja: true }));
+    // 掘る人と特徴（段階211）
+    const digger = run.dig?.digger ?? 'hero';
+    const diggerName = PARTY.find((c) => c.id === digger)?.name ?? digger;
+    this.root.add(addText(this, 12, PANEL_Y + 46, `掘る人：${diggerName}（${SAND_BOTTOM_DIGGERS[digger]?.note ?? ''}）`, { size: 10, bold: true, color: '#9fd0ff', wrap: GAME_WIDTH - 24, ja: true }));
+    const hpY = PANEL_Y + 66;
+    this.root.add(addText(this, 12, hpY, hp, { size: 11, color: COLORS.subText }).setLineSpacing(2));
+    if (this.message) this.root.add(addText(this, 12, hpY + 4 + party.length * 15, this.message, { size: 11, bold: true, color: '#ffe9a8', wrap: leftW, ja: true }));
     this.drawPad(s.outcome === 'diving');
-    const back = digBackCost(SAND_BOTTOM, s);
+    const back = digBackCost(this.def, s);
     addButton(this, this.root, 12 + leftW / 2, GAME_HEIGHT - 36, leftW, 50, s.y === 0 ? '地上へ出る\n（持ち帰る）' : `上へ戻る\n（砂 −${back}）`, { onTap: () => this.goBack() }, { fill: 0xc21f4a, size: 13 });
   }
 
@@ -384,7 +447,7 @@ export class SandBottomScene extends Phaser.Scene {
   private step(dir: DigDir): number {
     const before = this.s;
     if (dir === 'left' || dir === 'right') this.facing = dir;
-    const r = stepDig(SAND_BOTTOM, before, dir);
+    const r = stepDig(this.def, before, dir);
     const e = r.event;
     if (e.type === 'chest') {
       this.release();
@@ -430,7 +493,7 @@ export class SandBottomScene extends Phaser.Scene {
   }
 
   private eventText(e: DigEvent): string {
-    if (e.type === 'blocked') return e.reason === 'rock' ? '岩だ。掘れない（ほかの道を探す）' : e.reason === 'sand' ? '砂時計の砂が足りない。上へ戻ろう' : '';
+    if (e.type === 'blocked') return e.reason === 'rock' ? (this.def.rockCost !== undefined ? '層の境目の岩は割れない。番人の所から下りる' : '岩だ。掘れない（ほかの道を探す）') : e.reason === 'sand' ? '砂時計の砂が足りない。上へ戻ろう' : '';
     if (e.type === 'dig' && !e.through) return '固い土だ。もう一度掘る';
     if (e.type === 'ore') return e.item ? (e.kept ? `鉱脈から ${itemName(e.item)} を掘り出した` : `かばんがいっぱいで、${itemName(e.item)} は砂に戻った`) : '鉱脈は空だった';
     if (e.type === 'grain') return `砂時計の砂粒！ 砂 +${e.sand}`;
@@ -461,7 +524,7 @@ export class SandBottomScene extends Phaser.Scene {
   }
 
   private take(cell: number): void {
-    this.s = takeChest(SAND_BOTTOM, this.s, cell).state;
+    this.s = takeChest(this.def, this.s, cell).state;
     this.message = 'かばんに入れた';
     this.closeOverlay();
   }
@@ -499,7 +562,7 @@ export class SandBottomScene extends Phaser.Scene {
   private goBack(): void {
     if (this.overlay || this.moving) return;
     this.release();
-    const back = digBackCost(SAND_BOTTOM, this.s);
+    const back = digBackCost(this.def, this.s);
     if (this.s.sand < back) {
       const o = this.openOverlay();
       o.add(addText(this, GAME_WIDTH / 2, 220, `帰り道に要る砂（${back}）が足りない。\n戻ると、かばんの半分を失う`, { size: 15, bold: true, align: 'center', color: '#ff8a7a' }).setOrigin(0.5));
@@ -512,7 +575,7 @@ export class SandBottomScene extends Phaser.Scene {
 
   private finishDive(): void {
     this.closeOverlay();
-    this.s = goHome(SAND_BOTTOM, this.s);
+    this.s = goHome(this.def, this.s);
     this.render();
     this.showResult();
   }

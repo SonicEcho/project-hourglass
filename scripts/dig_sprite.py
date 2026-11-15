@@ -1,6 +1,6 @@
 """砂の底を掘る二頭身の絵（4行×3列）を、ゲームで使う形にする（段階210。docs/ART_QUEUE.md の T）。
 
-使い方: python3 scripts/dig_sprite.py 入力.png 出力.webp
+使い方: python3 scripts/dig_sprite.py 入力.png 出力.webp [--color]（髪が明るい人は --color。段階211）
 必要なもの: pip install pillow numpy scipy
 
 - 白い背景を抜く（scripts/cutout_white.py と同じ考え方：広い白を背景とみなし、縁は白からの割り戻しで半透明に）
@@ -24,6 +24,8 @@ WHITE = 236
 MIN_AREA = 300
 # 跳んでいるコマ（行, 列）：4行目の真ん中（上へ跳ぶ）
 AIRBORNE = {(3, 1)}
+# 頭の真ん中を、色の濃さで見る（--color を付けた時）。付けなければ暗い所（ハルトの黒髪）
+HEAD_BY_COLOR = '--color' in sys.argv
 
 
 def cutout(rgb: np.ndarray) -> np.ndarray:
@@ -48,6 +50,8 @@ def main(src: str, dst: str) -> None:
     rgba = np.dstack([rgb, alpha * 255]).astype(np.uint8)
     full = Image.fromarray(rgba, 'RGBA')
     dark = rgb.max(axis=2) < 70
+    mx, mn = rgb.max(axis=2), rgb.min(axis=2)
+    sat = ((mx - mn) / np.maximum(mx, 1) > 0.18) | dark
     s = CELL / ch
     out = Image.new('RGBA', (CELL * COLS, CELL * ROWS), (0, 0, 0, 0))
     for r in range(ROWS):
@@ -56,8 +60,10 @@ def main(src: str, dst: str) -> None:
             a = alpha[r * ch:(r + 1) * ch, c * cw:(c + 1) * cw] > 0.5
             ys, xs = np.nonzero(a)
             top, bottom = ys.min(), ys.max()
-            # 髪：上のほう（体の高さの 45% まで）の暗い所の真ん中
-            d = dark[r * ch:(r + 1) * ch, c * cw:(c + 1) * cw] & a
+            # 頭：上のほう（体の高さの 45% まで）の、灰色でない所（スコップの刃を除く）の真ん中。
+            # 明るい髪の人（あかり・みお）もいるので、暗さでなく色の濃さで見る（段階211）。ハルトは暗い所（髪が黒い）
+            region = sat if HEAD_BY_COLOR else dark
+            d = region[r * ch:(r + 1) * ch, c * cw:(c + 1) * cw] & a
             d[int(top + (bottom - top) * 0.45):, :] = False
             hx = np.nonzero(d)[1].mean()
             shifts[c] = (HEAD_X * cw - hx, FOOT_Y * ch - bottom)
@@ -76,4 +82,5 @@ def main(src: str, dst: str) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    main(args[0], args[1])

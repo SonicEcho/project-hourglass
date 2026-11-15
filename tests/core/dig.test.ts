@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
-import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, goHome, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
-import { AREA_BATTLES, SAND_BOTTOM, sandBottomFor, WEAPON_DATA } from '../../src/data';
+import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
+import { AREA_BATTLES, PARTY, SAND_BOTTOM, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
 const items = { common: ['c1', 'c2'], uncommon: ['u1'], rare: ['r1'] };
@@ -239,5 +239,46 @@ describe('砂の底：本編に入れる（段階209）', () => {
     expect(s.roamers.length).toBeLessThanOrEqual(2);
     // 書かなければ湧かない
     expect(stepDig({ ...sp, spawn: undefined }, s0, 'down').state.roamers).toEqual([]);
+  });
+});
+
+describe('砂の底：掘る人の特徴（段階211）', () => {
+  it('固い土を1回で掘れる人は、1回で進む（砂はふつうの量）', () => {
+    const def = { ...DEF, clayOnce: true };
+    const s = plain({ [at(3, 1)]: 'clay' });
+    const r = stepDig(def, s, 'down');
+    expect(r.event).toEqual({ type: 'dig', through: true });
+    expect([r.state.x, r.state.y, r.state.sand]).toEqual([3, 1, 20 - 3]);
+    expect(r.state.tiles[at(3, 1)]).toBe('air');
+  });
+
+  it('岩を割れる人は、岩を割って進む（rockCost の砂）。境目の岩の帯は割れない', () => {
+    const def = { ...DEF, rockCost: 6 };
+    const s = plain({ [at(3, 1)]: 'rock' });
+    const r = stepDig(def, s, 'down');
+    expect(r.event).toEqual({ type: 'dig', through: true });
+    expect([r.state.y, r.state.sand]).toEqual([1, 20 - 6]);
+    expect(stepDig(DEF, s, 'down').event).toEqual({ type: 'blocked', reason: 'rock' });
+    // 2つ目の層の上の行（帯）
+    const band = digLayerTop(DEF, 'low');
+    expect(isDigGuardRow(DEF, band)).toBe(true);
+    expect(isDigGuardRow(DEF, band + 1)).toBe(false);
+    expect(isDigGuardRow(DEF, digLayerTop(DEF, 'top'))).toBe(false);
+    const deep = { ...plain({ [at(3, band)]: 'rock' }), x: 3, y: band - 1 };
+    expect(stepDig(def, deep, 'down').event).toEqual({ type: 'blocked', reason: 'rock' });
+    // 岩の砂が足りなければ割れない
+    expect(stepDig(def, { ...s, sand: 5 }, 'down').event).toEqual({ type: 'blocked', reason: 'sand' });
+  });
+
+  it('データ：仲間の5人に特徴があり、withDigger で数値に入る。ハルトは平均（そのまま）', () => {
+    expect(Object.keys(SAND_BOTTOM_DIGGERS).sort()).toEqual(['akari', 'hayase', 'hero', 'mio', 'sayoko']);
+    for (const id of Object.keys(SAND_BOTTOM_DIGGERS)) expect(PARTY.some((c) => c.id === id), id).toBe(true);
+    const hero = withDigger(SAND_BOTTOM, 'hero');
+    expect([hero.cost, hero.rockCost, hero.clayOnce]).toEqual([SAND_BOTTOM.cost, undefined, undefined]);
+    expect(withDigger(SAND_BOTTOM, 'hayase').cost.dig).toBeLessThan(SAND_BOTTOM.cost.dig);
+    expect(withDigger(SAND_BOTTOM, 'mio').clayOnce).toBe(true);
+    expect(withDigger(SAND_BOTTOM, 'sayoko').rockCost).toBeGreaterThan(SAND_BOTTOM.cost.dig);
+    expect(SAND_BOTTOM_DIGGERS.akari.heal).toBeGreaterThan(0);
+    expect(withDigger(SAND_BOTTOM, 'nobody')).toBe(SAND_BOTTOM);
   });
 });

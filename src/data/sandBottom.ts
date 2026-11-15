@@ -68,3 +68,35 @@ export function sandBottomFor(chapterId: string | undefined): DigWorldDef {
 
 /** いちばん深く潜った深さ（マス）を覚える、物語で覚えた値の名前（段階209） */
 export const SAND_BOTTOM_DEEPEST_VAR = 'dig:deepest';
+
+/** 掘る人の特徴（段階211。S3。数値は仮）。掘る人は潜る前に、今の章の仲間から選ぶ。戦闘の並びとは関係ない */
+export interface DigDiggerDef {
+  /** 画面に出す特徴の説明 */
+  note: string;
+  /** 掘る時の砂（書かなければ、ふつうの量） */
+  dig?: number;
+  /** 岩を割れる時の砂（層の境目の岩の帯は割れない） */
+  rockCost?: number;
+  /** 固い土を1回で掘れる */
+  clayOnce?: boolean;
+  /** 砂嵐に勝つたびに、みんなの HP が最大のこの割合だけ戻る */
+  heal?: number;
+}
+
+export const SAND_BOTTOM_DIGGERS: Record<string, DigDiggerDef> = {
+  hero: { note: '平均。とくに得手も不得手もない' },
+  akari: { note: '砂嵐に勝つたびに、みんなの HP が2割戻る', heal: 0.2 },
+  mio: { note: '固い土を1回で掘れる', clayOnce: true },
+  sayoko: { note: '岩を割れる（砂 6。層の境目の岩は割れない）', rockCost: 6 },
+  hayase: { note: '掘る時の砂が少ない（3 → 2）', dig: 2 },
+};
+
+/** その人が掘る時の砂の底（特徴を数値に入れる）。知らない人は、そのまま */
+export function withDigger(def: DigWorldDef, digger: string): DigWorldDef {
+  const d = SAND_BOTTOM_DIGGERS[digger];
+  if (!d) return def;
+  return { ...def, cost: { ...def.cost, dig: d.dig ?? def.cost.dig }, rockCost: d.rockCost, clayOnce: d.clayOnce };
+}
+
+/** 前に選んだ掘る人を覚える、物語で覚えた値の名前（段階211） */
+export const SAND_BOTTOM_DIGGER_VAR = 'dig:digger';
