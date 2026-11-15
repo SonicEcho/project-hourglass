@@ -47,6 +47,9 @@ const SAND_WARN = 15;
 const SAND_CAUTION = 45;
 /** 道具袋の枠に出す1文字（段階214） */
 const TOOL_MARK: Record<DigToolId, string> = { blast: '爆', ladder: '縄', bell: '鈴', shard: '砂', lantern: '灯', needle: '針' };
+/** 暗がりの暗さ（段階216：もっと暗く）。一度見えた所はうっすら地形が分かる程度、見たことのない所はほぼ真っ暗 */
+const DARK_SEEN = 0.8;
+const DARK_UNSEEN = 0.97;
 /** 毒の砂で減る HP の割合（段階215） */
 const POISON_RATE = 0.1;
 
@@ -275,7 +278,7 @@ export class SandBottomScene extends Phaser.Scene {
     run.dig = { state: { ...state, tools: [...tools] }, vitals: {}, count, max: def.sand, digger };
     this.hero = ensureDigHero(this, digger);
     this.warned = false;
-    this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂を使わない';
+    this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂 1、掘るのは砂 3';
     this.closeOverlay();
     this.waitDiggerArt();
   }
@@ -433,6 +436,8 @@ export class SandBottomScene extends Phaser.Scene {
     }
     // 暗がり（段階215）：深い章の層は、自分のまわりと光る苔のまわりしか見えない。一度見えた所は薄暗く残る
     layer.add(this.drawDark(top));
+    // 層の名前は、暗がりの上に出す
+    for (const t of labels) layer.bringToTop(t);
     // 動ける上下左右のマスに枠（タップで、そのマスへ）
     if (s.outcome === 'diving') {
       for (const dir of Object.keys(DIR_STEP) as DigDir[]) {
@@ -503,7 +508,7 @@ export class SandBottomScene extends Phaser.Scene {
           }
           continue;
         }
-        g.fillStyle(0x000000, seen.has(cell) ? 0.55 : 0.94).fillRect(x * T, GRID_Y + r * T, T, T);
+        g.fillStyle(0x000000, seen.has(cell) ? DARK_SEEN : DARK_UNSEEN).fillRect(x * T, GRID_Y + r * T, T, T);
       }
     }
     if (added.length > 0 && run.dig) run.dig = { ...run.dig, seen: [...(run.dig.seen ?? []), ...added] };

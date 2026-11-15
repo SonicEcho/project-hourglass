@@ -156,7 +156,7 @@ const STRATA: DigStratum[] = [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
       band('futari', '夕暮れの二人乗り', ['a12'], { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d, loose: 0xe8c890 }),
     ],
-    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.03, loose: 0.08, caves: 8, chestRate: 0.6, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 }, pit: 0.02, poison: 0.02, fossil: 0.01, springRate: 0.2, whirlRate: 0.15 },
+    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.03, loose: 0.08, caves: 8, chestRate: 0.6, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 }, pit: 0.02, poison: 0.02, fossil: 0.01, springRate: 0.2, whirlRate: 0.15, dark: 4 },
   },
   {
     chapter: 'ch2',
@@ -167,7 +167,7 @@ const STRATA: DigStratum[] = [
       band('bunkasai', '最後の文化祭', ['a22'], { sand: 0xbca070, clay: 0x8a7046, rock: 0x6c6f78, air: 0x17130c, loose: 0xd6bc8c }),
       band('daseki', '最後の打席', ['a23'], { sand: 0xc49a62, clay: 0x946a40, rock: 0x6c6f78, air: 0x1a120a, loose: 0xdcb482 }),
     ],
-    ground: { rock: 0.1, clay: 0.18, ore: 0.05, grain: 0.015, loose: 0.2, caves: 8, chestRate: 0.6, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 }, pit: 0.04, poison: 0.04, fossil: 0.015, moss: 0.012, springRate: 0.2, whirlRate: 0.22, dark: 6 },
+    ground: { rock: 0.1, clay: 0.18, ore: 0.05, grain: 0.015, loose: 0.2, caves: 8, chestRate: 0.6, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 }, pit: 0.04, poison: 0.04, fossil: 0.015, moss: 0.012, springRate: 0.2, whirlRate: 0.22, dark: 3 },
   },
   {
     chapter: 'ch3',
@@ -178,7 +178,7 @@ const STRATA: DigStratum[] = [
       band('sotsugyo', '言えなかった卒業式', ['a32'], { sand: 0xb08a90, clay: 0x80606a, rock: 0x5e6068, air: 0x161012, loose: 0xcaa8ae }),
       band('taisho', '大正の祭りの夜', ['a3s1', 'a3s2'], { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18, loose: 0x9c7cac }),
     ],
-    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 10, chestRate: 0.6, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 }, pit: 0.06, poison: 0.06, fossil: 0.04, moss: 0.015, springRate: 0.2, whirlRate: 0.3, dark: 4 },
+    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 10, chestRate: 0.6, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 }, pit: 0.06, poison: 0.06, fossil: 0.04, moss: 0.015, springRate: 0.2, whirlRate: 0.3, dark: 2 },
   },
   {
     chapter: 'ch4',
@@ -188,7 +188,7 @@ const STRATA: DigStratum[] = [
       band('shiro', 'シロのいた夏', ['a41'], { sand: 0x8a9a6a, clay: 0x5e6c46, rock: 0x585c62, air: 0x0f140c, loose: 0xa6b688 }),
       band('hayase', '早瀬の時間', ['a42'], { sand: 0x6a8a8a, clay: 0x46605e, rock: 0x585c62, air: 0x0b1314, loose: 0x88a8a6 }),
     ],
-    ground: { rock: 0.27, clay: 0.24, ore: 0.09, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.6, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 }, pit: 0.08, poison: 0.08, fossil: 0.02, moss: 0.015, springRate: 0.2, whirlRate: 0.35, dark: 3 },
+    ground: { rock: 0.27, clay: 0.24, ore: 0.09, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.6, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 }, pit: 0.08, poison: 0.08, fossil: 0.02, moss: 0.015, springRate: 0.2, whirlRate: 0.35, dark: 2 },
   },
 ];
 
@@ -231,13 +231,13 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
     })),
   );
   // ふつうの地面：1マス下りるのに砂が2以上かかる（いちばん安い掘り方）。砂粒で戻る分も見込んで、入った時の砂と同じ行数
-  layers.push({ id: DEEP_GROUND_ID, name: DEEP_GROUND_NAME, group: DEEP_GROUND_ID, rows: sand, rock: 0.08, clay: 0.3, ore: 0, grain: 0, loose: 0.1, caves: 0, chestRate: 0, nestRate: 0, items: { common: [], uncommon: [], rare: [] }, weights: { common: 1, uncommon: 0, rare: 0 }, battles: [], dark: 3 });
+  layers.push({ id: DEEP_GROUND_ID, name: DEEP_GROUND_NAME, group: DEEP_GROUND_ID, rows: sand, rock: 0.08, clay: 0.3, ore: 0, grain: 0, loose: 0.1, caves: 0, chestRate: 0, nestRate: 0, items: { common: [], uncommon: [], rare: [] }, weights: { common: 1, uncommon: 0, rare: 0 }, battles: [], dark: 2 });
   return {
     width: 15,
     layers,
     sand,
-    // 段階209：空洞の移動は砂を使わない（掘る時だけ）
-    cost: { walk: 0, dig: 3, battle: 10, back: 1 },
+    // 段階209：空洞の移動は砂を使わない（掘る時だけ）。段階216（開発者の声：掘った道を戻れば帰り道が砂なしになる）：空洞の移動も砂 1
+    cost: { walk: 1, dig: 3, battle: 10, back: 1 },
     grainSand: 12,
     chase: 5,
     // 段階209：空洞に稀に砂嵐が湧く（帰り道でも出会う）

@@ -225,12 +225,13 @@ describe('砂の底：帰り道', () => {
 });
 
 describe('砂の底：本編に入れる（段階209）', () => {
-  it('空洞の移動は砂を使わない（掘る時だけ）。層は深く、砂時計の砂は章ごとに増える', () => {
+  it('砂時計の砂は章ごとに増える。空洞の移動の砂は数値で決まる（段階216：本編は 1、掘るより安い）', () => {
     const free: DigWorldDef = { ...DEF, cost: { ...DEF.cost, walk: 0 } };
     const tiles: Record<number, 'air'> = { [at(3, 1)]: 'air', [at(3, 2)]: 'air' };
     const r = stepDig(free, { ...plain(tiles), x: 3, y: 0, sand: 0 }, 'down');
     expect([r.event.type, r.state.y, r.state.sand]).toEqual(['move', 1, 0]);
-    expect(SAND_BOTTOM.cost.walk).toBe(0);
+    expect(SAND_BOTTOM.cost.walk).toBe(1);
+    expect(SAND_BOTTOM.cost.walk).toBeLessThan(SAND_BOTTOM.cost.dig);
     const sands = ['ch1', 'ch2', 'ch3', 'ch4'].map((c) => sandBottomFor(c).sand);
     expect([...sands].sort((a, b) => a - b)).toEqual(sands);
     expect(new Set(sands).size).toBe(4);
@@ -547,9 +548,9 @@ describe('砂の底：仕掛けと暗がり（段階215）', () => {
     expect([b.state.tiles[at(3, 3)], b.state.tiles[at(2, 2)], b.state.y]).toEqual(['air', 'air', 2]);
   });
 
-  it('データ：深い章の層ほど仕掛けが多く、暗い（感覚記憶の層は暗がりなし）。ふつうの地面に仕掛けはない', () => {
+  it('データ：深い章の層ほど仕掛けが多く、暗い（段階216：感覚記憶の層も暗い）。ふつうの地面に仕掛けはない', () => {
     const groups = ['ch1', 'ch2', 'ch3'].map((g) => SAND_BOTTOM.layers.find((l) => l.group === g)!);
-    expect(groups.map((l) => l.dark)).toEqual([undefined, 6, 4]);
+    expect(groups.map((l) => l.dark)).toEqual([4, 3, 2]);
     const pits = groups.map((l) => l.pit ?? 0);
     expect([...pits].sort((a, b) => a - b)).toEqual(pits);
     const deep = SAND_BOTTOM.layers.find((l) => l.group === 'deep')!;
@@ -584,5 +585,18 @@ describe('砂の底：宝箱は深い所に、層ごとの特徴（段階215 の
     const g = (c: string) => SAND_BOTTOM.layers.find((l) => l.group === c)!;
     expect(g('ch2').loose).toBeGreaterThan(g('ch1').loose * 1.5);
     expect(g('ch1').grain).toBeGreaterThan(g('ch2').grain);
+  });
+});
+
+describe('砂の底：帰り道の砂（段階216）', () => {
+  it('掘った道を歩いて戻っても、深さの分だけ砂を使う（空洞の移動も砂 1）', () => {
+    let s = { ...createDig(SAND_BOTTOM, 3), sand: 500 };
+    const tiles = [...s.tiles];
+    for (let y = 1; y <= 10; y++) tiles[y * s.width + s.x] = 'air';
+    s = { ...s, tiles, roamers: [], y: 10, calm: 99 };
+    const start = s.sand;
+    for (let i = 0; i < 10; i++) s = stepDig(SAND_BOTTOM, s, 'up').state;
+    expect(s.y).toBe(0);
+    expect(start - s.sand).toBe(10);
   });
 });
