@@ -14,6 +14,8 @@ export interface BattleSceneData {
     lose: { key: string; data: object };
     /** 狩りの戦闘（段階43）：HP・MP は狩りの状態（run.hunt）から持ち越し、ぬしのスナップは渡さない */
     hunt?: boolean;
+    /** 砂の底の戦闘（段階207）：HP・MP は掘っている状態（run.dig）から持ち越す。hunt と一緒に立てる（戦闘中の印・ぬしのスナップなしは狩りと同じ） */
+    dig?: boolean;
     /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
     seedShift?: number;
     /** 星の砂と武器の経験値の割合（段階49。狩りで前の章の区画なら半分。段階57から記憶の薄れもかける。書かなければ全部） */
@@ -118,7 +120,9 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   const gained = Math.ceil(battleReward(def.reward, 0, PART_BREAK_POINTS) * rate);
   const prize = enc.hunt ? undefined : def.item;
   run.growth = { ...run.growth, points: run.growth.points + gained };
-  if (enc.hunt) {
+  if (enc.dig) {
+    if (run.dig) run.dig = { ...run.dig, vitals: structuredClone(result.vitals) };
+  } else if (enc.hunt) {
     if (run.hunt) run.hunt = { ...run.hunt, state: keepVitals(run.hunt.state, result.vitals) };
   } else if (run.explore) run.explore = keepVitals(run.explore, result.vitals);
   const naviData = currentNaviData();

@@ -29,3 +29,4 @@ export * from './playtime';
 export * from './recommend';
 export * from './chain';
 export * from './chainMain';
+export * from './dig';

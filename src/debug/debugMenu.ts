@@ -25,7 +25,7 @@ export interface DebugNavigator {
   /** 星図・ムーブメントの画面を描き直す（星の砂やギアの表示を更新するため） */
   refreshGrowth(): void;
   /** 試作の画面を開く（段階16。エンジンを決めるための探索の試作。段階18b：data で地図を選ぶ。今は縁日の絵の見本だけ） */
-  openPrototype(key: 'ProtoExplore' | 'ChainBattle', data?: object): void;
+  openPrototype(key: 'ProtoExplore' | 'ChainBattle' | 'SandBottom', data?: object): void;
   /** 会話の画面を開く（段階22。DialogueScene の DialogueData） */
   openDialogue(data: { scene: string; queue?: string[] }): void;
   /** 物語の流れの画面を開く（段階23。今の出来事から） */
@@ -449,6 +449,11 @@ export function installDebugMenu(nav: DebugNavigator): void {
         close();
         nav.openPrototype('ChainBattle', { trial: 'chain1', main: true });
       }, true, 'background:#5a3a1f;border-color:#ffc88a;'),
+      // 段階207：砂の底を掘る（試作1。docs/milestones/M3_sand_bottom.md）。今の仲間と育ち具合で潜る。持ち帰った素材は持ち物に入る
+      button('砂の底（試作）', () => {
+        close();
+        nav.openPrototype('SandBottom', {});
+      }, true, 'background:#4a3a1a;border-color:#ffd76a;'),
       // 段階G2（段階192）：ほかの試し（並べてつなぐの試しの1〜8・序盤・組んで跳ねる・コンボと現像・文字盤）の入口は外した。遊んで確かめる場は ↑ の1つ
     );
 
