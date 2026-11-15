@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：13 枚**（済んだ絵 199 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：9 枚**（済んだ絵 203 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -13,7 +13,6 @@
 - [Q. だいち・さきの描き直し（けんたと見分けやすく）](#q-だいちさきの描き直しけんたと見分けやすく)：2 枚
 - [R. 洋服の小夜子（試着室）](#r-洋服の小夜子試着室)：3 枚
 - [S. とうや・しおりのまばたき・口パク用](#s-とうやしおりのまばたき口パク用)：4 枚
-- [U. 砂の底を掘る、二頭身の仲間（あかり・みお・小夜子・早瀬）](#u-砂の底を掘る二頭身の仲間あかりみお小夜子早瀬)：4 枚
 
 ### Q. だいち・さきの描き直し（けんたと見分けやすく）
 
@@ -143,82 +142,6 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-### U. 砂の底を掘る、二頭身の仲間（あかり・みお・小夜子・早瀬）
-
-砂の底で掘る人を選べる（段階211。`docs/milestones/M3_sand_bottom.md` の S3）。ハルトの掘る絵（`public/assets/sprites/dig_hero.webp`）と同じ形・同じ絵柄・同じ大きさで作る。毎回、ハルトの掘る絵と、その人の立ち絵を添付する。今はコードで描いた色違いの仮の絵。届いたら `scripts/dig_sprite.py` で背景を抜いてコマの位置をそろえ、台帳に id `sprite.dig_<人>` で足す
-
-#### 10. 掘る二頭身のあかり
-
-- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/akari_smile.webp`
-- 保存名：`dig_akari.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A chibi sprite sheet for a side-view 2D digging game on mobile. Match the attached chibi sprite sheet of the boy EXACTLY: the same layout, the same art style, the same two-heads-tall proportions, the same size and baseline in each cell, the same small wooden-handled steel shovel, the same 12 poses in the same order. Only the character is different: Akari, a cheerful 17-year-old girl, the same person as in the attached portrait (shoulder-length soft chestnut-brown hair with light inward curls, side-swept bangs, a thin red ribbon at the back, a small red goldfish hair clip on the left, warm brown eyes, white dress shirt with a dusk-red neck ribbon, a cream knit cardigan with slightly long sleeves, a navy pleated skirt, navy knee socks, brown loafers). She digs with cheerful energy, a little clumsy but determined.
-Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
-Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell, leaving empty space around so the shovel never touches the cell edges.
-- Row 1: walking to the right with the shovel resting on the shoulder (standing, left foot forward, right foot forward).
-- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
-- Row 3: digging straight down (shovel raised in front, swinging down, shovel blade stabbing into the ground at the feet).
-- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
-Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.
-```
-
-#### 11. 掘る二頭身のみお
-
-- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/mio_smile.webp`
-- 保存名：`dig_mio.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A chibi sprite sheet for a side-view 2D digging game on mobile. Match the attached chibi sprite sheet of the boy EXACTLY: the same layout, the same art style, the same two-heads-tall proportions, the same size and baseline in each cell, the same small wooden-handled steel shovel, the same 12 poses in the same order. Only the character is different: Mio, a lively 10-year-old girl, the same person as in the attached portrait (bright light-brown short hair with one tiny side tuft tied by a small orange hair tie, big lively brown eyes, round cheeks, a slightly sunburnt nose, a plain sunny-yellow T-shirt with no logo, shorts, sneakers). She is smaller than the boy (a child), and digs fast and eagerly, full of energy.
-Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
-Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell, leaving empty space around so the shovel never touches the cell edges.
-- Row 1: walking to the right with the shovel resting on the shoulder (standing, left foot forward, right foot forward).
-- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
-- Row 3: digging straight down (shovel raised in front, swinging down, shovel blade stabbing into the ground at the feet).
-- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
-Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.
-```
-
-#### 12. 掘る二頭身の小夜子
-
-- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/sayoko_smile.webp`
-- 保存名：`dig_sayoko.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A chibi sprite sheet for a side-view 2D digging game on mobile. Match the attached chibi sprite sheet of the boy EXACTLY: the same layout, the same art style, the same two-heads-tall proportions, the same size and baseline in each cell, the same small wooden-handled steel shovel, the same 12 poses in the same order. Only the character is different: Sayoko, a graceful 16-year-old girl of the Taisho era, the same person as in the attached portrait (long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi, the yukata sleeves tied back with a cord for work, wooden geta sandals with red straps). Graceful but surprisingly strong: her shovel strikes are sharp and powerful, as if she could split rock.
-Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
-Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell, leaving empty space around so the shovel never touches the cell edges.
-- Row 1: walking to the right with the shovel resting on the shoulder (standing, left foot forward, right foot forward).
-- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
-- Row 3: digging straight down (shovel raised in front, swinging down, shovel blade stabbing into the ground at the feet).
-- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
-Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.
-```
-
-#### 13. 掘る二頭身の早瀬
-
-- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/hayase_normal.webp`
-- 保存名：`dig_hayase.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A chibi sprite sheet for a side-view 2D digging game on mobile. Match the attached chibi sprite sheet of the boy EXACTLY: the same layout, the same art style, the same two-heads-tall proportions, the same size and baseline in each cell, the same small wooden-handled steel shovel, the same 12 poses in the same order. Only the character is different: Hayase, a dandy watchmaker in his late fifties, the same person as in the attached portrait (dark hair with grey at the temples swept back, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes, a watchmaker's loupe pushed up on his forehead, a dark navy work jacket open over a black henley shirt, sleeves rolled up, a leather tool roll on his belt, brown boots). He is a little taller than the boy, and digs calmly and efficiently with economical, precise movements.
-Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
-Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell, leaving empty space around so the shovel never touches the cell edges.
-- Row 1: walking to the right with the shovel resting on the shoulder (standing, left foot forward, right foot forward).
-- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
-- Row 3: digging straight down (shovel raised in front, swinging down, shovel blade stabbing into the ground at the feet).
-- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
-Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.
-```
-
 ## 済んだ絵
 
 届いてゲームに入れた絵（指示文は `scripts/art_queue.py` と台帳 `src/data/assets.ts`）。
@@ -240,3 +163,4 @@ Soft cel shading, clear dark outline so it reads at a very small size. No ground
 - **O. 4章の敵**（12 枚）：4-1 虫かごノイズ、4-1 すいかノイズ、4-1 花火の燃えかすノイズ、4-1 水鉄砲ノイズ、4-1 お地蔵さまの前の砂嵐（番人）、4-1 川のぬし（ボス）、4-2 ハイパーヨーヨーノイズ、4-2 ポケベルノイズ、4-2 紙風船ノイズ、4-2 鳩時計ノイズ、4-2 開店祝いの花輪ノイズ（番人）、4-2 シャッターのぬし（ボス）
 - **P. 4章の部屋の地図**（6 枚）：4-1 おじいちゃんの家の庭、4-1 物置、4-1 田んぼのあぜ道、4-1 用水路、4-1 川の浅瀬、4-2 開店の日の店内
 - **T. 砂の底を掘る、二頭身のハルト**（1 枚）：掘る二頭身のハルト（4行×3列）
+- **U. 砂の底を掘る、二頭身の仲間（あかり・みお・小夜子・早瀬）**（4 枚）：掘る二頭身のあかり、掘る二頭身のみお、掘る二頭身の小夜子、掘る二頭身の早瀬
