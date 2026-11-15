@@ -1,9 +1,10 @@
 import type { AlbumState, ArmoryState, GrowthState, NaviState } from '../core';
-import { addParts, arrangeBoards, createGrowth, createNavi, evolveWeapon, naviDataWithWeapons, flowEvents, gainSnaps, getEvolveError, nextEvolutions, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, resetV14Evolutions, weaponLevel } from '../core';
+import { addParts, arrangeBoards, createGrowth, createNavi, evolveWeapon, naviDataWithWeapons, flowEvents, gainSnaps, getEvolveError, nextEvolutions, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, weaponLevel } from '../core';
 import { AREAS, CHAIN_AREA_SETUPS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, NAVI_DATA, PARTY, RETURN_VISITS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 import type { Carry } from './autoArea';
 import { areaBattleOrder, grownParty, newCarry } from './autoArea';
 import presetCarryTable from './presetCarry.json';
+import { refundV13Growth, resetV14Evolutions } from './presetCarryFix';
 
 // 育ち具合で飛ぶ（段階92。docs/design/tech.md の 9.）：デバッグの「出来事へ飛ぶ」で、そこまで遊んだ人と同じくらいの育ち具合にする。
 // 育ち具合は、前の区画を出会う順に通した時の物（段階192 からは、古い戦闘の自動対戦で作った物を表にして固めた。PRESET_CARRY）。

@@ -151,7 +151,6 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.navi = p.carry.navi;
         run.chainAlbum = withPresetSnaps(run.chainAlbum, p);
         run.party = [];
-        run.pendingReward = null;
         run.returned = returnedBefore(eventId);
         summary = presetSummary(p, eventId);
       } catch (e) {

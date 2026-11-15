@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { addToAlbum, createAlbum, gainSnaps, parseSave, removeFromAlbum, sameAlbum } from '../src/core';
-import { FOLDER } from '../src/data';
+import { addToAlbum, albumFromIds, gainSnaps, parseSave, removeFromAlbum, sameAlbum } from '../src/core';
+import { CHAIN_ALBUM, CHAIN_START_ALBUM } from '../src/data';
 import type { SaveStorage } from '../src/save/storage';
 import { memoryStorage } from '../src/save/storage';
 import { isSaveFailing, isStaleByOtherTab, markStaleByOtherTab, onSaveStatus, readSave, run, SAVE_KEY, saveContext, saveRun, setSaveStorage, startNewRun } from '../src/scenes/run';
@@ -128,43 +128,43 @@ describe('ほかのタブで進めた時（段階134）', () => {
 });
 
 describe('アルバムの下書き（段階124）', () => {
-  /** 初期の20枚から1枚入れ替えた、決めた編成 */
+  /** 最初のアルバムから1枚入れ替えた、決めた編成（段階205 から新しい戦闘のアルバム） */
   function customAlbum() {
-    const a = gainSnaps(createAlbum(FOLDER), ['joker']);
-    return addToAlbum(removeFromAlbum(a, Object.keys(a.album)[0]), 'joker');
+    const a = gainSnaps(albumFromIds(CHAIN_START_ALBUM), ['c17_group']);
+    return addToAlbum(removeFromAlbum(a, Object.keys(a.album)[0]), 'c17_group', CHAIN_ALBUM.size, CHAIN_ALBUM.copyMax);
   }
 
-  it('編集の途中（19枚）で保存されても、セーブには決めた20枚が残る', () => {
+  it('編集の途中（1枚少ない）で保存されても、セーブには決めた編成が残る', () => {
     const st = flakyStorage();
     setSaveStorage(st);
     startNewRun();
-    run.album = customAlbum();
+    run.chainAlbum = customAlbum();
     saveRun();
-    // 画面の中だけで下書きを変える（run.album は変えない）
-    const draft = removeFromAlbum(run.album, 'joker');
-    expect(sameAlbum(draft, run.album)).toBe(false);
+    // 画面の中だけで下書きを変える（run.chainAlbum は変えない）
+    const draft = removeFromAlbum(run.chainAlbum, 'c17_group');
+    expect(sameAlbum(draft, run.chainAlbum)).toBe(false);
     saveRun();
     const r = parseSave(st.read(SAVE_KEY)!, saveContext());
-    expect(r.ok && r.save.run.album).toEqual(customAlbum());
+    expect(r.ok && r.save.run.chainAlbum).toEqual(customAlbum());
   });
 
-  it('壊れた（20枚でない）アルバムを読んだ時は、持ち物を残して最初の編成に戻す（今までどおりの守り）', () => {
+  it('壊れた（決まった枚数でない）アルバムを読んだ時は、持ち物を残して最初の編成に戻す（今までどおりの守り）', () => {
     const st = flakyStorage();
     setSaveStorage(st);
     startNewRun();
-    run.album = removeFromAlbum(customAlbum(), 'joker');
+    run.chainAlbum = removeFromAlbum(customAlbum(), 'c17_group');
     saveRun();
     const r = parseSave(st.read(SAVE_KEY)!, saveContext());
-    expect(r.ok && r.save.run.album.album).toEqual(createAlbum(FOLDER).album);
-    expect(r.ok && r.save.run.album.owned.joker).toBe(1);
+    expect(r.ok && r.save.run.chainAlbum.album).toEqual(albumFromIds(CHAIN_START_ALBUM).album);
+    expect(r.ok && r.save.run.chainAlbum.owned.c17_group).toBe(1);
   });
 
   it('sameAlbum は入れている枚数だけを比べる', () => {
-    const a = createAlbum(FOLDER);
-    expect(sameAlbum(a, gainSnaps(a, ['joker']))).toBe(true);
+    const a = albumFromIds(CHAIN_START_ALBUM);
+    expect(sameAlbum(a, gainSnaps(a, ['c17_group']))).toBe(true);
     expect(sameAlbum(a, customAlbum())).toBe(false);
     // 外して同じ物を入れ直すと、変わっていない
     const id = Object.keys(a.album)[0];
-    expect(sameAlbum(a, addToAlbum(removeFromAlbum(a, id), id))).toBe(true);
+    expect(sameAlbum(a, addToAlbum(removeFromAlbum(a, id), id, CHAIN_ALBUM.size, CHAIN_ALBUM.copyMax))).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import type { AlbumState, ArmoryState, LibraryState, BattleState, ChapterGauge, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
+import type { AlbumState, ArmoryState, LibraryState, BattleState, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
 import {
   allBattles,
   applyGrowth,
@@ -6,11 +6,8 @@ import {
   applyWeapons,
   battleNumber,
   albumFromIds,
-  createAlbum,
   createLibrary,
-  recordLibraryBattle,
   recordLibraryFinds,
-  sanitizeLibrary,
   createArmory,
   createGrowth,
   createNavi,
@@ -28,7 +25,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, FOLDER, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -48,8 +45,6 @@ export const run: {
   growth: GrowthState;
   /** ムーブメントのギア（持ち物と、どの盤のどこにはめたか） */
   navi: NaviState;
-  /** まだ受け取っていない勝利の報酬（ギアの候補）。勝った戦闘の名前（id） */
-  pendingReward: string | null;
   /** 武器と記憶の欠片 */
   armory: ArmoryState;
   /** 物語の流れの、今の出来事（段階23。SLICE_FLOW の id） */
@@ -58,13 +53,9 @@ export const run: {
   vars: Record<string, string>;
   /** 探索の状態（探索の途中の時だけ。段階25） */
   explore: ExploreState | null;
-  /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3） */
-  linkGauge: ChapterGauge | null;
   /** 持ち主に返した盗まれた時間（区画の id。段階28） */
   returned: string[];
-  /** 持っているスナップと、アルバムの中身（段階41） */
-  album: AlbumState;
-  /** 新しい戦闘のアルバム（段階163） */
+  /** 持っているスナップと、アルバムの中身（新しい戦闘のアルバム。段階163。段階205 で古いアルバムはなくした） */
   chainAlbum: AlbumState;
   /** ライブラリの記録（段階167。見つけたスナップ・コンボ・会った敵・分かった弱点・素材） */
   library: LibraryState;
@@ -84,14 +75,11 @@ export const run: {
   progress: startProgress(STORY),
   growth: createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS),
   navi: createNavi(START_NAVI_PARTS),
-  pendingReward: null,
   armory: createArmory(WEAPON_DATA),
   event: firstEventId(SLICE_FLOW),
   vars: {},
   explore: null,
-  linkGauge: null,
   returned: [],
-  album: createAlbum(FOLDER),
   chainAlbum: albumFromIds(CHAIN_START_ALBUM),
   library: startLibrary(),
   hunt: null,
@@ -102,27 +90,6 @@ export const run: {
 /** 始めのライブラリ：最初のアルバムのスナップは、もう持っている物として載せる */
 function startLibrary(): LibraryState {
   return recordLibraryFinds(createLibrary(), { snaps: CHAIN_START_ALBUM });
-}
-
-/**
- * ライブラリのない古いセーブ（段階167より前）：持っているスナップと素材から作り、
- * 端末に覚えていた見つけたコンボと分かった弱点（新しい戦闘の試しから使っていた物）を移す。弱点が分かっている敵は、会った敵にする
- */
-export function legacyLibrary(album: AlbumState, armory: ArmoryState): LibraryState {
-  const read = (key: string): unknown => {
-    try {
-      const raw = browserStorage().read(key);
-      return raw ? (JSON.parse(raw) as unknown) : undefined;
-    } catch {
-      return undefined;
-    }
-  };
-  const old = sanitizeLibrary({ combos: read('hourglass.chainTrial.combos'), weak: read('hourglass.chainTrial.knownWeak') }, LIBRARY_CONTEXT);
-  const lib = recordLibraryFinds(old, {
-    snaps: Object.keys(album.owned).filter((id) => (album.owned[id] ?? 0) > 0),
-    items: Object.keys(armory.items).filter((id) => (armory.items[id] ?? 0) > 0),
-  });
-  return recordLibraryBattle(lib, { met: Object.keys(lib.weak), defeated: [] });
 }
 
 /** URL の ?seed= で固定したシード（なければ null） */
@@ -155,14 +122,11 @@ export function startNewRun(): void {
   run.progress = startProgress(STORY);
   run.growth = createGrowth(GROWTH_MAP, PARTY.map((c) => c.id), START_MEMORY_POINTS);
   run.navi = createNavi(START_NAVI_PARTS);
-  run.pendingReward = null;
   run.armory = createArmory(WEAPON_DATA);
   run.event = firstEventId(SLICE_FLOW);
   run.vars = {};
   run.explore = null;
-  run.linkGauge = null;
   run.returned = [];
-  run.album = createAlbum(FOLDER);
   run.chainAlbum = albumFromIds(CHAIN_START_ALBUM);
   run.library = startLibrary();
   run.hunt = null;
@@ -265,8 +229,6 @@ export function saveContext(): SaveContext {
     flow: SLICE_FLOW,
     areas: AREAS,
     renamedEvents: RENAMED_EVENTS,
-    cards: CARDS,
-    initialAlbum: createAlbum(FOLDER),
     chainCards: CHAIN_SNAPS,
     initialChainAlbum: albumFromIds(CHAIN_START_ALBUM),
     chainAlbumRules: CHAIN_ALBUM,
@@ -282,14 +244,11 @@ function snapshot(): RunSnapshot {
     progress: run.progress,
     growth: run.growth,
     navi: run.navi,
-    pendingReward: run.pendingReward,
     armory: run.armory,
     event: run.event,
     vars: run.vars,
     explore: run.explore,
-    linkGauge: run.linkGauge,
     returned: run.returned,
-    album: run.album,
     chainAlbum: run.chainAlbum,
     library: run.library,
     battle: run.battle,
@@ -442,16 +401,13 @@ export function continueRun(): boolean {
   run.progress = s.progress;
   run.growth = s.growth;
   run.navi = s.navi;
-  run.pendingReward = s.pendingReward;
   run.armory = s.armory;
   run.event = s.event;
   run.vars = s.vars;
   run.explore = s.explore;
-  run.linkGauge = s.linkGauge;
   run.returned = s.returned;
-  run.album = s.album;
-  run.chainAlbum = s.chainAlbum ?? albumFromIds(CHAIN_START_ALBUM);
-  run.library = s.library ?? legacyLibrary(run.chainAlbum, run.armory);
+  run.chainAlbum = s.chainAlbum;
+  run.library = s.library;
   run.battle = s.battle;
   run.party = s.party;
   run.hunt = null;

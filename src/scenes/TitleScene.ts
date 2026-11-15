@@ -158,7 +158,7 @@ export class TitleScene extends Phaser.Scene {
     // セーブがあれば「つづきから」（段階11）
     let save = readSave();
     if (save && !save.ok && save.old) {
-      // 試作の5戦だけの古いセーブ（版1・2）は引き継がない（段階23）。壊れているのではないので、知らせずに片付ける
+      // 直す手順がない古い版のセーブ（段階205 から、版17 より前は全部）は引き継がない。壊れているのではないので、知らせずに片付ける（はじめから）
       console.info('[save] 古い版のセーブを片付けました', save.error);
       deleteSave();
       save = null;

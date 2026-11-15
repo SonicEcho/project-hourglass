@@ -29,8 +29,6 @@ export interface GrowthMap {
   /** 道（星と星。どちらからも進める。段階56） */
   edges: [string, string][];
   costs: { stat: number; statBig: number; skill: number; passThrough: number };
-  /** 前の id → 今の id（段階56。格子の星図のマスの id を、同じ効果の星へ付け替える。セーブを読む時に使う） */
-  renamed?: Record<string, string>;
   /** 星座の名前と、名前を出す位置 */
   constellations?: Record<string, { name: string; x: number; y: number }>;
 }
@@ -172,11 +170,6 @@ export function applyGrowth(map: GrowthMap, growth: GrowthState, bases: Characte
 /** 戦闘に勝った時の星の砂（基本 ＋ 壊した部位の数 × partPoints） */
 export function battleReward(base: number, brokenParts: number, partPoints: number): number {
   return base + brokenParts * partPoints;
-}
-
-/** 前の id を今の id に付け替える（段階56。知らない id はそのまま） */
-export function renameNode(map: GrowthMap, nodeId: string): string {
-  return map.renamed?.[nodeId] ?? nodeId;
 }
 
 /**

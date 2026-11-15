@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { RunSnapshot, SaveContext } from '../../src/core';
 import {
-  refundV13Growth,
   createLibrary,
   recordLibraryBattle,
   recordLibraryFinds,
   absorbMaterial,
   addItems,
-  addToAlbum,
-  createAlbum,
   createArmory,
   createGrowth,
   createNavi,
@@ -22,12 +19,11 @@ import {
   albumFromIds,
   placePart,
   progressAt,
-  removeFromAlbum,
   SAVE_VERSION,
   serializeSave,
   startProgress,
 } from '../../src/core';
-import { AREA_BATTLES, AREAS, CARDS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, FOLDER, GROWTH_MAP, LIBRARY_CONTEXT, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
+import { AREA_BATTLES, AREAS, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, GROWTH_MAP, LIBRARY_CONTEXT, NAVI_DATA, PARTY, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../../src/data';
 
 const ctx: SaveContext = {
   growthMap: GROWTH_MAP,
@@ -39,8 +35,10 @@ const ctx: SaveContext = {
   flow: SLICE_FLOW,
   renamedEvents: RENAMED_EVENTS,
   areas: AREAS,
-  cards: CARDS,
-  initialAlbum: createAlbum(FOLDER),
+  chainCards: CHAIN_SNAPS,
+  initialChainAlbum: albumFromIds(CHAIN_START_ALBUM),
+  chainAlbumRules: CHAIN_ALBUM,
+  library: LIBRARY_CONTEXT,
   battleIds: Object.keys(AREA_BATTLES),
 };
 
@@ -53,15 +51,14 @@ function freshRun(): RunSnapshot {
     progress: startProgress(STORY),
     growth: createGrowth(GROWTH_MAP, ctx.characterIds, 20),
     navi: createNavi(START_NAVI_PARTS),
-    pendingReward: null,
     armory: createArmory(WEAPON_DATA),
     event: 'prologue_open',
     vars: {},
     explore: null,
-    linkGauge: null,
     returned: [],
-    album: createAlbum(FOLDER),
     battle: null,
+    chainAlbum: albumFromIds(CHAIN_START_ALBUM),
+    library: createLibrary(),
     party: [],
   };
 }
@@ -80,11 +77,10 @@ function playedRun(): RunSnapshot {
   // 段階27b：素材を直接刻む（刻印を使う）
   r.armory = absorbMaterial(WEAPON_DATA, r.armory, 'akari', 'goldfishScale');
   r.progress = progressAt(STORY, 2);
-  r.pendingReward = 'battle2';
   r.event = 'd1_clockshop';
   r.vars = { goldfish: 'あかね', prize: 'robot' };
-  // 段階41：ジョーカーを手に入れて、ソード1枚と入れ替えた
-  r.album = addToAlbum(removeFromAlbum(gainSnaps(r.album, ['joker']), 'sword'), 'joker');
+  // 新しいスナップを手に入れた（アルバムの中身は最初のまま）
+  r.chainAlbum = gainSnaps(r.chainAlbum, ['c17_group']);
   return r;
 }
 
@@ -96,7 +92,7 @@ function parseEdited(edit: (raw: any) => void) {
 }
 
 describe('セーブ：保存して読む', () => {
-  it('戦闘中の印（段階44）を保存して読む。今のデータにない戦闘・形の違う物は捨てる。版11のセーブは戦闘中ではない', () => {
+  it('戦闘中の印（段階44）を保存して読む。今のデータにない戦闘・形の違う物は捨てる', () => {
     const mark = { battle: 'a11_storm1', win: { key: 'Explore', data: { area: 'a11', won: 'e1' } }, lose: { key: 'Explore', data: { area: 'a11', lost: true } } };
     const r = { ...playedRun(), battle: mark };
     const res = parseSave(serializeSave(r, AT), ctx);
@@ -105,24 +101,16 @@ describe('セーブ：保存して読む', () => {
     expect(gone.ok && gone.save.run.battle).toBeNull();
     const broken = parseEdited((raw) => (raw.run.battle = { battle: 'a11_storm1', win: 'Explore', lose: mark.lose }));
     expect(broken.ok && broken.save.run.battle).toBeNull();
-    const old = parseEdited((raw) => {
-      raw.version = 11;
-      delete raw.run.battle;
-    });
-    expect(old.ok && old.save.run.battle).toBeNull();
   });
 
-  it('選んだ戦闘の並び（段階91a）を保存して読む。知らない仲間と重なりは捨てる。版12のセーブは選んでいない', () => {
+  it('選んだ戦闘の並び（段階91a）を保存して読む。知らない仲間と重なりは捨てる', () => {
     const r = { ...playedRun(), party: ['hero', 'mio'] };
     const res = parseSave(serializeSave(r, AT), ctx);
     expect(res.ok && res.save.run.party).toEqual(['hero', 'mio']);
     const odd = parseEdited((raw) => (raw.run.party = ['mio', 'nobody', 'mio', 3]));
     expect(odd.ok && odd.save.run.party).toEqual(['mio']);
-    const old = parseEdited((raw) => {
-      raw.version = 12;
-      delete raw.run.party;
-    });
-    expect(old.ok && old.save.run.party).toEqual([]);
+    const none = parseEdited((raw) => delete raw.run.party);
+    expect(none.ok && none.save.run.party).toEqual([]);
   });
 
   it('保存した周回を、そのまま読み戻せる', () => {
@@ -150,12 +138,10 @@ describe('セーブ：保存して読む', () => {
     expect(res.ok && res.save.run.armory.items).toEqual({ steelClaw: 1, goldfishScale: 1 });
   });
 
-  it('版5のセーブ（刻印がなかった）は、枠を0として読む（段階27b）', () => {
+  it('刻印の数がない武器は、枠を0として読む（段階27b）', () => {
     const res = parseEdited((raw) => {
-      raw.version = 5;
       for (const w of Object.values(raw.run.armory.weapons) as any[]) delete w.absorbed;
     });
-    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
     expect(res.ok && res.save.run.armory.weapons.akari.absorbed).toBe(0);
   });
 });
@@ -180,126 +166,31 @@ describe('セーブ：読めないもの', () => {
   });
 });
 
-describe('セーブ：古い版から直す', () => {
-  it('移行の手順を順に通して、今の版に直してから読む', () => {
-    // 版0では、星の砂を memoryPoints という名前で持っていた、という想定
-    const v0 = JSON.parse(serializeSave(playedRun(), AT));
-    v0.version = 0;
-    v0.run.memoryPoints = v0.run.growth.points + 5;
-    const res = parseSave(JSON.stringify(v0), ctx, {
-      ...MIGRATIONS,
-      0: (raw: any) => ({ ...raw, run: { ...raw.run, growth: { ...raw.run.growth, points: raw.run.memoryPoints } } }),
-      // 版1・2 → 次の版は、形が同じだった、という想定
-      1: (raw: any) => raw,
-      2: (raw: any) => raw,
-    });
-    expect(res.ok).toBe(true);
-    if (!res.ok) return;
-    expect(res.save.version).toBe(SAVE_VERSION);
-    // 段階194：版13 → 版14 で、開けた星の星の砂を返す
-    expect(res.save.run.growth.points).toBe(refundV13Growth(playedRun().growth.points + 5, playedRun().growth.opened).points);
-  });
-
-  it('版13のセーブ（段階194 で星図を入れ替える前）は、開けた星の星の砂を全部返して、星図をまっさらにする', () => {
-    const v13 = JSON.parse(serializeSave(playedRun(), AT));
-    v13.version = 13;
-    // ハルト：ダブルスラッシュ（8）・ファイア（元から覚えている。3）・攻撃（3）。あかり：大きい能力値（6）。みお：ハルトの出発点（3）
-    v13.run.growth = { points: 10, opened: { hero: ['altair', 'tarazed', 'alshain', 'muAql'], akari: ['vega', 'sadr'], mio: ['sualocin', 'altair'] } };
-    const res = parseSave(JSON.stringify(v13), ctx);
-    expect(res.ok).toBe(true);
-    if (!res.ok) return;
-    expect(res.save.run.growth.points).toBe(10 + 8 + 3 + 3 + 6 + 3);
-    expect(res.save.run.growth.opened.hero).toEqual(['altair']);
-    expect(res.save.run.growth.opened.akari).toEqual(['vega']);
-  });
-
-  it('版1・2のセーブ（試作の5戦だけ）は、古い版として読まない（段階23で引き継がないと決めた）', () => {
-    for (const version of [1, 2]) {
+describe('セーブ：前の版（段階205）', () => {
+  it('版17 より前のセーブは、直す手順がない古いセーブとして読まない（はじめから。開発者と決めた）', () => {
+    expect(SAVE_VERSION).toBe(17);
+    expect(MIGRATIONS).toEqual({});
+    for (const version of [0, 1, 3, 13, 16]) {
       const res = parseEdited((raw) => (raw.version = version));
       expect(res).toEqual({ ok: false, error: `版${version}から直す手順がない`, old: true });
     }
   });
 
-  it('版3のセーブ（探索がなかった）は、探索の途中ではないものとして読む', () => {
-    const res = parseEdited((raw) => {
-      raw.version = 3;
-      delete raw.run.explore;
-    });
+  it('直す手順を渡せば、順に通して今の版に直してから読む（次に形を変える時の仕組み）', () => {
+    // 版16では、星の砂を memoryPoints という名前で持っていた、という想定
+    const v16 = JSON.parse(serializeSave(playedRun(), AT));
+    v16.version = 16;
+    v16.run.memoryPoints = v16.run.growth.points + 5;
+    const res = parseSave(JSON.stringify(v16), ctx, { 16: (raw: any) => ({ ...raw, run: { ...raw.run, growth: { ...raw.run.growth, points: raw.run.memoryPoints } } }) });
     expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    expect(res.ok && res.save.run.explore).toBeNull();
+    expect(res.ok && res.save.run.growth.points).toBe(playedRun().growth.points + 5);
   });
 
-  it('版4のセーブ（つながりゲージを引き継がなかった）は、ゲージなしとして読む', () => {
-    const res = parseEdited((raw) => {
-      raw.version = 4;
-      delete raw.run.linkGauge;
-    });
-    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    expect(res.ok && res.save.run.linkGauge).toBeNull();
-  });
-
-  it('引き継ぐつながりゲージ：今の流れにない章は捨て、量は0〜満タンにおさめる', () => {
-    const ok = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'ch1', value: 60 }));
-    expect(ok.ok && ok.save.run.linkGauge).toEqual({ chapter: 'ch1', value: 60 });
-    const over = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'ch1', value: 999 }));
-    expect(over.ok && over.save.run.linkGauge).toEqual({ chapter: 'ch1', value: 100 });
-    const gone = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'removed', value: 50 }));
-    expect(gone.ok && gone.save.run.linkGauge).toBeNull();
-    const bad = parseEdited((raw) => (raw.run.linkGauge = { chapter: 'ch1', value: 'a' }));
-    expect(bad.ok && bad.save.run.linkGauge).toBeNull();
-  });
-
-  it('版6のセーブ（返した時間がなかった）は、まだ何も返していないものとして読む。知らない区画は捨てる（段階28）', () => {
-    const res = parseEdited((raw) => {
-      raw.version = 6;
-      delete raw.run.returned;
-    });
+  it('返した時間：ない時は何も返していない。知らない区画と重なりは捨てる（段階28）', () => {
+    const res = parseEdited((raw) => delete raw.run.returned);
     expect(res.ok && res.save.run.returned).toEqual([]);
     const kept = parseEdited((raw) => (raw.run.returned = ['a11', 'removed', 'a11']));
     expect(kept.ok && kept.save.run.returned).toEqual(['a11']);
-  });
-
-  it('版7のセーブで M1 の「つづく」にいたものは、4日目の扉から続く。ほかの出来事はそのまま（段階34。段階63で1-1を3日に広げた）', () => {
-    const res = parseEdited((raw) => {
-      raw.version = 7;
-      raw.run.event = 'to_be_continued';
-    });
-    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    expect(res.ok && res.save.run.event).toBe('day4');
-    expect(res.ok && res.save.run.progress.day).toBe(4);
-    const kept = parseEdited((raw) => {
-      raw.version = 7;
-      raw.run.event = 'd2_classroom';
-    });
-    expect(kept.ok && kept.save.run.event).toBe('d2_classroom');
-    // 版8では、M1 の「つづく」は知らない出来事なので最初から
-    const v8 = parseEdited((raw) => (raw.run.event = 'to_be_continued'));
-    expect(v8.ok && v8.save.run.event).toBe('prologue_open');
-  });
-
-  it('版9のセーブ（アルバムがなかった）は、最初のアルバムで読む（段階41）', () => {
-    const res = parseEdited((raw) => {
-      raw.version = 9;
-      delete raw.run.album;
-    });
-    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    expect(res.ok && res.save.run.album).toEqual(createAlbum(FOLDER));
-  });
-
-  it('版10のセーブ（進化先が1つだった）は、進化先の1つ目の型を選んだことにして読む（段階42）', () => {
-    const res = parseEdited((raw) => {
-      raw.version = 10;
-      for (const w of Object.values(raw.run.armory.weapons) as Record<string, unknown>[]) {
-        delete w.path;
-        w.evolvedTo = null;
-      }
-      raw.run.armory.weapons.hero.evolvedTo = 'flameBlade';
-    });
-    expect(res.ok && res.save.version).toBe(SAVE_VERSION);
-    // 段階197：版14 → 版15 で、進化は外れて進化前に戻る（レベルと能力値は残る）
-    expect(res.ok && res.save.run.armory.weapons.hero.path).toEqual([]);
-    expect(res.ok && res.save.run.armory.weapons.akari.path).toEqual([]);
-    expect(res.ok && 'evolvedTo' in res.save.run.armory.weapons.hero).toBe(false);
   });
 
   it('通った進化先は、親から順につながっている所まで残す（知らない型・飛ばした段・まだ作っていない先で切る。段階42）', () => {
@@ -322,26 +213,6 @@ describe('セーブ：古い版から直す', () => {
     expect(pathOf('broken')).toEqual([]);
   });
 
-  it('アルバム：知らないスナップは捨て、持っていない分・上限を超える分は外す。20枚ちょうどでなければ最初のアルバムに戻す（段階41）', () => {
-    const res = parseEdited((raw) => {
-      raw.run.album.owned.removed = 3;
-      raw.run.album.album.removed = 1;
-      raw.run.album.album.heavyBlow = 1;
-    });
-    // 知らないスナップを外すと19枚になるので、最初のアルバムに戻す（持ち物のジョーカーは残る）
-    expect(res.ok && res.save.run.album.owned.removed).toBeUndefined();
-    expect(res.ok && res.save.run.album.owned.joker).toBe(1);
-    expect(res.ok && res.save.run.album.album).toEqual(createAlbum(FOLDER).album);
-    // 最初の持ち物は、セーブになくても持っていることにする
-    const kept = parseEdited((raw) => delete raw.run.album.owned.sword);
-    expect(kept.ok && kept.save.run.album.owned.sword).toBe(3);
-    expect(kept.ok && kept.save.run.album.album.joker).toBe(1);
-  });
-
-  it('直す手順がない古い版は読まない', () => {
-    const res = parseEdited((raw) => (raw.version = 0));
-    expect(res).toEqual({ ok: false, error: '版0から直す手順がない', old: true });
-  });
 });
 
 describe('セーブ：今のデータに合わせて整える', () => {
@@ -394,23 +265,6 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res.save.run.navi.loadouts?.hero?.[2]).toBeNull();
   });
 
-  it('版15のセーブ（段階200 でギアを入れ替える前）は、なくなったギアを近いギアに置き換えて盤から外す', () => {
-    const v15 = JSON.parse(serializeSave(playedRun(), AT));
-    v15.version = 15;
-    v15.run.navi.parts = [
-      { uid: 0, partId: 'speedMemory', placement: { charId: 'hero', col: 0, row: 0, rotation: 0 } },
-      { uid: 1, partId: 'oneMoreDraw', placement: null },
-      { uid: 2, partId: 'batonReceiver', placement: null },
-      { uid: 3, partId: 'startDash', placement: null },
-    ];
-    v15.run.navi.nextUid = 4;
-    const res = parseSave(JSON.stringify(v15), ctx);
-    expect(res.ok).toBe(true);
-    if (!res.ok) return;
-    expect(res.save.run.navi.parts.map((p) => p.partId)).toEqual(['mpMemory', 'snapBoost', 'effectBoost', 'startDash']);
-    expect(res.save.run.navi.parts[0].placement).toBeNull();
-  });
-
   it('武器の進化で広がったマスに置いたギアは、そのまま残る', () => {
     const r = freshRun();
     r.armory = { ...r.armory, weapons: { ...r.armory.weapons, hero: { ...r.armory.weapons.hero, path: [{ id: 'breakEdge', style: 0 }] } } };
@@ -436,14 +290,12 @@ describe('セーブ：今のデータに合わせて整える', () => {
     expect(res.ok && res.save.run.armory.weapons.hero).toEqual(fresh.weapons.hero);
   });
 
-  it('次に戦う場所は、今の物語に収める。知らない戦闘の報酬は捨てる', () => {
+  it('次に戦う場所は、今の物語に収める', () => {
     const res = parseEdited((raw) => {
       raw.run.progress.battle = 99;
       raw.run.progress.day = 0;
-      raw.run.pendingReward = 'removedBattle';
     });
     expect(res.ok && res.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 4, day: 1 });
-    expect(res.ok && res.save.run.pendingReward).toBeNull();
     const res2 = parseEdited((raw) => (raw.run.progress = { chapterId: 'removedChapter', areaId: 'x', battle: 2, day: 3 }));
     expect(res2.ok && res2.save.run.progress).toEqual({ chapterId: 'prototype', areaId: 'trial', battle: 2, day: 1 });
   });
@@ -477,14 +329,10 @@ describe('セーブ：今のデータに合わせて整える', () => {
   });
 
   it('探索の状態を読み戻す。知らない区画なら、探索の途中ではないことにする', () => {
-    // 1-2 の最初の部屋で確かめる（版8の探索の途中は、最初の部屋にいたことにする。段階66から 1-2 は部屋が4つ）
+    // 1-2 の最初の部屋で確かめる（段階66から 1-2 は部屋が4つ）
     const explore = { area: 'a12', room: 'showa_night', cell: [8, 29], checkpoint: [8, 29], checkpointRoom: 'showa_night', visited: ['showa_night'], openedChests: ['a12_chest_clock'], defeated: ['a12_e_gate'], seen: ['a12_first_koma'], cleared: false, koma: 3 };
     const res = parseEdited((raw) => (raw.run.explore = explore));
     expect(res.ok && res.save.run.explore).toEqual(explore);
-    // 版8の探索の途中（部屋がない。段階47）は、部屋が1つの区画として最初の部屋にいたことにする
-    const { room: _r, checkpointRoom: _c, visited: _v, ...v8 } = explore;
-    const old = parseEdited((raw) => ((raw.version = 8), (raw.run.explore = v8)));
-    expect(old.ok && old.save.run.explore).toEqual(explore);
     const res2 = parseEdited((raw) => (raw.run.explore = { ...explore, area: 'gone' }));
     expect(res2.ok && res2.save.run.explore).toBeNull();
   });
@@ -505,44 +353,31 @@ describe('セーブ：今のデータに合わせて整える', () => {
   });
 });
 
-describe('星図の前の id（段階56）', () => {
-  it('格子の星図のマスの id で開けていたセーブは、同じ効果の星に付け替えて読む（駒は最後に開けた星）', () => {
-    const r = freshRun();
-    r.growth = { points: 5, opened: { hero: ['n8_3', 'n8_2', 'n7_2'], akari: ['n5_0', 'n4_0'], mio: ['n5_6', 'unknown'] } };
-    const loaded = parseSave(serializeSave(r, AT), ctx);
-    expect(loaded.ok).toBe(true);
-    if (!loaded.ok) return;
-    const opened = loaded.save.run.growth.opened;
-    expect(opened.hero.slice(0, 1)).toEqual(['altair']);
-    expect(opened.hero).toHaveLength(3);
-    expect(opened.hero.every((id) => GROWTH_MAP.nodes.some((n) => n.id === id))).toBe(true);
-    expect(opened.akari).toEqual(['vega', GROWTH_MAP.renamed!.n4_0]);
-    expect(opened.mio).toEqual(['sualocin']);
+describe('セーブ：アルバム（段階163。版17 から新しい戦闘のアルバムだけ）', () => {
+  it('保存して読む。ない時は最初のアルバム、知らないスナップは捨てる。決まった枚数でなければ持ち物を残して最初の中身に戻す', () => {
+    const res = parseSave(serializeSave(playedRun(), AT), ctx);
+    expect(res.ok && res.save.run.chainAlbum.owned.c17_group).toBe(1);
+    const odd = parseEdited((raw) => (raw.run.chainAlbum.owned.nothing = 2));
+    expect(odd.ok && odd.save.run.chainAlbum.owned.nothing).toBeUndefined();
+    const none = parseEdited((raw) => delete raw.run.chainAlbum);
+    expect(none.ok && none.save.run.chainAlbum).toEqual(albumFromIds(CHAIN_START_ALBUM));
+    const short = parseEdited((raw) => (raw.run.chainAlbum.album = {}));
+    expect(short.ok && short.save.run.chainAlbum.album).toEqual(albumFromIds(CHAIN_START_ALBUM).album);
+    expect(short.ok && short.save.run.chainAlbum.owned.c17_group).toBe(1);
   });
-});
 
-describe('セーブ：新しい戦闘のアルバム（段階163）', () => {
-  const cctx: SaveContext = { ...ctx, chainCards: CHAIN_SNAPS, initialChainAlbum: albumFromIds(CHAIN_START_ALBUM), chainAlbumRules: CHAIN_ALBUM };
-  it('保存して読む。持っていない時（前のセーブ）は最初のアルバム、知らないスナップは捨てる', () => {
-    const r = { ...playedRun(), chainAlbum: gainSnaps(albumFromIds(CHAIN_START_ALBUM), ['c17_group', 'nothing']) };
-    const res = parseSave(serializeSave(r, AT), cctx);
-    expect(res.ok && res.save.run.chainAlbum?.owned.c17_group).toBe(1);
-    expect(res.ok && res.save.run.chainAlbum?.owned.nothing).toBeUndefined();
-    const old = parseSave(serializeSave(playedRun(), AT), cctx);
-    expect(old.ok && old.save.run.chainAlbum).toEqual(albumFromIds(CHAIN_START_ALBUM));
-    // 新しい戦闘のスナップを知らない時（書かない文脈）は、読まない
-    const none = parseSave(serializeSave(r, AT), ctx);
-    expect(none.ok && none.save.run.chainAlbum).toBeUndefined();
+  it('古いアルバム・つながりゲージ・ギアの報酬の受け取り待ちは、セーブに書かない（段階205）', () => {
+    const raw = JSON.parse(serializeSave(playedRun(), AT));
+    for (const key of ['album', 'linkGauge', 'pendingReward']) expect(key in raw.run, key).toBe(false);
   });
 });
 
 describe('セーブ：ライブラリの記録（段階167）', () => {
-  const lctx: SaveContext = { ...ctx, library: LIBRARY_CONTEXT };
-  it('保存して読む。今のデータにない物は捨てる。古いセーブ（ない時）は読まない', () => {
+  it('保存して読む。今のデータにない物は捨てる。ない時は空の記録', () => {
     const lib = recordLibraryBattle(recordLibraryFinds(createLibrary(), { combos: ['iceFlower', 'nothing'], snaps: ['a11_hireuchi'] }), { met: ['goldfishNoise', 'ghost'], defeated: ['goldfishNoise'], weak: { goldfishNoise: ['thunder'] } });
-    const res = parseSave(serializeSave({ ...playedRun(), library: lib }, AT), lctx);
+    const res = parseSave(serializeSave({ ...playedRun(), library: lib }, AT), ctx);
     expect(res.ok && res.save.run.library).toEqual({ met: { goldfishNoise: 1 }, defeated: { goldfishNoise: 1 }, weak: { goldfishNoise: ['thunder'] }, snaps: ['a11_hireuchi'], combos: ['iceFlower'], items: [] });
-    const old = parseSave(serializeSave(playedRun(), AT), lctx);
-    expect(old.ok && old.save.run.library).toBeUndefined();
+    const none = parseEdited((raw) => delete raw.run.library);
+    expect(none.ok && none.save.run.library).toEqual(createLibrary());
   });
 });
