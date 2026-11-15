@@ -94,6 +94,9 @@ export const DIG_TOOLS: Record<DigToolId, DigToolDef> = {
   ladder: { id: 'ladder', name: '縄ばしご', note: 'この回は、帰り道に要る砂が半分', price: 3 },
   bell: { id: 'bell', name: '砂嵐よけの鈴', note: '10手のあいだ、砂嵐が動かず、湧かない', price: 2 },
   shard: { id: 'shard', name: '砂時計のかけら', note: '砂時計の砂 +25', price: 2 },
+  // 段階215：暗がりのための道具
+  lantern: { id: 'lantern', name: 'ランタン', note: 'この回は、暗がりで見える広さ +3', price: 2 },
+  needle: { id: 'needle', name: '探し針', note: 'いちばん近い宝箱・光る物・ぬしの巣を2つ照らし、向きを知らせる', price: 2 },
 };
 
 /** 持っている道具の数を覚える、物語で覚えた値の名前（段階214。セーブの形は変えない） */
@@ -116,7 +119,7 @@ interface DigStratum {
   chapter: string;
   name: string;
   bands: DigBand[];
-  ground: Pick<DigLayerDef, 'rock' | 'clay' | 'ore' | 'grain' | 'loose' | 'caves' | 'chestRate' | 'nestRate' | 'weights' | 'deepWeights'>;
+  ground: Pick<DigLayerDef, 'rock' | 'clay' | 'ore' | 'grain' | 'loose' | 'caves' | 'chestRate' | 'nestRate' | 'weights' | 'deepWeights' | 'pit' | 'poison' | 'fossil' | 'moss' | 'springRate' | 'whirlRate' | 'dark'>;
 }
 
 /** 章の層の番人（段階212）：その章の区画の強い戦闘（`<区画>_n2_guard`）。なければ、いちばん報酬の多い砂嵐 */
@@ -150,7 +153,7 @@ const STRATA: DigStratum[] = [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
       band('futari', '夕暮れの二人乗り', ['a12'], { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d, loose: 0xe8c890 }),
     ],
-    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 8, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 } },
+    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 8, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 }, pit: 0.01, poison: 0.01, fossil: 0.01, springRate: 0.15, whirlRate: 0.1 },
   },
   {
     chapter: 'ch2',
@@ -160,7 +163,7 @@ const STRATA: DigStratum[] = [
       band('bunkasai', '最後の文化祭', ['a22'], { sand: 0xbca070, clay: 0x8a7046, rock: 0x6c6f78, air: 0x17130c, loose: 0xd6bc8c }),
       band('daseki', '最後の打席', ['a23'], { sand: 0xc49a62, clay: 0x946a40, rock: 0x6c6f78, air: 0x1a120a, loose: 0xdcb482 }),
     ],
-    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 8, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 } },
+    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 8, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 }, pit: 0.02, poison: 0.02, fossil: 0.015, moss: 0.012, springRate: 0.15, whirlRate: 0.15, dark: 6 },
   },
   {
     chapter: 'ch3',
@@ -170,7 +173,7 @@ const STRATA: DigStratum[] = [
       band('sotsugyo', '言えなかった卒業式', ['a32'], { sand: 0xb08a90, clay: 0x80606a, rock: 0x5e6068, air: 0x161012, loose: 0xcaa8ae }),
       band('taisho', '大正の祭りの夜', ['a3s1', 'a3s2'], { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18, loose: 0x9c7cac }),
     ],
-    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 8, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 } },
+    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 8, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 }, pit: 0.03, poison: 0.03, fossil: 0.02, moss: 0.015, springRate: 0.15, whirlRate: 0.2, dark: 4 },
   },
   {
     chapter: 'ch4',
@@ -179,7 +182,7 @@ const STRATA: DigStratum[] = [
       band('shiro', 'シロのいた夏', ['a41'], { sand: 0x8a9a6a, clay: 0x5e6c46, rock: 0x585c62, air: 0x0f140c, loose: 0xa6b688 }),
       band('hayase', '早瀬の時間', ['a42'], { sand: 0x6a8a8a, clay: 0x46605e, rock: 0x585c62, air: 0x0b1314, loose: 0x88a8a6 }),
     ],
-    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 } },
+    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 }, pit: 0.04, poison: 0.04, fossil: 0.02, moss: 0.015, springRate: 0.15, whirlRate: 0.25, dark: 3 },
   },
 ];
 
@@ -221,7 +224,7 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
     })),
   );
   // ふつうの地面：1マス下りるのに砂が2以上かかる（いちばん安い掘り方）。砂粒で戻る分も見込んで、入った時の砂と同じ行数
-  layers.push({ id: DEEP_GROUND_ID, name: DEEP_GROUND_NAME, group: DEEP_GROUND_ID, rows: sand, rock: 0.08, clay: 0.3, ore: 0, grain: 0, loose: 0.1, caves: 0, chestRate: 0, nestRate: 0, items: { common: [], uncommon: [], rare: [] }, weights: { common: 1, uncommon: 0, rare: 0 }, battles: [] });
+  layers.push({ id: DEEP_GROUND_ID, name: DEEP_GROUND_NAME, group: DEEP_GROUND_ID, rows: sand, rock: 0.08, clay: 0.3, ore: 0, grain: 0, loose: 0.1, caves: 0, chestRate: 0, nestRate: 0, items: { common: [], uncommon: [], rare: [] }, weights: { common: 1, uncommon: 0, rare: 0 }, battles: [], dark: 3 });
   return {
     width: 15,
     layers,

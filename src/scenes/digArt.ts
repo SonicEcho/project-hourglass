@@ -23,9 +23,9 @@ export type DigPose = 'walk' | 'digSide' | 'digDown' | 'climb';
 const POSE_ROW: Record<DigPose, number> = { walk: 0, digSide: 1, digDown: 2, climb: 3 };
 
 /** ブロックの絵の種類（DigTile のうち、絵が1枚で決まる物） */
-type TileArt = 'sand' | 'loose' | 'clay' | 'rock' | 'ore' | 'grain' | 'air';
-const LAYER_ARTS: TileArt[] = ['sand', 'loose', 'clay', 'rock', 'ore', 'grain', 'air'];
-const SINGLE_ARTS = ['surface', 'chest', 'guard', 'crack', 'relic', 'nest'] as const;
+type TileArt = 'sand' | 'loose' | 'clay' | 'rock' | 'ore' | 'grain' | 'air' | 'pit' | 'poison' | 'fossil' | 'moss';
+const LAYER_ARTS: TileArt[] = ['sand', 'loose', 'clay', 'rock', 'ore', 'grain', 'air', 'pit', 'poison', 'fossil', 'moss'];
+const SINGLE_ARTS = ['surface', 'chest', 'guard', 'crack', 'relic', 'nest', 'spring', 'whirl'] as const;
 
 // ---- 色と乱数 ----
 
@@ -325,6 +325,101 @@ function drawChest(ctx: Ctx, air: number, rand: () => number): void {
   ctx.strokeRect(4.5, 12.5, T - 9, 9);
 }
 
+/** 落とし穴（段階215）：砂に、うっすら黒い輪（よく見るとわかる） */
+function drawPit(ctx: Ctx, base: number, rand: () => number): void {
+  drawSand(ctx, base, rand);
+  ctx.strokeStyle = 'rgba(20,10,0,0.32)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.ellipse(T / 2, T / 2 + 1, 7.5, 5, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(20,10,0,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(T / 2, T / 2 + 1, 4.5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** 毒の砂（段階215）：砂に、うっすら紫の点 */
+function drawPoison(ctx: Ctx, base: number, rand: () => number): void {
+  drawSand(ctx, base, rand);
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = `rgba(150,60,190,${0.35 + rand() * 0.25})`;
+    ctx.beginPath();
+    ctx.arc(3 + rand() * (T - 6), 3 + rand() * (T - 6), 1 + rand() * 1.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** 化石（段階215）：固い土に、白い骨の形 */
+function drawFossil(ctx: Ctx, base: number, rand: () => number): void {
+  drawClay(ctx, base, rand);
+  ctx.strokeStyle = 'rgba(245,235,215,0.9)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(5, 16);
+  ctx.quadraticCurveTo(T / 2, 7, T - 5, 15);
+  ctx.stroke();
+  ctx.lineWidth = 1.1;
+  for (let i = 0; i < 5; i++) {
+    const x = 8 + i * 2.7;
+    const y = 15 - Math.sin((i / 4) * Math.PI) * 5.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 1, y + 6);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(245,235,215,0.9)';
+  ctx.beginPath();
+  ctx.arc(T - 5, 15, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** 光る苔（段階215）：固い土に、青緑に光る点 */
+function drawMoss(ctx: Ctx, base: number, rand: () => number): void {
+  drawClay(ctx, base, rand);
+  for (let i = 0; i < 6; i++) {
+    const x = 3 + rand() * (T - 6);
+    const y = 3 + rand() * (T - 6);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 4);
+    g.addColorStop(0, 'rgba(160,255,220,0.95)');
+    g.addColorStop(1, 'rgba(80,220,180,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - 4, y - 4, 8, 8);
+  }
+}
+
+/** ばね（段階215）：空洞の床の、赤い板つきのばね */
+function drawSpring(ctx: Ctx, air: number, rand: () => number): void {
+  drawAir(ctx, air, rand);
+  ctx.strokeStyle = '#c8ccd6';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(T / 2 - 5, T - 3);
+  for (let i = 0; i < 6; i++) ctx.lineTo(T / 2 + (i % 2 ? 5 : -5), T - 5 - i * 2.4);
+  ctx.stroke();
+  ctx.fillStyle = '#d8323a';
+  ctx.fillRect(T / 2 - 7, T - 20, 14, 3);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(T / 2 - 6, T - 20, 5, 1);
+}
+
+/** 流砂の渦（段階215）：空洞の中の、砂色の渦 */
+function drawWhirl(ctx: Ctx, air: number, rand: () => number): void {
+  drawAir(ctx, air, rand);
+  ctx.strokeStyle = 'rgba(220,180,110,0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 28; i++) {
+    const a = i * 0.45;
+    const r = 1 + i * 0.37;
+    const px = T / 2 + Math.cos(a) * r;
+    const py = T / 2 + Math.sin(a) * r * 0.8;
+    if (i) ctx.lineTo(px, py);
+    else ctx.moveTo(px, py);
+  }
+  ctx.stroke();
+}
+
 /** 光る物（段階213。記憶の宝箱・落とし物）：金色の光に包まれた小箱と、またたく光 */
 function drawRelic(ctx: Ctx, air: number, rand: () => number): void {
   drawAir(ctx, air, rand);
@@ -502,6 +597,10 @@ export function ensureDigTiles(scene: Phaser.Scene): void {
           else if (art === 'rock') drawRock(cx, c, rand);
           else if (art === 'ore') drawOre(cx, c, rand);
           else if (art === 'grain') drawGrain(cx, c.sand, rand);
+          else if (art === 'pit') drawPit(cx, c.sand, rand);
+          else if (art === 'poison') drawPoison(cx, c.sand, rand);
+          else if (art === 'fossil') drawFossil(cx, c.clay, rand);
+          else if (art === 'moss') drawMoss(cx, c.clay, rand);
           else drawAir(cx, c.air, rand);
         });
       }
@@ -515,14 +614,16 @@ export function ensureDigTiles(scene: Phaser.Scene): void {
   paint('crack', 3, last, drawCrack);
   paint('relic', 4, last, (cx) => drawRelic(cx, air0, artRand(903)));
   paint('nest', 5, last, (cx) => drawNest(cx, artRand(904)));
+  paint('spring', 6, last, (cx) => drawSpring(cx, air0, artRand(905)));
+  paint('whirl', 7, last, (cx) => drawWhirl(cx, air0, artRand(906)));
   tex.refresh();
 }
 
 /** そのマスの絵（ブロックの絵の1枚の、どのコマか）。宝箱・番人の下地も含めて1枚で描く */
 export function tileFrame(layerId: string, tile: DigTile, x: number, y: number): { key: string; frame: string } {
   const v = ((x * 7 + y * 13) ^ (y * 3)) % VARIANTS;
-  if (tile === 'chest' || tile === 'guard' || tile === 'relic' || tile === 'nest') return { key: TILES_KEY, frame: tile };
-  const art: TileArt = tile === 'sand' || tile === 'loose' || tile === 'clay' || tile === 'rock' || tile === 'ore' || tile === 'grain' ? tile : 'air';
+  if (tile === 'chest' || tile === 'guard' || tile === 'relic' || tile === 'nest' || tile === 'spring' || tile === 'whirl') return { key: TILES_KEY, frame: tile };
+  const art: TileArt = tile === 'air' ? 'air' : tile;
   return { key: TILES_KEY, frame: `${layerId}:${art}:${v}` };
 }
 
@@ -531,7 +632,7 @@ export const DIG_CRACK_FRAME = { key: TILES_KEY, frame: 'crack' };
 
 /** 掘れる土・岩（空洞との境目に影を付ける） */
 export function isSolid(tile: DigTile | undefined): boolean {
-  return tile === 'sand' || tile === 'clay' || tile === 'rock' || tile === 'ore' || tile === 'grain' || tile === 'loose';
+  return tile === 'sand' || tile === 'clay' || tile === 'rock' || tile === 'ore' || tile === 'grain' || tile === 'loose' || tile === 'pit' || tile === 'poison' || tile === 'fossil' || tile === 'moss';
 }
 
 // ---- 動く砂嵐（渦巻く砂。3コマで回る） ----

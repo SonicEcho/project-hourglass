@@ -9,9 +9,11 @@ import { nextRandom } from './rng';
 /**
  * マスの種類。clay は2回掘る（1回目で砂になる）。rock は掘れない。chest は宝箱、guard は層の境目の番人。
  * ore は鉱脈（掘ると素材）、grain は砂時計の砂粒（掘ると砂が戻る）、loose は崩れる砂（下が空くと落ちる）。
- * relic は光る物（段階213。記憶の宝箱・落とし物。中身は DigState の relics）、nest はぬしの巣（段階213。動かないぬし。戦闘は nests）
+ * relic は光る物（段階213。記憶の宝箱・落とし物。中身は DigState の relics）、nest はぬしの巣（段階213。動かないぬし。戦闘は nests）。
+ * 段階215：pit 落とし穴（掘って入ると落ちる）・poison 毒の砂（掘ると HP が減る。減らすのは呼ぶ側）・fossil 化石（素材が2つ）・
+ * moss 光る苔（まわりを照らす。照らすのは呼ぶ側）は、どれも掘れるマス。spring ばね（空洞の床。乗ると跳ね上がる）・whirl 流砂の渦（空洞の中。隣に来ると引き込まれる）
  */
-export type DigTile = 'air' | 'sand' | 'clay' | 'rock' | 'chest' | 'guard' | 'ore' | 'grain' | 'loose' | 'relic' | 'nest';
+export type DigTile = 'air' | 'sand' | 'clay' | 'rock' | 'chest' | 'guard' | 'ore' | 'grain' | 'loose' | 'relic' | 'nest' | 'pit' | 'poison' | 'fossil' | 'moss' | 'spring' | 'whirl';
 
 export type DigRarity = 'common' | 'uncommon' | 'rare';
 
@@ -51,6 +53,15 @@ export interface DigLayerDef {
   relics?: string[];
   /** ぬしの巣（段階213）：帯のいちばん深い空洞にいる、動かないぬしの戦闘 */
   nest?: string;
+  /** 仕掛けの割合（段階215）：落とし穴・毒の砂・化石・光る苔（マスの割合）、ばね・流砂の渦（空洞ごとの割合） */
+  pit?: number;
+  poison?: number;
+  fossil?: number;
+  moss?: number;
+  springRate?: number;
+  whirlRate?: number;
+  /** 暗がり（段階215）：見える広さ（マス）。書かなければ全部見える。見せ方は呼ぶ側 */
+  dark?: number;
   /** 層（まとまり）のいちばん下での、宝箱の中身の重み（段階212。上の端の weights から、深さに合わせて移る）。書かなければ weights のまま */
   deepWeights?: Record<DigRarity, number>;
   /**
@@ -134,6 +145,8 @@ export interface DigState {
   ladder: boolean;
   /** 砂嵐が動かず湧かない、残りの手数（段階214。砂嵐よけの鈴・時を止める） */
   calm: number;
+  /** ランタンで足した、見える広さ（段階215） */
+  light: number;
   /** diving 潜っている・home 帰った・late 砂が足りないまま帰った・lost 戦闘に負けて戻された */
   outcome: 'diving' | 'home' | 'late' | 'lost';
 }
@@ -151,6 +164,8 @@ export type DigEvent =
   | { type: 'nest'; cell: number; battle: string }
   /** 道具や技を使った（段階214）。dug は掘ったマス、items はかばんに入った素材 */
   | { type: 'used'; what: string; dug: number[]; items: string[] }
+  /** 仕掛け（段階215）。fall は落とし穴で落ちた数、jump はばねで跳ねた数、items は化石から出てかばんに入った素材 */
+  | { type: 'trap'; trap: 'pit' | 'poison' | 'whirl' | 'spring' | 'fossil'; fall?: number; jump?: number; items?: string[] }
   | { type: 'roamer'; id: number; battle: string };
 
 /** 入口（地上の真ん中） */
@@ -276,6 +291,11 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
         ['ore', layer.ore],
         ['grain', layer.grain],
         ['loose', layer.loose],
+        // 段階215：仕掛けと光る苔（書いていない層は 0）
+        ['pit', layer.pit ?? 0],
+        ['poison', layer.poison ?? 0],
+        ['fossil', layer.fossil ?? 0],
+        ['moss', layer.moss ?? 0],
       ];
       let tile: DigTile = 'sand';
       for (const [k, rate] of kinds) {
@@ -315,6 +335,16 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       const rx = cx + Math.floor(rand() * cw);
       if (floor * w + rx !== chestCell && layer.battles.length > 0 && rand() < layer.nestRate) {
         roamers.push({ id: roamers.length, x: rx, y: floor, battle: pick(layer.battles), chasing: false });
+      }
+      // ばね・流砂の渦（段階215）：空洞の床の空いたマス（宝箱・砂嵐と重ならない）。割合を書いた層だけ
+      for (const [kind, rate] of [
+        ['spring', layer.springRate ?? 0],
+        ['whirl', layer.whirlRate ?? 0],
+      ] as const) {
+        if (rate <= 0 || rand() >= rate) continue;
+        const sx = cx + Math.floor(rand() * cw);
+        const cell = floor * w + sx;
+        if (tiles[cell] === 'air' && !(floor === Math.floor(chestCell / w) && sx === chestCell % w) && sx !== rx) tiles[cell] = kind;
       }
       // 道具の包み（段階214）：空洞の天井の段（床の1つ上）に置く。宝箱・砂嵐と重ならない
       if ((def.tools?.length ?? 0) > 0 && ch >= 2 && rand() < (def.toolRate ?? 0)) {
@@ -380,7 +410,7 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
   for (const cell of Object.keys(nests).map(Number)) if (tiles[cell] !== 'nest') delete nests[cell];
   const alive = roamers.filter((m) => tiles[m.y * w + m.x] === 'air');
   const settled = settle(tiles, w, height, new Set([ex, ...alive.map((m) => m.y * w + m.x)]));
-  return { seed: seed >>> 0, width: w, height, tiles: settled, chests, guards, relics, nests, roamers: alive, x: ex, y: 0, sand: def.sand, deepest: 0, bag: [], steps: 0, tools: [], skillLeft: def.skillUses ?? 0, ladder: false, calm: 0, outcome: 'diving' };
+  return { seed: seed >>> 0, width: w, height, tiles: settled, chests, guards, relics, nests, roamers: alive, x: ex, y: 0, sand: def.sand, deepest: 0, bag: [], steps: 0, tools: [], skillLeft: def.skillUses ?? 0, ladder: false, calm: 0, light: 0, outcome: 'diving' };
 }
 
 /** 重みで珍しさを決める（その珍しさの物がなければ一つ下） */
@@ -445,16 +475,48 @@ export function stepDig(def: DigWorldDef, s: DigState, dir: DigDir): { state: Di
   if (tile === 'guard') return { state: s, event: { type: 'guard', cell, battle: s.guards[cell] } };
   if (tile === 'relic') return { state: s, event: { type: 'relic', cell, id: s.relics[cell] } };
   if (tile === 'nest') return { state: s, event: { type: 'nest', cell, battle: s.nests[cell] } };
-  const cost = tile === 'air' ? def.cost.walk : tile === 'rock' ? (def.rockCost ?? def.cost.dig) : def.cost.dig;
+  // 流砂の渦（段階215）：自分から入っても引き込まれる
+  if (tile === 'whirl') return afterStep(def, pullInto(def, s, cell), { type: 'trap', trap: 'whirl' });
+  const walk = tile === 'air' || tile === 'spring';
+  const cost = walk ? def.cost.walk : tile === 'rock' ? (def.rockCost ?? def.cost.dig) : def.cost.dig;
   if (s.sand < cost) return { state: s, event: { type: 'blocked', reason: 'sand' } };
   const tiles = [...s.tiles];
   if (tile === 'clay' && !def.clayOnce) {
     tiles[cell] = 'sand';
     return afterStep(def, { ...s, tiles, sand: s.sand - cost }, { type: 'dig', through: false });
   }
-  tiles[cell] = 'air';
+  if (tile !== 'spring') tiles[cell] = 'air';
   let next: DigState = { ...s, tiles, sand: s.sand - cost, x: nx, y: ny, deepest: Math.max(s.deepest, ny) };
   let event: DigEvent = tile === 'air' ? { type: 'move' } : { type: 'dig', through: true };
+  // 段階215：仕掛け
+  if (tile === 'pit') {
+    // 落とし穴：下へ3マスまで落ちる（下の砂も崩れる。岩・宝箱・砂嵐などで止まる）
+    let fall = 0;
+    const t2 = [...next.tiles];
+    while (fall < 3) {
+      const below = (next.y + fall + 1) * s.width + nx;
+      if (next.y + fall + 1 >= s.height || s.roamers.some((m) => m.y * s.width + m.x === below)) break;
+      const b = t2[below];
+      if (b !== 'air' && b !== 'sand' && b !== 'loose' && b !== 'clay' && b !== 'poison' && b !== 'moss' && b !== 'pit') break;
+      t2[below] = 'air';
+      fall++;
+    }
+    next = { ...next, tiles: t2, y: next.y + fall, deepest: Math.max(next.deepest, next.y + fall) };
+    event = { type: 'trap', trap: 'pit', fall };
+  }
+  if (tile === 'poison') event = { type: 'trap', trap: 'poison' };
+  if (tile === 'fossil') {
+    const got: string[] = [];
+    next = fossilItems(def, next, cell, got);
+    event = { type: 'trap', trap: 'fossil', items: got };
+  }
+  if (tile === 'spring') {
+    // ばね：上の空いた所を4マスまで跳ね上がる
+    let jump = 0;
+    while (jump < 4 && ny - jump - 1 >= 0 && next.tiles[(ny - jump - 1) * s.width + nx] === 'air' && !s.roamers.some((m) => m.x === nx && m.y === ny - jump - 1)) jump++;
+    next = { ...next, y: ny - jump };
+    event = { type: 'trap', trap: 'spring', jump };
+  }
   if (tile === 'grain') {
     next = { ...next, sand: next.sand + def.grainSand };
     event = { type: 'grain', sand: def.grainSand };
@@ -482,7 +544,41 @@ function afterStep(def: DigWorldDef, s: DigState, event: DigEvent): { state: Dig
   }
   const caught = next.roamers.find((m) => m.x === next.x && m.y === next.y);
   if (caught) return { state: next, event: { type: 'roamer', id: caught.id, battle: caught.battle } };
+  // 流砂の渦（段階215）：すぐ隣（上下左右）に来ると引き込まれる
+  if (event.type !== 'trap' || event.trap !== 'whirl') {
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const x = next.x + dx;
+      const y = next.y + dy;
+      if (x < 0 || x >= next.width || y < 0 || y >= next.height) continue;
+      if (next.tiles[y * next.width + x] === 'whirl') return { state: pullInto(def, next, y * next.width + x), event: { type: 'trap', trap: 'whirl' } };
+    }
+  }
   return { state: next, event };
+}
+
+/** 流砂の渦に引き込まれる（段階215）：渦のマスへ動き、砂時計の砂 −8。渦は消える */
+const WHIRL_SAND = 8;
+function pullInto(def: DigWorldDef, s: DigState, cell: number): DigState {
+  void def;
+  const tiles = [...s.tiles];
+  tiles[cell] = 'air';
+  const y = Math.floor(cell / s.width);
+  return { ...s, tiles, x: cell % s.width, y, deepest: Math.max(s.deepest, y), sand: Math.max(0, s.sand - WHIRL_SAND) };
+}
+
+/** 化石（段階215）：その層の素材が2つ（いつもの物か珍しい物）かばんへ。いっぱいなら入る分だけ */
+function fossilItems(def: DigWorldDef, s: DigState, cell: number, got: string[]): DigState {
+  const y = Math.floor(cell / s.width);
+  const rand = stepRand(s, cell + 77);
+  let next = s;
+  for (let i = 0; i < 2; i++) {
+    const item = rollItem(digLayerAt(def, y).items, { common: 1, uncommon: 1, rare: 0 }, rand, (l) => l[Math.floor(rand() * l.length)]);
+    if (item && next.bag.length < def.bagMax) {
+      next = { ...next, bag: [...next.bag, item] };
+      got.push(item);
+    }
+  }
+  return next;
 }
 
 /** 砂嵐が1マス動く：近くにいれば追う（空いたマスだけ通る。掘った道も通る）、遠ければうろうろする */
@@ -633,7 +729,7 @@ export function digBackCost(def: DigWorldDef, s: DigState): number {
 
 /** 道具・技で掘れるマス（段階214）。岩は withRock の時だけ（境目の岩の帯は割れない） */
 function breakable(def: DigWorldDef, tile: DigTile, y: number, withRock: boolean): boolean {
-  if (tile === 'sand' || tile === 'clay' || tile === 'loose' || tile === 'ore' || tile === 'grain') return true;
+  if (tile === 'sand' || tile === 'clay' || tile === 'loose' || tile === 'ore' || tile === 'grain' || tile === 'pit' || tile === 'poison' || tile === 'fossil' || tile === 'moss') return true;
   return withRock && tile === 'rock' && !isDigGuardRow(def, y);
 }
 
@@ -645,6 +741,7 @@ function breakCell(def: DigWorldDef, s: DigState, cell: number, got: string[]): 
   let next: DigState = { ...s, tiles };
   const y = Math.floor(cell / s.width);
   if (tile === 'grain') next = { ...next, sand: next.sand + def.grainSand };
+  if (tile === 'fossil') next = fossilItems(def, next, cell, got);
   if (tile === 'ore') {
     const rand = stepRand(s, cell);
     const item = rollItem(digLayerAt(def, y).items, lerpWeights(ORE_TOP, ORE_BOTTOM, depthInGroup(def, y)), rand, (l) => l[Math.floor(rand() * l.length)]);
@@ -657,7 +754,7 @@ function breakCell(def: DigWorldDef, s: DigState, cell: number, got: string[]): 
 }
 
 /** 道具の働き（段階214）。dir は向いている方（爆ぜる石・砂嵐よけの鈴などは使わない） */
-export type DigToolId = 'blast' | 'ladder' | 'bell' | 'shard';
+export type DigToolId = 'blast' | 'ladder' | 'bell' | 'shard' | 'lantern' | 'needle';
 /** 技の働き（段階214）。heal（応急手当）は HP を戻すので、呼ぶ側が戻す（ここでは回数だけ減らす） */
 export type DigSkillId = 'stop' | 'heal' | 'rush' | 'slash' | 'rewind';
 
@@ -693,6 +790,9 @@ export function useDigTool(def: DigWorldDef, s: DigState, tool: DigToolId): { st
   if (tool === 'ladder') return { state: { ...rest, ladder: true }, event: { type: 'used', what: tool, dug: [], items: [] } };
   if (tool === 'bell') return { state: { ...rest, calm: Math.max(rest.calm, 10) }, event: { type: 'used', what: tool, dug: [], items: [] } };
   if (tool === 'shard') return { state: { ...rest, sand: rest.sand + 25 }, event: { type: 'used', what: tool, dug: [], items: [] } };
+  // 段階215：ランタン（見える広さ +3）、探し針（照らすのは呼ぶ側）
+  if (tool === 'lantern') return { state: { ...rest, light: rest.light + 3 }, event: { type: 'used', what: tool, dug: [], items: [] } };
+  if (tool === 'needle') return { state: rest, event: { type: 'used', what: tool, dug: [], items: [] } };
   // 爆ぜる石：まわり8マス
   const cells: number[] = [];
   for (let dy = -1; dy <= 1; dy++)

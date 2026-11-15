@@ -501,3 +501,58 @@ describe('砂の底：道具と技（段階214）', () => {
     }
   });
 });
+
+describe('砂の底：仕掛けと暗がり（段階215）', () => {
+  it('落とし穴：掘って入ると、下へ3マスまで落ちる（岩で止まる）', () => {
+    const s = { ...plain({ [at(3, 1)]: 'pit', [at(3, 4)]: 'rock' }), x: 3, y: 0 };
+    const r = stepDig(DEF, s, 'down');
+    expect(r.event).toEqual({ type: 'trap', trap: 'pit', fall: 2 });
+    expect([r.state.y, r.state.tiles[at(3, 2)], r.state.tiles[at(3, 3)], r.state.tiles[at(3, 4)]]).toEqual([3, 'air', 'air', 'rock']);
+    expect(r.state.sand).toBe(s.sand - DEF.cost.dig);
+  });
+
+  it('毒の砂は掘って進み、知らせる。化石は素材が2つかばんへ', () => {
+    const s = { ...plain({ [at(3, 1)]: 'poison', [at(4, 0)]: 'fossil' }), x: 3, y: 0 };
+    expect(stepDig(DEF, s, 'down').event).toEqual({ type: 'trap', trap: 'poison' });
+    const f = stepDig(DEF, s, 'right');
+    expect(f.event.type).toBe('trap');
+    expect(f.state.bag).toHaveLength(2);
+    expect(f.state.x).toBe(4);
+  });
+
+  it('ばね：乗ると、上の空いた所を4マスまで跳ね上がる。何度でも使える', () => {
+    const tiles: Record<number, DigState['tiles'][number]> = { [at(3, 6)]: 'spring' };
+    for (let y = 1; y <= 5; y++) tiles[at(3, y)] = 'air';
+    const s = { ...plain(tiles), x: 2, y: 6 };
+    const r = stepDig(DEF, { ...s, tiles: s.tiles.map((t, i) => (i === at(2, 6) ? 'air' : t)) }, 'right');
+    expect(r.event).toEqual({ type: 'trap', trap: 'spring', jump: 4 });
+    expect([r.state.x, r.state.y, r.state.tiles[at(3, 6)]]).toEqual([3, 2, 'spring']);
+  });
+
+  it('流砂の渦：すぐ隣に来ると引き込まれ、砂 −8。渦は消える', () => {
+    const s = { ...plain({ [at(3, 1)]: 'air', [at(4, 2)]: 'whirl', [at(3, 2)]: 'air' }), x: 3, y: 0 };
+    const r = stepDig(DEF, s, 'down');
+    expect(r.event.type).toBe('move');
+    const r2 = stepDig(DEF, r.state, 'down');
+    expect(r2.event).toEqual({ type: 'trap', trap: 'whirl' });
+    expect([r2.state.x, r2.state.y, r2.state.tiles[at(4, 2)], r2.state.sand]).toEqual([4, 2, 'air', r.state.sand - DEF.cost.walk - 8]);
+  });
+
+  it('ランタン：見える広さ +3。爆ぜる石で落とし穴・毒の砂も掘れる（落ちない）', () => {
+    const s = { ...plain({ [at(3, 3)]: 'pit', [at(2, 2)]: 'poison' }), x: 3, y: 2, tools: ['lantern', 'blast'] };
+    expect(useDigTool(DEF, s, 'lantern').state.light).toBe(3);
+    const b = useDigTool(DEF, s, 'blast');
+    expect([b.state.tiles[at(3, 3)], b.state.tiles[at(2, 2)], b.state.y]).toEqual(['air', 'air', 2]);
+  });
+
+  it('データ：深い章の層ほど仕掛けが多く、暗い（感覚記憶の層は暗がりなし）。ふつうの地面に仕掛けはない', () => {
+    const groups = ['ch1', 'ch2', 'ch3'].map((g) => SAND_BOTTOM.layers.find((l) => l.group === g)!);
+    expect(groups.map((l) => l.dark)).toEqual([undefined, 6, 4]);
+    const pits = groups.map((l) => l.pit ?? 0);
+    expect([...pits].sort((a, b) => a - b)).toEqual(pits);
+    const deep = SAND_BOTTOM.layers.find((l) => l.group === 'deep')!;
+    expect([deep.pit, deep.poison, deep.whirlRate]).toEqual([undefined, undefined, undefined]);
+    expect(DIG_TOOLS.lantern).toBeDefined();
+    expect(DIG_TOOLS.needle).toBeDefined();
+  });
+});
