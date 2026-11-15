@@ -507,6 +507,19 @@ for who, name in [('toya', 'とうや'), ('shiori', 'しおり')]:
     add(f'{name}：目を閉じた絵', [P + f'{who}_smile.webp'], f'{who}_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
     add(f'{name}：口を開けた絵', [P + f'{who}_smile.webp'], f'{who}_talk_src.png', open_mouth('smiling'))
 
+section('T. 砂の底を掘る、二頭身のハルト', '砂の底（段階210。`docs/milestones/M3_sand_bottom.md` の S2）で、地面を横から見て掘り進む二頭身のハルト。今はコードで描いた仮の絵（`src/scenes/digArt.ts`）。届いたら白い背景を抜き、`public/assets/sprites/dig_hero.webp` にして台帳に id `sprite.dig_hero` で足し、砂の底に入る前に読む（マス目どおり4行×3列に切るのはゲームがする）。うまくそろわなければ、行ごとに1枚ずつ作る')
+add('掘る二頭身のハルト（4行×3列）', [P + 'hero_smile.webp'], 'dig_hero.png', f'''{STYLE}
+
+A chibi sprite sheet for a side-view 2D digging game on mobile, the same boy as in the attached reference portrait (Haruto: messy short black hair with ONE single sand-gold strand in the front bangs, warm amber eyes, white school dress shirt with a loose sand-gold necktie, open dark navy zip hoodie with dusk-orange lining, dark school trousers, white sneakers). Super-deformed proportions, about two heads tall, big head, small body, cute but not babyish. He always holds a small wooden-handled steel shovel.
+Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, his feet on the same baseline about three quarters down the cell, leaving empty space around him so the shovel never touches the cell edges.
+- Row 1: walking to the right with the shovel resting on his shoulder (left foot forward, standing, right foot forward).
+- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
+- Row 3: digging straight down (shovel raised in front of him, swinging down, shovel blade stabbing into the ground at his feet).
+- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.''', '1枚で12コマがそろわない時は、行ごとに「1 row of 3 cells」で4枚に分けて作る')
+
+
 def main():
     """未対応の絵を上に、指示文つきで並べる。済んだ絵は下に名前だけ（指示文はこのファイルと台帳 src/data/assets.ts に残っている）"""
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]

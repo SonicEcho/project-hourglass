@@ -1,20 +1,21 @@
 import Phaser from 'phaser';
-import type { DigDir, DigEvent, DigState } from '../core';
+import type { DigDir, DigEvent, DigState, DigTile } from '../core';
 import { addItems, chapterOfEvent, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALLY_FACE, FACE_CROP, FACE_CROPS, SAND_BOTTOM, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA } from '../data';
-import { faceTexture } from '../ui/portrait';
-import { hasImage } from '../assets/loader';
+import { SAND_BOTTOM, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { waitImages } from '../ui/waitImages';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
+import type { DigHeroSprite } from './digArt';
+import { DIG_CRACK_FRAME, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
 import { currentParty, run, saveRun, setStoryVars, storyBattleLineup } from './run';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2・段階209 本編の入口。docs/milestones/M3_sand_bottom.md）。横から見た地面を、1マスずつ掘り進む。
 // 動かし方は、下の大きな十字のボタン（長押しで続けて進む）か、自分の上下左右のマス（枠が出る）をタップ。自分と砂嵐はマスの間をなめらかに動く。
 // 砂時計の砂は掘る手数で減る（空洞を歩くのは減らない）。宝箱・鉱脈の素材はかばん（10個）へ。層の境目の番人と、動く砂嵐（空洞に稀に湧く）はいつもの戦闘。
-// 「上へ戻る」で持ち帰る。試作なので絵は色の四角。潜っている途中はセーブしない（閉じたら潜る前から）
+// 「上へ戻る」で持ち帰る。潜っている途中はセーブしない（閉じたら潜る前から）
+// 段階210（S2）：ブロック・宝箱・番人・砂嵐をコードで描いた絵にし、自分は二頭身のハルト（スコップで掘ってから歩いて進む。絵は digArt.ts）
 
 export interface SandBottomData {
   /** 番人に勝って戻った（番人のマス） */
@@ -25,7 +26,7 @@ export interface SandBottomData {
   lost?: boolean;
 }
 
-const T = 26;
+const T = DIG_TILE;
 const COLS = 15;
 const GRID_Y = 96;
 const ROWS = 18;
@@ -35,6 +36,16 @@ const PAD = { x: GAME_WIDTH - 118, y: PANEL_Y + 176, w: 72, h: 58, gap: 6 };
 /** 1マス動くのにかける時間（ミリ秒）と、長押しで次へ進むまでの間 */
 const MOVE_MS = 130;
 const REPEAT_MS = 60;
+/** 掘る時に、その場でスコップを振る時間（段階210。振り終わってから歩いて進む） */
+const DIG_MS = 150;
+
+/** 掘ったブロック（崩れる動きを出す） */
+interface DigAnim {
+  x: number;
+  y: number;
+  tile: DigTile;
+  dir: DigDir;
+}
 
 /** 潜った回数を覚える、物語で覚えた値の名前（段階209） */
 const DIVE_COUNT_VAR = 'dig:count';
@@ -60,6 +71,9 @@ export class SandBottomScene extends Phaser.Scene {
   /** 長押ししている向き */
   private held: DigDir | null = null;
   private holdTimer?: Phaser.Time.TimerEvent;
+  /** 掘る人の向き（左右。上下に動いても変えない） */
+  private facing: 'left' | 'right' = 'right';
+  private hero!: DigHeroSprite;
 
   constructor() {
     super('SandBottom');
@@ -87,6 +101,10 @@ export class SandBottomScene extends Phaser.Scene {
     this.moving = false;
     this.held = null;
     this.holdTimer = undefined;
+    this.facing = 'right';
+    ensureDigTiles(this);
+    ensureDigRoamer(this);
+    this.hero = ensureDigHero(this);
     this.input.on('pointerup', () => this.release());
     if (!run.dig || run.dig.state.outcome !== 'diving') {
       // 潜った回数はセーブに残す（シードをずらす。開き直しても同じ地面にならないように。乱数はシードから決まる）
@@ -112,12 +130,17 @@ export class SandBottomScene extends Phaser.Scene {
     if (this.s.outcome !== 'diving') this.showResult();
   }
 
-  /** 描き直す。before を渡すと、自分と砂嵐を前の位置から今の位置へ動かす（見える範囲がずれる時は、地面ごとずらして戻す） */
-  private render(before?: DigState): void {
+  /**
+   * 描き直す。before を渡すと、自分と砂嵐を前の位置から今の位置へ動かす（見える範囲がずれる時は、地面ごとずらして戻す）。
+   * dig を渡すと、先にその場でブロックを掘る動きを出す。動きにかかる時間（ミリ秒）を返す
+   */
+  private render(before?: DigState, dig?: DigAnim): number {
+    this.tweens.killAll();
     this.root.removeAll(true);
-    this.drawGrid(before);
+    const ms = this.drawGrid(before, dig);
     this.drawHud();
     this.drawPanel();
+    return ms;
   }
 
   /** 見える範囲の上の行（自分が上から7行目あたりに来るように） */
@@ -125,100 +148,121 @@ export class SandBottomScene extends Phaser.Scene {
     return Phaser.Math.Clamp(s.y - 6, 0, Math.max(0, s.height - ROWS));
   }
 
-  private drawGrid(before?: DigState): void {
+  private drawGrid(before?: DigState, dig?: DigAnim): number {
     const s = this.s;
     const top = this.viewTopOf(s);
     // 地面と動く物は1つの入れ物に入れる（見える範囲がずれた時に、まとめてずらす）
     const layer = this.add.container(0, 0);
     this.root.add(layer);
+    const tileAt = (x: number, y: number) => (x < 0 || x >= s.width || y < 1 || y >= s.height ? undefined : s.tiles[y * s.width + x]);
+    const img = (f: { key: string; frame: string }, px: number, py: number) => this.add.image(px, py, f.key, f.frame).setOrigin(0).setScale(1 / RENDER_SCALE);
+    // 境目の影（空洞の天井の下は暗く、土の上の面は明るい縁）
     const g = this.add.graphics();
-    layer.add(g);
+    const labels: Phaser.GameObjects.Text[] = [];
     // 見える範囲の上下に1行ずつ余分に描く（ずらしている間の隙間を埋める）
     for (let r = -1; r <= ROWS && top + r < s.height; r++) {
       const y = top + r;
       if (y < 0) continue;
       const lay = digLayerAt(SAND_BOTTOM, Math.max(1, y));
-      const c = SAND_BOTTOM_COLORS[lay.id];
       for (let x = 0; x < COLS; x++) {
-        const tile = s.tiles[y * s.width + x];
         const px = x * T;
         const py = GRID_Y + r * T;
         if (y === 0) {
-          g.fillStyle(0x2a3a5a, 1).fillRect(px, py, T, T);
+          layer.add(img(DIG_SURFACE_FRAME, px, py));
           continue;
         }
-        const base = tile === 'clay' ? c.clay : tile === 'loose' ? c.loose : tile === 'sand' || tile === 'ore' || tile === 'grain' ? c.sand : c.air;
-        g.fillStyle(base, 1).fillRect(px, py, T, T);
-        if (tile === 'sand' || tile === 'clay' || tile === 'ore' || tile === 'grain') g.lineStyle(1, 0x000000, 0.18).strokeRect(px, py, T, T);
-        if (tile === 'loose') {
-          g.fillStyle(0x000000, 0.22);
-          for (const [ox, oy] of [[5, 6], [15, 4], [10, 12], [20, 14], [6, 19], [17, 21]]) g.fillCircle(px + ox, py + oy, 1.4);
-        }
-        if (tile === 'ore') {
-          g.lineStyle(3, 0xffd76a, 0.95).lineBetween(px + 4, py + 20, px + 12, py + 9).lineBetween(px + 12, py + 9, px + 22, py + 6);
-          g.lineStyle(2, 0xfff2b8, 0.9).lineBetween(px + 9, py + 23, px + 18, py + 16);
-        }
-        if (tile === 'grain') {
-          g.fillStyle(0xfff2b8, 0.35).fillCircle(px + T / 2, py + T / 2, 10);
-          g.fillStyle(0xffe08a, 1).fillCircle(px + T / 2, py + T / 2, 5);
-        }
-        if (tile === 'rock') g.fillStyle(c.rock, 1).fillRoundedRect(px + 1, py + 1, T - 2, T - 2, 5);
-        if (tile === 'chest') {
-          g.fillStyle(0xc8902a, 1).fillRect(px + 4, py + 7, T - 8, T - 11);
-          g.lineStyle(2, 0xffd76a, 1).strokeRect(px + 4, py + 7, T - 8, T - 11);
-        }
-        if (tile === 'guard') {
-          g.fillStyle(0x6a0f1a, 1).fillRect(px, py, T, T);
-          g.fillStyle(0xff4d4d, 1).fillCircle(px + T / 2, py + T / 2, T / 2 - 3);
-          layer.add(addText(this, px + T / 2, py + T / 2, '番', { size: 13, bold: true, color: '#ffffff' }).setOrigin(0.5));
+        const tile = s.tiles[y * s.width + x];
+        layer.add(img(tileFrame(lay.id, tile, x, y), px, py));
+        const above = y === 1 ? 'air' : tileAt(x, y - 1);
+        if (isSolid(tile)) {
+          if (!isSolid(above)) g.fillStyle(0xffffff, 0.16).fillRect(px, py, T, 2);
+          if (!isSolid(tileAt(x, y + 1)) && y + 1 < s.height) g.fillStyle(0x000000, 0.3).fillRect(px, py + T - 2, T, 2);
+        } else {
+          if (isSolid(above)) g.fillStyle(0x000000, 0.4).fillRect(px, py, T, 3).fillStyle(0x000000, 0.18).fillRect(px, py + 3, T, 4);
+          if (isSolid(tileAt(x - 1, y))) g.fillStyle(0x000000, 0.22).fillRect(px, py, 3, T);
+          if (isSolid(tileAt(x + 1, y))) g.fillStyle(0x000000, 0.22).fillRect(px + T - 3, py, 3, T);
         }
       }
       if (r >= 0 && r < ROWS && y > 0 && (r === 0 || digLayerAt(SAND_BOTTOM, y - 1).id !== lay.id || y === 1)) {
-        layer.add(this.add.rectangle(4, GRID_Y + r * T + 3, 64, 16, 0x000000, 0.55).setOrigin(0));
-        layer.add(addText(this, 8, GRID_Y + r * T + 11, lay.name, { size: 10, bold: true }).setOrigin(0, 0.5));
+        g.fillStyle(0x000000, 0.55).fillRoundedRect(4, GRID_Y + r * T + 3, 64, 16, 4);
+        labels.push(addText(this, 8, GRID_Y + r * T + 11, lay.name, { size: 10, bold: true }).setOrigin(0, 0.5));
       }
     }
+    layer.add(g);
+    layer.add(labels);
     if (top === 0) layer.add(addText(this, digEntrance(SAND_BOTTOM) * T + T / 2, GRID_Y + 2, '入口', { size: 9, bold: true, color: '#ffd76a' }).setOrigin(0.5, 0));
     const cellX = (x: number) => x * T + T / 2;
     const cellY = (y: number) => GRID_Y + (y - top) * T + T / 2;
-    // 動く砂嵐（追っている時は「！」）。前の位置からなめらかに
+    // 掘っている間（DIG_MS）はその場でスコップを振り、それから歩いて進む。砂嵐と見える範囲も、歩き出すのに合わせて動く
+    const delay = dig ? DIG_MS : 0;
+    const moved = !!before && (before.x !== s.x || before.y !== s.y);
+    // 掘ったブロック：前の絵を揺らして崩し、かけらを飛ばす
+    if (dig) {
+      const lay = digLayerAt(SAND_BOTTOM, Math.max(1, dig.y));
+      const bx = cellX(dig.x);
+      const by = cellY(dig.y);
+      const f = tileFrame(lay.id, dig.tile, dig.x, dig.y);
+      const block = this.add.container(bx, by);
+      block.add(this.add.image(0, 0, f.key, f.frame).setScale(1 / RENDER_SCALE));
+      block.add(this.add.image(0, 0, DIG_CRACK_FRAME.key, DIG_CRACK_FRAME.frame).setScale(1 / RENDER_SCALE).setAlpha(0));
+      layer.add(block);
+      const crack = block.list[1] as Phaser.GameObjects.Image;
+      this.tweens.add({ targets: crack, alpha: 1, duration: DIG_MS * 0.5, delay: DIG_MS * 0.3 });
+      this.tweens.add({ targets: block, x: bx + 1.5, duration: 30, yoyo: true, repeat: 2, delay: DIG_MS * 0.4 });
+      this.tweens.add({ targets: block, scale: 0.5, alpha: 0, duration: 110, delay: DIG_MS });
+      const color = SAND_BOTTOM_COLORS[lay.id];
+      const chip = dig.tile === 'clay' ? color.clay : dig.tile === 'loose' ? color.loose : dig.tile === 'ore' || dig.tile === 'grain' ? 0xffd76a : color.sand;
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        const piece = this.add.rectangle(bx, by, 3, 3, chip).setAlpha(0);
+        layer.add(piece);
+        this.tweens.add({ targets: piece, alpha: { from: 1, to: 0 }, x: bx + Math.cos(a) * 12, y: by + Math.sin(a) * 8 + 8, angle: 180, duration: 320, delay: DIG_MS * 0.8, ease: 'Quad.easeOut' });
+      }
+    }
+    // 動く砂嵐（渦巻く砂。追っている時は「！」）。前の位置からなめらかに
     for (const m of s.roamers) {
       if (m.y - top < -1 || m.y - top > ROWS) continue;
       const foe = this.add.container(cellX(m.x), cellY(m.y));
-      foe.add(this.add.circle(0, 0, T / 2, 0xff4d4d, 0.3));
-      foe.add(this.add.circle(0, 0, T / 2 - 4, 0xd8323a));
-      foe.add(this.add.circle(-4, -2, 2, 0x200000));
-      foe.add(this.add.circle(4, -2, 2, 0x200000));
+      foe.add(this.add.sprite(0, 0, ROAMER_TEXTURE, 'r0').setScale(1 / RENDER_SCALE).play(ROAMER_ANIM));
       if (m.chasing) foe.add(addText(this, 0, -T / 2 - 2, '！', { size: 14, bold: true, color: '#ff8a7a' }).setOrigin(0.5, 1));
       layer.add(foe);
       const was = before?.roamers.find((o) => o.id === m.id);
       if (before && was && (was.x !== m.x || was.y !== m.y)) {
         foe.setPosition(cellX(was.x), cellY(was.y));
-        this.tweens.add({ targets: foe, x: cellX(m.x), y: cellY(m.y), duration: MOVE_MS });
+        this.tweens.add({ targets: foe, x: cellX(m.x), y: cellY(m.y), duration: MOVE_MS, delay });
       } else if (before && !was) {
         // 湧いた砂嵐は、ふわっと出る
         foe.setScale(0.2).setAlpha(0);
-        this.tweens.add({ targets: foe, scale: 1, alpha: 1, duration: MOVE_MS * 2 });
+        this.tweens.add({ targets: foe, scale: 1, alpha: 1, duration: MOVE_MS * 2, delay });
       }
     }
-    // 自分
-    const me = this.add.container(cellX(s.x), cellY(s.y));
-    const id = ALLY_FACE.hero;
-    const faceKey = id && hasImage(this, id) ? faceTexture(this, id, FACE_CROPS.hero ?? FACE_CROP, T - 2) : '';
-    if (faceKey) me.add(this.add.image(0, 0, faceKey).setDisplaySize(T - 2, T - 2));
-    else me.add(this.add.circle(0, 0, T / 2 - 2, COLORS.ally));
-    me.add(this.add.circle(0, 0, T / 2 - 1).setStrokeStyle(2, 0xffffff));
+    // 自分（二頭身のハルト。右向きの絵を、左へ行く時は左右を返す）。足もとをマスの下の端に
+    const hero = this.hero;
+    const footY = (y: number) => cellY(y) + T / 2 - 1;
+    const me = this.add.sprite(cellX(s.x), footY(s.y), hero.key, hero.idleFrame).setOrigin(hero.originX, hero.originY).setScale(hero.scale).setFlipX(this.facing === 'left');
     layer.add(me);
-    if (before && (before.x !== s.x || before.y !== s.y)) {
-      me.setPosition(cellX(before.x), cellY(before.y));
-      this.tweens.add({ targets: me, x: cellX(s.x), y: cellY(s.y), duration: MOVE_MS });
+    if (dig) {
+      me.setPosition(cellX(before?.x ?? s.x), footY(before?.y ?? s.y)).play(hero.anim(dig.dir === 'down' ? 'digDown' : dig.dir === 'up' ? 'climb' : 'digSide'));
+      if (!moved) me.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => me.setFrame(hero.idleFrame));
+    }
+    if (before && moved) {
+      me.setPosition(cellX(before.x), footY(before.y));
+      this.tweens.add({
+        targets: me,
+        x: cellX(s.x),
+        y: footY(s.y),
+        duration: MOVE_MS,
+        delay,
+        onStart: () => me.play(hero.anim(s.y < before.y ? 'climb' : 'walk')),
+        onComplete: () => me.stop().setFrame(hero.idleFrame),
+      });
     }
     // 見える範囲がずれた時：地面ごと前の位置に置いて、今の位置へずらす
     if (before) {
       const was = this.viewTopOf(before);
       if (was !== top) {
         layer.y = (top - was) * T;
-        this.tweens.add({ targets: layer, y: 0, duration: MOVE_MS });
+        this.tweens.add({ targets: layer, y: 0, duration: MOVE_MS, delay });
       }
     }
     // 動ける上下左右のマスに枠（タップで、そのマスへ）
@@ -235,6 +279,7 @@ export class SandBottomScene extends Phaser.Scene {
         this.root.add(frame);
       }
     }
+    return delay + (moved ? MOVE_MS : 0);
   }
 
   private drawHud(): void {
@@ -317,51 +362,62 @@ export class SandBottomScene extends Phaser.Scene {
   /** 動いている間は受け付けない（動き終わったら moving を戻す。押したままなら update が次へ進める） */
   private tryStep(dir: DigDir): void {
     if (this.overlay || this.moving || this.s.outcome !== 'diving') return;
-    this.step(dir);
+    const ms = this.step(dir);
     if (!this.moving) return;
-    this.time.delayedCall(MOVE_MS + REPEAT_MS, () => (this.moving = false));
+    this.time.delayedCall(ms + REPEAT_MS, () => (this.moving = false));
   }
 
   update(): void {
     if (this.held && !this.moving && !this.overlay) this.tryStep(this.held);
   }
 
-  private step(dir: DigDir): void {
+  /** 1手進める。動きにかかる時間（ミリ秒）を返す（動かない時は 0） */
+  private step(dir: DigDir): number {
     const before = this.s;
+    if (dir === 'left' || dir === 'right') this.facing = dir;
     const r = stepDig(SAND_BOTTOM, before, dir);
     const e = r.event;
     if (e.type === 'chest') {
       this.release();
+      this.render();
       this.showChest(e.cell);
-      return;
+      return 0;
     }
     if (e.type === 'guard') {
       this.release();
+      this.render();
       this.showFoe('guard', e.cell, e.battle, false);
-      return;
+      return 0;
     }
+    // 掘ったか（行き先のブロックが、この手で変わった）
+    const [dx, dy] = DIR_STEP[dir];
+    const tx = before.x + dx;
+    const ty = before.y + dy;
+    const cell = ty * before.width + tx;
+    const was = before.tiles[cell];
+    const dig: DigAnim | undefined = r.state !== before && isSolid(was) && r.state.tiles[cell] !== was ? { x: tx, y: ty, tile: was, dir } : undefined;
     if (e.type === 'roamer') {
       this.release();
       // 自分から入った時は戻れる。追いつかれた時（動いた後）は戦うしかない
       const caught = r.state !== before;
       this.s = r.state;
-      this.render(before);
+      const ms = this.render(before, dig);
       this.moving = true;
-      this.time.delayedCall(MOVE_MS + 40, () => {
+      this.time.delayedCall(ms + 40, () => {
         this.moving = false;
         this.showFoe('roamer', e.id, e.battle, caught);
       });
-      return;
+      return ms + 40;
     }
     this.s = r.state;
     this.message = this.eventText(e);
     if (e.type === 'blocked') {
       this.release();
       this.render();
-      return;
+      return 0;
     }
     this.moving = true;
-    this.render(before);
+    return this.render(before, dig);
   }
 
   private eventText(e: DigEvent): string {

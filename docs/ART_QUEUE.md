@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：9 枚**（済んだ絵 198 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：10 枚**（済んだ絵 198 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -13,6 +13,7 @@
 - [Q. だいち・さきの描き直し（けんたと見分けやすく）](#q-だいちさきの描き直しけんたと見分けやすく)：2 枚
 - [R. 洋服の小夜子（試着室）](#r-洋服の小夜子試着室)：3 枚
 - [S. とうや・しおりのまばたき・口パク用](#s-とうやしおりのまばたき口パク用)：4 枚
+- [T. 砂の底を掘る、二頭身のハルト](#t-砂の底を掘る二頭身のハルト)：1 枚
 
 ### Q. だいち・さきの描き直し（けんたと見分けやすく）
 
@@ -140,6 +141,29 @@ Change only the eyes: gently close both eyes, as in the middle of a natural blin
 ```
 Edit the attached image. Keep everything exactly the same: the same character, the same smiling expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
+```
+
+### T. 砂の底を掘る、二頭身のハルト
+
+砂の底（段階210。`docs/milestones/M3_sand_bottom.md` の S2）で、地面を横から見て掘り進む二頭身のハルト。今はコードで描いた仮の絵（`src/scenes/digArt.ts`）。届いたら白い背景を抜き、`public/assets/sprites/dig_hero.webp` にして台帳に id `sprite.dig_hero` で足し、砂の底に入る前に読む（マス目どおり4行×3列に切るのはゲームがする）。うまくそろわなければ、行ごとに1枚ずつ作る
+
+#### 10. 掘る二頭身のハルト（4行×3列）
+
+- 添付：`public/assets/portraits/hero_smile.webp`
+- 保存名：`dig_hero.png`
+- メモ：1枚で12コマがそろわない時は、行ごとに「1 row of 3 cells」で4枚に分けて作る
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A chibi sprite sheet for a side-view 2D digging game on mobile, the same boy as in the attached reference portrait (Haruto: messy short black hair with ONE single sand-gold strand in the front bangs, warm amber eyes, white school dress shirt with a loose sand-gold necktie, open dark navy zip hoodie with dusk-orange lining, dark school trousers, white sneakers). Super-deformed proportions, about two heads tall, big head, small body, cute but not babyish. He always holds a small wooden-handled steel shovel.
+Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, his feet on the same baseline about three quarters down the cell, leaving empty space around him so the shovel never touches the cell edges.
+- Row 1: walking to the right with the shovel resting on his shoulder (left foot forward, standing, right foot forward).
+- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
+- Row 3: digging straight down (shovel raised in front of him, swinging down, shovel blade stabbing into the ground at his feet).
+- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.
 ```
 
 ## 済んだ絵
