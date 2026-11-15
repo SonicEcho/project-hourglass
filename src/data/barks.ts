@@ -14,6 +14,9 @@ export const BARK_CAST: Record<string, string> = {
   hero: 'ハルト',
   akari: 'あかり',
   mio: 'みお',
+  // 段階206：小夜子と早瀬を足した
+  sayoko: '小夜子',
+  hayase: '早瀬',
 };
 
 /** 顔の帯を出しておく時間（ミリ秒。×2・×3 ではほかの演出と同じく速くなる） */
@@ -77,5 +80,46 @@ export const BARKS: BarkTable = {
     linkCall: [{ face: '真剣', text: '{partner}、いっしょにいくよ！' }],
     linkAnswer: [{ face: '笑顔', text: 'まかせて！' }],
     victory: [{ face: '大笑い', text: '決めた！ わたしたちの勝ち！' }],
+  },
+  // 段階206：小夜子（ていねいな言葉づかい）と早瀬（口数の少ない時計職人）
+  sayoko: {
+    weak: [
+      { face: '真剣', text: 'そこ、ですわね。' },
+      { face: '微笑み', text: '見えましたわ。' },
+    ],
+    hurt: [
+      { face: '真剣', text: 'この程度……！' },
+      { face: 'さみしげ', text: 'まだ、倒れるわけには。' },
+    ],
+    allyDown: [
+      { face: '驚き', text: '{name}さま！' },
+      { face: '真剣', text: '{name}さま、お気を確かに！' },
+    ],
+    linkCall: [{ face: '真剣', text: '{partner}さま、参ります！' }],
+    linkAnswer: [{ face: '微笑み', text: 'お供いたします。' }],
+    victory: [
+      { face: '微笑み', text: 'お見事でした、皆さま。' },
+      { face: '笑顔', text: '今夜は、いい夜ですね。' },
+    ],
+  },
+  hayase: {
+    weak: [
+      { face: '通常', text: 'そこが狂ってる。' },
+      { face: '考える', text: '……合ったな。' },
+    ],
+    hurt: [
+      { face: '怒り', text: 'ちっ……やるな。' },
+      { face: '通常', text: 'まだ止まらん。' },
+    ],
+    allyDown: [
+      { face: '驚き', text: '{name}！' },
+      { face: '怒り', text: 'おい、{name}！ 寝るな！' },
+    ],
+    linkCall: [{ face: '通常', text: '{partner}、合わせろ。' }],
+    linkAnswer: [{ face: '通常', text: '……わかった。' }],
+    victory: [
+      { face: '通常', text: '……済んだな。' },
+      { face: '苦笑い', text: '年寄りを働かせるな。' },
+    ],
   },
 };
