@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { DigTile } from '../core';
-import { SAND_BOTTOM, SAND_BOTTOM_COLORS } from '../data';
+import { SAND_BOTTOM_COLORS } from '../data';
 import { hasImage } from '../assets/loader';
 import { RENDER_SCALE } from '../ui/theme';
 
@@ -389,7 +389,8 @@ export function ensureDigTiles(scene: Phaser.Scene): void {
   if (scene.textures.exists(TILES_KEY)) return;
   const R = RENDER_SCALE;
   const S = T * R;
-  const layers = SAND_BOTTOM.layers.map((l) => l.id);
+  // 段階212：まだ開いていない章の層の帯も、はじめから全部作る
+  const layers = Object.keys(SAND_BOTTOM_COLORS);
   const rows = layers.length * LAYER_ARTS.length + 1;
   const cols = Math.max(VARIANTS, SINGLE_ARTS.length);
   const tex = scene.textures.createCanvas(TILES_KEY, cols * S, rows * S);
