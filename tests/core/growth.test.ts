@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   applyGrowth,
   checkGrowthMap,
-  renameNode,
   battleReward,
   createGrowth,
   findNode,
@@ -190,7 +189,6 @@ describe('星図の書き間違いの検査と、前の id の付け替え（段
       { id: 'd', x: 200, y: 60, chapter: 2, kind: 'skill' as const, skillId: 'fire' },
     ],
     edges: [['a', 'b'], ['b', 'c'], ['c', 'd'], ['c', 'x'], ['a', 'b']] as [string, string][],
-    renamed: { n8_3: 'a' },
   };
 
   it('知らない星への道・同じ道・近すぎる星・行き止まりの小さな能力値を見つける', () => {
@@ -210,15 +208,5 @@ describe('星図の書き間違いの検査と、前の id の付け替え（段
     ]);
     // 将来の星座へつなぐ場所は、行き止まりでも小さな能力値でよい
     expect(checkGrowthMap(cut, { minGap: 34, frontier: ['b', 'c'] }).filter((e) => e.startsWith('行き止まり'))).toEqual([]);
-  });
-
-  it('前の id は付け替える。知らない id はそのまま', () => {
-    expect(renameNode(tiny, 'n8_3')).toBe('a');
-    expect(renameNode(tiny, 'zzz')).toBe('zzz');
-    // 本物の星図：格子の星図の48マスは、全部どれかの星に付け替わる（出発点は出発点に）
-    expect(Object.keys(GROWTH_MAP.renamed ?? {})).toHaveLength(48);
-    expect(renameNode(GROWTH_MAP, 'n8_3')).toBe('altair');
-    expect(renameNode(GROWTH_MAP, 'n5_0')).toBe('vega');
-    expect(renameNode(GROWTH_MAP, 'n5_6')).toBe('sualocin');
   });
 });

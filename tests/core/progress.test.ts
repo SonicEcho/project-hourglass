@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Story } from '../../src/core';
-import { advance, allBattles, battleNumber, findBattle, normalizeProgress, placeOf, progressAt, startProgress, V1_AREA_ID, V1_CHAPTER_ID, v1BattleId } from '../../src/core';
-import { CAMPAIGN, PROTOTYPE_AREA_ID, PROTOTYPE_CHAPTER_ID, STORY } from '../../src/data';
+import { advance, allBattles, battleNumber, findBattle, normalizeProgress, placeOf, progressAt, startProgress } from '../../src/core';
+import { CAMPAIGN, STORY } from '../../src/data';
 
 /** 2章・3区画の物語（テスト用） */
 const story: Story = [
@@ -69,10 +69,5 @@ describe('進み具合：今の試作のデータ', () => {
     const last = progressAt(STORY, CAMPAIGN.length - 1);
     expect(placeOf(STORY, last)!.battle.boss).toBe(true);
     expect(advance(STORY, last).event).toBe('storyClear');
-  });
-
-  it('版1のセーブの章・区画・戦闘の名前が、今の試作のデータと合っている（移行が正しく働くように）', () => {
-    expect([PROTOTYPE_CHAPTER_ID, PROTOTYPE_AREA_ID]).toEqual([V1_CHAPTER_ID, V1_AREA_ID]);
-    CAMPAIGN.forEach((b, i) => expect(b.id).toBe(v1BattleId(i)));
   });
 });

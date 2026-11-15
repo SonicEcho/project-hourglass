@@ -1,7 +1,6 @@
 import type { LibraryState } from '../core';
-import { albumFromIds } from '../core';
-import { CHAIN_START_ALBUM, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ITEMS, LIBRARY_SNAPS } from '../data';
-import { legacyLibrary, readSave, run } from './run';
+import { LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ITEMS, LIBRARY_SNAPS } from '../data';
+import { readSave, run } from './run';
 
 // ライブラリの画面が読む記録（段階167）。遊んでいる途中は今の周回、タイトルから開いた時はセーブから読む
 
@@ -18,8 +17,7 @@ export function libraryView(): LibraryView {
   const r = readSave();
   if (r?.ok) {
     const s = r.save.run;
-    const album = s.chainAlbum ?? albumFromIds(CHAIN_START_ALBUM);
-    return { lib: s.library ?? legacyLibrary(album, s.armory), snapOwned: album.owned, items: s.armory.items };
+    return { lib: s.library, snapOwned: s.chainAlbum.owned, items: s.armory.items };
   }
   return { lib: run.library, snapOwned: run.chainAlbum.owned, items: {} };
 }

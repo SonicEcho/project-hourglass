@@ -5,16 +5,13 @@ import type { AreaDef, ExploreState } from './explore';
 import { normalizeExplore } from './explore';
 import type { Flow } from './flow';
 import { dayAt, findEvent, firstEventId } from './flow';
-import type { ChapterGauge } from './lineup';
-import { LINK_GAUGE_MAX } from '../data/constants';
 import type { GrowthMap, GrowthState } from './growth';
-import { createGrowth, renameNode } from './growth';
+import { createGrowth } from './growth';
 import { LOADOUT_MAX, type Rotation } from './navi';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
 import { getPlaceError, placePart } from './navi';
 import type { Progress, Story } from './progress';
-import type { CardDef } from './types';
-import { findBattle, normalizeProgress } from './progress';
+import { normalizeProgress } from './progress';
 import type { ArmoryState, EvolutionStep, WeaponData, WeaponParams, WeaponState } from './weapon';
 import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 
@@ -22,48 +19,32 @@ import { capItems, createArmory, naviDataWithWeapons } from './weapon';
 // セーブの中身（文字列）を作る・読む・古い版から直す・今のデータに合わせて整える、だけを受け持つ。
 
 /** セーブの形の版。形を変えたら番号を上げ、MIGRATIONS に古い版から直す手順を足す */
-export const SAVE_VERSION = 16;
-
-/** 試作の1章・1区画（5戦）の id（版1のセーブを版2に直す時に使っていた。版3からは古いセーブを引き継がない） */
-export const V1_CHAPTER_ID = 'prototype';
-export const V1_AREA_ID = 'trial';
-export const v1BattleId = (stage: number): string => `battle${stage + 1}`;
-
-/** 版7までの「つづく」（M1 の終わり）の出来事の id と、版8でその続きにあたる出来事の id（段階34） */
-export const V7_END_EVENT = 'to_be_continued';
-// 段階63で 1-1 を3日に広げたので、M1 の終わりの続き（1-2 の前）は4日目の扉
-export const V7_END_NEXT = 'day4';
+export const SAVE_VERSION = 17;
 
 /** 周回の状態のうち、セーブするもの */
 export interface RunSnapshot {
   seed: number;
   fixed: boolean;
-  /** 次に戦う場所と何日目か（段階13。版1では stage：次に戦う戦闘の番号） */
+  /** 次に戦う場所と何日目か（段階13） */
   progress: Progress;
   growth: GrowthState;
   navi: NaviState;
-  /** まだ受け取っていないギアの報酬（勝った戦闘の名前。版1では戦闘の番号） */
-  pendingReward: string | null;
   armory: ArmoryState;
-  /** 物語の流れの、今の出来事（段階23。版3から） */
+  /** 物語の流れの、今の出来事（段階23） */
   event: string;
-  /** 物語で覚えた値（プロローグで選んだ金魚の名前・景品など。段階23。版3から） */
+  /** 物語で覚えた値（プロローグで選んだ金魚の名前・景品など。段階23） */
   vars: Record<string, string>;
-  /** 探索の状態（探索の途中の時だけ。段階25。版4から） */
+  /** 探索の状態（探索の途中の時だけ。段階25） */
   explore: ExploreState | null;
-  /** 戦闘をまたいで引き継ぐ連携技のつながりゲージ（章の中だけ。段階26の調整3。版5から） */
-  linkGauge: ChapterGauge | null;
-  /** 持ち主に返した盗まれた時間（区画の id。返した順。段階28。版7から） */
+  /** 持ち主に返した盗まれた時間（区画の id。返した順。段階28） */
   returned: string[];
-  /** 持っているスナップと、アルバムの中身（段階41。版10から） */
-  album: AlbumState;
-  /** 戦闘中（段階44。版12から）：閉じたら、この戦闘の始めから続ける。戦闘の外では null */
+  /** 戦闘中（段階44）：閉じたら、この戦闘の始めから続ける。戦闘の外では null */
   battle: SavedBattle | null;
-  /** 新しい戦闘のアルバム（段階163。同じ版のまま足した。古いセーブは最初のアルバム） */
-  chainAlbum?: AlbumState;
-  /** ライブラリの記録（段階167。同じ版のまま足した。古いセーブにはない） */
-  library?: LibraryState;
-  /** 遊ぶ人が選んだ戦闘の並び（段階91a。版13から）。空なら章の並びのまま */
+  /** 持っているスナップと、アルバムの中身（新しい戦闘のアルバム。段階163。版17 から必ずある） */
+  chainAlbum: AlbumState;
+  /** ライブラリの記録（段階167。版17 から必ずある） */
+  library: LibraryState;
+  /** 遊ぶ人が選んだ戦闘の並び（段階91a）。空なら章の並びのまま */
   party: string[];
 }
 
@@ -96,15 +77,12 @@ export interface SaveContext {
   areas: Record<string, AreaDef>;
   /** なくなった出来事 → 代わりに続ける出来事（段階40。仮の「2-3：返す」を、カイの会話に替えた） */
   renamedEvents?: Record<string, string>;
-  /** スナップ（id → 中身）と、最初の持ち物とアルバム（段階41） */
-  cards: Record<string, CardDef>;
-  initialAlbum: AlbumState;
-  /** 新しい戦闘のスナップと、最初のアルバム（段階163。書かなければ新しい戦闘のアルバムを読まない） */
-  chainCards?: Record<string, { id: string }>;
-  initialChainAlbum?: AlbumState;
-  chainAlbumRules?: { size: number; copyMax: number };
-  /** ライブラリに載る物（段階167。書かなければライブラリを読まない） */
-  library?: LibraryContext;
+  /** 新しい戦闘のスナップと、最初のアルバム、アルバムの決まり（段階163） */
+  chainCards: Record<string, { id: string }>;
+  initialChainAlbum: AlbumState;
+  chainAlbumRules: { size: number; copyMax: number };
+  /** ライブラリに載る物（段階167） */
+  library: LibraryContext;
   /** 区画の戦闘の id（段階44。戦闘中の印を整える。書かなければ、戦闘中の印は捨てる） */
   battleIds?: readonly string[];
 }
@@ -114,120 +92,11 @@ export type SaveMigrations = Record<number, (raw: Record<string, unknown>) => Re
 
 /**
  * 古い版から直す手順。
- * 版1・2（試作の5戦だけのセーブ）は、スライスの流れ（段階23）には引き継がない（開発者と決めた）。手順を置かないので、読めない古いセーブとして扱う
+ * 段階205（段取りの段階G6b）：版17 で、古い戦闘だけが使っていた物（古いアルバム・つながりゲージ・ギアの報酬の受け取り待ち）をセーブから外し、
+ * 版3〜16 を直す手順は消した。前の版のセーブは、直す手順がない古いセーブとして、読まずにはじめから（開発者と決めた。今までのセーブは使っていないので、今後を優先）。
+ * 次に形を変える時は、ここに MIGRATIONS[17] から足す
  */
-export const MIGRATIONS: SaveMigrations = {
-  // 版3 → 版4（段階25）：探索の状態を足す（版3の時は、まだ探索がなかった）
-  3: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, explore: null } } : raw),
-  // 版4 → 版5（段階26の調整3）：引き継ぐつながりゲージを足す（版4の時は、戦闘ごとに0から）
-  4: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, linkGauge: null } } : raw),
-  // 版5 → 版6（段階27b）：素材を直接刻む形になった。武器の刻印（absorbed）は、整える時に0で補う。
-  // 今のデータにない素材（縁日の古い素材など）は、整える時に捨てる
-  5: (raw) => raw,
-  // 版6 → 版7（段階28）：返した時間（returned）を足す。探索の状態のコマは、整える時に0で補う
-  6: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, returned: [] } } : raw),
-  // 版7 → 版8（段階34）：流れを2章の終わりまで伸ばし、「つづく」の出来事が M1 の終わりから2章の終わり（ch2_end）に替わった。
-  // M1 の「つづく」にいたセーブは、その続きの扉から始める（段階63から4日目）
-  7: (raw) => (isObject(raw.run) && raw.run.event === V7_END_EVENT ? { ...raw, run: { ...raw.run, event: V7_END_NEXT } } : raw),
-  // 版8 → 版9（段階47）：区画が部屋をつないだ形になり、探索の状態に今いる部屋（room・checkpointRoom・visited）を足した。
-  // 前の版の探索の途中は、部屋が1つの区画として、整える時に最初の部屋で補う
-  8: (raw) => raw,
-  // 版9 → 版10（段階41）：持っているスナップとアルバムの中身（album）を足した。前の版のセーブは、整える時に最初のアルバムで補う
-  9: (raw) => raw,
-  // 版10 → 版11（段階42）：武器の進化が1回きりから進化ツリーになり、evolvedTo（進化先1つ）を path（通った進化先と型の列）に替えた。
-  // 前の版で進化していた武器は、その進化先の1つ目の型を選んだことにする（1つ目の型は、前と同じくブリッジの行が横に伸びる）
-  10: (raw) => {
-    if (!isObject(raw.run) || !isObject(raw.run.armory) || !isObject(raw.run.armory.weapons)) return raw;
-    const weapons: Record<string, unknown> = {};
-    for (const [owner, w] of Object.entries(raw.run.armory.weapons)) {
-      if (!isObject(w)) {
-        weapons[owner] = w;
-        continue;
-      }
-      const { evolvedTo, ...rest } = w;
-      weapons[owner] = { ...rest, path: typeof evolvedTo === 'string' ? [{ id: evolvedTo, style: 0 }] : [] };
-    }
-    return { ...raw, run: { ...raw.run, armory: { ...raw.run.armory, weapons } } };
-  },
-  // 版11 → 版12（段階44）：戦闘中の印（battle）を足した。前の版は戦闘中ではないとする
-  11: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, battle: null } } : raw),
-  // 版12 → 版13（段階91a）：選んだ戦闘の並び（party）を足した。前の版は選んでいない
-  12: (raw) => (isObject(raw.run) ? { ...raw, run: { ...raw.run, party: [] } } : raw),
-  // 版13 → 版14（段階194（段階G3b））：星図を全体図の3版に入れ替えた。開けた星は、使った星の砂を全部返して、まっさらにする（開発者と決めた）
-  13: (raw) => {
-    if (!isObject(raw.run) || !isObject(raw.run.growth) || !isInt(raw.run.growth.points) || !isObject(raw.run.growth.opened)) return raw;
-    const growth = refundV13Growth(raw.run.growth.points, raw.run.growth.opened);
-    return { ...raw, run: { ...raw.run, growth } };
-  },
-  // 版14 → 版15（段階197・段階G4b）：武器の進化ツリーを入れ替えた。進化した武器は、進化を外して進化前に戻す（レベルと刻んだ能力値は残す。開発者と決めた）
-  14: (raw) => (isObject(raw.run) && isObject(raw.run.armory) ? { ...raw, run: { ...raw.run, armory: resetV14Evolutions(raw.run.armory) } } : raw),
-  // 版15 → 版16（段階200・段階G5b）：ギアを入れ替えた。新しい戦闘にないギアは、近いギアに置き換える（開発者と決めた）。盤から外す（形が変わるため）
-  15: (raw) => (isObject(raw.run) && isObject(raw.run.navi) ? { ...raw, run: { ...raw.run, navi: renameV15Gears(raw.run.navi) } } : raw),
-};
-
-/** 版15 のギアのうち、なくなった物の置き換え先（段階200） */
-export const V15_GEAR_RENAMES: Record<string, string> = { speedMemory: 'mpMemory', oneMoreDraw: 'snapBoost', batonReceiver: 'effectBoost' };
-
-/** 版15 のなくなったギアを、置き換え先にする（段階200。置き換えたギアは盤から外す） */
-export function renameV15Gears(navi: Record<string, unknown>): Record<string, unknown> {
-  if (!Array.isArray(navi.parts)) return navi;
-  const parts = navi.parts.map((p) => {
-    if (!isObject(p) || typeof p.partId !== 'string' || !(p.partId in V15_GEAR_RENAMES)) return p;
-    return { ...p, partId: V15_GEAR_RENAMES[p.partId], placement: null };
-  });
-  return { ...navi, parts };
-}
-
-/** 版14 の武器の進化を外す（段階197）。武器の状態のほかの物（経験値・能力値・刻印）は残す */
-export function resetV14Evolutions(armory: Record<string, unknown>): Record<string, unknown> {
-  if (!isObject(armory.weapons)) return armory;
-  const weapons = Object.fromEntries(Object.entries(armory.weapons).map(([k, w]) => [k, isObject(w) ? { ...w, path: [] } : w]));
-  return { ...armory, weapons };
-}
-
-/** 版13 の星図の星（id → 効果。段階194 で入れ替える前の物。使った星の砂を返すために、値段を数える） */
-const V13_STARS: Record<string, string> = {
-  altair: 'start:hero', tarazed: 'skill:doubleSlash', alshain: 'skill:fire', muAql: 'a', deltaAql: 'h', zetaAql: 'a', epsAql: 'h', lambdaAql: 'a', iotaAql: 'D', etaAql: 'a', thetaAql: 'h',
-  vega: 'start:akari', epsLyr: 'skill:cure', zetaLyr: 'm', deltaLyr: 'p', sulafat: 'm', sheliak: 'skill:care', thetaLyr: 'skill:ice', kappaLyr: 'h', anser: 'p', alphaSge: 'a', betaSge: 'p', deltaSge: 's', gammaSge: 's',
-  sualocin: 'start:mio', rotanev: 'skill:thunder', gammaDel: 's', deltaDel: 's', epsDel: 'skill:inspiration', etaDel: 's', kappaDel: 'd',
-  deneb: 'skill:fira', sadr: 'A', etaCyg: 'h', phiCyg: 'd', albireo: 's', deltaCyg: 'm', thetaCyg: 'm', iotaCyg: 'P', kappaCyg: 'skill:blizzara', gienah: 'H', c41: 'M', zetaCyg: 'skill:thundara', tauCyg: 's', nuCyg: 's', xiCyg: 'D', rhoCyg: 'S', omiCyg: 'p',
-  piHer: 'start:sayoko', etaHer: 'a', zetaHer: 'h', epsHer: 'A', rhoHer: 'd', thetaHer: 's', iotaHer: 'S', deltaHer: 'H', muHer: 'P', betaHer: 'skill:doubleSlash', alphaHer: 'M',
-  alderamin: 'start:hayase', muCep: 'm', etaCep: 'p', thetaCep: 'M', alfirk: 'skill:thundara', iotaCep: 'H', zetaCep: 'd', epsCep: 'S', deltaCep: 'A',
-};
-/** 版13 の仲間が最初から覚えていた魔法・スキル（その星は「通るだけ」の値段だった） */
-const V13_START_SKILLS: Record<string, string[]> = {
-  hero: ['fire', 'breakSlash'],
-  akari: ['care', 'careAll', 'ice'],
-  mio: ['thunder', 'shuffle', 'swap'],
-  sayoko: ['kabutoWari', 'tsukiBarai'],
-  hayase: ['yakiire', 'reikyaku', 'tsuden', 'short'],
-};
-
-/**
- * 版13 の星図で開けた星の、使った星の砂を返す（段階194）。返した後の星の砂と、まっさらな開けた星（出発点は整える時に補う）。
- * 値段は版13 のまま：能力値3・大6・魔法・スキル8、もう覚えている魔法・スキルとほかの仲間の出発点は「通るだけ」3。知らない星は3
- */
-export function refundV13Growth(points: number, opened: Record<string, unknown>): { points: number; opened: Record<string, string[]> } {
-  let back = 0;
-  for (const [charId, list] of Object.entries(opened)) {
-    if (!Array.isArray(list)) continue;
-    const known = new Set(V13_START_SKILLS[charId] ?? []);
-    for (const id of list) {
-      const code = typeof id === 'string' ? V13_STARS[id] : undefined;
-      if (code === undefined) {
-        back += 3;
-        continue;
-      }
-      const [kind, value] = code.split(':');
-      if (kind === 'start') back += value === charId ? 0 : 3;
-      else if (kind === 'skill') {
-        back += known.has(value) ? 3 : 8;
-        known.add(value);
-      } else back += code === code.toUpperCase() ? 6 : 3;
-    }
-  }
-  return { points: Math.max(0, points) + back, opened: {} };
-}
+export const MIGRATIONS: SaveMigrations = {};
 
 /** old は、直す手順がない古い版のセーブ（壊れているのではないので、タイトルでは知らせずに片付ける） */
 export type LoadResult = { ok: true; save: SaveData } | { ok: false; error: string; old?: true };
@@ -266,9 +135,8 @@ export function parseSave(text: string, ctx: SaveContext, migrations: SaveMigrat
  * 形がまったく違う（数のはずが文字など）時は null
  */
 export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): RunSnapshot | null {
-  const { seed, fixed, pendingReward } = raw;
+  const { seed, fixed } = raw;
   if (!isInt(seed) || typeof fixed !== 'boolean' || !isObject(raw.progress)) return null;
-  if (pendingReward !== null && typeof pendingReward !== 'string') return null;
   if (!isObject(raw.growth) || !isObject(raw.navi) || !isObject(raw.armory)) return null;
   if (typeof raw.event !== 'string' || !isObject(raw.vars)) return null;
   // なくなった出来事は代わりの出来事から。今の流れにない出来事なら、最初の出来事から
@@ -286,20 +154,14 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     progress: { ...normalizeProgress(ctx.story, raw.progress as Partial<Progress>), day: dayAt(ctx.flow, event) },
     growth,
     navi,
-    // 今のデータにない戦闘の報酬は捨てる
-    pendingReward: pendingReward !== null && findBattle(ctx.story, pendingReward) ? pendingReward : null,
     armory,
     event,
     vars: stringsOf(raw.vars),
     explore: sanitizeExplore(raw.explore, ctx),
-    linkGauge: sanitizeGauge(raw.linkGauge, ctx),
     // 今の区画にないものと、重なりは捨てる
     returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
-    album: sanitizeAlbum(raw.album, ctx.cards, ctx.initialAlbum),
-    ...(ctx.chainCards && ctx.initialChainAlbum
-      ? { chainAlbum: sanitizeAlbum(raw.chainAlbum, ctx.chainCards, ctx.initialChainAlbum, ctx.chainAlbumRules?.size, ctx.chainAlbumRules?.copyMax) }
-      : {}),
-    ...(ctx.library && raw.library !== undefined ? { library: sanitizeLibrary(raw.library, ctx.library) } : {}),
+    chainAlbum: sanitizeAlbum(raw.chainAlbum, ctx.chainCards, ctx.initialChainAlbum, ctx.chainAlbumRules.size, ctx.chainAlbumRules.copyMax),
+    library: sanitizeLibrary(raw.library, ctx.library),
     battle: sanitizeBattle(raw.battle, ctx),
     // 知らない仲間と、重なりは捨てる（段階91a）
     party: Array.isArray(raw.party) ? [...new Set(raw.party.filter((x): x is string => typeof x === 'string' && ctx.characterIds.includes(x)))] : [],
@@ -314,23 +176,14 @@ function sanitizeBattle(raw: unknown, ctx: SaveContext): SavedBattle | null {
   return { battle: raw.battle, win: { key: raw.win.key, data: { ...raw.win.data } }, lose: { key: raw.lose.key, data: { ...raw.lose.data } } };
 }
 
-/** 引き継ぐつながりゲージ：今の流れにない章・形の違うものは捨て、量は 0〜満タンにおさめる */
-function sanitizeGauge(raw: unknown, ctx: SaveContext): ChapterGauge | null {
-  if (!isObject(raw) || typeof raw.chapter !== 'string' || typeof raw.value !== 'number' || !Number.isFinite(raw.value)) return null;
-  if (!ctx.flow.some((c) => c.id === raw.chapter)) return null;
-  return { chapter: raw.chapter, value: Math.max(0, Math.min(LINK_GAUGE_MAX, Math.round(raw.value))) };
-}
-
 function sanitizeGrowth(raw: Record<string, unknown>, ctx: SaveContext): GrowthState | null {
   if (!isInt(raw.points) || !isObject(raw.opened)) return null;
   const fresh = createGrowth(ctx.growthMap, ctx.characterIds, ctx.startPoints);
   const nodeIds = new Set(ctx.growthMap.nodes.map((n) => n.id));
-  // 段階56：格子の星図のマスの id は、同じ効果の星へ付け替える（セーブの版は変えない）
-  const rename = (id: unknown): unknown => (typeof id === 'string' ? renameNode(ctx.growthMap, id) : id);
   const opened: Record<string, string[]> = {};
   for (const id of ctx.characterIds) {
     const list = raw.opened[id];
-    const kept = Array.isArray(list) ? list.map(rename).filter((n): n is string => typeof n === 'string' && nodeIds.has(n)) : [];
+    const kept = Array.isArray(list) ? list.filter((n): n is string => typeof n === 'string' && nodeIds.has(n)) : [];
     // 出発点は必ず開いている
     opened[id] = kept.length > 0 ? [...new Set([...fresh.opened[id], ...kept])] : fresh.opened[id];
   }
@@ -345,7 +198,7 @@ function sanitizeArmory(raw: Record<string, unknown>, data: WeaponData): ArmoryS
     const w = raw.weapons[owner];
     weapons[owner] = isObject(w) && w.defId === base.defId ? sanitizeWeapon(w, base, data) : base;
   }
-  // ポーチの消費アイテムは持てる数にそろえる（段階51より前のセーブは、いくつでも持てた）
+  // 持てる数のある物は、持てる数にそろえる（段階204 で消費アイテムをなくしたので、今は持てる数のある物はない）
   return capItems(data, { weapons, items: countsOf(raw.items, data.items), fragments: countsOf(raw.fragments, data.fragments) }).armory;
 }
 
