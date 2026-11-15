@@ -5,10 +5,11 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { SAND_BOTTOM, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { waitImages } from '../ui/waitImages';
+import { isSettled } from '../assets/loader';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DigHeroSprite } from './digArt';
-import { DIG_CRACK_FRAME, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
+import { DIG_CRACK_FRAME, DIG_HERO_ART, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
 import { currentParty, run, saveRun, setStoryVars, storyBattleLineup } from './run';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2・段階209 本編の入口。docs/milestones/M3_sand_bottom.md）。横から見た地面を、1マスずつ掘り進む。
@@ -128,6 +129,14 @@ export class SandBottomScene extends Phaser.Scene {
     }
     this.render();
     if (this.s.outcome !== 'diving') this.showResult();
+    // 掘る人の絵がまだ読めていなければ（デバッグの入口から入った時・裏の読み込みが間に合わない時）、ここで待って描き直す。
+    // 待つ間は、読み込みの画面が上に出る（段階210。開発者の声：はじめに仮の絵が出た）
+    if (!isSettled(this, DIG_HERO_ART)) {
+      waitImages(this, [DIG_HERO_ART], () => {
+        this.hero = ensureDigHero(this);
+        if (!this.overlay) this.render();
+      });
+    }
   }
 
   /**
