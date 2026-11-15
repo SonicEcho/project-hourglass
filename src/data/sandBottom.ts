@@ -1,4 +1,4 @@
-import type { DigLayerDef, DigRarity, DigWorldDef } from '../core/dig';
+import type { DigLayerDef, DigRarity, DigSkillId, DigToolId, DigWorldDef } from '../core/dig';
 import { huntGearKey } from '../core/hunt';
 import { lostStatus } from '../core/lost';
 import { AREA_BATTLES, AREAS } from './areas';
@@ -42,14 +42,14 @@ function bandLord(areaIds: string[]): string | undefined {
     .find((b) => AREA_BATTLES[b]);
 }
 
-/** 光る物の id（段階213）：記憶の宝箱 'gear:<採取の場所>'、落とし物 'lost:<落とし物>' */
+/** 光る物の id（段階213）：記憶の宝箱 'gear:<採取の場所>'、落とし物 'lost:<落とし物>'。段階214：道具の包み 'tool:<道具>'（仕組みが置く） */
 export const relicGear = (gatherId: string) => `gear:${gatherId}`;
 export const relicLost = (lostId: string) => `lost:${lostId}`;
 
 /** 光る物の id を読む（段階213） */
-export function parseRelic(id: string): { kind: 'gear' | 'lost'; ref: string } | null {
-  const m = /^(gear|lost):(.+)$/.exec(id);
-  return m ? { kind: m[1] as 'gear' | 'lost', ref: m[2] } : null;
+export function parseRelic(id: string): { kind: 'gear' | 'lost' | 'tool'; ref: string } | null {
+  const m = /^(gear|lost|tool):(.+)$/.exec(id);
+  return m ? { kind: m[1] as 'gear' | 'lost' | 'tool', ref: m[2] } : null;
 }
 
 /** 記憶の宝箱に入るギア（段階213。狩りの採取の場所のギア） */
@@ -80,6 +80,27 @@ export interface DigColors {
   air: number;
   loose: number;
 }
+
+/** 砂の底の道具（段階214。S7a。数値は仮）。戦闘には持ち込まない。交換所で記憶の欠片で買える */
+export interface DigToolDef {
+  id: DigToolId;
+  name: string;
+  note: string;
+  price: number;
+}
+
+export const DIG_TOOLS: Record<DigToolId, DigToolDef> = {
+  blast: { id: 'blast', name: '爆ぜる石', note: 'まわり8マスをまとめて掘る（砂は1回分。岩は残る）', price: 3 },
+  ladder: { id: 'ladder', name: '縄ばしご', note: 'この回は、帰り道に要る砂が半分', price: 3 },
+  bell: { id: 'bell', name: '砂嵐よけの鈴', note: '10手のあいだ、砂嵐が動かず、湧かない', price: 2 },
+  shard: { id: 'shard', name: '砂時計のかけら', note: '砂時計の砂 +25', price: 2 },
+};
+
+/** 持っている道具の数を覚える、物語で覚えた値の名前（段階214。セーブの形は変えない） */
+export const digToolVar = (id: string) => `dig:tool:${id}`;
+
+/** 1種類の道具を持てる数（段階214） */
+export const DIG_TOOL_OWN_MAX = 9;
 
 /** 区画ごとの帯（段階212。章の層の中を区画ごとに分ける） */
 interface DigBand {
@@ -112,8 +133,8 @@ function stratumLords(st: DigStratum): string[] {
   return st.bands.flatMap((b) => b.areas.map((a) => `${a}_boss`)).filter((b) => AREA_BATTLES[b]);
 }
 
-/** 帯1つの深さ（マス） */
-const BAND_ROWS = 12;
+/** 帯1つの深さ（マス）。段階214：開発者の声で 12 → 20 → 32（層をもっと長く） */
+const BAND_ROWS = 32;
 
 const band = (id: string, name: string, areas: string[], color: DigColors): DigBand => ({ id, name, areas, color });
 
@@ -129,7 +150,7 @@ const STRATA: DigStratum[] = [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
       band('futari', '夕暮れの二人乗り', ['a12'], { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d, loose: 0xe8c890 }),
     ],
-    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 4, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 } },
+    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 8, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 } },
   },
   {
     chapter: 'ch2',
@@ -139,7 +160,7 @@ const STRATA: DigStratum[] = [
       band('bunkasai', '最後の文化祭', ['a22'], { sand: 0xbca070, clay: 0x8a7046, rock: 0x6c6f78, air: 0x17130c, loose: 0xd6bc8c }),
       band('daseki', '最後の打席', ['a23'], { sand: 0xc49a62, clay: 0x946a40, rock: 0x6c6f78, air: 0x1a120a, loose: 0xdcb482 }),
     ],
-    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 4, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 } },
+    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 8, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 } },
   },
   {
     chapter: 'ch3',
@@ -149,7 +170,7 @@ const STRATA: DigStratum[] = [
       band('sotsugyo', '言えなかった卒業式', ['a32'], { sand: 0xb08a90, clay: 0x80606a, rock: 0x5e6068, air: 0x161012, loose: 0xcaa8ae }),
       band('taisho', '大正の祭りの夜', ['a3s1', 'a3s2'], { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18, loose: 0x9c7cac }),
     ],
-    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 4, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 } },
+    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 8, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 } },
   },
   {
     chapter: 'ch4',
@@ -158,7 +179,7 @@ const STRATA: DigStratum[] = [
       band('shiro', 'シロのいた夏', ['a41'], { sand: 0x8a9a6a, clay: 0x5e6c46, rock: 0x585c62, air: 0x0f140c, loose: 0xa6b688 }),
       band('hayase', '早瀬の時間', ['a42'], { sand: 0x6a8a8a, clay: 0x46605e, rock: 0x585c62, air: 0x0b1314, loose: 0x88a8a6 }),
     ],
-    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 4, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 } },
+    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 } },
   },
 ];
 
@@ -181,7 +202,7 @@ export function canEnterSandBottom(chapterId: string | undefined): boolean {
 }
 
 /** 砂時計の砂（段階209・212。章ごとに増え、開いている層の底まで行って探れるくらい。数値は仮） */
-export const SAND_BOTTOM_SAND_BY_CHAPTER: Record<string, number> = { ch1: 100, ch2: 140, ch3: 260, ch4: 400 };
+export const SAND_BOTTOM_SAND_BY_CHAPTER: Record<string, number> = { ch1: 200, ch2: 320, ch3: 720, ch4: 1040 };
 
 function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<string, string>>): DigWorldDef {
   const layers: DigLayerDef[] = open.flatMap((st) =>
@@ -214,6 +235,11 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
     bagMax: 10,
     // 段階212：層の境目の番人が、稀にその層の章のぬし
     lordRate: 0.15,
+    // 段階214：道具袋と、空洞に落ちている道具の包み、掘る人の技の回数
+    toolMax: 3,
+    toolRate: 0.25,
+    tools: Object.keys(DIG_TOOLS),
+    skillUses: 2,
   };
 }
 
@@ -258,6 +284,24 @@ export const SAND_BOTTOM_COLORS: Record<string, DigColors> = {
 /** いちばん深く潜った深さ（マス）を覚える、物語で覚えた値の名前（段階209） */
 export const SAND_BOTTOM_DEEPEST_VAR = 'dig:deepest';
 
+/** 掘る人の技（段階214。S7b。数値は仮。1回潜るごとに2回） */
+export interface DigSkillDef {
+  id: DigSkillId;
+  name: string;
+  note: string;
+}
+
+export const DIG_SKILLS: Record<DigSkillId, DigSkillDef> = {
+  stop: { id: 'stop', name: '時を止める', note: '3手のあいだ、砂嵐が動かず、湧かない' },
+  heal: { id: 'heal', name: '応急手当', note: 'みんなの HP が最大の3割戻る' },
+  rush: { id: 'rush', name: '突進掘り', note: '向いている方へ3マスを一気に掘って進む（砂は1回分）' },
+  slash: { id: 'slash', name: '一閃', note: '向いている方の4マスを、岩も含めて割る（砂は1回分）' },
+  rewind: { id: 'rewind', name: '巻き戻し', note: '砂時計の砂 +30' },
+};
+
+/** 応急手当で戻る HP の割合 */
+export const DIG_HEAL_SKILL_RATE = 0.3;
+
 /** 掘る人の特徴（段階211。S3。数値は仮）。掘る人は潜る前に、今の章の仲間から選ぶ。戦闘の並びとは関係ない */
 export interface DigDiggerDef {
   /** 画面に出す特徴の説明 */
@@ -270,14 +314,18 @@ export interface DigDiggerDef {
   clayOnce?: boolean;
   /** 砂嵐に勝つたびに、みんなの HP が最大のこの割合だけ戻る */
   heal?: number;
+  /** 技（段階214） */
+  skill: DigSkillId;
+  /** 「誰が掘る？」の札の色（段階214） */
+  color: number;
 }
 
 export const SAND_BOTTOM_DIGGERS: Record<string, DigDiggerDef> = {
-  hero: { note: '平均。とくに得手も不得手もない' },
-  akari: { note: '砂嵐に勝つたびに、みんなの HP が2割戻る', heal: 0.2 },
-  mio: { note: '固い土を1回で掘れる', clayOnce: true },
-  sayoko: { note: '岩を割れる（砂 6。層の境目の岩は割れない）', rockCost: 6 },
-  hayase: { note: '掘る時の砂が少ない（3 → 2）', dig: 2 },
+  hero: { note: '平均。とくに得手も不得手もない', skill: 'stop', color: 0x2a3a7a },
+  akari: { note: '砂嵐に勝つたびに、みんなの HP が2割戻る', heal: 0.2, skill: 'heal', color: 0x8a3a4a },
+  mio: { note: '固い土を1回で掘れる', clayOnce: true, skill: 'rush', color: 0x8a6a1a },
+  sayoko: { note: '岩を割れる（砂 6。層の境目の岩は割れない）', rockCost: 6, skill: 'slash', color: 0x3a2a6a },
+  hayase: { note: '掘る時の砂が少ない（3 → 2）', dig: 2, skill: 'rewind', color: 0x1f4a4a },
 };
 
 /** その人が掘る時の砂の底（特徴を数値に入れる）。知らない人は、そのまま */

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import type { ExchangeGood } from '../core';
+import type { DigToolId, ExchangeGood } from '../core';
 import { addParts, eventPassed, exchange, gainSnaps, recordLibraryFinds, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen, nextKeeperTalk } from '../core';
-import { BACKDROPS, BGM, CHAIN_ALBUM, CHAIN_SNAPS, DECOMPOSE_VAR, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { BACKDROPS, BGM, CHAIN_ALBUM, CHAIN_SNAPS, DECOMPOSE_VAR, DIG_TOOL_OWN_MAX, DIG_TOOLS, digToolVar, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -17,11 +17,12 @@ import { run, saveRun, setStoryVars, storyLineup } from './run';
 // 初めて開いた時は、ペトラの会話（exchange_intro）を先に見る。日も昼の回数も使わない
 
 const INTRO = EXCHANGE_INTRO.scene;
-type Tab = 'material' | 'gear' | 'snap';
+type Tab = 'material' | 'gear' | 'snap' | 'dig';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'material', label: '素材' },
   { id: 'gear', label: 'ギア' },
   { id: 'snap', label: 'スナップ' },
+  { id: 'dig', label: '砂の底' },
 ];
 const PER_PAGE = 7;
 const FRAGMENT_ORDER = Object.keys(FRAGMENTS);
@@ -30,29 +31,33 @@ const FRAGMENT_ORDER = Object.keys(FRAGMENTS);
 function tabOf(g: ExchangeGood): Tab {
   if (g.kind === 'gear') return 'gear';
   if (g.kind === 'snap') return 'snap';
+  if (g.kind === 'digTool') return 'dig';
   return 'material';
 }
 
 function goodName(g: ExchangeGood): string {
   if (g.kind === 'snap') return CHAIN_SNAPS[g.ref]?.name ?? g.ref;
+  if (g.kind === 'digTool') return DIG_TOOLS[g.ref as DigToolId]?.name ?? g.ref;
   return g.kind === 'gear' ? (NAVI_PARTS[g.ref as keyof typeof NAVI_PARTS]?.name ?? g.ref) : (WEAPON_DATA.items[g.ref]?.name ?? g.ref);
 }
 
 /** 持てる数（スナップ・持てる数のある物） */
 function maxOf(g: ExchangeGood): number | undefined {
   if (g.kind === 'snap') return CHAIN_ALBUM.copyMax;
+  if (g.kind === 'digTool') return DIG_TOOL_OWN_MAX;
   return g.kind === 'item' ? WEAPON_DATA.items[g.ref]?.max : undefined;
 }
 
 /** 今持っている数（素材・アイテム・スナップ） */
 function haveOf(g: ExchangeGood): number {
+  if (g.kind === 'digTool') return Number(run.vars[digToolVar(g.ref)] ?? 0);
   return g.kind === 'snap' ? (run.chainAlbum.owned[g.ref] ?? 0) : (run.armory.items[g.ref] ?? 0);
 }
 
 const ERROR_TEXT: Record<string, string> = {
   'already exchanged': 'この品物は、もう交換した（1回だけ）',
   'pouch is full': 'これ以上持てない',
-  'too many copies': '同じスナップは4枚まで',
+  'too many copies': 'これ以上は持てない（スナップは4枚、砂の底の道具は9個まで）',
   'not enough fragments': '記憶の欠片が足りない（素材を時分解すると手に入る）',
 };
 
@@ -200,6 +205,8 @@ export class ExchangeScene extends Phaser.Scene {
     const r = exchange(g, run.armory, run.vars, FRAGMENT_ORDER, maxOf(g), haveOf(g));
     run.armory = r.armory;
     if (r.vars !== run.vars) setStoryVars(r.vars);
+    // 砂の底の道具（段階214）：持っている数は物語の値に
+    if (r.digTool) setStoryVars({ ...run.vars, [digToolVar(r.digTool)]: String(haveOf(g) + 1) });
     if (r.gear) run.navi = addParts(run.navi, [r.gear]);
     // スナップ（段階177）：新しい戦闘のアルバムの持ち物に足す（ライブラリにも記録）
     if (r.snap) {

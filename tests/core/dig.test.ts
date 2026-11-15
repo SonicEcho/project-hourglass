@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
-import { clearGuard, clearNest, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, digWeightsAt, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest, takeRelic } from '../../src/core';
-import { AREA_BATTLES, canEnterSandBottom, digRewardRate, parseRelic, PARTY, relicGears, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
+import { clearGuard, clearNest, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, digWeightsAt, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest, takeRelic, useDigSkill, useDigTool } from '../../src/core';
+import { AREA_BATTLES, canEnterSandBottom, DIG_SKILLS, DIG_TOOLS, digRewardRate, parseRelic, PARTY, relicGears, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
 const items = { common: ['c1', 'c2'], uncommon: ['u1'], rare: ['r1'] };
@@ -419,5 +419,85 @@ describe('砂の底：狩りを外して砂の底へ（段階213）', () => {
     expect(digRewardRate(def, 'taisho', 0.5)).toBe(1);
     expect(digRewardRate(def, 'deep', 0.5)).toBe(1);
     expect(digRewardRate(sandBottomFor('ch2'), 'kingyo', 0.5)).toBe(1);
+  });
+});
+
+describe('砂の底：道具と技（段階214）', () => {
+  it('爆ぜる石：まわり8マスの掘れるマスをまとめて掘る（岩は残る）。砂は1回分。道具袋から減る', () => {
+    const s = { ...plain({ [at(2, 1)]: 'rock', [at(4, 3)]: 'clay' }), x: 3, y: 2, tools: ['blast', 'bell'] };
+    const r = useDigTool(DEF, s, 'blast');
+    expect(r.event.type).toBe('used');
+    expect(r.state.tools).toEqual(['bell']);
+    expect(r.state.sand).toBe(s.sand - DEF.cost.dig);
+    for (const [x, y] of [[3, 1], [4, 1], [2, 2], [4, 2], [2, 3], [3, 3], [4, 3]]) expect(r.state.tiles[at(x, y)], `${x},${y}`).toBe('air');
+    expect(r.state.tiles[at(2, 1)]).toBe('rock');
+    // 持っていない道具は使えない
+    expect(useDigTool(DEF, s, 'ladder').event).toEqual({ type: 'blocked', reason: 'edge' });
+  });
+
+  it('縄ばしご：帰り道の砂が半分。砂時計のかけら：砂 +25。砂嵐よけの鈴：10手のあいだ砂嵐が動かない', () => {
+    const s = { ...plain(), x: 3, y: 5, tools: ['ladder', 'shard', 'bell'] };
+    expect(digBackCost(DEF, useDigTool(DEF, s, 'ladder').state)).toBe(Math.ceil(digBackCost(DEF, s) / 2));
+    expect(useDigTool(DEF, s, 'shard').state.sand).toBe(s.sand + 25);
+    const calm = useDigTool(DEF, s, 'bell').state;
+    expect(calm.calm).toBe(10);
+    const tiles = { [at(1, 5)]: 'air' as const, [at(2, 5)]: 'air' as const, [at(1, 4)]: 'air' as const };
+    const near = { ...plain(tiles), x: 3, y: 4, calm: 10, roamers: [{ id: 0, x: 1, y: 5, battle: 'b1', chasing: false }] };
+    const moved = stepDig(DEF, near, 'left').state;
+    expect(moved.roamers[0]).toMatchObject({ x: 1, y: 5 });
+    expect(moved.calm).toBe(9);
+  });
+
+  it('技は1回潜るごとの回数だけ。突進掘り：向いている方へ3マス掘って進む（砂は1回分）。一閃：4マスを岩も含めて割る（進まない）', () => {
+    const def = { ...DEF, skillUses: 2 };
+    const s0 = createDig(def, 1);
+    expect(s0.skillLeft).toBe(2);
+    const s = { ...plain({ [at(3, 2)]: 'clay' }), x: 3, y: 0, skillLeft: 2 };
+    const rush = useDigSkill(def, s, 'rush', 'down');
+    expect([rush.state.x, rush.state.y, rush.state.sand, rush.state.skillLeft]).toEqual([3, 3, s.sand - def.cost.dig, 1]);
+    // 岩の手前で止まる
+    const blocked = useDigSkill(def, { ...s, tiles: plain({ [at(3, 2)]: 'rock' }).tiles }, 'rush', 'down');
+    expect(blocked.state.y).toBe(1);
+    const slash = useDigSkill(def, { ...plain({ [at(3, 2)]: 'rock' }), x: 3, y: 0, skillLeft: 1 }, 'slash', 'down');
+    expect([1, 2, 3, 4].map((y) => slash.state.tiles[at(3, y)])).toEqual(['air', 'air', 'air', 'air']);
+    expect([slash.state.y, slash.state.skillLeft]).toEqual([0, 0]);
+    // 回数がなければ使えない
+    expect(useDigSkill(def, { ...s, skillLeft: 0 }, 'stop', 'down').event).toEqual({ type: 'blocked', reason: 'edge' });
+    expect(useDigSkill(def, s, 'rewind', 'down').state.sand).toBe(s.sand + 30);
+    expect(useDigSkill(def, s, 'stop', 'down').state.calm).toBe(3);
+  });
+
+  it('一閃でも、層の境目の岩の帯は割れない', () => {
+    const band = digLayerTop(DEF, 'low');
+    const s = { ...plain({ [at(3, band)]: 'rock' }), x: 3, y: band - 1, skillLeft: 1 };
+    const r = useDigSkill(DEF, s, 'slash', 'down');
+    expect(r.state.tiles[at(3, band)]).toBe('rock');
+  });
+
+  it('道具の包みは、空洞に光る物（tool:<道具>）として落ちている', () => {
+    let found = 0;
+    for (const seed of [1, 2, 3, 4, 5]) found += Object.values(createDig(SAND_BOTTOM, seed).relics).filter((r) => r.startsWith('tool:')).length;
+    expect(found).toBeGreaterThan(0);
+    for (const t of SAND_BOTTOM.tools!) expect(DIG_TOOLS[t as keyof typeof DIG_TOOLS], t).toBeDefined();
+  });
+
+  it('データ：掘る人ごとに技がある。層の帯は 32 マス', () => {
+    for (const d of Object.values(SAND_BOTTOM_DIGGERS)) expect(DIG_SKILLS[d.skill]).toBeDefined();
+    expect(sandBottomFor('ch2').layers.filter((l) => l.group === 'ch1').map((l) => l.rows)).toEqual([32, 32]);
+  });
+
+  it('空洞（宝箱・砂嵐の居場所）は帯の中で散らばる：帯を上下に4つに分けると、どこにも空洞がある', () => {
+    const open = new Set(['air', 'chest', 'relic', 'nest']);
+    for (const seed of [1, 2, 3]) {
+      const a = createDig(SAND_BOTTOM, seed);
+      for (const l of SAND_BOTTOM.layers.filter((x) => x.group !== 'deep')) {
+        const top = digLayerTop(SAND_BOTTOM, l.id);
+        const q = l.rows / 4;
+        for (let k = 0; k < 4; k++) {
+          const rows = a.tiles.slice((top + Math.floor(k * q)) * a.width, (top + Math.floor((k + 1) * q)) * a.width);
+          expect(rows.some((t) => open.has(t)), `${seed} ${l.id} ${k}`).toBe(true);
+        }
+      }
+    }
   });
 });
