@@ -775,17 +775,21 @@ export function ensureDigHero(scene: Phaser.Scene): DigHeroSprite {
     }
   }
   const anim = (pose: DigPose) => `${key}:${pose}`;
+  // 歩く行：届いた絵は 立ち・左足・右足、仮の絵は 左足・立ち・右足 の順。立ちをはさんで足を交互に出す
+  const stand = real ? 0 : 1;
+  const walk = real ? [1, 0, 2, 0] : [0, 1, 2, 1];
   for (const pose of Object.keys(POSE_ROW) as DigPose[]) {
     if (scene.anims.exists(anim(pose))) continue;
     const row = POSE_ROW[pose];
     scene.anims.create({
       key: anim(pose),
-      frames: [0, 1, 2].map((col) => ({ key, frame: `${row}-${col}` })),
+      frames: (pose === 'walk' ? walk : [0, 1, 2]).map((col) => ({ key, frame: `${row}-${col}` })),
       frameRate: pose === 'walk' ? 14 : 20,
       repeat: pose === 'walk' ? -1 : 0,
     });
   }
-  // 画面では、頭から足まで1マス半ほどの高さに出す（仮の絵は、描いた大きさのまま少し小さく）
+  // 画面では、頭から足まで1マス半ほどの高さに出す（仮の絵は、描いた大きさのまま少し小さく）。
+  // 届いた絵の足もとの位置は scripts/dig_sprite.py でそろえた所（HEAD_X・FOOT_Y）
   const scale = real ? (T * 1.5) / cellH : 0.9 / R;
-  return { key, originX: real ? 0.5 : FOOT_X / HW, originY: real ? 0.96 : FOOT_Y / HH, scale, anim, idleFrame: '0-1' };
+  return { key, originX: real ? 0.45 : FOOT_X / HW, originY: real ? 0.93 : FOOT_Y / HH, scale, anim, idleFrame: `0-${stand}` };
 }

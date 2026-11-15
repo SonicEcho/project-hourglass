@@ -92,8 +92,8 @@ export function screenImages(key: string, data: Record<string, unknown>, all: st
   if (key === 'Return') return returnImages(area);
   if (key === 'Daily' && typeof data.event === 'string') return dailyImages(data.event);
   if (key === 'Hub') return hubImages();
-  // 砂の底（段階207）：顔だけ使う
-  if (key === 'SandBottom') return commonImages();
+  // 砂の底（段階207）：顔と、掘る二頭身のハルト（段階210）
+  if (key === 'SandBottom') return [...commonImages(), 'sprite.dig_hero'];
   const encounter = data.encounter as { battle?: string } | undefined;
   if (key === 'Battle' && encounter?.battle) return [...new Set([...battleImages([encounter.battle]), ...commonImages()])];
   return all;

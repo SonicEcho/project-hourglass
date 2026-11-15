@@ -6,7 +6,7 @@
 
 - **今やっていること：砂の底を掘る遊びを本編に入れている**（`docs/milestones/M3_sand_bottom.md`。段取りは 4. の S1〜S8）。開発者が試作2を遊び「このゲーム性はとても良かった」。狩り（記憶をたどる）は、いずれ砂の底に置き換える
 - **済んだこと**：段階207（試作1）・208（試作2）・209（S1：拠点の入口・最深記録・深い層・章ごとの砂時計・歩きは砂なし・空洞に湧く砂嵐・大きな十字のボタンと長押し・なめらかな動き）。公開済み（PR #243）。**段階210（S2：見た目）**：ブロック・宝箱・番人・動く砂嵐・地上をコードで描いた絵に（`src/scenes/digArt.ts`）、自分は二頭身のハルト（スコップを振ってブロックが崩れてから歩いて進む）。開発者の確認待ち
-- **二頭身のハルトの絵の依頼を一覧に足した（`docs/ART_QUEUE.md` の T。保存名 `dig_hero.png`）**。今はコードで描いた仮の絵。届いたら白い背景を抜いて `public/assets/sprites/dig_hero.webp` にし、台帳に id `sprite.dig_hero` で足して、砂の底に入る前に読む（4行×3列に切るのは `ensureDigHero` がする）
+- **二頭身のハルトの絵は届いて、入れた**（`public/assets/sprites/dig_hero.webp`。`scripts/dig_sprite.py` で背景を抜き、コマの位置をそろえた）。仲間の掘る絵（S3）も同じ形（4行×3列・右向き）で頼む。依頼文は `scripts/art_queue.py` の T を見本にする
 - **次にやること：S3（掘る人を選ぶ・人ごとの特徴）**。その後は S4（返した区画の時代の層だけ開く）→ S5（狩りを外す）→ S6（落とし物を地層に）→ S7（アイテム・スキル・トラップ）→ S8（深い層とやり込み）
 - 開発者が気になった点の振り分けは、`docs/milestones/M3_sand_bottom.md` の 4. の表。細かい調整（砂の量・砂嵐の数・番人の強さなど）は後でまとめて
 - 仕組みの場所：`src/core/dig.ts`（テスト `tests/core/dig.test.ts`）、地層の数値 `src/data/sandBottom.ts`、画面 `src/scenes/SandBottomScene.ts`（絵は `src/scenes/digArt.ts`）、入口は拠点 `src/scenes/HubScene.ts` とデバッグの「砂の底（試作）」。潜っている途中は `run.dig`（セーブしない）。砂嵐の戦闘は `encounter` の `dig`（HP・MP を持ち越す）
