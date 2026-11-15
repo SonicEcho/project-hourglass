@@ -42,6 +42,9 @@ import {
 import { KAI_CUT_LINES, ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, GEAR_COUNTERS, NAVI_DATA, SE, traitName } from '../data';
 import { activeBondLinks, buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef } from '../core';
 import { currentNaviData, currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
+import { NEW_BARK_MEMORY, pickChainBarks, victoryBark, type Bark, type BarkMemory } from '../core';
+import { BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS } from '../data';
+import { portraitImageId } from '../ui/portrait';
 import type { BattleSceneData } from './chainEncounter';
 import { SNAP_CATEGORY } from '../ui/listKit';
 import { addFoundChainCombo, foundChainCombos, keepChainWeak, knownChainWeak, recordChainBattle, settleChainWin, type ChainWinReward } from './chainEncounter';
@@ -224,6 +227,9 @@ export class ChainBattleScene extends Phaser.Scene {
   private seed = 0;
   /** 演出の速さ（×1・×2） */
   private speed: 1 | 2 = 1;
+  /** 戦闘中のひとこと（段階206）：出しすぎないための覚え */
+  private barkMemory: BarkMemory = NEW_BARK_MEMORY;
+  private barkBox?: Phaser.GameObjects.Container;
   /** 気をつける案内（赤く出す。案内が変わると、ふつうの見た目に戻る） */
   private warnMsg = '';
   /** クライマックスの確かめ：1回目のタップで知らせた札 */
@@ -256,6 +262,8 @@ export class ChainBattleScene extends Phaser.Scene {
     this.firstTutorialBattle = false;
     this.shownFireworks = undefined;
     this.speed = browserStorage().read(SPEED_KEY) === '2' ? 2 : 1;
+    this.barkMemory = NEW_BARK_MEMORY;
+    this.barkBox = undefined;
     const area = data.encounter ? AREA_BATTLES[data.encounter.battle] : undefined;
     if (data.encounter && !area) throw new Error(`unknown area battle ${data.encounter.battle}`);
     this.areaBattle = area;
@@ -2580,12 +2588,68 @@ export class ChainBattleScene extends Phaser.Scene {
       this.render(f.state);
       this.popNumbers(f.events, f.state);
       this.cutInFor(f, before);
+      this.showBarks(f, before);
       if (f.events.some((e) => e.type === 'damage')) playSe(this, f.events.some((e) => e.type === 'damage' && e.weak) ? SE.slash : SE.hit);
       if (f.events.some((e) => e.type === 'heal')) playSe(this, SE.heal);
       if (f.events.some((e) => (e.type === 'trickUse' && e.trick === 'spread') || e.type === 'timerBlast')) playSe(this, SE.firework);
       const big = f.events.some((e) => ['link', 'trickUse', 'status', 'pop', 'split', 'counter', 'wake', 'sticky', 'flee', 'timerBlast', 'cover', 'shellBreak', 'allyCover', 'scatter', 'blast', 'sync', 'teeth', 'allyRiposte', 'chorus', 'hitBack', 'frameCut'].includes(e.type));
       this.wait(big ? WAIT.big : WAIT.result, () => this.playFrames(frames, i + 1, final, f.state));
     });
+  }
+
+  /** そのコマのひとこと（段階206）：コンボのかけ合い（呼ぶ → 答える）と、倒れた・削られた・弱点のうち1つ。流れは止めない */
+  private showBarks(f: ChainFrame, before: ChainState): void {
+    const r = pickChainBarks(before, f.state, f.events, BARKS, BARK_RULES, this.barkMemory);
+    this.barkMemory = r.memory;
+    // 決着した行動では、弱点・削られたのひとことは出さない（勝った時のひとことを出す）
+    const list = [...r.link, ...(r.after && f.state.outcome === 'ongoing' ? [r.after] : [])];
+    list.forEach((b, k) => this.time.delayedCall((k * BARK_SHOW_MS * 0.6) / this.speed, () => this.barkBand(b)));
+  }
+
+  /** 決着：勝った時は、生きている仲間の1人がひとこと言ってから結果の画面へ（段階206） */
+  private endWithBark(): void {
+    const b = this.s.outcome === 'win' ? victoryBark(this.s, BARKS) : null;
+    if (!b) {
+      this.showEnd();
+      return;
+    }
+    this.barkBand(b);
+    this.wait(BARK_SHOW_MS, () => this.showEnd());
+  }
+
+  /** ひとことの帯：左から顔と名前・台詞が入って、少しして消える（段階206） */
+  private barkBand(b: Bark): void {
+    // 前の帯が残っていれば消してから（重ねない）
+    this.barkBox?.destroy();
+    const y = STAGE_Y + 150;
+    const parts: Phaser.GameObjects.GameObject[] = [];
+    parts.push(this.add.rectangle(0, y, GAME_WIDTH - 40, 46, 0x10162c, 0.92).setOrigin(0, 0.5).setStrokeStyle(2, 0xffd76a));
+    const id = portraitImageId(this, BARK_CAST[b.allyId] ?? '', b.face);
+    const face = id ? this.faceSquareOf(id, b.allyId, 26, y, 40) : this.faceSquare(b.allyId, 26, y, 40);
+    if (face) parts.push(face);
+    parts.push(addText(this, 52, y - 12, b.name, { size: 10, bold: true, color: '#ffd76a' }).setOrigin(0, 0.5));
+    const t = addText(this, 52, y + 6, b.text, { size: 15, bold: true, color: '#ffffff' }).setOrigin(0, 0.5);
+    if (t.width > GAME_WIDTH - 104) t.setScale((GAME_WIDTH - 104) / t.width);
+    parts.push(t);
+    const box = this.add.container(-GAME_WIDTH, 0, parts).setDepth(58);
+    this.barkBox = box;
+    this.tweens.add({ targets: box, x: 0, duration: 160 / this.speed, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: box, alpha: 0, delay: (BARK_SHOW_MS - 220) / this.speed, duration: 220 / this.speed, onComplete: () => {
+        box.destroy();
+        if (this.barkBox === box) this.barkBox = undefined;
+      } });
+  }
+
+  /** 表情の絵（会話の立ち絵）から、顔を正方形に切り出す（切り出す場所は、その仲間の顔の切り出しと同じ） */
+  private faceSquareOf(id: string, defId: string, cx: number, cy: number, size: number): Phaser.GameObjects.Image {
+    const crop = FACE_CROPS[defId] ?? FACE_CROP;
+    const src = this.textures.get(id).getSourceImage() as { width: number; height: number };
+    const side = src.width * crop.size;
+    const sx = src.width * crop.x;
+    const sy = src.height * crop.y;
+    const img = this.add.image(cx, cy, id).setCrop(sx, sy, side, side);
+    img.setOrigin((sx + side / 2) / src.width, (sy + side / 2) / src.height).setScale(size / side);
+    return img;
   }
 
   /** そのコマに、差し込みの帯を出す出来事があれば出す */
@@ -2625,7 +2689,7 @@ export class ChainBattleScene extends Phaser.Scene {
     this.busy = false;
     if (final.outcome !== 'ongoing') {
       this.render();
-      this.showEnd();
+      this.endWithBark();
       return;
     }
     this.message = `ラウンド${final.round}。ダウンが解けた。敵の新しい予定を見て並べる`;
@@ -2669,7 +2733,7 @@ export class ChainBattleScene extends Phaser.Scene {
       for (const img of this.enemyImages.values()) img.clearTint();
       if (win) {
         this.render();
-        this.showEnd();
+        this.endWithBark();
         return;
       }
       const left = this.s.enemies.filter((e) => e.hp > 0 && !e.gone).length;
