@@ -2,7 +2,8 @@ import type { DigLayerDef, DigRarity, DigWorldDef } from '../core/dig';
 import { AREA_BATTLES, AREAS } from './areas';
 
 // 砂の底を掘る（段階207。試作1。docs/milestones/M3_sand_bottom.md）。数値はすべて仮。
-// 上の層ほど今に近い時代。宝箱の中身と砂嵐は、その時代の区画の砂嵐から集める（区画の雑魚の戦闘と、落とす素材）
+// 上の層ほど今に近い時代。宝箱の中身と砂嵐は、その時代の区画の砂嵐から集める（区画の雑魚の戦闘と、落とす素材）。
+// 段階208：層の境目の番人は、その層の砂嵐の先頭の戦闘。鉱脈・砂時計の砂粒・崩れる砂の割合を足した
 
 /** その区画の砂嵐（雑魚）の戦闘の id */
 function areaBattles(areaIds: string[]): string[] {
@@ -31,12 +32,14 @@ function layer(id: string, name: string, areaIds: string[], rest: Omit<DigLayerD
 export const SAND_BOTTOM: DigWorldDef = {
   width: 15,
   layers: [
-    layer('heisei', '平成の層', ['a22', 'a23', 'a42'], { rows: 16, rock: 0.06, clay: 0.18, caves: 5, chestRate: 0.8, nestRate: 0.35, weights: { common: 70, uncommon: 25, rare: 5 } }),
-    layer('showa', '昭和の層', ['a12', 'a21'], { rows: 16, rock: 0.12, clay: 0.26, caves: 5, chestRate: 0.8, nestRate: 0.55, weights: { common: 45, uncommon: 40, rare: 15 } }),
-    layer('taisho', '大正の層', ['a3s1', 'a3s2'], { rows: 18, rock: 0.18, clay: 0.32, caves: 5, chestRate: 0.85, nestRate: 0.75, weights: { common: 20, uncommon: 45, rare: 35 } }),
+    layer('heisei', '平成の層', ['a22', 'a23', 'a42'], { rows: 16, rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 5, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 } }),
+    layer('showa', '昭和の層', ['a12', 'a21'], { rows: 16, rock: 0.12, clay: 0.22, ore: 0.05, grain: 0.015, loose: 0.1, caves: 5, chestRate: 0.8, nestRate: 0.7, weights: { common: 45, uncommon: 40, rare: 15 } }),
+    layer('taisho', '大正の層', ['a3s1', 'a3s2'], { rows: 18, rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 5, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 } }),
   ],
   sand: 160,
   cost: { walk: 1, dig: 3, battle: 10, back: 1 },
+  grainSand: 12,
+  chase: 5,
   bagMax: 10,
 };
 
@@ -44,8 +47,8 @@ export const SAND_BOTTOM: DigWorldDef = {
 export const SAND_BOTTOM_METERS_PER_ROW = 2;
 
 /** 層の色（試作の四角のタイル。砂・固い土・岩） */
-export const SAND_BOTTOM_COLORS: Record<string, { sand: number; clay: number; rock: number; air: number }> = {
-  heisei: { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d },
-  showa: { sand: 0xb8844a, clay: 0x8a5a36, rock: 0x6c6f78, air: 0x1a110b },
-  taisho: { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18 },
+export const SAND_BOTTOM_COLORS: Record<string, { sand: number; clay: number; rock: number; air: number; loose: number }> = {
+  heisei: { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d, loose: 0xe8c890 },
+  showa: { sand: 0xb8844a, clay: 0x8a5a36, rock: 0x6c6f78, air: 0x1a110b, loose: 0xd4a46c },
+  taisho: { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18, loose: 0x9c7cac },
 };

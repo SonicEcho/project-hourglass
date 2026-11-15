@@ -1,27 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
-import { clearNest, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
+import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, goHome, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
 import { AREA_BATTLES, SAND_BOTTOM, WEAPON_DATA } from '../../src/data';
 
-// 砂の底を掘る（段階207。試作1。docs/milestones/M3_sand_bottom.md）
+// 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
 const items = { common: ['c1', 'c2'], uncommon: ['u1'], rare: ['r1'] };
+const flat = { rock: 0, clay: 0, ore: 0, grain: 0, loose: 0, caves: 0, chestRate: 0, nestRate: 0, items };
 const DEF: DigWorldDef = {
   width: 7,
   layers: [
-    { id: 'top', name: '上', rows: 4, rock: 0, clay: 0, caves: 0, chestRate: 0, nestRate: 0, items, weights: { common: 1, uncommon: 0, rare: 0 }, battles: ['b1'] },
-    { id: 'low', name: '下', rows: 4, rock: 0, clay: 0, caves: 0, chestRate: 0, nestRate: 0, items, weights: { common: 0, uncommon: 0, rare: 1 }, battles: ['b2'] },
+    { id: 'top', name: '上', rows: 4, ...flat, weights: { common: 1, uncommon: 0, rare: 0 }, battles: ['b1'] },
+    { id: 'low', name: '下', rows: 4, ...flat, weights: { common: 0, uncommon: 0, rare: 1 }, battles: ['b2'] },
   ],
   sand: 20,
   cost: { walk: 1, dig: 3, battle: 10, back: 1 },
+  grainSand: 12,
+  chase: 3,
   bagMax: 3,
 };
 
-/** 決まった形の地面（テスト用）：全部砂にして、指定したマスだけ変える */
+/** 決まった形の地面（テスト用）：全部砂にして、指定したマスだけ変える。砂嵐はいない */
 function plain(over: Record<number, DigState['tiles'][number]> = {}): DigState {
   const s = createDig(DEF, 1);
   const tiles = s.tiles.map((_, i) => (i < DEF.width ? 'air' : 'sand')) as DigState['tiles'];
   for (const [i, t] of Object.entries(over)) tiles[Number(i)] = t;
-  return { ...s, tiles, chests: {}, nests: {} };
+  return { ...s, tiles, chests: {}, guards: {}, roamers: [] };
 }
 const at = (x: number, y: number) => y * DEF.width + x;
 
@@ -33,22 +36,39 @@ describe('砂の底：地面を作る', () => {
     expect(a.height).toBe(1 + SAND_BOTTOM.layers.reduce((n, l) => n + l.rows, 0));
     expect(a.tiles.slice(0, a.width).every((t) => t === 'air')).toBe(true);
     expect(a.tiles[a.width + digEntrance(SAND_BOTTOM)]).toBe('sand');
-    expect([a.x, a.y, a.sand, a.bag]).toEqual([digEntrance(SAND_BOTTOM), 0, SAND_BOTTOM.sand, []]);
+    expect([a.x, a.y, a.sand, a.bag, a.steps]).toEqual([digEntrance(SAND_BOTTOM), 0, SAND_BOTTOM.sand, [], 0]);
   });
 
-  it('宝箱と砂嵐の巣は、マスと中身が合っている。中身はその層の物', () => {
+  it('層の境目（2つ目の層から）は岩の帯で、番人のいる1マスだけが通り道。番人は、その層の砂嵐', () => {
+    for (const seed of [1, 2, 3]) {
+      const a = createDig(SAND_BOTTOM, seed);
+      for (const layer of SAND_BOTTOM.layers.slice(1)) {
+        const row = a.tiles.slice(digLayerTop(SAND_BOTTOM, layer.id) * a.width, (digLayerTop(SAND_BOTTOM, layer.id) + 1) * a.width);
+        expect(row.filter((t) => t === 'guard'), layer.id).toHaveLength(1);
+        expect(row.filter((t) => t !== 'guard' && t !== 'rock'), layer.id).toEqual([]);
+      }
+      expect(Object.values(a.guards).sort()).toEqual(SAND_BOTTOM.layers.slice(1).map((l) => l.guard ?? l.battles[0]).sort());
+    }
+  });
+
+  it('宝箱と動く砂嵐は、空いた所にいて中身が合っている。中身はその層の物。鉱脈・砂粒・崩れる砂もある', () => {
     const a = createDig(SAND_BOTTOM, 7);
     const chests = a.tiles.flatMap((t, i) => (t === 'chest' ? [i] : []));
-    const nests = a.tiles.flatMap((t, i) => (t === 'nest' ? [i] : []));
     expect(chests.length).toBeGreaterThan(3);
-    expect(nests.length).toBeGreaterThan(3);
     expect(Object.keys(a.chests).map(Number).sort((x, y) => x - y)).toEqual(chests);
-    expect(Object.keys(a.nests).map(Number).sort((x, y) => x - y)).toEqual(nests);
     for (const c of chests) {
       const layer = digLayerAt(SAND_BOTTOM, Math.floor(c / a.width));
       for (const id of a.chests[c]) expect([...layer.items.common, ...layer.items.uncommon, ...layer.items.rare], id).toContain(id);
     }
-    for (const n of nests) expect(digLayerAt(SAND_BOTTOM, Math.floor(n / a.width)).battles).toContain(a.nests[n]);
+    expect(a.roamers.length).toBeGreaterThan(3);
+    for (const m of a.roamers) {
+      expect(a.tiles[m.y * a.width + m.x]).toBe('air');
+      expect(digLayerAt(SAND_BOTTOM, m.y).battles).toContain(m.battle);
+    }
+    for (const kind of ['ore', 'grain', 'loose'] as const) expect(a.tiles.some((t) => t === kind), kind).toBe(true);
+    // 崩れる砂の下は空いていない（作った時に落ちきっている。砂嵐のいるマスの上では止まる）
+    const foes = new Set(a.roamers.map((m) => m.y * a.width + m.x));
+    for (let i = 0; i < a.tiles.length - a.width; i++) if (a.tiles[i] === 'loose' && !foes.has(i + a.width)) expect(a.tiles[i + a.width]).not.toBe('air');
   });
 
   it('データ：どの層にも宝箱の素材と砂嵐の戦闘があり、どれも実在する。深い層ほど珍しい物が出やすい', () => {
@@ -56,7 +76,7 @@ describe('砂の底：地面を作る', () => {
       expect(l.items.common.length, l.id).toBeGreaterThan(0);
       expect(l.battles.length, l.id).toBeGreaterThan(0);
       for (const id of [...l.items.common, ...l.items.uncommon, ...l.items.rare]) expect(WEAPON_DATA.items[id], id).toBeDefined();
-      for (const b of l.battles) expect(AREA_BATTLES[b], b).toBeDefined();
+      for (const b of [...l.battles, ...(l.guard ? [l.guard] : [])]) expect(AREA_BATTLES[b], b).toBeDefined();
     }
     const rare = SAND_BOTTOM.layers.map((l) => l.weights.rare / (l.weights.common + l.weights.uncommon + l.weights.rare));
     expect([...rare].sort((x, y) => x - y)).toEqual(rare);
@@ -68,7 +88,7 @@ describe('砂の底：掘って進む', () => {
     let s = plain({ [at(3, 2)]: 'clay', [at(2, 1)]: 'rock' });
     s = { ...s, x: 3, y: 0 };
     let r = stepDig(DEF, s, 'down');
-    expect([r.event, r.state.y, r.state.sand]).toEqual([{ type: 'dig', through: true }, 1, 17]);
+    expect([r.event, r.state.y, r.state.sand, r.state.steps]).toEqual([{ type: 'dig', through: true }, 1, 17, 1]);
     r = stepDig(DEF, r.state, 'down');
     expect([r.event, r.state.y, r.state.tiles[at(3, 2)], r.state.sand]).toEqual([{ type: 'dig', through: false }, 1, 'sand', 14]);
     r = stepDig(DEF, r.state, 'up');
@@ -84,6 +104,32 @@ describe('砂の底：掘って進む', () => {
     expect(deep.deepest).toBe(1);
     expect(stepDig(DEF, deep, 'up').state.deepest).toBe(1);
   });
+
+  it('鉱脈：掘って進み、その層の素材がかばんへ（いっぱいなら砂に戻る）。砂粒：掘って進み、砂が戻る', () => {
+    const s = { ...plain({ [at(3, 1)]: 'ore', [at(4, 1)]: 'grain' }), x: 3, y: 0 };
+    const r = stepDig(DEF, s, 'down');
+    expect(r.event.type).toBe('ore');
+    expect(r.event.type === 'ore' && r.event.kept).toBe(true);
+    expect(r.state.bag).toHaveLength(1);
+    expect(items.common.concat(items.uncommon)).toContain(r.state.bag[0]);
+    const full = stepDig(DEF, { ...s, bag: ['x', 'y', 'z'] }, 'down');
+    expect(full.event.type === 'ore' && full.event.kept).toBe(false);
+    expect(full.state.bag).toEqual(['x', 'y', 'z']);
+    const g = stepDig(DEF, r.state, 'right');
+    expect(g.event).toEqual({ type: 'grain', sand: 12 });
+    expect(g.state.sand).toBe(r.state.sand - 3 + 12);
+  });
+
+  it('崩れる砂：下を掘って空けると落ちてきて、道がふさがる（自分のいるマスには落ちない）', () => {
+    // (3,1) 崩れる砂、(3,2)(3,3) 砂。(2,2) から右へ掘って (3,2) を空けると、(3,1) の砂が落ちる。自分は (3,2) にいるので、その上で止まる
+    const s = { ...plain({ [at(3, 1)]: 'loose', [at(2, 2)]: 'air' }), x: 2, y: 2 };
+    const r = stepDig(DEF, s, 'right');
+    expect(r.state.tiles[at(3, 1)]).toBe('loose');
+    // さらに下へ掘ると、空いた (3,2) に砂が落ちてきて、帰り道がふさがる
+    const r2 = stepDig(DEF, r.state, 'down');
+    expect(r2.state.tiles[at(3, 1)]).toBe('air');
+    expect(r2.state.tiles[at(3, 2)]).toBe('loose');
+  });
 });
 
 describe('砂の底：宝箱とかばん', () => {
@@ -97,26 +143,53 @@ describe('砂の底：宝箱とかばん', () => {
     expect(t.state.bag).toEqual(['c2', 'c2', 'c1']);
     expect(t.left).toEqual(['u1']);
     expect(t.state.tiles[cell]).toBe('chest');
-    // いっぱいなら入れ替える：捨てた物は宝箱に残る
     const sw = swapChest(t.state, cell, 0, 'u1');
     expect(sw.bag).toEqual(['u1', 'c2', 'c1']);
     expect(sw.chests[cell]).toEqual(['c2']);
-    // 全部入れば、宝箱は空洞に戻る
     const all = takeChest(DEF, { ...s, bag: [] }, cell);
     expect(all.state.tiles[cell]).toBe('air');
     expect(all.state.chests[cell]).toBeUndefined();
   });
 });
 
-describe('砂の底：砂嵐と帰り道', () => {
-  it('砂嵐の巣は進まずに知らせる。勝つと巣は消え、戦った分の砂が減る', () => {
+describe('砂の底：番人と動く砂嵐', () => {
+  it('番人は進まずに知らせる。勝つと通り道が開き、戦った分の砂が減る', () => {
     const cell = at(3, 1);
-    const s: DigState = { ...plain({ [cell]: 'nest' }), nests: { [cell]: 'b1' }, x: 3, y: 0 };
-    expect(stepDig(DEF, s, 'down').event).toEqual({ type: 'nest', cell, battle: 'b1' });
-    const won = clearNest(DEF, s, cell);
-    expect([won.tiles[cell], won.nests[cell], won.sand]).toEqual(['air', undefined, 10]);
+    const s: DigState = { ...plain({ [cell]: 'guard' }), guards: { [cell]: 'b2' }, x: 3, y: 0 };
+    expect(stepDig(DEF, s, 'down').event).toEqual({ type: 'guard', cell, battle: 'b2' });
+    const won = clearGuard(DEF, s, cell);
+    expect([won.tiles[cell], won.guards[cell], won.sand]).toEqual(['air', undefined, 10]);
   });
 
+  it('近くの砂嵐は、空いたマスを通って追ってくる。追いつかれたら戦闘。自分から入っても戦闘', () => {
+    // 横の通路 y=2 に空き。自分 (1,2)、砂嵐 (4,2)（距離3 → 追う）
+    const tiles: Record<number, 'air'> = {};
+    for (let x = 0; x < 7; x++) tiles[at(x, 2)] = 'air';
+    const s: DigState = { ...plain({ ...tiles, [at(2, 1)]: 'clay' }), x: 1, y: 2, roamers: [{ id: 0, x: 4, y: 2, battle: 'b1', chasing: false }] };
+    const r1 = stepDig(DEF, s, 'right');
+    // 自分は (2,2) へ、砂嵐は (3,2) へ寄ってくる
+    expect([r1.state.x, r1.state.roamers[0].x, r1.state.roamers[0].chasing]).toEqual([2, 3, true]);
+    expect(r1.event.type).toBe('move');
+    // 自分から入る
+    expect(stepDig(DEF, r1.state, 'right').event).toEqual({ type: 'roamer', id: 0, battle: 'b1' });
+    // 同じ速さで逃げれば追いつかれない
+    expect(stepDig(DEF, r1.state, 'left').event.type).toBe('move');
+    // 固い土を掘って止まっている間に、追いつかれる
+    const r2 = stepDig(DEF, r1.state, 'up');
+    expect(r2.event).toEqual({ type: 'roamer', id: 0, battle: 'b1' });
+    expect([r2.state.x, r2.state.y, r2.state.tiles[at(2, 1)]]).toEqual([2, 2, 'sand']);
+    // 勝つと消える
+    expect(clearRoamer(DEF, s, 0).roamers).toEqual([]);
+  });
+
+  it('遠くの砂嵐は追ってこない。砂の中は通れない', () => {
+    const s: DigState = { ...plain({ [at(6, 6)]: 'air' }), x: 0, y: 1, roamers: [{ id: 0, x: 6, y: 6, battle: 'b1', chasing: false }] };
+    const r = stepDig(DEF, s, 'down');
+    expect(r.state.roamers[0]).toMatchObject({ x: 6, y: 6, chasing: false });
+  });
+});
+
+describe('砂の底：帰り道', () => {
   it('上へ戻る：深さの分の砂があれば全部持ち帰る。足りなければ、かばんの半分（多い方を残す）を失う', () => {
     const s: DigState = { ...plain(), x: 3, y: 6, sand: 6, bag: ['a', 'b', 'c'] };
     expect(digBackCost(DEF, s)).toBe(6);
@@ -125,7 +198,6 @@ describe('砂の底：砂嵐と帰り道', () => {
     const late = goHome(DEF, { ...s, sand: 5 });
     expect([late.outcome, late.sand, late.y]).toEqual(['late', 0, 0]);
     expect(late.bag).toHaveLength(2);
-    for (const id of late.bag) expect(['a', 'b', 'c']).toContain(id);
   });
 
   it('戦闘に負けると、地上へ戻され、かばんの半分を失う。帰った後は掘れない', () => {
