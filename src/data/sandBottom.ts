@@ -118,6 +118,8 @@ interface DigBand {
 interface DigStratum {
   chapter: string;
   name: string;
+  /** 層の特徴（段階215 の続き。開発者の案：層ごとに特徴。層に入った時に知らせる） */
+  feature: string;
   bands: DigBand[];
   ground: Pick<DigLayerDef, 'rock' | 'clay' | 'ore' | 'grain' | 'loose' | 'caves' | 'chestRate' | 'nestRate' | 'weights' | 'deepWeights' | 'pit' | 'poison' | 'fossil' | 'moss' | 'springRate' | 'whirlRate' | 'dark'>;
 }
@@ -149,40 +151,44 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch1',
     name: '感覚記憶の層',
+    feature: '一瞬だけ残る記憶。砂時計の砂粒が多い',
     bands: [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
       band('futari', '夕暮れの二人乗り', ['a12'], { sand: 0xd2a868, clay: 0xa8794a, rock: 0x7d8088, air: 0x1d140d, loose: 0xe8c890 }),
     ],
-    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.015, loose: 0.08, caves: 8, chestRate: 0.8, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 }, pit: 0.01, poison: 0.01, fossil: 0.01, springRate: 0.15, whirlRate: 0.1 },
+    ground: { rock: 0.06, clay: 0.16, ore: 0.04, grain: 0.03, loose: 0.08, caves: 8, chestRate: 0.6, nestRate: 0.5, weights: { common: 70, uncommon: 25, rare: 5 }, deepWeights: { common: 30, uncommon: 45, rare: 25 }, pit: 0.02, poison: 0.02, fossil: 0.01, springRate: 0.2, whirlRate: 0.15 },
   },
   {
     chapter: 'ch2',
     name: '短期記憶の層',
+    feature: 'すぐ崩れる記憶。崩れる砂が多い',
     bands: [
       band('oyakata', '親方の背中', ['a21'], { sand: 0xb08458, clay: 0x7a5236, rock: 0x6c6f78, air: 0x1a110b, loose: 0xcca27a }),
       band('bunkasai', '最後の文化祭', ['a22'], { sand: 0xbca070, clay: 0x8a7046, rock: 0x6c6f78, air: 0x17130c, loose: 0xd6bc8c }),
       band('daseki', '最後の打席', ['a23'], { sand: 0xc49a62, clay: 0x946a40, rock: 0x6c6f78, air: 0x1a120a, loose: 0xdcb482 }),
     ],
-    ground: { rock: 0.1, clay: 0.2, ore: 0.05, grain: 0.015, loose: 0.1, caves: 8, chestRate: 0.8, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 }, pit: 0.02, poison: 0.02, fossil: 0.015, moss: 0.012, springRate: 0.15, whirlRate: 0.15, dark: 6 },
+    ground: { rock: 0.1, clay: 0.18, ore: 0.05, grain: 0.015, loose: 0.2, caves: 8, chestRate: 0.6, nestRate: 0.65, weights: { common: 50, uncommon: 38, rare: 12 }, deepWeights: { common: 20, uncommon: 45, rare: 35 }, pit: 0.04, poison: 0.04, fossil: 0.015, moss: 0.012, springRate: 0.2, whirlRate: 0.22, dark: 6 },
   },
   {
     chapter: 'ch3',
     name: 'エピソード記憶の層',
+    feature: '思い出の場面が眠る。空洞と化石が多い',
     bands: [
       band('shiokuri', 'はじめての仕送り', ['a31'], { sand: 0x9a8a78, clay: 0x6a5a4c, rock: 0x5e6068, air: 0x14110f, loose: 0xb6a692 }),
       band('sotsugyo', '言えなかった卒業式', ['a32'], { sand: 0xb08a90, clay: 0x80606a, rock: 0x5e6068, air: 0x161012, loose: 0xcaa8ae }),
       band('taisho', '大正の祭りの夜', ['a3s1', 'a3s2'], { sand: 0x7a5a8a, clay: 0x5a3a6a, rock: 0x5a5c66, air: 0x120c18, loose: 0x9c7cac }),
     ],
-    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 8, chestRate: 0.85, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 }, pit: 0.03, poison: 0.03, fossil: 0.02, moss: 0.015, springRate: 0.15, whirlRate: 0.2, dark: 4 },
+    ground: { rock: 0.15, clay: 0.24, ore: 0.055, grain: 0.015, loose: 0.11, caves: 10, chestRate: 0.6, nestRate: 0.8, weights: { common: 30, uncommon: 45, rare: 25 }, deepWeights: { common: 10, uncommon: 40, rare: 50 }, pit: 0.06, poison: 0.06, fossil: 0.04, moss: 0.015, springRate: 0.2, whirlRate: 0.3, dark: 4 },
   },
   {
     chapter: 'ch4',
     name: '意味記憶の層',
+    feature: '固く結びついた記憶。岩と鉱脈が多い',
     bands: [
       band('shiro', 'シロのいた夏', ['a41'], { sand: 0x8a9a6a, clay: 0x5e6c46, rock: 0x585c62, air: 0x0f140c, loose: 0xa6b688 }),
       band('hayase', '早瀬の時間', ['a42'], { sand: 0x6a8a8a, clay: 0x46605e, rock: 0x585c62, air: 0x0b1314, loose: 0x88a8a6 }),
     ],
-    ground: { rock: 0.18, clay: 0.26, ore: 0.06, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.85, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 }, pit: 0.04, poison: 0.04, fossil: 0.02, moss: 0.015, springRate: 0.15, whirlRate: 0.25, dark: 3 },
+    ground: { rock: 0.27, clay: 0.24, ore: 0.09, grain: 0.015, loose: 0.12, caves: 8, chestRate: 0.6, nestRate: 0.85, weights: { common: 20, uncommon: 45, rare: 35 }, deepWeights: { common: 5, uncommon: 35, rare: 60 }, pit: 0.08, poison: 0.08, fossil: 0.02, moss: 0.015, springRate: 0.2, whirlRate: 0.35, dark: 3 },
   },
 ];
 
@@ -208,8 +214,9 @@ export function canEnterSandBottom(chapterId: string | undefined): boolean {
 export const SAND_BOTTOM_SAND_BY_CHAPTER: Record<string, number> = { ch1: 200, ch2: 320, ch3: 720, ch4: 1040 };
 
 function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<string, string>>): DigWorldDef {
+  // 段階215 の続き（開発者の声：層の前半にぬしが固まる → もっと深い所へ）：ぬしの巣と光る物は、章の層のいちばん下の帯にまとめる
   const layers: DigLayerDef[] = open.flatMap((st) =>
-    st.bands.map((b) => ({
+    st.bands.map((b, bi) => ({
       id: b.id,
       name: st.name,
       group: st.chapter,
@@ -218,8 +225,8 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
       battles: areaBattles(b.areas),
       guards: stratumGuards(st),
       lords: stratumLords(st),
-      nest: bandLord(b.areas),
-      relics: bandRelics(b.areas, vars),
+      nests: bi === st.bands.length - 1 ? st.bands.flatMap((x) => bandLord(x.areas) ?? []) : [],
+      relics: bi === st.bands.length - 1 ? st.bands.flatMap((x) => bandRelics(x.areas, vars)) : [],
       ...st.ground,
     })),
   );
@@ -257,6 +264,9 @@ export function sandBottomFor(chapterId: string | undefined, vars: Readonly<Reco
   const sand = (chapterId && SAND_BOTTOM_SAND_BY_CHAPTER[chapterId]) || list[list.length - 1];
   return buildWorld(open.length > 0 ? open : STRATA.slice(0, 1), sand, vars);
 }
+
+/** 章の層の特徴（段階215 の続き）：層のまとまり（章）→ 名前と特徴 */
+export const SAND_BOTTOM_FEATURES: Record<string, { name: string; feature: string }> = Object.fromEntries(STRATA.map((st) => [st.chapter, { name: st.name, feature: st.feature }]));
 
 /**
  * その層（帯）の星の砂と経験値の割合（段階213）：開いている中でいちばん深い（いちばん最近の）章の層は満額、それより上は old（狩りの前の章と同じ割合）。

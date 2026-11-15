@@ -51,8 +51,8 @@ export interface DigLayerDef {
    * 深い空洞から順に置く
    */
   relics?: string[];
-  /** ぬしの巣（段階213）：帯のいちばん深い空洞にいる、動かないぬしの戦闘 */
-  nest?: string;
+  /** ぬしの巣（段階213）：その層のいちばん深い空洞から順にいる、動かないぬしの戦闘（段階215 の続き：いくつでも） */
+  nests?: string[];
   /** 仕掛けの割合（段階215）：落とし穴・毒の砂・化石・光る苔（マスの割合）、ばね・流砂の渦（空洞ごとの割合） */
   pit?: number;
   poison?: number;
@@ -197,6 +197,9 @@ const isOpen = (t: DigTile) => t === 'air';
 
 const groupOf = (l: DigLayerDef) => l.group ?? l.id;
 
+/** 宝箱の出やすさの、章の層の上の端での割合（段階215 の続き。下の端は 100%） */
+const CHEST_TOP = 0.15;
+
 /**
  * その層の上の境目に、岩の帯と番人を置くか（段階212）：まとまりが変わる所で、上のまとまりに戦う砂嵐がいる所。
  * 番人は、上の層（まとまり）の番人。いちばん下の層とふつうの地面の間にもいる
@@ -328,7 +331,8 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       const floor = Math.min(cy + ch - 1, height - 1);
       caves.push({ cx, cw, floor });
       const chestCell = floor * w + cx + Math.floor(rand() * cw);
-      if (rand() < layer.chestRate) {
+      // 段階215 の続き（開発者の声：宝箱はもっと深い所へ、少なめに）：章の層の中の深さに合わせて出やすく（上の端は 15%）
+      if (rand() < layer.chestRate * (CHEST_TOP + (1 - CHEST_TOP) * depthInGroup(def, floor))) {
         tiles[chestCell] = 'chest';
         chests[chestCell] = rollChest(layer.items, digWeightsAt(def, floor), rand, pick);
       }
@@ -357,7 +361,7 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       }
     }
     // ぬしの巣と光る物（段階213）：深い空洞の床から順に。空いたマス（宝箱のない所）に置く
-    if (caves.length > 0 && (layer.nest || (layer.relics?.length ?? 0) > 0)) {
+    if (caves.length > 0 && ((layer.nests?.length ?? 0) > 0 || (layer.relics?.length ?? 0) > 0)) {
       const deep = [...caves].sort((a, b) => b.floor - a.floor);
       const place = (cave: (typeof deep)[number]): number | null => {
         for (let i = 0; i < cave.cw; i++) {
@@ -367,13 +371,12 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
         return null;
       };
       let k = 0;
-      if (layer.nest) {
-        const cell = place(deep[0]);
-        if (cell !== null) {
-          tiles[cell] = 'nest';
-          nests[cell] = layer.nest;
-        }
-        k = 1;
+      for (const battle of layer.nests ?? []) {
+        const cell = place(deep[k % deep.length]);
+        k++;
+        if (cell === null) continue;
+        tiles[cell] = 'nest';
+        nests[cell] = battle;
       }
       for (const id of layer.relics ?? []) {
         const cell = place(deep[k % deep.length]);

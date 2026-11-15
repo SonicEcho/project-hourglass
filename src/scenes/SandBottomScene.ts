@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from '../core';
 import { addItems, addParts, chapterOfEvent, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, SAND_BOTTOM_FEATURES, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -42,8 +42,9 @@ const PAD = { x: GAME_WIDTH - 118, y: PANEL_Y + 176, w: 72, h: 58, gap: 6 };
 /** 1マス動くのにかける時間（ミリ秒）と、長押しで次へ進むまでの間 */
 const MOVE_MS = 130;
 const REPEAT_MS = 60;
-/** 帰り道の砂の余りがこれを下回ったら警告する（段階214） */
+/** 帰り道の砂の余りがこれを下回ったら警告する（段階214）。段階215 の続き：その前に、黄色の注意（もう少し早めに） */
 const SAND_WARN = 15;
+const SAND_CAUTION = 45;
 /** 道具袋の枠に出す1文字（段階214） */
 const TOOL_MARK: Record<DigToolId, string> = { blast: '爆', ladder: '縄', bell: '鈴', shard: '砂', lantern: '灯', needle: '針' };
 /** 毒の砂で減る HP の割合（段階215） */
@@ -217,6 +218,8 @@ export class SandBottomScene extends Phaser.Scene {
       const hero = ensureDigHero(this, id);
       const sprite = this.add.sprite(x + 52, y + h - 10, hero.key, hero.idleFrame).setOrigin(hero.originX, hero.originY).setScale(hero.scale * Math.min(2.4, (h - 16) / (T * 1.5)));
       sprite.play(hero.anim('walk'));
+      // 段階215 の続き（開発者の声：足の動きが速すぎる）：札では、ゆっくり歩く
+      sprite.anims.timeScale = 0.4;
       card.add(sprite);
       const name = PARTY.find((c) => c.id === id)?.name ?? id;
       const tx = x + 104;
@@ -562,6 +565,11 @@ export class SandBottomScene extends Phaser.Scene {
     }
     // 帰り道の砂の警告（段階214。開発者の声）：余りが少ない・足りない時は、地面の上の端に赤い知らせ
     const m = this.margin();
+    if (diving && s.y > 0 && m < SAND_CAUTION && m >= SAND_WARN) {
+      const bar = this.add.rectangle(0, GRID_Y, GAME_WIDTH, 22, 0x6a5010, 0.85).setOrigin(0);
+      const label = addText(this, GAME_WIDTH / 2, GRID_Y + 11, `そろそろ帰り道を考えよう（帰り道の砂の余り ${m}）`, { size: 11, bold: true, color: '#ffe9a8' }).setOrigin(0.5);
+      this.root.add([bar, label]);
+    }
     if (diving && s.y > 0 && m < SAND_WARN) {
       const text = m < 0 ? 'このままでは帰れない！ 上へ戻ると、かばんの半分を失う' : `帰り道の砂が残りわずか！（余り ${m}）`;
       const bar = this.add.rectangle(0, GRID_Y, GAME_WIDTH, 24, 0x8a1020, 0.9).setOrigin(0);
@@ -764,6 +772,11 @@ export class SandBottomScene extends Phaser.Scene {
     this.s = r.state;
     this.message = this.eventText(e);
     if (e.type === 'trap' && e.trap === 'poison') this.hurtParty(POISON_RATE);
+    // 層に入った時に、その層の特徴を知らせる（段階215 の続き。開発者の案）
+    const fromGroup = before.y > 0 ? digLayerAt(this.def, before.y).group : undefined;
+    const toGroup = r.state.y > 0 ? digLayerAt(this.def, r.state.y).group : undefined;
+    const f = toGroup ? SAND_BOTTOM_FEATURES[toGroup] : undefined;
+    if (toGroup !== fromGroup && f) this.message = `${f.name}：${f.feature}${this.message ? `　${this.message}` : ''}`;
     if (e.type === 'blocked') {
       this.release();
       this.render();

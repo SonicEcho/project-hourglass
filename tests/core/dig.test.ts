@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
 import { clearGuard, clearNest, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, digWeightsAt, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest, takeRelic, useDigSkill, useDigTool } from '../../src/core';
-import { AREA_BATTLES, canEnterSandBottom, DIG_SKILLS, DIG_TOOLS, digRewardRate, parseRelic, PARTY, relicGears, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
+import { AREA_BATTLES, SAND_BOTTOM_FEATURES, canEnterSandBottom, DIG_SKILLS, DIG_TOOLS, digRewardRate, parseRelic, PARTY, relicGears, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
 const items = { common: ['c1', 'c2'], uncommon: ['u1'], rare: ['r1'] };
@@ -361,7 +361,7 @@ describe('砂の底：層の下の方ほど珍しい（段階212）', () => {
 describe('砂の底：狩りを外して砂の底へ（段階213）', () => {
   const nestDef: DigWorldDef = {
     ...DEF,
-    layers: DEF.layers.map((l, i) => (i === 0 ? { ...l, caves: 3, nest: 'boss1', relics: ['gear:g1', 'lost:x1'] } : l)),
+    layers: DEF.layers.map((l, i) => (i === 0 ? { ...l, caves: 3, nests: ['boss1'], relics: ['gear:g1', 'lost:x1'] } : l)),
   };
 
   it('ぬしの巣と光る物は、その層の空洞の床に置く（いちばん深い空洞がぬし）。同じシードなら同じ所', () => {
@@ -388,25 +388,27 @@ describe('砂の底：狩りを外して砂の底へ（段階213）', () => {
     expect([n.tiles[at(4, 0)], n.nests, n.sand]).toEqual(['air', {}, s.sand - DEF.cost.battle]);
   });
 
-  it('データ：帯ごとにその区画のぬしの巣。狩りだけの素材も帯から出る。大正の祭りの夜は2晩目のぬし', () => {
+  it('データ：区画ごとのぬしの巣は、章の層のいちばん下の帯にまとめる（段階215 の続き）。狩りだけの素材も帯から出る。大正の祭りの夜は2晩目のぬし', () => {
     const band = (id: string) => SAND_BOTTOM.layers.find((l) => l.id === id)!;
-    expect(band('kingyo').nest).toBe('a11_boss');
-    expect(band('taisho').nest).toBe('a3s2_boss');
-    for (const l of SAND_BOTTOM.layers.filter((x) => x.group !== 'deep')) expect(AREA_BATTLES[l.nest!]?.boss, l.id).toBe(true);
+    expect(band('futari').nests).toEqual(['a11_boss', 'a12_boss']);
+    expect(band('kingyo').nests).toEqual([]);
+    expect(band('taisho').nests).toEqual(['a31_boss', 'a32_boss', 'a3s2_boss']);
+    for (const l of SAND_BOTTOM.layers.filter((x) => x.group !== 'deep')) for (const b of l.nests ?? []) expect(AREA_BATTLES[b]?.boss, l.id).toBe(true);
     const items = (id: string) => [...band(id).items.common, ...band(id).items.uncommon, ...band(id).items.rare];
     expect(items('kingyo')).toContain('goldfishFin');
     expect(items('oyakata')).toContain('filament');
   });
 
   it('データ：記憶の宝箱は、まだ手に入れていない採取の場所のギアから1つ。引き受けた探し物は、その区画の帯で光る', () => {
-    const oyakata = (vars: Record<string, string>) => sandBottomFor('ch3', vars).layers.find((l) => l.id === 'oyakata')!.relics!;
+    // 光る物も、章の層のいちばん下の帯（2章の層なら最後の打席の帯）にまとめる
+    const oyakata = (vars: Record<string, string>) => sandBottomFor('ch3', vars).layers.find((l) => l.id === 'daseki')!.relics!.filter((r) => r.includes('a21'));
     const gearRelic = oyakata({}).find((r) => r.startsWith('gear:'))!;
     expect(gearRelic).toBeDefined();
     const gather = parseRelic(gearRelic)!.ref;
     expect(relicGears(gather).length).toBeGreaterThan(0);
     expect(oyakata({ [`狩りのギア:${gather}`]: '1' })).not.toContain(gearRelic);
     // 1-1 の帯にギアはない。髪留めの探し物は、引き受けた時だけ
-    const kingyo = (vars: Record<string, string>) => sandBottomFor('ch2', vars).layers.find((l) => l.id === 'kingyo')!.relics!;
+    const kingyo = (vars: Record<string, string>) => sandBottomFor('ch2', vars).layers.find((l) => l.id === 'futari')!.relics!;
     expect(kingyo({})).toEqual([]);
     expect(kingyo({ '落とし物:a11_hairpin': 'accepted' })).toEqual(['lost:a11_hairpin']);
     expect(kingyo({ '落とし物:a11_hairpin': 'found' })).toEqual([]);
@@ -554,5 +556,33 @@ describe('砂の底：仕掛けと暗がり（段階215）', () => {
     expect([deep.pit, deep.poison, deep.whirlRate]).toEqual([undefined, undefined, undefined]);
     expect(DIG_TOOLS.lantern).toBeDefined();
     expect(DIG_TOOLS.needle).toBeDefined();
+  });
+});
+
+describe('砂の底：宝箱は深い所に、層ごとの特徴（段階215 の続き）', () => {
+  it('宝箱は、章の層の下の半分に多い（上の端は出にくい）', () => {
+    let upper = 0;
+    let lower = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const a = createDig(SAND_BOTTOM, seed);
+      for (const cell of Object.keys(a.chests).map(Number)) {
+        const y = Math.floor(cell / a.width);
+        const g = digLayerAt(SAND_BOTTOM, y).group;
+        const tops = SAND_BOTTOM.layers.filter((l) => l.group === g);
+        const top = digLayerTop(SAND_BOTTOM, tops[0].id);
+        const rows = tops.reduce((n, l) => n + l.rows, 0);
+        if (y - top < rows / 2) upper++;
+        else lower++;
+      }
+    }
+    expect(lower).toBeGreaterThan(upper * 1.5);
+  });
+
+  it('章の層ごとに特徴がある（名前と一言）', () => {
+    expect(Object.keys(SAND_BOTTOM_FEATURES)).toEqual(['ch1', 'ch2', 'ch3', 'ch4']);
+    for (const f of Object.values(SAND_BOTTOM_FEATURES)) expect(f.feature.length).toBeGreaterThan(5);
+    const g = (c: string) => SAND_BOTTOM.layers.find((l) => l.group === c)!;
+    expect(g('ch2').loose).toBeGreaterThan(g('ch1').loose * 1.5);
+    expect(g('ch1').grain).toBeGreaterThan(g('ch2').grain);
   });
 });
