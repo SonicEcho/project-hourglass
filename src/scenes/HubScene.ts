@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, KEEPER_TALKS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
+import { areaChapter, chapterOfEvent, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost, startExplore } from '../core';
+import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, canEnterSandBottom, KEEPER_TALKS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages } from '../ui/waitImages';
@@ -85,9 +85,9 @@ export class HubScene extends Phaser.Scene {
       // 段階152（テストプレイのメモ 2 の 7）：ペトラと話せる時は、タイルに札
       { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() },
       { id: 'lost', label: '落とし物の棚', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
-      // 段階209：砂の底（何度でも潜れる。日は進まない）
-      { id: 'sandBottom', label: '砂の底', onTap: () => this.openSandBottom() },
     ];
+    // 段階209：砂の底（何度でも潜れる。日は進まない）。段階212：2章から（終えた章の層が開く）
+    if (canEnterSandBottom(chapterOfEvent(SLICE_FLOW, run.event)?.id)) misc.push({ id: 'sandBottom', label: '砂の底', onTap: () => this.openSandBottom() });
     const talks = archivedTalks();
     if (talks.length > 0) {
       const unseen = talks.filter((t) => !t.seen).length;
