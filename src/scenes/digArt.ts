@@ -391,8 +391,13 @@ export function ensureDigTiles(scene: Phaser.Scene): void {
   const S = T * R;
   // 段階212：まだ開いていない章の層の帯も、はじめから全部作る
   const layers = Object.keys(SAND_BOTTOM_COLORS);
-  const rows = layers.length * LAYER_ARTS.length + 1;
-  const cols = Math.max(VARIANTS, SINGLE_ARTS.length);
+  // 1つの層を1行に並べる（種類 × 柄。段階212 の直し：前は縦1列で、帯が増えて縦が 6000 画素を超え、
+  // スマホの上限（多くは 4096 画素）を超えて真っ黒になった。今は 3 倍の画面でも横 約 1600・縦 約 1000）
+  const rows = layers.length + 1;
+  const cols = Math.max(LAYER_ARTS.length * VARIANTS, SINGLE_ARTS.length);
+  // 端末の上限を超えると、絵が丸ごと真っ黒になる。超えていたら記録に残す（?debug=1 のデバッグ画面で見られる）
+  const max = (scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).getMaxTextureSize?.() ?? 0;
+  if (max > 0 && Math.max(cols, rows) * S > max) console.warn(`[砂の底] ブロックの絵 ${cols * S}×${rows * S} が端末の上限 ${max} を超えている`);
   const tex = scene.textures.createCanvas(TILES_KEY, cols * S, rows * S);
   if (!tex) return;
   const ctx = tex.getContext();
@@ -412,7 +417,7 @@ export function ensureDigTiles(scene: Phaser.Scene): void {
     LAYER_ARTS.forEach((art, ai) => {
       for (let v = 0; v < VARIANTS; v++) {
         const rand = artRand(li * 1000 + ai * 37 + v * 7 + 11);
-        paint(`${id}:${art}:${v}`, v, li * LAYER_ARTS.length + ai, (cx) => {
+        paint(`${id}:${art}:${v}`, ai * VARIANTS + v, li, (cx) => {
           if (art === 'sand') drawSand(cx, c.sand, rand);
           else if (art === 'loose') drawLoose(cx, c.loose, rand);
           else if (art === 'clay') drawClay(cx, c.clay, rand);
