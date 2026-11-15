@@ -11,7 +11,7 @@ import {
   removeFromAlbum,
   spareSnaps,
 } from '../../src/core';
-import { ALBUM_COPY_MAX, ALBUM_SIZE, AREA_BATTLES, AREAS, CARDS, FOLDER } from '../../src/data';
+import { ALBUM_COPY_MAX, ALBUM_SIZE, AREAS, CARDS, CHAIN_SNAPS, FOLDER } from '../../src/data';
 
 // 段階41：アルバムの編集と、スナップの入手。新しいスナップ（ジョーカー・アンコール・ピンチヒッター）
 
@@ -58,15 +58,10 @@ describe('アルバムの編集', () => {
     expect(deck.filter((c) => c.id === 'sword')).toHaveLength(2);
   });
 
-  it('入手の道筋：宝箱・ボス・返した報酬のスナップは、どれも今あるスナップ', () => {
-    const ids = [
-      ...Object.values(AREAS).flatMap((a) => [...a.chests.flatMap((c) => c.snaps ?? []), ...(a.returnSnaps ?? [])]),
-      ...Object.values(AREA_BATTLES).flatMap((b) => b.snaps ?? []),
-    ];
+  it('入手の道筋：宝箱・返した報酬のスナップは、どれも新しい戦闘のスナップ（段階204 で古いスナップはなくした）', () => {
+    const ids = Object.values(AREAS).flatMap((a) => [...a.chests.flatMap((c) => c.chainSnaps ?? []), ...(a.chainReturnSnaps ?? [])]);
     expect(ids.length).toBeGreaterThan(0);
-    for (const id of ids) expect(CARDS[id as keyof typeof CARDS], id).toBeDefined();
-    // 新しい3枚は、2章のどこかで手に入る
-    for (const id of ['joker', 'encore', 'pinchHitter']) expect(ids).toContain(id);
+    for (const id of ids) expect(CHAIN_SNAPS[id], id).toBeDefined();
   });
 });
 

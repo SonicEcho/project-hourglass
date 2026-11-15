@@ -115,18 +115,12 @@ export type PassiveEffect =
   | { kind: 'elementBoost'; element: Element; rate: number }
   /** 部位へのダメージを rate 割増し */
   | { kind: 'partBoost'; rate: number }
-  /** 延長の時に引く枚数を増やす */
-  | { kind: 'oneMoreDraw'; count: number }
-  /** バトンを受けた時の倍率に足す */
-  | { kind: 'batonBoost'; rate: number }
   /** このキャラが使うコンボのダメージ・回復量を rate 割増し */
   | { kind: 'comboBoost'; rate: number }
   /** ラウンドの始めに最大HPの rate を回復 */
   | { kind: 'regen'; rate: number }
   /** 魔法・スキルのMP消費を減らす（最低1） */
   | { kind: 'mpSave'; amount: number }
-  /** 戦闘の最初のラウンド、行動が先制になる */
-  | { kind: 'startDash' }
   /** 狂い：ラウンドの始めに最大HPの rate を失う（HPは1未満にならない） */
   | { kind: 'bug'; rate: number };
 

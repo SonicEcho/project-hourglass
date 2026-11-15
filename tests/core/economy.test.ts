@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AREA_BATTLES, AREAS, GROWTH_COST, GROWTH_MAP, PART_BREAK_POINTS, WEAPON_DATA } from '../../src/data';
+import { AREA_BATTLES, AREAS, CHAIN_AREA_SETUPS, GROWTH_COST, GROWTH_MAP, PART_BREAK_POINTS, WEAPON_DATA } from '../../src/data';
 
 // 入手量の目安（段階55。docs/design/economy.md の 8.）：1つの区画で入る量
 const AREA_IDS = ['a11', 'a12', 'a21', 'a22', 'a23'];
@@ -25,20 +25,20 @@ describe('1つの区画で入る量（段階55）', () => {
     expect(got2 / ch2).toBeLessThanOrEqual(0.6);
   });
 
-  it('消費アイテム：宝箱と勝利のアイテムを合わせて2〜3つ', () => {
+  it('消費アイテム：段階204 でなくした（宝箱にも勝利の報酬にもない）', () => {
     for (const id of AREA_IDS) {
-      const items = [...AREAS[id].chests.flatMap((c) => c.items), ...battlesOf(id).flatMap((b) => (b.item ? [b.item] : []))];
-      const n = items.filter((i) => WEAPON_DATA.items[i]?.kind === 'item').length;
-      expect(n, id).toBeGreaterThanOrEqual(2);
-      expect(n, id).toBeLessThanOrEqual(3);
+      const items = AREAS[id].chests.flatMap((c) => c.items);
+      expect(items.filter((i) => WEAPON_DATA.items[i]?.kind === 'item'), id).toEqual([]);
     }
+    expect(Object.values(WEAPON_DATA.items).filter((it) => it.kind === 'item')).toEqual([]);
   });
 
-  it('スナップ：宝箱とぬしで1〜3枚（返した報酬は別）', () => {
+  // 段階204：新しい戦闘のスナップで数える。ぬしのスナップは早く倒した時（★3）だけなので、合わせて1〜4枚にした
+  it('スナップ：宝箱とぬし（★3）で1〜4枚（返した報酬は別。段階204 から新しい戦闘のスナップで数える）', () => {
     for (const id of AREA_IDS) {
-      const n = [...AREAS[id].chests.flatMap((c) => c.snaps ?? []), ...battlesOf(id).flatMap((b) => b.snaps ?? [])].length;
+      const n = [...AREAS[id].chests.flatMap((c) => c.chainSnaps ?? []), ...(CHAIN_AREA_SETUPS[AREAS[id].boss.battle]?.snaps ?? [])].length;
       expect(n, id).toBeGreaterThanOrEqual(1);
-      expect(n, id).toBeLessThanOrEqual(3);
+      expect(n, id).toBeLessThanOrEqual(4);
     }
   });
 });

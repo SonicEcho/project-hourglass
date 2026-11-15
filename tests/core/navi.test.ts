@@ -3,7 +3,6 @@ import type { NaviState, Placement } from '../../src/core';
 import {
   applyNavi,
   boardPassives,
-  claimRewardParts,
   createNavi,
   findBugs,
   getPlaceError,
@@ -18,8 +17,6 @@ import {
   NAVI_BOARDS,
   NAVI_DATA,
   NAVI_PARTS,
-  NAVI_REWARD_CANDIDATES,
-  NAVI_REWARD_PICKS,
   PARTY,
   START_NAVI_PARTS,
 } from '../../src/data';
@@ -163,23 +160,8 @@ describe('ムーブメント：狂い', () => {
 });
 
 describe('ムーブメント：ギアの入手', () => {
-  it('周回の始めのギアと、勝利の報酬の候補は、すべて定義がある', () => {
-    for (const id of [...START_NAVI_PARTS, ...NAVI_REWARD_CANDIDATES.flat()]) expect(NAVI_PARTS[id]).toBeDefined();
-    expect(NAVI_REWARD_CANDIDATES).toHaveLength(4);
-  });
-
-  it('候補から決まった数を選んで受け取る', () => {
-    const n = claimRewardParts(createNavi(START_NAVI_PARTS), NAVI_REWARD_CANDIDATES[0], [0, 2], NAVI_REWARD_PICKS);
-    expect(n.parts.map((p) => p.partId).slice(-2)).toEqual(['iceBoost', 'mpMemory']);
-    expect(new Set(n.parts.map((p) => p.uid)).size).toBe(n.parts.length);
-  });
-
-  it('数が違う・同じ候補を2回・ない候補は選べない', () => {
-    const n = createNavi([]);
-    const c = NAVI_REWARD_CANDIDATES[0];
-    expect(() => claimRewardParts(n, c, [0], 2)).toThrow();
-    expect(() => claimRewardParts(n, c, [1, 1], 2)).toThrow();
-    expect(() => claimRewardParts(n, c, [0, 5], 2)).toThrow();
+  it('周回の始めのギアは、すべて定義がある（段階204 で試作の5戦の勝利の報酬はなくした）', () => {
+    for (const id of START_NAVI_PARTS) expect(NAVI_PARTS[id]).toBeDefined();
   });
 
   it('各キャラの盤のブリッジには、置けるマスがある', () => {

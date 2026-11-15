@@ -36,6 +36,8 @@ import {
 import { FRAGMENTS, ITEMS, NAVI_DATA, PARTY, WEAPON_DATA } from '../../src/data';
 
 const D = WEAPON_DATA;
+// 刻めない物（kind 'item'）の確かめ用。段階204 でデータの消費アイテムはなくしたので、テストの中だけで足す
+const DI = { ...D, items: { ...D.items, potion: { id: 'potion', name: 'テストの道具', kind: 'item' as const, gains: {} } } };
 
 /** ハルトの武器の経験値を exp にした状態 */
 function withExp(a: ArmoryState, charId: string, exp: number): ArmoryState {
@@ -116,7 +118,7 @@ describe('武器：素材を刻む（段階27b）', () => {
 
   it('アイテム・持っていない素材は刻めない。元の状態は書き換えない', () => {
     const a = addItems(createArmory(D), ['potion', 'maskShard']);
-    expect(getAbsorbError(D, a, 'hero', 'potion')).toBe('only materials can be absorbed');
+    expect(getAbsorbError(DI, a, 'hero', 'potion')).toBe('only materials can be absorbed');
     expect(getAbsorbError(D, a, 'hero', 'goldfishFin')).toBe('no item left');
     absorbMaterial(D, a, 'hero', 'maskShard');
     expect(a.items.maskShard).toBe(1);
@@ -152,7 +154,7 @@ describe('武器：素材をまとめて刻む（段階145）', () => {
     expect(getAbsorbPickedError(D, a, 'hero', {})).toBe('nothing picked');
     expect(getAbsorbPickedError(D, a, 'hero', { goldfishScale: 0 })).toBe('nothing picked');
     expect(getAbsorbPickedError(D, a, 'hero', { goldfishScale: 2 })).toBe('no item left');
-    expect(getAbsorbPickedError(D, a, 'hero', { potion: 1 })).toBe('only materials can be absorbed');
+    expect(getAbsorbPickedError(DI, a, 'hero', { potion: 1 })).toBe('only materials can be absorbed');
     const many = addItems(createArmory(D), Array<string>(D.slotsPerLevel[0] + 1).fill('goldfishScale'));
     expect(getAbsorbPickedError(D, many, 'hero', { goldfishScale: D.slotsPerLevel[0] })).toBeNull();
     expect(getAbsorbPickedError(D, many, 'hero', { goldfishScale: D.slotsPerLevel[0] + 1 })).toBe('no slot left');

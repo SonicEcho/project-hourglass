@@ -60,18 +60,9 @@ export function chainBasicAttack(element: Element = 'physical', mod: ChainBasicM
   };
 }
 
-/** 本番の特性を、新しい戦闘の特性にする（段階158。段階164 で、新しい戦闘にない効果も近い効果に置き換えた） */
+/** 本番の特性を、新しい戦闘の特性にする（段階158。段階204 で、仮の置き換え（延長で引く枚数・バトン・先制）は外した。どれも同じ形で渡す） */
 export function chainPassives(c: CharacterDef): ChainPassive[] {
-  const out: ChainPassive[] = [];
-  for (const p of c.passives ?? []) {
-    if (p.kind === 'elementBoost' || p.kind === 'comboBoost' || p.kind === 'regen' || p.kind === 'mpSave' || p.kind === 'bug' || p.kind === 'partBoost') out.push({ ...p });
-    // 段階164（仮の置き換え。段階G で外す）：新しい戦闘にない効果を、近い効果に
-    // 延長で引く枚数 → 手札の上限 +1、バトン → コンボの割増し、先制 → 最初のラウンドの威力 +30%
-    else if (p.kind === 'oneMoreDraw') out.push({ kind: 'handPlus', count: 1 });
-    else if (p.kind === 'batonBoost') out.push({ kind: 'comboBoost', rate: p.rate });
-    else if (p.kind === 'startDash') out.push({ kind: 'firstRound', rate: 0.3 });
-  }
-  return out;
+  return (c.passives ?? []).map((p) => ({ ...p }));
 }
 
 /** 本番の仲間を、新しい戦闘の仲間にする */

@@ -6,7 +6,7 @@ import { backButton, frameBg, frameHeader } from '../ui/frame';
 import { addTileRows } from '../ui/gallery';
 import { enterScreen } from '../ui/skin';
 import { RENDER_SCALE } from '../ui/theme';
-import { addPouchLine, growthTiles } from './growthMenu';
+import { growthTiles } from './growthMenu';
 import { getCampReturn, run, setCampReturn, setHubReturn } from './run';
 
 // 探索の休憩所（段階147）：チェックポイントで「休憩する」と開く、拠点（レストピア）と同じ形のメニュー。
@@ -39,7 +39,8 @@ export class CampScene extends Phaser.Scene {
     const left = 14;
     const w = GAME_WIDTH - left * 2;
     const gap = 8;
-    let y = addPouchLine(this, root, left, 62, w) + gap + 4;
+    // 段階204：ポーチの行はなくした（消費アイテムをなくしたため）
+    let y = 62;
     // 一番上の星図は大きく、ほかは段に並べる（拠点の「記憶をたどる」の場所に、星図）
     const tiles = growthTiles((key) => this.open(key));
     const [first, ...rest] = tiles;

@@ -16,9 +16,7 @@ import {
   createNavi,
   advanceFlow,
   findEvent,
-  chapterOfEvent,
   firstEventId,
-  gaugeInChapter,
   battleLineup,
   lineupAt,
   lineupMembers,
@@ -540,17 +538,6 @@ export function getHubReturn(): SceneTarget | null {
   // 試作の5戦の並び（みおを含む3人）が出ないようにする（段階108。テストプレイのメモ 1）
   if (!hubReturn && run.explore) return { key: 'Explore', data: { area: run.explore.area } };
   return hubReturn;
-}
-
-/** 今の章で引き継いでいるつながりゲージ（別の章で貯めたものは0） */
-export function storyLinkGauge(): number {
-  return gaugeInChapter(run.linkGauge, chapterOfEvent(SLICE_FLOW, run.event)?.id);
-}
-
-/** 戦闘の後に残ったつながりゲージを、今の章のものとして覚える（セーブは呼ぶ側） */
-export function setStoryLinkGauge(value: number): void {
-  const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
-  run.linkGauge = chapter ? { chapter, value } : null;
 }
 
 /** 物語の今の章のパーティ（ハルトとあかり、など） */

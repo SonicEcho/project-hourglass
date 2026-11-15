@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { EnemyDef, NaviPartDef } from '../src/core';
 import { allBattles, castEntry, CLOCK_ACTIONS, parseClockTime } from '../src/core';
 import {
-  BOSS_PART_REWARDS,
   CARDS,
   COMBOS,
   FOLDER,
@@ -12,7 +11,6 @@ import {
   LINKS,
   NAVI_BOARDS,
   NAVI_PARTS,
-  NAVI_REWARD_CANDIDATES,
   PARTY,
   CHAIN_SKILLS,
   START_NAVI_PARTS,
@@ -58,20 +56,9 @@ describe('参照している名前が本当にある', () => {
     for (const e of enemies) for (const d of e.drops ?? []) expect(ITEMS[d as keyof typeof ITEMS]?.kind, `${e.name}：${d}`).toBe('material');
   });
 
-  it('戦闘でもらえるアイテムはアイテム（item）、ギアの候補はギア', () => {
-    for (const b of battles) {
-      if (b.item) expect(ITEMS[b.item as keyof typeof ITEMS]?.kind, b.id).toBe('item');
-      for (const p of b.naviReward ?? []) expect(has(NAVI_PARTS, p), `${b.id}：${p}`).toBe(true);
-    }
-    for (const p of [...START_NAVI_PARTS, ...NAVI_REWARD_CANDIDATES.flat()]) expect(has(NAVI_PARTS, p), p).toBe(true);
-  });
-
-  it('ボスの部位のギアは、本当にある部位とギア', () => {
-    const partIds = enemies.flatMap((e) => (e.parts ?? []).map((p) => p.id));
-    for (const [part, gear] of Object.entries(BOSS_PART_REWARDS)) {
-      expect(partIds, part).toContain(part);
-      expect(has(NAVI_PARTS, gear), gear).toBe(true);
-    }
+  it('戦闘でもらえるアイテムは実在する。周回の始めのギアはギア（段階204 で試作の5戦のギアの報酬はなくした）', () => {
+    for (const b of battles) if (b.item) expect(ITEMS[b.item as keyof typeof ITEMS], b.id).toBeDefined();
+    for (const p of START_NAVI_PARTS) expect(has(NAVI_PARTS, p), p).toBe(true);
   });
 
   it('敵の行動が使う部位は、その敵の部位', () => {

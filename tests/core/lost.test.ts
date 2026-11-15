@@ -15,7 +15,7 @@ import {
   lostStatus,
   shelfLost,
 } from '../../src/core';
-import { areaCommonItems, AREAS, CARDS, CAST, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SCENES, WEAPON_DATA } from '../../src/data';
+import { areaCommonItems, AREAS, CAST, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SCENES, WEAPON_DATA } from '../../src/data';
 
 // 落とし物（段階53。docs/design/economy.md の 5-3）
 const find: LostItemDef = { id: 'f', name: 'f', area: 'a11', owner: 'ゆうま', text: '', kind: 'find', spot: { cell: [1, 2] }, deliverScene: 'x', reward: { fragments: ['courage'] } };
@@ -81,7 +81,7 @@ describe('落とし物（段階53）', () => {
       for (const id of d.reward.items ?? []) expect(WEAPON_DATA.items[id], id).toBeDefined();
       for (const id of d.reward.fragments ?? []) expect(id in FRAGMENTS, id).toBe(true);
       for (const id of d.reward.gears ?? []) expect(id in NAVI_PARTS, id).toBe(true);
-      for (const id of d.reward.snaps ?? []) expect(id in CARDS, id).toBe(true);
+      for (const id of d.reward.snaps ?? []) expect(id in CHAIN_SNAPS, id).toBe(true);
       if (d.kind === 'bring') expect(areaCommonItems(d.area), d.id).toContain(d.bring!.item);
       else {
         // 光る所を足した記憶をたどる区画が、書き間違いなく作れる

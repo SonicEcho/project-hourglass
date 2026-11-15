@@ -1,6 +1,6 @@
 import type { AlbumState, ArmoryState, GrowthState, NaviState } from '../core';
 import { addParts, arrangeBoards, createGrowth, createNavi, evolveWeapon, naviDataWithWeapons, flowEvents, gainSnaps, getEvolveError, nextEvolutions, lineupAt, lineupMembers, nodeCost, openNode, recommendStar, refundV13Growth, resetV14Evolutions, weaponLevel } from '../core';
-import { AREAS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, NAVI_DATA, PARTY, RETURN_VISITS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
+import { AREAS, CHAIN_AREA_SETUPS, CHAPTER1_LINEUP, GROWTH_MAP, GROWTH_RECOMMEND, NAVI_DATA, PARTY, RETURN_VISITS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, WEAPON_DATA } from '../data';
 import type { Carry } from './autoArea';
 import { areaBattleOrder, grownParty, newCarry } from './autoArea';
 import presetCarryTable from './presetCarry.json';
@@ -144,13 +144,13 @@ function presetNavi(areas: string[], eventId: string, armory: ArmoryState): Navi
   return addParts(arranged, gears.filter((g) => PRESET_UNPLACED.has(g)));
 }
 
-/** 区画で手に入るスナップ（戦闘の勝ち・宝箱・返した時） */
+/** 区画で手に入る新しい戦闘のスナップ（ぬしの ★3・宝箱・返した時。段階204 で古いスナップから変えた） */
 function areaSnaps(areaId: string): string[] {
   const area = AREAS[areaId];
-  return [...areaBattleOrder(areaId).flatMap((b) => b.snaps ?? []), ...area.chests.flatMap((c) => c.snaps ?? []), ...(area.returnSnaps ?? [])];
+  return [...areaBattleOrder(areaId).flatMap((b) => (b.boss ? (CHAIN_AREA_SETUPS[b.id]?.snaps ?? []) : [])), ...area.chests.flatMap((c) => c.chainSnaps ?? []), ...(area.chainReturnSnaps ?? [])];
 }
 
-/** 持っているスナップに足す */
+/** 持っているスナップに足す（新しい戦闘のアルバム） */
 export function withPresetSnaps(album: AlbumState, preset: GrowthPreset): AlbumState {
   const missing = preset.snaps.filter((id) => !(album.owned[id] ?? 0));
   return missing.length ? gainSnaps(album, missing) : album;

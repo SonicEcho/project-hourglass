@@ -104,9 +104,7 @@ export interface AreaChest extends InRoom, InNight {
   cell: GridCell;
   items: string[];
   gears?: string[];
-  /** 入っているスナップ（段階41。持ち物に入り、アルバムの画面で入れ替えられる） */
-  snaps?: string[];
-  /** 新しい戦闘の区画で渡すスナップ（段階168。新しい戦闘のアルバムへ。書かなければ snaps を今のアルバムへ） */
+  /** 入っているスナップ（段階168。新しい戦闘のアルバムへ。段階204 で古いスナップの snaps はなくした） */
   chainSnaps?: string[];
 }
 
@@ -183,9 +181,7 @@ export interface AreaDef {
   owner?: string;
   /** 返す画面の後ろに流す、その時間の景色（会話の背景 BACKDROPS の id。段階46d「記憶の再生」） */
   memory?: string;
-  /** 返した時に持ち主からもらうスナップ（段階41。返した報酬） */
-  returnSnaps?: string[];
-  /** 返した時に手に入る、新しい戦闘のスナップ（段階177。区画の戦闘が新しい戦闘の区画。returnSnaps の代わり） */
+  /** 返した時に持ち主からもらうスナップ（段階177。新しい戦闘のアルバムへ。段階204 で古いスナップの returnSnaps はなくした） */
   chainReturnSnaps?: string[];
   /** 返し終えた後に入り直す、狩りの中身（段階43。core/hunt.ts） */
   hunt?: AreaHunt;

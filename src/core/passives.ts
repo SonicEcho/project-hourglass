@@ -9,7 +9,7 @@ function passivesOf<K extends PassiveEffect['kind']>(ally: { passives?: PassiveE
   return (ally.passives ?? []).filter((p): p is PassiveOf<K> => p.kind === kind);
 }
 
-type RateKind = 'partBoost' | 'batonBoost' | 'comboBoost' | 'regen' | 'bug' | 'elementBoost';
+type RateKind = 'partBoost' | 'comboBoost' | 'regen' | 'bug' | 'elementBoost';
 
 /** 割合の特性の、上限をかける前の合計（elementBoost は element を指定する） */
 export function passiveTotal(ally: { passives?: PassiveEffect[] }, kind: RateKind, element?: DamageType): number {
@@ -28,9 +28,8 @@ export function passiveRate(ally: { passives?: PassiveEffect[] }, kind: RateKind
 export function cappedPassives(ally: { passives?: PassiveEffect[] }): { kind: keyof typeof PASSIVE_CAPS; element?: Element; value: number }[] {
   const out: { kind: keyof typeof PASSIVE_CAPS; element?: Element; value: number }[] = [];
   for (const el of ['fire', 'ice', 'thunder'] as Element[]) if (passiveTotal(ally, 'elementBoost', el) >= PASSIVE_CAPS.elementBoost) out.push({ kind: 'elementBoost', element: el, value: PASSIVE_CAPS.elementBoost });
-  for (const kind of ['partBoost', 'comboBoost', 'regen', 'batonBoost'] as const) if (passiveTotal(ally, kind) >= PASSIVE_CAPS[kind]) out.push({ kind, value: PASSIVE_CAPS[kind] });
+  for (const kind of ['partBoost', 'comboBoost', 'regen'] as const) if (passiveTotal(ally, kind) >= PASSIVE_CAPS[kind]) out.push({ kind, value: PASSIVE_CAPS[kind] });
   if (passivesOf(ally, 'mpSave').reduce((sum, p) => sum + p.amount, 0) >= PASSIVE_CAPS.mpSave) out.push({ kind: 'mpSave', value: PASSIVE_CAPS.mpSave });
-  if (passivesOf(ally, 'oneMoreDraw').reduce((sum, p) => sum + p.count, 0) >= PASSIVE_CAPS.oneMoreDraw) out.push({ kind: 'oneMoreDraw', value: PASSIVE_CAPS.oneMoreDraw });
   return out;
 }
 

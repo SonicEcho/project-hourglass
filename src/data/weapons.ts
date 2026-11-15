@@ -1,7 +1,6 @@
 import type { Element } from '../core/types';
 import type { EvolutionCondition, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, WeaponData, WeaponDef, WeaponParamKey } from '../core/weapon';
 import type { PartColor } from '../core/navi';
-import { POUCH_MAX } from './constants';
 
 // 武器ビルドアップ（段階9）。数値・名前はすべて仮
 
@@ -169,10 +168,6 @@ export const ITEMS = {
   frostFeather: { id: 'frostFeather', name: '霜の羽', kind: 'material', rarity: 'common', gains: { thunder: 2, ice: 1 } },
   hardFur: { id: 'hardFur', name: '硬い毛皮', kind: 'material', rarity: 'common', gains: { ice: 2, atk: 1 } },
   steelClaw: { id: 'steelClaw', name: '鋼の爪', kind: 'material', rarity: 'uncommon', gains: { atk: 3 } },
-  // ---- ポーチの消費アイテム（勝利の報酬・宝箱。段階51。戦闘での効き目は pouch.ts。刻めず、時分解もできない） ----
-  potion: { id: 'potion', name: 'ポーション', kind: 'item', gains: {}, max: POUCH_MAX },
-  ether: { id: 'ether', name: 'エーテル', kind: 'item', gains: {}, max: POUCH_MAX },
-  hiPotion: { id: 'hiPotion', name: 'ハイポーション', kind: 'item', gains: {}, max: POUCH_MAX },
 } satisfies Record<string, ItemDef>;
 
 export type ItemId = keyof typeof ITEMS;

@@ -71,8 +71,3 @@ export interface ChapterGauge {
   chapter: string;
   value: number;
 }
-
-/** 今の章で使えるゲージの量。別の章で貯めたもの・なければ0（章が変わると0に戻る） */
-export function gaugeInChapter(g: ChapterGauge | null, chapter: string | undefined): number {
-  return g && chapter !== undefined && g.chapter === chapter ? g.value : 0;
-}

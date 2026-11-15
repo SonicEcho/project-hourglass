@@ -1,15 +1,13 @@
 import Phaser from 'phaser';
 import type { ChainMove, CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
-import { canEvolveAny, chapterLocked, claimRewardParts, findBattle, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar } from '../core';
+import { canEvolveAny, chapterLocked, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, NAVI_REWARD_PICKS, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, STORY, WEAPON_DATA } from '../data';
-import { describePart, partKindText } from '../ui/naviText';
-import { drawPartShape } from '../ui/naviViews';
+import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { battleAt, currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
+import { currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 import { faceTexture } from '../ui/portrait';
 import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
@@ -64,7 +62,6 @@ export class GrowthScene extends Phaser.Scene {
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
   /** 勝利の報酬で選んでいるギアの候補の番号 */
-  private rewardChosen: number[] = [];
   /** 星図（枠の外は隠す。段階56） */
   private mapLayer!: Phaser.GameObjects.Container;
   /** 星図をずらした量（描き直しても覚えておく） */
@@ -83,7 +80,6 @@ export class GrowthScene extends Phaser.Scene {
     this.overlay = undefined;
     this.selected = null;
     this.message = '';
-    this.rewardChosen = [];
     // パーティにいない仲間を選んでいたら、先頭の仲間にする（段階26）
     const members = lineupBase(hubLineup());
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
@@ -94,9 +90,8 @@ export class GrowthScene extends Phaser.Scene {
     this.centerOn(piecePosition(run.growth, this.charId));
     this.setupMapInput();
     this.render();
-    // ギアの報酬は試作の5戦だけ（ムーブメントが閉じている間は出さない）
-    if (run.pendingReward !== null && hubLineup().unlocks.navi) this.showReward();
-    else maybeShowTip(this, ['growth_star']);
+    // 段階204：試作の5戦のギアの報酬（showReward）は外した
+    maybeShowTip(this, ['growth_star']);
   }
 
   /** 章が進んで星図の区域が増えていたら、初めて開いた時に一度だけ知らせる（段階49。見たことは物語の値に覚える） */
@@ -170,7 +165,6 @@ export class GrowthScene extends Phaser.Scene {
     this.root.add(frameBg(this, SKY_COLORS.top, SKY_COLORS.bottom));
 
     // 上：見出しと星の砂（段階141：共通の枠。今いる場所の一言は、下のボタンの名前と重なるので出さない）
-    const next = back ? null : battleAt(run.progress);
     const pointsText = frameHeader(this, this.root, 'star', '星図', { label: '星の砂', value: `${g.points}` })!;
     // マスを開けて減った時などは、前の数から数えるように動く（段階32a 調整1）
     countText(this, pointsText, this.shownPoints ?? g.points, g.points, (v) => `${v}`);
@@ -222,17 +216,11 @@ export class GrowthScene extends Phaser.Scene {
     const subW = (GAME_WIDTH - SIDE_PADDING * 2 - gap * (subs.length - 1)) / Math.max(1, subs.length);
     subs.forEach((draw, i) => draw(SIDE_PADDING + subW / 2 + i * (subW + gap), subW, subs.length >= 3));
 
-    // 下：戻る（探索・拠点から開いた時）か、次の戦闘へ（試作の5戦。金のボタン）
-    if (back) {
-      backButton(this, this.root, back.label ?? '探索へ戻る', () => {
-        setHubReturn(null);
-        this.scene.start(back.key, back.data);
-      });
-    } else {
-      addButton(this, this.root, GAME_WIDTH / 2, FRAME.backY, GAME_WIDTH - SIDE_PADDING * 2 - 8, FRAME.backH, next ? `${next.name}へ` : '結果へ', {
-        onTap: () => this.scene.start('Battle', { progress: run.progress }),
-      }, GOLD_BUTTON);
-    }
+    // 下：戻る（探索・拠点から開いた時。段階204 で試作の5戦の「次の戦闘へ」は外した）
+    backButton(this, this.root, back.label ?? '探索へ戻る', () => {
+      setHubReturn(null);
+      this.scene.start(back.key, back.data);
+    });
   }
 
   /**
@@ -619,72 +607,6 @@ export class GrowthScene extends Phaser.Scene {
     });
   }
 
-
-  /** 勝利の報酬：ギアの候補から決まった数を選ぶ（選ぶまで閉じない） */
-  private showReward(): void {
-    this.closeOverlay();
-    const battleId = run.pendingReward;
-    if (battleId === null) return;
-    const candidates = findBattle(STORY, battleId)?.naviReward ?? [];
-    const picks = Math.min(NAVI_REWARD_PICKS, candidates.length);
-    const c = this.add.container(0, 0).setDepth(200);
-    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75).setOrigin(0).setInteractive());
-    const top = 150;
-    const itemH = 104;
-    const h = 120 + candidates.length * (itemH + 8) + 70;
-    c.add(addWindow(this, 14, top, GAME_WIDTH - 28, h));
-    c.add(addText(this, GAME_WIDTH / 2, top + 16, 'ギアを手に入れた！', { size: 20, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
-    c.add(
-      addText(this, GAME_WIDTH / 2, top + 50, `${candidates.length}つの中から${picks}つ選ぶ（${this.rewardChosen.length}/${picks}）
-ムーブメントではめると効く`, {
-        size: 13,
-        align: 'center',
-        color: COLORS.subText,
-      }).setOrigin(0.5, 0),
-    );
-    candidates.forEach((id, i) => {
-      const def = currentNaviData().parts[id];
-      const y = top + 104 + i * (itemH + 8);
-      const chosen = this.rewardChosen.includes(i);
-      const rect = this.add.rectangle(26, y, GAME_WIDTH - 52, itemH, chosen ? 0x2f4f3a : COLORS.panelLight).setRounded(8).setOrigin(0);
-      rect.setStrokeStyle(chosen ? 3 : 1, chosen ? 0x6dff9e : COLORS.border);
-      c.add(rect);
-      drawPartShape(this, c, def, 0, 38, y + 14, 16);
-      c.add(addText(this, 110, y + 10, `${chosen ? '✔ ' : ''}${def.name}`, { size: 16, bold: true, color: chosen ? '#6dff9e' : COLORS.text }));
-      c.add(addText(this, 110, y + 36, `${describePart(def)}
-${partKindText(def)}`, { size: 11, wrap: GAME_WIDTH - 150 }));
-      makePressable(rect, {
-        onTap: () => {
-          if (chosen) this.rewardChosen = this.rewardChosen.filter((x) => x !== i);
-          else if (this.rewardChosen.length < picks) this.rewardChosen = [...this.rewardChosen, i];
-          this.showReward();
-        },
-      });
-    });
-    addButton(
-      this,
-      c,
-      GAME_WIDTH / 2,
-      top + h - 40,
-      240,
-      52,
-      '受け取る',
-      {
-        onTap: () => {
-          run.navi = claimRewardParts(run.navi, candidates, this.rewardChosen, picks);
-          console.log('[navi] reward', this.rewardChosen.map((x) => candidates[x]).join(','));
-          run.pendingReward = null;
-          this.rewardChosen = [];
-          this.closeOverlay();
-          this.message = 'ギアを受け取った。「ムーブメント」ではめよう';
-          this.render();
-        },
-      },
-      { enabled: this.rewardChosen.length === picks, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: 17, bold: true },
-    );
-    this.overlay = c;
-    popIn(this, c);
-  }
 
   private closeOverlay(): void {
     fadeOutAndDestroy(this, this.overlay);

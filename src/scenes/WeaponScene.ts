@@ -470,7 +470,7 @@ export class WeaponScene extends Phaser.Scene {
       const label = (c: (typeof capped)[number]): string =>
         c.kind === 'elementBoost'
           ? `${ELEMENT_LABEL[c.element!]} +${Math.round(c.value * 100)}%`
-          : ({ partBoost: `部位 +${Math.round(c.value * 100)}%`, comboBoost: `コンボ +${Math.round(c.value * 100)}%`, regen: `回復 ${Math.round(c.value * 100)}%`, batonBoost: `バトン ×${1.25 + c.value}`, mpSave: `MP消費 −${c.value}`, oneMoreDraw: `延長 +${c.value}枚` } as Record<string, string>)[c.kind];
+          : ({ partBoost: `部位 +${Math.round(c.value * 100)}%`, comboBoost: `コンボ +${Math.round(c.value * 100)}%`, regen: `回復 ${Math.round(c.value * 100)}%`, mpSave: `MP消費 −${c.value}` } as Record<string, string>)[c.kind];
       lines.push(`上限：${capped.map(label).join('・')}（超えた分は効かない）`);
     }
     return lines.join('\n');
