@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from '../core';
 import { addItems, addParts, chapterOfEvent, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, SAND_BOTTOM_FEATURES, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -42,10 +42,13 @@ const PAD = { x: GAME_WIDTH - 118, y: PANEL_Y + 176, w: 72, h: 58, gap: 6 };
 /** 1マス動くのにかける時間（ミリ秒）と、長押しで次へ進むまでの間 */
 const MOVE_MS = 130;
 const REPEAT_MS = 60;
-/** 帰り道の砂の余りがこれを下回ったら警告する（段階214） */
+/** 帰り道の砂の余りがこれを下回ったら警告する（段階214）。段階215 の続き：その前に、黄色の注意（もう少し早めに） */
 const SAND_WARN = 15;
+const SAND_CAUTION = 45;
 /** 道具袋の枠に出す1文字（段階214） */
-const TOOL_MARK: Record<DigToolId, string> = { blast: '爆', ladder: '縄', bell: '鈴', shard: '砂' };
+const TOOL_MARK: Record<DigToolId, string> = { blast: '爆', ladder: '縄', bell: '鈴', shard: '砂', lantern: '灯', needle: '針' };
+/** 毒の砂で減る HP の割合（段階215） */
+const POISON_RATE = 0.1;
 
 /** 掘る時に、その場でスコップを振る時間（段階210。振り終わってから歩いて進む） */
 const DIG_MS = 150;
@@ -215,6 +218,8 @@ export class SandBottomScene extends Phaser.Scene {
       const hero = ensureDigHero(this, id);
       const sprite = this.add.sprite(x + 52, y + h - 10, hero.key, hero.idleFrame).setOrigin(hero.originX, hero.originY).setScale(hero.scale * Math.min(2.4, (h - 16) / (T * 1.5)));
       sprite.play(hero.anim('walk'));
+      // 段階215 の続き（開発者の声：足の動きが速すぎる）：札では、ゆっくり歩く
+      sprite.anims.timeScale = 0.4;
       card.add(sprite);
       const name = PARTY.find((c) => c.id === id)?.name ?? id;
       const tx = x + 104;
@@ -426,6 +431,8 @@ export class SandBottomScene extends Phaser.Scene {
         this.tweens.add({ targets: layer, y: 0, duration: MOVE_MS, delay });
       }
     }
+    // 暗がり（段階215）：深い章の層は、自分のまわりと光る苔のまわりしか見えない。一度見えた所は薄暗く残る
+    layer.add(this.drawDark(top));
     // 動ける上下左右のマスに枠（タップで、そのマスへ）
     if (s.outcome === 'diving') {
       for (const dir of Object.keys(DIR_STEP) as DigDir[]) {
@@ -461,6 +468,46 @@ export class SandBottomScene extends Phaser.Scene {
     this.root.add(addText(this, GAME_WIDTH - 14, 24, `${s.y * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 22, bold: true }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 54, s.y > 0 ? digLayerAt(this.def, s.y).name : '地上', { size: 11, color: COLORS.subText }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 70, `今回 ${s.deepest * SAND_BOTTOM_METERS_PER_ROW} m・記録 ${record * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 10, color: COLORS.subText }).setOrigin(1, 0));
+  }
+
+  /**
+   * 暗がりを描く（段階215）。見えている所は何もかけない。一度見えた所（run.dig.seen）は薄く、見たことのない所は真っ暗。
+   * 見えている所：暗がりのない層、自分から（その層の見える広さ＋ランタン）以内、光る苔から2マス以内
+   */
+  private drawDark(top: number): Phaser.GameObjects.Graphics {
+    const s = this.s;
+    const g = this.add.graphics();
+    const seen = new Set(run.dig?.seen ?? []);
+    const added: number[] = [];
+    const lit = (x: number, y: number) => {
+      const d = digLayerAt(this.def, Math.max(1, y)).dark;
+      if (d === undefined || y === 0) return true;
+      const r = d + s.light;
+      return (x - s.x) ** 2 + (y - s.y) ** 2 <= (r + 0.5) ** 2;
+    };
+    // 光る苔のまわり
+    const moss = new Set<number>();
+    for (let y = Math.max(1, top - 3); y < Math.min(s.height, top + ROWS + 3); y++)
+      for (let x = 0; x < COLS; x++)
+        if (s.tiles[y * s.width + x] === 'moss')
+          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (dx * dx + dy * dy <= 5) moss.add((y + dy) * s.width + x + dx);
+    for (let r = -1; r <= ROWS && top + r < s.height; r++) {
+      const y = top + r;
+      if (y < 1) continue;
+      for (let x = 0; x < COLS; x++) {
+        const cell = y * s.width + x;
+        if (lit(x, y) || moss.has(cell)) {
+          if (!seen.has(cell)) {
+            seen.add(cell);
+            added.push(cell);
+          }
+          continue;
+        }
+        g.fillStyle(0x000000, seen.has(cell) ? 0.55 : 0.94).fillRect(x * T, GRID_Y + r * T, T, T);
+      }
+    }
+    if (added.length > 0 && run.dig) run.dig = { ...run.dig, seen: [...(run.dig.seen ?? []), ...added] };
+    return g;
   }
 
   /** 帰り道の砂の余り（今の砂 − 帰り道に要る砂。段階214） */
@@ -518,6 +565,11 @@ export class SandBottomScene extends Phaser.Scene {
     }
     // 帰り道の砂の警告（段階214。開発者の声）：余りが少ない・足りない時は、地面の上の端に赤い知らせ
     const m = this.margin();
+    if (diving && s.y > 0 && m < SAND_CAUTION && m >= SAND_WARN) {
+      const bar = this.add.rectangle(0, GRID_Y, GAME_WIDTH, 22, 0x6a5010, 0.85).setOrigin(0);
+      const label = addText(this, GAME_WIDTH / 2, GRID_Y + 11, `そろそろ帰り道を考えよう（帰り道の砂の余り ${m}）`, { size: 11, bold: true, color: '#ffe9a8' }).setOrigin(0.5);
+      this.root.add([bar, label]);
+    }
     if (diving && s.y > 0 && m < SAND_WARN) {
       const text = m < 0 ? 'このままでは帰れない！ 上へ戻ると、かばんの半分を失う' : `帰り道の砂が残りわずか！（余り ${m}）`;
       const bar = this.add.rectangle(0, GRID_Y, GAME_WIDTH, 24, 0x8a1020, 0.9).setOrigin(0);
@@ -558,6 +610,36 @@ export class SandBottomScene extends Phaser.Scene {
     addButton(this, o, GAME_WIDTH / 2, 474, 220, 44, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
   }
 
+  /** 毒の砂（段階215）：みんなの HP が最大の rate だけ減る（1より下にはならない） */
+  private hurtParty(rate: number): void {
+    if (!run.dig) return;
+    const vitals = { ...run.dig.vitals };
+    for (const c of currentParty(storyBattleLineup())) {
+      const v = vitals[c.id] ?? { hp: c.stats.hp, mp: c.stats.mp };
+      vitals[c.id] = { ...v, hp: Math.max(1, v.hp - Math.round(c.stats.hp * rate)) };
+    }
+    run.dig = { ...run.dig, vitals };
+  }
+
+  /** 探し針（段階215）：いちばん近い宝箱・光る物・ぬしの巣を2つ照らし、向きを知らせる */
+  private useNeedle(): string {
+    const s = this.s;
+    const marks = [
+      ...Object.keys(s.chests).map((c) => ({ cell: Number(c), name: '宝箱' })),
+      ...Object.keys(s.relics).map((c) => ({ cell: Number(c), name: '光る物' })),
+      ...Object.keys(s.nests).map((c) => ({ cell: Number(c), name: 'ぬしの巣' })),
+    ]
+      .map((m) => ({ ...m, x: m.cell % s.width, y: Math.floor(m.cell / s.width) }))
+      .sort((a, b) => Math.abs(a.x - s.x) + Math.abs(a.y - s.y) - (Math.abs(b.x - s.x) + Math.abs(b.y - s.y)))
+      .slice(0, 2);
+    if (marks.length === 0 || !run.dig) return '探し針は、何も指さなかった';
+    const add: number[] = [];
+    for (const m of marks) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) add.push((m.y + dy) * s.width + m.x + dx);
+    run.dig = { ...run.dig, seen: [...(run.dig.seen ?? []), ...add] };
+    const dirOf = (m: { x: number; y: number }) => `${m.y > s.y ? '下' : m.y < s.y ? '上' : ''}${m.x > s.x ? '右' : m.x < s.x ? '左' : ''}` || 'すぐそこ';
+    return marks.map((m) => `${m.name}：${dirOf(m)} ${Math.abs(m.x - s.x) + Math.abs(m.y - s.y)}マス`).join('、');
+  }
+
   /** 道具・技の結果を受ける（段階214）。heal は応急手当（HP を戻す） */
   private applyUse(r: { state: DigState; event: DigEvent }, name: string, heal = false): void {
     this.closeOverlay(false);
@@ -579,6 +661,8 @@ export class SandBottomScene extends Phaser.Scene {
     }
     const got = e.type === 'used' && e.items.length > 0 ? `（${e.items.map(itemName).join('・')} をかばんへ）` : '';
     this.message = `${name}！${got}`;
+    if (e.type === 'used' && e.what === 'needle') this.message = `探し針！ ${this.useNeedle()}`;
+    if (e.type === 'trap') this.message = `${name}！ ${this.eventText(e)}`;
     if (e.type === 'roamer') {
       this.render(before);
       this.time.delayedCall(MOVE_MS + 40, () => this.showFoe('roamer', e.id, e.battle, true));
@@ -687,6 +771,12 @@ export class SandBottomScene extends Phaser.Scene {
     }
     this.s = r.state;
     this.message = this.eventText(e);
+    if (e.type === 'trap' && e.trap === 'poison') this.hurtParty(POISON_RATE);
+    // 層に入った時に、その層の特徴を知らせる（段階215 の続き。開発者の案）
+    const fromGroup = before.y > 0 ? digLayerAt(this.def, before.y).group : undefined;
+    const toGroup = r.state.y > 0 ? digLayerAt(this.def, r.state.y).group : undefined;
+    const f = toGroup ? SAND_BOTTOM_FEATURES[toGroup] : undefined;
+    if (toGroup !== fromGroup && f) this.message = `${f.name}：${f.feature}${this.message ? `　${this.message}` : ''}`;
     if (e.type === 'blocked') {
       this.release();
       this.render();
@@ -701,6 +791,14 @@ export class SandBottomScene extends Phaser.Scene {
     if (e.type === 'dig' && !e.through) return '固い土だ。もう一度掘る';
     if (e.type === 'ore') return e.item ? (e.kept ? `鉱脈から ${itemName(e.item)} を掘り出した` : `かばんがいっぱいで、${itemName(e.item)} は砂に戻った`) : '鉱脈は空だった';
     if (e.type === 'grain') return `砂時計の砂粒！ 砂 +${e.sand}`;
+    // 段階215：仕掛け
+    if (e.type === 'trap') {
+      if (e.trap === 'pit') return e.fall ? `落とし穴だ！ ${e.fall}マス落ちた` : '落とし穴だった（下が固くて、落ちずにすんだ）';
+      if (e.trap === 'poison') return `毒の砂だ！ みんなの HP が ${Math.round(POISON_RATE * 100)}% 減った`;
+      if (e.trap === 'whirl') return '流砂の渦に引き込まれた！ 砂時計の砂 −8';
+      if (e.trap === 'spring') return e.jump ? `ばねで ${e.jump}マス跳ね上がった！` : 'ばねだ（上がふさがっていて跳ねられない）';
+      if (e.trap === 'fossil') return e.items?.length ? `化石だ！ ${e.items.map(itemName).join('・')} をかばんへ` : '化石だ！（かばんがいっぱいで、何も持てない）';
+    }
     const chasing = this.s.roamers.some((m) => m.chasing);
     return chasing ? '砂嵐がこちらに気づいた！' : '';
   }
