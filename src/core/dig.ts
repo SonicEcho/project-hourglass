@@ -4,13 +4,14 @@ import { nextRandom } from './rng';
 // 横から見た地面（横 width マス、深さは層の合計）を、上下左右に1マスずつ掘り進む。砂時計の砂は時間ではなく手数で減る。
 // 地面はシードから作る（同じシードなら同じ地面）。
 // 段階208：層の境目の番人（倒さないと下の層へ行けない）、動く砂嵐（近づくと追ってくる）、鉱脈・砂時計の砂粒・崩れる砂を足した。
-// 段階209：空洞に砂嵐が稀に湧く（spawn）。段階212：層のまとまり（group。章の層の中の区画ごとの帯）。段階211：掘る人の特徴（岩を割る rockCost・固い土を1回で clayOnce）
+// 段階209：空洞に砂嵐が稀に湧く（spawn）。段階213：帯の奥の光る物（relics）とぬしの巣（nests）。段階212：層のまとまり（group。章の層の中の区画ごとの帯）。段階211：掘る人の特徴（岩を割る rockCost・固い土を1回で clayOnce）
 
 /**
  * マスの種類。clay は2回掘る（1回目で砂になる）。rock は掘れない。chest は宝箱、guard は層の境目の番人。
- * ore は鉱脈（掘ると素材）、grain は砂時計の砂粒（掘ると砂が戻る）、loose は崩れる砂（下が空くと落ちる）
+ * ore は鉱脈（掘ると素材）、grain は砂時計の砂粒（掘ると砂が戻る）、loose は崩れる砂（下が空くと落ちる）。
+ * relic は光る物（段階213。記憶の宝箱・落とし物。中身は DigState の relics）、nest はぬしの巣（段階213。動かないぬし。戦闘は nests）
  */
-export type DigTile = 'air' | 'sand' | 'clay' | 'rock' | 'chest' | 'guard' | 'ore' | 'grain' | 'loose';
+export type DigTile = 'air' | 'sand' | 'clay' | 'rock' | 'chest' | 'guard' | 'ore' | 'grain' | 'loose' | 'relic' | 'nest';
 
 export type DigRarity = 'common' | 'uncommon' | 'rare';
 
@@ -43,6 +44,13 @@ export interface DigLayerDef {
   guards?: string[];
   /** 稀に番人として出る、その層の章のぬしの戦闘（段階212）。出る割合は DigWorldDef の lordRate */
   lords?: string[];
+  /**
+   * 光る物（段階213）：帯の奥の空洞に1つずつ置く。id は呼ぶ側が決める（記憶の宝箱 'gear:<採取の場所>'・落とし物 'lost:<落とし物>'）。
+   * 深い空洞から順に置く
+   */
+  relics?: string[];
+  /** ぬしの巣（段階213）：帯のいちばん深い空洞にいる、動かないぬしの戦闘 */
+  nest?: string;
   /** 層（まとまり）のいちばん下での、宝箱の中身の重み（段階212。上の端の weights から、深さに合わせて移る）。書かなければ weights のまま */
   deepWeights?: Record<DigRarity, number>;
   /**
@@ -96,6 +104,10 @@ export interface DigState {
   tiles: DigTile[];
   /** 宝箱の中身（マスの番号 → 物の id） */
   chests: Record<number, string[]>;
+  /** 光る物（マスの番号 → id。段階213） */
+  relics: Record<number, string>;
+  /** ぬしの巣（マスの番号 → 戦闘の id。段階213） */
+  nests: Record<number, string>;
   /** 番人の戦闘（マスの番号 → 戦闘の id） */
   guards: Record<number, string>;
   roamers: DigRoamer[];
@@ -120,6 +132,8 @@ export type DigEvent =
   | { type: 'blocked'; reason: 'rock' | 'edge' | 'sand' }
   | { type: 'chest'; cell: number; items: string[] }
   | { type: 'guard'; cell: number; battle: string }
+  | { type: 'relic'; cell: number; id: string }
+  | { type: 'nest'; cell: number; battle: string }
   | { type: 'roamer'; id: number; battle: string };
 
 /** 入口（地上の真ん中） */
@@ -260,8 +274,11 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
   const chests: Record<number, string[]> = {};
   const guards: Record<number, string> = {};
   const roamers: DigRoamer[] = [];
+  const relics: Record<number, string> = {};
+  const nests: Record<number, string> = {};
   def.layers.forEach((layer, li) => {
     const top = digLayerTop(def, layer.id);
+    const caves: { cx: number; cw: number; floor: number }[] = [];
     for (let c = 0; c < layer.caves; c++) {
       // 空洞：横3〜5・縦2〜3。層の中に収める（境目の行は避ける）
       const cw = 3 + Math.floor(rand() * 3);
@@ -270,6 +287,7 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       const cy = top + 1 + Math.floor(rand() * Math.max(1, layer.rows - ch - 1));
       for (let y = cy; y < cy + ch && y < height; y++) for (let x = cx; x < cx + cw; x++) tiles[y * w + x] = 'air';
       const floor = Math.min(cy + ch - 1, height - 1);
+      caves.push({ cx, cw, floor });
       const chestCell = floor * w + cx + Math.floor(rand() * cw);
       if (rand() < layer.chestRate) {
         tiles[chestCell] = 'chest';
@@ -278,6 +296,33 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       const rx = cx + Math.floor(rand() * cw);
       if (floor * w + rx !== chestCell && layer.battles.length > 0 && rand() < layer.nestRate) {
         roamers.push({ id: roamers.length, x: rx, y: floor, battle: pick(layer.battles), chasing: false });
+      }
+    }
+    // ぬしの巣と光る物（段階213）：深い空洞の床から順に。空いたマス（宝箱のない所）に置く
+    if (caves.length > 0 && (layer.nest || (layer.relics?.length ?? 0) > 0)) {
+      const deep = [...caves].sort((a, b) => b.floor - a.floor);
+      const place = (cave: (typeof deep)[number]): number | null => {
+        for (let i = 0; i < cave.cw; i++) {
+          const cell = cave.floor * w + cave.cx + ((Math.floor(cave.cw / 2) + i) % cave.cw);
+          if (tiles[cell] === 'air') return cell;
+        }
+        return null;
+      };
+      let k = 0;
+      if (layer.nest) {
+        const cell = place(deep[0]);
+        if (cell !== null) {
+          tiles[cell] = 'nest';
+          nests[cell] = layer.nest;
+        }
+        k = 1;
+      }
+      for (const id of layer.relics ?? []) {
+        const cell = place(deep[k % deep.length]);
+        k++;
+        if (cell === null) continue;
+        tiles[cell] = 'relic';
+        relics[cell] = id;
       }
     }
     // 層の境目（いちばん上の層と、同じまとまりの帯の境目は除く）：岩の帯で、番人のいる1マスだけが通り道
@@ -303,9 +348,11 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
   }
   // 空洞が重なって宝箱が消えた所は、中身の記録も消す
   for (const cell of Object.keys(chests).map(Number)) if (tiles[cell] !== 'chest') delete chests[cell];
+  for (const cell of Object.keys(relics).map(Number)) if (tiles[cell] !== 'relic') delete relics[cell];
+  for (const cell of Object.keys(nests).map(Number)) if (tiles[cell] !== 'nest') delete nests[cell];
   const alive = roamers.filter((m) => tiles[m.y * w + m.x] === 'air');
   const settled = settle(tiles, w, height, new Set([ex, ...alive.map((m) => m.y * w + m.x)]));
-  return { seed: seed >>> 0, width: w, height, tiles: settled, chests, guards, roamers: alive, x: ex, y: 0, sand: def.sand, deepest: 0, bag: [], steps: 0, outcome: 'diving' };
+  return { seed: seed >>> 0, width: w, height, tiles: settled, chests, guards, relics, nests, roamers: alive, x: ex, y: 0, sand: def.sand, deepest: 0, bag: [], steps: 0, outcome: 'diving' };
 }
 
 /** 重みで珍しさを決める（その珍しさの物がなければ一つ下） */
@@ -368,6 +415,8 @@ export function stepDig(def: DigWorldDef, s: DigState, dir: DigDir): { state: Di
   if (tile === 'rock' && !canBreakRock(def, ny)) return { state: s, event: { type: 'blocked', reason: 'rock' } };
   if (tile === 'chest') return { state: s, event: { type: 'chest', cell, items: [...(s.chests[cell] ?? [])] } };
   if (tile === 'guard') return { state: s, event: { type: 'guard', cell, battle: s.guards[cell] } };
+  if (tile === 'relic') return { state: s, event: { type: 'relic', cell, id: s.relics[cell] } };
+  if (tile === 'nest') return { state: s, event: { type: 'nest', cell, battle: s.nests[cell] } };
   const cost = tile === 'air' ? def.cost.walk : tile === 'rock' ? (def.rockCost ?? def.cost.dig) : def.cost.dig;
   if (s.sand < cost) return { state: s, event: { type: 'blocked', reason: 'sand' } };
   const tiles = [...s.tiles];
@@ -506,6 +555,24 @@ export function clearGuard(def: DigWorldDef, s: DigState, cell: number): DigStat
   const guards = { ...s.guards };
   delete guards[cell];
   return { ...s, tiles, guards, sand: Math.max(0, s.sand - def.cost.battle) };
+}
+
+/** 光る物を手に入れた（段階213）：そのマスは空く */
+export function takeRelic(s: DigState, cell: number): DigState {
+  const tiles = [...s.tiles];
+  tiles[cell] = 'air';
+  const relics = { ...s.relics };
+  delete relics[cell];
+  return { ...s, tiles, relics };
+}
+
+/** ぬしの巣のぬしに勝った（段階213）：そのマスは空き、戦った分の砂が減る */
+export function clearNest(def: DigWorldDef, s: DigState, cell: number): DigState {
+  const tiles = [...s.tiles];
+  tiles[cell] = 'air';
+  const nests = { ...s.nests };
+  delete nests[cell];
+  return { ...s, tiles, nests, sand: Math.max(0, s.sand - def.cost.battle) };
 }
 
 /** 動く砂嵐に勝った：その砂嵐は消え、戦った分の砂が減る */

@@ -140,7 +140,7 @@ export class LostScene extends Phaser.Scene {
 
   private accept(d: LostItemDef): void {
     setStoryVars(acceptLost(LOST_ITEMS, run.vars, d.id, LOST_ACTIVE_MAX));
-    this.message = d.kind === 'find' ? `「${d.name}」を受けた。「記憶をたどる」で、金色に光る所を探す` : `「${d.name}」を受けた。「記憶をたどる」で、${WEAPON_DATA.items[d.bring!.item]?.name ?? ''}を${d.bring!.count}つ集める`;
+    this.message = d.kind === 'find' ? `「${d.name}」を受けた。「砂の底」の、その記憶の層で光る所を掘り当てる` : `「${d.name}」を受けた。「砂の底」で、${WEAPON_DATA.items[d.bring!.item]?.name ?? ''}を${d.bring!.count}つ集める`;
     this.render();
   }
 
