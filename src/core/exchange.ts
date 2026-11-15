@@ -6,7 +6,8 @@ import type { ArmoryState } from './weapon';
 /** 交換所の品物。kind が item なら持ち物（ArmoryState.items）、gear ならギア（ムーブメント）が1つ増える */
 export interface ExchangeGood {
   id: string;
-  kind: 'item' | 'gear' | 'snap';
+  /** digTool は砂の底の道具（段階214。持っている数は呼ぶ側が物語の値に覚える） */
+  kind: 'item' | 'gear' | 'snap' | 'digTool';
   /** 増える物の id（素材・消費アイテム、ギア、または新しい戦闘のスナップ（段階177）） */
   ref: string;
   /** 記憶の欠片の数 */
@@ -61,7 +62,7 @@ export function payFragments(fragments: Record<string, number>, price: number, o
 export function getExchangeError(good: ExchangeGood, armory: ArmoryState, vars: Record<string, string>, max?: number, have = 0): string | null {
   if (good.once && vars[exchangedKey(good.id)]) return 'already exchanged';
   if (good.kind === 'item' && max !== undefined && (armory.items[good.ref] ?? 0) >= max) return 'pouch is full';
-  if (good.kind === 'snap' && max !== undefined && have >= max) return 'too many copies';
+  if ((good.kind === 'snap' || good.kind === 'digTool') && max !== undefined && have >= max) return 'too many copies';
   if (fragmentTotal(armory.fragments) < good.price) return 'not enough fragments';
   return null;
 }
@@ -74,7 +75,7 @@ export function exchange(
   order: string[],
   max?: number,
   have = 0,
-): { armory: ArmoryState; vars: Record<string, string>; gear?: string; snap?: string } {
+): { armory: ArmoryState; vars: Record<string, string>; gear?: string; snap?: string; digTool?: string } {
   const err = getExchangeError(good, armory, vars, max, have);
   if (err) throw new Error(err);
   const fragments = payFragments(armory.fragments, good.price, order)!;
@@ -84,6 +85,7 @@ export function exchange(
     vars: good.once ? { ...vars, [exchangedKey(good.id)]: '1' } : vars,
     ...(good.kind === 'gear' ? { gear: good.ref } : {}),
     ...(good.kind === 'snap' ? { snap: good.ref } : {}),
+    ...(good.kind === 'digTool' ? { digTool: good.ref } : {}),
   };
 }
 

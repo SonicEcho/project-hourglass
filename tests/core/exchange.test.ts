@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ExchangeGood } from '../../src/core';
 import { createArmory, exchange, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, payFragments } from '../../src/core';
-import { areaCommonItems, AREAS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, EXCHANGE_GOODS, FRAGMENTS, ITEMS, NAVI_PARTS, WEAPON_DATA } from '../../src/data';
+import { areaCommonItems, AREAS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, DIG_TOOLS, EXCHANGE_GOODS, FRAGMENTS, ITEMS, NAVI_PARTS, WEAPON_DATA } from '../../src/data';
 
 // 交換所（段階52。docs/design/economy.md の 5-2）
 const ORDER = Object.keys(FRAGMENTS);
@@ -50,6 +50,8 @@ describe('交換所（段階52）', () => {
     for (const g of EXCHANGE_GOODS) {
       if (g.kind === 'gear') expect(NAVI_PARTS[g.ref as keyof typeof NAVI_PARTS], g.id).toBeDefined();
       else if (g.kind === 'snap') expect(CHAIN_SNAPS[g.ref], g.id).toBeDefined();
+      // 段階214：砂の底の道具
+      else if (g.kind === 'digTool') expect(DIG_TOOLS[g.ref as keyof typeof DIG_TOOLS], g.id).toBeDefined();
       else {
         const it = WEAPON_DATA.items[g.ref];
         expect(it, g.id).toBeDefined();
@@ -81,5 +83,19 @@ describe('交換所のスナップ（段階177）', () => {
     const armory = { weapons: {}, items: {}, fragments: { f: 10 } };
     expect(exchange(g, armory, {}, ['f'], 4, 1).snap).toBe(g.ref);
     expect(getExchangeError(g, armory, {}, 4, 4)).toBe('too many copies');
+  });
+});
+
+describe('交換所：砂の底の道具（段階214）', () => {
+  it('2章から並び、記憶の欠片で買える。持てる数を超えると買えない', () => {
+    const tools = EXCHANGE_GOODS.filter((g) => g.kind === 'digTool');
+    expect(tools.map((g) => g.ref).sort()).toEqual(Object.keys(DIG_TOOLS).sort());
+    for (const g of tools) expect(g.chapter).toBe(2);
+    const armory = { ...createArmory(WEAPON_DATA), fragments: { [Object.keys(FRAGMENTS)[0]]: 10 } };
+    const g = tools[0];
+    const r = exchange(g, armory, {}, Object.keys(FRAGMENTS), 9, 0);
+    expect(r.digTool).toBe(g.ref);
+    expect(fragmentTotal(r.armory.fragments)).toBe(10 - g.price);
+    expect(getExchangeError(g, armory, {}, 9, 9)).toBe('too many copies');
   });
 });

@@ -1,6 +1,7 @@
 import type { ExchangeGood, KeeperTalk } from '../core/exchange';
 import { AREA_BATTLES, AREAS } from './areas';
 import { NAVI_PARTS } from './navi';
+import { DIG_TOOLS } from './sandBottom';
 
 // 交換所の品物（段階52。docs/design/economy.md の 5-2）。値段は記憶の欠片の数。数値は仮。
 // 進化の鍵・星の砂は並べない（物語と狩りで手に入れる）。スナップは、新しい戦闘の比較的弱い札だけ（段階177）
@@ -48,10 +49,14 @@ const SNAP_GOODS: ExchangeGood[] = [
   ...['c17_wide', 'c17_plus20'].map((ref): ExchangeGood => ({ id: `snap_${ref}`, kind: 'snap', ref, price: 5, chapter: 3 })),
 ];
 
-/** 交換所に並ぶ品物（素材（区画の順）→ ギア → スナップ。段階204：ポーチの消費アイテムはなくした） */
+/** 砂の底の道具（段階214。砂の底に入れる2章から） */
+const DIG_TOOL_GOODS: ExchangeGood[] = Object.values(DIG_TOOLS).map((t) => ({ id: `dig_${t.id}`, kind: 'digTool', ref: t.id, price: t.price, chapter: 2 }));
+
+/** 交換所に並ぶ品物（素材（区画の順）→ ギア → スナップ → 砂の底の道具。段階204：ポーチの消費アイテムはなくした） */
 export const EXCHANGE_GOODS: ExchangeGood[] = [
   // 返す時間のある区画だけ（段階85：2-3 の4晩目の書庫は、ほかの区画の砂嵐を混ぜて使うので、並べない）
   ...Object.keys(AREAS).filter((areaId) => AREAS[areaId].timeTitle).flatMap((areaId) => areaCommonItems(areaId).map((id): ExchangeGood => ({ id: `mat_${id}`, kind: 'item', ref: id, price: 1, area: areaId }))),
   ...GEAR_GOODS,
   ...SNAP_GOODS,
+  ...DIG_TOOL_GOODS,
 ];

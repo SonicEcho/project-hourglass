@@ -84,6 +84,13 @@ export interface DigWorldDef {
   clayOnce?: boolean;
   /** 層の境目の番人が、その層の章のぬしになる割合（段階212）。書かなければ出ない */
   lordRate?: number;
+  /** 道具袋に入る数（段階214）。書かなければ 3 */
+  toolMax?: number;
+  /** 空洞に落ちている道具の包み（段階214）：空洞ごとに toolRate の割合で、tools から1つ。光る物（'tool:<道具>'）として置く */
+  toolRate?: number;
+  tools?: string[];
+  /** 1回潜るごとの技の回数（段階214）。書かなければ 0 */
+  skillUses?: number;
 }
 
 /** 動く砂嵐 */
@@ -119,6 +126,14 @@ export interface DigState {
   bag: string[];
   /** 進んだ手数（砂嵐の動きを決める） */
   steps: number;
+  /** 道具袋（段階214。持ち込んだ道具と拾った道具） */
+  tools: string[];
+  /** 残りの技の回数（段階214） */
+  skillLeft: number;
+  /** 縄ばしごを使った（段階214。帰り道の砂が半分） */
+  ladder: boolean;
+  /** 砂嵐が動かず湧かない、残りの手数（段階214。砂嵐よけの鈴・時を止める） */
+  calm: number;
   /** diving 潜っている・home 帰った・late 砂が足りないまま帰った・lost 戦闘に負けて戻された */
   outcome: 'diving' | 'home' | 'late' | 'lost';
 }
@@ -134,6 +149,8 @@ export type DigEvent =
   | { type: 'guard'; cell: number; battle: string }
   | { type: 'relic'; cell: number; id: string }
   | { type: 'nest'; cell: number; battle: string }
+  /** 道具や技を使った（段階214）。dug は掘ったマス、items はかばんに入った素材 */
+  | { type: 'used'; what: string; dug: number[]; items: string[] }
   | { type: 'roamer'; id: number; battle: string };
 
 /** 入口（地上の真ん中） */
@@ -297,6 +314,15 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       if (floor * w + rx !== chestCell && layer.battles.length > 0 && rand() < layer.nestRate) {
         roamers.push({ id: roamers.length, x: rx, y: floor, battle: pick(layer.battles), chasing: false });
       }
+      // 道具の包み（段階214）：空洞の天井の段（床の1つ上）に置く。宝箱・砂嵐と重ならない
+      if ((def.tools?.length ?? 0) > 0 && ch >= 2 && rand() < (def.toolRate ?? 0)) {
+        const tx = cx + Math.floor(rand() * cw);
+        const cell = (floor - 1) * w + tx;
+        if (tiles[cell] === 'air') {
+          tiles[cell] = 'relic';
+          relics[cell] = `tool:${pick(def.tools!)}`;
+        }
+      }
     }
     // ぬしの巣と光る物（段階213）：深い空洞の床から順に。空いたマス（宝箱のない所）に置く
     if (caves.length > 0 && (layer.nest || (layer.relics?.length ?? 0) > 0)) {
@@ -352,7 +378,7 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
   for (const cell of Object.keys(nests).map(Number)) if (tiles[cell] !== 'nest') delete nests[cell];
   const alive = roamers.filter((m) => tiles[m.y * w + m.x] === 'air');
   const settled = settle(tiles, w, height, new Set([ex, ...alive.map((m) => m.y * w + m.x)]));
-  return { seed: seed >>> 0, width: w, height, tiles: settled, chests, guards, relics, nests, roamers: alive, x: ex, y: 0, sand: def.sand, deepest: 0, bag: [], steps: 0, outcome: 'diving' };
+  return { seed: seed >>> 0, width: w, height, tiles: settled, chests, guards, relics, nests, roamers: alive, x: ex, y: 0, sand: def.sand, deepest: 0, bag: [], steps: 0, tools: [], skillLeft: def.skillUses ?? 0, ladder: false, calm: 0, outcome: 'diving' };
 }
 
 /** 重みで珍しさを決める（その珍しさの物がなければ一つ下） */
@@ -446,8 +472,12 @@ export function stepDig(def: DigWorldDef, s: DigState, dir: DigDir): { state: Di
 function afterStep(def: DigWorldDef, s: DigState, event: DigEvent): { state: DigState; event: DigEvent } {
   const steps = s.steps + 1;
   let next: DigState = { ...s, steps, tiles: settle(s.tiles, s.width, s.height, occupied(s)) };
-  next = moveRoamers(def, next);
-  next = spawnRoamer(def, next);
+  // 砂嵐よけの鈴・時を止める（段階214）：その間は、砂嵐が動かず湧かない
+  if (next.calm > 0) next = { ...next, calm: next.calm - 1 };
+  else {
+    next = moveRoamers(def, next);
+    next = spawnRoamer(def, next);
+  }
   const caught = next.roamers.find((m) => m.x === next.x && m.y === next.y);
   if (caught) return { state: next, event: { type: 'roamer', id: caught.id, battle: caught.battle } };
   return { state: next, event };
@@ -595,7 +625,109 @@ function halveBag(s: DigState): string[] {
 
 /** 帰るのに要る砂（今の深さ × back） */
 export function digBackCost(def: DigWorldDef, s: DigState): number {
-  return s.y * def.cost.back;
+  // 縄ばしご（段階214）：半分
+  return s.ladder ? Math.ceil((s.y * def.cost.back) / 2) : s.y * def.cost.back;
+}
+
+/** 道具・技で掘れるマス（段階214）。岩は withRock の時だけ（境目の岩の帯は割れない） */
+function breakable(def: DigWorldDef, tile: DigTile, y: number, withRock: boolean): boolean {
+  if (tile === 'sand' || tile === 'clay' || tile === 'loose' || tile === 'ore' || tile === 'grain') return true;
+  return withRock && tile === 'rock' && !isDigGuardRow(def, y);
+}
+
+/** 1マスを掘りくずす（段階214）：鉱脈はその層の素材をかばんへ（いっぱいなら砂に戻る）、砂粒は砂が戻る */
+function breakCell(def: DigWorldDef, s: DigState, cell: number, got: string[]): DigState {
+  const tile = s.tiles[cell];
+  const tiles = [...s.tiles];
+  tiles[cell] = 'air';
+  let next: DigState = { ...s, tiles };
+  const y = Math.floor(cell / s.width);
+  if (tile === 'grain') next = { ...next, sand: next.sand + def.grainSand };
+  if (tile === 'ore') {
+    const rand = stepRand(s, cell);
+    const item = rollItem(digLayerAt(def, y).items, lerpWeights(ORE_TOP, ORE_BOTTOM, depthInGroup(def, y)), rand, (l) => l[Math.floor(rand() * l.length)]);
+    if (item && next.bag.length < def.bagMax) {
+      next = { ...next, bag: [...next.bag, item] };
+      got.push(item);
+    }
+  }
+  return next;
+}
+
+/** 道具の働き（段階214）。dir は向いている方（爆ぜる石・砂嵐よけの鈴などは使わない） */
+export type DigToolId = 'blast' | 'ladder' | 'bell' | 'shard';
+/** 技の働き（段階214）。heal（応急手当）は HP を戻すので、呼ぶ側が戻す（ここでは回数だけ減らす） */
+export type DigSkillId = 'stop' | 'heal' | 'rush' | 'slash' | 'rewind';
+
+/** 道具や技の、掘る働き（掘ったマス・かばんに入った素材・砂を1回分使う。何も掘れなければ使わない） */
+function digWith(def: DigWorldDef, s: DigState, cells: number[], what: string, move: number | null): { state: DigState; event: DigEvent } {
+  if (cells.length === 0) return { state: s, event: { type: 'blocked', reason: 'edge' } };
+  if (s.sand < def.cost.dig) return { state: s, event: { type: 'blocked', reason: 'sand' } };
+  const got: string[] = [];
+  let next: DigState = { ...s, sand: s.sand - def.cost.dig };
+  for (const cell of cells) next = breakCell(def, next, cell, got);
+  if (move !== null) next = { ...next, x: move % s.width, y: Math.floor(move / s.width), deepest: Math.max(next.deepest, Math.floor(move / s.width)) };
+  return afterStep(def, next, { type: 'used', what, dug: cells, items: got });
+}
+
+/** 向いている方へ n マスのマス（画面の外は除く） */
+function lineCells(s: DigState, dir: DigDir, n: number): number[] {
+  const [dx, dy] = DIRS[dir];
+  const out: number[] = [];
+  for (let i = 1; i <= n; i++) {
+    const x = s.x + dx * i;
+    const y = s.y + dy * i;
+    if (x < 0 || x >= s.width || y < 1 || y >= s.height) break;
+    out.push(y * s.width + x);
+  }
+  return out;
+}
+
+/** 道具を使う（段階214）。道具袋から1つ減る（使えなかった時は減らない） */
+export function useDigTool(def: DigWorldDef, s: DigState, tool: DigToolId): { state: DigState; event: DigEvent } {
+  const at = s.tools.indexOf(tool);
+  if (s.outcome !== 'diving' || at < 0) return { state: s, event: { type: 'blocked', reason: 'edge' } };
+  const rest = { ...s, tools: s.tools.filter((_, i) => i !== at) };
+  if (tool === 'ladder') return { state: { ...rest, ladder: true }, event: { type: 'used', what: tool, dug: [], items: [] } };
+  if (tool === 'bell') return { state: { ...rest, calm: Math.max(rest.calm, 10) }, event: { type: 'used', what: tool, dug: [], items: [] } };
+  if (tool === 'shard') return { state: { ...rest, sand: rest.sand + 25 }, event: { type: 'used', what: tool, dug: [], items: [] } };
+  // 爆ぜる石：まわり8マス
+  const cells: number[] = [];
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = s.x + dx;
+      const y = s.y + dy;
+      if ((dx || dy) && x >= 0 && x < s.width && y >= 1 && y < s.height && breakable(def, s.tiles[y * s.width + x], y, false)) cells.push(y * s.width + x);
+    }
+  const r = digWith(def, rest, cells, tool, null);
+  return r.event.type === 'blocked' ? { state: s, event: r.event } : r;
+}
+
+/** 技を使う（段階214）。残りの回数から1つ減る（使えなかった時は減らない） */
+export function useDigSkill(def: DigWorldDef, s: DigState, skill: DigSkillId, dir: DigDir): { state: DigState; event: DigEvent } {
+  if (s.outcome !== 'diving' || s.skillLeft <= 0) return { state: s, event: { type: 'blocked', reason: 'edge' } };
+  const rest = { ...s, skillLeft: s.skillLeft - 1 };
+  if (skill === 'stop') return { state: { ...rest, calm: Math.max(rest.calm, 3) }, event: { type: 'used', what: skill, dug: [], items: [] } };
+  if (skill === 'heal') return { state: rest, event: { type: 'used', what: skill, dug: [], items: [] } };
+  if (skill === 'rewind') return { state: { ...rest, sand: rest.sand + 30 }, event: { type: 'used', what: skill, dug: [], items: [] } };
+  const occupiedBy = (cell: number) => s.roamers.some((m) => m.y * s.width + m.x === cell);
+  if (skill === 'rush') {
+    // 突進掘り：向いている方へ3マス。空洞と掘れるマスだけ（岩・宝箱・番人・砂嵐などの手前で止まる）
+    const path: number[] = [];
+    for (const cell of lineCells(s, dir, 3)) {
+      const t = s.tiles[cell];
+      if (occupiedBy(cell) || (t !== 'air' && !breakable(def, t, Math.floor(cell / s.width), false))) break;
+      path.push(cell);
+    }
+    if (path.length === 0) return { state: s, event: { type: 'blocked', reason: 'edge' } };
+    const dug = path.filter((c) => s.tiles[c] !== 'air');
+    const r = dug.length > 0 ? digWith(def, rest, dug, skill, path[path.length - 1]) : afterStep(def, { ...rest, x: path[path.length - 1] % s.width, y: Math.floor(path[path.length - 1] / s.width), deepest: Math.max(s.deepest, Math.floor(path[path.length - 1] / s.width)) }, { type: 'used', what: skill, dug: [], items: [] });
+    return r.event.type === 'blocked' ? { state: s, event: r.event } : r;
+  }
+  // 一閃：向いている方の4マスを、岩も含めて割る（進まない。宝箱・番人などは残る）
+  const cells = lineCells(s, dir, 4).filter((c) => breakable(def, s.tiles[c], Math.floor(c / s.width), true));
+  const r = digWith(def, rest, cells, skill, null);
+  return r.event.type === 'blocked' ? { state: s, event: r.event } : r;
 }
 
 /** 上へ戻る：砂が足りれば全部持ち帰る（home）。足りなければ、かばんの半分を失う（late） */
