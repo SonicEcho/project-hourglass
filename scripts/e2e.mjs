@@ -324,7 +324,8 @@ try {
   await skipTips();
   await debugButton('記憶の欠片を10個ずつもらう');
   await closeDebugMenu();
-  // 段階204：ポーチの札（消費アイテム）はなくした。最初は素材の札が開く
+  // 段階204：ポーチの札（消費アイテム）はなくした。素材の札を押して描き直す（もらった欠片の数を出す）
+  await tap('^素材$');
   await until('欠片が40', () => findText('^記憶の欠片 4\\d'));
   await tap('^ギア$');
   await tap('^MPギア　欠片 10');
