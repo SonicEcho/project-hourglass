@@ -65,8 +65,8 @@ export const run: {
    * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）。fade は記憶の薄れ（段階57）による、その回の実入りの割合
    */
   hunt: { salt: number; state: ExploreState; fade: number } | null;
-  /** 砂の底を掘っている途中（段階207。試作1）。セーブしない（閉じたら潜る前から）。vitals は潜っている間の HP・MP */
-  dig: { state: DigState; vitals: Record<string, Vitals>; count: number; max: number } | null;
+  /** 砂の底を掘っている途中（段階207。試作1）。セーブしない（閉じたら潜る前から）。vitals は潜っている間の HP・MP。digger は掘る人（段階211） */
+  dig: { state: DigState; vitals: Record<string, Vitals>; count: number; max: number; digger: string } | null;
   /** 戦闘中の印（段階44）：閉じたら「つづきから」でこの戦闘の始めから。戦闘の外では null */
   battle: SavedBattle | null;
   /** 遊ぶ人が選んだ戦闘の並び（段階91a。空なら章の並びのまま） */

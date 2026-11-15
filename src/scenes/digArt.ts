@@ -39,6 +39,11 @@ function shade(c: number, f: number, a = 1): string {
   return `rgba(${r},${g},${b},${a})`;
 }
 
+/** '#rrggbb' の明るさを変えた色 */
+function shadeHex(hex: string, f: number): string {
+  return shade(parseInt(hex.slice(1), 16), f);
+}
+
 /** 絵の柄を決める乱数（見た目だけ。毎回同じ柄になるように、種から決まる） */
 function artRand(seed: number): () => number {
   let a = seed >>> 0;
@@ -557,8 +562,36 @@ const POSES: Record<DigPose, Pose[]> = {
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
+/** 仮の二頭身の見た目（段階211。人ごとに髪と服の色を変える。届いた絵があれば使わない） */
+interface Look {
+  hair: string;
+  /** 前髪のひと筋（ハルトの砂金色） */
+  strand?: string;
+  /** 長い髪（背中まで） */
+  longHair?: boolean;
+  /** あごひげ */
+  beard?: string;
+  /** 上着と袖 */
+  top: string;
+  sleeve: string;
+  /** 前の開きから見える服・ネクタイ・裏地 */
+  inner: string;
+  tie?: string;
+  lining?: string;
+  legs: string;
+  shoes: string;
+}
+
+const LOOKS: Record<string, Look> = {
+  hero: { hair: '#1c1c28', strand: '#e8c060', top: '#27315c', sleeve: '#1e2648', inner: '#f2f2f6', tie: '#e0b040', lining: '#e8803a', legs: '#2c2c3e', shoes: '#f0f0f4' },
+  akari: { hair: '#7a4a2a', top: '#e2cfa8', sleeve: '#c8b48c', inner: '#ffffff', tie: '#c83a4a', legs: '#3a4a6a', shoes: '#8a4a3a' },
+  mio: { hair: '#b07840', strand: '#f08a30', top: '#f2c830', sleeve: '#f2c830', inner: '#f2c830', legs: '#3a5a8a', shoes: '#e8e8f0' },
+  sayoko: { hair: '#14141c', longHair: true, top: '#2a2f6a', sleeve: '#2a2f6a', inner: '#f0f0f8', lining: '#b0202a', legs: '#2a2f6a', shoes: '#b0202a' },
+  hayase: { hair: '#4a4a52', strand: '#a8a8b0', beard: '#5a5a62', top: '#1f2a44', sleeve: '#1a2238', inner: '#202024', legs: '#3a3a40', shoes: '#5a3a22' },
+};
+
 /** 仮の二頭身のハルト（右向き、横から少し斜め）。黒髪に砂金色のひと筋、紺のパーカー（裏地は夕焼け色）、スコップ */
-function drawHero(ctx: Ctx, p: Pose): void {
+function drawHero(ctx: Ctx, p: Pose, look: Look): void {
   const fx = FOOT_X + p.lean;
   const fy = FOOT_Y;
   const ink = '#241a1a';
@@ -567,13 +600,13 @@ function drawHero(ctx: Ctx, p: Pose): void {
   // 足（後ろの足は暗く）
   const leg = (dx: number, back: boolean) => {
     const x = FOOT_X + dx;
-    ctx.strokeStyle = back ? '#1c1c28' : '#2c2c3e';
+    ctx.strokeStyle = back ? shadeHex(look.legs, 0.7) : look.legs;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(fx + (back ? -1.5 : 1.5), fy - 8 + p.bob);
     ctx.lineTo(x, fy - 2);
     ctx.stroke();
-    ctx.fillStyle = back ? '#b8b8c0' : '#f0f0f4';
+    ctx.fillStyle = back ? shadeHex(look.shoes, 0.78) : look.shoes;
     ctx.strokeStyle = ink;
     ctx.lineWidth = 0.8;
     ctx.beginPath();
@@ -583,9 +616,9 @@ function drawHero(ctx: Ctx, p: Pose): void {
   };
   leg(p.legs[1], true);
   leg(p.legs[0], false);
-  // 体（紺のパーカー）
+  // 体（上着）
   const by = fy - 17 + p.bob;
-  ctx.fillStyle = '#27315c';
+  ctx.fillStyle = look.top;
   ctx.strokeStyle = ink;
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -596,13 +629,17 @@ function drawHero(ctx: Ctx, p: Pose): void {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  // 前の開き：白いシャツ・砂金色のネクタイ・夕焼け色の裏地
-  ctx.fillStyle = '#f2f2f6';
+  // 前の開き：中の服・ネクタイ（リボン）・裏地（帯）
+  ctx.fillStyle = look.inner;
   ctx.fillRect(fx + 1.5, by + 1, 2.5, 8.5);
-  ctx.fillStyle = '#e0b040';
-  ctx.fillRect(fx + 2.2, by + 1.5, 1.2, 4.5);
-  ctx.fillStyle = '#e8803a';
-  ctx.fillRect(fx + 4, by + 1.5, 1, 8);
+  if (look.tie) {
+    ctx.fillStyle = look.tie;
+    ctx.fillRect(fx + 2.2, by + 1.5, 1.2, 4.5);
+  }
+  if (look.lining) {
+    ctx.fillStyle = look.lining;
+    ctx.fillRect(fx + 4, by + 1.5, 1, 8);
+  }
   // スコップと腕（前の腕）。上に掲げる時は、頭より手前に描く
   const arm = () => {
     const sx = fx;
@@ -641,7 +678,7 @@ function drawHero(ctx: Ctx, p: Pose): void {
     ctx.fillRect(1, -2, 3, 1);
     ctx.restore();
     // 腕
-    ctx.strokeStyle = '#1e2648';
+    ctx.strokeStyle = look.sleeve;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
@@ -661,6 +698,20 @@ function drawHero(ctx: Ctx, p: Pose): void {
   const cx = fx + 0.5;
   const cy = fy - 26 + p.bob;
   const r = 9.5;
+  // 長い髪は、頭の後ろから背中へ
+  if (look.longHair) {
+    ctx.fillStyle = look.hair;
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - r - 0.5, cy);
+    ctx.quadraticCurveTo(cx - r - 3, by + 6, cx - r + 1, by + 9);
+    ctx.lineTo(cx - 2, by + 7);
+    ctx.lineTo(cx - 1, cy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
   ctx.fillStyle = '#f6d7b8';
   ctx.strokeStyle = ink;
   ctx.lineWidth = 1;
@@ -668,8 +719,8 @@ function drawHero(ctx: Ctx, p: Pose): void {
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  // 髪（黒。後ろ側は耳の下まで、前はぼさぼさの前髪）
-  ctx.fillStyle = '#1c1c28';
+  // 髪（後ろ側は耳の下まで、前はぼさぼさの前髪）
+  ctx.fillStyle = look.hair;
   ctx.beginPath();
   ctx.moveTo(cx - r - 0.6, cy + 4);
   ctx.quadraticCurveTo(cx - r - 1.5, cy - r - 2, cx + 1, cy - r - 1.2);
@@ -686,13 +737,15 @@ function drawHero(ctx: Ctx, p: Pose): void {
   ctx.fill();
   ctx.strokeStyle = ink;
   ctx.stroke();
-  // 砂金色のひと筋
-  ctx.strokeStyle = '#e8c060';
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(cx + 1, cy - r);
-  ctx.quadraticCurveTo(cx + 4.5, cy - 7, cx + 3.5, cy - 3.5);
-  ctx.stroke();
+  // 前髪のひと筋（ハルトの砂金色・みおの髪ゴム・早瀬の白髪）
+  if (look.strand) {
+    ctx.strokeStyle = look.strand;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cx + 1, cy - r);
+    ctx.quadraticCurveTo(cx + 4.5, cy - 7, cx + 3.5, cy - 3.5);
+    ctx.stroke();
+  }
   // 耳
   ctx.fillStyle = '#f0c8a6';
   ctx.beginPath();
@@ -723,6 +776,12 @@ function drawHero(ctx: Ctx, p: Pose): void {
   ctx.moveTo(cx + 5.5, cy + 6);
   ctx.lineTo(cx + 7, cy + 5.8);
   ctx.stroke();
+  if (look.beard) {
+    ctx.fillStyle = look.beard;
+    ctx.beginPath();
+    ctx.ellipse(cx + 4.5, cy + 7.5, 3.6, 1.8, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
   if (raised) arm();
 }
 
@@ -738,10 +797,16 @@ export interface DigHeroSprite {
   idleFrame: string;
 }
 
-export function ensureDigHero(scene: Phaser.Scene): DigHeroSprite {
+/** 掘る人の絵の台帳の id（段階211。ハルトは sprite.dig_hero、ほかの人は sprite.dig_<人>） */
+export function digArtId(who: string): string {
+  return who === 'hero' ? DIG_HERO_ART : `sprite.dig_${who}`;
+}
+
+export function ensureDigHero(scene: Phaser.Scene, who = 'hero'): DigHeroSprite {
   const R = RENDER_SCALE;
-  const real = hasImage(scene, DIG_HERO_ART);
-  const key = real ? DIG_HERO_ART : HERO_PLACEHOLDER_KEY;
+  const art = digArtId(who);
+  const real = hasImage(scene, art);
+  const key = real ? art : `${HERO_PLACEHOLDER_KEY}-${LOOKS[who] ? who : 'hero'}`;
   let cellH = HH * R;
   if (real) {
     // 届いた絵：マス目どおりに12に切る（白い背景は抜いてある前提）
@@ -766,7 +831,7 @@ export function ensureDigHero(scene: Phaser.Scene): DigHeroSprite {
           ctx.beginPath();
           ctx.rect(0, 0, HW, HH);
           ctx.clip();
-          drawHero(ctx, p);
+          drawHero(ctx, p, LOOKS[who] ?? LOOKS.hero);
           ctx.restore();
           tex.add(`${row}-${col}`, 0, col * S, row * HH * R, S, HH * R);
         });

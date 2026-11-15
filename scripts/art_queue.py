@@ -520,6 +520,29 @@ Layout: a grid of 4 rows by 3 columns on a plain pure white background, every ce
 Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.''', '1枚で12コマがそろわない時は、行ごとに「1 row of 3 cells」で4枚に分けて作る')
 
 
+section('U. 砂の底を掘る、二頭身の仲間（あかり・みお・小夜子・早瀬）', '砂の底で掘る人を選べる（段階211。`docs/milestones/M3_sand_bottom.md` の S3）。ハルトの掘る絵（`public/assets/sprites/dig_hero.webp`）と同じ形・同じ絵柄・同じ大きさで作る。毎回、ハルトの掘る絵と、その人の立ち絵を添付する。今はコードで描いた色違いの仮の絵。届いたら `scripts/dig_sprite.py` で背景を抜いてコマの位置をそろえ、台帳に id `sprite.dig_<人>` で足す')
+
+
+def dig_buddy(name, look, extra=''):
+    return f'''{STYLE}
+
+A chibi sprite sheet for a side-view 2D digging game on mobile. Match the attached chibi sprite sheet of the boy EXACTLY: the same layout, the same art style, the same two-heads-tall proportions, the same size and baseline in each cell, the same small wooden-handled steel shovel, the same 12 poses in the same order. Only the character is different: {name}, the same person as in the attached portrait ({look}). {extra}
+Side view, ALWAYS FACING RIGHT in every cell (the game flips it for the left).
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell, leaving empty space around so the shovel never touches the cell edges.
+- Row 1: walking to the right with the shovel resting on the shoulder (standing, left foot forward, right foot forward).
+- Row 2: digging sideways to the right (shovel swung back, swinging forward, shovel thrust horizontally forward hitting the ground in front).
+- Row 3: digging straight down (shovel raised in front, swinging down, shovel blade stabbing into the ground at the feet).
+- Row 4: climbing up while digging upward (crouching with the shovel pointed up, jumping up with the shovel thrust overhead, landing).
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no dirt effects, no shadow, no text, no grid lines.'''
+
+
+DIG_REF = 'public/assets/sprites/dig_hero.webp'
+add('掘る二頭身のあかり', [DIG_REF, P + 'akari_smile.webp'], 'dig_akari.png', dig_buddy('Akari, a cheerful 17-year-old girl', 'shoulder-length soft chestnut-brown hair with light inward curls, side-swept bangs, a thin red ribbon at the back, a small red goldfish hair clip on the left, warm brown eyes, white dress shirt with a dusk-red neck ribbon, a cream knit cardigan with slightly long sleeves, a navy pleated skirt, navy knee socks, brown loafers', 'She digs with cheerful energy, a little clumsy but determined.'))
+add('掘る二頭身のみお', [DIG_REF, P + 'mio_smile.webp'], 'dig_mio.png', dig_buddy('Mio, a lively 10-year-old girl', 'bright light-brown short hair with one tiny side tuft tied by a small orange hair tie, big lively brown eyes, round cheeks, a slightly sunburnt nose, a plain sunny-yellow T-shirt with no logo, shorts, sneakers', 'She is smaller than the boy (a child), and digs fast and eagerly, full of energy.'))
+add('掘る二頭身の小夜子', [DIG_REF, P + 'sayoko_smile.webp'], 'dig_sayoko.png', dig_buddy('Sayoko, a graceful 16-year-old girl of the Taisho era', 'long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi, the yukata sleeves tied back with a cord for work, wooden geta sandals with red straps', 'Graceful but surprisingly strong: her shovel strikes are sharp and powerful, as if she could split rock.'))
+add('掘る二頭身の早瀬', [DIG_REF, P + 'hayase_normal.webp'], 'dig_hayase.png', dig_buddy('Hayase, a dandy watchmaker in his late fifties', 'dark hair with grey at the temples swept back, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes, a watchmaker\'s loupe pushed up on his forehead, a dark navy work jacket open over a black henley shirt, sleeves rolled up, a leather tool roll on his belt, brown boots', 'He is a little taller than the boy, and digs calmly and efficiently with economical, precise movements.'))
+
+
 def main():
     """未対応の絵を上に、指示文つきで並べる。済んだ絵は下に名前だけ（指示文はこのファイルと台帳 src/data/assets.ts に残っている）"""
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
