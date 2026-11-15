@@ -3,7 +3,8 @@ import { nextRandom } from './rng';
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）。Phaser に依存しない。
 // 横から見た地面（横 width マス、深さは層の合計）を、上下左右に1マスずつ掘り進む。砂時計の砂は時間ではなく手数で減る。
 // 地面はシードから作る（同じシードなら同じ地面）。
-// 段階208：層の境目の番人（倒さないと下の層へ行けない）、動く砂嵐（近づくと追ってくる）、鉱脈・砂時計の砂粒・崩れる砂を足した
+// 段階208：層の境目の番人（倒さないと下の層へ行けない）、動く砂嵐（近づくと追ってくる）、鉱脈・砂時計の砂粒・崩れる砂を足した。
+// 段階209：空洞に砂嵐が稀に湧く（spawn）
 
 /**
  * マスの種類。clay は2回掘る（1回目で砂になる）。rock は掘れない。chest は宝箱、guard は層の境目の番人。
@@ -50,6 +51,11 @@ export interface DigWorldDef {
   grainSand: number;
   /** 砂嵐が追ってくる距離（縦横のマスの数の合計） */
   chase: number;
+  /**
+   * 空洞に砂嵐が湧く（段階209）：1手ごとに rate の割合で、自分から min〜max マス離れた空いたマスに1体（同時に cap 体まで）。
+   * 書かなければ湧かない
+   */
+  spawn?: { rate: number; min: number; max: number; cap: number };
   /** かばんに入る数 */
   bagMax: number;
 }
@@ -316,6 +322,7 @@ function afterStep(def: DigWorldDef, s: DigState, event: DigEvent): { state: Dig
   const steps = s.steps + 1;
   let next: DigState = { ...s, steps, tiles: settle(s.tiles, s.width, s.height, occupied(s)) };
   next = moveRoamers(def, next);
+  next = spawnRoamer(def, next);
   const caught = next.roamers.find((m) => m.x === next.x && m.y === next.y);
   if (caught) return { state: next, event: { type: 'roamer', id: caught.id, battle: caught.battle } };
   return { state: next, event };
@@ -362,6 +369,30 @@ function moveRoamers(def: DigWorldDef, s: DigState): DigState {
     return { ...m, chasing };
   });
   return { ...s, roamers };
+}
+
+/** 空洞に砂嵐が湧く（段階209）：自分から少し離れた空いたマスに、その深さの層の砂嵐が1体 */
+function spawnRoamer(def: DigWorldDef, s: DigState): DigState {
+  const sp = def.spawn;
+  if (!sp || s.roamers.length >= sp.cap) return s;
+  const rand = stepRand(s, 4242);
+  if (rand() >= sp.rate) return s;
+  const taken = occupied(s);
+  const cells: number[] = [];
+  for (let y = Math.max(1, s.y - sp.max); y <= Math.min(s.height - 1, s.y + sp.max); y++) {
+    for (let x = 0; x < s.width; x++) {
+      const d = Math.abs(x - s.x) + Math.abs(y - s.y);
+      const c = y * s.width + x;
+      if (d >= sp.min && d <= sp.max && s.tiles[c] === 'air' && !taken.has(c)) cells.push(c);
+    }
+  }
+  if (cells.length === 0) return s;
+  const c = cells[Math.floor(rand() * cells.length)];
+  const y = Math.floor(c / s.width);
+  const battles = digLayerAt(def, y).battles;
+  if (battles.length === 0) return s;
+  const id = s.roamers.reduce((m, r) => Math.max(m, r.id + 1), 0);
+  return { ...s, roamers: [...s.roamers, { id, x: c % s.width, y, battle: battles[Math.floor(rand() * battles.length)], chasing: false }] };
 }
 
 /** 宝箱を開ける：入る分だけかばんに入れ、入らなかった物は宝箱に残す（空になったら空洞に戻る） */

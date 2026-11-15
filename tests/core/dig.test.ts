@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
 import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, goHome, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
-import { AREA_BATTLES, SAND_BOTTOM, WEAPON_DATA } from '../../src/data';
+import { AREA_BATTLES, SAND_BOTTOM, sandBottomFor, WEAPON_DATA } from '../../src/data';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
 const items = { common: ['c1', 'c2'], uncommon: ['u1'], rare: ['r1'] };
@@ -204,5 +204,40 @@ describe('砂の底：帰り道', () => {
     const lost = loseDig(DEF, { ...plain(), x: 3, y: 4, bag: ['a', 'b', 'c', 'd'] });
     expect([lost.outcome, lost.y, lost.bag.length]).toEqual(['lost', 0, 2]);
     expect(stepDig(DEF, lost, 'down').event.type).toBe('blocked');
+  });
+});
+
+describe('砂の底：本編に入れる（段階209）', () => {
+  it('空洞の移動は砂を使わない（掘る時だけ）。層は深く、砂時計の砂は章ごとに増える', () => {
+    const free: DigWorldDef = { ...DEF, cost: { ...DEF.cost, walk: 0 } };
+    const tiles: Record<number, 'air'> = { [at(3, 1)]: 'air', [at(3, 2)]: 'air' };
+    const r = stepDig(free, { ...plain(tiles), x: 3, y: 0, sand: 0 }, 'down');
+    expect([r.event.type, r.state.y, r.state.sand]).toEqual(['move', 1, 0]);
+    expect(SAND_BOTTOM.cost.walk).toBe(0);
+    expect(SAND_BOTTOM.layers.reduce((n, l) => n + l.rows, 0)).toBeGreaterThanOrEqual(70);
+    const sands = ['ch1', 'ch2', 'ch3', 'ch4'].map((c) => sandBottomFor(c).sand);
+    expect([...sands].sort((a, b) => a - b)).toEqual(sands);
+    expect(new Set(sands).size).toBe(4);
+    expect(sandBottomFor('unknown').sand).toBe(sands[3]);
+  });
+
+  it('空洞に稀に砂嵐が湧く：自分から離れた空いたマスに、その深さの層の砂嵐。上限を超えない。同じ手なら同じ所', () => {
+    // 地面を全部空洞にして、毎手かならず湧くようにする
+    const sp: DigWorldDef = { ...DEF, cost: { ...DEF.cost, walk: 0 }, spawn: { rate: 1, min: 3, max: 5, cap: 2 } };
+    const open = Object.fromEntries(Array.from({ length: 7 * 9 }, (_, i) => [i, 'air'])) as Record<number, 'air'>;
+    const s0: DigState = { ...plain(open), x: 0, y: 1 };
+    const r1 = stepDig(sp, s0, 'down');
+    expect(r1.state.roamers).toHaveLength(1);
+    const m = r1.state.roamers[0];
+    const d = Math.abs(m.x - r1.state.x) + Math.abs(m.y - r1.state.y);
+    expect(d).toBeGreaterThanOrEqual(3);
+    expect(d).toBeLessThanOrEqual(5);
+    expect(digLayerAt(sp, m.y).battles).toContain(m.battle);
+    expect(stepDig(sp, s0, 'down').state.roamers).toEqual(r1.state.roamers);
+    let s = r1.state;
+    for (let i = 0; i < 5; i++) s = stepDig(sp, s, i % 2 ? 'up' : 'down').state;
+    expect(s.roamers.length).toBeLessThanOrEqual(2);
+    // 書かなければ湧かない
+    expect(stepDig({ ...sp, spawn: undefined }, s0, 'down').state.roamers).toEqual([]);
   });
 });

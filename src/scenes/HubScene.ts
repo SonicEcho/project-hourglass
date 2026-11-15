@@ -85,6 +85,8 @@ export class HubScene extends Phaser.Scene {
       // 段階152（テストプレイのメモ 2 の 7）：ペトラと話せる時は、タイルに札
       { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() },
       { id: 'lost', label: '落とし物の棚', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
+      // 段階209：砂の底（何度でも潜れる。日は進まない）
+      { id: 'sandBottom', label: '砂の底', onTap: () => this.openSandBottom() },
     ];
     const talks = archivedTalks();
     if (talks.length > 0) {
@@ -102,6 +104,12 @@ export class HubScene extends Phaser.Scene {
     if (this.overlay) return;
     setHubReturn({ ...BACK_TO_HUB, data: { seen: undefined } });
     this.scene.start(key);
+  }
+
+  /** 砂の底へ潜る（段階209） */
+  private openSandBottom(): void {
+    if (this.overlay) return;
+    startWithImages(this, 'SandBottom', {});
   }
 
   /** 交換所を開く（段階52。初めてなら、ペトラの会話から） */
