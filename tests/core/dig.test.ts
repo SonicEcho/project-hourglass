@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
-import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, digWeightsAt, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
-import { AREA_BATTLES, canEnterSandBottom, PARTY, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
+import { clearGuard, clearNest, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, digWeightsAt, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest, takeRelic } from '../../src/core';
+import { AREA_BATTLES, canEnterSandBottom, digRewardRate, parseRelic, PARTY, relicGears, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
 const items = { common: ['c1', 'c2'], uncommon: ['u1'], rare: ['r1'] };
@@ -355,5 +355,69 @@ describe('砂の底：層の下の方ほど珍しい（段階212）', () => {
   it('ぬしは、その章の区画のぬし（2-3 のカイの負け戦は入らない）', () => {
     expect(SAND_BOTTOM.layers.find((l) => l.id === 'kingyo')!.lords).toEqual(['a11_boss', 'a12_boss']);
     expect(SAND_BOTTOM.layers.find((l) => l.id === 'daseki')!.lords).not.toContain('a23_kai');
+  });
+});
+
+describe('砂の底：狩りを外して砂の底へ（段階213）', () => {
+  const nestDef: DigWorldDef = {
+    ...DEF,
+    layers: DEF.layers.map((l, i) => (i === 0 ? { ...l, caves: 3, nest: 'boss1', relics: ['gear:g1', 'lost:x1'] } : l)),
+  };
+
+  it('ぬしの巣と光る物は、その層の空洞の床に置く（いちばん深い空洞がぬし）。同じシードなら同じ所', () => {
+    for (const seed of [1, 2, 3, 4]) {
+      const a = createDig(nestDef, seed);
+      expect(createDig(nestDef, seed)).toEqual(a);
+      const nests = Object.entries(a.nests);
+      expect(nests.map(([, b]) => b)).toEqual(['boss1']);
+      expect(Object.values(a.relics).sort()).toEqual(['gear:g1', 'lost:x1']);
+      for (const [cell] of nests) expect(a.tiles[Number(cell)]).toBe('nest');
+      for (const cell of Object.keys(a.relics)) expect(a.tiles[Number(cell)]).toBe('relic');
+      // どれも上の層の中
+      for (const cell of [...Object.keys(a.nests), ...Object.keys(a.relics)]) expect(digLayerAt(nestDef, Math.floor(Number(cell) / a.width)).id).toBe('top');
+    }
+  });
+
+  it('光る物・ぬしの巣は進まずに知らせる。光る物を取るとマスが空く。ぬしに勝つとマスが空き、戦った分の砂が減る', () => {
+    const s = { ...plain({ [at(3, 1)]: 'relic', [at(4, 0)]: 'nest' }), relics: { [at(3, 1)]: 'gear:g1' }, nests: { [at(4, 0)]: 'boss1' } };
+    expect(stepDig(DEF, s, 'down').event).toEqual({ type: 'relic', cell: at(3, 1), id: 'gear:g1' });
+    expect(stepDig(DEF, s, 'right').event).toEqual({ type: 'nest', cell: at(4, 0), battle: 'boss1' });
+    const t = takeRelic(s, at(3, 1));
+    expect([t.tiles[at(3, 1)], t.relics]).toEqual(['air', {}]);
+    const n = clearNest(DEF, s, at(4, 0));
+    expect([n.tiles[at(4, 0)], n.nests, n.sand]).toEqual(['air', {}, s.sand - DEF.cost.battle]);
+  });
+
+  it('データ：帯ごとにその区画のぬしの巣。狩りだけの素材も帯から出る。大正の祭りの夜は2晩目のぬし', () => {
+    const band = (id: string) => SAND_BOTTOM.layers.find((l) => l.id === id)!;
+    expect(band('kingyo').nest).toBe('a11_boss');
+    expect(band('taisho').nest).toBe('a3s2_boss');
+    for (const l of SAND_BOTTOM.layers.filter((x) => x.group !== 'deep')) expect(AREA_BATTLES[l.nest!]?.boss, l.id).toBe(true);
+    const items = (id: string) => [...band(id).items.common, ...band(id).items.uncommon, ...band(id).items.rare];
+    expect(items('kingyo')).toContain('goldfishFin');
+    expect(items('oyakata')).toContain('filament');
+  });
+
+  it('データ：記憶の宝箱は、まだ手に入れていない採取の場所のギアから1つ。引き受けた探し物は、その区画の帯で光る', () => {
+    const oyakata = (vars: Record<string, string>) => sandBottomFor('ch3', vars).layers.find((l) => l.id === 'oyakata')!.relics!;
+    const gearRelic = oyakata({}).find((r) => r.startsWith('gear:'))!;
+    expect(gearRelic).toBeDefined();
+    const gather = parseRelic(gearRelic)!.ref;
+    expect(relicGears(gather).length).toBeGreaterThan(0);
+    expect(oyakata({ [`狩りのギア:${gather}`]: '1' })).not.toContain(gearRelic);
+    // 1-1 の帯にギアはない。髪留めの探し物は、引き受けた時だけ
+    const kingyo = (vars: Record<string, string>) => sandBottomFor('ch2', vars).layers.find((l) => l.id === 'kingyo')!.relics!;
+    expect(kingyo({})).toEqual([]);
+    expect(kingyo({ '落とし物:a11_hairpin': 'accepted' })).toEqual(['lost:a11_hairpin']);
+    expect(kingyo({ '落とし物:a11_hairpin': 'found' })).toEqual([]);
+  });
+
+  it('稼ぎ：いちばん深い章の層（とふつうの地面の番人）は満額、上の層は半分', () => {
+    const def = sandBottomFor('ch4');
+    expect(digRewardRate(def, 'kingyo', 0.5)).toBe(0.5);
+    expect(digRewardRate(def, 'oyakata', 0.5)).toBe(0.5);
+    expect(digRewardRate(def, 'taisho', 0.5)).toBe(1);
+    expect(digRewardRate(def, 'deep', 0.5)).toBe(1);
+    expect(digRewardRate(sandBottomFor('ch2'), 'kingyo', 0.5)).toBe(1);
   });
 });

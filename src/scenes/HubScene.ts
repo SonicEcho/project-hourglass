@@ -1,22 +1,19 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { areaChapter, chapterOfEvent, dayAt, enterFade, eventPassed, fadeLevel, fadeRate, huntableAreas, huntRewardRate, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost, startExplore } from '../core';
-import { AREAS, BACKDROPS, BGM, HUB_SCENES, HUNT_OLD_AREA_RATE, canEnterSandBottom, KEEPER_TALKS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, LOST_ITEMS, SLICE_FLOW } from '../data';
+import { chapterOfEvent, eventPassed, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost } from '../core';
+import { BACKDROPS, BGM, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages } from '../ui/waitImages';
-import { addWindow, enterScreen, popIn } from '../ui/skin';
-import { backButton, FRAME_COLORS, frameHeader, PLAIN_BUTTON } from '../ui/frame';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
-import { addButton, addText } from '../ui/widgets';
+import { enterScreen } from '../ui/skin';
+import { backButton, frameHeader } from '../ui/frame';
+import { RENDER_SCALE } from '../ui/theme';
 import { addGalleryTile, addTileRows, type GalleryTile } from '../ui/gallery';
 import { growthTiles } from './growthMenu';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
-import type { ExploreData } from './ExploreScene';
-import { notePlayCount } from './playRecord';
 import { archivedTalks } from './TalkArchiveScene';
-import { currentEvent, run, setHubReturn, setStoryVars, startHunt, storyLineup } from './run';
+import { currentEvent, run, setHubReturn, setStoryVars } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
 // 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）もここ。
@@ -70,10 +67,10 @@ export class HubScene extends Phaser.Scene {
     const left = 14;
     const w = GAME_WIDTH - left * 2;
     const gap = 8;
-    // 狩り：一番上の大きなタイル
-    const hunts = huntableAreas(AREAS, run.returned);
+    // 一番上の大きなタイル：砂の底（段階213。前は狩り「記憶をたどる」。狩りは砂の底に置き換えた。2章から）
+    const digOpen = canEnterSandBottom(chapterOfEvent(SLICE_FLOW, run.event)?.id);
     let y = 62;
-    addGalleryTile(this, root, left, y, w, 168, { id: 'hunt', label: '記憶をたどる', sub: '返した時間へ、もう一度', enabled: hunts.length > 0, onTap: () => this.pickHunt() });
+    addGalleryTile(this, root, left, y, w, 168, { id: 'sandBottom', label: '砂の底', sub: digOpen ? '返した記憶の地層を掘る' : '2章から', enabled: digOpen, onTap: () => this.openSandBottom() });
     y += 168 + 6;
     // ポーチの中身（段階51）。1行で
     // 育成（今の章で開いているものだけ）
@@ -86,8 +83,6 @@ export class HubScene extends Phaser.Scene {
       { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() },
       { id: 'lost', label: '落とし物の棚', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
     ];
-    // 段階209：砂の底（何度でも潜れる。日は進まない）。段階212：2章から（終えた章の層が開く）
-    if (canEnterSandBottom(chapterOfEvent(SLICE_FLOW, run.event)?.id)) misc.push({ id: 'sandBottom', label: '砂の底', onTap: () => this.openSandBottom() });
     const talks = archivedTalks();
     if (talks.length > 0) {
       const unseen = talks.filter((t) => !t.seen).length;
@@ -132,58 +127,8 @@ export class HubScene extends Phaser.Scene {
 
   /** 昼の時計屋へ戻る（昼の日常の途中でなければ、物語の流れへ） */
   private leave(): void {
-    run.hunt = null;
     const data: DailyData = { event: run.event, place: 'clockshop', finished: undefined };
     if (currentEvent().kind === 'daily') this.scene.start('Daily', data);
     else this.scene.start('Flow', { done: false });
-  }
-
-  /** 狩りに入る区画を選ぶ（段階43。段階50で昼の時計屋からここへ移した）。前の章の区画は、星の砂と経験値が半分 */
-  private pickHunt(): void {
-    if (this.overlay) return;
-    const areas = huntableAreas(AREAS, run.returned);
-    const cx = GAME_WIDTH / 2;
-    const h = 150 + areas.length * 60;
-    const top = Math.round((GAME_HEIGHT - h) / 2);
-    const panel = this.add.container(0, 0).setDepth(50);
-    this.overlay = panel;
-    panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
-    panel.add(addWindow(this, cx - 165, top, 330, h, FRAME_COLORS.gold, FRAME_COLORS.panel));
-    panel.add(addText(this, cx, top + 30, 'どの記憶をたどる？', { size: 17, bold: true }).setOrigin(0.5));
-    panel.add(addText(this, cx, top + 58, '砂嵐の名残とぬしから素材を集める\n同じ記憶を続けてたどると薄れる（1日で戻る）', { size: 12, color: COLORS.subText, align: 'center', wrap: 300 }).setOrigin(0.5));
-    const now = storyLineup().chapter;
-    const today = dayAt(SLICE_FLOW, run.event);
-    areas.forEach((area, i) => {
-      const half = huntRewardRate(areaChapter(SLICE_FLOW, area.id), now, HUNT_OLD_AREA_RATE) < 1;
-      // 記憶の濃さ（段階57）：同じ記憶を続けてたどるほど薄れ、使い切るとその日は入れない
-      const level = fadeLevel(run.vars, area.id, today);
-      const rate = fadeRate(MEMORY_FADE_RATES, level);
-      const fade = rate === null ? '今日はもう、かすれて見えない' : rate < 1 ? `記憶が${MEMORY_FADE_LABELS[level]}（実入り${Math.round(rate * 10)}割）` : '記憶は濃い';
-      const note = [fade, half && rate !== null ? '星の砂と経験値は半分' : ''].filter(Boolean).join('・');
-      addButton(this, panel, cx, top + 106 + i * 60, 290, 50, `${area.name}\n${note}`, { onTap: () => this.enterHunt(area.id) }, { ...PLAIN_BUTTON, size: 12, enabled: rate !== null });
-    });
-    addButton(this, panel, cx, top + h - 34, 150, 44, 'やめる', {
-      onTap: () => {
-        panel.destroy(true);
-        this.overlay = undefined;
-      },
-    }, { ...PLAIN_BUTTON, size: 14 });
-    popIn(this, panel);
-  }
-
-  /** 狩りに入る（入るたびに新しい中身。狩りの途中はセーブしない） */
-  private enterHunt(areaId: string): void {
-    const area = AREAS[areaId];
-    if (!area) return;
-    // 記憶の薄れ（段階57）：入るたびに1段階薄れる（今日はもう入れなければ何もしない）
-    const fade = enterFade(run.vars, areaId, dayAt(SLICE_FLOW, run.event), MEMORY_FADE_RATES);
-    if (!fade) return;
-    setStoryVars(fade.vars);
-    notePlayCount('hunt');
-    startHunt(startExplore(area), fade.rate);
-    const data: ExploreData = { area: areaId, won: undefined, lost: undefined, seen: undefined, hunt: true };
-    this.cameras.main.fadeOut(250, 0, 0, 0);
-    // 狩りの区画の地図と敵の絵だけを待つ（段階150）
-    this.time.delayedCall(260, () => startWithImages(this, 'Explore', data));
   }
 }

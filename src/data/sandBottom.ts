@@ -1,5 +1,9 @@
 import type { DigLayerDef, DigRarity, DigWorldDef } from '../core/dig';
+import { huntGearKey } from '../core/hunt';
+import { lostStatus } from '../core/lost';
 import { AREA_BATTLES, AREAS } from './areas';
+import { LOST_ITEMS } from './lost';
+import { WEAPON_DATA } from './weapons';
 
 // 砂の底を掘る（段階207。試作1。docs/milestones/M3_sand_bottom.md）。数値はすべて仮。
 // 上の層ほど今に近い時代。宝箱の中身と砂嵐は、その時代の区画の砂嵐から集める（区画の雑魚の戦闘と、落とす素材）。
@@ -22,7 +26,50 @@ function areaItems(areaIds: string[]): Record<DigRarity, string[]> {
       if (t.rare) out.rare.add(t.rare);
     }
   }
+  // 段階213：狩りの採取の場所の素材（砂嵐が落とさない物も）。珍しさは素材の珍しさのまま
+  for (const id of areaIds.flatMap((a) => AREAS[a]?.hunt?.gathers.flatMap((g) => g.items) ?? [])) {
+    const r = WEAPON_DATA.items[id]?.rarity;
+    out[r === 'rare' ? 'rare' : r === 'uncommon' ? 'uncommon' : 'common'].add(id);
+  }
   return { common: [...out.common], uncommon: [...out.uncommon], rare: [...out.rare] };
+}
+
+/** 帯のぬしの巣のぬし（段階213）：その区画のぬし（区画が2つなら後の方。大正の祭りの夜は2晩目のぬし） */
+function bandLord(areaIds: string[]): string | undefined {
+  return [...areaIds]
+    .reverse()
+    .map((a) => `${a}_boss`)
+    .find((b) => AREA_BATTLES[b]);
+}
+
+/** 光る物の id（段階213）：記憶の宝箱 'gear:<採取の場所>'、落とし物 'lost:<落とし物>' */
+export const relicGear = (gatherId: string) => `gear:${gatherId}`;
+export const relicLost = (lostId: string) => `lost:${lostId}`;
+
+/** 光る物の id を読む（段階213） */
+export function parseRelic(id: string): { kind: 'gear' | 'lost'; ref: string } | null {
+  const m = /^(gear|lost):(.+)$/.exec(id);
+  return m ? { kind: m[1] as 'gear' | 'lost', ref: m[2] } : null;
+}
+
+/** 記憶の宝箱に入るギア（段階213。狩りの採取の場所のギア） */
+export function relicGears(gatherId: string): string[] {
+  for (const a of Object.values(AREAS)) {
+    const g = a.hunt?.gathers.find((x) => x.id === gatherId);
+    if (g) return g.gears ?? [];
+  }
+  return [];
+}
+
+/**
+ * 帯の光る物（段階213）：まだ手に入れていない採取の場所のギアから1つ（記憶の宝箱）と、引き受けた探し物（落とし物）
+ */
+function bandRelics(areaIds: string[], vars: Readonly<Record<string, string>>): string[] {
+  const gear = areaIds
+    .flatMap((a) => AREAS[a]?.hunt?.gathers ?? [])
+    .find((g) => (g.gears?.length ?? 0) > 0 && !vars[huntGearKey(g.id)]);
+  const lost = LOST_ITEMS.filter((d) => d.kind === 'find' && areaIds.includes(d.area) && lostStatus({ ...vars }, d.id) === 'accepted');
+  return [...(gear ? [relicGear(gear.id)] : []), ...lost.map((d) => relicLost(d.id))];
 }
 
 /** 層の色（砂・固い土・岩・空洞・崩れる砂） */
@@ -136,9 +183,21 @@ export function canEnterSandBottom(chapterId: string | undefined): boolean {
 /** 砂時計の砂（段階209・212。章ごとに増え、開いている層の底まで行って探れるくらい。数値は仮） */
 export const SAND_BOTTOM_SAND_BY_CHAPTER: Record<string, number> = { ch1: 100, ch2: 140, ch3: 260, ch4: 400 };
 
-function buildWorld(open: DigStratum[], sand: number): DigWorldDef {
+function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<string, string>>): DigWorldDef {
   const layers: DigLayerDef[] = open.flatMap((st) =>
-    st.bands.map((b) => ({ id: b.id, name: st.name, group: st.chapter, rows: BAND_ROWS, items: areaItems(b.areas), battles: areaBattles(b.areas), guards: stratumGuards(st), lords: stratumLords(st), ...st.ground })),
+    st.bands.map((b) => ({
+      id: b.id,
+      name: st.name,
+      group: st.chapter,
+      rows: BAND_ROWS,
+      items: areaItems(b.areas),
+      battles: areaBattles(b.areas),
+      guards: stratumGuards(st),
+      lords: stratumLords(st),
+      nest: bandLord(b.areas),
+      relics: bandRelics(b.areas, vars),
+      ...st.ground,
+    })),
   );
   // ふつうの地面：1マス下りるのに砂が2以上かかる（いちばん安い掘り方）。砂粒で戻る分も見込んで、入った時の砂と同じ行数
   layers.push({ id: DEEP_GROUND_ID, name: DEEP_GROUND_NAME, group: DEEP_GROUND_ID, rows: sand, rock: 0.08, clay: 0.3, ore: 0, grain: 0, loose: 0.1, caves: 0, chestRate: 0, nestRate: 0, items: { common: [], uncommon: [], rare: [] }, weights: { common: 1, uncommon: 0, rare: 0 }, battles: [] });
@@ -162,12 +221,23 @@ function buildWorld(open: DigStratum[], sand: number): DigWorldDef {
  * その章の砂の底（段階212）：終えた章の層まで開く（2章は感覚記憶の層、3章で短期記憶の層が加わる…）。
  * 1章（入口は出さない。デバッグの入口から入った時）は、感覚記憶の層だけ
  */
-export function sandBottomFor(chapterId: string | undefined): DigWorldDef {
+export function sandBottomFor(chapterId: string | undefined, vars: Readonly<Record<string, string>> = {}): DigWorldDef {
   const n = chapterNo(chapterId);
   const open = STRATA.filter((_, i) => i + 1 < n);
   const list = Object.values(SAND_BOTTOM_SAND_BY_CHAPTER);
   const sand = (chapterId && SAND_BOTTOM_SAND_BY_CHAPTER[chapterId]) || list[list.length - 1];
-  return buildWorld(open.length > 0 ? open : STRATA.slice(0, 1), sand);
+  return buildWorld(open.length > 0 ? open : STRATA.slice(0, 1), sand, vars);
+}
+
+/**
+ * その層（帯）の星の砂と経験値の割合（段階213）：開いている中でいちばん深い（いちばん最近の）章の層は満額、それより上は old（狩りの前の章と同じ割合）。
+ * ふつうの地面の番人は、いちばん下の章の層の物なので満額
+ */
+export function digRewardRate(def: DigWorldDef, layerId: string, old: number): number {
+  const groups = def.layers.map((l) => l.group).filter((g) => g !== DEEP_GROUND_ID);
+  const latest = groups[groups.length - 1];
+  const g = def.layers.find((l) => l.id === layerId)?.group;
+  return g === latest || g === DEEP_GROUND_ID ? 1 : old;
 }
 
 /** 今ある章の層をみな開いた砂の底（テスト・絵の見本。4章の時と同じ） */

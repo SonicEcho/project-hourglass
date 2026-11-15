@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
-import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, huntableAreas, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { AREAS, BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
+import { BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -48,7 +48,8 @@ const PLACE_RADIUS = 52;
 function build(data: DailyHub): DailyHub {
   const visits = visitsFor(data, RETURN_VISITS, returnDays(SLICE_FLOW, run.event, run.returned));
   // レストピアの拠点の入口（段階50）：返した区画が1つでもあり、2章から（段階60。1章は物語に集中する）
-  const hub = (storyLineup().chapter ?? 1) >= HUB_FROM_CHAPTER && huntableAreas(AREAS, run.returned).length > 0 ? HUB_SPOT : undefined;
+  // 段階213：狩りを外したので、返した区画があれば出す（前は狩りに入れる区画がある時）
+  const hub = (storyLineup().chapter ?? 1) >= HUB_FROM_CHAPTER && run.returned.length > 0 ? HUB_SPOT : undefined;
   return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits, hub);
 }
 

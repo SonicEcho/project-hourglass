@@ -25,7 +25,7 @@ const POSE_ROW: Record<DigPose, number> = { walk: 0, digSide: 1, digDown: 2, cli
 /** ブロックの絵の種類（DigTile のうち、絵が1枚で決まる物） */
 type TileArt = 'sand' | 'loose' | 'clay' | 'rock' | 'ore' | 'grain' | 'air';
 const LAYER_ARTS: TileArt[] = ['sand', 'loose', 'clay', 'rock', 'ore', 'grain', 'air'];
-const SINGLE_ARTS = ['surface', 'chest', 'guard', 'crack'] as const;
+const SINGLE_ARTS = ['surface', 'chest', 'guard', 'crack', 'relic', 'nest'] as const;
 
 // ---- 色と乱数 ----
 
@@ -325,6 +325,84 @@ function drawChest(ctx: Ctx, air: number, rand: () => number): void {
   ctx.strokeRect(4.5, 12.5, T - 9, 9);
 }
 
+/** 光る物（段階213。記憶の宝箱・落とし物）：金色の光に包まれた小箱と、またたく光 */
+function drawRelic(ctx: Ctx, air: number, rand: () => number): void {
+  drawAir(ctx, air, rand);
+  const g = ctx.createRadialGradient(T / 2, T / 2, 1, T / 2, T / 2, T * 0.6);
+  g.addColorStop(0, 'rgba(255,240,180,0.95)');
+  g.addColorStop(0.45, 'rgba(255,200,90,0.55)');
+  g.addColorStop(1, 'rgba(255,200,90,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, T, T);
+  // 小箱
+  ctx.fillStyle = '#7a3ea0';
+  ctx.fillRect(7, 12, T - 14, 8);
+  ctx.fillStyle = '#a060d0';
+  ctx.beginPath();
+  ctx.moveTo(7, 12);
+  ctx.quadraticCurveTo(T / 2, 6, T - 7, 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ffe08a';
+  ctx.fillRect(7, 11.5, T - 14, 1.5);
+  ctx.fillRect(T / 2 - 1.5, 12, 3, 4);
+  ctx.strokeStyle = '#3a1a50';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(7.5, 12.5, T - 15, 7);
+  // 光の筋
+  ctx.fillStyle = '#ffffff';
+  for (const [x, y, l] of [
+    [5, 5, 4],
+    [T - 6, 7, 3],
+    [T / 2, 2, 3],
+  ] as const) {
+    ctx.fillRect(x - 0.5, y - l / 2, 1, l);
+    ctx.fillRect(x - l / 2, y - 0.5, l, 1);
+  }
+}
+
+/** ぬしの巣（段階213）：赤黒い光の中に、王冠をかぶった大きな影と光る目 */
+function drawNest(ctx: Ctx, rand: () => number): void {
+  const g = ctx.createRadialGradient(T / 2, T / 2, 2, T / 2, T / 2, T * 0.75);
+  g.addColorStop(0, '#7a1a5a');
+  g.addColorStop(1, '#14040e');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, T, T);
+  ctx.fillStyle = '#2a0a20';
+  ctx.beginPath();
+  ctx.ellipse(T / 2, T - 4, 10, 9, 0, Math.PI, 0);
+  ctx.fill();
+  speckles(ctx, 0x6a2a5a, rand, 30, 1.5, 0.6);
+  // 王冠
+  ctx.fillStyle = '#ffd76a';
+  ctx.beginPath();
+  ctx.moveTo(7, 10);
+  ctx.lineTo(8, 4);
+  ctx.lineTo(11, 8);
+  ctx.lineTo(T / 2, 3);
+  ctx.lineTo(T - 11, 8);
+  ctx.lineTo(T - 8, 4);
+  ctx.lineTo(T - 7, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#8a5a10';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  for (const ex of [10, T - 10]) {
+    ctx.fillStyle = 'rgba(255,120,200,0.5)';
+    ctx.beginPath();
+    ctx.arc(ex, 15, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffe0f0';
+    ctx.beginPath();
+    ctx.arc(ex, 15, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#ffd76a';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(0.75, 0.75, T - 1.5, T - 1.5);
+}
+
 function drawGuard(ctx: Ctx, rand: () => number): void {
   const g = ctx.createRadialGradient(T / 2, T / 2, 2, T / 2, T / 2, T * 0.75);
   g.addColorStop(0, '#9a1a24');
@@ -435,13 +513,15 @@ export function ensureDigTiles(scene: Phaser.Scene): void {
   paint('chest', 1, last, (cx) => drawChest(cx, air0, artRand(901)));
   paint('guard', 2, last, (cx) => drawGuard(cx, artRand(902)));
   paint('crack', 3, last, drawCrack);
+  paint('relic', 4, last, (cx) => drawRelic(cx, air0, artRand(903)));
+  paint('nest', 5, last, (cx) => drawNest(cx, artRand(904)));
   tex.refresh();
 }
 
 /** そのマスの絵（ブロックの絵の1枚の、どのコマか）。宝箱・番人の下地も含めて1枚で描く */
 export function tileFrame(layerId: string, tile: DigTile, x: number, y: number): { key: string; frame: string } {
   const v = ((x * 7 + y * 13) ^ (y * 3)) % VARIANTS;
-  if (tile === 'chest' || tile === 'guard') return { key: TILES_KEY, frame: tile };
+  if (tile === 'chest' || tile === 'guard' || tile === 'relic' || tile === 'nest') return { key: TILES_KEY, frame: tile };
   const art: TileArt = tile === 'sand' || tile === 'loose' || tile === 'clay' || tile === 'rock' || tile === 'ore' || tile === 'grain' ? tile : 'air';
   return { key: TILES_KEY, frame: `${layerId}:${art}:${v}` };
 }

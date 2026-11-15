@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import type { DigDir, DigEvent, DigState, DigTile } from '../core';
-import { addItems, chapterOfEvent, isDigGuardRow, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
+import type { DigDir, DigEvent, DigState, DigTile, DigWorldDef } from '../core';
+import { addItems, addParts, chapterOfEvent, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, PARTY, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, digRewardRate, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
-import { waitImages } from '../ui/waitImages';
+import { dialogueImages, waitImages } from '../ui/waitImages';
+import type { DialogueData } from './DialogueScene';
 import { isSettled } from '../assets/loader';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
@@ -23,9 +24,13 @@ export interface SandBottomData {
   wonGuard?: number;
   /** 動く砂嵐に勝って戻った（砂嵐の番号） */
   wonRoamer?: number;
+  /** ぬしの巣のぬしに勝って戻った（巣のマス。段階213） */
+  wonNest?: number;
   /** 戦闘に負けて戻った */
   lost?: boolean;
 }
+
+type FoeKind = 'guard' | 'roamer' | 'nest';
 
 const T = DIG_TILE;
 const COLS = 15;
@@ -60,7 +65,7 @@ const DIR_STEP: Record<DigDir, [number, number]> = { up: [0, -1], down: [0, 1], 
 
 /** 今の章の砂の底（砂時計の砂が章で変わる） */
 function currentDef() {
-  return sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id);
+  return sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars);
 }
 
 export class SandBottomScene extends Phaser.Scene {
@@ -89,8 +94,12 @@ export class SandBottomScene extends Phaser.Scene {
   }
 
   /** 掘る人の特徴を入れた砂の底（段階211） */
-  private get def() {
-    return withDigger(currentDef(), run.dig?.digger ?? 'hero');
+  /** 潜っている間の砂の底（章・掘る人・物語の値から。段階213：開くたびに1度だけ作る。中で毎回作ると重いため） */
+  private world?: DigWorldDef;
+
+  private get def(): DigWorldDef {
+    if (!this.world) this.world = withDigger(currentDef(), run.dig?.digger ?? 'hero');
+    return this.world;
   }
 
   /** 入った時の砂時計の砂（砂の棒の長さの元） */
@@ -103,6 +112,7 @@ export class SandBottomScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b0f22).setOrigin(0);
     this.root = this.add.container(0, 0);
     this.overlay = undefined;
+    this.world = undefined;
     this.message = '';
     this.moving = false;
     this.held = null;
@@ -125,7 +135,11 @@ export class SandBottomScene extends Phaser.Scene {
       this.s = clearRoamer(this.def, this.s, data.wonRoamer);
       this.message = `砂嵐を倒した！（砂時計 −${this.def.cost.battle}）`;
     }
-    if (data.wonGuard !== undefined || data.wonRoamer !== undefined) this.healAfterWin();
+    if (data.wonNest !== undefined) {
+      this.s = clearNest(this.def, this.s, data.wonNest);
+      this.message = `ぬしを倒した！（砂時計 −${this.def.cost.battle}）`;
+    }
+    if (data.wonGuard !== undefined || data.wonRoamer !== undefined || data.wonNest !== undefined) this.healAfterWin();
     if (data.lost) {
       this.s = loseDig(this.def, this.s);
       run.dig = { ...run.dig!, vitals: {} };
@@ -177,7 +191,8 @@ export class SandBottomScene extends Phaser.Scene {
     const count = Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1;
     setStoryVars({ ...run.vars, [DIVE_COUNT_VAR]: String(count), [SAND_BOTTOM_DIGGER_VAR]: digger });
     const def = currentDef();
-    run.dig = { state: createDig(def, (run.seed + count * 7919) >>> 0), vitals: {}, count, max: def.sand, digger };
+    this.world = undefined;
+    run.dig = { state: createDig(withDigger(def, digger), (run.seed + count * 7919) >>> 0), vitals: {}, count, max: def.sand, digger };
     this.hero = ensureDigHero(this, digger);
     this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂を使わない';
     this.closeOverlay();
@@ -464,6 +479,17 @@ export class SandBottomScene extends Phaser.Scene {
       this.showFoe('guard', e.cell, e.battle, false);
       return 0;
     }
+    if (e.type === 'nest') {
+      this.release();
+      this.render();
+      this.showFoe('nest', e.cell, e.battle, false);
+      return 0;
+    }
+    if (e.type === 'relic') {
+      this.release();
+      this.takeRelicAt(e.cell, e.id);
+      return 0;
+    }
     // 掘ったか（行き先のブロックが、この手で変わった）
     const [dx, dy] = DIR_STEP[dir];
     const tx = before.x + dx;
@@ -504,6 +530,38 @@ export class SandBottomScene extends Phaser.Scene {
     return chasing ? '砂嵐がこちらに気づいた！' : '';
   }
 
+  /**
+   * 光る物を掘り当てた（段階213）。記憶の宝箱はギアがすぐ手に入る（かばんを使わない。負けても失わない）。
+   * 落とし物は見つけた印を付け、声の会話があれば見てから砂の底へ戻る
+   */
+  private takeRelicAt(cell: number, id: string): void {
+    const relic = parseRelic(id);
+    this.s = takeRelic(this.s, cell);
+    if (relic?.kind === 'gear') {
+      const gears = relicGears(relic.ref);
+      if (gears.length > 0) run.navi = addParts(run.navi, gears);
+      setStoryVars({ ...run.vars, [huntGearKey(relic.ref)]: '1' });
+      this.message = `記憶の宝箱！ ギアを手に入れた：${gears.map((g) => NAVI_DATA.parts[g]?.name ?? g).join('、')}`;
+      this.render();
+      return;
+    }
+    if (relic?.kind === 'lost') {
+      const def = LOST_ITEMS.find((d) => d.id === relic.ref);
+      setStoryVars(findLost(run.vars, relic.ref));
+      this.message = `落とし物を見つけた！ ${def?.name ?? ''}（拠点の落とし物の棚から、${def?.owner ?? ''}さんに届けられる）`;
+      this.render();
+      if (def?.findScene) this.openFindScene(def.findScene);
+      return;
+    }
+    this.render();
+  }
+
+  /** 落とし物の声の会話を見て、砂の底へ戻る（潜っている状態はそのまま） */
+  private openFindScene(sceneId: string): void {
+    const data: DialogueData = { scene: sceneId, vars: run.vars, seed: run.seed, next: { key: 'SandBottom', data: {} }, onVars: (vars) => setStoryVars(vars) };
+    waitImages(this, dialogueImages([sceneId]), () => this.scene.start('Dialogue', data));
+  }
+
   /** 宝箱：中身を見せて、かばんに入れる。いっぱいなら、かばんの1つと入れ替えるか、持たない */
   private showChest(cell: number): void {
     const o = this.openOverlay();
@@ -540,24 +598,36 @@ export class SandBottomScene extends Phaser.Scene {
   }
 
   /** 番人・砂嵐：戦うか、やめるか（追いつかれた時は戦うしかない） */
-  private showFoe(kind: 'guard' | 'roamer', ref: number, battle: string, forced: boolean): void {
+  private showFoe(kind: FoeKind, ref: number, battle: string, forced: boolean): void {
     const o = this.openOverlay();
     // 段階212：番人は稀に、その層の章のぬし
     const lord = kind === 'guard' && !!AREA_BATTLES[battle]?.boss;
-    const title = lord ? `${AREA_BATTLES[battle].name}が、番人として現れた！` : kind === 'guard' ? '層の番人だ' : forced ? '砂嵐に追いつかれた！' : '砂嵐だ';
-    const note = kind === 'guard' ? 'この番人を倒さないと、下へは行けない。\n' : '';
+    const title =
+      kind === 'nest' ? `${AREA_BATTLES[battle]?.name ?? 'ぬし'}の巣だ` : lord ? `${AREA_BATTLES[battle].name}が、番人として現れた！` : kind === 'guard' ? '層の番人だ' : forced ? '砂嵐に追いつかれた！' : '砂嵐だ';
+    const note = kind === 'guard' ? 'この番人を倒さないと、下へは行けない。\n' : kind === 'nest' ? '部位を壊すと、進化の鍵の素材が手に入る。\n' : '';
+    const half = this.rewardRateOf(kind, ref) < 1 ? '\n（上の層なので、星の砂と経験値は半分）' : '';
     o.add(addText(this, GAME_WIDTH / 2, 200, title, { size: 22, bold: true, color: '#ff8a7a' }).setOrigin(0.5));
     o.add(
-      addText(this, GAME_WIDTH / 2, 240, `${note}戦うと、砂時計の砂が ${this.def.cost.battle} 減る。\nHP・MP は、潜っている間ずっと持ち越す。\n負けると地上へ戻され、かばんの半分を失う`, { size: 13, align: 'center', wrap: GAME_WIDTH - 60, ja: true }).setOrigin(0.5, 0),
+      addText(this, GAME_WIDTH / 2, 240, `${note}戦うと、砂時計の砂が ${this.def.cost.battle} 減る。\nHP・MP は、潜っている間ずっと持ち越す。\n負けると地上へ戻され、かばんの半分を失う${half}`, { size: 13, align: 'center', wrap: GAME_WIDTH - 60, ja: true }).setOrigin(0.5, 0),
     );
     addButton(this, o, GAME_WIDTH / 2, 400, 240, 52, '戦う', { onTap: () => this.fight(kind, ref, battle) }, { fill: 0xc21f4a, size: 16 });
     if (!forced) addButton(this, o, GAME_WIDTH / 2, 464, 240, 44, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
   }
 
-  private fight(kind: 'guard' | 'roamer', ref: number, battle: string): void {
-    const won = kind === 'guard' ? { wonGuard: ref } : { wonRoamer: ref };
+  /**
+   * その戦闘の星の砂と経験値の割合（段階213）：いちばん深い章の層は満額、上の層は半分。
+   * 番人は上の層（番人の行の1つ上）の物、ぬしの巣と砂嵐はいる所の層の物
+   */
+  private rewardRateOf(kind: FoeKind, ref: number): number {
+    const s = this.s;
+    const y = kind === 'roamer' ? (s.roamers.find((m) => m.id === ref)?.y ?? s.y) : Math.floor(ref / s.width) - (kind === 'guard' ? 1 : 0);
+    return digRewardRate(this.def, digLayerAt(this.def, Math.max(1, y)).id, HUNT_OLD_AREA_RATE);
+  }
+
+  private fight(kind: FoeKind, ref: number, battle: string): void {
+    const won = kind === 'guard' ? { wonGuard: ref } : kind === 'nest' ? { wonNest: ref } : { wonRoamer: ref };
     const data = {
-      encounter: { battle, win: { key: 'SandBottom', data: won }, lose: { key: 'SandBottom', data: { lost: true } }, hunt: true, dig: true, seedShift: (run.dig?.count ?? 0) * 31 + this.s.steps },
+      encounter: { battle, win: { key: 'SandBottom', data: won }, lose: { key: 'SandBottom', data: { lost: true } }, hunt: true, dig: true, rewardRate: this.rewardRateOf(kind, ref), seedShift: (run.dig?.count ?? 0) * 31 + this.s.steps },
     };
     // 敵の絵を読んでから戦闘へ
     this.cameras.main.flash(250, 255, 255, 255);
