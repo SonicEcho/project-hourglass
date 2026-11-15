@@ -17,18 +17,12 @@ export function describePassive(p: PassiveEffect): string {
       return `${ELEMENT_LABEL[p.element]}のダメージ +${pct(p.rate)}`;
     case 'partBoost':
       return `部位へのダメージ +${pct(p.rate)}`;
-    case 'oneMoreDraw':
-      return `延長の時に引く枚数 +${p.count}`;
-    case 'batonBoost':
-      return `バトンを受けた時の倍率 +${p.rate}（1.25 → ${1.25 + p.rate}）`;
     case 'comboBoost':
       return `自分が使うコンボのダメージ・回復量 +${pct(p.rate)}`;
     case 'regen':
       return `ラウンドの始めに最大HPの${pct(p.rate)}を回復`;
     case 'mpSave':
       return `魔法・スキルのMP消費 −${p.amount}（最低1）`;
-    case 'startDash':
-      return '戦闘の最初のラウンド、行動が先制になる';
     case 'bug':
       return `狂い：ラウンドの始めに最大HPの${pct(p.rate)}を失う`;
   }

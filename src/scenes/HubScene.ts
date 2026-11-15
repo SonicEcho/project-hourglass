@@ -10,7 +10,7 @@ import { backButton, FRAME_COLORS, frameHeader, PLAIN_BUTTON } from '../ui/frame
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { addGalleryTile, addTileRows, type GalleryTile } from '../ui/gallery';
-import { addPouchLine, growthTiles } from './growthMenu';
+import { growthTiles } from './growthMenu';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import type { ExploreData } from './ExploreScene';
@@ -76,7 +76,6 @@ export class HubScene extends Phaser.Scene {
     addGalleryTile(this, root, left, y, w, 168, { id: 'hunt', label: '記憶をたどる', sub: '返した時間へ、もう一度', enabled: hunts.length > 0, onTap: () => this.pickHunt() });
     y += 168 + 6;
     // ポーチの中身（段階51）。1行で
-    y = addPouchLine(this, root, left, y, w) + gap + 4;
     // 育成（今の章で開いているものだけ）
     y = addTileRows(this, root, growthTiles((key) => this.openGrowth(key)), left, y, w, gap);
     // 交換所（段階52）・落とし物の棚（段階53）・町の小話（段階82。過ぎた日の小話がある時だけ）

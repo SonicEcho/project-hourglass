@@ -59,9 +59,9 @@ describe('1-2 の性質の説明と宝箱（段階168）', () => {
     expect(tips).toEqual(expect.arrayContaining(['chain_pop', 'chain_split']));
     expect(tips).not.toContain('chain_shield');
   });
-  it('1-2 の宝箱は、新しい戦闘のスナップも持つ', async () => {
+  it('1-2 の宝箱は、新しい戦闘のスナップを持つ', async () => {
     const { AREAS } = await import('../../src/data');
-    const chests = AREAS.a12.chests.filter((c) => c.snaps?.length);
+    const chests = AREAS.a12.chests.filter((c) => c.chainSnaps?.length);
     expect(chests.length).toBeGreaterThan(0);
     for (const c of chests) for (const id of c.chainSnaps ?? []) expect(CHAIN_SNAPS[id]).toBeDefined();
     expect(chests.every((c) => c.chainSnaps?.length)).toBe(true);

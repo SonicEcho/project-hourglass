@@ -4,8 +4,6 @@ import { buildFolder } from './cards';
 import { COMBOS } from './combos';
 import { ARMOR_DOG, DISTORTED_BEAST, FROST_BAT, SLIME } from './enemies';
 import { LINKS } from './links';
-import type { NaviPartId } from './navi';
-import { NAVI_REWARD_CANDIDATES } from './navi';
 import { ITEMS } from './weapons';
 
 // 周回の構成（段階7）：戦闘 → 星図 → 戦闘…の5戦。数値はすべて仮
@@ -64,23 +62,17 @@ export interface CampaignBattle {
   cutoff?: BattleCutoff;
   /** 負け戦を打ち切ったら、探索では負けた時と同じくチェックポイントへ戻る（段階85。2-3 の4晩目の書庫を見回るカイ。書かなければ、打ち切りは話の続きへ） */
   cutoffBack?: boolean;
-  /** 勝った時に選べるギアの候補（段階8。この中から NAVI_REWARD_PICKS 個） */
-  naviReward?: NaviPartId[];
-  /** 勝った時に手に入るスナップ（区画のボス。段階41） */
-  snaps?: string[];
 }
 
 export const CAMPAIGN: CampaignBattle[] = [
-  { id: 'battle1', name: '戦闘1', enemies: [SLIME, SLIME], reward: 4, item: ITEMS.potion.id, naviReward: NAVI_REWARD_CANDIDATES[0] },
-  { id: 'battle2', name: '戦闘2', enemies: [SLIME, FROST_BAT], reward: 5, item: ITEMS.ether.id, naviReward: NAVI_REWARD_CANDIDATES[1] },
-  { id: 'battle3', name: '戦闘3', enemies: [SLIME, FROST_BAT, ARMOR_DOG], reward: 6, item: ITEMS.potion.id, naviReward: NAVI_REWARD_CANDIDATES[2] },
+  { id: 'battle1', name: '戦闘1', enemies: [SLIME, SLIME], reward: 4 },
+  { id: 'battle2', name: '戦闘2', enemies: [SLIME, FROST_BAT], reward: 5 },
+  { id: 'battle3', name: '戦闘3', enemies: [SLIME, FROST_BAT, ARMOR_DOG], reward: 6 },
   {
     id: 'battle4',
     name: '戦闘4',
     enemies: [SLIME, FROST_BAT, ARMOR_DOG].map((e) => strengthen(e, 1.3, [ITEMS.steelClaw.id])),
     reward: 7,
-    item: ITEMS.hiPotion.id,
-    naviReward: NAVI_REWARD_CANDIDATES[3],
   },
   { id: 'battle5', name: '戦闘5（ボス）', enemies: [DISTORTED_BEAST], reward: 0, boss: true },
 ];

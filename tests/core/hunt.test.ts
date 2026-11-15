@@ -21,7 +21,7 @@ const base: HuntableArea = {
   name: '狩りのテスト',
   rooms: [room('gate', true, ['top']), room('inner', false, ['bottom'])],
   links: [{ a: { room: 'gate', side: 'top' }, b: { room: 'inner', side: 'bottom' }, opensWhen: 'guard' }],
-  chests: [{ id: 'chest', cell: [6, 1], items: ['potion'], snaps: ['joker'] }],
+  chests: [{ id: 'chest', cell: [6, 1], items: ['potion'], chainSnaps: ['c17_quick'] }],
   enemies: [
     { id: 'e1', patrol: [[1, 2], [6, 2]], battle: 'b1' },
     { id: 'guard', patrol: [[3, 1]], battle: 'bg', move: 'guard' },

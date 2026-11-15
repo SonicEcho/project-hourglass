@@ -95,17 +95,3 @@ export const NAVI_DATA: NaviData = { parts: NAVI_PARTS, boards: NAVI_BOARDS };
 /** 段階200：2章の始め（ムーブメントが開く時）に使えるギア。能力値の1マスと、ファイアブースト・ワイドショット */
 export const START_NAVI_PARTS: NaviPartId[] = ['hpMemory', 'powerMemory1', 'magicMemory1', 'guardMemory1', 'fireBoost', 'wideShot'];
 
-/** 戦闘に勝った時のギアの候補（戦闘の番号ごと）。この中から NAVI_REWARD_PICKS 個選ぶ */
-export const NAVI_REWARD_CANDIDATES: NaviPartId[][] = [
-  ['iceBoost', 'thunderBoost', 'mpMemory'],
-  ['breaker', 'effectBoost', 'mpMemory'],
-  ['comboBoost', 'firstAid', 'powerMemory'],
-  ['mpSave', 'startDash', 'hpMemory'],
-];
-export const NAVI_REWARD_PICKS = 2;
-
-/** ボスの部位を壊すと手に入るはずのギア（結果画面に表示するだけ） */
-export const BOSS_PART_REWARDS: Record<string, NaviPartId> = {
-  rightArm: 'breaker',
-  horn: 'thunderBoost',
-};

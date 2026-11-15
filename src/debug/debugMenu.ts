@@ -1,7 +1,7 @@
 import { playtimeReport, resetPlaytime } from './playtime';
 import { debugAutoStory, setDebugAutoStory } from './debugFlag';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
-import { AREA_BATTLES, AREAS, ROOM_NAMES, CARDS, TRIAL_AREAS, ITEMS, FRAGMENTS, NAVI_PARTS, POUCH_MAX, POUCH_ORDER, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
+import { AREA_BATTLES, AREAS, ROOM_NAMES, TRIAL_AREAS, ITEMS, FRAGMENTS, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
 import type { GrowthTier } from '../sim/presets';
 import { clearReadLog } from '../scenes/DialogueScene';
 import {
@@ -149,9 +149,7 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.growth = p.carry.growth;
         run.armory = p.carry.armory;
         run.navi = p.carry.navi;
-        run.album = withPresetSnaps(run.album, p);
-        const chapter = SLICE_FLOW.find((c) => c.events.some((e) => e.id === eventId))?.id;
-        run.linkGauge = chapter ? { chapter, value: p.carry.gauge } : null;
+        run.chainAlbum = withPresetSnaps(run.chainAlbum, p);
         run.party = [];
         run.pendingReward = null;
         run.returned = returnedBefore(eventId);
@@ -327,14 +325,13 @@ export function installDebugMenu(nav: DebugNavigator): void {
         nav.refreshGrowth();
         notify(`ギアを${Object.keys(NAVI_PARTS).length}個もらいました（${run.navi.parts.length}個）`);
       }),
-      button(`スナップを全種類1枚ずつもらう（今 ${countOf(run.album.owned)}枚）`, () => {
-        run.album = gainSnaps(run.album, Object.keys(CARDS));
-        // 段階163：新しい戦闘のスナップも
+      button(`スナップを全種類1枚ずつもらう（今 ${countOf(run.chainAlbum.owned)}枚）`, () => {
+        // 段階204：新しい戦闘のスナップだけ（古いスナップはなくした）
         run.chainAlbum = gainSnaps(run.chainAlbum, Object.keys(CHAIN_SNAPS));
         nav.refreshGrowth();
-        notify(`スナップを${Object.keys(CARDS).length}枚もらいました（${countOf(run.album.owned)}枚）`);
+        notify(`スナップを${Object.keys(CHAIN_SNAPS).length}枚もらいました（${countOf(run.chainAlbum.owned)}枚）`);
       }),
-      button('素材とアイテムを全種類2つずつもらう', () => {
+      button('素材を全種類2つずつもらう', () => {
         const ids = Object.keys(ITEMS);
         run.armory = capItems(WEAPON_DATA, addItems(run.armory, [...ids, ...ids])).armory;
         nav.refreshGrowth();
@@ -345,11 +342,6 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.armory = addFragments(run.armory, Object.keys(FRAGMENTS).flatMap((id) => Array.from({ length: 10 }, () => id)));
         nav.refreshGrowth();
         notify('記憶の欠片を4種類10個ずつもらいました');
-      }),
-      // 段階51：ポーチの消費アイテムを、持てる数まで（次に始める戦闘から使える）
-      button('ポーチを満タンにする', () => {
-        run.armory = capItems(WEAPON_DATA, addItems(run.armory, POUCH_ORDER.flatMap((id) => Array.from({ length: POUCH_MAX }, () => id)))).armory;
-        notify(`ポーチを満タンにしました（1種類${POUCH_MAX}個。次に始める戦闘から使える）`);
       }),
       // 段階42：次の進化（2回目は Lv5、3回目は Lv7）に要るレベルまで上げる
       button('仲間の武器を、次の進化に要るレベルにする', () => {

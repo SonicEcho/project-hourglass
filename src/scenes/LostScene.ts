@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { LostItemDef } from '../core';
-import { acceptLost, activeLostCount, addParts, capItems, deliverLost, gainSnaps, getAcceptError, getDeliverError, isSeen, lostStatus, markSeen, shelfLost } from '../core';
-import { BACKDROPS, BGM, CARDS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SE, WEAPON_DATA } from '../data';
+import { acceptLost, activeLostCount, addParts, capItems, deliverLost, gainSnaps, recordLibraryFinds, getAcceptError, getDeliverError, isSeen, lostStatus, markSeen, shelfLost } from '../core';
+import { BACKDROPS, BGM, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SE, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -31,7 +31,7 @@ function rewardText(d: LostItemDef): string {
     ...(r.items ?? []).map((id) => WEAPON_DATA.items[id]?.name ?? id),
     ...(r.fragments?.length ? [`記憶の欠片×${r.fragments.length}（${[...new Set(r.fragments)].map((id) => FRAGMENTS[id as keyof typeof FRAGMENTS]?.name ?? id).join('・')}）`] : []),
     ...(r.gears ?? []).map((id) => `ギア「${NAVI_PARTS[id as keyof typeof NAVI_PARTS]?.name ?? id}」`),
-    ...(r.snaps ?? []).map((id) => `スナップ「${CARDS[id as keyof typeof CARDS]?.name ?? id}」`),
+    ...(r.snaps ?? []).map((id) => `スナップ「${CHAIN_SNAPS[id]?.name ?? id}」`),
     ...(r.points ? [`星の砂 ${r.points}`] : []),
   ];
   return parts.join('、');
@@ -150,7 +150,11 @@ export class LostScene extends Phaser.Scene {
     const r = deliverLost(d, run.vars, run.armory);
     run.armory = capItems(WEAPON_DATA, { ...run.armory, items: r.items, fragments: r.fragments }).armory;
     if (d.reward.gears?.length) run.navi = addParts(run.navi, d.reward.gears);
-    if (d.reward.snaps?.length) run.album = gainSnaps(run.album, d.reward.snaps);
+    // スナップは新しい戦闘のアルバムへ（段階204。ライブラリにも記録）
+    if (d.reward.snaps?.length) {
+      run.chainAlbum = gainSnaps(run.chainAlbum, d.reward.snaps);
+      run.library = recordLibraryFinds(run.library, { snaps: d.reward.snaps });
+    }
     if (d.reward.points) run.growth = { ...run.growth, points: run.growth.points + d.reward.points };
     setStoryVars(r.vars);
     saveRun();

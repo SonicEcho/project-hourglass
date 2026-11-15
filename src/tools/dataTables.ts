@@ -1,10 +1,8 @@
-import type { ActionDef, CardDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
+import type { ActionDef, CharacterDef, EnemyDef, GrowthNodeDef, NaviPartDef, Stats } from '../core';
 import { allBattles, evolutionTier, evolveLevelFor } from '../core';
 import {
   AREA_BATTLES,
-  AREAS,
   itemSources,
-  BOSS_PART_REWARDS,
   CARDS,
   COMBOS,
   FOLDER,
@@ -13,7 +11,6 @@ import {
   LINKS,
   NAVI_BOARDS,
   NAVI_PARTS,
-  NAVI_REWARD_PICKS,
   PART_BREAK_POINTS,
   PARTY,
   CHAIN_SKILLS,
@@ -72,19 +69,6 @@ function charactersPage(): string {
   ]);
 }
 
-/** そのスナップが手に入る所（区画の宝箱・ボス・返した報酬） */
-function snapSources(id: string): string[] {
-  const out: string[] = [];
-  for (const a of Object.values(AREAS)) {
-    const area = a.name.split('「')[0];
-    for (const c of a.chests) if (c.snaps?.includes(id)) out.push(`${area}の宝箱`);
-    if (a.returnSnaps?.includes(id)) out.push(`${area}を返した報酬`);
-    const boss = AREA_BATTLES[a.boss.battle];
-    if (boss?.snaps?.includes(id)) out.push(`${area}のボス`);
-  }
-  return out;
-}
-
 function snapsPage(): string {
   const total = FOLDER.reduce((n, f) => n + f.count, 0);
   return page('スナップ・コンボ・連携技', '正は `src/data/cards.ts`・`src/data/combos.ts`・`src/data/links.ts`。仕組みは `docs/design/battle.md`。', [
@@ -95,16 +79,7 @@ function snapsPage(): string {
         FOLDER.map(({ card, count }) => [card.name, count, describeAction(card), card.support ? '―' : `${weightLabel(card.weight)}（${formatWeight(card.weight)}）`, card.support ? 'サポート（行動枠を使わない）' : '行動']),
       ),
     ],
-    [
-      '最初のアルバムにないスナップ（段階41。宝箱・ボス・返した報酬で手に入る）',
-      table(
-        ['スナップ', '効果', '重さ', '入手'],
-        Object.values(CARDS as Record<string, CardDef>)
-          .filter((c) => !FOLDER.some((f) => f.card.id === c.id))
-          .map((c) => [c.name, describeAction(c), `${weightLabel(c.weight)}（${formatWeight(c.weight)}）`, snapSources(c.id).join('、') || '―']),
-      ),
-    ],
-    ['スナップの入手（段階41）', table(['スナップ', '入手'], Object.values(CARDS as Record<string, CardDef>).flatMap((c) => (snapSources(c.id).length > 0 ? [[c.name, snapSources(c.id).join('、')]] : [])))],
+    // 段階204：古いスナップの入手先（宝箱・ボス・返した報酬）はなくした。新しい戦闘のスナップの入手先は、ライブラリの画面で見る
     ['コンボ', table(['コンボ', '材料', '効果', '重さ'], COMBOS.map((c) => [c.name, c.cards.map(cardName).join('＋'), ...actionRow(c).slice(1)]))],
     ['連携技', table(['連携技', '2人', '効果', '重さ'], LINKS.map((l) => [l.name, l.members.map(charName).join('×'), ...actionRow(l).slice(1)]))],
   ]);
@@ -129,7 +104,7 @@ function enemiesPage(): string {
       })
       .join('\n');
   const parts = enemies.flatMap((e) =>
-    (e.parts ?? []).map((p) => [e.name, p.name, p.hp, actions({ ...e, actions: e.actions.filter((a) => a.requiresPart === p.id) }) || '―', p.revealsWeakness ? elements(p.revealsWeakness) : '―', p.material, BOSS_PART_REWARDS[p.id] ? partName(BOSS_PART_REWARDS[p.id]) : '―']),
+    (e.parts ?? []).map((p) => [e.name, p.name, p.hp, actions({ ...e, actions: e.actions.filter((a) => a.requiresPart === p.id) }) || '―', p.revealsWeakness ? elements(p.revealsWeakness) : '―', p.material]),
   );
   const battles = STORY.flatMap((c) => c.areas.flatMap((a) => a.battles.map((b) => ({ c, a, b }))));
   return page('敵と周回の戦闘', '正は `src/data/festivalEnemies.ts`・`src/data/enemies.ts`・`src/data/areas.ts`・`src/data/campaign.ts`・`src/data/story.ts`。仕組みは `docs/design/battle.md`・`docs/design/run.md`。', [
@@ -147,15 +122,15 @@ function enemiesPage(): string {
         Object.values(AREA_BATTLES).map((b) => [`${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―']),
       ),
     ],
-    ['部位', parts.length ? table(['敵', '部位', 'HP', '壊すと封じる行動', '壊すと露出する弱点', '素材（表示のみ）', 'ギア（表示のみ）'], parts) : 'なし'],
+    ['部位', parts.length ? table(['敵', '部位', 'HP', '壊すと封じる行動', '壊すと露出する弱点', '素材（表示のみ）'], parts) : 'なし'],
     [
       '試作の周回の戦闘（デバッグメニューの「試作の5戦」）',
       [
-        `最初の星の砂：${START_MEMORY_POINTS}。部位を1つ壊すごとに +${PART_BREAK_POINTS}。ギアは候補から${NAVI_REWARD_PICKS}つ選ぶ。`,
+        `最初の星の砂：${START_MEMORY_POINTS}。部位を1つ壊すごとに +${PART_BREAK_POINTS}。`,
         '',
         table(
-          ['章', '区画', '戦闘（id）', '敵', '星の砂', 'アイテム', 'ギアの候補'],
-          battles.map(({ c, a, b }) => [c.name, a.name, `${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―', (b.naviReward ?? []).map(partName).join('、') || '―']),
+          ['章', '区画', '戦闘（id）', '敵', '星の砂', 'アイテム'],
+          battles.map(({ c, a, b }) => [c.name, a.name, `${b.name}（${b.id}）${b.boss ? '★ボス' : ''}`, b.enemies.map((e) => e.name).join('、'), b.boss ? '―' : b.reward, b.item ? itemName(b.item) : '―']),
         ),
       ].join('\n'),
     ],

@@ -1,11 +1,6 @@
-import Phaser from 'phaser';
 import { canEvolveAny, findBugs, hasSpare } from '../core';
-import { chainAlbumActive } from './chainEncounter';
-import { ITEMS, POUCH_MAX, POUCH_ORDER, WEAPON_DATA } from '../data';
-import { FRAME_COLORS } from '../ui/frame';
+import { WEAPON_DATA } from '../data';
 import type { GalleryTile } from '../ui/gallery';
-import { COLORS } from '../ui/theme';
-import { addText } from '../ui/widgets';
 import { libraryProgressText } from './libraryView';
 import { canChooseParty, currentNaviData, lineupBase, run, storyLineup } from './run';
 
@@ -29,7 +24,7 @@ export function growthTiles(open: (key: string) => void): GalleryTile[] {
     tiles.push({ id: 'navi', label: 'ムーブメント', badge: bugs > 0 ? `狂い ${bugs}` : undefined, badgeColor: bugs > 0 ? 0xc0303a : undefined, onTap: () => open('Navi') });
   }
   // 段階163：新しい戦闘の区画にいる時は、新しい戦闘のアルバム
-  if (hasSpare(chainAlbumActive() ? run.chainAlbum : run.album)) tiles.push({ id: 'album', label: 'アルバム', onTap: () => open('Album') });
+  if (hasSpare(run.chainAlbum)) tiles.push({ id: 'album', label: 'アルバム', onTap: () => open('Album') });
   // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
   if (canChooseParty()) tiles.push({ id: 'party', label: '並び', onTap: () => open('Party') });
   // ライブラリ（段階167）：見つけたスナップ・コンボ・会った敵・素材の記録
@@ -37,11 +32,3 @@ export function growthTiles(open: (key: string) => void): GalleryTile[] {
   return tiles;
 }
 
-/** ポーチの中身を1行で（段階51）。下の端を返す */
-export function addPouchLine(scene: Phaser.Scene, root: Phaser.GameObjects.Container, left: number, y: number, w: number): number {
-  const pouch = POUCH_ORDER.map((id) => `${ITEMS[id as keyof typeof ITEMS].name} ${run.armory.items[id] ?? 0}`).join('　');
-  root.add(scene.add.rectangle(left, y, w, 26, FRAME_COLORS.panel, 0.85).setOrigin(0).setRounded(8).setStrokeStyle(1, FRAME_COLORS.line));
-  root.add(addText(scene, left + 10, y + 13, `ポーチ（各${POUCH_MAX}まで）`, { size: 10, color: COLORS.subText }).setOrigin(0, 0.5));
-  root.add(addText(scene, left + w - 10, y + 13, pouch, { size: 12, bold: true }).setOrigin(1, 0.5));
-  return y + 26;
-}

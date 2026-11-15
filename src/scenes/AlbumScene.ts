@@ -1,15 +1,14 @@
 import Phaser from 'phaser';
-import type { AlbumState, CardDef, ChainLinkDef, ChainSnapTab, Element } from '../core';
-import { addToAlbum, chainAlbumAddError, chainAlbumCounts, chainSnapMatches, countOf, getAddError, isAlbumComplete, recommendAlbum, removeFromAlbum, sameAlbum } from '../core';
+import type { AlbumState, ChainLinkDef, ChainSnapTab, Element } from '../core';
+import { addToAlbum, chainAlbumAddError, chainAlbumCounts, chainSnapMatches, countOf, isAlbumComplete, removeFromAlbum, sameAlbum } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALBUM_COPY_MAX, ALBUM_RECOMMEND, ALBUM_SIZE, CARDS, CHAIN_ALBUM, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, LIBRARY_COMBOS } from '../data';
+import { CHAIN_ALBUM, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, LIBRARY_COMBOS } from '../data';
 import { chainSnapLook as chainLook, comboDetailLines, comboMaterialNames, isComboMaterial, snapDetailLines } from '../ui/chainSnapText';
 import { addBand, addChip, addListRow, addPager, addRowName, addTabs, LIST_COLORS, ROW_GAP, ROW_H, SNAP_CATEGORY, type TabDef } from '../ui/listKit';
 import type { IconKind } from '../ui/icons';
-import { chainAlbumActive, foundChainCombos } from './chainEncounter';
-import { describeAction } from '../ui/describe';
+import { foundChainCombos } from './chainEncounter';
 import { addIcon } from '../ui/icons';
-import { ELEMENT_LABEL, weightLabel } from '../ui/labels';
+import { ELEMENT_LABEL } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { enterScreen, screenBg } from '../ui/skin';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
@@ -18,22 +17,20 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { hubBack, run, saveRun, setHubReturn } from './run';
 
 // アルバムの編集（段階41。docs/design/battle.md の 2.）。探索のチェックポイントの星図から開く。
-// 持っているスナップを1種類1行に並べ、「−」で外し「＋」で入れる。ALBUM_SIZE 枚ちょうどの時だけ星図へ戻れる。
+// 持っているスナップを1種類1行に並べ、「−」で外し「＋」で入れる。決まった枚数（CHAIN_ALBUM.size）ちょうどの時だけ星図へ戻れる。
 // 名前をタップすると、下の窓にそのスナップの説明が出る。
-// 段階124（レビューの項目2・3）：画面の中では下書きを変え、run.album（セーブされる編成）は「決めて戻る」まで変えない。
-// 途中で保存されたり（画面が裏に回る時など）、やめて閉じたりしても、直前に決めた ALBUM_SIZE 枚の編成が残る。「変更をやめる」で下書きを捨てて戻れる
+// 段階204：古い戦闘のアルバム（run.album）の道は外した。新しい戦闘のアルバム（run.chainAlbum）だけ。
+// 段階124（レビューの項目2・3）：画面の中では下書きを変え、run.chainAlbum（セーブされる編成）は「決めて戻る」まで変えない。
+// 途中で保存されたり（画面が裏に回る時など）、やめて閉じたりしても、直前に決めた 決まった枚数（CHAIN_ALBUM.size）の編成が残る。「変更をやめる」で下書きを捨てて戻れる
 
-/** 一覧の1行（今の戦闘のスナップと、新しい戦闘のスナップの両方を同じ形で並べる） */
+/** 一覧の1行 */
 interface SnapRow {
   id: string;
   name: string;
   look: { color: number; label: string; icon: IconKind };
 }
 
-/** 1ページに並べる行の数（種類がこれより多い時は、ページを切り替える） */
-const ROWS = 14;
-const LIST_Y = 82;
-/** 新しい戦闘のアルバム（段階166）：上に分類のタブと属性の絞り込みを置くので、一覧は下から。1ページ12行 */
+/** 段階166：上に分類のタブと属性の絞り込みを置くので、一覧は下から。1ページ12行（種類がこれより多い時は、ページを切り替える） */
 const CHAIN_ROWS = 12;
 const CHAIN_LIST_Y = 138;
 const TAB_Y = 76;
@@ -63,25 +60,23 @@ export class AlbumScene extends Phaser.Scene {
   private draft!: AlbumState;
   /** 「変更をやめる」を1回押して、もう一度押すのを待っているか */
   private discardArmed = false;
-  /** 新しい戦闘のアルバムを編集しているか（段階163。今いる区画が新しい戦闘の区画の時） */
-  private chain = false;
-  /** 分類のタブと属性の絞り込み（段階166。新しい戦闘のアルバムだけ） */
+  /** 分類のタブと属性の絞り込み（段階166） */
   private tab: ChainSnapTab | 'combo' = 'all';
   private element: Element | null = null;
   /** 見つけたコンボ（開いた時に読む） */
   private found: string[] = [];
 
   private get size(): number {
-    return this.chain ? CHAIN_ALBUM.size : ALBUM_SIZE;
+    return CHAIN_ALBUM.size;
   }
 
   private get copyMax(): number {
-    return this.chain ? CHAIN_ALBUM.copyMax : ALBUM_COPY_MAX;
+    return CHAIN_ALBUM.copyMax;
   }
 
   /** 周回の編成（決めた物） */
   private get saved(): AlbumState {
-    return this.chain ? run.chainAlbum : run.album;
+    return run.chainAlbum;
   }
 
   constructor() {
@@ -95,10 +90,9 @@ export class AlbumScene extends Phaser.Scene {
     this.selected = null;
     this.message = '';
     this.page = 0;
-    this.chain = chainAlbumActive();
     this.tab = 'all';
     this.element = null;
-    this.found = this.chain ? foundChainCombos(true) : [];
+    this.found = foundChainCombos(true);
     this.draft = this.saved;
     this.discardArmed = false;
     this.render();
@@ -107,19 +101,16 @@ export class AlbumScene extends Phaser.Scene {
 
   /** 持っているスナップ（スナップの一覧の順） */
   private ownedCards(): SnapRow[] {
-    if (this.chain) {
-      const tab = this.tab === 'combo' ? 'all' : this.tab;
-      return Object.values(CHAIN_SNAPS)
-        .filter((m) => (this.draft.owned[m.id] ?? 0) > 0 && chainSnapMatches(m, tab, this.element, ENEMY_SNAP_IDS))
-        .map((m) => ({ id: m.id, name: m.name, look: chainLook(m) }));
-    }
-    return Object.values(CARDS as Record<string, CardDef>).filter((c) => (this.draft.owned[c.id] ?? 0) > 0).map((c) => ({ id: c.id, name: c.name, look: { label: '札', icon: 'support' as const, color: 0xa98be0 } }));
+    const tab = this.tab === 'combo' ? 'all' : this.tab;
+    return Object.values(CHAIN_SNAPS)
+      .filter((m) => (this.draft.owned[m.id] ?? 0) > 0 && chainSnapMatches(m, tab, this.element, ENEMY_SNAP_IDS))
+      .map((m) => ({ id: m.id, name: m.name, look: chainLook(m) }));
   }
 
   private insert(id: string): void {
     this.discardArmed = false;
     this.messageOk = false;
-    const err = this.chain ? chainAlbumAddError(this.draft, id, CHAIN_SNAPS, CHAIN_ALBUM) : getAddError(this.draft, id);
+    const err = chainAlbumAddError(this.draft, id, CHAIN_SNAPS, CHAIN_ALBUM);
     if (err) {
       this.message =
         err === 'album is full'
@@ -134,18 +125,6 @@ export class AlbumScene extends Phaser.Scene {
       this.message = '';
     }
     this.selected = id;
-    this.render();
-  }
-
-  /** おまかせ（段階100）：持っているスナップから、コンボを組める形の20枚に入れ直す */
-  private recommend(): void {
-    if (this.chain) return;
-    this.discardArmed = false;
-    const next = recommendAlbum(this.draft, ALBUM_RECOMMEND);
-    this.message = sameAlbum(next, this.draft) ? 'もう、おまかせと同じ組み方' : 'おまかせで組んだ（コンボを組める形）';
-    this.messageOk = true;
-    this.draft = next;
-    this.selected = null;
     this.render();
   }
 
@@ -167,16 +146,15 @@ export class AlbumScene extends Phaser.Scene {
     // 上：見出しと枚数
     this.root.add(addIcon(this, 'support', SIDE_PADDING + 9, 20, 18, COLORS.accent));
     this.root.add(addText(this, SIDE_PADDING + 24, 8, 'アルバム', { size: 17, bold: true }));
-    if (this.chain) this.drawCounts();
-    else this.root.add(addText(this, SIDE_PADDING, 34, `${ALBUM_SIZE}枚を選んで戦う（同じスナップは${ALBUM_COPY_MAX}枚まで）`, { size: 11, color: COLORS.subText, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 70 }));
-    if (this.chain) this.drawTabs();
-    const listY = this.chain ? CHAIN_LIST_Y : LIST_Y;
-    const rowsPerPage = this.chain ? CHAIN_ROWS : ROWS;
+    this.drawCounts();
+    this.drawTabs();
+    const listY = CHAIN_LIST_Y;
+    const rowsPerPage = CHAIN_ROWS;
     this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, 6, 'アルバム', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
     this.root.add(
       addText(this, GAME_WIDTH - SIDE_PADDING, 18, `${total}/${this.size}`, { size: 22, bold: true, color: complete ? COLORS.accentText : COLORS.allyDamage }).setOrigin(1, 0),
     );
-    const comboTab = this.chain && this.tab === 'combo';
+    const comboTab = this.tab === 'combo';
     if (!comboTab) {
       this.root.add(addText(this, 266, listY - 12, '入れる枚数', { size: 10, color: COLORS.subText }).setOrigin(0.5));
       this.root.add(addText(this, GAME_WIDTH - SIDE_PADDING, listY - 12, '持っている', { size: 10, color: COLORS.subText }).setOrigin(1, 0.5));
@@ -199,8 +177,7 @@ export class AlbumScene extends Phaser.Scene {
     // 説明の窓
     const detailY = detailTop + (pages > 1 ? 30 : 0);
     this.root.add(this.add.rectangle(SIDE_PADDING, detailY, GAME_WIDTH - SIDE_PADDING * 2, DETAIL_H, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
-    const sel = this.selected && !this.chain ? (CARDS as Record<string, CardDef>)[this.selected] : undefined;
-    const chainSel = this.selected && this.chain ? CHAIN_SNAPS[this.selected] : undefined;
+    const chainSel = this.selected ? CHAIN_SNAPS[this.selected] : undefined;
     const comboSel = comboTab && this.selected ? LIBRARY_COMBOS.find((l) => l.id === this.selected) : undefined;
     const lines = comboTab
       ? comboSel
@@ -208,24 +185,18 @@ export class AlbumScene extends Phaser.Scene {
         : ['名前をタップすると、コンボの説明が出る', `見つけたコンボ ${LIBRARY_COMBOS.filter((l) => this.found.includes(l.id)).length}/${LIBRARY_COMBOS.length}。材料がそろうと、戦闘で見つかる`]
       : chainSel
       ? snapDetailLines(chainSel, this.found)
-      : this.chain
-        ? ['名前をタップすると、スナップの説明が出る', `${this.size}枚を選んで戦う（同じスナップは${this.copyMax}枚・クライマックスは${CHAIN_ALBUM.climaxMax}枚まで。スペシャルは仲間ごとに2枚加わる）。★は見つけたコンボの材料`]
-      : sel
-        ? [`${sel.name}（${sel.support ? 'サポート・行動枠を使わない' : `重さ：${weightLabel(sel.weight)}`}）`, describeAction(sel)]
-        : ['名前をタップすると、スナップの説明が出る', '宝箱・ボス・時間を返した時に、新しいスナップが手に入る'];
+      : ['名前をタップすると、スナップの説明が出る', `${this.size}枚を選んで戦う（同じスナップは${this.copyMax}枚・クライマックスは${CHAIN_ALBUM.climaxMax}枚まで。スペシャルは仲間ごとに2枚加わる）。★は見つけたコンボの材料`];
     this.root.add(addText(this, SIDE_PADDING + 10, detailY + 8, lines.join('\n'), { size: 12, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
     if (this.message) {
       this.root.add(addText(this, GAME_WIDTH / 2, detailY + DETAIL_H - 14, this.message, { size: 12, bold: true, color: this.messageOk ? COLORS.accentText : COLORS.allyDamage }).setOrigin(0.5));
     }
 
-    // 下：おまかせ（段階100）と、変更をやめる・決めて戻る（段階124。決めて戻れるのは ALBUM_SIZE 枚ちょうどの時だけ）
+    // 下：変更をやめる・決めて戻る（段階124。決めて戻れるのは決まった枚数ちょうどの時だけ）。
+    // 段階204：古い戦闘の「おまかせ」（段階100。新しい戦闘では使えなかった）は外した
     const y = 800;
     const gap = 6;
-    const autoW = 92;
-    const discardW = 100;
-    // おまかせは、今の戦闘のスナップの組み方（コンボの材料）で組むので、新しい戦闘のアルバムではまだ使えない
-    addButton(this, this.root, SIDE_PADDING + autoW / 2, y, autoW, 52, 'おまかせ', { onTap: () => this.recommend() }, this.chain ? { enabled: false, size: 15 } : { size: 15, bold: true });
-    const discardX = SIDE_PADDING + autoW + gap + discardW / 2;
+    const discardW = 120;
+    const discardX = SIDE_PADDING + discardW / 2;
     addButton(
       this,
       this.root,
@@ -237,7 +208,7 @@ export class AlbumScene extends Phaser.Scene {
       { onTap: () => this.discard() },
       changed ? { size: 13, fill: this.discardArmed ? 0x5a1a14 : undefined, stroke: this.discardArmed ? 0xff8a7a : undefined } : { enabled: false, size: 13 },
     );
-    const backW = GAME_WIDTH - SIDE_PADDING * 2 - autoW - discardW - gap * 2;
+    const backW = GAME_WIDTH - SIDE_PADDING * 2 - discardW - gap;
     const backLabel = hubBack()?.label ?? '星図へ戻る';
     addButton(
       this,
@@ -252,11 +223,10 @@ export class AlbumScene extends Phaser.Scene {
     );
   }
 
-  /** 決めて戻る（段階124）：下書きを周回の編成にして保存する。ALBUM_SIZE 枚ちょうどの時だけ */
+  /** 決めて戻る（段階124）：下書きを周回の編成にして保存する。決まった枚数（CHAIN_ALBUM.size）ちょうどの時だけ */
   private confirm(): void {
     if (!isAlbumComplete(this.draft, this.size)) return;
-    if (this.chain) run.chainAlbum = this.draft;
-    else run.album = this.draft;
+    run.chainAlbum = this.draft;
     saveRun();
     this.leave();
   }
@@ -372,10 +342,10 @@ export class AlbumScene extends Phaser.Scene {
     });
     // 属性の帯（手札のスナップと同じ色・アイコン）
     // 新しい戦闘のスナップは、分類の名前（アクション・エフェクト・クライマックス）が長いので札を広く（段階163）
-    const bandW = this.chain ? 88 : 58;
+    const bandW = 88;
     const bandX = SIDE_PADDING + 4 + bandW / 2;
     this.root.add(this.add.rectangle(bandX, cy, bandW, 22, look.color, inAlbum > 0 ? 0.9 : 0.45).setRounded(6));
-    const label = addText(this, bandX, cy, look.label, { size: this.chain ? 9 : 10, bold: true, color: '#101820' }).setOrigin(0.5);
+    const label = addText(this, bandX, cy, look.label, { size: 9, bold: true, color: '#101820' }).setOrigin(0.5);
     const left = bandX - (12 + 2 + label.width) / 2;
     this.root.add(addIcon(this, look.icon, left + 6, cy, 11, 0x101820));
     label.setX(left + 14 + label.width / 2);
@@ -383,7 +353,7 @@ export class AlbumScene extends Phaser.Scene {
     const nameX = SIDE_PADDING + 10 + bandW;
     const nameT = addText(this, nameX, cy, card.name, { size: 13, bold: true, color: inAlbum > 0 ? COLORS.text : COLORS.subText }).setOrigin(0, 0.5);
     // 見つけたコンボの材料には★（段階166）。名前の幅を少し詰める
-    const material = this.chain && isComboMaterial(card.id, this.found);
+    const material = isComboMaterial(card.id, this.found);
     const nameMax = material ? 188 : 200;
     if (nameT.width > nameMax - nameX) nameT.setScale((nameMax - nameX) / nameT.width);
     this.root.add(nameT);

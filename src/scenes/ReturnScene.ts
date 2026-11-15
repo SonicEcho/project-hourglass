@@ -3,7 +3,7 @@ import type { AreaDef } from '../core';
 import { addFragments, gainSnaps, komaExtra, recordLibraryFinds } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { playSandRise, playTick } from '../audio/sound';
-import { AREAS, BACKDROPS, CHAIN_SNAPS, FRAGMENTS, snapNames } from '../data';
+import { AREAS, BACKDROPS, CHAIN_SNAPS, FRAGMENTS } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE } from '../ui/theme';
 import { describeFragment } from '../ui/weaponText';
@@ -278,26 +278,13 @@ export class ReturnScene extends Phaser.Scene {
   /** 返した時間をセーブに残し、探索の状態を片付けて、物語の次へ */
   private showNext(): void {
     if (!run.returned.includes(this.area.id)) {
-      // 返した報酬のスナップ（段階41）。返した時に1回だけ
-      // 段階177：新しい戦闘の区画は、新しい戦闘のスナップ（chainReturnSnaps）を新しい戦闘のアルバムへ（ライブラリにも記録）
+      // 返した報酬のスナップ（段階41）。返した時に1回だけ。新しい戦闘のアルバムへ（段階177。ライブラリにも記録）
       const chainSnaps = this.area.chainReturnSnaps ?? [];
-      const snaps = chainSnaps.length ? [] : (this.area.returnSnaps ?? []);
       if (chainSnaps.length > 0) {
         run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
         run.library = recordLibraryFinds(run.library, { snaps: chainSnaps });
         this.root.add(
           addText(this, GAME_WIDTH / 2, 640, `${this.area.owner ?? '持ち主'}の想いが、スナップになった：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}\n（チェックポイントのアルバムで入れ替えられる）`, {
-            size: 13,
-            color: COLORS.accentText,
-            align: 'center',
-            wrap: GAME_WIDTH - 40,
-          }).setOrigin(0.5),
-        );
-      }
-      if (snaps.length > 0) {
-        run.album = gainSnaps(run.album, snaps);
-        this.root.add(
-          addText(this, GAME_WIDTH / 2, 640, `${this.area.owner ?? '持ち主'}の想いが、スナップになった：${snapNames(snaps)}\n（チェックポイントのアルバムで入れ替えられる）`, {
             size: 13,
             color: COLORS.accentText,
             align: 'center',

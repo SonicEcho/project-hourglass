@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { startWithImages } from '../ui/waitImages';
-import { battleSceneFor, chainAlbumActive } from './chainEncounter';
+import { battleSceneFor } from './chainEncounter';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -42,7 +42,6 @@ import {
   pendingTrigger,
   triggerGears,
   startExplore,
-  usableLinks,
   findLost,
   huntArea,
   huntGearKey,
@@ -62,7 +61,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LINK_GAUGE_MAX, LINKS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, snapNames, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
@@ -72,7 +71,7 @@ import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import type { BattleSceneData } from './chainEncounter';
 import type { DialogueData } from './DialogueScene';
-import { currentParty, nextHuntCount, run, setCampReturn, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup, storyLinkGauge } from './run';
+import { currentParty, nextHuntCount, run, setCampReturn, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup } from './run';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -564,18 +563,6 @@ export class ExploreScene extends Phaser.Scene {
         color: left > 0 ? COLORS.text : COLORS.accentText,
       }).setOrigin(0.5, 0),
     );
-    // 章の中で引き継いでいる、連携技のつながりゲージ（段階26の調整3）
-    if (usableLinks(LINKS, storyBattleLineup().members).length > 0) {
-      const g = storyLinkGauge();
-      const full = g >= LINK_GAUGE_MAX;
-      ui.add(
-        addText(this, GAME_WIDTH / 2, 54, full ? '連携技：準備OK' : `連携技：つながり ${Math.round((g / LINK_GAUGE_MAX) * 100)}%`, {
-          size: 12,
-          bold: full,
-          color: full ? COLORS.accentText : COLORS.subText,
-        }).setOrigin(0.5, 0),
-      );
-    }
     if (this.hunting) addButton(this, ui, 46, 32, 76, 44, 'レストピア\nへ戻る', { onTap: () => this.leaveHunt() }, { size: 11 });
     else addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     if (isDebugEnabled(window.location.search)) {
@@ -929,19 +916,15 @@ export class ExploreScene extends Phaser.Scene {
     const fade = this.hunting ? (run.hunt?.fade ?? 1) : 1;
     const got = thinItems(r.chest.items, fade, (run.hunt?.salt ?? 0) + [...chestId].reduce((a, ch) => a + ch.charCodeAt(0), 0));
     const lostByFade = r.chest.items.length - got.length;
-    // ポーチの消費アイテムは1種類 POUCH_MAX 個まで（段階51。入らなかった分は捨てる）
+    // 持てる数のある物は、超えた分を捨てる（段階204 で消費アイテムをなくしたので、今は持てる数のある物はない）
     const capped = capItems(WEAPON_DATA, addItems(run.armory, got));
     run.armory = capped.armory;
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
     // 記憶をたどる時の採取の場所のギアは、初めての1回だけ（段階200）
     if (this.hunting && gears.length > 0) run.vars = { ...run.vars, [huntGearKey(r.chest.id)]: '1' };
-    // スナップは持ち物に入る（段階41。チェックポイントのアルバムで入れ替える）
-    // 段階168：新しい戦闘の区画では、新しい戦闘のスナップ（chainSnaps）を新しい戦闘のアルバムへ（ライブラリにも記録）
-    const chainChest = chainAlbumActive() && !!r.chest.chainSnaps;
-    const snaps = chainChest ? [] : (r.chest.snaps ?? []);
-    const chainSnaps = chainChest ? (r.chest.chainSnaps ?? []) : [];
-    if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
+    // スナップは新しい戦闘のアルバムへ（段階168。ライブラリにも記録。段階204 で古いスナップはなくした）
+    const chainSnaps = r.chest.chainSnaps ?? [];
     if (chainSnaps.length > 0) {
       run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
       run.library = recordLibraryFinds(run.library, { snaps: chainSnaps });
@@ -953,7 +936,7 @@ export class ExploreScene extends Phaser.Scene {
     } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
-      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[got.length > 0 ? summarize(got) : '（記憶がかすれて、何も残っていなかった）', lostByFade > 0 && got.length > 0 ? `（記憶が薄れて、${lostByFade}つは砂に戻った）` : '', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', snaps.length > 0 ? `スナップ：${snapNames(snaps)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : '', capped.overflow.length > 0 ? `（ポーチがいっぱい：${summarize(capped.overflow)}は入らなかった）` : ''].filter(Boolean).join('　')}`,
+      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[got.length > 0 ? summarize(got) : '（記憶がかすれて、何も残っていなかった）', lostByFade > 0 && got.length > 0 ? `（記憶が薄れて、${lostByFade}つは砂に戻った）` : '', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''].filter(Boolean).join('　')}`,
     );
     this.keep(this.state);
   }

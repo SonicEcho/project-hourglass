@@ -1,5 +1,5 @@
 import { battleReward, boardColorCells, capItems, chainBossSnaps, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
-import { CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, snapNames, WEAPON_DATA, type CampaignBattle } from '../data';
+import { CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, WEAPON_DATA, type CampaignBattle } from '../data';
 import { browserStorage } from '../save/storage';
 import { currentNaviData, lineupBase, run, saveRun } from './run';
 
@@ -25,14 +25,6 @@ export interface BattleSceneData {
 
 // 段階159：新しい戦闘（並べてつなぐ戦闘）を探索から呼ぶ（docs/milestones/M3_battle_migration.md の段階C）。
 // どの区画の戦闘を新しい戦闘にするかと、勝った時の報酬の受け取り（今の本番の戦闘と同じ物）
-
-/**
- * 今いる区画が、新しい戦闘の区画か（段階163。アルバムの画面で、どちらのアルバムを開くか）。
- * 段階G1（2026-11-14）：区画の戦闘は全部新しい戦闘になったので、いつも新しい戦闘のアルバム（古いアルバムは段階G6 でセーブから外す）
- */
-export function chainAlbumActive(): boolean {
-  return true;
-}
 
 /**
  * 戦闘の始め方（段階159）。段階G1・G2（2026-11-14）：戦闘は全部、新しい戦闘（古い戦闘は外した）
@@ -148,8 +140,6 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   const chainSnaps = enc.hunt || !setup ? [] : chainBossSnaps(result, setup.snaps);
   // なんでもない（段階186）：言えなかった言葉を、最後まで言わずに勝った時のスナップ
   if (!enc.hunt && setup && result.quiet) chainSnaps.push(...(setup.quietSnaps ?? []));
-  const snaps = enc.hunt || setup ? [] : (def.snaps ?? []);
-  if (snaps.length > 0) run.album = gainSnaps(run.album, snaps);
   // 早く勝った時の敵のスナップ（段階165。狩りでも）
   if (result.snap) chainSnaps.push(result.snap);
   if (chainSnaps.length > 0) run.chainAlbum = gainSnaps(run.chainAlbum, chainSnaps);
@@ -164,6 +154,6 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   }
   const list = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
   const itemName = (id: string) => WEAPON_DATA.items[id]?.name ?? id;
-  const dropText = `素材：${list || 'なし'}${faded > 0 ? `（記憶が薄れて、${faded}つは砂に戻った）` : ''}${prize ? `　アイテム：${itemName(prize)}` : ''}${capped.overflow.length ? `（いっぱいで入らなかった：${capped.overflow.map(itemName).join('、')}）` : ''}${snaps.length > 0 ? `\nスナップ：${snapNames(snaps)}` : ''}${chainSnaps.length > 0 ? `\nスナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''}`;
+  const dropText = `素材：${list || 'なし'}${faded > 0 ? `（記憶が薄れて、${faded}つは砂に戻った）` : ''}${prize ? `　アイテム：${itemName(prize)}` : ''}${capped.overflow.length ? `（いっぱいで入らなかった：${capped.overflow.map(itemName).join('、')}）` : ''}${chainSnaps.length > 0 ? `\nスナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''}`;
   return { gained, koma: def.koma && !enc.hunt ? def.koma : 0, dropText, rare: drops.some((d) => d.kind === 'rare') };
 }

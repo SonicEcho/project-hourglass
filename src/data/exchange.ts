@@ -1,8 +1,6 @@
 import type { ExchangeGood, KeeperTalk } from '../core/exchange';
 import { AREA_BATTLES, AREAS } from './areas';
 import { NAVI_PARTS } from './navi';
-import { POUCH_ORDER } from './pouch';
-import { ITEMS } from './weapons';
 
 // 交換所の品物（段階52。docs/design/economy.md の 5-2）。値段は記憶の欠片の数。数値は仮。
 // 進化の鍵・星の砂は並べない（物語と狩りで手に入れる）。スナップは、新しい戦闘の比較的弱い札だけ（段階177）
@@ -35,8 +33,6 @@ export function areaCommonItems(areaId: string): string[] {
   return [...new Set(ids)];
 }
 
-const POUCH_PRICE: Record<string, number> = { [ITEMS.potion.id]: 1, [ITEMS.hiPotion.id]: 2, [ITEMS.ether.id]: 2 };
-
 /** 章ごとのギア（1回だけ）。ムーブメントが開く2章から */
 const GEAR_GOODS: ExchangeGood[] = [
   { id: 'gear_mpMemory', kind: 'gear', ref: NAVI_PARTS.mpMemory.id, price: 10, once: true, chapter: 2 },
@@ -52,9 +48,8 @@ const SNAP_GOODS: ExchangeGood[] = [
   ...['c17_wide', 'c17_plus20'].map((ref): ExchangeGood => ({ id: `snap_${ref}`, kind: 'snap', ref, price: 5, chapter: 3 })),
 ];
 
-/** 交換所に並ぶ品物（ポーチ → 素材（区画の順）→ ギア → スナップ） */
+/** 交換所に並ぶ品物（素材（区画の順）→ ギア → スナップ。段階204：ポーチの消費アイテムはなくした） */
 export const EXCHANGE_GOODS: ExchangeGood[] = [
-  ...POUCH_ORDER.map((id): ExchangeGood => ({ id: `pouch_${id}`, kind: 'item', ref: id, price: POUCH_PRICE[id] })),
   // 返す時間のある区画だけ（段階85：2-3 の4晩目の書庫は、ほかの区画の砂嵐を混ぜて使うので、並べない）
   ...Object.keys(AREAS).filter((areaId) => AREAS[areaId].timeTitle).flatMap((areaId) => areaCommonItems(areaId).map((id): ExchangeGood => ({ id: `mat_${id}`, kind: 'item', ref: id, price: 1, area: areaId }))),
   ...GEAR_GOODS,

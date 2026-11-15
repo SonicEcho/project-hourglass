@@ -75,8 +75,4 @@ describe('進み具合：今の試作のデータ', () => {
     expect([PROTOTYPE_CHAPTER_ID, PROTOTYPE_AREA_ID]).toEqual([V1_CHAPTER_ID, V1_AREA_ID]);
     CAMPAIGN.forEach((b, i) => expect(b.id).toBe(v1BattleId(i)));
   });
-
-  it('戦闘1〜4にはギアの報酬があり、ボスにはない', () => {
-    expect(CAMPAIGN.map((b) => !!b.naviReward)).toEqual([true, true, true, true, false]);
-  });
 });

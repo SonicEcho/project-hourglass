@@ -261,15 +261,6 @@ export function applyNavi(data: NaviData, navi: NaviState, chars: CharacterDef[]
   });
 }
 
-/** 勝利の報酬：候補から picks 個を選んで受け取る（chosen は候補の番号。重ならないこと） */
-export function claimRewardParts(navi: NaviState, candidates: string[], chosen: number[], picks: number): NaviState {
-  const unique = new Set(chosen);
-  if (unique.size !== chosen.length) throw new Error('the same candidate was chosen twice');
-  if (chosen.length !== Math.min(picks, candidates.length)) throw new Error(`choose ${picks} parts`);
-  if (chosen.some((i) => i < 0 || i >= candidates.length)) throw new Error('unknown candidate');
-  return addParts(navi, chosen.map((i) => candidates[i]));
-}
-
 /**
  * 盤を拡張する（武器の進化で増える。段階42。型で形が変わる）。
  * 段階100b：盤ができるだけ四角に広がるよう、row（ブリッジが伸びる型）は盤のすぐ下の新しい行を、ブリッジの列から近い順に（同じなら右から）埋め、

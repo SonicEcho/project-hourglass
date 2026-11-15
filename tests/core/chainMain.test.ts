@@ -126,12 +126,12 @@ describe('新しい戦闘を本番用に（段階158）', () => {
   });
 
   it('本番の仲間と敵を変える：通常攻撃に武器の属性、MP と特性を持つ。敵は行動から予定の癖を作る', () => {
-    const hero: CharacterDef = { ...HERO, attackElement: 'fire', passives: [{ kind: 'oneMoreDraw', count: 1 }, { kind: 'regen', rate: 0.03 }] };
+    const hero: CharacterDef = { ...HERO, attackElement: 'fire', passives: [{ kind: 'mpSave', amount: 1 }, { kind: 'regen', rate: 0.03 }] };
     const a = chainAllyFromCharacter(hero);
     expect(a.moves[0]).toMatchObject({ id: 'basic', effect: { element: 'fire' } });
     expect(a.mp).toBe(hero.stats.mp);
-    // 段階164：延長で引く枚数は、手札の上限 +1 に置き換える
-    expect(a.passives).toEqual([{ kind: 'handPlus', count: 1 }, { kind: 'regen', rate: 0.03 }]);
+    // 段階204：特性はそのまま渡す（仮の置き換えは外した）
+    expect(a.passives).toEqual([{ kind: 'mpSave', amount: 1 }, { kind: 'regen', rate: 0.03 }]);
     const e = chainEnemyFromMain(GOLDFISH_NOISE);
     expect(e).toMatchObject({ hp: GOLDFISH_NOISE.stats.hp, weak: ['ice'], resist: ['fire'] });
     expect(e.pattern[0]).toMatchObject({ id: 'finSlap', power: 28, element: 'physical' });
@@ -338,8 +338,8 @@ describe('新しい戦闘のアルバム（段階163）', () => {
 
 describe('新しい戦闘にない育成の効果を、近い効果で効かせる（段階164。仮の置き換え）', () => {
   const party = [HERO, AKARI].map((c) => ({ ...c, skills: [{ ...CHAIN_SKILLS.hirameki, id: 'inspiration', effect: { kind: 'draw' as const, count: 2 } }, CHAIN_SKILLS.shuffle, { ...CHAIN_SKILLS.shuffle, id: 'swap', effect: { kind: 'retrieve' as const } }] }));
-  const make = (passives: CharacterDef['passives'] = []) => {
-    const ps = party.map((c, i) => (i === 0 ? { ...c, passives } : c));
+  const make = (passives: CharacterDef['passives'] = [], traits: CharacterDef['traits'] = []) => {
+    const ps = party.map((c, i) => (i === 0 ? { ...c, passives, traits } : c));
     const def = buildMainChainBattle({ id: 'm', name: 'm', party: ps, enemies: [GOLDFISH_NOISE], chainEnemies: [dummy()], deck: BASE.deck, cards: BASE.cards, links: [] });
     return createChainBattle(def, CHAIN_RULES, 4);
   };
@@ -357,10 +357,9 @@ describe('新しい戦闘にない育成の効果を、近い効果で効かせ�
     expect(r3.hand.length).toBe(s3.hand.length);
   });
 
-  it('延長で引く枚数 → 手札の上限+1。先制 → 最初のラウンドの威力+30%。部位への割増しは部位に効く', () => {
-    expect(make([{ kind: 'oneMoreDraw', count: 1 }]).hand.length).toBe(CHAIN_RULES.handSize + 1);
+  it('特性はそのまま渡る：最初のラウンドの威力+30%（段階204 で古い特性の仮の置き換えは外した）', () => {
     const plain = make();
-    const quick = make([{ kind: 'startDash' }]);
+    const quick = make([], [{ kind: 'firstRound', rate: 0.3 }]);
     const t = plain.enemies[0].uid;
     const a = dmg(runChainRound(plain, [mv('hero', 'basic', t)]), 'hero')[0].amount;
     const b = dmg(runChainRound(quick, [mv('hero', 'basic', t)]), 'hero')[0].amount;

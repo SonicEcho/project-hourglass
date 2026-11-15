@@ -17,9 +17,8 @@ import { run, saveRun, setStoryVars, storyLineup } from './run';
 // 初めて開いた時は、ペトラの会話（exchange_intro）を先に見る。日も昼の回数も使わない
 
 const INTRO = EXCHANGE_INTRO.scene;
-type Tab = 'pouch' | 'material' | 'gear' | 'snap';
+type Tab = 'material' | 'gear' | 'snap';
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'pouch', label: 'ポーチ' },
   { id: 'material', label: '素材' },
   { id: 'gear', label: 'ギア' },
   { id: 'snap', label: 'スナップ' },
@@ -31,7 +30,7 @@ const FRAGMENT_ORDER = Object.keys(FRAGMENTS);
 function tabOf(g: ExchangeGood): Tab {
   if (g.kind === 'gear') return 'gear';
   if (g.kind === 'snap') return 'snap';
-  return WEAPON_DATA.items[g.ref]?.kind === 'item' ? 'pouch' : 'material';
+  return 'material';
 }
 
 function goodName(g: ExchangeGood): string {
@@ -39,7 +38,7 @@ function goodName(g: ExchangeGood): string {
   return g.kind === 'gear' ? (NAVI_PARTS[g.ref as keyof typeof NAVI_PARTS]?.name ?? g.ref) : (WEAPON_DATA.items[g.ref]?.name ?? g.ref);
 }
 
-/** 持てる数（ポーチの消費アイテムだけ） */
+/** 持てる数（スナップ・持てる数のある物） */
 function maxOf(g: ExchangeGood): number | undefined {
   if (g.kind === 'snap') return CHAIN_ALBUM.copyMax;
   return g.kind === 'item' ? WEAPON_DATA.items[g.ref]?.max : undefined;
@@ -52,7 +51,7 @@ function haveOf(g: ExchangeGood): number {
 
 const ERROR_TEXT: Record<string, string> = {
   'already exchanged': 'この品物は、もう交換した（1回だけ）',
-  'pouch is full': 'ポーチがいっぱい',
+  'pouch is full': 'これ以上持てない',
   'too many copies': '同じスナップは4枚まで',
   'not enough fragments': '記憶の欠片が足りない（素材を時分解すると手に入る）',
 };
@@ -60,7 +59,7 @@ const ERROR_TEXT: Record<string, string> = {
 export class ExchangeScene extends Phaser.Scene {
   private root!: Phaser.GameObjects.Container;
   private overlay?: Phaser.GameObjects.Container;
-  private tab: Tab = 'pouch';
+  private tab: Tab = 'material';
   private page = 0;
   private message = '';
 
@@ -81,7 +80,7 @@ export class ExchangeScene extends Phaser.Scene {
     }
     enterScreen(this);
     playBgm(this, BGM.library);
-    this.tab = 'pouch';
+    this.tab = 'material';
     this.page = 0;
     this.message = `${EXCHANGE_KEEPER}「ご用の品をどうぞ。欠片は、どの種類でも一つは一つです」`;
     this.root = this.add.container(0, 0);

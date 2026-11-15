@@ -212,13 +212,6 @@ export function capItems(data: WeaponData, armory: ArmoryState): { armory: Armor
   return { armory: overflow.length > 0 ? { ...armory, items } : armory, overflow };
 }
 
-/** 戦闘で使った消費アイテムを減らす（段階51。BattleResult の pouchUsed） */
-export function spendItems(armory: ArmoryState, used: Record<string, number>): ArmoryState {
-  const items = { ...armory.items };
-  for (const [id, n] of Object.entries(used)) items[id] = Math.max(0, (items[id] ?? 0) - n);
-  return { ...armory, items };
-}
-
 /** 武器の刻印（今のレベルまでの合計） */
 export function weaponSlots(data: WeaponData, w: WeaponState): number {
   const lv = weaponLevel(data, w.exp);

@@ -308,7 +308,7 @@ try {
     await page.waitForTimeout(1500);
   }
   await waitScene('Hub');
-  // 交換所（段階52）：初めてはペトラの会話。ポーチが満タンならポーションは交換できず、ギアは欠片で1回だけ交換できる
+  // 交換所（段階52）：初めてはペトラの会話。ギアは欠片で1回だけ交換できる
   await tap('^交換所$');
   await waitScene('Dialogue');
   await tap('^早送り$');
@@ -324,16 +324,8 @@ try {
   await skipTips();
   await debugButton('記憶の欠片を10個ずつもらう');
   await closeDebugMenu();
-  await tap('^ポーチ$');
+  // 段階204：ポーチの札（消費アイテム）はなくした。最初は素材の札が開く
   await until('欠片が40', () => findText('^記憶の欠片 4\\d'));
-  // ポーションを持てる数まで交換してから、もう一度押すと満タンの案内
-  for (let i = 0; i < 3 && !(await findText('^ポーション　欠片 1\\n持っている 3/3$')); i++) {
-    await tap('^ポーション　欠片 1');
-    await tap('^交換する$');
-    await page.waitForTimeout(300);
-  }
-  await tap('^ポーション　欠片 1');
-  await until('満タンの案内', () => findText('ポーチがいっぱい'));
   await tap('^ギア$');
   await tap('^MPギア　欠片 10');
   await tap('^交換する$');
