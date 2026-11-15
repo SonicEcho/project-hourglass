@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DigState, DigWorldDef } from '../../src/core';
-import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
+import { clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, digLayerTop, digWeightsAt, goHome, isDigGuardRow, loseDig, stepDig, swapChest, takeChest } from '../../src/core';
 import { AREA_BATTLES, canEnterSandBottom, PARTY, SAND_BOTTOM, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_DIGGERS, sandBottomFor, WEAPON_DATA, withDigger } from '../../src/data';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2。docs/milestones/M3_sand_bottom.md）
@@ -39,19 +39,30 @@ describe('砂の底：地面を作る', () => {
     expect([a.x, a.y, a.sand, a.bag, a.steps]).toEqual([digEntrance(SAND_BOTTOM), 0, SAND_BOTTOM.sand, [], 0]);
   });
 
-  it('章の層の境目（2つ目の章の層から）は岩の帯で、番人のいる1マスだけが通り道。番人は、その層の砂嵐。同じ章の層の帯の境目とふつうの地面の上には番人がいない', () => {
-    const gates = SAND_BOTTOM.layers.filter((l, i) => i > 0 && l.battles.length > 0 && l.group !== SAND_BOTTOM.layers[i - 1].group);
-    expect(gates.map((l) => l.group)).toEqual(['ch2', 'ch3']);
-    for (const l of SAND_BOTTOM.layers) expect(isDigGuardRow(SAND_BOTTOM, digLayerTop(SAND_BOTTOM, l.id)), l.id).toBe(gates.includes(l));
-    for (const seed of [1, 2, 3]) {
+  it('層の境目（章の層の間と、いちばん下の層とふつうの地面の間）は岩の帯で、番人のいる1マスだけが通り道。番人は上の層の強い戦闘か、稀にその章のぬし。同じ章の層の帯の境目には番人がいない', () => {
+    const L = SAND_BOTTOM.layers;
+    const gates = L.filter((l, i) => i > 0 && l.group !== L[i - 1].group);
+    expect(gates.map((l) => l.group)).toEqual(['ch2', 'ch3', 'deep']);
+    for (const l of L) expect(isDigGuardRow(SAND_BOTTOM, digLayerTop(SAND_BOTTOM, l.id)), l.id).toBe(gates.includes(l));
+    let lords = 0;
+    let all = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
       const a = createDig(SAND_BOTTOM, seed);
       for (const layer of gates) {
-        const row = a.tiles.slice(digLayerTop(SAND_BOTTOM, layer.id) * a.width, (digLayerTop(SAND_BOTTOM, layer.id) + 1) * a.width);
+        const top = digLayerTop(SAND_BOTTOM, layer.id);
+        const row = a.tiles.slice(top * a.width, (top + 1) * a.width);
         expect(row.filter((t) => t === 'guard'), layer.id).toHaveLength(1);
         expect(row.filter((t) => t !== 'guard' && t !== 'rock'), layer.id).toEqual([]);
+        const above = L[L.indexOf(layer) - 1];
+        const battle = a.guards[top * a.width + row.indexOf('guard')];
+        expect([...above.guards!, ...above.lords!], layer.id).toContain(battle);
+        all++;
+        if (above.lords!.includes(battle)) lords++;
       }
-      expect(Object.values(a.guards).sort()).toEqual(gates.map((l) => l.guard ?? l.battles[0]).sort());
     }
+    // ぬしは稀に（でも出る）
+    expect(lords).toBeGreaterThan(0);
+    expect(lords).toBeLessThan(all / 3);
   });
 
   it('宝箱と動く砂嵐は、空いた所にいて中身が合っている。中身はその層の物。鉱脈・砂粒・崩れる砂もある', () => {
@@ -80,7 +91,9 @@ describe('砂の底：地面を作る', () => {
       expect(l.items.common.length, l.id).toBeGreaterThan(0);
       expect(l.battles.length, l.id).toBeGreaterThan(0);
       for (const id of [...l.items.common, ...l.items.uncommon, ...l.items.rare]) expect(WEAPON_DATA.items[id], id).toBeDefined();
-      for (const b of [...l.battles, ...(l.guard ? [l.guard] : [])]) expect(AREA_BATTLES[b], b).toBeDefined();
+      for (const b of [...l.battles, ...(l.guards ?? []), ...(l.lords ?? [])]) expect(AREA_BATTLES[b], b).toBeDefined();
+      expect(l.guards?.length, l.id).toBeGreaterThan(0);
+      for (const b of l.lords ?? []) expect(AREA_BATTLES[b].boss, b).toBe(true);
     }
     const rare = bands.map((l) => l.weights.rare / (l.weights.common + l.weights.uncommon + l.weights.rare));
     expect([...rare].sort((x, y) => x - y)).toEqual(rare);
@@ -308,7 +321,7 @@ describe('砂の底：層を物語に合わせる（段階212）', () => {
     expect(taisho.battles.every((b) => b.startsWith('a3s'))).toBe(true);
   });
 
-  it('ふつうの地面：空洞・宝箱・砂嵐・鉱脈・砂粒がなく、砂がどうやっても足りない深さ（1マス2以上で、入った時の砂の行数）', () => {
+  it('ふつうの地面：上の境目に番人。その下は空洞・宝箱・砂嵐・鉱脈・砂粒がなく、砂がどうやっても足りない深さ（1マス2以上で、入った時の砂の行数）', () => {
     for (const c of ['ch2', 'ch3', 'ch4']) {
       const def = sandBottomFor(c);
       const deep = def.layers[def.layers.length - 1];
@@ -316,9 +329,31 @@ describe('砂の底：層を物語に合わせる（段階212）', () => {
       expect(deep.rows, c).toBeGreaterThanOrEqual(def.sand);
       const a = createDig(def, 5);
       const top = digLayerTop(def, deep.id);
-      const deepTiles = a.tiles.slice(top * a.width);
+      // いちばん上の行は、層の番人の行（岩の帯）
+      expect(isDigGuardRow(def, top), c).toBe(true);
+      const deepTiles = a.tiles.slice((top + 1) * a.width);
       expect(deepTiles.filter((t) => t === 'air' || t === 'chest' || t === 'guard' || t === 'ore' || t === 'grain'), c).toEqual([]);
       expect(a.roamers.filter((m) => m.y >= top), c).toEqual([]);
     }
+  });
+});
+
+describe('砂の底：層の下の方ほど珍しい（段階212）', () => {
+  it('宝箱の重みは、章の層の上の端から下の端へ、珍しい物が増える（2章の時の感覚記憶の層でも）', () => {
+    const def = sandBottomFor('ch2');
+    const top = digLayerTop(def, 'kingyo');
+    const bottom = digLayerTop(def, 'deep') - 1;
+    const rare = (y: number) => {
+      const w = digWeightsAt(def, y);
+      return w.rare / (w.common + w.uncommon + w.rare);
+    };
+    expect(rare(bottom)).toBeGreaterThan(rare(top) * 3);
+    expect(rare(top + 12)).toBeGreaterThan(rare(top));
+    expect(digWeightsAt(def, top)).toEqual(def.layers[0].weights);
+  });
+
+  it('ぬしは、その章の区画のぬし（2-3 のカイの負け戦は入らない）', () => {
+    expect(SAND_BOTTOM.layers.find((l) => l.id === 'kingyo')!.lords).toEqual(['a11_boss', 'a12_boss']);
+    expect(SAND_BOTTOM.layers.find((l) => l.id === 'daseki')!.lords).not.toContain('a23_kai');
   });
 });

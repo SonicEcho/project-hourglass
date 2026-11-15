@@ -36,8 +36,15 @@ export interface DigLayerDef {
   weights: Record<DigRarity, number>;
   /** 砂嵐で戦う戦闘（区画の戦闘の id） */
   battles: string[];
-  /** この層の入口（上の境目）の番人の戦闘。書かなければ battles の先頭。いちばん上の層には番人はいない */
-  guard?: string;
+  /**
+   * この層（まとまり）の下の境目の番人の戦闘（段階212：強い戦闘。どれか1つ）。書かなければ battles の先頭。
+   * 番人は、まとまりが変わる所（章の層の間と、いちばん下の層とふつうの地面の間）に必ずいる
+   */
+  guards?: string[];
+  /** 稀に番人として出る、その層の章のぬしの戦闘（段階212）。出る割合は DigWorldDef の lordRate */
+  lords?: string[];
+  /** 層（まとまり）のいちばん下での、宝箱の中身の重み（段階212。上の端の weights から、深さに合わせて移る）。書かなければ weights のまま */
+  deepWeights?: Record<DigRarity, number>;
   /**
    * まとまり（段階212。章の層の名前）。同じまとまりの層（区画ごとの帯）の境目には番人を置かない。
    * 書かなければ、層ごとに別のまとまり
@@ -67,6 +74,8 @@ export interface DigWorldDef {
   rockCost?: number;
   /** 固い土を1回で掘れる（段階211。掘る人の特徴） */
   clayOnce?: boolean;
+  /** 層の境目の番人が、その層の章のぬしになる割合（段階212）。書かなければ出ない */
+  lordRate?: number;
 }
 
 /** 動く砂嵐 */
@@ -140,13 +149,49 @@ export function digLayerTop(def: DigWorldDef, layerId: string): number {
 
 const isOpen = (t: DigTile) => t === 'air';
 
-/** その層の上の境目に、岩の帯と番人を置くか：2つ目の層から、まとまりが変わり、戦う砂嵐がいる所（段階212） */
+const groupOf = (l: DigLayerDef) => l.group ?? l.id;
+
+/**
+ * その層の上の境目に、岩の帯と番人を置くか（段階212）：まとまりが変わる所で、上のまとまりに戦う砂嵐がいる所。
+ * 番人は、上の層（まとまり）の番人。いちばん下の層とふつうの地面の間にもいる
+ */
 function hasGate(def: DigWorldDef, index: number): boolean {
   if (index <= 0) return false;
-  const layer = def.layers[index];
   const prev = def.layers[index - 1];
-  return layer.battles.length > 0 && (layer.group ?? layer.id) !== (prev.group ?? prev.id);
+  return groupOf(def.layers[index]) !== groupOf(prev) && (prev.guards?.length ?? 0) + prev.battles.length > 0;
 }
+
+/** 深さ y の、その層（まとまり）の中での深さの割合（上の端 0 〜 下の端 1。段階212） */
+function depthInGroup(def: DigWorldDef, y: number): number {
+  const group = groupOf(digLayerAt(def, y));
+  let top = -1;
+  let rows = 0;
+  let at = 1;
+  for (const l of def.layers) {
+    if (groupOf(l) === group) {
+      if (top < 0) top = at;
+      rows += l.rows;
+    }
+    at += l.rows;
+  }
+  return rows <= 1 ? 0 : Math.min(1, Math.max(0, (y - top) / (rows - 1)));
+}
+
+const lerpWeights = (a: Record<DigRarity, number>, b: Record<DigRarity, number>, t: number): Record<DigRarity, number> => ({
+  common: a.common + (b.common - a.common) * t,
+  uncommon: a.uncommon + (b.uncommon - a.uncommon) * t,
+  rare: a.rare + (b.rare - a.rare) * t,
+});
+
+/** 深さ y の宝箱の中身の重み（段階212：層の下の方ほど珍しい物が出やすい） */
+export function digWeightsAt(def: DigWorldDef, y: number): Record<DigRarity, number> {
+  const layer = digLayerAt(def, y);
+  return lerpWeights(layer.weights, layer.deepWeights ?? layer.weights, depthInGroup(def, y));
+}
+
+/** 鉱脈の重み（上の端はいつもの物が多く、下の端は珍しい物も出る。段階212） */
+const ORE_TOP: Record<DigRarity, number> = { common: 3, uncommon: 1, rare: 0 };
+const ORE_BOTTOM: Record<DigRarity, number> = { common: 1, uncommon: 2, rare: 1 };
 
 /** 層の境目の岩の帯の行か（いちばん上の層の上は帯がない） */
 export function isDigGuardRow(def: DigWorldDef, y: number): boolean {
@@ -228,7 +273,7 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
       const chestCell = floor * w + cx + Math.floor(rand() * cw);
       if (rand() < layer.chestRate) {
         tiles[chestCell] = 'chest';
-        chests[chestCell] = rollChest(layer, rand, pick);
+        chests[chestCell] = rollChest(layer.items, digWeightsAt(def, floor), rand, pick);
       }
       const rx = cx + Math.floor(rand() * cw);
       if (floor * w + rx !== chestCell && layer.battles.length > 0 && rand() < layer.nestRate) {
@@ -243,7 +288,10 @@ export function createDig(def: DigWorldDef, seed: number): DigState {
         delete chests[cell];
         tiles[cell] = x === gx ? 'guard' : 'rock';
       }
-      guards[top * w + gx] = layer.guard ?? layer.battles[0];
+      // 番人は上の層（まとまり）の強い戦闘。稀に、その層の章のぬし
+      const above = def.layers[li - 1];
+      const lord = (above.lords?.length ?? 0) > 0 && rand() < (def.lordRate ?? 0);
+      guards[top * w + gx] = lord ? pick(above.lords!) : pick(above.guards?.length ? above.guards : [above.battles[0]]);
       // 番人の上と下は、たどり着けるように砂にする
       for (const cell of [(top - 1) * w + gx, (top + 1) * w + gx]) if (tiles[cell] === 'rock') tiles[cell] = 'sand';
     }
@@ -278,11 +326,11 @@ function rollItem(items: Record<DigRarity, string[]>, weights: Record<DigRarity,
 }
 
 /** 宝箱の中身：1〜2個 */
-function rollChest(layer: DigLayerDef, rand: () => number, pick: <T>(l: readonly T[]) => T): string[] {
+function rollChest(items: Record<DigRarity, string[]>, weights: Record<DigRarity, number>, rand: () => number, pick: <T>(l: readonly T[]) => T): string[] {
   const n = rand() < 0.35 ? 2 : 1;
   const out: string[] = [];
   for (let i = 0; i < n; i++) {
-    const id = rollItem(layer.items, layer.weights, rand, pick);
+    const id = rollItem(items, weights, rand, pick);
     if (id) out.push(id);
   }
   return out;
@@ -337,7 +385,7 @@ export function stepDig(def: DigWorldDef, s: DigState, dir: DigDir): { state: Di
   if (tile === 'ore') {
     const layer = digLayerAt(def, ny);
     const rand = stepRand(s, cell);
-    const item = rollItem(layer.items, { common: 3, uncommon: 1, rare: 0 }, rand, (l) => l[Math.floor(rand() * l.length)]);
+    const item = rollItem(layer.items, lerpWeights(ORE_TOP, ORE_BOTTOM, depthInGroup(def, ny)), rand, (l) => l[Math.floor(rand() * l.length)]);
     const kept = !!item && next.bag.length < def.bagMax;
     if (kept && item) next = { ...next, bag: [...next.bag, item] };
     event = { type: 'ore', item, kept };

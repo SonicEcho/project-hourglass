@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { DigDir, DigEvent, DigState, DigTile } from '../core';
 import { addItems, chapterOfEvent, isDigGuardRow, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { PARTY, SAND_BOTTOM_BAND_NAMES, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, PARTY, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { waitImages } from '../ui/waitImages';
 import { isSettled } from '../assets/loader';
@@ -250,13 +250,10 @@ export class SandBottomScene extends Phaser.Scene {
           if (isSolid(tileAt(x + 1, y))) g.fillStyle(0x000000, 0.22).fillRect(px + T - 3, py, 3, T);
         }
       }
-      // 層・帯の始まり（と見える範囲のいちばん上）に名前。章の層の始まりは層の名前も（段階212）
+      // 層の始まり（と見える範囲のいちばん上）に層の名前（段階212。帯の名前は出さない）
       const prevLay = y > 1 ? digLayerAt(this.def, y - 1) : undefined;
-      if (r >= 0 && r < ROWS && y > 0 && (r === 0 || prevLay?.id !== lay.id)) {
-        const bandName = SAND_BOTTOM_BAND_NAMES[lay.id];
-        const head = !prevLay || prevLay.group !== lay.group || r === 0;
-        const label = head ? (bandName ? `${lay.name}・${bandName}` : lay.name) : (bandName ?? lay.name);
-        const t = addText(this, 8, GRID_Y + r * T + 11, label, { size: 10, bold: true, color: head ? '#ffd76a' : '#ffffff' }).setOrigin(0, 0.5);
+      if (r >= 0 && r < ROWS && y > 0 && (r === 0 || prevLay?.group !== lay.group)) {
+        const t = addText(this, 8, GRID_Y + r * T + 11, lay.name, { size: 10, bold: true, color: '#ffd76a' }).setOrigin(0, 0.5);
         g.fillStyle(0x000000, 0.55).fillRoundedRect(4, GRID_Y + r * T + 3, t.width + 8, 16, 4);
         labels.push(t);
       }
@@ -355,13 +352,6 @@ export class SandBottomScene extends Phaser.Scene {
     return delay + (moved ? MOVE_MS : 0);
   }
 
-  /** 深さ y の層と帯の名前（段階212） */
-  private layerLabel(y: number): string {
-    const lay = digLayerAt(this.def, y);
-    const bandName = SAND_BOTTOM_BAND_NAMES[lay.id];
-    return bandName ? `${lay.name}（${bandName}）` : lay.name;
-  }
-
   private drawHud(): void {
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GRID_Y, 0x0b0f22).setOrigin(0));
     this.root.add(this.add.rectangle(0, GRID_Y - 2, GAME_WIDTH, 2, 0xffd76a, 0.4).setOrigin(0));
@@ -378,7 +368,7 @@ export class SandBottomScene extends Phaser.Scene {
     const record = Number(run.vars[SAND_BOTTOM_DEEPEST_VAR] ?? 0);
     this.root.add(addText(this, GAME_WIDTH - 14, 10, '深さ', { size: 10, bold: true, color: '#ffd76a' }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 24, `${s.y * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 22, bold: true }).setOrigin(1, 0));
-    this.root.add(addText(this, GAME_WIDTH - 14, 54, s.y > 0 ? this.layerLabel(s.y) : '地上', { size: 11, color: COLORS.subText }).setOrigin(1, 0));
+    this.root.add(addText(this, GAME_WIDTH - 14, 54, s.y > 0 ? digLayerAt(this.def, s.y).name : '地上', { size: 11, color: COLORS.subText }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 70, `今回 ${s.deepest * SAND_BOTTOM_METERS_PER_ROW} m・記録 ${record * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 10, color: COLORS.subText }).setOrigin(1, 0));
   }
 
@@ -552,8 +542,10 @@ export class SandBottomScene extends Phaser.Scene {
   /** 番人・砂嵐：戦うか、やめるか（追いつかれた時は戦うしかない） */
   private showFoe(kind: 'guard' | 'roamer', ref: number, battle: string, forced: boolean): void {
     const o = this.openOverlay();
-    const title = kind === 'guard' ? '層の番人だ' : forced ? '砂嵐に追いつかれた！' : '砂嵐だ';
-    const note = kind === 'guard' ? 'この番人を倒さないと、下の層へは行けない。\n' : '';
+    // 段階212：番人は稀に、その層の章のぬし
+    const lord = kind === 'guard' && !!AREA_BATTLES[battle]?.boss;
+    const title = lord ? `${AREA_BATTLES[battle].name}が、番人として現れた！` : kind === 'guard' ? '層の番人だ' : forced ? '砂嵐に追いつかれた！' : '砂嵐だ';
+    const note = kind === 'guard' ? 'この番人を倒さないと、下へは行けない。\n' : '';
     o.add(addText(this, GAME_WIDTH / 2, 200, title, { size: 22, bold: true, color: '#ff8a7a' }).setOrigin(0.5));
     o.add(
       addText(this, GAME_WIDTH / 2, 240, `${note}戦うと、砂時計の砂が ${this.def.cost.battle} 減る。\nHP・MP は、潜っている間ずっと持ち越す。\n負けると地上へ戻され、かばんの半分を失う`, { size: 13, align: 'center', wrap: GAME_WIDTH - 60, ja: true }).setOrigin(0.5, 0),
