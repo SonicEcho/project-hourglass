@@ -579,7 +579,7 @@ export const AREAS: Record<string, AreaDef> = {
     chests: [
       { id: 'a21_chest_left', room: 'factory_yard', cell: [4, 3], night: 2, items: [ITEMS.rustyScrew.id], gears: ['thunderBoost'], chainSnaps: ['c17_burst'] },
       { id: 'a21_chest_right', cell: [19, 12], items: [], night: 2, gears: ['firstAid'], chainSnaps: ['c17_split'] },
-      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id], chainSnaps: ['c17_bigShot'] },
+      { id: 'a21_chest_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.brassBolt.id], gears: ['armorPierce'], chainSnaps: ['c17_bigShot'] },
     ],
     enemies: [
       // ---- 1晩目（路地の入口から銭湯の前と、銭湯の裏） ----

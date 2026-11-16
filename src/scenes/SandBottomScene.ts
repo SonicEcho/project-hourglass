@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from '../core';
 import type { DigLoreDef, DigLoreKind, DigOwned, DigRuleId } from '../data';
-import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
+import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, hearLostVoice, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
@@ -907,11 +907,21 @@ export class SandBottomScene extends Phaser.Scene {
       return;
     }
     if (relic?.kind === 'lost') {
+      // 段階220：声のかけら。掘り当てるたびに、写しの声を1つ聞く。全部聞くと、届けられる
       const def = LOST_ITEMS.find((d) => d.id === relic.ref);
-      setStoryVars(findLost(run.vars, relic.ref));
-      this.message = `落とし物を見つけた！ ${def?.name ?? ''}（拠点の落とし物の棚から、${def?.owner ?? ''}さんに届けられる）`;
+      if (!def) {
+        this.render();
+        return;
+      }
+      const r = hearLostVoice(def, run.vars);
+      setStoryVars(r.vars);
+      this.cameras.main.flash(250, 200, 230, 255);
+      this.message =
+        r.no >= r.total
+          ? `声のかけら（${r.no}/${r.total}）。「${def.name}」の声がそろった（拠点の落とし物の棚から、${def.owner}さんに届けられる）`
+          : `声のかけら（${r.no}/${r.total}）。「${def.name}」の次のかけらは、また潜った時に埋まっている`;
       this.render();
-      if (def?.findScene) this.openFindScene(def.findScene);
+      if (r.scene) this.openFindScene(r.scene);
       return;
     }
     this.render();
@@ -952,7 +962,7 @@ export class SandBottomScene extends Phaser.Scene {
     this.render();
   }
 
-  /** 落とし物の声の会話を見て、砂の底へ戻る（潜っている状態はそのまま） */
+  /** 依頼の声のかけらの会話を見て、砂の底へ戻る（潜っている状態はそのまま） */
   private openFindScene(sceneId: string): void {
     const data: DialogueData = { scene: sceneId, vars: run.vars, seed: run.seed, next: { key: 'SandBottom', data: {} }, onVars: (vars) => setStoryVars(vars) };
     waitImages(this, dialogueImages([sceneId]), () => this.scene.start('Dialogue', data));

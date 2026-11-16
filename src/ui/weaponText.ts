@@ -39,6 +39,8 @@ export function describeCondition(c: EvolutionCheck, data?: WeaponData): string 
   if (c.kind === 'param') return `${PARAM_LABEL[c.param]} ${c.min}以上`;
   if (c.kind === 'key') return `鍵：${data?.items[c.item]?.name ?? c.item}`;
   if (c.kind === 'paramMax') return `${PARAM_LABEL[c.param]} ${c.max}以下`;
+  if (c.kind === 'lost') return `依頼「${c.name}」を届けた`;
+  if (c.kind === 'record') return c.label;
   return `傾向が${PART_COLOR_LABEL[c.color]}`;
 }
 
@@ -92,6 +94,8 @@ export function describeDirection(evo: EvolutionDef): string {
     if (c.kind === 'paramMax') parts.push(`${PARAM_SHORT[c.param]}↓`);
     if (c.kind === 'tendency') parts.push(`傾向 ${PART_COLOR_LABEL[c.color]}`);
     if (c.kind === 'elementAny') parts.push('属性どれか↑');
+    if (c.kind === 'lost') parts.push('依頼を届ける');
+    if (c.kind === 'record') parts.push('戦い方');
   }
   return parts.join(' ');
 }

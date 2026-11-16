@@ -2,6 +2,9 @@ import type { NaviData, PartColor } from './navi';
 import { extendBoard } from './navi';
 import type { ChainBasicMod, ChainPassive } from './chain';
 import type { CharacterDef, Element, PassiveEffect, Stats } from './types';
+import { lostKey } from './lost';
+import type { BattleRecordId } from './battleRecord';
+import { battleRecord } from './battleRecord';
 
 // 武器ビルドアップ（段階9）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
@@ -56,7 +59,11 @@ export type EvolutionCondition =
   /** パラメータが max 以下（寄り道の、変わった条件。段階42） */
   | { kind: 'paramMax'; param: WeaponParamKey; max: number }
   /** 火・氷・雷のどれかが min 以上（段階197。ハルトの記の系統） */
-  | { kind: 'elementAny'; min: number };
+  | { kind: 'elementAny'; min: number }
+  /** 依頼（落とし物）を届けた（段階221。寄り道③。name は依頼の名前。物語の変数の `落とし物:<lost>` が delivered） */
+  | { kind: 'lost'; lost: string; name: string }
+  /** 戦い方の記録が min 以上（段階222。寄り道④。物語の変数の `戦い方:<record>:<武器の持ち主>`。label は条件の文） */
+  | { kind: 'record'; record: BattleRecordId; min: number; label: string };
 
 /** 進化の条件の確かめ（レベル、加わった時の選択も含む） */
 export type EvolutionCheck = EvolutionCondition | { kind: 'level'; min: number } | { kind: 'join' };
@@ -148,6 +155,8 @@ export interface WeaponData {
   decomposeCost: number;
   /** 能力値 → その能力値を上げる記憶の欠片の id（時分解で使う） */
   fragmentFor: Record<WeaponParamKey, string>;
+  /** 2本目の武器（段階223。docs/milestones/M3_second_weapon.md）：組むのに使う記憶の欠片の数・1本目に追いつくまでの経験値の倍率 */
+  second?: { fragments: number; catchUpRate: number };
 }
 
 export interface WeaponState {
@@ -160,6 +169,8 @@ export interface WeaponState {
   path: EvolutionStep[];
   /** 刻んだ素材の数（刻印を使った数。段階27b） */
   absorbed: number;
+  /** 2本目（早瀬が組んだ写し。段階223） */
+  copy?: boolean;
 }
 
 export interface ArmoryState {
@@ -169,24 +180,61 @@ export interface ArmoryState {
   items: Record<string, number>;
   /** 持っている記憶の欠片の数（パーティ共通） */
   fragments: Record<string, number>;
+  /** 持ち替えて、しまってある方の武器（段階223。キャラの id → 武器。2本目を組んだ仲間だけ） */
+  spare?: Record<string, WeaponState>;
 }
 
 const ELEMENTS: Element[] = ['fire', 'ice', 'thunder'];
 const PARAM_KEYS: WeaponParamKey[] = ['atk', 'fire', 'ice', 'thunder'];
 
+function freshWeapon(def: WeaponDef, exp: number): WeaponState {
+  return { defId: def.id, params: { atk: 0, fire: 0, ice: 0, thunder: 0 }, exp, tendency: { red: 0, blue: 0, green: 0, yellow: 0 }, path: [], absorbed: 0 };
+}
+
 export function createArmory(data: WeaponData): ArmoryState {
   const weapons: Record<string, WeaponState> = {};
-  for (const w of Object.values(data.weapons)) {
-    weapons[w.owner] = {
-      defId: w.id,
-      params: { atk: 0, fire: 0, ice: 0, thunder: 0 },
-      exp: w.startExp ?? 0,
-      tendency: { red: 0, blue: 0, green: 0, yellow: 0 },
-      path: [],
-      absorbed: 0,
-    };
-  }
+  for (const w of Object.values(data.weapons)) weapons[w.owner] = freshWeapon(w, w.startExp ?? 0);
   return { weapons, items: {}, fragments: {} };
+}
+
+// ---- 2本目の武器と持ち替え（段階223。docs/milestones/M3_second_weapon.md）----
+
+/** その仲間が2本目を持っているか（持っている方・しまってある方のどちらかが写し） */
+export function hasSecondWeapon(armory: ArmoryState, charId: string): boolean {
+  return !!armory.spare?.[charId];
+}
+
+/** 2本目を組めない理由。組めるなら null */
+export function getForgeError(data: WeaponData, armory: ArmoryState, charId: string): string | null {
+  if (!data.second) return 'no second weapon';
+  if (!armory.weapons[charId]) return 'no weapon';
+  if (hasSecondWeapon(armory, charId)) return 'already has second';
+  if (Object.values(armory.fragments).reduce((a, n) => a + n, 0) < data.second.fragments) return 'not enough fragments';
+  return null;
+}
+
+/**
+ * 2本目を組む：記憶の欠片を使い（多い種類から1つずつ。同じ数なら fragments の並びの先）、Lv1 の写しを、しまってある方に入れる。
+ * 持っている武器はそのまま
+ */
+export function forgeSecondWeapon(data: WeaponData, armory: ArmoryState, charId: string): ArmoryState {
+  const err = getForgeError(data, armory, charId);
+  if (err) throw new Error(err);
+  const fragments = { ...armory.fragments };
+  const order = Object.keys(data.fragments);
+  for (let i = 0; i < data.second!.fragments; i++) {
+    const id = [...order].sort((a, b) => (fragments[b] ?? 0) - (fragments[a] ?? 0) || order.indexOf(a) - order.indexOf(b))[0];
+    fragments[id] -= 1;
+  }
+  const def = data.weapons[armory.weapons[charId].defId];
+  return { ...armory, fragments, spare: { ...(armory.spare ?? {}), [charId]: { ...freshWeapon(def, 0), copy: true } } };
+}
+
+/** 持ち替える：持っている武器と、しまってある武器を入れ替える（ムーブメントの盤の形が変わるので、呼ぶ側で並べ直す） */
+export function swapWeapon(armory: ArmoryState, charId: string): ArmoryState {
+  const spare = armory.spare?.[charId];
+  if (!spare) throw new Error('no second weapon');
+  return { ...armory, weapons: { ...armory.weapons, [charId]: spare }, spare: { ...armory.spare, [charId]: armory.weapons[charId] } };
 }
 
 export function addFragments(armory: ArmoryState, ids: string[]): ArmoryState {
@@ -372,14 +420,21 @@ export interface BattleRecord {
   expRate?: number;
 }
 
-/** 戦闘に勝った時：素材・アイテムを受け取り、経験値とギアの傾向を貯める */
-export function recordVictory(armory: ArmoryState, record: BattleRecord): ArmoryState {
+/**
+ * 戦闘に勝った時：素材・アイテムを受け取り、経験値とギアの傾向を貯める。
+ * 段階223：しまってある武器より経験値が少なければ、追いつくまで経験値が catchUpRate 倍（追いついた所からは1倍）
+ */
+export function recordVictory(armory: ArmoryState, record: BattleRecord, catchUpRate = 1): ArmoryState {
   const weapons: Record<string, WeaponState> = {};
   for (const [charId, w] of Object.entries(armory.weapons)) {
     const cells = record.colorCells[charId];
     const tendency = { ...w.tendency };
     if (cells) for (const c of Object.keys(tendency) as PartColor[]) tendency[c] += cells[c] ?? 0;
-    weapons[charId] = { ...w, exp: w.exp + Math.floor((record.actions[charId] ?? 0) * (record.expRate ?? 1)), tendency };
+    const gain = Math.floor((record.actions[charId] ?? 0) * (record.expRate ?? 1));
+    const other = armory.spare?.[charId]?.exp ?? 0;
+    const boosted = w.exp + Math.floor(gain * catchUpRate);
+    const exp = other > w.exp && catchUpRate > 1 ? Math.max(w.exp + gain, Math.min(boosted, other)) : w.exp + gain;
+    weapons[charId] = { ...w, exp, tendency };
   }
   return addItems({ ...armory, weapons }, record.items);
 }
@@ -433,12 +488,16 @@ export function evolveLevelFor(data: WeaponData, tier: number): number {
   return list[Math.min(Math.max(tier, 1), list.length) - 1] ?? 1;
 }
 
-/** 進化の条件を1つずつ確かめる（レベルの条件を含む）。鍵の素材は、パーティ共通の持ち物 items で確かめる */
+/**
+ * 進化の条件を1つずつ確かめる（レベルの条件を含む）。鍵の素材は、パーティ共通の持ち物 items で確かめる。
+ * 依頼の条件（段階221）は、物語の変数 vars で確かめる
+ */
 export function evolutionChecks(
   data: WeaponData,
   w: WeaponState,
   evo: EvolutionDef,
   items: Record<string, number> = {},
+  vars: Readonly<Record<string, string>> = {},
 ): { condition: EvolutionCheck; ok: boolean }[] {
   // 加わった時の選択（段階197）：条件なし（寄り道は選べない）
   if (isJoinChoice(data, w)) return [{ condition: { kind: 'join' }, ok: !evo.detour }];
@@ -456,14 +515,18 @@ export function evolutionChecks(
             ? (items[c.item] ?? 0) >= 1
             : c.kind === 'elementAny'
               ? Math.max(w.params.fire, w.params.ice, w.params.thunder) >= c.min
-              : tendencyOf(w) === c.color;
+              : c.kind === 'lost'
+                ? vars[lostKey(c.lost)] === 'delivered'
+                : c.kind === 'record'
+                  ? battleRecord(vars, c.record, data.weapons[w.defId]?.owner ?? '') >= c.min
+                  : tendencyOf(w) === c.color;
     checks.push({ condition: c, ok });
   }
   return checks;
 }
 
-/** 進化できない理由。できるなら null（style は選ぶ型の番号） */
-export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0): string | null {
+/** 進化できない理由。できるなら null（style は選ぶ型の番号。vars は物語の変数。段階221 の依頼の条件に使う） */
+export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0, vars: Readonly<Record<string, string>> = {}): string | null {
   const w = armory.weapons[charId];
   if (!w) return 'no weapon';
   const evo = findEvolution(data, w, evolutionId);
@@ -471,13 +534,13 @@ export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: st
   if (!nextEvolutions(data, w).includes(evo)) return 'not the next evolution';
   if (evo.sealed) return 'sealed';
   if (!Number.isInteger(style) || style < 0 || style >= (evo.styles?.length ?? 0)) return 'unknown style';
-  if (!evolutionChecks(data, w, evo, armory.items).every((c) => c.ok)) return 'conditions are not met';
+  if (!evolutionChecks(data, w, evo, armory.items, vars).every((c) => c.ok)) return 'conditions are not met';
   return null;
 }
 
 /** 武器を進化させる（パラメータは引き継ぐ。選んだ型を覚える） */
-export function evolveWeapon(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0): ArmoryState {
-  const err = getEvolveError(data, armory, charId, evolutionId, style);
+export function evolveWeapon(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0, vars: Readonly<Record<string, string>> = {}): ArmoryState {
+  const err = getEvolveError(data, armory, charId, evolutionId, style, vars);
   if (err) throw new Error(err);
   // 鍵の素材を使う（加わった時の選択は使わない。段階197）
   const items = { ...armory.items };
@@ -556,10 +619,10 @@ export function naviDataWithWeapons(navi: NaviData, data: WeaponData, armory: Ar
 }
 
 /** その武器が、今どれかの進化先に進化できるか */
-export function canEvolveAny(data: WeaponData, armory: ArmoryState, charId: string): boolean {
+export function canEvolveAny(data: WeaponData, armory: ArmoryState, charId: string, vars: Readonly<Record<string, string>> = {}): boolean {
   const w = armory.weapons[charId];
   if (!w) return false;
-  return nextEvolutions(data, w).some((e) => getEvolveError(data, armory, charId, e.id) === null);
+  return nextEvolutions(data, w).some((e) => getEvolveError(data, armory, charId, e.id, 0, vars) === null);
 }
 
 /**

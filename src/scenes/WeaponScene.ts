@@ -9,6 +9,13 @@ import {
   evolutionVisibility,
   evolveWeapon,
   feedFragment,
+  forgeSecondWeapon,
+  getForgeError,
+  hasSecondWeapon,
+  isSeen,
+  markSeen,
+  refitNavi,
+  swapWeapon,
   decomposeCostOf, fragmentItem,
   getAbsorbPickedError,
   getEvolveError,
@@ -23,14 +30,15 @@ import {
   weaponSlots,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, WEAPON_DATA } from '../data';
+import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, SECOND_WEAPON, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { COLORS, ELEMENT_COLOR, ELEMENT_LABEL, FONT_HEADING, RENDER_SCALE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
-import { currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
+import { currentNaviData, currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
+import type { DialogueData } from './DialogueScene';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, sparkAt } from '../ui/skin';
 import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 import { CRIMSON, currentNode, drawTree, layoutTree, TREE, type TreeNode, treeDetail, treeSize } from '../ui/weaponTree';
@@ -205,7 +213,7 @@ export class WeaponScene extends Phaser.Scene {
     this.closeOverlay();
     const w = this.weapon();
     const ext = hubLineup().unlocks.navi ? D.boardExtension : 0;
-    const checks = evolutionChecks(D, w, evo, run.armory.items);
+    const checks = evolutionChecks(D, w, evo, run.armory.items, run.vars);
     const ok = checks.every((c) => c.ok);
     const styles = ok ? (evo.styles ?? []) : [];
     const c = this.add.container(0, 0).setDepth(200);
@@ -253,9 +261,9 @@ export class WeaponScene extends Phaser.Scene {
 
   private evolve(evo: EvolutionDef, style: number): void {
     this.closeOverlay();
-    if (getEvolveError(D, run.armory, this.charId, evo.id, style)) return;
+    if (getEvolveError(D, run.armory, this.charId, evo.id, style, run.vars)) return;
     const before = weaponName(D, this.weapon());
-    run.armory = evolveWeapon(D, run.armory, this.charId, evo.id, style);
+    run.armory = evolveWeapon(D, run.armory, this.charId, evo.id, style, run.vars);
     const after = weaponName(D, this.weapon());
     console.log('[weapon] evolve', this.charId, evo.id, style);
     this.message = `${before}が${after}に進化した！`;
@@ -348,6 +356,7 @@ export class WeaponScene extends Phaser.Scene {
     this.drawTree();
     // 見出し（段階141：共通の枠）
     frameHeader(this, this.root, 'weapon', '武器');
+    this.drawSecondButton();
     this.drawTabs();
     this.drawStatus();
     if (this.drawer) this.drawDrawer();
@@ -370,7 +379,7 @@ export class WeaponScene extends Phaser.Scene {
   private drawTabs(): void {
     const tabs = lineupBase(hubLineup()).map((c) => {
       const ws = run.armory.weapons[c.id];
-      const ready = canEvolveAny(D, run.armory, c.id);
+      const ready = canEvolveAny(D, run.armory, c.id, run.vars);
       return {
         id: c.id,
         name: c.name,
@@ -401,7 +410,10 @@ export class WeaponScene extends Phaser.Scene {
     const next = D.levelExp[lv - 1];
     const name = addText(this, x0, top, weaponName(D, w), { size: 19, bold: true });
     this.root.add(name.setFontFamily(FONT_HEADING).setLetterSpacing(1));
-    this.root.add(addText(this, x0 + name.width + 8, top + 6, `LV ${lv}　${next === undefined ? '経験値 最大' : `経験値 ${w.exp}/${next}`}`, { size: 10, color: COLORS.subText }));
+    // 段階223：2本目（写し）なら印。1本目に追いつくまで経験値が多い
+    const catchUp = w.copy || (run.armory.spare?.[this.charId]?.exp ?? 0) > w.exp;
+    const tag = hasSecondWeapon(run.armory, this.charId) ? (w.copy ? '2本目' : '1本目') : '';
+    this.root.add(addText(this, x0 + name.width + 8, top + 6, `${tag ? `${tag}　` : ''}LV ${lv}　${next === undefined ? '経験値 最大' : `経験値 ${w.exp}/${next}`}${catchUp && (run.armory.spare?.[this.charId]?.exp ?? 0) > w.exp ? `（経験値×${D.second?.catchUpRate ?? 1}）` : ''}`, { size: 10, color: COLORS.subText }));
     // 4本の棒（2列×2段）
     const after = this.picking() === 'items' || this.pickedCount() > 0 ? paramsAfterPicked(D, w.params, this.picks) : w.params;
     const near = nearestEvolution(D, run.armory, this.charId);
@@ -430,6 +442,78 @@ export class WeaponScene extends Phaser.Scene {
     this.root.add(g);
     this.root.add(addText(this, x0 + width, gy, `${used + picked}/${slots}`, { size: 11, bold: true, color: used >= slots ? '#ff8a8a' : COLORS.text }).setOrigin(1, 0.5));
     makePressable(hit, { onLongPress: () => this.showDetail(weaponName(D, w), this.statusDetail()) });
+  }
+
+  /**
+   * 2本目の武器（段階223。docs/milestones/M3_second_weapon.md）：4-2 を返した後、拠点から開いた武器の画面だけ。
+   * まだなら「2本目を組む」（初めては早瀬の会話）、持っていれば「持ち替える」
+   */
+  private drawSecondButton(): void {
+    if (!run.returned.includes(SECOND_WEAPON.area) || !hubBack()) return;
+    const has = hasSecondWeapon(run.armory, this.charId);
+    const x = GAME_WIDTH - SIDE_PADDING - 6 - 56;
+    addButton(this, this.root, x, 26, 112, 32, has ? '持ち替える' : '2本目を組む', { onTap: () => (has ? this.confirmSwap() : this.startForge()) }, { ...PLAIN_BUTTON, size: 12, bold: true });
+  }
+
+  private startForge(): void {
+    if (!isSeen(run.vars, SECOND_WEAPON.scene)) {
+      setStoryVars(markSeen(run.vars, SECOND_WEAPON.scene));
+      const talk: DialogueData = { scene: SECOND_WEAPON.scene, vars: run.vars, seed: run.seed, next: { key: 'Weapon', data: {} }, onVars: (vars) => setStoryVars(vars) };
+      this.scene.start('Dialogue', talk);
+      return;
+    }
+    this.confirmSecond('forge');
+  }
+
+  private confirmSwap(): void {
+    this.confirmSecond('swap');
+  }
+
+  /** 2本目を組む・持ち替えるの確かめの窓 */
+  private confirmSecond(kind: 'forge' | 'swap'): void {
+    this.closeOverlay();
+    const w = this.weapon();
+    const base = D.weapons[w.defId]?.name ?? '';
+    const cost = D.second?.fragments ?? 0;
+    const have = Object.values(run.armory.fragments).reduce((a, n) => a + n, 0);
+    const err = kind === 'forge' ? getForgeError(D, run.armory, this.charId) : null;
+    const other = run.armory.spare?.[this.charId];
+    const c = this.add.container(0, 0).setDepth(200);
+    c.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.72).setOrigin(0).setInteractive());
+    const h = 260;
+    const top = Math.round((GAME_HEIGHT - h) / 2);
+    c.add(addWindow(this, 18, top, GAME_WIDTH - 36, h, CRIMSON, 0x0c0a0b));
+    c.add(addText(this, 36, top + 18, kind === 'forge' ? `2本目の${base}を組む` : '武器を持ち替える', { size: 19, bold: true }).setFontFamily(FONT_HEADING));
+    const body =
+      kind === 'forge'
+        ? `早瀬が、記憶の欠片から${base}の写しを組む。\n・記憶の欠片 ${cost}（持っている：${have}。多い種類から使う）\n・Lv1 から。1本目のレベルに追いつくまで、経験値が×${D.second?.catchUpRate ?? 1}\n・進化の木を、1本目とは別の道で育てられる\n・持ち替えは、拠点の武器の画面でいつでも`
+        : `今の「${weaponName(D, w)}」（Lv${weaponLevel(D, w.exp)}）をしまい、「${other ? weaponName(D, other) : ''}」（Lv${other ? weaponLevel(D, other.exp) : 1}）を持つ。\n・育ちは、それぞれの武器に残る\n・ムーブメントの盤の形が変わるので、はみ出すギアは外れる`;
+    c.add(addText(this, 36, top + 54, body, { size: 12, wrap: GAME_WIDTH - 72, ja: true }).setLineSpacing(4));
+    if (err === 'not enough fragments') c.add(addText(this, GAME_WIDTH / 2, top + h - 80, '記憶の欠片が足りない', { size: 12, bold: true, color: '#ff8a8a' }).setOrigin(0.5));
+    const bw = (GAME_WIDTH - 36 - 40) / 2;
+    addButton(this, c, 30 + bw / 2, top + h - 36, bw, 48, kind === 'forge' ? '組んでもらう' : '持ち替える', { onTap: () => this.doSecond(kind) }, { ...GOLD_BUTTON, enabled: !err });
+    addButton(this, c, GAME_WIDTH - 30 - bw / 2, top + h - 36, bw, 48, 'やめる', { onTap: () => this.closeOverlay() }, { ...PLAIN_BUTTON, size: 15 });
+    this.overlay = c;
+    popIn(this, c);
+  }
+
+  private doSecond(kind: 'forge' | 'swap'): void {
+    this.closeOverlay();
+    if (kind === 'forge') {
+      if (getForgeError(D, run.armory, this.charId)) return;
+      run.armory = forgeSecondWeapon(D, run.armory, this.charId);
+      this.message = '2本目ができた。「持ち替える」で持ち替えて育てる';
+    } else {
+      if (!hasSecondWeapon(run.armory, this.charId)) return;
+      run.armory = swapWeapon(run.armory, this.charId);
+      // 盤の形が変わるので、はめたギアを置き直す（はみ出す物は外れる）
+      run.navi = refitNavi(currentNaviData(), run.navi);
+      this.message = `「${weaponName(D, this.weapon())}」に持ち替えた`;
+    }
+    this.picks = {};
+    this.laid = [];
+    this.treePos.clear();
+    this.render();
   }
 
   /** 能力値の棒1本（ラベル・棒・数）。after が大きければ増える分を白く、小さければ減る分を暗く */
@@ -487,7 +571,7 @@ export class WeaponScene extends Phaser.Scene {
     frame.lineStyle(1, 0xb8bcc4, 0.25).lineBetween(SIDE_PADDING + 18, TREE_TOP + 6, SIDE_PADDING + 18, TREE_BOTTOM - 6);
     frame.lineBetween(GAME_WIDTH - SIDE_PADDING - 18, TREE_TOP + 6, GAME_WIDTH - SIDE_PADDING - 18, TREE_BOTTOM - 6);
     this.root.add(frame);
-    drawTree(this, tree, D, w, this.laid, run.armory.items, D.weapons[w.defId].name);
+    drawTree(this, tree, D, w, this.laid, run.armory.items, D.weapons[w.defId].name, run.vars);
     const mask = this.make.graphics({}, false).fillRect(0, TREE_TOP, GAME_WIDTH, TREE_BOTTOM - TREE_TOP);
     tree.setMask(mask.createGeometryMask());
     tree.once(Phaser.GameObjects.Events.DESTROY, () => mask.destroy());
@@ -566,7 +650,7 @@ export class WeaponScene extends Phaser.Scene {
       return;
     }
     const ext = hubLineup().unlocks.navi ? D.boardExtension : 0;
-    const { title, body } = treeDetail(D, w, n.evo?.id ?? '', run.armory.items, ext);
+    const { title, body } = treeDetail(D, w, n.evo?.id ?? '', run.armory.items, ext, run.vars);
     if (title) this.showDetail(title, body);
   }
 
@@ -593,10 +677,10 @@ export class WeaponScene extends Phaser.Scene {
   /** 一番近い進化先まで（「次：○○　氷 あと8・鍵 ✓」）。今すぐ進化できる時はそう言う */
   private nextHint(): string {
     const w = this.weapon();
-    if (canEvolveAny(D, run.armory, this.charId)) return '金に光る紋章をタップで進化';
+    if (canEvolveAny(D, run.armory, this.charId, run.vars)) return '金に光る紋章をタップで進化';
     const near = nearestEvolution(D, run.armory, this.charId);
     if (!near) return '';
-    const parts = evolutionChecks(D, w, near.evolution, run.armory.items).map((c) => {
+    const parts = evolutionChecks(D, w, near.evolution, run.armory.items, run.vars).map((c) => {
       const cd = c.condition;
       if (cd.kind === 'param') return c.ok ? '' : `${PARAM_SHORT[cd.param]} あと${cd.min - w.params[cd.param]}`;
       if (cd.kind === 'key') return `鍵 ${c.ok ? '✓' : '✗'}`;

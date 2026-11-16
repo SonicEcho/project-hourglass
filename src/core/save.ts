@@ -9,7 +9,7 @@ import type { GrowthMap, GrowthState } from './growth';
 import { createGrowth } from './growth';
 import { LOADOUT_MAX, type Rotation } from './navi';
 import type { NaviData, NaviState, OwnedPart, PartColor, Placement } from './navi';
-import { getPlaceError, placePart } from './navi';
+import { refitNavi } from './navi';
 import type { Progress, Story } from './progress';
 import { normalizeProgress } from './progress';
 import type { ArmoryState, EvolutionStep, WeaponData, WeaponParams, WeaponState } from './weapon';
@@ -198,8 +198,15 @@ function sanitizeArmory(raw: Record<string, unknown>, data: WeaponData): ArmoryS
     const w = raw.weapons[owner];
     weapons[owner] = isObject(w) && w.defId === base.defId ? sanitizeWeapon(w, base, data) : base;
   }
+  // 2本目（段階223）：しまってある方。前の版のセーブにはないので、なければ持っている1本だけ（セーブの版は変えない）
+  const spare: Record<string, WeaponState> = {};
+  if (isObject(raw.spare))
+    for (const [owner, base] of Object.entries(fresh.weapons)) {
+      const w = raw.spare[owner];
+      if (isObject(w) && w.defId === base.defId) spare[owner] = sanitizeWeapon(w, base, data);
+    }
   // 持てる数のある物は、持てる数にそろえる（段階204 で消費アイテムをなくしたので、今は持てる数のある物はない）
-  return capItems(data, { weapons, items: countsOf(raw.items, data.items), fragments: countsOf(raw.fragments, data.fragments) }).armory;
+  return capItems(data, { weapons, items: countsOf(raw.items, data.items), fragments: countsOf(raw.fragments, data.fragments), ...(Object.keys(spare).length ? { spare } : {}) }).armory;
 }
 
 function sanitizeWeapon(raw: Record<string, unknown>, base: WeaponState, data: WeaponData): WeaponState {
@@ -217,7 +224,7 @@ function sanitizeWeapon(raw: Record<string, unknown>, base: WeaponState, data: W
     path.push({ id: step.id, style: step.style });
   }
   const absorbed = isInt(raw.absorbed) ? Math.max(0, raw.absorbed) : 0;
-  return { defId: base.defId, params, exp: isInt(raw.exp) ? Math.max(0, raw.exp) : 0, tendency, path, absorbed };
+  return { defId: base.defId, params, exp: isInt(raw.exp) ? Math.max(0, raw.exp) : 0, tendency, path, absorbed, ...(raw.copy === true ? { copy: true } : {}) };
 }
 
 function sanitizeNavi(raw: Record<string, unknown>, data: NaviData): NaviState | null {
@@ -234,9 +241,7 @@ function sanitizeNavi(raw: Record<string, unknown>, data: NaviData): NaviState |
     parts: owned.map((p): OwnedPart => ({ uid: p.uid, partId: p.partId, placement: null })),
     nextUid: Math.max(raw.nextUid, ...owned.map((p) => p.uid + 1), 0),
   };
-  for (const p of owned) {
-    if (p.placement && !getPlaceError(data, navi, p.uid, p.placement)) navi = placePart(data, navi, p.uid, p.placement);
-  }
+  navi = refitNavi(data, { ...navi, parts: owned.map((p) => ({ uid: p.uid, partId: p.partId, placement: p.placement })) });
   // 保存した並べ方（段階201）：形の合う物だけ残す（ギアを持っていない・置けない物は、付け替える時に飛ばす）
   const loadouts = sanitizeLoadouts(raw.loadouts);
   return loadouts ? { ...navi, loadouts } : navi;

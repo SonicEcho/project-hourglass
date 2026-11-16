@@ -82,6 +82,16 @@ export function parseBoardCells(layout: string[]): Cell[] {
   return cells;
 }
 
+/**
+ * はめたギアを、今の盤に置き直す（段階223。武器を持ち替えると盤の形が変わる）：いったん全部外し、はめた順（持ち物の順）に置き直す。
+ * 置けないものは外したままにする
+ */
+export function refitNavi(data: NaviData, navi: NaviState): NaviState {
+  let out: NaviState = { ...navi, parts: navi.parts.map((p) => ({ ...p, placement: null })) };
+  for (const p of navi.parts) if (p.placement && !getPlaceError(data, out, p.uid, p.placement)) out = placePart(data, out, p.uid, p.placement);
+  return out;
+}
+
 export function createNavi(partIds: string[]): NaviState {
   return addParts({ parts: [], nextUid: 0 }, partIds);
 }

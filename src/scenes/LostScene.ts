@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { LostItemDef } from '../core';
-import { acceptLost, activeLostCount, addParts, capItems, deliverLost, gainSnaps, recordLibraryFinds, getAcceptError, getDeliverError, isSeen, lostStatus, markSeen, shelfLost } from '../core';
-import { BACKDROPS, BGM, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SE, WEAPON_DATA } from '../data';
+import { acceptLost, activeLostCount, addParts, capItems, deliverLost, gainSnaps, recordLibraryFinds, getAcceptError, getDeliverError, isSeen, lostAfterwords, lostStatus, lostVoicesHeard, markSeen, shelfLost } from '../core';
+import { BACKDROPS, BGM, BOND_PARTNER_NAMES, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SE, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
@@ -24,6 +24,9 @@ export interface LostSceneData {
   got?: string;
 }
 
+/** 武器の持ち主の名前（段階221） */
+const CAST_NAMES: Record<string, string> = { hero: 'ハルト', akari: 'あかり', mio: 'みお', sayoko: '小夜子', hayase: '早瀬' };
+
 /** ごほうびの文 */
 function rewardText(d: LostItemDef): string {
   const r = d.reward;
@@ -33,6 +36,12 @@ function rewardText(d: LostItemDef): string {
     ...(r.gears ?? []).map((id) => `ギア「${NAVI_PARTS[id as keyof typeof NAVI_PARTS]?.name ?? id}」`),
     ...(r.snaps ?? []).map((id) => `スナップ「${CHAIN_SNAPS[id]?.name ?? id}」`),
     ...(r.points ? [`星の砂 ${r.points}`] : []),
+    ...(r.bond ? [`${BOND_PARTNER_NAMES[r.bond as keyof typeof BOND_PARTNER_NAMES] ?? r.bond}との絆`] : []),
+    ...(d.afterwords?.length ? ['仲間のひとこと'] : []),
+    // 段階221：この依頼で開く武器の寄り道③
+    ...Object.values(WEAPON_DATA.weapons).flatMap((w) =>
+      w.evolutions.filter((e) => e.conditions.some((c) => c.kind === 'lost' && c.lost === d.id)).map((e) => `${CAST_NAMES[w.owner] ?? w.owner}の武器の寄り道「${e.name}」`),
+    ),
   ];
   return parts.join('、');
 }
@@ -43,9 +52,10 @@ function statusText(d: LostItemDef): string {
     case 'none':
       return 'まだ受けていない';
     case 'accepted':
+      if (d.kind === 'voices') return `声をたどる：声のかけら ${lostVoicesHeard(run.vars, d.id)}/${d.voices?.length ?? 0}`;
       return d.kind === 'find' ? '記憶をたどって探す' : `集める：${WEAPON_DATA.items[d.bring!.item]?.name ?? ''} ${Math.min(run.armory.items[d.bring!.item] ?? 0, d.bring!.count)}/${d.bring!.count}`;
     case 'found':
-      return '見つけた（届けられる）';
+      return d.kind === 'voices' ? '声がそろった（届けられる）' : '見つけた（届けられる）';
     case 'delivered':
       return '届けた';
   }
@@ -70,7 +80,7 @@ export class LostScene extends Phaser.Scene {
     }
     enterScreen(this);
     playBgm(this, BGM.library);
-    this.message = data.got ? `届けた！　受け取った物：${data.got}` : '記憶の中の、あの時は気づかなかった小さなこと';
+    this.message = data.got ? `届けた！　受け取った：${data.got}` : '記憶の中の、あの時は気づかなかった小さなこと';
     if (data.got) playSe(this, SE.chest);
     this.root = this.add.container(0, 0);
     this.render();
@@ -114,14 +124,18 @@ export class LostScene extends Phaser.Scene {
     if (this.overlay) return;
     const cx = GAME_WIDTH / 2;
     const st = lostStatus(run.vars, d.id);
-    const top = 200;
-    const h = 380;
+    const top = 170;
+    const h = 440;
     const panel = this.add.container(0, 0).setDepth(50);
     this.overlay = panel;
     panel.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive());
     panel.add(addWindow(this, cx - 170, top, 340, h));
     panel.add(addText(this, cx, top + 28, d.name, { size: 18, bold: true, color: COLORS.accentText }).setOrigin(0.5));
-    panel.add(addText(this, cx - 150, top + 56, `${d.text}\n\n届ける相手：${d.owner}さん\nごほうび：${rewardText(d)}\n今：${statusText(d)}`, { size: 13, wrap: 300 }));
+    // 段階220：届けた後は、仲間のひとことを添える
+    const words = lostAfterwords(d, run.vars, run.returned)
+      .map((a) => `${a.speaker}「${a.text}」`)
+      .join('\n');
+    panel.add(addText(this, cx - 150, top + 56, `${d.text}\n\n届ける相手：${d.owner}さん\nごほうび：${rewardText(d)}\n今：${statusText(d)}${words ? `\n\n${words}` : ''}`, { size: 13, wrap: 300 }));
     const close = () => {
       panel.destroy(true);
       this.overlay = undefined;
@@ -140,7 +154,12 @@ export class LostScene extends Phaser.Scene {
 
   private accept(d: LostItemDef): void {
     setStoryVars(acceptLost(LOST_ITEMS, run.vars, d.id, LOST_ACTIVE_MAX));
-    this.message = d.kind === 'find' ? `「${d.name}」を受けた。「砂の底」の、その記憶の層で光る所を掘り当てる` : `「${d.name}」を受けた。「砂の底」で、${WEAPON_DATA.items[d.bring!.item]?.name ?? ''}を${d.bring!.count}つ集める`;
+    this.message =
+      d.kind === 'voices'
+        ? `「${d.name}」を受けた。「砂の底」の、その記憶の帯で光る声のかけらを掘り当てる（${d.voices?.length ?? 0}つ。1回の潜りで1つ）`
+        : d.kind === 'find'
+          ? `「${d.name}」を受けた。「砂の底」の、その記憶の層で光る所を掘り当てる`
+          : `「${d.name}」を受けた。「砂の底」で、${WEAPON_DATA.items[d.bring!.item]?.name ?? ''}を${d.bring!.count}つ集める`;
     this.render();
   }
 

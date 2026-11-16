@@ -194,7 +194,7 @@ export class GrowthScene extends Phaser.Scene {
       subs.push((x, w, compact) => {
         const fragments = Object.values(run.armory.fragments).reduce((sum, n) => sum + n, 0);
         const items = Object.values(run.armory.items).reduce((sum, n) => sum + n, 0);
-        const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+        const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id, run.vars));
         const stock = compact ? `素材${items}・欠片${fragments}` : `素材 ${items}・記憶の欠片 ${fragments}`;
         addButton(
           this,

@@ -1,6 +1,8 @@
 import type { Element } from '../core/types';
 import type { EvolutionCondition, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, WeaponData, WeaponDef, WeaponParamKey } from '../core/weapon';
 import type { PartColor } from '../core/navi';
+import { LOST_ITEMS } from './lost';
+import type { BattleRecordId } from '../core/battleRecord';
 
 // 武器ビルドアップ（段階9）。数値・名前はすべて仮
 
@@ -237,11 +239,15 @@ function beyond(from: string, branches: string[][]): EvolutionDef[] {
   });
 }
 
-/** 言い伝えだけの寄り道（段階197。③日常の遊び ④戦い方。条件を数える仕組みができるまで、影と一文だけ見せる） */
+/** 言い伝えだけの寄り道（段階197。④戦い方と、依頼のまだない仲間の③。条件ができるまで、影と一文だけ見せる。段階221：③は日常の遊びから依頼に替えた） */
 const legendDetour = (id: string, from: string, legend: string): EvolutionDef => ({ id, name: '', from, detour: true, sealed: true, legend, conditions: [] });
 const low = (p: WeaponParamKey, max: number): EvolutionCondition => ({ kind: 'paramMax', param: p, max });
 const anyElement = (min: number): EvolutionCondition => ({ kind: 'elementAny', min });
 const tendency = (color: PartColor): EvolutionCondition => ({ kind: 'tendency', color });
+/** 戦い方の記録（段階222。寄り道④。docs/milestones/M3_detours.md） */
+const record = (r: BattleRecordId, min: number, label: string): EvolutionCondition => ({ kind: 'record', record: r, min, label });
+/** 依頼を届けた（段階221。寄り道③。docs/milestones/M3_detours.md） */
+const lost = (id: string): EvolutionCondition => ({ kind: 'lost', lost: id, name: LOST_ITEMS.find((d) => d.id === id)?.name ?? id });
 
 // ---- 段階197（段取りの段階G4b）：5人の武器の木を、一覧の 17-6 の系統で3回目まで作り直した（docs/milestones/M3_catalog.md）----
 // どの武器も3つの系統（1回目3・2回目3・3回目4。3回目で1つの系統が2つに分かれる）。条件は主の能力値が 12・24・36。
@@ -265,13 +271,15 @@ const sword: WeaponDef = {
     { id: 'crimsonBlade', name: '紅蓮の刃', from: 'copySword', detour: true, conditions: [param('fire', 20), low('ice', 6), low('thunder', 6), key('beigoma')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.ember] },
     // 寄り道②：ブレイクエッジから。雷を低いままにして、刃こぼれを抱えたまま先手を取る剣
     { id: 'strayEdge', name: '迷い刃', from: 'breakEdge', detour: true, conditions: [low('thunder', 2), key('bentSpoke')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
-    legendDetour('shootingSword', 'copySword', '射的の屋台で、的を全部落とした子の剣だったという'),
+    // 寄り道③（段階221）：写しの剣から。依頼「二度鳴るベル」を届ける。二度鳴らす合図のように、当てた敵に露出の目印を残す剣
+    { id: 'signalSword', name: '合図の剣', from: 'copySword', detour: true, conditions: [lost('a12_bell')], stats: { atk: 3 }, basic: { exposure: 1 }, styles: [STYLES.quick, STYLES.attach] },
     // 3回目（鍵は 2-1・2-2 の素材）
     { id: 'grandEdge', name: 'グランドエッジ', from: 'crushEdge', conditions: [param('atk', 36), key('tempoSpring')], stats: { atk: 6 }, basic: { hits: 3, partMult: 1.5 }, styles: [STYLES.might, STYLES.shatter] },
     { id: 'lanternSword', name: '走馬灯の剣', from: 'mirrorSword', conditions: [param('fire', 12), param('ice', 12), param('thunder', 12), key('glitterPen')], stats: { atk: 4 }, traits: [{ kind: 'snapBoost', rate: 0.15 }], styles: [STYLES.attach, STYLES.stretch] },
     { id: 'kaleidoSword', name: '万華鏡の剣', from: 'mirrorSword', conditions: [param('fire', 12), param('ice', 12), param('thunder', 12), param('atk', 20), key('ringtoneChip')], stats: { atk: 5 }, traits: [{ kind: 'effectBoost', rate: 0.2 }], styles: [STYLES.attach, STYLES.might] },
     { id: 'diarySword', name: '日記の剣', from: 'pageSword', conditions: [param('atk', 28), anyElement(24), key('brokenBelt')], stats: { atk: 5 }, traits: [{ kind: 'comboBoost', rate: 0.15 }, { kind: 'climaxBoost', rate: 0.1 }], styles: [STYLES.bond, STYLES.attach] },
-    legendDetour('chippedSword', 'grandEdge', 'ぬしの部位を全部壊して勝つたびに、刃こぼれがひとつ増えたという'),
+    // 寄り道④（段階222）：グランドエッジから。ぬしの部位を全部壊して3回勝つ。刃こぼれを抱えたまま、部位をもっと砕く剣
+    { id: 'chippedSword', name: '刃こぼれの剣', from: 'grandEdge', detour: true, conditions: [record('bossParts', 3, 'ぬしの部位を全部壊して勝つ（3回）')], stats: { atk: 5 }, traits: [{ kind: 'partBoost', rate: 0.25 }], styles: [STYLES.might, STYLES.shatter] },
     // 4回目より先（まだ作っていない）
     ...beyond('grandEdge', [['天を割って、砂嵐の向こうに道を開いたという'], ['砂の山を一振りで割り、砂の道標を立てたという']]),
     ...beyond('lanternSword', [['ひと夏の思い出を、一つ残らず回して見せたという']]),
@@ -297,13 +305,15 @@ const rod: WeaponDef = {
     { id: 'ringRod', name: '炎環の杖', from: 'iceRod', detour: true, conditions: [param('fire', 20), low('ice', 14), key('menkoCard')], attackElement: 'fire', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.ember] },
     // 寄り道②：アイスロッドから。火を低いままにして、少ない力で長く祈り続ける杖
     { id: 'dewRod', name: 'しずくの杖', from: 'iceRod', detour: true, conditions: [low('fire', 2), key('phoneCord')], attackElement: 'ice', stats: { mp: 12 }, traits: [{ kind: 'mpSave', amount: 1 }], styles: [STYLES.sage, STYLES.calm] },
-    legendDetour('goldfishRod', 'healingRod', '金魚すくいで、ポイを破らずに十匹すくった子の杖だったという'),
+    // 寄り道③（段階221）：癒しの杖から。依頼「金魚のヘアピン」を届ける。来年の約束のように、ラウンドの始めに少しずつ癒やす杖
+    { id: 'promiseRod', name: '約束の金魚の杖', from: 'healingRod', detour: true, conditions: [lost('a11_hairpin')], attackElement: 'ice', stats: { mp: 8 }, traits: [{ kind: 'regen', rate: 0.03 }], styles: [STYLES.sage, STYLES.ember] },
     // 3回目
     { id: 'moonRod', name: '雪月の杖', from: 'sleetRod', conditions: [param('ice', 36), key('abacusFrame')], attackElement: 'ice', stats: { mag: 5 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.15 }], basic: { hits: 2 }, styles: [STYLES.fierce('ice'), STYLES.ember] },
     { id: 'blessRod', name: '祝福の杖', from: 'mercyRod', conditions: [param('ice', 24), low('atk', 8), key('lordGear')], attackElement: 'ice', stats: { mp: 12, mag: 3 }, basic: { healAll: 12 }, traits: [{ kind: 'healBoost', rate: 0.1 }], styles: [STYLES.bond, STYLES.ember] },
     { id: 'sunnyRod', name: '陽だまりの杖', from: 'mercyRod', conditions: [param('ice', 24), param('fire', 12), key('boomboxDial')], attackElement: 'ice', stats: { mag: 4 }, basic: { healAll: 10 }, traits: [{ kind: 'regen', rate: 0.02 }], styles: [STYLES.sage, STYLES.ember] },
     { id: 'templeBellRod', name: '鐘の杖', from: 'chimeRod', conditions: [param('ice', 28), tendency('blue'), key('cheerBand')], attackElement: 'ice', stats: { def: 3, mag: 3 }, basic: { guardAll: 0.25 }, traits: [{ kind: 'effectBoost', rate: 0.15 }], styles: [STYLES.stretch, STYLES.attach] },
-    legendDetour('snowmanRod', 'blessRod', '誰も倒れずに勝つたびに、雪だるまがひとつ増えたという'),
+    // 寄り道④（段階222）：祝福の杖から。誰も倒れずに10回勝つ。みんなを守りで包む杖
+    { id: 'snowmanRod', name: '雪だるまの杖', from: 'blessRod', detour: true, conditions: [record('noFall', 10, '誰も倒れずに勝つ（10回）')], attackElement: 'ice', stats: { mp: 10, def: 3 }, basic: { guardAll: 0.2 }, styles: [STYLES.sage, STYLES.guard] },
     ...beyond('moonRod', [['月の光で、なくした名前を照らしたという'], ['初雪の朝だけ、杖が少し温かかったという']]),
     ...beyond('blessRod', [['倒れた仲間が、一度だけ花の中で目を覚ましたという']]),
     ...beyond('sunnyRod', [['冬の日なたを、そのまま持ち歩いたという']]),
@@ -329,8 +339,11 @@ const cards: WeaponDef = {
     { id: 'fireworkCards', name: '花火のカード', from: 'thunderCards', detour: true, conditions: [param('fire', 20), low('thunder', 14), key('brassBolt')], attackElement: 'fire', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.shatter] },
     // 寄り道②：サンダーカードから。火を低いままにして、仲間につなぐことだけを考えるカード
     { id: 'oldMaidCards', name: 'ばば抜きのカード', from: 'thunderCards', detour: true, conditions: [low('fire', 2), key('photoSticker')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'comboBoost', rate: 0.2 }], styles: [STYLES.bond, STYLES.guard] },
-    legendDetour('towerCards', 'trickCards', 'トランプで、天井まで届く塔を建てた子のカードだったという'),
-    legendDetour('doodleCards', 'mirageCards', '一つの戦いで、敵の予定を十マスも後ろへ押しやったという'),
+    // 寄り道③（段階221）：トリックカードから。依頼「書きかけの四曲目」を届ける。終わりのチャイムを先へ延ばすように、敵の予定を遠くへ押すカード
+    { id: 'fourthSongCards', name: '四曲目のカード', from: 'trickCards', detour: true, conditions: [lost('a22_song')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'pushPlus', count: 1 }], styles: [STYLES.bond, STYLES.attach] },
+    // 寄り道④（段階222）：幻のカードから。1つの戦いで、みおが敵の予定を合わせて10マス押す。
+    // 敵の予定に落書きして狂わせるカード：全体攻撃・自爆を控えた敵へ威力 +50% と、その敵の予定を1マス後ろへ（ギア「ブレイクタイム」と同じ効果。開発者と決めた）
+    { id: 'doodleCards', name: 'いたずら書きのカード', from: 'mirageCards', detour: true, conditions: [record('pushMax', 10, '1つの戦いで、敵の予定を合わせて10マス押す')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'breakTime', rate: 0.5 }], styles: [STYLES.quick, STYLES.attach] },
     // 3回目（鍵は 2-3 の素材）
     { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 36), key('cheerBand')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.15 }], styles: [STYLES.fierce('thunder'), STYLES.attach] },
     { id: 'magicianCards', name: '奇術師のカード', from: 'mirageCards', conditions: [param('thunder', 24), tendency('yellow'), key('scorePlate')], attackElement: 'thunder', stats: { atk: 3 }, basic: { push: 2 }, traits: [{ kind: 'pushPlus', count: 1 }], styles: [STYLES.attach, STYLES.quick] },
@@ -362,13 +375,15 @@ const naginata: WeaponDef = {
     { id: 'eveNaginata', name: '宵宮の薙刀', from: 'crescentNaginata', detour: true, conditions: [param('fire', 20), key('lanternFrame')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.guard] },
     // 寄り道②：三日月から。雷を低いままにして、誰より先に踏みこむ薙刀
     { id: 'hazyMoonNaginata', name: '朧月', from: 'crescentNaginata', detour: true, conditions: [low('thunder', 2), key('tableLeg')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
-    legendDetour('lanternNaginata', 'crescentNaginata', '祭りの射的と輪投げで、提灯を全部ともした人の薙刀だったという'),
+    // 寄り道③：小夜子の区画（3章）に依頼を足すまで、言い伝えだけ（段階221）
+    legendDetour('lanternNaginata', 'crescentNaginata', '祭りの夜の落とし物を、百年後の持ち主に届けた人の薙刀だったという'),
     // 3回目
     { id: 'harvestMoonNaginata', name: '名月', from: 'fullMoonNaginata', conditions: [param('atk', 36), key('lordWhistle')], stats: { atk: 7 }, traits: [{ kind: 'heavyBoost', rate: 0.15 }], styles: [STYLES.stretch, STYLES.shatter] },
     { id: 'moonlitNaginata', name: '月下の薙刀', from: 'midnightNaginata', conditions: [param('atk', 36), low('fire', 8), low('ice', 8), low('thunder', 8), key('fanTimer')], stats: { atk: 5 }, traits: [{ kind: 'fragileBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.calm] },
     { id: 'shadowStepNaginata', name: '月影踏み', from: 'midnightNaginata', conditions: [param('atk', 30), low('fire', 8), low('ice', 8), low('thunder', 8), key('payEnvelope')], stats: { atk: 4, def: 3 }, traits: [{ kind: 'fragileBoost', rate: 0.15 }], styles: [STYLES.quick, STYLES.guard] },
     { id: 'crackedMoonNaginata', name: '割れ月', from: 'splitMoonNaginata', conditions: [param('atk', 36), key('oldTicket')], stats: { atk: 5 }, basic: { pierceHard: true }, traits: [{ kind: 'partBoost', rate: 0.2 }], styles: [STYLES.shatter, STYLES.might] },
-    legendDetour('summerNaginata', 'harvestMoonNaginata', 'ぬしの部位を全部壊して勝つたびに、夏が一つ終わったという'),
+    // 寄り道④（段階222）：名月から。ぬしの部位を全部壊して5回勝つ
+    { id: 'summerNaginata', name: '百回目の夏', from: 'harvestMoonNaginata', detour: true, conditions: [record('bossParts', 5, 'ぬしの部位を全部壊して勝つ（5回）')], stats: { atk: 6 }, traits: [{ kind: 'partBoost', rate: 0.25 }], styles: [STYLES.might, STYLES.shatter] },
     ...beyond('harvestMoonNaginata', [['欠けない月の下で、百の夜を一度に終わらせたという'], ['月を斬って、ふたつの夜に分けたという']]),
     ...beyond('moonlitNaginata', [['月の影だけを踏んで、誰にも気づかれずに歩いたという']]),
     ...beyond('shadowStepNaginata', [['足音のない刃で、夜道を一人で帰ったという']]),
@@ -394,8 +409,11 @@ const driver: WeaponDef = {
     // 寄り道①②：焼き戻しのドライバーから。氷を高く／雷を高く（火を低いまま）
     { id: 'coolDriver', name: '冷やしのドライバー', from: 'temperDriver', detour: true, conditions: [param('ice', 20), low('fire', 14), key('crackedLens')], attackElement: 'ice', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
     { id: 'currentDriver', name: '電流のドライバー', from: 'temperDriver', detour: true, conditions: [param('thunder', 20), low('fire', 14), key('earbudTip')], attackElement: 'thunder', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.calm] },
-    legendDetour('karakuriDriver', 'tuningDriver', '止まった時計を百個直した人の、からくりのドライバーだったという'),
-    legendDetour('oilDriver', 'secondDriver', '一つの戦いで、敵の行動を三度も空振りさせたという'),
+    // 寄り道③：早瀬の区画（4章）に依頼を足すまで、言い伝えだけ（段階221）
+    legendDetour('karakuriDriver', 'tuningDriver', '止まった時計の持ち主に、残っていた声を届けた人のドライバーだったという'),
+    // 寄り道④（段階222）：秒針のドライバーから。1つの戦いで、敵の行動を3回空振りさせる（ダウンさせて止める・ラウンドの外へ押し出す）。
+    // 歯車に油を差して、止まらずに回るドライバー：ねばねばの敵に当てても、仲間が遅れない（ギア「タイムキーパー」と同じ効果。開発者と決めた）
+    { id: 'oilDriver', name: '油差しのドライバー', from: 'secondDriver', detour: true, conditions: [record('whiffMax', 3, '1つの戦いで、敵の行動を3回空振りさせる')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'timeKeeper', count: 1 }], styles: [STYLES.quick, STYLES.calm] },
     // 3回目（鍵は 4-1 のレア・部位・ぬしの素材）
     { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, basic: { heavy: true }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.15 }], styles: [STYLES.fierce('fire'), STYLES.attach] },
     { id: 'furnaceDriver', name: '炉のドライバー', from: 'forgeDriver', conditions: [param('fire', 30), param('atk', 16), key('hatBrim')], attackElement: 'fire', stats: { mag: 6 }, basic: { heavy: true }, styles: [STYLES.might, STYLES.calm] },
@@ -417,6 +435,8 @@ export const WEAPON_DATA: WeaponData = {
   levelExp: [4, 8, 16, 26, 38, 52],
   // 1回目は Lv3、2回目は Lv5、3回目より先は Lv7
   evolveLevels: [3, 5, 7],
+  // 2本目の武器（段階223。数値は仮）：記憶の欠片12で組む。1本目に追いつくまで経験値2倍。開く区画と、初めての会話は SECOND_WEAPON
+  second: { fragments: 12, catchUpRate: 2 },
   elementRate: 0.02,
   // 進化1回で盤に足すマス（段階111。テストプレイのメモ 24：2マスでは増えすぎたので1マス）
   boardExtension: 1,
@@ -433,3 +453,6 @@ export const WEAPON_DATA: WeaponData = {
  */
 export const DECOMPOSE_VAR = '武器:時分解';
 export const WEAPON_STYLES = STYLES;
+
+/** 2本目の武器（段階223。docs/milestones/M3_second_weapon.md）：4-2 を返した後（早瀬が加わった後）の拠点の武器の画面で、早瀬が組む */
+export const SECOND_WEAPON = { area: 'a42', scene: 'second_weapon_intro' } as const;

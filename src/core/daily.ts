@@ -240,10 +240,18 @@ export interface BondPoints {
   talk: number;
   /** 絆のレベル1つ分の点（帯が満タンになる点） */
   level: number;
+  /** 絆の足し1つ（届けた依頼など。段階220）。なければ talk と同じ */
+  extra?: number;
+}
+
+/** 絆の足しの数（段階220）：物語の変数の `絆の足し:<相手>:…` が '1' の物 */
+export function bondExtras(vars: Record<string, string>, partner: string): number {
+  const head = `絆の足し:${partner}:`;
+  return Object.keys(vars).filter((k) => k.startsWith(head) && vars[k] === '1').length;
 }
 
 /**
- * 絆の点（段階83）：見た絆の出来事と、その日に見た小話（相手がこの仲間）。
+ * 絆の点（段階83）：見た絆の出来事と、その日に見た小話（相手がこの仲間）。段階220：絆の足し（届けた依頼など）も足す。
  * 「町の小話」で後から見た小話は、別の値（archivedKey）で覚えるので数えない
  */
 export function bondPoints(
@@ -256,7 +264,7 @@ export function bondPoints(
   const talks = Object.values(hubs)
     .flatMap(allSpots)
     .filter((s) => s.mark === 'talk' && s.with === partner && isSeen(vars, s.id)).length;
-  return bondLevel(vars, bonds[partner] ?? []) * points.event + talks * points.talk;
+  return bondLevel(vars, bonds[partner] ?? []) * points.event + talks * points.talk + bondExtras(vars, partner) * (points.extra ?? points.talk);
 }
 
 /** 絆の点を♥で書く（♥1つは event 点。足りない分があれば♡を1つ。0 は ―） */
