@@ -341,8 +341,9 @@ const cards: WeaponDef = {
     { id: 'oldMaidCards', name: 'ばば抜きのカード', from: 'thunderCards', detour: true, conditions: [low('fire', 2), key('photoSticker')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'comboBoost', rate: 0.2 }], styles: [STYLES.bond, STYLES.guard] },
     // 寄り道③（段階221）：トリックカードから。依頼「書きかけの四曲目」を届ける。終わりのチャイムを先へ延ばすように、敵の予定を遠くへ押すカード
     { id: 'fourthSongCards', name: '四曲目のカード', from: 'trickCards', detour: true, conditions: [lost('a22_song')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'pushPlus', count: 1 }], styles: [STYLES.bond, STYLES.attach] },
-    // 寄り道④（段階222）：幻のカードから。1つの戦いで、みおが敵の予定を合わせて10マス押す。誰より先に仕掛けるカード
-    { id: 'doodleCards', name: 'いたずら書きのカード', from: 'mirageCards', detour: true, conditions: [record('pushMax', 10, '1つの戦いで、敵の予定を合わせて10マス押す')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.attach] },
+    // 寄り道④（段階222）：幻のカードから。1つの戦いで、みおが敵の予定を合わせて10マス押す。
+    // 敵の予定に落書きして狂わせるカード：全体攻撃・自爆を控えた敵へ威力 +50% と、その敵の予定を1マス後ろへ（ギア「ブレイクタイム」と同じ効果。開発者と決めた）
+    { id: 'doodleCards', name: 'いたずら書きのカード', from: 'mirageCards', detour: true, conditions: [record('pushMax', 10, '1つの戦いで、敵の予定を合わせて10マス押す')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'breakTime', rate: 0.5 }], styles: [STYLES.quick, STYLES.attach] },
     // 3回目（鍵は 2-3 の素材）
     { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 36), key('cheerBand')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.15 }], styles: [STYLES.fierce('thunder'), STYLES.attach] },
     { id: 'magicianCards', name: '奇術師のカード', from: 'mirageCards', conditions: [param('thunder', 24), tendency('yellow'), key('scorePlate')], attackElement: 'thunder', stats: { atk: 3 }, basic: { push: 2 }, traits: [{ kind: 'pushPlus', count: 1 }], styles: [STYLES.attach, STYLES.quick] },
@@ -410,8 +411,9 @@ const driver: WeaponDef = {
     { id: 'currentDriver', name: '電流のドライバー', from: 'temperDriver', detour: true, conditions: [param('thunder', 20), low('fire', 14), key('earbudTip')], attackElement: 'thunder', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.calm] },
     // 寄り道③：早瀬の区画（4章）に依頼を足すまで、言い伝えだけ（段階221）
     legendDetour('karakuriDriver', 'tuningDriver', '止まった時計の持ち主に、残っていた声を届けた人のドライバーだったという'),
-    // 寄り道④（段階222）：秒針のドライバーから。1つの戦いで、敵の行動を3回空振りさせる（ダウンさせて止める・ラウンドの外へ押し出す）
-    { id: 'oilDriver', name: '油差しのドライバー', from: 'secondDriver', detour: true, conditions: [record('whiffMax', 3, '1つの戦いで、敵の行動を3回空振りさせる')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.calm] },
+    // 寄り道④（段階222）：秒針のドライバーから。1つの戦いで、敵の行動を3回空振りさせる（ダウンさせて止める・ラウンドの外へ押し出す）。
+    // 歯車に油を差して、止まらずに回るドライバー：ねばねばの敵に当てても、仲間が遅れない（ギア「タイムキーパー」と同じ効果。開発者と決めた）
+    { id: 'oilDriver', name: '油差しのドライバー', from: 'secondDriver', detour: true, conditions: [record('whiffMax', 3, '1つの戦いで、敵の行動を3回空振りさせる')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'timeKeeper', count: 1 }], styles: [STYLES.quick, STYLES.calm] },
     // 3回目（鍵は 4-1 のレア・部位・ぬしの素材）
     { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, basic: { heavy: true }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.15 }], styles: [STYLES.fierce('fire'), STYLES.attach] },
     { id: 'furnaceDriver', name: '炉のドライバー', from: 'forgeDriver', conditions: [param('fire', 30), param('atk', 16), key('hatBrim')], attackElement: 'fire', stats: { mag: 6 }, basic: { heavy: true }, styles: [STYLES.might, STYLES.calm] },
