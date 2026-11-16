@@ -188,15 +188,23 @@ export class HubScene extends Phaser.Scene {
       const ghost = this.add.image(img.x - 8, img.y, art).setOrigin(1, 0).setScale(img.scale).setTintFill(STYLE.red);
       layer.add([ghost, img]);
       // 段階227 の直し（開発者の声）：立ち絵の下の切れ目を、ぼかして消す（下の3割を少しずつ透明に。WebGL の時だけ）
+      // 段階227 の直し その3：紅の影は立ち絵より早く消す（影のふちが、下の方で枠の線に見えたので）
       if (this.game.renderer.type === Phaser.WEBGL) {
-        const fade = this.make.image({ x: img.x + 10, y: fit.top, key: this.portraitFade(), add: false }).setOrigin(1, 0);
-        fade.setDisplaySize(img.displayWidth + 30, fit.height);
-        const mask = fade.createBitmapMask();
-        img.setMask(mask);
-        ghost.setMask(mask);
+        const masks = [
+          { target: img, from: 0.55, to: 0.95 },
+          { target: ghost, from: 0.3, to: 0.6 },
+        ].map(({ target, from, to }) => {
+          const fade = this.make.image({ x: img.x + 10, y: fit.top, key: this.portraitFade(from, to), add: false }).setOrigin(1, 0);
+          fade.setDisplaySize(img.displayWidth + 30, fit.height);
+          const mask = fade.createBitmapMask();
+          target.setMask(mask);
+          return { fade, mask };
+        });
         img.once(Phaser.GameObjects.Events.DESTROY, () => {
-          mask.destroy();
-          fade.destroy();
+          for (const m of masks) {
+            m.mask.destroy();
+            m.fade.destroy();
+          }
         });
       }
     }
@@ -215,16 +223,17 @@ export class HubScene extends Phaser.Scene {
     });
   }
 
-  /** 立ち絵の下をぼかすための、上は不透明・下の3割で透明になる縦の帯（1回だけ作る） */
-  private portraitFade(): string {
-    const key = 'hub-portrait-fade';
+  /** 立ち絵の下をぼかすための縦の帯：from（高さの割合）まで不透明、to で透明（同じ形は1回だけ作る） */
+  private portraitFade(from: number, to: number): string {
+    const key = `hub-portrait-fade-${from}-${to}`;
     if (this.textures.exists(key)) return key;
     const tex = this.textures.createCanvas(key, 4, 256);
     const ctx = tex?.getContext();
     if (ctx) {
       const g = ctx.createLinearGradient(0, 0, 0, 256);
       g.addColorStop(0, 'rgba(255,255,255,1)');
-      g.addColorStop(0.68, 'rgba(255,255,255,1)');
+      g.addColorStop(from, 'rgba(255,255,255,1)');
+      g.addColorStop(to, 'rgba(255,255,255,0)');
       g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 4, 256);
