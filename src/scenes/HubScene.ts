@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { HubLineDef, HubNotice } from '../core';
 import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { BACKDROPS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages, waitImages } from '../ui/waitImages';
@@ -182,8 +182,9 @@ export class HubScene extends Phaser.Scene {
     const art = want && hasImage(this, want) ? want : this.shownArt || this.partnerArt(partner);
     if (art && hasImage(this, art)) {
       this.shownArt = art;
-      const img = this.add.image(GAME_WIDTH + 80, 64, art).setOrigin(1, 0);
-      img.setScale(500 / img.height);
+      const fit = HUB_PORTRAIT_FIT[partner] ?? { height: 500, top: 64 };
+      const img = this.add.image(GAME_WIDTH + 80, fit.top, art).setOrigin(1, 0);
+      img.setScale(fit.height / img.height);
       const ghost = this.add.image(img.x - 8, img.y, art).setOrigin(1, 0).setScale(img.scale).setTintFill(STYLE.red);
       layer.add([ghost, img]);
     }

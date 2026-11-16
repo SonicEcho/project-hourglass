@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
-import { HUB_TILE_ART, HUB_TILE_FOCUS, HUB_TILE_ZOOM, type HubTileId } from '../data';
+import { HUB_TILE_ART, HUB_TILE_FOCUS, HUB_TILE_SHIFT, type HubTileId } from '../data';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
 import { FRAME_COLORS } from './frame';
@@ -25,9 +25,9 @@ export interface GalleryTile {
 }
 
 /** 台帳の絵を、w×h の枠いっぱいに切り抜いて置く（左上が x, y）。focusY は見せたい所の高さ（0〜1） */
-function coverImage(scene: Phaser.Scene, id: string, x: number, y: number, w: number, h: number, focusY: number, zoom = 1): Phaser.GameObjects.Image {
+function coverImage(scene: Phaser.Scene, id: string, x: number, y: number, w: number, h: number, focusY: number): Phaser.GameObjects.Image {
   const src = scene.textures.get(id).getSourceImage();
-  const scale = Math.max(w / src.width, h / src.height) * zoom;
+  const scale = Math.max(w / src.width, h / src.height);
   const cw = w / scale;
   const ch = h / scale;
   const sx = (src.width - cw) / 2;
@@ -134,9 +134,24 @@ export function addSlantTile(scene: Phaser.Scene, root: Phaser.GameObjects.Conta
   face.add(scene.add.rectangle(x, y, w, h, 0x1a1418).setOrigin(0));
   const art = HUB_TILE_ART[tile.id].find((id) => hasImage(scene, id));
   if (art) {
-    const img = coverImage(scene, art, x, y, w, h, HUB_TILE_FOCUS[art] ?? 0.5, HUB_TILE_ZOOM[art] ?? 1);
+    // 段階227 の直し：大きさは変えずに、絵を下へずらす（下の端は切れる。上に空いた所は暗くぼかす）
+    const shift = Math.round(h * (HUB_TILE_SHIFT[art] ?? 0));
+    let img: Phaser.GameObjects.Image;
+    if (shift > 0) {
+      const src = scene.textures.get(art).getSourceImage();
+      const scale = Math.max(w / src.width, h / src.height);
+      const sx = (src.width - w / scale) / 2;
+      img = scene.add.image(x - sx * scale, y + shift, art).setOrigin(0).setScale(scale).setCrop(sx, 0, w / scale, (h - shift) / scale);
+      face.add(img);
+      const fade = scene.add.graphics();
+      fade.fillGradientStyle(0x0b0a0c, 0x0b0a0c, 0x0b0a0c, 0x0b0a0c, 1, 1, 0, 0);
+      fade.fillRect(x, y + shift - 1, w, Math.min(26, h * 0.2));
+      face.add(fade);
+    } else {
+      img = coverImage(scene, art, x, y, w, h, HUB_TILE_FOCUS[art] ?? 0.5);
+      face.add(img);
+    }
     if (!enabled) img.setAlpha(0.3).setTint(0x888888);
-    face.add(img);
   }
   const shade = scene.add.graphics();
   const top = y + h * (big ? 0.3 : 0.35);
@@ -167,16 +182,20 @@ export function addSlantTile(scene: Phaser.Scene, root: Phaser.GameObjects.Conta
     root.add(name);
     if (sub) root.add(sub.setPosition(x + 14, by + 32));
   } else {
-    // 段階226 の直し（開発者の声）：名前の高さはどのタイルもそろえ、一言はその下に。斜めに切った右下に掛からない幅に縮める
-    const label = addText(scene, x + 6, y + h - 22, tile.label, { size: 12, bold: true, color: enabled ? COLORS.text : COLORS.dimText });
+    // 段階227 の直し（開発者の声）：名前はどのタイルも一番下の同じ高さ。一言（星の砂など）は左上の小さな黒い札に。
+    // 名前は斜めに切った右下に掛からない幅に縮める
+    const label = addText(scene, x + 6, y + h - 7, tile.label, { size: 12, bold: true, color: enabled ? COLORS.text : COLORS.dimText });
     label.setOrigin(0, 1).setFontFamily(FONT).setFontStyle('bold italic').setShadow(2, 2, STYLE.redText, 0, false, true);
     const room = w - k - 14;
     if (label.width > room) label.setScale(room / label.width);
     root.add(label);
     if (tile.sub) {
-      const sub = addText(scene, x + 6, y + h - 8, tile.sub, { size: 9, color: COLORS.subText }).setOrigin(0, 1);
-      if (sub.width > room - 4) sub.setScale((room - 4) / sub.width);
-      root.add(sub);
+      const sub = addText(scene, 0, 0, tile.sub, { size: 9, bold: true, color: '#ffffff' });
+      const sw = Math.min(sub.width + 12, w - k - 6);
+      if (sub.width > sw - 10) sub.setScale((sw - 10) / sub.width);
+      const sy = y + h - 34;
+      root.add(addSlant(scene, x + 4 + sw / 2, sy, sw, 15, 0x000000, 0.8));
+      root.add(sub.setOrigin(0.5).setPosition(x + 4 + sw / 2, sy));
     }
   }
   // 右上の札（黄の斜めの札。赤の札はそのまま赤）

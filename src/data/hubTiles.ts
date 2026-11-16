@@ -21,13 +21,18 @@ export const HUB_TILE_ART: Record<HubTileId, string[]> = {
 };
 
 /**
- * 拠点の斜めのタイル（段階226）で、絵を大きくして上の方を見せる倍率（開発者の声：武器・交換所・落とし物の絵を少し下へずらす）。
- * 縦長のタイルでは絵の高さがぴったり入るので、ずらすには少し大きくして、見せる所（HUB_TILE_FOCUS）を上にする
+ * 拠点の斜めのタイル（段階226）で、絵を下へずらす量（タイルの高さに対する割合。開発者の声：武器・交換所・落とし物の絵を少し下へ）。
+ * 大きさは変えない（大きくすると横がはみ出す）。上に空いた所は暗くぼかす
  */
-export const HUB_TILE_ZOOM: Record<string, number> = {
-  'tile.weapon': 1.25,
-  'tile.exchange': 1.25,
-  'tile.lost': 1.25,
+export const HUB_TILE_SHIFT: Record<string, number> = {
+  'tile.weapon': 0.14,
+  'tile.exchange': 0.14,
+  'tile.lost': 0.14,
+};
+
+/** 拠点の立ち絵の大きさ（高さ）と上の端（段階227 の直し。開発者の声：みおが少し大きい。みおは小学4年なので小さめに） */
+export const HUB_PORTRAIT_FIT: Record<string, { height: number; top: number }> = {
+  mio: { height: 370, top: 140 },
 };
 
 /** 絵の中で見せたい所の高さ（0 が上の端、1 が下の端。切り抜く時の中心）。書いていない絵は真ん中 */
@@ -40,9 +45,5 @@ export const HUB_TILE_FOCUS: Record<string, number> = {
   'bg.library': 0.4,
   'bg.clock_shop': 0.4,
   'bg.shopping_street': 0.4,
-  // 段階226：上の方を見せる（絵が下へずれて見える）
-  'tile.weapon': 0.3,
-  'tile.exchange': 0.3,
-  'tile.lost': 0.3,
 };
 
