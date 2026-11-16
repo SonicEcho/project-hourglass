@@ -293,7 +293,7 @@ describe('武器：進化（能力値＋鍵の素材。段階27b）', () => {
         const tendency = e.conditions.some((c) => c.kind === 'tendency');
         expect(tendency, e.id).toBe(['bellRod', 'chimeRod', 'templeBellRod'].includes(e.id));
         // 段階221：寄り道③は、鍵の素材の代わりに依頼を届けること
-        if (!tendency) expect(e.conditions.some((c) => c.kind === 'key' || c.kind === 'lost'), e.id).toBe(true);
+        if (!tendency) expect(e.conditions.some((c) => c.kind === 'key' || c.kind === 'lost' || c.kind === 'record'), e.id).toBe(true);
         for (const c of e.conditions) if (c.kind === 'key') expect(D.items[c.item]?.kind, c.item).toBe('material');
       }
     }
@@ -420,7 +420,7 @@ describe('武器：進化ツリー（段階42）', () => {
     return a;
   };
 
-  it('ツリーの形（段階197）：合流せず、本道は 3 → 3 → 4。寄り道は作った物2本（依頼のある仲間は3本）と言い伝え。3回目までは作ってあり、その先は影', () => {
+  it('ツリーの形（段階197）：合流せず、本道は 3 → 3 → 4。寄り道は作った物3本（依頼のある仲間は4本）と言い伝え。3回目までは作ってあり、その先は影', () => {
     for (const w of Object.values(D.weapons)) {
       const ids = new Set(w.evolutions.map((e) => e.id));
       expect(ids.size, w.id).toBe(w.evolutions.length);
@@ -429,8 +429,8 @@ describe('武器：進化ツリー（段階42）', () => {
       const perTier = [1, 2, 3].map((t) => main.filter((e) => evolutionTier(w, e.id) === t).length);
       expect(perTier, w.id).toEqual([3, 3, 4]);
       const detours = w.evolutions.filter((e) => e.detour);
-      // 段階221：依頼のある仲間（ハルト・あかり・みお）は、寄り道③（依頼）も作ってある
-      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(['hero', 'akari', 'mio'].includes(w.owner) ? 3 : 2);
+      // 段階221：依頼のある仲間（ハルト・あかり・みお）は、寄り道③（依頼）も作ってある。段階222：どの仲間も寄り道④（戦い方）を作った
+      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(['hero', 'akari', 'mio'].includes(w.owner) ? 4 : 3);
       for (const e of detours.filter((x) => x.sealed)) expect(e.legend, e.id).toBeTruthy();
       for (const e of w.evolutions) {
         const tier = evolutionTier(w, e.id);
@@ -475,7 +475,8 @@ describe('武器：進化ツリー（段階42）', () => {
     expect(getEvolveError(D, base, 'hero', 'breakEdge', 2)).toBe('unknown style');
     expect(getEvolveError(D, base, 'hero', 'breakEdge', 1)).toBeNull();
     const a = evolveAlong([['breakEdge', 0], ['crushEdge', 0], ['grandEdge', 0]]);
-    expect(nextEvolutions(D, a.weapons.hero).every((e) => e.sealed)).toBe(true);
+    // 段階222：グランドエッジの先は、影と寄り道④（戦い方の記録がまだないので進化できない）
+    expect(nextEvolutions(D, a.weapons.hero).every((e) => e.sealed || e.detour)).toBe(true);
     expect(getEvolveError(D, a, 'hero', 'grandEdge_1a')).toBe('sealed');
     expect(canEvolveAny(D, a, 'hero')).toBe(false);
   });

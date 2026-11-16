@@ -752,6 +752,8 @@ export type ChainEvent =
   | { type: 'reveal'; uid: string; defId: string; element: Element };
 
 export interface ChainState {
+  /** 戦い方の記録（段階222。runChainRound が足す） */
+  tally?: ChainTally;
   /** ストップウォッチ（段階199。ギア）で巻き戻しを止めた回数 */
   rewindStops?: number;
   def: ChainBattleDef;
@@ -2122,6 +2124,36 @@ export function chainOrder(s: ChainState, plan: ChainPlanStep[]): ChainOrderEntr
  * 全員ダウン（シャッター）か決着で途中で止まる。最後まで動けば、時限を進め、ラウンドの終わり（ダウンが解け、手札を補充し、次の予定を決める）まで進めた状態を返す
  */
 export function runChainRound(s0: ChainState, plan: ChainPlanStep[]): { state: ChainState; frames: ChainFrame[] } {
+  const r = runChainRoundInner(s0, plan);
+  r.state.tally = tallyFrames(s0.tally, r.frames, r.state);
+  return r;
+}
+
+/**
+ * 戦い方の記録（段階222。武器の寄り道④）：この戦闘で、仲間ごとに敵の予定を押した数・敵の行動が空振りした数（ダウンしていて起きなかった・ラウンドの外へ押し出した）・仲間が倒れたか
+ */
+export interface ChainTally {
+  push: Record<string, number>;
+  whiffs: number;
+  allyFell: boolean;
+}
+
+/** コマから戦い方の記録を足す（段階222）。押した数は、そのコマで動いた仲間の分（仲間の定義の id） */
+export function tallyFrames(prev: ChainTally | undefined, frames: ChainFrame[], s: ChainState): ChainTally {
+  const t: ChainTally = { push: { ...(prev?.push ?? {}) }, whiffs: prev?.whiffs ?? 0, allyFell: prev?.allyFell ?? false };
+  const ally = (uid: string) => s.allies.find((a) => a.uid === uid);
+  for (const f of frames) {
+    const actor = ally(f.uid);
+    for (const ev of f.events) {
+      if (ev.type === 'push' && ev.moved && actor) t.push[actor.defId] = (t.push[actor.defId] ?? 0) + ev.by;
+      if ((ev.type === 'cancel' && ev.reason === 'down' && !ally(ev.uid)) || (ev.type === 'push' && ev.moved && ev.out)) t.whiffs++;
+      if (ev.type === 'defeat' && ally(ev.uid)) t.allyFell = true;
+    }
+  }
+  return t;
+}
+
+function runChainRoundInner(s0: ChainState, plan: ChainPlanStep[]): { state: ChainState; frames: ChainFrame[] } {
   const s = cloneChain(s0);
   s.timeShift = 0;
   s.actedAt = {};

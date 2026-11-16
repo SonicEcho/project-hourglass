@@ -3,6 +3,8 @@ import { extendBoard } from './navi';
 import type { ChainBasicMod, ChainPassive } from './chain';
 import type { CharacterDef, Element, PassiveEffect, Stats } from './types';
 import { lostKey } from './lost';
+import type { BattleRecordId } from './battleRecord';
+import { battleRecord } from './battleRecord';
 
 // 武器ビルドアップ（段階9）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
@@ -59,7 +61,9 @@ export type EvolutionCondition =
   /** 火・氷・雷のどれかが min 以上（段階197。ハルトの記の系統） */
   | { kind: 'elementAny'; min: number }
   /** 依頼（落とし物）を届けた（段階221。寄り道③。name は依頼の名前。物語の変数の `落とし物:<lost>` が delivered） */
-  | { kind: 'lost'; lost: string; name: string };
+  | { kind: 'lost'; lost: string; name: string }
+  /** 戦い方の記録が min 以上（段階222。寄り道④。物語の変数の `戦い方:<record>:<武器の持ち主>`。label は条件の文） */
+  | { kind: 'record'; record: BattleRecordId; min: number; label: string };
 
 /** 進化の条件の確かめ（レベル、加わった時の選択も含む） */
 export type EvolutionCheck = EvolutionCondition | { kind: 'level'; min: number } | { kind: 'join' };
@@ -465,7 +469,9 @@ export function evolutionChecks(
               ? Math.max(w.params.fire, w.params.ice, w.params.thunder) >= c.min
               : c.kind === 'lost'
                 ? vars[lostKey(c.lost)] === 'delivered'
-                : tendencyOf(w) === c.color;
+                : c.kind === 'record'
+                  ? battleRecord(vars, c.record, data.weapons[w.defId]?.owner ?? '') >= c.min
+                  : tendencyOf(w) === c.color;
     checks.push({ condition: c, ok });
   }
   return checks;

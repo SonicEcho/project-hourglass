@@ -24,6 +24,7 @@ export * from './playlog';
 export * from './bark';
 export * from './exchange';
 export * from './lost';
+export * from './battleRecord';
 export * from './fade';
 export * from './playtime';
 export * from './recommend';

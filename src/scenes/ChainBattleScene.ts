@@ -41,8 +41,8 @@ import {
 } from '../core';
 import { KAI_CUT_LINES, ENEMY_PART_SPOTS, CHAIN_COACH, CHAIN_COACH_ORDER, CHAIN_TUTORIAL_HAND, CHAIN_TUTORIAL_HAND2, type ChainCoachTarget, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_SHORT_TEXT, CHAIN_ALBUM, CHAIN_ALLY_SPECIALS, CHAIN_ENEMY_SNAPS, CHAIN_ENEMY_SNAP_RATE, CHAIN_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_SETUPS, BATTLE_BGM, BGM, HERO, MIO, type CampaignBattle, ALLY_FACE, CHAIN17_CARD_ART, CHAIN17_MOVE_ART, CHAIN17_SHORT_TEXT, CHAIN_CARD_ART as CHAIN_CARD_ART_16, CHAIN_MOVE_ART as CHAIN_MOVE_ART_16, CHAIN_REWARDS, CHAIN_RULES, CHAIN_SHORT_TEXT as CHAIN_SHORT_TEXT_16, CHAIN_TRAIT_TEXT, CHAIN_TRIAL_BG, CHAIN_TRIALS, chainTrialDef, type ChainStage, ENEMY_ART, FACE_CROP, FACE_CROPS, GEAR_COUNTERS, NAVI_DATA, SE, traitName } from '../data';
 import { activeBondLinks, buildMainChainBattle, chainAlbumDeck, chainEncounterResult, chainTipTriggers, isChainFinish, nextRandom, type ChainBattleDef, type Lineup, type CharacterDef } from '../core';
-import { currentNaviData, currentParty, partyChoice, run, setBattleMark, storyBattleLineup } from './run';
-import { NEW_BARK_MEMORY, pickChainBarks, victoryBark, type Bark, type BarkMemory } from '../core';
+import { currentNaviData, currentParty, partyChoice, run, setBattleMark, setStoryVars, storyBattleLineup } from './run';
+import { NEW_BARK_MEMORY, pickChainBarks, recordBattleStyle, victoryBark, type Bark, type BarkMemory } from '../core';
 import { BARK_CAST, BARK_RULES, BARK_SHOW_MS, BARKS } from '../data';
 import { portraitImageId } from '../ui/portrait';
 import type { BattleSceneData } from './chainEncounter';
@@ -2803,6 +2803,8 @@ export class ChainBattleScene extends Phaser.Scene {
       if (run.battle) setBattleMark(null);
       // ライブラリ（段階167）：会った敵・倒した敵・分かった弱点
       recordChainBattle(s);
+      // 戦い方の記録（段階222。武器の寄り道④）
+      setStoryVars(recordBattleStyle(run.vars, s));
       // 敵のスナップ（段階165）：区画を作り直した戦闘だけ。★3 の時に確率で
       const snapRule = CHAIN_AREA_SETUPS[this.areaBattle!.id]
         ? { snaps: CHAIN_ENEMY_SNAPS, rate: CHAIN_ENEMY_SNAP_RATE, owned: run.chainAlbum.owned, copyMax: CHAIN_ALBUM.copyMax, boss: !!this.areaBattle!.boss }

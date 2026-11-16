@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { EvolutionDef, EvolutionVisibility, WeaponData, WeaponState } from '../core';
-import { evolutionChecks, evolutionTier, evolutionVisibility, findEvolution } from '../core';
+import { battleRecord, evolutionChecks, evolutionTier, evolutionVisibility, findEvolution } from '../core';
 import { itemHint } from '../data';
 import { FRAME_COLORS } from './frame';
 import { addText } from './widgets';
@@ -183,6 +183,8 @@ export function treeDetail(D: WeaponData, w: WeaponState, id: string, items: Rec
           ...evo.conditions.flatMap((ch) => (ch.kind === 'key' ? [`鍵「${D.items[ch.item]?.name}」：${itemHint(ch.item)}`] : [])),
           // 段階221：依頼の寄り道の手がかり
           ...evo.conditions.flatMap((ch) => (ch.kind === 'lost' ? [`依頼「${ch.name}」：拠点の落とし物の棚で受け、砂の底で声をたどって届ける`] : [])),
+          // 段階222：戦い方の記録の今の数（その仲間が出て勝った戦闘で数える）
+          ...evo.conditions.flatMap((ch) => (ch.kind === 'record' ? [`今の記録：${Math.min(battleRecord(vars, ch.record, D.weapons[w.defId]?.owner ?? ''), ch.min)}/${ch.min}（その仲間が出て勝った戦闘で数える）`] : [])),
         ].join('\n'),
       };
     }
