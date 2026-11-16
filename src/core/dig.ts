@@ -434,14 +434,10 @@ function rollItem(items: Record<DigRarity, string[]>, weights: Record<DigRarity,
 }
 
 /** 宝箱の中身：1〜2個 */
+/** 宝箱の中身（段階224。開発者の声：1つの宝箱に素材は1つまで） */
 function rollChest(items: Record<DigRarity, string[]>, weights: Record<DigRarity, number>, rand: () => number, pick: <T>(l: readonly T[]) => T): string[] {
-  const n = rand() < 0.35 ? 2 : 1;
-  const out: string[] = [];
-  for (let i = 0; i < n; i++) {
-    const id = rollItem(items, weights, rand, pick);
-    if (id) out.push(id);
-  }
-  return out;
+  const id = rollItem(items, weights, rand, pick);
+  return id ? [id] : [];
 }
 
 /** その状態とマスから決まる乱数（鉱脈の中身・砂嵐の動き。同じ手なら同じ結果） */
@@ -666,17 +662,24 @@ export function takeChest(def: DigWorldDef, s: DigState, cell: number): { state:
   return { state: { ...s, tiles, chests, bag: [...s.bag, ...taken] }, left };
 }
 
-/** かばんの1つを捨てて、宝箱の物と入れ替える（捨てた物は宝箱に残る） */
+/**
+ * かばんの1つを捨てて、宝箱の物と入れ替える。段階224（開発者の声）：捨てた物は残さず、宝箱は消える（空洞に戻る。
+ * 宝箱に残りがあれば、残りの分だけの宝箱のまま）
+ */
 export function swapChest(s: DigState, cell: number, bagIndex: number, item: string): DigState {
   const items = s.chests[cell] ?? [];
   const at = items.indexOf(item);
   if (at < 0 || bagIndex < 0 || bagIndex >= s.bag.length) return s;
-  const dropped = s.bag[bagIndex];
   const bag = [...s.bag];
   bag[bagIndex] = item;
-  const rest = [...items];
-  rest[at] = dropped;
-  return { ...s, bag, chests: { ...s.chests, [cell]: rest } };
+  const rest = items.filter((_, i) => i !== at);
+  const chests = { ...s.chests };
+  const tiles = [...s.tiles];
+  if (rest.length === 0) {
+    delete chests[cell];
+    tiles[cell] = 'air';
+  } else chests[cell] = rest;
+  return { ...s, bag, tiles, chests };
 }
 
 /** 番人に勝った：通り道が開き、戦った分の砂が減る */

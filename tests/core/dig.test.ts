@@ -72,6 +72,8 @@ describe('砂の底：地面を作る', () => {
     expect(Object.keys(a.chests).map(Number).sort((x, y) => x - y)).toEqual(chests);
     for (const c of chests) {
       const layer = digLayerAt(SAND_BOTTOM, Math.floor(c / a.width));
+      // 段階224：1つの宝箱に素材は1つまで
+      expect(a.chests[c].length).toBeLessThanOrEqual(1);
       for (const id of a.chests[c]) expect([...layer.items.common, ...layer.items.uncommon, ...layer.items.rare], id).toContain(id);
     }
     expect(a.roamers.length).toBeGreaterThan(3);
@@ -160,9 +162,11 @@ describe('砂の底：宝箱とかばん', () => {
     expect(t.state.bag).toEqual(['c2', 'c2', 'c1']);
     expect(t.left).toEqual(['u1']);
     expect(t.state.tiles[cell]).toBe('chest');
+    // 段階224：入れ替えたら、捨てた物は残らず宝箱が消える
     const sw = swapChest(t.state, cell, 0, 'u1');
     expect(sw.bag).toEqual(['u1', 'c2', 'c1']);
-    expect(sw.chests[cell]).toEqual(['c2']);
+    expect(sw.chests[cell]).toBeUndefined();
+    expect(sw.tiles[cell]).toBe('air');
     const all = takeChest(DEF, { ...s, bag: [] }, cell);
     expect(all.state.tiles[cell]).toBe('air');
     expect(all.state.chests[cell]).toBeUndefined();

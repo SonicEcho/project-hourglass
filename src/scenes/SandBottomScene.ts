@@ -999,7 +999,7 @@ export class SandBottomScene extends Phaser.Scene {
   private swap(cell: number, bagIndex: number, item: string): void {
     const dropped = this.s.bag[bagIndex];
     this.s = swapChest(this.s, cell, bagIndex, item);
-    this.message = `${itemName(dropped)} を捨てて、${itemName(item)} を入れた（捨てた物は宝箱に残る）`;
+    this.message = `${itemName(dropped)} を捨てて、${itemName(item)} を入れた`;
     this.closeOverlay();
   }
 
