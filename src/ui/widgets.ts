@@ -6,6 +6,23 @@ import { SE } from '../data';
 import { sparkAt } from './skin';
 import { wrapJapanese } from './kinsoku';
 
+// 段階230 の直し（開発者の声：斜体の数字の右の端が切れる）：斜体の字は右へ傾くぶん、文字の枠からはみ出して切れる。
+// 斜体にした時は、字の大きさに合わせて右に余白を足す（どの画面でも。ここで1回だけ置き換える）
+type SetFontStyle = (style: string) => Phaser.GameObjects.Text;
+const textProto = Phaser.GameObjects.Text.prototype as unknown as { setFontStyle: SetFontStyle; __italicPad?: boolean };
+if (!textProto.__italicPad) {
+  const setFontStyle = textProto.setFontStyle;
+  textProto.setFontStyle = function (this: Phaser.GameObjects.Text, style: string) {
+    const out = setFontStyle.call(this, style);
+    if (style.includes('italic')) {
+      const size = parseFloat(String(this.style.fontSize)) || 16;
+      this.setPadding(0, 0, Math.ceil(size * 0.3), 0);
+    }
+    return out;
+  };
+  textProto.__italicPad = true;
+}
+
 export const LONG_PRESS_MS = 500;
 
 export interface TextStyle {
