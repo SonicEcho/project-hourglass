@@ -4,7 +4,7 @@ import { canEvolveAny, chapterLocked, findBugs, findNode, getOpenError, isOpened
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
-import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
+import { ALLY_COLOR, COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
@@ -101,7 +101,7 @@ export class GrowthScene extends Phaser.Scene {
     const chapters = [...new Set(GROWTH_MAP.nodes.flatMap((n) => (n.chapter !== undefined && n.chapter <= now ? [n.chapter] : [])))];
     const fresh = chapters.filter((c) => run.vars[`星図:広がった:${c}`] !== '1');
     if (fresh.length === 0) return;
-    this.message = '星図が広がった！　上の方に、新しい星が現れた';
+    this.message = '星図が広がりました！ 上の方に、新しい星が現れています';
     setStoryVars({ ...run.vars, ...Object.fromEntries(fresh.map((c) => [`星図:広がった:${c}`, '1'])) });
   }
 
@@ -143,7 +143,7 @@ export class GrowthScene extends Phaser.Scene {
   private open(nodeId: string): void {
     const node = findNode(GROWTH_MAP, nodeId)!;
     run.growth = openNode(GROWTH_MAP, run.growth, this.base(), nodeId, growthChapter(hubLineup()));
-    this.message = `${this.base().name}：${nodeTitle(node, this.base())}を開けた`;
+    this.message = `${this.base().name}の「${nodeTitle(node, this.base())}」を開けました`;
     console.log('[growth]', this.charId, nodeId, `points=${run.growth.points}`);
     this.selected = null;
     this.render();
@@ -537,24 +537,36 @@ export class GrowthScene extends Phaser.Scene {
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = INFO_TOP;
     const h = INFO_H;
-    // すりガラスの札（段階144）：夜空が透ける薄い地に、金の細いふち
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, 0x1a2040, 0.72).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.gold, 0.45));
-    this.root.add(this.add.rectangle(SIDE_PADDING + 1, top + 1, GAME_WIDTH - SIDE_PADDING * 2 - 2, h / 2, 0xffffff, 0.05).setRounded(11).setOrigin(0));
+    // 段階229（見た目の決まり）：説明の箱は、黒い地に白い枠・左に紅の帯（夜空が少し透ける）
+    this.root.add(addWindow(this, SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, STYLE.red, STYLE.ink, 0.86));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
       const advice = this.advice();
-      const lines = [
-        this.message || `${base.name}の駒を進める。点線の輪の星（開けられる星）をタップ。星図は指でずらせる`,
-        advice
-          ? `おすすめ：${nodeTitle(advice.target, base)}（金の道・あと${advice.cost}pt）`
-          : `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
-        `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}`,
+      // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で。おすすめの文は出さず（ボタンだけ残す）、
+      // 能力値は見出しと数字に分けて1列に並べる
+      const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 24;
+      const left = SIDE_PADDING + 14;
+      const msg = this.message || `点線の輪の星をタップで説明、もう一度タップで開けます。開けた星の力で、${base.name}が強くなります`;
+      this.root.add(addText(this, left, top + 10, msg, { size: 12, wrap: textW, ja: true }));
+      const stats: [string, number][] = [
+        ['HP', grown.stats.hp],
+        ['MP', grown.stats.mp],
+        ['攻撃', grown.stats.atk],
+        ['魔力', grown.stats.mag],
+        ['防御', grown.stats.def],
       ];
-      const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
-      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
+      const sy = top + h - 46;
+      this.root.add(this.add.rectangle(left, sy - 6, textW, 1, 0xffffff, 0.25).setOrigin(0));
+      this.root.add(addText(this, left, sy - 1, base.name, { size: 11, bold: true, color: STYLE.redText }).setFontStyle('bold italic'));
+      const colW = textW / stats.length;
+      stats.forEach(([label, value], i) => {
+        const cx = left + colW * i;
+        this.root.add(addText(this, cx, sy + 14, label, { size: 10, color: COLORS.subText }));
+        this.root.add(addText(this, cx, sy + 26, String(value), { size: 15, bold: true }));
+      });
       if (advice) {
-        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, stroke: FRAME_COLORS.gold, size: 13, bold: true });
+        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, size: 13, bold: true });
       }
       return;
     }

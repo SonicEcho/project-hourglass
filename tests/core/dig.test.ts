@@ -72,6 +72,8 @@ describe('砂の底：地面を作る', () => {
     expect(Object.keys(a.chests).map(Number).sort((x, y) => x - y)).toEqual(chests);
     for (const c of chests) {
       const layer = digLayerAt(SAND_BOTTOM, Math.floor(c / a.width));
+      // 段階224：1つの宝箱に素材は1つまで
+      expect(a.chests[c].length).toBeLessThanOrEqual(1);
       for (const id of a.chests[c]) expect([...layer.items.common, ...layer.items.uncommon, ...layer.items.rare], id).toContain(id);
     }
     expect(a.roamers.length).toBeGreaterThan(3);
@@ -160,9 +162,11 @@ describe('砂の底：宝箱とかばん', () => {
     expect(t.state.bag).toEqual(['c2', 'c2', 'c1']);
     expect(t.left).toEqual(['u1']);
     expect(t.state.tiles[cell]).toBe('chest');
+    // 段階224：入れ替えたら、捨てた物は残らず宝箱が消える
     const sw = swapChest(t.state, cell, 0, 'u1');
     expect(sw.bag).toEqual(['u1', 'c2', 'c1']);
-    expect(sw.chests[cell]).toEqual(['c2']);
+    expect(sw.chests[cell]).toBeUndefined();
+    expect(sw.tiles[cell]).toBe('air');
     const all = takeChest(DEF, { ...s, bag: [] }, cell);
     expect(all.state.tiles[cell]).toBe('air');
     expect(all.state.chests[cell]).toBeUndefined();
@@ -598,5 +602,18 @@ describe('砂の底：帰り道の砂（段階216）', () => {
     for (let i = 0; i < 10; i++) s = stepDig(SAND_BOTTOM, s, 'up').state;
     expect(s.y).toBe(0);
     expect(start - s.sand).toBe(10);
+  });
+});
+
+describe('砂の底：「誰が掘る？」の数の枠（段階230）', () => {
+  it('4つの枠は、掘る砂・固い土・岩・勝った時。ふつうより得意な所だけ up', async () => {
+    const { diggerStats } = await import('../../src/data');
+    const v = (id: string) => diggerStats(id).map((x) => `${x.label}:${x.value}${x.up ? '↑' : ''}`);
+    expect(v('hero')).toEqual(['掘る砂:3', '固い土:2回', '岩:✕', '勝った時:ー']);
+    expect(v('akari')).toEqual(['掘る砂:3', '固い土:2回', '岩:✕', '勝った時:HP+2割↑']);
+    expect(v('mio')).toEqual(['掘る砂:3', '固い土:1回↑', '岩:✕', '勝った時:ー']);
+    expect(v('sayoko')).toEqual(['掘る砂:3', '固い土:2回', '岩:砂6↑', '勝った時:ー']);
+    expect(v('hayase')).toEqual(['掘る砂:2↑', '固い土:2回', '岩:✕', '勝った時:ー']);
+    for (const id of Object.keys(SAND_BOTTOM_DIGGERS)) expect(SAND_BOTTOM_DIGGERS[id].tag.length, id).toBeGreaterThan(0);
   });
 });

@@ -33,12 +33,13 @@ describe('ライブラリに載る物（1-1・1-2）', () => {
     expect(lord.parts).toHaveLength(2);
     expect(LIBRARY_ENEMIES.every((e) => e.areas.length > 0)).toBe(true);
   });
-  it('素材：落とす敵が分かり、すべて素材の一覧にある', () => {
+  it('素材：落とす敵が分かり、すべて素材の一覧にある（段階233：砂の底だけの素材は落とす敵なし）', () => {
     expect(LIBRARY_ITEMS.length).toBeGreaterThan(0);
     for (const it of LIBRARY_ITEMS) {
       expect(WEAPON_DATA.items[it.id]).toBeDefined();
-      expect(it.sources.length).toBeGreaterThan(0);
+      if (!it.id.startsWith('dig')) expect(it.sources.length).toBeGreaterThan(0);
     }
+    expect(LIBRARY_ITEMS.some((it) => it.id === 'digScent')).toBe(true);
   });
   it('セーブの材料が、載る物とそろっている', () => {
     expect(LIBRARY_CONTEXT.snaps).toEqual(LIBRARY_SNAPS.map((m) => m.id));

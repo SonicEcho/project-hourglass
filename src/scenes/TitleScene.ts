@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { battleSceneFor } from './chainEncounter';
-import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
+import { COLORS, RENDER_SCALE, TITLE_EXIT, STYLE } from '../ui/theme';
 import { addImageOr, preloadQueue } from '../assets/loader';
 import { dialogueImages, focusImages, startWithImages } from '../ui/waitImages';
 import { addButton, addText } from '../ui/widgets';
@@ -166,7 +166,7 @@ export class TitleScene extends Phaser.Scene {
       console.error('[save] セーブを読めませんでした', save.error);
       moveBrokenSave();
     }
-    const strong = { size: 20, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 };
+    const strong = { size: 20, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true };
     const startNew = () => {
       notePlayStart();
       startNewRun();
@@ -338,7 +338,7 @@ export class TitleScene extends Phaser.Scene {
           panel.destroy(true);
           this.openTips(g.id);
         },
-      }, on ? { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent } : { size: 15 });
+      }, on ? { size: 15, bold: true, fill: STYLE.red, stroke: 0xffffff, italic: true } : { size: 15 });
     });
     const seen = seenTips();
     const name = groups.find((g) => g.id === group)?.name ?? '';

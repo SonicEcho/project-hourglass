@@ -5,7 +5,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { playSandRise, playTick } from '../audio/sound';
 import { AREAS, BACKDROPS, CHAIN_SNAPS, FRAGMENTS } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { describeFragment } from '../ui/weaponText';
 import { addButton, addText } from '../ui/widgets';
 import { run, saveRun } from './run';
@@ -71,10 +71,10 @@ export class ReturnScene extends Phaser.Scene {
     addButton(this, this.root, GAME_WIDTH / 2, 700, 240, 64, '返す', { onTap: () => this.giveBack() }, {
       size: 22,
       bold: true,
-      fill: 0x5a4a10,
-      stroke: COLORS.accent,
+      fill: STYLE.red,
+      stroke: 0xffffff,
       strokeWidth: 3,
-      textColor: COLORS.accentText,
+      italic: true,
     });
     this.root.add(addText(this, GAME_WIDTH / 2, 760, '集めたコマで、盗まれた時間を持ち主に返す', { size: 12, color: COLORS.subText }).setOrigin(0.5));
     this.cameras.main.fadeIn(400, 0, 0, 0);

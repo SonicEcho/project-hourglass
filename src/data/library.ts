@@ -1,6 +1,7 @@
 import type { ChainEnemyDef, ChainLinkDef, ChainMove, EnemyDef, LibraryContext } from '../core';
 import { AREAS, AREA_BATTLES } from './areas';
 import { CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS } from './chainAreas';
+import { SAND_BOTTOM_FINDS } from './sandBottom';
 import { WEAPON_DATA } from './weapons';
 
 // ライブラリに載る物（段階167）：新しい戦闘で戦う区画（CHAIN_AREA_SETUPS）から集める。
@@ -71,6 +72,10 @@ function collectItems(): LibraryItem[] {
     const t = e.base.dropTable;
     for (const id of [t?.common, t?.uncommon, t?.rare, ...(e.base.drops ?? [])]) if (id) add(id, e.base.name);
     for (const p of e.parts) if (p.drop) add(p.drop, `${e.base.name}の${p.name}`);
+  }
+  // 段階233：砂の底だけの素材も載せる（落とす敵はない。手に入る所は librarySources.ts）
+  for (const f of SAND_BOTTOM_FINDS) {
+    for (const id of [...f.digCommon, ...f.digRare]) if (WEAPON_DATA.items[id] && !out.has(id)) out.set(id, { id, sources: [], keys: [] });
   }
   for (const w of Object.values(WEAPON_DATA.weapons)) {
     for (const evo of w.evolutions) {

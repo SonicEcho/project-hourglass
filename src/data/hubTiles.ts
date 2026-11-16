@@ -20,6 +20,38 @@ export const HUB_TILE_ART: Record<HubTileId, string[]> = {
   sandBottom: ['tile.sandBottom', 'cg.cut_ground'],
 };
 
+/**
+ * 拠点の斜めのタイル（段階226）で、絵を下へずらす量（タイルの高さに対する割合。開発者の声：武器・交換所・落とし物の絵を少し下へ）。
+ * 大きさは変えない（大きくすると横がはみ出す）。上に空いた所は暗くぼかす
+ */
+export const HUB_TILE_SHIFT: Record<string, number> = {
+  'tile.weapon': 0.14,
+  'tile.exchange': 0.14,
+  'tile.lost': 0.14,
+};
+
+/**
+ * 拠点の斜めのタイルで、絵の下を切り落とす割合（段階227 の直し。開発者の声：ライブラリの下半分が切れて見える）。
+ * ライブラリの絵は下の方が暗い空の引き出しなので、下を少し落として、上の明るい所を大きく見せる（左右も同じ割合で狭まる）
+ */
+export const HUB_TILE_CROP_BOTTOM: Record<string, number> = {
+  'tile.library_tall': 0.2,
+};
+
+/** 拠点の立ち絵の大きさ（高さ）と上の端（段階227 の直し。開発者の声：みおが少し大きい。みおは小学4年なので小さめに） */
+export const HUB_PORTRAIT_FIT: Record<string, { height: number; top: number }> = {
+  mio: { height: 370, top: 140 },
+};
+
+/** 拠点の斜めのタイル（縦長）で先に使う絵（段階227。届いた物だけ。休憩所の横長のタイルは HUB_TILE_ART のまま） */
+export const HUB_TILE_TALL: Partial<Record<HubTileId, string>> = {
+  growth: 'tile.growth_tall',
+  weapon: 'tile.weapon_tall',
+  library: 'tile.library_tall',
+  exchange: 'tile.exchange_tall',
+  lost: 'tile.lost_tall',
+};
+
 /** 絵の中で見せたい所の高さ（0 が上の端、1 が下の端。切り抜く時の中心）。書いていない絵は真ん中 */
 export const HUB_TILE_FOCUS: Record<string, number> = {
   'cg.fireworks': 0.35,
@@ -31,3 +63,4 @@ export const HUB_TILE_FOCUS: Record<string, number> = {
   'bg.clock_shop': 0.4,
   'bg.shopping_street': 0.4,
 };
+

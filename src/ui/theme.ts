@@ -18,10 +18,11 @@ export const FONT_HAND = `"${HAND_FONT_NAME}", ${FONT}`;
 
 // 画面の部品の色（段階32a で藍寄りに整えた。docs/ART.md の 2.「全体・画面の部品：茜色と藍色、砂色」）
 export const COLORS = {
-  bg: 0x121831,
-  panel: 0x1d2544,
-  panelLight: 0x2b3560,
-  border: 0x4a5888,
+  // 段階225（テーマ「スタイリッシュ」）：地と枠を藍から黒に近い色へ（字の色は戦闘画面も使うので、そのまま）
+  bg: 0x0d0a0d,
+  panel: 0x16141a,
+  panelLight: 0x26232c,
+  border: 0x5a5a62,
   text: '#ffffff',
   subText: '#aab4d4',
   dimText: '#646f94',
@@ -32,7 +33,7 @@ export const COLORS = {
   hpLow: 0xff6b4a,
   mp: 0x5aa8ff,
   barBg: 0x0a0e1e,
-  disabled: 0x232a44,
+  disabled: 0x24222a,
   ally: 0x3f7fbf,
   enemy: 0xbf4f4f,
   heal: '#6dff9e',
@@ -92,12 +93,36 @@ export const SKIN = {
   /** 押した時の縮み */
   pressScale: 0.95,
   /** 背景の色の移り変わり（上・真ん中・下）と、地平の夕焼けの色 */
-  bgTop: 0x1f2752,
-  bgMiddle: 0x121831,
-  bgBottom: 0x1d1830,
-  bgGlow: 0xe07a4f,
+  // 段階225：黒に近い地と、下からうっすら紅
+  bgTop: 0x1a0a0e,
+  bgMiddle: 0x0d0a0d,
+  bgBottom: 0x120709,
+  bgGlow: 0xe8193f,
   /** 砂の粒の色（砂色。docs/STORY.md の暗い金より明るい、画面の部品用） */
   sand: 0xe8c784,
+} as const;
+
+/**
+ * 見た目の決まり（段階225。テーマ「スタイリッシュ」。docs/milestones/M3_ui_polish.md の 6.）：
+ * 黒い地・紅の差し色・白い字と枠・黄の知らせ。ボタンやタブは右へ傾けた平行四辺形で、影は斜めにずらした黒（ぼかさない）
+ */
+export const STYLE = {
+  red: 0xe8193f,
+  redText: '#e8193f',
+  /** 押せない紅（暗い） */
+  redDim: 0x5a1a26,
+  ink: 0x0b0a0c,
+  paper: 0xffffff,
+  /** 知らせ（進化できる・新しい） */
+  yellow: 0xffd400,
+  yellowText: '#ffd400',
+  /** 選んでいない物のふち */
+  line: 0x5a5a62,
+  /** 傾き：高さに対する横のずれの割合（上限 slantMax） */
+  slant: 0.28,
+  slantMax: 14,
+  /** 影のずれ */
+  shadow: 4,
 } as const;
 
 /** 動きの長さ（ミリ秒。段階32a 調整1） */

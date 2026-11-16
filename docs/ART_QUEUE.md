@@ -186,6 +186,142 @@ An old photo album lying open on a wooden table in warm evening light, a few fad
 Absolutely no letters or text anywhere.
 ```
 
+### W. 拠点のメニューの絵（段階226・227。開発者が先に全部用意する）
+
+拠点のメニュー（`addSlantTile`）は縦長の斜めのカード（4列）と、横長の「砂の底へ」の帯。今の絵は横長（3:2）で、縦に切ると端が切れるので、全部頼み直す。
+毎回、絵柄の見本として添付の絵（今のタイルの絵）を付ける。届いたら：縦長は 512×768、砂の底は 768×512 の WebP にして `public/assets/tiles/<名前>_tall.webp`（砂の底は `sandBottom.webp`）に置き、
+台帳（`src/data/assets.ts` の `tileArt`）に足す。拠点（縦長）は新しい絵、休憩所（横長のタイル）は今の絵のまま使い分ける
+
+#### 13. 砂の底（横長の帯）
+
+- cg.cut_ground の代わり。添付：`public/assets/tiles/navi.webp`
+- 保存名：`tile_sandBottom.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A large banner illustration for the hub screen of a mobile RPG. Horizontal 3:2 image (1536×1024). The banner will be cut into a wide slanted strip (about 2.3:1), so keep the main subject in the middle band of the image, with the top and bottom simple. Keep the lower-left corner darker and simple, because a red label will be placed over it. Rich, glowing light against deep shadows. Match the art style of the attached tile illustration.
+A deep cross-section of sand strata beneath the library of memories, like the bottom of a giant hourglass: layers of sand in different warm colors with small glowing keepsakes and tiny lights buried in them. On the left, a small figure with a shovel stands at the mouth of a dug tunnel leading down and to the right into the glowing depths; golden sand trickles down from far above like a waterfall of time.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 14. 星図
+
+- 添付：`public/assets/tiles/growth.webp`（今の絵。同じ題材で縦長に）
+- 保存名：`tile_growth_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A deep indigo night sky full of stars above the library of memories. Near the bottom stands a large antique hourglass whose falling sand glitters like stardust and rises upward into the sky, becoming new stars; above it, several stars are linked by thin glowing golden lines into a tall constellation that climbs toward the top of the image.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 15. 武器
+
+- 添付：`public/assets/tiles/weapon.webp`
+- 保存名：`tile_weapon_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A single slender sword standing upright, point down, on dark crimson velvet in the library of memories, its blade faintly glowing with a crimson light, as if remembering the boy who wields it. Above and behind it, faint silver octagonal emblems linked by thin crimson lines float in the dark like a family tree. Floating grains of golden sand.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 16. ムーブメント
+
+- 添付：`public/assets/tiles/navi.webp`
+- 保存名：`tile_navi_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+An antique pocket watch hanging by its chain from the top of the image, its back cover open, showing the beautiful clockwork movement: interlocking gears made of four metals (copper, blued steel, green bronze and yellow brass), tiny red ruby jewels, blued screws, and a golden balance wheel in motion. Warm light catching the metal edges, dark velvet background.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 17. アルバム
+
+- 添付：`public/assets/tiles/album.webp`
+- 保存名：`tile_album_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+An old photo album lying open on a dark wooden desk, seen from above, lit by a warm desk lamp. Several slightly faded instant photos are taped onto cream-colored pages in a vertical column; the photos show only soft blurry colors of everyday moments (a festival night, a riverside sunset, a classroom), with no clear faces. A roll of masking tape and a few loose photos at the edge.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 18. 並び
+
+- 添付：`public/assets/tiles/party.webp`
+- 保存名：`tile_party_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A narrow country path at night running straight away from the viewer into soft mist, seen from the middle of the path. Small old-fashioned oil lanterns stand on both sides; only the nearest few are lit with a warm golden glow, the rest stand unlit and fade into the deep mist. A quiet feeling of choosing who will walk the road together tonight. No people, no hands, no silhouettes, no footprints.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 19. ライブラリ
+
+- 今は蔵書の棚の背景で代わり。添付：`public/assets/tiles/navi.webp`
+- 保存名：`tile_library_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A tall wooden card catalog cabinet in a quiet corner of the library of memories, seen from the front, its many small drawers rising up to the top of the image. One drawer in the middle is pulled open, filled with neat rows of record cards; a few cards are lifted out, each with a tiny glowing picture of a snapshot, a monster silhouette or a small material, like a collector's index. Warm desk-lamp light, floating grains of golden sand.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 20. 交換所
+
+- 添付：`public/assets/tiles/exchange.webp` と、ペトラの立ち絵
+- 保存名：`tile_exchange_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A neat exchange counter between tall bookshelves in the library of memories, seen from the front: a brass balance scale in the center, glass jars of glowing sand and small crystal memory fragments on the shelves above, a thick ledger and a rubber stamp on the counter. Behind the counter, the clerk in the attached portrait is seen small, adjusting her glasses while checking the ledger.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 21. 落とし物
+
+- 添付：`public/assets/tiles/lost.webp`
+- 保存名：`tile_lost_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A tall narrow wooden shelf of lost things in a quiet corner of the library of memories, each item with a little paper tag tied by string (the tags are blank), arranged from top to bottom: a child's straw hat, a red umbrella, a wind-up tin toy, a music box, a single glove, an old cassette tape. A soft golden glow on each item, as if waiting for its owner.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 22. 町の小話
+
+- 添付：`public/assets/tiles/talks.webp`
+- 保存名：`tile_talks_tall.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+A narrow Japanese shopping street at dusk seen straight down its length, with paper lanterns and shop lights coming on and receding into the distance. In the lower middle, a few townspeople chatting in front of a bakery and a candy shop, a cat on a bench, warm windows. People are small and seen from the side or behind. A peaceful, everyday evening.
+Absolutely no letters, numbers or text anywhere.
+```
+
 ## 済んだ絵
 
 届いてゲームに入れた絵（指示文は `scripts/art_queue.py` と台帳 `src/data/assets.ts`）。

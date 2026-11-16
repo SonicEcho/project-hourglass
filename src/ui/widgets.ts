@@ -1,10 +1,27 @@
 import Phaser from 'phaser';
-import { COLORS, FONT, FONT_HAND, FONT_HEADING, MOTION, RENDER_SCALE, SKIN } from './theme';
+import { COLORS, FONT, FONT_HAND, FONT_HEADING, MOTION, RENDER_SCALE, SKIN, STYLE } from './theme';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
 // 角の丸い四角をなめらかに描く置き換え（skin.ts）を、どの画面よりも先に入れる
 import { sparkAt } from './skin';
 import { wrapJapanese } from './kinsoku';
+
+// 段階230 の直し（開発者の声：斜体の数字の右の端が切れる）：斜体の字は右へ傾くぶん、文字の枠からはみ出して切れる。
+// 斜体にした時は、字の大きさに合わせて右に余白を足す（どの画面でも。ここで1回だけ置き換える）
+type SetFontStyle = (style: string) => Phaser.GameObjects.Text;
+const textProto = Phaser.GameObjects.Text.prototype as unknown as { setFontStyle: SetFontStyle; __italicPad?: boolean };
+if (!textProto.__italicPad) {
+  const setFontStyle = textProto.setFontStyle;
+  textProto.setFontStyle = function (this: Phaser.GameObjects.Text, style: string) {
+    const out = setFontStyle.call(this, style);
+    if (style.includes('italic')) {
+      const size = parseFloat(String(this.style.fontSize)) || 16;
+      this.setPadding(0, 0, Math.ceil(size * 0.3), 0);
+    }
+    return out;
+  };
+  textProto.__italicPad = true;
+}
 
 export const LONG_PRESS_MS = 500;
 
@@ -86,11 +103,19 @@ export interface ButtonOptions {
   size?: number;
   enabled?: boolean;
   bold?: boolean;
+  /** 字を斜体にする（押してほしいボタン。段階225） */
+  italic?: boolean;
+}
+
+/** 右へ傾けた平行四辺形（段階225。真ん中が x, y） */
+export function addSlant(scene: Phaser.Scene, x: number, y: number, w: number, h: number, fill: number, alpha = 1): Phaser.GameObjects.Polygon {
+  const k = Math.min(STYLE.slantMax, h * STYLE.slant);
+  return scene.add.polygon(x, y, [k, 0, w, 0, w - k, h, 0, h], fill, alpha);
 }
 
 /**
- * ボタン。中心座標で置く。角が丸く、下に影、上半分にうっすら光。押すと少し沈む（段階32a）。
- * 返す四角の色（setFillStyle・setStrokeStyle）は、あとから替えてよい
+ * ボタン。中心座標で置く（段階225：右へ傾けた平行四辺形・斜めにずらした黒い影。押すと少し沈む）。
+ * 返す四角はタップを受ける透明の四角。setFillStyle・setStrokeStyle は見えている形に伝えるので、あとから色を替えてよい
  */
 export function addButton(
   scene: Phaser.Scene,
@@ -104,26 +129,37 @@ export function addButton(
   opts: ButtonOptions = {},
 ): Phaser.GameObjects.Rectangle {
   const enabled = opts.enabled ?? true;
-  const radius = Math.min(SKIN.buttonRadius, h / 2);
-  // 押せないボタンは影と光をなくし、ふちも薄くして、押せるボタンと見分けやすくする（段階32a 調整1）
-  const shadow = scene.add.rectangle(x, y + SKIN.shadowOffset, w, h, 0x000000, enabled ? 0.38 : 0).setRounded(radius);
-  const rect = scene.add.rectangle(x, y, w, h, enabled ? (opts.fill ?? COLORS.panelLight) : COLORS.disabled).setRounded(radius);
-  rect.setStrokeStyle(opts.strokeWidth ?? 1, opts.stroke ?? COLORS.border, enabled ? 1 : 0.45);
-  const sheen = scene.add.rectangle(x, y - h / 4 + 1, w - 6, h / 2 - 3, 0xffffff, enabled ? 0.07 : 0).setRounded(Math.max(0, radius - 3));
+  const shadow = addSlant(scene, x + STYLE.shadow, y + STYLE.shadow, w, h, 0x000000, enabled ? 0.75 : 0);
+  const face = addSlant(scene, x, y, w, h, enabled ? (opts.fill ?? STYLE.ink) : COLORS.disabled, enabled ? 1 : 0.7);
+  face.setStrokeStyle(opts.strokeWidth ?? 1.5, opts.stroke ?? STYLE.paper, enabled ? 1 : 0.35);
   const text = addText(scene, x, y, label, {
     size: opts.size ?? 14,
     color: enabled ? (opts.textColor ?? COLORS.text) : COLORS.dimText,
     align: 'center',
     bold: true,
-    wrap: w - 6,
+    wrap: w - 14,
   }).setOrigin(0.5);
-  parent.add([shadow, rect, sheen, text]);
+  if (opts.italic) text.setFontStyle('bold italic');
+  // タップを受ける透明の四角（返す物）。色の変更は見えている形へ伝える
+  const rect = scene.add.rectangle(x, y, w, h, 0xffffff, 0.001);
+  const r = rect as unknown as { setFillStyle: (c?: number, a?: number) => Phaser.GameObjects.Rectangle; setStrokeStyle: (lw?: number, c?: number, a?: number) => Phaser.GameObjects.Rectangle };
+  r.setFillStyle = (c?: number, a?: number) => {
+    face.setFillStyle(c, a);
+    return rect;
+  };
+  r.setStrokeStyle = (lw?: number, c?: number, a?: number) => {
+    face.setStrokeStyle(lw, c, a);
+    return rect;
+  };
+  parent.add([shadow, face, text, rect]);
   if (enabled) {
-    // 押した時に少し沈む
-    const face = [rect, sheen, text];
+    // 押した時に少し沈む（影の方へずれる）
     const press = (down: boolean) => {
-      for (const o of face) o.setScale(down ? SKIN.pressScale : 1);
-      for (const o of face) o.y = (o === sheen ? y - h / 4 + 1 : y) + (down ? 2 : 0);
+      for (const o of [face, text]) {
+        o.setScale(down ? SKIN.pressScale : 1);
+        o.x = x + (down ? 2 : 0);
+        o.y = y + (down ? 2 : 0);
+      }
     };
     rect.on('pointerdown', () => press(true));
     rect.on('pointerup', () => press(false));
@@ -136,17 +172,17 @@ export function addButton(
         onTap();
       }),
     });
-    // 押して離した時：ボタンが一瞬光り、砂の粒が散る（段階32a 調整1）
+    // 押して離した時：一瞬白く光り、砂の粒が散る（段階32a 調整1）
     if (onTap) {
       rect.on('pointerup', () => {
         const m = rect.getWorldTransformMatrix();
         sparkAt(scene, m.tx, m.ty);
-        sheen.setAlpha(1).setFillStyle(0xffffff, 0.3);
-        scene.tweens.add({ targets: sheen, alpha: { from: 1, to: 0.23 }, duration: 240 });
+        const flash = addSlant(scene, x, y, w, h, 0xffffff, 0.35);
+        parent.add(flash);
+        scene.tweens.add({ targets: flash, alpha: 0, duration: 220, onComplete: () => flash.destroy() });
       });
     }
-  }
-  else if (handlers.onLongPress) makePressable(rect, { onLongPress: handlers.onLongPress });
+  } else if (handlers.onLongPress) makePressable(rect, { onLongPress: handlers.onLongPress });
   return rect;
 }
 

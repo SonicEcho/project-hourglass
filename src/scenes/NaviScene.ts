@@ -8,7 +8,7 @@ import { gearCounterTraits, NAVI_COACH, PARTY, traitName, type NaviCoachTarget }
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizeTraits } from '../ui/naviText';
 import { addBalanceWheel, drawGear, drawMovementBg, drawPartShape, METAL, PART_COLOR, PART_SHORT } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
+import { ALLY_COLOR, COLORS, RENDER_SCALE, STYLE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, currentParty, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
@@ -148,7 +148,7 @@ export class NaviScene extends Phaser.Scene {
       return;
     }
     if (!sel) {
-      this.message = '先に下の一覧からギアを選ぶ';
+      this.message = '先に、下の一覧からギアを選んでください';
       this.render();
       return;
     }
@@ -184,7 +184,7 @@ export class NaviScene extends Phaser.Scene {
     run.navi = placePart(currentNaviData(), run.navi, sel.uid, ghost);
     const def = currentNaviData().parts[sel.partId];
     const placed = run.navi.parts.find((p) => p.uid === sel.uid)!;
-    this.message = `${def.name}をはめた${def.kind !== 'stat' && !isPartActive(currentNaviData(), placed) ? '（ブリッジに乗っていないので効かない）' : ''}`;
+    this.message = `${def.name}をはめました${def.kind !== 'stat' && !isPartActive(currentNaviData(), placed) ? '。ただし、ブリッジ（効果が効く列）に乗っていないので、まだ効きません' : ''}`;
     console.log('[navi] place', this.charId, sel.partId, JSON.stringify(ghost));
     this.clearSelection();
     this.render();
@@ -194,7 +194,7 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     if (!sel?.placement) return;
     run.navi = removePart(run.navi, sel.uid);
-    this.message = `${currentNaviData().parts[sel.partId].name}を外した`;
+    this.message = `${currentNaviData().parts[sel.partId].name}を外しました`;
     console.log('[navi] remove', sel.partId);
     this.clearSelection();
     this.render();
@@ -521,11 +521,13 @@ export class NaviScene extends Phaser.Scene {
   private drawInfo(): void {
     const top = INFO_TOP;
     const h = INFO_H;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, FRAME_COLORS.panel, 0.92).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.line));
+    // 段階229（見た目の決まり）：説明の箱は、黒い地に白い枠・左に紅の帯
+    this.root.add(addWindow(this, SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, STYLE.red, STYLE.ink, 0.92));
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
-      const text = this.message || '一覧からギアを選び、マスをタップして置く。同じ金属が隣だと狂い。下のセット：タップで付け替え、長押しで今の並べ方を保存';
+      // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で
+      const text = this.message || '下の一覧でギアを選び、盤のマスをタップして置きます。同じ金属を隣に置くと「狂い」が起きます。セットは、タップで付け替え・長押しで今の並べ方を保存';
       this.root.add(addText(this, SIDE_PADDING + 10, top + 8, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
       this.drawLoadouts(top + h - 22);
       return;
@@ -537,12 +539,12 @@ export class NaviScene extends Phaser.Scene {
     const status = ghost
       ? err
         ? err === 'overlaps another part'
-          ? '他のギアと重なっている'
-          : 'ムーブメントからはみ出している'
-        : '「はめる」か、影をもう一度タップで決定'
+          ? 'ほかのギアと重なるので、ここには置けません'
+          : '盤からはみ出すので、ここには置けません'
+        : '置ける場所です。「はめる」か、影をもう一度タップで決まります'
       : owner
-        ? `${owner}のムーブメントにはまっている`
-        : 'ムーブメントのマスをタップして置き場所を決める';
+        ? `${owner}のムーブメントにはめています`
+        : '盤のマスをタップすると、置く場所の影が出ます';
     drawPartShape(this, this.root, def, this.rotation, SIDE_PADDING + 10, top + 12, 12);
     this.root.add(addText(this, SIDE_PADDING + 62, top + 8, def.name, { size: 15, bold: true, color: COLORS.accentText }));
     this.root.add(
@@ -595,7 +597,7 @@ export class NaviScene extends Phaser.Scene {
   private keepLoadout(slot: number): void {
     const name = (run.navi.loadouts?.[this.charId]?.[slot]?.name ?? `セット${slot + 1}`).replace(/^並べ方/, 'セット');
     run.navi = saveLoadout(run.navi, this.charId, slot, name);
-    this.message = `${name}に、今の並べ方を保存した（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書き保存`;
+    this.message = `${name}に、今の並べ方を保存しました（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書きします`;
     this.render();
   }
 
@@ -610,7 +612,7 @@ export class NaviScene extends Phaser.Scene {
     const r = applyLoadout(currentNaviData(), run.navi, this.charId, slot);
     run.navi = r.navi;
     const name = (run.navi.loadouts?.[this.charId]?.[slot]?.name ?? '').replace(/^並べ方/, 'セット');
-    this.message = `${name}に付け替えた${r.missing ? `（置けなかったギアが${r.missing}つ）` : ''}`;
+    this.message = `${name}に付け替えました${r.missing ? `（置けなかったギアが${r.missing}つあります）` : ''}`;
     this.clearSelection();
     this.render();
   }
@@ -623,7 +625,7 @@ export class NaviScene extends Phaser.Scene {
     const body = addText(this, GAME_WIDTH / 2, 0, text, { size: 14, wrap: w - 32, align: 'center' }).setOrigin(0.5, 0);
     const h = body.height + 100;
     const y = GAME_HEIGHT / 2 - h / 2;
-    c.add(this.add.rectangle(20, y, w, h, FRAME_COLORS.panel, 0.98).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.line));
+    c.add(addWindow(this, 20, y, w, h));
     body.setY(y + 20);
     c.add(body);
     const bw = (w - 40) / 2;
@@ -655,7 +657,7 @@ export class NaviScene extends Phaser.Scene {
     const v = this.listView();
     const max = this.maxListScroll();
     this.listScroll = Math.max(0, Math.min(this.listScroll, max));
-    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで詳細${max > 0 ? '・上下にずらせる' : ''}`, { size: 11, color: COLORS.subText }));
+    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで説明${max > 0 ? '・指で上下にずらせます' : ''}`, { size: 11, color: COLORS.subText }));
     const layer = this.add.container(0, -this.listScroll);
     this.root.add(layer);
     this.listLayer = layer;
@@ -667,10 +669,11 @@ export class NaviScene extends Phaser.Scene {
       const x = SIDE_PADDING + (i % LIST_COLS) * (w + CHIP_GAP);
       const y = v.top + Math.floor(i / LIST_COLS) * (CHIP_H + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
-      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? 0x0a0908 : 0x1a1612, 0.92).setRounded(10).setOrigin(0);
-      // 選んでいるギアは白いふち（金は効果のギアの印。段階146 の調整）
-      rect.setStrokeStyle(selected ? 2.5 : 1, selected ? 0xffffff : FRAME_COLORS.line);
+      // 段階229（見た目の決まり）：角を丸めない黒い札。左に金属の色の細い帯。選んでいるギアは白いふち（金は効果のギアの印。段階146 の調整）
+      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? 0x060507 : STYLE.ink, 0.94).setOrigin(0);
+      rect.setStrokeStyle(selected ? 2.5 : 1, selected ? 0xffffff : 0x3a3840);
       layer.add(rect);
+      layer.add(this.add.rectangle(x, y, 3, CHIP_H, PART_COLOR[def.color], p.placement ? 0.4 : 1).setOrigin(0));
       drawPartShape(this, layer, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
       layer.add(addText(this, x + 4, y + CHIP_H - 16, `${PART_COLOR_LABEL[def.color]}・${def.name}`, { size: 9, color: p.placement ? COLORS.subText : COLORS.text }));
       if (p.placement) {
@@ -691,7 +694,7 @@ export class NaviScene extends Phaser.Scene {
       const h = v.bottom - v.top;
       const barH = Math.max(24, (h * h) / (h + max));
       this.root.add(this.add.rectangle(GAME_WIDTH - 3, v.top, 3, h, 0xffffff, 0.08).setOrigin(0.5, 0));
-      this.listBar = this.add.rectangle(GAME_WIDTH - 3, v.top, 3, barH, COLORS.accent, 0.8).setOrigin(0.5, 0);
+      this.listBar = this.add.rectangle(GAME_WIDTH - 3, v.top, 3, barH, STYLE.red, 0.9).setOrigin(0.5, 0);
       this.root.add(this.listBar);
       this.moveListBar();
     }
@@ -737,7 +740,7 @@ export class NaviScene extends Phaser.Scene {
   private showPartDetail(p: OwnedPart): void {
     const def = currentNaviData().parts[p.partId];
     const owner: CharacterDef | undefined = p.placement ? PARTY.find((c) => c.id === p.placement!.charId) : undefined;
-    const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと焼き付いて狂い）`, `大きさ：${def.cells.length}マス`];
+    const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと、焼き付いて「狂い」が起きます）`, `大きさ：${def.cells.length}マス`];
     // 効く性質（段階201）：対策のギアは、効く敵の性質を出す
     const counters = gearCounterTraits(def.id);
     if (counters.length) lines.push(`効く性質：${counters.map(traitName).join('・')}`);
