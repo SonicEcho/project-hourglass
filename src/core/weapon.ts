@@ -155,6 +155,8 @@ export interface WeaponData {
   decomposeCost: number;
   /** 能力値 → その能力値を上げる記憶の欠片の id（時分解で使う） */
   fragmentFor: Record<WeaponParamKey, string>;
+  /** 2本目の武器（段階223。docs/milestones/M3_second_weapon.md）：組むのに使う記憶の欠片の数・1本目に追いつくまでの経験値の倍率 */
+  second?: { fragments: number; catchUpRate: number };
 }
 
 export interface WeaponState {
@@ -167,6 +169,8 @@ export interface WeaponState {
   path: EvolutionStep[];
   /** 刻んだ素材の数（刻印を使った数。段階27b） */
   absorbed: number;
+  /** 2本目（早瀬が組んだ写し。段階223） */
+  copy?: boolean;
 }
 
 export interface ArmoryState {
@@ -176,24 +180,61 @@ export interface ArmoryState {
   items: Record<string, number>;
   /** 持っている記憶の欠片の数（パーティ共通） */
   fragments: Record<string, number>;
+  /** 持ち替えて、しまってある方の武器（段階223。キャラの id → 武器。2本目を組んだ仲間だけ） */
+  spare?: Record<string, WeaponState>;
 }
 
 const ELEMENTS: Element[] = ['fire', 'ice', 'thunder'];
 const PARAM_KEYS: WeaponParamKey[] = ['atk', 'fire', 'ice', 'thunder'];
 
+function freshWeapon(def: WeaponDef, exp: number): WeaponState {
+  return { defId: def.id, params: { atk: 0, fire: 0, ice: 0, thunder: 0 }, exp, tendency: { red: 0, blue: 0, green: 0, yellow: 0 }, path: [], absorbed: 0 };
+}
+
 export function createArmory(data: WeaponData): ArmoryState {
   const weapons: Record<string, WeaponState> = {};
-  for (const w of Object.values(data.weapons)) {
-    weapons[w.owner] = {
-      defId: w.id,
-      params: { atk: 0, fire: 0, ice: 0, thunder: 0 },
-      exp: w.startExp ?? 0,
-      tendency: { red: 0, blue: 0, green: 0, yellow: 0 },
-      path: [],
-      absorbed: 0,
-    };
-  }
+  for (const w of Object.values(data.weapons)) weapons[w.owner] = freshWeapon(w, w.startExp ?? 0);
   return { weapons, items: {}, fragments: {} };
+}
+
+// ---- 2本目の武器と持ち替え（段階223。docs/milestones/M3_second_weapon.md）----
+
+/** その仲間が2本目を持っているか（持っている方・しまってある方のどちらかが写し） */
+export function hasSecondWeapon(armory: ArmoryState, charId: string): boolean {
+  return !!armory.spare?.[charId];
+}
+
+/** 2本目を組めない理由。組めるなら null */
+export function getForgeError(data: WeaponData, armory: ArmoryState, charId: string): string | null {
+  if (!data.second) return 'no second weapon';
+  if (!armory.weapons[charId]) return 'no weapon';
+  if (hasSecondWeapon(armory, charId)) return 'already has second';
+  if (Object.values(armory.fragments).reduce((a, n) => a + n, 0) < data.second.fragments) return 'not enough fragments';
+  return null;
+}
+
+/**
+ * 2本目を組む：記憶の欠片を使い（多い種類から1つずつ。同じ数なら fragments の並びの先）、Lv1 の写しを、しまってある方に入れる。
+ * 持っている武器はそのまま
+ */
+export function forgeSecondWeapon(data: WeaponData, armory: ArmoryState, charId: string): ArmoryState {
+  const err = getForgeError(data, armory, charId);
+  if (err) throw new Error(err);
+  const fragments = { ...armory.fragments };
+  const order = Object.keys(data.fragments);
+  for (let i = 0; i < data.second!.fragments; i++) {
+    const id = [...order].sort((a, b) => (fragments[b] ?? 0) - (fragments[a] ?? 0) || order.indexOf(a) - order.indexOf(b))[0];
+    fragments[id] -= 1;
+  }
+  const def = data.weapons[armory.weapons[charId].defId];
+  return { ...armory, fragments, spare: { ...(armory.spare ?? {}), [charId]: { ...freshWeapon(def, 0), copy: true } } };
+}
+
+/** 持ち替える：持っている武器と、しまってある武器を入れ替える（ムーブメントの盤の形が変わるので、呼ぶ側で並べ直す） */
+export function swapWeapon(armory: ArmoryState, charId: string): ArmoryState {
+  const spare = armory.spare?.[charId];
+  if (!spare) throw new Error('no second weapon');
+  return { ...armory, weapons: { ...armory.weapons, [charId]: spare }, spare: { ...armory.spare, [charId]: armory.weapons[charId] } };
 }
 
 export function addFragments(armory: ArmoryState, ids: string[]): ArmoryState {
@@ -379,14 +420,21 @@ export interface BattleRecord {
   expRate?: number;
 }
 
-/** 戦闘に勝った時：素材・アイテムを受け取り、経験値とギアの傾向を貯める */
-export function recordVictory(armory: ArmoryState, record: BattleRecord): ArmoryState {
+/**
+ * 戦闘に勝った時：素材・アイテムを受け取り、経験値とギアの傾向を貯める。
+ * 段階223：しまってある武器より経験値が少なければ、追いつくまで経験値が catchUpRate 倍（追いついた所からは1倍）
+ */
+export function recordVictory(armory: ArmoryState, record: BattleRecord, catchUpRate = 1): ArmoryState {
   const weapons: Record<string, WeaponState> = {};
   for (const [charId, w] of Object.entries(armory.weapons)) {
     const cells = record.colorCells[charId];
     const tendency = { ...w.tendency };
     if (cells) for (const c of Object.keys(tendency) as PartColor[]) tendency[c] += cells[c] ?? 0;
-    weapons[charId] = { ...w, exp: w.exp + Math.floor((record.actions[charId] ?? 0) * (record.expRate ?? 1)), tendency };
+    const gain = Math.floor((record.actions[charId] ?? 0) * (record.expRate ?? 1));
+    const other = armory.spare?.[charId]?.exp ?? 0;
+    const boosted = w.exp + Math.floor(gain * catchUpRate);
+    const exp = other > w.exp && catchUpRate > 1 ? Math.max(w.exp + gain, Math.min(boosted, other)) : w.exp + gain;
+    weapons[charId] = { ...w, exp, tendency };
   }
   return addItems({ ...armory, weapons }, record.items);
 }

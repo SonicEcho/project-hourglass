@@ -435,6 +435,8 @@ export const WEAPON_DATA: WeaponData = {
   levelExp: [4, 8, 16, 26, 38, 52],
   // 1回目は Lv3、2回目は Lv5、3回目より先は Lv7
   evolveLevels: [3, 5, 7],
+  // 2本目の武器（段階223。数値は仮）：記憶の欠片12で組む。1本目に追いつくまで経験値2倍。開く区画と、初めての会話は SECOND_WEAPON
+  second: { fragments: 12, catchUpRate: 2 },
   elementRate: 0.02,
   // 進化1回で盤に足すマス（段階111。テストプレイのメモ 24：2マスでは増えすぎたので1マス）
   boardExtension: 1,
@@ -451,3 +453,6 @@ export const WEAPON_DATA: WeaponData = {
  */
 export const DECOMPOSE_VAR = '武器:時分解';
 export const WEAPON_STYLES = STYLES;
+
+/** 2本目の武器（段階223。docs/milestones/M3_second_weapon.md）：4-2 を返した後（早瀬が加わった後）の拠点の武器の画面で、早瀬が組む */
+export const SECOND_WEAPON = { area: 'a42', scene: 'second_weapon_intro' } as const;

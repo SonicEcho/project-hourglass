@@ -381,3 +381,17 @@ describe('セーブ：ライブラリの記録（段階167）', () => {
     expect(none.ok && none.save.run.library).toEqual(createLibrary());
   });
 });
+
+describe('セーブ：2本目の武器（段階223）', () => {
+  it('しまってある武器と写しの印を保存して読む。前の版のセーブ（spare なし）は1本のまま', async () => {
+    const { forgeSecondWeapon, swapWeapon } = await import('../../src/core');
+    const r = playedRun();
+    const armory = swapWeapon(forgeSecondWeapon(WEAPON_DATA, { ...r.armory, fragments: { courage: 20 } }, 'hero'), 'hero');
+    const res = parseSave(serializeSave({ ...r, armory }, AT), ctx);
+    expect(res.ok && res.save.run.armory.weapons.hero.copy).toBe(true);
+    expect(res.ok && res.save.run.armory.spare?.hero.path).toEqual(r.armory.weapons.hero.path);
+    expect(res.ok && res.save.run.armory.spare?.hero.copy).toBeUndefined();
+    const old = parseEdited((raw) => delete raw.run.armory.spare);
+    expect(old.ok && old.save.run.armory.spare).toBeUndefined();
+  });
+});

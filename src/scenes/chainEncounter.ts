@@ -135,7 +135,7 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
     colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
     items: [...drops.map((d) => d.itemId), ...(prize ? [prize] : [])],
     expRate: rate,
-  });
+  }, WEAPON_DATA.second?.catchUpRate);
   const capped = capItems(WEAPON_DATA, run.armory);
   run.armory = capped.armory;
   // スナップ：区画を作り直した戦闘は、新しい戦闘のスナップを新しいアルバムへ（段階163）。まだの戦闘は今のアルバムへ
