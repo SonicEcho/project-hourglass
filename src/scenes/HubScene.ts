@@ -1,19 +1,21 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { chapterOfEvent, eventPassed, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, BGM, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW } from '../data';
+import { canEvolveAny, chapterOfEvent, eventPassed, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost } from '../core';
+import { BACKDROPS, BGM, CAST, HUB_LINES, HUB_TILE_ART, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
-import { startWithImages } from '../ui/waitImages';
+import { startWithImages, waitImages } from '../ui/waitImages';
 import { enterScreen } from '../ui/skin';
 import { backButton, frameHeader } from '../ui/frame';
-import { RENDER_SCALE } from '../ui/theme';
-import { addGalleryTile, addTileRows, type GalleryTile } from '../ui/gallery';
+import { FONT, RENDER_SCALE, STYLE } from '../ui/theme';
+import { addSlantTile, type GalleryTile } from '../ui/gallery';
+import { hasImage } from '../assets/loader';
+import { addText } from '../ui/widgets';
 import { growthTiles } from './growthMenu';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
 import { archivedTalks } from './TalkArchiveScene';
-import { currentEvent, run, setHubReturn, setStoryVars } from './run';
+import { currentEvent, lineupBase, run, setHubReturn, setStoryVars, storyLineup } from './run';
 
 // レストピアの拠点（段階50。docs/design/economy.md の 4.）：昼の時計屋の奥から入る、蔵書の棚。
 // 狩り（返した時間へ）と育成（星図・ムーブメント・武器・アルバム）、交換所（段階52）を1つの画面から開く。落とし物の棚（段階53）もここ。
@@ -56,42 +58,117 @@ export class HubScene extends Phaser.Scene {
     setHubReturn(null);
     stopAmbience();
     playBgm(this, BGM.library);
+    // 段階226：右に立つ仲間の立ち絵を読んでから描く
+    const partner = this.pickPartner();
+    const art = this.partnerArt(partner);
+    // タイルの絵（代わりの1枚絵を含む。台帳にない id はそろったものとして扱われる）も一緒に待つ
+    const tileArt = [...new Set(Object.values(HUB_TILE_ART).flat())];
+    waitImages(this, [...(art ? [art] : []), ...tileArt], () => this.draw(partner));
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+  }
+
+  /** 右に立つ仲間（段階226）：今の並びの、ハルトでない仲間から日ごとに1人（いなければハルト） */
+  private pickPartner(): string {
+    const ids = lineupBase(storyLineup())
+      .map((c) => c.id)
+      .filter((id) => id !== 'hero' && HUB_LINES[id]);
+    if (ids.length === 0) return 'hero';
+    const n = [...run.event].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    return ids[n % ids.length];
+  }
+
+  /** 仲間の立ち絵の台帳の id（表情は HUB_LINES の face） */
+  private partnerArt(id: string): string {
+    const name = this.castName(id);
+    const def = CAST[name];
+    if (!def?.portrait) return '';
+    const face = HUB_LINES[id]?.face ?? def.firstFace ?? '';
+    return `${def.portrait}.${def.faces[face] ?? face}`;
+  }
+
+  private castName(id: string): string {
+    return { hero: 'ハルト', akari: 'あかり', mio: 'みお', sayoko: '小夜子', hayase: '早瀬' }[id] ?? 'ハルト';
+  }
+
+  /**
+   * 拠点の画面（段階226。docs/milestones/M3_ui_polish.md の 8. の A）：暗く沈めた蔵書の棚、右に仲間の立ち絵と吹き出し、
+   * 斜めの「砂の底へ」、メニューの絵の斜めのタイルを4列
+   */
+  private draw(partner: string): void {
     const root = this.add.container(0, 0);
     drawBackdrop(this, root, BACKDROPS.library, 0, GAME_HEIGHT, false);
-    // ギャラリーの暗い地（段階142）：蔵書の棚はうっすら見えるだけにして、タイルの絵を引き立てる
-    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0a0705, 0.78).setOrigin(0));
-    // 見出し（段階141：共通の枠）
-    frameHeader(this, root, 'hourglass', 'レストピア', { label: '蔵書の棚 ― 時間は進まない ―', value: '' });
+    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0b0a0c, 0.72).setOrigin(0));
+    const stripes = this.add.graphics();
+    stripes.lineStyle(2, STYLE.red, 0.08);
+    for (let x = -GAME_HEIGHT; x < GAME_WIDTH; x += 16) stripes.lineBetween(x, GAME_HEIGHT, x + GAME_HEIGHT * 0.58, 0);
+    root.add(stripes);
+    // 仲間の立ち絵（右。紅の影）と吹き出し
+    const art = this.partnerArt(partner);
+    if (art && hasImage(this, art)) {
+      const img = this.add.image(GAME_WIDTH + 80, 64, art).setOrigin(1, 0);
+      img.setScale(500 / img.height);
+      const ghost = this.add.image(img.x - 8, img.y, art).setOrigin(1, 0).setScale(img.scale).setTintFill(STYLE.red);
+      root.add([ghost, img]);
+    }
+    this.drawBubble(root, partner);
 
-    // 思い出のギャラリー（段階142。docs/ART.md の 5-9）：メニューを1枚絵のタイルにする
-    const left = 14;
-    const w = GAME_WIDTH - left * 2;
-    const gap = 8;
-    // 一番上の大きなタイル：砂の底（段階213。前は狩り「記憶をたどる」。狩りは砂の底に置き換えた。2章から）
-    const digOpen = canEnterSandBottom(chapterOfEvent(SLICE_FLOW, run.event)?.id);
-    let y = 62;
-    addGalleryTile(this, root, left, y, w, 168, { id: 'sandBottom', label: '砂の底', sub: digOpen ? '返した記憶の地層を掘る' : '2章から', enabled: digOpen, onTap: () => this.openSandBottom() });
-    y += 168 + 6;
-    // ポーチの中身（段階51）。1行で
-    // 育成（今の章で開いているものだけ）
-    y = addTileRows(this, root, growthTiles((key) => this.openGrowth(key)), left, y, w, gap);
-    // 交換所（段階52）・落とし物の棚（段階53）・町の小話（段階82。過ぎた日の小話がある時だけ）
+    // 知らせ（タイルの札と、吹き出しで使う）
     const lostReady = shelfLost(LOST_ITEMS, run.returned).filter((d) => lostStatus(run.vars, d.id) === 'found').length;
     const petraTalk = isSeen(run.vars, 'exchange_intro') && nextKeeperTalk(KEEPER_TALKS, (id) => eventPassed(SLICE_FLOW, run.event, id), (scene) => isSeen(run.vars, scene));
-    const misc: GalleryTile[] = [
+
+    // 一番上の大きなタイル：砂の底（段階213。2章から）
+    const digOpen = canEnterSandBottom(chapterOfEvent(SLICE_FLOW, run.event)?.id);
+    addSlantTile(this, root, 14, 292, 262, 112, { id: 'sandBottom', label: '砂の底へ', sub: digOpen ? '返した記憶の地層を掘る' : '2章から', enabled: digOpen, onTap: () => this.openSandBottom() }, true);
+
+    // 育成・交換所・落とし物の棚・町の小話（段階142 のギャラリーを、斜めの絵のタイル4列に）
+    const tiles: GalleryTile[] = [
+      ...growthTiles((key) => this.openGrowth(key)),
       // 段階152（テストプレイのメモ 2 の 7）：ペトラと話せる時は、タイルに札
       { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() },
-      { id: 'lost', label: '落とし物の棚', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
+      { id: 'lost', label: '落とし物', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
     ];
     const talks = archivedTalks();
     if (talks.length > 0) {
       const unseen = talks.filter((t) => !t.seen).length;
-      misc.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
+      tiles.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
     }
-    addTileRows(this, root, misc, left, y, w, gap, 3);
-    // 昼へ戻る
+    const cols = 4;
+    const gap = 7;
+    const left = 12;
+    const top = 418;
+    const bottom = 768;
+    const rows = Math.ceil(tiles.length / cols);
+    const tw = (GAME_WIDTH - left * 2 - gap * (cols - 1)) / cols;
+    const th = Math.min(rows <= 2 ? 150 : 124, (bottom - top - gap * (rows - 1)) / rows);
+    tiles.forEach((t, i) => addSlantTile(this, root, left + (i % cols) * (tw + gap), top + Math.floor(i / cols) * (th + gap), tw, th, t));
+
+    // 見出し（段階141：共通の枠）と、昼へ戻る
+    frameHeader(this, root, 'hourglass', 'レストピア', { label: '蔵書の棚 ― 時間は進まない ―', value: '' });
     backButton(this, root, '時計屋へ戻る', () => this.leave());
-    this.cameras.main.fadeIn(250, 0, 0, 0);
+  }
+
+  /** 仲間の吹き出し（段階226）：知らせがあればそれを、なければ日ごとのひとこと */
+  private drawBubble(root: Phaser.GameObjects.Container, partner: string): void {
+    const lines = HUB_LINES[partner];
+    if (!lines) return;
+    const lostReady = shelfLost(LOST_ITEMS, run.returned).some((d) => lostStatus(run.vars, d.id) === 'found');
+    const evolvable = lineupBase(storyLineup()).some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id, run.vars));
+    const petraTalk = isSeen(run.vars, 'exchange_intro') && !!nextKeeperTalk(KEEPER_TALKS, (id) => eventPassed(SLICE_FLOW, run.event, id), (scene) => isSeen(run.vars, scene));
+    const n = [...run.event].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    const text = lostReady ? lines.lost : evolvable ? lines.evolve : petraTalk ? lines.talk : lines.idle[n % lines.idle.length];
+    const x = 26;
+    const y = 112;
+    const w = 196;
+    const body = addText(this, 0, 0, text, { size: 12, bold: true, color: '#111111', wrap: w - 24, ja: true });
+    const h = Math.max(52, body.height + 34);
+    const g = this.add.graphics();
+    g.fillStyle(0x000000, 0.7).fillPoints([new Phaser.Math.Vector2(x + 4, y + 4), new Phaser.Math.Vector2(x + w + 4, y + 4), new Phaser.Math.Vector2(x + w - 8 + 4, y + h + 4), new Phaser.Math.Vector2(x + 4, y + h + 4)], true);
+    g.fillStyle(0xffffff, 1).fillPoints([new Phaser.Math.Vector2(x, y), new Phaser.Math.Vector2(x + w, y), new Phaser.Math.Vector2(x + w - 8, y + h), new Phaser.Math.Vector2(x, y + h)], true);
+    // しっぽ（右の立ち絵の方へ）
+    g.fillTriangle(x + w - 40, y + h - 1, x + w - 14, y + h - 1, x + w + 6, y + h + 16);
+    root.add(g);
+    root.add(addText(this, x + 12, y + 8, this.castName(partner), { size: 11, bold: true, color: STYLE.redText }).setFontFamily(FONT).setFontStyle('bold italic'));
+    root.add(body.setPosition(x + 12, y + 26));
   }
 
   /** 育成の画面を開く。閉じると拠点に戻る */
