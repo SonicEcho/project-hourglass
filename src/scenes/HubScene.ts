@@ -187,6 +187,18 @@ export class HubScene extends Phaser.Scene {
       img.setScale(fit.height / img.height);
       const ghost = this.add.image(img.x - 8, img.y, art).setOrigin(1, 0).setScale(img.scale).setTintFill(STYLE.red);
       layer.add([ghost, img]);
+      // 段階227 の直し（開発者の声）：立ち絵の下の切れ目を、ぼかして消す（下の3割を少しずつ透明に。WebGL の時だけ）
+      if (this.game.renderer.type === Phaser.WEBGL) {
+        const fade = this.make.image({ x: img.x + 10, y: fit.top, key: this.portraitFade(), add: false }).setOrigin(1, 0);
+        fade.setDisplaySize(img.displayWidth + 30, fit.height);
+        const mask = fade.createBitmapMask();
+        img.setMask(mask);
+        ghost.setMask(mask);
+        img.once(Phaser.GameObjects.Events.DESTROY, () => {
+          mask.destroy();
+          fade.destroy();
+        });
+      }
     }
     if (!line) return;
     setStoryVars(markHubLine(run.vars, line));
@@ -201,6 +213,24 @@ export class HubScene extends Phaser.Scene {
         this.showLine(partner);
       },
     });
+  }
+
+  /** 立ち絵の下をぼかすための、上は不透明・下の3割で透明になる縦の帯（1回だけ作る） */
+  private portraitFade(): string {
+    const key = 'hub-portrait-fade';
+    if (this.textures.exists(key)) return key;
+    const tex = this.textures.createCanvas(key, 4, 256);
+    const ctx = tex?.getContext();
+    if (ctx) {
+      const g = ctx.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(0.68, 'rgba(255,255,255,1)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 4, 256);
+      tex?.refresh();
+    }
+    return key;
   }
 
   /** 仲間の吹き出し（段階226） */
