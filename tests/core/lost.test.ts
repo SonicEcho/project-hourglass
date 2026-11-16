@@ -1,21 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import type { HuntableArea, LostItemDef } from '../../src/core';
+import type { LostItemDef } from '../../src/core';
 import {
   acceptLost,
   activeLostCount,
-  checkArea,
   deliverLost,
   findLost,
   getAcceptError,
   getDeliverError,
-  huntArea,
+  bondExtras,
+  bondPoints,
+  deliveredLostCount,
+  hearLostVoice,
+  lostAfterwords,
   lostKey,
+  lostVoicesHeard,
+  wantsLostVoice,
   lostOfSpot,
   lostSpots,
   lostStatus,
   shelfLost,
 } from '../../src/core';
-import { areaCommonItems, AREAS, CAST, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SCENES, WEAPON_DATA } from '../../src/data';
+import { AREAS, BOND_PARTNER_NAMES, CAST, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SCENES, WEAPON_DATA, sandBottomFor } from '../../src/data';
 
 // 落とし物（段階53。docs/design/economy.md の 5-3）
 const find: LostItemDef = { id: 'f', name: 'f', area: 'a11', owner: 'ゆうま', text: '', kind: 'find', spot: { cell: [1, 2] }, deliverScene: 'x', reward: { fragments: ['courage'] } };
@@ -66,30 +71,79 @@ describe('落とし物（段階53）', () => {
     expect(getDeliverError(bring, {}, { tinSpring: 9 })).toBe('not accepted');
   });
 
-  it('データ：2章までの区画に4つ。会話・相手・ごほうびは実在し、探し物の光る所は記憶をたどる区画の拾えるマスにある', () => {
+  it('データ：2章までの区画に4つ。どれも声をたどる形で、会話・相手・ご褒美・ひとことは実在する（段階220）', () => {
     expect(LOST_ACTIVE_MAX).toBe(3);
     expect(LOST_ITEMS.length).toBe(4);
     const ids = LOST_ITEMS.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
     const scenes = new Set(SCENES.map((s) => s.id));
     for (const d of LOST_ITEMS) {
-      const area = AREAS[d.area];
-      expect(area?.hunt, d.id).toBeDefined();
+      expect(AREAS[d.area], d.id).toBeDefined();
       expect(d.owner in CAST, d.id).toBe(true);
-      expect(scenes.has(d.deliverScene), d.deliverScene).toBe(true);
-      if (d.findScene) expect(scenes.has(d.findScene), d.findScene).toBe(true);
+      expect(d.kind, d.id).toBe('voices');
+      expect(d.voices?.length, d.id).toBe(3);
+      for (const v of [...d.voices!, d.deliverScene]) expect(scenes.has(v), v).toBe(true);
       for (const id of d.reward.items ?? []) expect(WEAPON_DATA.items[id], id).toBeDefined();
       for (const id of d.reward.fragments ?? []) expect(id in FRAGMENTS, id).toBe(true);
       for (const id of d.reward.gears ?? []) expect(id in NAVI_PARTS, id).toBe(true);
       for (const id of d.reward.snaps ?? []) expect(id in CHAIN_SNAPS, id).toBe(true);
-      if (d.kind === 'bring') expect(areaCommonItems(d.area), d.id).toContain(d.bring!.item);
-      else {
-        // 光る所を足した記憶をたどる区画が、書き間違いなく作れる
-        const vars = { [lostKey(d.id)]: 'accepted' };
-        const base = area as HuntableArea;
-        const withSpot: HuntableArea = { ...base, hunt: { ...base.hunt, gathers: [...base.hunt.gathers, ...lostSpots(LOST_ITEMS, vars, d.area)] } };
-        expect(checkArea(huntArea(withSpot, 1)), d.id).toEqual([]);
-      }
+      // ご褒美は物より関係と話（ギア・スナップは配り直した）
+      expect(d.reward.gears ?? [], d.id).toEqual([]);
+      expect(d.reward.snaps ?? [], d.id).toEqual([]);
+      expect(d.reward.bond! in BOND_PARTNER_NAMES, d.id).toBe(true);
+      expect(d.afterwords?.length, d.id).toBeGreaterThan(0);
+      for (const a of d.afterwords ?? []) if (a.after) expect(AREAS[a.after], a.after).toBeDefined();
     }
+  });
+
+  it('受けた依頼の声のかけらは、砂の底の、その区画の帯に1つだけ埋まる（段階220）', () => {
+    const d = LOST_ITEMS.find((x) => x.id === 'a21_words')!;
+    const relics = (vars: Record<string, string>) => sandBottomFor('ch3', vars).layers.flatMap((l) => l.relics ?? []);
+    expect(relics({}).filter((r) => r === 'lost:a21_words')).toEqual([]);
+    const vars = { [lostKey(d.id)]: 'accepted' };
+    expect(relics(vars).filter((r) => r === 'lost:a21_words')).toHaveLength(1);
+    // 全部聞いたら、もう埋まらない
+    expect(relics({ ...vars, [lostKey(d.id)]: 'found', [`落とし物の声:${d.id}`]: '3' }).filter((r) => r === 'lost:a21_words')).toEqual([]);
+  });
+});
+
+describe('声をたどる依頼（段階220）', () => {
+  const v: LostItemDef = { id: 'v', name: 'v', area: 'a11', owner: 'ゆうま', text: '', kind: 'voices', voices: ['s1', 's2', 's3'], deliverScene: 'z', reward: { fragments: ['wonder'], bond: 'akari' }, afterwords: [{ speaker: 'あかり', text: 'a' }, { speaker: '早瀬', text: 'b', after: 'a42' }] };
+
+  it('受けていないと聞けない。順に聞き、3つ目で見つけた（届けられる）になる', () => {
+    expect(hearLostVoice(v, {}).scene).toBeNull();
+    let vars = acceptLost([v], {}, 'v', 3);
+    expect(wantsLostVoice(v, vars)).toBe(true);
+    expect(getDeliverError(v, vars, {})).toBe('not found yet');
+    const heard: (string | null)[] = [];
+    for (let i = 0; i < 3; i++) {
+      const r = hearLostVoice(v, vars);
+      heard.push(r.scene);
+      expect(r.no).toBe(i + 1);
+      expect(r.total).toBe(3);
+      vars = r.vars;
+    }
+    expect(heard).toEqual(['s1', 's2', 's3']);
+    expect(lostVoicesHeard(vars, 'v')).toBe(3);
+    expect(lostStatus(vars, 'v')).toBe('found');
+    expect(wantsLostVoice(v, vars)).toBe(false);
+    expect(hearLostVoice(v, vars).scene).toBeNull();
+    expect(getDeliverError(v, vars, {})).toBeNull();
+  });
+
+  it('届けると、欠片と絆の足しが付き、ひとことが読める（仲間が加わった後のひとことは、その区画を返してから）', () => {
+    let vars = acceptLost([v], {}, 'v', 3);
+    for (let i = 0; i < 3; i++) vars = hearLostVoice(v, vars).vars;
+    expect(lostAfterwords(v, vars, ['a42'])).toEqual([]);
+    const r = deliverLost(v, vars, { items: {}, fragments: {} });
+    expect(r.fragments).toEqual({ wonder: 1 });
+    expect(bondExtras(r.vars, 'akari')).toBe(1);
+    expect(bondExtras(r.vars, 'mio')).toBe(0);
+    expect(deliveredLostCount([v], r.vars)).toBe(1);
+    expect(lostAfterwords(v, r.vars, []).map((a) => a.speaker)).toEqual(['あかり']);
+    expect(lostAfterwords(v, r.vars, ['a42']).map((a) => a.speaker)).toEqual(['あかり', '早瀬']);
+    // 絆の点：足し1つは extra 点（なければ talk 点）
+    expect(bondPoints(r.vars, 'akari', {}, {}, { event: 4, talk: 1, level: 10, extra: 3 })).toBe(3);
+    expect(bondPoints(r.vars, 'akari', {}, {}, { event: 4, talk: 1, level: 10 })).toBe(1);
   });
 });

@@ -1,7 +1,7 @@
 import type { DigLayerDef, DigRarity, DigSkillId, DigToolId, DigWorldDef } from '../core/dig';
 import { digLayerTop } from '../core/dig';
 import { huntGearKey } from '../core/hunt';
-import { lostStatus } from '../core/lost';
+import { wantsLostVoice } from '../core/lost';
 import { AREA_BATTLES, AREAS } from './areas';
 import { LOST_ITEMS } from './lost';
 import { CHAIN_ENEMY_SNAPS } from './chainAreas';
@@ -69,13 +69,14 @@ export function relicGears(gatherId: string): string[] {
 }
 
 /**
- * 帯の光る物（段階213）：まだ手に入れていない採取の場所のギアから1つ（記憶の宝箱）と、引き受けた探し物（落とし物）
+ * 帯の光る物（段階213）：まだ手に入れていない採取の場所のギアから1つ（記憶の宝箱）と、引き受けた依頼の声のかけら（段階220）
  */
 function bandRelics(areaIds: string[], vars: Readonly<Record<string, string>>): string[] {
   const gear = areaIds
     .flatMap((a) => AREAS[a]?.hunt?.gathers ?? [])
     .find((g) => (g.gears?.length ?? 0) > 0 && !vars[huntGearKey(g.id)]);
-  const lost = LOST_ITEMS.filter((d) => d.kind === 'find' && areaIds.includes(d.area) && lostStatus({ ...vars }, d.id) === 'accepted');
+  // 段階220：声をたどる依頼の、次の声のかけら（1回の潜りで1つ）
+  const lost = LOST_ITEMS.filter((d) => areaIds.includes(d.area) && wantsLostVoice(d, { ...vars }));
   return [...(gear ? [relicGear(gear.id)] : []), ...lost.map((d) => relicLost(d.id))];
 }
 
@@ -171,7 +172,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch2',
     name: '短期記憶の層',
-    digItems: { common: ['digLint', 'digSugarChip'], rare: ['digSpool', 'digSugarStone'], snaps: ['dig_utakata'], gears: ['digFleeting'] },
+    digItems: { common: ['digLint', 'digSugarChip'], rare: ['digSpool', 'digSugarStone'], snaps: ['dig_utakata'], gears: ['digFleeting', 'shellCrack'] },
     feature: 'すぐ崩れる記憶。崩れる砂が多い',
     bands: [
       band('oyakata', '親方の背中', ['a21'], { sand: 0xb08458, clay: 0x7a5236, rock: 0x6c6f78, air: 0x1a110b, loose: 0xcca27a }),

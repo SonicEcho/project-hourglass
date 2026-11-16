@@ -38,6 +38,8 @@ export function areaCommonItems(areaId: string): string[] {
 const GEAR_GOODS: ExchangeGood[] = [
   { id: 'gear_mpMemory', kind: 'gear', ref: NAVI_PARTS.mpMemory.id, price: 10, once: true, chapter: 2 },
   { id: 'gear_powerMemory', kind: 'gear', ref: NAVI_PARTS.powerMemory.id, price: 12, once: true, chapter: 2 },
+  // 段階220：依頼のご褒美から移した
+  { id: 'gear_hpMemory', kind: 'gear', ref: NAVI_PARTS.hpMemory.id, price: 10, once: true, chapter: 2 },
 ];
 
 /**

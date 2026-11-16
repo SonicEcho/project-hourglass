@@ -88,7 +88,7 @@ export const HUB_SCENES: { scene: string; after?: string; before?: string }[] = 
  * 絆の点の重み（段階83。docs/design/daily.md の 4-2）。段階153（テストプレイのメモ 2 の 4）：帯は少しずつ進み、10点でレベルが1上がる。
  * 絆の出来事1つで4点（帯の4割）、その日に見た小話1つで1点（1割）。「絆の一番」などの判定は、レベルで比べる
  */
-export const BOND_POINTS: BondPoints = { event: 4, talk: 1, level: 10 };
+export const BOND_POINTS: BondPoints = { event: 4, talk: 1, level: 10, extra: 3 };
 
 /** 昼に選べる回数（段階35。docs/milestones/M2.md の「決まったこと」） */
 export const DAILY_PICKS = 2;
