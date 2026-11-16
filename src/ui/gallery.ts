@@ -213,7 +213,8 @@ export function addSlantTile(scene: Phaser.Scene, root: Phaser.GameObjects.Conta
   if (tile.badge) {
     const t = addText(scene, 0, 0, tile.badge, { size: 9, bold: true, color: tile.badgeColor ? '#ffffff' : '#000000' });
     const bw = t.width + 14;
-    const bx = x + w - k - 4 - bw / 2;
+    // 段階227 の直し（開発者の声）：札は左の端をそろえる（「進化できる」の位置。右の端でそろえると、文字の長さで位置がずれた）
+    const bx = x + Math.max(8, k - 3) + bw / 2;
     root.add(addSlant(scene, bx, y + 11, bw, 16, tile.badgeColor ?? STYLE.yellow));
     root.add(t.setPosition(bx, y + 11).setOrigin(0.5));
   }
