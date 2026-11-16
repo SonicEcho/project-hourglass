@@ -10,16 +10,18 @@ export interface LibraryView {
   snapOwned: Record<string, number>;
   /** 持っている素材の数 */
   items: Record<string, number>;
+  /** 時間を返した区画（段階233：手に入る所の区画の名前を出すか） */
+  returned: readonly string[];
 }
 
 export function libraryView(): LibraryView {
-  if (run.active) return { lib: run.library, snapOwned: run.chainAlbum.owned, items: run.armory.items };
+  if (run.active) return { lib: run.library, snapOwned: run.chainAlbum.owned, items: run.armory.items, returned: run.returned };
   const r = readSave();
   if (r?.ok) {
     const s = r.save.run;
-    return { lib: s.library, snapOwned: s.chainAlbum.owned, items: s.armory.items };
+    return { lib: s.library, snapOwned: s.chainAlbum.owned, items: s.armory.items, returned: s.returned };
   }
-  return { lib: run.library, snapOwned: run.chainAlbum.owned, items: {} };
+  return { lib: run.library, snapOwned: run.chainAlbum.owned, items: {}, returned: [] };
 }
 
 /** 見つけたか（スナップ・素材は、今持っている物も見つけた物にする） */

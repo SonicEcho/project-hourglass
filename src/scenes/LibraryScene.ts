@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
+import { AREAS, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, LIBRARY_ITEM_SOURCES, LIBRARY_SNAP_SOURCES, sourceTexts, type LibrarySource, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainSnapLook, comboDetailLines, comboMaterialNames, ENEMY_OF_SNAP, snapArt, snapDetailLines, snapShortLine } from '../ui/chainSnapText';
 import { frameHeader } from '../ui/frame';
@@ -39,7 +39,7 @@ const LIST_Y = 108;
 const DETAIL_BOTTOM = 774 - 8;
 /** 段階232：スナップと敵は、大きな絵と絵の説明文を添えるので、窓を高く */
 const DETAIL_H_OPEN = 220;
-const DETAIL_H_ART = 244;
+const DETAIL_H_ART = 272;
 /** 敵は分かったことの行が多い（ぬしは部位の行も）ので、もっと高く */
 const DETAIL_H_ENEMY = 340;
 const DETAIL_H_HINT = 78;
@@ -240,10 +240,10 @@ export class LibraryScene extends Phaser.Scene {
     const id = this.selected;
     if (!id) {
       const hint = {
-        snap: ['名前をタップすると、スナップの説明が出ます。', 'スナップは、区画のぬしを倒した時や、敵に★3で早く勝った時に手に入ります。'],
+        snap: ['名前をタップすると、スナップの説明が出ます。', 'どこで手に入るかは、説明の「手に入る所」に出ます。'],
         combo: ['名前をタップすると、コンボの説明が出ます。', 'まだのコンボも、手がかりが読めます。材料が手札にそろうと、戦闘で見つかります。'],
         enemy: ['名前をタップすると、敵の説明が出ます。', '弱点は、その属性で当てると分かります。落とす素材は、倒すと分かります。'],
-        item: ['名前をタップすると、素材の説明が出ます。', '素材は敵が落とします。武器の進化の鍵になる物もあります。'],
+        item: ['名前をタップすると、素材の説明が出ます。', 'どこで手に入るかは「手に入る所」に出ます。武器の進化の鍵になる素材もあります。'],
       }[this.tab];
       addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), hint);
       return;
@@ -254,13 +254,19 @@ export class LibraryScene extends Phaser.Scene {
     else addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), this.itemLines(LIBRARY_ITEMS.find((i) => i.id === id)!));
   }
 
+  /** 手に入る所の1行（段階233）：まだ会っていない敵・知らない区画の名前は伏せる */
+  private sourceLine(list: readonly LibrarySource[] | undefined): string {
+    const v = this.view;
+    const areas = new Set([...v.returned.map((id) => AREAS[id]?.name ?? id), ...LIBRARY_ENEMIES.filter((e) => isFound.enemy(v, e.id)).flatMap((e) => e.areas)]);
+    const texts = sourceTexts(list, { enemy: (id) => isFound.enemy(v, id), area: (name) => areas.has(name) });
+    return `手に入る所：${texts.length ? texts.join('、') : '？？？'}`;
+  }
+
   private snapLines(m: ChainMove): string[] {
     const v = this.view;
-    if (!isFound.snap(v, m.id)) {
-      const foe = ENEMY_OF_SNAP[m.id];
-      return ['？？？（まだ手に入れていないスナップ）', `分類：${chainSnapLook(m).label}`, foe && isFound.enemy(v, LIBRARY_ENEMIES.find((e) => e.base.name === foe)?.id ?? '') ? `手がかり：${foe}に★3で早く勝つと、ときどき手に入る` : '手がかり：区画のぬしや、まだ会っていない敵が持っている'];
-    }
-    return [...snapDetailLines(m, v.lib.combos), `持っている：${v.snapOwned[m.id] ?? 0}枚`];
+    const where = this.sourceLine(LIBRARY_SNAP_SOURCES[m.id]);
+    if (!isFound.snap(v, m.id)) return ['？？？（まだ手に入れていないスナップ）', `分類：${chainSnapLook(m).label}`, where];
+    return [...snapDetailLines(m, v.lib.combos), where, `所持：${v.snapOwned[m.id] ?? 0}枚`];
   }
 
   private comboLines(l: ChainLinkDef): string[] {
@@ -272,14 +278,14 @@ export class LibraryScene extends Phaser.Scene {
   private itemLines(it: LibraryItem): string[] {
     const v = this.view;
     const def = WEAPON_DATA.items[it.id];
-    // 落とす敵は、会った敵なら名前、まだなら「？？？」
-    const sources = it.sources.map((s) => (LIBRARY_ENEMIES.some((e) => s.startsWith(e.base.name) && isFound.enemy(v, e.id)) ? s : '？？？'));
-    if (!isFound.item(v, it.id)) return ['？？？（まだ手に入れていない素材）', `手がかり：${[...new Set(sources)].join('、')}が落とす`];
+    // 段階233：落とす敵だけでなく、宝箱・交換所・依頼・砂の底も「手に入る所」に
+    const where = this.sourceLine(LIBRARY_ITEM_SOURCES[it.id]);
+    if (!isFound.item(v, it.id)) return ['？？？（まだ手に入れていない素材）', where];
     return [
       `${def.name}（素材・${RARITY_LABEL[def.rarity ?? 'common']}）`,
-      `落とす：${[...new Set(sources)].join('、')}`,
-      it.keys.length ? `進化の鍵：${it.keys.join('、')}` : '進化の鍵：なし（武器に刻んで能力を上げる）',
-      `持っている：${v.items[it.id] ?? 0}`,
+      where,
+      it.keys.length ? `進化の鍵：${it.keys.join('、')}` : '進化の鍵：なし（武器に刻んで能力を上げます）',
+      `所持：${v.items[it.id] ?? 0}`,
     ];
   }
 

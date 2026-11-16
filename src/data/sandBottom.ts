@@ -210,6 +210,16 @@ const STRATA: DigStratum[] = [
   },
 ];
 
+/**
+ * 層ごとに見つかる物（段階233。ライブラリの「手に入る所」に使う）：帯の区画の敵の素材（宝箱・鉱脈）、
+ * 砂の底だけの素材（common は宝箱・鉱脈、rare は珍品）、珍品のスナップ。areas は層の帯の区画（区画を知るまで層の名前を伏せる）
+ */
+export const SAND_BOTTOM_FINDS: { name: string; areas: string[]; items: string[]; digCommon: string[]; digRare: string[]; snaps: string[] }[] = STRATA.map((st) => {
+  const areas = st.bands.flatMap((b) => b.areas);
+  const items = areaItems(areas);
+  return { name: st.name, areas, items: [...items.common, ...items.uncommon, ...items.rare], digCommon: st.digItems.common, digRare: st.digItems.rare, snaps: st.digItems.snaps ?? [] };
+});
+
 /** いちばん下の開いている層の下の、ふつうの地面（空洞・宝箱・砂嵐・鉱脈・砂粒なし）。砂がどうやっても足りない深さまで続ける */
 const DEEP_GROUND_ID = 'deep';
 const DEEP_GROUND_NAME = 'まだ思い出せない深さ';
