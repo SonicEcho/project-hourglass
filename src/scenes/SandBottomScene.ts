@@ -156,15 +156,15 @@ export class SandBottomScene extends Phaser.Scene {
     this.hero = ensureDigHero(this, run.dig.digger);
     if (data.wonGuard !== undefined) {
       this.s = clearGuard(this.def, this.s, data.wonGuard);
-      this.message = `番人を倒した！ 下の層へ進める（砂時計 −${this.def.cost.battle}）`;
+      this.message = `番人を倒しました！ 下の層へ進めます（砂時計 −${this.def.cost.battle}）`;
     }
     if (data.wonRoamer !== undefined) {
       this.s = clearRoamer(this.def, this.s, data.wonRoamer);
-      this.message = `砂嵐を倒した！（砂時計 −${this.def.cost.battle}）`;
+      this.message = `砂嵐を倒しました！（砂時計 −${this.def.cost.battle}）`;
     }
     if (data.wonNest !== undefined) {
       this.s = clearNest(this.def, this.s, data.wonNest);
-      this.message = `ぬしを倒した！（砂時計 −${this.def.cost.battle}）`;
+      this.message = `ぬしを倒しました！（砂時計 −${this.def.cost.battle}）`;
     }
     if (data.wonGuard !== undefined || data.wonRoamer !== undefined || data.wonNest !== undefined) this.healAfterWin();
     if (data.lost) {
@@ -210,12 +210,14 @@ export class SandBottomScene extends Phaser.Scene {
     const list = this.diggers();
     const last = run.vars[SAND_BOTTOM_DIGGER_VAR];
     const chosen = last && list.includes(last) ? last : list[0];
-    o.add(addText(this, GAME_WIDTH / 2, 64, '誰が掘る？', { size: 24, bold: true, color: '#ffd76a' }).setOrigin(0.5));
-    o.add(addText(this, GAME_WIDTH / 2, 94, '人によって掘り方の得手と技がある。戦うのは、いつもの並び', { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 64, '誰が掘る？', { size: 24, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
+    o.add(addText(this, GAME_WIDTH / 2, 94, '掘る人で、得意なことと技が変わります（戦闘はいつもの並び）', { size: 11, color: COLORS.subText }).setOrigin(0.5));
     // 段階217：今回の地層の特別ルール（潜るたびに変わる）
     const rule = DIG_RULES[nextRule()];
-    o.add(this.add.rectangle(14, 108, GAME_WIDTH - 28, 30, 0x3a2a10, 0.9).setOrigin(0).setStrokeStyle(1, 0xffd76a, 0.8));
-    o.add(addText(this, GAME_WIDTH / 2, 123, `今回の地層：${rule.name}（${rule.note}）`, { size: 12, bold: true, color: '#ffe9a8' }).setOrigin(0.5));
+    // 段階230（見た目の決まり）：今回の地層は、黒い帯に白い枠・左に紅の帯
+    o.add(this.add.rectangle(14, 108, GAME_WIDTH - 28, 30, STYLE.ink, 0.95).setOrigin(0).setStrokeStyle(1, 0xffffff, 0.7));
+    o.add(this.add.rectangle(14, 108, 5, 30, STYLE.red).setOrigin(0));
+    o.add(addText(this, GAME_WIDTH / 2 + 2, 123, `今回の地層：${rule.name}（${rule.note}）`, { size: 12, bold: true }).setOrigin(0.5));
     const top = 146;
     const bottom = GAME_HEIGHT - 86;
     const gap = 8;
@@ -229,8 +231,10 @@ export class SandBottomScene extends Phaser.Scene {
       const card = this.add.container(0, 0);
       o.add(card);
       const bg = this.add.graphics();
-      bg.fillGradientStyle(d.color, d.color, 0x0b0f22, 0x0b0f22, 1, 1, 0.95, 0.95).fillRoundedRect(x, y, w, h, 12);
-      bg.lineStyle(id === chosen ? 3 : 1.5, id === chosen ? 0xffd76a : 0x8a9ad0, 1).strokeRoundedRect(x, y, w, h, 12);
+      // 段階230（見た目の決まり）：人ごとの色から黒へ移る札。角は丸めず、選んでいる人は白い太いふち
+      bg.fillStyle(0x000000, 0.7).fillRect(x + 4, y + 4, w, h);
+      bg.fillGradientStyle(d.color, d.color, STYLE.ink, STYLE.ink, 1, 1, 0.95, 0.95).fillRect(x, y, w, h);
+      bg.lineStyle(id === chosen ? 3 : 1.5, id === chosen ? 0xffffff : 0x5a5a62, 1).strokeRect(x, y, w, h);
       card.add(bg);
       // 動く二頭身（歩く）
       const hero = ensureDigHero(this, id);
@@ -243,7 +247,7 @@ export class SandBottomScene extends Phaser.Scene {
       const tx = x + 104;
       const tw = w - 116;
       card.add(addText(this, tx, y + 10, name, { size: 18, bold: true, color: '#ffffff' }));
-      if (id === last) card.add(addText(this, x + w - 12, y + 12, '前に選んだ人', { size: 9, bold: true, color: '#ffd76a' }).setOrigin(1, 0));
+      if (id === last) card.add(addText(this, x + w - 12, y + 12, '前に選んだ人', { size: 9, bold: true, color: STYLE.yellowText }).setOrigin(1, 0));
       card.add(addText(this, tx, y + 36, `得手：${d.note}`, { size: 11, color: '#e8ecff', wrap: tw, ja: true }));
       card.add(addText(this, tx, y + 36 + 32, `技「${skill.name}」：${skill.note}`, { size: 11, bold: true, color: '#ffe9a8', wrap: tw, ja: true }));
       const hit = this.add.rectangle(x, y, w, h, 0xffffff, 0.001).setOrigin(0).setInteractive();
@@ -257,7 +261,7 @@ export class SandBottomScene extends Phaser.Scene {
   /** 拾った記録（段階217）：りくのメモと誰かの日記を、番号順に。見つけていない所は「？」 */
   private showRecords(kind: DigLoreKind = 'riku'): void {
     const o = this.openOverlay(0.95);
-    o.add(addText(this, GAME_WIDTH / 2, 60, '拾った記録', { size: 22, bold: true, color: '#ffd76a' }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 60, '拾った記録', { size: 22, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
     const tabs: [DigLoreKind, string][] = [
       ['riku', 'りくのメモ'],
       ['diary', '誰かの日記'],
@@ -299,7 +303,7 @@ export class SandBottomScene extends Phaser.Scene {
     }
     const max = this.def.toolMax ?? 3;
     const o = this.openOverlay(0.94);
-    o.add(addText(this, GAME_WIDTH / 2, 90, '持ち込む道具', { size: 22, bold: true, color: '#ffd76a' }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 90, '持ち込む道具', { size: 22, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
     o.add(addText(this, GAME_WIDTH / 2, 120, `道具袋に ${max} つまで。帰れば残りは戻る。負けると失う`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
     o.add(addText(this, GAME_WIDTH / 2, 150, `道具袋：${picked.length > 0 ? picked.map((t) => DIG_TOOLS[t as DigToolId].name).join('・') : '（空）'}`, { size: 13, bold: true }).setOrigin(0.5));
     tools.forEach((t, i) => {
@@ -343,7 +347,7 @@ export class SandBottomScene extends Phaser.Scene {
     run.dig = { state: { ...state, tools: [...tools] }, vitals: {}, count, max: def.sand, digger, rule, rare, rareFound: false };
     this.hero = ensureDigHero(this, digger);
     this.warned = false;
-    this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂 1、掘るのは砂 3';
+    this.message = '十字のボタンか、まわりの枠をタップすると掘れます（長押しで続けて掘れます）。空洞を歩くと砂を1、掘ると砂を3使います';
     this.closeOverlay();
     this.waitDiggerArt();
   }
@@ -521,8 +525,9 @@ export class SandBottomScene extends Phaser.Scene {
   }
 
   private drawHud(): void {
-    this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GRID_Y, 0x0b0f22).setOrigin(0));
-    this.root.add(this.add.rectangle(0, GRID_Y - 2, GAME_WIDTH, 2, 0xffd76a, 0.4).setOrigin(0));
+    // 段階230（見た目の決まり）：上の帯は黒、下の境に紅の線
+    this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GRID_Y, STYLE.ink).setOrigin(0));
+    this.root.add(this.add.rectangle(0, GRID_Y - 2, GAME_WIDTH, 2, STYLE.red, 0.9).setOrigin(0));
     const s = this.s;
     this.root.add(addText(this, 14, 12, '⏳', { size: 26 }));
     this.root.add(addText(this, 50, 12, `砂 ${s.sand}`, { size: 20, bold: true }));
@@ -532,9 +537,9 @@ export class SandBottomScene extends Phaser.Scene {
     this.root.add(this.add.rectangle(50, 44, bw * rate, 10, rate < 0.25 ? 0xff6a5a : 0xffd76a).setOrigin(0));
     const back = digBackCost(this.def, s);
     const short = s.sand < back;
-    this.root.add(addText(this, 50, 62, `帰り道に要る砂 ${back}${short ? '（足りない！）' : ''}`, { size: 11, bold: true, color: short ? '#ff8a7a' : '#ffd76a' }));
+    this.root.add(addText(this, 50, 62, `帰り道に要る砂 ${back}${short ? '（足りない！）' : ''}`, { size: 11, bold: true, color: short ? '#ff8a7a' : STYLE.yellowText }));
     const record = Number(run.vars[SAND_BOTTOM_DEEPEST_VAR] ?? 0);
-    this.root.add(addText(this, GAME_WIDTH - 14, 10, '深さ', { size: 10, bold: true, color: '#ffd76a' }).setOrigin(1, 0));
+    this.root.add(addText(this, GAME_WIDTH - 14, 10, '深さ', { size: 10, bold: true, color: COLORS.subText }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 24, `${s.y * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 22, bold: true }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 54, s.y > 0 ? digLayerAt(this.def, s.y).name : '地上', { size: 11, color: COLORS.subText }).setOrigin(1, 0));
     this.root.add(addText(this, GAME_WIDTH - 14, 70, `今回 ${s.deepest * SAND_BOTTOM_METERS_PER_ROW} m・記録 ${record * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 10, color: COLORS.subText }).setOrigin(1, 0));
@@ -586,14 +591,15 @@ export class SandBottomScene extends Phaser.Scene {
   }
 
   private drawPanel(): void {
-    this.root.add(this.add.rectangle(0, PANEL_Y, GAME_WIDTH, GAME_HEIGHT - PANEL_Y, 0x0b0f22).setOrigin(0));
-    this.root.add(this.add.rectangle(0, PANEL_Y, GAME_WIDTH, 2, 0xffd76a, 0.4).setOrigin(0));
+    // 段階230（見た目の決まり）：下の板は黒、上の境に紅の線
+    this.root.add(this.add.rectangle(0, PANEL_Y, GAME_WIDTH, GAME_HEIGHT - PANEL_Y, STYLE.ink).setOrigin(0));
+    this.root.add(this.add.rectangle(0, PANEL_Y, GAME_WIDTH, 2, STYLE.red, 0.9).setOrigin(0));
     const s = this.s;
     // かばん
     this.root.add(addText(this, 12, PANEL_Y + 10, `かばん\n${s.bag.length}/${this.def.bagMax}`, { size: 10, bold: true }));
     for (let i = 0; i < this.def.bagMax; i++) {
       const x = 58 + i * 32;
-      this.root.add(this.add.rectangle(x, PANEL_Y + 10, 28, 28, 0x1d2440).setOrigin(0).setStrokeStyle(1, 0x3a4470));
+      this.root.add(this.add.rectangle(x, PANEL_Y + 10, 28, 28, 0x16141a).setOrigin(0).setStrokeStyle(1, 0x4a4852));
       const id = s.bag[i];
       if (id) this.root.add(addText(this, x + 14, PANEL_Y + 24, rarityMark(id), { size: 14, bold: true, color: rarityMark(id) === '★' ? '#ffd76a' : rarityMark(id) === '◆' ? '#9fd0ff' : '#ffffff' }).setOrigin(0.5));
     }
@@ -613,7 +619,7 @@ export class SandBottomScene extends Phaser.Scene {
     for (let i = 0; i < max; i++) {
       const x = 12 + i * 46;
       const t = s.tools[i] as DigToolId | undefined;
-      const slot = this.add.rectangle(x, toolY, 40, 40, t ? 0x3a2a5a : 0x1d2440).setOrigin(0).setStrokeStyle(1.5, t ? 0xc8a0ff : 0x3a4470);
+      const slot = this.add.rectangle(x, toolY, 40, 40, t ? 0x3a2a5a : 0x16141a).setOrigin(0).setStrokeStyle(1.5, t ? 0xc8a0ff : 0x4a4852);
       this.root.add(slot);
       if (!t) continue;
       this.root.add(addText(this, x + 20, toolY + 20, TOOL_MARK[t], { size: 18, bold: true, color: '#ffe9ff' }).setOrigin(0.5));
@@ -623,7 +629,7 @@ export class SandBottomScene extends Phaser.Scene {
     }
     // 技（段階214）
     const skill = DIG_SKILLS[SAND_BOTTOM_DIGGERS[digger]?.skill ?? 'stop'];
-    addButton(this, this.root, 12 + leftW / 2, PANEL_Y + 186, leftW, 38, `技「${skill.name}」\n残り ${s.skillLeft}`, { onTap: () => this.confirmSkill() }, { size: 11, fill: 0x2f4a6a, enabled: diving && s.skillLeft > 0 });
+    addButton(this, this.root, 12 + leftW / 2, PANEL_Y + 186, leftW, 38, `技「${skill.name}」\n残り ${s.skillLeft}`, { onTap: () => this.confirmSkill() }, { size: 11, enabled: diving && s.skillLeft > 0 });
     this.drawPad(diving);
     const back = digBackCost(this.def, s);
     addButton(this, this.root, 12 + leftW / 2, GAME_HEIGHT - 36, leftW, 50, s.y === 0 ? '地上へ出る\n（持ち帰る）' : `上へ戻る\n（砂 −${back}）`, { onTap: () => this.goBack() }, { fill: STYLE.red, italic: true, size: 13 });
@@ -755,7 +761,8 @@ export class SandBottomScene extends Phaser.Scene {
       const x = PAD.x + ox * (PAD.w + PAD.gap);
       const y = PAD.y + oy * (PAD.h + PAD.gap);
       const pressed = this.held === dir;
-      const rect = this.add.rectangle(x, y, PAD.w, PAD.h, pressed ? 0x4a5a8a : 0x2b3350, enabled ? 1 : 0.4).setRounded(10).setStrokeStyle(2, 0x6a7ab0, enabled ? 1 : 0.4);
+      // 段階230（見た目の決まり）：十字のボタンは黒い地に白い枠（押している間は紅）。押しやすさのため形は四角のまま
+      const rect = this.add.rectangle(x, y, PAD.w, PAD.h, pressed ? STYLE.red : 0x16141a, enabled ? 1 : 0.4).setStrokeStyle(2, 0xffffff, enabled ? 0.9 : 0.3);
       this.root.add(rect);
       this.root.add(addText(this, x, y, label, { size: 24, bold: true, color: enabled ? '#ffffff' : '#667' }).setOrigin(0.5));
       if (!enabled) continue;
@@ -888,12 +895,12 @@ export class SandBottomScene extends Phaser.Scene {
     if (relic?.kind === 'tool') {
       const t = DIG_TOOLS[relic.ref as DigToolId];
       if (this.s.tools.length >= (this.def.toolMax ?? 3)) {
-        this.message = `${t?.name ?? '道具'}の包みだ。道具袋がいっぱいで、拾えない`;
+        this.message = `${t?.name ?? '道具'}の包みです。道具袋がいっぱいなので、拾えません`;
         this.render();
         return;
       }
       this.s = { ...takeRelic(this.s, cell), tools: [...this.s.tools, relic.ref] };
-      this.message = `道具の包み！ ${t?.name ?? relic.ref}を道具袋に入れた`;
+      this.message = `道具の包み！ ${t?.name ?? relic.ref}を道具袋に入れました`;
       this.render();
       return;
     }
@@ -902,7 +909,7 @@ export class SandBottomScene extends Phaser.Scene {
       const gears = relicGears(relic.ref);
       if (gears.length > 0) run.navi = addParts(run.navi, gears);
       setStoryVars({ ...run.vars, [huntGearKey(relic.ref)]: '1' });
-      this.message = `記憶の宝箱！ ギアを手に入れた：${gears.map((g) => NAVI_DATA.parts[g]?.name ?? g).join('、')}`;
+      this.message = `記憶の宝箱！ ギアを手に入れました：${gears.map((g) => NAVI_DATA.parts[g]?.name ?? g).join('、')}`;
       this.render();
       return;
     }
@@ -932,7 +939,7 @@ export class SandBottomScene extends Phaser.Scene {
     const r = parseRare(ref);
     if (!r || !run.dig) return;
     if ((r.kind === 'item' || r.kind === 'oldItem') && this.s.bag.length >= this.def.bagMax) {
-      this.message = '珍品が光っている……が、かばんがいっぱいで持てない（何かを捨てて、もう一度）';
+      this.message = '珍品が光っています。かばんがいっぱいなので、何かを捨ててから、もう一度掘ってください';
       this.render();
       return;
     }
@@ -941,20 +948,20 @@ export class SandBottomScene extends Phaser.Scene {
     this.cameras.main.flash(250, 255, 230, 160);
     if (r.kind === 'item' || r.kind === 'oldItem') {
       this.s = { ...this.s, bag: [...this.s.bag, r.id] };
-      this.message = r.kind === 'item' ? `珍品だ！ ${itemName(r.id)}（砂の底でしか見つからない物）` : `物語のどこかで見かけた物が、砂に埋まっていた：${itemName(r.id)}`;
+      this.message = r.kind === 'item' ? `珍品！ ${itemName(r.id)}（砂の底でしか見つからない物）` : `物語のどこかで見かけた物が、砂に埋まっていました：${itemName(r.id)}`;
     } else if (r.kind === 'oldSnap' || r.kind === 'snap') {
       run.chainAlbum = gainSnaps(run.chainAlbum, [r.id]);
       run.library = recordLibraryFinds(run.library, { snaps: [r.id] });
       const name = CHAIN_SNAPS[r.id]?.name ?? r.id;
-      this.message = r.kind === 'snap' ? `珍品だ！ レアスナップ「${name}」（砂の底でしか見つからない札）` : `物語のどこかで見かけたスナップが、砂に埋まっていた：${name}`;
+      this.message = r.kind === 'snap' ? `珍品！ レアスナップ「${name}」（砂の底でしか見つからない札）` : `物語のどこかで見かけたスナップが、砂に埋まっていました：${name}`;
     } else if (r.kind === 'oldGear' || r.kind === 'gear') {
       run.navi = addParts(run.navi, [r.id]);
       const name = NAVI_DATA.parts[r.id]?.name ?? r.id;
-      this.message = r.kind === 'gear' ? `珍品だ！ レアギア「${name}」（砂の底でしか見つからないギア）` : `物語のどこかで見かけたギアが、砂に埋まっていた：${name}`;
+      this.message = r.kind === 'gear' ? `珍品！ レアギア「${name}」（砂の底でしか見つからないギア）` : `物語のどこかで見かけたギアが、砂に埋まっていました：${name}`;
     } else {
       const d = DIG_LORE.find((x) => x.id === r.id);
       setStoryVars({ ...run.vars, [digLoreVar(r.id)]: '1' });
-      this.message = d?.kind === 'riku' ? '珍品だ！ りくの字のメモが、砂に埋まっていた' : '珍品だ！ 誰かの日記の切れ端が、砂に埋まっていた';
+      this.message = d?.kind === 'riku' ? '珍品！ りくの字のメモが、砂に埋まっていました' : '珍品！ 誰かの日記の切れ端が、砂に埋まっていました';
       this.render();
       if (d) this.showLore(d);
       return;
@@ -973,7 +980,7 @@ export class SandBottomScene extends Phaser.Scene {
     const o = this.openOverlay();
     const items = this.s.chests[cell] ?? [];
     const room = this.def.bagMax - this.s.bag.length;
-    o.add(addText(this, GAME_WIDTH / 2, 150, '宝箱を見つけた', { size: 20, bold: true, color: '#ffd76a' }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 150, '宝箱を見つけた', { size: 20, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
     items.forEach((id, i) => o.add(addText(this, GAME_WIDTH / 2, 190 + i * 24, `${rarityMark(id)} ${itemName(id)}`, { size: 16, bold: true }).setOrigin(0.5)));
     if (room >= items.length) {
       addButton(this, o, GAME_WIDTH / 2, 300, 240, 52, 'かばんに入れる', { onTap: () => this.take(cell) }, { fill: STYLE.red, italic: true, size: 16 });
@@ -992,14 +999,14 @@ export class SandBottomScene extends Phaser.Scene {
 
   private take(cell: number): void {
     this.s = takeChest(this.def, this.s, cell).state;
-    this.message = 'かばんに入れた';
+    this.message = 'かばんに入れました';
     this.closeOverlay();
   }
 
   private swap(cell: number, bagIndex: number, item: string): void {
     const dropped = this.s.bag[bagIndex];
     this.s = swapChest(this.s, cell, bagIndex, item);
-    this.message = `${itemName(dropped)} を捨てて、${itemName(item)} を入れた`;
+    this.message = `${itemName(dropped)}を捨てて、${itemName(item)}を入れました`;
     this.closeOverlay();
   }
 
