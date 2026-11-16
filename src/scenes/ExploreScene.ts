@@ -65,7 +65,7 @@ import { AREA_BATTLES, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROO
 import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { GOLD_BUTTON } from '../ui/frame';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
@@ -955,9 +955,10 @@ export class ExploreScene extends Phaser.Scene {
       addButton(this, this.hubButton, GAME_WIDTH / 2, target ? y - 70 : y, 240, 60, '時計屋へ帰る\n（今夜はおわり）', { onTap: () => this.finishArea() }, {
         size: 16,
         bold: true,
-        fill: 0x5a4a1e,
-        stroke: 0xffd84a,
+        fill: STYLE.red,
+        stroke: 0xffffff,
         strokeWidth: 2,
+        italic: true,
       });
     }
     if (!target || !isCheckpoint(this.area, this.state.cell, this.state.room)) return;

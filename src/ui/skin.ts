@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { COLORS, MOTION, SKIN } from './theme';
+import { COLORS, MOTION, SKIN, STYLE } from './theme';
 
 // 画面の部品の見た目（段階32a）。絵の素材は使わず、図形で描く。色と形は theme.ts の COLORS と SKIN
 
@@ -41,6 +41,9 @@ function drawBackdrop(scene: Phaser.Scene): Phaser.GameObjects.Graphics {
     g.fillStyle(SKIN.bgGlow, 0.022);
     g.fillEllipse(GAME_WIDTH / 2, GAME_HEIGHT + 40, GAME_WIDTH * (0.9 + i * 0.25), 260 + i * 70);
   }
+  // 段階225：紅の細い斜めの線をうっすら
+  g.lineStyle(2, STYLE.red, 0.06);
+  for (let x = -GAME_HEIGHT; x < GAME_WIDTH; x += 16) g.lineBetween(x, GAME_HEIGHT, x + GAME_HEIGHT * 0.58, 0);
   // 砂の粒
   ensureSandTexture(scene);
   const sand = scene.add.particles(0, 0, 'ui-sand', {
@@ -65,25 +68,29 @@ export function rounded<T extends Phaser.GameObjects.Rectangle>(rect: T, radius:
 }
 
 /**
- * 説明や詳しい情報の窓（左上が x, y）。角の丸い枠に、砂色のふちと、四隅の小さな飾り。fill は地の色（育成の画面の枠は暗い地。段階142）
+ * 説明や詳しい情報の窓（左上が x, y）。段階225（テーマ「スタイリッシュ」）：暗い地に白い枠、左に紅の帯、右上と左下の角を斜めに落とす。
+ * accent は左の帯の色、fill は地の色（中の白い字が読めるよう、地は暗いまま）
  */
-export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, h: number, accent: number = COLORS.accent, fill: number = COLORS.panel): Phaser.GameObjects.Container {
+export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, h: number, accent: number = STYLE.red, fill: number = STYLE.ink): Phaser.GameObjects.Container {
   const c = scene.add.container(0, 0);
-  c.add(scene.add.rectangle(x + 2, y + 5, w, h, 0x000000, 0.4).setOrigin(0).setRounded(14));
-  c.add(scene.add.rectangle(x, y, w, h, fill, 0.97).setOrigin(0).setRounded(14).setStrokeStyle(2, accent));
+  const cut = 14;
+  const shape = (ox: number, oy: number) => [ox, oy, ox + w - cut, oy, ox + w, oy + cut, ox + w, oy + h, ox + cut, oy + h, ox, oy + h - cut];
+  const shadow = scene.add.graphics();
+  shadow.fillStyle(0x000000, 0.7).fillPoints(toPoints(shape(x + 5, y + 5)), true);
+  c.add(shadow);
   const g = scene.add.graphics();
-  g.lineStyle(1, accent, 0.35).strokeRoundedRect(x + 5, y + 5, w - 10, h - 10, 10);
-  g.fillStyle(accent, 1);
-  for (const [cx, cy] of [
-    [x + 5, y + 5],
-    [x + w - 5, y + 5],
-    [x + 5, y + h - 5],
-    [x + w - 5, y + h - 5],
-  ]) {
-    g.fillPoints([new Phaser.Math.Vector2(cx, cy - 5), new Phaser.Math.Vector2(cx + 5, cy), new Phaser.Math.Vector2(cx, cy + 5), new Phaser.Math.Vector2(cx - 5, cy)], true);
-  }
+  g.fillStyle(fill, 0.97).fillPoints(toPoints(shape(x, y)), true);
+  g.lineStyle(2, 0xffffff, 1).strokePoints(toPoints(shape(x, y)), true);
+  // 左の紅の帯
+  g.fillStyle(accent, 1).fillRect(x, y + cut, 6, h - cut * 2);
   c.add(g);
   return c;
+}
+
+function toPoints(flat: number[]): Phaser.Math.Vector2[] {
+  const out: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i < flat.length; i += 2) out.push(new Phaser.Math.Vector2(flat[i], flat[i + 1]));
+  return out;
 }
 
 /**

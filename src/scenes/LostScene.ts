@@ -6,7 +6,7 @@ import { BACKDROPS, BGM, BOND_PARTNER_NAMES, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
 import { notePlayCount } from './playRecord';
@@ -144,10 +144,10 @@ export class LostScene extends Phaser.Scene {
     addButton(this, panel, cx - 78, by, 140, 48, '閉じる', { onTap: close }, { size: 15 });
     if (st === 'none') {
       const err = getAcceptError(LOST_ITEMS, run.vars, d.id, LOST_ACTIVE_MAX);
-      addButton(this, panel, cx + 78, by, 140, 48, err === 'too many accepted' ? `受けられる\nのは${LOST_ACTIVE_MAX}つまで` : '受ける', { onTap: () => { close(); this.accept(d); } }, { size: 14, bold: true, enabled: err === null, fill: 0x24384a, stroke: 0x6bc8ff, strokeWidth: 2 });
+      addButton(this, panel, cx + 78, by, 140, 48, err === 'too many accepted' ? `受けられる\nのは${LOST_ACTIVE_MAX}つまで` : '受ける', { onTap: () => { close(); this.accept(d); } }, { size: 14, bold: true, enabled: err === null, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true });
     } else if (st === 'accepted' || st === 'found') {
       const err = getDeliverError(d, run.vars, run.armory.items);
-      addButton(this, panel, cx + 78, by, 140, 48, '届ける', { onTap: () => { close(); this.deliver(d); } }, { size: 15, bold: true, enabled: err === null, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+      addButton(this, panel, cx + 78, by, 140, 48, '届ける', { onTap: () => { close(); this.deliver(d); } }, { size: 15, bold: true, enabled: err === null, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true });
     }
     popIn(this, panel);
   }

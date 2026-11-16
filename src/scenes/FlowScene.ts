@@ -6,7 +6,7 @@ import type { FlowEvent } from '../core';
 import { chapterOfEvent, dialogueRun, isPlaceholder } from '../core';
 import { SLICE_FLOW } from '../data';
 import { applyKinsoku } from '../ui/kinsoku';
-import { COLORS, RENDER_SCALE, TITLE_EXIT } from '../ui/theme';
+import { COLORS, RENDER_SCALE, TITLE_EXIT, STYLE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import { stopAmbience } from '../audio/sound';
 import type { DialogueData } from './DialogueScene';
@@ -146,9 +146,10 @@ export class FlowScene extends Phaser.Scene {
     addButton(this, root, cx, 720, 260, 64, '次へ', { onTap: () => this.scene.restart({ done: true }) }, {
       size: 20,
       bold: true,
-      fill: 0x5a4a10,
-      stroke: COLORS.accent,
+      fill: STYLE.red,
+      stroke: 0xffffff,
       strokeWidth: 2,
+      italic: true,
     });
   }
 

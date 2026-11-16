@@ -6,7 +6,7 @@ import { BACKDROPS, BGM, CHAIN_ALBUM, CHAIN_SNAPS, DECOMPOSE_VAR, DIG_TOOL_OWN_M
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { maybeShowTip } from '../ui/tipPanel';
 import { addButton, addText } from '../ui/widgets';
 import type { DialogueData } from './DialogueScene';
@@ -151,7 +151,7 @@ export class ExchangeScene extends Phaser.Scene {
     const talk = this.talk();
     if (talk) {
       root.add(addText(this, 24, 690, `${EXCHANGE_KEEPER}「${talk.teaser}」`, { size: 13, wrap: GAME_WIDTH - 150 }).setOrigin(0, 0.5));
-      addButton(this, root, GAME_WIDTH - 66, 690, 92, 44, '話す', { onTap: () => this.startTalk(talk.scene) }, { size: 15, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+      addButton(this, root, GAME_WIDTH - 66, 690, 92, 44, '話す', { onTap: () => this.startTalk(talk.scene) }, { size: 15, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true });
       // 段階151（テストプレイのメモ 2 の 5）：「！」は字に混ぜず、日常の印と同じ赤い丸にして、ボタンの右上の角に付ける
       root.add(this.add.circle(GAME_WIDTH - 22, 670, 10, 0xe0563e).setStrokeStyle(2, 0xffffff));
       root.add(addText(this, GAME_WIDTH - 22, 670, '！', { size: 12, bold: true }).setOrigin(0.5));
@@ -197,7 +197,7 @@ export class ExchangeScene extends Phaser.Scene {
       this.overlay = undefined;
     };
     addButton(this, panel, cx - 72, top + 148, 130, 48, 'やめる', { onTap: close }, { size: 15 });
-    addButton(this, panel, cx + 72, top + 148, 130, 48, '交換する', { onTap: () => { close(); this.buy(g); } }, { size: 15, bold: true, fill: 0x2f4f3a, stroke: 0x6fe0a0, strokeWidth: 2 });
+    addButton(this, panel, cx + 72, top + 148, 130, 48, '交換する', { onTap: () => { close(); this.buy(g); } }, { size: 15, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true });
     popIn(this, panel);
   }
 

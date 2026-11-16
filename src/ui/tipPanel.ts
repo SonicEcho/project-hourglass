@@ -5,7 +5,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { TIPS } from '../data';
 import { browserStorage } from '../save/storage';
 import { applyKinsoku } from './kinsoku';
-import { COLORS } from './theme';
+import { COLORS, STYLE } from './theme';
 import { addButton, addText } from './widgets';
 import { addWindow, fadeOutAndDestroy, popIn } from './skin';
 
@@ -55,7 +55,7 @@ export function showTipPanel(scene: Phaser.Scene, tip: TipDef, onClose?: () => v
       fadeOutAndDestroy(scene, c);
       onClose?.();
     },
-  }, { size: 16, bold: true, fill: 0x2f6b3f, stroke: 0x6dff9e });
+  }, { size: 16, bold: true, fill: STYLE.red, stroke: 0xffffff, italic: true });
   popIn(scene, c);
   return c;
 }

@@ -8,7 +8,7 @@ import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
 import { isSettled } from '../assets/loader';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addButton, addText } from '../ui/widgets';
 import type { DigHeroSprite } from './digArt';
 import { digArtId, DIG_CRACK_FRAME, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
@@ -262,7 +262,7 @@ export class SandBottomScene extends Phaser.Scene {
       ['riku', 'りくのメモ'],
       ['diary', '誰かの日記'],
     ];
-    tabs.forEach(([k, label], i) => addButton(this, o, GAME_WIDTH / 2 + (i === 0 ? -80 : 80), 104, 150, 38, label, { onTap: () => this.showRecords(k) }, k === kind ? { fill: 0xc21f4a, size: 13 } : { size: 13 }));
+    tabs.forEach(([k, label], i) => addButton(this, o, GAME_WIDTH / 2 + (i === 0 ? -80 : 80), 104, 150, 38, label, { onTap: () => this.showRecords(k) }, k === kind ? { fill: STYLE.red, italic: true, size: 13 } : { size: 13 }));
     const list = DIG_LORE.filter((d) => d.kind === kind).sort((a, b) => a.no - b.no);
     const per = Math.min(list.length, 12);
     list.slice(0, per).forEach((d, i) => {
@@ -309,7 +309,7 @@ export class SandBottomScene extends Phaser.Scene {
     });
     const y = 206 + tools.length * 66 + 20;
     if (picked.length > 0) addButton(this, o, GAME_WIDTH / 2 - 84, y, 150, 44, '入れ直す', { onTap: () => this.showToolPicker(digger, []) }, { size: 13 });
-    addButton(this, o, GAME_WIDTH / 2 + (picked.length > 0 ? 84 : 0), y, 150, 44, '潜る', { onTap: () => this.startDive(digger, picked) }, { fill: 0xc21f4a, size: 15 });
+    addButton(this, o, GAME_WIDTH / 2 + (picked.length > 0 ? 84 : 0), y, 150, 44, '潜る', { onTap: () => this.startDive(digger, picked) }, { fill: STYLE.red, italic: true, size: 15 });
     addButton(this, o, GAME_WIDTH / 2, y + 60, 150, 40, '戻る', { onTap: () => this.showPicker() }, { size: 12 });
   }
 
@@ -626,7 +626,7 @@ export class SandBottomScene extends Phaser.Scene {
     addButton(this, this.root, 12 + leftW / 2, PANEL_Y + 186, leftW, 38, `技「${skill.name}」\n残り ${s.skillLeft}`, { onTap: () => this.confirmSkill() }, { size: 11, fill: 0x2f4a6a, enabled: diving && s.skillLeft > 0 });
     this.drawPad(diving);
     const back = digBackCost(this.def, s);
-    addButton(this, this.root, 12 + leftW / 2, GAME_HEIGHT - 36, leftW, 50, s.y === 0 ? '地上へ出る\n（持ち帰る）' : `上へ戻る\n（砂 −${back}）`, { onTap: () => this.goBack() }, { fill: 0xc21f4a, size: 13 });
+    addButton(this, this.root, 12 + leftW / 2, GAME_HEIGHT - 36, leftW, 50, s.y === 0 ? '地上へ出る\n（持ち帰る）' : `上へ戻る\n（砂 −${back}）`, { onTap: () => this.goBack() }, { fill: STYLE.red, italic: true, size: 13 });
     // 知らせの文は、地面の下の端に重ねる（段階214。左の列を道具と技に使うため）
     if (this.message) {
       const t = addText(this, 10, PANEL_Y - 6, this.message, { size: 11, bold: true, color: '#ffe9a8', wrap: GAME_WIDTH - 20, ja: true }).setOrigin(0, 1);
@@ -661,7 +661,7 @@ export class SandBottomScene extends Phaser.Scene {
     const o = this.openOverlay();
     o.add(addText(this, GAME_WIDTH / 2, 260, t.name, { size: 22, bold: true, color: '#e8c8ff' }).setOrigin(0.5));
     o.add(addText(this, GAME_WIDTH / 2, 300, t.note, { size: 13, align: 'center', wrap: GAME_WIDTH - 60, ja: true }).setOrigin(0.5, 0));
-    addButton(this, o, GAME_WIDTH / 2, 400, 220, 52, '使う', { onTap: () => this.applyUse(useDigTool(this.def, this.s, tool), t.name) }, { fill: 0xc21f4a, size: 16 });
+    addButton(this, o, GAME_WIDTH / 2, 400, 220, 52, '使う', { onTap: () => this.applyUse(useDigTool(this.def, this.s, tool), t.name) }, { fill: STYLE.red, italic: true, size: 16 });
     addButton(this, o, GAME_WIDTH / 2, 464, 220, 44, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
   }
 
@@ -676,7 +676,7 @@ export class SandBottomScene extends Phaser.Scene {
     o.add(addText(this, GAME_WIDTH / 2, 260, `技「${k.name}」`, { size: 22, bold: true, color: '#9fd0ff' }).setOrigin(0.5));
     const aim = id === 'rush' || id === 'slash' ? `\n（今は ${dirName} 向き。最後に動いた向きに使う）` : '';
     o.add(addText(this, GAME_WIDTH / 2, 300, `${k.note}${aim}\n残り ${this.s.skillLeft} 回`, { size: 13, align: 'center', wrap: GAME_WIDTH - 60, ja: true }).setOrigin(0.5, 0));
-    addButton(this, o, GAME_WIDTH / 2, 410, 220, 52, '使う', { onTap: () => this.applyUse(useDigSkill(this.def, this.s, id, this.lastDir), k.name, id === 'heal') }, { fill: 0xc21f4a, size: 16 });
+    addButton(this, o, GAME_WIDTH / 2, 410, 220, 52, '使う', { onTap: () => this.applyUse(useDigSkill(this.def, this.s, id, this.lastDir), k.name, id === 'heal') }, { fill: STYLE.red, italic: true, size: 16 });
     addButton(this, o, GAME_WIDTH / 2, 474, 220, 44, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
   }
 
@@ -976,10 +976,10 @@ export class SandBottomScene extends Phaser.Scene {
     o.add(addText(this, GAME_WIDTH / 2, 150, '宝箱を見つけた', { size: 20, bold: true, color: '#ffd76a' }).setOrigin(0.5));
     items.forEach((id, i) => o.add(addText(this, GAME_WIDTH / 2, 190 + i * 24, `${rarityMark(id)} ${itemName(id)}`, { size: 16, bold: true }).setOrigin(0.5)));
     if (room >= items.length) {
-      addButton(this, o, GAME_WIDTH / 2, 300, 240, 52, 'かばんに入れる', { onTap: () => this.take(cell) }, { fill: 0xc21f4a, size: 16 });
+      addButton(this, o, GAME_WIDTH / 2, 300, 240, 52, 'かばんに入れる', { onTap: () => this.take(cell) }, { fill: STYLE.red, italic: true, size: 16 });
       return;
     }
-    if (room > 0) addButton(this, o, GAME_WIDTH / 2, 290, 260, 48, `入るだけ入れる（あと${room}個）`, { onTap: () => this.take(cell) }, { fill: 0xc21f4a, size: 14 });
+    if (room > 0) addButton(this, o, GAME_WIDTH / 2, 290, 260, 48, `入るだけ入れる（あと${room}個）`, { onTap: () => this.take(cell) }, { fill: STYLE.red, italic: true, size: 14 });
     o.add(addText(this, GAME_WIDTH / 2, 330, room > 0 ? '全部は入らない。入れ替えるなら、捨てる物を選ぶ' : 'かばんがいっぱい。入れ替えるなら、捨てる物を選ぶ', { size: 12, color: '#ff8a7a', bold: true }).setOrigin(0.5));
     const want = items[0];
     o.add(addText(this, GAME_WIDTH / 2, 352, `（${itemName(want)} と入れ替える）`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
@@ -1016,7 +1016,7 @@ export class SandBottomScene extends Phaser.Scene {
     o.add(
       addText(this, GAME_WIDTH / 2, 240, `${note}戦うと、砂時計の砂が ${this.def.cost.battle} 減る。\nHP・MP は、潜っている間ずっと持ち越す。\n負けると地上へ戻され、かばんの半分を失う${half}`, { size: 13, align: 'center', wrap: GAME_WIDTH - 60, ja: true }).setOrigin(0.5, 0),
     );
-    addButton(this, o, GAME_WIDTH / 2, 400, 240, 52, '戦う', { onTap: () => this.fight(kind, ref, battle) }, { fill: 0xc21f4a, size: 16 });
+    addButton(this, o, GAME_WIDTH / 2, 400, 240, 52, '戦う', { onTap: () => this.fight(kind, ref, battle) }, { fill: STYLE.red, italic: true, size: 16 });
     if (!forced) addButton(this, o, GAME_WIDTH / 2, 464, 240, 44, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
   }
 
@@ -1047,7 +1047,7 @@ export class SandBottomScene extends Phaser.Scene {
     if (this.s.sand < back) {
       const o = this.openOverlay();
       o.add(addText(this, GAME_WIDTH / 2, 220, `帰り道に要る砂（${back}）が足りない。\n戻ると、かばんの半分を失う`, { size: 15, bold: true, align: 'center', color: '#ff8a7a' }).setOrigin(0.5));
-      addButton(this, o, GAME_WIDTH / 2, 320, 240, 52, 'それでも戻る', { onTap: () => this.finishDive() }, { fill: 0xc21f4a, size: 15 });
+      addButton(this, o, GAME_WIDTH / 2, 320, 240, 52, 'それでも戻る', { onTap: () => this.finishDive() }, { fill: STYLE.red, italic: true, size: 15 });
       addButton(this, o, GAME_WIDTH / 2, 384, 240, 44, 'やめる', { onTap: () => this.closeOverlay() }, { size: 14 });
       return;
     }
@@ -1075,7 +1075,7 @@ export class SandBottomScene extends Phaser.Scene {
     for (const id of s.bag) counts.set(id, (counts.get(id) ?? 0) + 1);
     const lines = [...counts].map(([id, n]) => `${rarityMark(id)} ${itemName(id)}${n > 1 ? ` ×${n}` : ''}`);
     o.add(addText(this, GAME_WIDTH / 2, 206, lines.length ? lines.join('\n') : '（何も持ち帰れなかった）', { size: 15, bold: true, align: 'center' }).setOrigin(0.5, 0).setLineSpacing(6));
-    addButton(this, o, GAME_WIDTH / 2, GAME_HEIGHT - 120, 260, 52, '受け取る', { onTap: () => this.receive() }, { fill: 0x2e5a3e, stroke: 0x6ad38a, strokeWidth: 2, size: 16 });
+    addButton(this, o, GAME_WIDTH / 2, GAME_HEIGHT - 120, 260, 52, '受け取る', { onTap: () => this.receive() }, { fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true, size: 16 });
   }
 
   private receive(): void {

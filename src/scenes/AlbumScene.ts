@@ -11,7 +11,7 @@ import { addIcon } from '../ui/icons';
 import { ELEMENT_LABEL } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { enterScreen, screenBg } from '../ui/skin';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { maybeShowTip } from '../ui/tipPanel';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { hubBack, run, saveRun, setHubReturn } from './run';
@@ -219,7 +219,7 @@ export class AlbumScene extends Phaser.Scene {
       52,
       !complete ? `あと${this.size - total}枚入れると\n決められる` : changed ? `決めて\n${backLabel}` : backLabel,
       { onTap: () => this.confirm() },
-      complete ? { fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2, size: changed ? 14 : 15, bold: true } : { enabled: false, size: 12 },
+      complete ? { fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true, size: changed ? 14 : 15, bold: true } : { enabled: false, size: 12 },
     );
   }
 

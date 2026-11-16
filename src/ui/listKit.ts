@@ -3,8 +3,8 @@ import type { ChainCardCategory } from '../core';
 import { GAME_WIDTH } from '../config';
 import { addIcon, type IconKind } from './icons';
 import { SIDE_PADDING } from './layout';
-import { COLORS } from './theme';
-import { addButton, addText, makePressable } from './widgets';
+import { COLORS, STYLE } from './theme';
+import { addButton, addSlant, addText, makePressable } from './widgets';
 
 // 一覧の画面の共通の部品（段階167。アルバムとライブラリで使う）。
 // 見た目を仕上げる段階（段取りの段階G の後）では、ここを直せば全部の一覧の画面に効く
@@ -28,10 +28,14 @@ export const ROW_W = GAME_WIDTH - SIDE_PADDING * 2;
 
 /** 小さな札（タブ・絞り込み）。選んでいる物は色で塗る */
 export function addChip(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number, w: number, h: number, label: string, color: number, on: boolean, onTap: () => void): void {
-  const r = scene.add.rectangle(x, y, w, h, on ? color : 0x141c25).setRounded(6);
-  r.setStrokeStyle(1, on ? color : COLORS.border);
+  // 段階225：斜めの札。選んでいる物は白地に黒い字（分類の色は下の線で）
+  const face = addSlant(scene, x, y, w, h, on ? 0xffffff : STYLE.ink);
+  face.setStrokeStyle(1, on ? 0xffffff : color, on ? 1 : 0.8);
+  parent.add(face);
+  if (on) parent.add(scene.add.rectangle(x, y + h / 2 - 1.5, w - 10, 3, color));
+  const r = scene.add.rectangle(x, y, w, h, 0xffffff, 0.001);
   parent.add(r);
-  const t = addText(scene, x, y, label, { size: 10, bold: true, color: on ? '#101820' : COLORS.subText }).setOrigin(0.5);
+  const t = addText(scene, x, y, label, { size: 10, bold: true, color: on ? '#101010' : COLORS.subText }).setOrigin(0.5);
   if (t.width > w - 6) t.setScale((w - 6) / t.width);
   parent.add(t);
   makePressable(r, { onTap });
@@ -61,9 +65,11 @@ export function addTabs<T extends string>(scene: Phaser.Scene, parent: Phaser.Ga
 
 /** 一覧の1行の地（タップで選ぶ）。dim はまだ持っていない・見つけていない物。行の真ん中の y を返す */
 export function addListRow(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, top: number, opts: { dim: boolean; selected: boolean; onTap: () => void }): number {
-  const row = scene.add.rectangle(SIDE_PADDING, top, ROW_W, ROW_H, opts.dim ? 0x141c25 : COLORS.panel).setRounded(8).setOrigin(0);
-  row.setStrokeStyle(opts.selected ? 3 : 1, opts.selected ? COLORS.select : COLORS.border);
+  // 段階225：暗い地に、左の紅の細い帯。選んでいる行は白い枠
+  const row = scene.add.rectangle(SIDE_PADDING, top, ROW_W, ROW_H, opts.dim ? 0x0e0d10 : COLORS.panel, 0.95).setOrigin(0);
+  row.setStrokeStyle(opts.selected ? 2 : 1, opts.selected ? 0xffffff : 0x2e2c34);
   parent.add(row);
+  parent.add(scene.add.rectangle(SIDE_PADDING, top, 4, ROW_H, STYLE.red, opts.dim ? 0.35 : 1).setOrigin(0));
   makePressable(row, { onTap: opts.onTap });
   return top + ROW_H / 2;
 }
@@ -71,7 +77,7 @@ export function addListRow(scene: Phaser.Scene, parent: Phaser.GameObjects.Conta
 /** 行の左の帯（分類の色・アイコン・名前） */
 export function addBand(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, left: number, cy: number, w: number, color: number, label: string, icon: IconKind | null, faded: boolean): void {
   const x = left + w / 2;
-  parent.add(scene.add.rectangle(x, cy, w, 22, color, faded ? 0.4 : 0.9).setRounded(6));
+  parent.add(addSlant(scene, x, cy, w, 22, color, faded ? 0.4 : 0.9));
   const t = addText(scene, x, cy, label, { size: 9, bold: true, color: '#101820' }).setOrigin(0.5);
   if (icon) {
     const l = x - (12 + 2 + t.width) / 2;
@@ -99,6 +105,7 @@ export function addPager(scene: Phaser.Scene, parent: Phaser.GameObjects.Contain
 
 /** 説明の窓（行ごとの文） */
 export function addDetailBox(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, y: number, h: number, lines: readonly string[]): void {
-  parent.add(scene.add.rectangle(SIDE_PADDING, y, ROW_W, h, COLORS.panel).setRounded(8).setOrigin(0).setStrokeStyle(1, COLORS.border));
+  parent.add(scene.add.rectangle(SIDE_PADDING, y, ROW_W, h, COLORS.panel, 0.95).setOrigin(0).setStrokeStyle(1, 0xffffff, 0.5));
+  parent.add(scene.add.rectangle(SIDE_PADDING, y, 4, h, STYLE.red).setOrigin(0));
   parent.add(addText(scene, SIDE_PADDING + 10, y + 8, lines.join('\n'), { size: 12, wrap: ROW_W - 20 }));
 }

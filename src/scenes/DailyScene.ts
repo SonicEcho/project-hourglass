@@ -4,7 +4,7 @@ import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
 import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
 import { BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
-import { COLORS, RENDER_SCALE, toCss } from '../ui/theme';
+import { COLORS, RENDER_SCALE, toCss, STYLE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
@@ -358,7 +358,7 @@ export class DailyScene extends Phaser.Scene {
     const top = 420 - h / 2;
     panel.add(this.add.rectangle(cx, 420, 320, h, COLORS.panel).setRounded(8).setStrokeStyle(1, COLORS.border));
     panel.add(body.setY(top + 30));
-    addButton(this, panel, cx - 75, top + h - 50, 130, 52, 'はい', { onTap: onYes }, { size: 16, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 });
+    addButton(this, panel, cx - 75, top + h - 50, 130, 52, 'はい', { onTap: onYes }, { size: 16, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true });
     addButton(this, panel, cx + 75, top + h - 50, 130, 52, 'いいえ', { onTap: () => panel.destroy(true) }, { size: 16 });
   }
 

@@ -6,12 +6,13 @@ import { addIcon, type IconKind } from './icons';
 import { SIDE_PADDING } from './layout';
 import { faceImage } from './portrait';
 import { ensureSandTexture } from './skin';
-import { ALLY_COLOR, COLORS, FONT_HEADING } from './theme';
-import { addButton, addText, type ButtonOptions, makePressable } from './widgets';
+import { ALLY_COLOR, COLORS, FONT, STYLE } from './theme';
+import { addButton, addSlant, addText, type ButtonOptions, makePressable } from './widgets';
 
 // 育成の5つの画面（拠点・並び・星図・武器・ムーブメント）に共通の枠（段階141。docs/ART.md の 5-9「そろえ方の決まり」）。
 // 上の見出し、仲間の顔のタブ、下の戻るボタン、金のボタン、暗い背景を、どの画面でも同じ形と場所で描く。
-// 色は金を1つだけの差し色にする（選んでいる物と、押してほしいボタン）。中身（各画面の絵）は画面ごとに描く
+// 色は金を1つだけの差し色にする（選んでいる物と、押してほしいボタン）。中身（各画面の絵）は画面ごとに描く。
+// 段階225（docs/milestones/M3_ui_polish.md の 6.）：テーマ「スタイリッシュ」に。差し色は紅、知らせ（進化できる等）は黄（gold の名前のまま）
 
 /** 枠の場所と大きさ（390×844 の座標） */
 export const FRAME = {
@@ -31,26 +32,26 @@ export const FRAME = {
 
 /** 枠の色 */
 export const FRAME_COLORS = {
-  /** 差し色の金（選んでいる物・押してほしいボタン） */
-  gold: 0xffd77a,
-  goldText: '#ffd77a',
+  /** 知らせの色（段階225 から黄。進化できる・開けられる・選んでいる物の字） */
+  gold: STYLE.yellow,
+  goldText: STYLE.yellowText,
   /** 背景の暗い色（上・下） */
-  bgTop: 0x1a130d,
-  bgBottom: 0x070504,
+  bgTop: 0x1a0a0e,
+  bgBottom: 0x050405,
   /** タブ・戻るボタンの地 */
-  panel: 0x0c0a08,
+  panel: STYLE.ink,
   /** 選んでいない物のふち */
-  line: 0x4a4238,
-  /** 金のボタンの地と字 */
-  goldFill: 0xd9a440,
-  goldInk: '#2a1a06',
+  line: STYLE.line,
+  /** 押してほしいボタンの地と字（段階225 から紅に白い斜体） */
+  goldFill: STYLE.red,
+  goldInk: '#ffffff',
 } as const;
 
-/** 押してほしい大事なボタン（金）。addButton にそのまま渡す */
-export const GOLD_BUTTON: ButtonOptions = { fill: FRAME_COLORS.goldFill, stroke: 0xfff3c8, strokeWidth: 2, textColor: FRAME_COLORS.goldInk, bold: true, size: 16 };
+/** 押してほしい大事なボタン（段階225 から紅に白い斜体。名前は前のまま）。addButton にそのまま渡す */
+export const GOLD_BUTTON: ButtonOptions = { fill: FRAME_COLORS.goldFill, stroke: 0xffffff, strokeWidth: 2, textColor: FRAME_COLORS.goldInk, bold: true, italic: true, size: 16 };
 
-/** ふつうのボタン（暗い地に細いふち）。addButton にそのまま渡す */
-export const PLAIN_BUTTON: ButtonOptions = { fill: FRAME_COLORS.panel, stroke: FRAME_COLORS.line, strokeWidth: 1 };
+/** ふつうのボタン（黒い地に白いふち）。addButton にそのまま渡す */
+export const PLAIN_BUTTON: ButtonOptions = { fill: FRAME_COLORS.panel, stroke: 0xffffff, strokeWidth: 1.5 };
 
 const backdrops = new WeakMap<Phaser.Scene, Phaser.GameObjects.GameObject>();
 
@@ -64,6 +65,9 @@ export function frameBg(scene: Phaser.Scene, top: number = FRAME_COLORS.bgTop, b
     const g = scene.add.graphics().setDepth(-100);
     g.fillGradientStyle(top, top, bottom, bottom, 1);
     g.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    // 段階225：紅の細い斜めの線をうっすら
+    g.lineStyle(2, STYLE.red, 0.07);
+    for (let x = -GAME_HEIGHT; x < GAME_WIDTH; x += 16) g.lineBetween(x, GAME_HEIGHT, x + GAME_HEIGHT * 0.58, 0);
     ensureSandTexture(scene);
     const dust = scene.add.particles(0, 0, 'ui-sand', {
       x: { min: 0, max: GAME_WIDTH },
@@ -72,7 +76,7 @@ export function frameBg(scene: Phaser.Scene, top: number = FRAME_COLORS.bgTop, b
       speedX: { min: -3, max: 3 },
       scale: { min: 0.25, max: 0.7 },
       alpha: { start: 0.3, end: 0 },
-      tint: FRAME_COLORS.gold,
+      tint: STYLE.red,
       lifespan: { min: 6000, max: 11000 },
       frequency: 520,
     });
@@ -97,15 +101,19 @@ export interface HeaderValue {
 export function frameHeader(scene: Phaser.Scene, root: Phaser.GameObjects.Container, icon: IconKind | 'hourglass' | 'album', title: string, right?: HeaderValue): Phaser.GameObjects.Text | undefined {
   const cy = FRAME.headerH / 2 + 2;
   const g = scene.add.graphics();
-  g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.75, 0.75, 0, 0);
+  g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.85, 0.85, 0, 0);
   g.fillRect(0, 0, GAME_WIDTH, FRAME.headerH + 6);
   root.add(g);
+  // 段階225：紅の斜めの箱にアイコン、太い斜体の名前と紅の影、下に紅の斜めの帯
   const ix = SIDE_PADDING + 16;
-  root.add(scene.add.circle(ix, cy, 14, FRAME_COLORS.panel, 0.9).setStrokeStyle(1.5, FRAME_COLORS.gold));
+  root.add(addSlant(scene, ix, cy, 30, 28, STYLE.red));
   root.add(drawHeaderIcon(scene, icon, ix, cy));
-  const t = addText(scene, ix + 24, cy, title, { size: 20, bold: true }).setOrigin(0, 0.5);
-  t.setFontFamily(FONT_HEADING).setLetterSpacing(3).setShadow(0, 2, '#000000', 6, false, true);
+  const t = addText(scene, ix + 24, cy, title, { size: 21, bold: true }).setOrigin(0, 0.5);
+  t.setFontFamily(FONT).setFontStyle('bold italic').setLetterSpacing(2).setShadow(3, 3, STYLE.redText, 0, false, true);
   root.add(t);
+  const left = ix - 16;
+  const lineW = t.x + t.width + 30 - left;
+  root.add(addSlant(scene, left + lineW / 2, cy + 19, lineW, 4, STYLE.red));
   if (!right) return undefined;
   const rx = GAME_WIDTH - SIDE_PADDING - 4;
   // 数がない時は、右上に小さな一言だけ
@@ -120,9 +128,9 @@ export function frameHeader(scene: Phaser.Scene, root: Phaser.GameObjects.Contai
 }
 
 function drawHeaderIcon(scene: Phaser.Scene, icon: IconKind | 'hourglass' | 'album', x: number, y: number): Phaser.GameObjects.Graphics {
-  if (icon !== 'hourglass' && icon !== 'album') return addIcon(scene, icon, x, y, 15, FRAME_COLORS.gold);
+  if (icon !== 'hourglass' && icon !== 'album') return addIcon(scene, icon, x, y, 15, 0xffffff);
   const g = scene.add.graphics({ x, y });
-  g.fillStyle(FRAME_COLORS.gold, 1).lineStyle(1.6, FRAME_COLORS.gold, 1);
+  g.fillStyle(0xffffff, 1).lineStyle(1.6, 0xffffff, 1);
   if (icon === 'hourglass') {
     // 砂時計：上下の板と、2つの三角
     g.fillRect(-6, -8, 12, 2).fillRect(-6, 6, 12, 2);
@@ -165,9 +173,12 @@ export function faceTabs(
     const x = SIDE_PADDING + i * (w + gap);
     const cx = x + w / 2;
     const on = tab.id === current;
-    if (on) root.add(scene.add.rectangle(cx, top + h / 2, w + 6, h + 6, FRAME_COLORS.gold, 0.18).setRounded(14));
-    const rect = scene.add.rectangle(x, top, w, h, on ? 0x2a2010 : FRAME_COLORS.panel, on ? 0.95 : 0.8).setOrigin(0).setRounded(12);
-    rect.setStrokeStyle(on ? 2 : 1, on ? FRAME_COLORS.gold : FRAME_COLORS.line);
+    // 段階225：斜めの板。今の人は紅に白いふち
+    root.add(addSlant(scene, cx + 3, top + h / 2 + 3, w, h, 0x000000, 0.7));
+    const face = addSlant(scene, cx, top + h / 2, w, h, on ? STYLE.red : FRAME_COLORS.panel, on ? 1 : 0.9);
+    face.setStrokeStyle(on ? 2 : 1.5, on ? 0xffffff : FRAME_COLORS.line);
+    root.add(face);
+    const rect = scene.add.rectangle(x, top, w, h, 0xffffff, 0.001).setOrigin(0);
     root.add(rect);
     // 顔（ふちはその人の色）
     const fy = top + 18;
@@ -181,8 +192,8 @@ export function faceTabs(
       root.add(scene.add.circle(cx, fy, r, color, 0.85));
       root.add(addText(scene, cx, fy, tab.name.slice(0, 1), { size: 13, bold: true }).setOrigin(0.5));
     }
-    root.add(scene.add.circle(cx, fy, r + 1).setStrokeStyle(1.5, on ? FRAME_COLORS.gold : color));
-    root.add(addText(scene, cx, top + 39, tab.name, { size: 11, bold: true, color: on ? FRAME_COLORS.goldText : COLORS.text }).setOrigin(0.5));
+    root.add(scene.add.circle(cx, fy, r + 1).setStrokeStyle(1.5, on ? 0xffffff : color));
+    root.add(addText(scene, cx, top + 39, tab.name, { size: 11, bold: true, color: COLORS.text }).setOrigin(0.5).setFontStyle('bold italic'));
     if (tab.sub) root.add(addText(scene, cx, top + 51, tab.sub, { size: 9, color: tab.subColor ?? COLORS.subText }).setOrigin(0.5));
     makePressable(rect, {
       onTap: () => handlers.onTap(tab.id),
@@ -195,7 +206,7 @@ export function faceTabs(
 export function backButton(scene: Phaser.Scene, root: Phaser.GameObjects.Container, label: string, onTap: () => void): Phaser.GameObjects.Rectangle {
   return addButton(scene, root, GAME_WIDTH / 2, FRAME.backY, GAME_WIDTH - SIDE_PADDING * 2 - 8, FRAME.backH, label, { onTap }, {
     ...PLAIN_BUTTON,
-    stroke: FRAME_COLORS.gold,
+    strokeWidth: 2,
     size: 15,
     bold: true,
   });

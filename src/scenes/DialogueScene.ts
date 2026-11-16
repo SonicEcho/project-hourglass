@@ -9,7 +9,7 @@ import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } f
 import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
-import { COLORS, RENDER_SCALE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { applyKinsoku } from '../ui/kinsoku';
 import { playMiniGame } from './miniGames';
 import { drawBackdrop } from '../ui/backdrop';
@@ -1196,7 +1196,7 @@ export class DialogueScene extends Phaser.Scene {
             void this.proceed();
           },
         },
-        { size: 16, bold: true, fill: 0x5a4a10, stroke: COLORS.accent, strokeWidth: 2 },
+        { size: 16, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true },
       );
     });
   }
