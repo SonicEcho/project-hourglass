@@ -1,4 +1,5 @@
 import type { DigLayerDef, DigRarity, DigSkillId, DigToolId, DigWorldDef } from '../core/dig';
+import { digLayerTop } from '../core/dig';
 import { huntGearKey } from '../core/hunt';
 import { lostStatus } from '../core/lost';
 import { AREA_BATTLES, AREAS } from './areas';
@@ -504,4 +505,25 @@ export function parseRare(ref: string): { kind: 'item' | 'oldItem' | 'oldSnap' |
   const o = /^old:(item|snap|gear):(.+)$/.exec(ref);
   if (o) return { kind: o[1] === 'item' ? 'oldItem' : o[1] === 'snap' ? 'oldSnap' : 'oldGear', id: o[2] };
   return null;
+}
+
+/** ちゃんと潜った回数を覚える、物語で覚えた値の名前（段階218） */
+export const DIG_FULL_VAR = 'dig:full';
+
+/**
+ * ちゃんと潜ったとみなす深さ（段階218）：開いている中でいちばん浅い章の層の、いちばん下の帯（宝の帯）の上の端。
+ * ここまで潜った回だけ、特別ルール・珍品・外れを進める（潜ってすぐ戻る選び直しを防ぐ）
+ */
+export function digFullDepth(def: DigWorldDef): number {
+  const first = def.layers[0]?.group;
+  const band = [...def.layers].reverse().find((l) => l.group === first);
+  return band ? digLayerTop(def, band.id) : 1;
+}
+
+/** 潜り終えた時の覚え（段階218）：ちゃんと潜った回だけ回数と外れを進める。珍品を取った回は、深さに関係なく取った */
+export function digAfterDive(vars: Readonly<Record<string, string>>, full: boolean, got: boolean): Record<string, string> {
+  let v: Record<string, string> = { ...vars };
+  if (full) v[DIG_FULL_VAR] = String(Number(vars[DIG_FULL_VAR] ?? 0) + 1);
+  if (got || full) v = digRareAfter(v, got);
+  return v;
 }

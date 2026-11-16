@@ -3,7 +3,7 @@ import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from
 import type { DigLoreDef, DigLoreKind, DigOwned, DigRuleId } from '../data';
 import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digRareAfter, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -82,7 +82,12 @@ function currentDef() {
 
 /** 次に潜る回の特別ルール（段階217。潜った回数とシードで決まる） */
 function nextRule(): DigRuleId {
-  return digRuleFor(run.seed, Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1);
+  return digRuleFor(run.seed, fullDives() + 1);
+}
+
+/** ちゃんと潜った回数（段階218。特別ルール・珍品はこれで決める。潜ってすぐ戻っても進まない） */
+function fullDives(): number {
+  return Number(run.vars[DIG_FULL_VAR] ?? 0);
 }
 
 export class SandBottomScene extends Phaser.Scene {
@@ -315,10 +320,12 @@ export class SandBottomScene extends Phaser.Scene {
     const stock = Object.fromEntries(tools.map((t) => [digToolVar(t), String(this.stockOf(t) - tools.filter((x) => x === t).length)]));
     setStoryVars({ ...run.vars, ...stock, [DIVE_COUNT_VAR]: String(count), [SAND_BOTTOM_DIGGER_VAR]: digger });
     // 段階217：その回の特別ルールと、珍品（埋めるかどうか・中身は、潜る前に決める。掘り当てるまで秘密）
-    const rule = digRuleFor(run.seed, count);
+    // 段階218：特別ルールと珍品は、ちゃんと潜った回数で決める（すぐ戻る選び直しを防ぐ）
+    const full = fullDives() + 1;
+    const rule = digRuleFor(run.seed, full);
     const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
     let def = withRule(sandBottomFor(chapter, run.vars), rule);
-    let r = (run.seed ^ Math.imul(count + 11, 40503)) >>> 0;
+    let r = (run.seed ^ Math.imul(full + 11, 40503)) >>> 0;
     const rand = () => {
       const [v, n] = nextRandom(r);
       r = n;
@@ -1064,7 +1071,8 @@ export class SandBottomScene extends Phaser.Scene {
     run.armory = addItems(run.armory, s.bag);
     run.library = recordLibraryFinds(run.library, { items: s.bag });
     // 珍品の確率の覚え（段階217）：取った → 下がる、取らなかった → 外れた回数 +1
-    setStoryVars(digRareAfter(run.vars, !!run.dig?.rareFound));
+    // 段階218：ちゃんと潜った回（いちばん浅い章の層の宝の帯まで）だけ、回数と外れを進める
+    setStoryVars(digAfterDive(run.vars, s.deepest >= digFullDepth(this.def), !!run.dig?.rareFound));
     // 道具袋に残った道具は、帰れば持ち物へ戻る（負けた・砂が尽きた時は失う。段階214）
     if (s.outcome === 'home' && s.tools.length > 0) {
       const back = Object.fromEntries([...new Set(s.tools)].map((t) => [digToolVar(t), String(Math.min(DIG_TOOL_OWN_MAX, this.stockOf(t) + s.tools.filter((x) => x === t).length))]));
