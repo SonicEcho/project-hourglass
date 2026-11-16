@@ -220,6 +220,38 @@ describe('武器：経験値とレベル', () => {
   });
 });
 
+describe('武器：寄り道③は依頼を届けると開く（段階221。docs/milestones/M3_detours.md）', () => {
+  it('写しの剣から「合図の剣」：依頼「二度鳴るベル」を届けていれば進化でき、鍵の素材は使わない', () => {
+    const base = createArmory(D);
+    const a: ArmoryState = { ...base, weapons: { ...base.weapons, hero: { ...base.weapons.hero, exp: 99999, path: [{ id: 'copySword', style: 0 }] } } };
+    const evo = D.weapons.recordSword.evolutions.find((e) => e.id === 'signalSword')!;
+    expect(evo.detour).toBe(true);
+    expect(evolutionChecks(D, a.weapons.hero, evo, a.items).map((c) => c.ok)).toEqual([true, false]);
+    expect(getEvolveError(D, a, 'hero', 'signalSword', 0, { '落とし物:a12_bell': 'found' })).toBe('conditions are not met');
+    const vars = { '落とし物:a12_bell': 'delivered' };
+    expect(getEvolveError(D, a, 'hero', 'signalSword', 0, vars)).toBeNull();
+    expect(canEvolveAny(D, a, 'hero', vars)).toBe(true);
+    const b = evolveWeapon(D, a, 'hero', 'signalSword', 0, vars);
+    expect(b.weapons.hero.path.map((p) => p.id)).toEqual(['copySword', 'signalSword']);
+    expect(b.items).toEqual(a.items);
+  });
+
+  it('依頼の条件は、どれも実在する依頼を指す。③のある武器は、依頼のある仲間だけ（ハルト・あかり・みお）', async () => {
+    const { LOST_ITEMS } = await import('../../src/data');
+    const ids = new Set(LOST_ITEMS.map((d) => d.id));
+    const owners: string[] = [];
+    for (const w of Object.values(D.weapons))
+      for (const e of w.evolutions)
+        for (const c of e.conditions)
+          if (c.kind === 'lost') {
+            expect(ids.has(c.lost), c.lost).toBe(true);
+            expect(e.detour, e.id).toBe(true);
+            owners.push(w.owner);
+          }
+    expect(owners.sort()).toEqual(['akari', 'hero', 'mio']);
+  });
+});
+
 describe('武器：進化（能力値＋鍵の素材。段階27b）', () => {
   /** ハルトの攻撃値を12にして、Lv3 にする（水風船のゴム6つ。段階197：ハルトの1回目の刃の系統は攻撃） */
   const atk6 = () => withExp(absorbMany(createArmory(D), 'hero', Array<string>(6).fill('balloonRubber')), 'hero', 20);
@@ -260,7 +292,8 @@ describe('武器：進化（能力値＋鍵の素材。段階27b）', () => {
       for (const e of w.evolutions.filter((x) => !x.sealed)) {
         const tendency = e.conditions.some((c) => c.kind === 'tendency');
         expect(tendency, e.id).toBe(['bellRod', 'chimeRod', 'templeBellRod'].includes(e.id));
-        if (!tendency) expect(e.conditions.some((c) => c.kind === 'key'), e.id).toBe(true);
+        // 段階221：寄り道③は、鍵の素材の代わりに依頼を届けること
+        if (!tendency) expect(e.conditions.some((c) => c.kind === 'key' || c.kind === 'lost'), e.id).toBe(true);
         for (const c of e.conditions) if (c.kind === 'key') expect(D.items[c.item]?.kind, c.item).toBe('material');
       }
     }
@@ -387,7 +420,7 @@ describe('武器：進化ツリー（段階42）', () => {
     return a;
   };
 
-  it('ツリーの形（段階197）：合流せず、本道は 3 → 3 → 4。寄り道は作った物2本と言い伝え。3回目までは作ってあり、その先は影', () => {
+  it('ツリーの形（段階197）：合流せず、本道は 3 → 3 → 4。寄り道は作った物2本（依頼のある仲間は3本）と言い伝え。3回目までは作ってあり、その先は影', () => {
     for (const w of Object.values(D.weapons)) {
       const ids = new Set(w.evolutions.map((e) => e.id));
       expect(ids.size, w.id).toBe(w.evolutions.length);
@@ -396,7 +429,8 @@ describe('武器：進化ツリー（段階42）', () => {
       const perTier = [1, 2, 3].map((t) => main.filter((e) => evolutionTier(w, e.id) === t).length);
       expect(perTier, w.id).toEqual([3, 3, 4]);
       const detours = w.evolutions.filter((e) => e.detour);
-      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(2);
+      // 段階221：依頼のある仲間（ハルト・あかり・みお）は、寄り道③（依頼）も作ってある
+      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(['hero', 'akari', 'mio'].includes(w.owner) ? 3 : 2);
       for (const e of detours.filter((x) => x.sealed)) expect(e.legend, e.id).toBeTruthy();
       for (const e of w.evolutions) {
         const tier = evolutionTier(w, e.id);

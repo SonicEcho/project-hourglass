@@ -15,7 +15,7 @@ export function growthTiles(open: (key: string) => void): GalleryTile[] {
   const tiles: GalleryTile[] = [];
   if (unlocks.growth) tiles.push({ id: 'growth', label: '星図', sub: `星の砂 ${run.growth.points}`, onTap: () => open('Growth') });
   if (unlocks.weapon) {
-    const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id));
+    const evolvable = members.some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id, run.vars));
     tiles.push({ id: 'weapon', label: '武器', badge: evolvable ? '進化できる' : undefined, onTap: () => open('Weapon') });
   }
   if (unlocks.navi) {

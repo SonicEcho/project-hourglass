@@ -65,7 +65,7 @@ export function currentNode(laid: TreeNode[], w: WeaponState): TreeNode {
 }
 
 /** 木を描く（c の中に。座標は layoutTree のまま）。ready は今すぐ進化できる次の姿の id */
-export function drawTree(scene: Phaser.Scene, c: Phaser.GameObjects.Container, D: WeaponData, w: WeaponState, laid: TreeNode[], items: Record<string, number>, baseName: string): void {
+export function drawTree(scene: Phaser.Scene, c: Phaser.GameObjects.Container, D: WeaponData, w: WeaponState, laid: TreeNode[], items: Record<string, number>, baseName: string, vars: Readonly<Record<string, string>> = {}): void {
   const g = scene.add.graphics();
   c.add(g);
   const pos = new Map(laid.map((n) => [n.evo?.id ?? '', n]));
@@ -93,7 +93,7 @@ export function drawTree(scene: Phaser.Scene, c: Phaser.GameObjects.Container, D
       curve.draw(g, 24);
     }
   }
-  for (const n of laid) drawEmblem(scene, c, D, w, n, n === current, items, baseName);
+  for (const n of laid) drawEmblem(scene, c, D, w, n, n === current, items, baseName, vars);
 }
 
 /** 八角形の頂点 */
@@ -104,11 +104,11 @@ function octagon(x: number, y: number, r: number): Phaser.Math.Vector2[] {
   });
 }
 
-function drawEmblem(scene: Phaser.Scene, c: Phaser.GameObjects.Container, D: WeaponData, w: WeaponState, n: TreeNode, current: boolean, items: Record<string, number>, baseName: string): void {
+function drawEmblem(scene: Phaser.Scene, c: Phaser.GameObjects.Container, D: WeaponData, w: WeaponState, n: TreeNode, current: boolean, items: Record<string, number>, baseName: string, vars: Readonly<Record<string, string>>): void {
   const g = scene.add.graphics();
   const { x, y } = n;
   const vis: EvolutionVisibility | 'root' = n.evo ? evolutionVisibility(D, w, n.evo.id) : 'root';
-  const ready = vis === 'next' && evolutionChecks(D, w, n.evo!, items).every((ch) => ch.ok);
+  const ready = vis === 'next' && evolutionChecks(D, w, n.evo!, items, vars).every((ch) => ch.ok);
   if (current) {
     // 今の姿：紅い大きな紋章と、まわりの光
     g.fillStyle(CRIMSON, 0.16).fillCircle(x, y, TREE.currentR * 1.7);
@@ -160,7 +160,7 @@ function drawEmblem(scene: Phaser.Scene, c: Phaser.GameObjects.Container, D: Wea
 }
 
 /** 紋章の説明（長押し・次の姿以外のタップ）。見せるものは今の武器からの近さで変わる（8-2） */
-export function treeDetail(D: WeaponData, w: WeaponState, id: string, items: Record<string, number>, ext: number): { title: string; body: string } {
+export function treeDetail(D: WeaponData, w: WeaponState, id: string, items: Record<string, number>, ext: number, vars: Readonly<Record<string, string>> = {}): { title: string; body: string } {
   if (id === '') return { title: D.weapons[w.defId].name, body: '元の武器。ここから枝分かれしていく' };
   const evo = findEvolution(D, w, id);
   if (!evo) return { title: '', body: '' };
@@ -173,7 +173,7 @@ export function treeDetail(D: WeaponData, w: WeaponState, id: string, items: Rec
       return { title: `${evo.name}${style ? `・${style.name}` : ''}${detour}`, body: [describeEvolution(evo), style ? `型 ${describeStyle(style, ext)}` : ''].filter(Boolean).join('\n') };
     }
     case 'next': {
-      const checks = evolutionChecks(D, w, evo, items);
+      const checks = evolutionChecks(D, w, evo, items, vars);
       return {
         title: `${evo.name}${detour}`,
         body: [
@@ -181,6 +181,8 @@ export function treeDetail(D: WeaponData, w: WeaponState, id: string, items: Rec
           `型：${(evo.styles ?? []).map((s) => describeStyle(s, ext)).join(' ／ ')}`,
           `条件：${checks.map((ch) => `${ch.ok ? '✓' : '✗'}${describeCondition(ch.condition, D)}`).join('　')}`,
           ...evo.conditions.flatMap((ch) => (ch.kind === 'key' ? [`鍵「${D.items[ch.item]?.name}」：${itemHint(ch.item)}`] : [])),
+          // 段階221：依頼の寄り道の手がかり
+          ...evo.conditions.flatMap((ch) => (ch.kind === 'lost' ? [`依頼「${ch.name}」：拠点の落とし物の棚で受け、砂の底で声をたどって届ける`] : [])),
         ].join('\n'),
       };
     }

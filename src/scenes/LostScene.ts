@@ -24,6 +24,9 @@ export interface LostSceneData {
   got?: string;
 }
 
+/** 武器の持ち主の名前（段階221） */
+const CAST_NAMES: Record<string, string> = { hero: 'ハルト', akari: 'あかり', mio: 'みお', sayoko: '小夜子', hayase: '早瀬' };
+
 /** ごほうびの文 */
 function rewardText(d: LostItemDef): string {
   const r = d.reward;
@@ -35,6 +38,10 @@ function rewardText(d: LostItemDef): string {
     ...(r.points ? [`星の砂 ${r.points}`] : []),
     ...(r.bond ? [`${BOND_PARTNER_NAMES[r.bond as keyof typeof BOND_PARTNER_NAMES] ?? r.bond}との絆`] : []),
     ...(d.afterwords?.length ? ['仲間のひとこと'] : []),
+    // 段階221：この依頼で開く武器の寄り道③
+    ...Object.values(WEAPON_DATA.weapons).flatMap((w) =>
+      w.evolutions.filter((e) => e.conditions.some((c) => c.kind === 'lost' && c.lost === d.id)).map((e) => `${CAST_NAMES[w.owner] ?? w.owner}の武器の寄り道「${e.name}」`),
+    ),
   ];
   return parts.join('、');
 }

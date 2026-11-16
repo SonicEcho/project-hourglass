@@ -2,6 +2,7 @@ import type { NaviData, PartColor } from './navi';
 import { extendBoard } from './navi';
 import type { ChainBasicMod, ChainPassive } from './chain';
 import type { CharacterDef, Element, PassiveEffect, Stats } from './types';
+import { lostKey } from './lost';
 
 // 武器ビルドアップ（段階9）。Phaser に依存しない。
 // 公開している関数は、受け取った状態を書き換えず、新しい状態を返す。
@@ -56,7 +57,9 @@ export type EvolutionCondition =
   /** パラメータが max 以下（寄り道の、変わった条件。段階42） */
   | { kind: 'paramMax'; param: WeaponParamKey; max: number }
   /** 火・氷・雷のどれかが min 以上（段階197。ハルトの記の系統） */
-  | { kind: 'elementAny'; min: number };
+  | { kind: 'elementAny'; min: number }
+  /** 依頼（落とし物）を届けた（段階221。寄り道③。name は依頼の名前。物語の変数の `落とし物:<lost>` が delivered） */
+  | { kind: 'lost'; lost: string; name: string };
 
 /** 進化の条件の確かめ（レベル、加わった時の選択も含む） */
 export type EvolutionCheck = EvolutionCondition | { kind: 'level'; min: number } | { kind: 'join' };
@@ -433,12 +436,16 @@ export function evolveLevelFor(data: WeaponData, tier: number): number {
   return list[Math.min(Math.max(tier, 1), list.length) - 1] ?? 1;
 }
 
-/** 進化の条件を1つずつ確かめる（レベルの条件を含む）。鍵の素材は、パーティ共通の持ち物 items で確かめる */
+/**
+ * 進化の条件を1つずつ確かめる（レベルの条件を含む）。鍵の素材は、パーティ共通の持ち物 items で確かめる。
+ * 依頼の条件（段階221）は、物語の変数 vars で確かめる
+ */
 export function evolutionChecks(
   data: WeaponData,
   w: WeaponState,
   evo: EvolutionDef,
   items: Record<string, number> = {},
+  vars: Readonly<Record<string, string>> = {},
 ): { condition: EvolutionCheck; ok: boolean }[] {
   // 加わった時の選択（段階197）：条件なし（寄り道は選べない）
   if (isJoinChoice(data, w)) return [{ condition: { kind: 'join' }, ok: !evo.detour }];
@@ -456,14 +463,16 @@ export function evolutionChecks(
             ? (items[c.item] ?? 0) >= 1
             : c.kind === 'elementAny'
               ? Math.max(w.params.fire, w.params.ice, w.params.thunder) >= c.min
-              : tendencyOf(w) === c.color;
+              : c.kind === 'lost'
+                ? vars[lostKey(c.lost)] === 'delivered'
+                : tendencyOf(w) === c.color;
     checks.push({ condition: c, ok });
   }
   return checks;
 }
 
-/** 進化できない理由。できるなら null（style は選ぶ型の番号） */
-export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0): string | null {
+/** 進化できない理由。できるなら null（style は選ぶ型の番号。vars は物語の変数。段階221 の依頼の条件に使う） */
+export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0, vars: Readonly<Record<string, string>> = {}): string | null {
   const w = armory.weapons[charId];
   if (!w) return 'no weapon';
   const evo = findEvolution(data, w, evolutionId);
@@ -471,13 +480,13 @@ export function getEvolveError(data: WeaponData, armory: ArmoryState, charId: st
   if (!nextEvolutions(data, w).includes(evo)) return 'not the next evolution';
   if (evo.sealed) return 'sealed';
   if (!Number.isInteger(style) || style < 0 || style >= (evo.styles?.length ?? 0)) return 'unknown style';
-  if (!evolutionChecks(data, w, evo, armory.items).every((c) => c.ok)) return 'conditions are not met';
+  if (!evolutionChecks(data, w, evo, armory.items, vars).every((c) => c.ok)) return 'conditions are not met';
   return null;
 }
 
 /** 武器を進化させる（パラメータは引き継ぐ。選んだ型を覚える） */
-export function evolveWeapon(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0): ArmoryState {
-  const err = getEvolveError(data, armory, charId, evolutionId, style);
+export function evolveWeapon(data: WeaponData, armory: ArmoryState, charId: string, evolutionId: string, style = 0, vars: Readonly<Record<string, string>> = {}): ArmoryState {
+  const err = getEvolveError(data, armory, charId, evolutionId, style, vars);
   if (err) throw new Error(err);
   // 鍵の素材を使う（加わった時の選択は使わない。段階197）
   const items = { ...armory.items };
@@ -556,10 +565,10 @@ export function naviDataWithWeapons(navi: NaviData, data: WeaponData, armory: Ar
 }
 
 /** その武器が、今どれかの進化先に進化できるか */
-export function canEvolveAny(data: WeaponData, armory: ArmoryState, charId: string): boolean {
+export function canEvolveAny(data: WeaponData, armory: ArmoryState, charId: string, vars: Readonly<Record<string, string>> = {}): boolean {
   const w = armory.weapons[charId];
   if (!w) return false;
-  return nextEvolutions(data, w).some((e) => getEvolveError(data, armory, charId, e.id) === null);
+  return nextEvolutions(data, w).some((e) => getEvolveError(data, armory, charId, e.id, 0, vars) === null);
 }
 
 /**

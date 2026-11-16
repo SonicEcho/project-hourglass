@@ -1,6 +1,7 @@
 import type { Element } from '../core/types';
 import type { EvolutionCondition, EvolutionDef, EvolutionStyleDef, FragmentDef, ItemDef, WeaponData, WeaponDef, WeaponParamKey } from '../core/weapon';
 import type { PartColor } from '../core/navi';
+import { LOST_ITEMS } from './lost';
 
 // 武器ビルドアップ（段階9）。数値・名前はすべて仮
 
@@ -237,11 +238,13 @@ function beyond(from: string, branches: string[][]): EvolutionDef[] {
   });
 }
 
-/** 言い伝えだけの寄り道（段階197。③日常の遊び ④戦い方。条件を数える仕組みができるまで、影と一文だけ見せる） */
+/** 言い伝えだけの寄り道（段階197。④戦い方と、依頼のまだない仲間の③。条件ができるまで、影と一文だけ見せる。段階221：③は日常の遊びから依頼に替えた） */
 const legendDetour = (id: string, from: string, legend: string): EvolutionDef => ({ id, name: '', from, detour: true, sealed: true, legend, conditions: [] });
 const low = (p: WeaponParamKey, max: number): EvolutionCondition => ({ kind: 'paramMax', param: p, max });
 const anyElement = (min: number): EvolutionCondition => ({ kind: 'elementAny', min });
 const tendency = (color: PartColor): EvolutionCondition => ({ kind: 'tendency', color });
+/** 依頼を届けた（段階221。寄り道③。docs/milestones/M3_detours.md） */
+const lost = (id: string): EvolutionCondition => ({ kind: 'lost', lost: id, name: LOST_ITEMS.find((d) => d.id === id)?.name ?? id });
 
 // ---- 段階197（段取りの段階G4b）：5人の武器の木を、一覧の 17-6 の系統で3回目まで作り直した（docs/milestones/M3_catalog.md）----
 // どの武器も3つの系統（1回目3・2回目3・3回目4。3回目で1つの系統が2つに分かれる）。条件は主の能力値が 12・24・36。
@@ -265,7 +268,8 @@ const sword: WeaponDef = {
     { id: 'crimsonBlade', name: '紅蓮の刃', from: 'copySword', detour: true, conditions: [param('fire', 20), low('ice', 6), low('thunder', 6), key('beigoma')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.ember] },
     // 寄り道②：ブレイクエッジから。雷を低いままにして、刃こぼれを抱えたまま先手を取る剣
     { id: 'strayEdge', name: '迷い刃', from: 'breakEdge', detour: true, conditions: [low('thunder', 2), key('bentSpoke')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
-    legendDetour('shootingSword', 'copySword', '射的の屋台で、的を全部落とした子の剣だったという'),
+    // 寄り道③（段階221）：写しの剣から。依頼「二度鳴るベル」を届ける。二度鳴らす合図のように、当てた敵に露出の目印を残す剣
+    { id: 'signalSword', name: '合図の剣', from: 'copySword', detour: true, conditions: [lost('a12_bell')], stats: { atk: 3 }, basic: { exposure: 1 }, styles: [STYLES.quick, STYLES.attach] },
     // 3回目（鍵は 2-1・2-2 の素材）
     { id: 'grandEdge', name: 'グランドエッジ', from: 'crushEdge', conditions: [param('atk', 36), key('tempoSpring')], stats: { atk: 6 }, basic: { hits: 3, partMult: 1.5 }, styles: [STYLES.might, STYLES.shatter] },
     { id: 'lanternSword', name: '走馬灯の剣', from: 'mirrorSword', conditions: [param('fire', 12), param('ice', 12), param('thunder', 12), key('glitterPen')], stats: { atk: 4 }, traits: [{ kind: 'snapBoost', rate: 0.15 }], styles: [STYLES.attach, STYLES.stretch] },
@@ -297,7 +301,8 @@ const rod: WeaponDef = {
     { id: 'ringRod', name: '炎環の杖', from: 'iceRod', detour: true, conditions: [param('fire', 20), low('ice', 14), key('menkoCard')], attackElement: 'fire', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.ember] },
     // 寄り道②：アイスロッドから。火を低いままにして、少ない力で長く祈り続ける杖
     { id: 'dewRod', name: 'しずくの杖', from: 'iceRod', detour: true, conditions: [low('fire', 2), key('phoneCord')], attackElement: 'ice', stats: { mp: 12 }, traits: [{ kind: 'mpSave', amount: 1 }], styles: [STYLES.sage, STYLES.calm] },
-    legendDetour('goldfishRod', 'healingRod', '金魚すくいで、ポイを破らずに十匹すくった子の杖だったという'),
+    // 寄り道③（段階221）：癒しの杖から。依頼「金魚のヘアピン」を届ける。来年の約束のように、ラウンドの始めに少しずつ癒やす杖
+    { id: 'promiseRod', name: '約束の金魚の杖', from: 'healingRod', detour: true, conditions: [lost('a11_hairpin')], attackElement: 'ice', stats: { mp: 8 }, traits: [{ kind: 'regen', rate: 0.03 }], styles: [STYLES.sage, STYLES.ember] },
     // 3回目
     { id: 'moonRod', name: '雪月の杖', from: 'sleetRod', conditions: [param('ice', 36), key('abacusFrame')], attackElement: 'ice', stats: { mag: 5 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.15 }], basic: { hits: 2 }, styles: [STYLES.fierce('ice'), STYLES.ember] },
     { id: 'blessRod', name: '祝福の杖', from: 'mercyRod', conditions: [param('ice', 24), low('atk', 8), key('lordGear')], attackElement: 'ice', stats: { mp: 12, mag: 3 }, basic: { healAll: 12 }, traits: [{ kind: 'healBoost', rate: 0.1 }], styles: [STYLES.bond, STYLES.ember] },
@@ -329,7 +334,8 @@ const cards: WeaponDef = {
     { id: 'fireworkCards', name: '花火のカード', from: 'thunderCards', detour: true, conditions: [param('fire', 20), low('thunder', 14), key('brassBolt')], attackElement: 'fire', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.shatter] },
     // 寄り道②：サンダーカードから。火を低いままにして、仲間につなぐことだけを考えるカード
     { id: 'oldMaidCards', name: 'ばば抜きのカード', from: 'thunderCards', detour: true, conditions: [low('fire', 2), key('photoSticker')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'comboBoost', rate: 0.2 }], styles: [STYLES.bond, STYLES.guard] },
-    legendDetour('towerCards', 'trickCards', 'トランプで、天井まで届く塔を建てた子のカードだったという'),
+    // 寄り道③（段階221）：トリックカードから。依頼「書きかけの四曲目」を届ける。終わりのチャイムを先へ延ばすように、敵の予定を遠くへ押すカード
+    { id: 'fourthSongCards', name: '四曲目のカード', from: 'trickCards', detour: true, conditions: [lost('a22_song')], attackElement: 'thunder', stats: { atk: 2 }, traits: [{ kind: 'pushPlus', count: 1 }], styles: [STYLES.bond, STYLES.attach] },
     legendDetour('doodleCards', 'mirageCards', '一つの戦いで、敵の予定を十マスも後ろへ押しやったという'),
     // 3回目（鍵は 2-3 の素材）
     { id: 'raijinCards', name: '雷神のカード', from: 'boltCards', conditions: [param('thunder', 36), key('cheerBand')], attackElement: 'thunder', stats: { atk: 3 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.15 }], styles: [STYLES.fierce('thunder'), STYLES.attach] },
@@ -362,7 +368,8 @@ const naginata: WeaponDef = {
     { id: 'eveNaginata', name: '宵宮の薙刀', from: 'crescentNaginata', detour: true, conditions: [param('fire', 20), key('lanternFrame')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.guard] },
     // 寄り道②：三日月から。雷を低いままにして、誰より先に踏みこむ薙刀
     { id: 'hazyMoonNaginata', name: '朧月', from: 'crescentNaginata', detour: true, conditions: [low('thunder', 2), key('tableLeg')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
-    legendDetour('lanternNaginata', 'crescentNaginata', '祭りの射的と輪投げで、提灯を全部ともした人の薙刀だったという'),
+    // 寄り道③：小夜子の区画（3章）に依頼を足すまで、言い伝えだけ（段階221）
+    legendDetour('lanternNaginata', 'crescentNaginata', '祭りの夜の落とし物を、百年後の持ち主に届けた人の薙刀だったという'),
     // 3回目
     { id: 'harvestMoonNaginata', name: '名月', from: 'fullMoonNaginata', conditions: [param('atk', 36), key('lordWhistle')], stats: { atk: 7 }, traits: [{ kind: 'heavyBoost', rate: 0.15 }], styles: [STYLES.stretch, STYLES.shatter] },
     { id: 'moonlitNaginata', name: '月下の薙刀', from: 'midnightNaginata', conditions: [param('atk', 36), low('fire', 8), low('ice', 8), low('thunder', 8), key('fanTimer')], stats: { atk: 5 }, traits: [{ kind: 'fragileBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.calm] },
@@ -394,7 +401,8 @@ const driver: WeaponDef = {
     // 寄り道①②：焼き戻しのドライバーから。氷を高く／雷を高く（火を低いまま）
     { id: 'coolDriver', name: '冷やしのドライバー', from: 'temperDriver', detour: true, conditions: [param('ice', 20), low('fire', 14), key('crackedLens')], attackElement: 'ice', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
     { id: 'currentDriver', name: '電流のドライバー', from: 'temperDriver', detour: true, conditions: [param('thunder', 20), low('fire', 14), key('earbudTip')], attackElement: 'thunder', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.calm] },
-    legendDetour('karakuriDriver', 'tuningDriver', '止まった時計を百個直した人の、からくりのドライバーだったという'),
+    // 寄り道③：早瀬の区画（4章）に依頼を足すまで、言い伝えだけ（段階221）
+    legendDetour('karakuriDriver', 'tuningDriver', '止まった時計の持ち主に、残っていた声を届けた人のドライバーだったという'),
     legendDetour('oilDriver', 'secondDriver', '一つの戦いで、敵の行動を三度も空振りさせたという'),
     // 3回目（鍵は 4-1 のレア・部位・ぬしの素材）
     { id: 'kilnDriver', name: '窯のドライバー', from: 'forgeDriver', conditions: [param('fire', 36), key('sparklerBead')], attackElement: 'fire', stats: { mag: 5 }, basic: { heavy: true }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.15 }], styles: [STYLES.fierce('fire'), STYLES.attach] },

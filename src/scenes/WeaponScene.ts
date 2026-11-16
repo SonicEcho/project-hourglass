@@ -205,7 +205,7 @@ export class WeaponScene extends Phaser.Scene {
     this.closeOverlay();
     const w = this.weapon();
     const ext = hubLineup().unlocks.navi ? D.boardExtension : 0;
-    const checks = evolutionChecks(D, w, evo, run.armory.items);
+    const checks = evolutionChecks(D, w, evo, run.armory.items, run.vars);
     const ok = checks.every((c) => c.ok);
     const styles = ok ? (evo.styles ?? []) : [];
     const c = this.add.container(0, 0).setDepth(200);
@@ -253,9 +253,9 @@ export class WeaponScene extends Phaser.Scene {
 
   private evolve(evo: EvolutionDef, style: number): void {
     this.closeOverlay();
-    if (getEvolveError(D, run.armory, this.charId, evo.id, style)) return;
+    if (getEvolveError(D, run.armory, this.charId, evo.id, style, run.vars)) return;
     const before = weaponName(D, this.weapon());
-    run.armory = evolveWeapon(D, run.armory, this.charId, evo.id, style);
+    run.armory = evolveWeapon(D, run.armory, this.charId, evo.id, style, run.vars);
     const after = weaponName(D, this.weapon());
     console.log('[weapon] evolve', this.charId, evo.id, style);
     this.message = `${before}が${after}に進化した！`;
@@ -370,7 +370,7 @@ export class WeaponScene extends Phaser.Scene {
   private drawTabs(): void {
     const tabs = lineupBase(hubLineup()).map((c) => {
       const ws = run.armory.weapons[c.id];
-      const ready = canEvolveAny(D, run.armory, c.id);
+      const ready = canEvolveAny(D, run.armory, c.id, run.vars);
       return {
         id: c.id,
         name: c.name,
@@ -487,7 +487,7 @@ export class WeaponScene extends Phaser.Scene {
     frame.lineStyle(1, 0xb8bcc4, 0.25).lineBetween(SIDE_PADDING + 18, TREE_TOP + 6, SIDE_PADDING + 18, TREE_BOTTOM - 6);
     frame.lineBetween(GAME_WIDTH - SIDE_PADDING - 18, TREE_TOP + 6, GAME_WIDTH - SIDE_PADDING - 18, TREE_BOTTOM - 6);
     this.root.add(frame);
-    drawTree(this, tree, D, w, this.laid, run.armory.items, D.weapons[w.defId].name);
+    drawTree(this, tree, D, w, this.laid, run.armory.items, D.weapons[w.defId].name, run.vars);
     const mask = this.make.graphics({}, false).fillRect(0, TREE_TOP, GAME_WIDTH, TREE_BOTTOM - TREE_TOP);
     tree.setMask(mask.createGeometryMask());
     tree.once(Phaser.GameObjects.Events.DESTROY, () => mask.destroy());
@@ -566,7 +566,7 @@ export class WeaponScene extends Phaser.Scene {
       return;
     }
     const ext = hubLineup().unlocks.navi ? D.boardExtension : 0;
-    const { title, body } = treeDetail(D, w, n.evo?.id ?? '', run.armory.items, ext);
+    const { title, body } = treeDetail(D, w, n.evo?.id ?? '', run.armory.items, ext, run.vars);
     if (title) this.showDetail(title, body);
   }
 
@@ -593,10 +593,10 @@ export class WeaponScene extends Phaser.Scene {
   /** 一番近い進化先まで（「次：○○　氷 あと8・鍵 ✓」）。今すぐ進化できる時はそう言う */
   private nextHint(): string {
     const w = this.weapon();
-    if (canEvolveAny(D, run.armory, this.charId)) return '金に光る紋章をタップで進化';
+    if (canEvolveAny(D, run.armory, this.charId, run.vars)) return '金に光る紋章をタップで進化';
     const near = nearestEvolution(D, run.armory, this.charId);
     if (!near) return '';
-    const parts = evolutionChecks(D, w, near.evolution, run.armory.items).map((c) => {
+    const parts = evolutionChecks(D, w, near.evolution, run.armory.items, run.vars).map((c) => {
       const cd = c.condition;
       if (cd.kind === 'param') return c.ok ? '' : `${PARAM_SHORT[cd.param]} あと${cd.min - w.params[cd.param]}`;
       if (cd.kind === 'key') return `鍵 ${c.ok ? '✓' : '✗'}`;
