@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { canEvolveAny, chapterOfEvent, eventPassed, isSeen, lostStatus, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, BGM, CAST, HUB_LINES, HUB_TILE_ART, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import type { HubLineDef, HubNotice } from '../core';
+import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost } from '../core';
+import { BACKDROPS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages, waitImages } from '../ui/waitImages';
@@ -9,8 +10,8 @@ import { enterScreen } from '../ui/skin';
 import { backButton, frameHeader } from '../ui/frame';
 import { FONT, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addSlantTile, type GalleryTile } from '../ui/gallery';
-import { hasImage } from '../assets/loader';
-import { addText } from '../ui/widgets';
+import { hasImage, preloadQueue } from '../assets/loader';
+import { addText, makePressable } from '../ui/widgets';
 import { growthTiles } from './growthMenu';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
@@ -26,6 +27,11 @@ const BACK_TO_HUB = { key: 'Hub', data: { seen: undefined }, label: 'レスト�
 
 export class HubScene extends Phaser.Scene {
   private overlay?: Phaser.GameObjects.Container;
+  /** 段階227：仲間のひとことの並びと、今出している番号。立ち絵と吹き出しの入れ物 */
+  private talk: HubLineDef[] = [];
+  private talkAt = 0;
+  private partnerLayer?: Phaser.GameObjects.Container;
+  private shownArt = '';
 
   constructor() {
     super('Hub');
@@ -60,10 +66,17 @@ export class HubScene extends Phaser.Scene {
     playBgm(this, BGM.library);
     // 段階226：右に立つ仲間の立ち絵を読んでから描く
     const partner = this.pickPartner();
-    const art = this.partnerArt(partner);
+    // 段階227：ひとことの並び（知らせ → まだ見ていない物 → 見た物）。開いた時は、前に出した物の次から
+    this.talk = hubLines(HUB_TALK, this.talkContext(partner), this.dayNumber());
+    this.talkAt = firstHubLine(this.talk, run.vars[hubLineLastKey(partner)]);
+    const art = this.partnerArt(partner, this.talk[this.talkAt]?.face);
     // タイルの絵（代わりの1枚絵を含む。台帳にない id はそろったものとして扱われる）も一緒に待つ
     const tileArt = [...new Set(Object.values(HUB_TILE_ART).flat())];
-    waitImages(this, [...(art ? [art] : []), ...tileArt], () => this.draw(partner));
+    waitImages(this, [...(art ? [art] : []), ...tileArt], () => {
+      this.draw(partner);
+      // ほかのひとことの表情の絵は、裏で先に読んでおく（タップした時に、読めていなければ今の表情のまま）
+      preloadQueue.prioritize([...new Set(this.talk.map((l) => this.partnerArt(partner, l.face)).filter((x) => x))]);
+    });
     this.cameras.main.fadeIn(250, 0, 0, 0);
   }
 
@@ -71,19 +84,34 @@ export class HubScene extends Phaser.Scene {
   private pickPartner(): string {
     const ids = lineupBase(storyLineup())
       .map((c) => c.id)
-      .filter((id) => id !== 'hero' && HUB_LINES[id]);
+      .filter((id) => id !== 'hero' && HUB_TALK.some((l) => l.who === id));
     if (ids.length === 0) return 'hero';
     const n = [...run.event].reduce((a, ch) => a + ch.charCodeAt(0), 0);
     return ids[n % ids.length];
   }
 
-  /** 仲間の立ち絵の台帳の id（表情は HUB_LINES の face） */
-  private partnerArt(id: string): string {
+  /** 仲間の立ち絵の台帳の id（表情はひとことの face、なければその人のふつうの表情） */
+  private partnerArt(id: string, face?: string): string {
     const name = this.castName(id);
     const def = CAST[name];
     if (!def?.portrait) return '';
-    const face = HUB_LINES[id]?.face ?? def.firstFace ?? '';
-    return `${def.portrait}.${def.faces[face] ?? face}`;
+    const f = face ?? HUB_TALK_FACE[id] ?? def.firstFace ?? '';
+    return `${def.portrait}.${def.faces[f] ?? f}`;
+  }
+
+  /** 日ごとに変わる数（物語の出来事の id から） */
+  private dayNumber(): number {
+    return [...run.event].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+  }
+
+  /** ひとことの条件を確かめる材料（段階227） */
+  private talkContext(who: string) {
+    const lostReady = shelfLost(LOST_ITEMS, run.returned).some((d) => lostStatus(run.vars, d.id) === 'found');
+    const evolvable = lineupBase(storyLineup()).some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id, run.vars));
+    const petraTalk = isSeen(run.vars, 'exchange_intro') && !!nextKeeperTalk(KEEPER_TALKS, (id) => eventPassed(SLICE_FLOW, run.event, id), (scene) => isSeen(run.vars, scene));
+    const notices = new Set<HubNotice>([...(lostReady ? ['lost' as const] : []), ...(evolvable ? ['evolve' as const] : []), ...(petraTalk ? ['talk' as const] : [])]);
+    const bond = BOND_EVENTS[who] ? bondGauge(bondPoints(run.vars, who, BOND_EVENTS, DAILY_HUBS, BOND_POINTS), BOND_POINTS).level : 0;
+    return { who, passed: (id: string) => eventPassed(SLICE_FLOW, run.event, id), isNow: (id: string) => run.event === id, bond, vars: run.vars, notices };
   }
 
   private castName(id: string): string {
@@ -102,15 +130,11 @@ export class HubScene extends Phaser.Scene {
     stripes.lineStyle(2, STYLE.red, 0.08);
     for (let x = -GAME_HEIGHT; x < GAME_WIDTH; x += 16) stripes.lineBetween(x, GAME_HEIGHT, x + GAME_HEIGHT * 0.58, 0);
     root.add(stripes);
-    // 仲間の立ち絵（右。紅の影）と吹き出し
-    const art = this.partnerArt(partner);
-    if (art && hasImage(this, art)) {
-      const img = this.add.image(GAME_WIDTH + 80, 64, art).setOrigin(1, 0);
-      img.setScale(500 / img.height);
-      const ghost = this.add.image(img.x - 8, img.y, art).setOrigin(1, 0).setScale(img.scale).setTintFill(STYLE.red);
-      root.add([ghost, img]);
-    }
-    this.drawBubble(root, partner);
+    // 仲間の立ち絵（右。紅の影）と吹き出し。タップで次のひとこと（段階227）
+    this.partnerLayer = this.add.container(0, 0);
+    root.add(this.partnerLayer);
+    this.shownArt = '';
+    this.showLine(partner);
 
     // 知らせ（タイルの札と、吹き出しで使う）
     const lostReady = shelfLost(LOST_ITEMS, run.returned).filter((d) => lostStatus(run.vars, d.id) === 'found').length;
@@ -147,15 +171,39 @@ export class HubScene extends Phaser.Scene {
     backButton(this, root, '時計屋へ戻る', () => this.leave());
   }
 
-  /** 仲間の吹き出し（段階226）：知らせがあればそれを、なければ日ごとのひとこと */
-  private drawBubble(root: Phaser.GameObjects.Container, partner: string): void {
-    const lines = HUB_LINES[partner];
-    if (!lines) return;
-    const lostReady = shelfLost(LOST_ITEMS, run.returned).some((d) => lostStatus(run.vars, d.id) === 'found');
-    const evolvable = lineupBase(storyLineup()).some((c) => canEvolveAny(WEAPON_DATA, run.armory, c.id, run.vars));
-    const petraTalk = isSeen(run.vars, 'exchange_intro') && !!nextKeeperTalk(KEEPER_TALKS, (id) => eventPassed(SLICE_FLOW, run.event, id), (scene) => isSeen(run.vars, scene));
-    const n = [...run.event].reduce((a, ch) => a + ch.charCodeAt(0), 0);
-    const text = lostReady ? lines.lost : evolvable ? lines.evolve : petraTalk ? lines.talk : lines.idle[n % lines.idle.length];
+  /** 今の番号のひとことを、立ち絵と吹き出しで出す（段階227）。出したひとことは覚える */
+  private showLine(partner: string): void {
+    const layer = this.partnerLayer;
+    if (!layer) return;
+    layer.removeAll(true);
+    const line = this.talk[this.talkAt];
+    // 表情の絵が読めていなければ、今の表情のまま
+    const want = this.partnerArt(partner, line?.face);
+    const art = want && hasImage(this, want) ? want : this.shownArt || this.partnerArt(partner);
+    if (art && hasImage(this, art)) {
+      this.shownArt = art;
+      const img = this.add.image(GAME_WIDTH + 80, 64, art).setOrigin(1, 0);
+      img.setScale(500 / img.height);
+      const ghost = this.add.image(img.x - 8, img.y, art).setOrigin(1, 0).setScale(img.scale).setTintFill(STYLE.red);
+      layer.add([ghost, img]);
+    }
+    if (!line) return;
+    setStoryVars(markHubLine(run.vars, line));
+    this.drawBubble(layer, partner, line.text);
+    // 立ち絵（上の方）と吹き出しをタップすると、次のひとこと
+    const hit = this.add.rectangle(14, 100, GAME_WIDTH - 14, 186, 0xffffff, 0.001).setOrigin(0);
+    layer.add(hit);
+    makePressable(hit, {
+      onTap: () => {
+        if (this.talk.length <= 1) return;
+        this.talkAt = (this.talkAt + 1) % this.talk.length;
+        this.showLine(partner);
+      },
+    });
+  }
+
+  /** 仲間の吹き出し（段階226） */
+  private drawBubble(root: Phaser.GameObjects.Container, partner: string, text: string): void {
     const x = 26;
     const y = 112;
     const w = 196;
@@ -169,6 +217,8 @@ export class HubScene extends Phaser.Scene {
     root.add(g);
     root.add(addText(this, x + 12, y + 8, this.castName(partner), { size: 11, bold: true, color: STYLE.redText }).setFontFamily(FONT).setFontStyle('bold italic'));
     root.add(body.setPosition(x + 12, y + 26));
+    // 次がある時は、右下に小さな ▶
+    if (this.talk.length > 1) root.add(addText(this, x + w - 20, y + h - 14, '▶', { size: 10, color: STYLE.redText }).setOrigin(0.5));
   }
 
   /** 育成の画面を開く。閉じると拠点に戻る */

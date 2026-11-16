@@ -56,6 +56,7 @@ export * from './faces';
 export * from './scriptM2';
 export * from './barks';
 export * from './hubTiles';
+export * from './hubTalk';
 export * from './library';
 export * from './sandBottom';
 export * from './sandBottomLore';
