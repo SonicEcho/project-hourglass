@@ -3,8 +3,9 @@ import type { ChainCardCategory } from '../core';
 import { GAME_WIDTH } from '../config';
 import { addIcon, type IconKind } from './icons';
 import { SIDE_PADDING } from './layout';
+import { addWindow } from './skin';
 import { COLORS, STYLE } from './theme';
-import { addButton, addSlant, addText, makePressable } from './widgets';
+import { addSlant, addText, makePressable } from './widgets';
 
 // 一覧の画面の共通の部品（段階167。アルバムとライブラリで使う）。
 // 見た目を仕上げる段階（段取りの段階G の後）では、ここを直せば全部の一覧の画面に効く
@@ -95,17 +96,11 @@ export function addRowName(scene: Phaser.Scene, parent: Phaser.GameObjects.Conta
   return t;
 }
 
-/** ページの切り替え（◀ 1/2 ▶）。ページが1つなら何も出さない */
-export function addPager(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, y: number, page: number, pages: number, onTurn: (d: number) => void): void {
-  if (pages <= 1) return;
-  addButton(scene, parent, GAME_WIDTH / 2 - 70, y, 60, 28, '◀', { onTap: () => onTurn(-1) }, { enabled: page > 0, size: 12 });
-  parent.add(addText(scene, GAME_WIDTH / 2, y, `${page + 1}/${pages}`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
-  addButton(scene, parent, GAME_WIDTH / 2 + 70, y, 60, 28, '▶', { onTap: () => onTurn(1) }, { enabled: page < pages - 1, size: 12 });
-}
-
 /** 説明の窓（行ごとの文） */
 export function addDetailBox(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, y: number, h: number, lines: readonly string[]): void {
-  parent.add(scene.add.rectangle(SIDE_PADDING, y, ROW_W, h, COLORS.panel, 0.95).setOrigin(0).setStrokeStyle(1, 0xffffff, 0.5));
-  parent.add(scene.add.rectangle(SIDE_PADDING, y, 4, h, STYLE.red).setOrigin(0));
-  parent.add(addText(scene, SIDE_PADDING + 10, y + 8, lines.join('\n'), { size: 12, wrap: ROW_W - 20 }));
+  // 段階231：窓の形（角を切った黒い窓に紅の帯）。入りきらない時は縮める
+  parent.add(addWindow(scene, SIDE_PADDING, y, ROW_W, h, STYLE.red, STYLE.ink, 0.94));
+  const t = addText(scene, SIDE_PADDING + 14, y + 10, lines.join('\n'), { size: 12, wrap: ROW_W - 28 }).setLineSpacing(2);
+  if (t.height > h - 18) t.setScale((h - 18) / t.height);
+  parent.add(t);
 }
