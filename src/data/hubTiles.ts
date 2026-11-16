@@ -30,6 +30,14 @@ export const HUB_TILE_SHIFT: Record<string, number> = {
   'tile.lost': 0.14,
 };
 
+/**
+ * 拠点の斜めのタイルで、絵の下を切り落とす割合（段階227 の直し。開発者の声：ライブラリの下半分が切れて見える）。
+ * ライブラリの絵は下の方が暗い空の引き出しなので、下を少し落として、上の明るい所を大きく見せる（左右も同じ割合で狭まる）
+ */
+export const HUB_TILE_CROP_BOTTOM: Record<string, number> = {
+  'tile.library_tall': 0.2,
+};
+
 /** 拠点の立ち絵の大きさ（高さ）と上の端（段階227 の直し。開発者の声：みおが少し大きい。みおは小学4年なので小さめに） */
 export const HUB_PORTRAIT_FIT: Record<string, { height: number; top: number }> = {
   mio: { height: 370, top: 140 },

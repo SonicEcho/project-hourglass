@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
-import { HUB_TILE_ART, HUB_TILE_FOCUS, HUB_TILE_SHIFT, HUB_TILE_TALL, type HubTileId } from '../data';
+import { HUB_TILE_ART, HUB_TILE_CROP_BOTTOM, HUB_TILE_FOCUS, HUB_TILE_SHIFT, HUB_TILE_TALL, type HubTileId } from '../data';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
 import { FRAME_COLORS } from './frame';
@@ -149,6 +149,14 @@ export function addSlantTile(scene: Phaser.Scene, root: Phaser.GameObjects.Conta
       fade.fillGradientStyle(0x0b0a0c, 0x0b0a0c, 0x0b0a0c, 0x0b0a0c, 1, 1, 0, 0);
       fade.fillRect(x, y + shift - 1, w, Math.min(26, h * 0.2));
       face.add(fade);
+    } else if (HUB_TILE_CROP_BOTTOM[art]) {
+      // 下を切り落とし、残った上の方をタイルいっぱいに（左右は真ん中から切る）
+      const src = scene.textures.get(art).getSourceImage();
+      const usedH = src.height * (1 - HUB_TILE_CROP_BOTTOM[art]);
+      const scale = Math.max(w / src.width, h / usedH);
+      const sx = (src.width - w / scale) / 2;
+      img = scene.add.image(x - sx * scale, y, art).setOrigin(0).setScale(scale).setCrop(sx, 0, w / scale, h / scale);
+      face.add(img);
     } else {
       img = coverImage(scene, art, x, y, w, h, HUB_TILE_FOCUS[art] ?? 0.5);
       face.add(img);
@@ -156,8 +164,9 @@ export function addSlantTile(scene: Phaser.Scene, root: Phaser.GameObjects.Conta
     if (!enabled) img.setAlpha(0.3).setTint(0x888888);
   }
   const shade = scene.add.graphics();
-  const top = y + h * (big ? 0.3 : 0.35);
-  shade.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0, 0.9, 0.9);
+  // 段階227 の直し：名前のための暗がりは、下の方だけ・少し薄く（絵の下が暗いと、切れて見えたので）
+  const top = y + h * (big ? 0.3 : 0.55);
+  shade.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0, 0.82, 0.82);
   shade.fillRect(x, top, w, y + h - top);
   face.add(shade);
   const mask = scene.make.graphics({}, false).fillStyle(0xffffff).fillPoints(poly(), true);
