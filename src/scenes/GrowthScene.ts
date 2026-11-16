@@ -543,16 +543,28 @@ export class GrowthScene extends Phaser.Scene {
     if (!n) {
       // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
       const advice = this.advice();
-      const lines = [
-        // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で
-        this.message || `点線の輪の星をタップで説明、もう一度タップで開けます。開けた星の力で、${base.name}が強くなります`,
-        advice
-          ? `おすすめ：${nodeTitle(advice.target, base)}（金の道の先。あと${advice.cost}pt）`
-          : `星の砂は${lineupBase(hubLineup()).length}人で共有です。誰の星を開けるか選びましょう`,
-        `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}`,
+      // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で。おすすめの文は出さず（ボタンだけ残す）、
+      // 能力値は見出しと数字に分けて1列に並べる
+      const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 24;
+      const left = SIDE_PADDING + 14;
+      const msg = this.message || `点線の輪の星をタップで説明、もう一度タップで開けます。開けた星の力で、${base.name}が強くなります`;
+      this.root.add(addText(this, left, top + 10, msg, { size: 12, wrap: textW, ja: true }));
+      const stats: [string, number][] = [
+        ['HP', grown.stats.hp],
+        ['MP', grown.stats.mp],
+        ['攻撃', grown.stats.atk],
+        ['魔力', grown.stats.mag],
+        ['防御', grown.stats.def],
       ];
-      const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
-      this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
+      const sy = top + h - 46;
+      this.root.add(this.add.rectangle(left, sy - 6, textW, 1, 0xffffff, 0.25).setOrigin(0));
+      this.root.add(addText(this, left, sy - 1, base.name, { size: 11, bold: true, color: STYLE.redText }).setFontStyle('bold italic'));
+      const colW = textW / stats.length;
+      stats.forEach(([label, value], i) => {
+        const cx = left + colW * i;
+        this.root.add(addText(this, cx, sy + 14, label, { size: 10, color: COLORS.subText }));
+        this.root.add(addText(this, cx, sy + 26, String(value), { size: 15, bold: true }));
+      });
       if (advice) {
         addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, size: 13, bold: true });
       }
