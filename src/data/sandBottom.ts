@@ -3,6 +3,8 @@ import { huntGearKey } from '../core/hunt';
 import { lostStatus } from '../core/lost';
 import { AREA_BATTLES, AREAS } from './areas';
 import { LOST_ITEMS } from './lost';
+import { CHAIN_ENEMY_SNAPS } from './chainAreas';
+import { DIG_LORE, digLoreVar } from './sandBottomLore';
 import { WEAPON_DATA } from './weapons';
 
 // 砂の底を掘る（段階207。試作1。docs/milestones/M3_sand_bottom.md）。数値はすべて仮。
@@ -34,6 +36,10 @@ function areaItems(areaIds: string[]): Record<DigRarity, string[]> {
   return { common: [...out.common], uncommon: [...out.uncommon], rare: [...out.rare] };
 }
 
+function withDigItems(items: Record<DigRarity, string[]>, extra: string[]): Record<DigRarity, string[]> {
+  return extra.length === 0 ? items : { ...items, uncommon: [...items.uncommon, ...extra] };
+}
+
 /** 帯のぬしの巣のぬし（段階213）：その区画のぬし（区画が2つなら後の方。大正の祭りの夜は2晩目のぬし） */
 function bandLord(areaIds: string[]): string | undefined {
   return [...areaIds]
@@ -47,9 +53,9 @@ export const relicGear = (gatherId: string) => `gear:${gatherId}`;
 export const relicLost = (lostId: string) => `lost:${lostId}`;
 
 /** 光る物の id を読む（段階213） */
-export function parseRelic(id: string): { kind: 'gear' | 'lost' | 'tool'; ref: string } | null {
-  const m = /^(gear|lost|tool):(.+)$/.exec(id);
-  return m ? { kind: m[1] as 'gear' | 'lost' | 'tool', ref: m[2] } : null;
+export function parseRelic(id: string): { kind: 'gear' | 'lost' | 'tool' | 'rare'; ref: string } | null {
+  const m = /^(gear|lost|tool|rare):(.+)$/.exec(id);
+  return m ? { kind: m[1] as 'gear' | 'lost' | 'tool' | 'rare', ref: m[2] } : null;
 }
 
 /** 記憶の宝箱に入るギア（段階213。狩りの採取の場所のギア） */
@@ -120,6 +126,8 @@ interface DigStratum {
   name: string;
   /** 層の特徴（段階215 の続き。開発者の案：層ごとに特徴。層に入った時に知らせる） */
   feature: string;
+  /** 砂の底だけの素材（段階217）：common は宝箱・鉱脈からいつもの素材と一緒に、rare は珍品だけ */
+  digItems: { common: string[]; rare: string[] };
   bands: DigBand[];
   ground: Pick<DigLayerDef, 'rock' | 'clay' | 'ore' | 'grain' | 'loose' | 'caves' | 'chestRate' | 'nestRate' | 'weights' | 'deepWeights' | 'pit' | 'poison' | 'fossil' | 'moss' | 'springRate' | 'whirlRate' | 'dark'>;
 }
@@ -151,6 +159,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch1',
     name: '感覚記憶の層',
+    digItems: { common: ['digScent', 'digBlink'], rare: ['digAfterglow', 'digEcho'] },
     feature: '一瞬だけ残る記憶。砂時計の砂粒が多い',
     bands: [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
@@ -161,6 +170,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch2',
     name: '短期記憶の層',
+    digItems: { common: ['digLint', 'digSugarChip'], rare: ['digSpool', 'digSugarStone'] },
     feature: 'すぐ崩れる記憶。崩れる砂が多い',
     bands: [
       band('oyakata', '親方の背中', ['a21'], { sand: 0xb08458, clay: 0x7a5236, rock: 0x6c6f78, air: 0x1a110b, loose: 0xcca27a }),
@@ -172,6 +182,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch3',
     name: 'エピソード記憶の層',
+    digItems: { common: ['digPhotoScrap', 'digSecondHand'], rare: ['digPostcard', 'digPocketWatch'] },
     feature: '思い出の場面が眠る。空洞と化石が多い',
     bands: [
       band('shiokuri', 'はじめての仕送り', ['a31'], { sand: 0x9a8a78, clay: 0x6a5a4c, rock: 0x5e6068, air: 0x14110f, loose: 0xb6a692 }),
@@ -183,6 +194,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch4',
     name: '意味記憶の層',
+    digItems: { common: [], rare: [] },
     feature: '固く結びついた記憶。岩と鉱脈が多い',
     bands: [
       band('shiro', 'シロのいた夏', ['a41'], { sand: 0x8a9a6a, clay: 0x5e6c46, rock: 0x585c62, air: 0x0f140c, loose: 0xa6b688 }),
@@ -221,7 +233,8 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
       name: st.name,
       group: st.chapter,
       rows: BAND_ROWS,
-      items: areaItems(b.areas),
+      // 段階217：砂の底だけのふつうの素材も、宝箱・鉱脈から（◆の段に混ぜる）
+      items: withDigItems(areaItems(b.areas), st.digItems.common),
       battles: areaBattles(b.areas),
       guards: stratumGuards(st),
       lords: stratumLords(st),
@@ -350,3 +363,145 @@ export function withDigger(def: DigWorldDef, digger: string): DigWorldDef {
 
 /** 前に選んだ掘る人を覚える、物語で覚えた値の名前（段階211） */
 export const SAND_BOTTOM_DIGGER_VAR = 'dig:digger';
+
+// ---- 段階217（S8a）：潜るたびに変わる特別ルールと、珍品 ----
+
+/** 特別ルール（潜るたびに1つ。なしもある） */
+export type DigRuleId = 'none' | 'traps' | 'dark' | 'chests' | 'storms' | 'grains';
+
+export const DIG_RULES: Record<DigRuleId, { name: string; note: string }> = {
+  none: { name: 'いつもどおり', note: '特別なことはない' },
+  traps: { name: '罠が多い', note: '落とし穴・毒の砂・流砂の渦が2倍' },
+  dark: { name: '真っ暗', note: '見える広さが1マス狭い' },
+  chests: { name: '宝箱が多い', note: '宝箱が1.5倍' },
+  storms: { name: '砂嵐が多い', note: '砂嵐が1.5倍。そのかわり珍品が出やすい' },
+  grains: { name: '砂粒が多い', note: '砂時計の砂粒が2倍' },
+};
+
+/** 特別ルールの並び（乱数で選ぶ順。なしを少し多めに） */
+const RULE_TABLE: DigRuleId[] = ['none', 'none', 'traps', 'dark', 'chests', 'storms', 'grains'];
+
+/** その回の特別ルール（潜った回数とシードで決まる。開き直しても同じ回は同じ） */
+export function digRuleFor(seed: number, count: number): DigRuleId {
+  const v = ((Math.imul((seed ^ Math.imul(count + 1, 2654435761)) >>> 0, 1103515245) + 12345) >>> 0) % 1000;
+  return RULE_TABLE[Math.floor((v / 1000) * RULE_TABLE.length)];
+}
+
+/** 特別ルールを砂の底に入れる */
+export function withRule(def: DigWorldDef, rule: DigRuleId | undefined): DigWorldDef {
+  if (!rule || rule === 'none') return def;
+  const map = (f: (l: DigLayerDef) => DigLayerDef): DigWorldDef => ({ ...def, layers: def.layers.map((l) => (l.group === DEEP_GROUND_ID ? l : f(l))) });
+  if (rule === 'traps') return map((l) => ({ ...l, pit: (l.pit ?? 0) * 2, poison: (l.poison ?? 0) * 2, whirlRate: Math.min(1, (l.whirlRate ?? 0) * 2) }));
+  if (rule === 'dark') return { ...def, layers: def.layers.map((l) => ({ ...l, dark: Math.max(1, (l.dark ?? 4) - 1) })) };
+  if (rule === 'chests') return map((l) => ({ ...l, chestRate: Math.min(1, l.chestRate * 1.5) }));
+  if (rule === 'storms') return { ...map((l) => ({ ...l, nestRate: Math.min(1, l.nestRate * 1.5) })), spawn: def.spawn ? { ...def.spawn, rate: def.spawn.rate * 1.5 } : def.spawn };
+  return map((l) => ({ ...l, grain: l.grain * 2 }));
+}
+
+/** 珍品の確率（段階217）：まだ取ったことがなければ高め、取ると下がり、外れるたびに上がる */
+export const DIG_RARE = { first: 0.4, low: 0.05, step: 0.05, max: 0.4, storms: 0.15 } as const;
+export const DIG_RARE_GOT_VAR = 'dig:rare:got';
+export const DIG_RARE_MISS_VAR = 'dig:rare:miss';
+
+export function digRareChance(vars: Readonly<Record<string, string>>, rule?: DigRuleId): number {
+  const base = vars[DIG_RARE_GOT_VAR] ? Math.min(DIG_RARE.max, DIG_RARE.low + DIG_RARE.step * Number(vars[DIG_RARE_MISS_VAR] ?? 0)) : DIG_RARE.first;
+  return Math.min(1, base + (rule === 'storms' ? DIG_RARE.storms : 0));
+}
+
+/** 潜り終えた時の、珍品の確率の覚え（取った → 外れた回数を 0 に。取らなかった → 外れた回数 +1） */
+export function digRareAfter(vars: Readonly<Record<string, string>>, got: boolean): Record<string, string> {
+  if (got) return { ...vars, [DIG_RARE_GOT_VAR]: '1', [DIG_RARE_MISS_VAR]: '0' };
+  return { ...vars, [DIG_RARE_MISS_VAR]: String(Number(vars[DIG_RARE_MISS_VAR] ?? 0) + 1) };
+}
+
+/** 持っているかを調べる（呼ぶ側の目録・持ち物から） */
+export interface DigOwned {
+  item: (id: string) => boolean;
+  snap: (id: string) => boolean;
+  gear: (id: string) => boolean;
+}
+
+/** 開いている章の層（その章の砂の底で） */
+function openStrata(chapterId: string | undefined): DigStratum[] {
+  const n = chapterNo(chapterId);
+  const open = STRATA.filter((_, i) => i + 1 < n);
+  return open.length > 0 ? open : STRATA.slice(0, 1);
+}
+
+/** 懐かしい物の候補（段階217）：区画の物語の宝箱の素材・スナップ・ギアと、区画のぬしのスナップのうち、まだ手に入れたことのない物 */
+function oldCandidates(areaIds: string[], owned: DigOwned): string[] {
+  const out: string[] = [];
+  for (const a of areaIds) {
+    for (const c of AREAS[a]?.chests ?? []) {
+      for (const it of c.items) if (WEAPON_DATA.items[it] && !owned.item(it)) out.push(`old:item:${it}`);
+      for (const sn of c.chainSnaps ?? []) if (!owned.snap(sn)) out.push(`old:snap:${sn}`);
+      for (const g of c.gears ?? []) if (!owned.gear(g)) out.push(`old:gear:${g}`);
+    }
+    for (const e of AREA_BATTLES[`${a}_boss`]?.enemies ?? []) {
+      const sn = CHAIN_ENEMY_SNAPS[e.id];
+      if (sn && !owned.snap(sn)) out.push(`old:snap:${sn}`);
+    }
+  }
+  return [...new Set(out)];
+}
+
+/**
+ * その回の珍品を決める（段階217）。rand は 0〜1 の乱数。埋めない回は null。
+ * 中身の重み：砂の底のレア素材 5・懐かしい物 2・りくのメモ 2・誰かの日記 2（ない種類は外す）。読み物は番号の若い物から
+ */
+export function pickDigRare(chapterId: string | undefined, vars: Readonly<Record<string, string>>, owned: DigOwned, rule: DigRuleId | undefined, rand: () => number): string | null {
+  if (rand() >= digRareChance(vars, rule)) return null;
+  const strata = openStrata(chapterId);
+  const chapters = new Set(strata.map((st) => st.chapter));
+  const rares = strata.flatMap((st) => st.digItems.rare);
+  const olds = oldCandidates(strata.flatMap((st) => st.bands.flatMap((b) => b.areas)), owned);
+  const lore = (kind: 'riku' | 'diary') => DIG_LORE.filter((d) => d.kind === kind && chapters.has(d.stratum) && !vars[digLoreVar(d.id)]).sort((a, b) => a.no - b.no)[0];
+  const riku = lore('riku');
+  const diary = lore('diary');
+  const kinds: [string, number][] = [
+    ['rare', rares.length > 0 ? 5 : 0],
+    ['old', olds.length > 0 ? 2 : 0],
+    ['riku', riku ? 2 : 0],
+    ['diary', diary ? 2 : 0],
+  ];
+  const total = kinds.reduce((n, [, w]) => n + w, 0);
+  if (total === 0) return null;
+  let v = rand() * total;
+  let kind = kinds[0][0];
+  for (const [k, w] of kinds) {
+    if (v < w) {
+      kind = k;
+      break;
+    }
+    v -= w;
+  }
+  if (kind === 'rare') return `rare:item:${rares[Math.floor(rand() * rares.length)]}`;
+  if (kind === 'old') return `rare:${olds[Math.floor(rand() * olds.length)]}`;
+  return `rare:lore:${(kind === 'riku' ? riku : diary)!.id}`;
+}
+
+/** 珍品を、開いている章の層のいちばん下の帯の光る物に足す（深い章の層ほど選ばれやすい） */
+export function withRareRelic(def: DigWorldDef, relic: string, rand: () => number): DigWorldDef {
+  const lastBands = def.layers.filter((l, i) => l.group !== DEEP_GROUND_ID && def.layers[i + 1]?.group !== l.group);
+  if (lastBands.length === 0) return def;
+  const weights = lastBands.map((_, i) => i + 1);
+  let v = rand() * weights.reduce((a, b) => a + b, 0);
+  let pick = lastBands[lastBands.length - 1];
+  for (let i = 0; i < lastBands.length; i++) {
+    if (v < weights[i]) {
+      pick = lastBands[i];
+      break;
+    }
+    v -= weights[i];
+  }
+  return { ...def, layers: def.layers.map((l) => (l.id === pick.id ? { ...l, relics: [...(l.relics ?? []), relic] } : l)) };
+}
+
+/** 珍品の id を読む：rare:item:<素材>・rare:old:item|snap|gear:<id>・rare:lore:<読み物> */
+export function parseRare(ref: string): { kind: 'item' | 'oldItem' | 'oldSnap' | 'oldGear' | 'lore'; id: string } | null {
+  const m = /^(item|lore):(.+)$/.exec(ref);
+  if (m) return { kind: m[1] as 'item' | 'lore', id: m[2] };
+  const o = /^old:(item|snap|gear):(.+)$/.exec(ref);
+  if (o) return { kind: o[1] === 'item' ? 'oldItem' : o[1] === 'snap' ? 'oldSnap' : 'oldGear', id: o[2] };
+  return null;
+}

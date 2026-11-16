@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from '../core';
-import { addItems, addParts, chapterOfEvent, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
+import type { DigLoreDef, DigLoreKind, DigOwned, DigRuleId } from '../data';
+import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, findLost, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, SAND_BOTTOM_FEATURES, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digRareAfter, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -76,7 +77,12 @@ const DIR_STEP: Record<DigDir, [number, number]> = { up: [0, -1], down: [0, 1], 
 
 /** 今の章の砂の底（砂時計の砂が章で変わる） */
 function currentDef() {
-  return sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars);
+  return withRule(sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars), run.dig?.rule);
+}
+
+/** 次に潜る回の特別ルール（段階217。潜った回数とシードで決まる） */
+function nextRule(): DigRuleId {
+  return digRuleFor(run.seed, Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1);
 }
 
 export class SandBottomScene extends Phaser.Scene {
@@ -201,7 +207,11 @@ export class SandBottomScene extends Phaser.Scene {
     const chosen = last && list.includes(last) ? last : list[0];
     o.add(addText(this, GAME_WIDTH / 2, 64, '誰が掘る？', { size: 24, bold: true, color: '#ffd76a' }).setOrigin(0.5));
     o.add(addText(this, GAME_WIDTH / 2, 94, '人によって掘り方の得手と技がある。戦うのは、いつもの並び', { size: 11, color: COLORS.subText }).setOrigin(0.5));
-    const top = 118;
+    // 段階217：今回の地層の特別ルール（潜るたびに変わる）
+    const rule = DIG_RULES[nextRule()];
+    o.add(this.add.rectangle(14, 108, GAME_WIDTH - 28, 30, 0x3a2a10, 0.9).setOrigin(0).setStrokeStyle(1, 0xffd76a, 0.8));
+    o.add(addText(this, GAME_WIDTH / 2, 123, `今回の地層：${rule.name}（${rule.note}）`, { size: 12, bold: true, color: '#ffe9a8' }).setOrigin(0.5));
+    const top = 146;
     const bottom = GAME_HEIGHT - 86;
     const gap = 8;
     const h = Math.min(132, Math.floor((bottom - top - gap * (list.length - 1)) / list.length));
@@ -235,7 +245,39 @@ export class SandBottomScene extends Phaser.Scene {
       hit.on('pointerup', () => this.showToolPicker(id));
       card.add(hit);
     });
-    addButton(this, o, GAME_WIDTH / 2, GAME_HEIGHT - 50, 200, 44, 'やめる', { onTap: () => this.scene.start(run.active ? 'Hub' : 'Title') }, { size: 14 });
+    addButton(this, o, GAME_WIDTH / 2 - 84, GAME_HEIGHT - 50, 150, 44, '拾った記録', { onTap: () => this.showRecords() }, { size: 13 });
+    addButton(this, o, GAME_WIDTH / 2 + 84, GAME_HEIGHT - 50, 150, 44, 'やめる', { onTap: () => this.scene.start(run.active ? 'Hub' : 'Title') }, { size: 14 });
+  }
+
+  /** 拾った記録（段階217）：りくのメモと誰かの日記を、番号順に。見つけていない所は「？」 */
+  private showRecords(kind: DigLoreKind = 'riku'): void {
+    const o = this.openOverlay(0.95);
+    o.add(addText(this, GAME_WIDTH / 2, 60, '拾った記録', { size: 22, bold: true, color: '#ffd76a' }).setOrigin(0.5));
+    const tabs: [DigLoreKind, string][] = [
+      ['riku', 'りくのメモ'],
+      ['diary', '誰かの日記'],
+    ];
+    tabs.forEach(([k, label], i) => addButton(this, o, GAME_WIDTH / 2 + (i === 0 ? -80 : 80), 104, 150, 38, label, { onTap: () => this.showRecords(k) }, k === kind ? { fill: 0xc21f4a, size: 13 } : { size: 13 }));
+    const list = DIG_LORE.filter((d) => d.kind === kind).sort((a, b) => a.no - b.no);
+    const per = Math.min(list.length, 12);
+    list.slice(0, per).forEach((d, i) => {
+      const found = !!run.vars[digLoreVar(d.id)];
+      const y = 150 + i * 46;
+      const label = found ? `${d.no}. ${d.text.slice(0, 18)}……` : `${d.no}. ？`;
+      addButton(this, o, GAME_WIDTH / 2, y, 330, 40, label, { onTap: () => (found ? this.showLore(d, () => this.showRecords(kind)) : undefined) }, { size: 11, enabled: found });
+    });
+    addButton(this, o, GAME_WIDTH / 2, GAME_HEIGHT - 50, 200, 44, '戻る', { onTap: () => this.showPicker() }, { size: 14 });
+  }
+
+  /** 読み物を読む（段階217） */
+  private showLore(d: DigLoreDef, back?: () => void): void {
+    const o = this.openOverlay(0.95);
+    const title = d.kind === 'riku' ? `りくのメモ ${d.no}` : `誰かの日記 ${d.no}`;
+    o.add(addText(this, GAME_WIDTH / 2, 150, title, { size: 20, bold: true, color: d.kind === 'riku' ? '#9fd0ff' : '#ffd0a0' }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 180, `（${d.note}）`, { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    o.add(this.add.rectangle(30, 206, GAME_WIDTH - 60, 300, 0xf4ecd8, 1).setOrigin(0).setStrokeStyle(2, 0x8a7a5a));
+    o.add(addText(this, 46, 222, d.text, { size: 14, color: '#2a2018', wrap: GAME_WIDTH - 92, ja: true }).setLineSpacing(6));
+    addButton(this, o, GAME_WIDTH / 2, 560, 200, 46, back ? '戻る' : '閉じる', { onTap: () => (back ? back() : this.closeOverlay()) }, { size: 14 });
   }
 
   /** 持っている道具の数（段階214。物語で覚えた値） */
@@ -272,10 +314,26 @@ export class SandBottomScene extends Phaser.Scene {
     const count = Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1;
     const stock = Object.fromEntries(tools.map((t) => [digToolVar(t), String(this.stockOf(t) - tools.filter((x) => x === t).length)]));
     setStoryVars({ ...run.vars, ...stock, [DIVE_COUNT_VAR]: String(count), [SAND_BOTTOM_DIGGER_VAR]: digger });
-    const def = currentDef();
+    // 段階217：その回の特別ルールと、珍品（埋めるかどうか・中身は、潜る前に決める。掘り当てるまで秘密）
+    const rule = digRuleFor(run.seed, count);
+    const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
+    let def = withRule(sandBottomFor(chapter, run.vars), rule);
+    let r = (run.seed ^ Math.imul(count + 11, 40503)) >>> 0;
+    const rand = () => {
+      const [v, n] = nextRandom(r);
+      r = n;
+      return v;
+    };
+    const owned: DigOwned = {
+      item: (id) => run.library.items.includes(id) || (run.armory.items[id] ?? 0) > 0,
+      snap: (id) => run.library.snaps.includes(id) || (run.chainAlbum.owned[id] ?? 0) > 0,
+      gear: (id) => run.navi.parts.some((p) => p.partId === id),
+    };
+    const rare = pickDigRare(chapter, run.vars, owned, rule, rand);
+    if (rare) def = withRareRelic(def, rare, rand);
     this.world = undefined;
     const state = createDig(withDigger(def, digger), (run.seed + count * 7919) >>> 0);
-    run.dig = { state: { ...state, tools: [...tools] }, vitals: {}, count, max: def.sand, digger };
+    run.dig = { state: { ...state, tools: [...tools] }, vitals: {}, count, max: def.sand, digger, rule, rare, rareFound: false };
     this.hero = ensureDigHero(this, digger);
     this.warned = false;
     this.message = '十字のボタン（長押しで続けて）か、まわりの枠をタップして掘る。空洞を歩くのは砂 1、掘るのは砂 3';
@@ -814,6 +872,11 @@ export class SandBottomScene extends Phaser.Scene {
    */
   private takeRelicAt(cell: number, id: string): void {
     const relic = parseRelic(id);
+    // 珍品（段階217）
+    if (relic?.kind === 'rare') {
+      this.takeRare(cell, relic.ref);
+      return;
+    }
     // 道具の包み（段階214）：道具袋へ。いっぱいなら拾えない（その場に残る）
     if (relic?.kind === 'tool') {
       const t = DIG_TOOLS[relic.ref as DigToolId];
@@ -842,6 +905,39 @@ export class SandBottomScene extends Phaser.Scene {
       this.message = `落とし物を見つけた！ ${def?.name ?? ''}（拠点の落とし物の棚から、${def?.owner ?? ''}さんに届けられる）`;
       this.render();
       if (def?.findScene) this.openFindScene(def.findScene);
+      return;
+    }
+    this.render();
+  }
+
+  /** 珍品を掘り当てた（段階217）。素材はかばんへ（いっぱいなら残る）、スナップ・ギア・読み物はすぐ手に入る */
+  private takeRare(cell: number, ref: string): void {
+    const r = parseRare(ref);
+    if (!r || !run.dig) return;
+    if ((r.kind === 'item' || r.kind === 'oldItem') && this.s.bag.length >= this.def.bagMax) {
+      this.message = '珍品が光っている……が、かばんがいっぱいで持てない（何かを捨てて、もう一度）';
+      this.render();
+      return;
+    }
+    this.s = takeRelic(this.s, cell);
+    run.dig = { ...run.dig, rareFound: true };
+    this.cameras.main.flash(250, 255, 230, 160);
+    if (r.kind === 'item' || r.kind === 'oldItem') {
+      this.s = { ...this.s, bag: [...this.s.bag, r.id] };
+      this.message = r.kind === 'item' ? `珍品だ！ ${itemName(r.id)}（砂の底でしか見つからない物）` : `物語のどこかで見かけた物が、砂に埋まっていた：${itemName(r.id)}`;
+    } else if (r.kind === 'oldSnap') {
+      run.chainAlbum = gainSnaps(run.chainAlbum, [r.id]);
+      run.library = recordLibraryFinds(run.library, { snaps: [r.id] });
+      this.message = `物語のどこかで見かけたスナップが、砂に埋まっていた：${CHAIN_SNAPS[r.id]?.name ?? r.id}`;
+    } else if (r.kind === 'oldGear') {
+      run.navi = addParts(run.navi, [r.id]);
+      this.message = `物語のどこかで見かけたギアが、砂に埋まっていた：${NAVI_DATA.parts[r.id]?.name ?? r.id}`;
+    } else {
+      const d = DIG_LORE.find((x) => x.id === r.id);
+      setStoryVars({ ...run.vars, [digLoreVar(r.id)]: '1' });
+      this.message = d?.kind === 'riku' ? '珍品だ！ りくの字のメモが、砂に埋まっていた' : '珍品だ！ 誰かの日記の切れ端が、砂に埋まっていた';
+      this.render();
+      if (d) this.showLore(d);
       return;
     }
     this.render();
@@ -967,6 +1063,8 @@ export class SandBottomScene extends Phaser.Scene {
     const s = this.s;
     run.armory = addItems(run.armory, s.bag);
     run.library = recordLibraryFinds(run.library, { items: s.bag });
+    // 珍品の確率の覚え（段階217）：取った → 下がる、取らなかった → 外れた回数 +1
+    setStoryVars(digRareAfter(run.vars, !!run.dig?.rareFound));
     // 道具袋に残った道具は、帰れば持ち物へ戻る（負けた・砂が尽きた時は失う。段階214）
     if (s.outcome === 'home' && s.tools.length > 0) {
       const back = Object.fromEntries([...new Set(s.tools)].map((t) => [digToolVar(t), String(Math.min(DIG_TOOL_OWN_MAX, this.stockOf(t) + s.tools.filter((x) => x === t).length))]));

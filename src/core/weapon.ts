@@ -41,6 +41,8 @@ export interface ItemDef {
   rarity?: ItemRarity;
   /** 持てる数（ポーチの消費アイテム。段階51）。書かなければ上限なし */
   max?: number;
+  /** 時分解で増える記憶の欠片の数（段階217。砂の底のレア素材）。書いた物は1つで時分解できる。書かなければ decomposeCost 個で1つ */
+  fragments?: number;
 }
 
 /** 進化の条件（全部満たすと進化できる） */
@@ -298,11 +300,16 @@ export function decomposeFragment(data: WeaponData, itemId: string): string {
   return data.fragmentFor[best];
 }
 
+/** 時分解に使う数（段階217：欠片の数を書いた素材は1つ） */
+export function decomposeCostOf(data: WeaponData, itemId: string): number {
+  return data.items[itemId]?.fragments ? 1 : data.decomposeCost;
+}
+
 /** 時分解できない理由。できるなら null */
 export function getFragmentError(data: WeaponData, armory: ArmoryState, itemId: string): string | null {
   if (!data.items[itemId]) return 'unknown item';
   if (data.items[itemId].kind !== 'material') return 'only materials can be decomposed';
-  if ((armory.items[itemId] ?? 0) < data.decomposeCost) return 'not enough items';
+  if ((armory.items[itemId] ?? 0) < decomposeCostOf(data, itemId)) return 'not enough items';
   return null;
 }
 
@@ -313,8 +320,8 @@ export function fragmentItem(data: WeaponData, armory: ArmoryState, itemId: stri
   const f = decomposeFragment(data, itemId);
   return {
     ...armory,
-    items: { ...armory.items, [itemId]: armory.items[itemId] - data.decomposeCost },
-    fragments: { ...armory.fragments, [f]: (armory.fragments[f] ?? 0) + 1 },
+    items: { ...armory.items, [itemId]: armory.items[itemId] - decomposeCostOf(data, itemId) },
+    fragments: { ...armory.fragments, [f]: (armory.fragments[f] ?? 0) + (data.items[itemId]?.fragments ?? 1) },
   };
 }
 
