@@ -224,7 +224,7 @@ export class ExchangeScene extends Phaser.Scene {
     const textMax = px - 38 - 10 - (x + 14);
     layer.add(name);
     const once = g.once ? (run.vars[exchangedKey(g.id)] ? '交換しました' : '1回だけ') : '';
-    const have = g.kind === 'gear' ? once : `持っている ${haveOf(g)}${maxOf(g) !== undefined ? `/${maxOf(g)}` : ''}${once ? `・${once}` : ''}`;
+    const have = g.kind === 'gear' ? once : `所持 ${haveOf(g)}${maxOf(g) !== undefined ? `/${maxOf(g)}` : ''}${once ? `・${once}` : ''}`;
     const sub = addText(this, 0, top + 18, have, { size: 9, color: COLORS.subText }).setOrigin(0, 0.5);
     const nameMax = textMax - sub.width - 8;
     if (name.width > nameMax) name.setScale(nameMax / name.width, 1);

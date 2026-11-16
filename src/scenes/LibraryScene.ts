@@ -150,7 +150,7 @@ export class LibraryScene extends Phaser.Scene {
       const it = WEAPON_DATA.items[id];
       addBand(this, layer, SIDE_PADDING + 4, cy, bandW, LIST_COLORS.item, `素材・${RARITY_LABEL[it.rarity ?? 'common']}`, null, !known);
       if (known) name = it.name;
-      right = known ? `持っている ${v.items[id] ?? 0}` : '';
+      right = known ? `所持${v.items[id] ?? 0}` : '';
     }
     const sub = right ? addText(this, GAME_WIDTH - SIDE_PADDING - 8, cy, right, { size: 11, color: COLORS.subText }).setOrigin(1, 0.5) : null;
     const subW = sub ? Math.min(sub.width, 130) : 0;
@@ -184,7 +184,7 @@ export class LibraryScene extends Phaser.Scene {
       if (known) {
         name = m.name;
         sub = snapShortLine(m);
-        right = `持つ${v.snapOwned[id] ?? 0}`;
+        right = `所持${v.snapOwned[id] ?? 0}`;
       } else sub = 'まだ手に入れていません';
     } else {
       const e = LIBRARY_ENEMIES.find((x) => x.id === id)!;

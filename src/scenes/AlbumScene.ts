@@ -394,6 +394,6 @@ export class AlbumScene extends Phaser.Scene {
     n.setFontStyle('bold italic');
     layer.add(n);
     addButton(this, layer, 310, cy, 32, 28, '＋', { onTap: this.list.guard(() => this.insert(card.id)) }, { enabled: inAlbum < owned, size: 16 });
-    layer.add(addText(this, GAME_WIDTH - SIDE_PADDING - 6, cy, `持つ${owned}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0.5));
+    layer.add(addText(this, GAME_WIDTH - SIDE_PADDING - 6, cy, `所持${owned}`, { size: 10, color: COLORS.subText }).setOrigin(1, 0.5));
   }
 }
