@@ -33,7 +33,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, SECOND_WEAPON, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
-import { COLORS, ELEMENT_COLOR, ELEMENT_LABEL, FONT_HEADING, RENDER_SCALE, toCss } from '../ui/theme';
+import { COLORS, ELEMENT_COLOR, ELEMENT_LABEL, FONT_HEADING, RENDER_SCALE, STYLE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
@@ -233,7 +233,8 @@ export class WeaponScene extends Phaser.Scene {
       y += 20;
       styles.forEach((st, i) => {
         const chosen = style === i;
-        const rect = this.add.rectangle(32, y, GAME_WIDTH - 64, 66, chosen ? 0x2a2010 : 0x141214).setRounded(10).setOrigin(0);
+        // 段階229（見た目の決まり）：型の札は角を丸めない（選んでいる型は紅のふち）
+        const rect = this.add.rectangle(32, y, GAME_WIDTH - 64, 66, chosen ? 0x2a0a10 : 0x141214).setOrigin(0);
         rect.setStrokeStyle(chosen ? 2 : 1, chosen ? FRAME_COLORS.gold : FRAME_COLORS.line);
         c.add(rect);
         c.add(addText(this, 44, y + 8, `${evo.name}・${st.name}`, { size: 14, bold: true, color: chosen ? FRAME_COLORS.goldText : COLORS.text }));
@@ -754,7 +755,9 @@ export class WeaponScene extends Phaser.Scene {
     }
     // 選んだものの合計と、ボタン
     const sy = gridTop + STONE.rows * (STONE.h + STONE.gap) + (pages > 1 ? 28 : 6);
-    this.root.add(this.add.rectangle(SIDE_PADDING, sy, GAME_WIDTH - SIDE_PADDING * 2, 48, 0x121316).setOrigin(0).setRounded(8).setStrokeStyle(1, FRAME_COLORS.line));
+    // 段階229（見た目の決まり）：説明の帯は、黒い地に細い白い枠・左に紅の帯
+    this.root.add(this.add.rectangle(SIDE_PADDING, sy, GAME_WIDTH - SIDE_PADDING * 2, 48, STYLE.ink, 0.95).setOrigin(0).setStrokeStyle(1, 0xffffff, 0.5));
+    this.root.add(this.add.rectangle(SIDE_PADDING, sy, 4, 48, STYLE.red).setOrigin(0));
     this.root.add(addText(this, SIDE_PADDING + 10, sy + 24, this.message || this.pickSummary(), { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }).setOrigin(0, 0.5));
     const n = this.pickedCount();
     const isItems = this.picking() === 'items';
@@ -813,7 +816,8 @@ export class WeaponScene extends Phaser.Scene {
     const key = it ? keyItems(this.weapon()).has(id) : false;
     const h = STONE.h;
     this.itemSpots.set(id, { x: x + w / 2, y: y + h / 2, color });
-    const rect = this.add.rectangle(x, y, w, h, picked > 0 ? 0x2a1418 : 0x121316).setOrigin(0).setRounded(6);
+    // 段階229（見た目の決まり）：素材の札は角を丸めない
+    const rect = this.add.rectangle(x, y, w, h, picked > 0 ? 0x2a1418 : 0x121316).setOrigin(0);
     rect.setStrokeStyle(picked > 0 ? 2 : 1, picked > 0 ? CRIMSON : best ? FRAME_COLORS.gold : 0x2a2e34);
     this.root.add(rect);
     if (key) {

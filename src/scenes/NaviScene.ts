@@ -8,7 +8,7 @@ import { gearCounterTraits, NAVI_COACH, PARTY, traitName, type NaviCoachTarget }
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart, PART_COLOR_LABEL, partKindText, STAT_LABEL, summarizeTraits } from '../ui/naviText';
 import { addBalanceWheel, drawGear, drawMovementBg, drawPartShape, METAL, PART_COLOR, PART_SHORT } from '../ui/naviViews';
-import { ALLY_COLOR, COLORS, RENDER_SCALE, toCss } from '../ui/theme';
+import { ALLY_COLOR, COLORS, RENDER_SCALE, STYLE, toCss } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { currentNaviData, currentParty, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn } from './run';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
@@ -521,7 +521,8 @@ export class NaviScene extends Phaser.Scene {
   private drawInfo(): void {
     const top = INFO_TOP;
     const h = INFO_H;
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, FRAME_COLORS.panel, 0.92).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.line));
+    // 段階229（見た目の決まり）：説明の箱は、黒い地に白い枠・左に紅の帯
+    this.root.add(addWindow(this, SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, STYLE.red, STYLE.ink, 0.92));
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
@@ -623,7 +624,7 @@ export class NaviScene extends Phaser.Scene {
     const body = addText(this, GAME_WIDTH / 2, 0, text, { size: 14, wrap: w - 32, align: 'center' }).setOrigin(0.5, 0);
     const h = body.height + 100;
     const y = GAME_HEIGHT / 2 - h / 2;
-    c.add(this.add.rectangle(20, y, w, h, FRAME_COLORS.panel, 0.98).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.line));
+    c.add(addWindow(this, 20, y, w, h));
     body.setY(y + 20);
     c.add(body);
     const bw = (w - 40) / 2;
@@ -667,10 +668,11 @@ export class NaviScene extends Phaser.Scene {
       const x = SIDE_PADDING + (i % LIST_COLS) * (w + CHIP_GAP);
       const y = v.top + Math.floor(i / LIST_COLS) * (CHIP_H + CHIP_GAP);
       const selected = p.uid === this.selectedUid;
-      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? 0x0a0908 : 0x1a1612, 0.92).setRounded(10).setOrigin(0);
-      // 選んでいるギアは白いふち（金は効果のギアの印。段階146 の調整）
-      rect.setStrokeStyle(selected ? 2.5 : 1, selected ? 0xffffff : FRAME_COLORS.line);
+      // 段階229（見た目の決まり）：角を丸めない黒い札。左に金属の色の細い帯。選んでいるギアは白いふち（金は効果のギアの印。段階146 の調整）
+      const rect = this.add.rectangle(x, y, w, CHIP_H, p.placement ? 0x060507 : STYLE.ink, 0.94).setOrigin(0);
+      rect.setStrokeStyle(selected ? 2.5 : 1, selected ? 0xffffff : 0x3a3840);
       layer.add(rect);
+      layer.add(this.add.rectangle(x, y, 3, CHIP_H, PART_COLOR[def.color], p.placement ? 0.4 : 1).setOrigin(0));
       drawPartShape(this, layer, def, 0, x + 5, y + 6, 8, p.placement ? 0.5 : 1);
       layer.add(addText(this, x + 4, y + CHIP_H - 16, `${PART_COLOR_LABEL[def.color]}・${def.name}`, { size: 9, color: p.placement ? COLORS.subText : COLORS.text }));
       if (p.placement) {
@@ -691,7 +693,7 @@ export class NaviScene extends Phaser.Scene {
       const h = v.bottom - v.top;
       const barH = Math.max(24, (h * h) / (h + max));
       this.root.add(this.add.rectangle(GAME_WIDTH - 3, v.top, 3, h, 0xffffff, 0.08).setOrigin(0.5, 0));
-      this.listBar = this.add.rectangle(GAME_WIDTH - 3, v.top, 3, barH, COLORS.accent, 0.8).setOrigin(0.5, 0);
+      this.listBar = this.add.rectangle(GAME_WIDTH - 3, v.top, 3, barH, STYLE.red, 0.9).setOrigin(0.5, 0);
       this.root.add(this.listBar);
       this.moveListBar();
     }

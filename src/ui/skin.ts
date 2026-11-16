@@ -71,7 +71,7 @@ export function rounded<T extends Phaser.GameObjects.Rectangle>(rect: T, radius:
  * 説明や詳しい情報の窓（左上が x, y）。段階225（テーマ「スタイリッシュ」）：暗い地に白い枠、左に紅の帯、右上と左下の角を斜めに落とす。
  * accent は左の帯の色、fill は地の色（中の白い字が読めるよう、地は暗いまま）
  */
-export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, h: number, accent: number = STYLE.red, fill: number = STYLE.ink): Phaser.GameObjects.Container {
+export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, h: number, accent: number = STYLE.red, fill: number = STYLE.ink, alpha = 0.97): Phaser.GameObjects.Container {
   const c = scene.add.container(0, 0);
   const cut = 14;
   const shape = (ox: number, oy: number) => [ox, oy, ox + w - cut, oy, ox + w, oy + cut, ox + w, oy + h, ox + cut, oy + h, ox, oy + h - cut];
@@ -79,7 +79,7 @@ export function addWindow(scene: Phaser.Scene, x: number, y: number, w: number, 
   shadow.fillStyle(0x000000, 0.7).fillPoints(toPoints(shape(x + 5, y + 5)), true);
   c.add(shadow);
   const g = scene.add.graphics();
-  g.fillStyle(fill, 0.97).fillPoints(toPoints(shape(x, y)), true);
+  g.fillStyle(fill, alpha).fillPoints(toPoints(shape(x, y)), true);
   g.lineStyle(2, 0xffffff, 1).strokePoints(toPoints(shape(x, y)), true);
   // 左の紅の帯
   g.fillStyle(accent, 1).fillRect(x, y + cut, 6, h - cut * 2);

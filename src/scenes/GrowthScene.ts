@@ -4,7 +4,7 @@ import { canEvolveAny, chapterLocked, findBugs, findNode, getOpenError, isOpened
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
-import { ALLY_COLOR, COLORS, RENDER_SCALE } from '../ui/theme';
+import { ALLY_COLOR, COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
 import { maybeShowTip } from '../ui/tipPanel';
 import { currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
@@ -537,9 +537,8 @@ export class GrowthScene extends Phaser.Scene {
   private drawInfo(base: CharacterDef, grown: CharacterDef): void {
     const top = INFO_TOP;
     const h = INFO_H;
-    // すりガラスの札（段階144）：夜空が透ける薄い地に、金の細いふち
-    this.root.add(this.add.rectangle(SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, 0x1a2040, 0.72).setRounded(12).setOrigin(0).setStrokeStyle(1, FRAME_COLORS.gold, 0.45));
-    this.root.add(this.add.rectangle(SIDE_PADDING + 1, top + 1, GAME_WIDTH - SIDE_PADDING * 2 - 2, h / 2, 0xffffff, 0.05).setRounded(11).setOrigin(0));
+    // 段階229（見た目の決まり）：説明の箱は、黒い地に白い枠・左に紅の帯（夜空が少し透ける）
+    this.root.add(addWindow(this, SIDE_PADDING, top, GAME_WIDTH - SIDE_PADDING * 2, h, STYLE.red, STYLE.ink, 0.86));
     const n = this.selected ? findNode(GROWTH_MAP, this.selected) : undefined;
     if (!n) {
       // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
@@ -554,7 +553,7 @@ export class GrowthScene extends Phaser.Scene {
       const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
       this.root.add(addText(this, SIDE_PADDING + 10, top + 10, lines.join('\n'), { size: 12, wrap: textW, ja: true }));
       if (advice) {
-        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, stroke: FRAME_COLORS.gold, size: 13, bold: true });
+        addButton(this, this.root, GAME_WIDTH - SIDE_PADDING - 52, top + h / 2, 88, 56, 'おすすめ\nを選ぶ', { onTap: () => this.showAdvice() }, { ...PLAIN_BUTTON, size: 13, bold: true });
       }
       return;
     }
