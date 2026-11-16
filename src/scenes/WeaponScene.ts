@@ -154,7 +154,7 @@ export class WeaponScene extends Phaser.Scene {
     const owned = this.picking() === 'items' ? (run.armory.items[id] ?? 0) : (run.armory.fragments[id] ?? 0);
     const room = this.picking() === 'items' ? weaponSlots(D, w) - w.absorbed - this.pickedCount() : Infinity;
     if (now === 0 && room <= 0) {
-      this.message = '刻印がいっぱい（武器のレベルが上がると増える）';
+      this.message = '刻印がいっぱいです。武器のレベルが上がると、刻める数が増えます';
       this.render();
       return;
     }
@@ -177,7 +177,7 @@ export class WeaponScene extends Phaser.Scene {
       for (const [id, n] of Object.entries(picks)) for (let i = 0; i < n; i++) run.armory = feedFragment(D, run.armory, this.charId, id);
     }
     const names = Object.entries(picks).map(([id, n]) => `${(D.items[id] ?? D.fragments[id]).name}${n > 1 ? `×${n}` : ''}`);
-    this.message = `${before}に${names.join('・')}を刻んだ`;
+    this.message = `${before}に${names.join('・')}を刻みました`;
     console.log('[weapon] absorb', this.charId, JSON.stringify(picks), JSON.stringify(this.weapon().params));
     this.picks = {};
     this.render();
@@ -196,7 +196,7 @@ export class WeaponScene extends Phaser.Scene {
       }
     }
     if (made === 0) return;
-    this.message = `時分解して、記憶の欠片が ${made} つできた（「欠片」で刻む）`;
+    this.message = `時分解して、記憶の欠片が ${made} つできました。「欠片」のタブから刻めます`;
     console.log('[weapon] fragment', JSON.stringify(this.picks), JSON.stringify(run.armory.fragments));
     this.picks = {};
     this.render();
@@ -229,7 +229,7 @@ export class WeaponScene extends Phaser.Scene {
     c.add(addText(this, 36, top + 100, describeEvolution(evo) || '―', { size: 13, wrap: GAME_WIDTH - 72 }));
     let y = top + 136;
     if (ok) {
-      c.add(addText(this, 36, y, '型を1つ選ぶ（効果は次の進化にも引き継ぐ）', { size: 11, color: COLORS.subText }));
+      c.add(addText(this, 36, y, '型を1つ選んでください（型の効果は、この先の進化にも引き継がれます）', { size: 11, color: COLORS.subText }));
       y += 20;
       styles.forEach((st, i) => {
         const chosen = style === i;
@@ -267,7 +267,7 @@ export class WeaponScene extends Phaser.Scene {
     run.armory = evolveWeapon(D, run.armory, this.charId, evo.id, style, run.vars);
     const after = weaponName(D, this.weapon());
     console.log('[weapon] evolve', this.charId, evo.id, style);
-    this.message = `${before}が${after}に進化した！`;
+    this.message = `${before}が${after}に進化しました！`;
     // 新しい今の姿が見えるように、木の位置を戻す
     this.treePos.delete(this.charId);
     this.render();
@@ -503,13 +503,13 @@ export class WeaponScene extends Phaser.Scene {
     if (kind === 'forge') {
       if (getForgeError(D, run.armory, this.charId)) return;
       run.armory = forgeSecondWeapon(D, run.armory, this.charId);
-      this.message = '2本目ができた。「持ち替える」で持ち替えて育てる';
+      this.message = '2本目ができました。右上の「持ち替える」で持ち替えて育てます';
     } else {
       if (!hasSecondWeapon(run.armory, this.charId)) return;
       run.armory = swapWeapon(run.armory, this.charId);
       // 盤の形が変わるので、はめたギアを置き直す（はみ出す物は外れる）
       run.navi = refitNavi(currentNaviData(), run.navi);
-      this.message = `「${weaponName(D, this.weapon())}」に持ち替えた`;
+      this.message = `「${weaponName(D, this.weapon())}」に持ち替えました`;
     }
     this.picks = {};
     this.laid = [];
@@ -678,7 +678,7 @@ export class WeaponScene extends Phaser.Scene {
   /** 一番近い進化先まで（「次：○○　氷 あと8・鍵 ✓」）。今すぐ進化できる時はそう言う */
   private nextHint(): string {
     const w = this.weapon();
-    if (canEvolveAny(D, run.armory, this.charId, run.vars)) return '金に光る紋章をタップで進化';
+    if (canEvolveAny(D, run.armory, this.charId, run.vars)) return '進化できます！ 光っている紋章をタップしてください';
     const near = nearestEvolution(D, run.armory, this.charId);
     if (!near) return '';
     const parts = evolutionChecks(D, w, near.evolution, run.armory.items, run.vars).map((c) => {
@@ -687,7 +687,7 @@ export class WeaponScene extends Phaser.Scene {
       if (cd.kind === 'key') return `鍵 ${c.ok ? '✓' : '✗'}`;
       return c.ok ? '' : describeCondition(cd, D);
     });
-    return `次：${near.evolution.name}　${parts.filter(Boolean).join('・')}`;
+    return `次の進化「${near.evolution.name}」まで：${parts.filter(Boolean).join('・')}`;
   }
 
   /** 引き出しを開いた時：絞り込み、ひし形の石（5列）、選んだものの合計、「刻む（N）」「時分解」 */
@@ -869,7 +869,10 @@ export class WeaponScene extends Phaser.Scene {
   private pickSummary(): string {
     const n = this.pickedCount();
     if (n === 0) {
-      return this.picking() === 'items' ? '石を押すと選ぶ（押すたびに +1、最後まで押すと 0 に戻る）。★は進化先に近づく素材' : '記憶の欠片を選んで「刻む」。刻印を使わず +1（時分解でできる）';
+      // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で
+      return this.picking() === 'items'
+        ? '石をタップで選び、「刻む」で能力値が上がります。★は次の進化に近づく素材です'
+        : '記憶の欠片をタップで選び、「刻む」で能力値が上がります。欠片は刻印を使いません（素材を時分解すると手に入ります）';
     }
     const w = this.weapon();
     const after = paramsAfterPicked(D, w.params, this.picks);

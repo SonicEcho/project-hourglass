@@ -148,7 +148,7 @@ export class NaviScene extends Phaser.Scene {
       return;
     }
     if (!sel) {
-      this.message = '先に下の一覧からギアを選ぶ';
+      this.message = '先に、下の一覧からギアを選んでください';
       this.render();
       return;
     }
@@ -184,7 +184,7 @@ export class NaviScene extends Phaser.Scene {
     run.navi = placePart(currentNaviData(), run.navi, sel.uid, ghost);
     const def = currentNaviData().parts[sel.partId];
     const placed = run.navi.parts.find((p) => p.uid === sel.uid)!;
-    this.message = `${def.name}をはめた${def.kind !== 'stat' && !isPartActive(currentNaviData(), placed) ? '（ブリッジに乗っていないので効かない）' : ''}`;
+    this.message = `${def.name}をはめました${def.kind !== 'stat' && !isPartActive(currentNaviData(), placed) ? '。ただし、ブリッジ（効果が効く列）に乗っていないので、まだ効きません' : ''}`;
     console.log('[navi] place', this.charId, sel.partId, JSON.stringify(ghost));
     this.clearSelection();
     this.render();
@@ -194,7 +194,7 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     if (!sel?.placement) return;
     run.navi = removePart(run.navi, sel.uid);
-    this.message = `${currentNaviData().parts[sel.partId].name}を外した`;
+    this.message = `${currentNaviData().parts[sel.partId].name}を外しました`;
     console.log('[navi] remove', sel.partId);
     this.clearSelection();
     this.render();
@@ -526,7 +526,8 @@ export class NaviScene extends Phaser.Scene {
     const sel = this.selectedPart();
     const textW = GAME_WIDTH - SIDE_PADDING * 2 - 128;
     if (!sel) {
-      const text = this.message || '一覧からギアを選び、マスをタップして置く。同じ金属が隣だと狂い。下のセット：タップで付け替え、長押しで今の並べ方を保存';
+      // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で
+      const text = this.message || '下の一覧でギアを選び、盤のマスをタップして置きます。同じ金属を隣に置くと「狂い」が起きます。セットは、タップで付け替え・長押しで今の並べ方を保存';
       this.root.add(addText(this, SIDE_PADDING + 10, top + 8, text, { size: 11, wrap: GAME_WIDTH - SIDE_PADDING * 2 - 20 }));
       this.drawLoadouts(top + h - 22);
       return;
@@ -538,12 +539,12 @@ export class NaviScene extends Phaser.Scene {
     const status = ghost
       ? err
         ? err === 'overlaps another part'
-          ? '他のギアと重なっている'
-          : 'ムーブメントからはみ出している'
-        : '「はめる」か、影をもう一度タップで決定'
+          ? 'ほかのギアと重なるので、ここには置けません'
+          : '盤からはみ出すので、ここには置けません'
+        : '置ける場所です。「はめる」か、影をもう一度タップで決まります'
       : owner
-        ? `${owner}のムーブメントにはまっている`
-        : 'ムーブメントのマスをタップして置き場所を決める';
+        ? `${owner}のムーブメントにはめています`
+        : '盤のマスをタップすると、置く場所の影が出ます';
     drawPartShape(this, this.root, def, this.rotation, SIDE_PADDING + 10, top + 12, 12);
     this.root.add(addText(this, SIDE_PADDING + 62, top + 8, def.name, { size: 15, bold: true, color: COLORS.accentText }));
     this.root.add(
@@ -596,7 +597,7 @@ export class NaviScene extends Phaser.Scene {
   private keepLoadout(slot: number): void {
     const name = (run.navi.loadouts?.[this.charId]?.[slot]?.name ?? `セット${slot + 1}`).replace(/^並べ方/, 'セット');
     run.navi = saveLoadout(run.navi, this.charId, slot, name);
-    this.message = `${name}に、今の並べ方を保存した（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書き保存`;
+    this.message = `${name}に、今の並べ方を保存しました（ギア${boardParts(run.navi, this.charId).length}つ）。タップで付け替え、長押しで上書きします`;
     this.render();
   }
 
@@ -611,7 +612,7 @@ export class NaviScene extends Phaser.Scene {
     const r = applyLoadout(currentNaviData(), run.navi, this.charId, slot);
     run.navi = r.navi;
     const name = (run.navi.loadouts?.[this.charId]?.[slot]?.name ?? '').replace(/^並べ方/, 'セット');
-    this.message = `${name}に付け替えた${r.missing ? `（置けなかったギアが${r.missing}つ）` : ''}`;
+    this.message = `${name}に付け替えました${r.missing ? `（置けなかったギアが${r.missing}つあります）` : ''}`;
     this.clearSelection();
     this.render();
   }
@@ -656,7 +657,7 @@ export class NaviScene extends Phaser.Scene {
     const v = this.listView();
     const max = this.maxListScroll();
     this.listScroll = Math.max(0, Math.min(this.listScroll, max));
-    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで詳細${max > 0 ? '・上下にずらせる' : ''}`, { size: 11, color: COLORS.subText }));
+    this.root.add(addText(this, SIDE_PADDING, LIST_TOP, `持っているギア（${parts.length}）　長押しで説明${max > 0 ? '・指で上下にずらせます' : ''}`, { size: 11, color: COLORS.subText }));
     const layer = this.add.container(0, -this.listScroll);
     this.root.add(layer);
     this.listLayer = layer;
@@ -739,7 +740,7 @@ export class NaviScene extends Phaser.Scene {
   private showPartDetail(p: OwnedPart): void {
     const def = currentNaviData().parts[p.partId];
     const owner: CharacterDef | undefined = p.placement ? PARTY.find((c) => c.id === p.placement!.charId) : undefined;
-    const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと焼き付いて狂い）`, `大きさ：${def.cells.length}マス`];
+    const lines = [describePart(def), partKindText(def), `金属：${PART_COLOR_LABEL[def.color]}（同じ金属を隣に置くと、焼き付いて「狂い」が起きます）`, `大きさ：${def.cells.length}マス`];
     // 効く性質（段階201）：対策のギアは、効く敵の性質を出す
     const counters = gearCounterTraits(def.id);
     if (counters.length) lines.push(`効く性質：${counters.map(traitName).join('・')}`);

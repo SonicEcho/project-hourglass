@@ -101,7 +101,7 @@ export class GrowthScene extends Phaser.Scene {
     const chapters = [...new Set(GROWTH_MAP.nodes.flatMap((n) => (n.chapter !== undefined && n.chapter <= now ? [n.chapter] : [])))];
     const fresh = chapters.filter((c) => run.vars[`星図:広がった:${c}`] !== '1');
     if (fresh.length === 0) return;
-    this.message = '星図が広がった！　上の方に、新しい星が現れた';
+    this.message = '星図が広がりました！ 上の方に、新しい星が現れています';
     setStoryVars({ ...run.vars, ...Object.fromEntries(fresh.map((c) => [`星図:広がった:${c}`, '1'])) });
   }
 
@@ -143,7 +143,7 @@ export class GrowthScene extends Phaser.Scene {
   private open(nodeId: string): void {
     const node = findNode(GROWTH_MAP, nodeId)!;
     run.growth = openNode(GROWTH_MAP, run.growth, this.base(), nodeId, growthChapter(hubLineup()));
-    this.message = `${this.base().name}：${nodeTitle(node, this.base())}を開けた`;
+    this.message = `${this.base().name}の「${nodeTitle(node, this.base())}」を開けました`;
     console.log('[growth]', this.charId, nodeId, `points=${run.growth.points}`);
     this.selected = null;
     this.render();
@@ -544,10 +544,11 @@ export class GrowthScene extends Phaser.Scene {
       // 段階100：おすすめの道の行き先と、次に開ける星を選ぶボタン
       const advice = this.advice();
       const lines = [
-        this.message || `${base.name}の駒を進める。点線の輪の星（開けられる星）をタップ。星図は指でずらせる`,
+        // 段階229 の直し（開発者の声）：説明はゲームのルール説明の口調で
+        this.message || `点線の輪の星をタップで説明、もう一度タップで開けます。開けた星の力で、${base.name}が強くなります`,
         advice
-          ? `おすすめ：${nodeTitle(advice.target, base)}（金の道・あと${advice.cost}pt）`
-          : `星の砂は${lineupBase(hubLineup()).length}人共通。誰にどう使うかを選ぼう`,
+          ? `おすすめ：${nodeTitle(advice.target, base)}（金の道の先。あと${advice.cost}pt）`
+          : `星の砂は${lineupBase(hubLineup()).length}人で共有です。誰の星を開けるか選びましょう`,
         `${base.name}：HP ${grown.stats.hp}　MP ${grown.stats.mp}　攻撃 ${grown.stats.atk}　魔力 ${grown.stats.mag}　防御 ${grown.stats.def}`,
       ];
       const textW = advice ? GAME_WIDTH - SIDE_PADDING * 2 - 120 : GAME_WIDTH - SIDE_PADDING * 2 - 20;
