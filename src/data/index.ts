@@ -58,3 +58,4 @@ export * from './barks';
 export * from './hubTiles';
 export * from './library';
 export * from './sandBottom';
+export * from './sandBottomLore';

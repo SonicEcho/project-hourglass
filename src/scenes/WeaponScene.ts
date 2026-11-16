@@ -9,7 +9,7 @@ import {
   evolutionVisibility,
   evolveWeapon,
   feedFragment,
-  fragmentItem,
+  decomposeCostOf, fragmentItem,
   getAbsorbPickedError,
   getEvolveError,
   getFragmentError,
@@ -180,10 +180,11 @@ export class WeaponScene extends Phaser.Scene {
   private fragment(): void {
     let made = 0;
     for (const [id, n] of Object.entries(this.picks)) {
-      for (let i = 0; i < Math.floor(n / D.decomposeCost); i++) {
+      // 段階217：砂の底のレア素材は1つで欠片がいくつもできる（decomposeCostOf・fragments）
+      for (let i = 0; i < Math.floor(n / decomposeCostOf(D, id)); i++) {
         if (getFragmentError(D, run.armory, id)) break;
         run.armory = fragmentItem(D, run.armory, id);
-        made++;
+        made += D.items[id]?.fragments ?? 1;
       }
     }
     if (made === 0) return;
@@ -196,7 +197,7 @@ export class WeaponScene extends Phaser.Scene {
   /** 時分解でできる欠片の数（選んだ数から） */
   private fragmentYield(): number {
     if (this.picking() !== 'items') return 0;
-    return Object.entries(this.picks).reduce((a, [id, n]) => a + (getFragmentError(D, { ...run.armory, items: { ...run.armory.items } }, id) ? 0 : Math.floor(n / D.decomposeCost)), 0);
+    return Object.entries(this.picks).reduce((a, [id, n]) => a + (getFragmentError(D, { ...run.armory, items: { ...run.armory.items } }, id) ? 0 : Math.floor(n / decomposeCostOf(D, id)) * (D.items[id]?.fragments ?? 1)), 0);
   }
 
   /** 次の姿の紋章をタップ：条件 ✓ と得るもの、型を選んで進化する窓（段階42 の進化の確認） */
