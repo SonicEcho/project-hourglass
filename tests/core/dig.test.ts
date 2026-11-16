@@ -604,3 +604,16 @@ describe('砂の底：帰り道の砂（段階216）', () => {
     expect(start - s.sand).toBe(10);
   });
 });
+
+describe('砂の底：「誰が掘る？」の数の枠（段階230）', () => {
+  it('4つの枠は、掘る砂・固い土・岩・勝った時。ふつうより得意な所だけ up', async () => {
+    const { diggerStats } = await import('../../src/data');
+    const v = (id: string) => diggerStats(id).map((x) => `${x.label}:${x.value}${x.up ? '↑' : ''}`);
+    expect(v('hero')).toEqual(['掘る砂:3', '固い土:2回', '岩:✕', '勝った時:ー']);
+    expect(v('akari')).toEqual(['掘る砂:3', '固い土:2回', '岩:✕', '勝った時:HP+2割↑']);
+    expect(v('mio')).toEqual(['掘る砂:3', '固い土:1回↑', '岩:✕', '勝った時:ー']);
+    expect(v('sayoko')).toEqual(['掘る砂:3', '固い土:2回', '岩:砂6↑', '勝った時:ー']);
+    expect(v('hayase')).toEqual(['掘る砂:2↑', '固い土:2回', '岩:✕', '勝った時:ー']);
+    for (const id of Object.keys(SAND_BOTTOM_DIGGERS)) expect(SAND_BOTTOM_DIGGERS[id].tag.length, id).toBeGreaterThan(0);
+  });
+});

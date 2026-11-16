@@ -3,16 +3,17 @@ import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from
 import type { DigLoreDef, DigLoreKind, DigOwned, DigRuleId } from '../data';
 import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, hearLostVoice, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger } from '../data';
+import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger, diggerStats, ALLY_FACE, FACE_CROPS } from '../data';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
-import { isSettled } from '../assets/loader';
-import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
-import { addButton, addText } from '../ui/widgets';
+import { isSettled, hasImage } from '../assets/loader';
+import { COLORS, RENDER_SCALE, STYLE, ALLY_COLOR, toCss } from '../ui/theme';
+import { addButton, addText, addSlant } from '../ui/widgets';
 import type { DigHeroSprite } from './digArt';
 import { digArtId, DIG_CRACK_FRAME, DIG_SURFACE_FRAME, DIG_TILE, ensureDigHero, ensureDigRoamer, ensureDigTiles, isSolid, ROAMER_ANIM, ROAMER_TEXTURE, tileFrame } from './digArt';
 import { currentParty, run, saveRun, setStoryVars, storyBattleLineup, storyLineup } from './run';
+import { faceImage } from '../ui/portrait';
 
 // 砂の底を掘る（段階207 試作1・段階208 試作2・段階209 本編の入口。docs/milestones/M3_sand_bottom.md）。横から見た地面を、1マスずつ掘り進む。
 // 動かし方は、下の大きな十字のボタン（長押しで続けて進む）か、自分の上下左右のマス（枠が出る）をタップ。自分と砂嵐はマスの間をなめらかに動く。
@@ -230,26 +231,53 @@ export class SandBottomScene extends Phaser.Scene {
       const w = GAME_WIDTH - 28;
       const card = this.add.container(0, 0);
       o.add(card);
+      // 段階230（開発者の声：文だけで単調）：人ごとの色から黒へ横に移る札に、名前・特徴のひとこと・4つの数の枠・技を整理して出す
+      const on = id === chosen;
       const bg = this.add.graphics();
-      // 段階230（見た目の決まり）：人ごとの色から黒へ移る札。角は丸めず、選んでいる人は白い太いふち
       bg.fillStyle(0x000000, 0.7).fillRect(x + 4, y + 4, w, h);
-      bg.fillGradientStyle(d.color, d.color, STYLE.ink, STYLE.ink, 1, 1, 0.95, 0.95).fillRect(x, y, w, h);
-      bg.lineStyle(id === chosen ? 3 : 1.5, id === chosen ? 0xffffff : 0x5a5a62, 1).strokeRect(x, y, w, h);
+      bg.fillGradientStyle(d.color, STYLE.ink, d.color, STYLE.ink, 1, 1, 1, 1).fillRect(x, y, w, h);
+      bg.lineStyle(on ? 3 : 1.5, on ? 0xffffff : 0x5a5a62, 1).strokeRect(x, y, w, h);
       card.add(bg);
       // 動く二頭身（歩く）
       const hero = ensureDigHero(this, id);
-      const sprite = this.add.sprite(x + 52, y + h - 10, hero.key, hero.idleFrame).setOrigin(hero.originX, hero.originY).setScale(hero.scale * Math.min(2.4, (h - 16) / (T * 1.5)));
+      const sprite = this.add.sprite(x + 52, y + h - 6, hero.key, hero.idleFrame).setOrigin(hero.originX, hero.originY).setScale(hero.scale * Math.min(2.4, (h - 16) / (T * 1.5)));
       sprite.play(hero.anim('walk'));
       // 段階215 の続き（開発者の声：足の動きが速すぎる）：札では、ゆっくり歩く
       sprite.anims.timeScale = 0.4;
       card.add(sprite);
       const name = PARTY.find((c) => c.id === id)?.name ?? id;
       const tx = x + 104;
-      const tw = w - 116;
-      card.add(addText(this, tx, y + 10, name, { size: 18, bold: true, color: '#ffffff' }));
-      if (id === last) card.add(addText(this, x + w - 12, y + 12, '前に選んだ人', { size: 9, bold: true, color: STYLE.yellowText }).setOrigin(1, 0));
-      card.add(addText(this, tx, y + 36, `得手：${d.note}`, { size: 11, color: '#e8ecff', wrap: tw, ja: true }));
-      card.add(addText(this, tx, y + 36 + 32, `技「${skill.name}」：${skill.note}`, { size: 11, bold: true, color: '#ffe9a8', wrap: tw, ja: true }));
+      const tw = w - 114;
+      const nameT = addText(this, tx, y + 6, name, { size: 19, bold: true }).setFontStyle('bold italic').setShadow(2, 2, '#000000', 0, false, true);
+      card.add(nameT);
+      // 特徴のひとこと（白い斜めの札）
+      const tagT = addText(this, 0, 0, d.tag, { size: 10, bold: true, color: '#111111' });
+      const tagW = tagT.width + 16;
+      card.add(addSlant(this, tx + tagW / 2, y + 40, tagW, 16, 0xffffff));
+      card.add(tagT.setOrigin(0.5).setPosition(tx + tagW / 2, y + 40));
+      // 選んでいる人
+      if (on) {
+        card.add(addSlant(this, x + w - 40, y + 14, 60, 18, STYLE.red));
+        card.add(addText(this, x + w - 40, y + 14, '選択中', { size: 10, bold: true }).setOrigin(0.5).setFontStyle('bold italic'));
+      }
+      // 4つの数の枠（ふつうより得意な所は黄）
+      const stats = diggerStats(id);
+      const cw = (tw - 3 * 4) / 4;
+      const sy = y + 52;
+      stats.forEach((st, k) => {
+        const cx = tx + k * (cw + 4);
+        card.add(this.add.rectangle(cx, sy, cw, 30, 0x000000, 0.55).setOrigin(0).setStrokeStyle(1, st.up ? STYLE.yellow : 0xffffff, st.up ? 1 : 0.25));
+        card.add(addText(this, cx + cw / 2, sy + 7, st.label, { size: 8, color: COLORS.subText }).setOrigin(0.5));
+        const v = addText(this, cx + cw / 2, sy + 20, st.value, { size: 13, bold: true, color: st.up ? STYLE.yellowText : '#ffffff' }).setOrigin(0.5);
+        if (v.width > cw - 4) v.setScale((cw - 4) / v.width);
+        card.add(v);
+      });
+      // 技（紅の札「技」と、名前・ひとこと）
+      const ky = sy + 38;
+      card.add(addSlant(this, tx + 14, ky + 8, 28, 16, STYLE.red));
+      card.add(addText(this, tx + 14, ky + 8, '技', { size: 10, bold: true }).setOrigin(0.5));
+      card.add(addText(this, tx + 34, ky, skill.name, { size: 12, bold: true }));
+      card.add(addText(this, tx + 34, ky + 16, skill.note, { size: 9, color: '#dddddd', wrap: tw - 34, ja: true }));
       const hit = this.add.rectangle(x, y, w, h, 0xffffff, 0.001).setOrigin(0).setInteractive();
       hit.on('pointerup', () => this.showToolPicker(id));
       card.add(hit);
@@ -524,25 +552,45 @@ export class SandBottomScene extends Phaser.Scene {
     return delay + (moved ? MOVE_MS : 0);
   }
 
+  /**
+   * 上の帯（段階230。開発者の声：デバッグの画面のように質素）：砂は斜めの板に大きな数字と区切りの帯、帰り道の砂は黄の札。
+   * 深さは大きな斜体の数字に紅の影、今の層は紅の札
+   */
   private drawHud(): void {
-    // 段階230（見た目の決まり）：上の帯は黒、下の境に紅の線
     this.root.add(this.add.rectangle(0, 0, GAME_WIDTH, GRID_Y, STYLE.ink).setOrigin(0));
     this.root.add(this.add.rectangle(0, GRID_Y - 2, GAME_WIDTH, 2, STYLE.red, 0.9).setOrigin(0));
     const s = this.s;
-    this.root.add(addText(this, 14, 12, '⏳', { size: 26 }));
-    this.root.add(addText(this, 50, 12, `砂 ${s.sand}`, { size: 20, bold: true }));
-    const bw = 150;
-    this.root.add(this.add.rectangle(50, 44, bw, 10, 0x333333).setOrigin(0));
+    // 砂の板
+    const plate = addSlant(this, 118, 30, 212, 42, 0x16141a);
+    plate.setStrokeStyle(1.5, 0xffffff, 1);
+    this.root.add(plate);
+    this.root.add(addText(this, 28, 30, '⏳', { size: 20 }).setOrigin(0, 0.5));
+    const num = addText(this, 58, 30, String(s.sand), { size: 24, bold: true }).setOrigin(0, 0.5).setFontStyle('bold italic');
+    this.root.add(num);
+    this.root.add(addText(this, 64 + num.width, 33, `/ ${this.sandMax}　砂時計`, { size: 10, color: COLORS.subText }).setOrigin(0, 0.5));
+    // 区切りの帯（20こ）
     const rate = Phaser.Math.Clamp(s.sand / this.sandMax, 0, 1);
-    this.root.add(this.add.rectangle(50, 44, bw * rate, 10, rate < 0.25 ? 0xff6a5a : 0xffd76a).setOrigin(0));
+    const segs = 20;
+    const lit = Math.ceil(rate * segs);
+    const low = rate < 0.25;
+    for (let k = 0; k < segs; k++) this.root.add(addSlant(this, 22 + k * 11, 63, 9, 9, k < lit ? (low ? 0xff6a5a : 0xe8c784) : 0x333038));
+    // 帰り道に要る砂（黄の札。足りない時は赤）
     const back = digBackCost(this.def, s);
     const short = s.sand < back;
-    this.root.add(addText(this, 50, 62, `帰り道に要る砂 ${back}${short ? '（足りない！）' : ''}`, { size: 11, bold: true, color: short ? '#ff8a7a' : STYLE.yellowText }));
+    const backT = addText(this, 0, 0, `帰り道 砂 ${back}${short ? '（足りない！）' : ''}`, { size: 10, bold: true, color: short ? '#ffffff' : '#000000' });
+    const bw = backT.width + 18;
+    this.root.add(addSlant(this, 18 + bw / 2, 82, bw, 16, short ? 0xff4a3a : STYLE.yellow));
+    this.root.add(backT.setOrigin(0.5).setPosition(18 + bw / 2, 82));
+    // 深さ（大きな斜体）と、今の層の札
     const record = Number(run.vars[SAND_BOTTOM_DEEPEST_VAR] ?? 0);
-    this.root.add(addText(this, GAME_WIDTH - 14, 10, '深さ', { size: 10, bold: true, color: COLORS.subText }).setOrigin(1, 0));
-    this.root.add(addText(this, GAME_WIDTH - 14, 24, `${s.y * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 22, bold: true }).setOrigin(1, 0));
-    this.root.add(addText(this, GAME_WIDTH - 14, 54, s.y > 0 ? digLayerAt(this.def, s.y).name : '地上', { size: 11, color: COLORS.subText }).setOrigin(1, 0));
-    this.root.add(addText(this, GAME_WIDTH - 14, 70, `今回 ${s.deepest * SAND_BOTTOM_METERS_PER_ROW} m・記録 ${record * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 10, color: COLORS.subText }).setOrigin(1, 0));
+    const unit = addText(this, GAME_WIDTH - 12, 40, 'm', { size: 16, bold: true }).setOrigin(1, 1).setFontStyle('bold italic');
+    this.root.add(unit);
+    this.root.add(addText(this, GAME_WIDTH - 14 - unit.width, 44, String(s.y * SAND_BOTTOM_METERS_PER_ROW), { size: 36, bold: true }).setOrigin(1, 1).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
+    const layerT = addText(this, 0, 0, s.y > 0 ? digLayerAt(this.def, s.y).name : '地上', { size: 10, bold: true });
+    const lw = layerT.width + 18;
+    this.root.add(addSlant(this, GAME_WIDTH - 12 - lw / 2, 58, lw, 16, STYLE.red));
+    this.root.add(layerT.setOrigin(0.5).setPosition(GAME_WIDTH - 12 - lw / 2, 58));
+    this.root.add(addText(this, GAME_WIDTH - 12, 76, `今回 ${s.deepest * SAND_BOTTOM_METERS_PER_ROW} m・記録 ${record * SAND_BOTTOM_METERS_PER_ROW} m`, { size: 9, color: COLORS.subText }).setOrigin(1, 0));
   }
 
   /**
@@ -595,41 +643,72 @@ export class SandBottomScene extends Phaser.Scene {
     this.root.add(this.add.rectangle(0, PANEL_Y, GAME_WIDTH, GAME_HEIGHT - PANEL_Y, STYLE.ink).setOrigin(0));
     this.root.add(this.add.rectangle(0, PANEL_Y, GAME_WIDTH, 2, STYLE.red, 0.9).setOrigin(0));
     const s = this.s;
-    // かばん
-    this.root.add(addText(this, 12, PANEL_Y + 10, `かばん\n${s.bag.length}/${this.def.bagMax}`, { size: 10, bold: true }));
+    // 段階230（開発者の声：デバッグの画面のように質素）：紅の見出し「かばん」「道具」、かばんは珍しさの色の斜めの枠、
+    // 仲間は顔と HP の帯で出す
+    const label = (x: number, y: number, text: string) => {
+      const t = addText(this, 0, 0, text, { size: 9, bold: true });
+      const w = t.width + 16;
+      this.root.add(addSlant(this, x + w / 2, y, w, 14, STYLE.red));
+      this.root.add(t.setOrigin(0.5).setPosition(x + w / 2, y).setFontStyle('bold italic'));
+    };
+    label(12, PANEL_Y + 11, `かばん ${s.bag.length}/${this.def.bagMax}`);
     for (let i = 0; i < this.def.bagMax; i++) {
-      const x = 58 + i * 32;
-      this.root.add(this.add.rectangle(x, PANEL_Y + 10, 28, 28, 0x16141a).setOrigin(0).setStrokeStyle(1, 0x4a4852));
+      const x = 12 + i * 36 + 15;
       const id = s.bag[i];
-      if (id) this.root.add(addText(this, x + 14, PANEL_Y + 24, rarityMark(id), { size: 14, bold: true, color: rarityMark(id) === '★' ? '#ffd76a' : rarityMark(id) === '◆' ? '#9fd0ff' : '#ffffff' }).setOrigin(0.5));
+      const mark = id ? rarityMark(id) : '';
+      const color = mark === '★' ? STYLE.yellow : mark === '◆' ? 0x6dd0ff : id ? 0xffffff : 0x4a4852;
+      const slot = addSlant(this, x, PANEL_Y + 32, 30, 24, 0x16141a);
+      slot.setStrokeStyle(id ? 1.5 : 1, color, 1);
+      this.root.add(slot);
+      if (id) this.root.add(addText(this, x, PANEL_Y + 32, mark, { size: 13, bold: true, color: toCss(color) }).setOrigin(0.5));
     }
     // 左の列：掘る人・仲間の HP・道具袋・技・上へ戻る。右：十字のボタン
     const leftW = PAD.x - PAD.w * 1.5 - PAD.gap - 20;
     const party = currentParty(storyBattleLineup());
-    const hp = party.map((c) => `${c.name} ${Math.round(run.dig?.vitals[c.id]?.hp ?? c.stats.hp)}/${c.stats.hp}`).join('\n');
-    // 掘る人と特徴（段階211）
+    // 掘る人と特徴のひとこと（段階211・230）
     const digger = run.dig?.digger ?? 'hero';
     const diggerName = PARTY.find((c) => c.id === digger)?.name ?? digger;
-    this.root.add(addText(this, 12, PANEL_Y + 46, `掘る人：${diggerName}（${SAND_BOTTOM_DIGGERS[digger]?.note ?? ''}）`, { size: 10, bold: true, color: '#9fd0ff', wrap: GAME_WIDTH - 24, ja: true }));
-    this.root.add(addText(this, 12, PANEL_Y + 64, hp, { size: 10, color: COLORS.subText }).setLineSpacing(1));
+    this.root.add(addText(this, 12, PANEL_Y + 48, `掘る人：`, { size: 10, color: COLORS.subText }));
+    this.root.add(addText(this, 52, PANEL_Y + 48, `${diggerName}（${SAND_BOTTOM_DIGGERS[digger]?.tag ?? ''}）`, { size: 10, bold: true, color: STYLE.yellowText }));
+    // 仲間：顔と HP の帯
+    party.forEach((c, k) => {
+      const y = PANEL_Y + 72 + k * 16;
+      const faceId = ALLY_FACE[c.id];
+      if (faceId && hasImage(this, faceId)) {
+        this.root.add(this.add.circle(20, y, 8, 0x000000));
+        this.root.add(faceImage(this, faceId, 20, y, 7, FACE_CROPS[c.id]));
+      } else this.root.add(this.add.circle(20, y, 7, ALLY_COLOR[c.id] ?? COLORS.ally));
+      this.root.add(this.add.circle(20, y, 8).setStrokeStyle(1.2, 0xffffff));
+      const hp = Math.round(run.dig?.vitals[c.id]?.hp ?? c.stats.hp);
+      const rate = Phaser.Math.Clamp(hp / c.stats.hp, 0, 1);
+      const bw = leftW - 74;
+      this.root.add(addSlant(this, 34 + bw / 2, y, bw, 6, 0x333038));
+      if (rate > 0) this.root.add(addSlant(this, 34 + (bw * rate) / 2, y, bw * rate, 6, rate < 0.3 ? 0xff6a4a : 0x4cd07d));
+      this.root.add(addText(this, 38 + bw, y, `${hp}/${c.stats.hp}`, { size: 9, color: '#dddddd' }).setOrigin(0, 0.5));
+    });
     const diving = s.outcome === 'diving';
     // 道具袋（段階214）：3つの枠。タップで説明と「使う」
-    const toolY = PANEL_Y + 118;
+    // 左の列の下の方は、画面の下から決める（「地上へ出る」のボタンと重ならないように）
+    const skillY = GAME_HEIGHT - 86;
+    const toolY = skillY - 17 - 6 - 36;
+    label(12, toolY - 9, '道具');
     const max = this.def.toolMax ?? 3;
     for (let i = 0; i < max; i++) {
       const x = 12 + i * 46;
       const t = s.tools[i] as DigToolId | undefined;
-      const slot = this.add.rectangle(x, toolY, 40, 40, t ? 0x3a2a5a : 0x16141a).setOrigin(0).setStrokeStyle(1.5, t ? 0xc8a0ff : 0x4a4852);
+      const slot = addSlant(this, x + 20, toolY + 18, 40, 36, t ? 0x3a2a5a : 0x16141a);
+      slot.setStrokeStyle(1.5, t ? 0xc8a0ff : 0x4a4852, 1);
       this.root.add(slot);
       if (!t) continue;
-      this.root.add(addText(this, x + 20, toolY + 20, TOOL_MARK[t], { size: 18, bold: true, color: '#ffe9ff' }).setOrigin(0.5));
+      this.root.add(addText(this, x + 20, toolY + 18, TOOL_MARK[t], { size: 18, bold: true, color: '#ffe9ff' }).setOrigin(0.5));
       if (!diving) continue;
-      slot.setInteractive();
-      slot.on('pointerup', () => this.confirmTool(t));
+      const hit = this.add.rectangle(x, toolY, 40, 36, 0xffffff, 0.001).setOrigin(0).setInteractive();
+      hit.on('pointerup', () => this.confirmTool(t));
+      this.root.add(hit);
     }
     // 技（段階214）
     const skill = DIG_SKILLS[SAND_BOTTOM_DIGGERS[digger]?.skill ?? 'stop'];
-    addButton(this, this.root, 12 + leftW / 2, PANEL_Y + 186, leftW, 38, `技「${skill.name}」\n残り ${s.skillLeft}`, { onTap: () => this.confirmSkill() }, { size: 11, enabled: diving && s.skillLeft > 0 });
+    addButton(this, this.root, 12 + leftW / 2, skillY, leftW, 34, `技「${skill.name}」　残り ${s.skillLeft}`, { onTap: () => this.confirmSkill() }, { size: 10, enabled: diving && s.skillLeft > 0 });
     this.drawPad(diving);
     const back = digBackCost(this.def, s);
     addButton(this, this.root, 12 + leftW / 2, GAME_HEIGHT - 36, leftW, 50, s.y === 0 ? '地上へ出る\n（持ち帰る）' : `上へ戻る\n（砂 −${back}）`, { onTap: () => this.goBack() }, { fill: STYLE.red, italic: true, size: 13 });
@@ -762,13 +841,17 @@ export class SandBottomScene extends Phaser.Scene {
       const y = PAD.y + oy * (PAD.h + PAD.gap);
       const pressed = this.held === dir;
       // 段階230（見た目の決まり）：十字のボタンは黒い地に白い枠（押している間は紅）。押しやすさのため形は四角のまま
+      if (enabled) this.root.add(this.add.rectangle(x + 3, y + 3, PAD.w, PAD.h, 0x000000, 0.6));
       const rect = this.add.rectangle(x, y, PAD.w, PAD.h, pressed ? STYLE.red : 0x16141a, enabled ? 1 : 0.4).setStrokeStyle(2, 0xffffff, enabled ? 0.9 : 0.3);
       this.root.add(rect);
-      this.root.add(addText(this, x, y, label, { size: 24, bold: true, color: enabled ? '#ffffff' : '#667' }).setOrigin(0.5));
+      this.root.add(addText(this, x, y, label, { size: 24, bold: true, color: !enabled ? '#667' : pressed ? '#ffffff' : STYLE.redText }).setOrigin(0.5));
       if (!enabled) continue;
       rect.setInteractive();
       rect.on('pointerdown', () => this.press(dir));
     }
+    // 真ん中の砂時計の丸（段階230）
+    this.root.add(this.add.circle(PAD.x, PAD.y, 24, STYLE.ink).setStrokeStyle(2, STYLE.red, 1));
+    this.root.add(addText(this, PAD.x, PAD.y, '⏳', { size: 18 }).setOrigin(0.5));
   }
 
   private press(dir: DigDir): void {

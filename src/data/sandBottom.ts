@@ -8,6 +8,10 @@ import { CHAIN_ENEMY_SNAPS } from './chainAreas';
 import { DIG_LORE, digLoreVar } from './sandBottomLore';
 import { WEAPON_DATA } from './weapons';
 
+/** ふつうの掘る砂と、固い土を掘る回数（段階230。「誰が掘る？」の数の枠に使う） */
+export const SAND_BOTTOM_DIG_COST = 3;
+export const SAND_BOTTOM_CLAY_HITS = 2;
+
 // 砂の底を掘る（段階207。試作1。docs/milestones/M3_sand_bottom.md）。数値はすべて仮。
 // 上の層ほど今に近い時代。宝箱の中身と砂嵐は、その時代の区画の砂嵐から集める（区画の雑魚の戦闘と、落とす素材）。
 // 段階208：層の境目の番人は、その層の砂嵐の先頭の戦闘。鉱脈・砂時計の砂粒・崩れる砂の割合を足した
@@ -252,7 +256,7 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
     layers,
     sand,
     // 段階209：空洞の移動は砂を使わない（掘る時だけ）。段階216（開発者の声：掘った道を戻れば帰り道が砂なしになる）：空洞の移動も砂 1
-    cost: { walk: 1, dig: 3, battle: 10, back: 1 },
+    cost: { walk: 1, dig: SAND_BOTTOM_DIG_COST, battle: 10, back: 1 },
     grainSand: 12,
     chase: 5,
     // 段階209：空洞に稀に砂嵐が湧く（帰り道でも出会う）
@@ -334,6 +338,8 @@ export const DIG_HEAL_SKILL_RATE = 0.3;
 export interface DigDiggerDef {
   /** 画面に出す特徴の説明 */
   note: string;
+  /** 「誰が掘る？」の札の、特徴のひとこと（段階230） */
+  tag: string;
   /** 掘る時の砂（書かなければ、ふつうの量） */
   dig?: number;
   /** 岩を割れる時の砂（層の境目の岩の帯は割れない） */
@@ -349,12 +355,25 @@ export interface DigDiggerDef {
 }
 
 export const SAND_BOTTOM_DIGGERS: Record<string, DigDiggerDef> = {
-  hero: { note: '平均。とくに得手も不得手もない', skill: 'stop', color: 0x2a3a7a },
-  akari: { note: '砂嵐に勝つたびに、みんなの HP が2割戻る', heal: 0.2, skill: 'heal', color: 0x8a3a4a },
-  mio: { note: '固い土を1回で掘れる', clayOnce: true, skill: 'rush', color: 0x8a6a1a },
-  sayoko: { note: '岩を割れる（砂 6。層の境目の岩は割れない）', rockCost: 6, skill: 'slash', color: 0x3a2a6a },
-  hayase: { note: '掘る時の砂が少ない（3 → 2）', dig: 2, skill: 'rewind', color: 0x1f4a4a },
+  hero: { note: '平均。とくに得手も不得手もない', tag: 'バランス', skill: 'stop', color: 0x2a3a7a },
+  akari: { note: '砂嵐に勝つたびに、みんなの HP が2割戻る', tag: '回復', heal: 0.2, skill: 'heal', color: 0x8a3a4a },
+  mio: { note: '固い土を1回で掘れる', tag: '固い土に強い', clayOnce: true, skill: 'rush', color: 0x8a6a1a },
+  sayoko: { note: '岩を割れる（砂 6。層の境目の岩は割れない）', tag: '岩を割る', rockCost: 6, skill: 'slash', color: 0x3a2a6a },
+  hayase: { note: '掘る時の砂が少ない（3 → 2）', tag: '砂を節約', dig: 2, skill: 'rewind', color: 0x1f4a4a },
 };
+
+/** 「誰が掘る？」の4つの数の枠（段階230）。up はふつうより得意な所（黄で光らせる） */
+export function diggerStats(id: string): { label: string; value: string; up: boolean }[] {
+  const d = SAND_BOTTOM_DIGGERS[id];
+  if (!d) return [];
+  const dig = d.dig ?? SAND_BOTTOM_DIG_COST;
+  return [
+    { label: '掘る砂', value: String(dig), up: dig < SAND_BOTTOM_DIG_COST },
+    { label: '固い土', value: d.clayOnce ? '1回' : `${SAND_BOTTOM_CLAY_HITS}回`, up: !!d.clayOnce },
+    { label: '岩', value: d.rockCost ? `砂${d.rockCost}` : '✕', up: !!d.rockCost },
+    { label: '勝った時', value: d.heal ? `HP+${Math.round(d.heal * 10)}割` : 'ー', up: !!d.heal },
+  ];
+}
 
 /** その人が掘る時の砂の底（特徴を数値に入れる）。知らない人は、そのまま */
 export function withDigger(def: DigWorldDef, digger: string): DigWorldDef {
