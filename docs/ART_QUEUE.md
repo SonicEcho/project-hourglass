@@ -186,6 +186,37 @@ An old photo album lying open on a wooden table in warm evening light, a few fad
 Absolutely no letters or text anywhere.
 ```
 
+### W. 拠点のタイル：ライブラリ・砂の底（段階226。開発者の頼みで差し替え）
+
+拠点の斜めのタイル（`addSlantTile`）。今はライブラリが蔵書の棚の背景、砂の底が物語の1枚絵（地面の切り取り）で代わりにしている。
+毎回、絵柄の見本として `public/assets/tiles/navi.webp`（ムーブメントのタイル）を添付する。届いたら 768×512 の WebP にして `public/assets/tiles/` に置き、台帳（`src/data/assets.ts` の `tileArt`）に足し、`HUB_TILE_ART` の先頭に `tile.library`・`tile.sandBottom` を入れる
+
+#### 13. タイル「ライブラリ」
+
+- 添付：`public/assets/tiles/navi.webp`
+- 保存名：`tile_library.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024). The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a tall narrow strip or to a wide banner. Keep the bottom quarter darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the tile stands out on a near-black screen. Match the art style of the attached tile illustration.
+A tall wooden card catalog cabinet in a quiet corner of the library of memories, one small drawer pulled open, filled with neat rows of record cards; a few cards are lifted out, each with a tiny glowing picture of a snapshot, a monster silhouette or a small material, like a collector's index. Warm desk-lamp light, floating grains of golden sand.
+Absolutely no letters, numbers or text anywhere.
+```
+
+#### 14. タイル「砂の底」
+
+- 添付：`public/assets/tiles/navi.webp`
+- 保存名：`tile_sandBottom.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu tile illustration for the hub screen of a mobile RPG, shown like a framed painting in a dark memory gallery. Horizontal 3:2 image (1536×1024). The main subject sits in the center of the image; the edges are simple, because the image will be cropped to a tall narrow strip or to a wide banner. Keep the bottom quarter darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the tile stands out on a near-black screen. Match the art style of the attached tile illustration.
+A deep vertical cross-section of sand strata beneath the library of memories, like the bottom of a giant hourglass: layers of sand in different warm colors, with small glowing treasures, old keepsakes and tiny lights buried in them. At the top, a small figure with a shovel stands at the edge of a dug tunnel leading down into the glowing depths; golden sand trickles down from far above like a waterfall of time.
+Absolutely no letters, numbers or text anywhere.
+```
+
 ## 済んだ絵
 
 届いてゲームに入れた絵（指示文は `scripts/art_queue.py` と台帳 `src/data/assets.ts`）。
