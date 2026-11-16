@@ -9,7 +9,7 @@ import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } f
 import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
-import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
+import { COLORS, FONT, RENDER_SCALE, STYLE } from '../ui/theme';
 import { applyKinsoku } from '../ui/kinsoku';
 import { playMiniGame } from './miniGames';
 import { drawBackdrop } from '../ui/backdrop';
@@ -177,7 +177,9 @@ export class DialogueScene extends Phaser.Scene {
   private talking?: Actor;
   private cast: string[] = [];
   private box!: Phaser.GameObjects.Rectangle;
-  private nameBox!: Phaser.GameObjects.Rectangle;
+  private nameBox!: Phaser.GameObjects.Polygon;
+  /** 段階228：黒い文の箱（白い枠・左に紅の帯・角を斜めに落とす）。紙の文の時は box（紙）を出す */
+  private shade!: Phaser.GameObjects.Graphics;
   private nameTag!: Phaser.GameObjects.Text;
   private body!: Phaser.GameObjects.Text;
   private cursor!: Phaser.GameObjects.Text;
@@ -254,17 +256,38 @@ export class DialogueScene extends Phaser.Scene {
     }
     this.setBackdrop('black');
 
-    // 本文の枠
-    this.box = this.add.rectangle(16, 560, GAME_WIDTH - 32, 200, DIALOGUE_BOX, 0.92).setRounded(12).setOrigin(0).setStrokeStyle(2, COLORS.border).setDepth(40);
-    // 枠の内側の、砂色の細い線（段階32a。紙の文では出さない）
+    // 段階228（docs/milestones/M3_ui_polish.md の 10.）：文の箱は見本の A（黒い地に白い枠・左に紅の帯・角を斜めに落とす）。
+    // 箱の上の端を立ち絵の下の端（y 560）より上に置き、立ち絵が浮いて見えないようにする（開発者の声：字幕の形だとキャラが浮いて見えた）。
+    // 名前は箱の左上にかかる紅の斜めの札に白い斜体。紙の文（手紙・メモ）だけは、紙の箱を出す
+    const bx = 12;
+    const by = 548;
+    const bw = GAME_WIDTH - 24;
+    const bh = 222;
+    const cut = 16;
+    const pts = (ox: number, oy: number) =>
+      [
+        [ox, oy],
+        [ox + bw - cut, oy],
+        [ox + bw, oy + cut],
+        [ox + bw, oy + bh],
+        [ox + cut, oy + bh],
+        [ox, oy + bh - cut],
+      ].map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    this.shade = this.add.graphics().setDepth(40);
+    this.shade.fillStyle(0x000000, 0.7).fillPoints(pts(bx + 5, by + 5), true);
+    this.shade.fillStyle(STYLE.ink, 0.94).fillPoints(pts(bx, by), true);
+    this.shade.lineStyle(2, 0xffffff, 1).strokePoints(pts(bx, by), true);
+    this.shade.fillStyle(STYLE.red, 1).fillRect(bx, by + cut, 6, bh - cut * 2);
+    this.box = this.add.rectangle(bx, by, bw, bh, DIALOGUE_BOX, 0.92).setOrigin(0).setStrokeStyle(2, 0x000000, 0.4).setDepth(40).setVisible(false);
+    // 前の枠の内側の線（段階32a）。今は使わない（ほかの所が出し入れするので残す）
     this.boxLine = this.add.graphics().setDepth(40);
-    this.boxLine.lineStyle(1, COLORS.accent, 0.3).strokeRoundedRect(22, 566, GAME_WIDTH - 44, 188, 8);
-    // 名前の札は、最初の台詞が出るまで隠す（場面の始めの @wait の間に、空の札が出ないように。段階32b）
-    this.nameBox = this.add.rectangle(28, 540, 140, 36, COLORS.panelLight).setRounded(8).setOrigin(0).setStrokeStyle(2, COLORS.accent).setDepth(41).setVisible(false);
-    this.nameTag = addText(this, 98, 558, '', { size: 15, bold: true, color: COLORS.accentText }).setOrigin(0.5).setDepth(42).setVisible(false);
-    this.body = addText(this, 34, 592, '', { size: 17, wrap: BODY_WRAP }).setDepth(42);
-    this.body.setLineSpacing(6);
-    this.cursor = addText(this, GAME_WIDTH - 40, 735, '▼', { size: 14, color: COLORS.accentText }).setOrigin(0.5).setDepth(42);
+    // 名前の札（紅の斜めの札）と名前。最初の台詞が出るまで隠す（段階32b）
+    this.nameBox = this.add.polygon(0, 0, [0, 0], STYLE.red).setOrigin(0).setDepth(41).setVisible(false);
+    this.nameTag = addText(this, 34, by, '', { size: 17, bold: true }).setOrigin(0, 0.5).setDepth(42).setVisible(false);
+    this.nameTag.setFontFamily(FONT).setFontStyle('bold italic');
+    this.body = addText(this, 32, by + 36, '', { size: 17, wrap: BODY_WRAP }).setDepth(42);
+    this.body.setLineSpacing(8);
+    this.cursor = addText(this, GAME_WIDTH - 34, by + bh - 22, '▼', { size: 14, color: STYLE.redText }).setOrigin(0.5).setDepth(42);
     this.tweens.add({ targets: this.cursor, alpha: 0.2, yoyo: true, repeat: -1, duration: 400 });
 
     // 章の扉などの大きな文字
@@ -513,7 +536,7 @@ export class DialogueScene extends Phaser.Scene {
   /** 本文の枠・名前の札・立ち絵を下げる（もう下げていれば何もしない） */
   private hideForView(): void {
     if (this.viewHidden) return;
-    const parts = [this.box, this.boxLine, this.body, this.cursor, this.nameBox, this.nameTag];
+    const parts = [this.shade, this.box, this.boxLine, this.body, this.cursor, this.nameBox, this.nameTag];
     this.viewHidden = { parts, shown: parts.map((p) => p.visible) };
     for (const p of parts) p.setVisible(false);
     this.tweens.killTweensOf(this.stage);
@@ -1032,8 +1055,11 @@ export class DialogueScene extends Phaser.Scene {
       style === 'talk' ? (CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT)
       : style === 'voice' ? { ...(VOICE_ONLY[line.speaker ?? ''] ?? CAST[line.speaker ?? '']?.voice ?? VOICE_DEFAULT), phone: line.tag === '電話' }
       : undefined;
-    for (const o of [this.box, this.body]) o.setVisible(!isCaption);
-    this.boxLine.setVisible(!isCaption && style !== 'document');
+    // 段階228：ふだんは下の暗がり、紙の文だけ紙の箱
+    this.body.setVisible(!isCaption);
+    this.shade.setVisible(!isCaption && style !== 'document');
+    this.box.setVisible(!isCaption && style === 'document');
+    this.boxLine.setVisible(false);
 
     // 立ち絵：話している人だけ明るく。声だけ・地の文などは全員を暗く（語りの文は誰も暗くしない）
     const speaker = style === 'talk' ? line.speaker : null;
@@ -1048,10 +1074,10 @@ export class DialogueScene extends Phaser.Scene {
     const name = style === 'note' ? '開発メモ' : `${line.speaker ?? ''}${line.tag ? `（${line.tag}）` : ''}`;
     this.nameBox.setVisible(named && !isCaption);
     this.nameTag.setVisible(named && !isCaption).setText(name);
-    // 長い名前（金魚すくいのおじさん、など）でも札からはみ出さないよう、札の幅を名前に合わせる（段階32b）
-    const plateW = Math.max(140, Math.ceil(this.nameTag.width) + 32);
-    this.nameBox.setSize(plateW, 36);
-    this.nameTag.setX(28 + plateW / 2);
+    // 名前の札は名前に合わせた幅の、右へ傾けた紅の板（段階228。箱の左上にかかる。黒い影付き）
+    const plateW = Math.max(100, Math.ceil(this.nameTag.width) + 44);
+    const ny = this.nameTag.y - 15;
+    this.nameBox.setTo([22 + 8, ny, 22 + plateW, ny, 22 + plateW - 8, ny + 30, 22, ny + 30]);
 
     // 文の色と枠
     const paper = style === 'document';
@@ -1196,7 +1222,8 @@ export class DialogueScene extends Phaser.Scene {
             void this.proceed();
           },
         },
-        { size: 16, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true },
+        // 段階228：選択肢は黒い斜めの板に白い枠（押すと光る）
+        { size: 16, bold: true, fill: STYLE.ink, stroke: 0xffffff, strokeWidth: 2 },
       );
     });
   }
@@ -1225,7 +1252,7 @@ export class DialogueScene extends Phaser.Scene {
 
   /** 本文の枠・名前の札・文を下げる（次の文を出す時に showLine が出し直す） */
   private clearTextBox(): void {
-    for (const o of [this.box, this.boxLine, this.body, this.cursor, this.nameBox, this.nameTag]) o.setVisible(false);
+    for (const o of [this.shade, this.box, this.boxLine, this.body, this.cursor, this.nameBox, this.nameTag]) o.setVisible(false);
     this.body.setText('');
     this.sand.stop();
     this.sand.killAll();
