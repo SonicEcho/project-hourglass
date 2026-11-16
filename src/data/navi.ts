@@ -61,6 +61,10 @@ export const NAVI_PARTS = {
   // ④ 両刃（得と損。1個ずつ）
   reckless: part({ id: 'reckless', name: '捨て身', color: 'red', cells: LINE2, kind: 'effect', effect: { kind: 'reckless', rate: 0.3, taken: 0.2 } }),
   pinpointFocus: part({ id: 'pinpointFocus', name: '一点集中', color: 'red', cells: LINE2, kind: 'effect', effect: { kind: 'focus', rate: 0.4, spread: 0.5 } }),
+  // ⑤ 砂の底だけのレアギア（段階219。珍品。今の効果の仕組みで作り、強さは一段上）
+  digFlash: part({ id: 'digFlash', name: 'ひらめき', color: 'yellow', cells: LINE2, kind: 'effect', effect: { kind: 'firstRound', rate: 0.5 } }),
+  digFleeting: part({ id: 'digFleeting', name: 'うつろい', color: 'blue', cells: L3, kind: 'effect', effect: { kind: 'fragileBoost', rate: 0.4 } }),
+  digSomato: part({ id: 'digSomato', name: '走馬灯', color: 'red', cells: LINE2, kind: 'effect', effect: { kind: 'desperate', rate: 0.6 } }),
   // 絆のギア（色なし＝銀。ブリッジに乗っていると、その3人のコンボを開く。4マス）
   fairBond: part({ id: 'fairBond', name: '縁日のギア', color: 'silver', cells: SQUARE, kind: 'bond', links: ['threeTimes'] }),
 } satisfies Record<string, NaviPartDef>;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createArmory, createDig, decomposeCostOf, fragmentItem } from '../../src/core';
-import { DIG_LORE, DIG_RARE_GOT_VAR, DIG_RARE_MISS_VAR, DIG_RULES, digLoreVar, digRareAfter, digRareChance, digRuleFor, parseRare, parseRelic, pickDigRare, SAND_BOTTOM, sandBottomFor, WEAPON_DATA, withRareRelic, withRule } from '../../src/data';
+import { createArmory, createDig, decomposeCostOf, digLayerTop, fragmentItem } from '../../src/core';
+import { digAfterDive, DIG_FULL_VAR, digFullDepth, DIG_LORE, DIG_RARE_GOT_VAR, DIG_RARE_MISS_VAR, DIG_RULES, digLoreVar, digRareAfter, digRareChance, digRuleFor, parseRare, parseRelic, pickDigRare, SAND_BOTTOM, sandBottomFor, WEAPON_DATA, withRareRelic, withRule } from '../../src/data';
 import type { DigOwned } from '../../src/data';
 
 // 砂の底のやり込み（段階217。S8a。docs/milestones/M3_sand_bottom.md）：特別ルールと珍品
@@ -46,7 +46,7 @@ describe('砂の底：珍品の確率（段階217）', () => {
     expect(digRareChance(v, 'storms')).toBeCloseTo(0.2);
   });
 
-  it('外れの回は埋めない。当たりの回は、砂の底のレア素材・懐かしい物・りくのメモ・誰かの日記から選ぶ', () => {
+  it('外れの回は埋めない。当たりの回は、砂の底のレア素材・レアスナップ・レアギア・懐かしい物・りくのメモ・誰かの日記から選ぶ', () => {
     expect(pickDigRare('ch3', {}, none, 'none', seq(0.99))).toBeNull();
     const kinds = new Set<string>();
     for (let i = 0; i < 40; i++) {
@@ -56,7 +56,7 @@ describe('砂の底：珍品の確率（段階217）', () => {
       expect(parseRelic(r!)?.kind).toBe('rare');
       expect(parseRare(parseRelic(r!)!.ref)).not.toBeNull();
     }
-    expect([...kinds].sort()).toEqual(['item', 'lore', 'old']);
+    expect([...kinds].sort()).toEqual(['gear', 'item', 'lore', 'old', 'snap']);
   });
 
   it('読み物は、開いている層の分から番号の若い物から。見つけた物は出ない。持っている物は懐かしい物にならない', () => {
@@ -105,5 +105,33 @@ describe('砂の底：砂の底だけの素材と読み物（段階217）', () =
     }
     // 物語の軸（STORY.md の 2-0）：体の時間が減る書き方はしない
     for (const d of DIG_LORE) expect(d.text, d.id).not.toMatch(/残り時間|寿命|年老い/);
+  });
+});
+
+describe('砂の底：選び直しを防ぐ（段階218）', () => {
+  it('ちゃんと潜ったとみなす深さは、いちばん浅い章の層のいちばん下の帯の上の端', () => {
+    const def = sandBottomFor('ch2');
+    expect(digFullDepth(def)).toBe(digLayerTop(def, 'futari'));
+    expect(digFullDepth(sandBottomFor('ch4'))).toBe(digLayerTop(sandBottomFor('ch4'), 'futari'));
+  });
+
+  it('すぐ戻った回は、回数も外れも進まない。ちゃんと潜った回は進む。取った回は深さに関係なく取った', () => {
+    expect(digAfterDive({}, false, false)).toEqual({});
+    const full = digAfterDive({}, true, false);
+    expect([full[DIG_FULL_VAR], full[DIG_RARE_MISS_VAR]]).toEqual(['1', '1']);
+    const got = digAfterDive({}, false, true);
+    expect([got[DIG_FULL_VAR], got[DIG_RARE_GOT_VAR], got[DIG_RARE_MISS_VAR]]).toEqual([undefined, '1', '0']);
+  });
+});
+
+describe('砂の底：レアスナップ・レアギア（段階219）', () => {
+  it('どの層にもレアスナップとレアギアがあり、実在する。持っている物は珍品に出ない', async () => {
+    const { CHAIN_SNAPS, NAVI_DATA } = await import('../../src/data');
+    for (const id of ['dig_zanzo', 'dig_utakata', 'dig_kaiso']) expect(CHAIN_SNAPS[id], id).toBeDefined();
+    for (const id of ['digFlash', 'digFleeting', 'digSomato']) expect(NAVI_DATA.parts[id], id).toBeDefined();
+    for (let i = 0; i < 40; i++) {
+      const r = pickDigRare('ch4', {}, all, 'none', seq(0.01, i / 40, 0.5)) ?? '';
+      expect(r).not.toMatch(/rare:(snap|gear):/);
+    }
   });
 });

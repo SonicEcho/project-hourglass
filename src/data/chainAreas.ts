@@ -9,6 +9,7 @@ import { A3K_NEW_SNAPS, A3K_SETUPS } from './chainArea3k';
 import { A42_BATTLE_ONLY, A42_CARD_ART, A42_ENEMY_SNAP, A42_ENEMY_SNAPS, A42_NEW_SNAPS, A42_SETUPS, A42_SHORT_TEXT } from './chainArea42';
 import { A41_CARD_ART, A41_ENEMY_SNAP, A41_ENEMY_SNAPS, A41_NEW_SNAPS, A41_SETUPS, A41_SHORT_TEXT } from './chainArea41';
 import { A32_BATTLE_ONLY, A32_CARD_ART, A32_ENEMY_SNAP, A32_ENEMY_SNAPS, A32_NEW_SNAPS, A32_SETUPS, A32_SHORT_TEXT } from './chainArea32';
+import { DIG_CARD_ART, DIG_SHORT_TEXT, DIG_SNAPS } from './chainDig';
 import { A31_CARD_ART, A31_ENEMY_SNAP, A31_ENEMY_SNAPS, A31_NEW_SNAPS, A31_SETUPS, A31_SHORT_TEXT } from './chainArea31';
 
 // 新しい戦闘の区画をまとめる（段階168）。区画ごとのファイル（chainArea11・chainArea12…）の札・敵のスナップ・戦闘の中身を、ここで1つにする。
@@ -17,7 +18,7 @@ import { A31_CARD_ART, A31_ENEMY_SNAP, A31_ENEMY_SNAPS, A31_NEW_SNAPS, A31_SETUP
 /** 新しい戦闘の本番の札（スペシャルを含む） */
 export const CHAIN_MAIN_CARDS: Record<string, ChainMove> = {
   ...A11_CARDS,
-  ...Object.fromEntries([...Object.values(A12_ENEMY_SNAP), ...A21_NEW_SNAPS, ...Object.values(A21_ENEMY_SNAP), ...A22_NEW_SNAPS, ...Object.values(A22_ENEMY_SNAP), ...A23_NEW_SNAPS, ...Object.values(A23_ENEMY_SNAP), ...A31_NEW_SNAPS, ...Object.values(A31_ENEMY_SNAP), ...A3S_NEW_SNAPS, ...Object.values(A3S_ENEMY_SNAP), ...A3K_NEW_SNAPS, ...A32_NEW_SNAPS, ...Object.values(A32_ENEMY_SNAP), ...A32_BATTLE_ONLY, ...A41_NEW_SNAPS, ...Object.values(A41_ENEMY_SNAP), ...A42_NEW_SNAPS, ...Object.values(A42_ENEMY_SNAP), ...A42_BATTLE_ONLY].map((m) => [m.id, m])),
+  ...Object.fromEntries([...Object.values(A12_ENEMY_SNAP), ...A21_NEW_SNAPS, ...Object.values(A21_ENEMY_SNAP), ...A22_NEW_SNAPS, ...Object.values(A22_ENEMY_SNAP), ...A23_NEW_SNAPS, ...Object.values(A23_ENEMY_SNAP), ...A31_NEW_SNAPS, ...Object.values(A31_ENEMY_SNAP), ...A3S_NEW_SNAPS, ...Object.values(A3S_ENEMY_SNAP), ...A3K_NEW_SNAPS, ...A32_NEW_SNAPS, ...Object.values(A32_ENEMY_SNAP), ...A32_BATTLE_ONLY, ...A41_NEW_SNAPS, ...Object.values(A41_ENEMY_SNAP), ...A42_NEW_SNAPS, ...Object.values(A42_ENEMY_SNAP), ...A42_BATTLE_ONLY, ...DIG_SNAPS].map((m) => [m.id, m])),
 };
 
 /**
@@ -31,8 +32,8 @@ export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.
 export const CHAIN_ENEMY_SNAPS: Record<string, string> = { ...A11_ENEMY_SNAPS, ...A12_ENEMY_SNAPS, ...A21_ENEMY_SNAPS, ...A22_ENEMY_SNAPS, ...A23_ENEMY_SNAPS, ...A31_ENEMY_SNAPS, ...A3S_ENEMY_SNAPS, ...A32_ENEMY_SNAPS, ...A41_ENEMY_SNAPS, ...A42_ENEMY_SNAPS };
 
 /** 本番の札の絵と短い説明（試しにない物） */
-export const CHAIN_MAIN_CARD_ART: Record<string, string> = { ...A11_CARD_ART, ...A12_CARD_ART, ...A21_CARD_ART, ...A22_CARD_ART, ...A23_CARD_ART, ...A31_CARD_ART, ...A3S_CARD_ART, ...A32_CARD_ART, ...A41_CARD_ART, ...A42_CARD_ART };
-export const CHAIN_MAIN_SHORT_TEXT: Record<string, string> = { ...A11_SHORT_TEXT, ...A12_SHORT_TEXT, ...A21_SHORT_TEXT, ...A22_SHORT_TEXT, ...A23_SHORT_TEXT, ...A31_SHORT_TEXT, ...A3S_SHORT_TEXT, ...A32_SHORT_TEXT, ...A41_SHORT_TEXT, ...A42_SHORT_TEXT };
+export const CHAIN_MAIN_CARD_ART: Record<string, string> = { ...A11_CARD_ART, ...A12_CARD_ART, ...A21_CARD_ART, ...A22_CARD_ART, ...A23_CARD_ART, ...A31_CARD_ART, ...A3S_CARD_ART, ...A32_CARD_ART, ...A41_CARD_ART, ...A42_CARD_ART, ...DIG_CARD_ART };
+export const CHAIN_MAIN_SHORT_TEXT: Record<string, string> = { ...A11_SHORT_TEXT, ...A12_SHORT_TEXT, ...A21_SHORT_TEXT, ...A22_SHORT_TEXT, ...A23_SHORT_TEXT, ...A31_SHORT_TEXT, ...A3S_SHORT_TEXT, ...A32_SHORT_TEXT, ...A41_SHORT_TEXT, ...A42_SHORT_TEXT, ...DIG_SHORT_TEXT };
 
 /**
  * ぬし戦の評価の基準（段階180。決着した時刻のマス。★3＝high 以内、★2＝mid 以内）。ぬしのスナップは ★3 の時だけ。

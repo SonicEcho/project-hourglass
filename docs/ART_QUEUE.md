@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：9 枚**（済んだ絵 203 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：12 枚**（済んだ絵 203 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -13,6 +13,7 @@
 - [Q. だいち・さきの描き直し（けんたと見分けやすく）](#q-だいちさきの描き直しけんたと見分けやすく)：2 枚
 - [R. 洋服の小夜子（試着室）](#r-洋服の小夜子試着室)：3 枚
 - [S. とうや・しおりのまばたき・口パク用](#s-とうやしおりのまばたき口パク用)：4 枚
+- [V. 砂の底のレアスナップ（段階219）](#v-砂の底のレアスナップ段階219)：3 枚
 
 ### Q. だいち・さきの描き直し（けんたと見分けやすく）
 
@@ -140,6 +141,49 @@ Change only the eyes: gently close both eyes, as in the middle of a natural blin
 ```
 Edit the attached image. Keep everything exactly the same: the same character, the same smiling expression, the same pose, framing, size, camera distance, hair, clothes, colors, line art and plain white background.
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
+```
+
+### V. 砂の底のレアスナップ（段階219）
+
+砂の底の珍品で手に入る、新しい戦闘の札の写真（`src/data/chainDig.ts`）。今は近い雰囲気の今ある絵を仮に使っている。毎回、絵柄の見本として今あるスナップの写真を添付する。届いたら 768×768 の WebP にして、台帳に足し、`DIG_CARD_ART` をつなぎ替える
+
+#### 10. スナップ「残像」（感覚記憶の層）
+
+- 添付：`public/assets/snaps/encore.webp`
+- 保存名：`snap_digZanzo.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A candid snapshot, like a slightly faded instant photo of a precious everyday moment. Square 1:1 image. The main subject is in the center of the image; the outer edges are simple, because the image will be cropped tightly. Do not draw a photo border or frame. People are shown from behind, from the side, or small in the scene; no large close-up faces. Match the art style of the attached snapshot.
+A child running through a summer festival at dusk between paper lanterns, caught with soft motion blur, so a faint transparent afterimage of the child trails a step behind. The feeling of a moment that stays in the eyes for just a second.
+Absolutely no letters or text anywhere.
+```
+
+#### 11. スナップ「うたかた」（短期記憶の層）
+
+- 添付：`public/assets/snaps/encore.webp`
+- 保存名：`snap_digUtakata.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A candid snapshot, like a slightly faded instant photo of a precious everyday moment. Square 1:1 image. The main subject is in the center of the image; the outer edges are simple, because the image will be cropped tightly. Do not draw a photo border or frame. People are shown from behind, from the side, or small in the scene; no large close-up faces. Match the art style of the attached snapshot.
+Soap bubbles drifting over an old shopping street at dusk, catching the orange light; one bubble is just about to pop. A small child's hand with a bubble wand at the edge of the frame. Fleeting and gentle.
+Absolutely no letters or text anywhere.
+```
+
+#### 12. スナップ「回想」（エピソード記憶の層）
+
+- 添付：`public/assets/snaps/encore.webp`
+- 保存名：`snap_digKaiso.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A candid snapshot, like a slightly faded instant photo of a precious everyday moment. Square 1:1 image. The main subject is in the center of the image; the outer edges are simple, because the image will be cropped tightly. Do not draw a photo border or frame. People are shown from behind, from the side, or small in the scene; no large close-up faces. Match the art style of the attached snapshot.
+An old photo album lying open on a wooden table in warm evening light, a few faded photographs of festivals and school days slightly out of focus, a cup of tea beside it. The quiet feeling of remembering many days at once.
+Absolutely no letters or text anywhere.
 ```
 
 ## 済んだ絵
