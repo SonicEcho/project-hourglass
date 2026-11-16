@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
+import { CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainSnapLook, comboDetailLines, comboMaterialNames, ENEMY_OF_SNAP, snapArt, snapDetailLines, snapShortLine } from '../ui/chainSnapText';
 import { frameHeader } from '../ui/frame';
@@ -37,14 +37,18 @@ const COUNT_Y = 96;
 const LIST_Y = 108;
 /** 説明の窓：選んだ時は大きく（敵の説明は長い）、選んでいない時は小さくして、一覧を広げる */
 const DETAIL_BOTTOM = 774 - 8;
+/** 段階232：スナップと敵は、大きな絵と絵の説明文を添えるので、窓を高く */
 const DETAIL_H_OPEN = 220;
+const DETAIL_H_ART = 244;
+/** 敵は分かったことの行が多い（ぬしは部位の行も）ので、もっと高く */
+const DETAIL_H_ENEMY = 340;
 const DETAIL_H_HINT = 78;
 /** 絵のある行（スナップ・敵）の高さと、小さな絵 */
 const ART_ROW_H = 46;
 const ART_ROW_GAP = 4;
 const THUMB = 38;
-/** 敵の説明の窓の絵の大きさ */
-const ART = 84;
+/** 説明の窓の大きな絵の大きさ（段階232） */
+const ART = 124;
 
 export interface LibrarySceneData {
   /** タイトルから開いた時（戻る先） */
@@ -111,7 +115,8 @@ export class LibraryScene extends Phaser.Scene {
   }
 
   private detailY(): number {
-    return DETAIL_BOTTOM - (this.selected ? DETAIL_H_OPEN : DETAIL_H_HINT);
+    if (!this.selected) return DETAIL_BOTTOM - DETAIL_H_HINT;
+    return DETAIL_BOTTOM - (this.tab === 'enemy' ? DETAIL_H_ENEMY : this.tab === 'snap' ? DETAIL_H_ART : DETAIL_H_OPEN);
   }
 
   /** 今のタブに並ぶ物の id（データの順） */
@@ -243,7 +248,7 @@ export class LibraryScene extends Phaser.Scene {
       addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), hint);
       return;
     }
-    if (this.tab === 'snap') addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), this.snapLines(CHAIN_SNAPS[id]));
+    if (this.tab === 'snap') this.drawSnapDetail(CHAIN_SNAPS[id]);
     else if (this.tab === 'combo') addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), this.comboLines(LIBRARY_COMBOS.find((l) => l.id === id)!));
     else if (this.tab === 'enemy') this.drawEnemyDetail(LIBRARY_ENEMIES.find((e) => e.id === id)!);
     else addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), this.itemLines(LIBRARY_ITEMS.find((i) => i.id === id)!));
@@ -291,8 +296,8 @@ export class LibraryScene extends Phaser.Scene {
       const weakKnown = v.lib.weak[e.id] ?? [];
       const reveals = e.parts.flatMap((p) => p.part?.reveals ?? []);
       const allWeak = [...e.chain.weak, ...reveals];
-      const weak = weakKnown.length ? `${el(weakKnown)}${weakKnown.length < allWeak.length ? '・？' : ''}` : allWeak.length === 0 && defeated > 0 ? 'なし' : '？（その属性で当てると分かる）';
-      const resist = defeated > 0 ? (e.chain.resist.length ? el(e.chain.resist) : 'なし') : '？（倒すと分かる）';
+      const weak = weakKnown.length ? `${el(weakKnown)}${weakKnown.length < allWeak.length ? '・？' : ''}` : allWeak.length === 0 && defeated > 0 ? 'なし' : '？（その属性で当てると分かります）';
+      const resist = defeated > 0 ? (e.chain.resist.length ? el(e.chain.resist) : 'なし') : '？（倒すと分かります）';
       const trait = e.chain.trait ? `${CHAIN_TRAIT_TEXT[e.chain.trait]?.name ?? e.chain.trait}：${CHAIN_TRAIT_TEXT[e.chain.trait]?.text ?? ''}` : 'なし';
       const plan = e.chain.pattern.map((m) => `${m.name}（時刻${m.at}${m.all ? '・全体' : ''}）`).join(' → ');
       const t = e.base.dropTable;
@@ -312,26 +317,71 @@ export class LibraryScene extends Phaser.Scene {
           const rev = p.part?.reveals?.length ? `弱点「${el(p.part.reveals)}」が出る` : '';
           return `部位 ${p.name}：壊すと${[...stops, rev].filter(Boolean).join('・') || '素材を落とす'}`;
         }),
-        `落とす素材：${defeated > 0 ? drops.join('、') || 'なし' : '？（倒すと分かる）'}`,
+        `落とす素材：${defeated > 0 ? drops.join('、') || 'なし' : '？（倒すと分かります）'}`,
         `スナップ：${snap ? (isFound.snap(v, snap) ? CHAIN_SNAPS[snap]?.name : '？？？') : 'なし'}`,
         `出てくる区画：${e.areas.join('、')}`,
       ];
     }
-    this.root.add(addWindow(this, SIDE_PADDING, this.detailY(), ROW_W, DETAIL_H_OPEN, STYLE.red, STYLE.ink, 0.94));
-    const art = ENEMY_ART[e.id];
+    // 段階232：上に大きな絵と絵の説明文、下に分かったこと
+    const title = met === 0 ? '？？？' : lines[0];
+    const sub = met === 0 ? '' : lines[1];
+    this.drawArtDetail(ENEMY_ART[e.id], met > 0, title, sub, met === 0 ? lines.slice(1) : lines.slice(2), true);
+  }
+
+  /** スナップの説明（段階232）：大きな絵と絵の説明文、下に効果とコンボ */
+  private drawSnapDetail(m: ChainMove): void {
+    const known = isFound.snap(this.view, m.id);
+    const lines = this.snapLines(m);
+    const look = chainSnapLook(m);
+    this.drawArtDetail(snapArt(m.id), known, known ? m.name : '？？？', `${ENEMY_OF_SNAP[m.id] ? '敵のスナップ・' : ''}${look.label}・重さ${m.weight}`, lines.slice(1), false);
+  }
+
+  /**
+   * 大きな絵の説明の窓（段階232。開発者の声：大きな絵と、絵の説明文）。
+   * 左上に大きな絵、その右に名前と絵の説明文（`LIBRARY_ART_NOTES`）、下にルールの説明。まだの物は絵を影にして、説明文を伏せる
+   */
+  private drawArtDetail(art: string | undefined, known: boolean, title: string, sub: string, rules: readonly string[], enemy: boolean): void {
+    const y = this.detailY();
+    const h = DETAIL_BOTTOM - y;
+    const x = SIDE_PADDING;
+    this.root.add(addWindow(this, x, y, ROW_W, h, STYLE.red, STYLE.ink, 0.95));
+    // 大きな絵（敵は縦横を保って枠に収める）
+    const ax = x + 14 + ART / 2;
+    const ay = y + 14 + ART / 2;
+    this.root.add(this.add.rectangle(ax, ay, ART, ART, 0x1c1a22));
     if (art && hasImage(this, art)) {
-      const img = this.add.image(GAME_WIDTH - SIDE_PADDING - 8 - ART / 2, this.detailY() + 16 + ART / 2, art);
-      img.setScale(ART / Math.max(img.width, img.height));
-      // 会っていない敵は影だけ
-      if (met === 0) img.setTintFill(0x0b1020).setAlpha(0.8);
+      const img = this.add.image(ax, ay, art);
+      if (enemy) img.setScale((ART - 6) / Math.max(img.width, img.height));
+      else img.setDisplaySize(ART, ART);
+      if (!known) img.setTintFill(0x2a2832).setAlpha(0.9);
       this.root.add(img);
     }
-    // 上の2行は絵の左に、残りは窓の幅いっぱいに
-    const headW = ROW_W - 20 - ART - 8;
-    const head = addText(this, SIDE_PADDING + 14, this.detailY() + 10, lines.slice(0, 2).join('\n'), { size: 12, wrap: headW });
-    this.root.add(head);
-    const rest = addText(this, SIDE_PADDING + 14, this.detailY() + 10 + Math.max(head.height + 4, met === 0 ? 0 : 36), lines.slice(2).join('\n'), { size: 11, wrap: ROW_W - 20 }).setLineSpacing(2);
-    if (rest.y + rest.height > this.detailY() + DETAIL_H_OPEN - 6) rest.setScale((this.detailY() + DETAIL_H_OPEN - 6 - rest.y) / rest.height);
+    this.root.add(this.add.rectangle(ax, ay, ART, ART).setStrokeStyle(1.5, 0xffffff, 0.5));
+    // 名前・小さな見出し・絵の説明文
+    const tx = x + 14 + ART + 12;
+    const tw = x + ROW_W - 16 - tx;
+    const name = addText(this, tx, y + 14, title, { size: 15, bold: true, color: known ? COLORS.text : COLORS.dimText });
+    name.setFontStyle('bold italic');
+    if (name.width > tw) name.setScale(tw / name.width, 1);
+    this.root.add(name);
+    let ny = y + 38;
+    if (sub) {
+      const subT = addText(this, tx, ny, sub, { size: 10, color: STYLE.redText, bold: true });
+      if (subT.width > tw) subT.setScale(tw / subT.width, 1);
+      this.root.add(subT);
+      ny += 18;
+    }
+    const noteText = known ? (art ? LIBRARY_ART_NOTES[art] : undefined) ?? '' : enemy ? 'まだ会っていない敵です。会うと、絵と説明がはっきりします。' : 'まだ手に入れていない写真です。手に入れると、絵と説明がはっきりします。';
+    const note = addText(this, tx, ny, noteText, { size: 11, wrap: tw, color: known ? '#e9e1cf' : COLORS.dimText }).setLineSpacing(3);
+    const noteMax = y + 14 + ART - ny;
+    if (note.height > noteMax) note.setScale(noteMax / note.height);
+    this.root.add(note);
+    // 下：ルールの説明
+    const ry = y + 14 + ART + 10;
+    this.root.add(this.add.rectangle(x + 14, ry - 5, ROW_W - 28, 1, 0xffffff, 0.15).setOrigin(0));
+    const rest = addText(this, x + 14, ry, rules.join('\n'), { size: 11, wrap: ROW_W - 28 }).setLineSpacing(2);
+    const restMax = y + h - 8 - ry;
+    if (rest.height > restMax) rest.setScale(restMax / rest.height);
     this.root.add(rest);
   }
 

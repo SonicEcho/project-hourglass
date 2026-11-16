@@ -1,6 +1,6 @@
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainCardCategory, chainComboMaterials } from '../core';
-import { CHAIN_CARD_ART, CHAIN_MAIN_CARD_ART, CHAIN_MAIN_CARDS, CHAIN_MAIN_SHORT_TEXT, CHAIN_SHORT_TEXT, CHAIN17_CARD_ART, CHAIN17_SHORT_TEXT, CHAIN17_COMBO_HINT, ENEMY_ART, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP } from '../data';
+import { CHAIN_MAIN_CARDS, CHAIN_MAIN_SHORT_TEXT, CHAIN_SHORT_TEXT, CHAIN17_SHORT_TEXT, CHAIN17_COMBO_HINT, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP } from '../data';
 import type { IconKind } from './icons';
 import { SNAP_CATEGORY } from './listKit';
 
@@ -18,13 +18,8 @@ export function chainSnapLook(m: ChainMove): { color: number; label: string; ico
 export const ENEMY_OF_SNAP: Record<string, string> = Object.fromEntries(LIBRARY_ENEMIES.filter((e) => LIBRARY_ENEMY_SNAP[e.id]).map((e) => [LIBRARY_ENEMY_SNAP[e.id], e.base.name]));
 
 /** コンボの材料の名前（「雪の結晶＋ブルーアワー」） */
-const SNAP_CARD_ART: Record<string, string> = { ...CHAIN_CARD_ART, ...CHAIN17_CARD_ART, ...CHAIN_MAIN_CARD_ART };
-const ENEMY_ID_OF_SNAP: Record<string, string> = Object.fromEntries(LIBRARY_ENEMIES.filter((e) => LIBRARY_ENEMY_SNAP[e.id]).map((e) => [LIBRARY_ENEMY_SNAP[e.id], e.id]));
-
-/** スナップの絵（段階231）：札の絵。敵のスナップで札の絵がない物は、その敵の絵 */
-export function snapArt(id: string): string | undefined {
-  return SNAP_CARD_ART[id] ?? ENEMY_ART[ENEMY_ID_OF_SNAP[id]];
-}
+/** スナップの絵（段階231。データの側に置いた） */
+export { snapArt } from '../data';
 
 const SNAP_SHORT_TEXT: Record<string, string> = { ...CHAIN_SHORT_TEXT, ...CHAIN17_SHORT_TEXT, ...CHAIN_MAIN_SHORT_TEXT };
 
