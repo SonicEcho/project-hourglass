@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { HubLineDef, HubNotice } from '../core';
 import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { BACKDROPS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages, waitImages } from '../ui/waitImages';
@@ -71,7 +71,7 @@ export class HubScene extends Phaser.Scene {
     this.talkAt = firstHubLine(this.talk, run.vars[hubLineLastKey(partner)]);
     const art = this.partnerArt(partner, this.talk[this.talkAt]?.face);
     // タイルの絵（代わりの1枚絵を含む。台帳にない id はそろったものとして扱われる）も一緒に待つ
-    const tileArt = [...new Set(Object.values(HUB_TILE_ART).flat())];
+    const tileArt = [...new Set([...Object.values(HUB_TILE_TALL), ...Object.values(HUB_TILE_ART).flat()])];
     waitImages(this, [...(art ? [art] : []), ...tileArt], () => {
       this.draw(partner);
       // ほかのひとことの表情の絵は、裏で先に読んでおく（タップした時に、読めていなければ今の表情のまま）
@@ -225,18 +225,19 @@ export class HubScene extends Phaser.Scene {
 
   /** 立ち絵の下をぼかすための縦の帯：from（高さの割合）まで不透明、to で透明（同じ形は1回だけ作る） */
   private portraitFade(from: number, to: number): string {
-    const key = `hub-portrait-fade-${from}-${to}`;
+    const key = `hub-portrait-fade2-${from}-${to}`;
     if (this.textures.exists(key)) return key;
-    const tex = this.textures.createCanvas(key, 4, 256);
+    // 幅と高さは2のべき乗にしない（2のべき乗だと WebGL が端を折り返して読み、上の不透明が下の端に混ざって細い線が出た）
+    const tex = this.textures.createCanvas(key, 6, 250);
     const ctx = tex?.getContext();
     if (ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, 256);
+      const g = ctx.createLinearGradient(0, 0, 0, 250);
       g.addColorStop(0, 'rgba(255,255,255,1)');
       g.addColorStop(from, 'rgba(255,255,255,1)');
       g.addColorStop(to, 'rgba(255,255,255,0)');
       g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 4, 256);
+      ctx.fillRect(0, 0, 6, 250);
       tex?.refresh();
     }
     return key;

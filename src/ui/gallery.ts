@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
-import { HUB_TILE_ART, HUB_TILE_FOCUS, HUB_TILE_SHIFT, type HubTileId } from '../data';
+import { HUB_TILE_ART, HUB_TILE_FOCUS, HUB_TILE_SHIFT, HUB_TILE_TALL, type HubTileId } from '../data';
 import { playSe } from '../audio/sound';
 import { SE } from '../data';
 import { FRAME_COLORS } from './frame';
@@ -132,7 +132,9 @@ export function addSlantTile(scene: Phaser.Scene, root: Phaser.GameObjects.Conta
   root.add(shadow);
   const face = scene.add.container(0, 0);
   face.add(scene.add.rectangle(x, y, w, h, 0x1a1418).setOrigin(0));
-  const art = HUB_TILE_ART[tile.id].find((id) => hasImage(scene, id));
+  // 段階227：縦長のタイル用の絵があれば先に使う（砂の底の横長の帯は tile.sandBottom）
+  const tall = big ? undefined : HUB_TILE_TALL[tile.id];
+  const art = [...(tall ? [tall] : []), ...HUB_TILE_ART[tile.id]].find((id) => hasImage(scene, id));
   if (art) {
     // 段階227 の直し：大きさは変えずに、絵を下へずらす（下の端は切れる。上に空いた所は暗くぼかす）
     const shift = Math.round(h * (HUB_TILE_SHIFT[art] ?? 0));

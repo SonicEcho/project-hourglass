@@ -35,6 +35,15 @@ export const HUB_PORTRAIT_FIT: Record<string, { height: number; top: number }> =
   mio: { height: 370, top: 140 },
 };
 
+/** 拠点の斜めのタイル（縦長）で先に使う絵（段階227。届いた物だけ。休憩所の横長のタイルは HUB_TILE_ART のまま） */
+export const HUB_TILE_TALL: Partial<Record<HubTileId, string>> = {
+  growth: 'tile.growth_tall',
+  weapon: 'tile.weapon_tall',
+  library: 'tile.library_tall',
+  exchange: 'tile.exchange_tall',
+  lost: 'tile.lost_tall',
+};
+
 /** 絵の中で見せたい所の高さ（0 が上の端、1 が下の端。切り抜く時の中心）。書いていない絵は真ん中 */
 export const HUB_TILE_FOCUS: Record<string, number> = {
   'cg.fireworks': 0.35,
