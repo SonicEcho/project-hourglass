@@ -187,9 +187,10 @@ describe('ギアの入れ替え（段階200）', () => {
     expect(activeBondLinks(NAVI_DATA, n, ['hero', 'mio'])).toEqual([]);
   });
 
-  it('どのギアも、どこかで手に入る（周回の始め・宝箱・会話・出来事・落とし物・狩りの採取の場所）', async () => {
-    const { AREAS, LOST_ITEMS, RETURN_VISITS, START_NAVI_PARTS } = await import('../../src/data');
-    const got = new Set<string>(START_NAVI_PARTS);
+  it('どのギアも、どこかで手に入る（周回の始め・宝箱・会話・出来事・落とし物・狩りの採取の場所・砂の底の珍品）', async () => {
+    const { AREAS, LOST_ITEMS, RETURN_VISITS, SAND_BOTTOM_RARE_GEARS, START_NAVI_PARTS } = await import('../../src/data');
+    // 段階219：砂の底の珍品のレアギア
+    const got = new Set<string>([...START_NAVI_PARTS, ...SAND_BOTTOM_RARE_GEARS]);
     for (const a of Object.values(AREAS)) {
       if (a.id.startsWith('trial')) continue;
       for (const c of a.chests) for (const g of c.gears ?? []) got.add(g);
@@ -201,7 +202,7 @@ describe('ギアの入れ替え（段階200）', () => {
     for (const l of LOST_ITEMS) for (const g of l.reward.gears ?? []) got.add(g);
     for (const g of got) expect(NAVI_DATA.parts[g], g).toBeDefined();
     expect(Object.keys(NAVI_DATA.parts).filter((id) => !got.has(id))).toEqual([]);
-    expect(Object.keys(NAVI_DATA.parts)).toHaveLength(40);
+    expect(Object.keys(NAVI_DATA.parts)).toHaveLength(43);
   });
 });
 

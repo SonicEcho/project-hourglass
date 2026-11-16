@@ -543,6 +543,23 @@ add('掘る二頭身の小夜子', [DIG_REF, P + 'sayoko_smile.webp'], 'dig_sayo
 add('掘る二頭身の早瀬', [DIG_REF, P + 'hayase_normal.webp'], 'dig_hayase.png', dig_buddy('Hayase, a dandy watchmaker in his late fifties', 'dark hair with grey at the temples swept back, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes, a watchmaker\'s loupe pushed up on his forehead, a dark navy work jacket open over a black henley shirt, sleeves rolled up, a leather tool roll on his belt, brown boots', 'He is a little taller than the boy, and digs calmly and efficiently with economical, precise movements.'))
 
 
+section('V. 砂の底のレアスナップ（段階219）', '砂の底の珍品で手に入る、新しい戦闘の札の写真（`src/data/chainDig.ts`）。今は近い雰囲気の今ある絵を仮に使っている。毎回、絵柄の見本として今あるスナップの写真を添付する。届いたら 768×768 の WebP にして、台帳に足し、`DIG_CARD_ART` をつなぎ替える')
+
+
+def dig_snap(scene):
+    return f'''{STYLE}
+
+A candid snapshot, like a slightly faded instant photo of a precious everyday moment. Square 1:1 image. The main subject is in the center of the image; the outer edges are simple, because the image will be cropped tightly. Do not draw a photo border or frame. People are shown from behind, from the side, or small in the scene; no large close-up faces. Match the art style of the attached snapshot.
+{scene}
+Absolutely no letters or text anywhere.'''
+
+
+SNAP_REF = 'public/assets/snaps/encore.webp'
+add('スナップ「残像」（感覚記憶の層）', [SNAP_REF], 'snap_digZanzo.png', dig_snap('A child running through a summer festival at dusk between paper lanterns, caught with soft motion blur, so a faint transparent afterimage of the child trails a step behind. The feeling of a moment that stays in the eyes for just a second.'))
+add('スナップ「うたかた」（短期記憶の層）', [SNAP_REF], 'snap_digUtakata.png', dig_snap('Soap bubbles drifting over an old shopping street at dusk, catching the orange light; one bubble is just about to pop. A small child\'s hand with a bubble wand at the edge of the frame. Fleeting and gentle.'))
+add('スナップ「回想」（エピソード記憶の層）', [SNAP_REF], 'snap_digKaiso.png', dig_snap('An old photo album lying open on a wooden table in warm evening light, a few faded photographs of festivals and school days slightly out of focus, a cup of tea beside it. The quiet feeling of remembering many days at once.'))
+
+
 def main():
     """未対応の絵を上に、指示文つきで並べる。済んだ絵は下に名前だけ（指示文はこのファイルと台帳 src/data/assets.ts に残っている）"""
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]

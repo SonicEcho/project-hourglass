@@ -128,7 +128,7 @@ interface DigStratum {
   /** 層の特徴（段階215 の続き。開発者の案：層ごとに特徴。層に入った時に知らせる） */
   feature: string;
   /** 砂の底だけの素材（段階217）：common は宝箱・鉱脈からいつもの素材と一緒に、rare は珍品だけ */
-  digItems: { common: string[]; rare: string[] };
+  digItems: { common: string[]; rare: string[]; snaps?: string[]; gears?: string[] };
   bands: DigBand[];
   ground: Pick<DigLayerDef, 'rock' | 'clay' | 'ore' | 'grain' | 'loose' | 'caves' | 'chestRate' | 'nestRate' | 'weights' | 'deepWeights' | 'pit' | 'poison' | 'fossil' | 'moss' | 'springRate' | 'whirlRate' | 'dark'>;
 }
@@ -160,7 +160,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch1',
     name: '感覚記憶の層',
-    digItems: { common: ['digScent', 'digBlink'], rare: ['digAfterglow', 'digEcho'] },
+    digItems: { common: ['digScent', 'digBlink'], rare: ['digAfterglow', 'digEcho'], snaps: ['dig_zanzo'], gears: ['digFlash'] },
     feature: '一瞬だけ残る記憶。砂時計の砂粒が多い',
     bands: [
       band('kingyo', '金魚の名前', ['a11'], { sand: 0xd8a070, clay: 0xb06a4a, rock: 0x7d8088, air: 0x1d120d, loose: 0xeec09a }),
@@ -171,7 +171,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch2',
     name: '短期記憶の層',
-    digItems: { common: ['digLint', 'digSugarChip'], rare: ['digSpool', 'digSugarStone'] },
+    digItems: { common: ['digLint', 'digSugarChip'], rare: ['digSpool', 'digSugarStone'], snaps: ['dig_utakata'], gears: ['digFleeting'] },
     feature: 'すぐ崩れる記憶。崩れる砂が多い',
     bands: [
       band('oyakata', '親方の背中', ['a21'], { sand: 0xb08458, clay: 0x7a5236, rock: 0x6c6f78, air: 0x1a110b, loose: 0xcca27a }),
@@ -183,7 +183,7 @@ const STRATA: DigStratum[] = [
   {
     chapter: 'ch3',
     name: 'エピソード記憶の層',
-    digItems: { common: ['digPhotoScrap', 'digSecondHand'], rare: ['digPostcard', 'digPocketWatch'] },
+    digItems: { common: ['digPhotoScrap', 'digSecondHand'], rare: ['digPostcard', 'digPocketWatch'], snaps: ['dig_kaiso'], gears: ['digSomato'] },
     feature: '思い出の場面が眠る。空洞と化石が多い',
     bands: [
       band('shiokuri', 'はじめての仕送り', ['a31'], { sand: 0x9a8a78, clay: 0x6a5a4c, rock: 0x5e6068, air: 0x14110f, loose: 0xb6a692 }),
@@ -448,19 +448,23 @@ function oldCandidates(areaIds: string[], owned: DigOwned): string[] {
 
 /**
  * その回の珍品を決める（段階217）。rand は 0〜1 の乱数。埋めない回は null。
- * 中身の重み：砂の底のレア素材 5・懐かしい物 2・りくのメモ 2・誰かの日記 2（ない種類は外す）。読み物は番号の若い物から
+ * 中身の重み：砂の底のレア素材 3・レアスナップ 1・レアギア 1（段階219。まだ持っていない物だけ）・懐かしい物 2・りくのメモ 2・誰かの日記 2（ない種類は外す）。読み物は番号の若い物から
  */
 export function pickDigRare(chapterId: string | undefined, vars: Readonly<Record<string, string>>, owned: DigOwned, rule: DigRuleId | undefined, rand: () => number): string | null {
   if (rand() >= digRareChance(vars, rule)) return null;
   const strata = openStrata(chapterId);
   const chapters = new Set(strata.map((st) => st.chapter));
   const rares = strata.flatMap((st) => st.digItems.rare);
+  const snaps = strata.flatMap((st) => st.digItems.snaps ?? []).filter((id) => !owned.snap(id));
+  const gears = strata.flatMap((st) => st.digItems.gears ?? []).filter((id) => !owned.gear(id));
   const olds = oldCandidates(strata.flatMap((st) => st.bands.flatMap((b) => b.areas)), owned);
   const lore = (kind: 'riku' | 'diary') => DIG_LORE.filter((d) => d.kind === kind && chapters.has(d.stratum) && !vars[digLoreVar(d.id)]).sort((a, b) => a.no - b.no)[0];
   const riku = lore('riku');
   const diary = lore('diary');
   const kinds: [string, number][] = [
-    ['rare', rares.length > 0 ? 5 : 0],
+    ['rare', rares.length > 0 ? 3 : 0],
+    ['snap', snaps.length > 0 ? 1 : 0],
+    ['gear', gears.length > 0 ? 1 : 0],
     ['old', olds.length > 0 ? 2 : 0],
     ['riku', riku ? 2 : 0],
     ['diary', diary ? 2 : 0],
@@ -477,6 +481,8 @@ export function pickDigRare(chapterId: string | undefined, vars: Readonly<Record
     v -= w;
   }
   if (kind === 'rare') return `rare:item:${rares[Math.floor(rand() * rares.length)]}`;
+  if (kind === 'snap') return `rare:snap:${snaps[Math.floor(rand() * snaps.length)]}`;
+  if (kind === 'gear') return `rare:gear:${gears[Math.floor(rand() * gears.length)]}`;
   if (kind === 'old') return `rare:${olds[Math.floor(rand() * olds.length)]}`;
   return `rare:lore:${(kind === 'riku' ? riku : diary)!.id}`;
 }
@@ -499,9 +505,9 @@ export function withRareRelic(def: DigWorldDef, relic: string, rand: () => numbe
 }
 
 /** 珍品の id を読む：rare:item:<素材>・rare:old:item|snap|gear:<id>・rare:lore:<読み物> */
-export function parseRare(ref: string): { kind: 'item' | 'oldItem' | 'oldSnap' | 'oldGear' | 'lore'; id: string } | null {
-  const m = /^(item|lore):(.+)$/.exec(ref);
-  if (m) return { kind: m[1] as 'item' | 'lore', id: m[2] };
+export function parseRare(ref: string): { kind: 'item' | 'snap' | 'gear' | 'oldItem' | 'oldSnap' | 'oldGear' | 'lore'; id: string } | null {
+  const m = /^(item|snap|gear|lore):(.+)$/.exec(ref);
+  if (m) return { kind: m[1] as 'item' | 'snap' | 'gear' | 'lore', id: m[2] };
   const o = /^old:(item|snap|gear):(.+)$/.exec(ref);
   if (o) return { kind: o[1] === 'item' ? 'oldItem' : o[1] === 'snap' ? 'oldSnap' : 'oldGear', id: o[2] };
   return null;
@@ -527,3 +533,6 @@ export function digAfterDive(vars: Readonly<Record<string, string>>, full: boole
   if (got || full) v = digRareAfter(v, got);
   return v;
 }
+
+/** 砂の底だけのレアギア（段階219。珍品で手に入る） */
+export const SAND_BOTTOM_RARE_GEARS: string[] = STRATA.flatMap((st) => st.digItems.gears ?? []);

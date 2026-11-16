@@ -932,13 +932,15 @@ export class SandBottomScene extends Phaser.Scene {
     if (r.kind === 'item' || r.kind === 'oldItem') {
       this.s = { ...this.s, bag: [...this.s.bag, r.id] };
       this.message = r.kind === 'item' ? `珍品だ！ ${itemName(r.id)}（砂の底でしか見つからない物）` : `物語のどこかで見かけた物が、砂に埋まっていた：${itemName(r.id)}`;
-    } else if (r.kind === 'oldSnap') {
+    } else if (r.kind === 'oldSnap' || r.kind === 'snap') {
       run.chainAlbum = gainSnaps(run.chainAlbum, [r.id]);
       run.library = recordLibraryFinds(run.library, { snaps: [r.id] });
-      this.message = `物語のどこかで見かけたスナップが、砂に埋まっていた：${CHAIN_SNAPS[r.id]?.name ?? r.id}`;
-    } else if (r.kind === 'oldGear') {
+      const name = CHAIN_SNAPS[r.id]?.name ?? r.id;
+      this.message = r.kind === 'snap' ? `珍品だ！ レアスナップ「${name}」（砂の底でしか見つからない札）` : `物語のどこかで見かけたスナップが、砂に埋まっていた：${name}`;
+    } else if (r.kind === 'oldGear' || r.kind === 'gear') {
       run.navi = addParts(run.navi, [r.id]);
-      this.message = `物語のどこかで見かけたギアが、砂に埋まっていた：${NAVI_DATA.parts[r.id]?.name ?? r.id}`;
+      const name = NAVI_DATA.parts[r.id]?.name ?? r.id;
+      this.message = r.kind === 'gear' ? `珍品だ！ レアギア「${name}」（砂の底でしか見つからないギア）` : `物語のどこかで見かけたギアが、砂に埋まっていた：${name}`;
     } else {
       const d = DIG_LORE.find((x) => x.id === r.id);
       setStoryVars({ ...run.vars, [digLoreVar(r.id)]: '1' });
