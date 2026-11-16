@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { battleSceneFor } from './chainEncounter';
-import { COLORS, RENDER_SCALE, TITLE_EXIT, STYLE } from '../ui/theme';
+import { COLORS, RENDER_SCALE, TITLE_EXIT, TITLE_LOOK, STYLE } from '../ui/theme';
 import { addImageOr, preloadQueue } from '../assets/loader';
 import { dialogueImages, focusImages, startWithImages } from '../ui/waitImages';
-import { addButton, addText } from '../ui/widgets';
+import { addButton, addSlant, addText, makePressable } from '../ui/widgets';
 import { playBgm, playSand, stopAmbience } from '../audio/sound';
 import { prepareBgm } from '../audio/bgmStore';
 import { chapterOfEvent, dialogueRun, findEvent } from '../core';
@@ -13,7 +13,7 @@ import type { TipGroup } from '../core';
 import { resetTips, seenTips, showTipPanel } from '../ui/tipPanel';
 import { continueRun, currentEvent, deleteSave, moveBrokenSave, readSave, run, startNewRun } from './run';
 import type { BattleSceneData } from './chainEncounter';
-import { enterScreen, fadeOutAndDestroy, screenBg } from '../ui/skin';
+import { ensureSandTexture, enterScreen, fadeOutAndDestroy } from '../ui/skin';
 import { openOptions } from '../ui/options';
 import { canToggleFullscreen, isFullscreen, onFullscreenChange, toggleFullscreen } from '../ui/fullscreen';
 import { notePlayStart, setPlayTracking } from './playRecord';
@@ -55,25 +55,26 @@ export class TitleScene extends Phaser.Scene {
     stopAmbience();
     let root = this.add.container(0, 0);
     const cx = GAME_WIDTH / 2;
-    root.add(screenBg(this));
-    // 砂時計の後ろのほのかな光（段階32a）。ゆっくり明るくなったり暗くなったりする
+    // 段階234（開発者の声：今のシンプルで寂しい感じを伸ばす。案1 静けさを深める）：
+    // 紅の斜線はやめ、真ん中だけほのかに明るい黒。舞う砂粒はまばらに、ゆっくり
+    root.add(this.quietBackdrop());
+    // 砂時計の後ろのほのかな光（段階32a）。ゆっくり明るくなったり暗くなったりする（段階234：控えめに）
     const glow = this.add.graphics();
-    for (let i = 0; i < 7; i++) {
-      glow.fillStyle(COLORS.accent, 0.035);
-      glow.fillCircle(cx, 230, 40 + i * 16);
+    for (let i = 0; i < 6; i++) {
+      glow.fillStyle(TITLE_LOOK.glow, 0.03);
+      glow.fillCircle(cx, 230, 30 + i * 14);
     }
     root.add(glow);
     this.tweens.add({ targets: glow, alpha: 0.55, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     // 砂時計（台帳の title.hourglass。読み込めない時は同じ形を図形で描く）
-    root.add(
-      addImageOr(this, 'title.hourglass', cx, 230, () => {
+    const hourglass = addImageOr(this, 'title.hourglass', cx, 230, () => {
         const g = this.add.graphics();
         g.lineStyle(3, COLORS.accent, 1);
         g.strokeTriangle(cx - 40, 160, cx + 40, 160, cx, 230);
         g.strokeTriangle(cx - 40, 300, cx + 40, 300, cx, 230);
         return g;
-      }),
-    );
+      });
+    root.add(hourglass);
     // 砂時計の真ん中から下へ落ちる砂（段階32a。粒の絵は背景の砂と同じ）
     const fall = this.add.particles(0, 0, 'ui-sand', {
       x: { min: cx - 1.5, max: cx + 1.5 },
@@ -86,8 +87,13 @@ export class TitleScene extends Phaser.Scene {
       frequency: 45,
     });
     root.add(fall);
-    root.add(addText(this, cx, 360, 'RESTOPIA', { size: 34, bold: true }).setOrigin(0.5).setLetterSpacing(4));
-    root.add(addText(this, cx, 400, '思い出だけの理想郷', { size: 15, color: COLORS.accentText }).setOrigin(0.5));
+    // 落ちた砂が、砂時計の下に少しずつ積もる（段階234）
+    const bottom = hourglass instanceof Phaser.GameObjects.Image ? hourglass.getBounds().bottom - 4 : 296;
+    root.add(this.sandPile(cx, bottom));
+    // 題字は細く字の間を広く。副題の上に紅の細い線（段階234）
+    root.add(addText(this, cx, 362, 'RESTOPIA', { size: 30, color: '#f2ede4' }).setOrigin(0.5).setLetterSpacing(12));
+    root.add(this.add.rectangle(cx, 392, 90, 1, STYLE.red, 0.9));
+    root.add(addText(this, cx, 410, '思い出だけの理想郷', { size: 13, color: '#d9b77a' }).setOrigin(0.5).setLetterSpacing(4));
     // 物語の流れへ移る時に消すもの（ボタンと小さな文字）。題字と砂時計は残す（段階32b 調整5）
     const ui = this.add.container(0, 0);
     root.add(ui);
@@ -115,10 +121,9 @@ export class TitleScene extends Phaser.Scene {
         startWithImages(this, battleSceneFor(data), data);
       });
     root = ui;
-    root.add(addText(this, cx, 432, '試作版（第4章の 4-1 まで）', { size: 13, color: COLORS.subText }).setOrigin(0.5));
-    // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3）
-    addButton(this, root, GAME_WIDTH - 66, 36, 112, 44, 'オプション', {
-      onTap: () =>
+    root.add(addText(this, cx, 806, '試作版（第4章の 4-1 まで）', { size: 10, color: '#c8c3cd' }).setOrigin(0.5).setAlpha(0.4));
+    // 音量・説明・遊んだ記録・クレジットは、右上のオプションにまとめる（段階32b 調整3。段階234：字だけ）
+    this.quietLink(root, GAME_WIDTH - 16, 30, 'オプション', 1, () =>
         openOptions(this, {
           links: [
             { label: '説明を読む', onTap: () => this.openTips() },
@@ -126,8 +131,7 @@ export class TitleScene extends Phaser.Scene {
             { label: '遊んだ記録', onTap: () => this.scene.start('PlayLog', { back: 'Title' }) },
             { label: 'クレジット', onTap: () => this.scene.start('Credits') },
           ],
-        }),
-    }, { size: 13 });
+        }));
     // 左上に全画面のボタン（段階48）。ホーム画面のアイコンから開いた時と、全画面にできないブラウザでは出さない
     if (canToggleFullscreen()) {
       const fs = this.add.container(0, 0);
@@ -136,14 +140,14 @@ export class TitleScene extends Phaser.Scene {
         if (!fs.active) return;
         fs.removeAll(true);
         const full = isFullscreen();
-        addButton(this, fs, 72, 36, 124, 44, full ? '全画面をやめる' : '全画面', { onTap: () => toggleFullscreen() }, { size: 13 });
+        this.quietLink(fs, 16, 30, full ? '全画面をやめる' : '全画面', 0, () => toggleFullscreen());
       };
       drawFs();
       onFullscreenChange(this, drawFs);
     }
     // スマホのブラウザは、最初に画面に触れるまで音を出せない。それまでは案内を出す（段階32b 調整3）
     if (this.sound.locked) {
-      const hint = addText(this, cx, 500, '画面をタップすると音が出ます', { size: 14, color: COLORS.accentText }).setOrigin(0.5);
+      const hint = addText(this, cx, 520, '画面をタップすると音が出ます', { size: 12, color: '#d9b77a' }).setOrigin(0.5).setLetterSpacing(2);
       root.add(hint);
       this.tweens.add({ targets: hint, alpha: 0.35, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       this.sound.once(Phaser.Sound.Events.UNLOCKED, () => {
@@ -166,7 +170,6 @@ export class TitleScene extends Phaser.Scene {
       console.error('[save] セーブを読めませんでした', save.error);
       moveBrokenSave();
     }
-    const strong = { size: 20, bold: true, fill: STYLE.red, stroke: 0xffffff, strokeWidth: 2, italic: true };
     const startNew = () => {
       notePlayStart();
       startNewRun();
@@ -176,40 +179,110 @@ export class TitleScene extends Phaser.Scene {
       const s = save.save;
       const event = findEvent(SLICE_FLOW, s.run.event);
       const chapter = chapterOfEvent(SLICE_FLOW, s.run.event);
-      addButton(this, root, cx, 600, 260, 64, 'つづきから', {
-        onTap: () => {
+      this.quietButton(root, cx, 620, 'つづきから', () => {
+        {
           if (!continueRun()) this.scene.restart();
           // 戦闘の途中で閉じていたら、その戦闘の始めから（段階44）
           else if (run.battle) battle({ encounter: { battle: run.battle.battle, win: run.battle.win, lose: run.battle.lose } });
           else flow({ done: false, fromTitle: true });
-        },
-      }, strong);
+        }
+      });
       root.add(
-        addText(this, cx, 656, `${chapter?.name ?? ''}　${event?.title ?? ''}${s.run.battle ? `（${AREA_BATTLES[s.run.battle.battle]?.name ?? '戦闘'}の途中）` : ''}\n${formatSavedAt(s.savedAt)}`, {
-          size: 12,
-          color: COLORS.subText,
+        addText(this, cx, 664, `${chapter?.name ?? ''}　${event?.title ?? ''}${s.run.battle ? `（${AREA_BATTLES[s.run.battle.battle]?.name ?? '戦闘'}の途中）` : ''}　${formatSavedAt(s.savedAt)}`, {
+          size: 10,
+          color: '#c8c3cd',
           align: 'center',
-        }).setOrigin(0.5),
+        }).setOrigin(0.5).setAlpha(0.6),
       );
       // 誤タップでセーブを消さないよう、2回押して始める
       let armed = false;
-      const warn = addText(this, cx, 790, '', { size: 12, color: COLORS.allyDamage, align: 'center' }).setOrigin(0.5);
+      const warn = addText(this, cx, 750, '', { size: 11, color: '#e8a0ac', align: 'center' }).setOrigin(0.5);
       root.add(warn);
-      addButton(this, root, cx, 734, 220, 52, 'はじめから', {
-        onTap: () => {
-          if (armed) startNew();
-          else {
-            armed = true;
-            warn.setText('セーブを消して最初から始めます。\nもう一度押してください');
-          }
-        },
-      }, { size: 16 });
+      this.quietLink(root, cx, 714, 'はじめから', 0.5, () => {
+        if (armed) startNew();
+        else {
+          armed = true;
+          warn.setText('セーブを消して最初から始めます。\nもう一度押してください');
+        }
+      });
     } else {
       if (save && !save.ok) {
         root.add(addText(this, cx, 560, 'セーブを読めませんでした', { size: 13, color: COLORS.allyDamage }).setOrigin(0.5));
       }
-      addButton(this, root, cx, 640, 260, 64, 'はじめる', { onTap: startNew }, strong);
+      this.quietButton(root, cx, 640, 'はじめる', startNew);
     }
+  }
+
+  /** 背景（段階234）：真ん中だけほのかに明るい黒と、まばらにゆっくり舞う砂粒 */
+  private quietBackdrop(): Phaser.GameObjects.Container {
+    const c = this.add.container(0, 0);
+    const g = this.add.graphics();
+    g.fillStyle(TITLE_LOOK.bg, 1).fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    for (let i = 0; i < 10; i++) {
+      g.fillStyle(TITLE_LOOK.haze, 0.05);
+      g.fillEllipse(GAME_WIDTH / 2, 260, 520 - i * 44, 640 - i * 52);
+    }
+    c.add(g);
+    ensureSandTexture(this);
+    c.add(
+      this.add.particles(0, 0, 'ui-sand', {
+        x: { min: 0, max: GAME_WIDTH },
+        y: { min: 0, max: GAME_HEIGHT },
+        speedX: { min: -4, max: 4 },
+        speedY: { min: -6, max: 3 },
+        scale: { min: 0.25, max: 0.5 },
+        tint: TITLE_LOOK.dust,
+        alpha: { start: 0, end: 0.45, ease: 'Sine.easeInOut' },
+        lifespan: 9000,
+        frequency: 420,
+        advance: 9000,
+      }),
+    );
+    return c;
+  }
+
+  /** 落ちた砂の小さな山（段階234）：開いている間、少しずつ育つ */
+  private sandPile(cx: number, bottom: number): Phaser.GameObjects.Graphics {
+    const pile = this.add.graphics({ x: cx, y: bottom });
+    pile.fillStyle(TITLE_LOOK.sand, 0.25).fillEllipse(0, 0, 52, 12);
+    pile.fillStyle(TITLE_LOOK.sand, 0.55).fillEllipse(0, 1, 36, 8);
+    pile.fillStyle(TITLE_LOOK.sand, 0.9).fillEllipse(0, 2, 20, 5);
+    pile.setScale(0.35, 0.3);
+    this.tweens.add({ targets: pile, scaleX: 1, scaleY: 1, duration: TITLE_LOOK.pileMs, ease: 'Sine.easeOut' });
+    return pile;
+  }
+
+  /** 細い白い線の斜めの枠だけのボタン（段階234）。押している間は紅く光る */
+  private quietButton(root: Phaser.GameObjects.Container, x: number, y: number, label: string, onTap: () => void): void {
+    const w = 176;
+    const h = 46;
+    const face = addSlant(this, x, y, w, h, STYLE.ink, 0.45);
+    face.setStrokeStyle(1, 0xffffff, 0.75);
+    root.add(face);
+    const t = addText(this, x, y, label, { size: 15, color: '#f2ede4' }).setOrigin(0.5).setLetterSpacing(6);
+    root.add(t);
+    const lit = (on: boolean) => {
+      face.setFillStyle(on ? STYLE.red : STYLE.ink, on ? 0.9 : 0.45);
+      face.setStrokeStyle(1, 0xffffff, on ? 1 : 0.75);
+    };
+    makePressable(face, { onTap });
+    face.on('pointerdown', () => lit(true));
+    face.on('pointerup', () => lit(false));
+    face.on('pointerout', () => lit(false));
+  }
+
+  /** 字だけのリンク（段階234。はじめから・全画面・オプション）。align：0 左・0.5 真ん中・1 右 */
+  private quietLink(root: Phaser.GameObjects.Container, x: number, y: number, label: string, align: number, onTap: () => void): void {
+    const t = addText(this, x, y, label, { size: 12, color: '#e6e1d7' }).setOrigin(align, 0.5).setLetterSpacing(3).setAlpha(0.65);
+    root.add(t);
+    // 押しやすいよう、字より広い当たり
+    const hit = this.add.rectangle(x - (align - 0.5) * t.width, y, t.width + 32, 40, 0x000000, 0.001);
+    root.add(hit);
+    makePressable(hit, { onTap });
+    hit.on('pointerdown', () => t.setAlpha(1).setColor(STYLE.redText));
+    const off = () => t.active && t.setAlpha(0.65).setColor('#e6e1d7');
+    hit.on('pointerup', off);
+    hit.on('pointerout', off);
   }
 
   /**
