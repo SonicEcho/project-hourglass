@@ -221,25 +221,27 @@ try {
   await waitScene('Title');
   await page.evaluate(() => window.__restopia.start('Growth', {}));
   await waitScene('Growth');
-  await until('星図の説明', () => findText('^はじめての説明$'));
-  await tap('^わかった$');
-  await until('説明が閉じる', async () => !(await findText('^はじめての説明$')));
+  // 段階236：育成の画面の説明も、戦闘と同じ照らす案内（タップで次へ）
+  await until('星図の説明', () => findText('タップで次へ'));
+  await skipCoach();
+  await until('説明が閉じる', async () => !(await findText('タップで次へ')));
 
   step('探索で説明が出ても固まらない（窓が見えて、閉じたら歩ける）');
   await page.evaluate(() => window.__restopia.start('Explore', { area: 'a11' }));
   await waitScene('Explore');
   // 説明の窓が見えるまで出てくる（2026-10-13 の直し。窓の出る動きまで止めていて、見えない窓で後ろを押せなくなっていた）
+  // 段階236：探索の説明も、戦闘と同じ照らす案内（タップで次へ）
   for (let i = 0; i < 4; i++) {
-    await until('探索の説明の窓', () => findText('^はじめての説明$'));
-    // 窓（いちばん手前の入れ物）がすき通ったままでなく、ちゃんと見えるまで出てくる
-    await until('探索の説明の窓が見える', () =>
-      page.evaluate(() => window.__restopia.scene('Explore').children.list.some((o) => o.depth === 500 && o.active && o.alpha > 0.9)),
+    await until('探索の説明', () => findText('タップで次へ'));
+    // 案内（いちばん手前の入れ物）がすき通ったままでなく、ちゃんと見えるまで出てくる
+    await until('探索の説明が見える', () =>
+      page.evaluate(() => window.__restopia.scene('Explore').children.list.some((o) => o.depth === 900 && o.active && o.alpha > 0.9)),
     3000);
-    await tap('^わかった$');
+    await skipCoach();
     await page.waitForTimeout(500);
-    if (!(await findText('^はじめての説明$'))) break;
+    if (!(await findText('タップで次へ'))) break;
   }
-  await until('説明が閉じる', async () => !(await findText('^はじめての説明$')));
+  await until('説明が閉じる', async () => !(await findText('タップで次へ')));
   const hero = () => page.evaluate(() => { const s = window.__restopia.scene('Explore'); return [s.player.x, s.player.y]; });
   const before = await hero();
   await tapAt(195, 600);
@@ -278,6 +280,8 @@ try {
       await tap('^わかった$');
       await page.waitForTimeout(400);
     }
+    // 段階236：照らす案内（タップで次へ）
+    await skipCoach();
   };
   await page.getByText('DBG', { exact: true }).click();
   await page.locator('#debug-event').selectOption('d6_free');
@@ -324,15 +328,14 @@ try {
   await skipTips();
   await debugButton('記憶の欠片を10個ずつもらう');
   await closeDebugMenu();
-  // 段階204：ポーチの札（消費アイテム）はなくした。素材の札を押して描き直す（もらった欠片の数を出す）
-  await tap('^素材$');
-  await until('欠片が40', () => findText('^記憶の欠片 4\\d'));
+  // 段階204：ポーチの札（消費アイテム）はなくした。ギアの札を押して描き直す（もらった欠片の数を、見出しの右に出す。段階231）
   await tap('^ギア$');
-  await tap('^MPギア　欠片 10');
+  await until('欠片が40', () => findText('^4\\d$'));
+  await tap('^MPギア$');
   await tap('^交換する$');
-  await until('交換した印', () => findText('^MPギア　欠片 10\\n交換した$'));
-  await tap('^MPギア　欠片 10');
-  await until('2回目はできない', () => findText('もう交換した'));
+  await until('交換した印', () => findText('^交換しました$'));
+  await tap('^MPギア$');
+  await until('2回目はできない', () => findText('もう交換しました'));
   // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
   for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
     await tap('^レストピアへ戻る$').catch(() => {});
@@ -340,7 +343,7 @@ try {
   }
   await waitScene('Hub');
   // 落とし物（段階53）：初めては棚の会話。1-1 の「金魚のヘアピン」を受ける
-  await tap('^落とし物の棚$');
+  await tap('^落とし物$');
   await waitScene('Dialogue');
   await tap('^早送り$');
   for (let i = 0; i < 40 && !(await scenes()).includes('Lost'); i++) {
@@ -348,9 +351,11 @@ try {
     await page.waitForTimeout(300);
   }
   await waitScene('Lost');
+  await page.waitForTimeout(800);
+  await skipTips();
   await tap('^金魚のヘアピン');
   await tap('^受ける$');
-  await until('受けた', () => findText('^金魚のヘアピン　→ ゆうまさん\\n記憶をたどって探す$'));
+  await until('受けた', () => findText('^声をたどる$'));
   // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
   for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
     await tap('^レストピアへ戻る$').catch(() => {});
@@ -382,8 +387,10 @@ try {
   await tap('^レストピア\\nへ戻る$');
   await waitScene('Hub');
   // 見つけた落とし物を、棚から届ける（ゆうまに会う会話の後、ごほうび）
-  await tap('^落とし物の棚$');
+  await tap('^落とし物$');
   await waitScene('Lost');
+  await page.waitForTimeout(800);
+  await skipTips();
   await tap('^金魚のヘアピン');
   await tap('^届ける$');
   await waitScene('Dialogue');

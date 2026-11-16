@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, LIBRARY_ITEM_SOURCES, LIBRARY_SNAP_SOURCES, sourceTexts, type LibrarySource, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
+import { AREAS, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, LIBRARY_ITEM_SOURCES, LIBRARY_SNAP_SOURCES, SCREEN_COACH, sourceTexts, type LibrarySource, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainSnapLook, comboDetailLines, comboMaterialNames, ENEMY_OF_SNAP, snapArt, snapDetailLines, snapShortLine } from '../ui/chainSnapText';
-import { frameHeader } from '../ui/frame';
+import { frameCoachRect, frameHeader } from '../ui/frame';
+import { startScreenCoach } from '../ui/screenCoach';
 import { ScrollArea } from '../ui/scrollArea';
 import { addIcon, type IconKind } from '../ui/icons';
 import { ELEMENT_LABEL } from '../ui/labels';
@@ -78,8 +79,19 @@ export class LibraryScene extends Phaser.Scene {
     this.view = libraryView();
     const art = [...new Set([...LIBRARY_ENEMIES.map((e) => ENEMY_ART[e.id]), ...LIBRARY_SNAPS.map((m) => snapArt(m.id))].filter((x): x is string => !!x))];
     this.render();
-    // 敵とスナップの絵は、届いてから描き直す
-    waitImages(this, art, () => this.render());
+    // 敵とスナップの絵は、届いてから描き直す。段階236：その後、初めての時は照らす案内（戦闘と同じ形）
+    waitImages(this, art, () => {
+      this.render();
+      startScreenCoach(this, 'library_intro', SCREEN_COACH.library_intro, (t) =>
+        t === 'tabs'
+          ? { x: 4, y: TAB_Y - 16, w: GAME_WIDTH - 8, h: 32 }
+          : t === 'list'
+            ? { x: 4, y: LIST_Y - 4, w: GAME_WIDTH - 8, h: 3 * (ART_ROW_H + ART_ROW_GAP) + 4 }
+            : t === 'detail'
+              ? { x: SIDE_PADDING - 3, y: this.detailY() - 3, w: ROW_W + 6, h: DETAIL_BOTTOM - this.detailY() + 6 }
+              : frameCoachRect(t),
+      );
+    });
   }
 
   private render(): void {

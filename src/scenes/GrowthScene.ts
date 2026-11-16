@@ -2,15 +2,15 @@ import Phaser from 'phaser';
 import type { ChainMove, CharacterDef, GrowthNodeDef, StarAdvice, StatKey } from '../core';
 import { canEvolveAny, chapterLocked, findBugs, findNode, getOpenError, isOpened, neighbors, nodeCost, openableNodes, openNode, piecePosition, recommendStar } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { ALLY_FACE, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, WEAPON_DATA } from '../data';
+import { ALLY_FACE, SCREEN_COACH, FACE_CROPS, GROWTH_FRONTIER, GROWTH_MAP, GROWTH_RECOMMEND, GROWTH_STAR_NAMES, PARTY, CHAIN_SKILLS, CHAIN_TRAIT_STARS, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { ALLY_COLOR, COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { maybeShowTip } from '../ui/tipPanel';
+import { startScreenCoach } from '../ui/screenCoach';
 import { currentNaviData, currentParty, getHubReturn, growthChapter, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import { addWindow, countText, enterScreen, fadeOutAndDestroy, popIn } from '../ui/skin';
 import { faceTexture } from '../ui/portrait';
-import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
+import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameCoachRect, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 import { addIcon } from '../ui/icons';
 
 // 星図の画面（段階7）。縦持ち 390×844 に、星図と操作を1画面で収める。
@@ -91,7 +91,10 @@ export class GrowthScene extends Phaser.Scene {
     this.setupMapInput();
     this.render();
     // 段階204：試作の5戦のギアの報酬（showReward）は外した
-    maybeShowTip(this, ['growth_star']);
+    // 段階236：照らす案内（戦闘と同じ形）
+    startScreenCoach(this, 'growth_star', SCREEN_COACH.growth_star, (t) =>
+      t === 'map' ? { ...VIEW } : t === 'info' ? { x: SIDE_PADDING, y: INFO_TOP, w: GAME_WIDTH - SIDE_PADDING * 2, h: INFO_H } : frameCoachRect(t),
+    );
   }
 
   /** 章が進んで星図の区域が増えていたら、初めて開いた時に一度だけ知らせる（段階49。見たことは物語の値に覚える） */

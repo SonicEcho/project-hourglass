@@ -30,17 +30,17 @@ import {
   weaponSlots,
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { DECOMPOSE_VAR, FRAGMENTS, ITEMS, itemSources, SECOND_WEAPON, WEAPON_DATA } from '../data';
+import { DECOMPOSE_VAR, SCREEN_COACH, FRAGMENTS, ITEMS, itemSources, SECOND_WEAPON, WEAPON_DATA } from '../data';
 import { SIDE_PADDING } from '../ui/layout';
 import { PART_COLOR_LABEL } from '../ui/naviText';
 import { COLORS, ELEMENT_COLOR, ELEMENT_LABEL, FONT_HEADING, RENDER_SCALE, STYLE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { maybeShowTip } from '../ui/tipPanel';
+import { startScreenCoach } from '../ui/screenCoach';
 import { currentNaviData, currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import type { DialogueData } from './DialogueScene';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, sparkAt } from '../ui/skin';
-import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
+import { backButton, faceTabs, FRAME, FRAME_COLORS, frameBg, frameCoachRect, frameHeader, GOLD_BUTTON, PLAIN_BUTTON } from '../ui/frame';
 import { CRIMSON, currentNode, drawTree, layoutTree, TREE, type TreeNode, treeDetail, treeSize } from '../ui/weaponTree';
 
 // 武器の画面（段階9）。段階145：見た目は「紅の系譜」（docs/ART.md の 5-9）。
@@ -110,7 +110,24 @@ export class WeaponScene extends Phaser.Scene {
     if (!members.some((c) => c.id === this.charId)) this.charId = members[0].id;
     this.render();
     this.setupPan();
-    maybeShowTip(this, ['growth_weapon', 'growth_tree', ...(this.decompose ? ['growth_decompose'] : [])]);
+    // 段階236：照らす案内（戦闘と同じ形）。武器 → 進化の木 → 時分解（使える時）の順に続けて
+    this.coachChain(['growth_weapon', 'growth_tree', ...(this.decompose ? ['growth_decompose'] : [])]);
+  }
+
+  /** 照らす案内を、まだ見ていない物から順に続けて出す（段階236） */
+  private coachChain(ids: string[]): void {
+    const [id, ...rest] = ids;
+    if (!id) return;
+    const shown = startScreenCoach(this, id, SCREEN_COACH[id] ?? [], (t) => this.coachRect(t), () => this.coachChain(rest));
+    if (!shown) this.coachChain(rest);
+  }
+
+  /** 照らす所（段階236）：能力値の帯・進化の木・下の素材の引き出し、ほかは共通の枠 */
+  private coachRect(t: string): { x: number; y: number; w: number; h: number } | null {
+    if (t === 'status') return { x: 0, y: STATUS_TOP, w: GAME_WIDTH, h: TREE_TOP - STATUS_TOP };
+    if (t === 'tree') return { x: 0, y: TREE_TOP, w: GAME_WIDTH, h: TREE_BOTTOM - TREE_TOP };
+    if (t === 'drawer') return { x: 6, y: TREE_BOTTOM + 2, w: GAME_WIDTH - 12, h: FRAME.mainY + 28 - TREE_BOTTOM };
+    return frameCoachRect(t);
   }
 
   /**
@@ -125,7 +142,7 @@ export class WeaponScene extends Phaser.Scene {
     this.decompose = anySlotsFull(D, run.armory);
     if (!this.decompose) return;
     setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
-    if (this.root.list.length > 0) this.time.delayedCall(600, () => maybeShowTip(this, ['growth_decompose']));
+    if (this.root.list.length > 0) this.time.delayedCall(600, () => this.coachChain(['growth_decompose']));
   }
 
   /** デバッグメニューから記憶の欠片や経験値が変わった時に描き直す */

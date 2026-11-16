@@ -1,4 +1,5 @@
 import type { TipDef } from '../core';
+import { SCREEN_COACH_TITLES, screenCoachBody } from './screenCoach';
 
 // 初めての人向けの説明の文（段階30）。並び順が、同じ時に出せる説明の優先順（上ほど先）。
 // どの場面で出すかは src/core/tips.ts。タイトルの「説明」から、いつでも読み返せる
@@ -329,30 +330,19 @@ export const TIPS: TipDef[] = [
     id: 'explore_basic',
     group: 'explore',
     title: '探索',
-    body: [
-      'タップした場所まで歩く。宝箱はタップすると開く。',
-      '歩き回っている小さな敵の絵は砂嵐。触れると戦闘になる。倒した砂嵐はもう出ない。',
-      '光る輪はチェックポイント。負けると、最後に立ったチェックポイントに戻る。',
-    ].join('\n'),
+    body: screenCoachBody('explore_basic'),
   },
   {
     id: 'explore_checkpoint',
     group: 'explore',
     title: 'チェックポイント',
-    body: [
-      'ここまでを記録した。',
-      'チェックポイントに立っている間は、下の「休憩する」で休憩所を開ける。休憩所から育成（星図・武器など）の画面に入れる。戦闘で手に入れた星の砂や素材は、ここで使う。',
-    ].join('\n'),
+    body: screenCoachBody('explore_checkpoint'),
   },
   {
     id: 'explore_koma',
     group: 'explore',
     title: 'コマ集め',
-    body: [
-      '砂嵐を倒すと、時計のコマが手に入る。画面の上に「あと◯つで返せる」と出る。',
-      'コマがそろうと、この場所の時間を持ち主に返せる。最後のコマは、奥にいる大きな砂嵐が持っている。',
-      'コマを持つ砂嵐には、黄色い印が付いている。',
-    ].join('\n'),
+    body: screenCoachBody('explore_koma'),
   },
   {
     id: 'explore_hunt',
@@ -368,11 +358,7 @@ export const TIPS: TipDef[] = [
     id: 'growth_star',
     group: 'growth',
     title: '星図',
-    body: [
-      '戦闘で手に入れた星の砂を使って、星図のマスを開ける。開けたマスの能力値や魔法・スキルは、ずっと身につく。',
-      '開けられるのは、自分の駒が開けたマスの隣（黄色い枠）。マスをタップすると説明、もう一度タップで開ける。',
-      '育てる仲間は、キャラの切り替えのボタンで選ぶ。迷ったら、金色の点線（おすすめの道）の先の星を。',
-    ].join('\n'),
+    body: screenCoachBody('growth_star'),
   },
   {
     id: 'growth_navi',
@@ -389,51 +375,34 @@ export const TIPS: TipDef[] = [
     id: 'growth_weapon',
     group: 'growth',
     title: '武器',
-    body: [
-      '敵が落とした素材を武器に刻むと、武器の能力値（攻撃・火・氷・雷）が上がる。素材によっては下がる能力値もある。刻む前に変わり方が出る。',
-      '刻める数（刻印）には限りがある。武器は戦闘で使うとレベルが上がり、刻印が増える。',
-      '能力値が条件に届き、鍵の素材を持っていると、武器が進化する。迷ったら ★（おすすめ）の素材を。',
-    ].join('\n'),
+    body: screenCoachBody('growth_weapon'),
   },
   {
     // 段階100c：時分解が使えるようになった時（どれかの武器の刻印が初めていっぱいになった時か、交換所を初めて開いた時の早い方）
     id: 'growth_decompose',
     group: 'growth',
     title: '時分解と記憶の欠片',
-    body: [
-      '武器の画面で「時分解」が使えるようになった。',
-      '要らない素材を2つ時分解すると、記憶の欠片が1つできる。欠片は「欠片」のタブから、刻印を使わずに武器へ刻める（能力値 +1）。',
-      '欠片は、レストピアの交換所で品物と換えることもできる。',
-    ].join('\n'),
+    body: screenCoachBody('growth_decompose'),
   },
   {
     id: 'growth_tree',
     group: 'growth',
     title: '進化ツリー',
-    body: [
-      '武器は何度も進化する。武器の画面のまん中が進化の木で、下が元の武器、上へ枝分かれしていく（指でずらせる）。一度選んだ枝には戻れない。',
-      '紅いふちの紋章が次の進化先。タップすると条件と型が見え、条件がそろえば進化できる（金に光っている時）。2段先は「？」で、タップすると伸びる方向と鍵の素材の手がかりが見える。その先は影だけ。',
-      '進化するたびに「型」を2つから1つ選ぶ。型の効果は次の進化にも引き継ぐ。「寄り道」は短い枝で、変わった条件と力を持つ。',
-    ].join('\n'),
+    body: screenCoachBody('growth_tree'),
   },
   {
     // 段階98（レビューの D2）：「○日目　おわり」が初めて出た時
     id: 'day_end',
     group: 'explore',
     title: '一日の区切り',
-    body: [
-      '「○日目　おわり」の所までで、遊んだところは保存してある。',
-      'ここでやめても、タイトルの「つづきから」で、次の日から始められる。昼の画面に入った時と、探索の途中でも保存している。',
-    ].join('\n'),
+    body: screenCoachBody('day_end'),
   },
   {
     id: 'growth_album',
     group: 'growth',
     title: 'アルバム',
-    body: [
-      '戦闘の山札（アルバム）は20枚。宝箱・ボス・時間を返した時に手に入るスナップと、入れ替えられる。',
-      '「−」で外し、「＋」で入れる。同じスナップは4枚まで。20枚ちょうどにすると星図へ戻れる。',
-      '名前をタップすると、そのスナップの説明が出る。「おまかせ」で、コンボを組める20枚にできる。',
-    ].join('\n'),
+    body: screenCoachBody('growth_album'),
   },
+  // 段階236：説明のなかった画面の照らす案内（読み返し用の文は、手順の文から作る）
+  ...Object.entries(SCREEN_COACH_TITLES).map(([id, t]): TipDef => ({ id, group: t.group, title: t.title, body: screenCoachBody(id) })),
 ];

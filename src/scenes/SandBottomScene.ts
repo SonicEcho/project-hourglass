@@ -3,7 +3,8 @@ import type { DigDir, DigEvent, DigState, DigTile, DigToolId, DigWorldDef } from
 import type { DigLoreDef, DigLoreKind, DigOwned, DigRuleId } from '../data';
 import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, hearLostVoice, huntGearKey, isDigGuardRow, takeRelic, useDigSkill, useDigTool, clearGuard, clearRoamer, createDig, digBackCost, digEntrance, digLayerAt, goHome, loseDig, recordLibraryFinds, stepDig, swapChest, takeChest } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREA_BATTLES, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger, diggerStats, ALLY_FACE, FACE_CROPS } from '../data';
+import { AREA_BATTLES, SCREEN_COACH, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger, diggerStats, ALLY_FACE, FACE_CROPS } from '../data';
+import { startScreenCoach } from '../ui/screenCoach';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -284,6 +285,22 @@ export class SandBottomScene extends Phaser.Scene {
     });
     addButton(this, o, GAME_WIDTH / 2 - 84, GAME_HEIGHT - 50, 150, 44, '拾った記録', { onTap: () => this.showRecords() }, { size: 13 });
     addButton(this, o, GAME_WIDTH / 2 + 84, GAME_HEIGHT - 50, 150, 44, 'やめる', { onTap: () => this.scene.start(run.active ? 'Hub' : 'Title') }, { size: 14 });
+    // 段階236：初めての時は、照らす案内（戦闘と同じ形）
+    startScreenCoach(this, 'dig_pick', SCREEN_COACH.dig_pick, (t) => this.coachRect(t, h));
+  }
+
+  /** 照らす所（段階236）：「誰が掘る？」の特別ルールと札、掘る画面の上の帯・地層・十字のボタン・戻るボタン */
+  private coachRect(t: string, cardH = 132): { x: number; y: number; w: number; h: number } | null {
+    if (t === 'rule') return { x: 10, y: 104, w: GAME_WIDTH - 20, h: 38 };
+    if (t === 'cards') return { x: 10, y: 142, w: GAME_WIDTH - 20, h: cardH + 8 };
+    if (t === 'hud') return { x: 0, y: 0, w: GAME_WIDTH, h: GRID_Y - 2 };
+    if (t === 'grid') return { x: 0, y: GRID_Y, w: GAME_WIDTH, h: ROWS * T };
+    if (t === 'pad') return { x: PAD.x - PAD.w * 1.5 - PAD.gap - 4, y: PAD.y - PAD.h * 1.5 - PAD.gap - 4, w: PAD.w * 3 + PAD.gap * 2 + 8, h: PAD.h * 3 + PAD.gap * 2 + 8 };
+    if (t === 'exit') {
+      const leftW = PAD.x - PAD.w * 1.5 - PAD.gap - 20;
+      return { x: 6, y: GAME_HEIGHT - 36 - 31, w: leftW + 12, h: 62 };
+    }
+    return null;
   }
 
   /** 拾った記録（段階217）：りくのメモと誰かの日記を、番号順に。見つけていない所は「？」 */
@@ -378,6 +395,10 @@ export class SandBottomScene extends Phaser.Scene {
     this.message = '十字のボタンか、まわりの枠をタップすると掘れます（長押しで続けて掘れます）。空洞を歩くと砂を1、掘ると砂を3使います';
     this.closeOverlay();
     this.waitDiggerArt();
+    // 段階236：初めて潜った時は、照らす案内（戦闘と同じ形）
+    this.time.delayedCall(350, () => {
+      if (!this.overlay) startScreenCoach(this, 'dig_play', SCREEN_COACH.dig_play, (t) => this.coachRect(t));
+    });
   }
 
   /** あかりが掘る時：砂嵐に勝つたびに、みんなの HP が戻る（段階211） */
