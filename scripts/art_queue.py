@@ -848,7 +848,6 @@ add('ひなの：目を閉じた絵', [P + 'hinano_normal.webp'], 'hinano_blink_
 add('ひなの：口を開けた絵', [P + 'hinano_normal.webp'], 'hinano_talk_src.png', open_mouth('calm'))
 add('ノア：目を閉じた絵', [P + 'noa_normal.webp'], 'noa_blink_src.png', close_eyes('calm').replace('her eyes', 'the eyes'))
 add('ノア：口を開けた絵', [P + 'noa_normal.webp'], 'noa_talk_src.png', open_mouth('calm'))
-add('写しのひなの：口を開けた絵', [P + 'past_hinano_smile.webp'], 'past_hinano_talk_src.png', open_mouth('smiling'))
 add('寿美：目を閉じた絵', [P + 'sumi_smile.webp'], 'sumi_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
 add('寿美：口を開けた絵', [P + 'sumi_smile.webp'], 'sumi_talk_src.png', open_mouth('smiling'))
 add('茂雄：目を閉じた絵', [P + 'shigeru_smile.webp'], 'shigeru_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
