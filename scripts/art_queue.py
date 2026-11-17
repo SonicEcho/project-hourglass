@@ -59,7 +59,7 @@ Follow the attached layout sketch exactly: light areas are walkable ground, dark
 ITEMS = []  # (章の見出し, [(番号, 名前, 添付, 保存名, 指示文, メモ)])
 
 # 届いてゲームに入れた絵（保存名）。一覧では見出しに「済」を付ける
-DONE = {'dig_hero.png', 'dig_akari.png', 'dig_mio.png', 'dig_sayoko.png', 'dig_hayase.png', 'sayoko_sheet.png', 'sayoko_smile.png', 'chiyo_smile.png', 'noboru_smile.png', 'past_chiyo_smile.png', 'past_kiku_normal.png', 'past_noboru_smile.png', 'shiori_smile.png', 'toya_smile.png', 'past_shiori_smile.png', 'past_toya_smile.png', 'past_koji_normal.png', 'past_masaru_smile.png', 'masaru_smile.png', 'sumi_smile.png', 'past_sumi_smile.png', 'daichi_smile.png', 'saki_smile.png', 'gear_noise.png', 'screw_noise.png', 'tube_noise.png', 'abacus_noise.png', 'lathe_boss.png', 'flip_phone_noise.png', 'sticker_noise.png', 'boombox_noise.png', 'metronome_noise.png', 'amp_boss.png', 'ball_noise.png', 'pet_noise.png', 'megaphone_noise.png', 'jug_noise.png', 'scoreboard_boss.png', 'fan_noise.png', 'coil_noise.png', 'radio_noise.png', 'table_noise.png', 'postbox_noise.png', 'train_boss.png', 'lantern_noise.png', 'pinwheel_noise.png', 'candy_noise.png', 'phonograph_noise.png', 'yagura_boss.png', 'earphone_noise.png', 'selfie_noise.png', 'tapioca_noise.png', 'diploma_noise.png', 'yosegaki_noise.png', 'crossing_boss.png', 'map_fest_woods.png', 'map_fest_backyard.png', 'map_fest_east.png', 'map_fest_west.png', 'map_fest_gate.png', 'map_showa_alley.png', 'map_showa_lane.png', 'map_showa_hill.png', 'map_school_courtyard.png', 'map_school_bikes.png', 'map_school_classroom.png', 'map_school_corridor.png', 'map_school_gym.png', 'map_riverside_levee.png', 'map_riverside_bank.png', 'map_riverside_bench.png', 'map_riverside_diamond.png', 'map_riverside_shed.png', 'map_riverside_stand.png', 'map_archive_corridor.png', 'map_archive_reading.png', 'map_archive_vault.png', 'map_archive_stacks.png', 'map_village_station.png', 'map_village_paddy.png', 'map_village_shrine.png', 'map_village_house.png', 'map_village_river.png', 'map_village_platform.png', 'map_grad_slope.png', 'map_grad_gym_back.png', 'map_grad_street.png', 'map_grad_levee.png', 'map_grad_crossing.png', 'map_matsuri_torii.png', 'map_matsuri_stalls.png', 'map_matsuri_yagura.png', 'map_matsuri_edge.png', 'bg_home_tv_dark.png', 'bg_school_festival.png', 'bg_village_1966.png', 'bg_village_dusk.png', 'bg_care_home.png', 'bg_care_home_rain.png', 'bg_station_now.png', 'bg_school_fair.png', 'bg_taisho_festival.png', 'bg_taisho_edge.png', 'bg_shrine_now.png', 'bg_grad_2019.png', 'bg_grad_dusk.png', 'bg_crossing_now.png', 'cg_pinch_hit.png', 'snap_sword.png', 'snap_heavyBlow.png', 'snap_iceChip.png', 'snap_thunderChip.png', 'snap_wideShot.png', 'snap_recover.png', 'snap_quickStep.png', 'snap_search.png', 'snap_breakArm.png', 'snap_draw.png', 'snap_joker.png', 'snap_encore.png', 'snap_pinchHitter.png', 'snap_fireChip.png', 'mio_serious.png', 'mio_surprised.png', 'mio_thinking.png', 'mio_worried.png', 'mio_laugh.png', 'mio_pout.png', 'mio_frustrated.png', 'mio_wry.png', 'mio_shy.png', 'mio_teary.png', 'sayoko_thinking.png', 'sayoko_surprised.png', 'sayoko_serious.png', 'sayoko_laugh.png', 'sayoko_normal.png', 'sayoko_shy.png', 'sayoko_lonely.png', 'sayoko_teary.png', 'akari_tearful.png', 'hero_thinking.png', 'hayase_sheet.png', 'hayase_sheet_draft.png', 'tile_hunt.png', 'tile_growth.png', 'tile_weapon.png', 'tile_navi.png', 'tile_album.png', 'tile_party.png', 'tile_exchange.png', 'tile_lost.png', 'tile_talks.png', 'mio_blink_src_smile.png', 'mio_blink_src_serious.png', 'mio_blink_src_surprised.png', 'mio_blink_src_thinking.png', 'mio_blink_src_worried.png', 'mio_blink_src_pout.png', 'mio_blink_src_frustrated.png', 'mio_blink_src_wry.png', 'mio_blink_src_shy.png', 'mio_blink_src_teary.png', 'map_school_gate.png', 'taichi_normal.png', 'taichi_sullen.png', 'taichi_tearful.png', 'taichi_thinking.png', 'taichi_surprised.png', 'taichi_smile.png', 'past_taichi_normal.png', 'past_taichi_smile.png', 'past_taichi_tearful.png', 'past_taichi_serious.png', 'past_taichi_angry.png', 'past_taichi_surprised.png', 'past_taichi_sullen.png', 'past_grandpa_normal.png', 'past_grandpa_angry.png', 'hayase_normal.png', 'hayase_thinking.png', 'hayase_wry.png', 'hayase_surprised.png', 'hayase_angry.png', 'hayase_teary.png', 'bugcage_noise.png', 'watermelon_noise.png', 'firework_noise.png', 'watergun_noise.png', 'jizo_noise.png', 'river_boss.png', 'yoyo_noise.png', 'pager_noise.png', 'paperballoon_noise.png', 'cuckoo_noise.png', 'wreath_noise.png', 'shutter_boss.png', 'map_summer_garden.png', 'map_summer_shed.png', 'map_summer_ridge.png', 'map_summer_canal.png', 'map_summer_shallows.png', 'map_opening_shop.png', 'goro_smile.png', 'zenji_smile.png', 'tome_smile.png', 'tile_side_tall.png'}
+DONE = {'dig_hero.png', 'dig_akari.png', 'dig_mio.png', 'dig_sayoko.png', 'dig_hayase.png', 'sayoko_sheet.png', 'sayoko_smile.png', 'chiyo_smile.png', 'noboru_smile.png', 'past_chiyo_smile.png', 'past_kiku_normal.png', 'past_noboru_smile.png', 'shiori_smile.png', 'toya_smile.png', 'past_shiori_smile.png', 'past_toya_smile.png', 'past_koji_normal.png', 'past_masaru_smile.png', 'masaru_smile.png', 'sumi_smile.png', 'past_sumi_smile.png', 'daichi_smile.png', 'saki_smile.png', 'gear_noise.png', 'screw_noise.png', 'tube_noise.png', 'abacus_noise.png', 'lathe_boss.png', 'flip_phone_noise.png', 'sticker_noise.png', 'boombox_noise.png', 'metronome_noise.png', 'amp_boss.png', 'ball_noise.png', 'pet_noise.png', 'megaphone_noise.png', 'jug_noise.png', 'scoreboard_boss.png', 'fan_noise.png', 'coil_noise.png', 'radio_noise.png', 'table_noise.png', 'postbox_noise.png', 'train_boss.png', 'lantern_noise.png', 'pinwheel_noise.png', 'candy_noise.png', 'phonograph_noise.png', 'yagura_boss.png', 'earphone_noise.png', 'selfie_noise.png', 'tapioca_noise.png', 'diploma_noise.png', 'yosegaki_noise.png', 'crossing_boss.png', 'map_fest_woods.png', 'map_fest_backyard.png', 'map_fest_east.png', 'map_fest_west.png', 'map_fest_gate.png', 'map_showa_alley.png', 'map_showa_lane.png', 'map_showa_hill.png', 'map_school_courtyard.png', 'map_school_bikes.png', 'map_school_classroom.png', 'map_school_corridor.png', 'map_school_gym.png', 'map_riverside_levee.png', 'map_riverside_bank.png', 'map_riverside_bench.png', 'map_riverside_diamond.png', 'map_riverside_shed.png', 'map_riverside_stand.png', 'map_archive_corridor.png', 'map_archive_reading.png', 'map_archive_vault.png', 'map_archive_stacks.png', 'map_village_station.png', 'map_village_paddy.png', 'map_village_shrine.png', 'map_village_house.png', 'map_village_river.png', 'map_village_platform.png', 'map_grad_slope.png', 'map_grad_gym_back.png', 'map_grad_street.png', 'map_grad_levee.png', 'map_grad_crossing.png', 'map_matsuri_torii.png', 'map_matsuri_stalls.png', 'map_matsuri_yagura.png', 'map_matsuri_edge.png', 'bg_home_tv_dark.png', 'bg_school_festival.png', 'bg_village_1966.png', 'bg_village_dusk.png', 'bg_care_home.png', 'bg_care_home_rain.png', 'bg_station_now.png', 'bg_school_fair.png', 'bg_taisho_festival.png', 'bg_taisho_edge.png', 'bg_shrine_now.png', 'bg_grad_2019.png', 'bg_grad_dusk.png', 'bg_crossing_now.png', 'cg_pinch_hit.png', 'snap_sword.png', 'snap_heavyBlow.png', 'snap_iceChip.png', 'snap_thunderChip.png', 'snap_wideShot.png', 'snap_recover.png', 'snap_quickStep.png', 'snap_search.png', 'snap_breakArm.png', 'snap_draw.png', 'snap_joker.png', 'snap_encore.png', 'snap_pinchHitter.png', 'snap_fireChip.png', 'mio_serious.png', 'mio_surprised.png', 'mio_thinking.png', 'mio_worried.png', 'mio_laugh.png', 'mio_pout.png', 'mio_frustrated.png', 'mio_wry.png', 'mio_shy.png', 'mio_teary.png', 'sayoko_thinking.png', 'sayoko_surprised.png', 'sayoko_serious.png', 'sayoko_laugh.png', 'sayoko_normal.png', 'sayoko_shy.png', 'sayoko_lonely.png', 'sayoko_teary.png', 'akari_tearful.png', 'hero_thinking.png', 'hayase_sheet.png', 'hayase_sheet_draft.png', 'tile_hunt.png', 'tile_growth.png', 'tile_weapon.png', 'tile_navi.png', 'tile_album.png', 'tile_party.png', 'tile_exchange.png', 'tile_lost.png', 'tile_talks.png', 'mio_blink_src_smile.png', 'mio_blink_src_serious.png', 'mio_blink_src_surprised.png', 'mio_blink_src_thinking.png', 'mio_blink_src_worried.png', 'mio_blink_src_pout.png', 'mio_blink_src_frustrated.png', 'mio_blink_src_wry.png', 'mio_blink_src_shy.png', 'mio_blink_src_teary.png', 'map_school_gate.png', 'taichi_normal.png', 'taichi_sullen.png', 'taichi_tearful.png', 'taichi_thinking.png', 'taichi_surprised.png', 'taichi_smile.png', 'past_taichi_normal.png', 'past_taichi_smile.png', 'past_taichi_tearful.png', 'past_taichi_serious.png', 'past_taichi_angry.png', 'past_taichi_surprised.png', 'past_taichi_sullen.png', 'past_grandpa_normal.png', 'past_grandpa_angry.png', 'hayase_normal.png', 'hayase_thinking.png', 'hayase_wry.png', 'hayase_surprised.png', 'hayase_angry.png', 'hayase_teary.png', 'bugcage_noise.png', 'watermelon_noise.png', 'firework_noise.png', 'watergun_noise.png', 'jizo_noise.png', 'river_boss.png', 'yoyo_noise.png', 'pager_noise.png', 'paperballoon_noise.png', 'cuckoo_noise.png', 'wreath_noise.png', 'shutter_boss.png', 'map_summer_garden.png', 'map_summer_shed.png', 'map_summer_ridge.png', 'map_summer_canal.png', 'map_summer_shallows.png', 'map_opening_shop.png', 'goro_smile.png', 'zenji_smile.png', 'tome_smile.png', 'tile_side_tall.png', 'daichi_smile_v2.png', 'saki_smile_v2.png', 'sayoko_western_shy.png', 'sayoko_western_surprised.png', 'sayoko_western_smile.png', 'toya_blink_src.png', 'toya_talk_src.png', 'shiori_blink_src.png', 'shiori_talk_src.png', 'snap_digZanzo.png', 'snap_digUtakata.png', 'snap_digKaiso.png', 'goro_troubled.png', 'goro_surprised.png', 'goro_shy.png', 'goro_teary.png', 'zenji_shy.png', 'zenji_surprised.png', 'tome_gentle.png', 'tome_troubled.png'}
 
 
 def section(title, note=''):
@@ -802,15 +802,15 @@ add('しげる：苦笑い（台本で2回）', att, save, pr)
 att, save, pr = expr_of('shigeru', 'smile', '考える', child=False)
 add('しげる：考える（台本で2回）', att, save, pr)
 att, save, pr = expr_of('saki', 'smile', '驚き', child=False)
-add('さき：驚き（台本で3回）', att, save, pr, 'Q の描き直し（saki_smile.png）が届いてから、その絵を添付して作る')
+add('さき：驚き（台本で3回）', att, save, pr)
 att, save, pr = expr_of('saki', 'smile', '考える', child=False)
-add('さき：考える（台本で3回）', att, save, pr, 'Q の描き直し（saki_smile.png）が届いてから、その絵を添付して作る')
+add('さき：考える（台本で3回）', att, save, pr)
 att, save, pr = expr_of('saki', 'smile', 'さみしげ', child=False)
-add('さき：さみしげ（台本で3回）', att, save, pr, 'Q の描き直し（saki_smile.png）が届いてから、その絵を添付して作る')
+add('さき：さみしげ（台本で3回）', att, save, pr)
 att, save, pr = expr_of('saki', 'smile', '苦笑い', child=False)
-add('さき：苦笑い（台本で1回）', att, save, pr, 'Q の描き直し（saki_smile.png）が届いてから、その絵を添付して作る')
+add('さき：苦笑い（台本で1回）', att, save, pr)
 att, save, pr = expr_of('saki', 'smile', '微笑み', child=False)
-add('さき：微笑み（台本で1回）', att, save, pr, 'Q の描き直し（saki_smile.png）が届いてから、その絵を添付して作る')
+add('さき：微笑み（台本で1回）', att, save, pr)
 att, save, pr = expr_of('past_isamu', 'serious', '泣き笑い', child=False)
 add('写しのいさむ：泣き笑い（台本で1回）', att, save, pr)
 section('AC. 脇役のまばたき・口パク（基本の1枚）', '基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・トメ）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す')
@@ -856,8 +856,8 @@ add('しげる：目を閉じた絵', [P + 'shigeru_smile.webp'], 'shigeru_blink
 add('しげる：口を開けた絵', [P + 'shigeru_smile.webp'], 'shigeru_talk_src.png', open_mouth('smiling'))
 add('写しの源三：目を閉じた絵', [P + 'past_genzo_normal.webp'], 'past_genzo_blink_src.png', close_eyes('calm').replace('her eyes', 'the eyes'))
 add('写しの源三：口を開けた絵', [P + 'past_genzo_normal.webp'], 'past_genzo_talk_src.png', open_mouth('calm'))
-add('さき：目を閉じた絵', [P + 'saki_smile.webp'], 'saki_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'), 'Q の描き直しが届いてから、その絵を添付して作る')
-add('さき：口を開けた絵', [P + 'saki_smile.webp'], 'saki_talk_src.png', open_mouth('smiling'), 'Q の描き直しが届いてから、その絵を添付して作る')
+add('さき：目を閉じた絵', [P + 'saki_smile.webp'], 'saki_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
+add('さき：口を開けた絵', [P + 'saki_smile.webp'], 'saki_talk_src.png', open_mouth('smiling'))
 add('写しのいさむ：目を閉じた絵', [P + 'past_isamu_serious.webp'], 'past_isamu_blink_src.png', close_eyes('serious').replace('her eyes', 'the eyes'))
 add('写しのいさむ：口を開けた絵', [P + 'past_isamu_serious.webp'], 'past_isamu_talk_src.png', open_mouth('serious'))
 add('写しののぼる：目を閉じた絵', [P + 'past_noboru_smile.webp'], 'past_noboru_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
@@ -868,8 +868,15 @@ add('写しのすみ：目を閉じた絵', [P + 'past_sumi_smile.webp'], 'past_
 add('写しのすみ：口を開けた絵', [P + 'past_sumi_smile.webp'], 'past_sumi_talk_src.png', open_mouth('smiling'))
 add('写しのおじいちゃん：目を閉じた絵', [P + 'past_grandpa_normal.webp'], 'past_grandpa_blink_src.png', close_eyes('calm').replace('her eyes', 'the eyes'))
 add('写しのおじいちゃん：口を開けた絵', [P + 'past_grandpa_normal.webp'], 'past_grandpa_talk_src.png', open_mouth('calm'))
-add('だいち：目を閉じた絵', [P + 'daichi_smile.webp'], 'daichi_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'), 'Q の描き直しが届いてから、その絵を添付して作る')
-add('だいち：口を開けた絵', [P + 'daichi_smile.webp'], 'daichi_talk_src.png', open_mouth('smiling'), 'Q の描き直しが届いてから、その絵を添付して作る')
+add('だいち：目を閉じた絵', [P + 'daichi_smile.webp'], 'daichi_blink_src.png', close_eyes('smiling').replace('her eyes', 'the eyes'))
+add('だいち：口を開けた絵', [P + 'daichi_smile.webp'], 'daichi_talk_src.png', open_mouth('smiling'))
+
+
+# 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
+MANUAL_DONE = [
+    '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
+    '- **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、トメ（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）',
+]
 
 
 def main():
@@ -884,7 +891,7 @@ def main():
            '- できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする',
            '- 気に入らない時は、同じ文でもう一度作るか、「ここを直して」と一言足して作り直してよい',
            '- 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる（届いた絵は DONE に足すと、下の「済んだ絵」に移る）',
-           '- まだ一覧にない物：探索の地図を歩く2頭身のハルト・カイ（`docs/ART.md` の 5-5b の 3〜4。試し）。拠点のメニューの絵のうち、ムーブメント・アルバム・編成・町の小話の縦長（W。今の横長の絵を使い回すと決めたので、作らなくてよい）',
+           '- まだ一覧にない物：探索の地図を歩く2頭身のハルト・カイ（`docs/ART.md` の 5-5b の 3〜4。試し）。',
            '', '## まだの絵', '']
     for title, _, items in pending:
         out.append(f'- [{title}](#{anchor(title)})：{len(items)} 枚')
@@ -907,6 +914,7 @@ def main():
         done = [it for it in items if it[2] in DONE]
         if done:
             out.append(f'- **{title}**（{len(done)} 枚）：' + '、'.join(it[0] for it in done))
+    out += MANUAL_DONE
     out.append('')
     with open('docs/ART_QUEUE.md', 'w') as f:
         f.write('\n'.join(out))

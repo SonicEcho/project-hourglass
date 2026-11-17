@@ -165,6 +165,9 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
   写しのひなの: { blink: partsOf('past_hinano_blink_l', ['smile']) },
   けんた: { blink: partsOf('kenta_blink_l', ['smile']), talk: partsOf('kenta_talk_l', ['smile']) },
   カイ: { blink: partsOf('kai_blink_l', ['smug']) },
+  // とうや・しおり（2026-11-17。docs/ART_QUEUE.md の S）：笑顔の1枚だけ。しおりの笑顔は口が開いているので、口パクはない
+  とうや: { blink: partsOf('toya_blink', ['smile']), talk: partsOf('toya_talk', ['smile']) },
+  しおり: { blink: partsOf('shiori_blink', ['smile']) },
 };
 
 /** まばたき・口パクの差分（台帳の portrait.part.<file>）と、重ねる表情 */
@@ -214,9 +217,9 @@ export const CAST: Record<string, CastMember> = {
   },
   // 交換所の番人（段階52）。時間保管局の取引の窓口の係（2026-10-17 に通常の立ち絵が届いた。ほかの表情は Gemini で作るまで通常で代わりに出す）
   // 寄り道（段階239）の町の人。笑顔の絵は 2026-11-17 に届いた（ほかの表情は、届くまで笑顔で代わりに出す）。docs/ART_QUEUE.md の X
-  五郎: { portrait: 'portrait.goro', ...young(['笑顔', '困り', '驚き', '照れ', '泣き笑い'], { 笑顔: 'smile' }, '笑顔'), height: 410, color: 0x9a7a4a, voice: { pitch: 280, wave: 'square' } },
-  トメ: { portrait: 'portrait.tome', ...young(['笑顔', '微笑み', '困り', '驚き'], { 笑顔: 'smile' }, '笑顔'), height: 400, color: 0xa08a7a, voice: { pitch: 520, wave: 'triangle' } },
-  善次: { portrait: 'portrait.zenji', ...young(['笑顔', '微笑み', '照れ', '驚き'], { 笑顔: 'smile' }, '笑顔'), height: 420, color: 0x8a8a9a, voice: { pitch: 260, wave: 'triangle' } },
+  五郎: { portrait: 'portrait.goro', ...young(['笑顔', '困り', '驚き', '照れ', '泣き笑い'], { 笑顔: 'smile', 困り: 'troubled', 驚き: 'surprised', 照れ: 'shy', 泣き笑い: 'teary' }, '笑顔'), height: 410, color: 0x9a7a4a, voice: { pitch: 280, wave: 'square' } },
+  トメ: { portrait: 'portrait.tome', ...young(['笑顔', '微笑み', '困り', '驚き'], { 笑顔: 'smile', 微笑み: 'gentle', 困り: 'troubled' }, '笑顔'), height: 400, color: 0xa08a7a, voice: { pitch: 520, wave: 'triangle' } },
+  善次: { portrait: 'portrait.zenji', ...young(['笑顔', '微笑み', '照れ', '驚き'], { 笑顔: 'smile', 照れ: 'shy', 驚き: 'surprised' }, '笑顔'), height: 420, color: 0x8a8a9a, voice: { pitch: 260, wave: 'triangle' } },
   ペトラ: {
     portrait: 'portrait.petra',
     ...young(['通常', '笑顔', '困り', '驚き', '真剣'], { 通常: 'normal' }, '通常'),
@@ -389,8 +392,9 @@ export const CAST: Record<string, CastMember> = {
   小夜子: {
     portrait: 'portrait.sayoko',
     ...young(
-      ['微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い'],
-      { 微笑み: 'smile', 笑顔: 'laugh', 通常: 'normal', 考える: 'thinking', 驚き: 'surprised', 真剣: 'serious', さみしげ: 'lonely', 照れ: 'shy', 泣き笑い: 'teary' },
+      // 洋服・〜：試着室（bond_sayoko2）の洋服の小夜子（2026-11-17。docs/ART_QUEUE.md の R）
+      ['微笑み', '笑顔', '通常', '考える', '驚き', '真剣', 'さみしげ', '照れ', '泣き笑い', '洋服・照れ', '洋服・驚き', '洋服・微笑み'],
+      { 微笑み: 'smile', 笑顔: 'laugh', 通常: 'normal', 考える: 'thinking', 驚き: 'surprised', 真剣: 'serious', さみしげ: 'lonely', 照れ: 'shy', 泣き笑い: 'teary', '洋服・照れ': 'western_shy', '洋服・驚き': 'western_surprised', '洋服・微笑み': 'western_smile' },
       '微笑み',
     ),
     height: 450,
