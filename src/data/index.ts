@@ -64,3 +64,4 @@ export * from './hubTalk';
 export * from './library';
 export * from './sandBottom';
 export * from './sandBottomLore';
+export * from './portraitPartBoxes';
