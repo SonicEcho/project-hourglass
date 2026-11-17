@@ -21,3 +21,6 @@
 
 - 台本は `src/data/scriptM2.ts`（2章の2つ）と `src/data/scriptM3.ts`（3章の2つ）
 - 4章より先も、章ごとに1〜2つ足す（押し花の回収、5章の前の「規則」の揺れ）
+
+## 段階244（2026-11-17）
+- 押し花の回収を、落とし物の棚の頼み「帳簿の押し花」にした（`docs/milestones/M3_side_events.md` の 9.。台本は `src/data/scriptLost.ts` の `lost_petra_*`）

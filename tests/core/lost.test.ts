@@ -62,7 +62,8 @@ describe('落とし物（段階53）', () => {
 
   it('データ：返す区画に1つずつ（段階242：9つ。祭りの夜は終章で）。どれも声をたどる形で、会話・相手・ご褒美・ひとことは実在する（段階220）', () => {
     expect(LOST_ACTIVE_MAX).toBe(3);
-    expect(LOST_ITEMS.map((d) => d.area)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32', 'a41', 'a42']);
+    // 段階244：最後はペトラの頼み（1-2 の記憶。4-1 を返した後に棚へ）
+    expect(LOST_ITEMS.map((d) => d.area)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32', 'a41', 'a42', 'a12']);
     const ids = LOST_ITEMS.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
     const scenes = new Set(SCENES.map((s) => s.id));
@@ -147,5 +148,14 @@ describe('4章の層は、4章の区画を全部返したら開く（段階242�
     const vars = acceptLost(LOST_ITEMS, {}, 'a42_wreath', 3);
     const relics = sandBottomFor('ch4', vars, ['a41', 'a42']).layers.flatMap((l) => l.relics ?? []);
     expect(relics).toContain('lost:a42_wreath');
+  });
+});
+
+// 段階244：needs の区画も返し終えるまで、棚に出さない（ペトラの頼みは 4-1 の後）
+describe('棚に出す時（段階244）', () => {
+  it('ペトラの頼みは、1-2 を返していても、4-1 を返すまで出ない', () => {
+    const ids = (returned: string[]) => shelfLost(LOST_ITEMS, returned).map((d) => d.id);
+    expect(ids(['a11', 'a12'])).not.toContain('petra_flower');
+    expect(ids(['a11', 'a12', 'a41'])).toContain('petra_flower');
   });
 });

@@ -35,6 +35,8 @@ export interface LostItemDef {
   name: string;
   /** この区画を返し終えたら棚に届く */
   area: string;
+  /** この区画も返し終えるまで、棚に出さない（段階244。ペトラの頼みを 4章の後にする） */
+  needs?: string;
   /** 届ける相手（今の持ち主） */
   owner: string;
   /** 棚に出す説明 */
@@ -66,7 +68,7 @@ export function lostStatus(vars: Record<string, string>, id: string): LostStatus
 
 /** 棚に届いている落とし物（返し終えた区画の分。書いた順） */
 export function shelfLost(defs: LostItemDef[], returned: readonly string[]): LostItemDef[] {
-  return defs.filter((d) => returned.includes(d.area));
+  return defs.filter((d) => returned.includes(d.area) && (!d.needs || returned.includes(d.needs)));
 }
 
 /** 受けていて、まだ届けていない落とし物の数 */

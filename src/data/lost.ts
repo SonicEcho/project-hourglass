@@ -122,4 +122,19 @@ export const LOST_ITEMS: LostItemDef[] = [
     reward: { fragments: ['elation', 'wonder'], bond: 'mio' },
     afterwords: [{ speaker: '早瀬', text: '……花輪の札なら、店の奥に掛けてある。見るな。仕事に戻れ' }],
   },
+  // 段階244（docs/milestones/M3_side_events.md の 9.）：レストピアの頼み。ペトラが帳簿にはさんで隠していた押し花（petra_ledger）は、
+  // 1-2 の時間を返した時に、こぼれた砂といっしょに落ちてきた花だった。4-1 を返した後、ペトラから頼まれる
+  {
+    id: 'petra_flower',
+    name: '帳簿の押し花',
+    area: 'a12',
+    needs: 'a41',
+    owner: 'ペトラ',
+    text: 'ペトラさんの頼み。帳簿にはさんだ押し花が、どの記憶から来たのか知りたいという。「業務外ですので、お手すきの時で結構です」',
+    kind: 'voices',
+    voices: ['lost_petra_voice1', 'lost_petra_voice2', 'lost_petra_voice3'],
+    deliverScene: 'lost_petra_deliver',
+    reward: { fragments: ['wonder', 'relief'], bond: 'akari' },
+    afterwords: [{ speaker: 'ペトラ', text: '押し花は、今は帳簿の表紙にはさんであります。……隠す必要が、なくなりましたので' }],
+  },
 ];
