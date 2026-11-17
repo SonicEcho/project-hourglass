@@ -91,6 +91,11 @@ export interface PortraitPart {
   faces: string[];
   /** 表情ごとに別の差分の絵を使う時（表情の id → 台帳の id）。ない表情は image */
   byFace?: Record<string, string>;
+  /**
+   * 口パクで、差分が「口を閉じた絵」の表情（段階249）。元の絵が口を開けている表情は、話していない時に閉じた口を重ね、
+   * 話す間は重ねたり外したりして開け閉めする。ここにない表情の差分は「口を開けた絵」（話す間だけ重ねる）
+   */
+  closed?: string[];
 }
 const RIKU_TALK_FACES = ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'];
 const HAYASE_BLINK_FACES = ['normal', 'thinking', 'wry', 'surprised', 'angry', 'teary'];
@@ -193,6 +198,8 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
   寿美: { blink: partsOf('sumi_blink', ['smile']), talk: partsOf('sumi_talk', ['smile']) },
   茂雄: { blink: partsOf('shigeru_blink', ['normal']), talk: partsOf('shigeru_talk', ['normal']) },
   写しの源三: { blink: partsOf('past_genzo_blink', ['normal']), talk: partsOf('past_genzo_talk', ['normal']) },
+  // さき（2026-11-17）：「微笑み」の顔に重ねる
+  さき: { blink: partsOf('saki_blink', ['gentle']), talk: partsOf('saki_talk', ['gentle']) },
   // とうや・しおり（2026-11-17。docs/ART_QUEUE.md の S）：笑顔の1枚だけ。しおりの笑顔は口が開いているので、口パクはない
   とうや: { blink: partsOf('toya_blink', ['smile']), talk: partsOf('toya_talk', ['smile']) },
   しおり: { blink: partsOf('shiori_blink', ['smile']) },
