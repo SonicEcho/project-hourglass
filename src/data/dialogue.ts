@@ -246,7 +246,7 @@ export const CAST: Record<string, CastMember> = {
   // 電器屋の主人（今45歳。段階66の 1-2 の書き直し。昭和63年の「電器屋の子ども」）。笑顔の絵だけある（2026-10-20。ほかの表情は笑顔で代わりに出す）
   茂雄: {
     portrait: 'portrait.shigeru',
-    ...young(['笑顔', '驚き', '苦笑い', '通常', 'さみしげ', '考える'], { 笑顔: 'smile' }, '笑顔'),
+    ...young(['笑顔', '驚き', '苦笑い', '通常', 'さみしげ', '考える'], { 笑顔: 'smile', 通常: 'normal', さみしげ: 'lonely', 驚き: 'surprised', 苦笑い: 'wry', 考える: 'thinking' }, '笑顔'),
     color: 0x7a8aa0,
     height: 450,
     voice: { pitch: 300, wave: 'square' },
@@ -322,7 +322,7 @@ export const CAST: Record<string, CastMember> = {
   },
   写しの勇夫: {
     portrait: 'portrait.past_isamu',
-    ...young(['真剣', '笑顔', '泣き笑い', '驚き'], { 真剣: 'serious' }, '真剣'),
+    ...young(['真剣', '笑顔', '泣き笑い', '驚き'], { 真剣: 'serious', 泣き笑い: 'teary' }, '真剣'),
     color: 0x6a7a8a,
     height: 450,
     voice: { pitch: 380, wave: 'sawtooth' },
@@ -338,7 +338,7 @@ export const CAST: Record<string, CastMember> = {
   },
   // 段階78（2-1 の書き直し。docs/script/2-1_rework.md）：源三の娘寿美（今77歳。銭湯「松の湯」の女将）と、昭和44年の写しの寿美（22歳）・先輩の職人敏夫。
   // 早瀬の立ち絵は 2026-11-04 に届いた。写しの2人はまだない（色の札）。写しはセピアをかける
-  寿美: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile', さみしげ: 'lonely', 考える: 'thinking', 驚き: 'surprised' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
+  寿美: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile', さみしげ: 'lonely', 考える: 'thinking', 驚き: 'surprised', 通常: 'normal' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
   写しの寿美: { portrait: 'portrait.past_sumi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
   写しの敏夫: { portrait: 'portrait.past_toshio', ...young(['通常'], { 通常: 'normal' }, '通常'), height: 450, color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
   // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
@@ -359,7 +359,7 @@ export const CAST: Record<string, CastMember> = {
     tint: SEPIA_TINT,
   },
   だいち: { portrait: 'portrait.daichi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x4a5a7a, voice: { pitch: 300, wave: 'sawtooth' } },
-  さき: { portrait: 'portrait.saki', ...young(['笑顔', '驚き', '苦笑い', '考える', '微笑み', 'さみしげ'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
+  さき: { portrait: 'portrait.saki', ...young(['笑顔', '驚き', '苦笑い', '考える', '微笑み', 'さみしげ'], { 笑顔: 'smile', 驚き: 'surprised', 考える: 'thinking', さみしげ: 'lonely', 苦笑い: 'wry', 微笑み: 'gentle' }, '笑顔'), height: 450, color: 0x9a6a7a, voice: { pitch: 560, wave: 'triangle' } },
   // 2-3 の人たちと、カイ・ノア（段階40）。浩二と写しの2人は絵がまだない（色の札）。カイは余裕、ノアは通常・悲しいの絵がある
   浩二: {
     portrait: 'portrait.koji',
