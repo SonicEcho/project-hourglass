@@ -8,6 +8,14 @@ import { markTipSeenNow, seenTips } from './tipPanel';
 
 import type { ScreenCoachStep } from '../data/screenCoach';
 
+/** 照らす案内を出している画面（段階236：画面全体でタップを受ける所が、案内の後ろで反応しないように） */
+const active = new WeakSet<Phaser.Scene>();
+
+/** その画面で照らす案内を出しているか */
+export function coachActive(scene: Phaser.Scene): boolean {
+  return active.has(scene);
+}
+
 /**
  * 画面の照らす案内を始める。まだ見ていない時だけ出し、出したら true。
  * rect：照らす所の名前 → 場所（見つからない時は、画面のまん中に吹き出しだけ）。手順のたびに呼ぶので、描き直した後の場所を返せばよい。
@@ -30,6 +38,7 @@ export function startScreenCoach(
     layer = null;
     const step = steps[i];
     if (!step) {
+      active.delete(scene);
       markTipSeenNow(id);
       onDone?.();
       return;
@@ -41,7 +50,9 @@ export function startScreenCoach(
     }, 900);
     onLayer?.(layer);
   };
+  active.add(scene);
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    active.delete(scene);
     layer?.destroy(true);
     layer = null;
   });

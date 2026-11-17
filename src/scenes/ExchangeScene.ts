@@ -124,14 +124,10 @@ export class ExchangeScene extends Phaser.Scene {
     this.list = new ScrollArea(this, () => !!this.overlay);
     this.render();
     this.cameras.main.fadeIn(250, 0, 0, 0);
-    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す（それまでは、刻印が初めていっぱいになるまで出さない）
-    // 段階236：照らす案内（戦闘と同じ形）。初めては時分解の案内から
-    const coach = ['exchange_shop'];
-    if (!run.vars[DECOMPOSE_VAR]) {
-      setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
-      coach.unshift('growth_decompose');
-    }
-    this.time.delayedCall(400, () => this.coachChain(coach));
+    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す。時分解の案内は、次に武器の画面を開いた時に出す（そこにボタンがあるので）。
+    // 段階236：交換所の照らす案内（戦闘と同じ形）
+    if (!run.vars[DECOMPOSE_VAR]) setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
+    this.time.delayedCall(400, () => this.coachChain(['exchange_shop']));
   }
 
   /** 照らす案内を、まだ見ていない物から順に続けて出す（段階236） */

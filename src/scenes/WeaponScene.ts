@@ -36,7 +36,7 @@ import { PART_COLOR_LABEL } from '../ui/naviText';
 import { COLORS, ELEMENT_COLOR, ELEMENT_LABEL, FONT_HEADING, RENDER_SCALE, STYLE, toCss } from '../ui/theme';
 import { describeCondition, describeDecompose, describeEvolution, describeFragment, describeGains, describeStyle, PARAM_LABEL, PARAM_SHORT, RARITY_LABEL } from '../ui/weaponText';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { startScreenCoach } from '../ui/screenCoach';
+import { coachActive, startScreenCoach } from '../ui/screenCoach';
 import { currentNaviData, currentParty, getHubReturn, hubBack, hubLineup, lineupBase, run, saveRun, setHubReturn, setStoryVars } from './run';
 import type { DialogueData } from './DialogueScene';
 import { addWindow, ensureSandTexture, enterScreen, fadeOutAndDestroy, popIn, sparkAt } from '../ui/skin';
@@ -630,7 +630,7 @@ export class WeaponScene extends Phaser.Scene {
     const bottom = () => (this.drawer ? DRAWER_TOP : TREE_BOTTOM);
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       const at = toWorld(p);
-      if (this.overlay || !this.tree || at.y < TREE_TOP || at.y > bottom()) return;
+      if (this.overlay || coachActive(this) || !this.tree || at.y < TREE_TOP || at.y > bottom()) return;
       start = { x: at.x, y: at.y, tx: this.tree.x, ty: this.tree.y, at: this.time.now };
       moved = false;
     });
