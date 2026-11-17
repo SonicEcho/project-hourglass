@@ -60,9 +60,9 @@ describe('落とし物（段階53）', () => {
     expect(getDeliverError(bring, {}, { tinSpring: 9 })).toBe('not accepted');
   });
 
-  it('データ：2章までの区画に4つ。どれも声をたどる形で、会話・相手・ご褒美・ひとことは実在する（段階220）', () => {
+  it('データ：返す区画に1つずつ（段階242：9つ。祭りの夜は終章で）。どれも声をたどる形で、会話・相手・ご褒美・ひとことは実在する（段階220）', () => {
     expect(LOST_ACTIVE_MAX).toBe(3);
-    expect(LOST_ITEMS.length).toBe(4);
+    expect(LOST_ITEMS.map((d) => d.area)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32', 'a41', 'a42']);
     const ids = LOST_ITEMS.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
     const scenes = new Set(SCENES.map((s) => s.id));
@@ -134,5 +134,18 @@ describe('声をたどる依頼（段階220）', () => {
     // 絆の点：足し1つは extra 点（なければ talk 点）
     expect(bondPoints(r.vars, 'akari', {}, {}, { event: 4, talk: 1, level: 10, extra: 3 })).toBe(3);
     expect(bondPoints(r.vars, 'akari', {}, {}, { event: 4, talk: 1, level: 10 })).toBe(1);
+  });
+});
+
+// 段階242：4章の依頼（4-1・4-2）の声のかけらは、4章の区画を全部返したら掘れる（5章を待たない）
+describe('4章の層は、4章の区画を全部返したら開く（段階242）', () => {
+  it('4-1 だけでは開かず、4-1・4-2 を返すと開いて、受けた依頼の声が埋まる', async () => {
+    const { sandBottomFor } = await import('../../src/data');
+    const groups = (returned: string[]) => [...new Set(sandBottomFor('ch4', {}, returned).layers.map((l) => l.group))];
+    expect(groups(['a41'])).not.toContain('ch4');
+    expect(groups(['a41', 'a42'])).toContain('ch4');
+    const vars = acceptLost(LOST_ITEMS, {}, 'a42_wreath', 3);
+    const relics = sandBottomFor('ch4', vars, ['a41', 'a42']).layers.flatMap((l) => l.relics ?? []);
+    expect(relics).toContain('lost:a42_wreath');
   });
 });

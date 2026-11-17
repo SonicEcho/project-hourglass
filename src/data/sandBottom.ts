@@ -284,11 +284,12 @@ function buildWorld(open: DigStratum[], sand: number, vars: Readonly<Record<stri
 
 /**
  * その章の砂の底（段階212）：終えた章の層まで開く（2章は感覚記憶の層、3章で短期記憶の層が加わる…）。
- * 1章（入口は出さない。デバッグの入口から入った時）は、感覚記憶の層だけ
+ * 1章（入口は出さない。デバッグの入口から入った時）は、感覚記憶の層だけ。
+ * 段階242：その章の区画の時間を全部返したら、次の章を待たずに、その章の層も開く（4章の依頼 4-1・4-2 の声のかけらを、5章を待たずに掘れるように）
  */
-export function sandBottomFor(chapterId: string | undefined, vars: Readonly<Record<string, string>> = {}): DigWorldDef {
+export function sandBottomFor(chapterId: string | undefined, vars: Readonly<Record<string, string>> = {}, returned: readonly string[] = []): DigWorldDef {
   const n = chapterNo(chapterId);
-  const open = STRATA.filter((_, i) => i + 1 < n);
+  const open = STRATA.filter((st, i) => i + 1 < n || (st.bands.length > 0 && st.bands.every((b) => b.areas.every((a) => returned.includes(a)))));
   const list = Object.values(SAND_BOTTOM_SAND_BY_CHAPTER);
   const sand = (chapterId && SAND_BOTTOM_SAND_BY_CHAPTER[chapterId]) || list[list.length - 1];
   return buildWorld(open.length > 0 ? open : STRATA.slice(0, 1), sand, vars);

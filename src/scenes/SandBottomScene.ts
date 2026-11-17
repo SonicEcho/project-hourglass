@@ -80,7 +80,7 @@ const DIR_STEP: Record<DigDir, [number, number]> = { up: [0, -1], down: [0, 1], 
 
 /** 今の章の砂の底（砂時計の砂が章で変わる） */
 function currentDef() {
-  return withRule(sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars), run.dig?.rule);
+  return withRule(sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars, run.returned), run.dig?.rule);
 }
 
 /** 次に潜る回の特別ルール（段階217。潜った回数とシードで決まる） */
@@ -376,7 +376,7 @@ export class SandBottomScene extends Phaser.Scene {
     const full = fullDives() + 1;
     const rule = digRuleFor(run.seed, full);
     const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
-    let def = withRule(sandBottomFor(chapter, run.vars), rule);
+    let def = withRule(sandBottomFor(chapter, run.vars, run.returned), rule);
     let r = (run.seed ^ Math.imul(full + 11, 40503)) >>> 0;
     const rand = () => {
       const [v, n] = nextRandom(r);
