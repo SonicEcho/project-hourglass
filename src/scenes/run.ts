@@ -2,6 +2,7 @@ import type { DigRuleId } from '../data';
 import type { DigState, Vitals } from '../core';
 import type { AlbumState, ArmoryState, LibraryState, BattleState, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
 import {
+  chainCardCategory,
   allBattles,
   applyGrowth,
   applyNavi,
@@ -27,7 +28,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { RETIRED_SNAPS, FRAGMENTS, AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -210,6 +211,9 @@ export function saveContext(): SaveContext {
     chainCards: CHAIN_SNAPS,
     initialChainAlbum: albumFromIds(CHAIN_START_ALBUM),
     chainAlbumRules: CHAIN_ALBUM,
+    // 段階238：埋め直す時はクライマックスの上限を超えない。外したスナップは勇気の欠片に替える
+    chainAlbumLimit: { is: (id) => !!CHAIN_SNAPS[id] && chainCardCategory(CHAIN_SNAPS[id]) === 'finish', max: CHAIN_ALBUM.climaxMax },
+    retiredSnaps: { ids: RETIRED_SNAPS, refund: FRAGMENTS.courage.id },
     library: LIBRARY_CONTEXT,
     battleIds: Object.keys(AREA_BATTLES),
   };

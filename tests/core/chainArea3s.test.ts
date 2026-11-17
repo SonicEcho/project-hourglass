@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle, runChainRound, type ChainBattleDef, type ChainEnemyDef, type ChainEvent, type ChainMove } from '../../src/core';
-import { A3K_KAI, A3S_LORD, CHAIN_BOSS_GRADE, A3S_COMBOS, A3S_ENEMY_SNAP, A3S_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_ALLY_SPECIALS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_MAIN_CARDS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, HERO, MIO, SAYOKO } from '../../src/data';
+import { A3K_KAI, A3S_LORD, CHAIN_BOSS_GRADE, A3S_COMBOS, A3S_ENEMY_SNAP, A3S_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_ALLY_SPECIALS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_MAIN_CARDS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, HERO, MIO, SAYOKO, RETIRED_SNAPS } from '../../src/data';
 
 // 段階181（段取りの段階F6a）：祭りの夜の雑魚の戦闘を新しい戦闘に
 const ids = Object.keys(AREA_BATTLES).filter((id) => id.startsWith('a3s') && !AREA_BATTLES[id].boss);
@@ -29,7 +29,13 @@ describe('祭りの夜の雑魚を新しい戦闘に（段階181）', () => {
     for (const id of ['a3s1_torii', 'a3s1_torii2', 'a3s1_stalls', 'a3s1_stalls2']) expect(AREA_BATTLES[id].enemies.every((e) => e.id === 'pinwheelNoise' || e.id === 'lanternNoise')).toBe(true);
   });
   it('敵のスナップ・宝箱の札・小夜子の専用の札とコンボ「デジャヴ」', () => {
+    // 段階238：区画に2枚へ絞った（外した札は、敵も落とさず、アルバムにも入らない）
     for (const [enemy, snap] of Object.entries(A3S_ENEMY_SNAPS)) {
+      if (RETIRED_SNAPS.has(snap)) {
+        expect(CHAIN_ENEMY_SNAPS[enemy]).toBeUndefined();
+        expect(CHAIN_SNAPS[snap]).toBeUndefined();
+        continue;
+      }
       expect(CHAIN_ENEMY_SNAPS[enemy]).toBe(snap);
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle } from '../../src/core';
-import { A32_QUIET, A32_WORD, CHAIN_BOSS_GRADE, CHAIN_MAIN_CARDS, A32_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, HERO, MIO } from '../../src/data';
+import { A32_QUIET, A32_WORD, CHAIN_BOSS_GRADE, CHAIN_MAIN_CARDS, A32_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, HERO, MIO, RETIRED_SNAPS } from '../../src/data';
 
 // 段階185（段取りの段階F8a）：3-2 の雑魚の戦闘を新しい戦闘に
 const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a32_n') || id === 'a32_runner') && !AREA_BATTLES[id].boss);
@@ -32,7 +32,13 @@ describe('3-2 の雑魚を新しい戦闘に（段階185）', () => {
     expect(n2).toEqual(expect.arrayContaining(['earphoneNoise', 'tapiocaNoise']));
   });
   it('敵のスナップ（技から）・宝箱の札', () => {
+    // 段階238：区画に2枚へ絞った（外した札は、敵も落とさず、アルバムにも入らない）
     for (const [enemy, snap] of Object.entries(A32_ENEMY_SNAPS)) {
+      if (RETIRED_SNAPS.has(snap)) {
+        expect(CHAIN_ENEMY_SNAPS[enemy]).toBeUndefined();
+        expect(CHAIN_SNAPS[snap]).toBeUndefined();
+        continue;
+      }
       expect(CHAIN_ENEMY_SNAPS[enemy]).toBe(snap);
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle } from '../../src/core';
-import { A42_BROKEN, A42_WINDUP, CHAIN_BOSS_GRADE, A42_COMBOS, A42_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_ALLY_SPECIALS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_MAIN_CARDS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, HAYASE, HERO, MIO } from '../../src/data';
+import { A42_BROKEN, A42_WINDUP, CHAIN_BOSS_GRADE, A42_COMBOS, A42_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_ALLY_SPECIALS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_MAIN_CARDS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, HAYASE, HERO, MIO, RETIRED_SNAPS } from '../../src/data';
 
 // 段階189（段取りの段階F10a）：4-2 の雑魚の戦闘を新しい戦闘に・早瀬
 const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a42_n') || id === 'a42_runner') && !AREA_BATTLES[id].boss);
@@ -29,7 +29,13 @@ describe('4-2 の雑魚を新しい戦闘に（段階189）', () => {
     expect(ids.filter((x) => x.startsWith('a42_n2_')).flatMap((id) => AREA_BATTLES[id].enemies.map((e) => e.id))).toEqual(expect.arrayContaining(['pagerNoise', 'cuckooNoise']));
   });
   it('敵のスナップ・宝箱の札・早瀬の専用の札とコンボ「時計屋の二人」', () => {
+    // 段階238：区画に2枚へ絞った（外した札は、敵も落とさず、アルバムにも入らない）
     for (const [enemy, snap] of Object.entries(A42_ENEMY_SNAPS)) {
+      if (RETIRED_SNAPS.has(snap)) {
+        expect(CHAIN_ENEMY_SNAPS[enemy]).toBeUndefined();
+        expect(CHAIN_SNAPS[snap]).toBeUndefined();
+        continue;
+      }
       expect(CHAIN_ENEMY_SNAPS[enemy]).toBe(snap);
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }

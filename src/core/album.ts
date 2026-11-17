@@ -100,7 +100,15 @@ export function albumDeck(state: AlbumState, cards: Record<string, CardDef>): Ca
  * 知らないスナップは捨て、最初の持ち物は必ず持っていることにする。アルバムは持っている枚数と上限におさめ、
  * size 枚ちょうどでなければ最初のアルバムに戻す（壊れた形で戦えなくならないように）
  */
-export function sanitizeAlbum(raw: unknown, cards: Record<string, { id: string }>, initial: AlbumState, size = ALBUM_SIZE, copyMax = ALBUM_COPY_MAX): AlbumState {
+export function sanitizeAlbum(
+  raw: unknown,
+  cards: Record<string, { id: string }>,
+  initial: AlbumState,
+  size = ALBUM_SIZE,
+  copyMax = ALBUM_COPY_MAX,
+  /** 入れられる数に上限のある札（クライマックス）。埋め直す時に超えないように */
+  limit?: { is: (id: string) => boolean; max: number },
+): AlbumState {
   const obj = isObject(raw) ? raw : {};
   const owned: SnapCounts = { ...initial.owned };
   for (const [id, n] of Object.entries(counts(obj.owned, cards))) owned[id] = Math.max(owned[id] ?? 0, n);
@@ -109,7 +117,20 @@ export function sanitizeAlbum(raw: unknown, cards: Record<string, { id: string }
     const kept = Math.min(n, owned[id] ?? 0, copyMax);
     if (kept > 0) album[id] = kept;
   }
+  if (countOf(album) > size) return { owned, album: { ...initial.album } };
+  // 段階238：札が今のデータからなくなって足りなくなった時は、最初のアルバムの札で埋める（組み直したアルバムを残す）
+  const limited = () => (limit ? Object.entries(album).filter(([id]) => limit.is(id)).reduce((a, [, n]) => a + n, 0) : 0);
+  for (const [id, n] of Object.entries(initial.album)) {
+    while (n > 0 && countOf(album) < size && (album[id] ?? 0) < Math.min(copyMax, owned[id] ?? 0) && !(limit?.is(id) && limited() >= limit.max)) album[id] = (album[id] ?? 0) + 1;
+  }
   return { owned, album: countOf(album) === size ? album : { ...initial.album } };
+}
+
+/** セーブの持っているスナップのうち、外した札（retired）の枚数（段階238。記憶の欠片に替える分） */
+export function retiredSnapCount(raw: unknown, retired: ReadonlySet<string>): number {
+  const obj = isObject(raw) ? raw : {};
+  if (!isObject(obj.owned)) return 0;
+  return Object.entries(obj.owned).reduce((a, [id, n]) => a + (retired.has(id) && typeof n === 'number' && Number.isInteger(n) && n > 0 ? n : 0), 0);
 }
 
 function counts(raw: unknown, cards: Record<string, { id: string }>): SnapCounts {

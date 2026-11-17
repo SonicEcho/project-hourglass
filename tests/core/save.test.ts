@@ -374,9 +374,9 @@ describe('セーブ：アルバム（段階163。版17 から新しい戦闘の�
 
 describe('セーブ：ライブラリの記録（段階167）', () => {
   it('保存して読む。今のデータにない物は捨てる。ない時は空の記録', () => {
-    const lib = recordLibraryBattle(recordLibraryFinds(createLibrary(), { combos: ['iceFlower', 'nothing'], snaps: ['a11_hireuchi'] }), { met: ['goldfishNoise', 'ghost'], defeated: ['goldfishNoise'], weak: { goldfishNoise: ['thunder'] } });
+    const lib = recordLibraryBattle(recordLibraryFinds(createLibrary(), { combos: ['iceFlower', 'nothing'], snaps: ['a11_amaikiri', 'a11_hireuchi'] }), { met: ['goldfishNoise', 'ghost'], defeated: ['goldfishNoise'], weak: { goldfishNoise: ['thunder'] } });
     const res = parseSave(serializeSave({ ...playedRun(), library: lib }, AT), ctx);
-    expect(res.ok && res.save.run.library).toEqual({ met: { goldfishNoise: 1 }, defeated: { goldfishNoise: 1 }, weak: { goldfishNoise: ['thunder'] }, snaps: ['a11_hireuchi'], combos: ['iceFlower'], items: [] });
+    expect(res.ok && res.save.run.library).toEqual({ met: { goldfishNoise: 1 }, defeated: { goldfishNoise: 1 }, weak: { goldfishNoise: ['thunder'] }, snaps: ['a11_amaikiri'], combos: ['iceFlower'], items: [] });
     const none = parseEdited((raw) => delete raw.run.library);
     expect(none.ok && none.save.run.library).toEqual(createLibrary());
   });
@@ -393,5 +393,48 @@ describe('セーブ：2本目の武器（段階223）', () => {
     expect(res.ok && res.save.run.armory.spare?.hero.copy).toBeUndefined();
     const old = parseEdited((raw) => delete raw.run.armory.spare);
     expect(old.ok && old.save.run.armory.spare).toBeUndefined();
+  });
+});
+
+// 段階238：敵のスナップを区画に2枚へ絞った。外した札を持っていたセーブ
+describe('セーブ：外したスナップ（段階238）', () => {
+  const retiredCtx: SaveContext = { ...ctx, retiredSnaps: { ids: new Set(['a11_hireuchi', 'a11_mizushibuki']), refund: 'courage' } };
+  const withRetired = () => {
+    const raw = JSON.parse(serializeSave(playedRun(), AT));
+    const album = raw.run.chainAlbum;
+    // アルバムの2枚を外した札に入れ替え、持っている物にも足す
+    const [first] = Object.keys(album.album);
+    album.album[first] -= 2;
+    if (album.album[first] === 0) delete album.album[first];
+    album.album.a11_hireuchi = 2;
+    album.owned.a11_hireuchi = 3;
+    album.owned.a11_mizushibuki = 1;
+    return raw;
+  };
+
+  it('持っていた枚数だけ、記憶の欠片（refund の種類）に替える', () => {
+    const raw = withRetired();
+    const before = raw.run.armory.fragments.courage ?? 0;
+    const res = parseSave(JSON.stringify(raw), retiredCtx);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.save.run.armory.fragments.courage).toBe(before + 4);
+    expect(res.save.run.chainAlbum.owned.a11_hireuchi).toBeUndefined();
+    // 読み直しても、もう替えない（持っていないので）
+    const again = parseSave(serializeSave(res.save.run, AT), retiredCtx);
+    expect(again.ok && again.save.run.armory.fragments.courage).toBe(before + 4);
+  });
+
+  it('アルバムが足りなくなった分は、最初のアルバムの札で埋める（組み直したアルバムは残す）', () => {
+    const raw = withRetired();
+    const kept = { ...raw.run.chainAlbum.album };
+    delete kept.a11_hireuchi;
+    const res = parseSave(JSON.stringify(raw), retiredCtx);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    const album = res.save.run.chainAlbum.album;
+    expect(Object.values(album).reduce((a, n) => a + n, 0)).toBe(CHAIN_ALBUM.size);
+    for (const [id, n] of Object.entries(kept)) expect(album[id] ?? 0, id).toBeGreaterThanOrEqual(n as number);
+    expect(album.a11_hireuchi).toBeUndefined();
   });
 });
