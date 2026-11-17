@@ -214,7 +214,7 @@ export class SandBottomScene extends Phaser.Scene {
     const last = run.vars[SAND_BOTTOM_DIGGER_VAR];
     const chosen = last && list.includes(last) ? last : list[0];
     o.add(addText(this, GAME_WIDTH / 2, 64, '誰が掘る？', { size: 24, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
-    o.add(addText(this, GAME_WIDTH / 2, 94, '掘る人で、得意なことと技が変わります（戦闘はいつもの並び）', { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 94, '掘る人で、得意なことと技が変わります（戦闘はいつもの編成）', { size: 11, color: COLORS.subText }).setOrigin(0.5));
     // 段階217：今回の地層の特別ルール（潜るたびに変わる）
     const rule = DIG_RULES[nextRule()];
     // 段階230（見た目の決まり）：今回の地層は、黒い帯に白い枠・左に紅の帯

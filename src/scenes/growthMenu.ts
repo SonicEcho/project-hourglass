@@ -26,7 +26,7 @@ export function growthTiles(open: (key: string) => void): GalleryTile[] {
   // 段階163：新しい戦闘の区画にいる時は、新しい戦闘のアルバム
   if (hasSpare(run.chainAlbum)) tiles.push({ id: 'album', label: 'アルバム', onTap: () => open('Album') });
   // 戦闘の並び（段階91a）：仲間が戦闘に出られる人数より多い時だけ
-  if (canChooseParty()) tiles.push({ id: 'party', label: '並び', onTap: () => open('Party') });
+  if (canChooseParty()) tiles.push({ id: 'party', label: '編成', onTap: () => open('Party') });
   // ライブラリ（段階167）：見つけたスナップ・コンボ・会った敵・素材の記録
   tiles.push({ id: 'library', label: 'ライブラリ', sub: libraryProgressText(), onTap: () => open('Library') });
   return tiles;

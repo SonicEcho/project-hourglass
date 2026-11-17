@@ -61,7 +61,7 @@ export class PartyScene extends Phaser.Scene {
     const cx = GAME_WIDTH / 2;
     this.root.add(frameBg(this, DESK.top, DESK.bottom));
     // 見出し（段階141：共通の枠）。右上に、選んだ人数
-    frameHeader(this, this.root, 'album', '並び', { label: '出る', value: `${this.picked.length}/${size}` });
+    frameHeader(this, this.root, 'album', '編成', { label: '出る', value: `${this.picked.length}/${size}` });
     this.root.add(addText(this, cx, 72, `戦闘に出る${size}人を選ぶ（選んだ順に左から並ぶ）`, { size: 12, color: COLORS.subText }).setOrigin(0.5));
     this.drawAlbum();
     const members = currentParty(lineup);
@@ -77,7 +77,7 @@ export class PartyScene extends Phaser.Scene {
       FRAME.backY,
       GAME_WIDTH - SIDE_PADDING * 2 - 8,
       FRAME.backH,
-      ready ? `この並びで決める（${back?.label ?? '星図へ戻る'}）` : `あと${size - this.picked.length}人選ぶ`,
+      ready ? `この編成で決める（${back?.label ?? '星図へ戻る'}）` : `あと${size - this.picked.length}人選ぶ`,
       {
         onTap: () => {
           setParty(this.picked);
