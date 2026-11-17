@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
 import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { ALLY_FACE, BACKDROPS, BGM, FACE_CROPS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SIDE_EVENTS, SLICE_FLOW, TOWN } from '../data';
+import { ALLY_FACE, SCREEN_COACH, BACKDROPS, BGM, FACE_CROPS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SIDE_EVENTS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE, toCss, STYLE } from '../ui/theme';
 import { addButton, addSlant, addText, makePressable } from '../ui/widgets';
 import { addWindow } from '../ui/skin';
 import { backButton } from '../ui/frame';
+import { startScreenCoach } from '../ui/screenCoach';
 import { faceImage } from '../ui/portrait';
 import { hasImage } from '../assets/loader';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
@@ -68,6 +69,8 @@ function build(data: DailyHub): DailyHub {
 export class DailyScene extends Phaser.Scene {
   private hub!: DailyHub;
   private eventId = '';
+  /** 説明の窓の場所（初めての案内で照らす。段階247） */
+  private legendRect = { x: 0, y: LEGEND_TOP, w: GAME_WIDTH, h: 100 };
 
   constructor() {
     super('Daily');
@@ -151,7 +154,8 @@ export class DailyScene extends Phaser.Scene {
     const left = picksLeft(this.hub, run.vars);
     if (Number.isFinite(left)) {
       const rx = GAME_WIDTH - 14;
-      root.add(addText(this, rx, 10, '昼に選べる', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
+      // 段階247：何を選べる数かを言葉で（開発者の声：表示の文が分かりづらい）
+      root.add(addText(this, rx, 10, '絆・小話を見られる', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
       const v = addText(this, rx, 22, `あと ${left}`, { size: 24, bold: true, color: STYLE.yellowText }).setOrigin(1, 0);
       v.setFontStyle('bold italic');
       root.add(v);
@@ -210,7 +214,27 @@ export class DailyScene extends Phaser.Scene {
     }
     this.header(root, 'どこへ行く？');
     this.drawLegend(root);
-    this.drawBonds(root, 800);
+    this.drawBonds(root, 808);
+    // 段階247：初めて地図を開いた時の案内（町の昼だけ。屋台めぐりは地図を出さない）
+    if (this.hub.day !== undefined) startScreenCoach(this, 'daily_map', SCREEN_COACH.daily_map, (target) => this.coachRect(target));
+  }
+
+  /** 初めての案内で照らす所（段階247） */
+  private coachRect(target: string): { x: number; y: number; w: number; h: number } | null {
+    if (target === 'map') return { x: 0, y: MAP_TOP, w: GAME_WIDTH, h: MAP_H };
+    if (target === 'place') {
+      // 印のある場所のうち、いちばん上の場所（なければ地図ぜんたい）
+      const lit = this.hub.places.filter((p) => p.spots.some((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends)).sort((a, b) => a.mapY - b.mapY)[0];
+      return lit ? { x: Math.max(0, lit.mapX - 56), y: lit.mapY - 36, w: 112, h: 72 } : { x: 0, y: MAP_TOP, w: GAME_WIDTH, h: MAP_H };
+    }
+    if (target === 'picks') return { x: GAME_WIDTH - 128, y: 2, w: 124, h: 60 };
+    if (target === 'legend') return this.legendRect;
+    if (target === 'bonds') return (this.hub.partners ?? []).length > 0 ? { x: 4, y: 788, w: GAME_WIDTH - 8, h: 40 } : null;
+    if (target === 'clock') {
+      const c = this.hub.places.find((p) => p.spots.some((s) => s.ends)) ?? this.hub.places.find((p) => p.id === 'clockshop');
+      return c ? { x: Math.max(0, c.mapX - 56), y: c.mapY - 36, w: 112, h: 72 } : null;
+    }
+    return null;
   }
 
   /**
@@ -219,23 +243,26 @@ export class DailyScene extends Phaser.Scene {
   private drawLegend(root: Phaser.GameObjects.Container): void {
     const spots = allSpots(this.hub);
     const marks = (['main', 'bond', 'talk', 'side', 'hub'] as SpotMark[]).filter((m) => spots.some((s) => s.mark === m));
+    // 段階247（開発者の声：表示の文が分かりづらい）：記号でなく、印の名前の言葉で書く。1文に1つの決まり
     const left = requiredLeft(this.hub, run.vars);
     const lines: string[] = [];
-    if (left.length > 0) lines.push(`！必ず見る：${left.map((s) => s.label).join('、')}`);
-    else lines.push('印のある場所で、出来事を見られます。時計屋へ行くと、夕暮れになります。');
+    if (left.length > 0) lines.push(`今日の「必ず見る」：${left.map((s) => s.label).join('、')}`);
+    else if (spots.some((s) => s.ends)) lines.push('時計屋の「→」へ進むと、夕方になります。');
+    else lines.push('印のある場所で、出来事を見られます。');
     if (this.hub.picks !== undefined) {
-      lines.push(`♥絆・…小話は、昼に${this.hub.picks}つまで選べます。`);
-      // 段階125（レビューの項目48）・段階239：必ず見る・寄り道・拠点の扉は、選べる数に入らない
-      const free = ['！', ...(marks.includes('side') ? ['？'] : []), ...(marks.includes('hub') ? ['扉'] : [])];
-      lines.push(`${free.join('・')}は、選べる数に入りません。`);
+      lines.push(`「絆」と「小話」は、1日に${this.hub.picks}つまで見られます。`);
+      // 段階125（レビューの項目48）・段階239：必ず見る・寄り道・拠点の扉は、この数に入らない
+      const free = ['「必ず見る」', ...(marks.includes('side') ? ['「寄り道」'] : []), ...(marks.includes('hub') ? ['「レストピア」'] : [])];
+      lines.push(`${free.join('')}は、この数に入りません。`);
       // 段階83・段階125（レビューの項目49）：相手のいる小話は、その日に見た時だけ絆の帯が進む
-      if (spots.some((s) => s.with)) lines.push('…小話をその日に見ると、絆の帯が少し進みます。');
+      if (spots.some((s) => s.with)) lines.push('「小話」は、今日見ると、その仲間との絆が少し深まります。');
     }
     const body = addText(this, 26, 0, lines.join('\n'), { size: 11, color: COLORS.text, wrap: GAME_WIDTH - 60, ja: true });
     body.setLineSpacing(3);
     const chipsH = marks.length > 0 ? 24 : 0;
     const h = 14 + chipsH + body.height + 12;
     root.add(addWindow(this, 10, LEGEND_TOP, GAME_WIDTH - 20, h));
+    this.legendRect = { x: 4, y: LEGEND_TOP - 4, w: GAME_WIDTH - 8, h: h + 10 };
     let cx = 26;
     for (const m of marks) {
       const st = MARK_STYLE[m];

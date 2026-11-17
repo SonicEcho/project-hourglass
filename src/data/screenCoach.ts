@@ -19,6 +19,15 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
     { target: 'tiles', text: 'ここから、育成やお店の画面を開きます。\n「進化できる」などの札が付いている時は、やることがあります。' },
     { target: 'back', text: '用が済んだら、ここから時計屋へ戻ります。\nレストピアでは、時間は進みません。' },
   ],
+  // 昼の町の地図（段階247。開発者の声：このマップも最初に見た時にチュートリアルを）
+  daily_map: [
+    { target: 'intro', text: 'ここは昼の町の地図です！\n放課後は、町を歩いて仲間や町の人に会いに行きます。' },
+    { target: 'place', text: '光っている場所で、出来事を見られます。\n場所をタップすると、その場所へ行きます。\n顔の丸は、そこで会える仲間です。' },
+    { target: 'picks', text: '「絆」と「小話」は、1日に2つまで見られます。\nここに、あといくつ見られるかが出ます。' },
+    { target: 'legend', text: 'ここに、印の意味と今日の決まりが出ます。\n「必ず見る」の出来事は、夕方の前に必ず見ます。\n「寄り道」と「レストピア」は、いつでも見られます。' },
+    { target: 'bonds', text: 'ここに、仲間との絆の深さが出ます。\n「絆」の出来事を見ると、Lv が上がります。' },
+    { target: 'clock', text: '時計屋へ行くと、夕方になって1日が進みます。\n見たい場所を回ってから行きましょう。' },
+  ],
   // 休憩所（探索のチェックポイント）
   camp_intro: [
     { target: 'intro', text: 'ここは休憩所です！\nチェックポイントで休憩すると、探索の途中でも育成の画面に入れます。' },
@@ -120,6 +129,7 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
 export const SCREEN_COACH_TITLES: Record<string, { title: string; group: 'explore' | 'growth' }> = {
   hub_intro: { title: 'レストピア', group: 'growth' },
   camp_intro: { title: '休憩所', group: 'explore' },
+  daily_map: { title: '昼の町の地図', group: 'explore' },
   dig_pick: { title: '砂の底（潜る前）', group: 'explore' },
   dig_play: { title: '砂の底（掘る）', group: 'explore' },
   lost_shelf: { title: '落とし物の棚', group: 'growth' },
