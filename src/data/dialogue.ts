@@ -165,12 +165,23 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
   // 基本の1枚（ChatGPT）しか絵のない人は、基本の1枚の大きさの差分だけ
   写しのひなの: { blink: partsOf('past_hinano_blink_l', ['smile']) },
   けんた: { blink: partsOf('kenta_blink_l', ['smile']), talk: partsOf('kenta_talk_l', ['smile']) },
-  カイ: { blink: partsOf('kai_blink_l', ['smug']) },
+  カイ: { blink: partsOf('kai_blink_l', ['smug']), talk: partsOf('kai_talk', ['smug']) },
   // 早瀬（2026-11-17。docs/ART_QUEUE.md の AA）：表情ごとの目を閉じた絵から作ったまばたき。口パクは口を閉じている通常・考える・苦笑い
   早瀬: {
     blink: { image: 'portrait.part.hayase_blink_normal', faces: HAYASE_BLINK_FACES, byFace: Object.fromEntries(HAYASE_BLINK_FACES.map((f) => [f, `portrait.part.hayase_blink_${f}`])) },
     talk: { image: 'portrait.part.hayase_talk', faces: ['normal', 'thinking', 'wry'], byFace: { thinking: 'portrait.part.hayase_talk_thinking', wry: 'portrait.part.hayase_talk_wry' } },
   },
+  // 脇役（2026-11-17。docs/ART_QUEUE.md の AC）：基本の1枚から目だけ閉じた絵・口だけ開けた絵。写しの千代・写しのしおりは「通常」に重ねる
+  勇夫: { blink: partsOf('isamu_blink', ['normal']), talk: partsOf('isamu_talk', ['normal']) },
+  ペトラ: { blink: partsOf('petra_blink', ['normal']), talk: partsOf('petra_talk', ['normal']) },
+  浩二: { blink: partsOf('koji_blink', ['smile']), talk: partsOf('koji_talk', ['smile']) },
+  千代: { blink: partsOf('chiyo_blink', ['smile']), talk: partsOf('chiyo_talk', ['smile']) },
+  たいち: { blink: partsOf('taichi_blink', ['normal']), talk: partsOf('taichi_talk', ['normal']) },
+  写しのとうや: { blink: partsOf('past_toya_blink', ['smile']), talk: partsOf('past_toya_talk', ['smile']) },
+  写しの千代: { blink: partsOf('past_chiyo_blink', ['normal']), talk: partsOf('past_chiyo_talk', ['normal']) },
+  写しの菊: { blink: partsOf('past_kiku_blink', ['normal']), talk: partsOf('past_kiku_talk', ['normal']) },
+  写しのしおり: { blink: partsOf('past_shiori_blink', ['normal']) },
+  写しのけんた: { blink: partsOf('past_kenta_blink', ['smile']) },
   // とうや・しおり（2026-11-17。docs/ART_QUEUE.md の S）：笑顔の1枚だけ。しおりの笑顔は口が開いているので、口パクはない
   とうや: { blink: partsOf('toya_blink', ['smile']), talk: partsOf('toya_talk', ['smile']) },
   しおり: { blink: partsOf('shiori_blink', ['smile']) },
