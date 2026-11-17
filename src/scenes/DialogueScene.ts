@@ -6,7 +6,7 @@ import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playT
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { castEntry, chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog, topBondPartner } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } from '../data';
-import { BACKDROPS, SCREEN_COACH, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, SCREEN_COACH, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PART_BOXES, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, FONT, RENDER_SCALE, STYLE } from '../ui/theme';
@@ -877,9 +877,21 @@ export class DialogueScene extends Phaser.Scene {
       const eyes = overlay(parts?.blink);
       const mouth = overlay(parts?.talk);
       for (const o of [eyes, mouth]) if (o) breath.add(o);
+      // 段階252：差分は目・口のまわりだけに切り詰めてあるので、立ち絵の中の位置に置く（位置の表がない差分は、立ち絵と同じ大きさ）
+      const place = (o?: Phaser.GameObjects.Image) => {
+        if (!o) return;
+        const b = PORTRAIT_PART_BOXES[o.texture.key.replace(/^portrait\.part\./, '')];
+        if (!b) {
+          o.setOrigin(0.5, 1).setPosition(0, 0).setScale(img.scaleX);
+          return;
+        }
+        const s = img.displayHeight / b[5];
+        o.setOrigin(0, 0).setScale(s).setPosition((b[0] - b[4] / 2) * s, (b[1] - b[5]) * s);
+      };
       const fitAll = () => {
         fit();
-        for (const o of [eyes, mouth]) o?.setScale(img.scaleX);
+        place(eyes);
+        place(mouth);
       };
       fitAll();
       // 今の表情の絵に、その差分を重ねてよいか（目を閉じた表情・口を開けた表情には重ねない）
@@ -895,7 +907,7 @@ export class DialogueScene extends Phaser.Scene {
         // 段階249：口を閉じた絵の表情は、口が閉じている間（話していない時も）だけ重ねる
         const closed = (parts.talk.closed ?? []).some((f) => img.texture.key.endsWith(`.${f}`));
         const show = fits(parts.talk) && (closed ? !mouthOpen : mouthOpen);
-        if (show && mouth.texture.key !== partFor(parts.talk)) mouth.setTexture(partFor(parts.talk));
+        if (show && mouth.texture.key !== partFor(parts.talk)) place(mouth.setTexture(partFor(parts.talk)));
         mouth.setVisible(show);
       };
       showMouth();
@@ -904,7 +916,7 @@ export class DialogueScene extends Phaser.Scene {
           if (!obj.active) return;
           if (this.skip || !parts?.blink || !fits(parts.blink)) return then();
           // 表情ごとに別の差分の絵がある時は、今の表情の絵に替える（基本の1枚と表情違いで絵の大きさが違う人。2026-10-19）
-          if (eyes.texture.key !== partFor(parts.blink)) eyes.setTexture(partFor(parts.blink));
+          if (eyes.texture.key !== partFor(parts.blink)) place(eyes.setTexture(partFor(parts.blink)));
           eyes.setVisible(true);
           this.time.delayedCall(BLINK.closedMs, () => {
             if (!obj.active) return;

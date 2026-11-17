@@ -14,7 +14,12 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "public/assets/portraits"
+# 段階251：公開する立ち絵は縦1100 に縮めた。差分は元の大きさの絵（art/portraits_full）から切り抜く（楕円の位置は元の大きさで書いてある）
+FULL = ROOT / "art/portraits_full"
 OUT = SRC / "parts"
+# 段階252：差分は、立ち絵と同じ縦 HEIGHT に縮めてから、透明でない所だけに切り詰める。切り詰めた位置は BOXES に書き出す
+HEIGHT = 1100
+BOXES = ROOT / "src/data/portraitPartBoxes.ts"
 
 # りくの口のまわり：鼻の下にかからない高さから、あごの上まで
 RIKU_MOUTH = [(352, 364, 520, 436)]
@@ -156,7 +161,8 @@ LARGE_ONLY = {"past_hinano_blink", "kenta_blink", "kenta_talk", "kai_blink"}
 def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, int, int, int]], feather: int, squash: float) -> None:
     boxes = box if isinstance(box, list) else [box]
     box = boxes[0]
-    im = Image.open(SRC / f"{src}.webp").convert("RGBA")
+    full = FULL / f"{src}.webp"
+    im = Image.open(full if full.exists() else SRC / f"{src}.webp").convert("RGBA")
     if squash != 1.0:
         # 楕円の中ほどを中心に、縦だけ縮める（周りの肌ごと縮めるので、ふちのぼかしでなじむ）
         cy = (box[1] + box[3]) / 2
@@ -174,13 +180,50 @@ def make(name: str, src: str, box: tuple[int, int, int, int] | list[tuple[int, i
     out.putalpha(ImageChops.multiply(im.getchannel("A"), mask))
     OUT.mkdir(exist_ok=True)
     if name not in LARGE_ONLY:
-        out.save(OUT / f"{name}.webp", quality=88, method=6)
+        save_part(out, name)
         print(f"{name}.webp ← {src}")
     if name in LARGE:
-        out.resize(LARGE_SIZE, Image.LANCZOS).save(OUT / f"{name}_l.webp", quality=88, method=6)
+        save_part(out.resize(LARGE_SIZE, Image.LANCZOS), f"{name}_l")
         print(f"{name}_l.webp ← {src}（{LARGE_SIZE[0]}×{LARGE_SIZE[1]} に広げた）")
 
 
+BOX_DATA: dict[str, tuple[int, int, int, int, int, int]] = {}
+
+
+def save_part(out: Image.Image, name: str) -> None:
+    """立ち絵と同じ縦 HEIGHT に縮め、透明でない所だけに切り詰めて保存し、位置を覚える（段階252）"""
+    w = round(out.width * HEIGHT / out.height)
+    small = out.resize((w, HEIGHT), Image.LANCZOS)
+    box = small.getchannel("A").point(lambda a: 255 if a > 4 else 0).getbbox() or (0, 0, 1, 1)
+    small.crop(box).save(OUT / f"{name}.webp", quality=88, method=6)
+    BOX_DATA[name] = (box[0], box[1], box[2] - box[0], box[3] - box[1], w, HEIGHT)
+
+
+def write_boxes() -> None:
+    """切り詰めた差分の位置を、ゲームが読む表に書き出す（今ある表に足して上書き）"""
+    import re
+
+    old = {}
+    if BOXES.exists():
+        for m in re.finditer(r"'([\w]+)': \[(\d+), (\d+), (\d+), (\d+), (\d+), (\d+)\]", BOXES.read_text()):
+            old[m.group(1)] = tuple(int(x) for x in m.groups()[1:])
+    old.update(BOX_DATA)
+    lines = [
+        "// まばたき・口パクの差分を切り詰めた位置（段階252。scripts/portrait_parts.py が書き出す。手で直さない）。",
+        "// 差分のファイル名 → [左, 上, 幅, 高さ, 立ち絵の幅, 立ち絵の高さ]（立ち絵を縦1100 に縮めた時の座標）",
+        "export const PORTRAIT_PART_BOXES: Record<string, [number, number, number, number, number, number]> = {",
+        *[f"  '{k}': [{', '.join(str(x) for x in v)}]," for k, v in sorted(old.items())],
+        "};",
+        "",
+    ]
+    BOXES.write_text("\n".join(lines))
+
+
 if __name__ == "__main__":
+    import sys
+
+    only = set(sys.argv[1:])
     for name, (src, box, feather, squash) in PARTS.items():
-        make(name, src, box, feather, squash)
+        if not only or name in only:
+            make(name, src, box, feather, squash)
+    write_boxes()

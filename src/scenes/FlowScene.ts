@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { startWithImages } from '../ui/waitImages';
+import { loadSection, startWithImages } from '../ui/waitImages';
 import { battleSceneFor } from './chainEncounter';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { FlowEvent } from '../core';
@@ -48,6 +48,12 @@ export class FlowScene extends Phaser.Scene {
     // 遊んだ記録（段階32b）：ここから物語の時間を数える。進めた時は advanceEvent が覚える
     setPlayTracking(true);
     if (!data?.done) notePlayEvent(event.id);
+    // 段階250：章の始めと区画を返した後に、次のまとまりで使う絵を読み込み画面でまとめて読む（遊んでいる間に読んでカクつかないように）
+    loadSection(this, event.id, () => this.begin(event, data));
+  }
+
+  /** 出来事を始める */
+  private begin(event: FlowEvent, data: FlowData): void {
     if (isPlaceholder(event)) {
       this.showPlaceholder(event);
       return;

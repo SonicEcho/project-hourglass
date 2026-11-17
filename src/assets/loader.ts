@@ -77,8 +77,6 @@ export function addImageOr<T extends Phaser.GameObjects.GameObject>(
 
 // ---- 裏での読み込み（段階69） ----
 
-/** 裏で読む素材の進み具合（PreloadScene が書く。まだ始まっていなければ total 0） */
-export const background = { loaded: 0, total: 0, done: false };
 
 /**
  * 裏で読む素材の順番（段階148）。先に要る絵の id を渡すと、まだ読んでいない物を列の先頭へ回す（PreloadScene が受け持つ）。
@@ -96,6 +94,20 @@ export const preloadQueue: {
 /** その絵を読み終えたか（読めなかった物も、読み終えたとみなす。画面は図形で代わりに描く） */
 export function isSettled(scene: Phaser.Scene, id: string): boolean {
   return failed.has(id) || scene.textures.exists(id);
+}
+
+/**
+ * 章で使わない絵を捨てる（段階250）。keep にない台帳の絵のうち、展開してある物をメモリから外す。
+ * 画面に何も出していない時（章の読み込み画面）に呼ぶ。また要る時は、その画面の前に読み直す
+ */
+export function unloadExcept(scene: Phaser.Scene, keep: Set<string>): number {
+  let n = 0;
+  for (const a of ASSETS) {
+    if (a.kind !== 'image' || keep.has(a.id) || !scene.textures.exists(a.id)) continue;
+    scene.textures.remove(a.id);
+    n += 1;
+  }
+  return n;
 }
 
 /** 台帳にあって画面で読み込む絵のうち、まだ読み終えていない id */
