@@ -216,7 +216,18 @@ export class DailyScene extends Phaser.Scene {
     this.drawLegend(root);
     this.drawBonds(root, 808);
     // 段階247：初めて地図を開いた時の案内（町の昼だけ。屋台めぐりは地図を出さない）
-    if (this.hub.day !== undefined) startScreenCoach(this, 'daily_map', SCREEN_COACH.daily_map, (target) => this.coachRect(target));
+    if (this.hub.day !== undefined) {
+      const marks = new Set(allSpots(this.hub).map((s) => s.mark));
+      this.coachChain(['daily_map', ...(['main', 'side', 'hub'] as const).filter((m) => marks.has(m)).map((m) => `daily_${m}`)]);
+    }
+  }
+
+  /** 照らす案内を、まだ見ていない物から順に続けて出す（段階247。新しい印は、初めて出た日に1つずつ） */
+  private coachChain(ids: string[]): void {
+    const [id, ...rest] = ids;
+    if (!id) return;
+    const shown = startScreenCoach(this, id, SCREEN_COACH[id] ?? [], (target) => this.coachRect(target), () => this.coachChain(rest));
+    if (!shown) this.coachChain(rest);
   }
 
   /** 初めての案内で照らす所（段階247） */
@@ -230,6 +241,11 @@ export class DailyScene extends Phaser.Scene {
     if (target === 'picks') return { x: GAME_WIDTH - 128, y: 2, w: 124, h: 60 };
     if (target === 'legend') return this.legendRect;
     if (target === 'bonds') return (this.hub.partners ?? []).length > 0 ? { x: 4, y: 788, w: GAME_WIDTH - 8, h: 40 } : null;
+    if (target.startsWith('mark:')) {
+      const mark = target.slice(5);
+      const p = this.hub.places.find((pl) => pl.spots.some((s) => s.mark === mark));
+      return p ? { x: Math.max(0, p.mapX - 56), y: p.mapY - 36, w: 112, h: 72 } : null;
+    }
     if (target === 'clock') {
       const c = this.hub.places.find((p) => p.spots.some((s) => s.ends)) ?? this.hub.places.find((p) => p.id === 'clockshop');
       return c ? { x: Math.max(0, c.mapX - 56), y: c.mapY - 36, w: 112, h: 72 } : null;

@@ -22,11 +22,21 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
   // 昼の町の地図（段階247。開発者の声：このマップも最初に見た時にチュートリアルを）
   daily_map: [
     { target: 'intro', text: 'ここは昼の町の地図です！\n放課後は、町を歩いて仲間や町の人に会いに行きます。' },
-    { target: 'place', text: '光っている場所で、出来事を見られます。\n場所をタップすると、その場所へ行きます。\n顔の丸は、そこで会える仲間です。' },
+    { target: 'place', text: '光っている場所で、出来事を見られます。\n場所をタップすると、その場所へ行きます。\n顔の丸が付いた場所では、その仲間に会えます。' },
     { target: 'picks', text: '「絆」と「小話」は、1日に2つまで見られます。\nここに、あといくつ見られるかが出ます。' },
-    { target: 'legend', text: 'ここに、印の意味と今日の決まりが出ます。\n「必ず見る」の出来事は、夕方の前に必ず見ます。\n「寄り道」と「レストピア」は、いつでも見られます。' },
+    { target: 'legend', text: 'ここに、印の意味と今日の決まりが出ます。\n印の種類は、日が進むと増えていきます。' },
     { target: 'bonds', text: 'ここに、仲間との絆の深さが出ます。\n「絆」の出来事を見ると、Lv が上がります。' },
     { target: 'clock', text: '時計屋へ行くと、夕方になって1日が進みます。\n見たい場所を回ってから行きましょう。' },
+  ],
+  // 段階247：新しい印が初めて地図に出た日に、その印だけを説明する（最初の日には、まだない印があるため）
+  daily_main: [
+    { target: 'mark:main', text: '「必ず見る」の印が出ました！\nこの出来事は、夕方の前に必ず見ます。\n「絆」「小話」の数には入りません。' },
+  ],
+  daily_side: [
+    { target: 'mark:side', text: '「寄り道」の印が出ました！\n町の人の、短いお話です。\n「絆」「小話」の数には入らないので、いつでも見られます。' },
+  ],
+  daily_hub: [
+    { target: 'mark:hub', text: '時計屋に「レストピア」の扉が出ました！\n扉から、レストピアへ行けます。\n「絆」「小話」の数には入らず、時間も進みません。' },
   ],
   // 休憩所（探索のチェックポイント）
   camp_intro: [
@@ -130,6 +140,9 @@ export const SCREEN_COACH_TITLES: Record<string, { title: string; group: 'explor
   hub_intro: { title: 'レストピア', group: 'growth' },
   camp_intro: { title: '休憩所', group: 'explore' },
   daily_map: { title: '昼の町の地図', group: 'explore' },
+  daily_main: { title: '昼の「必ず見る」', group: 'explore' },
+  daily_side: { title: '昼の「寄り道」', group: 'explore' },
+  daily_hub: { title: '昼の「レストピア」の扉', group: 'explore' },
   dig_pick: { title: '砂の底（潜る前）', group: 'explore' },
   dig_play: { title: '砂の底（掘る）', group: 'explore' },
   lost_shelf: { title: '落とし物の棚', group: 'growth' },
