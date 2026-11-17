@@ -93,6 +93,7 @@ export interface PortraitPart {
   byFace?: Record<string, string>;
 }
 const RIKU_TALK_FACES = ['normal', 'proud', 'serious', 'sad', 'smirk', 'flustered'];
+const HAYASE_BLINK_FACES = ['normal', 'thinking', 'wry', 'surprised', 'angry', 'teary'];
 const MIO_BLINK_FACES = ['smile', 'serious', 'surprised', 'thinking', 'worried', 'pout', 'frustrated', 'wry', 'shy', 'teary'];
 export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: PortraitPart }> = {
   // みお（2026-10-31）：表情ごとの「目だけ閉じた絵」から作ったまばたき（別の表情の閉じた目を重ねると顔がゆがんだため）と、「驚き」の開いた口
@@ -165,6 +166,11 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
   写しのひなの: { blink: partsOf('past_hinano_blink_l', ['smile']) },
   けんた: { blink: partsOf('kenta_blink_l', ['smile']), talk: partsOf('kenta_talk_l', ['smile']) },
   カイ: { blink: partsOf('kai_blink_l', ['smug']) },
+  // 早瀬（2026-11-17。docs/ART_QUEUE.md の AA）：表情ごとの目を閉じた絵から作ったまばたき。口パクは「通常」だけ
+  早瀬: {
+    blink: { image: 'portrait.part.hayase_blink_normal', faces: HAYASE_BLINK_FACES, byFace: Object.fromEntries(HAYASE_BLINK_FACES.map((f) => [f, `portrait.part.hayase_blink_${f}`])) },
+    talk: { image: 'portrait.part.hayase_talk', faces: ['normal'] },
+  },
   // とうや・しおり（2026-11-17。docs/ART_QUEUE.md の S）：笑顔の1枚だけ。しおりの笑顔は口が開いているので、口パクはない
   とうや: { blink: partsOf('toya_blink', ['smile']), talk: partsOf('toya_talk', ['smile']) },
   しおり: { blink: partsOf('shiori_blink', ['smile']) },
@@ -179,8 +185,6 @@ function partsOf(file: string, faces: string[]): PortraitPart {
 export const BLINK = { minMs: 2200, maxMs: 5400, closedMs: 110, doubleRate: 0.25 };
 export const MOUTH_FLAP_MS = 110;
 
-/** 絵のない人の表情（名前だけ。絵ができたら台帳の id に替える） */
-const names = (...faces: string[]) => Object.fromEntries(faces.map((f) => [f, f]));
 
 /** 子どものころの3人の立ち絵の高さ。高校生（450）より小さく出して、背の低さを表す（docs/ART.md の 5-2 の 6） */
 const YOUNG_HEIGHT = 360;
@@ -336,7 +340,7 @@ export const CAST: Record<string, CastMember> = {
   // 早瀬の立ち絵は 2026-11-04 に届いた。写しの2人はまだない（色の札）。写しはセピアをかける
   寿美: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
   写しの寿美: { portrait: 'portrait.past_sumi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
-  写しの敏夫: { faces: names('通常'), firstFace: '通常', color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
+  写しの敏夫: { portrait: 'portrait.past_toshio', ...young(['通常'], { 通常: 'normal' }, '通常'), height: 450, color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
   // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
   // 写しのけんたは笑顔の絵だけある（2026-10-17。ほかの表情は笑顔で代わりに出す）。だいち・さきは絵がまだない
   けんた: {
@@ -386,8 +390,8 @@ export const CAST: Record<string, CastMember> = {
   写しのおじいちゃん: { portrait: 'portrait.past_grandpa', ...young(['通常', '怒り'], { 通常: 'normal', 怒り: 'angry' }, '通常'), height: 450, color: 0x7a6a5a, voice: { pitch: 250, wave: 'sawtooth' }, tint: SEPIA_TINT },
   // 段階140a（4-2。docs/script/4-2.md の 2.）：店長の早瀬仁（今58歳。5人目の仲間。段階149 で75歳から直した）、平成9年の春の写しの仁（29歳）と写しの静江（27歳）。立ち絵はまだない（色の札）。写しはセピア
   早瀬: { portrait: 'portrait.hayase', ...young(['通常', '怒り', '驚き', '考える', '苦笑い', '泣き笑い'], { 通常: 'normal', 怒り: 'angry', 驚き: 'surprised', 考える: 'thinking', 苦笑い: 'wry', 泣き笑い: 'teary' }, '通常'), height: 450, color: 0x8a7a5a, voice: { pitch: 250, wave: 'sawtooth' } },
-  写しの仁: { faces: names('通常', '驚き', '真剣', '困り'), firstFace: '通常', color: 0x9a8a6a, voice: { pitch: 280, wave: 'sawtooth' }, tint: SEPIA_TINT },
-  写しの静江: { faces: names('笑顔', '大笑い', '照れ', '驚き', '困り笑い', '泣き笑い', '考える', '微笑み'), firstFace: '笑顔', color: 0xd09a7a, voice: { pitch: 620, wave: 'triangle' }, tint: SEPIA_TINT },
+  写しの仁: { portrait: 'portrait.past_jin', ...young(['通常', '驚き', '真剣', '困り'], { 通常: 'normal', 驚き: 'surprised', 真剣: 'serious', 困り: 'troubled' }, '通常'), height: 450, color: 0x9a8a6a, voice: { pitch: 280, wave: 'sawtooth' }, tint: SEPIA_TINT },
+  写しの静江: { portrait: 'portrait.past_shizue', ...young(['笑顔', '大笑い', '照れ', '驚き', '困り笑い', '泣き笑い', '考える', '微笑み'], { 笑顔: 'smile', 大笑い: 'laugh', 照れ: 'shy', 驚き: 'surprised', 困り笑い: 'awkward', 泣き笑い: 'teary', 考える: 'thinking', 微笑み: 'gentle' }, '笑顔'), height: 440, color: 0xd09a7a, voice: { pitch: 620, wave: 'triangle' }, tint: SEPIA_TINT },
   // 表情違い8枚（2026-10-31。docs/ART_QUEUE.md の I）
   小夜子: {
     portrait: 'portrait.sayoko',

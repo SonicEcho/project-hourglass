@@ -67,6 +67,15 @@ PARTS = {
     "toya_blink": ("toya_blink_src", [(355, 330, 478, 445), (545, 315, 672, 428)], 6, 1.0),
     "toya_talk": ("toya_talk_src", (455, 468, 612, 552), 6, 1.0),
     "shiori_blink": ("shiori_blink_src", [(338, 368, 478, 492), (548, 328, 692, 442)], 6, 1.0),
+    # 早瀬（2026-11-17。docs/ART_QUEUE.md の AA）：表情ごとに、その表情から目だけ閉じた絵（hayase_blink_src_<表情>）。
+    # 作り直した絵は顔の位置が少しずれるので、鼻と額でそろえてから保存した。口パクは「通常」だけ（口を開けた絵が届いた分）
+    "hayase_blink_normal": ("hayase_blink_src_normal", [(373, 348, 474, 410), (542, 320, 649, 382)], 7, 1.0),
+    "hayase_blink_thinking": ("hayase_blink_src_thinking", [(378, 405, 488, 462), (553, 385, 667, 440)], 7, 1.0),
+    "hayase_blink_wry": ("hayase_blink_src_wry", [(348, 341, 471, 403), (539, 323, 663, 385)], 7, 1.0),
+    "hayase_blink_surprised": ("hayase_blink_src_surprised", [(370, 302, 500, 420), (538, 314, 665, 395)], 7, 1.0),
+    "hayase_blink_angry": ("hayase_blink_src_angry", [(364, 349, 477, 411), (567, 332, 685, 394)], 7, 1.0),
+    "hayase_blink_teary": ("hayase_blink_src_teary", [(360, 345, 485, 425), (545, 335, 665, 405)], 7, 1.0),
+    "hayase_talk": ("hayase_talk_src_normal", (430, 480, 630, 548), 7, 1.0),
     # 小夜子（2026-10-31）：閉じた目は「笑顔」、開いた口は「驚き」から。表情どうしで顔の位置がそろっているので、1枚をどの表情にも重ねる
     "sayoko_blink": ("sayoko_laugh", [(370, 360, 490, 448), (550, 318, 688, 402)], 6, 1.0),
     "sayoko_talk": ("sayoko_surprised", (484, 488, 572, 540), 6, 1.0),
