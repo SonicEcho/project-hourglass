@@ -18,8 +18,26 @@ export function installServiceWorker(): void {
         });
       })
       .catch((e) => console.warn('[sw] 登録できなかった', e));
+    // 遊んでいる途中で新しい版に切り替わったら、読み直すよう知らせる（2026-11-17。古いプログラムのまま新しい絵を読むと、
+    // まばたき・口パクの部品が違う場所に出た）。最初の登録（前の版がない時）は知らせない
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.addEventListener('controllerchange', showUpdateBanner, { once: true });
+    }
   };
   // 端末にしまった版から開くと、ここに来る前にページの読み込みが終わっていることがある（load を待つと、いつまでも動かない）
   if (document.readyState === 'complete') install();
   else window.addEventListener('load', install);
+}
+
+/** 画面の上に「新しい版になりました」の帯を出す。タップで読み直す（遊んだところは、最後に保存した所から続く） */
+function showUpdateBanner(): void {
+  if (document.getElementById('update-banner')) return;
+  const el = document.createElement('div');
+  el.id = 'update-banner';
+  el.textContent = '新しい版になりました。ここをタップで読み直す';
+  el.style.cssText =
+    'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:10000;padding:10px 16px;background:#e8193f;color:#fff;' +
+    'font:bold 13px sans-serif;border:2px solid #fff;box-shadow:3px 3px 0 #000;cursor:pointer;white-space:nowrap';
+  el.addEventListener('click', () => location.reload());
+  document.body.appendChild(el);
 }
