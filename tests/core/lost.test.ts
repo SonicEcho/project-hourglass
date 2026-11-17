@@ -21,7 +21,7 @@ import { AREAS, BOND_PARTNER_NAMES, CAST, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MA
 
 // 落とし物（段階53。docs/design/economy.md の 5-3）
 const find: LostItemDef = { id: 'f', name: 'f', area: 'a11', owner: 'ゆうま', text: '', kind: 'find', spot: { cell: [1, 2] }, deliverScene: 'x', reward: { fragments: ['courage'] } };
-const bring: LostItemDef = { id: 'b', name: 'b', area: 'a12', owner: 'ふみ', text: '', kind: 'bring', bring: { item: 'tinSpring', count: 2 }, deliverScene: 'y', reward: { items: ['potion'] } };
+const bring: LostItemDef = { id: 'b', name: 'b', area: 'a12', owner: '富美', text: '', kind: 'bring', bring: { item: 'tinSpring', count: 2 }, deliverScene: 'y', reward: { items: ['potion'] } };
 const defs = [find, bring];
 
 describe('落とし物（段階53）', () => {

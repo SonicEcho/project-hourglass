@@ -366,17 +366,17 @@ Absolutely no letters or text anywhere: signs, lanterns, banners and awnings are
 | 1 | みおの設定画 → 胸から上の基本の1枚 | ChatGPT | 子どものあかりの立ち絵（絵柄・構図・子どもの体つき） | 設定画は済（2026-10-11。下の「みおの見た目（決まった）」）。胸から上の基本の1枚（笑顔）も済（2026-10-13。`portrait.mio.smile`） |
 | 2 | カイの設定画 → 胸から上の基本の1枚 | ChatGPT | ノアの設定画（同じ組織の制服）、あかりの笑顔の立ち絵（構図） | 設定画は済（2026-10-11。髪と目を直した。下の「カイの見た目（決まった）」）。胸から上の基本の1枚（余裕）と戦闘の絵も済（2026-10-13。`portrait.kai.smug`・`enemy.kai`） |
 | 3 | 1枚絵：切り取られるグラウンド（2-3。2章の山場） | ChatGPT | ハルト・あかり・みお・カイの立ち絵 | 済（2026-10-20） |
-| 4 | いさむ（今）、写しのいさむ、写しの源三 | ChatGPT | あかりの笑顔の立ち絵（構図）。写しのいさむは、いさむとみおの立ち絵も | 済（2026-10-13。`portrait.isamu.normal`・`portrait.past_isamu.serious`・`portrait.past_genzo.normal`） |
+| 4 | 勇夫（今）、写しの勇夫、写しの源三 | ChatGPT | あかりの笑顔の立ち絵（構図）。写しの勇夫は、勇夫とみおの立ち絵も | 済（2026-10-13。`portrait.isamu.normal`・`portrait.past_isamu.serious`・`portrait.past_genzo.normal`） |
 | 5 | 背景：昭和44年の町工場の中、雪の町工場の路地 | ChatGPT | なし | 済（2026-10-13。`bg.factory_1969`・`bg.factory_alley`） |
 | 6 | 地図：2-1 の雪の町工場の路地 | ChatGPT | 1-1 の縁日の地図（見下ろし方の見本） | 済（2026-10-13。`map.factory_alley`） |
-| 7 | 1枚絵：親方の背中（2-1） | ChatGPT | 写しのいさむ・写しの源三の立ち絵 | 済（2026-10-14。`cg.master_back`） |
-| 8 | こうじ（今）、けんた（今）、写しのけんた、写しのこうじ、写しのまさる | ChatGPT | あかりの笑顔の立ち絵（構図）。写しは、今の本人の立ち絵も | けんたは済（2026-10-14。`portrait.kenta.smile`）。こうじ・写しのけんたも済（2026-10-17）。ほかはまだ |
+| 7 | 1枚絵：親方の背中（2-1） | ChatGPT | 写しの勇夫・写しの源三の立ち絵 | 済（2026-10-14。`cg.master_back`） |
+| 8 | 浩二（今）、けんた（今）、写しのけんた、写しの浩二、写しの正雄 | ChatGPT | あかりの笑顔の立ち絵（構図）。写しは、今の本人の立ち絵も | けんたは済（2026-10-14。`portrait.kenta.smile`）。浩二・写しのけんたも済（2026-10-17）。ほかはまだ |
 | 9 | 背景：パン屋の店内、楽器店の店内、体育館のステージ、河川敷のグラウンド | ChatGPT | なし | まだ |
 | 10 | 地図：2-2 の文化祭の高校、2-3 の河川敷のグラウンド | ChatGPT | 1-1 の縁日の地図 | まだ |
 | 11 | 1枚絵：代打の一打（2-3）、弦が切れても歌うステージ（2-2） | ChatGPT | 写しの人たちの立ち絵 | まだ |
 | 12 | 1-2 の残り：背景（昭和の商店街、時計屋の店内（昼）、川沿いの帰り道）、地図、1枚絵（夕焼けの二人乗り） | ChatGPT | 下の各項 | 昭和の商店街の背景・地図・夕焼けの二人乗りは済（2026-10-11。`bg.showa_street`・`map.showa_street`・`cg.tandem_bicycle`）。時計屋の店内（昼）と川沿いの帰り道も済（2026-10-13。`bg.clock_shop_day`・`bg.riverside_path`） |
 | 13 | 敵：1-2 の砂嵐4つとボス、2章の砂嵐12とボス3つ、カイの戦闘の絵 | ChatGPT（多い時は Gemini） | 最初に作った敵の絵（絵柄をそろえる） | ブリキノイズは済（2026-10-11。`enemy.tin_noise`。段階37で戦闘画面に置いた）。1-2 の残り4つも済（2026-10-13。`enemy.phone_noise`・`ramune_noise`・`menko_noise`・`bicycle_boss`） |
-| ― | 表情違い（みお・カイ・ふみ・写しの人たち、ノアの悲しい、ハルトの悔しい・怒り、あかりの考える・泣き笑い） | Gemini | 基本の1枚 | 一部済（2026-10-11。ふみの5つ、写しのふみの3つ、写しのきよしの照れ、ノアの悲しい、ハルトの悔しい・怒り、あかりの考える・泣き笑い。残りは、みお・カイ・2章の人たちの基本の1枚ができてから） |
+| ― | 表情違い（みお・カイ・富美・写しの人たち、ノアの悲しい、ハルトの悔しい・怒り、あかりの考える・泣き笑い） | Gemini | 基本の1枚 | 一部済（2026-10-11。富美の5つ、写しの富美の3つ、写しの清志の照れ、ノアの悲しい、ハルトの悔しい・怒り、あかりの考える・泣き笑い。残りは、みお・カイ・2章の人たちの基本の1枚ができてから） |
 | 低 | だいち・さき（今。笑顔1つずつ）、教室（放課後） | ― | ― | なければ声だけ・色の加工で代わりにする |
 
 ### 共通部分
@@ -539,13 +539,13 @@ A late 1990s Japanese riverside little league baseball field on a bright summer 
 
 ### 4. 2-1 の人たち（立ち絵）
 
-いさむ（今。75歳）：立ち絵の頭（`<表情>` は `a calm, taciturn expression with gentle eyes behind his glasses`）の後に
+勇夫（今。75歳）：立ち絵の頭（`<表情>` は `a calm, taciturn expression with gentle eyes behind his glasses`）の後に
 
 ```
 Character: Isamu, a Japanese gear craftsman around 75 years old, Mio's grandfather, who runs a tiny old machine workshop in a quiet regional town. Small and wiry, short white hair, thin round glasses, deep wrinkles, a stubborn mouth but gentle eyes. An old brown cardigan over a faded factory work jacket. A man of few words.
 ```
 
-写しのいさむ（昭和44年。18歳）：いさむとみおの立ち絵も添付。立ち絵の頭（`<表情>` は `a serious, determined face, cheeks red from the cold`）の後に
+写しの勇夫（昭和44年。18歳）：勇夫とみおの立ち絵も添付。立ち絵の頭（`<表情>` は `a serious, determined face, cheeks red from the cold`）の後に
 
 ```
 Character: young Isamu, the same man as the attached elderly portrait but 57 years earlier: an 18-year-old apprentice at a small machine workshop in the winter of 1969. Keep the same face features so he is clearly the same person, with lively eyes that look like the attached little girl's (his granddaughter). Very short buzz-cut black hair, cheeks red from the cold, an oil-stained gray work jacket.
@@ -773,7 +773,7 @@ At the top, home plate in front of a tall backstop net, with the ends of the net
 Character: Hinano, an 18-year-old Japanese high school senior from a neighboring town, the younger sister of a laid-back university student. Straight black hair to the shoulders with blunt bangs, sharp but kind eyes, a strong-willed, stubborn look. A summer school uniform (white short-sleeve blouse, navy ribbon), a school bag with a faded red goldfish keychain.
 ```
 
-#### 6-6. 1-2 を3晩に分けた区画の部屋と、しげる（段階66。2026-10-18）
+#### 6-6. 1-2 を3晩に分けた区画の部屋と、茂雄（段階66。2026-10-18）
 
 1-2 も3晩に分けて作り直した。商店街の地図（`map.showa_street`）の左右（行19〜22）と上の辺の真ん中（列10〜13）を開ける手直し（2-1・1-1 と同じ、今の地図を付けた編集）と、寄り道の部屋3つ（左の路地裏、右の電器屋の裏通り、坂の上の先。今は 1-1 の部屋と同じ形の文字の地図。絵を頼む時に、部屋ごとの文字の地図と下絵を作る）。
 
@@ -785,7 +785,7 @@ Character: Hinano, an 18-year-old Japanese high school senior from a neighboring
 | 右の電器屋の裏通り | `room_showa_lane.png` | `map.showa_lane` | `Scene: a winding back lane behind an old electronics shop at summer dusk in 1988: discarded CRT televisions and radios stacked by the back door, tangled antenna cables, a small storage shed, potted plants, and a dead end with a little vacant lot at the bottom right. An opening at the center of the left edge.` |
 | 坂の上の先 | `room_showa_hill.png` | `map.showa_hill` | `Scene: the top of a gentle slope above a small Japanese town at summer sunset in 1988: a narrow paved road winding between old houses with tiled roofs and stone walls, utility poles with wires, a small bus stop bench and a vending machine, the evening sun glowing over the rooftops. An opening at the center of the bottom edge.` |
 
-しげる（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a friendly, slightly nostalgic smile`）の後に。見本はあかりの笑顔の立ち絵（構図）
+茂雄（今45歳。商店街の電器屋の主人）：立ち絵の頭（`<表情>` は `a friendly, slightly nostalgic smile`）の後に。見本はあかりの笑顔の立ち絵（構図）
 
 ```
 Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned electronics shop on a shopping street in a quiet regional town. Short graying hair, kind tired eyes, a work apron over a plain polo shirt, a pencil behind his ear, a small screwdriver in the apron pocket. Friendly and talkative, the kind of shopkeeper who has known the neighborhood since he was a child.
@@ -797,9 +797,9 @@ Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned el
 
 | 物 | 使う所 | 今の代わり |
 | --- | --- | --- |
-| すみの立ち絵（今77歳。源三の娘、銭湯「松の湯」の女将。小柄、手ぬぐい、割烹着） | 9日目の松の湯、11日目の工場 | 色の札 |
-| 写しのすみの立ち絵（昭和44年、22歳。番台の娘。頭に手ぬぐい。セピア） | 1晩目の銭湯の前 | 色の札 |
-| 写しのとしおの立ち絵（昭和44年、25歳くらいの職人。口は悪いが面倒見がいい。台詞はほとんど声だけ） | 2晩目・3晩目のかけらの中 | 声だけ |
+| 寿美の立ち絵（今77歳。源三の娘、銭湯「松の湯」の女将。小柄、手ぬぐい、割烹着） | 9日目の松の湯、11日目の工場 | 色の札 |
+| 写しの寿美の立ち絵（昭和44年、22歳。番台の娘。頭に手ぬぐい。セピア） | 1晩目の銭湯の前 | 色の札 |
+| 写しの敏夫の立ち絵（昭和44年、25歳くらいの職人。口は悪いが面倒見がいい。台詞はほとんど声だけ） | 2晩目・3晩目のかけらの中 | 声だけ |
 | 背景「銭湯の番台（今）」 | 9日目の松の湯 | 商店街の背景 |
 
 #### 6-6c. 2-3 を3晩＋取り返す4晩目に分けた区画で足した人と場所（段階85。2026-10-21）
@@ -808,7 +808,7 @@ Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned el
 
 | 物 | 使う所 | 今の代わり |
 | --- | --- | --- |
-| まさるの立ち絵（今70歳。こうじの父、パン屋の先代。大柄、白髪の短髪、メガホン、声が大きく笑う） | 17日目・19日目の河川敷、20日目の準決勝 | 色の札 |
+| 正雄の立ち絵（今70歳。浩二の父、パン屋の先代。大柄、白髪の短髪、メガホン、声が大きく笑う） | 17日目・19日目の河川敷、20日目の準決勝 | 色の札 |
 | 保管局の奥の書庫の部屋4つの地図（通用口の廊下・閲覧室・黒い扉の部屋・奥の書庫。ひびのない砂時計が整然と並ぶ、冷たい白と灰色の書庫） | 19日目の4晩目 | 文字の地図だけ |
 | 1枚絵の候補「黒い砂時計の扉」 | 4晩目の寄り道 | 地の文だけ（なくても伝わる） |
 
@@ -818,9 +818,9 @@ Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned el
 
 | 物 | 使う所 | 今の代わり |
 | --- | --- | --- |
-| ちよの立ち絵（今75歳。老人ホームに住む上品なおばあさん、車いす。手首に小さな金色の婦人用の腕時計） | 21〜24日目 | 色の札 |
-| のぼるの立ち絵（今68歳。ちよの弟。日に焼けた村のおじいさん、手ぬぐい） | 21・22・24日目 | 色の札 |
-| 写しのちよ（昭和41年、15歳。白いブラウス、新しい靴、指先の火傷）・写しの菊（40歳くらい、手ぬぐいをかぶった畑の母）・写しののぼる（8歳、半ズボン） | 3-1 の3晩 | 色の札（セピア） |
+| 千代の立ち絵（今75歳。老人ホームに住む上品なおばあさん、車いす。手首に小さな金色の婦人用の腕時計） | 21〜24日目 | 色の札 |
+| 昇平の立ち絵（今68歳。千代の弟。日に焼けた村のおじいさん、手ぬぐい） | 21・22・24日目 | 色の札 |
+| 写しの千代（昭和41年、15歳。白いブラウス、新しい靴、指先の火傷）・写しの菊（40歳くらい、手ぬぐいをかぶった畑の母）・写しの昇平（8歳、半ズボン） | 3-1 の3晩 | 色の札（セピア） |
 | 3-1 の部屋6つの地図（駅前・田んぼ道・鎮守の森の石段・実家の庭・川べり・夕暮れの駅のホーム。昭和41年の夏、山あいの村） | 3-1 の探索 | 文字の地図だけ |
 | 背景：昭和41年の村（昼）・村の駅（夕暮れ）・ひだまり荘の部屋（窓辺）・町の駅のホーム（今）・文化祭の中庭 | 会話 | 仮の色 |
 | 3-1 の敵：扇風機・蚊取り線香・トランジスタラジオ・ちゃぶ台の砂嵐、郵便ポストノイズ（番人）、汽車のぬし | 3-1 の戦闘 | 絵なし（名前の札） |
@@ -881,7 +881,7 @@ Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned el
 | 2 | ゆうまの基本の1枚（47）（済。2026-10-19。口を開けた笑顔で出てきたので笑顔の絵 `portrait.yuma.smile`。最初の絵はハルトに似たので、髪と目元を替えて作り直した） | 5-5 の「ゆうま」 | あかり（笑顔） |
 | 3 | 写しのゆうま（笑顔）（28）、写しのひなの（笑顔）（20）（済。2026-10-19） | 5-5 の「写しのゆうま」「写しのひなの」 | ゆうま、子どものあかり（構図）。ひなのは写しのゆうまも |
 | 4 | ひなの（通常）（24）（済。2026-10-20。`portrait.hinano.normal`） | 6-5 | あかり（笑顔） |
-| 5 | しげる（笑顔）（17）（済。2026-10-20。`portrait.shigeru.smile`） | 6-6 | あかり（笑顔） |
+| 5 | 茂雄（笑顔）（17）（済。2026-10-20。`portrait.shigeru.smile`） | 6-6 | あかり（笑顔） |
 | 6 | 1枚絵：長針の剣と金魚の灯籠の杖（1-1 の1晩目の頭）（済。2026-10-20。光るトランプも） | 11-2 | ハルト・あかりの立ち絵 |
 | 7 | 1枚絵：高台で花火を見る3人の後ろ姿（プロローグの終わり）（済。2026-10-20） | 5-5 の「M1 の残りの指示文」 | 子どもの3人の立ち絵 |
 | 8 | 1枚絵：金魚の写真（1日目の屋上）（済。2026-10-20。正方形なので、ぼかした縦長の台紙に置いた） | 同上 | 子どものあかり（笑顔） |
@@ -897,13 +897,13 @@ Character: Shigeru, a 45-year-old Japanese man who runs a small old-fashioned el
 | 2 | 写しのひなの | 泣き（5）（済。2026-10-19） |
 | 3 | 写しのゆうま | 驚き・怒り・ふくれ・照れ・通常（済。2026-10-19） |
 | 4 | ひなの | むっ・驚き・泣き笑い・困り・さみしげ・微笑み |
-| 5 | しげる | 驚き・さみしげ・考える・苦笑い・通常 |
+| 5 | 茂雄 | 驚き・さみしげ・考える・苦笑い・通常 |
 | 6 | 子どもの3人（プロローグ） | 5-6 の Gemini の 1〜3（済。2026-10-19。子りくの照れとあせりは似た顔になった） |
-| 7 | 写しのきよし | 照れの作り直し（2026-10-19。5-3 の 14 の表の下の文。1-2 の山場の2行で使う）（済。2026-10-19） |
+| 7 | 写しの清志 | 照れの作り直し（2026-10-19。5-3 の 14 の表の下の文。1-2 の山場の2行で使う）（済。2026-10-19） |
 
 ### 7. 1枚絵：親方の背中（2-1-8）
 
-写しのいさむと写しの源三の立ち絵を添付。1枚絵の頭の後に
+写しの勇夫と写しの源三の立ち絵を添付。1枚絵の頭の後に
 
 ```
 Inside a small Japanese machine workshop on a snowy winter night in 1969, sepia tones with warm light from a single bare bulb. On the workbench, a tiny brass clock gear glints. An old master craftsman with a white towel around his head walks away toward the back of the workshop, his broad back to the viewer, his ears slightly red. In the foreground, an 18-year-old apprentice in an oil-stained work jacket bows deeply, his face hidden, tears falling (keep their designs as in the attached portraits). Lathes and belts in the shadows, snow visible through the window.
@@ -911,7 +911,7 @@ Inside a small Japanese machine workshop on a snowy winter night in 1969, sepia 
 
 ### 8. 2-2・2-3 の人たち（立ち絵）
 
-こうじ（今。40歳。パン屋）：立ち絵の頭（`<表情>` は `a kind, slightly self-deprecating smile`）の後に
+浩二（今。40歳。パン屋）：立ち絵の頭（`<表情>` は `a kind, slightly self-deprecating smile`）の後に
 
 ```
 Character: Koji, a 40-year-old Japanese bakery owner on a shopping street in a quiet regional town. A gentle, good-natured face, slightly tired eyes, short neat black hair, a white baker's coat and a white baker's cap. Friendly to everyone, but always puts himself down.
@@ -929,13 +929,13 @@ Character: Kenta, a 37-year-old Japanese man who runs a small musical instrument
 Character: young Kenta, the same man as the attached adult portrait but 20 years earlier: a 17-year-old Japanese high school boy at his school festival in autumn 2006, the singer and guitarist of a three-piece band. Keep the same face features so he is clearly the same person. Spiky dark-brown hair, a black gakuran school uniform worn open over a white T-shirt.
 ```
 
-写しのこうじ（平成10年。12歳）：こうじの立ち絵も添付。立ち絵の頭（`<表情>` は `a nervous, unsure face, biting his lip`）の後に
+写しの浩二（平成10年。12歳）：浩二の立ち絵も添付。立ち絵の頭（`<表情>` は `a nervous, unsure face, biting his lip`）の後に
 
 ```
 Character: young Koji, the same man as the attached adult portrait but 28 years earlier: a 12-year-old boy on a little league baseball team in the summer of 1998, always on the bench. Keep the same face features so he is clearly the same person. Short black hair, a slightly dirty white baseball uniform with navy trim that is a little too big for him, a baseball cap. No letters or numbers on the uniform or cap.
 ```
 
-写しのまさる（平成10年。40代。こうじの父）：こうじの立ち絵も添付。立ち絵の頭（`<表情>` は `a big, warm, proud smile`）の後に
+写しの正雄（平成10年。40代。浩二の父）：浩二の立ち絵も添付。立ち絵の頭（`<表情>` は `a big, warm, proud smile`）の後に
 
 ```
 Character: Masaru, Koji's father, a Japanese man in his 40s in the summer of 1998, a cheerful working dad watching his son's little league game. A face that resembles the attached portrait (his son as an adult), sun-tanned skin, short black hair, a faded polo shirt with a towel around his neck. No letters or logos.
@@ -1010,7 +1010,7 @@ Layout from bottom to top:
 
 ### 11. 1枚絵：代打の一打（2-3）、弦が切れても歌うステージ（2-2）
 
-代打の一打（写しのこうじと写しのまさるの立ち絵を添付）：1枚絵の頭の後に
+代打の一打（写しの浩二と写しの正雄の立ち絵を添付）：1枚絵の頭の後に
 
 ```
 A riverside little league baseball field on a bright summer afternoon in 1998, bright pastel summer colors. The last inning, two outs. A 12-year-old pinch hitter in a slightly oversized white uniform swings the bat with all his strength, his arms trembling, his eyes shut tight, the ball just leaving the bat. Behind the backstop, his father in a polo shirt with a towel around his neck jumps up from the bench, shouting with joy (keep their designs as in the attached portraits). Teammates leaning out of the dugout, cumulonimbus clouds, sparkling light. No letters or numbers on uniforms or the scoreboard.
@@ -1079,7 +1079,7 @@ Layout from bottom to top:
 Walkable areas (the street, the back alleys, the slope) must be clearly distinguishable from non-walkable objects (buildings, goods, bicycles, poles).
 ```
 
-1枚絵：夕焼けの二人乗り（1-2-9。1章の山場）：写しのふみ・写しのきよしの立ち絵を添付。1枚絵の頭の後に
+1枚絵：夕焼けの二人乗り（1-2-9。1章の山場）：写しの富美・写しの清志の立ち絵を添付。1枚絵の頭の後に
 
 ```
 A small Japanese shopping arcade street in the summer of 1988 at sunset, in warm, slightly faded sepia-like colors, the street opening onto a gentle downhill slope bathed in golden evening light. A middle-aged man pedals an old black utility bicycle down the slope, turning his head slightly back with a shy, awkward smile; his wife sits sideways on the rear rack, holding onto his back, laughing with teary eyes (keep their designs as in the attached reference portraits). Shopkeepers wave from the storefronts behind them, welcoming her home. Long shadows, warm backlight.
@@ -1119,30 +1119,30 @@ Use this image as the base. Keep everything exactly the same: framing, pose, arm
 Expression: <表情>
 ```
 
-`<その人の見た目>` の例：みお `bright light-brown short hair with one tiny side tuft tied by an orange hair tie, sunny-yellow T-shirt, childlike proportions`／カイ `swept-back ash-blond hair, steel-gray eyes, open white long coat with thin blue-green lines over a black high-neck inner`／ノア `silver short bob with a blue-green tint, blue-green eyes, white high-collared coat with blue-green lines, hourglass collar clasp`／ふみ `thin white hair in a low bun, deep wrinkles, beige knitted cardigan`
+`<その人の見た目>` の例：みお `bright light-brown short hair with one tiny side tuft tied by an orange hair tie, sunny-yellow T-shirt, childlike proportions`／カイ `swept-back ash-blond hair, steel-gray eyes, open white long coat with thin blue-green lines over a black high-neck inner`／ノア `silver short bob with a blue-green tint, blue-green eyes, white high-collared coat with blue-green lines, hourglass collar clasp`／富美 `thin white hair in a low bun, deep wrinkles, beige knitted cardigan`
 
 | 表情 | `<表情>` | 使う人（`docs/script/M2.md` の 5.・12.） |
 | --- | --- | --- |
-| 通常 | `relaxed and natural, mouth closed` | みお、カイ、ふみ、いさむ、写しのいさむ、写しのきよし、こうじ、写しのこうじ |
-| 笑顔 | `a bright, warm smile with the mouth slightly open` | みお、ふみ、いさむ、こうじ、けんた、写しのけんた |
+| 通常 | `relaxed and natural, mouth closed` | みお、カイ、富美、勇夫、写しの勇夫、写しの清志、浩二、写しの浩二 |
+| 笑顔 | `a bright, warm smile with the mouth slightly open` | みお、富美、勇夫、浩二、けんた、写しのけんた |
 | 大笑い | `laughing happily with the mouth wide open, eyes closed` | みお、けんた |
-| 驚き | `surprised, eyes wide open, mouth slightly open` | みお、ふみ、写しのふみ、写しのいさむ、こうじ、写しのけんた、写しのこうじ |
+| 驚き | `surprised, eyes wide open, mouth slightly open` | みお、富美、写しの富美、写しの勇夫、浩二、写しのけんた、写しの浩二 |
 | むっ | `pouting, cheeks puffed, frowning a little` | みお |
-| 真剣 | `serious and focused, mouth firmly closed, brows set, eyes steady and determined` | みお、カイ、写しのいさむ |
-| 泣き笑い | `smiling through tears, eyes wet and slightly narrowed, a trembling smile` | みお、ふみ、写しのふみ、いさむ、写しのいさむ、けんた、写しのけんた、写しのこうじ、あかり |
-| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しのふみ、けんた（写しのきよしは下の別の文） |
-| 考える | `thoughtful, eyes looking up and aside, mouth slightly pursed` | みお、ふみ、いさむ、こうじ、けんた、あかり |
+| 真剣 | `serious and focused, mouth firmly closed, brows set, eyes steady and determined` | みお、カイ、写しの勇夫 |
+| 泣き笑い | `smiling through tears, eyes wet and slightly narrowed, a trembling smile` | みお、富美、写しの富美、勇夫、写しの勇夫、けんた、写しのけんた、写しの浩二、あかり |
+| 照れ | `embarrassed, light blush on the cheeks, eyes looking aside, a small awkward smile` | みお、写しの富美、けんた（写しの清志は下の別の文） |
+| 考える | `thoughtful, eyes looking up and aside, mouth slightly pursed` | みお、富美、勇夫、浩二、けんた、あかり |
 | 心配 | `gently worried, eyebrows raised in a troubled way, mouth slightly open` | みお |
 | 悔しい | `frustrated and regretful, biting the lip, brows drawn together, eyes glistening` | みお、ハルト |
 | 困り笑い | `a troubled smile, eyebrows raised in a worried way, a small awkward smile` | みお |
-| さみしげ | `quietly lonely, a faint sad smile, eyes looking down` | ふみ、いさむ、こうじ、けんた |
-| 苦笑い | `a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled` | こうじ、けんた |
+| さみしげ | `quietly lonely, a faint sad smile, eyes looking down` | 富美、勇夫、浩二、けんた |
+| 苦笑い | `a wry, strained smile, one corner of the mouth raised, eyebrows slightly troubled` | 浩二、けんた |
 | 余裕 | `a relaxed, arrogant smirk, eyes half-lidded` | カイ |
 | 見下す | `looking down on someone with cold, narrowed eyes, chin slightly raised, a faint sneer` | カイ |
 | 悲しい | `sad and quiet, eyes looking down, mouth closed, brows slightly lowered` | ノア |
 | 怒り | `angry, brows sharply drawn together, teeth clenched, eyes blazing` | ハルト |
 
-写しのきよしの照れ（2026-10-19 に作り直す。上の照れの文では歯を見せて大きく赤くなり、口数が少なく頑固で気持ちを出すのが下手な人に合わなかった。照れを隠して、ぶっきらぼうに目をそらす顔にする）：`gruffly hiding his embarrassment: face turned slightly away and eyes looking off to the side, mouth pressed into a stubborn straight line, brows slightly drawn together as if annoyed, no smile and no teeth showing. Only a faint blush on the cheeks and reddened ear tips give away that he is embarrassed. A quiet, awkward middle-aged man who is bad at showing his feelings.`
+写しの清志の照れ（2026-10-19 に作り直す。上の照れの文では歯を見せて大きく赤くなり、口数が少なく頑固で気持ちを出すのが下手な人に合わなかった。照れを隠して、ぶっきらぼうに目をそらす顔にする）：`gruffly hiding his embarrassment: face turned slightly away and eyes looking off to the side, mouth pressed into a stubborn straight line, brows slightly drawn together as if annoyed, no smile and no teeth showing. Only a faint blush on the cheeks and reddened ear tips give away that he is embarrassed. A quiet, awkward middle-aged man who is bad at showing his feelings.`
 
 （ハルト・あかりは 5-2 の頭の文を使う。表情の名前は台本の〔 〕と同じにする）
 
@@ -1158,7 +1158,7 @@ Expression: <表情>
 | りくの開いた口 | 表情ごとに、Gemini でその表情から口だけ開けた絵（`riku_talk_<表情>_src`。下の指示文） | 済（2026-10-11。はじめは「驚き」の口を全部の表情に重ねたが、顔の傾きが違う表情で口の線や鼻がずれたので、表情ごとに作り直した） |
 | ハルトの閉じた目 | 目を閉じた絵（Gemini で作った `hero_blink_src`） | 済（2026-10-11。全部の表情に重ねる） |
 | りくの閉じた目 | 目を閉じた絵（Gemini で作った `riku_blink_src`。笑った目になった） | 済（2026-10-11。眉が上がった絵なので、眉の形が違う真剣・あせり・悲しいには重ねない） |
-| ゆうま・ふみ・子どものりく・写しのゆうま・写しのきよし・子どものあかり・子どものハルト・写しのふみの閉じた目と開いた口、写しのひなの・カイの閉じた目、けんたの閉じた目と開いた口 | それぞれ「通常」から Gemini で目だけ閉じた絵・口だけ開けた絵（`<人>_blink_src`・`<人>_talk_src`） | 済（2026-10-19。差分は Gemini の表情の絵（843×1264）の大きさで切り抜き、ChatGPT の基本の1枚（1024×1536）に重ねる分は `_l` として広げた。子どものりくは顔が傾いているので目ごとに楕円を分けた。口は口を閉じた表情だけに重ねる） |
+| ゆうま・富美・子どものりく・写しのゆうま・写しの清志・子どものあかり・子どものハルト・写しの富美の閉じた目と開いた口、写しのひなの・カイの閉じた目、けんたの閉じた目と開いた口 | それぞれ「通常」から Gemini で目だけ閉じた絵・口だけ開けた絵（`<人>_blink_src`・`<人>_talk_src`） | 済（2026-10-19。差分は Gemini の表情の絵（843×1264）の大きさで切り抜き、ChatGPT の基本の1枚（1024×1536）に重ねる分は `_l` として広げた。子どものりくは顔が傾いているので目ごとに楕円を分けた。口は口を閉じた表情だけに重ねる） |
 
 **口だけ開けた絵**（Gemini。その表情の絵を見本として渡す。1つの口をどの表情にも重ねるとずれる人だけ、表情ごとに作る。できた絵を `<人>_talk_<表情>_src.webp` として portraits に入れ、`scripts/portrait_parts.py` に口の範囲を足して切り抜き、`PORTRAIT_PARTS` の `byFace` に足す。id が `_src` で終わる絵は、起動の時に読み込まない）
 
@@ -1178,7 +1178,7 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 
 ### 人物像（まだ絵のない人）
 
-見た目を決める元になる設定。台本（`docs/script/M1.md` の 5.、`docs/script/M2.md` の 5.・12.）と物語（`docs/STORY.md`）から集めた。名前の書き方は `docs/NAMING.md`（今を生きている人はひらがな、昭和のうちに亡くなった人は漢字）。
+見た目を決める元になる設定。台本（`docs/script/M1.md` の 5.、`docs/script/M2.md` の 5.・12.）と物語（`docs/STORY.md`）から集めた。名前の書き方は `docs/NAMING.md`（2026-11-17 段階248 から、昭和以前の生まれは漢字、平成以降の生まれはひらがな）。
 
 | 人 | 年齢・時代 | 立場 | 人柄 | 見た目 | 要る表情 |
 | --- | --- | --- | --- | --- | --- |
@@ -1187,12 +1187,12 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 | ゆうま | 21歳（大学生）・今 | 1-1 の持ち主。商店街のコンビニでバイトしている。妹のひなのとは2年ほど話していない | 気だるそうだが優しい。人なつっこく、高校生にも軽口をたたく。返された後、妹に電話する | 明るいアッシュブラウンに染めた少し長めの髪を、うなじで小さく結ぶ（前髪は目にかけない）、垂れ目、左目の下に泣きぼくろ、左耳に小さな銀のピアス、ひげなし。コンビニの制服（縦じまの半袖シャツ、ロゴのないエプロン、字の読めない名札）。2026-10-19：黒髪で前髪が目にかかる最初の絵がハルトに似たので替えた | 通常（だるそう）・笑顔・考える・泣き笑い・苦笑い・驚き |
 | 写しのゆうま | 小学4年・平成の終わりの縁日（十年ちょっと前） | 1-1 の写し。妹と金魚すくいに走る | 面倒見のいいお兄ちゃん。妹をせかすが、ちゃんと待つ | ゆうまの面影（垂れ目と左目の下の泣きぼくろ）。短い黒髪（染めるのは大学から）、紺の無地の浴衣（ノイズの加工はゲームの側でかける） | 笑顔 |
 | 写しのひなの | 小学1年・同じ縁日 | ゆうまの妹。金魚に「なつ」と「まつり」と名付ける | 甘えん坊で、兄のあとを追いかける | ゆうまに似た目、短い二つ結び、薄い桃色の浴衣（朝顔の柄。子どものあかりの「白地に赤い金魚」と重ならないように） | 笑顔・泣き |
-| いさむ | 75歳・今 | 2-1 の持ち主。みおの祖父で、小さな町工場の歯車職人 | 口数が少なく頑固だが、目は優しい | 小柄でやせている、白髪の短髪、細い丸眼鏡、深いしわ。色あせた作業着の上に古い茶色のカーディガン | 通常・笑顔・考える・さみしげ・泣き笑い |
-| 写しのいさむ | 18歳・昭和44年（1969年）の冬 | 町工場の見習い。親方の源三に「いい仕事だ」と言われる日 | ひたむきで不器用 | 坊主に近い短髪、寒さで赤いほお、油で汚れた灰色の作業着。みおに似た目 | 真剣・驚き・泣き笑い・通常 |
+| 勇夫 | 75歳・今 | 2-1 の持ち主。みおの祖父で、小さな町工場の歯車職人 | 口数が少なく頑固だが、目は優しい | 小柄でやせている、白髪の短髪、細い丸眼鏡、深いしわ。色あせた作業着の上に古い茶色のカーディガン | 通常・笑顔・考える・さみしげ・泣き笑い |
+| 写しの勇夫 | 18歳・昭和44年（1969年）の冬 | 町工場の見習い。親方の源三に「いい仕事だ」と言われる日 | ひたむきで不器用 | 坊主に近い短髪、寒さで赤いほお、油で汚れた灰色の作業着。みおに似た目 | 真剣・驚き・泣き笑い・通常 |
 | 源三 | 50代・昭和44年 | 町工場の親方（昭和のうちに亡くなった） | こわもてで厳しいが、命を預けられる。照れると耳が赤くなる（照れの顔は背中で見せる） | 太い眉、日に焼けたしわの顔、頭に白い手ぬぐい、厚手の紺の作業着 | 通常 |
-| こうじ | 40歳・今 | 2-3 の持ち主。商店街のパン屋の店主。息子はそうた（声だけ） | 人がよく、誰にでも親切だが、すぐ自分を下げる | 人のよさそうな顔、少し疲れた目、短く整えた黒髪、白いコックコートと帽子 | 通常・笑顔・さみしげ・考える・苦笑い・驚き |
-| 写しのこうじ | 12歳・平成10年（1998年）の夏 | 少年野球のベンチの子。最終回に代打で出る | 気弱で自信がない | 短い黒髪、少し大きすぎる白いユニフォーム（紺の線。番号と文字なし）、野球帽 | 通常・驚き・泣き笑い |
-| まさる | 40代・平成10年 | こうじの父。土手から試合を見ている | 陽気で、息子を信じている | 大人のこうじに似た顔、日焼け、短い黒髪、色あせたポロシャツに首のタオル | 笑顔 |
+| 浩二 | 40歳・今 | 2-3 の持ち主。商店街のパン屋の店主。息子はそうた（声だけ） | 人がよく、誰にでも親切だが、すぐ自分を下げる | 人のよさそうな顔、少し疲れた目、短く整えた黒髪、白いコックコートと帽子 | 通常・笑顔・さみしげ・考える・苦笑い・驚き |
+| 写しの浩二 | 12歳・平成10年（1998年）の夏 | 少年野球のベンチの子。最終回に代打で出る | 気弱で自信がない | 短い黒髪、少し大きすぎる白いユニフォーム（紺の線。番号と文字なし）、野球帽 | 通常・驚き・泣き笑い |
+| 正雄 | 40代・平成10年 | 浩二の父。土手から試合を見ている | 陽気で、息子を信じている | 大人の浩二に似た顔、日焼け、短い黒髪、色あせたポロシャツに首のタオル | 笑顔 |
 | けんた | 37歳・今 | 2-2 の持ち主。商店街の楽器店の店主。高校のバンド「ラストチャイム」のボーカルとギターだった | 気さくでおしゃべり。音楽はとうにやめた | 少しぼさぼさの中くらいの長さのこげ茶の髪、無精ひげ、黒っぽいTシャツに帆布のエプロン | 笑顔・苦笑い・考える・さみしげ・泣き笑い・照れ・大笑い |
 | 写しのけんた | 17歳・平成18年（2006年）の秋の文化祭 | 3人組のバンドのボーカルとギター。弦が切れても歌い切る | 自信家で元気 | けんたの面影。つんつんのこげ茶の髪、前を開けた学ランに白いTシャツ | 笑顔・驚き・泣き笑い |
 | ペトラ | 20代後半・未来 | 時間保管局の取引の窓口の係。レストピアの拠点の交換所の番人（段階52）。「ここまで来られるのはアーカイバーだけ」と思い込んで取引する | 規則どおりで淡々としているが、帳簿の数字が合うと少しうれしそう。口癖は「規則ですので」。現場の話は「現場の課へどうぞ」 | 眼鏡（細い銀縁）、きっちりまとめた紺に近い黒髪のひとつ結び、白いシャツに紺のベスト、黒い腕カバー、胸に砂時計の小さな局の徽章。カウンターの奥に立つ（腰から上） | 通常・笑顔・困り・驚き・真剣 |
@@ -1204,20 +1204,20 @@ Use this image as the base. Keep everything exactly the same: framing, pose, hai
 | --- | --- | --- | --- | --- |
 | 1 | 37 | 地図：1-2 の昭和の商店街（済。2026-10-11） | 5-3 の 12. | 昭和の商店街の背景（縁日の地図は付けない。屋台の並びに引っ張られたため） |
 | 2 | 37 | 背景：昭和の商店街（夕焼け）（済。2026-10-11） | 5-3 の 12. | なし |
-| 3 | 37 | 1枚絵：夕焼けの二人乗り（済。2026-10-11） | 5-3 の 12. | 写しのふみ（笑顔）・写しのきよし（通常） |
+| 3 | 37 | 1枚絵：夕焼けの二人乗り（済。2026-10-11） | 5-3 の 12. | 写しの富美（笑顔）・写しの清志（通常） |
 | 4 | 37 | 敵：ブリキノイズ（済。2026-10-11。最初の1体。敵の絵の共通部分を、これを戦闘画面に置いて決める） | 5-3 の共通部分と 13. | なし |
 | 5 | 38 | みおの設定画（済。2026-10-11） → 胸から上の基本の1枚（済。2026-10-13） | 5-3 の 1. | 子どものあかり（笑顔） |
 | 6 | 40 | カイの設定画（済。2026-10-11） → 胸から上の基本の1枚 → 戦闘の絵（済。2026-10-13） | 5-3 の 2. | ノアの設定画、あかり（笑顔） |
 | 7 | 37 | 敵：1-2 の残り（黒電話・ラムネ・めんこ・自転車のぬし）（済。2026-10-13） | 5-3 の 13. | ブリキノイズ |
 | 8 | 37 | 背景：時計屋の店内（昼）、川沿いの帰り道（済。2026-10-13） | 5-3 の 12. | 時計屋の店内（夕暮れ） |
-| 9 | 39 | いさむ、写しのいさむ、写しの源三（済。2026-10-13） | 5-3 の 4. | あかり（笑顔）。写しのいさむは、いさむ・みおも |
+| 9 | 39 | 勇夫、写しの勇夫、写しの源三（済。2026-10-13） | 5-3 の 4. | あかり（笑顔）。写しの勇夫は、勇夫・みおも |
 | 10 | 39 | 背景：昭和44年の町工場の中、雪の町工場の路地／地図：2-1（済。2026-10-13） | 5-3 の 5.・6. | 1-1 の縁日の地図 |
-| 11 | 39 | 1枚絵：親方の背中（済。2026-10-14） | 5-3 の 7. | 写しのいさむ・写しの源三 |
+| 11 | 39 | 1枚絵：親方の背中（済。2026-10-14） | 5-3 の 7. | 写しの勇夫・写しの源三 |
 | 12 | 39 | けんた（済。2026-10-14）、写しのけんた（済。2026-10-17）／背景：体育館のステージ、楽器店の店内（済。2026-10-17）／地図：2-2 | 5-3 の 8.〜10. | あかり（笑顔）、けんた |
 | 13 | 39 | 1枚絵：弦が切れても歌うステージ（済。2026-10-17） | 5-3 の 11. | 写しのけんた |
 | 14 | 39 | 敵：2-1・2-2 の砂嵐8とボス2 | 5-3 の 13. | ブリキノイズ |
-| 15 | 40 | こうじ（済。2026-10-17）、写しのこうじ、まさる／背景：河川敷のグラウンド、パン屋の店内（済。2026-10-17）／地図：2-3 | 5-3 の 8.〜10. | あかり（笑顔）、こうじ |
-| 16 | 40 | 1枚絵：切り取られるグラウンド、代打の一打 | 5-3 の 3.・11. | ハルト・あかり・みお・カイ／写しのこうじ・まさる |
+| 15 | 40 | 浩二（済。2026-10-17）、写しの浩二、正雄／背景：河川敷のグラウンド、パン屋の店内（済。2026-10-17）／地図：2-3 | 5-3 の 8.〜10. | あかり（笑顔）、浩二 |
+| 16 | 40 | 1枚絵：切り取られるグラウンド、代打の一打 | 5-3 の 3.・11. | ハルト・あかり・みお・カイ／写しの浩二・正雄 |
 | 17 | 40 | 敵：2-3 の砂嵐4とボス／1-1 の砂嵐4とボス（今は仮の絵） | 5-3 の 13.、下の 1-1 の敵 | ブリキノイズ |
 | 18 | ― | M1 の残り：ゆうま、写しのゆうま・ひなの | 下 | あかり（笑顔）。写しは、ゆうまと子どものあかり |
 | 19 | ― | M1 の残り：背景（金魚すくいの屋台、射的の屋台、石段の上、高台、施設の台所、学校の屋上、コンビニの店内は済。2026-10-17。白い街はまだ）／1枚絵（花火、金魚の写真） | 下 | 下の各項 |
@@ -1386,7 +1386,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 
 ### あとで作る物（低）
 
-- まばたき・口パクの差分（5-4）：子どもの3人、ふみ、写しのふみ、写しのきよし、ゆうま。今は止まった絵のまま出る。表情違いがそろってから作る
+- まばたき・口パクの差分（5-4）：子どもの3人、富美、写しの富美、写しの清志、ゆうま。今は止まった絵のまま出る。表情違いがそろってから作る
 
 ### 絵はあるが、まだ画面につないでいない物
 
@@ -1410,7 +1410,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
    - **時間を返した持ち主の、一番大事な瞬間**（「持ち主の想いがスナップになる」という今の決まりと同じ。`docs/design/battle.md` の 2.）。写真を見ると、どこで誰を助けたかを思い出せる
    - **追加の仲間の写真**（みお・小夜子・早瀬・りく・ノア）。ハルトとあかりだけにしない。構想ノートの「固有スナップ」に当たる。仲間ひとりにつき少なくとも1種、その仲間が加わる章か、その仲間の話で手に入るようにする
 3. 同じ種類でも手に入れた場所で絵柄が変わる形は、後で考える（持っている札ごとに出どころを覚えるデータと、絵の数が増えるため）
-4. **使う人の思い出にする（2026-10-30 開発者が決めた。今後もこの方向）**：写真は、そのスナップを使う人（ハルトとあかり。最初の11種）が一緒に過ごした思い出の一瞬にする。子どものころのりくとのチャンバラやカード遊びのように、仲間との昔の思い出も入れてよい。あとから足すスナップも、**それまでの思い出に関連する場面**にする（例：代打の一打は、こうじの一打を、ハルトたちがフェンス越しに応援している場面）。持ち主の大事な瞬間を撮る時も、仲間がその場に居合わせた思い出として撮る。開発者は、この方針で一覧の指示文を書き換えて13枚を作った（書き換えた文は控えていない。下の「14枚の場面」の文は元のもの）
+4. **使う人の思い出にする（2026-10-30 開発者が決めた。今後もこの方向）**：写真は、そのスナップを使う人（ハルトとあかり。最初の11種）が一緒に過ごした思い出の一瞬にする。子どものころのりくとのチャンバラやカード遊びのように、仲間との昔の思い出も入れてよい。あとから足すスナップも、**それまでの思い出に関連する場面**にする（例：代打の一打は、浩二の一打を、ハルトたちがフェンス越しに応援している場面）。持ち主の大事な瞬間を撮る時も、仲間がその場に居合わせた思い出として撮る。開発者は、この方針で一覧の指示文を書き換えて13枚を作った（書き換えた文は控えていない。下の「14枚の場面」の文は元のもの）
 
 いま足りないこと：今の14種のうち、仲間の写真はみお（ジョーカー）だけ。小夜子・早瀬・りく・ノアの写真は、その仲間が加わる章で新しいスナップの種類と一緒に決める（新しい種類の効き目は `docs/design/battle.md` で決める。小夜子は3章の大正の祭りが先）。
 
@@ -1450,7 +1450,7 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 | ドロー | ① | ハルト・あかり | `An empty classroom after school. Playing cards are spread out across two pushed-together desks; the boy and the girl's hands reach for the cards, faces out of frame. Violet evening light.` |
 | ジョーカー | ② 仲間 | みお | `A small 10-year-old girl with a confident grin, seen from the side, shows off a card trick, fanning playing cards and holding up the joker card toward the viewer; the card's face shows only a simple jester pattern. Soft golden light.` |
 | アンコール | ② 持ち主（2-2） | けんた・さき | `A high school culture festival stage in the gym. A boy keeps singing into the microphone even though a guitar string has snapped, a girl playing beside him, seen from the side; a single spotlight and a few cheering hands in the foreground.`（1枚絵 `cg.string_stage` の構図に合わせる） |
-| ピンチヒッター | ② 持ち主（2-3） | こうじと父 | `A late 1990s riverside little league baseball field. A boy in a baseball uniform steps into the batter's box as a pinch hitter, seen from behind; in the stands, his father cups his hands and shouts. Bright summer afternoon.` |
+| ピンチヒッター | ② 持ち主（2-3） | 浩二と父 | `A late 1990s riverside little league baseball field. A boy in a baseball uniform steps into the batter's box as a pinch hitter, seen from behind; in the stands, his father cups his hands and shouts. Bright summer afternoon.` |
 
 ### 作る順番
 
@@ -1726,9 +1726,9 @@ BGM と効果音も、フリー素材を中心にする。2026-10-08 に、各�
 
 | 番号 | 曲 | 使う所 | 作り方 | 指示文（Style of Music） | Exclude styles |
 | --- | --- | --- | --- | --- | --- |
-| ⑧ | しんみり・不穏な日常（`somber`） | りくが休みだと知らされる教室（2日目・5日目）、帰り道、ふみさんの家の前、ゆうま・ふみさんの電話 | 新しく作る | `quiet melancholic slice-of-life underscore, soft felt piano and warm cello, sparse slow chords with gentle silences, a missing friend and an empty seat in a summer classroom, uneasy but tender, D minor, 66 bpm, simple repeating motif, background music under dialogue, steady dynamics, loop-friendly, instrumental` | `drums, vocals, epic, orchestral build-up, EDM` |
+| ⑧ | しんみり・不穏な日常（`somber`） | りくが休みだと知らされる教室（2日目・5日目）、帰り道、富美さんの家の前、ゆうま・富美さんの電話 | 新しく作る | `quiet melancholic slice-of-life underscore, soft felt piano and warm cello, sparse slow chords with gentle silences, a missing friend and an empty seat in a summer classroom, uneasy but tender, D minor, 66 bpm, simple repeating motif, background music under dialogue, steady dynamics, loop-friendly, instrumental` | `drums, vocals, epic, orchestral build-up, EDM` |
 | ⑨ | 昭和の商店街の記憶（`showa`。1-2 の探索と記憶の場面） | 1-2 の区画、1-2 に入る所 | ② 日常（Arcade Afternoon）を Cover して、Style だけ替える（今の商店街の曲が、30年前の記憶として聞こえるように） | `the same shopping street theme remembered from the summer of 1988, played back like a worn cassette tape, slightly detuned and wobbly, warm analog synth and soft electric piano, gentle acoustic guitar, light shuffle rhythm, bittersweet and dreamy, a little mysterious, looping exploration music, steady dynamics, instrumental` | `vocals, heavy drums, distorted guitar, EDM` |
-| ①b | 夕暮れの時計屋（`dusk`。前から予定していた曲） | 時計屋で落ち着いて話す場面（4日目の店番・ふみさん、小話・ふみさんのお茶菓子。2026-10-20。最初に入れた1日目の店じまいと1章の終わりは、すぐ時計が止まって曲が消え、合わなかった） | Paper Umbrella（歌ありの原曲）を Cover（2026-10-19。タイトル曲 NoTitle を元にすると、旋律が消えるか、ピアノごと元の曲のままになった。原曲から作ると、旋律だけが共通になる） | `gentle instrumental variation of the theme, string quartet and soft celesta, harp arpeggios, a quiet old clock shop at sunset, soft clock ticking, golden evening light, nostalgic and calm with a little sadness, 72 bpm, background music under dialogue, steady dynamics, instrumental` | `vocals, piano, drums, big climax, fade out` |
+| ①b | 夕暮れの時計屋（`dusk`。前から予定していた曲） | 時計屋で落ち着いて話す場面（4日目の店番・富美さん、小話・富美さんのお茶菓子。2026-10-20。最初に入れた1日目の店じまいと1章の終わりは、すぐ時計が止まって曲が消え、合わなかった） | Paper Umbrella（歌ありの原曲）を Cover（2026-10-19。タイトル曲 NoTitle を元にすると、旋律が消えるか、ピアノごと元の曲のままになった。原曲から作ると、旋律だけが共通になる） | `gentle instrumental variation of the theme, string quartet and soft celesta, harp arpeggios, a quiet old clock shop at sunset, soft clock ticking, golden evening light, nostalgic and calm with a little sadness, 72 bpm, background music under dialogue, steady dynamics, instrumental` | `vocals, piano, drums, big climax, fade out` |
 | ⑩ | 昭和44年の冬の町工場の記憶（2-1） | 2-1 の区画（段階75 で入れた） | 新しく作る | `a snowy winter evening in a small Japanese machine workshop in 1969, remembered like an old 8mm film, warm sepia mood, gentle accordion and soft brass, plucked strings and quiet metallic percussion like turning gears, a stubborn master and his young apprentice, hardworking and warm with quiet sadness, A minor, 84 bpm, looping exploration music, steady dynamics, instrumental` | `vocals, distorted guitar, EDM, heavy drums` |
 | ⑪ | 平成18年の文化祭の記憶（2-2） | 2-2 の区画（段階75 で入れた） | 新しく作る | `a high school culture festival in autumn 2006, remembered like a faded camcorder video, nostalgic J-rock band sound with clean electric guitar arpeggios, warm bass and light drums, hallways full of laughter, a band that will break up after graduation, youthful and bittersweet, E major, 120 bpm, looping exploration music, steady dynamics, instrumental` | `vocals, metal, screaming, EDM` |
 | ⑫ | 平成10年の夏の河川敷の記憶（2-3） | 2-3 の区画（2026-10-20 に入れた） | 新しく作る | `small and laid-back summer afternoon tune, a riverside baseball field in 1998, remembered like a sun-faded photograph, just acoustic guitar strumming, light whistling melody, simple bass and soft brushed snare, lo-fi warm tape sound, relaxed and a little nostalgic, D major, 96 bpm, looping exploration music, steady dynamics, instrumental`（最初の文は brass や父と子の話が入っていて、壮大になった） | `vocals, EDM, heavy drums, distorted guitar, brass, orchestral, epic, cinematic, anthemic, big climax` |

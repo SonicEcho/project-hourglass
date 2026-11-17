@@ -34,9 +34,9 @@ const AKARI: HubLineDef[] = [
   a.story('ここの砂時計、ひとつずつ誰かの思い出なんだよね。……なんだか、あったかい', { after: 'chapter1_title', before: 'a11_returned', face: '微笑み' }),
   a.story('りく、どこにいるんだろう。……絶対、見つけようね', { after: 'chapter1_title', before: 'chapter2_title', face: '真剣' }),
   a.story('ゆうまさんとひなのちゃん、電話できてよかったね。金魚の名前、ちゃんと思い出せてた', { after: 'a11_returned', before: 'a12_return', face: '微笑み' }),
-  a.story('ふみさんの「おかえり」の顔、思い出すと、わたしまで泣きそうになる', { after: 'a12_return', before: 'chapter2_title', face: '泣き笑い' }),
+  a.story('富美さんの「おかえり」の顔、思い出すと、わたしまで泣きそうになる', { after: 'a12_return', before: 'chapter2_title', face: '泣き笑い' }),
   a.story('みおちゃん、いつも元気だよね。……ちょっと、元気すぎるくらい', { after: 'chapter2_title', before: 'a22_return', face: '考える' }),
-  a.story('いさむさんの「いい仕事だ」、みおちゃん、きっとずっと覚えてるよ', { after: 'd6_library', before: 'chapter3_title', face: '微笑み' }),
+  a.story('勇夫さんの「いい仕事だ」、みおちゃん、きっとずっと覚えてるよ', { after: 'd6_library', before: 'chapter3_title', face: '微笑み' }),
   a.story('「終わるから、全力でやれた」……か。わたし、まだ、そう思えないかも', { after: 'a22_return', before: 'chapter3_title', face: '悲しい' }),
   a.story('持っていかれた砂時計、取り返そうね。……あきらめるの、まだ早いよ', { after: 'd7_taken', before: 'a23_return', face: '真剣' }),
   a.story('小夜子さんって、不思議な人だね。でも、なんだか好きだな', { after: 'chapter3_title', before: 'chapter4_title', face: '笑顔' }),
@@ -50,7 +50,7 @@ const AKARI: HubLineDef[] = [
   a.story('二人乗りって、ちょっと憧れる。……ハルト、うしろ、ちゃんとこげる？', { after: 'a12_enter', before: 'a12_return', face: '照れ' }),
   a.story('町工場の音って、なんだか落ち着くね。カン、カン、って', { after: 'a21_enter', before: 'a21_return', face: '微笑み' }),
   a.story('文化祭、わたしたちの時はどうしよっか。……出し物、また決まらなそう', { after: 'a22_enter', before: 'a22_return', face: '困り笑い' }),
-  a.story('最後の打席……こうじさん、打てるといいね', { after: 'a23_enter', before: 'd7_taken', face: '真剣' }),
+  a.story('最後の打席……浩二さん、打てるといいね', { after: 'a23_enter', before: 'd7_taken', face: '真剣' }),
   a.story('あの砂時計、ちゃんと持ち主に返せてよかった', { after: 'a23_return', before: 'chapter3_title', face: '泣き笑い' }),
   a.story('汽車の音って、遠くまで聞こえるんだね。待ってる人にも、届いたかな', { after: 'a31_enter', before: 'a31_return', face: '考える' }),
   a.story('浴衣の小夜子さん、すごくきれいだった。……わたしも、着てみたいな', { after: 'a3s_enter', before: 'chapter4_title', face: '照れ' }),
@@ -88,7 +88,7 @@ const AKARI: HubLineDef[] = [
   a.event('出し物、まだ決まらない。……ハルトも、ちゃんと考えてよね', { seen: 'bond_akari5', face: 'むっ' }),
   a.event('時計の博物館、また行こうね。今度は迷わないから', { seen: 'bond_akari6', face: '笑顔' }),
   a.event('お弁当、次はわたしが勝つからね。卵焼き、練習してるんだから', { seen: 'bond_akari7', face: 'むっ' }),
-  a.event('いさむさん、親方さんの言葉、ちゃんと受け取れたね', { lost: 'a21_words', face: '微笑み' }),
+  a.event('勇夫さん、親方さんの言葉、ちゃんと受け取れたね', { lost: 'a21_words', face: '微笑み' }),
   a.event('「ラストチャイム」、三人で弾くところ、見てみたいな', { lost: 'a22_song', face: '笑顔' }),
   // 状況
   a.idle('砂の底って、どこまで続いてるんだろうね。こわいけど、ちょっと見てみたい', { flag: 'dig:count', face: '考える' }),
@@ -104,7 +104,7 @@ const AKARI: HubLineDef[] = [
 ];
 
 // ---- みお（段階227。小学4年なので恋愛寄りにはせず、妹分・相棒の距離。4章までに絆 Lv4 まで届く） ----
-// 呼び方：ハルト＝せんぱい、あかり＝あかりちゃん、早瀬＝てんちょーさん、いさむ＝じいちゃん（師匠）。「決めた！」は1つのひとことに1回まで。
+// 呼び方：ハルト＝せんぱい、あかり＝あかりちゃん、早瀬＝てんちょーさん、勇夫＝じいちゃん（師匠）。「決めた！」は1つのひとことに1回まで。
 // 伏線：帰り道や交差点・踏切の前で一瞬止まる（7章まで理由は明かさない）
 const m = make('mio');
 const MIO: HubLineDef[] = [
@@ -122,7 +122,7 @@ const MIO: HubLineDef[] = [
   m.story('「また明日」って、いい言葉ですよね。……たぶん', { after: 'a22_return', before: 'chapter3_title', face: '考える' }),
   m.story('代打って、すっごく緊張するんですよ。わたし、知ってます', { after: 'a23_enter', before: 'd7_taken', face: '真剣' }),
   m.story('取られたまんまじゃ、終われません！ 取り返しましょう、せんぱい！', { after: 'd7_taken', before: 'a23_return', face: '悔しい' }),
-  m.story('こうじさんのヒット、ちゃんと見てました！ ……泣いてないです！', { after: 'a23_return', before: 'chapter3_title', face: '泣き笑い' }),
+  m.story('浩二さんのヒット、ちゃんと見てました！ ……泣いてないです！', { after: 'a23_return', before: 'chapter3_title', face: '泣き笑い' }),
   m.story('小夜子さん、ちょっと不思議でかわいいです。名前付けても……あ、もうあるんだった', { after: 'a3s_enter', before: 'chapter4_title', face: '困り笑い' }),
   m.story('お祭りの屋台、いくつ回れるか数えてました！ 十二です！', { after: 'a3s_enter', before: 'chapter4_title', face: '大笑い' }),
   m.story('あの白い子、ちょっとこわいけど……さみしそうでした', { after: 'a3k_noa', before: 'chapter4_title', face: '心配' }),
@@ -222,11 +222,11 @@ const HAYASE: HubLineDef[] = [
   y.notice('evolve', '武器、進化できるぞ。見てやろうか'),
   y.notice('evolve', '刃の具合がいい。進化させてやれ', '苦笑い'),
   y.notice('talk', '交換所の人が呼んでいる'),
-  y.story('しずえの見ていた景色を、もう一度見られるとはな。……礼を言う', { after: 'a42_return', face: '泣き笑い' }),
+  y.story('静江の見ていた景色を、もう一度見られるとはな。……礼を言う', { after: 'a42_return', face: '泣き笑い' }),
   y.story('柱時計は、まだ動かん。……それでいい。急ぐもんじゃない', { after: 'a42_return', face: '考える' }),
   y.story('返せなかった時間の砂は、どこへ行くんだろうな', { after: 'a42_after', face: '考える' }),
   y.story('店の時計が止まって見えることが、少し減った。……お前らのおかげかもな', { after: 'a42_return', face: '苦笑い' }),
-  y.story('じん坊、か。……そう呼ばれてたこともあった', { after: 'a42_return', face: '苦笑い' }),
+  y.story('仁坊、か。……そう呼ばれてたこともあった', { after: 'a42_return', face: '苦笑い' }),
   y.event('ベルの油さしなら、覚えがある。……昔の話だ', { lost: 'a12_bell', face: '苦笑い' }),
   y.event('親方ってのは、どこもそういうもんだ。褒めるのが下手でな', { lost: 'a21_words', face: '苦笑い' }),
   y.idle('……で、どこから行く'),

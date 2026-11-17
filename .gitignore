@@ -4,3 +4,4 @@ dist/
 .DS_Store
 e2e-failure.png
 __pycache__/
+scripts/.e2e_local.mjs

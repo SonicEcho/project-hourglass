@@ -17,7 +17,7 @@ export const SIDE_CHAINS: Record<string, { name: string; with?: string }> = {
 };
 
 export const SIDE_EVENTS: Record<string, SideEvent[]> = {
-  // 町の頼まれごと：八百屋のごろうさんの福引。特賞がいつまでも出ない
+  // 町の頼まれごと：八百屋の五郎さんの福引。特賞がいつまでも出ない
   lottery: [
     { id: 'side_lottery_1', chain: 'lottery', title: '特賞が出ない', label: '商店街の福引', from: 9, place: 'street', x: 300, y: 520 },
     { id: 'side_lottery_2', chain: 'lottery', title: 'みおの名推理', label: '商店街の福引', from: 17, place: 'street', x: 300, y: 520 },
@@ -29,13 +29,13 @@ export const SIDE_EVENTS: Record<string, SideEvent[]> = {
     { id: 'side_mio_trick_2', chain: 'mio_trick', title: '本気の観察', label: 'みおの手品', from: 18, place: 'convenience', x: 100, y: 520 },
     { id: 'side_mio_trick_3', chain: 'mio_trick', title: '種明かし……？', label: 'みおの手品', from: 29, place: 'riverside', x: 100, y: 520 },
   ],
-  // 町の頼まれごと：壊れていない時計を、毎週持ってくるぜんじさん
+  // 町の頼まれごと：壊れていない時計を、毎週持ってくる善次さん
   regular: [
     { id: 'side_regular_1', chain: 'regular', title: '壊れていない時計', label: '時計屋の常連', from: 11, place: 'clockshop', x: 300, y: 380 },
     { id: 'side_regular_2', chain: 'regular', title: '毎週火曜日', label: '時計屋の常連', from: 19, place: 'clockshop', x: 300, y: 380 },
     { id: 'side_regular_3', chain: 'regular', title: 'ねじを巻く人', label: '時計屋の常連', from: 31, place: 'clockshop', x: 300, y: 380 },
   ],
-  // 段階241：町の頼まれごと。駄菓子屋のとめさんの白い猫「だいふく」がいない
+  // 段階241：町の頼まれごと。駄菓子屋の初江さんの白い猫「だいふく」がいない
   cat: [
     { id: 'side_cat_1', chain: 'cat', title: '看板猫がいない', label: '駄菓子屋の看板猫', from: 12, place: 'street', x: 100, y: 520 },
     { id: 'side_cat_2', chain: 'cat', title: '施設の秘密', label: '駄菓子屋の看板猫', from: 20, place: 'home', x: 300, y: 520 },

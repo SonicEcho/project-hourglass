@@ -892,10 +892,13 @@ export class DialogueScene extends Phaser.Scene {
       let mouthOpen = false;
       const showMouth = () => {
         if (!mouth || !parts?.talk) return;
-        const show = mouthOpen && fits(parts.talk);
+        // 段階249：口を閉じた絵の表情は、口が閉じている間（話していない時も）だけ重ねる
+        const closed = (parts.talk.closed ?? []).some((f) => img.texture.key.endsWith(`.${f}`));
+        const show = fits(parts.talk) && (closed ? !mouthOpen : mouthOpen);
         if (show && mouth.texture.key !== partFor(parts.talk)) mouth.setTexture(partFor(parts.talk));
         mouth.setVisible(show);
       };
+      showMouth();
       if (eyes) {
         const blinkOnce = (then: () => void) => {
           if (!obj.active) return;

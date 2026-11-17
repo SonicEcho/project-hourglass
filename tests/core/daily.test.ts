@@ -235,7 +235,7 @@ describe('返した翌日に持ち主に会う（段階36）', () => {
   const TOWN_T = { street: placeInfo('street'), factory: placeInfo('factory'), shop: placeInfo('shop'), clock: placeInfo('clock') };
   const VISITS: ReturnVisit[] = [
     { area: 'a11', id: 'v11', label: 'ゆうま', place: 'street', x: 0, y: 0 },
-    { area: 'a21', id: 'v21', label: 'いさむ', place: 'factory', x: 0, y: 0, gears: ['batonReceiver'] },
+    { area: 'a21', id: 'v21', label: '勇夫', place: 'factory', x: 0, y: 0, gears: ['batonReceiver'] },
     { area: 'a22', id: 'v22', label: 'けんた', place: 'shop', x: 0, y: 0 },
   ];
   const hub = (day: number): DailyHub => ({
