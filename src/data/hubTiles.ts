@@ -51,6 +51,7 @@ export const HUB_TILE_TALL: Partial<Record<HubTileId, string>> = {
   library: 'tile.library_tall',
   exchange: 'tile.exchange_tall',
   lost: 'tile.lost_tall',
+  side: 'tile.side_tall',
 };
 
 /** 絵の中で見せたい所の高さ（0 が上の端、1 が下の端。切り抜く時の中心）。書いていない絵は真ん中 */

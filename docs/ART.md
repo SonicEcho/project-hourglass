@@ -1490,43 +1490,41 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 
 5-4 の「目を閉じた絵」「口だけ開けた絵」の指示文のまま。ひなのの「通常」の絵（`portrait.hinano`）を見本として渡す。できた絵を `hinano_blink_src.webp`・`hinano_talk_src.webp` として portraits に入れる（`scripts/portrait_parts.py` に目と口の範囲を足して切り抜き、`src/data/dialogue.ts` の `PORTRAIT_PARTS` に「ひなの」を足す）。写しのひなのの口を開けた絵も、同じ指示文で「笑顔」から作る（`past_hinano_talk_src.webp`）。
 
-### 2. 昼の町の見下ろしの地図（2026-11-17 書き直し。昼の「どこへ行く？」の案 D）
+### 2. 昼の町の見下ろしの地図（2026-11-17 書き直し2。昼の「どこへ行く？」の案 D。航空写真のように）
 
-昼の「どこへ行く？」の画面に、町の見下ろしの地図として敷く（`docs/milestones/M3_ui_polish.md` の 18-2）。絵は 390×585 に縮めて、見出しと説明の窓の間（上下 68〜653）に置く。場所の印（丸）と仲間の顔は、ゲームの側で建物の上に重ねる。行けない場所を暗くする・時間帯の色を付けるのも、ゲームの側でする。
+昼の「どこへ行く？」の画面に、町の見下ろしの地図として敷く（`docs/milestones/M3_ui_polish.md` の 18-2）。絵は 390×585 に縮めて、見出しと説明の窓の間（上下 68〜653）に置く。場所の印（丸）と仲間の顔は、ゲームの側で建物の上に重ねる（印の位置は、届いた絵に合わせて `TOWN` の `mapX`・`mapY` を直す）。行けない場所を暗くする・時間帯の色を付けるのも、ゲームの側でする。
 
-- 添付：`docs/sketches/town_map_layout.png`（下絵。青＝川、緑＝土手、灰＝道、縞＝線路、白い四角＝建物の場所、赤い点＝建物の中心）
+- 1回目（2026-11-17）：建物が大きすぎて、地図として縮尺がおかしかった（開発者の声：場所の主張が強すぎる。本物の航空写真のようにしたい）。下絵の赤い点も絵に描かれた。→ 真上からの航空写真にし、建物は本物の大きさの比率に。普通の家で区画を埋める。下絵は印を描かない形に作り直した
+- 添付：`docs/sketches/town_map_layout_aerial.png`（青＝川、緑＝土手、濃い灰＝道、黒い帯＝線路、薄い四角＝普通の家、白い四角＝目印の建物の敷地。大きさの比率も下絵のとおり）
 - 保存名：`town_map.png`（台帳の id は `map.town`）
-- 建物の中心（絵の幅・高さに対する割合）：列は 1/6・1/2・5/6、段は 24%・44%・64%・82%
 
 | 段（上から） | 左 | 真ん中 | 右 |
 | --- | --- | --- | --- |
 | （上の帯） | 川と桜の土手 | | |
-| 1 | 学校（校庭） | 川沿いの道（桜・ベンチ・小さな釣り堀） | 河川敷（野球場） |
-| 2 | 楽器店 | ひだまり荘（老人ホーム） | 施設（ハルトとあかりの家） |
-| 3 | 工場（＋となりに銭湯「松の湯」の煙突） | 商店街（アーケード。八百屋・駄菓子屋の店先、奥に町の神社の小さな鳥居） | パン屋 |
-| 4 | コンビニ | 駅（ホームと、となりの踏切） | 時計屋 |
+| 1 | 学校（校舎と校庭。いちばん大きい） | 川沿いの道（桜・小さな釣り堀の公園） | 河川敷（野球場） |
+| 2 | 楽器店（小さな店） | ひだまり荘（老人ホーム。庭つき） | 施設（ハルトとあかりの家） |
+| 3 | 工場（のこぎり屋根）＋となりに銭湯「松の湯」の煙突 | 商店街（細長いアーケードの屋根。奥に神社の小さな森と鳥居） | パン屋（小さな店） |
+| 4 | コンビニ（駐車場つき） | 駅（線路ぞいのホームと、となりの踏切） | 時計屋（角の小さな店） |
 | （下の帯） | 線路 | | |
-
-場所の印は今の12か所のまま。銭湯・駄菓子屋・八百屋・神社・踏切・釣り堀は、物語や寄り道で出てくるので、印は付けずに絵の中だけに描いてもらう（町の顔なじみの場所が、地図で見つかるように）。
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
-A top-down guide map of a small, warm Japanese town in the present day, in the late afternoon, like a hand-painted map on the town's welcome board. Vertical 2:3 image (1024x1536). A nearly overhead view with only a slight tilt, flat projection without strong perspective. No people and no characters.
-Follow the attached layout sketch exactly: blue is the river, green is the levee, gray are the streets, the striped band is the railway, white boxes are where the landmark buildings stand, and each red dot is the center of a landmark.
-- Top band (the top eighth): a wide river flowing from left to right, with a grassy levee and a row of cherry trees along its lower bank.
-- Bottom band (the bottom tenth): a railway track running from left to right.
-- Between them, two vertical streets and three horizontal streets divide the town into 3 columns by 4 rows of blocks. Each block has exactly one landmark at its center, with small trees, gardens and plain houses around it.
-Landmarks (left / center / right):
-- Row 1 (just below the river): a high school with a sports ground; a quiet path along the levee with cherry trees, benches and a tiny fishing pond; a riverside baseball field with a backstop net.
-- Row 2: a small musical instrument shop with a guitar in the window; a two-story care home with a sunny garden; a modest two-story children's home with laundry drying in the yard.
-- Row 3: an old small factory with a sawtooth roof, and next to it an old public bathhouse with a tall thin chimney; a covered shopping arcade with an arched roof, small shop fronts (a greengrocer with crates of vegetables, a tiny old candy shop) and the small red torii of a neighborhood shrine at its back end; a cozy bakery with a striped awning.
-- Row 4 (just above the railway): a convenience store with a small parking lot; a small local train station with a platform by the railway and a railroad crossing beside it; an old clock shop on a corner with a big round clock on its wall.
-Each landmark must be easy to recognize at a small size: simple, bold silhouettes and distinct colors. Keep each landmark at most one quarter of the image width, and keep the ground right around each landmark simple, because round buttons and small face icons will be placed on top of them.
-Absolutely no letters, numbers or text anywhere: signs, banners and the clock face are blank or have simple patterns only.
+A realistic aerial photograph of a small Japanese residential town in the present day, taken straight down from high above like a satellite or drone survey photo, in warm late-afternoon light with long soft shadows. Vertical 2:3 image (1024x1536). True top-down orthographic view: we see only roofs, treetops, roads and grounds from directly above, no building walls or facades, no tilt and no perspective. Realistic scale: ordinary houses are small and tightly packed, and every block is filled with many ordinary detached houses with gray, dark blue and brown tiled roofs, small gardens, trees and narrow lanes. No people visible.
+Follow the attached layout sketch exactly for the positions and the relative sizes: blue is the river, green is the levee, dark gray are the streets, the black band is the railway, light small squares are ordinary houses, and the white rectangles are the footprints of the landmarks below. The sketch is only a guide: do not draw any outlines, boxes, dots or markers from it.
+- Top: a wide river flowing from left to right, with a grassy levee, a levee road and a row of cherry trees in full bloom along its lower bank.
+- Bottom: a railway line with two tracks running from left to right.
+- Between them, three main streets run across and two run down, with ordinary blocks of houses in between.
+Landmarks, recognizable from directly above (left / center / right):
+- Row 1: a high school (a white L-shaped school building with a flat roof, and a sandy sports ground with a running track); a small park on the levee with cherry trees, paths and a small round pond; a riverside baseball field (a dirt diamond and a green outfield with a backstop).
+- Row 2: a small music shop (a small flat-roofed building, no bigger than the houses around it); a two-story care home with a pale roof and a sunny garden; a modest two-story children's home with a yard and laundry poles.
+- Row 3: an old small factory with a sawtooth roof, with an old public bathhouse next to it (a traditional tiled roof and a tall thin chimney casting a long shadow); a long, narrow covered shopping arcade (a translucent arched roof running down the block), with a small grove and the red torii of a tiny neighborhood shrine at its upper end; a small bakery with a striped awning.
+- Row 4: a convenience store with a small parking lot with white lines; a small train station building with a long platform beside the tracks, and a railroad crossing next to it; a small clock shop on a street corner.
+The landmarks must not be bigger than the sketch shows: only the school, the baseball field and the factory are large; the shops are about the size of two or three houses. Keep a natural, believable town where the landmarks blend in among the houses.
+Absolutely no letters, numbers or text anywhere: no labels, no signs with writing, no map symbols, no compass, no scale bar.
 ```
 
-（できた絵は、人がいないか、赤い点の所に建物が来ているかを確かめる。ずれていたら、下絵と一緒に「建物を赤い点の位置へ動かして」と編集で頼む）
+（できた絵は、人がいないか、真上から見ているか、目印の建物が白い四角の位置と大きさに近いか、下絵の線や点が描かれていないかを確かめる。ゲームの絵柄に寄せたい時は、最初の段落（Anime-style …）を残したまま、2段落目の `A realistic aerial photograph` を `A painterly aerial view, like a realistic aerial photograph repainted in a soft anime background style` に替える）
 
 ### 3. 探索の地図を歩く、2頭身のハルト（試し）
 

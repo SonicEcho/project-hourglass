@@ -213,10 +213,10 @@ export const CAST: Record<string, CastMember> = {
     voice: { pitch: 500, wave: 'square' },
   },
   // 交換所の番人（段階52）。時間保管局の取引の窓口の係（2026-10-17 に通常の立ち絵が届いた。ほかの表情は Gemini で作るまで通常で代わりに出す）
-  // 寄り道（段階239）の町の人。絵は開発者が用意する（届くまでは図形）。docs/ART_QUEUE.md の X
-  五郎: { faces: names('笑顔', '困り', '驚き', '照れ', '泣き笑い'), firstFace: '笑顔', color: 0x9a7a4a, voice: { pitch: 280, wave: 'square' } },
-  トメ: { faces: names('笑顔', '微笑み', '困り', '驚き'), firstFace: '笑顔', color: 0xa08a7a, voice: { pitch: 520, wave: 'triangle' } },
-  善次: { faces: names('笑顔', '微笑み', '照れ', '驚き'), firstFace: '笑顔', color: 0x8a8a9a, voice: { pitch: 260, wave: 'triangle' } },
+  // 寄り道（段階239）の町の人。笑顔の絵は 2026-11-17 に届いた（ほかの表情は、届くまで笑顔で代わりに出す）。docs/ART_QUEUE.md の X
+  五郎: { portrait: 'portrait.goro', ...young(['笑顔', '困り', '驚き', '照れ', '泣き笑い'], { 笑顔: 'smile' }, '笑顔'), height: 410, color: 0x9a7a4a, voice: { pitch: 280, wave: 'square' } },
+  トメ: { portrait: 'portrait.tome', ...young(['笑顔', '微笑み', '困り', '驚き'], { 笑顔: 'smile' }, '笑顔'), height: 400, color: 0xa08a7a, voice: { pitch: 520, wave: 'triangle' } },
+  善次: { portrait: 'portrait.zenji', ...young(['笑顔', '微笑み', '照れ', '驚き'], { 笑顔: 'smile' }, '笑顔'), height: 420, color: 0x8a8a9a, voice: { pitch: 260, wave: 'triangle' } },
   ペトラ: {
     portrait: 'portrait.petra',
     ...young(['通常', '笑顔', '困り', '驚き', '真剣'], { 通常: 'normal' }, '通常'),
