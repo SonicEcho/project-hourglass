@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
 import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SLICE_FLOW, TOWN } from '../data';
+import { BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SIDE_EVENTS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE, toCss, STYLE } from '../ui/theme';
 import { addButton, addText, makePressable } from '../ui/widgets';
@@ -38,6 +38,8 @@ const MARK_STYLE: Record<SpotMark, { color: number; icon: string; word: string }
   stall: { color: 0xf0a040, icon: '★', word: '屋台' },
   go: { color: 0xd9ae62, icon: '→', word: '夕暮れへ' },
   hub: { color: 0x7a5ad0, icon: '扉', word: '拠点' },
+  // 段階239：寄り道（サブイベント）。昼に選べる回数は使わない
+  side: { color: 0x3fbf8a, icon: '？', word: '寄り道' },
 };
 /** 「保存しました」を出した昼（段階98。同じ昼の中で場所を行き来するたびには出さない） */
 let savedNoticeFor: string | null = null;
@@ -50,7 +52,8 @@ function build(data: DailyHub): DailyHub {
   // レストピアの拠点の入口（段階50）：返した区画が1つでもあり、2章から（段階60。1章は物語に集中する）
   // 段階213：狩りを外したので、返した区画があれば出す（前は狩りに入れる区画がある時）
   const hub = (storyLineup().chapter ?? 1) >= HUB_FROM_CHAPTER && run.returned.length > 0 ? HUB_SPOT : undefined;
-  return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits, hub);
+  // 段階239：寄り道の連作（昼に選べる回数は使わない）
+  return resolveHub(data, run.vars, BOND_EVENTS, TOWN, visits, hub, SIDE_EVENTS);
 }
 
 export class DailyScene extends Phaser.Scene {
@@ -169,7 +172,10 @@ export class DailyScene extends Phaser.Scene {
     const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
     // 段階125（レビューの項目48）：拠点の扉も回数を使わない
     const hasHub = allSpots(this.hub).some((s) => s.mark === 'hub');
-    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。！${hasHub ? 'と扉' : ''}は数えない`);
+    // 段階239：寄り道（？）も回数を使わない。「！・？・扉は数えない」にまとめる
+    const hasSide = allSpots(this.hub).some((s) => s.mark === 'side');
+    const free = ['！', ...(hasSide ? ['？'] : []), ...(hasHub ? ['扉'] : [])];
+    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。${free.join('・')}は数えない`);
     // 段階83：相手のいる小話は、その日に見ると♥が半分増える（段階153 から、帯が1割進む）。段階125（レビューの項目49）：後から拠点で読んでも増えないので「その日に見た時だけ」と書く
     if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…小話は、その日に見た時だけ絆の帯が少し進む');
     root.add(addText(this, GAME_WIDTH / 2, 730, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
@@ -223,7 +229,7 @@ export class DailyScene extends Phaser.Scene {
     holder.add(circle);
     holder.add(addText(this, 0, 0, state === 'seen' ? '✓' : st.icon, { size: 22, bold: true }).setOrigin(0.5));
     // 記号の上に、出来事の種類を言葉で（段階98）
-    holder.add(addText(this, 0, -44, st.word, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(0.5));
+    holder.add(addText(this, 0, -44, spot.mark === 'side' ? '寄り道・時間を使わない' : st.word, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(0.5));
     const label = addText(this, 0, 46, spot.label, { size: 14, bold: true, align: 'center', wrap: 300 }).setOrigin(0.5);
     holder.add(this.add.rectangle(0, 46, label.width + 16, label.height + 8, 0x000000, 0.6));
     holder.add(label);

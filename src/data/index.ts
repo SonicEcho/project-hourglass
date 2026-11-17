@@ -36,6 +36,7 @@ export * from './enemyArt';
 export * from './libraryNotes';
 export * from './librarySources';
 export * from './screenCoach';
+export * from './sideEvents';
 export * from './encounters';
 export * from './growthMap';
 export * from './campaign';

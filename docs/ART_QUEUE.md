@@ -14,6 +14,7 @@
 - [R. 洋服の小夜子（試着室）](#r-洋服の小夜子試着室)：3 枚
 - [S. とうや・しおりのまばたき・口パク用](#s-とうやしおりのまばたき口パク用)：4 枚
 - [V. 砂の底のレアスナップ（段階219）](#v-砂の底のレアスナップ段階219)：3 枚
+- [X. 寄り道の町の人（段階239）](#x-寄り道の町の人段階239)：2 枚（表情違いは、基本の1枚の後に）
 
 ### Q. だいち・さきの描き直し（けんたと見分けやすく）
 
@@ -320,6 +321,42 @@ Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft c
 A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
 A narrow Japanese shopping street at dusk seen straight down its length, with paper lanterns and shop lights coming on and receding into the distance. In the lower middle, a few townspeople chatting in front of a bakery and a candy shop, a cat on a bench, warm windows. People are small and seen from the side or behind. A peaceful, everyday evening.
 Absolutely no letters, numbers or text anywhere.
+```
+
+### X. 寄り道の町の人（段階239）
+
+寄り道（`docs/milestones/M3_side_events.md`）に出る、現代の商店街の人。今は図形で出している（`src/data/dialogue.ts` の `CAST`）。絵が届いたら、`portrait.goro`・`portrait.zenji` として台帳に足し、`CAST` に `portrait` と表情を書く。表情違い（困り・驚き・照れ・泣き笑い／微笑み・照れ・驚き）は、基本の1枚を見てから頼む。
+
+#### 1. 五郎（八百屋の主人。商店街の福引の係）
+
+- 添付：`public/assets/portraits/akari_smile.webp`
+- 保存名：`goro_smile.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a big, hearty open-mouthed grin.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl in the cardigan.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Goro, a 58-year-old Japanese greengrocer in a small local shopping street, cheerful and loud. Stocky build, sun-tanned round face, short graying crew cut, a twisted towel tied around his forehead as a headband, a dark green apron with a front pocket over a white T-shirt. Present-day Japan.
+Keep the face and body proportions natural for his age. Absolutely no letters or text anywhere.
+```
+
+#### 2. 善次（時計屋の常連。毎週火曜に、壊れていない腕時計を見せに来る）
+
+- 添付：`public/assets/portraits/akari_smile.webp`
+- 保存名：`zenji_smile.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a soft, gentle smile with kind, slightly watery eyes.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl in the cardigan.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Zenji, an 82-year-old Japanese widower, quiet and polite. Slim, slightly stooped, neatly combed thin white hair, small round glasses, a tidy gray cardigan over a white collared shirt. Present-day Japan.
+Absolutely no letters or text anywhere.
 ```
 
 ## 済んだ絵
