@@ -5,6 +5,7 @@ import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, h
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { AREA_BATTLES, SCREEN_COACH, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger, diggerStats, ALLY_FACE, FACE_CROPS } from '../data';
 import { startScreenCoach } from '../ui/screenCoach';
+import { notePlayCount } from './playRecord';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -368,6 +369,8 @@ export class SandBottomScene extends Phaser.Scene {
     const count = Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1;
     const stock = Object.fromEntries(tools.map((t) => [digToolVar(t), String(this.stockOf(t) - tools.filter((x) => x === t).length)]));
     setStoryVars({ ...run.vars, ...stock, [DIVE_COUNT_VAR]: String(count), [SAND_BOTTOM_DIGGER_VAR]: digger });
+    // 遊んだ記録（段階237）：砂の底に潜った回数（前の「記憶をたどった回数」の欄を使う）
+    notePlayCount('hunt');
     // 段階217：その回の特別ルールと、珍品（埋めるかどうか・中身は、潜る前に決める。掘り当てるまで秘密）
     // 段階218：特別ルールと珍品は、ちゃんと潜った回数で決める（すぐ戻る選び直しを防ぐ）
     const full = fullDives() + 1;

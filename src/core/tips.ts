@@ -38,10 +38,9 @@ export function serializeSeenTips(seen: readonly string[]): string {
 }
 
 
-/** 探索で、今の場面に合う説明の id。atCheckpoint：チェックポイントに立っている。hunting：記憶をたどっている（段階45） */
-export function exploreTipTriggers(state: ExploreState, ctx: { atCheckpoint: boolean; hunting?: boolean }): string[] {
+/** 探索で、今の場面に合う説明の id。atCheckpoint：チェックポイントに立っている */
+export function exploreTipTriggers(state: ExploreState, ctx: { atCheckpoint: boolean }): string[] {
   const out = ['explore_basic'];
-  if (ctx.hunting) out.push('explore_hunt');
   if (ctx.atCheckpoint) out.push('explore_checkpoint');
   if (state.koma > 0) out.push('explore_koma');
   return out;

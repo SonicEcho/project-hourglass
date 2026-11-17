@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { startWithImages } from '../ui/waitImages';
 import { battleSceneFor } from './chainEncounter';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
@@ -43,14 +42,6 @@ import {
   pendingTrigger,
   triggerGears,
   startExplore,
-  findLost,
-  huntArea,
-  huntGearKey,
-  lostOfSpot,
-  lostSpots,
-  thinItems,
-  areaChapter,
-  huntRewardRate,
   applyMapEdits,
   isEmptyMapEdits,
   roofCells,
@@ -62,7 +53,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
@@ -73,7 +64,7 @@ import { maybeShowTip, seenTips } from '../ui/tipPanel';
 import { startScreenCoach } from '../ui/screenCoach';
 import type { BattleSceneData } from './chainEncounter';
 import type { DialogueData } from './DialogueScene';
-import { currentParty, nextHuntCount, run, setCampReturn, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup } from './run';
+import { currentParty, run, setCampReturn, setExplore, setHubReturn, setStoryVars, storyBattleLineup, storyLineup } from './run';
 import { notePlayBattle } from './playRecord';
 
 // 探索（段階25）：区画の地図を歩く。タップした所まで最短の道で歩き、宝箱を開け、敵の印に触れると戦闘になる。
@@ -81,8 +72,7 @@ import { notePlayBattle } from './playRecord';
 // 区画のボスに勝ち、その後の会話を見たら、物語の流れへ done で戻る。
 // 段階47：区画は部屋を出入口でつないだもの。出入口のマスに着くと、短く暗転して、つながった部屋の出入口の内側に出る（画面を開き直す）。
 // 敵の印は、動き方の種類ごとに1歩ずつ行き先を決める（core/explore.ts の enemyNext）
-// 段階43：狩り（hunt）の時は、返し終えた区画を狩りの区画（core/hunt.ts の huntArea）にして歩く。状態はセーブしない run.hunt に置く。
-// コマ・会話はなく、ぬしはいつでも挑めて、勝っても区画は終わらない。左上の「レストピアへ戻る」で拠点に戻る（段階50）
+// 段階43 の狩り（記憶をたどる）は、段階213 で砂の底に置き換えて外した（段階237 でコードも片付けた）
 
 const T = AREA_TILE;
 
@@ -96,8 +86,6 @@ export interface ExploreData {
   lost?: boolean;
   /** 見終えて戻ってきた、途中の会話（場面の id） */
   seen?: string;
-  /** 狩り（段階43。返し終えた区画に入り直している） */
-  hunt?: boolean;
   /** 晩に分けた区画の、何晩目か（段階63。物語の流れの探索の出来事が決める） */
   night?: number;
   /**
@@ -125,7 +113,6 @@ export class ExploreScene extends Phaser.Scene {
   /** デバッグメニューの試しの区画（段階47。物語の流れには戻らない） */
   private trial = false;
   /** 狩りの途中（段階43） */
-  private hunting = false;
   /** 晩に分けた区画の、何晩目か（段階63。晩に分けていない区画と狩りは 0） */
   private night = 0;
   private map!: GridMap;
@@ -181,23 +168,9 @@ export class ExploreScene extends Phaser.Scene {
     this.rawArea = raw;
     this.editor = null;
     const base = isDebugEnabled(window.location.search) ? applyMapEdits(raw, loadMapEdits()) : raw;
-    this.hunting = data.hunt === true;
-    const hunt = run.hunt;
-    if (this.hunting && (!hunt || !base.hunt)) {
-      // 狩りの状態がない（ふつうは起きない）：物語の流れへ戻る（前に開いた時の仲間や敵が update で動かないよう、移る途中にする）
-      this.leaving = true;
-      this.scene.start('Flow', { done: false });
-      return;
-    }
-    // 記憶をたどる時は、受けている探し物（落とし物。段階53）の光る所も置く
     // 晩に分けた区画（段階63）：その晩の壁と、その晩に出るものだけ
-    this.night = !this.hunting && base.nights ? (data.night ?? 1) : 0;
-    const area =
-      this.hunting && hunt && base.hunt
-        ? huntArea({ ...base, hunt: { ...base.hunt, gathers: [...base.hunt.gathers, ...lostSpots(LOST_ITEMS, run.vars, base.id)] } }, hunt.salt, run.vars)
-        : this.night > 0
-          ? nightArea(base, this.night)
-          : base;
+    this.night = base.nights ? (data.night ?? 1) : 0;
+    const area = this.night > 0 ? nightArea(base, this.night) : base;
     this.area = area;
     this.trial = !AREAS[data.area];
     this.tune = data.tune ?? null;
@@ -216,7 +189,7 @@ export class ExploreScene extends Phaser.Scene {
     this.world = undefined;
     this.pausedTweens = [];
 
-    let state = this.hunting && hunt ? hunt.state : run.explore?.area === area.id ? run.explore : startExplore(area);
+    let state = run.explore?.area === area.id ? run.explore : startExplore(area);
     // 新しい晩なら、その晩を始める所から（段階63）
     if (this.night > 0) state = startNight(base, state, this.night);
     // 地図直しの試し歩き（段階121）：選んだ部屋の、選んだマス（なければ S・P か、出入口の内側）から。全部の部屋に入ったことにする
@@ -227,15 +200,14 @@ export class ExploreScene extends Phaser.Scene {
     let note = '';
     let komaGot = 0;
     // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
-    if (data.won && !this.trial && !this.hunting) notePlayBattle(run.event, true);
-    if (data.lost && !this.trial && !this.hunting) notePlayBattle(run.event, false);
+    if (data.won && !this.trial) notePlayBattle(run.event, true);
+    if (data.lost && !this.trial) notePlayBattle(run.event, false);
     if (data.won) {
       // 倒した印の戦闘のコマを手に入れる（段階28。同じ印で2回もらわないよう、まだ倒していなかった時だけ）
       const battleId = data.won === area.boss.id ? area.boss.battle : area.enemies.find((e) => e.id === data.won)?.battle;
-      // 狩りでは、コマは手に入らず、ぬしに勝っても区画は終わらない（段階43）
-      if (!state.defeated.includes(data.won) && !this.hunting) komaGot = AREA_BATTLES[battleId ?? '']?.koma ?? 0;
+      if (!state.defeated.includes(data.won)) komaGot = AREA_BATTLES[battleId ?? '']?.koma ?? 0;
       state = addKoma(defeatEnemy(state, data.won), komaGot);
-      if (data.won === area.boss.id && !this.hunting) state = { ...state, cleared: true };
+      if (data.won === area.boss.id) state = { ...state, cleared: true };
     }
     if (data.lost) {
       state = loseBattle(state);
@@ -300,12 +272,10 @@ export class ExploreScene extends Phaser.Scene {
     this.say(
       note ||
         (data.won
-          ? `${data.won === area.boss.id ? 'ぬし' : '砂嵐'}を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${this.komaNote()}）` : this.hunting || data.won === area.boss.id ? '' : '（コマは持っていなかった）'}`
-          : this.hunting
-            ? '記憶をたどる：砂嵐の名残とぬしから素材を集める。光る所をタップすると素材を拾える'
-            : this.night > 0
-              ? this.nightGuide()
-              : (area.goal?.guide ?? 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘')) +
+          ? `${data.won === area.boss.id ? 'ぬし' : '砂嵐'}を倒した。${komaGot > 0 ? `コマを${komaGot}つ手に入れた（${this.komaNote()}）` : data.won === area.boss.id ? '' : '（コマは持っていなかった）'}`
+          : this.night > 0
+            ? this.nightGuide()
+            : (area.goal?.guide ?? 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘')) +
         // 区画の予告（段階201）：入った時に、この先に多い性質と効くギア
         (note || data.won || data.lost ? '' : this.traitForecast(false)),
     );
@@ -337,7 +307,7 @@ export class ExploreScene extends Phaser.Scene {
       // 同じ場面で当てはまる次の説明を続けて出す（段階32b）
       this.showTip(atCheckpoint);
     };
-    const triggers = exploreTipTriggers(this.state, { atCheckpoint, hunting: this.hunting });
+    const triggers = exploreTipTriggers(this.state, { atCheckpoint });
     const tip = nextTip(TIPS, seenTips(), triggers);
     if (!tip) return;
     // 段階236：照らす案内（戦闘と同じ形）。案内の手順がない説明は、今までどおり説明の窓
@@ -412,8 +382,8 @@ export class ExploreScene extends Phaser.Scene {
       }
     }
 
-    // まだ入っていない部屋への出入口（段階112）：光る矢印と、その部屋の名前。狩りでは出さない
-    if (!this.hunting) {
+    // まだ入っていない部屋への出入口（段階112）：光る矢印と、その部屋の名前
+    {
       for (const door of unvisitedDoors(area, this.state, room.id)) {
         const [dx, dy] = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[door.side];
         const nx = door.cells.reduce((n, c) => n + c[0], 0) / door.cells.length;
@@ -441,20 +411,11 @@ export class ExploreScene extends Phaser.Scene {
         this.tweens.add({ targets: ring, alpha: 0.4, yoyo: true, repeat: -1, duration: 900 });
       }),
     );
-    // 宝箱（狩りでは採取の場所：光る緑のひし形。段階43）
+    // 宝箱
     for (const chest of area.chests) {
       if (!this.here(chest)) continue;
       const opened = this.state.openedChests.includes(chest.id);
       const [x, y] = [chest.cell[0] * T + T / 2, chest.cell[1] * T + T / 2];
-      if (this.hunting) {
-        // 落とし物の光る所（段階53）は金色
-        const lost = lostOfSpot(chest.id) !== null;
-        const spot = this.add.rectangle(x, y, T * 0.5, T * 0.5, opened ? 0x3a4a3a : lost ? 0xffd84a : 0x6fe0a0).setAngle(45).setStrokeStyle(2, opened ? 0x5a6a5a : 0xffffff);
-        if (!opened) this.tweens.add({ targets: spot, alpha: 0.45, scale: 1.2, yoyo: true, repeat: -1, duration: 700 });
-        this.chestSprites.set(chest.id, spot);
-        world.add(spot);
-        continue;
-      }
       const box = this.add.rectangle(x, y, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f).setStrokeStyle(2, opened ? 0x6b5a40 : 0xffd84a);
       this.chestSprites.set(chest.id, box);
       world.add(box);
@@ -507,7 +468,7 @@ export class ExploreScene extends Phaser.Scene {
       const sprite = this.enemySprite(e.battle, move, route[0]);
       this.shadeSprite(sprite, isShade(room, route[0]));
       // コマを持つ砂嵐の印（段階67。物語の探索だけ。狩りではコマは手に入らない）
-      if (!this.hunting && (AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
+      if ((AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
       world.add(sprite);
       const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route) };
       if (move === 'chase') {
@@ -551,16 +512,9 @@ export class ExploreScene extends Phaser.Scene {
     // 上の帯は、地図の絵が透けて文字が読みにくくならないよう、濃くする（段階98。レビューの F3）
     ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.8).setOrigin(0));
     ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
-    // コマ：あと何コマで返せるか（段階28）。狩りではコマはないので、狩りの案内（段階43）
+    // コマ：あと何コマで返せるか（段階28）
     const left = komaLeft(area, this.state);
-    if (this.hunting) {
-      // その回の記憶の濃さ（段階57）
-      const fade = run.hunt?.fade ?? 1;
-      const level = MEMORY_FADE_RATES.indexOf(fade);
-      const label = fade < 1 ? `（${MEMORY_FADE_LABELS[level] ?? '薄い'}・${Math.round(fade * 10)}割）` : '';
-      ui.add(addText(this, GAME_WIDTH / 2, 31, `記憶をたどる：素材を集める${label}`, { size: 13, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
-    }
-    else if (this.night > 0) {
+    if (this.night > 0) {
       // 晩に分けた区画（段階67）：今夜の目標（何晩目と、今夜のコマ）
       const goal = nightGoal(area, this.state, this.night);
       const done = this.nightOver();
@@ -583,8 +537,7 @@ export class ExploreScene extends Phaser.Scene {
         color: left > 0 ? COLORS.text : COLORS.accentText,
       }).setOrigin(0.5, 0),
     );
-    if (this.hunting) addButton(this, ui, 46, 32, 76, 44, 'レストピア\nへ戻る', { onTap: () => this.leaveHunt() }, { size: 11 });
-    else addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
+    addButton(this, ui, 46, 32, 76, 44, 'タイトル', { onTap: () => this.scene.start('Title') }, { size: 13 });
     if (isDebugEnabled(window.location.search)) {
       addButton(this, ui, GAME_WIDTH - 46, 28, 76, 34, 'マス目', { onTap: () => gridView.setVisible(!gridView.visible) }, { size: 13 });
       // 地図の調整（段階117）。直しがあれば ＊ を付ける
@@ -882,36 +835,27 @@ export class ExploreScene extends Phaser.Scene {
     return AREA_BATTLES[this.area.boss.battle]?.koma ?? 0;
   }
 
-  /** ボスに挑めるか（ボスのコマを足せば返せる数になっている。狩りでは、いつでも。段階43） */
+  /** ボスに挑めるか（ボスのコマを足せば返せる数になっている） */
   private bossReady(): boolean {
-    return this.hunting || bossReady(this.area, this.state, this.bossKoma());
+    return bossReady(this.area, this.state, this.bossKoma());
   }
 
-  /** ボスの印が今の部屋にいるか（狩りでは、勝つとその回は消える） */
+  /** ボスの印が今の部屋にいるか */
   private bossHere(): boolean {
     return !this.state.cleared && enemyActive(this.state, this.area.boss.id) && this.here(this.area.boss) && (this.night === 0 || inNight(this.area.boss, this.night));
   }
 
-  /** 探索の状態を覚える（狩りはセーブしない run.hunt に。段階43） */
+  /** 探索の状態を覚える */
   private keep(state: ExploreState): void {
     // 地図直しの試し歩き（段階121）はセーブに書かない（いる所は開き直す時のデータで渡す）
     if (this.tune) return;
-    if (this.hunting) setHuntState(state);
-    else setExplore(state);
+    setExplore(state);
   }
 
-  /** この画面を開き直す時のデータ（区画と、狩りかどうか） */
+  /** この画面を開き直す時のデータ */
   private back(extra: Partial<ExploreData> = {}): ExploreData {
     const tune = this.tune ? { room: this.state.room, cell: this.state.cell } : undefined;
-    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, hunt: this.hunting || undefined, night: this.night || undefined, tune, ...extra };
-  }
-
-  /** 狩りを終えて、レストピアの拠点へ戻る（段階43。段階50から、昼の時計屋ではなく拠点へ） */
-  private leaveHunt(): void {
-    if (this.leaving) return;
-    this.leaving = true;
-    run.hunt = null;
-    startWithImages(this, 'Hub', { seen: undefined });
+    return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, night: this.night || undefined, tune, ...extra };
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */
@@ -919,30 +863,12 @@ export class ExploreScene extends Phaser.Scene {
     const r = openChest(this.area, this.state, chestId);
     if (!r) return;
     this.state = r.state;
-    // 落とし物の光る所（段階53）：見つけた印を付け、声が残っていれば会話を見る
-    const lostId = lostOfSpot(chestId);
-    if (lostId) {
-      const def = LOST_ITEMS.find((d) => d.id === lostId);
-      setStoryVars(findLost(run.vars, lostId));
-      this.chestSprites.get(chestId)?.setFillStyle(0x3a4a3a).setStrokeStyle(2, 0x5a6a5a);
-      this.tweens.killTweensOf(this.chestSprites.get(chestId) ?? []);
-      playSe(this, SE.chest);
-      this.say(`落とし物を見つけた！　${def?.name ?? ''}（拠点の落とし物の棚から、${def?.owner ?? ''}さんに届けられる）`);
-      this.keep(this.state);
-      if (def?.findScene) this.openScene(def.findScene, this.back());
-      return;
-    }
-    // 記憶をたどる時の採取の場所は、記憶の薄れ（段階57）の割合の分だけ残る
-    const fade = this.hunting ? (run.hunt?.fade ?? 1) : 1;
-    const got = thinItems(r.chest.items, fade, (run.hunt?.salt ?? 0) + [...chestId].reduce((a, ch) => a + ch.charCodeAt(0), 0));
-    const lostByFade = r.chest.items.length - got.length;
+    const got = r.chest.items;
     // 持てる数のある物は、超えた分を捨てる（段階204 で消費アイテムをなくしたので、今は持てる数のある物はない）
     const capped = capItems(WEAPON_DATA, addItems(run.armory, got));
     run.armory = capped.armory;
     const gears = r.chest.gears ?? [];
     if (gears.length > 0) run.navi = addParts(run.navi, gears);
-    // 記憶をたどる時の採取の場所のギアは、初めての1回だけ（段階200）
-    if (this.hunting && gears.length > 0) run.vars = { ...run.vars, [huntGearKey(r.chest.id)]: '1' };
     // スナップは新しい戦闘のアルバムへ（段階168。ライブラリにも記録。段階204 で古いスナップはなくした）
     const chainSnaps = r.chest.chainSnaps ?? [];
     if (chainSnaps.length > 0) {
@@ -950,13 +876,10 @@ export class ExploreScene extends Phaser.Scene {
       run.library = recordLibraryFinds(run.library, { snaps: chainSnaps });
     }
     const sprite = this.chestSprites.get(r.chest.id);
-    if (sprite && this.hunting) {
-      this.tweens.killTweensOf(sprite);
-      sprite.setAlpha(1).setScale(1).setFillStyle(0x3a4a3a).setStrokeStyle(2, 0x5a6a5a);
-    } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
+    sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
-      `${this.hunting ? '素材を拾った！' : '宝箱を開けた！'}　${[got.length > 0 ? summarize(got) : '（記憶がかすれて、何も残っていなかった）', lostByFade > 0 && got.length > 0 ? `（記憶が薄れて、${lostByFade}つは砂に戻った）` : '', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''].filter(Boolean).join('　')}`,
+      `宝箱を開けた！　${[got.length > 0 ? summarize(got) : '（空っぽだった）', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''].filter(Boolean).join('　')}`,
     );
     this.keep(this.state);
   }
@@ -1025,17 +948,6 @@ export class ExploreScene extends Phaser.Scene {
         battle,
         win: { key: 'Explore', data: this.back({ won: enemyId }) },
         lose: { key: 'Explore', data: this.back({ lost: true }) },
-        // 狩り（段階43）：同じ砂嵐と何度戦っても落とす物が変わるよう、狩りの戦闘の回数でシードをずらす
-        // 段階49：前の章の区画なら、星の砂と経験値は半分
-        // 記憶の薄れ（段階57）：星の砂・経験値に割合をかけ（前の章の区画の半分と重ねる）、落とした素材も割合の分だけ残す
-        ...(this.hunting
-          ? {
-              hunt: true,
-              seedShift: nextHuntCount(),
-              rewardRate: huntRewardRate(areaChapter(SLICE_FLOW, this.area.id), storyLineup().chapter, HUNT_OLD_AREA_RATE) * (run.hunt?.fade ?? 1),
-              dropRate: run.hunt?.fade ?? 1,
-            }
-          : {}),
       },
     };
     // 段階159：新しい戦闘にした区画の戦闘（と、デバッグの切り替え）は、並べてつなぐ戦闘の画面へ
@@ -1213,7 +1125,7 @@ export class ExploreScene extends Phaser.Scene {
    */
   private traitForecast(withBoss: boolean): string {
     if (!storyLineup().unlocks.navi) return '';
-    const hints = areaTraitHints(this.area.id.replace(/^hunt_/, ''));
+    const hints = areaTraitHints(this.area.id);
     const name = (id: string) => NAVI_DATA.parts[id]?.name ?? id;
     const lines = [traitHintLine('この先', hints.field, name), withBoss ? traitHintLine('ぬし', hints.boss, name) : ''].filter((x) => x);
     return lines.length ? `\n${lines.join('\n')}` : '';

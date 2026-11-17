@@ -63,7 +63,7 @@ export function notePlayStart(): void {
   store(recordPlayStart(playRecord()));
 }
 
-/** M2 で足した遊びの回数（段階45）：記憶をたどった・交換した・落とし物を届けた・ポーチを使った */
+/** M2 で足した遊びの回数（段階45）：砂の底に潜った（段階237 から。前は記憶をたどった）・交換した・落とし物を届けた・ポーチを使った */
 export function notePlayCount(key: PlayCountKey, n = 1): void {
   store(recordPlayCount(playRecord(), key, n));
 }

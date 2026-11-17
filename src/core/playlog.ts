@@ -27,7 +27,7 @@ export interface PlayLog {
   lastAt: string | null;
   /** 「つづく」まで着いた回数 */
   finished: number;
-  /** M2 で足した遊びの回数（段階45）：hunt 記憶をたどった回数、exchange 交換した回数、lost 落とし物を届けた数、pouch ポーチを使った数 */
+  /** M2 で足した遊びの回数（段階45）：hunt 砂の底に潜った回数（段階237 から。前は記憶をたどった回数。記録の形を変えないよう名前はそのまま）、exchange 交換した回数、lost 落とし物を届けた数、pouch ポーチを使った数 */
   counts: Record<PlayCountKey, number>;
 }
 

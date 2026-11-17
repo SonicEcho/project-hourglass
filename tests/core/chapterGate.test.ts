@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GrowthState } from '../../src/core';
-import { areaChapter, eventPassed, flowEvents, chapterLocked, createArmory, createGrowth, getOpenError, huntRewardRate, openableNodes, openNode, recordVictory } from '../../src/core';
+import { areaChapter, eventPassed, flowEvents, chapterLocked, createArmory, createGrowth, getOpenError, openableNodes, openNode, recordVictory } from '../../src/core';
 import { AREAS, CHAPTER1_LINEUP, CHAPTER2_LINEUP, GROWTH_MAP, HERO, HUB_SCENES, HUNT_OLD_AREA_RATE, PARTY, SCENES, SLICE_FLOW, WEAPON_DATA } from '../../src/data';
 
 // 章の区切り（段階49。docs/design/economy.md の 2.・7.）：星図の区域は章で広がる。狩りで前の章の区画は、星の砂と経験値が半分
@@ -40,12 +40,8 @@ describe('狩りの報酬の割合（段階49）', () => {
     expect([CHAPTER1_LINEUP.chapter, CHAPTER2_LINEUP.chapter]).toEqual([1, 2]);
   });
 
-  it('今の章の区画は全部、前の章の区画は半分。章が分からなければ全部', () => {
+  it('前の章の層の割合は半分（段階237：探索の狩りは外した。砂の底の上の層で使う）', () => {
     expect(HUNT_OLD_AREA_RATE).toBe(0.5);
-    expect(huntRewardRate(2, 2, HUNT_OLD_AREA_RATE)).toBe(1);
-    expect(huntRewardRate(1, 2, HUNT_OLD_AREA_RATE)).toBe(0.5);
-    expect(huntRewardRate(undefined, 2, HUNT_OLD_AREA_RATE)).toBe(1);
-    expect(huntRewardRate(1, undefined, HUNT_OLD_AREA_RATE)).toBe(1);
   });
 
   it('経験値の割合：行動の回数に割合をかけて切り捨て。素材は割合に関係なく入る（上限はない）', () => {

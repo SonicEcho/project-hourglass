@@ -126,8 +126,8 @@ if (debug) {
     openPrototype: (key, data = {}) => goTo(key, data),
     openDialogue: (data) => goTo('Dialogue', data),
     openFlow: () => goTo('Flow', { done: false }),
-    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined }),
-    openMapTune: (area, night, room) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined, night, tune: { room, edit: true } }),
+    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined }),
+    openMapTune: (area, night, room) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, night, tune: { room, edit: true } }),
   });
   // その場のメモ（段階92）：書いた時の場所を集める
   installMemoPanel(() => {

@@ -57,7 +57,6 @@ export function exploreImages(areaId: string): string[] {
   if (!area) return commonImages();
   const battles = new Set<string>();
   collect(area, 'battle', battles);
-  for (const list of Object.values(area.hunt?.tables ?? {})) for (const b of list) battles.add(b);
   const maps = area.rooms.map((r) => r.image).filter((x): x is string => !!x);
   return [...new Set([...maps, ...battleImages([...battles]), ...commonImages()])];
 }

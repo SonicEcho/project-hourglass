@@ -304,7 +304,7 @@ export class ChainBattleScene extends Phaser.Scene {
         gradeAt: setup?.gradeAt ?? (area.boss ? { high: 35, mid: 50 } : { high: 13, mid: 20 }),
       });
       this.seed = (run.seed + textHash(area.id) + (data.encounter.seedShift ?? 0) * 104729) >>> 0;
-      const vitals = data.encounter.dig ? run.dig?.vitals : data.encounter.hunt ? run.hunt?.state.vitals : run.explore?.vitals;
+      const vitals = data.encounter.dig ? run.dig?.vitals : data.encounter.hunt ? undefined : run.explore?.vitals;
       this.s = createChainBattle(def, CHAIN_RULES, this.seed, knownChainWeak(true), vitals ?? {});
       // チュートリアル（段階161）：最初の戦闘は手札を決めておく（2ラウンド目にエフェクトとクライマックスの説明が出るように）
       // 2戦目（最初の戦闘を終えて、スペシャルとコンボをまだ見ていない）は、コンボがそろう手札にする

@@ -4,7 +4,6 @@ import {
   acceptLost,
   activeLostCount,
   deliverLost,
-  findLost,
   getAcceptError,
   getDeliverError,
   bondExtras,
@@ -15,8 +14,6 @@ import {
   lostKey,
   lostVoicesHeard,
   wantsLostVoice,
-  lostOfSpot,
-  lostSpots,
   lostStatus,
   shelfLost,
 } from '../../src/core';
@@ -43,23 +40,15 @@ describe('落とし物（段階53）', () => {
     expect(activeLostCount(defs, vars)).toBe(1);
   });
 
-  it('探し物：受けている間だけ、記憶をたどる区画に光る所が出る。拾うと見つけた、になり、届けられる', () => {
+  // 段階237：記憶をたどる時の光る所（lostSpots・findLost）は外した。見つけた（found）になれば届けられる
+  it('探し物：見つけた、になると届けられる', () => {
     let vars = acceptLost(defs, {}, 'f', 3);
-    expect(lostSpots(defs, {}, 'a11')).toEqual([]);
-    expect(lostSpots(defs, vars, 'a12')).toEqual([]);
-    const spots = lostSpots(defs, vars, 'a11');
-    expect(spots).toEqual([{ id: 'lost:f', cell: [1, 2], items: [] }]);
-    expect(lostOfSpot(spots[0].id)).toBe('f');
-    expect(lostOfSpot('a11_gather_goldfish')).toBeNull();
     expect(getDeliverError(find, vars, {})).toBe('not found yet');
-    vars = findLost(vars, 'f');
-    expect(lostSpots(defs, vars, 'a11')).toEqual([]);
+    vars = { ...vars, [lostKey('f')]: 'found' };
     const r = deliverLost(find, vars, { items: {}, fragments: {} });
     expect(lostStatus(r.vars, 'f')).toBe('delivered');
     expect(r.fragments).toEqual({ courage: 1 });
     expect(getDeliverError(find, r.vars, {})).toBe('already delivered');
-    // 受けていない物を見つけても変わらない
-    expect(findLost({}, 'f')).toEqual({});
   });
 
   it('取り出す：素材を集めて届けると、素材を使い、ごほうびが入る', () => {

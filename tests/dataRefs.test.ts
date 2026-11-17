@@ -533,20 +533,16 @@ describe('探索の試作の地図（段階16・18b）', () => {
   });
 });
 
-describe('周回・狩り（段階43）', () => {
-  it('返す区画（1-1〜4-2）に狩りの中身があり、書き間違いがない。素材はある物（段階85：2-3 も返すので狩りがある。4晩目の書庫は狩りがない。段階88：3-1。段階137a：4-1。段階140a：4-2）', async () => {
-    const { AREA_BATTLES, AREAS, ITEMS } = await import('../src/data');
-    const { checkHunt, huntableAreas } = await import('../src/core');
-    const hunts = huntableAreas(AREAS, Object.keys(AREAS));
+describe('区画の採取の場所（段階43。段階237：砂の底の帯で使う）', () => {
+  it('返す区画（1-1〜4-2）に採取の場所があり、書き間違いがない。素材はある物', async () => {
+    const { AREAS, ITEMS } = await import('../src/data');
+    const { checkHunt } = await import('../src/core');
+    const hunts = Object.values(AREAS).filter((a) => a.hunt);
     expect(hunts.map((a) => a.id)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32', 'a41', 'a42']);
     for (const area of hunts) {
-      expect(checkHunt(area, AREA_BATTLES), area.id).toEqual([]);
-      for (const g of area.hunt.gathers) for (const item of g.items) expect(item in ITEMS, `${g.id} ${item}`).toBe(true);
-      // 表の戦闘は、その区画の戦闘（ほかの区画の敵を混ぜない）。ぬしと負け戦は入れない
-      for (const table of Object.values(area.hunt.tables ?? {})) for (const b of table) {
-        expect(b.startsWith(`${area.id}_`), b).toBe(true);
-        expect(AREA_BATTLES[b].boss, b).toBeFalsy();
-      }
+      const withHunt = area as typeof area & { hunt: NonNullable<typeof area.hunt> };
+      expect(checkHunt(withHunt), area.id).toEqual([]);
+      for (const g of withHunt.hunt.gathers) for (const item of g.items) expect(item in ITEMS, `${g.id} ${item}`).toBe(true);
     }
   });
 });

@@ -2,10 +2,9 @@
 // 台帳の id を、使いたい順に並べる。先頭は新しく頼んだタイルの絵（docs/ART_QUEUE.md の L）、届くまでは次の絵で代わりに出す。
 // 代わりの1枚絵は、そのタイルが開くより前の物語で見る絵だけにする（まだ見ていない場面が先に見えないように）。合う1枚絵がない所は背景の絵
 
-export type HubTileId = 'hunt' | 'growth' | 'navi' | 'weapon' | 'album' | 'party' | 'exchange' | 'lost' | 'talks' | 'library' | 'sandBottom';
+export type HubTileId = 'growth' | 'navi' | 'weapon' | 'album' | 'party' | 'exchange' | 'lost' | 'talks' | 'library' | 'sandBottom';
 
 export const HUB_TILE_ART: Record<HubTileId, string[]> = {
-  hunt: ['tile.hunt', 'cg.fireworks'],
   growth: ['tile.growth', 'cg.tandem_bicycle'],
   navi: ['tile.navi', 'bg.clock_shop_back'],
   weapon: ['tile.weapon', 'cg.awaken_weapons'],
