@@ -14,7 +14,7 @@
 - [R. 洋服の小夜子（試着室）](#r-洋服の小夜子試着室)：3 枚
 - [S. とうや・しおりのまばたき・口パク用](#s-とうやしおりのまばたき口パク用)：4 枚
 - [V. 砂の底のレアスナップ（段階219）](#v-砂の底のレアスナップ段階219)：3 枚
-- [X. 寄り道の町の人（段階239）と寄り道のタイル（段階240）](#x-寄り道の町の人段階239)：3 枚（表情違いは、基本の1枚の後に）
+- [X. 寄り道の町の人（段階239・241）と寄り道のタイル（段階240）](#x-寄り道の町の人段階239)：4 枚（表情違いは、基本の1枚の後に）
 
 ### Q. だいち・さきの描き直し（けんたと見分けやすく）
 
@@ -356,6 +356,22 @@ Framing: from just above the top of the head down to mid-chest. The head sits in
 Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 Character: Zenji, an 82-year-old Japanese widower, quiet and polite. Slim, slightly stooped, neatly combed thin white hair, small round glasses, a tidy gray cardigan over a white collared shirt. Present-day Japan.
+Absolutely no letters or text anywhere.
+```
+
+#### 4. トメ（駄菓子屋のおばあさん。看板猫「だいふく」の飼い主。段階241）
+
+- 添付：`public/assets/portraits/akari_smile.webp`
+- 保存名：`tome_smile.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a warm, wrinkled grandmotherly smile.
+Framing: from just above the top of the head down to mid-chest. The head sits in the upper third of the image. Use exactly the same framing, size and camera distance as the attached reference portrait of the girl in the cardigan.
+Pose: both arms relaxed down at the sides, hands outside the frame. No props.
+Background: plain pure white, no shadow, no gradient.
+Character: Tome, a 79-year-old Japanese woman who runs a tiny old-fashioned candy shop (dagashi-ya) in a local shopping street. Small and round, white hair tied in a small bun, reading glasses on a cord around her neck, a faded indigo kappogi apron over a plain blouse. Present-day Japan.
 Absolutely no letters or text anywhere.
 ```
 
