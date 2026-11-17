@@ -881,8 +881,11 @@ export class DialogueScene extends Phaser.Scene {
       const place = (o?: Phaser.GameObjects.Image) => {
         if (!o) return;
         const b = PORTRAIT_PART_BOXES[o.texture.key.replace(/^portrait\.part\./, '')];
-        if (!b) {
-          o.setOrigin(0.5, 1).setPosition(0, 0).setScale(img.scaleX);
+        // 表の大きさと違う絵（切り詰める前の、立ち絵と同じ大きさの差分。新しい版へ切り替わる途中で、古い絵が残っている時など）は、
+        // 立ち絵と同じ形で重ねる（2026-11-17 開発者の確認：まばたきが全く違う場所に出た）
+        const src = o.texture.getSourceImage() as { width: number; height: number };
+        if (!b || Math.abs(src.width - b[2]) > 1 || Math.abs(src.height - b[3]) > 1) {
+          o.setOrigin(0.5, 1).setPosition(0, 0).setScale(img.displayHeight / src.height);
           return;
         }
         const s = img.displayHeight / b[5];
