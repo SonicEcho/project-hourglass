@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { HubLineDef, HubNotice } from '../core';
-import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, SCREEN_COACH, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost, sideChainStatus } from '../core';
+import { BACKDROPS, SCREEN_COACH, SIDE_EVENTS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages, waitImages } from '../ui/waitImages';
@@ -167,6 +167,14 @@ export class HubScene extends Phaser.Scene {
       const unseen = talks.filter((t) => !t.seen).length;
       tiles.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
     }
+    // 段階240：寄り道の帳面。どれかの話が出る日になってから。今日まだ見ていない話が出ていれば札
+    const sides = Object.values(SIDE_EVENTS);
+    const allSide = sides.flat();
+    if (allSide.some((e) => e.from <= run.progress.day || isSeen(run.vars, e.id))) {
+      const today = sides.some((events) => sideChainStatus(events, run.vars, run.progress.day, (p) => p).tone === 'today');
+      const seenN = allSide.filter((e) => isSeen(run.vars, e.id)).length;
+      tiles.push({ id: 'side', label: '寄り道', sub: `見た ${seenN}/${allSide.length}`, badge: today ? '今日あり' : undefined, onTap: () => this.openSideBook() });
+    }
     const cols = 4;
     const gap = 7;
     const left = 12;
@@ -299,6 +307,11 @@ export class HubScene extends Phaser.Scene {
   }
 
   /** 町の小話を開く（段階82） */
+  private openSideBook(): void {
+    if (this.overlay) return;
+    this.scene.start('SideBook');
+  }
+
   private openTalks(): void {
     if (this.overlay) return;
     this.scene.start('TalkArchive', { seen: undefined, page: 0 });

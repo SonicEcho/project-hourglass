@@ -14,7 +14,7 @@
 - [R. 洋服の小夜子（試着室）](#r-洋服の小夜子試着室)：3 枚
 - [S. とうや・しおりのまばたき・口パク用](#s-とうやしおりのまばたき口パク用)：4 枚
 - [V. 砂の底のレアスナップ（段階219）](#v-砂の底のレアスナップ段階219)：3 枚
-- [X. 寄り道の町の人（段階239）](#x-寄り道の町の人段階239)：2 枚（表情違いは、基本の1枚の後に）
+- [X. 寄り道の町の人（段階239）と寄り道のタイル（段階240）](#x-寄り道の町の人段階239)：3 枚（表情違いは、基本の1枚の後に）
 
 ### Q. だいち・さきの描き直し（けんたと見分けやすく）
 
@@ -357,6 +357,19 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 Character: Zenji, an 82-year-old Japanese widower, quiet and polite. Slim, slightly stooped, neatly combed thin white hair, small round glasses, a tidy gray cardigan over a white collared shirt. Present-day Japan.
 Absolutely no letters or text anywhere.
+```
+
+#### 3. 拠点のタイル「寄り道」（段階240。縦長。今は手品の1枚絵で代わりに出している）
+
+- 添付：`public/assets/tiles/lost.webp`
+- 保存名：`tile_side_tall.png`（台帳の id は `tile.side`）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A menu card illustration for the hub screen of a mobile RPG. Vertical 2:3 image (1024×1536). The card will be cut into a narrow slanted parallelogram, so keep the main subject in the center column of the image (the middle 60% of the width), with the left and right edges simple and dark. Keep the bottom fifth darker and simple, because a white label will be placed over it. Rich, glowing light against deep shadows, so the card stands out on a near-black screen. Match the art style of the attached tile illustration.
+An open, well-worn notebook lying on a small wooden desk in the library of memories, its pages filled with small pasted snapshots and pressed keepsakes from a small town: a lottery ticket stub, a playing card (the joker, with only a simple jester pattern), a wristwatch strap, a pressed flower. A warm desk lamp glow and drifting golden dust. The writing on the pages is only wavy lines.
+Absolutely no letters, numbers or text anywhere.
 ```
 
 ## 済んだ絵

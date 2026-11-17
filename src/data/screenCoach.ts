@@ -102,6 +102,11 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
     { target: 'rows', text: '品物の行をタップすると、欠片と交換できます。\n欠片は、多く持っている種類から使います。\n欠片が足りない時は、値段の札が灰色になります。' },
     { target: 'keeper', text: 'ペトラから話がある時は、ここに「話す」が出ます。' },
   ],
+  // 寄り道の帳面（段階240）
+  side_book: [
+    { target: 'intro', text: 'ここは寄り道の帳面です！\n昼の町で出会った、寄り道の話をまとめています。' },
+    { target: 'cards', text: '話の続きごとに、札が並びます。\n右上に、次の話がいつ・どこに出るかが書いてあります。\n見た話は、題をタップすると読み返せます。' },
+  ],
   // ライブラリ
   library_intro: [
     { target: 'intro', text: 'ここはライブラリです！\n見つけたスナップ・コンボ、会った敵、手に入れた素材の記録を読めます。' },
@@ -120,6 +125,7 @@ export const SCREEN_COACH_TITLES: Record<string, { title: string; group: 'explor
   lost_shelf: { title: '落とし物の棚', group: 'growth' },
   exchange_shop: { title: '交換所', group: 'growth' },
   library_intro: { title: 'ライブラリ', group: 'growth' },
+  side_book: { title: '寄り道の帳面', group: 'growth' },
 };
 
 /** 手順の文を、読み返し用の本文にする */

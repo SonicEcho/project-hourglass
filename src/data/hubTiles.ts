@@ -2,7 +2,7 @@
 // 台帳の id を、使いたい順に並べる。先頭は新しく頼んだタイルの絵（docs/ART_QUEUE.md の L）、届くまでは次の絵で代わりに出す。
 // 代わりの1枚絵は、そのタイルが開くより前の物語で見る絵だけにする（まだ見ていない場面が先に見えないように）。合う1枚絵がない所は背景の絵
 
-export type HubTileId = 'growth' | 'navi' | 'weapon' | 'album' | 'party' | 'exchange' | 'lost' | 'talks' | 'library' | 'sandBottom';
+export type HubTileId = 'side' | 'growth' | 'navi' | 'weapon' | 'album' | 'party' | 'exchange' | 'lost' | 'talks' | 'library' | 'sandBottom';
 
 export const HUB_TILE_ART: Record<HubTileId, string[]> = {
   growth: ['tile.growth', 'cg.tandem_bicycle'],
@@ -13,6 +13,8 @@ export const HUB_TILE_ART: Record<HubTileId, string[]> = {
   exchange: ['tile.exchange', 'bg.library'],
   lost: ['tile.lost', 'bg.clock_shop'],
   talks: ['tile.talks', 'bg.shopping_street'],
+  // 段階240：寄り道の帳面。専用のタイルの絵はまだないので、手品の1枚絵
+  side: ['tile.side', 'cg.mio_cards'],
   // 段階167：ライブラリ。専用のタイルの絵はまだないので、図書館の背景
   library: ['bg.library'],
   // 段階209：砂の底。専用のタイルの絵はまだないので、地面の切り取りの絵

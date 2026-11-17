@@ -30,6 +30,7 @@ import { HubScene } from './scenes/HubScene';
 import { CampScene } from './scenes/CampScene';
 import { ExchangeScene } from './scenes/ExchangeScene';
 import { LostScene } from './scenes/LostScene';
+import { SideBookScene } from './scenes/SideBookScene';
 import { TalkArchiveScene } from './scenes/TalkArchiveScene';
 import { findEvent } from './core';
 import { SLICE_FLOW } from './data';
@@ -98,7 +99,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, LibraryScene, PartyScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene, ChainBattleScene, SandBottomScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, LibraryScene, PartyScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, SideBookScene, TalkArchiveScene, ChestMapScene, ChainBattleScene, SandBottomScene],
 });
 
 if (debug) {

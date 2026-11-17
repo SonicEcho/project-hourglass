@@ -144,6 +144,22 @@ export function sideEventFor(hub: DailyHub, vars: Record<string, string>, events
   return next;
 }
 
+/** 寄り道の連作の今の様子（段階240。拠点の帳面の札の右上）。placeName は町の場所の名前 */
+export function sideChainStatus(
+  events: readonly SideEvent[],
+  vars: Record<string, string>,
+  today: number,
+  placeName: (place: string) => string,
+): { label: string; tone: 'today' | 'later' | 'done' | 'seen' } {
+  const shown = sideEventFor({ id: 'book', time: '', places: [], day: today }, vars, events);
+  if (shown && isSeen(vars, shown.id)) return { label: '今日の話は見ました', tone: 'seen' };
+  if (shown) return { label: `今日、${placeName(shown.place)}に出ています`, tone: 'today' };
+  const next = events.find((e) => !isSeen(vars, e.id));
+  if (!next) return { label: '全部見ました', tone: 'done' };
+  if (next.from > today) return { label: `${next.from}日目から、${placeName(next.place)}`, tone: 'later' };
+  return { label: `次は明日から、${placeName(next.place)}`, tone: 'later' };
+}
+
 /**
  * 返した翌日に持ち主に会う出来事（段階36）。区画の時間を返した次の日の昼に、必ず見る出来事として、その場所に出る。
  * id は会話の場面の id と同じ（見たかどうかを、この id で覚える）

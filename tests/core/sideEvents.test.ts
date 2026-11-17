@@ -49,3 +49,16 @@ describe('寄り道（段階239）', () => {
     }
   });
 });
+
+describe('寄り道の帳面（段階240）', () => {
+  const name = (p: string) => (p === 'street' ? '商店街' : p);
+  it('今日出ている・見た・この先・全部見た、を言葉で返す', async () => {
+    const { sideChainStatus } = await import('../../src/core');
+    expect(sideChainStatus(chain, {}, 2, name)).toEqual({ label: '3日目から、商店街', tone: 'later' });
+    expect(sideChainStatus(chain, {}, 3, name)).toEqual({ label: '今日、商店街に出ています', tone: 'today' });
+    const seen1 = { '見た:s1': '1', [sideDayKey('c')]: '3' };
+    expect(sideChainStatus(chain, seen1, 3, name).tone).toBe('seen');
+    expect(sideChainStatus(chain, seen1, 4, name)).toEqual({ label: '5日目から、商店街', tone: 'later' });
+    expect(sideChainStatus(chain, { ...seen1, '見た:s2': '1', [sideDayKey('c')]: '5' }, 6, name)).toEqual({ label: '全部見ました', tone: 'done' });
+  });
+});
