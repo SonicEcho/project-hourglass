@@ -4,6 +4,8 @@ import type { ScriptScene } from '../core/script';
 import { parseScript } from '../core/script';
 import { M1_SCENES } from './scriptM1';
 import { M3_SCENES } from './scriptM3';
+import { SIDE_SCENES } from './scriptSide';
+import { LOST_SCENES_2 } from './scriptLost';
 
 export const SCRIPT_M2 = `
 # chapter2_title 章の扉（2章）
@@ -4108,4 +4110,4 @@ export const SCRIPT_M2 = `
 export const M2_SCENES = parseScript(SCRIPT_M2);
 
 /** 会話の画面で読む、すべての台本の場面（M1〜M3。M3 は段階88 から） */
-export const SCENES: ScriptScene[] = [...M1_SCENES, ...M2_SCENES, ...M3_SCENES];
+export const SCENES: ScriptScene[] = [...M1_SCENES, ...M2_SCENES, ...M3_SCENES, ...SIDE_SCENES, ...LOST_SCENES_2];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle } from '../../src/core';
-import { A21_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, HERO, MIO } from '../../src/data';
+import { A21_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, HERO, MIO, RETIRED_SNAPS } from '../../src/data';
 import { grownParty } from '../../src/sim/autoArea';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 import { growthPreset } from '../../src/sim/presets';
@@ -33,7 +33,13 @@ describe('2-1 の雑魚を新しい戦闘に（段階170）', () => {
     expect(new Set(AREA_BATTLES.a21_n1_gate.enemies.map((e) => e.id))).toEqual(new Set(['gearNoise']));
   });
   it('敵のスナップ・宝箱の札・コンボ', () => {
+    // 段階238：区画に2枚へ絞った（外した札は、敵も落とさず、アルバムにも入らない）
     for (const [enemy, snap] of Object.entries(A21_ENEMY_SNAPS)) {
+      if (RETIRED_SNAPS.has(snap)) {
+        expect(CHAIN_ENEMY_SNAPS[enemy]).toBeUndefined();
+        expect(CHAIN_SNAPS[snap]).toBeUndefined();
+        continue;
+      }
       expect(CHAIN_ENEMY_SNAPS[enemy]).toBe(snap);
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }

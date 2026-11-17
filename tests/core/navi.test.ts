@@ -208,15 +208,13 @@ describe('ギアの入れ替え（段階200）', () => {
   });
 });
 
-describe('狩りの採取の場所のギア（段階200）', () => {
-  it('初めて開ける時だけギアが入る（手に入れたら物語の変数に覚える）', async () => {
-    const { huntArea, huntGearKey } = await import('../../src/core');
-    const { AREAS } = await import('../../src/data');
-    const a31 = AREAS.a31 as Parameters<typeof huntArea>[0];
-    const first = huntArea(a31, 1).chests.find((c) => c.id === 'a31_gather_paddy')!;
-    expect(first.gears).toEqual(['timeKeeper']);
-    const again = huntArea(a31, 2, { [huntGearKey('a31_gather_paddy')]: '1' }).chests.find((c) => c.id === 'a31_gather_paddy')!;
-    expect(again.gears).toBeUndefined();
-    expect(again.items.length).toBeGreaterThan(0);
+describe('採取の場所のギア（段階200。段階237：砂の底の記憶の宝箱で）', () => {
+  it('まだ手に入れていない時だけ、砂の底の記憶の宝箱に入る（手に入れたら物語の変数に覚える）', async () => {
+    const { huntGearKey } = await import('../../src/core');
+    const { relicGear, relicGears, sandBottomFor } = await import('../../src/data');
+    expect(relicGears('a31_gather_paddy')).toEqual(['timeKeeper']);
+    const relics = (vars: Record<string, string>) => sandBottomFor('ch4', vars).layers.flatMap((l) => l.relics ?? []);
+    expect(relics({})).toContain(relicGear('a31_gather_paddy'));
+    expect(relics({ [huntGearKey('a31_gather_paddy')]: '1' })).not.toContain(relicGear('a31_gather_paddy'));
   });
 });

@@ -1321,7 +1321,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 1. 1-1 の縁日の入口 `fest_gate`
 2. 1-1 の残りの4部屋（`fest_backyard`・`fest_west`・`fest_east`・`fest_woods`）
 3. 1-2 の寄り道の3部屋（`showa_alley`・`showa_lane`・`showa_hill`）
-4. 昼の「どこへ行く？」に敷く、町の見下ろしの地図（商店街・学校・時計屋・川。指示文はこれから書く）
+4. 昼の「どこへ行く？」に敷く、町の見下ろしの地図（指示文は 5-5b の「2. 昼の町の見下ろしの地図」。2026-11-17 書き直し）
 
 - 絵が届くまで、文字の地図に時代の色と小物（提灯の灯りなど）を重ねる仮の見た目を作る案は、やめた（2026-10-25。段階104。絵のない部屋は開発中に開発者が見るだけなので、文字の地図のままでよい。本番の地図は1枚の絵で頼む）
 - 昼の地図は、町の地図の絵が届くまで、行き先の丸を大きくして地図を小さく寄せる（F4）
@@ -1479,7 +1479,7 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 | 順 | メモ | 作る物 | 道具 | 状態 |
 | --- | --- | --- | --- | --- |
 | 1 | 8 | ひなの（今）の目を閉じた絵・口を開けた絵 | Gemini | まだ |
-| 2 | 3 | 昼の「どこへ行く？」に敷く、町の見下ろしの地図 | ChatGPT | まだ |
+| 2 | 3 | 昼の「どこへ行く？」に敷く、町の見下ろしの地図 | ChatGPT | 済（2026-11-17。`public/assets/maps/town.webp`） |
 | 3 | 25 | 探索の地図を歩く、2頭身のハルト（上下左右×3コマ） | ChatGPT | まだ（試し） |
 | 4 | 35 | 探索の地図を見回る、2頭身のカイ（上下左右×3コマ）。3. のハルトと同じ形 | ChatGPT | まだ（3. のハルトがうまくいってから） |
 | 5 | ― | 砂の底を掘る、二頭身のハルト（横向き、4行×3列。段階210） | ChatGPT | 済（2026-11-15。`public/assets/sprites/dig_hero.webp`） |
@@ -1490,31 +1490,58 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 
 5-4 の「目を閉じた絵」「口だけ開けた絵」の指示文のまま。ひなのの「通常」の絵（`portrait.hinano`）を見本として渡す。できた絵を `hinano_blink_src.webp`・`hinano_talk_src.webp` として portraits に入れる（`scripts/portrait_parts.py` に目と口の範囲を足して切り抜き、`src/data/dialogue.ts` の `PORTRAIT_PARTS` に「ひなの」を足す）。写しのひなのの口を開けた絵も、同じ指示文で「笑顔」から作る（`past_hinano_talk_src.webp`）。
 
-### 2. 昼の町の見下ろしの地図
+### 2. 昼の町の見下ろしの地図（2026-11-17 書き直し3。昼の「どこへ行く？」の案 D。本当にある町の航空写真のように）
 
-昼の画面は、町の11の場所を丸で並べている（`src/data/daily.ts` の `TOWN`）。地図の絵は、その丸の下に敷く。丸の位置に、その場所の建物が来るように描いてもらう（横3列・縦4段。画面 390×844 のうち、上下 120〜680 の範囲）。
+昼の「どこへ行く？」の画面に、町の見下ろしの地図として敷く（`docs/milestones/M3_ui_polish.md` の 18-2）。絵は 390×585 に縮めて、見出しと説明の窓の間（上下 68〜653）に置く。場所の印（丸）と仲間の顔は、ゲームの側で建物の上に重ねる（印の位置は、届いた絵に合わせて `TOWN` の `mapX`・`mapY` を直す）。行けない場所を暗くする・時間帯の色を付けるのも、ゲームの側でする。
 
-| 段（上から） | 左 | 真ん中 | 右 |
+- 1回目：建物が大きすぎて、地図として縮尺がおかしかった。下絵の赤い点も描かれた（開発者の声：本物の航空写真のようなイメージにしたい）
+- 2回目の依頼文（出す前に直した）：区画がマス目だと不自然（開発者の声：本当にある町のように自然に）→ 格子をやめ、曲がった川・橋から駅へ下る昔の通り（商店街はこの通りのアーケード）・斜めの幹線道路・曲がった生活道路・行き止まりの下絵にした
+- 添付：`docs/sketches/town_map_layout_natural.png`（`python3 scripts/town_sketch.py` で作る。青＝川、緑＝河川敷、灰＝道（太いのが幹線道路）、黒い帯＝線路、薄い四角＝普通の家、白い形＝目印の建物の敷地と大きさ。真ん中の細長い白＝商店街のアーケード）
+- 保存名：`town_map.png`（台帳の id は `map.town`）
+
+届いた絵（2026-11-17。3回目の依頼文で1回目に出た絵）の建物の位置。絵の座標は 1024×1536、画面は 390×844（絵を上下 68〜653 に置いた時）
+
+| 場所 | 絵の中の建物 | 絵の座標 | 画面の印の位置 |
 | --- | --- | --- | --- |
-| 1 | 学校 | 川沿いの道 | 河川敷 |
-| 2 | 楽器店 | ひだまり荘（老人ホーム） | 施設（ハルトとあかりの家） |
-| 3 | 工場 | 商店街 | パン屋 |
-| 4 | コンビニ | 駅 | 時計屋 |
-
-地図の頭（5-3 の共通部分）の後に：
+| 川沿いの道 | 橋の左の、桜と池の公園 | 300, 160 | 114, 129 |
+| 河川敷 | 橋の右の野球場 | 850, 200 | 324, 144 |
+| 学校 | 左上の L 字の校舎と校庭 | 190, 330 | 72, 194 |
+| ひだまり荘 | 昔の通りの右の、庭つきの建物 | 655, 350 | 249, 201 |
+| 楽器店 | 学校の下の、赤い屋根の店 | 275, 475 | 105, 249 |
+| 施設 | 右の真ん中の、庭つきの2階建て | 800, 680 | 305, 327 |
+| 工場（＋松の湯の煙突） | 左ののこぎり屋根 | 200, 810 | 76, 377 |
+| 商店街（奥に神社の鳥居） | 真ん中のアーケード | 545, 720 | 208, 342 |
+| パン屋 | アーケードの右下の、縞の日よけ | 610, 815 | 232, 378 |
+| コンビニ | 左の、幹線道路ぞいの駐車場つきの店 | 180, 1000 | 69, 449 |
+| 時計屋 | 右下の、時計の付いた角の店 | 775, 1150 | 295, 506 |
+| 駅 | 線路ぞいの細長い屋根 | 570, 1300 | 217, 563 |
 
 ```
-Scene: an overview map of a small, warm Japanese town in the present day, on a clear autumn afternoon, like a hand-painted guide map. The town spreads over the whole image; a river runs across the top part from left to right.
-Place these landmarks on a 3-column by 4-row layout, each one clearly separated with space around it (left / center / right):
-- Row 1 (top): a high school with a sports ground (left), a quiet path along the river with cherry trees (center), a riverside baseball field below the levee (right).
-- Row 2: a small musical instrument shop with a guitar in the window (left), a two-story care home with a sunny garden (center), a modest two-story children's home with laundry in the yard (right).
-- Row 3: an old small factory with a sawtooth roof (left), a covered shopping arcade street (center), a cozy bakery with an awning (right).
-- Row 4 (bottom): a convenience store (left), a small local train station with a platform (center), an old clock shop on a corner (right).
-Streets connect all landmarks. The center of each landmark should sit at the center of its cell, because round buttons will be placed on top of them.
-Keep each landmark building at most one quarter of the image width. Absolutely no letters or text anywhere: signs and banners are blank or have simple patterns only.
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A realistic aerial photograph of a real-looking small Japanese town in the present day, taken straight down from high above like a satellite or drone survey photo, in warm late-afternoon light with long soft shadows. Vertical 2:3 image (1024x1536). True top-down orthographic view: we see only roofs, treetops, roads and grounds from directly above, no building walls or facades, no tilt and no perspective. Realistic scale and an organic street layout that grew naturally over time, not a grid: gently curving streets, narrow winding lanes, dead ends, irregular blocks of different shapes and sizes. Every block is densely filled with many small ordinary detached houses with gray, dark blue and brown tiled roofs, small gardens, trees and tiny parking spaces. No people visible.
+Follow the attached layout sketch exactly for the river, the roads, the railway and the positions and relative sizes of the landmarks: blue is the river, green is the grassy riverbed, gray lines are streets (the thick one is the main road), the black band is the railway, small light squares are ordinary houses, and the white shapes are the footprints of the landmarks below. The sketch is only a guide: do not draw any outlines, boxes or markers from it.
+- The river: a wide river curving across the top, with a grassy riverbed and a levee road lined with cherry trees in full bloom. A bridge crosses it near the center.
+- The old street: from the bridge, an old street winds down through the town to the station.
+- The main road: a wider road crossing the lower part of the town at a slant.
+- The railway: two tracks crossing near the bottom at a slant.
+Landmarks, recognizable from directly above:
+- On the riverbed, left of the bridge: a small park with paths, cherry trees and a small round pond. Right of the bridge: a riverside baseball field (a dirt diamond and a green outfield with a backstop).
+- Upper left (the large shape): a high school, a white L-shaped building with a flat roof, and a sandy sports ground with a running track.
+- Right of the old street, upper middle: a two-story care home with a pale roof and a sunny garden.
+- Below the school (the small shape): a small music shop, no bigger than the houses around it.
+- Right side, middle: a modest two-story children's home with a yard and laundry poles.
+- Left, lower middle (the large shape): an old small factory with a sawtooth roof; next to it (the small shape) an old public bathhouse with a traditional tiled roof and a tall thin chimney casting a long shadow.
+- Center (the long narrow shape on the old street): a covered shopping arcade, a long translucent arched roof over the old street, with a small grove and the red torii of a tiny neighborhood shrine beside its upper end.
+- Right side, at the same height as the arcade: a small bakery with a striped awning.
+- Right, below the main road, on a street corner: a small clock shop.
+- Left, along the main road: a convenience store with a small parking lot with white lines.
+- Bottom center, beside the tracks where the old street ends: a small train station with a long platform, and a railroad crossing next to it.
+The landmarks must not be bigger than the sketch shows: only the school, the baseball field and the factory are large; the shops are about the size of two or three houses. Keep a natural, believable town where the landmarks blend in among the houses.
+Absolutely no letters, numbers or text anywhere: no labels, no signs with writing, no map symbols, no compass, no scale bar.
 ```
 
-（できた絵は、地図の頭の「No people」を守っているか、丸の位置に建物が来ているかを確かめる。ずれていたら、丸の位置の下絵を付けて作り直す）
+（できた絵は、人がいないか、真上から見ているか、道がマス目になっていないか、目印の建物が白い形の位置と大きさに近いか、下絵の線や点が描かれていないかを確かめる。ゲームの絵柄に寄せたい時は、2段落目の `A realistic aerial photograph` を `A painterly aerial view, like a realistic aerial photograph repainted in a soft anime background style` に替える）
 
 ### 3. 探索の地図を歩く、2頭身のハルト（試し）
 

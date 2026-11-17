@@ -239,8 +239,6 @@ function beyond(from: string, branches: string[][]): EvolutionDef[] {
   });
 }
 
-/** 言い伝えだけの寄り道（段階197。④戦い方と、依頼のまだない仲間の③。条件ができるまで、影と一文だけ見せる。段階221：③は日常の遊びから依頼に替えた） */
-const legendDetour = (id: string, from: string, legend: string): EvolutionDef => ({ id, name: '', from, detour: true, sealed: true, legend, conditions: [] });
 const low = (p: WeaponParamKey, max: number): EvolutionCondition => ({ kind: 'paramMax', param: p, max });
 const anyElement = (min: number): EvolutionCondition => ({ kind: 'elementAny', min });
 const tendency = (color: PartColor): EvolutionCondition => ({ kind: 'tendency', color });
@@ -375,8 +373,8 @@ const naginata: WeaponDef = {
     { id: 'eveNaginata', name: '宵宮の薙刀', from: 'crescentNaginata', detour: true, conditions: [param('fire', 20), key('lanternFrame')], attackElement: 'fire', stats: { atk: 4 }, traits: [{ kind: 'elementBoost', element: 'fire', rate: 0.1 }], styles: [STYLES.fierce('fire'), STYLES.guard] },
     // 寄り道②：三日月から。雷を低いままにして、誰より先に踏みこむ薙刀
     { id: 'hazyMoonNaginata', name: '朧月', from: 'crescentNaginata', detour: true, conditions: [low('thunder', 2), key('tableLeg')], stats: { atk: 3 }, traits: [{ kind: 'quickStart', count: 1 }], styles: [STYLES.quick, STYLES.guard] },
-    // 寄り道③：小夜子の区画（3章）に依頼を足すまで、言い伝えだけ（段階221）
-    legendDetour('lanternNaginata', 'crescentNaginata', '祭りの夜の落とし物を、百年後の持ち主に届けた人の薙刀だったという'),
+    // 寄り道③（段階242）：3-2 の依頼「外れた第二ボタン」を届けると開く。言わずに持っておく想いを、追いつめられた時に振るう薙刀
+    { id: 'lanternNaginata', name: '秘め灯の薙刀', from: 'crescentNaginata', detour: true, conditions: [lost('a32_button')], stats: { atk: 3 }, traits: [{ kind: 'desperate', rate: 0.2 }], styles: [STYLES.bond, STYLES.guard] },
     // 3回目
     { id: 'harvestMoonNaginata', name: '名月', from: 'fullMoonNaginata', conditions: [param('atk', 36), key('lordWhistle')], stats: { atk: 7 }, traits: [{ kind: 'heavyBoost', rate: 0.15 }], styles: [STYLES.stretch, STYLES.shatter] },
     { id: 'moonlitNaginata', name: '月下の薙刀', from: 'midnightNaginata', conditions: [param('atk', 36), low('fire', 8), low('ice', 8), low('thunder', 8), key('fanTimer')], stats: { atk: 5 }, traits: [{ kind: 'fragileBoost', rate: 0.2 }], styles: [STYLES.might, STYLES.calm] },
@@ -409,8 +407,8 @@ const driver: WeaponDef = {
     // 寄り道①②：焼き戻しのドライバーから。氷を高く／雷を高く（火を低いまま）
     { id: 'coolDriver', name: '冷やしのドライバー', from: 'temperDriver', detour: true, conditions: [param('ice', 20), low('fire', 14), key('crackedLens')], attackElement: 'ice', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'ice', rate: 0.1 }], styles: [STYLES.fierce('ice'), STYLES.guard] },
     { id: 'currentDriver', name: '電流のドライバー', from: 'temperDriver', detour: true, conditions: [param('thunder', 20), low('fire', 14), key('earbudTip')], attackElement: 'thunder', stats: { mag: 4 }, traits: [{ kind: 'elementBoost', element: 'thunder', rate: 0.1 }], styles: [STYLES.fierce('thunder'), STYLES.calm] },
-    // 寄り道③：早瀬の区画（4章）に依頼を足すまで、言い伝えだけ（段階221）
-    legendDetour('karakuriDriver', 'tuningDriver', '止まった時計の持ち主に、残っていた声を届けた人のドライバーだったという'),
+    // 寄り道③（段階242）：4-2 の依頼「花輪の名札」を届けると開く。一番の客に見守られ、少しずつ仲間を立て直すドライバー
+    { id: 'karakuriDriver', name: '花輪のドライバー', from: 'tuningDriver', detour: true, conditions: [lost('a42_wreath')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'regen', rate: 0.03 }], styles: [STYLES.calm, STYLES.bond] },
     // 寄り道④（段階222）：秒針のドライバーから。1つの戦いで、敵の行動を3回空振りさせる（ダウンさせて止める・ラウンドの外へ押し出す）。
     // 歯車に油を差して、止まらずに回るドライバー：ねばねばの敵に当てても、仲間が遅れない（ギア「タイムキーパー」と同じ効果。開発者と決めた）
     { id: 'oilDriver', name: '油差しのドライバー', from: 'secondDriver', detour: true, conditions: [record('whiffMax', 3, '1つの戦いで、敵の行動を3回空振りさせる')], attackElement: 'fire', stats: { mag: 3 }, traits: [{ kind: 'timeKeeper', count: 1 }], styles: [STYLES.quick, STYLES.calm] },

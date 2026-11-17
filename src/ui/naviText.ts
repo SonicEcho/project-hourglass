@@ -33,7 +33,7 @@ export function describePart(def: NaviPartDef): string {
   if (def.kind === 'stat') {
     return (Object.entries(def.stats) as [keyof Stats, number][]).map(([k, v]) => `${STAT_LABEL[k]} +${v}`).join('、');
   }
-  if (def.kind === 'bond') return '3人のコンボを開く（ブリッジに乗っている時。並びにその3人がそろえば、アルバムから使える）';
+  if (def.kind === 'bond') return '3人のコンボを開く（ブリッジに乗っている時。編成にその3人がそろえば、アルバムから使える）';
   return describeTraits([def.effect]).join('、');
 }
 

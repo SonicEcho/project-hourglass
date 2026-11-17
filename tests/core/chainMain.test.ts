@@ -375,7 +375,9 @@ describe('敵のスナップ（段階165）', () => {
     const s = createChainBattle(def, CHAIN_RULES, 2);
     return runChainRound(s, [mv('hero', 'basic', s.enemies[0].uid), mv('akari', 'basic', s.enemies[1].uid)]).state;
   };
-  const rule = (over: Partial<{ normal: number; boss: number }> = {}, owned: Record<string, number> = {}) => ({ snaps: CHAIN_ENEMY_SNAPS, rate: { normal: 1, boss: 1, ...over }, owned, copyMax: 4, boss: false });
+  // 段階238：1-1 の雑魚のスナップはデータから外したので、仕組みの確かめは、ここで決めた敵とスナップの組で行う
+  const testSnaps = { goldfishNoise: 'a11_hireuchi', balloonNoise: 'a11_mizushibuki' };
+  const rule = (over: Partial<{ normal: number; boss: number }> = {}, owned: Record<string, number> = {}) => ({ snaps: testSnaps, rate: { normal: 1, boss: 1, ...over }, owned, copyMax: 4, boss: false });
 
   it('★3 で勝つと、その戦闘にいた敵の種類のスナップを確率で1枚（4枚持っている物は選ばない）', () => {
     let s = win();

@@ -345,16 +345,6 @@ export const TIPS: TipDef[] = [
     body: screenCoachBody('explore_koma'),
   },
   {
-    id: 'explore_hunt',
-    group: 'explore',
-    title: '砂の底',
-    body: [
-      '拠点の「砂の底」から、返した記憶の地層を掘る（2章から）。層は章ごとで、終えた章の層まで開く。',
-      '層の下の方ほど、珍しい素材が出る。層と層の間には番人がいて、稀にその章のぬしが現れる。帯の奥には、動かないぬしの巣と、光る記憶の宝箱（ギア）がある。',
-      'いちばん深い章の層は、星の砂と経験値が満額。上の層は半分。引き受けた探し物は、その記憶の層で光っている。',
-    ].join('\n'),
-  },
-  {
     id: 'growth_star',
     group: 'growth',
     title: '星図',

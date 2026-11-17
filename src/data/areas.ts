@@ -363,12 +363,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a11_gather_yukata', room: 'festival_night', cell: [1, 17], items: [ITEMS.maskShard.id] },
         { id: 'a11_gather_back', room: 'fest_backyard', cell: [8, 2], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
       ],
-      tables: {
-        fest_gate: ['a11_n1_gate', 'a11_n1_chaser'],
-        festival_night: ['a11_n1_road', 'a11_n1_plaza', 'a11_n2_corridor', 'a11_n3_steps', 'a11_n2_west1', 'a11_n2_west2'],
-        fest_east: ['a11_n2_east1', 'a11_n2_east2'],
-        fest_woods: ['a11_n3_woods1', 'a11_n3_woods2'],
-      },
     },
     chests: [
       { id: 'a11_chest_goldfish', room: 'fest_east', cell: [13, 23], items: [ITEMS.goldfishScale.id] },
@@ -468,12 +462,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a12_gather_tv', cell: [9, 15], items: [ITEMS.phoneCord.id] },
         { id: 'a12_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.ramuneGlass.id, ITEMS.tinSpring.id] },
       ],
-      tables: {
-        showa_night: ['a12_n1_gate', 'a12_n1_lower', 'a12_n1_mid', 'a12_n2_upper', 'a12_n3_slope'],
-        showa_alley: ['a12_n2_alley1', 'a12_n2_alley2'],
-        showa_lane: ['a12_n2_lane1', 'a12_n2_lane2'],
-        showa_hill: ['a12_n3_hill1', 'a12_n3_hill2'],
-      },
     },
     chests: [
       { id: 'a12_chest_clock', cell: [18, 30], items: [ITEMS.ramuneGlass.id], chainSnaps: ['c17_strobe'] },
@@ -569,11 +557,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a21_gather_radio', cell: [11, 27], items: [ITEMS.tubeGlass.id] },
         { id: 'a21_gather_bath', room: 'bath_alley', cell: [20, 20], items: [ITEMS.rustyScrew.id, ITEMS.filament.id] },
       ],
-      tables: {
-        factory_alley: ['a21_n1_gate', 'a21_n1_road', 'a21_n1_plaza', 'a21_n2_left', 'a21_n3_top'],
-        factory_yard: ['a21_n2_yard1', 'a21_n2_yard2'],
-        bath_alley: ['a21_n1_bath1', 'a21_alley'],
-      },
     },
     // 資材置き場の左上の行き止まり、銭湯の右の道の奥、銭湯の裏の路地の行き止まり。ムーブメントのギアも入っている（段階38）
     chests: [
@@ -675,14 +658,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a22_gather_bikes', room: 'school_bikes', cell: [3, 3], items: [ITEMS.cassetteTape.id, ITEMS.pendulumWeight.id], gears: ['mpMemory2'] },
         { id: 'a22_gather_haunted', room: 'school_classroom', cell: [19, 5], items: [ITEMS.photoSticker.id, ITEMS.cassetteTape.id], gears: ['guardMemory'] },
       ],
-      tables: {
-        school_gate: ['a22_n1_gate', 'a22_n1_gate2'],
-        school_courtyard: ['a22_n1_stalls', 'a22_n1_upper', 'a22_n1_west'],
-        school_bikes: ['a22_n1_bikes'],
-        school_corridor: ['a22_n2_hall', 'a22_n2_east', 'a22_n3_hall'],
-        school_classroom: ['a22_n2_haunted', 'a22_n2_room', 'a22_n2_guard'],
-        school_gym: ['a22_n3_floor1', 'a22_n3_floor2', 'a22_n3_front'],
-      },
     },
     chests: [
       { id: 'a22_chest_stall', room: 'school_courtyard', cell: [20, 17], items: [], chainSnaps: ['c17_highlight'] },
@@ -781,14 +756,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a23_gather_bank', room: 'riverside_bank', cell: [16, 4], items: [ITEMS.petEgg.id, ITEMS.megaphoneMouth.id], gears: ['mirrorGuard'] },
         { id: 'a23_gather_shed', room: 'riverside_shed', cell: [6, 4], items: [ITEMS.ballSeam.id, ITEMS.petEgg.id] },
       ],
-      tables: {
-        riverside_levee: ['a23_n1_slope', 'a23_n1_levee'],
-        riverside_bench: ['a23_n1_bench', 'a23_n1_shade'],
-        riverside_bank: ['a23_n1_bank'],
-        riverside_stand: ['a23_n2_stand', 'a23_n2_west', 'a23_n2_guard', 'a23_n3_stand'],
-        riverside_shed: ['a23_n2_shed', 'a23_n2_shed2'],
-        riverside_diamond: ['a23_n3_field1', 'a23_n3_field2', 'a23_n3_front'],
-      },
     },
     chests: [
       { id: 'a23_chest_bench', room: 'riverside_bench', cell: [19, 13], items: [], chainSnaps: ['c17_imprint'] },
@@ -923,14 +890,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a31_gather_shrine', room: 'village_shrine', cell: [16, 5], items: [ITEMS.radioDial.id, ITEMS.tableLeg.id], gears: ['reckless'] },
         { id: 'a31_gather_river', room: 'village_river', cell: [13, 5], items: [ITEMS.coilAsh.id, ITEMS.radioDial.id], gears: ['hpMemory2'] },
       ],
-      tables: {
-        village_station: ['a31_n1_station', 'a31_n1_square'],
-        village_paddy: ['a31_n1_paddy', 'a31_n1_ridge'],
-        village_shrine: ['a31_n1_shrine'],
-        village_house: ['a31_n2_yard', 'a31_n2_east', 'a31_n2_guard', 'a31_n3_yard'],
-        village_river: ['a31_n2_river', 'a31_n2_river2'],
-        village_platform: ['a31_n3_platform1', 'a31_n3_platform2', 'a31_n3_front'],
-      },
     },
     chests: [
       { id: 'a31_chest_paddy', room: 'village_paddy', cell: [21, 12], items: [], chainSnaps: ['c17_longTake'] },
@@ -1028,13 +987,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a32_gather_gym', room: 'grad_gym_back', cell: [22, 10], items: [ITEMS.selfieGrip.id, ITEMS.earphoneCord.id], gears: ['magicMemory'] },
         { id: 'a32_gather_levee', room: 'grad_levee', cell: [2, 2], items: [ITEMS.earphoneCord.id, ITEMS.diplomaCap.id], gears: ['effectBoost'] },
       ],
-      tables: {
-        grad_slope: ['a32_n1_gate', 'a32_n1_slope', 'a32_n1_tree', 'a32_n1_bus'],
-        grad_gym_back: ['a32_n1_gym'],
-        grad_street: ['a32_n2_arcade', 'a32_n2_shops', 'a32_n2_guard', 'a32_n3_street', 'a32_n3_street2'],
-        grad_levee: ['a32_n2_levee', 'a32_n2_levee2'],
-        grad_crossing: ['a32_n3_cross1', 'a32_n3_cross2'],
-      },
     },
     chests: [
       { id: 'a32_chest_slope', room: 'grad_slope', cell: [18, 34], items: [], chainSnaps: ['c17_rainbow'] },
@@ -1167,13 +1119,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a41_gather_shed', room: 'summer_shed', cell: [15, 18], items: [ITEMS.pumpHandle.id, ITEMS.fireworkStick.id], gears: ['finder'] },
         { id: 'a41_gather_canal', room: 'summer_canal', cell: [5, 4], items: [ITEMS.cageMesh.id, ITEMS.pumpHandle.id] },
       ],
-      tables: {
-        summer_garden: ['a41_n1_gate', 'a41_n1_well', 'a41_n1_yard'],
-        summer_shed: ['a41_n1_shed', 'a41_n1_shed2'],
-        summer_ridge: ['a41_n2_ridge', 'a41_n2_ridge2', 'a41_n2_ridge3', 'a41_n2_guard', 'a41_n3_ridge', 'a41_n3_ridge2'],
-        summer_canal: ['a41_n2_canal'],
-        summer_shallows: ['a41_n3_shallows', 'a41_n3_shallows2'],
-      },
     },
     chests: [
       { id: 'a41_chest_garden', room: 'summer_garden', cell: [6, 5], items: [], chainSnaps: ['c17_filterRed'] },
@@ -1267,12 +1212,6 @@ export const AREAS: Record<string, AreaDef> = {
         { id: 'a42_gather_alley', room: 'showa_alley', cell: [6, 2], items: [ITEMS.gameButton.id, ITEMS.cuckooBird.id], gears: ['startDash'] },
         { id: 'a42_gather_shop', room: 'opening_shop', cell: [4, 17], items: [ITEMS.cuckooBird.id, ITEMS.balloonPaper.id] },
       ],
-      tables: {
-        showa_night: ['a42_n1_gate', 'a42_n1_lower', 'a42_n1_mid', 'a42_n2_upper', 'a42_n2_guard', 'a42_n3_slope'],
-        showa_alley: ['a42_n2_alley1', 'a42_n2_alley2'],
-        showa_lane: ['a42_n2_lane1', 'a42_n2_lane2'],
-        opening_shop: ['a42_n3_shop', 'a42_n3_shop2'],
-      },
     },
     chests: [
       { id: 'a42_chest_clock', cell: [18, 30], items: [], chainSnaps: ['c17_pinpoint'] },

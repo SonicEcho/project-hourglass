@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { HubLineDef, HubNotice } from '../core';
-import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, SCREEN_COACH, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost, sideChainStatus } from '../core';
+import { BACKDROPS, SCREEN_COACH, SIDE_EVENTS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages, waitImages } from '../ui/waitImages';
@@ -12,7 +12,7 @@ import { startScreenCoach } from '../ui/screenCoach';
 import { FONT, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addSlantTile, type GalleryTile } from '../ui/gallery';
 import { hasImage, preloadQueue } from '../assets/loader';
-import { addText, makePressable } from '../ui/widgets';
+import { addSlant, addText, makePressable } from '../ui/widgets';
 import { growthTiles } from './growthMenu';
 import type { DailyData } from './DailyScene';
 import type { DialogueData } from './DialogueScene';
@@ -155,27 +155,58 @@ export class HubScene extends Phaser.Scene {
     const digOpen = canEnterSandBottom(chapterOfEvent(SLICE_FLOW, run.event)?.id);
     addSlantTile(this, root, 14, 292, 262, 112, { id: 'sandBottom', label: '砂の底へ', sub: digOpen ? '返した記憶の地層を掘る' : '2章から', enabled: digOpen, onTap: () => this.openSandBottom() }, true);
 
-    // 育成・交換所・落とし物の棚・町の小話（段階142 のギャラリーを、斜めの絵のタイル4列に）
-    const tiles: GalleryTile[] = [
-      ...growthTiles((key) => this.openGrowth(key)),
-      // 段階152（テストプレイのメモ 2 の 7）：ペトラと話せる時は、タイルに札
-      { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() },
-      { id: 'lost', label: '落とし物', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() },
-    ];
+    // 育成・交換所・落とし物の棚・町の小話（段階142 のギャラリーを、斜めの絵のタイルに）。
+    // 段階243（開発者の声：メニューが増えて分かりにくい）：今の並べ方は保ち、「育成」「準備」「サブストーリー」の見出しで分ける
+    const growth = growthTiles((key) => this.openGrowth(key));
+    const pick = (ids: string[]) => ids.flatMap((id) => growth.filter((t) => t.id === id));
+    const story: GalleryTile[] = [];
     const talks = archivedTalks();
     if (talks.length > 0) {
       const unseen = talks.filter((t) => !t.seen).length;
-      tiles.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
+      story.push({ id: 'talks', label: '町の小話', badge: unseen > 0 ? `まだ ${unseen}` : undefined, onTap: () => this.openTalks() });
     }
-    const cols = 4;
+    story.push({ id: 'lost', label: '落とし物', badge: lostReady > 0 ? '届けられる' : undefined, onTap: () => this.openLost() });
+    // 段階240：寄り道の帳面。どれかの話が出る日になってから。今日まだ見ていない話が出ていれば札
+    const sides = Object.values(SIDE_EVENTS);
+    const allSide = sides.flat();
+    if (allSide.some((e) => e.from <= run.progress.day || isSeen(run.vars, e.id))) {
+      const today = sides.some((events) => sideChainStatus(events, run.vars, run.progress.day, (p) => p).tone === 'today');
+      const seenN = allSide.filter((e) => isSeen(run.vars, e.id)).length;
+      story.push({ id: 'side', label: '寄り道', sub: `見た ${seenN}/${allSide.length}`, badge: today ? '今日あり' : undefined, onTap: () => this.openSideBook() });
+    }
+    const exchange: GalleryTile = { id: 'exchange', label: '交換所', badge: petraTalk ? '話がある' : undefined, onTap: () => this.openExchange() };
+    const groups: { title: string; tiles: GalleryTile[] }[] = [
+      { title: '育成', tiles: pick(['growth', 'weapon', 'navi', 'album']) },
+      {
+        title: '準備',
+        tiles: [
+          ...pick(['party']),
+          // 段階152（テストプレイのメモ 2 の 7）：ペトラと話せる時は、タイルに札
+          exchange,
+          ...pick(['library']),
+        ],
+      },
+      { title: 'サブストーリー', tiles: story },
+    ].filter((g) => g.tiles.length > 0);
     const gap = 7;
     const left = 12;
-    const top = 418;
+    const top = 410;
     const bottom = 768;
-    const rows = Math.ceil(tiles.length / cols);
-    const tw = (GAME_WIDTH - left * 2 - gap * (cols - 1)) / cols;
-    const th = Math.min(rows <= 2 ? 150 : 124, (bottom - top - gap * (rows - 1)) / rows);
-    tiles.forEach((t, i) => addSlantTile(this, root, left + (i % cols) * (tw + gap), top + Math.floor(i / cols) * (th + gap), tw, th, t));
+    const headH = 18;
+    const groupGap = 6;
+    const th = Math.min(110, (bottom - top - groups.length * headH - (groups.length - 1) * groupGap) / groups.length);
+    let y = top;
+    for (const g of groups) {
+      // 見出し：紅の斜めの小さな札に白い字
+      const label = addText(this, left + 14, y + headH / 2 - 1, g.title, { size: 11, bold: true }).setOrigin(0, 0.5);
+      root.add(addSlant(this, left + 4, y + headH / 2 - 1, 8, 12, STYLE.red));
+      root.add(label);
+      y += headH;
+      const n = Math.max(g.tiles.length, 3);
+      const tw = (GAME_WIDTH - left * 2 - gap * (n - 1)) / n;
+      g.tiles.forEach((t, i) => addSlantTile(this, root, left + i * (tw + gap), y, tw, th, t));
+      y += th + groupGap;
+    }
 
     // 見出し（段階141：共通の枠）と、昼へ戻る
     frameHeader(this, root, 'hourglass', 'レストピア', { label: '蔵書の棚 ― 時間は進まない ―', value: '' });
@@ -299,6 +330,11 @@ export class HubScene extends Phaser.Scene {
   }
 
   /** 町の小話を開く（段階82） */
+  private openSideBook(): void {
+    if (this.overlay) return;
+    this.scene.start('SideBook');
+  }
+
   private openTalks(): void {
     if (this.overlay) return;
     this.scene.start('TalkArchive', { seen: undefined, page: 0 });

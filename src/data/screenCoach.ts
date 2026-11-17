@@ -14,10 +14,29 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
   // 拠点（レストピア）
   hub_intro: [
     { target: 'intro', text: 'ここは時間保管局の蔵書の棚「レストピア」です！\n区画の合間に、ここで仲間を育てたり、記憶の地層に潜ったりできます。' },
-    { target: 'partner', text: '並びの仲間が、ひとこと話しかけてきます。\n立ち絵か吹き出しをタップすると、次のひとことを聞けます。' },
+    { target: 'partner', text: '編成の仲間が、ひとこと話しかけてきます。\n立ち絵か吹き出しをタップすると、次のひとことを聞けます。' },
     { target: 'sandBottom', text: '「砂の底へ」から、返した記憶の地層を掘りに行けます（2章から）。\n素材やギア、珍しい物が見つかります。' },
     { target: 'tiles', text: 'ここから、育成やお店の画面を開きます。\n「進化できる」などの札が付いている時は、やることがあります。' },
     { target: 'back', text: '用が済んだら、ここから時計屋へ戻ります。\nレストピアでは、時間は進みません。' },
+  ],
+  // 昼の町の地図（段階247。開発者の声：このマップも最初に見た時にチュートリアルを）
+  daily_map: [
+    { target: 'intro', text: 'ここは昼の町の地図です！\n放課後は、町を歩いて仲間や町の人に会いに行きます。' },
+    { target: 'place', text: '光っている場所で、出来事を見られます。\n場所をタップすると、その場所へ行きます。\n顔の丸が付いた場所では、その仲間に会えます。' },
+    { target: 'picks', text: '「絆」と「小話」は、1日に2つまで見られます。\nここに、あといくつ見られるかが出ます。' },
+    { target: 'legend', text: 'ここに、印の意味と今日の決まりが出ます。\n印の種類は、日が進むと増えていきます。' },
+    { target: 'bonds', text: 'ここに、仲間との絆の深さが出ます。\n「絆」の出来事を見ると、Lv が上がります。' },
+    { target: 'clock', text: '時計屋へ行くと、夕方になって1日が進みます。\n見たい場所を回ってから行きましょう。' },
+  ],
+  // 段階247：新しい印が初めて地図に出た日に、その印だけを説明する（最初の日には、まだない印があるため）
+  daily_main: [
+    { target: 'mark:main', text: '「必ず見る」の印が出ました！\nこの出来事は、夕方の前に必ず見ます。\n「絆」「小話」の数には入りません。' },
+  ],
+  daily_side: [
+    { target: 'mark:side', text: '「寄り道」の印が出ました！\n町の人の、短いお話です。\n「絆」「小話」の数には入らないので、いつでも見られます。' },
+  ],
+  daily_hub: [
+    { target: 'mark:hub', text: '時計屋に「レストピア」の扉が出ました！\n扉から、レストピアへ行けます。\n「絆」「小話」の数には入らず、時間も進みません。' },
   ],
   // 休憩所（探索のチェックポイント）
   camp_intro: [
@@ -102,6 +121,11 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
     { target: 'rows', text: '品物の行をタップすると、欠片と交換できます。\n欠片は、多く持っている種類から使います。\n欠片が足りない時は、値段の札が灰色になります。' },
     { target: 'keeper', text: 'ペトラから話がある時は、ここに「話す」が出ます。' },
   ],
+  // 寄り道の帳面（段階240）
+  side_book: [
+    { target: 'intro', text: 'ここは寄り道の帳面です！\n昼の町で出会った、寄り道の話をまとめています。' },
+    { target: 'cards', text: '話の続きごとに、札が並びます。\n右上に、次の話がいつ・どこに出るかが書いてあります。\n見た話は、題をタップすると読み返せます。' },
+  ],
   // ライブラリ
   library_intro: [
     { target: 'intro', text: 'ここはライブラリです！\n見つけたスナップ・コンボ、会った敵、手に入れた素材の記録を読めます。' },
@@ -115,11 +139,16 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
 export const SCREEN_COACH_TITLES: Record<string, { title: string; group: 'explore' | 'growth' }> = {
   hub_intro: { title: 'レストピア', group: 'growth' },
   camp_intro: { title: '休憩所', group: 'explore' },
+  daily_map: { title: '昼の町の地図', group: 'explore' },
+  daily_main: { title: '昼の「必ず見る」', group: 'explore' },
+  daily_side: { title: '昼の「寄り道」', group: 'explore' },
+  daily_hub: { title: '昼の「レストピア」の扉', group: 'explore' },
   dig_pick: { title: '砂の底（潜る前）', group: 'explore' },
   dig_play: { title: '砂の底（掘る）', group: 'explore' },
   lost_shelf: { title: '落とし物の棚', group: 'growth' },
   exchange_shop: { title: '交換所', group: 'growth' },
   library_intro: { title: 'ライブラリ', group: 'growth' },
+  side_book: { title: '寄り道の帳面', group: 'growth' },
 };
 
 /** 手順の文を、読み返し用の本文にする */

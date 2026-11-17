@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { battleImages, dailyImages, exploreImages, returnImages, screenImages } from '../src/assets/screenImages';
-import { AREA_BATTLES, AREAS, ASSETS, DAILY_HUBS, ENEMY_ART } from '../src/data';
+import { AREA_BATTLES, AREAS, ASSETS, DAILY_HUBS, ENEMY_ART, HUB_TILE_ART } from '../src/data';
 
 // 会話のほかの画面で使う絵（段階150）：探索・戦闘・日常・返す・拠点は、その画面で使う絵だけを待つ
 const IMAGES = new Set(ASSETS.filter((a) => a.kind === 'image' && a.file && !a.id.endsWith('_src')).map((a) => a.id));
@@ -15,13 +15,13 @@ describe('会話のほかの画面で使う絵（段階150）', () => {
     expect(ids).not.toContain('portrait.taichi.normal');
     // 仲間の顔（顔のタブ・戦闘の丸）とタイルは入れる
     expect(ids).toContain('portrait.hero.normal');
-    expect(ids).toContain('tile.hunt');
+    expect(ids).toContain(HUB_TILE_ART.growth[0]);
   });
 
   it('どの区画も、出る戦闘の敵の絵はすべて待つ（戦闘に入ってから図形が出ないように）', () => {
     for (const [id, area] of Object.entries(AREAS)) {
       const ids = new Set(exploreImages(id));
-      const battles = [...(area.enemies ?? []).map((e) => e.battle), area.boss?.battle, ...Object.values(area.hunt?.tables ?? {}).flat()].filter((b): b is string => !!b);
+      const battles = [...(area.enemies ?? []).map((e) => e.battle), area.boss?.battle].filter((b): b is string => !!b);
       for (const b of battles) for (const e of AREA_BATTLES[b]?.enemies ?? []) if (ENEMY_ART[e.id]) expect(ids.has(ENEMY_ART[e.id]), `${id}：${b} の ${e.id}`).toBe(true);
     }
   });

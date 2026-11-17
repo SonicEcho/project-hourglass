@@ -1,4 +1,4 @@
-import { battleReward, boardColorCells, capItems, chainBossSnaps, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, thinItems, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
+import { battleReward, boardColorCells, capItems, chainBossSnaps, chainEnemyDef, gainSnaps, keepVitals, recordLibraryBattle, recordLibraryFinds, recordVictory, type ChainEncounterResult, type ChainState, type Element, type Lineup } from '../core';
 import { CHAIN_AREA_SETUPS, CHAIN_SNAPS, PART_BREAK_POINTS, WEAPON_DATA, type CampaignBattle } from '../data';
 import { browserStorage } from '../save/storage';
 import { currentNaviData, lineupBase, run, saveRun } from './run';
@@ -12,16 +12,14 @@ export interface BattleSceneData {
     battle: string;
     win: { key: string; data: object };
     lose: { key: string; data: object };
-    /** 狩りの戦闘（段階43）：HP・MP は狩りの状態（run.hunt）から持ち越し、ぬしのスナップは渡さない */
+    /** 物語の外の戦闘（段階43 の狩りから。今は砂の底の戦闘が dig と一緒に立てる）：コマ・ぬしの賞品とスナップは渡さず、戦闘中の印も付けない */
     hunt?: boolean;
     /** 砂の底の戦闘（段階207）：HP・MP は掘っている状態（run.dig）から持ち越す。hunt と一緒に立てる（戦闘中の印・ぬしのスナップなしは狩りと同じ） */
     dig?: boolean;
     /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
     seedShift?: number;
-    /** 星の砂と武器の経験値の割合（段階49。狩りで前の章の区画なら半分。段階57から記憶の薄れもかける。書かなければ全部） */
+    /** 星の砂と武器の経験値の割合（段階49。砂の底の上の層なら半分。書かなければ全部） */
     rewardRate?: number;
-    /** 落とした素材が残る割合（段階57。記憶の薄れ。書かなければ全部残る） */
-    dropRate?: number;
   };
 }
 
@@ -115,21 +113,17 @@ export interface ChainWinReward {
  * 勝った時の報酬を受け取る（今の本番の戦闘の showEncounterEnd と同じ受け取り方。ポーチ・つながりゲージ・部位破壊は新しい戦闘にないので除く）：
  * 星の砂（狩りの割合）、残った HP・MP の持ち越し、素材（記憶の薄れの割合）と勝利のアイテム、武器の経験値と盤の色、ぬしのスナップ。最後にセーブ
  */
-export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, def: CampaignBattle, result: ChainEncounterResult, lineup: Lineup, seed: number): ChainWinReward {
+export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, def: CampaignBattle, result: ChainEncounterResult, lineup: Lineup, _seed: number): ChainWinReward {
   const rate = enc.rewardRate ?? 1;
   const gained = Math.ceil(battleReward(def.reward, 0, PART_BREAK_POINTS) * rate);
   const prize = enc.hunt ? undefined : def.item;
   run.growth = { ...run.growth, points: run.growth.points + gained };
   if (enc.dig) {
     if (run.dig) run.dig = { ...run.dig, vitals: structuredClone(result.vitals) };
-  } else if (enc.hunt) {
-    if (run.hunt) run.hunt = { ...run.hunt, state: keepVitals(run.hunt.state, result.vitals) };
-  } else if (run.explore) run.explore = keepVitals(run.explore, result.vitals);
+  } else if (!enc.hunt && run.explore) run.explore = keepVitals(run.explore, result.vitals);
   const naviData = currentNaviData();
   const colorMembers = lineup.unlocks.navi ? lineupBase(lineup) : [];
-  const keptIdx = new Set(thinItems(result.drops.map((_, i) => String(i)), enc.dropRate ?? 1, seed + 7));
-  const drops = result.drops.filter((_, i) => keptIdx.has(String(i)));
-  const faded = result.drops.length - drops.length;
+  const drops = result.drops;
   run.armory = recordVictory(run.armory, {
     actions: result.actionCounts,
     colorCells: Object.fromEntries(colorMembers.map((p) => [p.id, boardColorCells(naviData, run.navi, p.id)])),
@@ -158,6 +152,6 @@ export function settleChainWin(enc: NonNullable<BattleSceneData['encounter']>, d
   }
   const list = [...counts].map(([name, n]) => `${name}${n > 1 ? `×${n}` : ''}`).join('、');
   const itemName = (id: string) => WEAPON_DATA.items[id]?.name ?? id;
-  const dropText = `素材：${list || 'なし'}${faded > 0 ? `（記憶が薄れて、${faded}つは砂に戻った）` : ''}${prize ? `　アイテム：${itemName(prize)}` : ''}${capped.overflow.length ? `（いっぱいで入らなかった：${capped.overflow.map(itemName).join('、')}）` : ''}${chainSnaps.length > 0 ? `\nスナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''}`;
+  const dropText = `素材：${list || 'なし'}${prize ? `　アイテム：${itemName(prize)}` : ''}${capped.overflow.length ? `（いっぱいで入らなかった：${capped.overflow.map(itemName).join('、')}）` : ''}${chainSnaps.length > 0 ? `\nスナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''}`;
   return { gained, koma: def.koma && !enc.hunt ? def.koma : 0, dropText, rare: drops.some((d) => d.kind === 'rare') };
 }

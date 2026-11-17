@@ -2,6 +2,7 @@ import type { DigRuleId } from '../data';
 import type { DigState, Vitals } from '../core';
 import type { AlbumState, ArmoryState, LibraryState, BattleState, CharacterDef, ExploreState, FlowEvent, GrowthState, Lineup, LoadResult, NaviData, NaviState, Progress, RunSnapshot, SaveContext, SavedBattle } from '../core';
 import {
+  chainCardCategory,
   allBattles,
   applyGrowth,
   applyNavi,
@@ -27,7 +28,7 @@ import {
   startProgress,
 } from '../core';
 import type { CampaignBattle } from '../data';
-import { AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
+import { RETIRED_SNAPS, FRAGMENTS, AREA_BATTLES, AREAS, CHAIN_SKILLS, CHAIN_TRAIT_PASSIVES, CHAIN_ALBUM, CHAIN_SNAPS, CHAIN_START_ALBUM, CHAPTER1_LINEUP, LIBRARY_CONTEXT, GROWTH_MAP, NAVI_DATA, PARTY, PROTOTYPE_LINEUP, RENAMED_EVENTS, SLICE_FLOW, START_MEMORY_POINTS, START_NAVI_PARTS, STORY, WEAPON_DATA } from '../data';
 import type { SaveStorage } from '../save/storage';
 import { browserStorage } from '../save/storage';
 import { notePlayEvent } from './playRecord';
@@ -61,11 +62,6 @@ export const run: {
   chainAlbum: AlbumState;
   /** ライブラリの記録（段階167。見つけたスナップ・コンボ・会った敵・分かった弱点・素材） */
   library: LibraryState;
-  /**
-   * 狩りの途中の状態（段階43。返し終えた区画に入り直している時だけ）。セーブしない（閉じたら昼の日常から）。
-   * salt は入るたびに変わる数（砂嵐の戦闘を選ぶ）。fade は記憶の薄れ（段階57）による、その回の実入りの割合
-   */
-  hunt: { salt: number; state: ExploreState; fade: number } | null;
   /** 砂の底を掘っている途中（段階207。試作1）。セーブしない（閉じたら潜る前から）。vitals は潜っている間の HP・MP。digger は掘る人（段階211）。seen は暗がりで一度見えたマス（段階215）。rule はその回の特別ルール、rare は埋めた珍品、rareFound は掘り当てたか（段階217） */
   dig: { state: DigState; vitals: Record<string, Vitals>; count: number; max: number; digger: string; seen?: number[]; rule?: DigRuleId; rare?: string | null; rareFound?: boolean } | null;
   /** 戦闘中の印（段階44）：閉じたら「つづきから」でこの戦闘の始めから。戦闘の外では null */
@@ -86,7 +82,6 @@ export const run: {
   returned: [],
   chainAlbum: albumFromIds(CHAIN_START_ALBUM),
   library: startLibrary(),
-  hunt: null,
   dig: null,
   battle: null,
   party: [],
@@ -134,7 +129,6 @@ export function startNewRun(): void {
   run.returned = [];
   run.chainAlbum = albumFromIds(CHAIN_START_ALBUM);
   run.library = startLibrary();
-  run.hunt = null;
   run.dig = null;
   run.battle = null;
   run.party = [];
@@ -177,28 +171,7 @@ export function setExplore(state: ExploreState | null): void {
   saveRun();
 }
 
-// ---- 周回・狩り（段階43） ----
-
-/** 狩りの戦闘の回数を覚える、物語で覚えた値の名前（戦闘のシードをずらす。セーブの形を変えないよう、物語の値に入れる） */
-const HUNT_COUNT_KEY = '狩り:回数';
-
-/** 狩りの戦闘の回数（入るたび・戦うたびに1つ進め、保存する）。進める前の数を返す */
-export function nextHuntCount(): number {
-  const n = Number(run.vars[HUNT_COUNT_KEY] ?? '0') || 0;
-  setStoryVars({ ...run.vars, [HUNT_COUNT_KEY]: String(n + 1) });
-  return n;
-}
-
-/** 狩りに入る（入るたびに新しい中身）。fade は記憶の薄れによる実入りの割合（段階57） */
-export function startHunt(state: ExploreState, fade = 1): void {
-  run.hunt = { salt: (run.seed + nextHuntCount() * 7919) >>> 0, state, fade };
-}
-
-/** 狩りの途中の状態を変える（セーブしない。手に入れた素材などは saveRun で保存する） */
-export function setHuntState(state: ExploreState): void {
-  if (run.hunt) run.hunt = { ...run.hunt, state };
-  saveRun();
-}
+// ---- 周回 ----
 
 /** 物語で覚えた値を足して保存する（会話の @set） */
 export function setStoryVars(vars: Record<string, string>): void {
@@ -238,6 +211,9 @@ export function saveContext(): SaveContext {
     chainCards: CHAIN_SNAPS,
     initialChainAlbum: albumFromIds(CHAIN_START_ALBUM),
     chainAlbumRules: CHAIN_ALBUM,
+    // 段階238：埋め直す時はクライマックスの上限を超えない。外したスナップは勇気の欠片に替える
+    chainAlbumLimit: { is: (id) => !!CHAIN_SNAPS[id] && chainCardCategory(CHAIN_SNAPS[id]) === 'finish', max: CHAIN_ALBUM.climaxMax },
+    retiredSnaps: { ids: RETIRED_SNAPS, refund: FRAGMENTS.courage.id },
     library: LIBRARY_CONTEXT,
     battleIds: Object.keys(AREA_BATTLES),
   };
@@ -416,7 +392,6 @@ export function continueRun(): boolean {
   run.library = s.library;
   run.battle = s.battle;
   run.party = s.party;
-  run.hunt = null;
   run.dig = null;
   run.active = true;
   lastWritten = null;

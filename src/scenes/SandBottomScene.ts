@@ -5,6 +5,7 @@ import { addItems, addParts, chapterOfEvent, gainSnaps, nextRandom, clearNest, h
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { AREA_BATTLES, SCREEN_COACH, CHAIN_SNAPS, DIG_LORE, DIG_RULES, digLoreVar, digAfterDive, digFullDepth, DIG_FULL_VAR, digRuleFor, parseRare, pickDigRare, SAND_BOTTOM_FEATURES, withRareRelic, withRule, DIG_HEAL_SKILL_RATE, DIG_SKILLS, DIG_TOOL_OWN_MAX, DIG_TOOLS, digRewardRate, digToolVar, HUNT_OLD_AREA_RATE, LOST_ITEMS, NAVI_DATA, parseRelic, PARTY, relicGears, SAND_BOTTOM_COLORS, SAND_BOTTOM_DEEPEST_VAR, SAND_BOTTOM_DIGGER_VAR, SAND_BOTTOM_DIGGERS, SAND_BOTTOM_METERS_PER_ROW, sandBottomFor, SLICE_FLOW, WEAPON_DATA, withDigger, diggerStats, ALLY_FACE, FACE_CROPS } from '../data';
 import { startScreenCoach } from '../ui/screenCoach';
+import { notePlayCount } from './playRecord';
 import { battleImages, commonImages } from '../assets/screenImages';
 import { dialogueImages, waitImages } from '../ui/waitImages';
 import type { DialogueData } from './DialogueScene';
@@ -79,7 +80,7 @@ const DIR_STEP: Record<DigDir, [number, number]> = { up: [0, -1], down: [0, 1], 
 
 /** 今の章の砂の底（砂時計の砂が章で変わる） */
 function currentDef() {
-  return withRule(sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars), run.dig?.rule);
+  return withRule(sandBottomFor(chapterOfEvent(SLICE_FLOW, run.event)?.id, run.vars, run.returned), run.dig?.rule);
 }
 
 /** 次に潜る回の特別ルール（段階217。潜った回数とシードで決まる） */
@@ -213,7 +214,7 @@ export class SandBottomScene extends Phaser.Scene {
     const last = run.vars[SAND_BOTTOM_DIGGER_VAR];
     const chosen = last && list.includes(last) ? last : list[0];
     o.add(addText(this, GAME_WIDTH / 2, 64, '誰が掘る？', { size: 24, bold: true }).setOrigin(0.5).setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true));
-    o.add(addText(this, GAME_WIDTH / 2, 94, '掘る人で、得意なことと技が変わります（戦闘はいつもの並び）', { size: 11, color: COLORS.subText }).setOrigin(0.5));
+    o.add(addText(this, GAME_WIDTH / 2, 94, '掘る人で、得意なことと技が変わります（戦闘はいつもの編成）', { size: 11, color: COLORS.subText }).setOrigin(0.5));
     // 段階217：今回の地層の特別ルール（潜るたびに変わる）
     const rule = DIG_RULES[nextRule()];
     // 段階230（見た目の決まり）：今回の地層は、黒い帯に白い枠・左に紅の帯
@@ -368,12 +369,14 @@ export class SandBottomScene extends Phaser.Scene {
     const count = Number(run.vars[DIVE_COUNT_VAR] ?? 0) + 1;
     const stock = Object.fromEntries(tools.map((t) => [digToolVar(t), String(this.stockOf(t) - tools.filter((x) => x === t).length)]));
     setStoryVars({ ...run.vars, ...stock, [DIVE_COUNT_VAR]: String(count), [SAND_BOTTOM_DIGGER_VAR]: digger });
+    // 遊んだ記録（段階237）：砂の底に潜った回数（前の「記憶をたどった回数」の欄を使う）
+    notePlayCount('hunt');
     // 段階217：その回の特別ルールと、珍品（埋めるかどうか・中身は、潜る前に決める。掘り当てるまで秘密）
     // 段階218：特別ルールと珍品は、ちゃんと潜った回数で決める（すぐ戻る選び直しを防ぐ）
     const full = fullDives() + 1;
     const rule = digRuleFor(run.seed, full);
     const chapter = chapterOfEvent(SLICE_FLOW, run.event)?.id;
-    let def = withRule(sandBottomFor(chapter, run.vars), rule);
+    let def = withRule(sandBottomFor(chapter, run.vars, run.returned), rule);
     let r = (run.seed ^ Math.imul(full + 11, 40503)) >>> 0;
     const rand = () => {
       const [v, n] = nextRandom(r);

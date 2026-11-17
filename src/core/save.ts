@@ -1,5 +1,5 @@
 import type { AlbumState } from './album';
-import { sanitizeAlbum } from './album';
+import { retiredSnapCount, sanitizeAlbum } from './album';
 import { sanitizeLibrary, type LibraryContext, type LibraryState } from './library';
 import type { AreaDef, ExploreState } from './explore';
 import { normalizeExplore } from './explore';
@@ -81,6 +81,10 @@ export interface SaveContext {
   chainCards: Record<string, { id: string }>;
   initialChainAlbum: AlbumState;
   chainAlbumRules: { size: number; copyMax: number };
+  /** アルバムに入れられる数に上限のある札（クライマックス。段階238：埋め直す時に使う） */
+  chainAlbumLimit?: { is: (id: string) => boolean; max: number };
+  /** 外したスナップ（段階238）：持っていた枚数だけ、記憶の欠片（refund の種類）に替える */
+  retiredSnaps?: { ids: ReadonlySet<string>; refund: string };
   /** ライブラリに載る物（段階167） */
   library: LibraryContext;
   /** 区画の戦闘の id（段階44。戦闘中の印を整える。書かなければ、戦闘中の印は捨てる） */
@@ -143,8 +147,11 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
   const renamed = ctx.renamedEvents?.[raw.event] ?? raw.event;
   const event = findEvent(ctx.flow, renamed) ? renamed : firstEventId(ctx.flow);
   const growth = sanitizeGrowth(raw.growth, ctx);
-  const armory = sanitizeArmory(raw.armory, ctx.weaponData);
-  if (!growth || !armory) return null;
+  const parsedArmory = sanitizeArmory(raw.armory, ctx.weaponData);
+  if (!growth || !parsedArmory) return null;
+  // 段階238：外したスナップは、持っていた枚数だけ記憶の欠片に替える（次のセーブからは持っていないので、替えるのは1回だけ）
+  const refund = ctx.retiredSnaps ? retiredSnapCount(raw.chainAlbum, ctx.retiredSnaps.ids) : 0;
+  const armory = refund > 0 && ctx.retiredSnaps ? { ...parsedArmory, fragments: { ...parsedArmory.fragments, [ctx.retiredSnaps.refund]: (parsedArmory.fragments[ctx.retiredSnaps.refund] ?? 0) + refund } } : parsedArmory;
   const navi = sanitizeNavi(raw.navi, naviDataWithWeapons(ctx.naviData, ctx.weaponData, armory));
   if (!navi) return null;
   return {
@@ -160,7 +167,7 @@ export function sanitizeRun(raw: Record<string, unknown>, ctx: SaveContext): Run
     explore: sanitizeExplore(raw.explore, ctx),
     // 今の区画にないものと、重なりは捨てる
     returned: Array.isArray(raw.returned) ? [...new Set(raw.returned.filter((x): x is string => typeof x === 'string' && x in ctx.areas))] : [],
-    chainAlbum: sanitizeAlbum(raw.chainAlbum, ctx.chainCards, ctx.initialChainAlbum, ctx.chainAlbumRules.size, ctx.chainAlbumRules.copyMax),
+    chainAlbum: sanitizeAlbum(raw.chainAlbum, ctx.chainCards, ctx.initialChainAlbum, ctx.chainAlbumRules.size, ctx.chainAlbumRules.copyMax, ctx.chainAlbumLimit),
     library: sanitizeLibrary(raw.library, ctx.library),
     battle: sanitizeBattle(raw.battle, ctx),
     // 知らない仲間と、重なりは捨てる（段階91a）

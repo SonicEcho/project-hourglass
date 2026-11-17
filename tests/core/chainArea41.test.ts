@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle, chainTipTriggers, createChainBattle, runChainRound, type ChainEnemyDef, type ChainEvent } from '../../src/core';
-import { A41_ETERNAL, A41_LORD, A41_SPLASH, CHAIN_BOSS_GRADE, A41_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, HERO, MIO } from '../../src/data';
+import { A41_ETERNAL, A41_LORD, A41_SPLASH, CHAIN_BOSS_GRADE, A41_ENEMY_SNAPS, AKARI, AREA_BATTLES, AREAS, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, CHAIN_TRIALS, HERO, MIO, RETIRED_SNAPS } from '../../src/data';
 
 // 段階187（段取りの段階F9a）：4-1 の雑魚の戦闘を新しい戦闘に
 const ids = Object.keys(AREA_BATTLES).filter((id) => (id.startsWith('a41_n') || id === 'a41_runner') && !AREA_BATTLES[id].boss);
@@ -45,7 +45,13 @@ describe('4-1 の雑魚を新しい戦闘に（段階187）', () => {
     expect(ids.filter((x) => x.startsWith('a41_n2_')).flatMap((id) => AREA_BATTLES[id].enemies.map((e) => e.id))).toContain('watermelonNoise');
   });
   it('敵のスナップ・宝箱の札', () => {
+    // 段階238：区画に2枚へ絞った（外した札は、敵も落とさず、アルバムにも入らない）
     for (const [enemy, snap] of Object.entries(A41_ENEMY_SNAPS)) {
+      if (RETIRED_SNAPS.has(snap)) {
+        expect(CHAIN_ENEMY_SNAPS[enemy]).toBeUndefined();
+        expect(CHAIN_SNAPS[snap]).toBeUndefined();
+        continue;
+      }
       expect(CHAIN_ENEMY_SNAPS[enemy]).toBe(snap);
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }

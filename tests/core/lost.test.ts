@@ -4,7 +4,6 @@ import {
   acceptLost,
   activeLostCount,
   deliverLost,
-  findLost,
   getAcceptError,
   getDeliverError,
   bondExtras,
@@ -15,8 +14,6 @@ import {
   lostKey,
   lostVoicesHeard,
   wantsLostVoice,
-  lostOfSpot,
-  lostSpots,
   lostStatus,
   shelfLost,
 } from '../../src/core';
@@ -43,23 +40,15 @@ describe('落とし物（段階53）', () => {
     expect(activeLostCount(defs, vars)).toBe(1);
   });
 
-  it('探し物：受けている間だけ、記憶をたどる区画に光る所が出る。拾うと見つけた、になり、届けられる', () => {
+  // 段階237：記憶をたどる時の光る所（lostSpots・findLost）は外した。見つけた（found）になれば届けられる
+  it('探し物：見つけた、になると届けられる', () => {
     let vars = acceptLost(defs, {}, 'f', 3);
-    expect(lostSpots(defs, {}, 'a11')).toEqual([]);
-    expect(lostSpots(defs, vars, 'a12')).toEqual([]);
-    const spots = lostSpots(defs, vars, 'a11');
-    expect(spots).toEqual([{ id: 'lost:f', cell: [1, 2], items: [] }]);
-    expect(lostOfSpot(spots[0].id)).toBe('f');
-    expect(lostOfSpot('a11_gather_goldfish')).toBeNull();
     expect(getDeliverError(find, vars, {})).toBe('not found yet');
-    vars = findLost(vars, 'f');
-    expect(lostSpots(defs, vars, 'a11')).toEqual([]);
+    vars = { ...vars, [lostKey('f')]: 'found' };
     const r = deliverLost(find, vars, { items: {}, fragments: {} });
     expect(lostStatus(r.vars, 'f')).toBe('delivered');
     expect(r.fragments).toEqual({ courage: 1 });
     expect(getDeliverError(find, r.vars, {})).toBe('already delivered');
-    // 受けていない物を見つけても変わらない
-    expect(findLost({}, 'f')).toEqual({});
   });
 
   it('取り出す：素材を集めて届けると、素材を使い、ごほうびが入る', () => {
@@ -71,9 +60,10 @@ describe('落とし物（段階53）', () => {
     expect(getDeliverError(bring, {}, { tinSpring: 9 })).toBe('not accepted');
   });
 
-  it('データ：2章までの区画に4つ。どれも声をたどる形で、会話・相手・ご褒美・ひとことは実在する（段階220）', () => {
+  it('データ：返す区画に1つずつ（段階242：9つ。祭りの夜は終章で）。どれも声をたどる形で、会話・相手・ご褒美・ひとことは実在する（段階220）', () => {
     expect(LOST_ACTIVE_MAX).toBe(3);
-    expect(LOST_ITEMS.length).toBe(4);
+    // 段階244：最後はペトラの頼み（1-2 の記憶。4-1 を返した後に棚へ）
+    expect(LOST_ITEMS.map((d) => d.area)).toEqual(['a11', 'a12', 'a21', 'a22', 'a23', 'a31', 'a32', 'a41', 'a42', 'a12']);
     const ids = LOST_ITEMS.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
     const scenes = new Set(SCENES.map((s) => s.id));
@@ -145,5 +135,27 @@ describe('声をたどる依頼（段階220）', () => {
     // 絆の点：足し1つは extra 点（なければ talk 点）
     expect(bondPoints(r.vars, 'akari', {}, {}, { event: 4, talk: 1, level: 10, extra: 3 })).toBe(3);
     expect(bondPoints(r.vars, 'akari', {}, {}, { event: 4, talk: 1, level: 10 })).toBe(1);
+  });
+});
+
+// 段階242：4章の依頼（4-1・4-2）の声のかけらは、4章の区画を全部返したら掘れる（5章を待たない）
+describe('4章の層は、4章の区画を全部返したら開く（段階242）', () => {
+  it('4-1 だけでは開かず、4-1・4-2 を返すと開いて、受けた依頼の声が埋まる', async () => {
+    const { sandBottomFor } = await import('../../src/data');
+    const groups = (returned: string[]) => [...new Set(sandBottomFor('ch4', {}, returned).layers.map((l) => l.group))];
+    expect(groups(['a41'])).not.toContain('ch4');
+    expect(groups(['a41', 'a42'])).toContain('ch4');
+    const vars = acceptLost(LOST_ITEMS, {}, 'a42_wreath', 3);
+    const relics = sandBottomFor('ch4', vars, ['a41', 'a42']).layers.flatMap((l) => l.relics ?? []);
+    expect(relics).toContain('lost:a42_wreath');
+  });
+});
+
+// 段階244：needs の区画も返し終えるまで、棚に出さない（ペトラの頼みは 4-1 の後）
+describe('棚に出す時（段階244）', () => {
+  it('ペトラの頼みは、1-2 を返していても、4-1 を返すまで出ない', () => {
+    const ids = (returned: string[]) => shelfLost(LOST_ITEMS, returned).map((d) => d.id);
+    expect(ids(['a11', 'a12'])).not.toContain('petra_flower');
+    expect(ids(['a11', 'a12', 'a41'])).toContain('petra_flower');
   });
 });

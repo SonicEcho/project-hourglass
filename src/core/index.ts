@@ -26,7 +26,6 @@ export * from './exchange';
 export * from './lost';
 export * from './hubTalk';
 export * from './battleRecord';
-export * from './fade';
 export * from './playtime';
 export * from './recommend';
 export * from './chain';

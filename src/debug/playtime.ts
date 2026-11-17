@@ -46,8 +46,7 @@ function detailOf(scene: Phaser.Scene): string {
     case 'Explore': {
       const area = (s.area as { id?: string } | undefined)?.id ?? '';
       const night = typeof s.night === 'number' && s.night > 0 ? ` ${s.night}晩目` : '';
-      const hunt = s.hunting === true ? ' 記憶をたどる' : '';
-      return `${area}${night}${hunt} ${(s.state as { room?: string } | undefined)?.room ?? ''}`.trim();
+      return `${area}${night} ${(s.state as { room?: string } | undefined)?.room ?? ''}`.trim();
     }
     case 'Daily':
       return typeof s.eventId === 'string' ? s.eventId : '';

@@ -41,8 +41,6 @@ describe('説明（段階30）', () => {
     expect(exploreTipTriggers(s, { atCheckpoint: false })).toEqual(['explore_basic']);
     expect(exploreTipTriggers(s, { atCheckpoint: true })).toEqual(['explore_basic', 'explore_checkpoint']);
     expect(exploreTipTriggers({ ...s, koma: 2 }, { atCheckpoint: false })).toEqual(['explore_basic', 'explore_koma']);
-    // 段階45：記憶をたどる時は「記憶をたどる」
-    expect(exploreTipTriggers(s, { atCheckpoint: false, hunting: true })).toEqual(['explore_basic', 'explore_hunt']);
   });
 
 });

@@ -96,7 +96,11 @@ async function winBattle() {
 
 
 // 初めての人向けの説明（段階30）は、流れの途中で窓が出て止まらないよう、最初から全部見たことにしておく（最後に1つだけ出ることを確かめる）
-const TIP_IDS = [...readFileSync(new URL('../src/data/tips.ts', import.meta.url), 'utf8').matchAll(/id: '([a-z_]+)'/g)].map((m) => m[1]);
+const TIP_IDS = [
+  ...[...readFileSync(new URL('../src/data/tips.ts', import.meta.url), 'utf8').matchAll(/id: '([a-z_]+)'/g)].map((m) => m[1]),
+  // 段階236：画面の照らす案内（説明と同じ記録を使う）
+  ...[...readFileSync(new URL('../src/data/screenCoach.ts', import.meta.url), 'utf8').matchAll(/^ {2}([a-z_]+): \[$/gm)].map((m) => m[1]),
+];
 await page.addInitScript((ids) => {
   if (localStorage.getItem('restopia.tips') === null) localStorage.setItem('restopia.tips', JSON.stringify(ids));
 }, TIP_IDS);
@@ -274,7 +278,7 @@ try {
   if ((await page.evaluate(() => window.__restopia.scene('ChainBattle').areaBattle.id)) !== 'a11_storm2') throw new Error('別の戦闘に戻った');
   await winBattle();
 
-  step('レストピアの拠点（段階50）と記憶をたどる（段階43）・交換所（段階52）・落とし物（段階53）：昼の時計屋から拠点に入り、星図・交換所を開いて戻り、落とし物を受け、返した区画をたどって見つけ、ぬしに勝っても続き、落とし物を届け、拠点から時計屋へ戻っても昼の回数は減らない');
+  step('レストピアの拠点（段階50）と砂の底（段階213）・交換所（段階52）・落とし物（段階53・220）：昼の時計屋から拠点に入り、星図・交換所を開いて戻り、落とし物を受け、砂の底で声のかけらをそろえ、砂嵐に勝っても潜り続け、落とし物を届け、拠点から時計屋へ戻っても昼の回数は減らない');
   const skipTips = async () => {
     for (let i = 0; i < 6 && (await findText('^はじめての説明$')); i++) {
       await tap('^わかった$');
@@ -362,31 +366,57 @@ try {
     await page.waitForTimeout(1500);
   }
   await waitScene('Hub');
-  await tap('^記憶をたどる$');
-  // 6日目（2章）に1章の区画を狩ると、星の砂と経験値は半分（段階49）
-  await until('前の章の区画の案内', () => findText('^1-1「金魚の名前」\\n記憶は濃い・星の砂と経験値は半分$'));
-  await tap('^1-1「金魚の名前」');
-  await waitScene('Explore');
+  // 段階213 で狩り（記憶をたどる）を外したので、砂の底で依頼の声のかけらをたどる（段階220）
+  await tap('^砂の底へ$');
+  await waitScene('SandBottom');
+  await until('誰が掘る？', () => findText('^誰が掘る？$'));
+  await page.waitForTimeout(600);
   await skipTips();
-  await until('記憶をたどるの案内', () => findText('^記憶をたどる：素材を集める$'));
-  // 受けた探し物の光る所を拾う（光る所の隣まで歩くのと同じ処理）
-  await page.evaluate(() => window.__restopia.scene('Explore').openChestNow('lost:a11_hairpin'));
-  await until('落とし物を見つけた', () => findText('^落とし物を見つけた'));
-  // 探索の画面の中から、ぬしとの戦闘を始める（ぬしの隣まで歩くのと同じ処理）
-  await page.evaluate(() => window.__restopia.scene('Explore').startBattle('a11_boss', 'a11_boss'));
-  await winBattle();
-  if (await findText('^コマ \\+')) throw new Error('狩りの戦闘でコマが出た');
-  // ぬし戦の初めての説明（部位破壊）が出ていれば閉じる（前の確かめで、見た説明を忘れさせている）
+  await tap('^ハルト$');
+  await page.waitForTimeout(600);
+  // 持っている道具があれば、持ち込む道具を選ぶ画面が出る（選ばずに潜る）
+  if (await findText('^潜る$')) await tap('^潜る$');
+  const digging = () => page.evaluate(() => { const sc = window.__restopia.scene('SandBottom'); return !!sc && !!sc.s && !sc.overlay; });
+  await until('潜った', digging);
   await page.waitForTimeout(800);
   await skipTips();
-  await tap('^探索へ戻る ▶$');
-  await waitScene('Explore');
+  // 十字のボタンの「下」で1マス掘る
+  const steps = () => page.evaluate(() => window.__restopia.scene('SandBottom').s.steps);
+  const stepsBefore = await steps();
+  await tapAt(272, 804);
+  await until('掘って進んだ', async () => (await steps()) > stepsBefore, 5000);
+  // 声のかけらを3つ掘り当てる（掘り当てたのと同じ処理）。毎回、写しの声の場面を見てから砂の底へ戻る
+  for (let n = 1; n <= 3; n++) {
+    await until(`かけら${n}の前`, digging);
+    await page.evaluate(() => window.__restopia.scene('SandBottom').takeRelicAt(0, 'lost:a11_hairpin'));
+    await waitScene('Dialogue');
+    await tap('^早送り$');
+    for (let i = 0; i < 40 && !(await scenes()).includes('SandBottom'); i++) {
+      await tapAt(195, 650);
+      await page.waitForTimeout(300);
+    }
+    await waitScene('SandBottom');
+  }
+  await until('声がそろった', () => page.evaluate(() => (localStorage.getItem('restopia.save.auto') ?? '').includes('"落とし物の声:a11_hairpin":"3"')));
+  // 砂の底の砂嵐に勝つと、砂の底へ戻って続く（HP・MP は持ち越す）
+  await until('かけらの後', digging);
+  await page.evaluate(() => {
+    const sc = window.__restopia.scene('SandBottom');
+    const layer = sc.def.layers.find((l) => l.battles.length > 0);
+    sc.fight('roamer', -1, layer.battles[0]);
+  });
+  await winBattle();
+  await page.waitForTimeout(800);
   await skipTips();
-  await until('ぬしに勝っても狩りが続く', () => findText('^ぬしを倒した。'));
-  if (await findText('^ぬし$')) throw new Error('倒したぬしがまだいる');
-  await tap('^レストピア\\nへ戻る$');
+  await tap('^砂の底へ戻る ▶$');
+  await waitScene('SandBottom');
+  await until('戦った後も潜っている', digging);
+  // 地上へ戻って、拾った物を受け取る
+  await page.evaluate(() => window.__restopia.scene('SandBottom').goBack());
+  if (await findText('^それでも戻る$')) await tap('^それでも戻る$');
+  await tap('^受け取る$');
   await waitScene('Hub');
-  // 見つけた落とし物を、棚から届ける（ゆうまに会う会話の後、ごほうび）
+  // 声がそろった落とし物を、棚から届ける（ゆうまに会う会話の後、ごほうび）
   await tap('^落とし物$');
   await waitScene('Lost');
   await page.waitForTimeout(800);
@@ -400,20 +430,16 @@ try {
     await page.waitForTimeout(300);
   }
   await waitScene('Lost');
-  await until('届けた', () => findText('^届けた！'));
+  await until('届けた', () => findText('^届けました'));
   // 段階202：落とし物の棚の出てくる動きの途中で押すと届かないことがあるので、拠点に戻るまで押し直す
   for (let k = 0; k < 3 && !(await scenes()).includes('Hub'); k++) {
     await tap('^レストピアへ戻る$').catch(() => {});
     await page.waitForTimeout(1500);
   }
   await waitScene('Hub');
-  // 記憶の薄れ（段階57）：一度たどった 1-1 は、同じ日のうちは少し薄れている
-  await tap('^記憶をたどる$');
-  await until('1-1 が少し薄い', () => findText('^1-1「金魚の名前」\\n記憶が少し薄い（実入り6割）・星の砂と経験値は半分$'));
-  await tap('^やめる$');
   await tap('^時計屋へ戻る$');
   await waitScene('Daily');
-  await until('昼の回数が減っていない', () => findText('^昼に選べるのは、あと2回$'));
+  await until('昼の回数が減っていない', () => findText('^あと 2$'));
 
   step('確認を楽にする（段階92）：育ち具合で飛び、メモを書き、飛ぶ前のセーブに戻す');
   page.on('dialog', (d) => void d.accept());

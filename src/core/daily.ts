@@ -14,7 +14,9 @@ export type SpotMark =
   /** ここへ行くと日が進む（夕暮れの時計屋など） */
   | 'go'
   /** 時計屋の奥からレストピアの拠点へ（段階50。狩り・育成など。回数を使わず、時間も進まない） */
-  | 'hub';
+  | 'hub'
+  /** 寄り道（段階239。サブイベントの連作。回数を使わない） */
+  | 'side';
 
 export interface DailySpot {
   /** 印の名前（見たかどうかを、この名前で覚える。会話の場面がある時は、場面の id と同じにする） */
@@ -42,6 +44,8 @@ export interface DailySpot {
   gears?: string[];
   /** 小話の相手（段階83。話の中心の仲間。その日に見た時だけ、この仲間の♥を半分足す） */
   with?: string;
+  /** 寄り道の連作の id（段階239。見た日を覚え、続きは次の日から） */
+  side?: string;
 }
 
 export interface DailyPlace {
@@ -98,6 +102,62 @@ export interface BondEvent {
   /** 場所の絵の上の位置 */
   x: number;
   y: number;
+}
+
+/**
+ * 寄り道（段階239。docs/milestones/M3_side_events.md）：昼の町に出る、短いサブイベントの連作。昼に選べる回数は使わない。
+ * 連作ごとに順番に並べ、前の話を見た次の日から、続きが出る。id は会話の場面の id と同じ
+ */
+export interface SideEvent {
+  id: string;
+  /** 連作の id */
+  chain: string;
+  /** 題（「特賞が出ない」など） */
+  title: string;
+  /** 印の名前（「商店街の福引」など） */
+  label: string;
+  /** 何日目から出るか */
+  from: number;
+  /** 出る場所の id（町の地図の場所） */
+  place: string;
+  x: number;
+  y: number;
+}
+
+/** 寄り道の連作の、最後に見た日を覚える値の名前 */
+export function sideDayKey(chain: string): string {
+  return `寄り道の日:${chain}`;
+}
+
+/**
+ * その日に出す、寄り道の連作の話（段階239）。今日見た話があれば、その話（見た印になる）。
+ * なければ、まだ見ていない一番前の話。「何日目から」より前、または前の話を見たのが今日以降なら、出さない
+ */
+export function sideEventFor(hub: DailyHub, vars: Record<string, string>, events: readonly SideEvent[]): SideEvent | undefined {
+  if (hub.day === undefined || events.length === 0) return undefined;
+  const lastSeen = events.reduce((n, e, i) => (isSeen(vars, e.id) ? i : n), -1);
+  const seenDay = Number(vars[sideDayKey(events[0].chain)] ?? NaN);
+  if (lastSeen >= 0 && seenDay === hub.day) return events[lastSeen];
+  const next = events[lastSeen + 1];
+  if (!next || next.from > hub.day) return undefined;
+  if (lastSeen >= 0 && !(seenDay < hub.day)) return undefined;
+  return next;
+}
+
+/** 寄り道の連作の今の様子（段階240。拠点の帳面の札の右上）。placeName は町の場所の名前 */
+export function sideChainStatus(
+  events: readonly SideEvent[],
+  vars: Record<string, string>,
+  today: number,
+  placeName: (place: string) => string,
+): { label: string; tone: 'today' | 'later' | 'done' | 'seen' } {
+  const shown = sideEventFor({ id: 'book', time: '', places: [], day: today }, vars, events);
+  if (shown && isSeen(vars, shown.id)) return { label: '今日の話は見ました', tone: 'seen' };
+  if (shown) return { label: `今日、${placeName(shown.place)}に出ています`, tone: 'today' };
+  const next = events.find((e) => !isSeen(vars, e.id));
+  if (!next) return { label: '全部見ました', tone: 'done' };
+  if (next.from > today) return { label: `${next.from}日目から、${placeName(next.place)}`, tone: 'later' };
+  return { label: `次は明日から、${placeName(next.place)}`, tone: 'later' };
 }
 
 /**
@@ -372,6 +432,8 @@ export function resolveHub(
   town: Readonly<Record<string, DailyPlaceInfo>>,
   visits: readonly ReturnVisit[] = [],
   entrance?: { place: string; spot: DailySpot },
+  /** 寄り道の連作（段階239。連作の id → 話の並び） */
+  sides: Readonly<Record<string, readonly SideEvent[]>> = {},
 ): DailyHub {
   const places: DailyPlace[] = hub.places.map((p) => ({ ...p, spots: [...p.spots] }));
   /** その場所（日常のデータになければ、町の地図から足す） */
@@ -394,12 +456,21 @@ export function resolveHub(
     const place = placeOf(ev.place);
     place?.spots.push({ id: ev.id, scene: ev.id, label: ev.label, mark: 'bond', x: ev.x, y: freeSpotY(place.spots, ev.y), partner });
   }
+  // 寄り道（段階239）：連作ごとに、その日の話を1つ
+  for (const events of Object.values(sides)) {
+    const ev = sideEventFor(hub, vars, events);
+    if (!ev) continue;
+    const place = placeOf(ev.place);
+    place?.spots.push({ id: ev.id, scene: ev.id, label: ev.label, mark: 'side', x: ev.x, y: freeSpotY(place.spots, ev.y), side: ev.chain });
+  }
   return { ...hub, places: places.filter((p) => p.spots.length > 0) };
 }
 
 /** 見終えた印を覚えた、新しい値（絆の出来事は、今日会った相手も覚える） */
 export function markVisited(hub: DailyHub, vars: Record<string, string>, spot: DailySpot): Record<string, string> {
   const next = markSeen(vars, spot.id);
+  // 寄り道（段階239）：見た日を覚える（続きは次の日から）
+  if (spot.side && hub.day !== undefined) return { ...next, [sideDayKey(spot.side)]: String(hub.day) };
   return spot.partner ? { ...next, [metKey(hub.id, spot.partner)]: spot.id } : next;
 }
 

@@ -26,10 +26,30 @@ export const CHAIN_MAIN_CARDS: Record<string, ChainMove> = {
  */
 /** ぬし戦だけの札（段階186 の踏切のぬしの「あのね」、段階190 のシャッターのぬしの「壊れた札」）はアルバムに入れない */
 const BATTLE_ONLY = new Set([...A32_BATTLE_ONLY, ...A42_BATTLE_ONLY].map((m) => m.id));
-export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_MAIN_CARDS).filter((m) => !m.owner && !BATTLE_ONLY.has(m.id)).map((m) => [m.id, m]));
+
+/**
+ * 段階238（開発者と決めた：スナップを手に入れる喜びを薄めない）：敵のスナップを区画に2枚へ絞り、外した25枚（docs/milestones/M3_snap_count.md の 3.）。
+ * 札の決まりは残すが、アルバム・ライブラリ・敵の落とし物には出さない。持っていたセーブは、1枚につき記憶の欠片1つに替える（src/core/save.ts）
+ */
+export const RETIRED_SNAPS: ReadonlySet<string> = new Set([
+  'a11_hireuchi', 'a11_mizushibuki', 'a11_zutsuki',
+  'a12_marble', 'a12_menkoStorm', 'a12_alarmBell',
+  'a21_gearArmor', 'a21_scatter', 'a21_discharge',
+  'a22_sticker', 'a22_bass', 'a22_ringtone',
+  'a23_iceWater', 'a23_jeer', 'a23_irregular',
+  'a31_quickTurn', 'a31_tableFlip',
+  'a3s_candyCrane', 'a3s_welcomeFire',
+  'a32_tangle', 'a32_pearls',
+  'a41_squirt', 'a41_sparks',
+  'a42_chime', 'a42_drift',
+]);
+
+export const CHAIN_SNAPS: Record<string, ChainMove> = Object.fromEntries(Object.values(CHAIN_MAIN_CARDS).filter((m) => !m.owner && !BATTLE_ONLY.has(m.id) && !RETIRED_SNAPS.has(m.id)).map((m) => [m.id, m]));
 
 /** 敵の種類 → その敵のスナップ（段階165） */
-export const CHAIN_ENEMY_SNAPS: Record<string, string> = { ...A11_ENEMY_SNAPS, ...A12_ENEMY_SNAPS, ...A21_ENEMY_SNAPS, ...A22_ENEMY_SNAPS, ...A23_ENEMY_SNAPS, ...A31_ENEMY_SNAPS, ...A3S_ENEMY_SNAPS, ...A32_ENEMY_SNAPS, ...A41_ENEMY_SNAPS, ...A42_ENEMY_SNAPS };
+export const CHAIN_ENEMY_SNAPS: Record<string, string> = Object.fromEntries(
+  Object.entries({ ...A11_ENEMY_SNAPS, ...A12_ENEMY_SNAPS, ...A21_ENEMY_SNAPS, ...A22_ENEMY_SNAPS, ...A23_ENEMY_SNAPS, ...A31_ENEMY_SNAPS, ...A3S_ENEMY_SNAPS, ...A32_ENEMY_SNAPS, ...A41_ENEMY_SNAPS, ...A42_ENEMY_SNAPS }).filter(([, snap]) => !RETIRED_SNAPS.has(snap)),
+);
 
 /** 本番の札の絵と短い説明（試しにない物） */
 export const CHAIN_MAIN_CARD_ART: Record<string, string> = { ...A11_CARD_ART, ...A12_CARD_ART, ...A21_CARD_ART, ...A22_CARD_ART, ...A23_CARD_ART, ...A31_CARD_ART, ...A3S_CARD_ART, ...A32_CARD_ART, ...A41_CARD_ART, ...A42_CARD_ART, ...DIG_CARD_ART };

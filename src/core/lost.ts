@@ -1,7 +1,6 @@
 // 落とし物（段階53。docs/design/economy.md の 5-3）：拠点の落とし物の棚で受ける、任意の頼みごと。Phaser に依存しない。
 // 拠点の砂時計はハルトたちが見てきた記憶。その中で、あの時は気づかなかった小さなこと（落とし物）を見つけ、今の持ち主に届ける（伝える）。
 // 受けた・見つけた・届けたは、物語の変数（vars）の `落とし物:id` に覚える（セーブの形を変えない）
-import type { AreaGather } from './hunt';
 import type { GridCell } from './grid';
 
 /** 届けた時のごほうび */
@@ -27,7 +26,7 @@ export interface LostAfterword {
 
 /**
  * 落とし物1つ。kind：
- * - find（探し物）：記憶をたどる時だけ、区画の spot に光る所が出る。拾うと「見つけた」（findScene があれば、その会話を見る）
+ * - find（探し物）：段階43 の狩りで区画に光る所を出していた形（段階237 で狩りを外したので、今は使っていない。found になれば届けられる）
  * - bring（取り出す）：砂嵐の名残が飲みこんでいる。bring の素材を count 個集めて棚へ持っていくと、中から出てくる（届ける時に素材を使う）
  * - voices（声をたどる。段階220）：砂の底の、その区画の帯に「声のかけら」が埋まる。掘り当てるたびに voices の会話を1つ順に聞き、全部聞くと「見つけた」
  */
@@ -36,6 +35,8 @@ export interface LostItemDef {
   name: string;
   /** この区画を返し終えたら棚に届く */
   area: string;
+  /** この区画も返し終えるまで、棚に出さない（段階244。ペトラの頼みを 4章の後にする） */
+  needs?: string;
   /** 届ける相手（今の持ち主） */
   owner: string;
   /** 棚に出す説明 */
@@ -67,7 +68,7 @@ export function lostStatus(vars: Record<string, string>, id: string): LostStatus
 
 /** 棚に届いている落とし物（返し終えた区画の分。書いた順） */
 export function shelfLost(defs: LostItemDef[], returned: readonly string[]): LostItemDef[] {
-  return defs.filter((d) => returned.includes(d.area));
+  return defs.filter((d) => returned.includes(d.area) && (!d.needs || returned.includes(d.needs)));
 }
 
 /** 受けていて、まだ届けていない落とし物の数 */
@@ -87,18 +88,6 @@ export function acceptLost(defs: LostItemDef[], vars: Record<string, string>, id
   const err = getAcceptError(defs, vars, id, max);
   if (err) throw new Error(err);
   return { ...vars, [lostKey(id)]: 'accepted' };
-}
-
-/** 記憶をたどる時に置く、探し物の光る所（受けていて、まだ見つけていない find だけ）。id は lost: で始まる */
-export function lostSpots(defs: LostItemDef[], vars: Record<string, string>, areaId: string): AreaGather[] {
-  return defs
-    .filter((d) => d.kind === 'find' && d.area === areaId && d.spot && lostStatus(vars, d.id) === 'accepted')
-    .map((d) => ({ id: `lost:${d.id}`, ...(d.spot!.room ? { room: d.spot!.room } : {}), cell: d.spot!.cell, items: [] }));
-}
-
-/** 光る所の id から、落とし物の id（落とし物の光る所でなければ null） */
-export function lostOfSpot(spotId: string): string | null {
-  return spotId.startsWith('lost:') ? spotId.slice('lost:'.length) : null;
 }
 
 /** 聞いた声の数を覚える、物語の変数の名前（段階220） */
@@ -145,10 +134,6 @@ export function lostAfterwords(def: LostItemDef, vars: Record<string, string>, r
   return (def.afterwords ?? []).filter((a) => !a.after || returned.includes(a.after));
 }
 
-/** 探し物を見つけた */
-export function findLost(vars: Record<string, string>, id: string): Record<string, string> {
-  return lostStatus(vars, id) === 'accepted' ? { ...vars, [lostKey(id)]: 'found' } : vars;
-}
 
 /** 届けられない理由。届けられるなら null */
 export function getDeliverError(def: LostItemDef, vars: Record<string, string>, items: Record<string, number>): string | null {

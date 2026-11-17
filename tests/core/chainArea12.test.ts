@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMainChainBattle } from '../../src/core';
-import { A12_ENEMY_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, HERO } from '../../src/data';
+import { A12_ENEMY_SNAPS, AKARI, AREA_BATTLES, CHAIN_AREA_BATTLES, CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_RULES, CHAIN_SNAPS, HERO, RETIRED_SNAPS } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
 // 段階168（段取りの段階F1a）：1-2 の雑魚の戦闘を新しい戦闘に
@@ -34,7 +34,13 @@ describe('1-2 の雑魚を新しい戦闘に（段階168）', () => {
     for (const id of ids.filter((x) => !x.startsWith('a12_n3_'))) expect(new Set(AREA_BATTLES[id].enemies.map((e) => e.id)).size).toBeLessThanOrEqual(2);
   });
   it('敵のスナップ：4種類とも、アルバムに入れられる札', () => {
+    // 段階238：区画に2枚へ絞った（外した札は、敵も落とさず、アルバムにも入らない）
     for (const [enemy, snap] of Object.entries(A12_ENEMY_SNAPS)) {
+      if (RETIRED_SNAPS.has(snap)) {
+        expect(CHAIN_ENEMY_SNAPS[enemy]).toBeUndefined();
+        expect(CHAIN_SNAPS[snap]).toBeUndefined();
+        continue;
+      }
       expect(CHAIN_ENEMY_SNAPS[enemy]).toBe(snap);
       expect(CHAIN_SNAPS[snap]).toBeDefined();
     }

@@ -30,6 +30,7 @@ import { HubScene } from './scenes/HubScene';
 import { CampScene } from './scenes/CampScene';
 import { ExchangeScene } from './scenes/ExchangeScene';
 import { LostScene } from './scenes/LostScene';
+import { SideBookScene } from './scenes/SideBookScene';
 import { TalkArchiveScene } from './scenes/TalkArchiveScene';
 import { findEvent } from './core';
 import { SLICE_FLOW } from './data';
@@ -98,7 +99,7 @@ const game = new Phaser.Game({
   },
   input: { activePointers: 1 },
   // 最初の Boot で素材を読み込んでからタイトルへ（段階15）
-  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, LibraryScene, PartyScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, TalkArchiveScene, ChestMapScene, ChainBattleScene, SandBottomScene],
+  scene: [BootScene, PreloadScene, TitleScene, CreditsScene, GrowthScene, NaviScene, WeaponScene, AlbumScene, LibraryScene, PartyScene, ProtoExploreScene, DialogueScene, FlowScene, DailyScene, ExploreScene, ReturnScene, PlayLogScene, HubScene, CampScene, ExchangeScene, LostScene, SideBookScene, TalkArchiveScene, ChestMapScene, ChainBattleScene, SandBottomScene],
 });
 
 if (debug) {
@@ -126,8 +127,8 @@ if (debug) {
     openPrototype: (key, data = {}) => goTo(key, data),
     openDialogue: (data) => goTo('Dialogue', data),
     openFlow: () => goTo('Flow', { done: false }),
-    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined }),
-    openMapTune: (area, night, room) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, hunt: undefined, night, tune: { room, edit: true } }),
+    openExplore: (area) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined }),
+    openMapTune: (area, night, room) => goTo('Explore', { area, won: undefined, lost: undefined, seen: undefined, night, tune: { room, edit: true } }),
   });
   // その場のメモ（段階92）：書いた時の場所を集める
   installMemoPanel(() => {

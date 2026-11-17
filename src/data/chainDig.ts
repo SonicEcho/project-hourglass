@@ -40,9 +40,10 @@ export const DIG_SNAPS: ChainMove[] = Object.values(DIG_SNAP);
 
 /** 札の絵（段階219：絵を頼んでいる。届くまでは、近い雰囲気の今ある絵を仮に使う） */
 export const DIG_CARD_ART: Record<string, string> = {
-  dig_zanzo: 'snap.quickStep',
-  dig_utakata: 'snap.iceChip',
-  dig_kaiso: 'snap.encore',
+  // 2026-11-17：専用の写真が届いた（docs/ART_QUEUE.md の V）
+  dig_zanzo: 'snap.digZanzo',
+  dig_utakata: 'snap.digUtakata',
+  dig_kaiso: 'snap.digKaiso',
 };
 
 export const DIG_SHORT_TEXT: Record<string, string> = {

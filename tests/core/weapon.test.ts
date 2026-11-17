@@ -236,7 +236,7 @@ describe('武器：寄り道③は依頼を届けると開く（段階221。docs
     expect(b.items).toEqual(a.items);
   });
 
-  it('依頼の条件は、どれも実在する依頼を指す。③のある武器は、依頼のある仲間だけ（ハルト・あかり・みお）', async () => {
+  it('依頼の条件は、どれも実在する依頼を指す。③は5人とも依頼で開く（段階242：小夜子は 3-2、早瀬は 4-2）', async () => {
     const { LOST_ITEMS } = await import('../../src/data');
     const ids = new Set(LOST_ITEMS.map((d) => d.id));
     const owners: string[] = [];
@@ -248,7 +248,7 @@ describe('武器：寄り道③は依頼を届けると開く（段階221。docs
             expect(e.detour, e.id).toBe(true);
             owners.push(w.owner);
           }
-    expect(owners.sort()).toEqual(['akari', 'hero', 'mio']);
+    expect(owners.sort()).toEqual(['akari', 'hayase', 'hero', 'mio', 'sayoko']);
   });
 });
 
@@ -430,7 +430,7 @@ describe('武器：進化ツリー（段階42）', () => {
       expect(perTier, w.id).toEqual([3, 3, 4]);
       const detours = w.evolutions.filter((e) => e.detour);
       // 段階221：依頼のある仲間（ハルト・あかり・みお）は、寄り道③（依頼）も作ってある。段階222：どの仲間も寄り道④（戦い方）を作った
-      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(['hero', 'akari', 'mio'].includes(w.owner) ? 4 : 3);
+      expect(detours.filter((e) => !e.sealed), w.id).toHaveLength(4);
       for (const e of detours.filter((x) => x.sealed)) expect(e.legend, e.id).toBeTruthy();
       for (const e of w.evolutions) {
         const tier = evolutionTier(w, e.id);
