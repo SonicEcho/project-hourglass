@@ -76,6 +76,8 @@ PARTS = {
     "hayase_blink_angry": ("hayase_blink_src_angry", [(364, 349, 477, 411), (567, 332, 685, 394)], 7, 1.0),
     "hayase_blink_teary": ("hayase_blink_src_teary", [(360, 345, 485, 425), (545, 335, 665, 405)], 7, 1.0),
     "hayase_talk": ("hayase_talk_src_normal", (430, 480, 630, 548), 7, 1.0),
+    "hayase_talk_thinking": ("hayase_talk_src_thinking", (455, 520, 640, 600), 7, 1.0),
+    "hayase_talk_wry": ("hayase_talk_src_wry", (450, 488, 635, 592), 7, 1.0),
     # 小夜子（2026-10-31）：閉じた目は「笑顔」、開いた口は「驚き」から。表情どうしで顔の位置がそろっているので、1枚をどの表情にも重ねる
     "sayoko_blink": ("sayoko_laugh", [(370, 360, 490, 448), (550, 318, 688, 402)], 6, 1.0),
     "sayoko_talk": ("sayoko_surprised", (484, 488, 572, 540), 6, 1.0),

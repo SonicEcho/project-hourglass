@@ -166,10 +166,10 @@ export const PORTRAIT_PARTS: Record<string, { blink?: PortraitPart; talk?: Portr
   写しのひなの: { blink: partsOf('past_hinano_blink_l', ['smile']) },
   けんた: { blink: partsOf('kenta_blink_l', ['smile']), talk: partsOf('kenta_talk_l', ['smile']) },
   カイ: { blink: partsOf('kai_blink_l', ['smug']) },
-  // 早瀬（2026-11-17。docs/ART_QUEUE.md の AA）：表情ごとの目を閉じた絵から作ったまばたき。口パクは「通常」だけ
+  // 早瀬（2026-11-17。docs/ART_QUEUE.md の AA）：表情ごとの目を閉じた絵から作ったまばたき。口パクは口を閉じている通常・考える・苦笑い
   早瀬: {
     blink: { image: 'portrait.part.hayase_blink_normal', faces: HAYASE_BLINK_FACES, byFace: Object.fromEntries(HAYASE_BLINK_FACES.map((f) => [f, `portrait.part.hayase_blink_${f}`])) },
-    talk: { image: 'portrait.part.hayase_talk', faces: ['normal'] },
+    talk: { image: 'portrait.part.hayase_talk', faces: ['normal', 'thinking', 'wry'], byFace: { thinking: 'portrait.part.hayase_talk_thinking', wry: 'portrait.part.hayase_talk_wry' } },
   },
   // とうや・しおり（2026-11-17。docs/ART_QUEUE.md の S）：笑顔の1枚だけ。しおりの笑顔は口が開いているので、口パクはない
   とうや: { blink: partsOf('toya_blink', ['smile']), talk: partsOf('toya_talk', ['smile']) },
@@ -226,7 +226,7 @@ export const CAST: Record<string, CastMember> = {
   善次: { portrait: 'portrait.zenji', ...young(['笑顔', '微笑み', '照れ', '驚き'], { 笑顔: 'smile', 微笑み: 'smile', 照れ: 'shy', 驚き: 'surprised' }, '笑顔'), height: 420, color: 0x8a8a9a, voice: { pitch: 260, wave: 'triangle' } },
   ペトラ: {
     portrait: 'portrait.petra',
-    ...young(['通常', '笑顔', '困り', '驚き', '真剣'], { 通常: 'normal' }, '通常'),
+    ...young(['通常', '笑顔', '困り', '驚き', '真剣'], { 通常: 'normal', 笑顔: 'smile', 困り: 'troubled', 驚き: 'surprised', 真剣: 'serious' }, '通常'),
     color: 0x6a7f9a,
     height: 440,
     voice: { pitch: 520, wave: 'triangle' },
@@ -315,7 +315,7 @@ export const CAST: Record<string, CastMember> = {
   // 2-1 の人たち（段階38）。基本の1枚だけある（2026-10-13。ほかの表情は、絵が届くまで基本の絵で代わりに出す）。写しはセピアをかける
   勇夫: {
     portrait: 'portrait.isamu',
-    ...young(['通常', '笑顔', '考える', 'さみしげ', '泣き笑い', '驚き'], { 通常: 'normal' }, '通常'),
+    ...young(['通常', '笑顔', '考える', 'さみしげ', '泣き笑い', '驚き'], { 通常: 'normal', 笑顔: 'smile', 考える: 'thinking', さみしげ: 'lonely', 泣き笑い: 'teary', 驚き: 'surprised' }, '通常'),
     color: 0x7a6a50,
     height: 420,
     voice: { pitch: 250, wave: 'sawtooth' },
@@ -380,7 +380,7 @@ export const CAST: Record<string, CastMember> = {
   写しの昇平: { portrait: 'portrait.past_noboru', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: YOUNG_HEIGHT, color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
   // 段階91（祭りの夜。docs/script/3-matsuri.md の 2.）：大正十年の夏祭りに百年いる少女。4人目の仲間。立ち絵はまだない（色の札）
   // 段階94（3-2。docs/script/3-2.md の 2.）：町の印刷会社の一年目のしおり（今22歳）と、同級生のとうや（今22歳）、平成31年3月の写しの2人。立ち絵はまだない（色の札）。写しはセピア
-  しおり: { portrait: 'portrait.shiori', ...young(['笑顔', '困り', '困り笑い', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '微笑み', '大笑い', 'あせり'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x7a90b8, voice: { pitch: 540, wave: 'triangle' } },
+  しおり: { portrait: 'portrait.shiori', ...young(['笑顔', '困り', '困り笑い', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '微笑み', '大笑い', 'あせり'], { 笑顔: 'smile', 困り: 'troubled', 困り笑い: 'awkward', 通常: 'normal', 考える: 'thinking', さみしげ: 'lonely', 苦笑い: 'wry', 驚き: 'surprised', 微笑み: 'gentle', 大笑い: 'laugh' }, '笑顔'), height: 450, color: 0x7a90b8, voice: { pitch: 540, wave: 'triangle' } },
   とうや: { portrait: 'portrait.toya', ...young(['笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
   写しのしおり: { portrait: 'portrait.past_shiori', ...young(['むっ', '笑顔', '通常', '真剣'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
   写しのとうや: { portrait: 'portrait.past_toya', ...young(['笑顔', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
