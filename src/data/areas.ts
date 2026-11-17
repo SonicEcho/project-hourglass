@@ -1243,7 +1243,7 @@ export const AREAS: Record<string, AreaDef> = {
     ],
     // 奥のカウンターの前の、下りてくるシャッター
     boss: { id: 'a42_boss', room: 'opening_shop', cell: [9, 8], battle: 'a42_boss' },
-    // 写しの人々と、夜ごとの謎（店の奥の柱時計・しずえさんの白い薬）
+    // 写しの人々と、夜ごとの謎（店の奥の柱時計・静江さんの白い薬）
     talkers: [
       { id: 'a42_voice_grocer', cell: [8, 38], until: 1, scene: 'a42_voice_grocer', label: '八百屋' },
       { id: 'a42_voice_kid', cell: [7, 27], until: 1, scene: 'a42_voice_kid', label: '紙風船の子' },

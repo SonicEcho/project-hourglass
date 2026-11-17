@@ -48,7 +48,7 @@ export const PAPERBALLOON_NOISE: EnemyDef = {
     { id: 'drift', name: 'ふわり', target: 'allies', type: 'ice', power: 22, weight: 1.0 },
   ],
   ai: { type: 'random' },
-  // レアは「赤い紙風船」（開店の日に、しずえさんが配った紙風船。強い素材）
+  // レアは「赤い紙風船」（開店の日に、静江さんが配った紙風船。強い素材）
   dropTable: { common: 'balloonPaper', uncommon: 'balloonMouth', rare: 'redBalloon' },
 };
 

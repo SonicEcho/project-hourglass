@@ -34,7 +34,7 @@ export const COIL_NOISE: EnemyDef = {
   dropTable: { common: 'coilAsh', uncommon: 'coilStand' },
 };
 
-/** トランジスタラジオノイズ：ちよが組み立てたのと同じ形のラジオ。全体攻撃。物理が弱点（叩けば直る）、雷に強い */
+/** トランジスタラジオノイズ：千代が組み立てたのと同じ形のラジオ。全体攻撃。物理が弱点（叩けば直る）、雷に強い */
 export const RADIO_NOISE: EnemyDef = {
   id: 'radioNoise',
   name: 'トランジスタラジオノイズ',
@@ -46,7 +46,7 @@ export const RADIO_NOISE: EnemyDef = {
     { id: 'tuning', name: '選局', target: 'ally', type: 'magic', power: 34, weight: 1.0 },
   ],
   ai: { type: 'random' },
-  // レアは「はじめての給料袋」（ちよの初めての仕送り。強い素材）
+  // レアは「はじめての給料袋」（千代の初めての仕送り。強い素材）
   dropTable: { common: 'radioDial', uncommon: 'radioEarphone', rare: 'payEnvelope' },
 };
 
