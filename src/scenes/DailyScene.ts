@@ -255,8 +255,7 @@ export class DailyScene extends Phaser.Scene {
   private drawBonds(root: Phaser.GameObjects.Container, y: number): void {
     const partners = this.hub.partners ?? [];
     if (partners.length === 0) return;
-    // 右下の設定の歯車（どの画面にも出る）に重ならないよう、右を空ける
-    const colW = (GAME_WIDTH - 28 - 36) / partners.length;
+    const colW = (GAME_WIDTH - 28) / partners.length;
     partners.forEach((p, i) => {
       const { level, progress } = bondGauge(bondPoints(run.vars, p, BOND_EVENTS, DAILY_HUBS, BOND_POINTS), BOND_POINTS);
       const x = 14 + i * colW;
