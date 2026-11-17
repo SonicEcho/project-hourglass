@@ -254,7 +254,7 @@ export const CAST: Record<string, CastMember> = {
   // ゆうまの妹（今18歳。段階63の 1-1 の書き直し）。通常（少しむっとした顔）の絵だけある（2026-10-20。ほかの表情は通常で代わりに出す）
   ひなの: {
     portrait: 'portrait.hinano',
-    ...young(['通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'], { 通常: 'normal' }, '通常'),
+    ...young(['通常', '驚き', '困り', 'むっ', 'さみしげ', '泣き笑い', '微笑み'], { 通常: 'normal', さみしげ: 'lonely', 驚き: 'surprised', むっ: 'pout', 困り: 'troubled', 微笑み: 'gentle' }, '通常'),
     color: 0xc08aa0,
     height: 440,
     voice: { pitch: 620, wave: 'triangle' },
@@ -338,7 +338,7 @@ export const CAST: Record<string, CastMember> = {
   },
   // 段階78（2-1 の書き直し。docs/script/2-1_rework.md）：源三の娘寿美（今77歳。銭湯「松の湯」の女将）と、昭和44年の写しの寿美（22歳）・先輩の職人敏夫。
   // 早瀬の立ち絵は 2026-11-04 に届いた。写しの2人はまだない（色の札）。写しはセピアをかける
-  寿美: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
+  寿美: { portrait: 'portrait.sumi', ...young(['笑顔', '考える', '驚き', 'さみしげ', '泣き笑い', '通常'], { 笑顔: 'smile', さみしげ: 'lonely', 考える: 'thinking', 驚き: 'surprised' }, '笑顔'), height: 430, color: 0x8a7a9a, voice: { pitch: 480, wave: 'triangle' } },
   写しの寿美: { portrait: 'portrait.past_sumi', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0xa08a9a, voice: { pitch: 600, wave: 'triangle' }, tint: SEPIA_TINT },
   写しの敏夫: { portrait: 'portrait.past_toshio', ...young(['通常'], { 通常: 'normal' }, '通常'), height: 450, color: 0x6a6a5a, voice: { pitch: 330, wave: 'sawtooth' }, tint: SEPIA_TINT },
   // 2-2 の人たち（段階39b）。けんたは笑顔の絵だけある（2026-10-14。ほかの表情は笑顔で代わりに出す）。
@@ -368,20 +368,20 @@ export const CAST: Record<string, CastMember> = {
     height: 440,
     voice: { pitch: 310, wave: 'square' },
   },
-  写しの浩二: { portrait: 'portrait.past_koji', ...young(['通常', '驚き', '泣き笑い'], { 通常: 'normal' }, '通常'), height: YOUNG_HEIGHT, color: 0x8aa0c0, voice: { pitch: 640, wave: 'square' } },
+  写しの浩二: { portrait: 'portrait.past_koji', ...young(['通常', '驚き', '泣き笑い'], { 通常: 'normal', 驚き: 'surprised', 泣き笑い: 'teary' }, '通常'), height: YOUNG_HEIGHT, color: 0x8aa0c0, voice: { pitch: 640, wave: 'square' } },
   写しの正雄: { portrait: 'portrait.past_masaru', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: 440, color: 0x7a8a6a, voice: { pitch: 280, wave: 'sawtooth' } },
   // 段階85：浩二の父（今70歳。パン屋の先代）。立ち絵はまだない（色の札）。声が大きい
   正雄: { portrait: 'portrait.masaru', ...young(['笑顔', '通常', '驚き', '苦笑い', 'さみしげ'], { 笑顔: 'smile', 通常: 'normal', 驚き: 'surprised', 苦笑い: 'wry', さみしげ: 'lonely' }, '笑顔'), height: 440, color: 0x8a7a5a, voice: { pitch: 260, wave: 'sawtooth' } },
   // 段階88（3-1。docs/script/3-1.md の 2.）：ひだまり荘の千代（今75歳）と弟の昇平（今68歳）、昭和41年の写しの3人。立ち絵はまだない（色の札）。写しはセピア
   千代: { portrait: 'portrait.chiyo', ...young(['微笑み', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '悲しい', '泣き笑い', '笑顔', '真剣'], { 笑顔: 'smile', 微笑み: 'gentle', 通常: 'normal', 考える: 'thinking', さみしげ: 'lonely', 苦笑い: 'wry', 驚き: 'surprised', 悲しい: 'sad', 泣き笑い: 'teary', 真剣: 'serious' }, '笑顔'), height: 440, color: 0xa08aa8, voice: { pitch: 470, wave: 'triangle' } },
-  昇平: { portrait: 'portrait.noboru', ...young(['笑顔', '通常', '苦笑い', '困り笑い', '考える', 'さみしげ', '照れ', '驚き', '泣き笑い'], { 笑顔: 'smile', 通常: 'normal', 苦笑い: 'wry', 困り笑い: 'awkward', 考える: 'thinking', さみしげ: 'lonely' }, '笑顔'), height: 440, color: 0x8a6a4a, voice: { pitch: 280, wave: 'sawtooth' } },
+  昇平: { portrait: 'portrait.noboru', ...young(['笑顔', '通常', '苦笑い', '困り笑い', '考える', 'さみしげ', '照れ', '驚き', '泣き笑い'], { 笑顔: 'smile', 通常: 'normal', 苦笑い: 'wry', 困り笑い: 'awkward', 考える: 'thinking', さみしげ: 'lonely', 照れ: 'shy', 驚き: 'surprised' }, '笑顔'), height: 440, color: 0x8a6a4a, voice: { pitch: 280, wave: 'sawtooth' } },
   写しの千代: { portrait: 'portrait.past_chiyo', ...young(['笑顔', '通常', '真剣', 'むっ', '驚き', '泣き', '泣き笑い'], { 笑顔: 'smile', 通常: 'normal', 真剣: 'serious', むっ: 'pout', 驚き: 'surprised', 泣き: 'crying' }, '笑顔'), height: 440, color: 0xc0b0c8, voice: { pitch: 660, wave: 'triangle' }, tint: SEPIA_TINT },
   写しの菊: { portrait: 'portrait.past_kiku', ...young(['通常', '泣き笑い'], { 通常: 'normal', 泣き笑い: 'teary' }, '通常'), height: 440, color: 0x7a6a5a, voice: { pitch: 420, wave: 'triangle' }, tint: SEPIA_TINT },
   写しの昇平: { portrait: 'portrait.past_noboru', ...young(['笑顔'], { 笑顔: 'smile' }, '笑顔'), height: YOUNG_HEIGHT, color: 0xb0a080, voice: { pitch: 740, wave: 'square' }, tint: SEPIA_TINT },
   // 段階91（祭りの夜。docs/script/3-matsuri.md の 2.）：大正十年の夏祭りに百年いる少女。4人目の仲間。立ち絵はまだない（色の札）
   // 段階94（3-2。docs/script/3-2.md の 2.）：町の印刷会社の一年目のしおり（今22歳）と、同級生のとうや（今22歳）、平成31年3月の写しの2人。立ち絵はまだない（色の札）。写しはセピア
   しおり: { portrait: 'portrait.shiori', ...young(['笑顔', '困り', '困り笑い', '通常', '考える', 'さみしげ', '苦笑い', '驚き', '微笑み', '大笑い', 'あせり'], { 笑顔: 'smile', 困り: 'troubled', 困り笑い: 'awkward', 通常: 'normal', 考える: 'thinking', さみしげ: 'lonely', 苦笑い: 'wry', 驚き: 'surprised', 微笑み: 'gentle', 大笑い: 'laugh', あせり: 'flustered' }, '笑顔'), height: 450, color: 0x7a90b8, voice: { pitch: 540, wave: 'triangle' } },
-  とうや: { portrait: 'portrait.toya', ...young(['笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'], { 笑顔: 'smile' }, '笑顔'), height: 450, color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
+  とうや: { portrait: 'portrait.toya', ...young(['笑顔', '困り笑い', '考える', '通常', '驚き', '苦笑い', '微笑み', '真剣', '大笑い'], { 笑顔: 'smile', 通常: 'normal', 驚き: 'surprised', 困り笑い: 'awkward', 考える: 'thinking', 苦笑い: 'wry', 微笑み: 'gentle', 真剣: 'serious', 大笑い: 'laugh' }, '笑顔'), height: 450, color: 0x5a7a5a, voice: { pitch: 320, wave: 'square' } },
   写しのしおり: { portrait: 'portrait.past_shiori', ...young(['むっ', '笑顔', '通常', '真剣'], { 笑顔: 'smile', むっ: 'pout', 通常: 'normal', 真剣: 'serious' }, '笑顔'), height: 440, color: 0xa8b8d0, voice: { pitch: 640, wave: 'triangle' }, tint: SEPIA_TINT },
   写しのとうや: { portrait: 'portrait.past_toya', ...young(['笑顔', '通常'], { 笑顔: 'smile', 通常: 'normal' }, '笑顔'), height: 440, color: 0x8aa08a, voice: { pitch: 400, wave: 'square' }, tint: SEPIA_TINT },
   // 段階137a（4-1。docs/script/4-1.md の 2.）：ハルトたちの高校の1年生のたいち（今16歳）、平成30年の夏の写しのたいち（10歳）と写しのおじいちゃん。立ち絵は 2026-11-04 に届いた（docs/ART_QUEUE.md の J）。写しはセピア
