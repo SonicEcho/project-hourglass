@@ -1321,7 +1321,7 @@ Character: young Hinano, the 7-year-old little sister of the attached boy, at a 
 1. 1-1 の縁日の入口 `fest_gate`
 2. 1-1 の残りの4部屋（`fest_backyard`・`fest_west`・`fest_east`・`fest_woods`）
 3. 1-2 の寄り道の3部屋（`showa_alley`・`showa_lane`・`showa_hill`）
-4. 昼の「どこへ行く？」に敷く、町の見下ろしの地図（商店街・学校・時計屋・川。指示文はこれから書く）
+4. 昼の「どこへ行く？」に敷く、町の見下ろしの地図（指示文は 5-5b の「2. 昼の町の見下ろしの地図」。2026-11-17 書き直し）
 
 - 絵が届くまで、文字の地図に時代の色と小物（提灯の灯りなど）を重ねる仮の見た目を作る案は、やめた（2026-10-25。段階104。絵のない部屋は開発中に開発者が見るだけなので、文字の地図のままでよい。本番の地図は1枚の絵で頼む）
 - 昼の地図は、町の地図の絵が届くまで、行き先の丸を大きくして地図を小さく寄せる（F4）
@@ -1490,31 +1490,43 @@ A candid snapshot, like a slightly faded instant photo of a precious everyday mo
 
 5-4 の「目を閉じた絵」「口だけ開けた絵」の指示文のまま。ひなのの「通常」の絵（`portrait.hinano`）を見本として渡す。できた絵を `hinano_blink_src.webp`・`hinano_talk_src.webp` として portraits に入れる（`scripts/portrait_parts.py` に目と口の範囲を足して切り抜き、`src/data/dialogue.ts` の `PORTRAIT_PARTS` に「ひなの」を足す）。写しのひなのの口を開けた絵も、同じ指示文で「笑顔」から作る（`past_hinano_talk_src.webp`）。
 
-### 2. 昼の町の見下ろしの地図
+### 2. 昼の町の見下ろしの地図（2026-11-17 書き直し。昼の「どこへ行く？」の案 D）
 
-昼の画面は、町の11の場所を丸で並べている（`src/data/daily.ts` の `TOWN`）。地図の絵は、その丸の下に敷く。丸の位置に、その場所の建物が来るように描いてもらう（横3列・縦4段。画面 390×844 のうち、上下 120〜680 の範囲）。
+昼の「どこへ行く？」の画面に、町の見下ろしの地図として敷く（`docs/milestones/M3_ui_polish.md` の 18-2）。絵は 390×585 に縮めて、見出しと説明の窓の間（上下 68〜653）に置く。場所の印（丸）と仲間の顔は、ゲームの側で建物の上に重ねる。行けない場所を暗くする・時間帯の色を付けるのも、ゲームの側でする。
+
+- 添付：`docs/sketches/town_map_layout.png`（下絵。青＝川、緑＝土手、灰＝道、縞＝線路、白い四角＝建物の場所、赤い点＝建物の中心）
+- 保存名：`town_map.png`（台帳の id は `map.town`）
+- 建物の中心（絵の幅・高さに対する割合）：列は 1/6・1/2・5/6、段は 24%・44%・64%・82%
 
 | 段（上から） | 左 | 真ん中 | 右 |
 | --- | --- | --- | --- |
-| 1 | 学校 | 川沿いの道 | 河川敷 |
+| （上の帯） | 川と桜の土手 | | |
+| 1 | 学校（校庭） | 川沿いの道（桜・ベンチ・小さな釣り堀） | 河川敷（野球場） |
 | 2 | 楽器店 | ひだまり荘（老人ホーム） | 施設（ハルトとあかりの家） |
-| 3 | 工場 | 商店街 | パン屋 |
-| 4 | コンビニ | 駅 | 時計屋 |
+| 3 | 工場（＋となりに銭湯「松の湯」の煙突） | 商店街（アーケード。八百屋・駄菓子屋の店先、奥に町の神社の小さな鳥居） | パン屋 |
+| 4 | コンビニ | 駅（ホームと、となりの踏切） | 時計屋 |
+| （下の帯） | 線路 | | |
 
-地図の頭（5-3 の共通部分）の後に：
+場所の印は今の12か所のまま。銭湯・駄菓子屋・八百屋・神社・踏切・釣り堀は、物語や寄り道で出てくるので、印は付けずに絵の中だけに描いてもらう（町の顔なじみの場所が、地図で見つかるように）。
 
 ```
-Scene: an overview map of a small, warm Japanese town in the present day, on a clear autumn afternoon, like a hand-painted guide map. The town spreads over the whole image; a river runs across the top part from left to right.
-Place these landmarks on a 3-column by 4-row layout, each one clearly separated with space around it (left / center / right):
-- Row 1 (top): a high school with a sports ground (left), a quiet path along the river with cherry trees (center), a riverside baseball field below the levee (right).
-- Row 2: a small musical instrument shop with a guitar in the window (left), a two-story care home with a sunny garden (center), a modest two-story children's home with laundry in the yard (right).
-- Row 3: an old small factory with a sawtooth roof (left), a covered shopping arcade street (center), a cozy bakery with an awning (right).
-- Row 4 (bottom): a convenience store (left), a small local train station with a platform (center), an old clock shop on a corner (right).
-Streets connect all landmarks. The center of each landmark should sit at the center of its cell, because round buttons will be placed on top of them.
-Keep each landmark building at most one quarter of the image width. Absolutely no letters or text anywhere: signs and banners are blank or have simple patterns only.
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A top-down guide map of a small, warm Japanese town in the present day, in the late afternoon, like a hand-painted map on the town's welcome board. Vertical 2:3 image (1024x1536). A nearly overhead view with only a slight tilt, flat projection without strong perspective. No people and no characters.
+Follow the attached layout sketch exactly: blue is the river, green is the levee, gray are the streets, the striped band is the railway, white boxes are where the landmark buildings stand, and each red dot is the center of a landmark.
+- Top band (the top eighth): a wide river flowing from left to right, with a grassy levee and a row of cherry trees along its lower bank.
+- Bottom band (the bottom tenth): a railway track running from left to right.
+- Between them, two vertical streets and three horizontal streets divide the town into 3 columns by 4 rows of blocks. Each block has exactly one landmark at its center, with small trees, gardens and plain houses around it.
+Landmarks (left / center / right):
+- Row 1 (just below the river): a high school with a sports ground; a quiet path along the levee with cherry trees, benches and a tiny fishing pond; a riverside baseball field with a backstop net.
+- Row 2: a small musical instrument shop with a guitar in the window; a two-story care home with a sunny garden; a modest two-story children's home with laundry drying in the yard.
+- Row 3: an old small factory with a sawtooth roof, and next to it an old public bathhouse with a tall thin chimney; a covered shopping arcade with an arched roof, small shop fronts (a greengrocer with crates of vegetables, a tiny old candy shop) and the small red torii of a neighborhood shrine at its back end; a cozy bakery with a striped awning.
+- Row 4 (just above the railway): a convenience store with a small parking lot; a small local train station with a platform by the railway and a railroad crossing beside it; an old clock shop on a corner with a big round clock on its wall.
+Each landmark must be easy to recognize at a small size: simple, bold silhouettes and distinct colors. Keep each landmark at most one quarter of the image width, and keep the ground right around each landmark simple, because round buttons and small face icons will be placed on top of them.
+Absolutely no letters, numbers or text anywhere: signs, banners and the clock face are blank or have simple patterns only.
 ```
 
-（できた絵は、地図の頭の「No people」を守っているか、丸の位置に建物が来ているかを確かめる。ずれていたら、丸の位置の下絵を付けて作り直す）
+（できた絵は、人がいないか、赤い点の所に建物が来ているかを確かめる。ずれていたら、下絵と一緒に「建物を赤い点の位置へ動かして」と編集で頼む）
 
 ### 3. 探索の地図を歩く、2頭身のハルト（試し）
 
