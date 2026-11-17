@@ -2,10 +2,14 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DailyHub, DailyPlace, DailySpot, SpotMark } from '../core';
 import { addParts, allSpots, blockers, bondGauge, bondPoints, expireBondEvents, spotGears, finishesAfter, isSeen, markVisited, picksLeft, requiredLeft, resolveHub, returnDays, spotState, visitsFor } from '../core';
-import { BACKDROPS, BGM, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SIDE_EVENTS, SLICE_FLOW, TOWN } from '../data';
+import { ALLY_FACE, BACKDROPS, BGM, FACE_CROPS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, HUB_FROM_CHAPTER, HUB_SPOT, NAVI_DATA, RETURN_VISITS, SIDE_EVENTS, SLICE_FLOW, TOWN } from '../data';
 import { drawBackdrop } from '../ui/backdrop';
 import { COLORS, RENDER_SCALE, toCss, STYLE } from '../ui/theme';
-import { addButton, addText, makePressable } from '../ui/widgets';
+import { addButton, addSlant, addText, makePressable } from '../ui/widgets';
+import { addWindow } from '../ui/skin';
+import { backButton } from '../ui/frame';
+import { faceImage } from '../ui/portrait';
+import { hasImage } from '../assets/loader';
 import { playBgm, startAmbience, stopAmbience } from '../audio/sound';
 import { openOptions } from '../ui/options';
 import { startWithImages } from '../ui/waitImages';
@@ -43,8 +47,13 @@ const MARK_STYLE: Record<SpotMark, { color: number; icon: string; word: string }
 };
 /** 「保存しました」を出した昼（段階98。同じ昼の中で場所を行き来するたびには出さない） */
 let savedNoticeFor: string | null = null;
-/** 地図の場所の丸の大きさ（段階98。レビューの F4 で 46 から大きくした） */
-const PLACE_RADIUS = 52;
+/** 町の地図の絵を置く所（段階246。見出しと説明の窓の間。絵は 2:3） */
+const MAP_TOP = 68;
+const MAP_H = 585;
+/** 地図の場所をタップで拾う丸の大きさ（段階246。いちばん近い商店街とパン屋は 44 離れている） */
+const PLACE_HIT = 22;
+/** 説明の窓の上の端（段階246） */
+const LEGEND_TOP = 662;
 
 /** 今の値で、その日の日常を組み立てる（絆の出来事と、返した翌日の出来事を足す） */
 function build(data: DailyHub): DailyHub {
@@ -122,85 +131,144 @@ export class DailyScene extends Phaser.Scene {
     this.scene.restart(data);
   }
 
+  /**
+   * 見出し（段階246：ほかの画面と同じ形。左にオプション、時間帯と斜体の題。右上に「昼に選べる あと2」）
+   */
   private header(root: Phaser.GameObjects.Container, title: string): void {
-    root.add(this.add.rectangle(0, 0, GAME_WIDTH, 96, 0x000000, 0.55).setOrigin(0));
-    // 左上はオプション（音の設定と「タイトルへ戻る」。段階32b 調整4）。題は画面の真ん中に
-    addButton(this, root, 52, 36, 84, 44, 'オプション', {
+    const g = this.add.graphics();
+    g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.9, 0.9, 0.55, 0.55);
+    g.fillRect(0, 0, GAME_WIDTH, MAP_TOP);
+    root.add(g);
+    // 左上はオプション（音の設定と「タイトルへ戻る」。段階32b 調整4）
+    addButton(this, root, 42, 34, 70, 34, 'オプション', {
       onTap: () => openOptions(this, { depth: 100, links: [{ label: 'タイトルへ戻る', onTap: () => this.scene.start('Title') }] }),
-    }, { size: 12 });
-    root.add(addText(this, GAME_WIDTH / 2, 22, this.hub.time, { size: 12, color: COLORS.subText }).setOrigin(0.5));
-    root.add(addText(this, GAME_WIDTH / 2, 50, title, { size: 18, bold: true }).setOrigin(0.5));
+    }, { size: 11 });
+    root.add(addText(this, 88, 12, this.hub.time, { size: 11, color: COLORS.subText }));
+    const t = addText(this, 88, 26, title, { size: 21, bold: true });
+    t.setFontStyle('bold italic').setShadow(3, 3, STYLE.redText, 0, false, true);
+    root.add(t);
     // 昼に選べる回数（段階35）
     const left = picksLeft(this.hub, run.vars);
-    if (Number.isFinite(left)) root.add(addText(this, GAME_WIDTH / 2, 80, `昼に選べるのは、あと${left}回`, { size: 12, color: COLORS.accentText }).setOrigin(0.5));
-  }
-
-  /** 地図：場所を選ぶ。まだ見ていない印がある場所には、その印を添える */
-  private showMap(): void {
-    stopAmbience();
-    const root = this.add.container(0, 0);
-    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1a1712).setOrigin(0));
-    // 町の地図（仮）：格子の道と、場所の円（段階35：場所の位置は町じゅうで同じ。data/daily.ts の TOWN）
-    const g = this.add.graphics();
-    g.fillStyle(0x2a241c, 1).fillRoundedRect(20, 120, GAME_WIDTH - 40, 560, 16);
-    g.lineStyle(14, 0x4a4030, 1);
-    const xs = [...new Set(Object.values(TOWN).map((p) => p.mapX))];
-    const ys = [...new Set(Object.values(TOWN).map((p) => p.mapY))];
-    for (const x of xs) g.lineBetween(x, Math.min(...ys), x, Math.max(...ys));
-    for (const y of ys) g.lineBetween(Math.min(...xs), y, Math.max(...xs), y);
-    root.add(g);
-    const places = this.hub.places;
-    this.header(root, 'どこへ行く？');
-    for (const place of places) {
-      const open = place.spots.filter((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends && s.mark !== 'hub');
-      const fill = place.spots.some((s) => s.ends) ? 0x6a5420 : 0x30465c;
-      const circle = this.add.circle(place.mapX, place.mapY, PLACE_RADIUS, fill).setStrokeStyle(3, COLORS.accent);
-      root.add(circle);
-      root.add(addText(this, place.mapX, place.mapY, place.name, { size: 17, bold: true }).setOrigin(0.5));
-      makePressable(circle, { onTap: () => this.reopen(place.id) });
-      open.forEach((s, i) => {
-        const st = MARK_STYLE[s.mark];
-        const bx = place.mapX + 38 + i * 22;
-        root.add(this.add.circle(bx, place.mapY - 42, 13, st.color).setStrokeStyle(2, 0xffffff));
-        root.add(addText(this, bx, place.mapY - 42, st.icon, { size: 13, bold: true }).setOrigin(0.5));
-      });
-      // 丸の下に、見られる出来事の種類を言葉で（段階98。「絆・小話」など）
-      const words = [...new Set(open.map((s) => MARK_STYLE[s.mark].word))];
-      if (words.length > 0) root.add(addText(this, place.mapX, place.mapY + PLACE_RADIUS + 12, words.join('・'), { size: 11, color: COLORS.accentText }).setOrigin(0.5));
+    if (Number.isFinite(left)) {
+      const rx = GAME_WIDTH - 14;
+      root.add(addText(this, rx, 10, '昼に選べる', { size: 10, color: COLORS.subText }).setOrigin(1, 0));
+      const v = addText(this, rx, 22, `あと ${left}`, { size: 24, bold: true, color: STYLE.yellowText }).setOrigin(1, 0);
+      v.setFontStyle('bold italic');
+      root.add(v);
     }
-    const left = requiredLeft(this.hub, run.vars);
-    const lines = [left.length > 0 ? `必ず見る：${left.map((s) => s.label).join('、')}` : '印のある場所で出来事が見られる。時計屋へ行くと、夕暮れになる'];
-    // 段階125（レビューの項目48）：拠点の扉も回数を使わない
-    const hasHub = allSpots(this.hub).some((s) => s.mark === 'hub');
-    // 段階239：寄り道（？）も回数を使わない。「！・？・扉は数えない」にまとめる
-    const hasSide = allSpots(this.hub).some((s) => s.mark === 'side');
-    const free = ['！', ...(hasSide ? ['？'] : []), ...(hasHub ? ['扉'] : [])];
-    if (this.hub.picks !== undefined) lines.push(`昼に選べるのは${this.hub.picks}回（♥絆と…小話）。${free.join('・')}は数えない`);
-    // 段階83：相手のいる小話は、その日に見ると♥が半分増える（段階153 から、帯が1割進む）。段階125（レビューの項目49）：後から拠点で読んでも増えないので「その日に見た時だけ」と書く
-    if (this.hub.picks !== undefined && allSpots(this.hub).some((s) => s.with)) lines.push('…小話は、その日に見た時だけ絆の帯が少し進む');
-    root.add(addText(this, GAME_WIDTH / 2, 730, lines.join('\n'), { size: 13, color: COLORS.subText, align: 'center', wrap: GAME_WIDTH - 50 }).setOrigin(0.5));
-    this.drawBonds(root, 790);
   }
 
   /**
-   * 絆の深さ（段階35。段階83 から、その日に見た小話の半分も数える）。段階110：♥を並べると増えた時に見づらいので、
-   * 相手ごとに「Lv」（絆の出来事の分）と、次の Lv までの短い帯（小話の半分）で見せる
+   * 地図（段階246。M3_ui_polish.md の 18-2 の案 D-1）：町の見下ろしの絵を少し暗く敷き、場所は建物の位置に小さな点。
+   * 印のある場所だけ、光・名前・印の丸を出し、絆の出来事の相手の顔を添える。点のまわりをタップすると、その場所へ
+   */
+  private showMap(): void {
+    stopAmbience();
+    const root = this.add.container(0, 0);
+    root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, STYLE.ink).setOrigin(0));
+    if (hasImage(this, 'map.town')) root.add(this.add.image(0, MAP_TOP, 'map.town').setOrigin(0).setDisplaySize(GAME_WIDTH, MAP_H));
+    else root.add(this.add.rectangle(0, MAP_TOP, GAME_WIDTH, MAP_H, 0x2a2630).setOrigin(0));
+    // 町は少し暗くして、行ける所の光を目立たせる
+    root.add(this.add.rectangle(0, MAP_TOP, GAME_WIDTH, MAP_H, 0x000000, 0.4).setOrigin(0));
+    const places = this.hub.places;
+    const lit = places.map((place) => {
+      const open = place.spots.filter((s) => spotState(this.hub, run.vars, s) === 'open' && !s.ends);
+      return { place, open, on: open.length > 0 || place.spots.some((s) => s.ends) };
+    });
+    // 暗い場所を先に、光る場所を後に描く（名前と印が上に来るように）
+    for (const { place, open, on } of [...lit.filter((l) => !l.on), ...lit.filter((l) => l.on)]) {
+      const { mapX: x, mapY: y } = place;
+      if (on) {
+        const glow = this.add.circle(x, y, 26, STYLE.yellow, 0.22);
+        root.add(glow);
+        this.tweens.add({ targets: glow, scale: 1.25, alpha: 0.1, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.easeInOut' });
+        root.add(this.add.circle(x, y, 6, 0xffffff).setStrokeStyle(2, STYLE.red));
+        const name = addText(this, x, y + 16, place.name, { size: 12, bold: true }).setOrigin(0.5);
+        name.setFontStyle('bold italic').setStroke('#000000', 3).setShadow(2, 2, STYLE.redText, 0, false, true);
+        root.add(name);
+      } else {
+        root.add(this.add.circle(x, y, 4.5, 0xffffff, 0.85).setStrokeStyle(1.5, 0x000000, 0.7));
+      }
+      open.forEach((s, i) => {
+        const st = MARK_STYLE[s.mark];
+        const bx = x + 16 + i * 24;
+        root.add(this.add.circle(bx, y - 16, 11, st.color).setStrokeStyle(2, 0xffffff));
+        root.add(addText(this, bx, y - 16, st.icon, { size: 11, bold: true, color: '#111111' }).setOrigin(0.5));
+      });
+      // 絆の出来事の相手の顔（その日に、その場所で会える）
+      const partners = [...new Set(open.map((s) => s.partner).filter((p): p is string => !!p))];
+      partners.forEach((p, i) => {
+        const fx = x - 30 - i * 30;
+        root.add(this.add.circle(fx, y - 12, 16, MARK_STYLE.bond.color));
+        const id = ALLY_FACE[p];
+        if (id && hasImage(this, id)) root.add(faceImage(this, id, fx, y - 12, 14, FACE_CROPS[p]));
+        else root.add(addText(this, fx, y - 12, (BOND_PARTNER_NAMES[p] ?? p).slice(0, 1), { size: 13, bold: true }).setOrigin(0.5));
+      });
+      const hit = this.add.circle(x, y, PLACE_HIT, 0x000000, 0.001);
+      root.add(hit);
+      makePressable(hit, { onTap: () => this.reopen(place.id) });
+    }
+    this.header(root, 'どこへ行く？');
+    this.drawLegend(root);
+    this.drawBonds(root, 800);
+  }
+
+  /**
+   * 説明の窓（段階246）：今日ある印を色の札で並べ、決まりを1文に1つ書く（ゲームのルール説明の口調）
+   */
+  private drawLegend(root: Phaser.GameObjects.Container): void {
+    const spots = allSpots(this.hub);
+    const marks = (['main', 'bond', 'talk', 'side', 'hub'] as SpotMark[]).filter((m) => spots.some((s) => s.mark === m));
+    const left = requiredLeft(this.hub, run.vars);
+    const lines: string[] = [];
+    if (left.length > 0) lines.push(`！必ず見る：${left.map((s) => s.label).join('、')}`);
+    else lines.push('印のある場所で、出来事を見られます。時計屋へ行くと、夕暮れになります。');
+    if (this.hub.picks !== undefined) {
+      lines.push(`♥絆・…小話は、昼に${this.hub.picks}つまで選べます。`);
+      // 段階125（レビューの項目48）・段階239：必ず見る・寄り道・拠点の扉は、選べる数に入らない
+      const free = ['！', ...(marks.includes('side') ? ['？'] : []), ...(marks.includes('hub') ? ['扉'] : [])];
+      lines.push(`${free.join('・')}は、選べる数に入りません。`);
+      // 段階83・段階125（レビューの項目49）：相手のいる小話は、その日に見た時だけ絆の帯が進む
+      if (spots.some((s) => s.with)) lines.push('…小話をその日に見ると、絆の帯が少し進みます。');
+    }
+    const body = addText(this, 26, 0, lines.join('\n'), { size: 11, color: COLORS.text, wrap: GAME_WIDTH - 60, ja: true });
+    body.setLineSpacing(3);
+    const chipsH = marks.length > 0 ? 24 : 0;
+    const h = 14 + chipsH + body.height + 12;
+    root.add(addWindow(this, 10, LEGEND_TOP, GAME_WIDTH - 20, h));
+    let cx = 26;
+    for (const m of marks) {
+      const st = MARK_STYLE[m];
+      const label = addText(this, 0, LEGEND_TOP + 20, `${st.icon} ${m === 'hub' ? 'レストピア' : st.word}`, { size: 10, bold: true, color: '#111111' }).setOrigin(0, 0.5);
+      const w = label.width + 14;
+      root.add(addSlant(this, cx + w / 2, LEGEND_TOP + 20, w, 16, st.color));
+      root.add(label.setX(cx + 7));
+      cx += w + 4;
+    }
+    root.add(body.setY(LEGEND_TOP + 12 + chipsH));
+  }
+
+  /**
+   * 絆の深さ（段階35。段階83 から、その日に見た小話の半分も数える）。段階110：相手ごとに「Lv」（絆の出来事の分）と、次の Lv までの短い帯（小話の半分）。
+   * 段階246：相手の顔・名前・Lv・帯を、2人までなら横に並べる
    */
   private drawBonds(root: Phaser.GameObjects.Container, y: number): void {
     const partners = this.hub.partners ?? [];
     if (partners.length === 0) return;
-    const colW = Math.min(118, (GAME_WIDTH - 40) / partners.length);
-    const x0 = GAME_WIDTH / 2 - (colW * partners.length) / 2;
-    root.add(addText(this, x0 - 6, y, '絆', { size: 13, bold: true, color: toCss(MARK_STYLE.bond.color) }).setOrigin(1, 0.5));
+    // 右下の設定の歯車（どの画面にも出る）に重ならないよう、右を空ける
+    const colW = (GAME_WIDTH - 28 - 36) / partners.length;
     partners.forEach((p, i) => {
       const { level, progress } = bondGauge(bondPoints(run.vars, p, BOND_EVENTS, DAILY_HUBS, BOND_POINTS), BOND_POINTS);
-      const x = x0 + i * colW + 4;
-      const name = addText(this, x, y - 8, BOND_PARTNER_NAMES[p] ?? p, { size: 12, bold: true }).setOrigin(0, 0.5);
-      root.add(name);
-      root.add(addText(this, x + colW - 12, y - 8, `Lv${level}`, { size: 12, bold: true, color: COLORS.accentText }).setOrigin(1, 0.5));
-      const barW = colW - 16;
-      root.add(this.add.rectangle(x, y + 8, barW, 6, 0x2a3b4e).setOrigin(0, 0.5));
-      if (progress > 0) root.add(this.add.rectangle(x, y + 8, barW * progress, 6, MARK_STYLE.bond.color).setOrigin(0, 0.5));
+      const x = 14 + i * colW;
+      const id = ALLY_FACE[p];
+      root.add(this.add.circle(x + 15, y, 15, MARK_STYLE.bond.color));
+      if (id && hasImage(this, id)) root.add(faceImage(this, id, x + 15, y, 13, FACE_CROPS[p]));
+      const right = x + colW - 10;
+      root.add(addText(this, x + 36, y - 8, BOND_PARTNER_NAMES[p] ?? p, { size: 12, bold: true }).setOrigin(0, 0.5));
+      root.add(addText(this, right, y - 8, `♥ Lv${level}`, { size: 11, bold: true, color: toCss(MARK_STYLE.bond.color) }).setOrigin(1, 0.5));
+      const barW = right - (x + 36);
+      root.add(this.add.rectangle(x + 36, y + 8, barW, 6, 0x333338).setOrigin(0, 0.5));
+      if (progress > 0) root.add(this.add.rectangle(x + 36, y + 8, barW * progress, 6, MARK_STYLE.bond.color).setOrigin(0, 0.5));
     });
   }
 
@@ -215,7 +283,7 @@ export class DailyScene extends Phaser.Scene {
     this.header(root, place.name);
     for (const spot of place.spots) this.drawSpot(root, place, spot);
     if (this.hub.places.length > 1) {
-      addButton(this, root, GAME_WIDTH / 2, 780, 200, 52, '地図へ戻る', { onTap: () => this.reopen(undefined) }, { size: 15 });
+      backButton(this, root, '地図へ戻る', () => this.reopen(undefined));
     }
     if (this.hub.plan) this.drawPlan(root);
   }
@@ -229,7 +297,10 @@ export class DailyScene extends Phaser.Scene {
     holder.add(circle);
     holder.add(addText(this, 0, 0, state === 'seen' ? '✓' : st.icon, { size: 22, bold: true }).setOrigin(0.5));
     // 記号の上に、出来事の種類を言葉で（段階98）
-    holder.add(addText(this, 0, -44, spot.mark === 'side' ? '寄り道・時間を使わない' : st.word, { size: 11, bold: true, color: COLORS.accentText }).setOrigin(0.5));
+    // 段階246：記号の上の言葉を、地図の説明と同じ色の札に
+    const word = addText(this, 0, -46, spot.mark === 'side' ? '寄り道・時間を使わない' : st.word, { size: 10, bold: true, color: '#111111' }).setOrigin(0.5);
+    holder.add(addSlant(this, 0, -46, word.width + 16, 17, state === 'open' ? st.color : 0x8a8a92));
+    holder.add(word);
     const label = addText(this, 0, 46, spot.label, { size: 14, bold: true, align: 'center', wrap: 300 }).setOrigin(0.5);
     holder.add(this.add.rectangle(0, 46, label.width + 16, label.height + 8, 0x000000, 0.6));
     holder.add(label);

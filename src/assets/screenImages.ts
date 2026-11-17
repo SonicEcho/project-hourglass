@@ -66,11 +66,12 @@ function backdropImages(names: Iterable<string>): string[] {
   return [...names].map((n) => BACKDROPS[n]?.image).filter((x): x is string => !!x);
 }
 
-/** 日常：その日の場所の背景。拠点（レストピア）へも行けるので、拠点の背景も */
+/** 日常：その日の場所の背景。拠点（レストピア）へも行けるので、拠点の背景も。段階246：場所が2つ以上の日は町の地図の絵 */
 export function dailyImages(eventId: string): string[] {
   const names = new Set<string>(['library']);
   collect(DAILY_HUBS[eventId], 'backdrop', names);
-  return [...new Set([...backdropImages(names), ...commonImages()])];
+  const map = (DAILY_HUBS[eventId]?.places.length ?? 0) > 1 ? ['map.town'] : [];
+  return [...new Set([...map, ...backdropImages(names), ...commonImages()])];
 }
 
 /** 拠点（レストピア）：背景と、タイル・顔 */

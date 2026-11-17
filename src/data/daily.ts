@@ -6,21 +6,21 @@ import type { BondEvent, BondPoints, DailyHub, DailyPlace, DailyPlaceInfo, Daily
 // 段階35：町の地図の場所は TOWN に1つずつ書き、どの日も同じ位置に出す。絆の出来事は BOND_EVENTS（相手ごとの続きもの）
 // 段階36：返した翌日に持ち主に会う出来事は RETURN_VISITS（区画ごと。返した次の日の昼に、必ず見る出来事として出る）
 
-/** 町の地図の場所（段階35）。地図は格子の道で、場所は列（x）と行（y）の交わる所に置く */
+/** 町の地図の場所（段階35）。段階246：町の見下ろしの地図の絵（map.town。画面の上下 68〜653）の、その場所の建物の位置（docs/ART.md の 5-5b の 2 の表） */
 export const TOWN: Record<string, DailyPlaceInfo> = {
-  school: { id: 'school', name: '学校', backdrop: 'classroom', mapX: 85, mapY: 200 },
-  river_path: { id: 'river_path', name: '川沿いの道', backdrop: 'river_path', mapX: 195, mapY: 200 },
-  riverside: { id: 'riverside', name: '河川敷', backdrop: 'riverside_ground', mapX: 305, mapY: 200 },
-  music_shop: { id: 'music_shop', name: '楽器店', backdrop: 'music_shop', mapX: 85, mapY: 330 },
-  home: { id: 'home', name: '施設', backdrop: 'home_kitchen', mapX: 305, mapY: 330 },
-  factory: { id: 'factory', name: '工場', backdrop: 'factory_now', mapX: 85, mapY: 460 },
-  street: { id: 'street', name: '商店街', backdrop: 'shopping_street', mapX: 195, mapY: 460 },
-  bakery: { id: 'bakery', name: 'パン屋', backdrop: 'bakery', mapX: 305, mapY: 460 },
-  convenience: { id: 'convenience', name: 'コンビニ', backdrop: 'convenience_store', mapX: 85, mapY: 590 },
-  clockshop: { id: 'clockshop', name: '時計屋', backdrop: 'clock_shop', mapX: 305, mapY: 590 },
+  school: { id: 'school', name: '学校', backdrop: 'classroom', mapX: 72, mapY: 194 },
+  river_path: { id: 'river_path', name: '川沿いの道', backdrop: 'river_path', mapX: 114, mapY: 129 },
+  riverside: { id: 'riverside', name: '河川敷', backdrop: 'riverside_ground', mapX: 324, mapY: 144 },
+  music_shop: { id: 'music_shop', name: '楽器店', backdrop: 'music_shop', mapX: 105, mapY: 249 },
+  home: { id: 'home', name: '施設', backdrop: 'home_kitchen', mapX: 305, mapY: 327 },
+  factory: { id: 'factory', name: '工場', backdrop: 'factory_now', mapX: 76, mapY: 377 },
+  street: { id: 'street', name: '商店街', backdrop: 'shopping_street', mapX: 208, mapY: 342 },
+  bakery: { id: 'bakery', name: 'パン屋', backdrop: 'bakery', mapX: 232, mapY: 378 },
+  convenience: { id: 'convenience', name: 'コンビニ', backdrop: 'convenience_store', mapX: 69, mapY: 449 },
+  clockshop: { id: 'clockshop', name: '時計屋', backdrop: 'clock_shop', mapX: 295, mapY: 506 },
   // 段階88（3-1）：ひだまり荘と、町の駅
-  care_home: { id: 'care_home', name: 'ひだまり荘', backdrop: 'care_home', mapX: 195, mapY: 330 },
-  station: { id: 'station', name: '駅', backdrop: 'station_now', mapX: 195, mapY: 590 },
+  care_home: { id: 'care_home', name: 'ひだまり荘', backdrop: 'care_home', mapX: 249, mapY: 201 },
+  station: { id: 'station', name: '駅', backdrop: 'station_now', mapX: 217, mapY: 563 },
 };
 
 /** 町の地図の場所に、印を置く */

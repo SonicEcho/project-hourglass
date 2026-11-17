@@ -439,7 +439,7 @@ try {
   await waitScene('Hub');
   await tap('^時計屋へ戻る$');
   await waitScene('Daily');
-  await until('昼の回数が減っていない', () => findText('^昼に選べるのは、あと2回$'));
+  await until('昼の回数が減っていない', () => findText('^あと 2$'));
 
   step('確認を楽にする（段階92）：育ち具合で飛び、メモを書き、飛ぶ前のセーブに戻す');
   page.on('dialog', (d) => void d.accept());
