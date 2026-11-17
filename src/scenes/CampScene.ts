@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, BACKDROPS } from '../data';
+import { AREAS, BACKDROPS, HUB_TILE_ART, HUB_TILE_TALL, SCREEN_COACH } from '../data';
+import { startScreenCoach } from '../ui/screenCoach';
 import { drawBackdrop } from '../ui/backdrop';
-import { backButton, frameBg, frameHeader } from '../ui/frame';
-import { addTileRows } from '../ui/gallery';
+import { backButton, frameBg, frameCoachRect, frameHeader } from '../ui/frame';
+import { addSlantTile } from '../ui/gallery';
+import { waitImages } from '../ui/waitImages';
 import { enterScreen } from '../ui/skin';
 import { RENDER_SCALE } from '../ui/theme';
 import { growthTiles } from './growthMenu';
@@ -36,19 +38,29 @@ export class CampScene extends Phaser.Scene {
       root.add(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0a0705, 0.8).setOrigin(0));
     }
     frameHeader(this, root, 'hourglass', '休憩所', { label: area ? area.name : '', value: '' });
-    const left = 14;
-    const w = GAME_WIDTH - left * 2;
-    const gap = 8;
-    // 段階204：ポーチの行はなくした（消費アイテムをなくしたため）
-    let y = 62;
-    // 一番上の星図は大きく、ほかは段に並べる（拠点の「記憶をたどる」の場所に、星図）
+    // 段階235：拠点と同じ、斜めに切った絵のタイル。いちばん上の星図は大きく、ほかは3列（絵を待ってから描く）
     const tiles = growthTiles((key) => this.open(key));
-    const [first, ...rest] = tiles;
-    if (first) {
-      addTileRows(this, root, [first], left, y, w, gap);
-      y += 150 + gap;
-    }
-    addTileRows(this, root, rest, left, y, w, gap);
+    const art = [...new Set([...Object.values(HUB_TILE_TALL), ...Object.values(HUB_TILE_ART).flat()])];
+    const layer = this.add.container(0, 0);
+    root.add(layer);
+    waitImages(this, art, () => {
+      const left = 12;
+      const [first, ...rest] = tiles;
+      let top = 64;
+      if (first) {
+        addSlantTile(this, layer, left + 2, top, GAME_WIDTH - left * 2 - 4, 150, first, true);
+        top += 150 + 12;
+      }
+      const cols = 3;
+      const gap = 8;
+      const bottom = 768;
+      const rows = Math.max(1, Math.ceil(rest.length / cols));
+      const tw = (GAME_WIDTH - left * 2 - gap * (cols - 1)) / cols;
+      const th = Math.min(260, (bottom - top - gap * (rows - 1)) / rows);
+      rest.forEach((t, i) => addSlantTile(this, layer, left + (i % cols) * (tw + gap), top + Math.floor(i / cols) * (th + gap), tw, th, t));
+      // 段階236：初めての時は、照らす案内（戦闘と同じ形）
+      startScreenCoach(this, 'camp_intro', SCREEN_COACH.camp_intro, (t) => (t === 'tiles' ? { x: 6, y: 58, w: GAME_WIDTH - 12, h: 768 - 58 + 6 } : frameCoachRect(t)));
+    });
     backButton(this, root, '探索へ戻る', () => this.leave());
   }
 

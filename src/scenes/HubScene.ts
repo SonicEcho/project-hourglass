@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { HubLineDef, HubNotice } from '../core';
 import { bondGauge, bondPoints, canEvolveAny, chapterOfEvent, eventPassed, firstHubLine, hubLineLastKey, hubLines, isSeen, lostStatus, markHubLine, markSeen, nextKeeperTalk, shelfLost } from '../core';
-import { BACKDROPS, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { BACKDROPS, SCREEN_COACH, BGM, BOND_EVENTS, BOND_POINTS, CAST, DAILY_HUBS, HUB_PORTRAIT_FIT, HUB_TALK, HUB_TALK_FACE, HUB_TILE_ART, HUB_TILE_TALL, HUB_SCENES, canEnterSandBottom, KEEPER_TALKS, LOST_ITEMS, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, stopAmbience } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { startWithImages, waitImages } from '../ui/waitImages';
 import { enterScreen } from '../ui/skin';
-import { backButton, frameHeader } from '../ui/frame';
+import { backButton, frameCoachRect, frameHeader } from '../ui/frame';
+import { startScreenCoach } from '../ui/screenCoach';
 import { FONT, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addSlantTile, type GalleryTile } from '../ui/gallery';
 import { hasImage, preloadQueue } from '../assets/loader';
@@ -74,6 +75,16 @@ export class HubScene extends Phaser.Scene {
     const tileArt = [...new Set([...Object.values(HUB_TILE_TALL), ...Object.values(HUB_TILE_ART).flat()])];
     waitImages(this, [...(art ? [art] : []), ...tileArt], () => {
       this.draw(partner);
+      // 段階236：初めての時は、照らす案内（戦闘と同じ形）
+      startScreenCoach(this, 'hub_intro', SCREEN_COACH.hub_intro, (t) =>
+        t === 'partner'
+          ? { x: 14, y: 100, w: GAME_WIDTH - 22, h: 186 }
+          : t === 'sandBottom'
+            ? { x: 8, y: 286, w: 276, h: 124 }
+            : t === 'tiles'
+              ? { x: 6, y: 412, w: GAME_WIDTH - 12, h: 362 }
+              : frameCoachRect(t),
+      );
       // ほかのひとことの表情の絵は、裏で先に読んでおく（タップした時に、読めていなければ今の表情のまま）
       preloadQueue.prioritize([...new Set(this.talk.map((l) => this.partnerArt(partner, l.face)).filter((x) => x))]);
     });

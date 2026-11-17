@@ -35,6 +35,7 @@ export * from './chainTutorial';
 export * from './enemyArt';
 export * from './libraryNotes';
 export * from './librarySources';
+export * from './screenCoach';
 export * from './encounters';
 export * from './growthMap';
 export * from './campaign';

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH } from '../config';
+import { coachActive } from './screenCoach';
 import { STYLE } from './theme';
 
 // 指で上下にずらす一覧（段階231。段階127 のムーブメントの一覧の作りを、ほかの画面でも使えるようにした）。
@@ -25,7 +26,7 @@ export class ScrollArea {
     scene.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       this.dragged = false;
       const y = world(p).y;
-      this.drag = !this.blocked() && this.layer?.active && y >= this.top && y <= this.bottom && this.max() > 0 ? { y, scroll: this.scroll } : null;
+      this.drag = !this.blocked() && !coachActive(scene) && this.layer?.active && y >= this.top && y <= this.bottom && this.max() > 0 ? { y, scroll: this.scroll } : null;
     });
     scene.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (!this.drag || !p.isDown) return;
@@ -38,7 +39,7 @@ export class ScrollArea {
     // PC で見る時のため、ホイールでもずらせる
     scene.input.on('wheel', (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       const y = world(p).y;
-      if (this.blocked() || !this.layer?.active || y < this.top || y > this.bottom) return;
+      if (this.blocked() || coachActive(scene) || !this.layer?.active || y < this.top || y > this.bottom) return;
       this.setScroll(this.scroll + dy * 0.5);
     });
   }

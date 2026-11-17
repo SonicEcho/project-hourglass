@@ -2,13 +2,14 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { LostItemDef } from '../core';
 import { acceptLost, activeLostCount, addParts, capItems, deliverLost, gainSnaps, recordLibraryFinds, getAcceptError, getDeliverError, isSeen, lostAfterwords, lostStatus, lostVoicesHeard, markSeen, shelfLost } from '../core';
-import { BACKDROPS, BGM, BOND_PARTNER_NAMES, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SE, WEAPON_DATA } from '../data';
+import { BACKDROPS, BGM, BOND_PARTNER_NAMES, CHAIN_SNAPS, FRAGMENTS, LOST_ACTIVE_MAX, LOST_ITEMS, NAVI_PARTS, SCREEN_COACH, SE, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { addButton, addSlant, addText, makePressable } from '../ui/widgets';
-import { backButton, frameHeader } from '../ui/frame';
+import { backButton, frameCoachRect, frameHeader } from '../ui/frame';
+import { startScreenCoach } from '../ui/screenCoach';
 import { SIDE_PADDING } from '../ui/layout';
 import { ScrollArea } from '../ui/scrollArea';
 import type { DialogueData } from './DialogueScene';
@@ -115,6 +116,8 @@ export class LostScene extends Phaser.Scene {
     this.list = new ScrollArea(this, () => !!this.overlay);
     this.render();
     this.cameras.main.fadeIn(250, 0, 0, 0);
+    // 段階236：初めての時は、照らす案内（戦闘と同じ形）
+    startScreenCoach(this, 'lost_shelf', SCREEN_COACH.lost_shelf, (t) => (t === 'cards' ? { x: 4, y: LIST_TOP - 4, w: GAME_WIDTH - 8, h: Math.min(LIST_BOTTOM, LIST_TOP + 2 * 100) - LIST_TOP + 8 } : frameCoachRect(t)));
   }
 
   private talk(scene: string, back: LostSceneData): void {

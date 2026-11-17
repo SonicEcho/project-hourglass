@@ -211,3 +211,14 @@ export function backButton(scene: Phaser.Scene, root: Phaser.GameObjects.Contain
     bold: true,
   });
 }
+
+/**
+ * 照らす案内（段階236）で使う、共通の枠の場所：見出しの右の数（points）・顔のタブ（tabs）・戻るボタン（back）。
+ * ほかの名前は null（画面が自分で返す）
+ */
+export function frameCoachRect(target: string): { x: number; y: number; w: number; h: number } | null {
+  if (target === 'points') return { x: GAME_WIDTH - 124, y: 2, w: 120, h: FRAME.headerH };
+  if (target === 'tabs') return { x: 4, y: FRAME.tabsTop - 2, w: GAME_WIDTH - 8, h: FRAME.tabsH + 4 };
+  if (target === 'back') return { x: 4, y: FRAME.backY - FRAME.backH / 2 - 4, w: GAME_WIDTH - 8, h: FRAME.backH + 8 };
+  return null;
+}

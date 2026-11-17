@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { AlbumState, ChainLinkDef, ChainSnapTab, Element } from '../core';
 import { addToAlbum, chainAlbumAddError, chainAlbumCounts, chainSnapMatches, countOf, isAlbumComplete, removeFromAlbum, sameAlbum } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { CHAIN_ALBUM, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, LIBRARY_COMBOS } from '../data';
+import { CHAIN_ALBUM, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS, LIBRARY_COMBOS, SCREEN_COACH } from '../data';
 import { chainSnapLook as chainLook, comboDetailLines, comboMaterialNames, isComboMaterial, snapArt, snapDetailLines, snapShortLine } from '../ui/chainSnapText';
 import { frameHeader } from '../ui/frame';
 import { addBand, addChip, addListRow, addRowName, addTabs, LIST_COLORS, ROW_GAP, ROW_H, SNAP_CATEGORY, type TabDef } from '../ui/listKit';
@@ -15,7 +15,7 @@ import { ELEMENT_LABEL } from '../ui/labels';
 import { SIDE_PADDING } from '../ui/layout';
 import { addWindow, enterScreen, screenBg } from '../ui/skin';
 import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
-import { maybeShowTip } from '../ui/tipPanel';
+import { startScreenCoach } from '../ui/screenCoach';
 import { addButton, addSlant, addText, makePressable } from '../ui/widgets';
 import { hubBack, run, saveRun, setHubReturn } from './run';
 
@@ -112,8 +112,23 @@ export class AlbumScene extends Phaser.Scene {
     const art = [...new Set(Object.keys(this.draft.owned).map(snapArt).filter((x): x is string => !!x))];
     waitImages(this, art, () => {
       this.render();
-      maybeShowTip(this, ['growth_album']);
+      // 段階236：照らす案内（戦闘と同じ形）
+      startScreenCoach(this, 'growth_album', SCREEN_COACH.growth_album, (t) => this.coachRect(t));
     });
+  }
+
+  /** 照らす所（段階236） */
+  private coachRect(t: string): { x: number; y: number; w: number; h: number } | null {
+    const w = GAME_WIDTH - SIDE_PADDING * 2;
+    if (t === 'counts') return { x: 4, y: COUNTS_Y - 11, w: GAME_WIDTH - 8, h: 22 };
+    if (t === 'tabs') return { x: 4, y: TAB_Y - 15, w: GAME_WIDTH - 8, h: FILTER_Y + 14 - (TAB_Y - 15) };
+    if (t === 'row') return { x: SIDE_PADDING - 3, y: CHAIN_LIST_Y - 3, w: w + 6, h: SNAP_ROW_H + 6 };
+    if (t === 'detail') return { x: SIDE_PADDING - 3, y: DETAIL_Y - 3, w: w + 6, h: DETAIL_H + 6 };
+    if (t === 'confirm') {
+      const backW = w - 120 - 6;
+      return { x: GAME_WIDTH - SIDE_PADDING - backW - 6, y: 800 - 32, w: backW + 12, h: 64 };
+    }
+    return null;
   }
 
   /** 持っているスナップ（スナップの一覧の順） */

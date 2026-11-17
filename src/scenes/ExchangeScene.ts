@@ -2,15 +2,15 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import type { DigToolId, ExchangeGood } from '../core';
 import { addParts, eventPassed, exchange, gainSnaps, recordLibraryFinds, exchangedKey, exchangeGoods, fragmentTotal, getExchangeError, isSeen, markSeen, nextKeeperTalk } from '../core';
-import { BACKDROPS, BGM, CHAIN_ALBUM, CHAIN_SNAPS, DECOMPOSE_VAR, DIG_TOOL_OWN_MAX, DIG_TOOLS, digToolVar, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
+import { BACKDROPS, BGM, CHAIN_ALBUM, CHAIN_SNAPS, DECOMPOSE_VAR, DIG_TOOL_OWN_MAX, DIG_TOOLS, digToolVar, EXCHANGE_GOODS, EXCHANGE_INTRO, EXCHANGE_KEEPER, KEEPER_TALKS, SCREEN_COACH, FRAGMENTS, NAVI_PARTS, SE, SLICE_FLOW, WEAPON_DATA } from '../data';
 import { playBgm, playSe } from '../audio/sound';
 import { drawBackdrop } from '../ui/backdrop';
 import { addWindow, enterScreen, popIn } from '../ui/skin';
 import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
-import { maybeShowTip } from '../ui/tipPanel';
+import { startScreenCoach } from '../ui/screenCoach';
 import { addButton, addSlant, addText, makePressable } from '../ui/widgets';
 import { snapShortLine } from '../ui/chainSnapText';
-import { backButton, frameHeader } from '../ui/frame';
+import { backButton, frameCoachRect, frameHeader } from '../ui/frame';
 import { SIDE_PADDING } from '../ui/layout';
 import { describePart } from '../ui/naviText';
 import { ScrollArea } from '../ui/scrollArea';
@@ -124,11 +124,25 @@ export class ExchangeScene extends Phaser.Scene {
     this.list = new ScrollArea(this, () => !!this.overlay);
     this.render();
     this.cameras.main.fadeIn(250, 0, 0, 0);
-    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す（それまでは、刻印が初めていっぱいになるまで出さない）
-    if (!run.vars[DECOMPOSE_VAR]) {
-      setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
-      this.time.delayedCall(400, () => maybeShowTip(this, ['growth_decompose']));
-    }
+    // 段階100c：ペトラから時分解を教わったので、武器の画面に時分解を出す。時分解の案内は、次に武器の画面を開いた時に出す（そこにボタンがあるので）。
+    // 段階236：交換所の照らす案内（戦闘と同じ形）
+    if (!run.vars[DECOMPOSE_VAR]) setStoryVars({ ...run.vars, [DECOMPOSE_VAR]: '1' });
+    this.time.delayedCall(400, () => this.coachChain(['exchange_shop']));
+  }
+
+  /** 照らす案内を、まだ見ていない物から順に続けて出す（段階236） */
+  private coachChain(ids: string[]): void {
+    const [id, ...rest] = ids;
+    if (!id || this.overlay) return;
+    const rect = (t: string) =>
+      t === 'tabs'
+        ? { x: 4, y: TAB_Y - 19, w: GAME_WIDTH - 8, h: 38 }
+        : t === 'rows'
+          ? { x: 4, y: LIST_TOP - 4, w: GAME_WIDTH - 8, h: 3 * (ROW_H + ROW_GAP) + 4 }
+          : t === 'keeper'
+            ? { x: SIDE_PADDING - 3, y: MSG_Y - 4, w: GAME_WIDTH - SIDE_PADDING * 2 + 6, h: MSG_H + 8 }
+            : frameCoachRect(t);
+    if (!startScreenCoach(this, id, SCREEN_COACH[id] ?? [], rect, () => this.coachChain(rest))) this.coachChain(rest);
   }
 
   private goods(): ExchangeGood[] {

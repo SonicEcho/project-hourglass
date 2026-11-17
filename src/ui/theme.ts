@@ -138,6 +138,9 @@ export const MOTION = {
 } as const;
 
 /** タイトルから物語の流れへ移る時の余韻（段階32b 調整5）。ボタンが消える → 砂が強く流れる → 暗転 → 黒のまま一呼吸 */
+/** タイトルの見た目（段階234。案1 静けさを深める）：地の黒・真ん中のかすみ・舞う砂粒・砂時計の光・積もる砂の色と、積もりきるまでの時間 */
+export const TITLE_LOOK = { bg: 0x070608, haze: 0x2a1d22, dust: 0xe8c98a, glow: 0xffc96e, sand: 0xe2b766, pileMs: 90000 } as const;
+
 export const TITLE_EXIT = {
   /** ボタンと小さな文字が消える */
   uiFadeMs: 500,

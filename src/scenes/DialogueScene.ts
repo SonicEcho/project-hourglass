@@ -6,7 +6,7 @@ import { audioLatencyMs, getSettings, playBgm, playBlip, playSand, playSe, playT
 import type { MiniGameName, ScriptCommand, ScriptLine, ScriptPos, ScriptScene, ScriptVars } from '../core';
 import { castEntry, chooseOption, nextBgm, parseClockTime, parseReadLog, runScript, serializeReadLog, topBondPartner } from '../core';
 import type { ActorMotion, Ambient, Backdrop, BlipVoice, Emote, PortraitPart } from '../data';
-import { BACKDROPS, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
+import { BACKDROPS, SCREEN_COACH, BG_VIEW_MS, BOND_EVENTS, BOND_PARTNER_NAMES, BOND_POINTS, DAILY_HUBS, BG_VIEW_MS_BY_IMAGE, BLINK, BLIP_EVERY, CAST, CGS, CLOCK, FACE_EMOTES, FACE_MOTIONS, MOUTH_FLAP_MS, NARRATION_SAND_COLOR, PORTRAIT_PARTS, SCRIPT_BGM, SCENES, SCRIPT_SE, VOICE_DEFAULT, VOICE_ONLY } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { COLORS, FONT, RENDER_SCALE, STYLE } from '../ui/theme';
@@ -16,7 +16,7 @@ import { drawBackdrop } from '../ui/backdrop';
 import { addButton, addText } from '../ui/widgets';
 import { openOptions } from '../ui/options';
 import { fadeOutAndDestroy } from '../ui/skin';
-import { maybeShowTip } from '../ui/tipPanel';
+import { startScreenCoach } from '../ui/screenCoach';
 
 /** 台本で読む「♥の一番多い相手」の値の名前（段階82） */
 const BOND_TOP = '絆の一番';
@@ -1104,7 +1104,7 @@ export class DialogueScene extends Phaser.Scene {
       this.tweens.add({ targets: this.caption, alpha: 1, duration: this.skip ? 50 : 600 });
       this.finishTyping();
       // 一日の区切り（段階98。レビューの D2）：「○日目　おわり」「第○章　おわり」が初めて出た時に、ここでやめてよいことを知らせる
-      if (/おわり$/.test(text)) this.time.delayedCall(700, () => maybeShowTip(this, ['day_end']));
+      if (/おわり$/.test(text)) this.time.delayedCall(700, () => startScreenCoach(this, 'day_end', SCREEN_COACH.day_end, () => null));
       return;
     }
     // 全文で先に折り返しを決めてから1文字ずつ出す（途中の文で折り返すと、行の終わりの文字が一瞬はみ出して見えるため）

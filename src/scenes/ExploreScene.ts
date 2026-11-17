@@ -16,6 +16,7 @@ import {
   addParts,
   enemyNext,
   exploreTipTriggers,
+  nextTip,
   inRoom,
   passDoor,
   roomOf,
@@ -61,14 +62,15 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { AREA_BATTLES, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, HUNT_OLD_AREA_RATE, ROOM_NAMES, SLICE_FLOW, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, LOST_ITEMS, MEMORY_FADE_LABELS, MEMORY_FADE_RATES, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled } from '../debug/debugFlag';
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
 import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
 import { GOLD_BUTTON } from '../ui/frame';
 import { addButton, addText, makePressable } from '../ui/widgets';
-import { maybeShowTip } from '../ui/tipPanel';
+import { maybeShowTip, seenTips } from '../ui/tipPanel';
+import { startScreenCoach } from '../ui/screenCoach';
 import type { BattleSceneData } from './chainEncounter';
 import type { DialogueData } from './DialogueScene';
 import { currentParty, nextHuntCount, run, setCampReturn, setExplore, setHubReturn, setHuntState, setStoryVars, storyBattleLineup, storyLineup } from './run';
@@ -313,21 +315,39 @@ export class ExploreScene extends Phaser.Scene {
     this.showTip(false);
   }
 
+  /** 照らす所（段階236）：上のコマの数・「休憩する」のボタン */
+  private coachRect(t: string): { x: number; y: number; w: number; h: number } | null {
+    if (t === 'koma') return { x: 16, y: 24, w: GAME_WIDTH - 32, h: 30 };
+    if (t === 'rest') {
+      const y = GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyBattleLineup()).length);
+      return { x: GAME_WIDTH / 2 - 130, y: y - 36, w: 260, h: 72 };
+    }
+    return null;
+  }
+
   /** 今の場面の初めての説明があれば出す。出している間は動きを止め、閉じたら少しの間は敵に触れても戦闘にしない */
   private showTip(atCheckpoint: boolean): void {
     if (this.tipOpen || this.leaving) return;
     const before = new Set(this.children.list);
-    const shown = maybeShowTip(this, exploreTipTriggers(this.state, { atCheckpoint, hunting: this.hunting }), () => {
+    const onClose = () => {
       this.tipOpen = false;
       for (const t of this.pausedTweens) t.resume();
       this.pausedTweens = [];
       this.graceUntil = this.time.now + AREA_GRACE_MS;
       // 同じ場面で当てはまる次の説明を続けて出す（段階32b）
       this.showTip(atCheckpoint);
-    });
+    };
+    const triggers = exploreTipTriggers(this.state, { atCheckpoint, hunting: this.hunting });
+    const tip = nextTip(TIPS, seenTips(), triggers);
+    if (!tip) return;
+    // 段階236：照らす案内（戦闘と同じ形）。案内の手順がない説明は、今までどおり説明の窓
+    // 案内は画面の文字用のカメラだけに映す（地図用のカメラにも映ると、地図の左上に暗い幕がもう1枚重なる）
+    const steps = SCREEN_COACH[tip.id];
+    const shown = steps
+      ? startScreenCoach(this, tip.id, steps, (t) => this.coachRect(t), onClose, (layer) => this.cameras.main.ignore(layer))
+      : maybeShowTip(this, triggers, onClose);
     if (!shown) return;
     this.tipOpen = true;
-    // 説明の窓は画面の文字用のカメラだけに映す（地図用のカメラにも映ると、地図の左上に暗い幕がもう1枚重なる）
     this.cameras.main.ignore(this.children.list.filter((o) => !before.has(o)));
     // 止めるのは地図の上の動きだけ。tweens.pauseAll() は説明の窓が出る動きまで止めてしまい、
     // 見えない窓が残って後ろを押せなくなる（音は鳴っているのに固まる。段階32a で窓に動きを付けてから）
