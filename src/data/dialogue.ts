@@ -345,7 +345,7 @@ export const CAST: Record<string, CastMember> = {
   // 写しのけんたは笑顔の絵だけある（2026-10-17。ほかの表情は笑顔で代わりに出す）。だいち・さきは絵がまだない
   けんた: {
     portrait: 'portrait.kenta',
-    ...young(['笑顔', '苦笑い', '考える', 'さみしげ', '泣き笑い', '照れ', '大笑い', '驚き'], { 笑顔: 'smile', 苦笑い: 'wry', 考える: 'thinking', さみしげ: 'lonely' }, '笑顔'),
+    ...young(['笑顔', '苦笑い', '考える', 'さみしげ', '泣き笑い', '照れ', '大笑い', '驚き'], { 笑顔: 'smile', 苦笑い: 'wry', 考える: 'thinking', さみしげ: 'lonely', 照れ: 'shy', 驚き: 'surprised', 泣き笑い: 'teary', 大笑い: 'laugh' }, '笑顔'),
     color: 0x6a5a4a,
     height: 440,
     voice: { pitch: 330, wave: 'square' },
@@ -407,7 +407,7 @@ export const CAST: Record<string, CastMember> = {
   },
   カイ: {
     portrait: 'portrait.kai',
-    ...young(['余裕', '見下す', '通常'], { 余裕: 'smug' }, '余裕'),
+    ...young(['余裕', '見下す', '通常'], { 余裕: 'smug', 見下す: 'scornful', 通常: 'normal' }, '余裕'),
     color: 0xd8e0e8,
     height: 470,
     voice: { pitch: 340, wave: 'sawtooth' },

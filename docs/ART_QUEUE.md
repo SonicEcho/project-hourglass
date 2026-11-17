@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：114 枚**（済んだ絵 283 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：108 枚**（済んだ絵 289 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -10,104 +10,14 @@
 
 ## まだの絵
 
-- [AB. 脇役の表情違い（台本で使う表情だけ）](#ab-脇役の表情違い台本で使う表情だけ)：58 枚
+- [AB. 脇役の表情違い（台本で使う表情だけ）](#ab-脇役の表情違い台本で使う表情だけ)：52 枚
 - [AC. 脇役のまばたき・口パク（基本の1枚）](#ac-脇役のまばたき口パク基本の1枚)：56 枚
 
 ### AB. 脇役の表情違い（台本で使う表情だけ）
 
 基本の1枚しかない人の、台本で使う表情。台詞の多い人から順に、1人の中は使う回数の多い表情から。今はどれも基本の1枚で代わりに出している。毎回その人の基本の1枚を添付する。届いたら `CAST` の表情に足す
 
-#### 1. けんた：照れ（台本で6回）
-
-- 添付：`public/assets/portraits/kenta_smile.webp`
-- 保存名：`kenta_shy.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a shy, embarrassed look, cheeks blushing.
-This is exactly the same character as the attached portrait: the same face, hairstyle and outfit.
-Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
-Pose: both arms relaxed down at the sides, hands outside the frame. No props.
-Background: plain pure white, no shadow, no gradient.
-```
-
-#### 2. けんた：驚き（台本で4回）
-
-- 添付：`public/assets/portraits/kenta_smile.webp`
-- 保存名：`kenta_surprised.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a surprised look, eyes wide open, lips slightly parted.
-This is exactly the same character as the attached portrait: the same face, hairstyle and outfit.
-Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
-Pose: both arms relaxed down at the sides, hands outside the frame. No props.
-Background: plain pure white, no shadow, no gradient.
-```
-
-#### 3. けんた：泣き笑い（台本で2回）
-
-- 添付：`public/assets/portraits/kenta_smile.webp`
-- 保存名：`kenta_teary.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, smiling through tears, eyes wet with tears.
-This is exactly the same character as the attached portrait: the same face, hairstyle and outfit.
-Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
-Pose: both arms relaxed down at the sides, hands outside the frame. No props.
-Background: plain pure white, no shadow, no gradient.
-```
-
-#### 4. けんた：大笑い（台本で1回）
-
-- 添付：`public/assets/portraits/kenta_smile.webp`
-- 保存名：`kenta_laugh.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, laughing heartily, eyes squeezed shut, mouth wide open.
-This is exactly the same character as the attached portrait: the same face, hairstyle and outfit.
-Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
-Pose: both arms relaxed down at the sides, hands outside the frame. No props.
-Background: plain pure white, no shadow, no gradient.
-```
-
-#### 5. カイ：通常（台本で20回）
-
-- 添付：`public/assets/portraits/kai_smug.webp`
-- 保存名：`kai_normal.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a calm, natural expression.
-This is exactly the same character as the attached portrait: the same face, hairstyle and outfit.
-Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
-Pose: both arms relaxed down at the sides, hands outside the frame. No props.
-Background: plain pure white, no shadow, no gradient.
-```
-
-#### 6. カイ：見下す（台本で11回）
-
-- 添付：`public/assets/portraits/kai_smug.webp`
-- 保存名：`kai_scornful.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Chest-up character portrait for visual-novel style dialogue scenes. Vertical 2:3 image. Front view, facing the viewer, a cold, condescending look, chin slightly raised, looking down at the viewer.
-This is exactly the same character as the attached portrait: the same face, hairstyle and outfit.
-Change only the facial expression (a small natural tilt of the head or shoulders is fine). Keep exactly the same character design, hairstyle, outfit, colors, art style, framing, size and camera distance as the attached portrait.
-Pose: both arms relaxed down at the sides, hands outside the frame. No props.
-Background: plain pure white, no shadow, no gradient.
-```
-
-#### 7. 写しのとうや：通常（台本で12回）
+#### 1. 写しのとうや：通常（台本で12回）
 
 - 添付：`public/assets/portraits/past_toya_smile.webp`
 - 保存名：`past_toya_normal.png`
@@ -122,7 +32,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 8. 写しの千代：通常（台本で11回）
+#### 2. 写しの千代：通常（台本で11回）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_normal.png`
@@ -137,7 +47,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 9. 写しの千代：泣き（台本で6回）
+#### 3. 写しの千代：泣き（台本で6回）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_crying.png`
@@ -152,7 +62,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 10. 写しの千代：むっ（台本で4回）
+#### 4. 写しの千代：むっ（台本で4回）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_pout.png`
@@ -167,7 +77,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 11. 写しの千代：真剣（台本で2回）
+#### 5. 写しの千代：真剣（台本で2回）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_serious.png`
@@ -182,7 +92,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 12. 写しの千代：驚き（台本で1回）
+#### 6. 写しの千代：驚き（台本で1回）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_surprised.png`
@@ -197,7 +107,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 13. 写しの菊：泣き笑い（台本で1回）
+#### 7. 写しの菊：泣き笑い（台本で1回）
 
 - 添付：`public/assets/portraits/past_kiku_normal.webp`
 - 保存名：`past_kiku_teary.png`
@@ -212,7 +122,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 14. 写しのしおり：通常（台本で14回）
+#### 8. 写しのしおり：通常（台本で14回）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_normal.png`
@@ -227,7 +137,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 15. 写しのしおり：むっ（台本で9回）
+#### 9. 写しのしおり：むっ（台本で9回）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_pout.png`
@@ -242,7 +152,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 16. 写しのしおり：真剣（台本で3回）
+#### 10. 写しのしおり：真剣（台本で3回）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_serious.png`
@@ -257,7 +167,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 17. 写しのけんた：泣き笑い（台本で1回）
+#### 11. 写しのけんた：泣き笑い（台本で1回）
 
 - 添付：`public/assets/portraits/past_kenta_smile.webp`
 - 保存名：`past_kenta_teary.png`
@@ -272,7 +182,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 18. 正雄：通常（台本で6回）
+#### 12. 正雄：通常（台本で6回）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_normal.png`
@@ -287,7 +197,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 19. 正雄：苦笑い（台本で5回）
+#### 13. 正雄：苦笑い（台本で5回）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_wry.png`
@@ -302,7 +212,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 20. 正雄：驚き（台本で2回）
+#### 14. 正雄：驚き（台本で2回）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_surprised.png`
@@ -317,7 +227,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 21. 正雄：さみしげ（台本で2回）
+#### 15. 正雄：さみしげ（台本で2回）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_lonely.png`
@@ -332,7 +242,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 22. 昇平：通常（台本で4回）
+#### 16. 昇平：通常（台本で4回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_normal.png`
@@ -347,7 +257,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 23. 昇平：考える（台本で4回）
+#### 17. 昇平：考える（台本で4回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_thinking.png`
@@ -362,7 +272,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 24. 昇平：さみしげ（台本で4回）
+#### 18. 昇平：さみしげ（台本で4回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_lonely.png`
@@ -377,7 +287,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 25. 昇平：困り笑い（台本で3回）
+#### 19. 昇平：困り笑い（台本で3回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_awkward.png`
@@ -392,7 +302,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 26. 昇平：苦笑い（台本で2回）
+#### 20. 昇平：苦笑い（台本で2回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_wry.png`
@@ -407,7 +317,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 27. 昇平：照れ（台本で1回）
+#### 21. 昇平：照れ（台本で1回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_shy.png`
@@ -422,7 +332,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 28. 昇平：驚き（台本で1回）
+#### 22. 昇平：驚き（台本で1回）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_surprised.png`
@@ -437,7 +347,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 29. とうや：通常（台本で7回）
+#### 23. とうや：通常（台本で7回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_normal.png`
@@ -452,7 +362,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 30. とうや：驚き（台本で4回）
+#### 24. とうや：驚き（台本で4回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_surprised.png`
@@ -467,7 +377,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 31. とうや：困り笑い（台本で3回）
+#### 25. とうや：困り笑い（台本で3回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_awkward.png`
@@ -482,7 +392,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 32. とうや：考える（台本で2回）
+#### 26. とうや：考える（台本で2回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_thinking.png`
@@ -497,7 +407,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 33. とうや：苦笑い（台本で2回）
+#### 27. とうや：苦笑い（台本で2回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_wry.png`
@@ -512,7 +422,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 34. とうや：微笑み（台本で1回）
+#### 28. とうや：微笑み（台本で1回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_gentle.png`
@@ -527,7 +437,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 35. とうや：真剣（台本で1回）
+#### 29. とうや：真剣（台本で1回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_serious.png`
@@ -542,7 +452,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 36. とうや：大笑い（台本で1回）
+#### 30. とうや：大笑い（台本で1回）
 
 - 添付：`public/assets/portraits/toya_smile.webp`
 - 保存名：`toya_laugh.png`
@@ -557,7 +467,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 37. 写しの浩二：驚き（台本で3回）
+#### 31. 写しの浩二：驚き（台本で3回）
 
 - 添付：`public/assets/portraits/past_koji_normal.webp`
 - 保存名：`past_koji_surprised.png`
@@ -572,7 +482,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 38. 写しの浩二：泣き笑い（台本で1回）
+#### 32. 写しの浩二：泣き笑い（台本で1回）
 
 - 添付：`public/assets/portraits/past_koji_normal.webp`
 - 保存名：`past_koji_teary.png`
@@ -587,7 +497,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 39. ひなの：さみしげ（台本で5回）
+#### 33. ひなの：さみしげ（台本で5回）
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_lonely.png`
@@ -602,7 +512,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 40. ひなの：驚き（台本で3回）
+#### 34. ひなの：驚き（台本で3回）
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_surprised.png`
@@ -617,7 +527,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 41. ひなの：むっ（台本で3回）
+#### 35. ひなの：むっ（台本で3回）
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_pout.png`
@@ -632,7 +542,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 42. ひなの：困り（台本で2回）
+#### 36. ひなの：困り（台本で2回）
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_troubled.png`
@@ -647,7 +557,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 43. ひなの：微笑み（台本で1回）
+#### 37. ひなの：微笑み（台本で1回）
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_gentle.png`
@@ -662,7 +572,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 44. 寿美：さみしげ（台本で7回）
+#### 38. 寿美：さみしげ（台本で7回）
 
 - 添付：`public/assets/portraits/sumi_smile.webp`
 - 保存名：`sumi_lonely.png`
@@ -677,7 +587,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 45. 寿美：考える（台本で3回）
+#### 39. 寿美：考える（台本で3回）
 
 - 添付：`public/assets/portraits/sumi_smile.webp`
 - 保存名：`sumi_thinking.png`
@@ -692,7 +602,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 46. 寿美：驚き（台本で2回）
+#### 40. 寿美：驚き（台本で2回）
 
 - 添付：`public/assets/portraits/sumi_smile.webp`
 - 保存名：`sumi_surprised.png`
@@ -707,7 +617,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 47. 寿美：通常（台本で1回）
+#### 41. 寿美：通常（台本で1回）
 
 - 添付：`public/assets/portraits/sumi_smile.webp`
 - 保存名：`sumi_normal.png`
@@ -722,7 +632,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 48. 茂雄：通常（台本で3回）
+#### 42. 茂雄：通常（台本で3回）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_normal.png`
@@ -737,7 +647,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 49. 茂雄：さみしげ（台本で3回）
+#### 43. 茂雄：さみしげ（台本で3回）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_lonely.png`
@@ -752,7 +662,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 50. 茂雄：驚き（台本で2回）
+#### 44. 茂雄：驚き（台本で2回）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_surprised.png`
@@ -767,7 +677,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 51. 茂雄：苦笑い（台本で2回）
+#### 45. 茂雄：苦笑い（台本で2回）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_wry.png`
@@ -782,7 +692,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 52. 茂雄：考える（台本で2回）
+#### 46. 茂雄：考える（台本で2回）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_thinking.png`
@@ -797,7 +707,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 53. さき：驚き（台本で3回）
+#### 47. さき：驚き（台本で3回）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_surprised.png`
@@ -812,7 +722,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 54. さき：考える（台本で3回）
+#### 48. さき：考える（台本で3回）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_thinking.png`
@@ -827,7 +737,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 55. さき：さみしげ（台本で3回）
+#### 49. さき：さみしげ（台本で3回）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_lonely.png`
@@ -842,7 +752,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 56. さき：苦笑い（台本で1回）
+#### 50. さき：苦笑い（台本で1回）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_wry.png`
@@ -857,7 +767,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 57. さき：微笑み（台本で1回）
+#### 51. さき：微笑み（台本で1回）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_gentle.png`
@@ -872,7 +782,7 @@ Pose: both arms relaxed down at the sides, hands outside the frame. No props.
 Background: plain pure white, no shadow, no gradient.
 ```
 
-#### 58. 写しの勇夫：泣き笑い（台本で1回）
+#### 52. 写しの勇夫：泣き笑い（台本で1回）
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_teary.png`
@@ -891,7 +801,7 @@ Background: plain pure white, no shadow, no gradient.
 
 基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・初江）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す
 
-#### 59. 勇夫：目を閉じた絵
+#### 53. 勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/isamu_normal.webp`
 - 保存名：`isamu_blink_src.png`
@@ -901,7 +811,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 60. 勇夫：口を開けた絵
+#### 54. 勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/isamu_normal.webp`
 - 保存名：`isamu_talk_src.png`
@@ -911,7 +821,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 61. ペトラ：目を閉じた絵
+#### 55. ペトラ：目を閉じた絵
 
 - 添付：`public/assets/portraits/petra_normal.webp`
 - 保存名：`petra_blink_src.png`
@@ -921,7 +831,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 62. ペトラ：口を開けた絵
+#### 56. ペトラ：口を開けた絵
 
 - 添付：`public/assets/portraits/petra_normal.webp`
 - 保存名：`petra_talk_src.png`
@@ -931,7 +841,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 63. 浩二：目を閉じた絵
+#### 57. 浩二：目を閉じた絵
 
 - 添付：`public/assets/portraits/koji_smile.webp`
 - 保存名：`koji_blink_src.png`
@@ -941,7 +851,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 64. 浩二：口を開けた絵
+#### 58. 浩二：口を開けた絵
 
 - 添付：`public/assets/portraits/koji_smile.webp`
 - 保存名：`koji_talk_src.png`
@@ -951,7 +861,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 65. 千代：目を閉じた絵
+#### 59. 千代：目を閉じた絵
 
 - 添付：`public/assets/portraits/chiyo_smile.webp`
 - 保存名：`chiyo_blink_src.png`
@@ -961,7 +871,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 66. 千代：口を開けた絵
+#### 60. 千代：口を開けた絵
 
 - 添付：`public/assets/portraits/chiyo_smile.webp`
 - 保存名：`chiyo_talk_src.png`
@@ -971,7 +881,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 67. カイ：口を開けた絵
+#### 61. カイ：口を開けた絵
 
 - 添付：`public/assets/portraits/kai_smug.webp`
 - 保存名：`kai_talk_src.png`
@@ -981,7 +891,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 68. たいち：目を閉じた絵
+#### 62. たいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/taichi_normal.webp`
 - 保存名：`taichi_blink_src.png`
@@ -991,7 +901,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 69. たいち：口を開けた絵
+#### 63. たいち：口を開けた絵
 
 - 添付：`public/assets/portraits/taichi_normal.webp`
 - 保存名：`taichi_talk_src.png`
@@ -1001,7 +911,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 70. 写しのとうや：目を閉じた絵
+#### 64. 写しのとうや：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_toya_smile.webp`
 - 保存名：`past_toya_blink_src.png`
@@ -1011,7 +921,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 71. 写しのとうや：口を開けた絵
+#### 65. 写しのとうや：口を開けた絵
 
 - 添付：`public/assets/portraits/past_toya_smile.webp`
 - 保存名：`past_toya_talk_src.png`
@@ -1021,7 +931,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 72. 写しの千代：目を閉じた絵
+#### 66. 写しの千代：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_blink_src.png`
@@ -1031,7 +941,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 73. 写しの千代：口を開けた絵
+#### 67. 写しの千代：口を開けた絵
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_talk_src.png`
@@ -1041,7 +951,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 74. 写しの菊：目を閉じた絵
+#### 68. 写しの菊：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_kiku_normal.webp`
 - 保存名：`past_kiku_blink_src.png`
@@ -1051,7 +961,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 75. 写しの菊：口を開けた絵
+#### 69. 写しの菊：口を開けた絵
 
 - 添付：`public/assets/portraits/past_kiku_normal.webp`
 - 保存名：`past_kiku_talk_src.png`
@@ -1061,7 +971,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 76. 写しのしおり：目を閉じた絵
+#### 70. 写しのしおり：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_blink_src.png`
@@ -1071,7 +981,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 77. 写しのしおり：口を開けた絵
+#### 71. 写しのしおり：口を開けた絵
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_talk_src.png`
@@ -1081,7 +991,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 78. 写しのけんた：目を閉じた絵
+#### 72. 写しのけんた：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_kenta_smile.webp`
 - 保存名：`past_kenta_blink_src.png`
@@ -1091,7 +1001,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 79. 写しのけんた：口を開けた絵
+#### 73. 写しのけんた：口を開けた絵
 
 - 添付：`public/assets/portraits/past_kenta_smile.webp`
 - 保存名：`past_kenta_talk_src.png`
@@ -1101,7 +1011,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 80. 正雄：目を閉じた絵
+#### 74. 正雄：目を閉じた絵
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_blink_src.png`
@@ -1111,7 +1021,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 81. 正雄：口を開けた絵
+#### 75. 正雄：口を開けた絵
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_talk_src.png`
@@ -1121,7 +1031,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 82. 昇平：目を閉じた絵
+#### 76. 昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_blink_src.png`
@@ -1131,7 +1041,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 83. 昇平：口を開けた絵
+#### 77. 昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_talk_src.png`
@@ -1141,7 +1051,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 84. 写しのたいち：目を閉じた絵
+#### 78. 写しのたいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_taichi_normal.webp`
 - 保存名：`past_taichi_blink_src.png`
@@ -1151,7 +1061,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 85. 写しのたいち：口を開けた絵
+#### 79. 写しのたいち：口を開けた絵
 
 - 添付：`public/assets/portraits/past_taichi_normal.webp`
 - 保存名：`past_taichi_talk_src.png`
@@ -1161,7 +1071,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 86. 写しの正雄：目を閉じた絵
+#### 80. 写しの正雄：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_blink_src.png`
@@ -1171,7 +1081,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 87. 写しの正雄：口を開けた絵
+#### 81. 写しの正雄：口を開けた絵
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_talk_src.png`
@@ -1181,7 +1091,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 88. 写しの浩二：目を閉じた絵
+#### 82. 写しの浩二：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_koji_normal.webp`
 - 保存名：`past_koji_blink_src.png`
@@ -1191,7 +1101,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 89. 写しの浩二：口を開けた絵
+#### 83. 写しの浩二：口を開けた絵
 
 - 添付：`public/assets/portraits/past_koji_normal.webp`
 - 保存名：`past_koji_talk_src.png`
@@ -1201,7 +1111,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 90. ひなの：目を閉じた絵
+#### 84. ひなの：目を閉じた絵
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_blink_src.png`
@@ -1211,7 +1121,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 91. ひなの：口を開けた絵
+#### 85. ひなの：口を開けた絵
 
 - 添付：`public/assets/portraits/hinano_normal.webp`
 - 保存名：`hinano_talk_src.png`
@@ -1221,7 +1131,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 92. ノア：目を閉じた絵
+#### 86. ノア：目を閉じた絵
 
 - 添付：`public/assets/portraits/noa_normal.webp`
 - 保存名：`noa_blink_src.png`
@@ -1231,7 +1141,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 93. ノア：口を開けた絵
+#### 87. ノア：口を開けた絵
 
 - 添付：`public/assets/portraits/noa_normal.webp`
 - 保存名：`noa_talk_src.png`
@@ -1241,7 +1151,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 94. 写しのひなの：口を開けた絵
+#### 88. 写しのひなの：口を開けた絵
 
 - 添付：`public/assets/portraits/past_hinano_smile.webp`
 - 保存名：`past_hinano_talk_src.png`
@@ -1251,7 +1161,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 95. 寿美：目を閉じた絵
+#### 89. 寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/sumi_smile.webp`
 - 保存名：`sumi_blink_src.png`
@@ -1261,7 +1171,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 96. 寿美：口を開けた絵
+#### 90. 寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/sumi_smile.webp`
 - 保存名：`sumi_talk_src.png`
@@ -1271,7 +1181,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 97. 茂雄：目を閉じた絵
+#### 91. 茂雄：目を閉じた絵
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_blink_src.png`
@@ -1281,7 +1191,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 98. 茂雄：口を開けた絵
+#### 92. 茂雄：口を開けた絵
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_talk_src.png`
@@ -1291,7 +1201,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 99. 写しの源三：目を閉じた絵
+#### 93. 写しの源三：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_genzo_normal.webp`
 - 保存名：`past_genzo_blink_src.png`
@@ -1301,7 +1211,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 100. 写しの源三：口を開けた絵
+#### 94. 写しの源三：口を開けた絵
 
 - 添付：`public/assets/portraits/past_genzo_normal.webp`
 - 保存名：`past_genzo_talk_src.png`
@@ -1311,7 +1221,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 101. さき：目を閉じた絵
+#### 95. さき：目を閉じた絵
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_blink_src.png`
@@ -1321,7 +1231,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 102. さき：口を開けた絵
+#### 96. さき：口を開けた絵
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_talk_src.png`
@@ -1331,7 +1241,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 103. 写しの勇夫：目を閉じた絵
+#### 97. 写しの勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_blink_src.png`
@@ -1341,7 +1251,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 104. 写しの勇夫：口を開けた絵
+#### 98. 写しの勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_talk_src.png`
@@ -1351,7 +1261,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 105. 写しの昇平：目を閉じた絵
+#### 99. 写しの昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_blink_src.png`
@@ -1361,7 +1271,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 106. 写しの昇平：口を開けた絵
+#### 100. 写しの昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_talk_src.png`
@@ -1371,7 +1281,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 107. 善次：目を閉じた絵
+#### 101. 善次：目を閉じた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_blink_src.png`
@@ -1381,7 +1291,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 108. 善次：口を開けた絵
+#### 102. 善次：口を開けた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_talk_src.png`
@@ -1391,7 +1301,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 109. 写しの寿美：目を閉じた絵
+#### 103. 写しの寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_blink_src.png`
@@ -1401,7 +1311,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 110. 写しの寿美：口を開けた絵
+#### 104. 写しの寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_talk_src.png`
@@ -1411,7 +1321,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 111. 写しのおじいちゃん：目を閉じた絵
+#### 105. 写しのおじいちゃん：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_blink_src.png`
@@ -1421,7 +1331,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 112. 写しのおじいちゃん：口を開けた絵
+#### 106. 写しのおじいちゃん：口を開けた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_talk_src.png`
@@ -1431,7 +1341,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 113. だいち：目を閉じた絵
+#### 107. だいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_blink_src.png`
@@ -1441,7 +1351,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 114. だいち：口を開けた絵
+#### 108. だいち：口を開けた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_talk_src.png`
@@ -1480,6 +1390,6 @@ Change only the mouth: open it slightly, as in the middle of speaking a word (a 
 - **Y. 寄り道の町の人の表情違い（五郎・善次・初江）**（10 枚）：五郎：困り、五郎：驚き、五郎：照れ、五郎：泣き笑い、善次：微笑み、善次：照れ、善次：驚き、初江：微笑み、初江：困り、初江：驚き
 - **Z. 立ち絵のない3人（写しの仁・写しの静江・写しの敏夫）**（13 枚）：写しの仁（平成9年の春、29歳。早瀬の若いころ）：通常、写しの静江（平成9年の春、27歳。早瀬の妻）：笑顔、写しの敏夫（昭和44年の冬、30代。工場の先輩の職人）：通常、写しの仁：驚き、写しの仁：真剣、写しの仁：困り、写しの静江：驚き、写しの静江：大笑い、写しの静江：考える、写しの静江：微笑み、写しの静江：泣き笑い、写しの静江：照れ、写しの静江：困り笑い
 - **AA. 早瀬（仲間）のまばたき・口パク**（9 枚）：早瀬：通常（目を閉じた絵）、早瀬：考える（目を閉じた絵）、早瀬：苦笑い（目を閉じた絵）、早瀬：驚き（目を閉じた絵）、早瀬：怒り（目を閉じた絵）、早瀬：泣き笑い（目を閉じた絵）、早瀬：通常（口を開けた絵）、早瀬：考える（口を開けた絵）、早瀬：苦笑い（口を開けた絵）
-- **AB. 脇役の表情違い（台本で使う表情だけ）**（36 枚）：勇夫：笑顔（台本で12回）、勇夫：さみしげ（台本で12回）、勇夫：考える（台本で11回）、勇夫：驚き（台本で3回）、勇夫：泣き笑い（台本で3回）、ペトラ：真剣（台本で13回）、ペトラ：困り（台本で10回）、ペトラ：驚き（台本で7回）、ペトラ：笑顔（台本で5回）、しおり：通常（台本で14回）、しおり：困り笑い（台本で12回）、しおり：驚き（台本で9回）、しおり：考える（台本で8回）、しおり：苦笑い（台本で7回）、しおり：微笑み（台本で4回）、しおり：さみしげ（台本で3回）、しおり：大笑い（台本で3回）、しおり：困り（台本で1回）、しおり：あせり（台本で1回）、浩二：苦笑い（台本で15回）、浩二：考える（台本で12回）、浩二：さみしげ（台本で11回）、浩二：通常（台本で9回）、浩二：驚き（台本で5回）、千代：微笑み（台本で15回）、千代：通常（台本で12回）、千代：さみしげ（台本で9回）、千代：考える（台本で8回）、千代：驚き（台本で7回）、千代：苦笑い（台本で2回）、千代：悲しい（台本で2回）、千代：泣き笑い（台本で2回）、千代：真剣（台本で1回）、けんた：苦笑い（台本で14回）、けんた：さみしげ（台本で8回）、けんた：考える（台本で7回）
+- **AB. 脇役の表情違い（台本で使う表情だけ）**（42 枚）：勇夫：笑顔（台本で12回）、勇夫：さみしげ（台本で12回）、勇夫：考える（台本で11回）、勇夫：驚き（台本で3回）、勇夫：泣き笑い（台本で3回）、ペトラ：真剣（台本で13回）、ペトラ：困り（台本で10回）、ペトラ：驚き（台本で7回）、ペトラ：笑顔（台本で5回）、しおり：通常（台本で14回）、しおり：困り笑い（台本で12回）、しおり：驚き（台本で9回）、しおり：考える（台本で8回）、しおり：苦笑い（台本で7回）、しおり：微笑み（台本で4回）、しおり：さみしげ（台本で3回）、しおり：大笑い（台本で3回）、しおり：困り（台本で1回）、しおり：あせり（台本で1回）、浩二：苦笑い（台本で15回）、浩二：考える（台本で12回）、浩二：さみしげ（台本で11回）、浩二：通常（台本で9回）、浩二：驚き（台本で5回）、千代：微笑み（台本で15回）、千代：通常（台本で12回）、千代：さみしげ（台本で9回）、千代：考える（台本で8回）、千代：驚き（台本で7回）、千代：苦笑い（台本で2回）、千代：悲しい（台本で2回）、千代：泣き笑い（台本で2回）、千代：真剣（台本で1回）、けんた：苦笑い（台本で14回）、けんた：さみしげ（台本で8回）、けんた：考える（台本で7回）、けんた：照れ（台本で6回）、けんた：驚き（台本で4回）、けんた：泣き笑い（台本で2回）、けんた：大笑い（台本で1回）、カイ：通常（台本で20回）、カイ：見下す（台本で11回）
 - **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）
 - **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）
