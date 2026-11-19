@@ -3052,7 +3052,7 @@ function describe(f: ChainFrame, before: ChainState): string {
     else if (ev.type === 'damage') parts.push(`${name(ev.to)}に${ev.amount}${ev.weak ? '（弱点）' : ev.resist ? '（耐性）' : ''}`);
     else if (ev.type === 'heal') parts.push(`${name(ev.to)}+${ev.amount}`);
     else if (ev.type === 'trick') parts.push(`${name(ev.to)}に「${TRICK_LABEL[ev.trick]}」を付与`);
-    else if (ev.type === 'trickUse') parts.push(ev.trick === 'spread' ? `パノラマ！${ev.to?.length ? `${ev.to.map(name).join('・')}にも広がる` : '（ほかに敵がいない）'}` : ev.trick === 'expose' ? 'ハイライト！ 弱点になった' : 'ピンポイント！ フィニッシュが2倍');
+    else if (ev.type === 'trickUse') parts.push(ev.trick === 'spread' ? `パノラマ！${ev.to?.length ? `${ev.to.map(name).join('・')}にも広がる` : '（ほかに敵がいない）'}` : ev.trick === 'expose' ? 'ハイライト！ 弱点になった' : 'ピンポイント！ クライマックスが2倍');
     else if (ev.type === 'status') parts.push(`${name(ev.to)}に${STATUS_LABEL[ev.status]}（${ev.left}ラウンド）`);
     else if (ev.type === 'burn') parts.push(`${name(ev.uid)}にヒートで${ev.amount}`);
     else if (ev.type === 'drain') parts.push(`${name(ev.to)}がリワインドで${ev.amount}回復`);

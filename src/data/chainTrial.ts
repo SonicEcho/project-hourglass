@@ -40,7 +40,7 @@ export const CHAIN_CARDS = {
   // フォーカス：敵に合わせておき、次に当たった攻撃で使い切る
   target: card({ id: 'ch_target', name: 'パノラマ', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'spread' }, text: '対象の敵に「パノラマ」を付与する。次にこの敵が攻撃を受けた時、同じダメージを他の敵全体にも与える（広がった先はダウンしない）' }),
   expose: card({ id: 'ch_expose', name: 'ハイライト', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'expose' }, text: '対象の敵に「ハイライト」を付与する。次にこの敵が受ける攻撃は、属性に関係なく弱点扱いになる（ダウンする）' }),
-  rattle: card({ id: 'ch_rattle', name: 'ピンポイント', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'opening', element: 'physical', power: 4 }, text: '敵1体に物理の小ダメージを与え、「ピンポイント」を付与する。次にこの敵が受けるフィニッシュの威力が3倍' }),
+  rattle: card({ id: 'ch_rattle', name: 'ピンポイント', type: 'trick', weight: 1, target: 'enemy', effect: { kind: 'trick', trick: 'opening', element: 'physical', power: 4 }, text: '敵1体に物理の小ダメージを与え、「ピンポイント」を付与する。次にこの敵が受けるクライマックスの威力が3倍' }),
   // フィルター：数ラウンド続く（1体に1つ。新しく付けると上書き）
   chill: card({ id: 'ch_chill', name: 'スロー', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'slow', rounds: 2 }, text: '敵1体を2ラウンドの間「スロー」にする。敵の行動が1マス遅れる' }),
   ember: card({ id: 'ch_ember', name: 'ヒート', type: 'status', weight: 1, target: 'enemy', effect: { kind: 'status', status: 'burn', rounds: 3, element: 'fire', power: 4 }, text: '敵1体に火の小ダメージを与え、3ラウンドの間「ヒート」にする。ラウンド終了時にダメージを与える' }),
@@ -108,7 +108,7 @@ export const CHAIN_CARD_ART: Record<string, string> = {
 export const CHAIN_SHORT_TEXT: Record<string, string> = {
   ch_target: '次の攻撃を\n敵全体に拡散',
   ch_expose: '次の攻撃が\n弱点扱いに',
-  ch_rattle: 'フィニッシュ\n威力3倍',
+  ch_rattle: 'クライマックス\n威力3倍',
   ch_chill: '敵の行動が\n1マス遅れる',
   ch_ember: 'ラウンド終了\n時にダメージ',
   ch_notch: 'このラウンド\n被ダメ+50%ずつ',
