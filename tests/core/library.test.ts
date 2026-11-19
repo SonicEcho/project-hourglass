@@ -44,6 +44,6 @@ describe('ライブラリに載る物（1-1・1-2）', () => {
   it('セーブの材料が、載る物とそろっている', () => {
     expect(LIBRARY_CONTEXT.snaps).toEqual(LIBRARY_SNAPS.map((m) => m.id));
     expect(LIBRARY_CONTEXT.combos).toEqual(LIBRARY_COMBOS.map((l) => l.id));
-    expect(LIBRARY_COMBOS.map((l) => l.id).sort()).toEqual(['biribiri', 'crossDrive', 'flashback', 'iceFlower', 'inSync', 'thunderRain', 'threeTimes', 'dejaVu', 'clockShop'].sort());
+    expect(LIBRARY_COMBOS.map((l) => l.id).sort()).toEqual(['biribiri', 'crossDrive', 'flashback', 'iceFlower', 'inSync', 'threeTimes', 'dejaVu', 'clockShop'].sort());
   });
 });

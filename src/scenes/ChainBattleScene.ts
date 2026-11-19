@@ -12,6 +12,7 @@ import {
   chainPlanClaps,
   chainPlanPitch,
   chainPlanPushes,
+  nearLinks,
   chainPlanWatch,
   chainPlanRepeat,
   chainPlanFilm,
@@ -1866,6 +1867,16 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(g);
     }
     const linkedIdx = new Set(this.tab === 'cards' ? linkSpots.flatMap((sp) => sp.cards) : []);
+    // あと1枚でそろうコンボ（段階261）：材料の札に「あと1枚」と、そのコンボの名前（まだ見つけていないコンボは「？？？」）
+    const near = new Map<number, { name: string; missing: string }>();
+    if (this.tab === 'cards' && s.def.finishLast) {
+      const found = foundChainCombos(!!this.encounter);
+      for (const x of nearLinks(s, this.plan)) {
+        const name = found.includes(x.link.id) ? x.link.move.name : '？？？';
+        const missing = found.includes(x.link.id) ? (s.def.cards[x.missing]?.name ?? '') : '';
+        for (const k of x.have) if (!linkedIdx.has(k) && !near.has(k)) near.set(k, { name, missing });
+      }
+    }
     shown.forEach((it, i) => {
       const cx = 4 + step * i + step / 2;
       const sel = !!this.pending && sameSource(this.pending.source, it.source);
@@ -1873,12 +1884,20 @@ export class ChainBattleScene extends Phaser.Scene {
       // コンボの材料の札は、後ろを金色に光らせる
       if (it.source.kind === 'card' && linkedIdx.has(it.source.index)) r.add(this.add.rectangle(cx, cy, CARD_W + 16, cardH + 16, GOLD, 0.55));
       this.drawCard(cx, cy, it, (i - (shown.length - 1) / 2) * 2.5, sel, !!it.move.owner && me?.defId !== it.move.owner, cardH);
+      const nearOf = it.source.kind === 'card' ? near.get(it.source.index) : undefined;
+      if (nearOf && !it.used) {
+        const tag = this.sticker(cx, cy - cardH / 2 - 8, `あと1枚\n${nearOf.name}`, GOLD, '#2a1300', -4, 8);
+        const tagW = (tag.list[1] as Phaser.GameObjects.Rectangle).width;
+        if (tagW > step - 4) tag.setScale((step - 4) / tagW);
+        r.add(tag);
+      }
       const hit = this.add.rectangle(cx, cy, Math.min(CARD_W, step - 2), cardH, 0xffffff, 0.001);
       r.add(hit);
       makePressable(hit, {
         onTap: () => !it.used && this.pickOption(it.source, it.move),
         onLongPress: () => {
-          this.message = `【${this.categoryLabel(it.move)}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}`;
+          const tip = nearOf ? `\nあと1枚でコンボ「${nearOf.name}」${nearOf.missing ? `（足りないのは ${nearOf.missing}）` : ''}。残しておくと、そろうかも` : '';
+          this.message = `【${this.categoryLabel(it.move)}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}${tip}`;
           this.render();
         },
       });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addToAlbum,
+  isChainFinish,
   albumFromIds,
   buildMainChainBattle,
   chainBossSnaps,
@@ -308,19 +309,29 @@ describe('新しい戦闘のアルバム（段階163）', () => {
     expect(deck.filter((id) => id === 'c17_paperGun').length).toBe(0);
   });
 
+  it('最初のアルバム（段階258）：数字だけの攻撃の札は入れない。クライマックスは3種類1枚ずつ。新しい札シャッターチャンス', () => {
+    for (const id of ['c17_quick', 'c17_closeUp', 'c17_backlight', 'c17_blueHour', 'c17_strobe', 'c17_wide']) expect(CHAIN_START_ALBUM).not.toContain(id);
+    expect(CHAIN_START_ALBUM.filter((id) => id === 'c17_chance').length).toBe(2);
+    expect(CHAIN_START_ALBUM.filter((id) => isChainFinish(CHAIN_SNAPS[id])).sort()).toEqual(['c17_decisive', 'c17_imprint', 'c17_margin']);
+    for (const id of ['c17_filterRed', 'c17_filterBlue', 'c17_filterYellow', 'c17_highlight']) expect(CHAIN_START_ALBUM).toContain(id);
+  });
+
   it('クライマックスは3枚まで。同じスナップは4枚まで。20枚でいっぱい', () => {
     let a = albumFromIds(CHAIN_START_ALBUM);
-    a = gainSnaps(a, ['c17_group', 'c17_group', 'c17_group', 'c17_decisive']);
-    // いっぱいなので、1枚外してから
-    a = removeFromAlbum(a, 'c17_quick');
+    a = gainSnaps(a, ['c17_group', 'c17_group', 'c17_quick']);
+    // 段階258：最初のアルバムに、クライマックスが3枚（決めの一枚・焼き付け・余白）。いっぱいなので、1枚外してから
+    a = removeFromAlbum(a, 'a11_recover');
+    expect(chainAlbumAddError(a, 'c17_group', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('too many climaxes');
+    // クライマックスを1枚外すと入る
+    a = removeFromAlbum(a, 'c17_margin');
+    a = removeFromAlbum(a, 'a11_recover');
     expect(chainAlbumAddError(a, 'c17_group', CHAIN_SNAPS, CHAIN_ALBUM)).toBeNull();
     a = addToAlbum(a, 'c17_group', CHAIN_ALBUM.size, CHAIN_ALBUM.copyMax);
-    a = removeFromAlbum(a, 'c17_quick');
-    a = addToAlbum(a, 'c17_group', CHAIN_ALBUM.size, CHAIN_ALBUM.copyMax);
-    a = removeFromAlbum(a, 'c17_quick');
-    // 決めの一枚1＋集合写真2＝3枚。もう入らない
+    a = removeFromAlbum(a, 'c17_push');
     expect(chainAlbumAddError(a, 'c17_group', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('too many climaxes');
+    // 持っていない札は入らない。20枚の時は、外さないと入らない
     expect(chainAlbumAddError(albumFromIds(CHAIN_START_ALBUM), 'c17_quick', CHAIN_SNAPS, CHAIN_ALBUM)).toBe('no spare copy');
+    expect(chainAlbumAddError(gainSnaps(albumFromIds(CHAIN_START_ALBUM), ['c17_quick']), 'c17_quick', CHAIN_SNAPS, CHAIN_ALBUM)).not.toBeNull();
   });
 
   it('1-1 のぬしの報酬は、新しい戦闘のスナップ（段階180：★3 で倒した時だけ集合写真1枚。リカバリーは返した時）', () => {

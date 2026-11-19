@@ -1202,6 +1202,29 @@ export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: Ch
   return out;
 }
 
+/**
+ * あと1枚でそろうコンボ（段階261。手札の材料の札に「あと1枚」の印を出す）：動く仲間が生きていて、まだ並べておらず、
+ * 材料の札がちょうど1枚だけ足りない物。have は手札にある材料の位置、missing は足りない札の id
+ */
+export function nearLinks(s: ChainState, plan: ChainPlanStep[]): { link: ChainLinkDef; have: number[]; missing: string }[] {
+  const usedCards = new Set(plan.flatMap(stepCards));
+  const usedAllies = new Set(plan.flatMap((p) => stepAllies(s, p)));
+  const out: { link: ChainLinkDef; have: number[]; missing: string }[] = [];
+  for (const link of s.def.links) {
+    const uids = link.members.map((m) => s.allies.find((a) => a.defId === m));
+    if (uids.some((u) => !u || u.hp <= 0 || (usedAllies.has(u.uid) && !s.def.multiAct))) continue;
+    const have: number[] = [];
+    const missing: string[] = [];
+    for (const id of link.cards) {
+      const i = s.hand.findIndex((c, k) => c === id && !usedCards.has(k) && !have.includes(k));
+      if (i < 0) missing.push(id);
+      else have.push(i);
+    }
+    if (missing.length === 1 && have.length > 0) out.push({ link, have, missing: missing[0] });
+  }
+  return out;
+}
+
 /** 計画の最後に step を足せない理由（足せれば null） */
 export function chainPlanError(s: ChainState, plan: ChainPlanStep[], step: ChainPlanStep): string | null {
   if (s.outcome !== 'ongoing' || s.shutter) return '戦闘は終わっている';

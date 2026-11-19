@@ -37,7 +37,7 @@ export const CHAIN_ENEMY_SNAP_RATE = { normal: 0.25, boss: 0.5 };
 
 /** 1-1 で使う札（試しの調整17の札から） */
 export const A11_CARDS: Record<string, ChainMove> = Object.fromEntries(
-  [C.quick, C.closeUp, C.backlight, C.blueHour, C.strobe, C.wide, RECOVER, RECOVERY, ...Object.values(ENEMY_SNAP), C.push, C.plus10, C.decisive, C.group, C.swing, C.snow, C.paperGun].map((m) => [m.id, m]),
+  [C.quick, C.closeUp, C.backlight, C.blueHour, C.strobe, C.wide, C.firstCut, C.chance, C.bigShot, C.filterRed, C.filterBlue, C.filterYellow, C.highlight, C.plus10, C.pinpoint, C.panorama, C.imprint, C.margin, RECOVER, RECOVERY, ...Object.values(ENEMY_SNAP), C.push, C.plus10, C.decisive, C.group, C.swing, C.snow, C.paperGun].map((m) => [m.id, m]),
 );
 
 /** 1-1 の札の絵と短い説明（試しにない物だけ） */
@@ -64,19 +64,25 @@ const times = (n: number, id: string): string[] => Array.from({ length: n }, () 
 
 /**
  * 最初のアルバム（20枚）とスペシャル（ハルト「全力スイング」・あかり「雪の結晶」2枚ずつ）。
- * アルバムの編集（段階E）までは、この決まった山札で戦う
+ * 段階258（docs/milestones/M3_battle_tension.md の 8.）：技（MP）は「いつでも同じだけ効く威力」、札は「条件で跳ねる・流れを変える物」。
+ * 数字だけの攻撃の札（速写・クローズアップ・逆光・ブルーアワー・ストロボ・ワイドショット）は入れない。弱点は技と、フィルターを添えた通常攻撃・技で突く
  */
 export const A11_DECK: string[] = [
-  ...times(3, C.quick.id),
-  ...times(3, C.closeUp.id),
-  ...times(2, C.backlight.id),
-  ...times(2, C.blueHour.id),
-  ...times(2, C.strobe.id),
-  ...times(2, C.wide.id),
-  ...times(2, RECOVER.id),
+  ...times(2, C.firstCut.id),
+  ...times(2, C.chance.id),
+  C.bigShot.id,
+  C.filterRed.id,
+  C.filterBlue.id,
+  C.filterYellow.id,
+  C.highlight.id,
   ...times(2, C.push.id),
-  C.plus10.id,
+  ...times(2, C.plus10.id),
+  C.pinpoint.id,
+  C.panorama.id,
   C.decisive.id,
+  C.imprint.id,
+  C.margin.id,
+  ...times(2, RECOVER.id),
   ...times(2, C.swing.id),
   ...times(2, C.snow.id),
 ];

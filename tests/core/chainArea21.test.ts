@@ -46,7 +46,9 @@ describe('2-1 の雑魚を新しい戦闘に（段階170）', () => {
     const chests = AREAS.a21.chests;
     expect(chests.flatMap((c) => c.chainSnaps ?? []).sort()).toEqual(['c17_bigShot', 'c17_burst', 'c17_split']);
     for (const id of chests.flatMap((c) => c.chainSnaps ?? [])) expect(CHAIN_SNAPS[id]).toBeDefined();
-    expect(CHAIN_AREA_SETUPS.a21_n1_gate.links.map((l) => l.id)).toEqual(expect.arrayContaining(['crossDrive', 'biribiri', 'thunderRain']));
+    expect(CHAIN_AREA_SETUPS.a21_n1_gate.links.map((l) => l.id)).toEqual(expect.arrayContaining(['crossDrive', 'biribiri']));
+    // 段階261：誰でも使える2枚のコンボ「雷の雨」は外した（コンボを絞る）
+    expect(CHAIN_AREA_SETUPS.a21_n1_gate.links.map((l) => l.id)).not.toContain('thunderRain');
   });
   it('かたい・バリアの敵がいると、その説明が出る', () => {
     const st = CHAIN_AREA_SETUPS.a21_n1_road;

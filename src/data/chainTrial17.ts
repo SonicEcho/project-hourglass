@@ -23,6 +23,8 @@ export const CHAIN17_CARDS = {
   bigShot: m({ id: 'c17_bigShot', name: '渾身の一枚', type: 'attack', weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 100, unsplittable: true, heavy: true }, text: '敵1体に物理100（分けられない）。かたい敵に1.5倍で、バリアも1発で割る' }),
   longTake: m({ id: 'c17_longTake', name: '長回し', type: 'attack', weight: 5, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 150, fragile: true }, text: '敵1体に物理150。動き始めてから効くまでの間（帯の幅の中）に敵が動くと不発（札は手札に戻る）' }),
   zoom: m({ id: 'c17_zoom', name: 'ズームイン', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, pierce: true }, text: '敵1体に物理30。「かばう」に防がれない' }),
+  // 段階258：敵の予定の時刻を読むほど強い札（仕組みは段階181 の先回り beforeMult）
+  chance: m({ id: 'c17_chance', name: 'シャッターチャンス', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 20, beforeMult: 2 }, text: '敵1体に物理20。ねらった敵が、このラウンドにまだ動いていなければ2倍' }),
   firstCut: m({ id: 'c17_firstCut', name: 'ファーストカット', type: 'attack', weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, firstMult: 2 }, text: '敵1体に物理30。ラウンドで最初に動くと2倍' }),
   // サポート（重さ0。行動に添える）
   plus10: m({ id: 'c17_plus10', name: 'アタック+10', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', add: 10 }, text: 'アクションに添える。1発ごとに威力+10' }),
@@ -63,7 +65,7 @@ const C = CHAIN17_CARDS;
 export const CHAIN17_CARD_ART: Record<string, string> = {
   c17_quick: 'snap.quickStep', c17_closeUp: 'snap.sword', c17_backlight: 'snap.fireChip', c17_blueHour: 'snap.iceChip', c17_strobe: 'snap.thunderChip',
   c17_flash: 'snap.thunderChip', c17_burst: 'snap.quickStep', c17_sparkler: 'snap.fireChip', c17_wide: 'snap.wideShot', c17_bigShot: 'snap.heavyBlow',
-  c17_longTake: 'snap.heavyBlow', c17_zoom: 'snap.search', c17_firstCut: 'snap.sword',
+  c17_longTake: 'snap.heavyBlow', c17_zoom: 'snap.search', c17_firstCut: 'snap.sword', c17_chance: 'snap.search',
   c17_plus10: 'snap.sword', c17_plus20: 'snap.sword', c17_plus30: 'snap.sword', c17_split: 'snap.draw', c17_exposure: 'snap.joker', c17_panorama: 'snap.search',
   c17_highlight: 'snap.joker', c17_filterRed: 'snap.fireChip', c17_filterBlue: 'snap.iceChip', c17_filterYellow: 'snap.thunderChip', c17_pinpoint: 'snap.breakArm',
   c17_push: 'snap.quickStep', c17_pause: 'snap.encore', c17_rewind: 'snap.recover',
@@ -82,7 +84,7 @@ export const CHAIN17_MOVE_ART: Record<string, string> = {
 export const CHAIN17_SHORT_TEXT: Record<string, string> = {
   c17_quick: '敵1体に\n物理20', c17_closeUp: '敵1体に\n物理40', c17_backlight: '敵1体に\n火35', c17_blueHour: '敵1体に\n氷35', c17_strobe: '敵1体に\n雷35',
   c17_flash: '敵全体に\n雷20', c17_burst: '物理12×5回\n分けられない', c17_sparkler: '全体に火6×5\n分けられない', c17_wide: '敵全体に\n物理25', c17_bigShot: '物理100\nかたい・バリアに強い',
-  c17_longTake: '物理150\n邪魔されると不発', c17_zoom: '物理30\nかばうを無視', c17_firstCut: '物理30\n最初なら2倍',
+  c17_longTake: '物理150\n邪魔されると不発', c17_zoom: '物理30\nかばうを無視', c17_firstCut: '物理30\n最初なら2倍', c17_chance: '物理20\n敵が動く前なら2倍',
   c17_plus10: '添える\n1発ごと+10', c17_plus20: '添える\n1発ごと+20', c17_plus30: '添える\n1発ごと+30', c17_split: '添える\n4回に分ける', c17_exposure: '添える\n以後ずっと+5',
   c17_panorama: '添える\n全体に広げる', c17_highlight: '添える\n弱点扱い', c17_filterRed: '添える\n火にする', c17_filterBlue: '添える\n氷にする', c17_filterYellow: '添える\n雷にする',
   c17_pinpoint: '添える\nフィニッシュ1.5倍', c17_push: '添える\n予定を3マス後へ', c17_pause: '添える\n大技を封じる', c17_rewind: '添える\n30%回復',
@@ -158,14 +160,14 @@ export const CHAIN17_COMBOS: ChainLinkDef[] = [
   combo('thunderDrum', '雷鼓', [C.paperGun, C.strobe, C.push], ['mio'], { weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 15, hits: 8, push: 99 }, text: 'みお。敵1体に雷15を8回。当たった敵の、このラウンドの残りの予定を消す' }),
   // 専用2＋通常1（連携技）
   combo('afterglow', 'アフターグロウ', [C.swing, C.snow, C.backlight], ['hero', 'akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 60, bestOf: ['fire', 'ice'], healAll: 30 }, text: 'ハルトとあかり。敵全体に、敵ごとに火か氷の効く方で60。味方全体を回復' }),
-  combo('crossDrive', 'クロスドライブ', [C.swing, C.paperGun, C.quick], ['hero', 'mio'], { weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, hits: 3, extra: [{ element: 'thunder', power: 40, hits: 3 }] }, text: 'ハルトとみお。敵1体に物理40を3回と、雷40を3回' }),
+  combo('crossDrive', 'クロスドライブ', [C.swing, C.paperGun], ['hero', 'mio'], { weight: 3, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 40, hits: 3, extra: [{ element: 'thunder', power: 40, hits: 3 }] }, text: 'ハルトとみお。敵1体に物理40を3回と、雷40を3回' }),
   combo('shower', '夕立', [C.snow, C.paperGun, C.wide], ['akari', 'mio'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 15, hits: 4, extra: [{ element: 'ice', power: 15, hits: 2 }] }, text: 'あかりとみお。敵全体に雷15を4回と、氷15を2回' }),
   // 2枚のコンボ（3枚より少し弱い。3枚目を待つか、2枚で撃つか）
-  combo('flashback', 'フラッシュバック', [C.backlight, C.strobe], [], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 30, extra: [{ element: 'thunder', power: 30 }] }, text: '敵全体に火30と雷30（弱点ならダウン）' }),
+  combo('flashback', 'フラッシュバック', [C.filterRed, C.filterYellow], [], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'fire', power: 30, extra: [{ element: 'thunder', power: 30 }] }, text: '敵全体に火30と雷30（弱点ならダウン）' }),
   combo('thunderRain', '雷の雨', [C.wide, C.strobe], [], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'thunder', power: 15, hits: 4 }, text: '敵全体に雷15を4回' }),
   combo('onceInLife', '一世一代', [C.bigShot, C.longTake], [], { weight: 5, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 280, heavy: true }, text: '敵1体に物理280（かたい敵に1.5倍・バリアを割る）' }),
   combo('thousandKnock', '千本ノック', [C.swing, C.burst], ['hero'], { weight: 4, target: 'enemy', effect: { kind: 'damage', element: 'physical', power: 30, hits: 6 }, text: 'ハルト。敵1体に物理30を6回' }),
-  combo('iceFlower', '氷の花', [C.snow, C.blueHour], ['akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 25, hits: 3 }, text: 'あかり。敵全体に氷25を3回' }),
+  combo('iceFlower', '氷の花', [C.snow, C.filterBlue], ['akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'ice', power: 25, hits: 3 }, text: 'あかり。敵全体に氷25を3回' }),
   combo('biribiri', 'ビリビリ', [C.paperGun, C.push], ['mio'], { weight: 2, target: 'enemy', effect: { kind: 'damage', element: 'thunder', power: 10, hits: 6, push: 2 }, text: 'みお。敵1体に雷10を6回。当たった敵の予定を2マス後ろへ' }),
   combo('inSync', '息ぴったり', [C.swing, C.snow], ['hero', 'akari'], { weight: 3, target: 'enemies', effect: { kind: 'damage', element: 'physical', power: 40, extra: [{ element: 'ice', power: 40 }] }, text: 'ハルトとあかり。敵全体に物理40と氷40' }),
   // 専用2（同じ仲間）＋通常1
@@ -187,17 +189,17 @@ export const CHAIN17_COMBO_HINT: Record<string, string> = {
   diamondDust: 'あかりの専用の札＋氷のアタック＋広げる札',
   thunderDrum: 'みおの専用の札＋雷のアタック＋予定を動かす札',
   afterglow: 'ハルトとあかりの専用の札＋火のアタック',
-  crossDrive: 'ハルトとみおの専用の札＋軽いアタック',
+  crossDrive: 'ハルトとみおの専用の札',
   shower: 'あかりとみおの専用の札＋全体の札',
   twoSwords: 'ハルトの専用の札2枚＋添える札',
   threeTimes: '3人の専用の札',
   dejaVu: 'あかりと小夜子の専用の札',
   clockShop: 'ハルトと早瀬の専用の札',
-  flashback: '火と雷のアタック',
+  flashback: '火にする札と雷にする札',
   thunderRain: '全体の札＋雷のアタック',
   onceInLife: '重い一撃＋邪魔されると不発の札',
   thousandKnock: 'ハルトの専用の札＋連続攻撃の札',
-  iceFlower: 'あかりの専用の札＋氷のアタック',
+  iceFlower: 'あかりの専用の札＋氷にする札',
   biribiri: 'みおの専用の札＋予定を動かす札',
   inSync: 'ハルトとあかりの専用の札',
 };

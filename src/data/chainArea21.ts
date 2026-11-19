@@ -42,7 +42,7 @@ export const A21_SHORT_TEXT: Record<string, string> = {
 };
 
 /** 2-1 で増えるコンボ（1-1 の3つに足す）：クロスドライブ（ハルトとみお）・ビリビリ（みお）・雷の雨 */
-export const A21_COMBOS: ChainLinkDef[] = [...A11_COMBOS, ...CHAIN17_COMBOS.filter((l) => ['crossDrive', 'biribiri', 'thunderRain'].includes(l.id))];
+export const A21_COMBOS: ChainLinkDef[] = [...A11_COMBOS, ...CHAIN17_COMBOS.filter((l) => ['crossDrive', 'biribiri'].includes(l.id))];
 
 /** 2-1 の宝箱と、ぬしの報酬で渡す札（2-1 の答えになる札）。アルバムに入れられる札の一覧に足す */
 export const A21_NEW_SNAPS: ChainMove[] = [C.bigShot, C.burst, C.split, C.plus20];

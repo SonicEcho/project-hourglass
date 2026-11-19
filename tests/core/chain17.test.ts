@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { availableLinks, chainMoveOf, chainPlanError, chainPlanPushes, createChainBattle, isChainFinish, runChainRound, type ChainBattleDef, type ChainEnemyDef, type ChainEvent, type ChainPlanStep, type ChainState } from '../../src/core';
+import { availableLinks, chainMoveOf, chainPlanError, chainPlanPushes, nearLinks, createChainBattle, isChainFinish, runChainRound, type ChainBattleDef, type ChainEnemyDef, type ChainEvent, type ChainPlanStep, type ChainState } from '../../src/core';
 import { CHAIN17_CARDS as C, CHAIN17_COMBOS, CHAIN17_DECK_PLAN, CHAIN_RULES, CHAIN_TRIALS, CHAIN_TRIALS_MULTI } from '../../src/data';
 import { autoChainBattle } from '../../src/sim/chainAuto';
 
@@ -117,6 +117,28 @@ describe('並べてつなぐ戦闘・調整17（跳ねる要素）', () => {
     expect(chainPlanPushes(s2, [])).toEqual({ out: [], shifted: {} });
   });
 
+  it('あと1枚でそろうコンボ（段階261）：材料が1枚だけ足りない物。並べた札・もう並べた仲間の物は数えない', () => {
+    const s = make([dummy()], [C.filterRed.id, C.quick.id]);
+    const near = nearLinks(s, []);
+    const fb = near.find((x) => x.link.id === 'flashback')!;
+    expect(fb).toMatchObject({ have: [0], missing: C.filterYellow.id });
+    // そろっている物・2枚足りない物は入らない
+    expect(nearLinks(make([dummy()], [C.filterRed.id, C.filterYellow.id]), []).some((x) => x.link.id === 'flashback')).toBe(false);
+    expect(nearLinks(make([dummy()], [C.quick.id]), []).some((x) => x.link.id === 'flashback')).toBe(false);
+    // 材料の札を並べてしまえば、もう入らない
+    expect(nearLinks(s, [card('hero', 1, s.enemies[0].uid, [0])]).some((x) => x.link.id === 'flashback')).toBe(false);
+  });
+
+  it('シャッターチャンス（段階258）：ねらった敵がこのラウンドにまだ動いていなければ2倍', () => {
+    const before = dummy({ atk: 1, pattern: [{ id: 'hit', name: 'たたく', at: 8, element: 'physical', power: 1 }] });
+    const after = dummy({ atk: 1, pattern: [{ id: 'hit', name: 'たたく', at: 1, element: 'physical', power: 1 }] });
+    const a = make([before], [C.chance.id]);
+    const b = make([after], [C.chance.id]);
+    const hitA = dmg(runChainRound(a, [card('hero', 0, a.enemies[0].uid)]), 'hero')[0].amount;
+    const hitB = dmg(runChainRound(b, [card('hero', 0, b.enemies[0].uid)]), 'hero')[0].amount;
+    expect(hitA).toBe(hitB * 2);
+  });
+
   it('長回し：動き始めてから効くまでの間に敵が動くと不発で、札は手札に戻る。終わりちょうどの敵の行動では中断しない', () => {
     const at = (t: number) => dummy({ pattern: [{ id: 'x', name: 'つつく', at: t, element: 'physical', power: 1 }] });
     const s = make([at(3)], [C.longTake.id]);
@@ -139,9 +161,9 @@ describe('並べてつなぐ戦闘・調整17（跳ねる要素）', () => {
   });
 
   it('コンボ：材料がそろうと使える。仲間の専用の札のレシピは、その仲間が動く（3人技は3人とも）', () => {
-    const s = make([dummy()], [C.backlight.id, C.blueHour.id, C.strobe.id]);
+    const s = make([dummy()], [C.backlight.id, C.blueHour.id, C.strobe.id, C.filterRed.id, C.filterYellow.id]);
     const found = availableLinks(s, []);
-    // 3枚の三原色と、2枚のフラッシュバック（逆光＋ストロボ）の両方がそろう
+    // 3枚の三原色と、2枚のフラッシュバック（段階258 から赤フィルター＋黄フィルター）の両方がそろう
     expect(found.map((x) => x.link.id).sort()).toEqual(['flashback', 'tricolor']);
     expect(found.find((x) => x.link.id === 'flashback')!.cards.length).toBe(2);
     const tri = found.find((x) => x.link.id === 'tricolor')!;
