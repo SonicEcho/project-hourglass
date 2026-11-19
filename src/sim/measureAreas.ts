@@ -28,6 +28,11 @@ export interface AreaMeasure {
   /** 1ラウンドに並べた行動の数と、添えた札の数（考える方針） */
   actsPerRound: number;
   addonsPerRound: number;
+  /** 1ラウンドに行動として使った札（アクション・クライマックス・スペシャル。添える札は含まない）と、ラウンドの終わりに手札に残った札（考える方針） */
+  cardsPerRound: number;
+  handLeft: number;
+  /** 1戦で山札から見た札の割合（最初の手札＋引いた札 ÷ 山札の枚数） */
+  deckSeen: number;
   /** 1戦あたり、押して予定をずらした回数・ラウンドの外へ押し出して消した回数（考える方針） */
   pushes: number;
   pushOuts: number;
@@ -40,6 +45,9 @@ interface OneRun {
   acts: number;
   addons: number;
   roundsPlayed: number;
+  cards: number;
+  handLeft: number;
+  deckSeen: number;
   pushes: number;
   pushOuts: number;
 }
@@ -54,13 +62,16 @@ function runOnce(def: ChainBattleDef, seed: number, policy: ChainPolicy): OneRun
   let s: ChainState = createChainBattle(def, CHAIN_RULES, seed);
   const maxHp = s.allies.reduce((a, x) => a + x.maxHp, 0);
   const startHp = s.allies.reduce((a, x) => a + x.hp, 0);
-  const out: OneRun = { win: false, rounds: 0, hpLoss: 0, acts: 0, addons: 0, roundsPlayed: 0, pushes: 0, pushOuts: 0 };
+  const out: OneRun = { win: false, rounds: 0, hpLoss: 0, acts: 0, addons: 0, roundsPlayed: 0, cards: 0, handLeft: 0, deckSeen: 0, pushes: 0, pushOuts: 0 };
+  const deckSize = s.deck.length + s.hand.length;
   while (s.outcome === 'ongoing' && s.round <= 20) {
     const plan = planBy(policy, s, pick);
     out.acts += plan.length;
     out.addons += plan.reduce((a, p) => a + (p.addons?.length ?? 0), 0);
+    out.cards += plan.filter((p) => p.source.kind === 'card').length;
     out.roundsPlayed++;
     const res = runChainRound(s, plan);
+    out.handLeft += res.state.hand.length;
     for (const ev of res.frames.flatMap((f) => f.events)) {
       if (ev.type !== 'push') continue;
       if (ev.moved) out.pushes++;
@@ -69,6 +80,7 @@ function runOnce(def: ChainBattleDef, seed: number, policy: ChainPolicy): OneRun
     s = res.state;
   }
   out.win = s.outcome === 'win';
+  out.deckSeen = deckSize ? Math.min(1, (deckSize - s.deck.length) / deckSize) : 0;
   out.rounds = s.finishRound ?? s.round;
   out.hpLoss = (startHp - s.allies.reduce((a, x) => a + Math.max(0, x.hp), 0)) / maxHp;
   return out;
@@ -143,6 +155,9 @@ export function measureArea(areaId: string, seeds = 3): AreaMeasure {
     hpLoss: avg(zako.map((x) => x.hpLoss)),
     actsPerRound: zako.reduce((a, x) => a + x.acts, 0) / played,
     addonsPerRound: zako.reduce((a, x) => a + x.addons, 0) / played,
+    cardsPerRound: zako.reduce((a, x) => a + x.cards, 0) / played,
+    handLeft: zako.reduce((a, x) => a + x.handLeft, 0) / played,
+    deckSeen: avg(zako.map((x) => x.deckSeen)),
     pushes: avg(zako.map((x) => x.pushes)),
     pushOuts: avg(zako.map((x) => x.pushOuts)),
   };
@@ -152,7 +167,7 @@ export function measureArea(areaId: string, seeds = 3): AreaMeasure {
 export function measureTable(rows: AreaMeasure[]): string {
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   const f = (x: number) => x.toFixed(1);
-  const head = '| 区画 | 雑魚戦 | ラウンド（考える） | ラウンド（でたらめ） | でたらめの勝率 | ぬしのラウンド | ぬしの勝率 | 雑魚1戦で失う HP | 1ラウンドの行動 | 1ラウンドの添える札 | 押した（1戦） | 押して消した（1戦） |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
-  const body = rows.map((r) => `| ${r.area} ${r.name} | ${r.battles} | ${f(r.smartRounds)} | ${f(r.randomRounds)} | ${pct(r.randomWinRate)} | ${f(r.bossRounds)} | ${pct(r.bossWinRate)} | ${pct(r.hpLoss)} | ${f(r.actsPerRound)} | ${f(r.addonsPerRound)} | ${f(r.pushes)} | ${f(r.pushOuts)} |`);
+  const head = '| 区画 | 雑魚戦 | ラウンド（考える） | ラウンド（でたらめ） | でたらめの勝率 | ぬしのラウンド | ぬしの勝率 | 雑魚1戦で失う HP | 1ラウンドの行動 | うち札 | 1ラウンドの添える札 | ラウンドの終わりの手札 | 1戦で見た山札 | 押した（1戦） | 押して消した（1戦） |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+  const body = rows.map((r) => `| ${r.area} ${r.name} | ${r.battles} | ${f(r.smartRounds)} | ${f(r.randomRounds)} | ${pct(r.randomWinRate)} | ${f(r.bossRounds)} | ${pct(r.bossWinRate)} | ${pct(r.hpLoss)} | ${f(r.actsPerRound)} | ${f(r.cardsPerRound)} | ${f(r.addonsPerRound)} | ${f(r.handLeft)} | ${pct(r.deckSeen)} | ${f(r.pushes)} | ${f(r.pushOuts)} |`);
   return [head, ...body].join('\n');
 }
