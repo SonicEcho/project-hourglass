@@ -36,7 +36,7 @@ export const CHAIN17_CARDS = {
   filterBlue: m({ id: 'c17_filterBlue', name: '青フィルター', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', element: 'ice' }, text: 'アクションに添える。その攻撃を氷にする' }),
   filterYellow: m({ id: 'c17_filterYellow', name: '黄フィルター', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', element: 'thunder' }, text: 'アクションに添える。その攻撃を雷にする' }),
   pinpoint: m({ id: 'c17_pinpoint', name: 'ピンポイント', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', pinpoint: true }, text: 'アクションに添える。当たった敵は、このラウンドのフィニッシュを1.5倍で受ける' }),
-  push: m({ id: 'c17_push', name: '押す', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', push: 2 }, text: 'アクションに添える。当たった敵の、まだ動いていない予定を2マス後ろへ（ラウンドの外へ出たら起きない）' }),
+  push: m({ id: 'c17_push', name: '押す', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', push: 3 }, text: 'アクションに添える。当たった敵の、まだ動いていない予定を3マス後ろへ（ラウンドの外へ出たら起きない）' }),
   pause: m({ id: 'c17_pause', name: 'ポーズ', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', seal: true }, text: 'アクションに添える。当たった敵の、このラウンドの大技・全体攻撃を、ふつうの単体攻撃にする' }),
   rewind: m({ id: 'c17_rewind', name: 'リワインド', type: 'support', weight: 0, target: 'enemy', effect: { kind: 'addon', drain: 0.3 }, text: 'アクションに添える。その攻撃のダメージの30%を、使った仲間が回復する' }),
   // フィニッシュ（ラウンドの最後の行動だけ。添えられない。アルバムに3枚まで）
@@ -85,7 +85,7 @@ export const CHAIN17_SHORT_TEXT: Record<string, string> = {
   c17_longTake: '物理150\n邪魔されると不発', c17_zoom: '物理30\nかばうを無視', c17_firstCut: '物理30\n最初なら2倍',
   c17_plus10: '添える\n1発ごと+10', c17_plus20: '添える\n1発ごと+20', c17_plus30: '添える\n1発ごと+30', c17_split: '添える\n4回に分ける', c17_exposure: '添える\n以後ずっと+5',
   c17_panorama: '添える\n全体に広げる', c17_highlight: '添える\n弱点扱い', c17_filterRed: '添える\n火にする', c17_filterBlue: '添える\n氷にする', c17_filterYellow: '添える\n雷にする',
-  c17_pinpoint: '添える\nフィニッシュ1.5倍', c17_push: '添える\n予定を2マス後へ', c17_pause: '添える\n大技を封じる', c17_rewind: '添える\n30%回復',
+  c17_pinpoint: '添える\nフィニッシュ1.5倍', c17_push: '添える\n予定を3マス後へ', c17_pause: '添える\n大技を封じる', c17_rewind: '添える\n30%回復',
   c17_decisive: '物理60\n当てた回数×10', c17_group: '全体に物理30\n当てた回数×4', c17_imprint: '物理40\nその敵へ×15', c17_margin: '物理40\n残りマス×20',
   c17_develop: '物理40\nサポート×25', c17_reel: '物理15×5\n当てた回数×2', c17_rainbow: '全体に一番効く\n属性で20',
   c17_swing: '敵1体に\n物理70', c17_snow: '敵全体に\n氷15', c17_paperGun: '雷10×3回', c17_twinCut: '物理25×2回\n重い一撃', c17_repairFire: '火35\n重い一撃',
