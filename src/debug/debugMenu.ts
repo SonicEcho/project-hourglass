@@ -1,5 +1,5 @@
 import { playtimeReport, resetPlaytime } from './playtime';
-import { debugAutoStory, setDebugAutoStory } from './debugFlag';
+import { debugAutoStory, setDebugAutoStory, setTrialOff, trialOff } from './debugFlag';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
 import { AREA_BATTLES, AREAS, ROOM_NAMES, TRIAL_AREAS, ITEMS, FRAGMENTS, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
 import type { GrowthTier } from '../sim/presets';
@@ -352,6 +352,16 @@ export function installDebugMenu(nav: DebugNavigator): void {
         run.armory = { ...run.armory, weapons };
         nav.refreshGrowth();
         notify('仲間の武器を、次の進化に要るレベルにしました');
+      }),
+    );
+
+    // ---- 試しの切り替え（段階255。docs/milestones/M3_battle_tension.md）：試しを前の形に戻して比べる ----
+    const trials = section('試しの切り替え（戦闘の手触り）');
+    const tension = !trialOff('tension');
+    trials.append(
+      button(`回復と負けの重み：${tension ? '入（回復は1晩に1回・負けたら敵が戻る）' : '切（前の形）'}`, () => {
+        setTrialOff('tension', tension);
+        render(`回復と負けの重み：${tension ? '切（前の形）' : '入'}にしました`);
       }),
     );
 

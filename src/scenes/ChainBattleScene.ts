@@ -51,7 +51,7 @@ import { SNAP_CATEGORY } from '../ui/listKit';
 import { addFoundChainCombo, foundChainCombos, keepChainWeak, knownChainWeak, recordChainBattle, settleChainWin, type ChainWinReward } from './chainEncounter';
 import { markTipSeenNow, seenTips } from '../ui/tipPanel';
 import { smartChainPlan } from '../sim/chainAuto';
-import { isDebugEnabled } from '../debug/debugFlag';
+import { isDebugEnabled, trialOff } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
 import { playBgm, playSe } from '../audio/sound';
@@ -2847,7 +2847,7 @@ export class ChainBattleScene extends Phaser.Scene {
     if (!win) {
       o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : s.finish === 'strikeout' ? '三振… 打ち返せなかった' : s.finish === 'watch' ? '腕時計が止まった… 守りきれなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
-        const keep = this.encounter.dig ? ['かばんの中の半分は、砂に戻る', 'HP・MP は全回復して戻る'] : [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
+        const keep = this.encounter.dig ? ['かばんの中の半分は、砂に戻る', 'HP・MP は全回復して戻る'] : [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : trialOff('tension') ? '倒した敵・開けた宝箱・集めたコマは、そのまま' : 'チェックポイントの後に倒した砂嵐は、戻ってくる（コマを持っていた砂嵐・開けた宝箱・集めたコマは、そのまま）', 'HP・MP は全回復して戻る'];
         const head = this.encounter.dig ? '砂の底から、地上へ戻される' : '最後に記録したチェックポイントから、やり直す';
         o.add(addText(this, GAME_WIDTH / 2, 340, `${head}\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
         // 負けた時の手がかり（段階201。一覧の 18-3）：この戦闘の敵の性質に効くギアを1行

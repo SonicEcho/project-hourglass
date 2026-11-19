@@ -30,6 +30,7 @@ import {
   passDoor,
   roomPositions,
   startMind,
+  startNight,
 } from '../../src/core';
 import type { RoomDef } from '../../src/core';
 
@@ -401,3 +402,53 @@ describe('敵の動き（段階47b）', () => {
 function parseGridOf(room: RoomDef) {
   return areaGrid({ id: 'x', name: 'x', rooms: [room], chests: [], enemies: [], boss: { id: 'b', cell: [1, 1], battle: 'b' }, talkers: [], triggers: [], komaNeed: 1 });
 }
+
+describe('回復と負けの重み（段階255）', () => {
+  const rules = { healOncePerNight: true, reviveOnLose: true };
+  const hurt = { hero: { hp: 10, mp: 1 } };
+  it('チェックポイントの全回復は、1晩に1回。2回目は記録だけで HP・MP はそのまま', () => {
+    const r1 = arrive(area, { ...startExplore(area), vitals: hurt }, [3, 3], rules);
+    expect(r1.event).toEqual({ type: 'checkpoint', first: true, healed: true });
+    expect(r1.state.vitals).toBeUndefined();
+    const r2 = arrive(area, { ...r1.state, vitals: hurt }, [3, 3], rules);
+    expect(r2.event).toEqual({ type: 'checkpoint', first: false, healed: false, spent: true });
+    expect(r2.state.vitals).toEqual(hurt);
+    // 減っていない時に着いても、回復を使わない
+    const fresh = arrive(area, startExplore(area), [3, 3], rules);
+    expect(fresh.state.healedCheckpoints).toBeUndefined();
+    expect(arrive(area, { ...fresh.state, vitals: hurt }, [3, 3], rules).state.vitals).toBeUndefined();
+    // 次の晩は、また回復できる
+    expect(arrive(area, { ...r1.state, night: 2, vitals: hurt }, [3, 3], rules).state.vitals).toBeUndefined();
+    // 決まりを渡さなければ、前の形（何度でも全回復）
+    expect(arrive(area, { ...r1.state, vitals: hurt }, [3, 3]).state.vitals).toBeUndefined();
+  });
+
+  it('負けたら、最後に記録した後に倒した敵が戻る。記録より前の敵と、keep の敵は戻らない。HP・MP は全回復', () => {
+    let s = defeatEnemy(startExplore(area), 'e1');
+    s = arrive(area, s, [3, 3], rules).state;
+    s = defeatEnemy(defeatEnemy(s, 'e2'), 'boss');
+    const lost = loseBattle({ ...s, vitals: hurt }, rules, (id) => id === 'boss');
+    expect(lost.defeated).toEqual(['e1', 'boss']);
+    expect(lost.revived).toEqual(['e2']);
+    expect(lost.vitals).toBeUndefined();
+    expect(lost.sinceCheckpoint).toEqual([]);
+    // 決まりを渡さなければ、前の形（倒した敵はそのまま）
+    expect(loseBattle(s).defeated).toEqual(['e1', 'e2', 'boss']);
+  });
+
+  it('晩を始める所（チェックポイント）での全回復は、その晩のそこでの回復を使ったことにする', () => {
+    const nightly: AreaDef = { ...area, nights: [{ koma: 1 }, { start: { cell: [3, 3] } }] };
+    const s = startNight(nightly, { ...startExplore(nightly), vitals: hurt }, 2);
+    expect(s.vitals).toBeUndefined();
+    expect(s.healedCheckpoints).toEqual(['2:main:3,3']);
+    expect(arrive(nightly, { ...s, vitals: hurt }, [3, 3], rules).state.vitals).toEqual(hurt);
+  });
+
+  it('セーブから読み直しても、回復を使った所と、記録の後に倒した敵を覚えている', () => {
+    let s = arrive(area, { ...startExplore(area), vitals: hurt }, [3, 3], rules).state;
+    s = defeatEnemy(s, 'e2');
+    const back = normalizeExplore(area, JSON.parse(JSON.stringify(s)))!;
+    expect(back.healedCheckpoints).toEqual(['1:main:3,3']);
+    expect(back.sinceCheckpoint).toEqual(['e2']);
+  });
+});

@@ -53,8 +53,11 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
-import { isDebugEnabled } from '../debug/debugFlag';
+import { AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { isDebugEnabled, trialOff } from '../debug/debugFlag';
+
+/** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
+const tensionRules = () => (trialOff('tension') ? undefined : EXPLORE_TENSION);
 import { loadMapEdits } from '../debug/mapEdits';
 import { MapEditor } from './mapEditor';
 import { COLORS, RENDER_SCALE, STYLE } from '../ui/theme';
@@ -210,8 +213,13 @@ export class ExploreScene extends Phaser.Scene {
       if (data.won === area.boss.id) state = { ...state, cleared: true };
     }
     if (data.lost) {
-      state = loseBattle(state);
-      note = 'チェックポイントへ戻った';
+      // 段階255：最後に記録した後に倒した砂嵐が戻る（コマを持つ砂嵐は戻さない。同じ印でコマを2回もらわないため）
+      const keep = (id: string) => (AREA_BATTLES[area.enemies.find((e) => e.id === id)?.battle ?? '']?.koma ?? 0) > 0;
+      const back = loseBattle(state, tensionRules(), keep);
+      const revived = back.revived?.length ?? 0;
+      const { revived: _r, ...rest } = back;
+      state = rest;
+      note = revived > 0 ? `チェックポイントへ戻った。倒した砂嵐が ${revived} 体、戻ってきた` : 'チェックポイントへ戻った';
     }
     // 会話のごほうびのギア（段階38。2-1 の銭湯の前で、みおが拾った歯車など）
     const gears = data.seen ? triggerGears(area, state, data.seen) : [];
@@ -758,7 +766,7 @@ export class ExploreScene extends Phaser.Scene {
       if (door?.type === 'moved') this.changeRoom(door.state);
       return;
     }
-    const r = arrive(this.area, this.state, cell);
+    const r = arrive(this.area, this.state, cell, tensionRules());
     this.state = r.state;
     // 出入口（段階47a）：つながった部屋へ移る。閉じていれば止まる
     const door = passDoor(this.area, this.state, cell);
@@ -773,7 +781,8 @@ export class ExploreScene extends Phaser.Scene {
     }
     if (r.event.type === 'checkpoint') {
       playSe(this, SE.heal);
-      this.say(`チェックポイント：${r.event.healed ? 'HP・MP が全回復した。' : ''}ここまでを記録した。${storyLineup().unlocks.growth || storyLineup().unlocks.weapon ? '「休憩する」で育成できる' : ''}${this.traitForecast(true)}`);
+      // 段階255：この晩の回復を使ったチェックポイントでは、記録だけ
+      this.say(`チェックポイント：${r.event.healed ? (tensionRules() ? 'HP・MP が全回復した（ここでの回復は、この晩はもう使った）。' : 'HP・MP が全回復した。') : r.event.spent ? 'この晩の回復は使った。HP・MP はそのまま。' : ''}ここまでを記録した。${storyLineup().unlocks.growth || storyLineup().unlocks.weapon ? '「休憩する」で育成できる' : ''}${this.traitForecast(true)}`);
       if (r.event.healed) this.refreshVitals();
     }
     if (this.atExit(cell)) this.say('光る砂時計：今夜はここまで\n下のボタンで時計屋へ帰る');

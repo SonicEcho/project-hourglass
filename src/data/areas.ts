@@ -1,4 +1,4 @@
-import type { AreaDef, EnemyMove, EnemyTuning } from '../core/explore';
+import type { AreaDef, EnemyMove, EnemyTuning, ExploreRules } from '../core/explore';
 import type { CampaignBattle } from './campaign';
 import { scaleEnemy, toughenEnemy } from './campaign';
 import type { EnemyDef } from '../core/types';
@@ -30,6 +30,11 @@ export const AREA_STEP_MS = 140;
 export const AREA_ENEMY_STEP_MS = 420;
 /** 戦闘や会話から戻った後、敵の印に触れても戦闘にしない間（ミリ秒） */
 export const AREA_GRACE_MS = 1800;
+/**
+ * 回復と負けの重み（段階255。docs/milestones/M3_battle_tension.md の課題 B）：チェックポイントの全回復は、そのチェックポイントごとに1晩に1回。
+ * 負けたら、最後に記録した後に倒した砂嵐が戻る（コマを持つ砂嵐・開けた宝箱・集めたコマはそのまま）。デバッグメニューで前の形に戻して比べられる
+ */
+export const EXPLORE_TENSION: ExploreRules = { healOncePerNight: true, reviveOnLose: true };
 /**
  * 敵の動き方ごとの数値（段階47b）。stepMs は1マス進む時間（仲間は AREA_STEP_MS）。追ってくる敵は仲間より遅いので逃げ切れる。
  * 逃げる敵は、段階79で仲間より少し遅くした（まっすぐ追いかけると追いつける。前は仲間とほぼ同じ速さで、行き止まりに追いこまないと捕まらなかった）

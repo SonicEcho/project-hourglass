@@ -22,3 +22,30 @@ export function setDebugAutoStory(on: boolean): void {
     // 保存できない時は何もしない
   }
 }
+
+const TRIAL_OFF_KEY = 'restopia.trialOff';
+
+/**
+ * 試しの切り替え（段階255。docs/milestones/M3_battle_tension.md）：デバッグの時だけ、試しを前の形に戻して比べられる。
+ * デバッグでない時は、いつも試しの形
+ */
+export function trialOff(id: string): boolean {
+  try {
+    if (!isDebugEnabled(window.location.search)) return false;
+    const list = JSON.parse(localStorage.getItem(TRIAL_OFF_KEY) ?? '[]') as unknown;
+    return Array.isArray(list) && list.includes(id);
+  } catch {
+    return false;
+  }
+}
+
+export function setTrialOff(id: string, off: boolean): void {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TRIAL_OFF_KEY) ?? '[]') as unknown;
+    const list = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string' && x !== id) : [];
+    if (off) list.push(id);
+    localStorage.setItem(TRIAL_OFF_KEY, JSON.stringify(list));
+  } catch {
+    // 保存できない時は何もしない
+  }
+}
