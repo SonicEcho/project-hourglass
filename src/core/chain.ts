@@ -671,7 +671,8 @@ export type ChainEvent =
   | { type: 'scatter'; uid: string; to: string[] }
   | { type: 'blast'; uid: string; to: string[] }
   /** 押す：まだ動いていない予定を by だけ後ろへ。out はラウンドの外へ押し出して止めた。moved は動かせる予定があった */
-  | { type: 'push'; uid: string; by: number; out: boolean; moved: boolean }
+  /** 押す。outs：ラウンドの外へ押し出して消えた敵の予定（s.intents の位置）。shifts：ずれた予定とずれた後の時刻（段階254。並べている時の見込みに使う） */
+  | { type: 'push'; uid: string; by: number; out: boolean; moved: boolean; outs?: number[]; shifts?: { k: number; at: number }[] }
   | { type: 'wake'; uid: string; woke: string[] }
   | { type: 'counter'; uid: string; to: string }
   | { type: 'split'; uid: string; into: string[] }
@@ -1197,6 +1198,29 @@ export function availableLinks(s: ChainState, plan: ChainPlanStep[]): { link: Ch
       picked.push(i);
     }
     if (picked.length === link.cards.length) out.push({ link, cards: picked });
+  }
+  return out;
+}
+
+/**
+ * あと1枚でそろうコンボ（段階261。手札の材料の札に「あと1枚」の印を出す）：動く仲間が生きていて、まだ並べておらず、
+ * 材料の札がちょうど1枚だけ足りない物。have は手札にある材料の位置、missing は足りない札の id
+ */
+export function nearLinks(s: ChainState, plan: ChainPlanStep[]): { link: ChainLinkDef; have: number[]; missing: string }[] {
+  const usedCards = new Set(plan.flatMap(stepCards));
+  const usedAllies = new Set(plan.flatMap((p) => stepAllies(s, p)));
+  const out: { link: ChainLinkDef; have: number[]; missing: string }[] = [];
+  for (const link of s.def.links) {
+    const uids = link.members.map((m) => s.allies.find((a) => a.defId === m));
+    if (uids.some((u) => !u || u.hp <= 0 || (usedAllies.has(u.uid) && !s.def.multiAct))) continue;
+    const have: number[] = [];
+    const missing: string[] = [];
+    for (const id of link.cards) {
+      const i = s.hand.findIndex((c, k) => c === id && !usedCards.has(k) && !have.includes(k));
+      if (i < 0) missing.push(id);
+      else have.push(i);
+    }
+    if (missing.length === 1 && have.length > 0) out.push({ link, have, missing: missing[0] });
   }
   return out;
 }
@@ -2043,6 +2067,26 @@ export function chainPlanTeethHits(s: ChainState, plan: ChainPlanStep[]): number
   return n;
 }
 
+/**
+ * 並べた予定で、押して消える敵の予定と、ずれる予定（段階254。画面の見込み。実際に動かして見る）。
+ * out：消える予定（s.intents の位置）。shifted：ずれる予定の位置 → ずれた後の時刻（何度か押された時は最後の時刻）
+ */
+export function chainPlanPushes(s: ChainState, plan: ChainPlanStep[]): { out: number[]; shifted: Record<number, number> } {
+  const res = { out: [] as number[], shifted: {} as Record<number, number> };
+  if (plan.length === 0) return res;
+  for (const f of runChainRound(s, plan).frames) {
+    for (const e of f.events) {
+      if (e.type !== 'push') continue;
+      for (const k of e.outs ?? []) {
+        res.out.push(k);
+        delete res.shifted[k];
+      }
+      for (const x of e.shifts ?? []) res.shifted[x.k] = x.at;
+    }
+  }
+  return res;
+}
+
 /** 並べた予定で、このラウンドに打ち返す見込みの数と、ストライクになる見込みの数（段階175。実際に動かして見る） */
 export function chainPlanPitch(s: ChainState, plan: ChainPlanStep[]): { hits: number; strikes: number } {
   if (!s.def.pitch || plan.length === 0) return { hits: 0, strikes: 0 };
@@ -2348,8 +2392,9 @@ function runChainRoundInner(s0: ChainState, plan: ChainPlanStep[]): { state: Cha
           if (s.intents[k]) s.intents[k] = { ...s.intents[k], at: e.at };
           if (e.at > s.rules.roundLen - 1) {
             pe.out = true;
+            (pe.outs ??= []).push(k);
             pending.splice(pending.indexOf(e), 1);
-          }
+          } else (pe.shifts ??= []).push({ k, at: e.at });
         }
       }
       // 状態：付いた敵のまだ動いていない予定に、すぐ効く（鈍足・封印・混乱）

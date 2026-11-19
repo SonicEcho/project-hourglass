@@ -167,8 +167,8 @@ function a23Lord(): ChainEnemyDef[] {
 /** カイの切り取りのカットインのセリフ（段階176 の後。開発者：CUT! ではなく、カイらしいセリフに。脚本の言い回しに合わせた）。ラウンドごとに順に */
 export const KAI_CUT_LINES = ['その一コマは、要らない', '動くな。ピントがずれる', '余計な時間だ。切る'];
 
-/** カイの負け戦（2-3 の返す直前）：決まったラウンドで打ち切る（区画の戦闘の cutoff）。倒しきれないよう HP は多め */
-export const A23_KAI = { hp: 2, atk: 0.7 };
+/** カイの負け戦（2-3 の返す直前）：決まったラウンドで打ち切る（区画の戦闘の cutoff）。倒しきれないよう HP は多め（段階258：最初のアルバムにハイライトが入り、弱点のないカイもダウンさせられるので 2 → 3） */
+export const A23_KAI = { hp: 3, atk: 0.7 };
 
 function a23Kai(): ChainEnemyDef[] {
   const kai = AREA_BATTLES.a23_kai.enemies[0];

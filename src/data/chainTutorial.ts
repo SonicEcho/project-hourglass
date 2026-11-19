@@ -164,7 +164,7 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
     { target: 'trait_healer', text: '「回復役」の敵は、動くとほかの敵の HP を回復します。\n先に倒すか、押す・ダウンで止めましょう。' },
   ],
   chain_fast: [
-    { target: 'trait_fast', text: '「速い」敵は、予定がいつも時刻1〜2。\nふつうに並べると間に合いません。\n速写やファーストカットなど、軽い札で先に倒しましょう。' },
+    { target: 'trait_fast', text: '「速い」敵は、予定がいつも時刻1〜2。\nふつうに並べると間に合いません。\nファーストカットや軽い技で、先に当てて倒しましょう。' },
   ],
   // 段階181：祭りの夜の敵の性質
   chain_interrupt: [
@@ -212,8 +212,8 @@ export const CHAIN_COACH: Record<string, ChainCoachStep[]> = {
 /** 説明を出す順（同じ時に出せる物は、上ほど先） */
 export const CHAIN_COACH_ORDER = ['chain_plan', 'chain_boss', 'chain_sunset', 'chain_teeth', 'chain_clap', 'chain_pitch', 'chain_watch', 'chain_repeat', 'chain_film', 'chain_word', 'chain_heat', 'chain_broken', 'chain_weak', 'chain_guard', 'chain_flee', 'chain_shield', 'chain_split', 'chain_pop', 'chain_hard', 'chain_shell', 'chain_sticky', 'chain_counter', 'chain_swift', 'chain_timer', 'chain_waker', 'chain_interrupt', 'chain_veil', 'chain_healer', 'chain_fast', 'chain_rewind', 'chain_addon', 'chain_climax', 'chain_combo'];
 
-/** 最初の戦闘の最初の手札（1ラウンド目にハルトがクローズアップを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料は入れない） */
-export const CHAIN_TUTORIAL_HAND = ['c17_closeUp', 'c17_push', 'c17_decisive', 'c17_strobe', 'c17_blueHour'];
+/** 最初の戦闘の最初の手札（1ラウンド目にハルトがファーストカットを使い、押すと決めの一枚が2ラウンド目に残る。スペシャルとコンボの材料はそろえない。段階258 で札を替えた） */
+export const CHAIN_TUTORIAL_HAND = ['c17_firstCut', 'c17_push', 'c17_decisive', 'c17_filterYellow', 'c17_chance'];
 
 /** 2戦目の最初の手札（スペシャル2枚で、コンボ「息ぴったり」がそろう） */
-export const CHAIN_TUTORIAL_HAND2 = ['c17_swing', 'c17_snow', 'c17_closeUp', 'c17_backlight', 'c17_quick'];
+export const CHAIN_TUTORIAL_HAND2 = ['c17_swing', 'c17_snow', 'c17_firstCut', 'c17_filterRed', 'c17_chance'];

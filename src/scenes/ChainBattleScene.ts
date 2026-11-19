@@ -11,6 +11,8 @@ import {
   chainPlanTeethHits,
   chainPlanClaps,
   chainPlanPitch,
+  chainPlanPushes,
+  nearLinks,
   chainPlanWatch,
   chainPlanRepeat,
   chainPlanFilm,
@@ -50,7 +52,7 @@ import { SNAP_CATEGORY } from '../ui/listKit';
 import { addFoundChainCombo, foundChainCombos, keepChainWeak, knownChainWeak, recordChainBattle, settleChainWin, type ChainWinReward } from './chainEncounter';
 import { markTipSeenNow, seenTips } from '../ui/tipPanel';
 import { smartChainPlan } from '../sim/chainAuto';
-import { isDebugEnabled } from '../debug/debugFlag';
+import { isDebugEnabled, trialOff } from '../debug/debugFlag';
 import { browserStorage } from '../save/storage';
 import { hasImage } from '../assets/loader';
 import { playBgm, playSe } from '../audio/sound';
@@ -1585,6 +1587,8 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(addText(this, x, y, String(n), { size: now ? 11 : 9, bold: true, color: now ? '#ffffff' : '#101010' }).setOrigin(0.5).setAlpha(done ? 0.5 : 1));
     };
     // 上の段：敵の予定（敵の絵の丸。大技は黄色の縁）
+    // 押すの見込み（段階254）：並べた予定を実際に動かして、押して消える予定に「消える」、ずれる予定に「→時刻」
+    const pushLook = this.busy || this.plan.length === 0 ? null : chainPlanPushes(this.s, this.plan);
     const slots: Record<number, number> = {};
     s.intents.forEach((it, k) => {
       const e = s.enemies.find((x) => x.uid === it.enemy);
@@ -1607,6 +1611,18 @@ export class ChainBattleScene extends Phaser.Scene {
       if (it.move.pitch && !e.down) r.add(this.sticker(cx + 12, cy + 13, '球', 0xffffff, '#c0303a', 0, 9));
       // 急かす（段階179）：腕時計をねらう物は「時」、ねじを巻いて仲間へそれた物は「そ」
       if (it.move.watch && !e.down) r.add(this.sticker(cx + 12, cy + 13, it.eased ? 'そ' : '時', it.eased ? 0x6bc8ff : 0xffd23f, it.eased ? '#06203a' : '#3a2a00', 0, 9));
+      if (pushLook && !e.down) {
+        const to = pushLook.shifted[k];
+        if (pushLook.out.includes(k)) {
+          r.add(this.add.circle(cx, cy, 17, 0x000000, 0.55));
+          r.add(this.sticker(cx + 2, cy + 15, '消える', 0x6bc8ff, '#06203a', -6, 10));
+        } else if (to !== undefined && to !== it.at) {
+          const nx = this.tx(to);
+          r.add(this.add.graphics().lineStyle(2, 0x6bc8ff, 0.8).lineBetween(cx + 17, cy, nx - 12, cy));
+          r.add(this.add.circle(nx, cy, 12).setStrokeStyle(2, 0x6bc8ff, 0.9));
+          r.add(this.sticker((cx + nx) / 2, cy - 9, `→${to}`, 0x6bc8ff, '#06203a', 0, 9));
+        }
+      }
       badge(cx - 15, cy - 14, numOf(`e${k}`));
     });
     // 下の段：並べた行動のクリップ（重さの分の長さ。札・技の絵を正方形のコマにして並べる。調整9）
@@ -1851,6 +1867,16 @@ export class ChainBattleScene extends Phaser.Scene {
       r.add(g);
     }
     const linkedIdx = new Set(this.tab === 'cards' ? linkSpots.flatMap((sp) => sp.cards) : []);
+    // あと1枚でそろうコンボ（段階261）：材料の札に「あと1枚」と、そのコンボの名前（まだ見つけていないコンボは「？？？」）
+    const near = new Map<number, { name: string; missing: string }>();
+    if (this.tab === 'cards' && s.def.finishLast) {
+      const found = foundChainCombos(!!this.encounter);
+      for (const x of nearLinks(s, this.plan)) {
+        const name = found.includes(x.link.id) ? x.link.move.name : '？？？';
+        const missing = found.includes(x.link.id) ? (s.def.cards[x.missing]?.name ?? '') : '';
+        for (const k of x.have) if (!linkedIdx.has(k) && !near.has(k)) near.set(k, { name, missing });
+      }
+    }
     shown.forEach((it, i) => {
       const cx = 4 + step * i + step / 2;
       const sel = !!this.pending && sameSource(this.pending.source, it.source);
@@ -1858,12 +1884,20 @@ export class ChainBattleScene extends Phaser.Scene {
       // コンボの材料の札は、後ろを金色に光らせる
       if (it.source.kind === 'card' && linkedIdx.has(it.source.index)) r.add(this.add.rectangle(cx, cy, CARD_W + 16, cardH + 16, GOLD, 0.55));
       this.drawCard(cx, cy, it, (i - (shown.length - 1) / 2) * 2.5, sel, !!it.move.owner && me?.defId !== it.move.owner, cardH);
+      const nearOf = it.source.kind === 'card' ? near.get(it.source.index) : undefined;
+      if (nearOf && !it.used) {
+        const tag = this.sticker(cx, cy - cardH / 2 - 8, `あと1枚\n${nearOf.name}`, GOLD, '#2a1300', -4, 8);
+        const tagW = (tag.list[1] as Phaser.GameObjects.Rectangle).width;
+        if (tagW > step - 4) tag.setScale((step - 4) / tagW);
+        r.add(tag);
+      }
       const hit = this.add.rectangle(cx, cy, Math.min(CARD_W, step - 2), cardH, 0xffffff, 0.001);
       r.add(hit);
       makePressable(hit, {
         onTap: () => !it.used && this.pickOption(it.source, it.move),
         onLongPress: () => {
-          this.message = `【${this.categoryLabel(it.move)}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}`;
+          const tip = nearOf ? `\nあと1枚でコンボ「${nearOf.name}」${nearOf.missing ? `（足りないのは ${nearOf.missing}）` : ''}。残しておくと、そろうかも` : '';
+          this.message = `【${this.categoryLabel(it.move)}】${it.move.name}（重さ${it.move.weight}）：${it.move.text}${tip}`;
           this.render();
         },
       });
@@ -2767,6 +2801,10 @@ export class ChainBattleScene extends Phaser.Scene {
       } else if (ev.type === 'rewind') {
         const p = this.posOf(s, ev.uid);
         if (p) this.popSticker(p.x, p.y - 30, `巻き戻し +${ev.amount}`, 0x6dff9e, '#000000', -6, k++);
+      } else if (ev.type === 'push' && ev.out) {
+        // 押してラウンドの外へ出した（段階254）：その攻撃は来ない
+        const p = this.posOf(s, ev.uid);
+        if (p) this.popSticker(p.x, p.y - 40, '回避！ 予定を消した', 0x6bc8ff, '#06203a', -6, k++);
       } else if (ev.type === 'interrupt') {
         const p = this.posOf(s, ev.uid);
         if (p) this.popSticker(p.x, p.y - 40, '割り込み！', 0xffffff, '#ff2d55', -8, k++);
@@ -2828,7 +2866,7 @@ export class ChainBattleScene extends Phaser.Scene {
     if (!win) {
       o.add(addText(this, GAME_WIDTH / 2, 300, s.finish === 'poi' ? 'ポイが破れた… すくえなかった' : s.finish === 'sunset' ? '日が沈んだ… 坂を上りきれなかった' : s.finish === 'strikeout' ? '三振… 打ち返せなかった' : s.finish === 'watch' ? '腕時計が止まった… 守りきれなかった' : `${s.finishRound ?? s.round}ラウンド目で倒れた…`, { size: 16, bold: true, color: '#ff9db0' }).setOrigin(0.5));
       if (this.encounter) {
-        const keep = this.encounter.dig ? ['かばんの中の半分は、砂に戻る', 'HP・MP は全回復して戻る'] : [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : '倒した敵・開けた宝箱・集めたコマは、そのまま', 'HP・MP は全回復して戻る'];
+        const keep = this.encounter.dig ? ['かばんの中の半分は、砂に戻る', 'HP・MP は全回復して戻る'] : [this.encounter.hunt ? '倒した敵・集めた素材は、そのまま' : trialOff('tension') ? '倒した敵・開けた宝箱・集めたコマは、そのまま' : 'チェックポイントの後に倒した砂嵐は、戻ってくる（コマを持っていた砂嵐・開けた宝箱・集めたコマは、そのまま）', 'HP・MP は全回復して戻る'];
         const head = this.encounter.dig ? '砂の底から、地上へ戻される' : '最後に記録したチェックポイントから、やり直す';
         o.add(addText(this, GAME_WIDTH / 2, 340, `${head}\n\n${keep.map((t) => `・${t}`).join('\n')}`, { size: 14, align: 'center', color: '#e6e9f5', wrap: GAME_WIDTH - 48, ja: true }).setOrigin(0.5, 0).setLineSpacing(6));
         // 負けた時の手がかり（段階201。一覧の 18-3）：この戦闘の敵の性質に効くギアを1行

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "data:tables": "node scripts/data-tables.mjs",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "measure": "node scripts/measure.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"

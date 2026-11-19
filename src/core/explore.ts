@@ -238,6 +238,10 @@ export interface ExploreState {
    * 区画の中の戦闘は、勝ったら残りを次の戦闘へ持ち越す。チェックポイントに着くと全回復、負けてチェックポイントへ戻る時も全回復
    */
   vitals?: Record<string, Vitals>;
+  /** 段階255：この晩に回復を使ったチェックポイント（`晩:部屋:列,行`）。回復と負けの重み（ExploreRules）を使う時だけ見る */
+  healedCheckpoints?: string[];
+  /** 段階255：最後にチェックポイントで記録した後に倒した敵の印（負けた時に戻す） */
+  sinceCheckpoint?: string[];
 }
 
 /** 区画の最初の部屋（出発点のある部屋） */
@@ -370,21 +374,43 @@ export function roomPositions(area: AreaDef): Record<string, GridCell> {
   return pos;
 }
 
-/** マスに着いた時の出来事 */
-export type ArriveEvent = { type: 'checkpoint'; first: boolean; healed: boolean } | { type: 'none' };
+/**
+ * 回復と負けの重み（段階255。docs/milestones/M3_battle_tension.md の課題 B）。書かなければ前の形（チェックポイントに着くたび全回復・負けても失う物なし）。
+ * healOncePerNight：チェックポイントの全回復は、そのチェックポイントごとに1晩に1回。
+ * reviveOnLose：負けたら、最後に記録した後に倒した敵の印が戻る（keep が true の印は戻さない。コマを持つ砂嵐など）
+ */
+export interface ExploreRules {
+  healOncePerNight: boolean;
+  reviveOnLose: boolean;
+}
+
+/** マスに着いた時の出来事。spent：この晩の回復をもう使ったチェックポイントだった（段階255） */
+export type ArriveEvent = { type: 'checkpoint'; first: boolean; healed: boolean; spent?: boolean } | { type: 'none' };
+
+/** チェックポイントの回復の記録の名前（段階255。晩ごと） */
+const checkpointKey = (night: number, room: string, cell: GridCell): string => `${night}:${room}:${cell[0]},${cell[1]}`;
+
+/** そのチェックポイントで、この晩にまだ回復できるか（段階255） */
+export function checkpointHealLeft(state: ExploreState, room: string, cell: GridCell, rules?: ExploreRules): boolean {
+  return !rules?.healOncePerNight || !(state.healedCheckpoints ?? []).includes(checkpointKey(nightOf(state), room, cell));
+}
 
 /**
  * マスに着いた。チェックポイントなら記録する（新しい状態と出来事を返す）。
  * 宝箱は、通っただけでは開かない（タップして隣まで来た時に openChest で開ける）
  */
-export function arrive(area: AreaDef, state: ExploreState, cell: GridCell): { state: ExploreState; event: ArriveEvent } {
+export function arrive(area: AreaDef, state: ExploreState, cell: GridCell, rules?: ExploreRules): { state: ExploreState; event: ArriveEvent } {
   const next: ExploreState = { ...state, cell };
   if (isCheckpoint(area, cell, state.room)) {
     // まだどのチェックポイントでも記録していなかった（出発点のまま）なら、初めて
     const first = !isCheckpoint(area, state.checkpoint, state.checkpointRoom);
-    // チェックポイントに着くと、HP・MP が全回復する（段階32b 調整3）
-    const { vitals, ...rest } = next;
-    return { state: { ...rest, checkpoint: cell, checkpointRoom: state.room }, event: { type: 'checkpoint', first, healed: vitals !== undefined } };
+    const recorded: ExploreState = { ...next, checkpoint: cell, checkpointRoom: state.room, sinceCheckpoint: [] };
+    // 段階255：この晩にもう回復を使ったチェックポイントでは、記録だけ（HP・MP はそのまま）
+    if (!checkpointHealLeft(state, state.room, cell, rules)) return { state: recorded, event: { type: 'checkpoint', first, healed: false, spent: next.vitals !== undefined } };
+    // チェックポイントに着くと、HP・MP が全回復する（段階32b 調整3）。段階255：回復を使ったことを覚える（減っていない時は使わない）
+    const { vitals, ...rest } = recorded;
+    const used = rules?.healOncePerNight && vitals !== undefined ? { healedCheckpoints: [...(state.healedCheckpoints ?? []), checkpointKey(nightOf(state), state.room, cell)] } : {};
+    return { state: { ...rest, ...used }, event: { type: 'checkpoint', first, healed: vitals !== undefined } };
   }
   return { state: next, event: { type: 'none' } };
 }
@@ -416,13 +442,19 @@ export function enemyActive(state: ExploreState, enemyId: string): boolean {
 
 /** 敵に勝った。印を消す */
 export function defeatEnemy(state: ExploreState, enemyId: string): ExploreState {
-  return state.defeated.includes(enemyId) ? state : { ...state, defeated: [...state.defeated, enemyId] };
+  return state.defeated.includes(enemyId) ? state : { ...state, defeated: [...state.defeated, enemyId], sinceCheckpoint: [...(state.sinceCheckpoint ?? []), enemyId] };
 }
 
-/** 負けた。最後に記録したチェックポイントへ戻り、HP・MP は全回復（倒した敵・開けた宝箱はそのまま） */
-export function loseBattle(state: ExploreState): ExploreState {
+/**
+ * 負けた。最後に記録したチェックポイントへ戻り、HP・MP は全回復（倒した敵・開けた宝箱はそのまま）。
+ * 段階255：rules.reviveOnLose の時は、最後に記録した後に倒した敵の印が戻る（keep が true の印・開けた宝箱・コマはそのまま）。revived は戻った印
+ */
+export function loseBattle(state: ExploreState, rules?: ExploreRules, keep: (enemyId: string) => boolean = () => false): ExploreState & { revived?: string[] } {
   const { vitals: _, ...rest } = state;
-  return { ...rest, room: state.checkpointRoom, cell: state.checkpoint };
+  const back = { ...rest, room: state.checkpointRoom, cell: state.checkpoint };
+  if (!rules?.reviveOnLose) return back;
+  const revived = (state.sinceCheckpoint ?? []).filter((id) => !keep(id));
+  return { ...back, defeated: state.defeated.filter((id) => !revived.includes(id)), sinceCheckpoint: [], revived };
 }
 
 /** 勝った戦闘の終わりの HP・MP を、次の戦闘へ持ち越すために覚える（段階32b 調整3） */
@@ -597,6 +629,8 @@ export function normalizeExplore(area: AreaDef, raw: unknown): ExploreState | nu
     koma: Number.isInteger(r.koma) && (r.koma as number) > 0 ? (r.koma as number) : 0,
     ...(Number.isInteger(r.night) && (r.night as number) > 1 ? { night: r.night as number } : {}),
     ...(normalizeVitals(r.vitals) ? { vitals: normalizeVitals(r.vitals) } : {}),
+    ...(Array.isArray(r.healedCheckpoints) ? { healedCheckpoints: r.healedCheckpoints.filter((x): x is string => typeof x === 'string') } : {}),
+    ...(Array.isArray(r.sinceCheckpoint) ? { sinceCheckpoint: ids(r.sinceCheckpoint, area.enemies.map((e) => e.id)) } : {}),
   };
 }
 
@@ -780,7 +814,9 @@ export function startNight(area: AreaDef, state: ExploreState, night: number): E
   if (!start) return { ...rest, night };
   const room = start.room ?? startRoom(area);
   const visited = state.visited.includes(room) ? state.visited : [...state.visited, room];
-  return { ...rest, night, room, cell: start.cell, checkpoint: start.cell, checkpointRoom: room, visited };
+  // 段階255：晩を始める所での全回復は、そのチェックポイントのこの晩の回復を使ったことにする
+  const healedCheckpoints = [...(state.healedCheckpoints ?? []), checkpointKey(night, room, start.cell)];
+  return { ...rest, night, room, cell: start.cell, checkpoint: start.cell, checkpointRoom: room, visited, healedCheckpoints, sinceCheckpoint: [] };
 }
 
 /** その晩のコマがそろったか（最後の晩は、ぬしに勝つまで終わらない） */
