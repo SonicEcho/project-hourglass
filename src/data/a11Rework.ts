@@ -323,15 +323,15 @@ export const A11_REWORK: AreaDef = {
   boss: { ...base.boss, room: 'fest2_woods', cell: [11, 3] },
   // 写しの人：1つの部屋の1つの晩に1人まで（広場の1晩目だけ2人）
   talkers: [
-    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [3, 11], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人' },
-    { id: 'a11_voice_cotton', room: 'fest2_plaza', cell: [18, 24], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋' },
-    { id: 'a11_voice_goldfish', room: 'fest2_plaza', cell: [8, 32], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん' },
-    { id: 'a11_voice2_cotton', room: 'fest2_plaza', cell: [19, 12], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋' },
-    { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [14, 15], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人' },
-    { id: 'a11_voice2_goldfish', room: 'fest2_east', cell: [8, 19], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん' },
-    { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [9, 13], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人' },
-    { id: 'a11_voice3_goldfish', room: 'fest2_woods', cell: [7, 30], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん' },
-    { id: 'a11_voice3_cotton', room: 'fest2_woods', cell: [17, 15], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋' },
+    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [3, 11], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_knob', text: '浴衣の女の人「そういえば、屋台の裏の左の奥で、何か光ってたわ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice_cotton', room: 'fest2_plaza', cell: [18, 24], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「甘いの食べて、ひと休みしな」\n（HP・MP が少し回復した）' } },
+    { id: 'a11_voice_goldfish', room: 'fest2_plaza', cell: [8, 32], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'goldfishNoise', element: 'ice', text: '金魚すくいのおじさん「さっきの金魚みたいな砂嵐、冷たいのが苦手みたいだったよ」\n（金魚ノイズの弱点：氷 が分かった）' } },
+    { id: 'a11_voice2_cotton', room: 'fest2_plaza', cell: [19, 12], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「疲れた顔してるね。ほら、ひと口」\n（HP・MP が少し回復した）' } },
+    { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [14, 15], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_mask', text: '浴衣の女の人「東の屋台のお面屋さん、お面をひとつなくして困ってたわ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice2_goldfish', room: 'fest2_east', cell: [8, 19], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'maskNoise', element: 'fire', text: '金魚すくいのおじさん「お面の砂嵐は、火に弱いらしいぜ」\n（お面ノイズの弱点：火 が分かった）' } },
+    { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [9, 13], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_lantern1', text: '浴衣の女の人「やぐらの提灯はね、右から灯して、次は左、最後に下よ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice3_goldfish', room: 'fest2_woods', cell: [7, 30], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'cottonNoise', element: 'thunder', text: '金魚すくいのおじさん「わたあめの砂嵐は、ビリッとくるのが苦手でな」\n（わたあめノイズの弱点：雷 が分かった）' } },
+    { id: 'a11_voice3_cotton', room: 'fest2_woods', cell: [17, 15], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「ここまで来たんだ、もうひと踏ん張り」\n（HP・MP が少し回復した）' } },
   ],
   // 仕掛けの扉（段階264）：仕掛けを解くまで通れない
   gates: [
@@ -363,6 +363,11 @@ export const A11_REWORK: AreaDef = {
     { id: 'p_lantern3', room: 'fest2_plaza', night: 3, cell: [11, 32], kind: 'order', group: 'p_lanterns', index: 2, mark: '灯', label: '提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろうと、やぐらの太鼓が鳴った！\nやぐらの前で、何か光っている' },
     // 社の森：ハルトのカメラで写す（3晩目。池の霧に隠れた飛び石が写る）
     { id: 'p_camera', room: 'fest2_woods', night: 3, cell: [11, 16], kind: 'ability', ally: 'hero', mark: 'カ', label: '池の霧', need: '池に霧が立ちこめている', done: 'ハルトがカメラを向けると、霧の中に飛び石が写った！' },
+    // 思い出の一枚（段階265。ハルトのカメラで撮ると、その場所の昔の一場面）。1-1 に4枚。入口のほかは、仕掛けを解いた先
+    { id: 'm_gate', room: 'fest2_gate', cell: [13, 11], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（鳥居の前）\n浴衣の女の子が、兄の袖を引っぱっている。「お兄ちゃん、はやく！」' },
+    { id: 'm_yagura', room: 'fest2_plaza', cell: [21, 29], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（やぐらの陰）\n男の子が、小さな財布の中身を数えている。……金魚すくい、一回分' },
+    { id: 'm_shooting', room: 'fest2_east', cell: [11, 13], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（射的の裏）\n金魚の袋を抱えた女の子が、泣きべそで兄を呼んでいる' },
+    { id: 'm_pond', room: 'fest2_woods', night: 3, cell: [11, 22], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（池のほとり）\n二人で金魚の袋をのぞきこむ。「この子の名前、なんにする？」' },
     // 社の森の、後で来る所（小夜子が切る）
     { id: 'l_bamboo', room: 'fest2_woods', night: 3, cell: [2, 22], kind: 'later', ally: 'sayoko', mark: '刀', label: '竹やぶ', need: '竹やぶで通れない。……切れる人がいれば', done: '小夜子が竹やぶを切った（この先は、また今度）' },
   ],
