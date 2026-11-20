@@ -371,6 +371,39 @@ export const A11_REWORK: AreaDef = {
     // 社の森の、後で来る所（小夜子が切る）
     { id: 'l_bamboo', room: 'fest2_woods', night: 3, cell: [2, 22], kind: 'later', ally: 'sayoko', mark: '刀', label: '竹やぶ', need: '竹やぶで通れない。……切れる人がいれば', done: '小夜子が竹やぶを切った（この先は、また今度）' },
   ],
+  // 仕掛けの扉（段階264）：仕掛けを解くまで通れない
+  gates: [
+    { id: 'g_dark', room: 'fest2_backyard', cells: box(7, 19, 27, 37), by: 'p_generator', look: 'dark', label: '停電で真っ暗' },
+    { id: 'g_cart', room: 'fest2_lane', cells: box(3, 5, 16, 16), by: 'p_cart', look: 'cart', label: '荷車' },
+    { id: 'g_crowd', room: 'fest2_plaza', cells: box(20, 20, 27, 30), by: 'p_song', look: 'crowd', label: '人混み' },
+    { id: 'g_gap', room: 'fest2_east', cells: box(7, 9, 11, 12), by: 'p_mask', look: 'fence', label: '射的の裏の板' },
+    { id: 'g_stones', room: 'fest2_woods', cells: [...box(11, 12, 17, 27), ...box(9, 14, 21, 23)], by: 'p_camera', look: 'water', label: '池の霧' },
+  ],
+  // 仕掛けと仲間の力（段階264。docs/milestones/M3_explore_feel.md の 5-7）。1部屋に1つまで
+  gadgets: [
+    // 屋台の裏：発電機を直す（左上の行き止まりで、つまみを拾う）
+    { id: 'p_knob', room: 'fest2_backyard', cell: [4, 5], kind: 'item', mark: '品', label: 'つまみ', done: '発電機のつまみを拾った。どこかで使えそう' },
+    { id: 'p_generator', room: 'fest2_backyard', cell: [11, 21], kind: 'use', needs: 'p_knob', mark: '発', label: '発電機', need: '止まった発電機。つまみが外れている', done: 'つまみを付けると、発電機がうなりを上げた！\n下の路地の提灯が灯った' },
+    // 屋台の裏の、後で来る所（早瀬が直す）
+    { id: 'l_door', room: 'fest2_backyard', cell: [2, 31], kind: 'later', ally: 'hayase', mark: '直', label: '壊れた木戸', need: '壊れた木戸。……直せる人がいれば', done: '早瀬が木戸を直した（この先は、また今度）' },
+    // 屋台の裏通り：荷車を上から押す（2晩目）。行き止まりで、お面を拾う
+    { id: 'p_cart', room: 'fest2_lane', night: 2, cell: [4, 16], kind: 'push', from: [4, 15], mark: '車', label: '荷車', need: '荷車が道をふさいでいる。反対の側から押せば動きそう', done: '荷車を押した！ 下の道へ抜けられる' },
+    { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [8, 6], kind: 'item', mark: '品', label: '狐のお面', done: '狐のお面を拾った。どこかの屋台の物みたい' },
+    // 東の屋台：お面を届ける（2晩目）
+    { id: 'p_mask', room: 'fest2_east', night: 2, cell: [12, 4], kind: 'use', needs: 'p_mask_item', mark: '屋', label: 'お面屋', need: 'お面屋「狐のお面がひとつ、見当たらなくてねえ」', done: 'お面屋「おお、それそれ！ ありがとよ。お礼に、射的の裏を通っていいよ」' },
+    // 東の屋台の、後で来る所（みおが動かす）
+    { id: 'l_vending', room: 'fest2_east', cell: [20, 3], kind: 'later', ally: 'mio', mark: '雷', label: '止まった自販機', need: '止まった自販機。……電気を流せる人がいれば', done: 'みおが自販機を動かした（この先は、また今度）' },
+    // 縁日の広場：あかりが歌う（人混みが道をあける）
+    { id: 'p_song', room: 'fest2_plaza', cell: [20, 28], kind: 'ability', ally: 'akari', mark: '歌', label: '人混み', need: '人混みで通れない', done: 'あかりが小さく歌うと、写しの人たちが振り向いて、道をあけた' },
+    // 縁日の広場：提灯を順に灯す（3晩目。右 → 左 → 下）
+    { id: 'p_lantern1', room: 'fest2_plaza', night: 3, cell: [17, 24], kind: 'order', group: 'p_lanterns', index: 0, mark: '灯', label: '提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろうと、やぐらの太鼓が鳴った！\nやぐらの前で、何か光っている' },
+    { id: 'p_lantern2', room: 'fest2_plaza', night: 3, cell: [6, 24], kind: 'order', group: 'p_lanterns', index: 1, mark: '灯', label: '提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろうと、やぐらの太鼓が鳴った！\nやぐらの前で、何か光っている' },
+    { id: 'p_lantern3', room: 'fest2_plaza', night: 3, cell: [11, 32], kind: 'order', group: 'p_lanterns', index: 2, mark: '灯', label: '提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろうと、やぐらの太鼓が鳴った！\nやぐらの前で、何か光っている' },
+    // 社の森：ハルトのカメラで写す（3晩目。池の霧に隠れた飛び石が写る）
+    { id: 'p_camera', room: 'fest2_woods', night: 3, cell: [11, 16], kind: 'ability', ally: 'hero', mark: 'カ', label: '池の霧', need: '池に霧が立ちこめている', done: 'ハルトがカメラを向けると、霧の中に飛び石が写った！' },
+    // 社の森の、後で来る所（小夜子が切る）
+    { id: 'l_bamboo', room: 'fest2_woods', night: 3, cell: [2, 22], kind: 'later', ally: 'sayoko', mark: '刀', label: '竹やぶ', need: '竹やぶで通れない。……切れる人がいれば', done: '小夜子が竹やぶを切った（この先は、また今度）' },
+  ],
   // 途中の会話は今のまま（東の屋台に入った時の会話だけ、部屋の id を新しい部屋に）
   triggers: base.triggers.map((t) => (t.on === 'room' && t.room === 'fest_east' ? { ...t, room: 'fest2_east' } : t)),
 };
