@@ -54,3 +54,50 @@ describe('新しい1-1（段階262）', () => {
     for (const t of area.talkers) expect(isWalkable(areaGrid(area, t.room), t.cell), t.id).toBe(true);
   });
 });
+
+describe('出し抜く（段階263）', () => {
+  it('見つかる範囲：向きの先3マス。1マス先は真ん中だけ、2・3マス先は左右1マスずつ。通れないマスの先は見えない', async () => {
+    const { areaGrid: grid, sightCells } = await import('../../src/core');
+    const room = { id: 'r', exits: [], layout: ['.......', '.......', '.......', '...#...', '.......', '.......'] };
+    const map = grid({ ...area, rooms: [room] } as never, 'r');
+    const key = (cs: [number, number][]) => cs.map((c) => c.join(',')).sort();
+    // 上の行から下向きに（(3,0) から下）：(3,1)・(2..4,2)・(3,3) は壁なので、その先の真ん中は見えない
+    expect(key(sightCells(map, [3, 0], [0, 1]))).toEqual(key([[3, 1], [2, 2], [3, 2], [4, 2], [2, 3], [4, 3]]));
+    // 右向き
+    expect(key(sightCells(map, [0, 1], [1, 0]))).toEqual(key([[1, 1], [2, 0], [2, 1], [2, 2], [3, 0], [3, 1], [3, 2]]));
+  });
+
+  it('陰のマスにいると見つからない。範囲の外も見つからない', async () => {
+    const { areaGrid: grid, spotted } = await import('../../src/core');
+    const room = { id: 'r', exits: [], layout: ['.....', '..:..', '.....', '.....'] };
+    const map = grid({ ...area, rooms: [room] } as never, 'r');
+    expect(spotted(map, room as never, [2, 3], [0, -1], [2, 2])).toBe(true);
+    expect(spotted(map, room as never, [2, 3], [0, -1], [2, 1])).toBe(false); // 陰
+    expect(spotted(map, room as never, [2, 3], [0, 1], [2, 2])).toBe(false); // 後ろ
+  });
+
+  it('不意打ち：コマを持たない砂嵐は倒した扱い、コマを持つ砂嵐・番人は先手、逃げる砂嵐はふつう', async () => {
+    const { ambushKind } = await import('../../src/core');
+    expect(ambushKind('patrol', 0)).toBe('scatter');
+    expect(ambushKind('chase', 0)).toBe('scatter');
+    expect(ambushKind('patrol', 1)).toBe('first');
+    expect(ambushKind('guard', 1)).toBe('first');
+    expect(ambushKind('flee', 0)).toBe('none');
+    // 新しい1-1 の砂嵐16のうち、コマを持たないのは9。逃げる砂嵐を除く8が、倒した扱いにできる
+    const scatter = area.enemies.filter((e) => ambushKind(e.move ?? 'patrol', AREA_BATTLES[e.battle]?.koma ?? 0) === 'scatter');
+    expect(scatter.length).toBe(8);
+  });
+
+  it('先手の戦闘：1ラウンド目は敵がみんなダウンで動かない。2ラウンド目に警戒は付かない', async () => {
+    const { ambushChainBattle, buildMainChainBattle, createChainBattle, runChainRound } = await import('../../src/core');
+    const { CHAIN_AREA_SETUPS, CHAIN_RULES, HERO, AKARI } = await import('../../src/data');
+    const st = CHAIN_AREA_SETUPS.a11_n1_gate;
+    const def = buildMainChainBattle({ id: 'x', name: 'x', party: [HERO, AKARI], enemies: AREA_BATTLES.a11_n1_gate.enemies, chainEnemies: st.enemies, deck: st.deck, cards: st.cards, links: st.links });
+    const s = ambushChainBattle(createChainBattle(def, CHAIN_RULES, 1));
+    expect(s.enemies.every((e) => e.down)).toBe(true);
+    const r = runChainRound(s, []);
+    const acted = r.frames.flatMap((f) => f.events).filter((e) => e.type === 'act' && s.enemies.some((x) => x.uid === e.uid));
+    expect(acted).toEqual([]);
+    expect(r.state.enemies.every((e) => !e.down && !(e.guard ?? 0))).toBe(true);
+  });
+});

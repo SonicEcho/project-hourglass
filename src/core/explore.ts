@@ -550,6 +550,68 @@ export interface EnemyMind {
   chasing: boolean;
 }
 
+// ---- 出し抜く（段階263。docs/milestones/M3_explore_feel.md の 5-7） ----
+
+/** 見つかる範囲の深さ（向きの先、何マスまで） */
+export const SIGHT_DEPTH = 3;
+
+/** 歩いた向き（上下左右。動いていなければ null） */
+export function facingOf(from: GridCell, to: GridCell): GridCell | null {
+  const dx = Math.sign(to[0] - from[0]);
+  const dy = Math.sign(to[1] - from[1]);
+  if (dx === 0 && dy === 0) return null;
+  // 斜めは無い（4方向に歩く）が、念のため横を優先
+  return dx !== 0 ? [dx, 0] : [0, dy];
+}
+
+/** 見回りの最初の向き（道の次の点の方。点が1つなら下） */
+export function startFacing(route: GridCell[]): GridCell {
+  return (route.length > 1 ? facingOf(route[0], route[1]) : null) ?? [0, 1];
+}
+
+/**
+ * 見つかる範囲のマス：向きの先 1〜SIGHT_DEPTH マス。1マス先は真ん中だけ、2マス先からは左右1マスずつ広がる（広がる三角）。
+ * 通れないマスの先は見えない（真ん中の列がふさがると、その先は見えない。横の列も、それぞれの手前がふさがると見えない）
+ */
+export function sightCells(map: GridMap, cell: GridCell, facing: GridCell): GridCell[] {
+  const [fx, fy] = facing;
+  const side: GridCell = [-fy, fx];
+  const out: GridCell[] = [];
+  const open = new Set<number>([0]);
+  for (let d = 1; d <= SIGHT_DEPTH; d++) {
+    const width = d === 1 ? 0 : 1;
+    const next = new Set<number>();
+    for (let w = -width; w <= width; w++) {
+      // 1つ手前（同じ横の位置か、真ん中）が見えていなければ、見えない
+      if (!open.has(w) && !open.has(0)) continue;
+      const c: GridCell = [cell[0] + fx * d + side[0] * w, cell[1] + fy * d + side[1] * w];
+      if (!isWalkable(map, c)) continue;
+      out.push(c);
+      next.add(w);
+    }
+    open.clear();
+    for (const w of next) open.add(w);
+    if (open.size === 0) break;
+  }
+  return out;
+}
+
+/** 仲間が見つかるか：見つかる範囲にいて、陰のマスにいない */
+export function spotted(map: GridMap, room: RoomDef, cell: GridCell, facing: GridCell, player: GridCell): boolean {
+  if (isShade(room, player)) return false;
+  return sightCells(map, cell, facing).some((c) => same(c, player));
+}
+
+/**
+ * 見つかる前に触れた（不意打ち）時：コマを持たない砂嵐は、その場で倒した扱い（'scatter'）。コマを持つ砂嵐・番人は、先手の戦闘（'first'）。
+ * 逃げる砂嵐は、追いこんで捕まえる物なので、ふつうの戦闘（'none'）
+ */
+export function ambushKind(move: EnemyMove, koma: number): 'scatter' | 'first' | 'none' {
+  if (move === 'flee') return 'none';
+  if (move === 'guard') return 'first';
+  return koma > 0 ? 'first' : 'scatter';
+}
+
 export function startMind(route: GridCell[]): EnemyMind {
   return { cell: route[0], index: 0, chasing: false };
 }

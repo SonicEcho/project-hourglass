@@ -18,6 +18,8 @@ export interface BattleSceneData {
     dig?: boolean;
     /** シードのずらし（段階43。狩りで同じ砂嵐と何度戦っても、落とす物が変わるように） */
     seedShift?: number;
+    /** 不意打ちの先手（段階263）：1ラウンド目、敵がみんなダウンから始まる */
+    ambush?: boolean;
     /** 星の砂と武器の経験値の割合（段階49。砂の底の上の層なら半分。書かなければ全部） */
     rewardRate?: number;
   };

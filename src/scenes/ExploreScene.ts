@@ -14,6 +14,12 @@ import {
   recordLibraryFinds,
   addParts,
   enemyNext,
+  ambushKind,
+  facingOf,
+  sightCells,
+  SHADE,
+  spotted,
+  startFacing,
   exploreTipTriggers,
   nextTip,
   inRoom,
@@ -79,6 +85,8 @@ import { notePlayBattle } from './playRecord';
 // 段階43 の狩り（記憶をたどる）は、段階213 で砂の底に置き換えて外した（段階237 でコードも片付けた）
 
 const T = AREA_TILE;
+/** 出し抜くの案内（段階263）を、この起動の間に出したか */
+let stealthGuideShown = false;
 
 /** Phaser はデータを渡さずに開くと前のデータを使い回すので、この画面を開く時は必ず全部渡す（なければ undefined を書く） */
 export interface ExploreData {
@@ -108,6 +116,9 @@ interface Enemy {
   mind: EnemyMind;
   /** 追ってくる途中の「！」 */
   alert?: Phaser.GameObjects.Text;
+  /** 出し抜く（段階263）：向いている向きと、仲間を見つけたか */
+  facing: GridCell;
+  spotted: boolean;
 }
 
 export class ExploreScene extends Phaser.Scene {
@@ -130,6 +141,9 @@ export class ExploreScene extends Phaser.Scene {
   private enemies: Enemy[] = [];
   /** この時刻までは、敵の印に触れても戦闘にしない（戻ってきた直後など） */
   private graceUntil = 0;
+  /** 出し抜く（段階263。新しい1-1 の試しだけ）：見つかる範囲・陰・不意打ち */
+  private stealth = false;
+  private sightView?: Phaser.GameObjects.Graphics;
   /** 初めての人向けの説明を出している間は、敵も自分も止める（段階30） */
   private tipOpen = false;
   /** 地図（仲間について動くカメラで映すもの） */
@@ -178,6 +192,7 @@ export class ExploreScene extends Phaser.Scene {
     const area = this.night > 0 ? nightArea(base, this.night) : base;
     this.area = area;
     this.trial = !AREAS[data.area];
+    this.stealth = raw === A11_REWORK;
     this.tune = data.tune ?? null;
     stopAmbience();
     this.route = [];
@@ -289,7 +304,9 @@ export class ExploreScene extends Phaser.Scene {
             ? this.nightGuide()
             : (area.goal?.guide ?? 'タップした場所まで歩く。宝箱はタップで開ける。敵の印に触れると戦闘')) +
         // 区画の予告（段階201）：入った時に、この先に多い性質と効くギア
-        (note || data.won || data.lost ? '' : this.traitForecast(false)),
+        (note || data.won || data.lost ? '' : this.traitForecast(false)) +
+        // 出し抜くの案内（段階263。新しい1-1 の試しで、最初の1回だけ）
+        (this.stealth && !stealthGuideShown && !note && !data.won ? ((stealthGuideShown = true), '\n砂嵐の前の砂色のマスに入ると見つかる。緑の陰にいる間は見つからない。見つかる前に触れると不意打ち！') : ''),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
@@ -362,6 +379,11 @@ export class ExploreScene extends Phaser.Scene {
       room.layout.forEach((line, r) =>
         [...line].forEach((ch, c) => {
           if (ch !== '#') g.fillStyle((c + r) % 2 === 0 ? 0x22303f : 0x1f2c3a, 1).fillRect(c * T, r * T, T, T);
+          // 陰（段階263：隠れられる所）は、暗い緑に草の点
+          if (ch === SHADE) {
+            g.fillStyle(0x16301f, 1).fillRect(c * T, r * T, T, T);
+            g.fillStyle(0x2f5a3a, 1).fillRect(c * T + 6, r * T + 8, 4, 4).fillRect(c * T + 20, r * T + 18, 4, 4).fillRect(c * T + 12, r * T + 24, 3, 3);
+          }
         }),
       );
       world.add(g);
@@ -469,6 +491,11 @@ export class ExploreScene extends Phaser.Scene {
       world.add(mark);
       this.tweens.add({ targets: mark, y: mark.y - 5, yoyo: true, repeat: -1, duration: 800 });
     }
+    // 見つかる範囲（段階263）：砂嵐の前の、薄い砂の色のマス。見つかったら赤
+    if (this.stealth) {
+      this.sightView = this.add.graphics();
+      world.add(this.sightView);
+    }
     // タップした所の印
     this.marker = this.add.circle(0, 0, 6, 0xffd84a, 0.8).setVisible(false);
     world.add(this.marker);
@@ -482,8 +509,8 @@ export class ExploreScene extends Phaser.Scene {
       // コマを持つ砂嵐の印（段階67。物語の探索だけ。狩りではコマは手に入らない）
       if ((AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
       world.add(sprite);
-      const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route) };
-      if (move === 'chase') {
+      const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route), facing: startFacing(route), spotted: false };
+      if (move === 'chase' || (this.stealth && move === 'patrol')) {
         enemy.alert = addText(this, 0, -T * 0.95, '！', { size: 16, bold: true, color: '#ffd84a' }).setOrigin(0.5).setVisible(false);
         enemy.alert.setStroke('#5a1a00', 4);
         sprite.add(enemy.alert);
@@ -593,8 +620,11 @@ export class ExploreScene extends Phaser.Scene {
   update(): void {
     if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune) return;
     if (this.time.now < this.graceUntil) return;
+    if (this.stealth) this.updateSight();
     for (const e of this.enemies) {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
+        // 段階263：見つかる前に触れたら不意打ち
+        if (this.stealth && this.ambush(e)) return;
         playSe(this, SE.encounter);
         // 戦う前の会話がある敵（番人の前など。段階63）は、会話を見てから戦う
         const scene = this.area.enemies.find((x) => x.id === e.id)?.scene;
@@ -952,12 +982,13 @@ export class ExploreScene extends Phaser.Scene {
     this.scene.start('Dialogue', data);
   }
 
-  private startBattle(battle: string, enemyId: string): void {
+  private startBattle(battle: string, enemyId: string, ambush = false): void {
     if (this.leaving) return;
     this.leaving = true;
     this.keep(this.state);
     const data: BattleSceneData = {
       encounter: {
+        ...(ambush ? { ambush: true } : {}),
         battle,
         win: { key: 'Explore', data: this.back({ won: enemyId }) },
         lose: { key: 'Explore', data: this.back({ lost: true }) },
@@ -1088,15 +1119,62 @@ export class ExploreScene extends Phaser.Scene {
     const tuning = ENEMY_MOVES[e.move];
     if (e.move === 'guard' || tuning.stepMs <= 0) return;
     const player = this.nextCell ?? this.state.cell;
-    e.mind = enemyNext(this.map, e.move, e.route, e.mind, player, tuning);
-    e.alert?.setVisible(e.mind.chasing);
+    const before = e.mind.cell;
+    if (this.stealth && (e.move === 'patrol' || e.move === 'chase')) {
+      // 段階263：見つかるまでは見回るだけ（近づいただけでは気づかない）。見つかったら追ってくる。離れすぎると、あきらめて見回りに戻る
+      const chase = ENEMY_MOVES.chase;
+      e.mind = e.spotted ? enemyNext(this.map, 'chase', e.route, { ...e.mind, chasing: true }, player, chase) : enemyNext(this.map, 'patrol', e.route, e.mind, player, tuning);
+      if (e.spotted && !e.mind.chasing) e.spotted = false;
+    } else e.mind = enemyNext(this.map, e.move, e.route, e.mind, player, tuning);
+    e.facing = facingOf(before, e.mind.cell) ?? e.facing;
+    e.alert?.setVisible(this.stealth ? e.spotted : e.mind.chasing);
     const [c, r] = e.mind.cell;
     this.shadeSprite(e.sprite, isShade(this.room, e.mind.cell));
     // 歩く向きに絵を向ける（左へ歩く時は左右を返す。上下に歩く時は今の向きのまま）
     const img = e.sprite.getData('art') as Phaser.GameObjects.Image | undefined;
     const dx = c * T + T / 2 - e.sprite.x;
     if (img && dx !== 0) img.setFlipX(dx < 0);
-    this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: tuning.stepMs, onComplete: () => this.stepEnemy(e) });
+    const ms = this.stealth && e.spotted ? ENEMY_MOVES.chase.stepMs : tuning.stepMs;
+    this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: ms, onComplete: () => this.stepEnemy(e) });
+  }
+
+  /** 出し抜く（段階263）：見つかる範囲を描き、範囲の中にいる（陰でない）仲間を見つける */
+  private updateSight(): void {
+    const g = this.sightView;
+    if (!g) return;
+    g.clear();
+    const player = this.state.cell;
+    for (const e of this.enemies) {
+      if (e.move !== 'patrol' && e.move !== 'chase') continue;
+      if (!e.spotted && spotted(this.map, this.room, e.mind.cell, e.facing, player)) {
+        e.spotted = true;
+        e.alert?.setVisible(true);
+        playSe(this, SE.encounter);
+      }
+      g.fillStyle(e.spotted ? 0xff3040 : 0xffd890, e.spotted ? 0.28 : 0.2);
+      for (const [c, r] of sightCells(this.map, e.mind.cell, e.facing)) g.fillRect(c * T + 1, r * T + 1, T - 2, T - 2);
+    }
+  }
+
+  /** 不意打ち（段階263）：見つかる前に触れた。コマを持たない砂嵐はその場で散らす（素材を1つ）。コマを持つ砂嵐・番人は先手の戦闘 */
+  private ambush(e: Enemy): boolean {
+    const battle = AREA_BATTLES[e.battle];
+    const kind = ambushKind(e.move, battle?.koma ?? 0);
+    if (kind === 'none' || e.spotted) return false;
+    if (kind === 'first') {
+      this.startBattle(e.battle, e.id, true);
+      return true;
+    }
+    this.state = defeatEnemy(this.state, e.id);
+    this.enemies = this.enemies.filter((x) => x !== e);
+    this.tweens.killTweensOf(e.sprite);
+    this.tweens.add({ targets: e.sprite, scale: 1.6, alpha: 0, duration: 380, onComplete: () => e.sprite.destroy() });
+    const drop = battle?.enemies.flatMap((x) => x.drops ?? [])[0];
+    if (drop) run.armory = capItems(WEAPON_DATA, addItems(run.armory, [drop])).armory;
+    playSe(this, SE.heal);
+    this.say(`不意打ち！ 砂嵐を散らした${drop ? `\n${WEAPON_DATA.items[drop]?.name ?? drop}を手に入れた` : ''}`);
+    this.keep(this.state);
+    return true;
   }
 
   /** 全体の地図（段階47a）：入った部屋とつながり。今いる部屋は明るく */
