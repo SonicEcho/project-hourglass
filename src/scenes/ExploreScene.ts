@@ -14,6 +14,11 @@ import {
   recordLibraryFinds,
   addParts,
   enemyNext,
+  closedGates,
+  gadgetArea,
+  gadgetAt,
+  gadgetsShown,
+  useGadget,
   ambushKind,
   facingOf,
   sightCells,
@@ -98,6 +103,8 @@ export interface ExploreData {
   lost?: boolean;
   /** 見終えて戻ってきた、途中の会話（場面の id） */
   seen?: string;
+  /** 開き直した後に、上の帯に出す言葉（段階264：仕掛けが解けて地図を作り直した時） */
+  notice?: string;
   /** 晩に分けた区画の、何晩目か（段階63。物語の流れの探索の出来事が決める） */
   night?: number;
   /**
@@ -137,7 +144,7 @@ export class ExploreScene extends Phaser.Scene {
   private nextCell: GridCell | null = null;
   private walking = false;
   /** 道の終わりで話す人・開ける宝箱・ボス */
-  private goal: { kind: 'talk'; id: string } | { kind: 'chest'; id: string } | { kind: 'boss' } | null = null;
+  private goal: { kind: 'talk'; id: string } | { kind: 'chest'; id: string } | { kind: 'gadget'; id: string } | { kind: 'boss' } | null = null;
   private enemies: Enemy[] = [];
   /** この時刻までは、敵の印に触れても戦闘にしない（戻ってきた直後など） */
   private graceUntil = 0;
@@ -219,7 +226,7 @@ export class ExploreScene extends Phaser.Scene {
       const room = roomOf(area, this.tune.room);
       state = { ...startExplore(area), room: room.id, cell: this.tune.cell ?? tuneStart(room), visited: area.rooms.map((r) => r.id) };
     }
-    let note = '';
+    let note = data.notice ?? '';
     let komaGot = 0;
     // 遊んだ記録（段階32b）：探索の戦闘の勝ち負けを、今の出来事のものとして数える
     if (data.won && !this.trial) notePlayBattle(run.event, true);
@@ -248,8 +255,10 @@ export class ExploreScene extends Phaser.Scene {
     }
     if (data.seen) state = markTrigger(state, data.seen);
     this.state = state;
-    this.room = roomOf(area, state.room);
-    this.map = areaGrid(area, state.room);
+    // 仕掛けの扉と仕掛け（段階264）：まだ解いていない扉と、出ている仕掛けのマスは通れない
+    if (area.gates?.length || area.gadgets?.length) this.area = gadgetArea(area, state, this.night);
+    this.room = roomOf(this.area, state.room);
+    this.map = areaGrid(this.area, state.room);
     this.keep(state);
     if (this.tune) {
       if (area.bgm) playBgm(this, area.bgm);
@@ -454,6 +463,8 @@ export class ExploreScene extends Phaser.Scene {
       this.chestSprites.set(chest.id, box);
       world.add(box);
     }
+    // 仕掛けの扉と仕掛け（段階264。絵が届くまでの仮の印）
+    this.drawGadgets(world);
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
       if (!this.here(t)) continue;
@@ -722,18 +733,28 @@ export class ExploreScene extends Phaser.Scene {
       this.say(`厚いノイズの壁で、ふさがっている\n……${wall.opens}晩目、持ち主がもう少し思い出せば、ほどけそう`);
       return;
     }
+    // 仕掛けの扉（段階264）：仕掛けの載っていない所をタップしたら、なぜ通れないかを言う
+    const gate = closedGates(this.area, this.state, this.state.room).find((g) => g.cells.some((c) => c[0] === cell[0] && c[1] === cell[1]));
+    if (gate && !gadgetAt(this.area, this.state, this.night, this.state.room, cell)) {
+      const why: Record<string, string> = { dark: '停電で真っ暗で、進めない。……明かりがつけば', fence: '板でふさがれている。屋台の人に頼めば通してくれるかも', water: '池に霧が立ちこめていて、渡れない', crowd: '人混みで通れない', cart: '荷車が道をふさいでいる' };
+      this.say(why[gate.look] ?? gate.label);
+      return;
+    }
     // 地図直しの試し歩き（段階121）では、歩くだけ
     const plain = !!this.tune;
     const talker = plain ? undefined : this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
     const chest = talker || plain ? null : chestAt(this.area, this.state, cell);
-    const boss = !plain && !talker && !chest && this.bossHere() && near(this.area.boss.cell, cell, 1);
+    // 仕掛け（段階264）：隣まで歩いてから。押す物は、押すマス（from）まで
+    const gadget = talker || chest || plain ? null : gadgetAt(this.area, this.state, this.night, this.state.room, cell);
+    const boss = !plain && !talker && !chest && !gadget && this.bossHere() && near(this.area.boss.cell, cell, 1);
     const from = this.nextCell ?? this.state.cell;
     let target: GridCell | null;
     let path: GridCell[] | null;
-    if (chest) {
-      // 宝箱のマスは通れないので、隣の立てるマスのうち一番近い所まで歩いてから開ける
-      const sides: GridCell[] = [[chest.cell[0], chest.cell[1] - 1], [chest.cell[0] + 1, chest.cell[1]], [chest.cell[0], chest.cell[1] + 1], [chest.cell[0] - 1, chest.cell[1]]];
+    if (chest || gadget) {
+      // 宝箱のマスは通れないので、隣の立てるマスのうち一番近い所まで歩いてから開ける（仕掛けも同じ。押す物は、まず押すマスへ）
+      const at = (chest ?? gadget)!.cell;
+      const sides: GridCell[] = gadget?.from && findPath(this.map, from, gadget.from) ? [gadget.from] : [[at[0], at[1] - 1], [at[0] + 1, at[1]], [at[0], at[1] + 1], [at[0] - 1, at[1]]];
       const options = sides.map((c) => ({ c, p: findPath(this.map, from, c) })).filter((o) => o.p !== null) as { c: GridCell; p: GridCell[] }[];
       options.sort((a, b) => a.p.length - b.p.length);
       target = options[0]?.c ?? null;
@@ -749,6 +770,8 @@ export class ExploreScene extends Phaser.Scene {
       this.goal = talker ? { kind: 'talk', id: talker.id } : { kind: 'boss' };
     } else if (chest) {
       this.goal = { kind: 'chest', id: chest.id };
+    } else if (gadget) {
+      this.goal = { kind: 'gadget', id: gadget.id };
     } else {
       this.goal = null;
     }
@@ -848,6 +871,10 @@ export class ExploreScene extends Phaser.Scene {
       this.openChestNow(goal.id);
       return;
     }
+    if (goal.kind === 'gadget') {
+      this.useGadgetNow(goal.id);
+      return;
+    }
     if (!this.bossReady()) {
       // コマがそろうまでは戦えない（雑魚を飛ばしてボスに勝ち、コマが足りないまま区画を出ないように。段階32b 調整3）
       const need = komaLeft(this.area, this.state) - this.bossKoma();
@@ -899,6 +926,73 @@ export class ExploreScene extends Phaser.Scene {
   private back(extra: Partial<ExploreData> = {}): ExploreData {
     const tune = this.tune ? { room: this.state.room, cell: this.state.cell } : undefined;
     return { area: this.area.id, won: undefined, lost: undefined, seen: undefined, night: this.night || undefined, tune, ...extra };
+  }
+
+  /** 仕掛けを使う（段階264）。解けて扉が開いた・宝箱が出た時は、地図を作り直す（部屋を移る時と同じく開き直す） */
+  private useGadgetNow(id: string): void {
+    const gadget = this.area.gadgets?.find((g) => g.id === id);
+    if (!gadget) return;
+    const party = currentParty(storyBattleLineup()).map((c) => c.id);
+    const r = useGadget(this.area, this.state, gadget, party, this.state.cell);
+    this.state = r.state;
+    this.keep(this.state);
+    const rebuild = r.solved.length > 0 || gadget.kind === 'item';
+    if (r.solved.length > 0) playSe(this, SE.heal);
+    if (!rebuild) {
+      this.say(r.text);
+      // 提灯の灯り（順番の途中）を描き直す
+      this.redrawGadgets();
+      return;
+    }
+    this.leaving = true;
+    this.cameras.main.flash(260, 255, 240, 200);
+    this.time.delayedCall(280, () => this.scene.restart(this.back({ notice: r.text })));
+  }
+
+  private gadgetLayer?: Phaser.GameObjects.Container;
+
+  /** 仕掛けの扉と仕掛けを描く（絵が届くまでの仮の印） */
+  private drawGadgets(world: Phaser.GameObjects.Container): void {
+    const layer = this.add.container(0, 0);
+    this.gadgetLayer = layer;
+    world.add(layer);
+    this.redrawGadgets();
+  }
+
+  private redrawGadgets(): void {
+    const layer = this.gadgetLayer;
+    if (!layer) return;
+    layer.removeAll(true);
+    const look: Record<string, { fill: number; alpha: number; text: string }> = {
+      dark: { fill: 0x000000, alpha: 0.85, text: '真っ暗' },
+      cart: { fill: 0x6b4a2a, alpha: 1, text: '' },
+      crowd: { fill: 0x7a7f90, alpha: 0.9, text: '' },
+      fence: { fill: 0x5a4030, alpha: 1, text: '' },
+      water: { fill: 0x2a4a7a, alpha: 0.9, text: '' },
+    };
+    // 扉を描くのは、もとの部屋で歩けるマスだけ（扉の四角の中の壁は描かない）
+    const plainRoom = this.rawArea.rooms.find((x) => x.id === this.state.room) ?? this.room;
+    for (const gate of closedGates(this.area, this.state, this.state.room)) {
+      const st = look[gate.look];
+      for (const [c, r] of gate.cells) {
+        const ch = plainRoom.layout[r]?.[c];
+        if (ch === undefined || ch === '#') continue;
+        layer.add(this.add.rectangle(c * T + T / 2, r * T + T / 2, T, T, st.fill, st.alpha));
+        if (gate.look === 'crowd') layer.add(this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.3, 0xc8ccd8, 0.8));
+        if (gate.look === 'water') layer.add(this.add.rectangle(c * T + T / 2, r * T + T / 2, T * 0.8, 3, 0x8ab4e8, 0.6));
+      }
+      const [c0, r0] = gate.cells[0];
+      if (st.text) layer.add(addText(this, c0 * T + 4, r0 * T + 4, st.text, { size: 10, bold: true, color: '#8a93ad' }));
+    }
+    const flags = this.state.flags ?? [];
+    for (const g of gadgetsShown(this.area, this.state, this.night, this.state.room)) {
+      const [x, y] = [g.cell[0] * T + T / 2, g.cell[1] * T + T / 2];
+      const lit = g.kind === 'order' ? flags.includes(g.group ?? '') || flags.includes(`${g.group}:${g.index}`) : flags.includes(g.id);
+      const later = g.kind === 'later';
+      const color = later ? 0x5a5f70 : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
+      layer.add(this.add.rectangle(x, y, T * 0.72, T * 0.72, color, 1).setAngle(45).setStrokeStyle(2, 0x000000));
+      layer.add(addText(this, x, y, g.mark, { size: 13, bold: true, color: '#101010' }).setOrigin(0.5));
+    }
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */
