@@ -4,7 +4,7 @@
 // 宝箱・敵・ボス・話せる人は「どの部屋のどのマス」で書く（room を書かなければ、最初の部屋）。敵には動き方の種類がある
 import type { GridCell, GridMap } from './grid';
 import type { AreaHunt } from './hunt';
-import type { Vitals } from './types';
+import type { Element, Vitals } from './types';
 import { findPath, isWalkable, parseGrid } from './grid';
 
 // ---- 部屋とつなぎ（段階47a） ----
@@ -143,6 +143,32 @@ export interface AreaTalker extends InRoom, InNight {
   cell: GridCell;
   scene: string;
   label: string;
+  /** 話すともらえる物（段階265。docs/milestones/M3_explore_feel.md の 5-4。1人1回） */
+  gift?: TalkerGift;
+}
+
+/**
+ * 写しの人がくれる物（段階265）：weak 敵の弱点を教える（戦闘で最初から分かる）・rest 一息（HP・MP を最大の rate だけ回復）・
+ * hint 場所の手がかり（target の仕掛けに印）。text は話の後に上の帯に出す言葉
+ */
+export type TalkerGift = { kind: 'weak'; enemy: string; element: Element; text: string } | { kind: 'rest'; rate: number; text: string } | { kind: 'hint'; target: string; text: string };
+
+/** 写しの人からもらう（段階265）。もうもらっていれば null */
+export function takeGift(state: ExploreState, talker: AreaTalker): { state: ExploreState; gift: TalkerGift } | null {
+  const key = `gift:${talker.id}`;
+  if (!talker.gift || (state.flags ?? []).includes(key)) return null;
+  const extra = talker.gift.kind === 'hint' ? [`hint:${talker.gift.target}`] : [];
+  return { state: { ...state, flags: [...(state.flags ?? []), key, ...extra] }, gift: talker.gift };
+}
+
+/** 一息（段階265）：持ち越している HP・MP を、最大の rate だけ戻す（全回復の時はそのまま） */
+export function restVitals(state: ExploreState, rate: number, max: Record<string, Vitals>): ExploreState {
+  if (!state.vitals) return state;
+  const vitals = Object.fromEntries(Object.entries(state.vitals).map(([id, v]) => {
+    const m = max[id];
+    return [id, m ? { hp: Math.min(m.hp, v.hp + Math.ceil(m.hp * rate)), mp: Math.min(m.mp, v.mp + Math.ceil(m.mp * rate)) } : v];
+  }));
+  return { ...state, vitals };
 }
 
 /** 探索の途中の会話のきっかけ（1回だけ）。gears を書くと、その会話を見た時にごほうびのギアが手に入る（段階38。2-1 でみおが拾った歯車など） */
@@ -213,12 +239,12 @@ export interface AreaGate extends InRoom {
  * 地図の上の仕掛け（段階264。docs/milestones/M3_explore_feel.md の 5-7）。そのマスは通れない（宝箱と同じく、隣からタップする）。
  * item：拾う品（拾うと消える）。use：needs の品を持っていれば解ける。push：from のマスから押すと解ける。
  * ability：ally の仲間が編成にいれば解ける（あかりの歌・ハルトのカメラ）。order：group の仕掛けを index の順に。全部そろうと group が解ける。
- * later：後で来る所（ally が仲間になってから、区画にもう一度来ると解ける）
+ * later：後で来る所（ally が仲間になってから、区画にもう一度来ると解ける）。photo：思い出の一枚（段階265。ハルトのカメラで撮ると、その場所の昔の一場面 done が見られる）
  */
 export interface AreaGadget extends InRoom, InNight {
   id: string;
   cell: GridCell;
-  kind: 'item' | 'use' | 'push' | 'ability' | 'order' | 'later';
+  kind: 'item' | 'use' | 'push' | 'ability' | 'order' | 'later' | 'photo';
   /** 地図の印の1字と、名前 */
   mark: string;
   label: string;
@@ -943,8 +969,11 @@ export function useGadget(area: AreaDef, state: ExploreState, gadget: AreaGadget
   const add = (...ids: string[]) => ({ ...state, flags: [...flags, ...ids.filter((id) => !flags.includes(id))] });
   const none = (text: string) => ({ state, text, solved: [] as string[] });
   if (gadget.kind !== 'item' && gadget.kind !== 'order' && flags.includes(gadget.id)) return none(gadget.done);
+  // 撮った思い出の一枚は、もう一度見られる（上の行で、そのまま done を返す）
   switch (gadget.kind) {
     case 'item':
+      return { state: add(gadget.id), text: gadget.done, solved: [] };
+    case 'photo':
       return { state: add(gadget.id), text: gadget.done, solved: [] };
     case 'use':
       return gadget.needs && flags.includes(gadget.needs) ? { state: add(gadget.id), text: gadget.done, solved: [gadget.id] } : none(gadget.need ?? '');

@@ -162,11 +162,51 @@ describe('仕掛けと仲間の力（段階264）', () => {
       for (const e of night.enemies.filter((x) => (AREA_BATTLES[x.battle]?.koma ?? 0) > 0)) expect(reach[e.room!]?.has(e.patrol[0].join(',')), `${n}晩目 ${e.id}`).toBe(true);
       if (n === 3) expect([...(reach.fest2_woods ?? [])].some((k) => ['10,3', '12,3', '11,4'].includes(k))).toBe(true);
       // 仕掛けは、どれも隣のマスまで歩いて行ける（後で来る所は、仕掛けを解いた奥にもある）
-      for (const gd of night.gadgets!.filter((x) => x.kind !== 'later' && (x.night ?? 1) <= n && n <= (x.until ?? 9))) {
+      for (const gd of night.gadgets!.filter((x) => x.kind !== 'later' && x.kind !== 'photo' && (x.night ?? 1) <= n && n <= (x.until ?? 9))) {
         const [c, r] = gd.cell;
         const sides = [[c, r - 1], [c + 1, r], [c, r + 1], [c - 1, r]].map((x) => x.join(','));
         expect(sides.some((k) => reach[gd.room!]?.has(k)), `${n}晩目 ${gd.id}`).toBe(true);
       }
     }
+  });
+});
+
+describe('写しの人がくれる物と思い出の一枚（段階265）', () => {
+  it('写しの人はみんな、くれる物がある。おじさん＝弱点、わたあめ屋＝一息、浴衣の女の人＝場所の手がかり。手がかりの先は、ある仕掛け', () => {
+    const kind: Record<string, string> = { 金魚すくいのおじさん: 'weak', わたあめ屋: 'rest', 浴衣の女の人: 'hint' };
+    for (const t of area.talkers) {
+      expect(t.gift?.kind, t.id).toBe(kind[t.label]);
+      if (t.gift?.kind === 'hint') expect(area.gadgets!.some((g) => g.id === (t.gift as { target: string }).target), t.id).toBe(true);
+      if (t.gift?.kind === 'weak') {
+        const g = t.gift;
+        const enemy = Object.values(AREA_BATTLES).flatMap((b) => b.enemies).find((e) => e.id === g.enemy);
+        expect(enemy?.weaknesses, t.id).toContain(g.element);
+      }
+    }
+  });
+
+  it('もらうのは1人1回。場所の手がかりは、その仕掛けに印の flag', async () => {
+    const { startExplore, takeGift } = await import('../../src/core');
+    const t = area.talkers.find((x) => x.id === 'a11_voice_yukata')!;
+    const first = takeGift(startExplore(area), t)!;
+    expect(first.state.flags).toEqual(['gift:a11_voice_yukata', 'hint:p_knob']);
+    expect(takeGift(first.state, t)).toBeNull();
+  });
+
+  it('一息：持ち越している HP・MP を、最大の割合だけ戻す（最大は超えない）。全回復の時はそのまま', async () => {
+    const { restVitals, startExplore } = await import('../../src/core');
+    const s = { ...startExplore(area), vitals: { hero: { hp: 10, mp: 1 }, akari: { hp: 95, mp: 30 } } };
+    const r = restVitals(s, 0.3, { hero: { hp: 100, mp: 20 }, akari: { hp: 100, mp: 30 } });
+    expect(r.vitals).toEqual({ hero: { hp: 40, mp: 7 }, akari: { hp: 100, mp: 30 } });
+    expect(restVitals(startExplore(area), 0.3, {}).vitals).toBeUndefined();
+  });
+
+  it('思い出の一枚は4枚。撮ると flag が付き、もう一度タップしても同じ場面が見られる', async () => {
+    const { startExplore, useGadget } = await import('../../src/core');
+    const photos = area.gadgets!.filter((g) => g.kind === 'photo');
+    expect(photos.map((g) => g.room)).toEqual(['fest2_gate', 'fest2_plaza', 'fest2_east', 'fest2_woods']);
+    const r = useGadget(area, startExplore(area), photos[0], [], [0, 0]);
+    expect(r.state.flags).toEqual(['m_gate']);
+    expect(useGadget(area, r.state, photos[0], [], [0, 0]).text).toBe(photos[0].done);
   });
 });

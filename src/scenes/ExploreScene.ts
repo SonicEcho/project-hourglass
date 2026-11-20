@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { battleSceneFor } from './chainEncounter';
+import { battleSceneFor, keepChainWeak, knownChainWeak } from './chainEncounter';
 import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -14,6 +14,8 @@ import {
   recordLibraryFinds,
   addParts,
   enemyNext,
+  restVitals,
+  takeGift,
   closedGates,
   gadgetArea,
   gadgetAt,
@@ -105,6 +107,8 @@ export interface ExploreData {
   seen?: string;
   /** 開き直した後に、上の帯に出す言葉（段階264：仕掛けが解けて地図を作り直した時） */
   notice?: string;
+  /** 話し終えて戻ってきた写しの人（段階265。くれる物を渡す） */
+  talked?: string;
   /** 晩に分けた区画の、何晩目か（段階63。物語の流れの探索の出来事が決める） */
   night?: number;
   /**
@@ -254,6 +258,22 @@ export class ExploreScene extends Phaser.Scene {
       note = `ギアを手に入れた！　${gearNames(gears)}`;
     }
     if (data.seen) state = markTrigger(state, data.seen);
+    // 写しの人がくれる物（段階265）：話し終えて戻ってきた時に、1人1回
+    const talked = data.talked ? area.talkers.find((t) => t.id === data.talked) : undefined;
+    const got = talked ? takeGift(state, talked) : null;
+    if (got) {
+      state = got.state;
+      if (got.gift.kind === 'weak') {
+        const known = knownChainWeak(true);
+        const list = known[got.gift.enemy] ?? [];
+        if (!list.includes(got.gift.element)) keepChainWeak(true, { ...known, [got.gift.enemy]: [...list, got.gift.element] });
+      }
+      if (got.gift.kind === 'rest') {
+        const max = Object.fromEntries(currentParty(storyBattleLineup()).map((c) => [c.id, { hp: c.stats.hp, mp: c.stats.mp }]));
+        state = restVitals(state, got.gift.rate, max);
+      }
+      note = got.gift.text;
+    }
     this.state = state;
     // 仕掛けの扉と仕掛け（段階264）：まだ解いていない扉と、出ている仕掛けのマスは通れない
     if (area.gates?.length || area.gadgets?.length) this.area = gadgetArea(area, state, this.night);
@@ -471,7 +491,11 @@ export class ExploreScene extends Phaser.Scene {
       const x = t.cell[0] * T + T / 2;
       const y = t.cell[1] * T + T / 2;
       world.add(this.add.ellipse(x, y, T * 0.6, T * 0.8, 0xc8d0e0, 0.55));
-      const bubble = addText(this, x, y - T * 0.75, '…', { size: 14, bold: true, color: '#ffffff' }).setOrigin(0.5);
+      // 段階265：くれる物がある人は、吹き出しを、くれる物の印に（弱点＝弱・一息＝休・場所の手がかり＝地）。もらった後は薄く
+      const giftMark = t.gift ? { weak: '弱', rest: '休', hint: '地' }[t.gift.kind] : '…';
+      const given = !!t.gift && (this.state.flags ?? []).includes(`gift:${t.id}`);
+      const bubble = addText(this, x, y - T * 0.75, giftMark, { size: 14, bold: true, color: t.gift ? '#ffd84a' : '#ffffff' }).setOrigin(0.5).setAlpha(given ? 0.35 : 1);
+      if (t.gift && !given) bubble.setStroke('#3a2a00', 4);
       world.add(bubble);
       this.tweens.add({ targets: bubble, y: bubble.y - 4, yoyo: true, repeat: -1, duration: 700 });
     }
@@ -864,7 +888,7 @@ export class ExploreScene extends Phaser.Scene {
     if (!goal || this.leaving) return;
     if (goal.kind === 'talk') {
       const talker = this.area.talkers.find((t) => t.id === goal.id);
-      if (talker) this.openScene(talker.scene, { area: this.area.id });
+      if (talker) this.openScene(talker.scene, { area: this.area.id, talked: talker.id });
       return;
     }
     if (goal.kind === 'chest') {
@@ -938,6 +962,16 @@ export class ExploreScene extends Phaser.Scene {
     this.keep(this.state);
     const rebuild = r.solved.length > 0 || gadget.kind === 'item';
     if (r.solved.length > 0) playSe(this, SE.heal);
+    if (gadget.kind === 'photo') {
+      // 思い出の一枚（段階265）：撮った時は白く光る。何枚目か
+      this.cameras.main.flash(200, 255, 250, 235);
+      const photos = (this.area.gadgets ?? []).filter((g) => g.kind === 'photo');
+      const taken = photos.filter((g) => (this.state.flags ?? []).includes(g.id)).length;
+      this.say(`思い出の一枚を撮った（${taken}/${photos.length}）`);
+      this.redrawGadgets();
+      this.showPhoto(r.text, `${taken}/${photos.length}`);
+      return;
+    }
     if (!rebuild) {
       this.say(r.text);
       // 提灯の灯り（順番の途中）を描き直す
@@ -947,6 +981,32 @@ export class ExploreScene extends Phaser.Scene {
     this.leaving = true;
     this.cameras.main.flash(260, 255, 240, 200);
     this.time.delayedCall(280, () => this.scene.restart(this.back({ notice: r.text })));
+  }
+
+  /** 思い出の一枚（段階265）：セピアの写真の札を画面の真ん中に。タップで閉じる（絵が届くまでは、場面を言葉で） */
+  private showPhoto(text: string, count: string): void {
+    if (!this.ui) return;
+    const [head, ...body] = text.split('\n');
+    const box = this.add.container(0, 0);
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive();
+    const cx = GAME_WIDTH / 2;
+    const cy = GAME_HEIGHT / 2 - 20;
+    box.add(shade);
+    box.add(this.add.rectangle(cx + 4, cy + 4, 300, 330, 0x000000, 0.5));
+    box.add(this.add.rectangle(cx, cy, 300, 330, 0xf4ecd8).setStrokeStyle(1, 0xc8b898).setAngle(-2));
+    box.add(this.add.rectangle(cx, cy - 30, 264, 230, 0x8a6a48).setAngle(-2));
+    box.add(this.add.rectangle(cx, cy - 30, 264, 230, 0x3a2a18, 0.35).setAngle(-2));
+    box.add(addText(this, cx, cy - 30, body.join('\n'), { size: 15, bold: true, color: '#fff4dc', align: 'center', wrap: 236, ja: true }).setOrigin(0.5).setAngle(-2).setLineSpacing(6));
+    box.add(addText(this, cx, cy + 118, head.replace('思い出の一枚', '').replace(/[（）]/g, ''), { size: 14, bold: true, color: '#5a4630' }).setOrigin(0.5).setAngle(-2));
+    box.add(addText(this, cx, cy + 186, `思い出の一枚 ${count}　タップで閉じる`, { size: 12, color: '#e6e9f5' }).setOrigin(0.5));
+    box.setAlpha(0);
+    this.ui.add(box);
+    this.tweens.add({ targets: box, alpha: 1, duration: 220 });
+    this.tipOpen = true;
+    shade.on('pointerup', () => {
+      this.tipOpen = false;
+      box.destroy();
+    });
   }
 
   private gadgetLayer?: Phaser.GameObjects.Container;
@@ -989,7 +1049,14 @@ export class ExploreScene extends Phaser.Scene {
       const [x, y] = [g.cell[0] * T + T / 2, g.cell[1] * T + T / 2];
       const lit = g.kind === 'order' ? flags.includes(g.group ?? '') || flags.includes(`${g.group}:${g.index}`) : flags.includes(g.id);
       const later = g.kind === 'later';
-      const color = later ? 0x5a5f70 : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
+      // 場所の手がかり（段階265）：まだ解いていない物に、金の輪
+      if (!lit && flags.includes(`hint:${g.id}`)) {
+        const ring = this.add.circle(x, y, T * 0.85).setStrokeStyle(3, 0xffd84a, 0.9);
+        layer.add(ring);
+        this.tweens.add({ targets: ring, scale: 1.25, alpha: 0.3, yoyo: true, repeat: -1, duration: 700 });
+      }
+      const photo = g.kind === 'photo';
+      const color = later ? 0x5a5f70 : photo ? (lit ? 0x8a8070 : 0xfff4d8) : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
       layer.add(this.add.rectangle(x, y, T * 0.72, T * 0.72, color, 1).setAngle(45).setStrokeStyle(2, 0x000000));
       layer.add(addText(this, x, y, g.mark, { size: 13, bold: true, color: '#101010' }).setOrigin(0.5));
     }
