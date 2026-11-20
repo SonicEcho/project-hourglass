@@ -2068,6 +2068,14 @@ export function chainPlanTeethHits(s: ChainState, plan: ChainPlanStep[]): number
 }
 
 /**
+ * 不意打ちの先手（段階263。探索で、見つかる前にコマを持つ砂嵐・番人に触れた）：1ラウンド目は、敵がみんなダウンから始まる（そのラウンドは動かない）。
+ * ダウンの回数には数えない（2ラウンド目に「警戒」が付かない）
+ */
+export function ambushChainBattle(s: ChainState): ChainState {
+  return { ...s, enemies: s.enemies.map((e) => (e.hp > 0 && !e.gone ? { ...e, down: true, downs: 0 } : e)) };
+}
+
+/**
  * 並べた予定で、押して消える敵の予定と、ずれる予定（段階254。画面の見込み。実際に動かして見る）。
  * out：消える予定（s.intents の位置）。shifted：ずれる予定の位置 → ずれた後の時刻（何度か押された時は最後の時刻）
  */
