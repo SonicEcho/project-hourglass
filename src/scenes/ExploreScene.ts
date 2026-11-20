@@ -31,6 +31,7 @@ import {
   defeatEnemy,
   enemyActive,
   findPath,
+  normalizeExplore,
   isCheckpoint,
   komaLeft,
   komaVars,
@@ -53,8 +54,8 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
-import { isDebugEnabled, trialOff } from '../debug/debugFlag';
+import { A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
 const tensionRules = () => (trialOff('tension') ? undefined : EXPLORE_TENSION);
@@ -165,7 +166,8 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   create(data: ExploreData): void {
-    const raw = AREAS[data.area] ?? TRIAL_AREAS[data.area];
+    // 段階262：デバッグの切り替えで、新しい1-1（マス目の試し）
+    const raw = data.area === 'a11' && trialOn('a11rework') ? A11_REWORK : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
     if (!raw) throw new Error(`unknown area ${data.area}`);
     // 地図の調整（段階117）：?debug=1 の時だけ、端末に覚えた直しを重ねる
     this.rawArea = raw;
@@ -193,6 +195,8 @@ export class ExploreScene extends Phaser.Scene {
     this.pausedTweens = [];
 
     let state = run.explore?.area === area.id ? run.explore : startExplore(area);
+    // 段階262：今の1-1 と新しい1-1 を切り替えた時、部屋が合わなければ、残せる物（倒した敵・開けた宝箱・コマ）を残して最初の部屋から
+    if (!area.rooms.some((r) => r.id === state.room)) state = normalizeExplore(base, state) ?? startExplore(area);
     // 新しい晩なら、その晩を始める所から（段階63）
     if (this.night > 0) state = startNight(base, state, this.night);
     // 地図直しの試し歩き（段階121）：選んだ部屋の、選んだマス（なければ S・P か、出入口の内側）から。全部の部屋に入ったことにする

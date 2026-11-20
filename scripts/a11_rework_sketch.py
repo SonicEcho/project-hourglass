@@ -30,7 +30,7 @@ ITEMS = [
 ENEMIES = [
     ('fest_gate', [(11, 4), (11, 16)], 'patrol', 1, True), ('fest_gate', [(20, 20), (16, 20)], 'chase', 1, False),
     ('fest_backyard', [(8, 18), (14, 18), (14, 24), (8, 24)], 'patrol', 1, False), ('fest_backyard', [(4, 32)], 'flee', 1, False),
-    ('festival_night', [(11, 35), (11, 40)], 'patrol', 1, True), ('festival_night', [(5, 24), (5, 32)], 'chase', 1, True),
+    ('festival_night', [(11, 35), (11, 40)], 'patrol', 1, True), ('festival_night', [(5, 24), (5, 30)], 'chase', 1, True),
     ('festival_night', [(3, 12), (20, 12)], 'patrol', 2, True), ('festival_night', [(20, 15), (20, 17)], 'patrol', 2, False),
     ('fest_lane', [(4, 9), (4, 12)], 'chase', 2, False), ('fest_lane', [(8, 3), (16, 3)], 'patrol', 2, True),
     ('fest_east', [(19, 11), (19, 17)], 'chase', 2, False), ('fest_east', [(21, 20)], 'guard', 2, True),
@@ -141,6 +141,8 @@ def crowd():
         if load(n)[y][x] == '#': warn.append(f'{n} {t}({x}, {y}) が歩けないマスにある')
     for (n, pts, move, _, _) in ENEMIES:
         L = load(n)
+        for (x, y) in pts:
+            if L[y][x] == '#': warn.append(f'{n} 砂嵐の点 ({x}, {y}) が歩けないマス')
         for (a, b) in zip(pts, pts[1:] + pts[:1] if len(pts) > 2 else pts[1:]):
             for t in range(0, 101):
                 x = round(a[0] + (b[0] - a[0]) * t / 100); y = round(a[1] + (b[1] - a[1]) * t / 100)

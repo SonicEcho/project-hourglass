@@ -1,5 +1,5 @@
 import { playtimeReport, resetPlaytime } from './playtime';
-import { debugAutoStory, setDebugAutoStory, setTrialOff, trialOff } from './debugFlag';
+import { debugAutoStory, setDebugAutoStory, setTrialOff, setTrialOn, trialOff, trialOn } from './debugFlag';
 import { addFragments, addItems, addKoma, capItems, addParts, countOf, defeatEnemy, evolveLevelFor, flowEvents, gainSnaps, nextEvent, nightExit } from '../core';
 import { AREA_BATTLES, AREAS, ROOM_NAMES, TRIAL_AREAS, ITEMS, FRAGMENTS, NAVI_PARTS, SCENES, SLICE_FLOW, WEAPON_DATA, CHAIN_SNAPS } from '../data';
 import type { GrowthTier } from '../sim/presets';
@@ -362,6 +362,14 @@ export function installDebugMenu(nav: DebugNavigator): void {
       button(`回復と負けの重み：${tension ? '入（回復は1晩に1回・負けたら敵が戻る）' : '切（前の形）'}`, () => {
         setTrialOff('tension', tension);
         render(`回復と負けの重み：${tension ? '切（前の形）' : '入'}にしました`);
+      }),
+    );
+    // 段階262（docs/milestones/M3_explore_feel.md の 5.）：新しい1-1（マス目の試し）。次に 1-1 の探索に入った時から
+    const rework = trialOn('a11rework');
+    trials.append(
+      button(`新しい1-1（マス目の試し）：${rework ? '入' : '切（今の1-1）'}`, () => {
+        setTrialOn('a11rework', !rework);
+        render(`新しい1-1：${rework ? '切（今の1-1）' : '入'}にしました。1-1 の探索に入り直すと変わります（探索の途中の場所は、最初の部屋からになります）`);
       }),
     );
 
