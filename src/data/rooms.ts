@@ -2871,6 +2871,13 @@ export const ROOM_NAMES: Record<string, string> = {
   factory_yard: '工場の庭',
   bath_alley: '銭湯の路地',
   fest_gate: '縁日の入口',
+  // 段階262：新しい1-1の試しの部屋（src/data/a11Rework.ts）
+  fest2_gate: '縁日の入口',
+  fest2_backyard: '屋台の裏',
+  fest2_lane: '屋台の裏通り',
+  fest2_plaza: '縁日の広場',
+  fest2_east: '東の屋台',
+  fest2_woods: '社の森',
   fest_backyard: '屋台の裏',
   festival_night: '縁日の広場',
   fest_east: '東の屋台',

@@ -49,3 +49,27 @@ export function setTrialOff(id: string, off: boolean): void {
     // 保存できない時は何もしない
   }
 }
+
+const TRIAL_ON_KEY = 'restopia.trialOn';
+
+/** 試しを入れる切り替え（段階262。新しい1-1 など、まだ本番にしない試し）：デバッグの時だけ。デバッグでない時は、いつも入れない */
+export function trialOn(id: string): boolean {
+  try {
+    if (!isDebugEnabled(window.location.search)) return false;
+    const list = JSON.parse(localStorage.getItem(TRIAL_ON_KEY) ?? '[]') as unknown;
+    return Array.isArray(list) && list.includes(id);
+  } catch {
+    return false;
+  }
+}
+
+export function setTrialOn(id: string, on: boolean): void {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TRIAL_ON_KEY) ?? '[]') as unknown;
+    const list = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string' && x !== id) : [];
+    if (on) list.push(id);
+    localStorage.setItem(TRIAL_ON_KEY, JSON.stringify(list));
+  } catch {
+    // 保存できない時は何もしない
+  }
+}
