@@ -103,6 +103,8 @@ export interface AreaChest extends InRoom, InNight {
   id: string;
   cell: GridCell;
   items: string[];
+  /** この仕掛けを解くまで出ない（段階264。提灯を順に灯すと、やぐらの前に出る） */
+  needs?: string;
   gears?: string[];
   /** 入っているスナップ（段階168。新しい戦闘のアルバムへ。段階204 で古いスナップの snaps はなくした） */
   chainSnaps?: string[];
@@ -193,6 +195,41 @@ export interface AreaDef {
   walls?: AreaWall[];
   /** この区画で、並びから外せない仲間（段階91a。祭りの夜の2晩目の小夜子） */
   partyFixed?: string[];
+  /** 仕掛けと仲間の力（段階264）：解くと開く扉（gates）と、地図の上の仕掛け（gadgets） */
+  gates?: AreaGate[];
+  gadgets?: AreaGadget[];
+}
+
+/** 仕掛けの扉（段階264）：by の仕掛けを解くまで、そのマスを通れない。look は描き方 */
+export interface AreaGate extends InRoom {
+  id: string;
+  cells: GridCell[];
+  by: string;
+  look: 'dark' | 'cart' | 'crowd' | 'fence' | 'water';
+  label: string;
+}
+
+/**
+ * 地図の上の仕掛け（段階264。docs/milestones/M3_explore_feel.md の 5-7）。そのマスは通れない（宝箱と同じく、隣からタップする）。
+ * item：拾う品（拾うと消える）。use：needs の品を持っていれば解ける。push：from のマスから押すと解ける。
+ * ability：ally の仲間が編成にいれば解ける（あかりの歌・ハルトのカメラ）。order：group の仕掛けを index の順に。全部そろうと group が解ける。
+ * later：後で来る所（ally が仲間になってから、区画にもう一度来ると解ける）
+ */
+export interface AreaGadget extends InRoom, InNight {
+  id: string;
+  cell: GridCell;
+  kind: 'item' | 'use' | 'push' | 'ability' | 'order' | 'later';
+  /** 地図の印の1字と、名前 */
+  mark: string;
+  label: string;
+  needs?: string;
+  from?: GridCell;
+  ally?: string;
+  group?: string;
+  index?: number;
+  /** 解けた時・解けない時の言葉 */
+  done: string;
+  need?: string;
 }
 
 /** 晩の区切り（段階63）：コマが koma 個になると、その晩は終わる（最後の晩は書かなくてよい）。start は、その晩を始める所（1晩目は出発点） */
@@ -242,6 +279,8 @@ export interface ExploreState {
   healedCheckpoints?: string[];
   /** 段階255：最後にチェックポイントで記録した後に倒した敵の印（負けた時に戻す） */
   sinceCheckpoint?: string[];
+  /** 段階264：解いた仕掛け・拾った品（仕掛けの id）。順番の仕掛けの途中は `group:n` */
+  flags?: string[];
 }
 
 /** 区画の最初の部屋（出発点のある部屋） */
@@ -693,6 +732,7 @@ export function normalizeExplore(area: AreaDef, raw: unknown): ExploreState | nu
     ...(normalizeVitals(r.vitals) ? { vitals: normalizeVitals(r.vitals) } : {}),
     ...(Array.isArray(r.healedCheckpoints) ? { healedCheckpoints: r.healedCheckpoints.filter((x): x is string => typeof x === 'string') } : {}),
     ...(Array.isArray(r.sinceCheckpoint) ? { sinceCheckpoint: ids(r.sinceCheckpoint, area.enemies.map((e) => e.id)) } : {}),
+    ...(Array.isArray(r.flags) ? { flags: r.flags.filter((x): x is string => typeof x === 'string') } : {}),
   };
 }
 
@@ -856,6 +896,78 @@ export function nightArea(area: AreaDef, night: number): AreaDef {
     talkers: area.talkers.filter((x) => inNight(x, night)),
     triggers: area.triggers.filter((x) => inNight(x, night)),
   };
+}
+
+// ---- 仕掛けと仲間の力（段階264） ----
+
+const flagged = (state: ExploreState, id: string): boolean => (state.flags ?? []).includes(id);
+
+/** まだ解いていない仕掛けの扉 */
+export function closedGates(area: AreaDef, state: ExploreState, room?: string): AreaGate[] {
+  return (area.gates ?? []).filter((g) => !flagged(state, g.by) && (room === undefined || inRoom(area, g, room)));
+}
+
+/** その晩の、地図に出ている仕掛け。拾った品と、解けた後の道をふさいでいた物（押した荷車・道をあけた人混み・晴れた霧）は出さない */
+export function gadgetsShown(area: AreaDef, state: ExploreState, night: number, room?: string): AreaGadget[] {
+  const gone = (g: AreaGadget) => (g.kind === 'item' || g.kind === 'push' || g.kind === 'ability') && flagged(state, g.id);
+  return (area.gadgets ?? []).filter((g) => inNight(g, night || 1) && !gone(g) && (room === undefined || inRoom(area, g, room)));
+}
+
+/**
+ * 仕掛けの区画：まだ解いていない扉と、出ている仕掛けのマスを通れなくし、解いていない仕掛けの奥の宝箱（`needs`）を除く。
+ * 仕掛けのない区画は、そのまま
+ */
+export function gadgetArea(area: AreaDef, state: ExploreState, night: number): AreaDef {
+  if (!area.gates?.length && !area.gadgets?.length) return area;
+  const rooms = area.rooms.map((room) => {
+    const cells = [...closedGates(area, state, room.id).flatMap((g) => g.cells), ...gadgetsShown(area, state, night, room.id).map((g) => g.cell)];
+    if (cells.length === 0) return room;
+    const rows = room.layout.map((l) => [...l]);
+    for (const [c, r] of cells) if (rows[r]?.[c] !== undefined) rows[r][c] = '#';
+    return { ...room, layout: rows.map((r) => r.join('')) };
+  });
+  return { ...area, rooms, chests: area.chests.filter((c) => !c.needs || flagged(state, c.needs)) };
+}
+
+/** そのマスの仕掛け（出ている物） */
+export function gadgetAt(area: AreaDef, state: ExploreState, night: number, room: string, cell: GridCell): AreaGadget | null {
+  return gadgetsShown(area, state, night, room).find((g) => same(g.cell, cell)) ?? null;
+}
+
+/**
+ * 仕掛けをタップした（隣まで歩いた後）。party は編成の仲間の id、at は立っているマス。
+ * solved：この仕掛けで新しく解けた物（扉が開く・宝箱が出る時は、画面を描き直す）
+ */
+export function useGadget(area: AreaDef, state: ExploreState, gadget: AreaGadget, party: string[], at: GridCell): { state: ExploreState; text: string; solved: string[] } {
+  const flags = state.flags ?? [];
+  const add = (...ids: string[]) => ({ ...state, flags: [...flags, ...ids.filter((id) => !flags.includes(id))] });
+  const none = (text: string) => ({ state, text, solved: [] as string[] });
+  if (gadget.kind !== 'item' && gadget.kind !== 'order' && flags.includes(gadget.id)) return none(gadget.done);
+  switch (gadget.kind) {
+    case 'item':
+      return { state: add(gadget.id), text: gadget.done, solved: [] };
+    case 'use':
+      return gadget.needs && flags.includes(gadget.needs) ? { state: add(gadget.id), text: gadget.done, solved: [gadget.id] } : none(gadget.need ?? '');
+    case 'push':
+      return !gadget.from || same(at, gadget.from) ? { state: add(gadget.id), text: gadget.done, solved: [gadget.id] } : none(gadget.need ?? '');
+    case 'ability':
+    case 'later':
+      return gadget.ally && party.includes(gadget.ally) ? { state: add(gadget.id), text: gadget.done, solved: [gadget.id] } : none(gadget.need ?? '');
+    case 'order': {
+      const group = gadget.group ?? gadget.id;
+      if (flags.includes(group)) return none('もう灯っている');
+      const size = (area.gadgets ?? []).filter((g) => g.group === group).length;
+      const step = flags.filter((f) => f.startsWith(`${group}:`)).length;
+      const lit = flags.includes(`${group}:${gadget.index}`);
+      if (lit) return none('もう灯っている');
+      if (gadget.index !== step) {
+        // 順番がちがう：灯っていた物がみんな消える
+        return { state: { ...state, flags: flags.filter((f) => !f.startsWith(`${group}:`)) }, text: gadget.need ?? '', solved: [] };
+      }
+      if (step + 1 < size) return { state: add(`${group}:${gadget.index}`), text: `${gadget.label}が灯った（${step + 1}/${size}）`, solved: [] };
+      return { state: add(`${group}:${gadget.index}`, group), text: gadget.done, solved: [group] };
+    }
+  }
 }
 
 /** 今いる晩 */

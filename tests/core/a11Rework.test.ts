@@ -101,3 +101,72 @@ describe('出し抜く（段階263）', () => {
     expect(r.state.enemies.every((e) => !e.down && !(e.guard ?? 0))).toBe(true);
   });
 });
+
+describe('仕掛けと仲間の力（段階264）', () => {
+  const at0: [number, number] = [0, 0];
+  const g = (id: string) => area.gadgets!.find((x) => x.id === id)!;
+
+  it('拾う品 → 使う：つまみを拾うと、発電機が直り、下の路地（停電の扉）が開く', async () => {
+    const { gadgetArea, startExplore, useGadget, closedGates } = await import('../../src/core');
+    let s = startExplore(area);
+    expect(useGadget(area, s, g('p_generator'), ['hero', 'akari'], at0).solved).toEqual([]);
+    s = useGadget(area, s, g('p_knob'), ['hero', 'akari'], at0).state;
+    const r = useGadget(area, s, g('p_generator'), ['hero', 'akari'], at0);
+    expect(r.solved).toEqual(['p_generator']);
+    expect(closedGates(area, r.state, 'fest2_backyard')).toEqual([]);
+    // 拾った品は地図から消え、そのマスは通れる。開く前の扉のマスは通れない
+    const before = gadgetArea(area, startExplore(area), 1);
+    const after = gadgetArea(area, r.state, 1);
+    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [8, 36])).toBe(false);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 36])).toBe(true);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [4, 5])).toBe(true);
+  });
+
+  it('押す：荷車は上のマスから押すと動く。下からは動かない', async () => {
+    const { startExplore, useGadget } = await import('../../src/core');
+    const s = startExplore(area);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 17]).solved).toEqual([]);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 15]).solved).toEqual(['p_cart']);
+  });
+
+  it('仲間の力：あかりが編成にいれば人混みが道をあける。後で来る所は、その仲間がいないと開かない', async () => {
+    const { startExplore, useGadget } = await import('../../src/core');
+    const s = startExplore(area);
+    expect(useGadget(area, s, g('p_song'), ['hero'], at0).solved).toEqual([]);
+    expect(useGadget(area, s, g('p_song'), ['hero', 'akari'], at0).solved).toEqual(['p_song']);
+    expect(useGadget(area, s, g('l_vending'), ['hero', 'akari'], at0).solved).toEqual([]);
+    expect(useGadget(area, s, g('l_vending'), ['hero', 'mio'], at0).solved).toEqual(['l_vending']);
+  });
+
+  it('順番：提灯は右 → 左 → 下。まちがえると灯った物が消える。そろうと、やぐらの前に宝箱が出る', async () => {
+    const { gadgetArea, startExplore, useGadget } = await import('../../src/core');
+    let s = startExplore(area);
+    s = useGadget(area, s, g('p_lantern1'), [], at0).state;
+    expect(s.flags).toEqual(['p_lanterns:0']);
+    s = useGadget(area, s, g('p_lantern3'), [], at0).state;
+    expect(s.flags).toEqual([]);
+    for (const id of ['p_lantern1', 'p_lantern2']) s = useGadget(area, s, g(id), [], at0).state;
+    const last = useGadget(area, s, g('p_lantern3'), [], at0);
+    expect(last.solved).toEqual(['p_lanterns']);
+    expect(gadgetArea(area, s, 3).chests.some((c) => c.id === 'a11_chest_new1')).toBe(false);
+    expect(gadgetArea(area, last.state, 3).chests.some((c) => c.id === 'a11_chest_new1')).toBe(true);
+  });
+
+  it('仕掛けを解かなくても、コマを持つ砂嵐・ぬし・次の晩の始まりへ歩いて行ける（仕掛けはごほうびだけ）', async () => {
+    const { gadgetArea, startExplore } = await import('../../src/core');
+    const s = startExplore(area);
+    for (let n = 1; n <= 3; n++) {
+      const night = gadgetArea(nightArea(area, n), s, n);
+      const start = area.nights![n - 1].start;
+      const reach = reachableCells(night, start ? { room: start.room ?? startRoom(area), cell: start.cell } : undefined);
+      for (const e of night.enemies.filter((x) => (AREA_BATTLES[x.battle]?.koma ?? 0) > 0)) expect(reach[e.room!]?.has(e.patrol[0].join(',')), `${n}晩目 ${e.id}`).toBe(true);
+      if (n === 3) expect([...(reach.fest2_woods ?? [])].some((k) => ['10,3', '12,3', '11,4'].includes(k))).toBe(true);
+      // 仕掛けは、どれも隣のマスまで歩いて行ける（後で来る所は、仕掛けを解いた奥にもある）
+      for (const gd of night.gadgets!.filter((x) => x.kind !== 'later' && (x.night ?? 1) <= n && n <= (x.until ?? 9))) {
+        const [c, r] = gd.cell;
+        const sides = [[c, r - 1], [c + 1, r], [c, r + 1], [c - 1, r]].map((x) => x.join(','));
+        expect(sides.some((k) => reach[gd.room!]?.has(k)), `${n}晩目 ${gd.id}`).toBe(true);
+      }
+    }
+  });
+});
