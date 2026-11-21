@@ -234,6 +234,7 @@ export interface AreaDef {
  * 地図の出来事の手順（段階266）。who は 'hero'（先頭の仲間）か、敵の印の id。
  * walk：そのマスまで歩く。camera：そのマス（'hero' なら仲間）へカメラを動かす。say：地図の下に台詞の帯（タップで次へ）。
  * spawn：隠れていた砂嵐（`hidden`）を湧かせる。light：マスを順に灯す（提灯）。shake：画面を揺らす。wait：待つ。
+ * flash：画面を光らせる（花火。times 回）。slide：印 mark の物を from から to へ動かす（転がる荷車。段階268）。
  * battle：その砂嵐と戦う（地図の出来事の最後だけ）
  */
 export type AreaEventStep =
@@ -244,6 +245,8 @@ export type AreaEventStep =
   | { do: 'light'; cells: GridCell[] }
   | { do: 'shake' }
   | { do: 'wait'; ms: number }
+  | { do: 'flash'; times?: number }
+  | { do: 'slide'; mark: string; from: GridCell; to: GridCell }
   | { do: 'battle'; enemy: string };
 
 /** 地図の出来事のきっかけ（段階266）：enter そのマスのどれかに着いた・solved その仕掛けが解けた・room その部屋に入った */
@@ -268,12 +271,12 @@ export interface AreaGate extends InRoom {
  * 地図の上の仕掛け（段階264。docs/milestones/M3_explore_feel.md の 5-7）。そのマスは通れない（宝箱と同じく、隣からタップする）。
  * item：拾う品（拾うと消える）。use：needs の品を持っていれば解ける。push：from のマスから押すと解ける。
  * ability：ally の仲間が編成にいれば解ける（あかりの歌・ハルトのカメラ）。order：group の仕掛けを index の順に。全部そろうと group が解ける。
- * later：後で来る所（ally が仲間になってから、区画にもう一度来ると解ける）。photo：思い出の一枚（段階265。ハルトのカメラで撮ると、その場所の昔の一場面 done が見られる）
+ * look：見るだけ（段階268。はずれの木箱・ちがうお面屋。done を言うだけ）。later：後で来る所（ally が仲間になってから、区画にもう一度来ると解ける）。photo：思い出の一枚（段階265。ハルトのカメラで撮ると、その場所の昔の一場面 done が見られる）
  */
 export interface AreaGadget extends InRoom, InNight {
   id: string;
   cell: GridCell;
-  kind: 'item' | 'use' | 'push' | 'ability' | 'order' | 'later' | 'photo';
+  kind: 'item' | 'use' | 'push' | 'ability' | 'order' | 'later' | 'photo' | 'look';
   /** 地図の印の1字と、名前 */
   mark: string;
   label: string;
@@ -1004,6 +1007,8 @@ export function useGadget(area: AreaDef, state: ExploreState, gadget: AreaGadget
       return { state: add(gadget.id), text: gadget.done, solved: [] };
     case 'photo':
       return { state: add(gadget.id), text: gadget.done, solved: [] };
+    case 'look':
+      return none(gadget.done);
     case 'use':
       return gadget.needs && flags.includes(gadget.needs) ? { state: add(gadget.id), text: gadget.done, solved: [gadget.id] } : none(gadget.need ?? '');
     case 'push':
@@ -1055,13 +1060,14 @@ export function markEvent(state: ExploreState, ev: AreaEvent): ExploreState {
   return { ...state, flags: [...flags, ...add.filter((f) => !flags.includes(f))] };
 }
 
-/** 地図の出来事の書き間違い：きっかけ・歩く先・カメラのマスが歩けるか、出てくる砂嵐がいて隠れているか、戦闘が最後か */
+/** 地図の出来事の書き間違い：きっかけ・歩く先のマスが歩けるか、出てくる砂嵐がいて隠れているか、戦闘が最後か */
 export function checkEvents(area: AreaDef): string[] {
   const errors: string[] = [];
   for (const ev of area.events ?? []) {
     const room = ev.room ?? startRoom(area);
     const map = areaGrid(area, room);
-    const cells = [...(ev.when.on === 'enter' ? ev.when.cells : []), ...ev.steps.flatMap((s) => (s.do === 'walk' ? [s.to] : s.do === 'camera' && s.to !== 'hero' ? [s.to] : []))];
+    // カメラを向けるマスは見せる場所なので、歩けなくてよい（輪の真ん中など）
+    const cells = [...(ev.when.on === 'enter' ? ev.when.cells : []), ...ev.steps.flatMap((s) => (s.do === 'walk' ? [s.to] : []))];
     for (const c of cells) if (!isWalkable(map, c)) errors.push(`${area.id}：地図の出来事 ${ev.id} のマス（${c}）が通れない`);
     for (const st of ev.steps) {
       const who = st.do === 'walk' && st.who !== 'hero' ? st.who : st.do === 'spawn' || st.do === 'battle' ? st.enemy : null;

@@ -12,7 +12,7 @@ N = {1: (255, 210, 80), 2: (120, 200, 255), 3: (230, 120, 255)}  # 晩ごとの�
 ITEMS = [
     # ---- 1晩目（入口・屋台の裏・広場の下） ----
     ('fest_gate', (11, 20), 'start', 1, 'S'),
-    ('fest_gate', (20, 5), 'chest', 1, '箱'), ('fest_gate', (3, 11), 'talk', 1, '人'), ('fest_gate', (13, 11), 'photo', 1, '写'), ('fest_gate', (16, 14), 'show', 1, '★'),
+    ('fest_gate', (20, 5), 'chest', 1, '箱'), ('fest_gate', (5, 16), 'talk', 1, '人'), ('fest_gate', (13, 11), 'photo', 1, '写'), ('fest_gate', (16, 14), 'show', 1, '★'),
     ('fest_backyard', (3, 3), 'key', 1, '箱?'), ('fest_backyard', (6, 3), 'key', 1, '箱?'), ('fest_backyard', (8, 4), 'key', 1, '箱?'),
     ('fest_backyard', (11, 10), 'puzzle', 1, '発'), ('fest_backyard', (18, 19), 'chest', 1, '箱'), ('fest_backyard', (2, 20), 'later', 1, '直'), ('fest_backyard', (11, 17), 'show', 1, '★'),
     ('festival_night', (11, 19), 'cp', 1, 'P'), ('festival_night', (18, 18), 'ability', 1, '歌'), ('festival_night', (21, 18), 'photo', 1, '写'),
@@ -31,10 +31,10 @@ ITEMS = [
 ENEMIES = [
     ('fest_gate', [(11, 4), (11, 16)], 'patrol', 1, True), ('fest_gate', [(15, 13), (16, 13)], 'chase', 1, False),
     ('fest_backyard', [(8, 8), (14, 8), (14, 13), (8, 13)], 'patrol', 1, False), ('fest_backyard', [(4, 19)], 'flee', 1, False),
-    ('festival_night', [(11, 21), (11, 22)], 'patrol', 1, True), ('festival_night', [(5, 13), (5, 17)], 'chase', 1, True),
-    ('festival_night', [(6, 6), (17, 6)], 'patrol', 2, True), ('fest_lane', [(18, 5), (18, 15)], 'chase', 2, False), ('fest_lane', [(6, 3), (15, 3)], 'patrol', 2, True),
+    ('fest_gate', [(1, 11), (8, 11)], 'patrol', 1, True), ('festival_night', [(5, 13), (5, 17)], 'chase', 1, True),
+    ('festival_night', [(5, 4), (5, 7)], 'patrol', 2, True), ('fest_lane', [(18, 5), (18, 15)], 'chase', 2, False), ('fest_lane', [(6, 3), (15, 3)], 'patrol', 2, True),
     ('fest_east', [(18, 5), (18, 12)], 'chase', 2, False), ('fest_east', [(16, 19), (10, 19)], 'patrol', 2, False), ('fest_east', [(21, 20)], 'guard', 2, True),
-    ('festival_night', [(9, 4), (14, 4)], 'patrol', 3, False), ('festival_night', [(18, 13), (18, 17)], 'chase', 3, False),
+    ('festival_night', [(15, 7), (18, 7)], 'patrol', 3, False), ('festival_night', [(18, 13), (18, 17)], 'chase', 3, False),
     ('fest_woods', [(18, 13), (18, 16)], 'chase', 3, False), ('fest_woods', [(14, 4), (19, 4)], 'patrol', 3, True),
 ]
 GATES = [

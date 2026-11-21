@@ -1460,6 +1460,25 @@ export class ExploreScene extends Phaser.Scene {
           await wait(170);
         }
         await wait(200);
+      } else if (step.do === 'flash') {
+        // 花火：色を変えて光らせる
+        const colors: [number, number, number][] = [[255, 200, 120], [160, 210, 255], [255, 150, 200]];
+        for (let k = 0; k < (step.times ?? 1); k++) {
+          const [r, g, b] = colors[k % colors.length];
+          cam.flash(320, r, g, b);
+          playSe(this, SE.encounter);
+          await wait(650);
+        }
+      } else if (step.do === 'slide') {
+        // 物を動かす（転がる荷車）
+        const [fx, fy] = [step.from[0] * T + T / 2, step.from[1] * T + T / 2];
+        const box = this.add.container(fx, fy);
+        box.add(this.add.rectangle(0, 0, T * 0.8, T * 0.8, 0x6b4a2a).setStrokeStyle(2, 0x000000));
+        box.add(addText(this, 0, 0, step.mark, { size: 13, bold: true, color: '#ffffff' }).setOrigin(0.5));
+        this.world?.add(box);
+        const dist = Math.abs(step.to[0] - step.from[0]) + Math.abs(step.to[1] - step.from[1]);
+        await new Promise<void>((done) => this.tweens.add({ targets: box, x: step.to[0] * T + T / 2, y: step.to[1] * T + T / 2, angle: 360, duration: 90 * dist, ease: 'Quad.easeIn', onComplete: () => done() }));
+        this.tweens.add({ targets: box, alpha: 0, duration: 400, onComplete: () => box.destroy() });
       } else if (step.do === 'walk') {
         await this.eventWalk(step.who, step.to);
       } else if (step.do === 'battle') {
