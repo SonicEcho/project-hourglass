@@ -48,6 +48,9 @@ import {
   defeatEnemy,
   enemyActive,
   findPath,
+  findPathDiag,
+  dragStep,
+  dirOfDrag,
   normalizeExplore,
   isCheckpoint,
   komaLeft,
@@ -670,7 +673,36 @@ export class ExploreScene extends Phaser.Scene {
     // 全体の地図（段階47a）：部屋が2つ以上の区画だけ。入った部屋とつながりを、右上に小さく出す
     if (area.rooms.length > 1) ui.add(this.drawRoomMap());
 
+    // 段階269：押したまま引っ張ると、その向きへ歩き続ける（見えないスティック。指の下に小さな輪）
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (over.length > 0 || this.leaving || this.editor || this.eventRunning || this.tune) return;
+      this.drag = { x: p.x, y: p.y, dir: null };
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!this.drag || !p.isDown) return;
+      const dx = p.x - this.drag.x;
+      const dy = p.y - this.drag.y;
+      if (Math.hypot(dx, dy) < 18) return;
+      const ui = this.cameras.cameras[1];
+      const at = ui ? (p.positionToCamera(ui) as Phaser.Math.Vector2) : { x: p.x, y: p.y };
+      const start = ui ? ui.getWorldPoint(this.drag.x, this.drag.y) : { x: this.drag.x, y: this.drag.y };
+      this.drawStick(start.x, start.y, at.x - start.x, at.y - start.y);
+      const first = !this.drag.dir;
+      this.drag.dir = dirOfDrag(dx, dy);
+      if (first) {
+        // 引っ張り始めたら、タップで決めた道と行き先はやめる
+        this.route = [];
+        this.goal = null;
+        this.marker.setVisible(false);
+        this.drawRoute();
+      }
+      if (!this.walking) this.step();
+    });
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      const dragged = !!this.drag?.dir;
+      this.drag?.ring?.destroy();
+      this.drag = null;
+      if (dragged) return;
       if (over.length > 0 || this.leaving || this.editor || this.eventRunning) return;
       if (p.getDistance() > 12) return; // ドラッグは無視
       const pt = p.positionToCamera(cam) as Phaser.Math.Vector2;
@@ -804,17 +836,21 @@ export class ExploreScene extends Phaser.Scene {
     if (chest || gadget) {
       // 宝箱のマスは通れないので、隣の立てるマスのうち一番近い所まで歩いてから開ける（仕掛けも同じ。押す物は、まず押すマスへ）
       const at = (chest ?? gadget)!.cell;
-      const sides: GridCell[] = gadget?.from && findPath(this.map, from, gadget.from) ? [gadget.from] : [[at[0], at[1] - 1], [at[0] + 1, at[1]], [at[0], at[1] + 1], [at[0] - 1, at[1]]];
-      const options = sides.map((c) => ({ c, p: findPath(this.map, from, c) })).filter((o) => o.p !== null) as { c: GridCell; p: GridCell[] }[];
+      const sides: GridCell[] = gadget?.from && findPathDiag(this.map, from, gadget.from) ? [gadget.from] : [[at[0], at[1] - 1], [at[0] + 1, at[1]], [at[0], at[1] + 1], [at[0] - 1, at[1]]];
+      const options = sides.map((c) => ({ c, p: findPathDiag(this.map, from, c) })).filter((o) => o.p !== null) as { c: GridCell; p: GridCell[] }[];
       options.sort((a, b) => a.p.length - b.p.length);
       target = options[0]?.c ?? null;
       path = options[0]?.p ?? null;
     } else {
       const goal = talker ? talker.cell : boss ? this.area.boss.cell : cell;
-      target = nearestWalkable(this.map, goal);
-      path = target ? findPath(this.map, from, target) : null;
+      // 段階269：少しずれたタップ（1マス以内）は近くの歩ける所へ。それより遠い、歩けない所は「×」
+      target = nearestWalkable(this.map, goal, talker || boss ? 2 : 1);
+      path = target ? findPathDiag(this.map, from, target) : null;
     }
-    if (!target || !path) return;
+    if (!target || !path) {
+      this.showNoWay(cell);
+      return;
+    }
     if (talker || boss) {
       path.pop(); // 相手のマスの手前で止まる
       this.goal = talker ? { kind: 'talk', id: talker.id } : { kind: 'boss' };
@@ -827,13 +863,81 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.marker.setPosition(target[0] * T + T / 2, target[1] * T + T / 2).setVisible(true);
     this.route = path;
+    // 段階269：行き先に波紋、歩く道に点
+    this.ripple(target);
+    this.drawRoute();
     if (!this.walking) this.step();
     this.updateHubButton();
   }
 
+  // ---- 歩きやすく（段階269。docs/milestones/M3_explore_feel.md の 6.） ----
+
+  private routeView?: Phaser.GameObjects.Graphics;
+  /** 押したまま引っ張って歩く：指を置いた所（画面の座標）と、今の向き。見えないスティックの輪 */
+  private drag: { x: number; y: number; dir: GridCell | null; ring?: Phaser.GameObjects.Container } | null = null;
+
+  /** 歩く道に、小さな点（残りの道だけ） */
+  private drawRoute(): void {
+    if (!this.world) return;
+    if (!this.routeView || !this.routeView.active) {
+      this.routeView = this.add.graphics();
+      this.world.addAt(this.routeView, 1);
+    }
+    const g = this.routeView;
+    g.clear();
+    if (this.drag) return;
+    g.fillStyle(0xffd84a, 0.6);
+    for (const [c, r] of this.route) g.fillCircle(c * T + T / 2, r * T + T / 2, 3);
+  }
+
+  /** 行き先の波紋 */
+  private ripple([c, r]: GridCell): void {
+    if (!this.world) return;
+    const ring = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.35).setStrokeStyle(2, 0xffd84a, 0.9);
+    this.world.add(ring);
+    this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+  }
+
+  /** 行けない所をタップした：その所に「×」 */
+  private showNoWay([c, r]: GridCell): void {
+    if (!this.world) return;
+    const x = addText(this, c * T + T / 2, r * T + T / 2, '×', { size: 22, bold: true, color: '#ff5a6a' }).setOrigin(0.5).setStroke('#000000', 4);
+    this.world.add(x);
+    this.tweens.add({ targets: x, alpha: 0, y: x.y - 8, delay: 250, duration: 400, onComplete: () => x.destroy() });
+  }
+
+  /** 引っ張って歩く時の、次の1歩（向きへ進めなければ、近い向きにすべる） */
+  private dragNext(): GridCell | null {
+    if (!this.drag?.dir) return null;
+    const from = this.state.cell;
+    return dragStep(this.map, from, this.drag.dir);
+  }
+
+  /** 見えないスティックの輪（指を置いた所に小さく） */
+  private drawStick(px: number, py: number, dx: number, dy: number): void {
+    if (!this.ui || !this.drag) return;
+    if (!this.drag.ring) {
+      const ring = this.add.container(px, py);
+      ring.add(this.add.circle(0, 0, 34, 0xffffff, 0.08).setStrokeStyle(2, 0xffffff, 0.35));
+      ring.add(this.add.circle(0, 0, 13, 0xffd84a, 0.6).setName('knob'));
+      this.ui.add(ring);
+      this.drag.ring = ring;
+    }
+    const len = Math.min(34, Math.hypot(dx, dy));
+    const a = Math.atan2(dy, dx);
+    const knob = this.drag.ring.getByName('knob') as Phaser.GameObjects.Arc;
+    knob.setPosition(Math.cos(a) * len, Math.sin(a) * len);
+  }
+
   private step(): void {
     if (this.leaving) return;
+    // 段階269：引っ張っている間は、道が尽きたら向きへ次の1歩
+    if (this.route.length === 0 && this.drag?.dir && !this.eventRunning && !this.tipOpen) {
+      const n = this.dragNext();
+      if (n) this.route = [n];
+    }
     const next = this.route.shift();
+    this.drawRoute();
     if (!next) {
       this.walking = false;
       this.nextCell = null;
@@ -846,12 +950,14 @@ export class ExploreScene extends Phaser.Scene {
     this.walking = true;
     this.nextCell = next;
     this.shadeSprite(this.player, isShade(this.room, next));
-    if (this.walkers) this.walkParty(this.state.cell, next);
+    // 斜めの1歩は、少し長く（同じ速さに見えるように）
+    const diag = next[0] !== this.state.cell[0] && next[1] !== this.state.cell[1];
+    if (this.walkers) this.walkParty(this.state.cell, next, diag ? AREA_STEP_MS * 1.4 : AREA_STEP_MS);
     const walk = this.tweens.add({
       targets: this.player,
       x: next[0] * T + T / 2,
       y: next[1] * T + T / 2,
-      duration: AREA_STEP_MS,
+      duration: diag ? AREA_STEP_MS * 1.4 : AREA_STEP_MS,
       onComplete: () => {
         this.nextCell = null;
         this.arriveAt(next);
