@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { battleSceneFor, keepChainWeak, knownChainWeak } from './chainEncounter';
+import { ensureDigHero, type DigHeroSprite } from './digArt';
 import type { AreaDef, AreaEnemy, AreaEvent, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -159,8 +160,12 @@ export class ExploreScene extends Phaser.Scene {
   private graceUntil = 0;
   /** 出し抜く（段階263。新しい1-1 の試しだけ）：見つかる範囲・陰・不意打ち */
   private stealth = false;
-  /** 地図の上の地図の出来事（段階266）の途中（歩く・タップ・砂嵐を止める） */
+  /** 地図の出来事（段階266）の途中（歩く・タップ・砂嵐を止める） */
   private eventRunning = false;
+  /** 一緒に歩く仲間（段階267。新しい1-1 の試しだけ）：先頭と、後ろをついて歩く仲間の2頭身の絵。trail は先頭が歩いてきたマス（新しい順） */
+  private walkers = false;
+  private party: { id: string; box: Phaser.GameObjects.Container; img: Phaser.GameObjects.Sprite; art: DigHeroSprite; walk?: string }[] = [];
+  private trail: GridCell[] = [];
   private sightView?: Phaser.GameObjects.Graphics;
   /** 初めての人向けの説明を出している間は、敵も自分も止める（段階30） */
   private tipOpen = false;
@@ -211,6 +216,7 @@ export class ExploreScene extends Phaser.Scene {
     this.area = area;
     this.trial = !AREAS[data.area];
     this.stealth = raw === A11_REWORK;
+    this.walkers = raw === A11_REWORK;
     this.tune = data.tune ?? null;
     stopAmbience();
     this.route = [];
@@ -554,8 +560,28 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 仲間（ハルト）：小さくした立ち絵を足元の影の上に（歩くアニメーションは作らない。docs/ART.md）
     const [pc, pr] = this.state.cell;
-    this.player = this.add.container(pc * T + T / 2, pr * T + T / 2);
-    if (hasImage(this, 'portrait.hero.normal')) {
+    this.party = [];
+    this.trail = [];
+    // 一緒に歩く仲間（段階267）：編成の仲間を、後ろの人から先に置く（先頭が一番手前に重なる）
+    if (this.walkers) {
+      const ids = currentParty(storyBattleLineup()).map((c) => c.id);
+      for (const id of [...ids].reverse()) {
+        // 歩く二頭身（sprite.walk_<人>。4行×3列：前・左・右・後ろ × 立ち・左足・右足）が届いていれば、それを。なければ砂の底の掘る絵を仮に
+        const walk = this.walkSheet(id);
+        const art = walk ? { key: walk, originX: 0.5, originY: 0.9, scale: 1, anim: () => `${walk}:down`, idleFrame: 'w0-0' } : ensureDigHero(this, id);
+        const box = this.add.container(pc * T + T / 2, pr * T + T / 2);
+        box.add(this.add.ellipse(0, T * 0.38, T * 0.7, T * 0.26, 0x000000, 0.35));
+        const img = this.add.sprite(0, T * 0.45, art.key, art.idleFrame).setOrigin(art.originX, art.originY);
+        img.setScale((T * 1.55) / img.height);
+        box.add(img);
+        world.add(box);
+        this.party.unshift({ id, box, img, art, walk });
+      }
+    }
+    this.player = this.walkers && this.party[0] ? this.party[0].box : this.add.container(pc * T + T / 2, pr * T + T / 2);
+    if (this.walkers && this.party[0]) {
+      // 先頭は上で置いた（仲間の絵の箱が、そのまま先頭の印）
+    } else if (hasImage(this, 'portrait.hero.normal')) {
       this.player.add(this.add.ellipse(0, T * 0.35, T * 0.8, T * 0.3, 0x000000, 0.35));
       const face = this.add.image(0, T * 0.4, 'portrait.hero.normal').setOrigin(0.5, 1);
       face.setScale((T * 1.5) / face.height);
@@ -564,7 +590,7 @@ export class ExploreScene extends Phaser.Scene {
       this.player.add(this.add.circle(0, 0, T * 0.42, COLORS.ally).setStrokeStyle(2, 0xffffff));
       this.player.add(addText(this, 0, 0, 'ハ', { size: 14, bold: true }).setOrigin(0.5));
     }
-    world.add(this.player);
+    if (!this.walkers) world.add(this.player);
     this.shadeSprite(this.player, isShade(room, this.state.cell));
     this.roof = this.drawRoof(room);
     if (this.roof) world.add(this.roof);
@@ -810,6 +836,7 @@ export class ExploreScene extends Phaser.Scene {
     if (!next) {
       this.walking = false;
       this.nextCell = null;
+      for (const m of this.party) m.img.stop().setFrame(m.art.idleFrame);
       this.marker.setVisible(false);
       this.updateHubButton();
       this.reachGoal();
@@ -818,6 +845,7 @@ export class ExploreScene extends Phaser.Scene {
     this.walking = true;
     this.nextCell = next;
     this.shadeSprite(this.player, isShade(this.room, next));
+    if (this.walkers) this.walkParty(this.state.cell, next);
     const walk = this.tweens.add({
       targets: this.player,
       x: next[0] * T + T / 2,
@@ -1306,6 +1334,45 @@ export class ExploreScene extends Phaser.Scene {
     this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: ms, onComplete: () => this.stepEnemy(e) });
   }
 
+  /** 歩く二頭身の絵（段階267）があれば、切り分けて向きごとの歩きを作り、その絵の id を返す。なければ undefined */
+  private walkSheet(id: string): string | undefined {
+    const key = `sprite.walk_${id}`;
+    if (!hasImage(this, key)) return undefined;
+    const tex = this.textures.get(key);
+    const src = tex.getSourceImage() as HTMLImageElement;
+    const cw = Math.floor(src.width / 3);
+    const ch = Math.floor(src.height / 4);
+    if (!tex.has('w0-0')) for (let row = 0; row < 4; row++) for (let col = 0; col < 3; col++) tex.add(`w${row}-${col}`, 0, col * cw, row * ch, cw, ch);
+    (['down', 'left', 'right', 'up'] as const).forEach((dir, row) => {
+      const anim = `${key}:${dir}`;
+      if (!this.anims.exists(anim)) this.anims.create({ key: anim, frames: [1, 0, 2, 0].map((col) => ({ key, frame: `w${row}-${col}` })), frameRate: 9, repeat: -1 });
+    });
+    return key;
+  }
+
+  /** 一緒に歩く仲間（段階267）：先頭が from から to へ1歩。後ろの仲間は、先頭が歩いてきたマスを1つずつたどる */
+  private walkParty(from: GridCell, to: GridCell, ms = AREA_STEP_MS): void {
+    this.trail.unshift(from);
+    this.trail.length = Math.min(this.trail.length, this.party.length);
+    this.party.forEach((m, k) => {
+      const dest = k === 0 ? to : this.trail[k - 1];
+      if (!dest) return;
+      const x = dest[0] * T + T / 2;
+      const y = dest[1] * T + T / 2;
+      if (m.walk) {
+        // 歩く二頭身：向きの行を選ぶ
+        const dir = x < m.box.x ? 'left' : x > m.box.x ? 'right' : y < m.box.y ? 'up' : 'down';
+        const key = `${m.walk}:${dir}`;
+        if (m.img.anims.currentAnim?.key !== key || !m.img.anims.isPlaying) m.img.play(key);
+      } else {
+        if (x !== m.box.x) m.img.setFlipX(x < m.box.x);
+        if (!m.img.anims.isPlaying) m.img.play(m.art.anim('walk'));
+      }
+      if (k > 0) this.tweens.add({ targets: m.box, x, y, duration: ms });
+      this.shadeSprite(m.box, isShade(this.room, dest));
+    });
+  }
+
   /** 敵の印を置く（段階266：地図の出来事で湧かせる時にも使う） */
   private addEnemy(e: AreaEnemy, world: Phaser.GameObjects.Container): Enemy {
     const room = this.room;
@@ -1327,7 +1394,7 @@ export class ExploreScene extends Phaser.Scene {
     return enemy;
   }
 
-  // ---- 地図の上の地図の出来事（段階266。docs/milestones/M3_explore_feel.md の 6.） ----
+  // ---- 地図の出来事（段階266。docs/milestones/M3_explore_feel.md の 6.） ----
 
   /** 地図の出来事を始める。歩くのと砂嵐を止め、手順を順に動かす。最後に戦闘があれば、そのまま戦闘へ */
   private async runEvent(ev: AreaEvent): Promise<void> {
@@ -1429,14 +1496,24 @@ export class ExploreScene extends Phaser.Scene {
 
   /** 地図の出来事で歩かせる：'hero' は先頭の仲間、ほかは敵の印 */
   private async eventWalk(who: string, to: GridCell): Promise<void> {
-    const enemy = who === 'hero' ? undefined : this.enemies.find((e) => e.id === who);
-    const sprite = who === 'hero' ? this.player : enemy?.sprite;
+    const member = this.party.find((m) => m.id === who && who !== 'hero');
+    const enemy = who === 'hero' || member ? undefined : this.enemies.find((e) => e.id === who);
+    const sprite = who === 'hero' ? this.player : (member?.box ?? enemy?.sprite);
     if (!sprite) return;
-    const from: GridCell = who === 'hero' ? this.state.cell : enemy!.mind.cell;
+    const from: GridCell = who === 'hero' ? this.state.cell : member ? [Math.floor(member.box.x / T), Math.floor(member.box.y / T)] : enemy!.mind.cell;
     const path = findPath(this.map, from, to) ?? [];
+    let at = from;
     for (const [c, r] of path) {
-      await new Promise<void>((done) => this.tweens.add({ targets: sprite, x: c * T + T / 2, y: r * T + T / 2, duration: who === 'hero' ? AREA_STEP_MS * 1.4 : ENEMY_MOVES.patrol.stepMs, onComplete: () => done() }));
+      // 先頭が歩く時は、後ろの仲間もついて来る
+      if (who === 'hero' && this.walkers) this.walkParty(at, [c, r], AREA_STEP_MS * 1.4);
+      else if (member) {
+        member.img.setFlipX(c * T + T / 2 < member.box.x);
+        if (!member.img.anims.isPlaying) member.img.play(member.art.anim('walk'));
+      }
+      await new Promise<void>((done) => this.tweens.add({ targets: sprite, x: c * T + T / 2, y: r * T + T / 2, duration: who === 'hero' || member ? AREA_STEP_MS * 1.4 : ENEMY_MOVES.patrol.stepMs, onComplete: () => done() }));
+      at = [c, r];
     }
+    for (const m of this.party) m.img.stop().setFrame(m.art.idleFrame);
     if (who === 'hero') this.state = { ...this.state, cell: to };
     else if (enemy) enemy.mind = { ...enemy.mind, cell: to };
   }

@@ -1,23 +1,119 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：35 枚**（済んだ絵 382 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：40 枚**（済んだ絵 382 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
 - 気に入らない時は、同じ文でもう一度作るか、「ここを直して」と一言足して作り直してよい
 - 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる（届いた絵は DONE に足すと、下の「済んだ絵」に移る）
-- まだ一覧にない物：探索の地図を歩く2頭身のハルト・カイ（`docs/ART.md` の 5-5b の 3〜4。試し）。
+- まだ一覧にない物：探索の地図を見回る2頭身のカイ（`docs/ART.md` の 5-8 の 4.。歩く二頭身のハルトがうまくいってから）。
 
 ## まだの絵
 
+- [W. 探索を一緒に歩く二頭身（段階267）](#w-探索を一緒に歩く二頭身段階267)：5 枚
 - [AC. 脇役のまばたき・口パク（基本の1枚）](#ac-脇役のまばたき口パク基本の1枚)：13 枚
 - [AD. 口を開けた顔の、口を閉じた絵（口パク用）](#ad-口を開けた顔の口を閉じた絵口パク用)：22 枚
+
+### W. 探索を一緒に歩く二頭身（段階267）
+
+探索の地図で、編成の仲間が一緒に歩く2頭身の絵（`docs/milestones/M3_explore_feel.md` の 6.）。届くまでは、砂の底の掘る二頭身の歩く行を仮に使っている。絵柄と大きさは、砂の底の掘る二頭身（`public/assets/sprites/dig_*.webp`）にそろえる。届いたら背景を抜いて `public/assets/sprites/walk_<人>.webp` にし、台帳に `sprite.walk_<人>` で足す（Claude がする）
+
+#### 1. 歩く二頭身のハルト
+
+- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/hero_normal.webp`
+- 保存名：`walk_hero.png`
+- メモ：まず1枚で試す。うまくいけば下の4人も同じ形で
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A chibi sprite sheet for a top-down 2D RPG on mobile. Match the attached chibi digging sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell, but this sheet has NO shovel and NO tools: the character simply walks. The character is Haruto, a 17-year-old boy, the same person as in the attached portrait (messy short black hair with ONE single sand-gold strand in the front bangs, warm amber eyes, white school dress shirt with a loose sand-gold necktie, open dark navy zip hoodie with dusk-orange lining, dark school trousers, sneakers). He walks with an easy, slightly lazy stride.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: standing, left foot forward, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no shadow, no text, no grid lines.
+```
+
+#### 2. 歩く二頭身のあかり
+
+- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/akari_smile.webp`
+- 保存名：`walk_akari.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A chibi sprite sheet for a top-down 2D RPG on mobile. Match the attached chibi digging sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell, but this sheet has NO shovel and NO tools: the character simply walks. The character is Akari, a cheerful 17-year-old girl, the same person as in the attached portrait (shoulder-length soft chestnut-brown hair with light inward curls, side-swept bangs, a thin red ribbon at the back, a small red goldfish hair clip on the left, warm brown eyes, white dress shirt with a dusk-red neck ribbon, a cream knit cardigan with slightly long sleeves, a navy pleated skirt, navy knee socks, brown loafers). She walks with a light, bouncy step.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: standing, left foot forward, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no shadow, no text, no grid lines.
+```
+
+#### 3. 歩く二頭身のみお
+
+- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/mio_smile.webp`
+- 保存名：`walk_mio.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A chibi sprite sheet for a top-down 2D RPG on mobile. Match the attached chibi digging sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell, but this sheet has NO shovel and NO tools: the character simply walks. The character is Mio, a lively 10-year-old girl, the same person as in the attached portrait (bright light-brown short hair with one tiny side tuft tied by a small orange hair tie, big lively brown eyes, round cheeks, a slightly sunburnt nose, a plain sunny-yellow T-shirt with no logo, shorts, sneakers). She is smaller than the boy (a child) and walks briskly, full of energy.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: standing, left foot forward, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no shadow, no text, no grid lines.
+```
+
+#### 4. 歩く二頭身の小夜子
+
+- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/sayoko_smile.webp`
+- 保存名：`walk_sayoko.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A chibi sprite sheet for a top-down 2D RPG on mobile. Match the attached chibi digging sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell, but this sheet has NO shovel and NO tools: the character simply walks. The character is Sayoko, a graceful 16-year-old girl of the Taisho era, the same person as in the attached portrait (long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi, wooden geta sandals with red straps). She walks gracefully with small steps.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: standing, left foot forward, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no shadow, no text, no grid lines.
+```
+
+#### 5. 歩く二頭身の早瀬
+
+- 添付：`public/assets/sprites/dig_hero.webp`、`public/assets/portraits/hayase_normal.webp`
+- 保存名：`walk_hayase.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A chibi sprite sheet for a top-down 2D RPG on mobile. Match the attached chibi digging sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell, but this sheet has NO shovel and NO tools: the character simply walks. The character is Hayase, a dandy watchmaker in his late fifties, the same person as in the attached portrait (dark hair with grey at the temples swept back, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes, a watchmaker's loupe pushed up on his forehead, a dark navy work jacket over a black henley shirt, sleeves rolled up, a leather tool roll on his belt, brown boots). He is a little taller than the boy and walks calmly with his hands in his pockets.
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: standing, left foot forward, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no shadow, no text, no grid lines.
+```
 
 ### AC. 脇役のまばたき・口パク（基本の1枚）
 
 基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・初江）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す
 
-#### 1. 写しのしおり：口を開けた絵（作り直し）
+#### 6. 写しのしおり：口を開けた絵（作り直し）
 
 - 添付：`public/assets/portraits/past_shiori_normal.webp`
 - 保存名：`past_shiori_talk_src.png`
@@ -28,7 +124,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 2. 写しの勇夫：目を閉じた絵
+#### 7. 写しの勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_blink_src.png`
@@ -38,7 +134,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 3. 写しの勇夫：口を開けた絵
+#### 8. 写しの勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_talk_src.png`
@@ -48,7 +144,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 4. 写しの昇平：目を閉じた絵
+#### 9. 写しの昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_blink_src.png`
@@ -58,7 +154,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 5. 写しの昇平：口を開けた絵
+#### 10. 写しの昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_talk_src.png`
@@ -68,7 +164,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 6. 善次：目を閉じた絵
+#### 11. 善次：目を閉じた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_blink_src.png`
@@ -78,7 +174,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 7. 善次：口を開けた絵
+#### 12. 善次：口を開けた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_talk_src.png`
@@ -88,7 +184,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 8. 写しの寿美：目を閉じた絵
+#### 13. 写しの寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_blink_src.png`
@@ -98,7 +194,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 9. 写しの寿美：口を開けた絵
+#### 14. 写しの寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_talk_src.png`
@@ -108,7 +204,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 10. 写しのおじいちゃん：目を閉じた絵
+#### 15. 写しのおじいちゃん：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_blink_src.png`
@@ -118,7 +214,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 11. 写しのおじいちゃん：口を開けた絵
+#### 16. 写しのおじいちゃん：口を開けた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_talk_src.png`
@@ -128,7 +224,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 12. だいち：目を閉じた絵
+#### 17. だいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_blink_src.png`
@@ -138,7 +234,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 13. だいち：口を開けた絵
+#### 18. だいち：口を開けた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_talk_src.png`
@@ -152,7 +248,7 @@ Change only the mouth: open it slightly, as in the middle of speaking a word (a 
 
 元の絵が口を開けている表情は、話していても口が止まって見える（開発者と決めた：口を閉じた絵を足す）。ゲームは、話していない時にこの絵を重ね、話す間は重ねたり外したりして開け閉めする。台詞の多い順。大笑い・泣き顔のように、開いているのが自然な顔は頼まない。毎回その表情の絵を添付する。構図が少しでも動いたら作り直す
 
-#### 14. みお：smileの口を閉じた絵（台本で204行）
+#### 19. みお：smileの口を閉じた絵（台本で204行）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_smile_closed_src.png`
@@ -162,7 +258,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 15. あかり：smileの口を閉じた絵（台本で85行）
+#### 20. あかり：smileの口を閉じた絵（台本で85行）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_smile_closed_src.png`
@@ -172,7 +268,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 16. 富美：smileの口を閉じた絵（台本で35行）
+#### 21. 富美：smileの口を閉じた絵（台本で35行）
 
 - 添付：`public/assets/portraits/fumi_smile.webp`
 - 保存名：`fumi_smile_closed_src.png`
@@ -182,7 +278,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 17. ゆうま：smileの口を閉じた絵（台本で32行）
+#### 22. ゆうま：smileの口を閉じた絵（台本で32行）
 
 - 添付：`public/assets/portraits/yuma_smile.webp`
 - 保存名：`yuma_smile_closed_src.png`
@@ -192,7 +288,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 18. 写しの正雄：smileの口を閉じた絵（台本で26行）
+#### 23. 写しの正雄：smileの口を閉じた絵（台本で26行）
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_smile_closed_src.png`
@@ -202,7 +298,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 19. 写しのゆうま：smileの口を閉じた絵（台本で18行）
+#### 24. 写しのゆうま：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_yuma_smile.webp`
 - 保存名：`past_yuma_smile_closed_src.png`
@@ -212,7 +308,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 20. 写しの静江：smileの口を閉じた絵（台本で18行）
+#### 25. 写しの静江：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_shizue_smile.webp`
 - 保存名：`past_shizue_smile_closed_src.png`
@@ -222,7 +318,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 21. 子りく：proudの口を閉じた絵（台本で16行）
+#### 26. 子りく：proudの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/young_riku_proud.webp`
 - 保存名：`young_riku_proud_closed_src.png`
@@ -232,7 +328,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 22. 写しのひなの：smileの口を閉じた絵（台本で16行）
+#### 27. 写しのひなの：smileの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/past_hinano_smile.webp`
 - 保存名：`past_hinano_smile_closed_src.png`
@@ -242,7 +338,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 23. 正雄：smileの口を閉じた絵（台本で15行）
+#### 28. 正雄：smileの口を閉じた絵（台本で15行）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_smile_closed_src.png`
@@ -252,7 +348,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 24. 子あかり：smileの口を閉じた絵（台本で14行）
+#### 29. 子あかり：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`
 - 保存名：`young_akari_smile_closed_src.png`
@@ -262,7 +358,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 25. 写しの富美：smileの口を閉じた絵（台本で14行）
+#### 30. 写しの富美：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/past_fumi_smile.webp`
 - 保存名：`past_fumi_smile_closed_src.png`
@@ -272,7 +368,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 26. 勇夫：smileの口を閉じた絵（台本で12行）
+#### 31. 勇夫：smileの口を閉じた絵（台本で12行）
 
 - 添付：`public/assets/portraits/isamu_smile.webp`
 - 保存名：`isamu_smile_closed_src.png`
@@ -282,7 +378,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 27. 昇平：smileの口を閉じた絵（台本で11行）
+#### 32. 昇平：smileの口を閉じた絵（台本で11行）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_smile_closed_src.png`
@@ -292,7 +388,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 28. さき：smileの口を閉じた絵（台本で9行）
+#### 33. さき：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_smile_closed_src.png`
@@ -302,7 +398,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 29. しおり：smileの口を閉じた絵（台本で9行）
+#### 34. しおり：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/shiori_smile.webp`
 - 保存名：`shiori_smile_closed_src.png`
@@ -312,7 +408,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 30. 茂雄：smileの口を閉じた絵（台本で8行）
+#### 35. 茂雄：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_smile_closed_src.png`
@@ -322,7 +418,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 31. 写しの千代：smileの口を閉じた絵（台本で8行）
+#### 36. 写しの千代：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_smile_closed_src.png`
@@ -332,7 +428,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 32. 写しの昇平：smileの口を閉じた絵（台本で8行）
+#### 37. 写しの昇平：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_smile_closed_src.png`
@@ -342,7 +438,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 33. 写しのたいち：smileの口を閉じた絵（台本で8行）
+#### 38. 写しのたいち：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_taichi_smile.webp`
 - 保存名：`past_taichi_smile_closed_src.png`
@@ -352,7 +448,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 34. ペトラ：smileの口を閉じた絵（台本で5行）
+#### 39. ペトラ：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/petra_smile.webp`
 - 保存名：`petra_smile_closed_src.png`
@@ -362,7 +458,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 35. 写しのしおり：smileの口を閉じた絵（台本で5行）
+#### 40. 写しのしおり：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_smile_closed_src.png`

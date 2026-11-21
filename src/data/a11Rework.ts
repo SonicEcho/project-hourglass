@@ -373,7 +373,7 @@ export const A11_REWORK: AreaDef = {
     // 社の森の、後で来る所（小夜子が切る）
     { id: 'l_bamboo', room: 'fest2_woods', night: 3, cell: [2, 22], kind: 'later', ally: 'sayoko', mark: '刀', label: '竹やぶ', need: '竹やぶで通れない。……切れる人がいれば', done: '小夜子が竹やぶを切った（この先は、また今度）' },
   ],
-  // 地図の上の地図の出来事（段階266。docs/milestones/M3_explore_feel.md の 6.）：会話の画面に切り替えず、地図の上で起きる
+  // 地図の出来事（段階266。docs/milestones/M3_explore_feel.md の 6.）：会話の画面に切り替えず、地図の上で起きる
   events: [
     {
       id: 'ev_gate_ambush',

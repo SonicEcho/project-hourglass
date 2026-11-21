@@ -226,7 +226,7 @@ export interface AreaDef {
   /** 仕掛けと仲間の力（段階264）：解くと開く扉（gates）と、地図の上の仕掛け（gadgets） */
   gates?: AreaGate[];
   gadgets?: AreaGadget[];
-  /** 地図の上の地図の出来事（段階266）：会話の画面に切り替えず、地図の上で起きる出来事（1回だけ） */
+  /** 地図の出来事（段階266）：会話の画面に切り替えず、地図の上で起きる出来事（1回だけ） */
   events?: AreaEvent[];
 }
 
@@ -1028,7 +1028,7 @@ export function useGadget(area: AreaDef, state: ExploreState, gadget: AreaGadget
   }
 }
 
-// ---- 地図の上の地図の出来事（段階266） ----
+// ---- 地図の出来事（段階266） ----
 
 /** 地図に出ている敵か（隠れている砂嵐は、地図の出来事で湧くまで出ない） */
 export function enemyShown(state: ExploreState, enemy: AreaEnemy): boolean {

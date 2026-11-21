@@ -60,7 +60,9 @@ export function exploreImages(areaId: string): string[] {
   const battles = new Set<string>();
   collect(area, 'battle', battles);
   const maps = area.rooms.map((r) => r.image).filter((x): x is string => !!x);
-  return [...new Set([...maps, ...battleImages([...battles]), ...commonImages()])];
+  // 一緒に歩く仲間（段階267）：2頭身の絵（今は砂の底の掘る絵を仮に使う）
+  const walkers = ['hero', 'akari', 'mio', 'sayoko', 'hayase'].map((id) => (id === 'hero' ? 'sprite.dig_hero' : `sprite.dig_${id}`));
+  return [...new Set([...maps, ...battleImages([...battles]), ...walkers, ...commonImages()])];
 }
 
 /** 背景の名前から絵の id */
