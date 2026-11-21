@@ -27,7 +27,7 @@ describe('新しい1-1（段階262）', () => {
     expect(area.boss.battle).toBe(now.boss.battle);
     expect(area.komaNeed).toBe(now.komaNeed);
     expect(area.enemies.reduce((a, e) => a + (AREA_BATTLES[e.battle]?.koma ?? 0), 0) + (AREA_BATTLES[area.boss.battle]?.koma ?? 0)).toBe(area.komaNeed);
-    expect(area.chests.length).toBe(8);
+    expect(area.chests.length).toBe(6);
   });
 
   it('1つの部屋の1つの晩に、写しの人は1人まで（広場の1晩目と社の森だけ2人）', () => {
@@ -117,16 +117,16 @@ describe('仕掛けと仲間の力（段階264）', () => {
     // 拾った品は地図から消え、そのマスは通れる。開く前の扉のマスは通れない
     const before = gadgetArea(area, startExplore(area), 1);
     const after = gadgetArea(area, r.state, 1);
-    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [8, 36])).toBe(false);
-    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 36])).toBe(true);
-    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [4, 5])).toBe(true);
+    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [8, 17])).toBe(false);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 17])).toBe(true);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [6, 3])).toBe(true);
   });
 
   it('押す：荷車は上のマスから押すと動く。下からは動かない', async () => {
     const { startExplore, useGadget } = await import('../../src/core');
     const s = startExplore(area);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 17]).solved).toEqual([]);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 15]).solved).toEqual(['p_cart']);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 7]).solved).toEqual([]);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 5]).solved).toEqual(['p_cart']);
   });
 
   it('仲間の力：あかりが編成にいれば人混みが道をあける。後で来る所は、その仲間がいないと開かない', async () => {
@@ -232,5 +232,45 @@ describe('地図の上の寸劇（段階266）', () => {
     expect(pendingEvent(area, after, 1, 'fest2_gate', { on: 'enter', cell: [11, 15] })).toBeNull();
     expect(enemyShown(after, gate)).toBe(true);
     expect(pendingEvent(area, s, 1, 'fest2_backyard', { on: 'solved', flag: 'p_generator' })?.id).toBe('ev_generator');
+  });
+});
+
+describe('小さく濃い1-1（段階268）', () => {
+  it('6部屋とも 24×24。どの部屋にも、地図の出来事つきの見せ場がある', () => {
+    for (const r of area.rooms) expect([r.layout[0].length, r.layout.length], r.id).toEqual([24, 24]);
+    for (const r of area.rooms) expect(area.events!.some((ev) => ev.room === r.id), r.id).toBe(true);
+  });
+
+  it('提灯の答え（赤 → 白 → 青）は、思い出の一枚3枚に出てくる提灯の色の順', () => {
+    const lanterns = area.gadgets!.filter((g) => g.group === 'p_lanterns').sort((a, b) => a.index! - b.index!);
+    const colors = lanterns.map((g) => g.label.replace('い提灯', ''));
+    expect(colors).toEqual(['赤', '白', '青']);
+    const photos = ['m_gate', 'm_yagura', 'm_shooting'].map((id) => area.gadgets!.find((g) => g.id === id)!.done);
+    photos.forEach((text, k) => expect(text).toContain(`${colors[k]}い提灯`));
+  });
+
+  it('見るだけの仕掛け（はずれの木箱・ちがうお面屋）は、言葉だけで何も変えない', async () => {
+    const { startExplore, useGadget } = await import('../../src/core');
+    const s = startExplore(area);
+    const r = useGadget(area, s, area.gadgets!.find((g) => g.id === 'p_crate_blue')!, [], [0, 0]);
+    expect(r.state).toBe(s);
+    expect(r.text).toContain('からっぽ');
+  });
+
+  it('スナップの数は変えない：思い出を返した時のリカバリーを、提灯の仕掛けの先の宝箱へ移した', () => {
+    const snapsOf = (a: typeof area) => [...(a.chainReturnSnaps ?? []), ...a.chests.flatMap((c) => c.chainSnaps ?? [])].sort();
+    expect(snapsOf(area)).toEqual(snapsOf(AREAS.a11));
+    expect(area.chests.find((c) => c.id === 'a11_chest_new1')).toMatchObject({ needs: 'p_lanterns', chainSnaps: ['a11_recovery'] });
+  });
+});
+
+describe('晩の始まりの安全（段階268）', () => {
+  it('晩を始めるチェックポイントから4マス以内に、その晩までに出る砂嵐の見回りの道がない（始まってすぐ戦闘にならない。デバッグで途中の晩へ飛んだ時も）', () => {
+    for (let n = 2; n <= 3; n++) {
+      const start = area.nights![n - 1].start!;
+      for (const e of nightArea(area, n).enemies.filter((x) => x.room === start.room && (x.night ?? 1) <= n)) {
+        for (const p of e.patrol) expect(Math.abs(p[0] - start.cell[0]) + Math.abs(p[1] - start.cell[1]), `${n}晩目 ${e.id}`).toBeGreaterThan(4);
+      }
+    }
   });
 });

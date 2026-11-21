@@ -568,7 +568,8 @@ export class ExploreScene extends Phaser.Scene {
       for (const id of [...ids].reverse()) {
         // 歩く二頭身（sprite.walk_<人>。4行×3列：前・左・右・後ろ × 立ち・左足・右足）が届いていれば、それを。なければ砂の底の掘る絵を仮に
         const walk = this.walkSheet(id);
-        const art = walk ? { key: walk, originX: 0.5, originY: 0.9, scale: 1, anim: () => `${walk}:down`, idleFrame: 'w0-0' } : ensureDigHero(this, id);
+        // 足もとの位置は scripts/walk_sprite.py でそろえた所（HEAD_X 0.5・FOOT_Y 0.92）
+        const art = walk ? { key: walk, originX: 0.5, originY: 0.92, scale: 1, anim: () => `${walk}:down`, idleFrame: 'w0-0' } : ensureDigHero(this, id);
         const box = this.add.container(pc * T + T / 2, pr * T + T / 2);
         box.add(this.add.ellipse(0, T * 0.38, T * 0.7, T * 0.26, 0x000000, 0.35));
         const img = this.add.sprite(0, T * 0.45, art.key, art.idleFrame).setOrigin(art.originX, art.originY);
@@ -1334,6 +1335,19 @@ export class ExploreScene extends Phaser.Scene {
     this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: ms, onComplete: () => this.stepEnemy(e) });
   }
 
+  /** 仲間を、x・y へ歩く向きに向けて歩かせる（歩く二頭身は向きの行。仮の掘る絵は左右を返す）。止まった時の向きも覚える */
+  private faceMember(m: { box: Phaser.GameObjects.Container; img: Phaser.GameObjects.Sprite; art: DigHeroSprite; walk?: string }, x: number, y: number): void {
+    if (m.walk) {
+      const dir = x < m.box.x ? 'left' : x > m.box.x ? 'right' : y < m.box.y ? 'up' : 'down';
+      const key = `${m.walk}:${dir}`;
+      if (m.img.anims.currentAnim?.key !== key || !m.img.anims.isPlaying) m.img.play(key);
+      m.art = { ...m.art, idleFrame: `w${['down', 'left', 'right', 'up'].indexOf(dir)}-0` };
+      return;
+    }
+    if (x !== m.box.x) m.img.setFlipX(x < m.box.x);
+    if (!m.img.anims.isPlaying) m.img.play(m.art.anim('walk'));
+  }
+
   /** 歩く二頭身の絵（段階267）があれば、切り分けて向きごとの歩きを作り、その絵の id を返す。なければ undefined */
   private walkSheet(id: string): string | undefined {
     const key = `sprite.walk_${id}`;
@@ -1359,15 +1373,7 @@ export class ExploreScene extends Phaser.Scene {
       if (!dest) return;
       const x = dest[0] * T + T / 2;
       const y = dest[1] * T + T / 2;
-      if (m.walk) {
-        // 歩く二頭身：向きの行を選ぶ
-        const dir = x < m.box.x ? 'left' : x > m.box.x ? 'right' : y < m.box.y ? 'up' : 'down';
-        const key = `${m.walk}:${dir}`;
-        if (m.img.anims.currentAnim?.key !== key || !m.img.anims.isPlaying) m.img.play(key);
-      } else {
-        if (x !== m.box.x) m.img.setFlipX(x < m.box.x);
-        if (!m.img.anims.isPlaying) m.img.play(m.art.anim('walk'));
-      }
+      this.faceMember(m, x, y);
       if (k > 0) this.tweens.add({ targets: m.box, x, y, duration: ms });
       this.shadeSprite(m.box, isShade(this.room, dest));
     });
@@ -1454,6 +1460,25 @@ export class ExploreScene extends Phaser.Scene {
           await wait(170);
         }
         await wait(200);
+      } else if (step.do === 'flash') {
+        // 花火：色を変えて光らせる
+        const colors: [number, number, number][] = [[255, 200, 120], [160, 210, 255], [255, 150, 200]];
+        for (let k = 0; k < (step.times ?? 1); k++) {
+          const [r, g, b] = colors[k % colors.length];
+          cam.flash(320, r, g, b);
+          playSe(this, SE.encounter);
+          await wait(650);
+        }
+      } else if (step.do === 'slide') {
+        // 物を動かす（転がる荷車）
+        const [fx, fy] = [step.from[0] * T + T / 2, step.from[1] * T + T / 2];
+        const box = this.add.container(fx, fy);
+        box.add(this.add.rectangle(0, 0, T * 0.8, T * 0.8, 0x6b4a2a).setStrokeStyle(2, 0x000000));
+        box.add(addText(this, 0, 0, step.mark, { size: 13, bold: true, color: '#ffffff' }).setOrigin(0.5));
+        this.world?.add(box);
+        const dist = Math.abs(step.to[0] - step.from[0]) + Math.abs(step.to[1] - step.from[1]);
+        await new Promise<void>((done) => this.tweens.add({ targets: box, x: step.to[0] * T + T / 2, y: step.to[1] * T + T / 2, angle: 360, duration: 90 * dist, ease: 'Quad.easeIn', onComplete: () => done() }));
+        this.tweens.add({ targets: box, alpha: 0, duration: 400, onComplete: () => box.destroy() });
       } else if (step.do === 'walk') {
         await this.eventWalk(step.who, step.to);
       } else if (step.do === 'battle') {
@@ -1506,10 +1531,7 @@ export class ExploreScene extends Phaser.Scene {
     for (const [c, r] of path) {
       // 先頭が歩く時は、後ろの仲間もついて来る
       if (who === 'hero' && this.walkers) this.walkParty(at, [c, r], AREA_STEP_MS * 1.4);
-      else if (member) {
-        member.img.setFlipX(c * T + T / 2 < member.box.x);
-        if (!member.img.anims.isPlaying) member.img.play(member.art.anim('walk'));
-      }
+      else if (member) this.faceMember(member, c * T + T / 2, r * T + T / 2);
       await new Promise<void>((done) => this.tweens.add({ targets: sprite, x: c * T + T / 2, y: r * T + T / 2, duration: who === 'hero' || member ? AREA_STEP_MS * 1.4 : ENEMY_MOVES.patrol.stepMs, onComplete: () => done() }));
       at = [c, r];
     }
