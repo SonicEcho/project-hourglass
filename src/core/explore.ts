@@ -126,6 +126,8 @@ export interface AreaEnemy extends InRoom, InNight {
   battle: string;
   /** 動き方（書かなければ見回り） */
   move?: EnemyMove;
+  /** 地図の出来事（段階266）の「湧かせる」まで、地図に出ない（物陰からの待ち伏せなど） */
+  hidden?: boolean;
 }
 
 /** 区画の奥のボスの印（動かない） */
@@ -224,6 +226,33 @@ export interface AreaDef {
   /** 仕掛けと仲間の力（段階264）：解くと開く扉（gates）と、地図の上の仕掛け（gadgets） */
   gates?: AreaGate[];
   gadgets?: AreaGadget[];
+  /** 地図の上の地図の出来事（段階266）：会話の画面に切り替えず、地図の上で起きる出来事（1回だけ） */
+  events?: AreaEvent[];
+}
+
+/**
+ * 地図の出来事の手順（段階266）。who は 'hero'（先頭の仲間）か、敵の印の id。
+ * walk：そのマスまで歩く。camera：そのマス（'hero' なら仲間）へカメラを動かす。say：地図の下に台詞の帯（タップで次へ）。
+ * spawn：隠れていた砂嵐（`hidden`）を湧かせる。light：マスを順に灯す（提灯）。shake：画面を揺らす。wait：待つ。
+ * battle：その砂嵐と戦う（地図の出来事の最後だけ）
+ */
+export type AreaEventStep =
+  | { do: 'walk'; who: string; to: GridCell }
+  | { do: 'camera'; to: GridCell | 'hero'; ms?: number }
+  | { do: 'say'; name: string; text: string }
+  | { do: 'spawn'; enemy: string }
+  | { do: 'light'; cells: GridCell[] }
+  | { do: 'shake' }
+  | { do: 'wait'; ms: number }
+  | { do: 'battle'; enemy: string };
+
+/** 地図の出来事のきっかけ（段階266）：enter そのマスのどれかに着いた・solved その仕掛けが解けた・room その部屋に入った */
+export type AreaEventWhen = { on: 'enter'; cells: GridCell[] } | { on: 'solved'; flag: string } | { on: 'room' };
+
+export interface AreaEvent extends InRoom, InNight {
+  id: string;
+  when: AreaEventWhen;
+  steps: AreaEventStep[];
 }
 
 /** 仕掛けの扉（段階264）：by の仕掛けを解くまで、そのマスを通れない。look は描き方 */
@@ -997,6 +1026,54 @@ export function useGadget(area: AreaDef, state: ExploreState, gadget: AreaGadget
       return { state: add(`${group}:${gadget.index}`, group), text: gadget.done, solved: [group] };
     }
   }
+}
+
+// ---- 地図の上の地図の出来事（段階266） ----
+
+/** 地図に出ている敵か（隠れている砂嵐は、地図の出来事で湧くまで出ない） */
+export function enemyShown(state: ExploreState, enemy: AreaEnemy): boolean {
+  return !enemy.hidden || (state.flags ?? []).includes(`spawn:${enemy.id}`);
+}
+
+/** 起きる地図の出来事（まだ起きていない物の最初の1つ）。cause は、今起きたこと */
+export function pendingEvent(area: AreaDef, state: ExploreState, night: number, room: string, cause: { on: 'enter'; cell: GridCell } | { on: 'solved'; flag: string } | { on: 'room' }): AreaEvent | null {
+  const flags = state.flags ?? [];
+  return (
+    (area.events ?? []).find((ev) => {
+      if (flags.includes(`event:${ev.id}`) || !inNight(ev, night || 1) || !inRoom(area, ev, room)) return false;
+      if (cause.on === 'enter') return ev.when.on === 'enter' && ev.when.cells.some((c) => same(c, cause.cell));
+      if (cause.on === 'solved') return ev.when.on === 'solved' && ev.when.flag === cause.flag;
+      return ev.when.on === 'room';
+    }) ?? null
+  );
+}
+
+/** 地図の出来事が起きた（1回だけ）。湧かせた砂嵐も覚える */
+export function markEvent(state: ExploreState, ev: AreaEvent): ExploreState {
+  const add = [`event:${ev.id}`, ...ev.steps.flatMap((s) => (s.do === 'spawn' ? [`spawn:${s.enemy}`] : []))];
+  const flags = state.flags ?? [];
+  return { ...state, flags: [...flags, ...add.filter((f) => !flags.includes(f))] };
+}
+
+/** 地図の出来事の書き間違い：きっかけ・歩く先・カメラのマスが歩けるか、出てくる砂嵐がいて隠れているか、戦闘が最後か */
+export function checkEvents(area: AreaDef): string[] {
+  const errors: string[] = [];
+  for (const ev of area.events ?? []) {
+    const room = ev.room ?? startRoom(area);
+    const map = areaGrid(area, room);
+    const cells = [...(ev.when.on === 'enter' ? ev.when.cells : []), ...ev.steps.flatMap((s) => (s.do === 'walk' ? [s.to] : s.do === 'camera' && s.to !== 'hero' ? [s.to] : []))];
+    for (const c of cells) if (!isWalkable(map, c)) errors.push(`${area.id}：地図の出来事 ${ev.id} のマス（${c}）が通れない`);
+    for (const st of ev.steps) {
+      const who = st.do === 'walk' && st.who !== 'hero' ? st.who : st.do === 'spawn' || st.do === 'battle' ? st.enemy : null;
+      if (who && !area.enemies.some((e) => e.id === who)) errors.push(`${area.id}：地図の出来事 ${ev.id} の砂嵐 ${who} がいない`);
+      if (st.do === 'spawn' && !area.enemies.find((e) => e.id === st.enemy)?.hidden) errors.push(`${area.id}：地図の出来事 ${ev.id} で湧かせる ${st.enemy} が隠れていない`);
+    }
+    const bi = ev.steps.findIndex((st) => st.do === 'battle');
+    if (bi >= 0 && bi !== ev.steps.length - 1) errors.push(`${area.id}：地図の出来事 ${ev.id} の戦闘が最後でない`);
+    const when = ev.when;
+    if (when.on === 'solved' && !(area.gadgets ?? []).some((g) => g.id === when.flag || g.group === when.flag)) errors.push(`${area.id}：地図の出来事 ${ev.id} の仕掛け ${when.flag} がない`);
+  }
+  return errors;
 }
 
 /** 今いる晩 */

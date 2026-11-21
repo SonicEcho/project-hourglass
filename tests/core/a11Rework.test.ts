@@ -210,3 +210,27 @@ describe('写しの人がくれる物と思い出の一枚（段階265）', () =
     expect(useGadget(area, r.state, photos[0], [], [0, 0]).text).toBe(photos[0].done);
   });
 });
+
+describe('地図の上の寸劇（段階266）', () => {
+  it('書き間違いがない（マス・砂嵐・戦闘が最後・仕掛けがある）', async () => {
+    const { checkEvents } = await import('../../src/core');
+    expect(checkEvents(area)).toEqual([]);
+    // 書き間違いを見つける
+    const bad = { ...area, events: [{ id: 'x', room: 'fest2_gate', when: { on: 'enter' as const, cells: [[0, 0] as [number, number]] }, steps: [{ do: 'battle' as const, enemy: 'nobody' }, { do: 'shake' as const }] }] };
+    expect(checkEvents(bad).length).toBe(3);
+  });
+
+  it('マスに着いた時・仕掛けが解けた時に起きる。1回だけ。湧かせた砂嵐は、その後も地図に出る', async () => {
+    const { enemyShown, markEvent, pendingEvent, startExplore } = await import('../../src/core');
+    const s = startExplore(area);
+    const gate = area.enemies.find((e) => e.id === 'a11_e_gate_chase')!;
+    expect(enemyShown(s, gate)).toBe(false);
+    const ev = pendingEvent(area, s, 1, 'fest2_gate', { on: 'enter', cell: [11, 15] })!;
+    expect(ev.id).toBe('ev_gate_ambush');
+    expect(pendingEvent(area, s, 1, 'fest2_gate', { on: 'enter', cell: [11, 16] })).toBeNull();
+    const after = markEvent(s, ev);
+    expect(pendingEvent(area, after, 1, 'fest2_gate', { on: 'enter', cell: [11, 15] })).toBeNull();
+    expect(enemyShown(after, gate)).toBe(true);
+    expect(pendingEvent(area, s, 1, 'fest2_backyard', { on: 'solved', flag: 'p_generator' })?.id).toBe('ev_generator');
+  });
+});
