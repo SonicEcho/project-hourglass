@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { battleSceneFor, keepChainWeak, knownChainWeak } from './chainEncounter';
-import type { AreaDef, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
+import type { AreaDef, AreaEnemy, AreaEvent, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
   unvisitedDoors,
@@ -14,6 +14,9 @@ import {
   recordLibraryFinds,
   addParts,
   enemyNext,
+  enemyShown,
+  markEvent,
+  pendingEvent,
   restVitals,
   takeGift,
   closedGates,
@@ -109,6 +112,8 @@ export interface ExploreData {
   notice?: string;
   /** 話し終えて戻ってきた写しの人（段階265。くれる物を渡す） */
   talked?: string;
+  /** 開き直した後に起こす地図の出来事（段階266：仕掛けが解けた時の地図の出来事） */
+  event?: string;
   /** 晩に分けた区画の、何晩目か（段階63。物語の流れの探索の出来事が決める） */
   night?: number;
   /**
@@ -154,6 +159,8 @@ export class ExploreScene extends Phaser.Scene {
   private graceUntil = 0;
   /** 出し抜く（段階263。新しい1-1 の試しだけ）：見つかる範囲・陰・不意打ち */
   private stealth = false;
+  /** 地図の上の地図の出来事（段階266）の途中（歩く・タップ・砂嵐を止める） */
+  private eventRunning = false;
   private sightView?: Phaser.GameObjects.Graphics;
   /** 初めての人向けの説明を出している間は、敵も自分も止める（段階30） */
   private tipOpen = false;
@@ -217,6 +224,7 @@ export class ExploreScene extends Phaser.Scene {
     setHubReturn(null);
     this.graceUntil = this.time.now + AREA_GRACE_MS;
     this.tipOpen = false;
+    this.eventRunning = false;
     this.world = undefined;
     this.pausedTweens = [];
 
@@ -338,6 +346,10 @@ export class ExploreScene extends Phaser.Scene {
         (this.stealth && !stealthGuideShown && !note && !data.won ? ((stealthGuideShown = true), '\n砂嵐の前の砂色のマスに入ると見つかる。緑の陰にいる間は見つからない。見つかる前に触れると不意打ち！') : ''),
     );
     this.cameras.main.fadeIn(300, 0, 0, 0);
+    // 地図の出来事（段階266）：仕掛けが解けた時の地図の出来事と、部屋に入った時の地図の出来事
+    const queued = data.event ? (this.area.events ?? []).find((x) => x.id === data.event && !(this.state.flags ?? []).includes(`event:${x.id}`)) : undefined;
+    const onRoom = queued ?? pendingEvent(this.area, this.state, this.night, this.state.room, { on: 'room' });
+    if (onRoom) this.time.delayedCall(420, () => void this.runEvent(onRoom));
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
     if (komaGot > 0) this.time.delayedCall(300, () => playKoma(this, left <= 0));
     this.showTip(false);
@@ -536,22 +548,9 @@ export class ExploreScene extends Phaser.Scene {
     world.add(this.marker);
     // 敵の印（倒したものは出さない）
     for (const e of area.enemies) {
-      if (!enemyActive(this.state, e.id) || !this.here(e)) continue;
-      const move = e.move ?? 'patrol';
-      const route = e.patrol.length >= 2 ? patrolRoute(this.map, e.patrol) : [e.patrol[0]];
-      const sprite = this.enemySprite(e.battle, move, route[0]);
-      this.shadeSprite(sprite, isShade(room, route[0]));
-      // コマを持つ砂嵐の印（段階67。物語の探索だけ。狩りではコマは手に入らない）
-      if ((AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
-      world.add(sprite);
-      const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route), facing: startFacing(route), spotted: false };
-      if (move === 'chase' || (this.stealth && move === 'patrol')) {
-        enemy.alert = addText(this, 0, -T * 0.95, '！', { size: 16, bold: true, color: '#ffd84a' }).setOrigin(0.5).setVisible(false);
-        enemy.alert.setStroke('#5a1a00', 4);
-        sprite.add(enemy.alert);
-      }
-      this.enemies.push(enemy);
-      this.stepEnemy(enemy);
+      // 地図の出来事（段階266）で湧くまで隠れている砂嵐は出さない
+      if (!enemyActive(this.state, e.id) || !this.here(e) || !enemyShown(this.state, e)) continue;
+      this.addEnemy(e, world);
     }
     // 仲間（ハルト）：小さくした立ち絵を足元の影の上に（歩くアニメーションは作らない。docs/ART.md）
     const [pc, pr] = this.state.cell;
@@ -645,7 +644,7 @@ export class ExploreScene extends Phaser.Scene {
     if (area.rooms.length > 1) ui.add(this.drawRoomMap());
 
     this.input.on('pointerup', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (over.length > 0 || this.leaving || this.editor) return;
+      if (over.length > 0 || this.leaving || this.editor || this.eventRunning) return;
       if (p.getDistance() > 12) return; // ドラッグは無視
       const pt = p.positionToCamera(cam) as Phaser.Math.Vector2;
       this.tapCell([Math.floor(pt.x / T), Math.floor(pt.y / T)]);
@@ -653,7 +652,7 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune) return;
+    if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune || this.eventRunning) return;
     if (this.time.now < this.graceUntil) return;
     if (this.stealth) this.updateSight();
     for (const e of this.enemies) {
@@ -868,6 +867,12 @@ export class ExploreScene extends Phaser.Scene {
     }
     if (this.atExit(cell)) this.say('光る砂時計：今夜はここまで\n下のボタンで時計屋へ帰る');
     this.keep(this.state);
+    // 地図の出来事（段階266）：そのマスに着いたら
+    const ev = pendingEvent(this.area, this.state, this.night, this.state.room, { on: 'enter', cell });
+    if (ev) {
+      void this.runEvent(ev);
+      return;
+    }
     if (r.event.type === 'checkpoint') {
       const t = pendingTrigger(this.area, this.state, 'checkpoint');
       if (t) {
@@ -980,7 +985,9 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.leaving = true;
     this.cameras.main.flash(260, 255, 240, 200);
-    this.time.delayedCall(280, () => this.scene.restart(this.back({ notice: r.text })));
+    // 地図の出来事（段階266）：仕掛けが解けた時の地図の出来事は、開き直した後に起こす
+    const ev = r.solved.map((flag) => pendingEvent(this.area, this.state, this.night, this.state.room, { on: 'solved', flag })).find((x) => !!x);
+    this.time.delayedCall(280, () => this.scene.restart(this.back({ notice: r.text, ...(ev ? { event: ev.id } : {}) })));
   }
 
   /** 思い出の一枚（段階265）：セピアの写真の札を画面の真ん中に。タップで閉じる（絵が届くまでは、場面を言葉で） */
@@ -1297,6 +1304,141 @@ export class ExploreScene extends Phaser.Scene {
     if (img && dx !== 0) img.setFlipX(dx < 0);
     const ms = this.stealth && e.spotted ? ENEMY_MOVES.chase.stepMs : tuning.stepMs;
     this.tweens.add({ targets: e.sprite, x: c * T + T / 2, y: r * T + T / 2, duration: ms, onComplete: () => this.stepEnemy(e) });
+  }
+
+  /** 敵の印を置く（段階266：地図の出来事で湧かせる時にも使う） */
+  private addEnemy(e: AreaEnemy, world: Phaser.GameObjects.Container): Enemy {
+    const room = this.room;
+    const move = e.move ?? 'patrol';
+    const route = e.patrol.length >= 2 ? patrolRoute(this.map, e.patrol) : [e.patrol[0]];
+    const sprite = this.enemySprite(e.battle, move, route[0]);
+    this.shadeSprite(sprite, isShade(room, route[0]));
+    // コマを持つ砂嵐の印（段階67。物語の探索だけ。狩りではコマは手に入らない）
+    if ((AREA_BATTLES[e.battle]?.koma ?? 0) > 0) sprite.add(this.komaMark(T * 0.45, -T * 0.6));
+    world.add(sprite);
+    const enemy: Enemy = { id: e.id, battle: e.battle, move, sprite, route, mind: startMind(route), facing: startFacing(route), spotted: false };
+    if (move === 'chase' || (this.stealth && move === 'patrol')) {
+      enemy.alert = addText(this, 0, -T * 0.95, '！', { size: 16, bold: true, color: '#ffd84a' }).setOrigin(0.5).setVisible(false);
+      enemy.alert.setStroke('#5a1a00', 4);
+      sprite.add(enemy.alert);
+    }
+    this.enemies.push(enemy);
+    this.stepEnemy(enemy);
+    return enemy;
+  }
+
+  // ---- 地図の上の地図の出来事（段階266。docs/milestones/M3_explore_feel.md の 6.） ----
+
+  /** 地図の出来事を始める。歩くのと砂嵐を止め、手順を順に動かす。最後に戦闘があれば、そのまま戦闘へ */
+  private async runEvent(ev: AreaEvent): Promise<void> {
+    if (this.eventRunning || this.leaving) return;
+    this.eventRunning = true;
+    this.route = [];
+    this.goal = null;
+    this.marker?.setVisible(false);
+    // 起きたことを先に覚える（地図の出来事の途中で戦闘に入っても、もう一度起きない）
+    this.state = markEvent(this.state, ev);
+    this.keep(this.state);
+    const paused = this.tweens.getTweens().filter((t) => !t.isPaused() && this.enemies.some((e) => t.targets.includes(e.sprite)));
+    for (const t of paused) t.pause();
+    const cam = this.cameras.main;
+    const wait = (ms: number) => new Promise<void>((done) => this.time.delayedCall(ms, () => done()));
+    for (const step of ev.steps) {
+      if (this.leaving) return;
+      if (step.do === 'wait') await wait(step.ms);
+      else if (step.do === 'shake') {
+        cam.shake(320, 0.008);
+        await wait(360);
+      } else if (step.do === 'camera') {
+        cam.stopFollow();
+        const [x, y] = step.to === 'hero' ? [this.player.x, this.player.y] : [step.to[0] * T + T / 2, step.to[1] * T + T / 2];
+        cam.pan(x, y, step.ms ?? 400, 'Sine.easeInOut');
+        await wait((step.ms ?? 400) + 60);
+        if (step.to === 'hero') cam.startFollow(this.player, true, 0.2, 0.2);
+      } else if (step.do === 'say') await this.eventLine(step.name, step.text);
+      else if (step.do === 'spawn') {
+        const def = this.area.enemies.find((e) => e.id === step.enemy);
+        if (def && this.world && enemyActive(this.state, def.id)) {
+          const e = this.addEnemy(def, this.world);
+          this.tweens.getTweensOf(e.sprite).forEach((t) => t.pause());
+          paused.push(...this.tweens.getTweensOf(e.sprite));
+          // 砂が渦を巻いて、砂嵐が現れる
+          e.sprite.setScale(0.2).setAlpha(0);
+          for (let k = 0; k < 10; k++) {
+            const a = (k / 10) * Math.PI * 2;
+            const dot = this.add.circle(e.sprite.x + Math.cos(a) * T, e.sprite.y + Math.sin(a) * T, 3, 0xd8c8a0, 0.9);
+            this.world.add(dot);
+            this.tweens.add({ targets: dot, x: e.sprite.x, y: e.sprite.y, alpha: 0, duration: 420, onComplete: () => dot.destroy() });
+          }
+          this.tweens.add({ targets: e.sprite, scale: 1, alpha: 1, duration: 420, ease: 'Back.easeOut' });
+          playSe(this, SE.encounter);
+          await wait(460);
+        }
+      } else if (step.do === 'light') {
+        // 提灯を順に灯す
+        for (const [c, r] of step.cells) {
+          const glow = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.9, 0xffc860, 0.0);
+          const core = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.22, 0xfff0b0, 0);
+          this.world?.add([glow, core]);
+          this.tweens.add({ targets: glow, fillAlpha: 0.35, duration: 260 });
+          this.tweens.add({ targets: core, fillAlpha: 1, duration: 160 });
+          this.tweens.add({ targets: glow, scale: 1.15, yoyo: true, repeat: -1, duration: 900, delay: 260 });
+          playSe(this, SE.heal);
+          await wait(170);
+        }
+        await wait(200);
+      } else if (step.do === 'walk') {
+        await this.eventWalk(step.who, step.to);
+      } else if (step.do === 'battle') {
+        const e = this.area.enemies.find((x) => x.id === step.enemy);
+        if (e) {
+          this.eventRunning = false;
+          this.startBattle(e.battle, e.id);
+          return;
+        }
+      }
+    }
+    if (cam.panEffect.isRunning) await wait(400);
+    cam.startFollow(this.player, true, 0.2, 0.2);
+    for (const t of paused) t.resume();
+    this.graceUntil = this.time.now + AREA_GRACE_MS;
+    this.eventRunning = false;
+  }
+
+  /** 地図の出来事の台詞：地図の下に、名前と台詞の帯。タップで次へ */
+  private eventLine(name: string, text: string): Promise<void> {
+    return new Promise((done) => {
+      if (!this.ui) return done();
+      const box = this.add.container(0, 0);
+      const y = GAME_HEIGHT - 230;
+      const hit = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.001).setOrigin(0).setInteractive();
+      box.add(hit);
+      box.add(this.add.rectangle(12, y, GAME_WIDTH - 24, 96, 0x0b1020, 0.92).setOrigin(0).setStrokeStyle(2, 0xffd84a));
+      box.add(addText(this, 26, y + 10, name, { size: 13, bold: true, color: '#ffd84a' }));
+      box.add(addText(this, 26, y + 34, text, { size: 15, color: '#ffffff', wrap: GAME_WIDTH - 60, ja: true }).setLineSpacing(4));
+      box.add(addText(this, GAME_WIDTH - 24, y + 84, '▼', { size: 11, color: '#ffd84a' }).setOrigin(1, 1));
+      box.setAlpha(0);
+      this.ui.add(box);
+      this.tweens.add({ targets: box, alpha: 1, duration: 140 });
+      hit.once('pointerup', () => {
+        box.destroy();
+        done();
+      });
+    });
+  }
+
+  /** 地図の出来事で歩かせる：'hero' は先頭の仲間、ほかは敵の印 */
+  private async eventWalk(who: string, to: GridCell): Promise<void> {
+    const enemy = who === 'hero' ? undefined : this.enemies.find((e) => e.id === who);
+    const sprite = who === 'hero' ? this.player : enemy?.sprite;
+    if (!sprite) return;
+    const from: GridCell = who === 'hero' ? this.state.cell : enemy!.mind.cell;
+    const path = findPath(this.map, from, to) ?? [];
+    for (const [c, r] of path) {
+      await new Promise<void>((done) => this.tweens.add({ targets: sprite, x: c * T + T / 2, y: r * T + T / 2, duration: who === 'hero' ? AREA_STEP_MS * 1.4 : ENEMY_MOVES.patrol.stepMs, onComplete: () => done() }));
+    }
+    if (who === 'hero') this.state = { ...this.state, cell: to };
+    else if (enemy) enemy.mind = { ...enemy.mind, cell: to };
   }
 
   /** 出し抜く（段階263）：見つかる範囲を描き、範囲の中にいる（陰でない）仲間を見つける */

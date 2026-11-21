@@ -301,9 +301,11 @@ export const A11_REWORK: AreaDef = {
   enemies: [
     // ---- 1晩目 ----
     { id: 'a11_e_gate', room: 'fest2_gate', patrol: [[11, 4], [11, 16]], battle: 'a11_n1_gate' },
-    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', patrol: [[20, 20], [16, 20]], battle: 'a11_n1_chaser' },
+    // 段階266：入口の待ち伏せ（参道を上ると、屋台の陰から飛び出してくる。地図の出来事 ev_gate_ambush）
+    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', hidden: true, patrol: [[16, 13], [17, 13]], battle: 'a11_n1_chaser' },
     { id: 'a11_e_back', room: 'fest2_backyard', patrol: [[8, 18], [14, 18], [14, 24], [8, 24]], battle: 'a11_n1_back' },
-    { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', patrol: [[4, 32]], battle: 'a11_runner' },
+    // 段階266：発電機を直して明かりがつくと、暗がりから現れて逃げる（地図の出来事 ev_generator）
+    { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[4, 32]], battle: 'a11_runner' },
     { id: 'a11_e_road', room: 'fest2_plaza', patrol: [[11, 35], [11, 40]], battle: 'a11_n1_road' },
     { id: 'a11_e_plaza', room: 'fest2_plaza', move: 'chase', patrol: [[5, 24], [5, 30]], battle: 'a11_n1_plaza' },
     // ---- 2晩目 ----
@@ -370,6 +372,36 @@ export const A11_REWORK: AreaDef = {
     { id: 'm_pond', room: 'fest2_woods', night: 3, cell: [11, 22], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（池のほとり）\n二人で金魚の袋をのぞきこむ。「この子の名前、なんにする？」' },
     // 社の森の、後で来る所（小夜子が切る）
     { id: 'l_bamboo', room: 'fest2_woods', night: 3, cell: [2, 22], kind: 'later', ally: 'sayoko', mark: '刀', label: '竹やぶ', need: '竹やぶで通れない。……切れる人がいれば', done: '小夜子が竹やぶを切った（この先は、また今度）' },
+  ],
+  // 地図の上の地図の出来事（段階266。docs/milestones/M3_explore_feel.md の 6.）：会話の画面に切り替えず、地図の上で起きる
+  events: [
+    {
+      id: 'ev_gate_ambush',
+      room: 'fest2_gate',
+      when: { on: 'enter', cells: [[10, 15], [11, 15], [12, 15], [13, 15]] },
+      steps: [
+        { do: 'shake' },
+        { do: 'say', name: 'ハルト', text: '……今、屋台の陰で何か動いた' },
+        { do: 'spawn', enemy: 'a11_e_gate_chase' },
+        { do: 'camera', to: [16, 13], ms: 350 },
+        { do: 'say', name: 'あかり', text: '砂嵐！ 待ち伏せしてたんだ' },
+        { do: 'battle', enemy: 'a11_e_gate_chase' },
+      ],
+    },
+    {
+      id: 'ev_generator',
+      room: 'fest2_backyard',
+      when: { on: 'solved', flag: 'p_generator' },
+      steps: [
+        { do: 'camera', to: [8, 30], ms: 500 },
+        { do: 'light', cells: [[8, 27], [8, 30], [8, 33], [8, 36], [12, 36], [16, 36], [18, 33], [18, 30], [18, 27]] },
+        { do: 'say', name: 'ハルト', text: '明かりがついた……路地の奥まで見える' },
+        { do: 'spawn', enemy: 'a11_e_runner' },
+        { do: 'camera', to: [5, 32], ms: 400 },
+        { do: 'say', name: 'あかり', text: 'あっ、何か逃げてく！ 追いかけよう' },
+        { do: 'camera', to: 'hero', ms: 400 },
+      ],
+    },
   ],
   // 途中の会話は今のまま（東の屋台に入った時の会話だけ、部屋の id を新しい部屋に）
   triggers: base.triggers.map((t) => (t.on === 'room' && t.room === 'fest_east' ? { ...t, room: 'fest2_east' } : t)),
