@@ -543,6 +543,30 @@ add('掘る二頭身の小夜子', [DIG_REF, P + 'sayoko_smile.webp'], 'dig_sayo
 add('掘る二頭身の早瀬', [DIG_REF, P + 'hayase_normal.webp'], 'dig_hayase.png', dig_buddy('Hayase, a dandy watchmaker in his late fifties', 'dark hair with grey at the temples swept back, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes, a watchmaker\'s loupe pushed up on his forehead, a dark navy work jacket open over a black henley shirt, sleeves rolled up, a leather tool roll on his belt, brown boots', 'He is a little taller than the boy, and digs calmly and efficiently with economical, precise movements.'))
 
 
+section('W. 探索を一緒に歩く二頭身（段階267）', '探索の地図で、編成の仲間が一緒に歩く2頭身の絵（`docs/milestones/M3_explore_feel.md` の 6.）。届くまでは、砂の底の掘る二頭身の歩く行を仮に使っている。絵柄と大きさは、砂の底の掘る二頭身（`public/assets/sprites/dig_*.webp`）にそろえる。届いたら背景を抜いて `public/assets/sprites/walk_<人>.webp` にし、台帳に `sprite.walk_<人>` で足す（Claude がする）')
+
+
+def walk_sheet(name, look, extra=''):
+    return f'''{STYLE}
+
+A chibi sprite sheet for a top-down 2D RPG on mobile. Match the attached chibi digging sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell, but this sheet has NO shovel and NO tools: the character simply walks. The character is {name}, the same person as in the attached portrait ({look}). {extra}
+Layout: a grid of 4 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), the character at exactly the same scale in each cell, feet on the same baseline about three quarters down the cell.
+- Row 1: walking toward the viewer (front view).
+- Row 2: walking to the left (side view).
+- Row 3: walking to the right (side view).
+- Row 4: walking away from the viewer (back view).
+- Columns: standing, left foot forward, right foot forward.
+Soft cel shading, clear dark outline so it reads at a very small size. No ground, no shadow, no text, no grid lines.'''
+
+
+WALK_REF = 'public/assets/sprites/dig_hero.webp'
+add('歩く二頭身のハルト', [WALK_REF, P + 'hero_normal.webp'], 'walk_hero.png', walk_sheet('Haruto, a 17-year-old boy', 'messy short black hair with ONE single sand-gold strand in the front bangs, warm amber eyes, white school dress shirt with a loose sand-gold necktie, open dark navy zip hoodie with dusk-orange lining, dark school trousers, sneakers', 'He walks with an easy, slightly lazy stride.'), 'まず1枚で試す。うまくいけば下の4人も同じ形で')
+add('歩く二頭身のあかり', [WALK_REF, P + 'akari_smile.webp'], 'walk_akari.png', walk_sheet('Akari, a cheerful 17-year-old girl', 'shoulder-length soft chestnut-brown hair with light inward curls, side-swept bangs, a thin red ribbon at the back, a small red goldfish hair clip on the left, warm brown eyes, white dress shirt with a dusk-red neck ribbon, a cream knit cardigan with slightly long sleeves, a navy pleated skirt, navy knee socks, brown loafers', 'She walks with a light, bouncy step.'))
+add('歩く二頭身のみお', [WALK_REF, P + 'mio_smile.webp'], 'walk_mio.png', walk_sheet('Mio, a lively 10-year-old girl', 'bright light-brown short hair with one tiny side tuft tied by a small orange hair tie, big lively brown eyes, round cheeks, a slightly sunburnt nose, a plain sunny-yellow T-shirt with no logo, shorts, sneakers', 'She is smaller than the boy (a child) and walks briskly, full of energy.'))
+add('歩く二頭身の小夜子', [WALK_REF, P + 'sayoko_smile.webp'], 'walk_sayoko.png', walk_sheet('Sayoko, a graceful 16-year-old girl of the Taisho era', 'long straight black hair half-up with a small silver crescent moon hairpin, blunt bangs, large dark eyes with a soft reddish-brown tint, a deep indigo yukata with white bellflowers and a crimson obi, wooden geta sandals with red straps', 'She walks gracefully with small steps.'))
+add('歩く二頭身の早瀬', [WALK_REF, P + 'hayase_normal.webp'], 'walk_hayase.png', walk_sheet('Hayase, a dandy watchmaker in his late fifties', "dark hair with grey at the temples swept back, a neatly trimmed short salt-and-pepper beard, sharp narrow eyes, a watchmaker's loupe pushed up on his forehead, a dark navy work jacket over a black henley shirt, sleeves rolled up, a leather tool roll on his belt, brown boots", 'He is a little taller than the boy and walks calmly with his hands in his pockets.'))
+
+
 section('V. 砂の底のレアスナップ（段階219）', '砂の底の珍品で手に入る、新しい戦闘の札の写真（`src/data/chainDig.ts`）。今は近い雰囲気の今ある絵を仮に使っている。毎回、絵柄の見本として今あるスナップの写真を添付する。届いたら 768×768 の WebP にして、台帳に足し、`DIG_CARD_ART` をつなぎ替える')
 
 
@@ -920,7 +944,7 @@ def main():
            '- できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする',
            '- 気に入らない時は、同じ文でもう一度作るか、「ここを直して」と一言足して作り直してよい',
            '- 元の決まりは `docs/ART.md`（絵柄の共通部分・頭の文）。この一覧は `python3 scripts/art_queue.py` で作り直せる（届いた絵は DONE に足すと、下の「済んだ絵」に移る）',
-           '- まだ一覧にない物：探索の地図を歩く2頭身のハルト・カイ（`docs/ART.md` の 5-5b の 3〜4。試し）。',
+           '- まだ一覧にない物：探索の地図を見回る2頭身のカイ（`docs/ART.md` の 5-8 の 4.。歩く二頭身のハルトがうまくいってから）。',
            '', '## まだの絵', '']
     for title, _, items in pending:
         out.append(f'- [{title}](#{anchor(title)})：{len(items)} 枚')
