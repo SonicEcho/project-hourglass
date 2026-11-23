@@ -1110,6 +1110,62 @@ add('部品2：屋台の裏の小さな物', [AF_REF, 'parts_backyard1.png（上
     'a moss-covered rock.',
 ], ' Match the attached parts sheet exactly in scale, view and style.'))
 
+# ---- AG. 残りの5部屋の地面の絵と部品（段階274） ----
+section('AG. 残りの5部屋の地面の絵と部品（段階274）', '屋台の裏の試し（段階273）が「とてもいい感じ」だった（2026-11-23 開発者）ので、残りの5部屋も地面の絵と部品で組む。添付は、どれも届いた屋台の裏の地面の絵（`ground_fest2_backyard.png`）と部品の絵（`parts_backyard1.png`）。絵柄・角度・大きさをそろえるため。部品は白い背景のまま送ってくれればよい。屋台の裏の部品（テント・箱・樽など）は使い回すので、ここには新しい物だけ')
+AG_REF = ['ground_fest2_backyard.png（届いた屋台の裏の地面の絵）', 'parts_backyard1.png（届いた屋台の裏の部品の絵）']
+
+
+def ag_ground(scene):
+    return f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place all the objects (stalls, tents, trees, lanterns, people) on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale, colors and dusk lighting.
+{AF_CAM}
+{scene}
+Keep everything inside the frame open ground: absolutely NO stalls, tents, crates, boxes, tables, benches, lanterns on posts, stone lanterns, guardian statues, free-standing trees inside the area, buildings inside the area, people or text. Absolutely no letters or text anywhere."""
+
+
+add('地面の絵：縁日の入口', AG_REF, 'ground_fest2_gate.png', ag_ground(
+    'Scene: the entrance of a summer shrine festival at dusk. A straight stone-paved approach (about 6 steps wide) runs from a wide stone-paved forecourt at the bottom up through the middle to the top edge, where it leaves the image. About 9 steps from the bottom, a side path of packed earth branches off to the LEFT and leaves through the left edge. Along both sides of the approach, strips of packed earth (about 3 steps wide) where the stalls will stand. A small dead-end nook of packed earth at the upper right. The forecourt at the bottom is closed by a low stone wall with shrubs along the bottom edge. The rest of the edges are dense trees and bushes.'))
+add('地面の絵：屋台の裏通り', AG_REF, 'ground_fest2_lane.png', ag_ground(
+    'Scene: narrow winding back alleys of packed earth behind the festival stalls at dusk. The alleys make ONE big loop around a large empty block of packed earth in the middle (where the stalls will stand). The left side of the loop is a long gentle downhill slope paved with old stones with a few low steps, running from the top left down to the bottom left, between a low mossy stone wall on its left and a strip of packed earth on its right. Exits: a path leaves through the bottom edge a little left of the center, and another through the right edge a little below the middle. The top edge, the left edge and the rest of the edges are dense trees and old wooden fences. A short dead-end alley at the upper right.'))
+add('地面の絵：縁日の広場', AG_REF, 'ground_fest2_plaza.png', ag_ground(
+    'Scene: the central plaza of a summer shrine festival at dusk: a wide, roughly round open plaza of old stone paving and packed earth, its edge irregular. At the top center, old stone steps (about 4 steps wide) climb up and leave through the top edge toward the shrine woods. Paths leave through the bottom edge in the center, the left edge a little below the middle and the right edge a little below the middle. Around the plaza, strips of packed earth where the stalls will stand. The corners and the rest of the edges are dense trees and bushes.'))
+add('地面の絵：東の屋台', AG_REF, 'ground_fest2_east.png', ag_ground(
+    'Scene: a crooked side street of packed earth at a summer shrine festival at dusk. The street makes ONE loop around a large empty block of packed earth in the middle (where two big stalls will stand), with a wide part along the top. At the bottom right, the street ends in a small quiet open dead end. Only one exit: a path leaves through the left edge a little below the middle. Along the top edge, a strip of packed earth where a row of stalls will stand, and behind it, the dark tiled roofs of old houses along the very top edge. The bottom edge is the tiled roofs of old houses and bushes; the right edge is trees and an old wooden fence.'))
+add('地面の絵：社の森', AG_REF, 'ground_fest2_woods.png', ag_ground(
+    'Scene: the quiet grove behind a small Japanese shrine on a summer night, the ground of gravel and moss. At the very top center, the front of a small wooden shrine building with an offering box and a straw rope, partly cut off by the top edge (this building IS part of the ground picture). In front of it, a gravel yard. In the center, a cross-shaped pond with STEPPING STONES running through it in a cross (part of the ground picture), with mossy stones along its banks. A gravel path loops around the pond. A small side nook at the left edge and one at the right edge, both open gravel. The path leaves through the bottom edge in the center, down toward the festival. The rest of the edges are the dark trunks and roots of tall cedar trees and bushes (but no free-standing trees inside the area).'))
+add('部品3：屋台と石の物', AG_REF, 'parts_fest_a.png', af_parts(3, 3, [
+    'a festival food stall seen from the FRONT (its counter facing the viewer), with a RED-and-white striped awning, a wooden counter, a few blank paper lanterns hanging from the awning (no letters), about 3 steps wide.',
+    'the same kind of stall with a BLUE-and-white striped awning, the same size.',
+    'the same kind of stall with a GREEN-and-white striped awning, the same size.',
+    'the BACK of a festival stall (seen from behind): a plain tarp back wall, wooden frame, a few boxes stacked against it, about 3 steps wide.',
+    'a stone komainu guardian lion on a stone pedestal, facing RIGHT, about 1 step wide.',
+    'the same stone komainu guardian lion facing LEFT (mirror pose, mouth closed).',
+    'a traditional stone lantern (ishidoro) with a warm light glowing inside, about 1 step wide and 2 steps tall.',
+    'a tall cedar tree with a thick trunk and dark green layered foliage, about 3 steps wide (let it fill the cell height).',
+    'a round leafy deciduous tree with yellow-green leaves lit by dusk light, about 3 steps wide (let it fill the cell height).',
+]), '地面の絵がそろってからでよい')
+add('部品4：大きな屋台とやぐら', AG_REF, 'parts_fest_b.png', af_parts(2, 2, [
+    'a tall wooden yagura festival drum tower wrapped in red-and-white cloth, with a big taiko drum on its upper stage and paper lanterns hanging on the tower itself, about 4 steps wide (let it fill the cell height).',
+    'a shooting gallery stall (shateki) seen from the front: a red-and-white striped awning, a shelf of small prizes and targets at the back, a counter with toy cork guns, about 5 steps wide (let it fill the cell width).',
+    'a goldfish-scooping stall (kingyo-sukui) seen from the front: a blue awning and a wide shallow blue water tank with small red goldfish, about 5 steps wide (let it fill the cell width).',
+    'a row of two old Japanese wooden houses with dark tiled roofs and warmly lit windows, seen from the front, about 6 steps wide (let it fill the cell width).',
+], ' Match the attached parts sheet exactly in scale, view and style.'))
+add('部品5：小さな物と草木', AG_REF, 'parts_fest_c.png', af_parts(3, 4, [
+    'a stack of wooden boxes for paper lanterns, with a few folded paper lanterns on top.',
+    'a simple wooden bench.',
+    'a blank wooden signboard on two legs (no letters).',
+    'a low bush of blue hydrangea flowers.',
+    'a short section of low mossy stone wall, horizontal, about 3 steps wide.',
+    'a short section of bamboo fence, horizontal, about 3 steps wide.',
+    'a small wooden offering box with a straw rope above it, about 1 step wide.',
+    'a tall bundle of bamboo stalks with leaves (a small bamboo thicket), about 2 steps wide.',
+    'a big moss-covered rock, about 2 steps wide.',
+    'a cluster of tall grass and fern.',
+    'a wooden water barrel with a ladle.',
+    'two folding chairs and a small folding table.',
+], ' Match the attached parts sheet exactly in scale, view and style.'))
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1122,7 +1178,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: 0 if p[0].startswith('AF.') else 1 if p[0].startswith('AE.') else 2)
+    pending.sort(key=lambda p: 0 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',

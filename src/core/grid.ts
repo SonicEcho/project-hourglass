@@ -155,6 +155,40 @@ export function dragStep(map: GridMap, from: GridCell, dir: GridCell): GridCell 
   else if (dir[0] !== 0) tries.push([dir[0], -1], [dir[0], 1]);
   else tries.push([-1, dir[1]], [1, dir[1]]);
   for (const d of tries) if (canStep(map, from, d)) return [from[0] + d[0], from[1] + d[1]];
+  // 2026-11-23（開発者：入れない所で引っかかる）：上下左右の向きで壁に当たったら、壁に沿って横へ。
+  // 横に SLIDE_REACH マスまで見て、その先で前へ進める所があれば、近い方へ1マスずれる（同じ近さなら、引っ張った向きの左→右の順）
+  if (dir[0] === 0 || dir[1] === 0) {
+    const sides: GridCell[] = dir[0] === 0 ? [[-1, 0], [1, 0]] : [[0, -1], [0, 1]];
+    for (let k = 1; k <= SLIDE_REACH; k++) {
+      for (const sd of sides) {
+        let ok = true;
+        for (let i = 1; i <= k && ok; i++) ok = isWalkable(map, [from[0] + sd[0] * i, from[1] + sd[1] * i]);
+        const lane: GridCell = [from[0] + sd[0] * k, from[1] + sd[1] * k];
+        if (ok && canStep(map, lane, dir)) return [from[0] + sd[0], from[1] + sd[1]];
+      }
+    }
+  }
+  return null;
+}
+
+/** 壁に沿ってすべる時に、横を見るマスの数 */
+export const SLIDE_REACH = 3;
+
+/**
+ * タップした所の近くの、歩いて行ける所（2026-11-23）。歩けない所（テント・箱など）をタップした時、
+ * maxDistance マス以内で、タップした所に一番近く、from から道のある歩けるマス。なければ null
+ */
+export function reachableNear(map: GridMap, from: GridCell, goal: GridCell, maxDistance = 3): GridCell | null {
+  for (let d = 0; d <= maxDistance; d++) {
+    const ring: GridCell[] = [];
+    for (let dr = -d; dr <= d; dr++) {
+      const rest = d - Math.abs(dr);
+      for (const dc of rest === 0 ? [0] : [-rest, rest]) ring.push([goal[0] + dc, goal[1] + dr]);
+    }
+    // 同じ近さなら、今いる所に近い方
+    ring.sort((p, q) => Math.hypot(p[0] - from[0], p[1] - from[1]) - Math.hypot(q[0] - from[0], q[1] - from[1]));
+    for (const c of ring) if (isWalkable(map, c) && findPathDiag(map, from, c)) return c;
+  }
   return null;
 }
 
