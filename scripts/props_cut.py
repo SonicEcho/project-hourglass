@@ -27,6 +27,7 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
     a = np.asarray(Image.fromarray((a * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.6))).astype(np.float32) / 255.0
     safe = np.maximum(a, 1e-3)[..., None]
     f = np.where(bg[..., None], np.clip(255.0 - (255.0 - c) / safe, 0, 255), rgb)
+    shadow = np.zeros(bg.shape, bool)
     if soft_shadow:
         # 部品（段階273）：足もとの影（白い紙に落ちた、色の薄い暖かい灰色）を見分け、白い背景とつながる所だけ、黒っぽい半透明の影にする
         # （そのままだと、影が白っぽいふちになって地面の上で浮いた）
@@ -44,6 +45,29 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
         sa = np.clip((1.0 - mx / 255.0) * 1.5, 0.06, 0.55)
         a = np.where(shadow, sa, a)
         f = np.where(shadow[..., None], np.array([46.0, 32.0, 28.0]), f)
+    # 背景から明るい色だけでつながる所（白い紙の上の薄い影・光のにじみ）：白からの割り戻しで透明にする（2026-11-23 開発者：白地が残る）。
+    # 物の白い所（クーラーのふた・お面）は暗い輪郭で囲まれていて、背景とつながらないので残る
+    mx0, mn0 = rgb.max(axis=2), rgb.min(axis=2)
+    pale = (mn0 >= 165) & ((mx0 - mn0) <= 100)
+    labp, _ = ndimage.label(pale | bg)
+    keepp = np.unique(labp[bg])
+    halo = pale & np.isin(labp, keepp[keepp > 0]) & ~bg & ~shadow
+    a_h = np.clip((255.0 - mn0) / (255.0 - 120.0), 0.0, 1.0) * 0.9
+    a = np.where(halo, np.minimum(a, a_h), a)
+    safe_h = np.maximum(a, 1e-3)[..., None]
+    f = np.where(halo[..., None], np.clip(255.0 - (255.0 - rgb) / safe_h, 0, 255), f)
+    bg = bg | halo
+    # 輪郭のふち（白い背景から3ドットまで）：白と混ざった薄い色が不透明のまま残り、白いふちに見えた（2026-11-23 開発者）。
+    # ここも白からの割り戻しで、混ざった白の分だけ透明にする（暗い線はそのまま残る）
+    dist = ndimage.distance_transform_edt(~bg)
+    edge = (dist <= 3) & ~bg
+    if soft_shadow:
+        edge &= ~shadow
+    mn_e = rgb.min(axis=2)
+    a_edge = np.clip((255.0 - mn_e) / (255.0 - 70.0), 0.0, 1.0)
+    a = np.where(edge, np.minimum(a, a_edge), a)
+    safe2 = np.maximum(a, 1e-3)[..., None]
+    f = np.where(edge[..., None], np.clip(255.0 - (255.0 - rgb) / safe2, 0, 255), f)
     # ほぼ透明な所の色は、暗い影の色にしておく（ゲームが縮めて描く時に、透明な所の白がにじんで白いふちになった）
     f = np.where((a < 0.08)[..., None], np.array([46.0, 32.0, 28.0]), f)
     return np.dstack([f, a * 255.0]).astype(np.uint8)
