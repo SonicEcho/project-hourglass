@@ -39,12 +39,18 @@ const GATE_LAYOUT = [
 
 /** gate の部品（段階274）。鳥居（A11_DECOR）の柱の根もと (10,17)・(13,17) は GATE_LAYOUT で通れないマスにしてある */
 export const GATE_PARTS: RoomPart[] = [
+  // 段階275：屋台は参道の両わきに続けて並べ、横に箱を寄せる（横向きの屋台の絵が届いたら、道を向かせる）
   { part: 'stall_red', cell: [5, 4], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_green', cell: [5, 7], w: 3, d: 2, sw: 3.2 },
   { part: 'stall_blue', cell: [5, 14], w: 3, d: 2, sw: 3.2 },
-  { part: 'lantern_boxes', cell: [7, 7], w: 2, sw: 1.8 },
+  { part: 'stall_red', cell: [5, 17], w: 3, d: 2, sw: 3.2 },
+  { part: 'crates_red', cell: [4, 12], w: 1, sw: 0.9 },
+  { part: 'stall_blue', cell: [16, 4], w: 3, d: 2, sw: 3.2 },
   { part: 'stall_green', cell: [16, 9], w: 3, d: 2, sw: 3.2 },
+  { part: 'crates_yellow', cell: [19, 9], w: 1, sw: 0.9 },
+  { part: 'stall_blue', cell: [16, 13], w: 3, d: 2, sw: 3.2 },
   { part: 'stall_red', cell: [16, 16], w: 3, d: 2, sw: 3.2 },
-  { part: 'bench', cell: [17, 13], w: 2, sw: 2 },
+  { part: 'cooler', cell: [19, 16], w: 1, sw: 1 },
   { part: 'komainu_r', cell: [8, 18], w: 1, sw: 1.2 },
   { part: 'komainu_l', cell: [15, 18], w: 1, sw: 1.2 },
   { part: 'stone_lantern', cell: [2, 20], w: 1, sw: 1 },
@@ -135,17 +141,25 @@ const LANE_LAYOUT = [
 
 /** lane の部品（段階274） */
 export const LANE_PARTS: RoomPart[] = [
-  { part: 'stall_back', cell: [8, 8], w: 3, d: 2, sw: 3.2 },
-  { part: 'tarp_pile', cell: [11, 8], w: 6, d: 2, sw: 6.3 },
+  // 段階275：真ん中のかたまりは、屋台の裏（外向き）でふちを囲み、中に荷物を詰める
+  { part: 'stall_back', cell: [8, 7], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [11, 7], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [14, 7], w: 3, d: 2, sw: 3.2 },
   { part: 'kegs', cell: [17, 7], w: 2, sw: 1.7 },
-  { part: 'lantern_boxes', cell: [12, 12], w: 2, sw: 1.9 },
-  { part: 'box_stack', cell: [15, 12], w: 2, sw: 1.9 },
-  { part: 'crates_red', cell: [17, 11], w: 1, sw: 1 },
-  { part: 'stall_back', cell: [8, 17], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [12, 17], w: 3, d: 2, sw: 3.2 },
-  { part: 'tarp_table', cell: [16, 17], w: 2, sw: 2 },
-  { part: 'chairs', cell: [8, 12], w: 2, sw: 1.8 },
   { part: 'water_barrel', cell: [10, 10], w: 1, sw: 0.9 },
+  { part: 'tarp_pile', cell: [11, 11], w: 6, d: 2, sw: 6.3 },
+  { part: 'crates_red', cell: [17, 10], w: 1, sw: 1 },
+  { part: 'cooler', cell: [18, 11], w: 1, sw: 1 },
+  { part: 'chairs', cell: [8, 12], w: 2, sw: 1.8 },
+  { part: 'lantern_boxes', cell: [11, 14], w: 2, sw: 1.9 },
+  { part: 'box_stack', cell: [13, 14], w: 2, sw: 1.9 },
+  { part: 'drum', cell: [15, 14], w: 1, sw: 0.9 },
+  { part: 'buckets', cell: [16, 14], w: 1, sw: 1 },
+  { part: 'folding_stack', cell: [8, 15], w: 2, sw: 1.8 },
+  { part: 'stall_back', cell: [8, 17], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [11, 17], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [14, 17], w: 3, d: 2, sw: 3.2 },
+  { part: 'tarp_table', cell: [17, 17], w: 2, sw: 2 },
   { part: 'drum', cell: [21, 9], w: 1, sw: 0.9 },
   { part: 'grass', cell: [1, 19], w: 1, sw: 1.2 },
 ];
@@ -179,21 +193,30 @@ const PLAZA_LAYOUT = [
 
 /** plaza の部品（段階274） */
 export const PLAZA_PARTS: RoomPart[] = [
-  { part: 'stall_red', cell: [1, 9], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_blue', cell: [4, 9], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_green', cell: [7, 9], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_red', cell: [14, 9], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_blue', cell: [17, 9], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [20, 9], w: 2, d: 2, sw: 2.4 },
+  // 段階275：上（石段の前）と下（やぐらの広場）は、屋台の列でなく、あじさいを添えた低い石垣と石灯籠で分ける。屋台は広場のふちに
+  { part: 'stone_wall', cell: [1, 9], w: 3, d: 2, sw: 3.1 },
+  { part: 'stone_wall', cell: [4, 9], w: 3, d: 2, sw: 3.1 },
+  { part: 'stone_wall', cell: [7, 9], w: 2, d: 2, sw: 2.1 },
+  { part: 'stone_lantern', cell: [9, 9], w: 1, d: 2, sw: 1 },
+  { part: 'stone_lantern', cell: [14, 9], w: 1, d: 2, sw: 1 },
+  { part: 'stone_wall', cell: [15, 9], w: 2, d: 2, sw: 2.1 },
+  { part: 'stone_wall', cell: [17, 9], w: 3, d: 2, sw: 3.1 },
+  { part: 'stone_wall', cell: [20, 9], w: 2, d: 2, sw: 2.1 },
+  { part: 'hydrangea', cell: [2, 8], w: 1, sw: 1.3, walk: true },
+  { part: 'hydrangea', cell: [19, 8], w: 1, sw: 1.3, walk: true },
   { part: 'stone_lantern', cell: [8, 3], w: 1, sw: 1 },
   { part: 'stone_lantern', cell: [15, 3], w: 1, sw: 1 },
   { part: 'bench', cell: [2, 6], w: 2, sw: 2 },
+  { part: 'stall_blue', cell: [19, 6], w: 3, d: 2, sw: 3.2 },
   { part: 'yagura', cell: [10, 16], w: 4, d: 3, sw: 4.4 },
   { part: 'stall_green', cell: [19, 15], w: 3, d: 2, sw: 3.2 },
-  { part: 'big_rock', cell: [18, 20], w: 2, sw: 1.8 },
   { part: 'stall_red', cell: [2, 16], w: 3, d: 2, sw: 3.2 },
-  { part: 'lantern_boxes', cell: [6, 21], w: 2, sw: 1.8 },
-  { part: 'signboard', cell: [15, 21], w: 2, sw: 1.6 },
+  { part: 'crates_yellow', cell: [1, 14], w: 1, sw: 0.9 },
+  { part: 'stall_blue', cell: [5, 21], w: 3, d: 2, sw: 3.2 },
+  { part: 'crates_red', cell: [8, 21], w: 1, sw: 0.9 },
+  { part: 'signboard', cell: [15, 21], w: 1, sw: 1.4 },
+  { part: 'stall_red', cell: [16, 21], w: 3, d: 2, sw: 3.2 },
+  { part: 'cooler', cell: [19, 20], w: 1, sw: 1 },
 ];
 
 const EAST_LAYOUT = [
@@ -225,18 +248,22 @@ const EAST_LAYOUT = [
 
 /** east の部品（段階274） */
 export const EAST_PARTS: RoomPart[] = [
+  // 段階275：真ん中のかたまりは、上の通りに向く屋台（裏から見た絵）と、下の通りに向く屋台でふちを囲む
   { part: 'shateki', cell: [4, 9], w: 5, d: 2, sw: 5.2 },
   { part: 'kingyo', cell: [4, 15], w: 5, d: 2, sw: 5.2 },
-  { part: 'tarp_pile', cell: [10, 9], w: 6, d: 2, sw: 6.3 },
-  { part: 'lantern_boxes', cell: [16, 9], w: 2, sw: 1.9 },
-  { part: 'kegs', cell: [10, 12], w: 2, sw: 1.7 },
-  { part: 'box_stack', cell: [13, 12], w: 2, sw: 1.9 },
-  { part: 'water_barrel', cell: [16, 12], w: 1, sw: 0.9 },
-  { part: 'stall_back', cell: [10, 15], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [14, 15], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [10, 8], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [13, 8], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_back', cell: [16, 8], w: 3, d: 2, sw: 3.2 },
+  { part: 'lantern_boxes', cell: [10, 11], w: 2, sw: 1.9 },
+  { part: 'tarp_pile', cell: [12, 12], w: 6, d: 2, sw: 6.2 },
+  { part: 'kegs', cell: [9, 13], w: 2, sw: 1.7 },
+  { part: 'stall_red', cell: [10, 15], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_blue', cell: [13, 15], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_green', cell: [16, 15], w: 3, d: 2, sw: 3.2 },
   { part: 'grass', cell: [4, 10], w: 1, sw: 1 },
   { part: 'grass', cell: [4, 13], w: 1, sw: 1 },
   { part: 'bench', cell: [2, 4], w: 2, sw: 2 },
+  { part: 'crates_red', cell: [21, 18], w: 1, sw: 0.9 },
 ];
 
 const WOODS_LAYOUT = [
@@ -350,7 +377,7 @@ export const A11_REWORK: AreaDef = {
     // ---- 1晩目 ----
     { id: 'a11_e_gate', room: 'fest2_gate', patrol: [[11, 4], [11, 16]], battle: 'a11_n1_gate' },
     // 入口の待ち伏せ（参道を上ると、屋台の陰から飛び出してくる。地図の出来事 ev_gate_ambush）
-    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', hidden: true, patrol: [[17, 11], [17, 12]], battle: 'a11_n1_chaser' },
+    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', hidden: true, patrol: [[15, 11], [15, 12]], battle: 'a11_n1_chaser' },
     { id: 'a11_e_back', room: 'fest2_backyard', patrol: [[7, 9], [13, 9], [13, 13], [7, 13]], battle: 'a11_n1_back' },
     // 発電機を直して明かりがつくと、暗がりから現れて逃げる（地図の出来事 ev_generator）
     { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[12, 21]], battle: 'a11_runner' },
@@ -374,7 +401,7 @@ export const A11_REWORK: AreaDef = {
   boss: { ...base.boss, room: 'fest2_woods', cell: [12, 3] },
   // 写しの人（段階265 のくれる物つき）：1つの部屋の1つの晩に1人まで（広場の1晩目と社の森は2人）
   talkers: [
-    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [5, 16], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_knob', text: '浴衣の女の人「発電機のつまみ？ 赤いテントの横の箱に入れたって、誰かが言ってたわ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [8, 15], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_knob', text: '浴衣の女の人「発電機のつまみ？ 赤いテントの横の箱に入れたって、誰かが言ってたわ」\n（地図に印が付いた）' } },
     { id: 'a11_voice_cotton', room: 'fest2_plaza', cell: [16, 12], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「甘いの食べて、ひと休みしな」\n（HP・MP が少し回復した）' } },
     { id: 'a11_voice_goldfish', room: 'fest2_plaza', cell: [7, 18], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'goldfishNoise', element: 'ice', text: '金魚すくいのおじさん「さっきの金魚みたいな砂嵐、冷たいのが苦手みたいだったよ」\n（金魚ノイズの弱点：氷 が分かった）' } },
     { id: 'a11_voice2_cotton', room: 'fest2_plaza', cell: [18, 4], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「疲れた顔してるね。ほら、ひと口」\n（HP・MP が少し回復した）' } },
@@ -433,7 +460,7 @@ export const A11_REWORK: AreaDef = {
         { do: 'shake' },
         { do: 'say', name: 'ハルト', text: '……今、屋台の陰で何か動いた' },
         { do: 'spawn', enemy: 'a11_e_gate_chase' },
-        { do: 'camera', to: [17, 11], ms: 350 },
+        { do: 'camera', to: [15, 11], ms: 350 },
         { do: 'say', name: 'あかり', text: '砂嵐！ 待ち伏せしてたんだ' },
         { do: 'battle', enemy: 'a11_e_gate_chase' },
       ],
