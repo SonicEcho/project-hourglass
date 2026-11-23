@@ -1059,6 +1059,57 @@ for name, rid, scene, exits in AE_FREE:
     add(name, [AE_REF], f'map_{rid}.png', a11_room_free(scene, exits), '下絵は付けない。添付は、届いた縁日の入口の絵（絵柄をそろえるため）')
 
 
+# ---- AF. 地面の絵と部品（段階273 の試し） ----
+section('AF. 地面の絵と部品で組む部屋（段階273 の試し：屋台の裏）', '1枚絵に歩ける所を後から合わせると、細かい所で物の上を歩けてしまった（2026-11-23 開発者）。部屋を「物のない地面の絵」と「1つずつの部品（白い背景）」に分け、Claude が組み立てる。通れない所は部品の足もとから決まり、奥・手前の重なりも正しくなる。まず屋台の裏の1部屋で試す（`docs/milestones/M3_explore_feel.md` の 8.）。添付は、届いた屋台の裏の絵（`map_fest2_backyard.png`。絵柄と色をそろえるため）')
+AF_REF = 'map_fest2_backyard.png（届いた屋台の裏の絵）'
+AF_CAM = """Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right)."""
+
+
+def af_parts(rows, cols, cells, extra=''):
+    lines = '\n'.join(f'- Row {i // cols + 1}, column {i % cols + 1}: {c}' for i, c in enumerate(cells))
+    return f"""{STYLE}
+
+A sheet of separate map objects (parts) for a top-down 2D RPG map on mobile. The game places each part one by one on top of a ground illustration, so every part is drawn alone, complete and uncropped.
+{AF_CAM}
+Layout: a grid of {rows} rows by {cols} columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
+Scale: all objects on this sheet share one consistent scale: one step (one grid square of the map) is about one person's shoulder width, about the size of one beer crate.
+{lines}{extra}"""
+
+
+add('地面の絵：屋台の裏（物を置かない地面だけ）', [AF_REF], 'ground_fest2_backyard.png', f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place all the objects (tents, crates, sheds, piles, barrels) on top of it later as separate pictures.
+{AF_CAM}
+Scene: the ground of a cramped backyard behind the festival stalls of a Japanese summer shrine festival at dusk. Packed earth with small gravel, a few shallow puddles reflecting the dusk sky, tufts of grass along the edges, two thick black power cables lying on the ground and curving from the upper middle down to the lower part.
+Across the lower third of the image, a low old stone retaining wall (about knee high) runs from the left edge to the right edge, with a short flight of stone steps in it a little right of the center, so the bottom part of the ground is one step lower and darker.
+Edges: the image is framed by dense trees and bushes along the top, the left and the bottom edges, and an old wooden fence along the right edge, EXCEPT two openings: a narrow dirt path leaving through the top edge a little right of the center, and a dirt path leaving through the right edge just above the middle.
+Keep everything inside the frame open, flat ground: absolutely NO tents, stalls, crates, boxes, tables, chairs, sheds, buildings, barrels, coolers, tarps, fences inside the area, people or lanterns. Absolutely no letters or text anywhere.""", '試しの1枚目。地面と、縁の木・塀だけ')
+add('部品1：屋台の裏の大きな物', [AF_REF], 'parts_backyard1.png', af_parts(3, 3, [
+    'the back of a small BLUE festival tent (a pop-up canopy tent with blue sheet walls, seen from behind), about 3 steps wide.',
+    'the same kind of tent in RED, the same size.',
+    'the same kind of tent in YELLOW, the same size.',
+    'a big pile of stall equipment covered with a blue tarp tied with rope, with folding tables, a barrel and a cooler at its sides, about 7 steps wide and 3 steps deep (let it fill the cell width).',
+    'a small old wooden storage shed with a grey tiled roof and a closed wooden door, about 3 steps wide.',
+    'a corner of an old Japanese wooden house with a tiled roof and one warmly lit window, about 4 steps wide.',
+    'a stack of folding tables and folded metal chairs leaning together, about 2 steps wide.',
+    'a stack of cardboard boxes and wooden crates, about 2 steps wide.',
+    'a blue tarp thrown over a small table, about 2 steps wide.',
+]), '地面の絵がうまくいったら')
+add('部品2：屋台の裏の小さな物', [AF_REF, 'parts_backyard1.png（上で作った絵）'], 'parts_backyard2.png', af_parts(3, 4, [
+    'a stack of red plastic beer crates (two high).',
+    'a stack of yellow plastic beer crates (two high).',
+    'two metal beer kegs side by side.',
+    'a blue-and-white picnic cooler box.',
+    'a metal drum barrel.',
+    'two metal buckets.',
+    'a coil of rope.',
+    'a few bamboo poles and long wooden boards leaning against nothing, standing upright in a small bundle.',
+    'a short section of old wooden fence, horizontal, about 3 steps wide.',
+    'a short section of old wooden fence seen from the side (running from top to bottom of the cell), about 3 steps long.',
+    'a small low bush with a few yellow-green leaves.',
+    'a moss-covered rock.',
+], ' Match the attached parts sheet exactly in scale, view and style.'))
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1071,7 +1122,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: 0 if p[0].startswith('AE.') else 1)
+    pending.sort(key=lambda p: 0 if p[0].startswith('AF.') else 1 if p[0].startswith('AE.') else 2)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
