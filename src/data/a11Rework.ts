@@ -1,4 +1,5 @@
-import type { AreaDef, RoomDef } from '../core/explore';
+import type { AreaDef, RoomDef, RoomPart } from '../core/explore';
+import { composeLayout } from '../core/explore';
 import { AREAS } from './areas';
 import { box } from './rooms';
 import { ITEMS } from './weapons';
@@ -36,31 +37,58 @@ const GATE_LAYOUT = [
   '########################',
 ];
 
-const BACKYARD_LAYOUT = [
-  '#############....#######',
-  '#############....#######',
-  '##############..########',
-  '##############..########',
-  '##############..########',
-  '##############..########',
-  '##:::..........#########',
-  '##:::.........##########',
-  '#####.........##########',
-  '#####.........######....',
-  '##..............####....',
-  '######.............##...',
-  '######.............##...',
-  '######................##',
-  '######................##',
-  '######...............###',
+/**
+ * 屋台の裏（段階273：地面の絵と部品で組む試し）。BACKYARD_GROUND は物のない地面の絵の歩ける所（縁の木・木の囲い・石垣と石段だけ）。
+ * 部品の足もとは composeLayout で通れないマスにする
+ */
+const BACKYARD_GROUND = [
+  '##############....######',
+  '##############....######',
   '###############..#######',
-  '###############..#######',
-  '##...###########...#####',
-  '##...###########...#####',
-  '##...###########...#####',
-  '##.....#########...#####',
-  '######.............#####',
+  '####.................###',
+  '###:..................##',
+  '###:..................##',
+  '###:..................##',
+  '##......................',
+  '##......................',
+  '##......................',
+  '##......................',
+  '###...................##',
+  '###...................##',
+  '###...................##',
+  '###...................##',
+  '###...................##',
+  '###...................##',
+  '###...................##',
+  '###############...######',
+  '###############...######',
+  '#######..............###',
+  '#########...........####',
+  '##########.........#####',
   '########################',
+];
+
+/** 屋台の裏の部品（段階273）。cell は足もとの左下、w・d は足もとの幅・奥行き、sw は絵の幅（マス） */
+export const BACKYARD_PARTS: RoomPart[] = [
+  { part: 'tent_blue', cell: [4, 5], w: 3, d: 2, sw: 3.2 },
+  { part: 'tent_red', cell: [7, 5], w: 3, d: 2, sw: 3.2 },
+  { part: 'tent_yellow', cell: [10, 5], w: 3, d: 2, sw: 3.2 },
+  { part: 'poles', cell: [13, 5], w: 1, sw: 1 },
+  { part: 'crates_red', cell: [17, 5], w: 1, sw: 1 },
+  { part: 'shed', cell: [18, 5], w: 3, d: 2, sw: 3.1 },
+  { part: 'bush', cell: [20, 3], w: 1, sw: 1.3 },
+  { part: 'folding_stack', cell: [3, 9], w: 2, sw: 1.9 },
+  { part: 'box_stack', cell: [3, 12], w: 2, sw: 1.9 },
+  { part: 'drum', cell: [5, 12], w: 1, sw: 0.9 },
+  { part: 'buckets', cell: [5, 13], w: 1, sw: 1.1 },
+  { part: 'cooler', cell: [18, 11], w: 1, sw: 1.1 },
+  { part: 'rope', cell: [12, 13], w: 1, sw: 1.2, walk: true },
+  { part: 'kegs', cell: [15, 13], w: 2, sw: 1.7 },
+  { part: 'tarp_pile', cell: [4, 16], w: 6, d: 2, sw: 6.3 },
+  { part: 'crates_yellow', cell: [12, 16], w: 1, sw: 1 },
+  { part: 'tarp_table', cell: [14, 16], w: 2, sw: 2 },
+  { part: 'rock', cell: [19, 17], w: 1, sw: 1 },
+  { part: 'house_corner', cell: [20, 16], w: 4, d: 3, sw: 4 },
 ];
 
 const LANE_LAYOUT = [
@@ -176,7 +204,7 @@ const room = (id: string, layout: string[], exits: RoomDef['exits'], exitAt?: Ro
 /** 新しい1-1の部屋（6つ。屋台の裏通りは新しい部屋） */
 export const A11_REWORK_ROOMS = {
   gate: room('fest2_gate', GATE_LAYOUT, ['top', 'left'], { left: 10 }, 'map.fest2_gate'),
-  backyard: room('fest2_backyard', BACKYARD_LAYOUT, ['right', 'top'], { right: 9, top: 13 }, 'map.fest2_backyard'),
+  backyard: { ...room('fest2_backyard', composeLayout(BACKYARD_GROUND, BACKYARD_PARTS), ['right', 'top'], { right: 7, top: 14 }, 'map.fest2_backyard_ground'), parts: BACKYARD_PARTS },
   lane: room('fest2_lane', LANE_LAYOUT, ['bottom', 'right'], { bottom: 5, right: 13 }, 'map.fest2_lane'),
   plaza: room('fest2_plaza', PLAZA_LAYOUT, ['bottom', 'left', 'right', 'top']),
   east: room('fest2_east', EAST_LAYOUT, ['left'], { left: 11 }, 'map.fest2_east'),
@@ -229,13 +257,13 @@ export const A11_REWORK: AreaDef = {
       { id: 'a11_gather_goldfish', room: 'fest2_east', cell: [10, 11], items: [ITEMS.goldfishScale.id, ITEMS.goldfishScale.id] },
       { id: 'a11_gather_ramune', room: 'fest2_plaza', cell: [3, 5], items: [ITEMS.balloonShard.id, ITEMS.cottonThread.id] },
       { id: 'a11_gather_yukata', room: 'fest2_gate', cell: [20, 5], items: [ITEMS.maskShard.id] },
-      { id: 'a11_gather_back', room: 'fest2_backyard', cell: [17, 21], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
+      { id: 'a11_gather_back', room: 'fest2_backyard', cell: [19, 21], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
     ],
   },
   // 宝箱は6つ（入口の脇道の奥・停電の路地の奥・射的の裏・射的の裏の行き止まり・やぐらの前・森の右のほこら）
   chests: [
     { id: 'a11_chest_gate', room: 'fest2_gate', cell: [20, 5], items: [ITEMS.cottonThread.id] },
-    { id: 'a11_chest_back', room: 'fest2_backyard', cell: [17, 21], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
+    { id: 'a11_chest_back', room: 'fest2_backyard', cell: [19, 21], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
     { id: 'a11_chest_goldfish', room: 'fest2_east', cell: [10, 11], night: 2, items: [ITEMS.goldfishScale.id] },
     { id: 'a11_chest_new2', room: 'fest2_plaza', cell: [3, 5], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
     // 提灯を思い出の順に灯すと、やぐらの前に出る。中身は、思い出を返した時からここへ移したリカバリー
@@ -247,9 +275,9 @@ export const A11_REWORK: AreaDef = {
     { id: 'a11_e_gate', room: 'fest2_gate', patrol: [[11, 4], [11, 16]], battle: 'a11_n1_gate' },
     // 入口の待ち伏せ（参道を上ると、屋台の陰から飛び出してくる。地図の出来事 ev_gate_ambush）
     { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', hidden: true, patrol: [[16, 11], [16, 12]], battle: 'a11_n1_chaser' },
-    { id: 'a11_e_back', room: 'fest2_backyard', patrol: [[6, 9], [12, 9], [12, 14], [6, 14]], battle: 'a11_n1_back' },
+    { id: 'a11_e_back', room: 'fest2_backyard', patrol: [[7, 9], [13, 9], [13, 13], [7, 13]], battle: 'a11_n1_back' },
     // 発電機を直して明かりがつくと、暗がりから現れて逃げる（地図の出来事 ev_generator）
-    { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[3, 19]], battle: 'a11_runner' },
+    { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[12, 21]], battle: 'a11_runner' },
     { id: 'a11_e_road', room: 'fest2_gate', patrol: [[1, 11], [8, 11]], battle: 'a11_n1_road' },
     { id: 'a11_e_plaza', room: 'fest2_plaza', move: 'chase', patrol: [[5, 13], [5, 17]], battle: 'a11_n1_plaza' },
     // ---- 2晩目 ----
@@ -282,7 +310,7 @@ export const A11_REWORK: AreaDef = {
   ],
   // 仕掛けの扉（段階264）：仕掛けを解くまで通れない
   gates: [
-    { id: 'g_dark', room: 'fest2_backyard', cells: box(2, 18, 18, 22), by: 'p_generator', look: 'dark', label: '停電で真っ暗' },
+    { id: 'g_dark', room: 'fest2_backyard', cells: box(7, 20, 20, 22), by: 'p_generator', look: 'dark', label: '停電で真っ暗' },
     { id: 'g_fence', room: 'fest2_lane', cells: box(1, 3, 16, 16), by: 'p_cart', look: 'fence', label: '板のかべ' },
     { id: 'g_crowd', room: 'fest2_plaza', cells: box(19, 19, 16, 20), by: 'p_song', look: 'crowd', label: '人混み' },
     { id: 'g_gap', room: 'fest2_east', cells: box(6, 7, 12, 12), by: 'p_mask', look: 'fence', label: '射的の裏の板' },
@@ -291,11 +319,11 @@ export const A11_REWORK: AreaDef = {
   // 仕掛けと仲間の力（段階264・268）。1部屋に1つまで。考える所：木箱はテントの色、お面は店の狐の色、提灯は思い出の一枚の順
   gadgets: [
     // 屋台の裏：木箱が3つ。赤いテントの横の箱に、発電機のつまみ（浴衣の女の人の手がかり）
-    { id: 'p_crate_blue', room: 'fest2_backyard', cell: [4, 6], kind: 'look', mark: '青', label: '青いテントの横の木箱', done: '青いテントの横の木箱。……からっぽだ' },
-    { id: 'p_knob', room: 'fest2_backyard', cell: [7, 6], kind: 'item', mark: '赤', label: '赤いテントの横の木箱', done: '赤いテントの横の木箱に、発電機のつまみが入っていた！' },
-    { id: 'p_crate_yellow', room: 'fest2_backyard', cell: [10, 6], kind: 'look', mark: '黄', label: '黄色いテントの横の木箱', done: '黄色いテントの横の木箱。……ラムネの空き瓶しか入っていない' },
-    { id: 'p_generator', room: 'fest2_backyard', cell: [9, 11], kind: 'use', needs: 'p_knob', mark: '発', label: '発電機', need: '止まった発電機。つまみが外れている', done: 'つまみを付けると、発電機がうなりを上げた！' },
-    { id: 'l_door', room: 'fest2_backyard', cell: [2, 20], kind: 'later', ally: 'hayase', mark: '直', label: '壊れた木戸', need: '壊れた木戸。……直せる人がいれば', done: '早瀬が木戸を直した（この先は、また今度）' },
+    { id: 'p_crate_blue', room: 'fest2_backyard', cell: [5, 6], kind: 'look', mark: '青', label: '青いテントの横の木箱', done: '青いテントの横の木箱。……からっぽだ' },
+    { id: 'p_knob', room: 'fest2_backyard', cell: [8, 6], kind: 'item', mark: '赤', label: '赤いテントの横の木箱', done: '赤いテントの横の木箱に、発電機のつまみが入っていた！' },
+    { id: 'p_crate_yellow', room: 'fest2_backyard', cell: [11, 6], kind: 'look', mark: '黄', label: '黄色いテントの横の木箱', done: '黄色いテントの横の木箱。……ラムネの空き瓶しか入っていない' },
+    { id: 'p_generator', room: 'fest2_backyard', cell: [10, 11], kind: 'use', needs: 'p_knob', mark: '発', label: '発電機', need: '止まった発電機。つまみが外れている', done: 'つまみを付けると、発電機がうなりを上げた！' },
+    { id: 'l_door', room: 'fest2_backyard', cell: [20, 20], kind: 'later', ally: 'hayase', mark: '直', label: '壊れた木戸', need: '壊れた木戸。……直せる人がいれば', done: '早瀬が木戸を直した（この先は、また今度）' },
     // 屋台の裏通り：坂の上の荷車を、上から押す（2晩目）。転がり落ちて板のかべを突き破る
     { id: 'p_cart', room: 'fest2_lane', night: 2, cell: [3, 5], kind: 'push', from: [3, 4], mark: '車', label: '荷車', need: '坂の途中の荷車。坂の上から押せば、転がりそう', done: '荷車を押した！' },
     { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [21, 2], kind: 'item', mark: '面', label: '白い狐のお面', done: '白い狐のお面を拾った。どこかのお面屋の物みたい' },
@@ -340,11 +368,11 @@ export const A11_REWORK: AreaDef = {
       when: { on: 'solved', flag: 'p_generator' },
       steps: [
         { do: 'shake' },
-        { do: 'camera', to: [10, 20], ms: 450 },
-        { do: 'light', cells: [[16, 18], [17, 20], [17, 22], [12, 22], [7, 22], [4, 21], [3, 19], [3, 18]] },
+        { do: 'camera', to: [12, 21], ms: 450 },
+        { do: 'light', cells: [[16, 19], [18, 20], [19, 21], [16, 22], [13, 22], [10, 21], [8, 20]] },
         { do: 'say', name: 'ハルト', text: '明かりがついた……路地の奥まで見える' },
         { do: 'spawn', enemy: 'a11_e_runner' },
-        { do: 'camera', to: [3, 19], ms: 400 },
+        { do: 'camera', to: [12, 21], ms: 400 },
         { do: 'say', name: 'あかり', text: 'あっ、何か逃げてく！ 追いかけよう' },
         { do: 'camera', to: 'hero', ms: 400 },
       ],
@@ -454,5 +482,6 @@ export const A11_REWORK_IMAGES: string[] = [
     A11_CHEST_ART.closed,
     A11_CHEST_ART.open,
     ...A11_DECOR.map((d) => d.image),
+    ...A11_REWORK.rooms.flatMap((r) => (r.parts ?? []).map((p) => `part.${p.part}`)),
   ]),
 ];

@@ -2,7 +2,8 @@
 
 使い方: python3 scripts/props_cut.py 一覧の絵.png 行 列 名前1,名前2,... [出力先（既定 public/assets/sprites/props）]
   名前は左上から右へ、行ごとに。名前を - にしたマスは飛ばす。出力は <名前>.webp（長い辺 256）
-白い背景の抜き方は scripts/cutout_white.py と同じ（広い白を背景にし、縁は白からの割り戻しで半透明に）
+白い背景の抜き方は scripts/cutout_white.py と同じ（広い白を背景にし、縁は白からの割り戻しで半透明に）。
+足もとの影（白い紙に落ちた薄い影）は、暗い半透明の影にする（段階273）
 """
 
 import sys
@@ -15,7 +16,7 @@ WHITE = 236
 MIN_AREA = 300
 
 
-def alpha_cut(rgb):
+def alpha_cut(rgb, soft_shadow=False, rows=1):
     near_white = rgb.min(axis=2) >= WHITE
     lab, _ = ndimage.label(near_white)
     sizes = ndimage.sum(near_white, lab, range(lab.max() + 1))
@@ -26,12 +27,31 @@ def alpha_cut(rgb):
     a = np.asarray(Image.fromarray((a * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.6))).astype(np.float32) / 255.0
     safe = np.maximum(a, 1e-3)[..., None]
     f = np.where(bg[..., None], np.clip(255.0 - (255.0 - c) / safe, 0, 255), rgb)
+    if soft_shadow:
+        # 部品（段階273）：足もとの影（白い紙に落ちた、色の薄い暖かい灰色）を見分け、白い背景とつながる所だけ、黒っぽい半透明の影にする
+        # （そのままだと、影が白っぽいふちになって地面の上で浮いた）
+        mx, mn = rgb.max(axis=2), rgb.min(axis=2)
+        sat = (mx - mn) / np.maximum(mx, 1)
+        r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        # 影は物の足もと：マスの下 4 割だけで探す（上の方の、色の薄い光った所を影にしないため）
+        h = rgb.shape[0]
+        ycell = (np.arange(h) % (h / rows)) / (h / rows)
+        low = (ycell >= 0.6)[:, None]
+        cand = (((r >= g) & (g >= b - 6) & (sat <= 0.42)) | (sat <= 0.22)) & (mx >= 140) & ~bg & low
+        lab2, _ = ndimage.label(cand | bg)
+        keep = np.unique(lab2[bg])
+        shadow = cand & np.isin(lab2, keep[keep > 0])
+        sa = np.clip((1.0 - mx / 255.0) * 1.5, 0.06, 0.55)
+        a = np.where(shadow, sa, a)
+        f = np.where(shadow[..., None], np.array([46.0, 32.0, 28.0]), f)
+    # ほぼ透明な所の色は、暗い影の色にしておく（ゲームが縮めて描く時に、透明な所の白がにじんで白いふちになった）
+    f = np.where((a < 0.08)[..., None], np.array([46.0, 32.0, 28.0]), f)
     return np.dstack([f, a * 255.0]).astype(np.uint8)
 
 
 def cut(src, rows, cols, names, out='public/assets/sprites/props', longest=256):
     rgb = np.asarray(Image.open(src).convert('RGB')).astype(np.float32)
-    rgba = alpha_cut(rgb)
+    rgba = alpha_cut(rgb, soft_shadow=True, rows=rows)
     h, w = rgba.shape[:2]
     for i, name in enumerate(names):
         if name == '-':

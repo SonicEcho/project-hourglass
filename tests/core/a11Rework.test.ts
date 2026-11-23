@@ -117,9 +117,9 @@ describe('仕掛けと仲間の力（段階264）', () => {
     // 拾った品は地図から消え、そのマスは通れる。開く前の扉のマスは通れない
     const before = gadgetArea(area, startExplore(area), 1);
     const after = gadgetArea(area, r.state, 1);
-    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [8, 22])).toBe(false);
-    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 22])).toBe(true);
-    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [7, 6])).toBe(true);
+    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [12, 22])).toBe(false);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [12, 22])).toBe(true);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 6])).toBe(true);
   });
 
   it('押す：荷車は上のマスから押すと動く。下からは動かない', async () => {
@@ -294,5 +294,29 @@ describe('新しい1-1 の絵（段階271・272）', () => {
     expect(isWalkable(grid, [10, 17])).toBe(false);
     expect(isWalkable(grid, [13, 17])).toBe(false);
     expect(isWalkable(grid, [11, 17])).toBe(true);
+  });
+});
+
+describe('部品で組む部屋（段階273）', () => {
+  it('部品の足もとは通れない。歩ける飾りは通れる', async () => {
+    const { composeLayout, partCells } = await import('../../src/core');
+    const base = ['.....', '.....', '.....'];
+    const parts = [
+      { part: 'a', cell: [1, 2] as [number, number], w: 2, d: 2 },
+      { part: 'b', cell: [4, 0] as [number, number], w: 1, walk: true },
+    ];
+    expect(partCells(parts[0]).map((c) => c.join(','))).toEqual(['1,1', '2,1', '1,2', '2,2']);
+    expect(composeLayout(base, parts)).toEqual(['.....', '.##..', '.##..']);
+  });
+
+  it('屋台の裏の部品は台帳にあり、足もとは地面の歩ける所の上に置いている', async () => {
+    const { BACKYARD_PARTS, ASSETS } = await import('../../src/data');
+    const { partCells } = await import('../../src/core');
+    const room = area.rooms.find((r) => r.id === 'fest2_backyard')!;
+    expect(room.parts).toBe(BACKYARD_PARTS);
+    for (const p of BACKYARD_PARTS) {
+      expect(ASSETS.some((a) => a.id === `part.${p.part}`), p.part).toBe(true);
+      for (const [c, r] of partCells(p)) expect(room.layout[r][c], `${p.part} ${c},${r}`).toBe('#');
+    }
   });
 });

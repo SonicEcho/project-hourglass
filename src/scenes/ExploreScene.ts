@@ -178,6 +178,10 @@ export class ExploreScene extends Phaser.Scene {
   private pausedTweens: Phaser.Tweens.Tween[] = [];
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
+  /** 足もとの高さの順に重ねる物（段階273） */
+  private sortLayer?: Phaser.GameObjects.Container;
+  /** 小物の絵のうち、足もとの順に重ねている物（仕掛けを描き直す時に消す） */
+  private sortedProps: Phaser.GameObjects.GameObject[] = [];
   private chestSprites = new Map<string, Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image>();
   private marker!: Phaser.GameObjects.Arc;
   private message!: Phaser.GameObjects.Text;
@@ -495,6 +499,20 @@ export class ExploreScene extends Phaser.Scene {
         this.tweens.add({ targets: ring, alpha: 0.4, yoyo: true, repeat: -1, duration: 900 });
       }),
     );
+    // 足もとの高さの順に重ねる物（段階273）：部品・小物・宝箱・仲間・敵。毎フレーム並べ直す（手前の物ほど上）
+    const sortLayer = this.add.container(0, 0);
+    this.sortLayer = sortLayer;
+    this.sortedProps = [];
+    for (const p of room.parts ?? []) {
+      const key = `part.${p.part}`;
+      if (!hasImage(this, key)) continue;
+      const w = (p.sw ?? p.w) * T;
+      const im = this.add.image((p.cell[0] + p.w / 2) * T, (p.cell[1] + 1) * T, key).setOrigin(0.5, 1);
+      im.setDisplaySize(w, (w * im.height) / im.width);
+      // 歩ける飾り（縄など）は、いつも仲間の下
+      im.setData('foot', p.walk ? -1 : (p.cell[1] + 1) * T);
+      sortLayer.add(im);
+    }
     // 宝箱
     for (const chest of area.chests) {
       if (!this.here(chest)) continue;
@@ -504,10 +522,12 @@ export class ExploreScene extends Phaser.Scene {
       const art = this.propArt(opened ? A11_CHEST_ART.open : A11_CHEST_ART.closed);
       const box = art ? this.propImage(art, chest.cell, 1.1) : this.add.rectangle(x, y, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f).setStrokeStyle(2, opened ? 0x6b5a40 : 0xffd84a);
       this.chestSprites.set(chest.id, box);
-      world.add(box);
+      if (art) sortLayer.add(box);
+      else world.add(box);
     }
     // 仕掛けの扉と仕掛け（段階264。絵が届くまでの仮の印）
     this.drawGadgets(world);
+    world.add(sortLayer);
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
       if (!this.here(t)) continue;
@@ -561,7 +581,7 @@ export class ExploreScene extends Phaser.Scene {
     for (const e of area.enemies) {
       // 地図の出来事（段階266）で湧くまで隠れている砂嵐は出さない
       if (!enemyActive(this.state, e.id) || !this.here(e) || !enemyShown(this.state, e)) continue;
-      this.addEnemy(e, world);
+      this.addEnemy(e, sortLayer);
     }
     // 仲間（ハルト）：小さくした立ち絵を足元の影の上に（歩くアニメーションは作らない。docs/ART.md）
     const [pc, pr] = this.state.cell;
@@ -580,7 +600,7 @@ export class ExploreScene extends Phaser.Scene {
         const img = this.add.sprite(0, T * 0.45, art.key, art.idleFrame).setOrigin(art.originX, art.originY);
         img.setScale((T * 1.55) / img.height);
         box.add(img);
-        world.add(box);
+        sortLayer.add(box);
         this.party.unshift({ id, box, img, art, walk });
       }
     }
@@ -596,7 +616,7 @@ export class ExploreScene extends Phaser.Scene {
       this.player.add(this.add.circle(0, 0, T * 0.42, COLORS.ally).setStrokeStyle(2, 0xffffff));
       this.player.add(addText(this, 0, 0, 'ハ', { size: 14, bold: true }).setOrigin(0.5));
     }
-    if (!this.walkers) world.add(this.player);
+    if (!this.walkers) sortLayer.add(this.player);
     this.shadeSprite(this.player, isShade(room, this.state.cell));
     this.roof = this.drawRoof(room);
     if (this.roof) world.add(this.roof);
@@ -720,6 +740,8 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   update(): void {
+    // 段階273：手前の物ほど上に（足もとの高さの順）
+    if (this.sortLayer) this.sortLayer.list.sort((a, b) => footOf(a) - footOf(b));
     if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune || this.eventRunning) return;
     if (this.time.now < this.graceUntil) return;
     if (this.stealth) this.updateSight();
@@ -1174,6 +1196,15 @@ export class ExploreScene extends Phaser.Scene {
     const layer = this.gadgetLayer;
     if (!layer) return;
     layer.removeAll(true);
+    for (const o of this.sortedProps) o.destroy();
+    this.sortedProps = [];
+    // 小物の絵は、足もとの順に仲間と重ねる（段階273。重ねる入れ物がまだなければ仕掛けの入れ物へ）
+    const front = (o: Phaser.GameObjects.Image): void => {
+      if (this.sortLayer) {
+        this.sortLayer.add(o);
+        this.sortedProps.push(o);
+      } else layer.add(o);
+    };
     const look: Record<string, { fill: number; alpha: number; text: string }> = {
       dark: { fill: 0x000000, alpha: 0.85, text: '真っ暗' },
       cart: { fill: 0x6b4a2a, alpha: 1, text: '' },
@@ -1187,14 +1218,14 @@ export class ExploreScene extends Phaser.Scene {
     // 段階271：板のかべは、解いた後は壊れた板の絵を残す
     for (const gate of (this.area.gates ?? []).filter((g) => g.room === this.state.room && g.look === 'fence' && !closed.includes(g))) {
       const broken = this.propArt(A11_GATE_ART.broken);
-      if (broken) layer.add(this.gateBoards(broken, gate.cells));
+      if (broken) front(this.gateBoards(broken, gate.cells));
     }
     for (const gate of closed) {
       const st = look[gate.look];
       // 段階271：小物の絵が読めていれば、絵で（板のかべ・人混み・池の霧）
       const boards = gate.look === 'fence' ? this.propArt(A11_GATE_ART.boards) : undefined;
       if (boards) {
-        layer.add(this.gateBoards(boards, gate.cells));
+        front(this.gateBoards(boards, gate.cells));
         continue;
       }
       const crowd = gate.look === 'crowd' ? A11_GATE_ART.crowd.map((k) => this.propArt(k)).filter((k): k is string => !!k) : [];
@@ -1202,7 +1233,7 @@ export class ExploreScene extends Phaser.Scene {
         gate.cells.forEach(([c, r], i) => {
           if (plainRoom.layout[r]?.[c] === '#') return;
           const im = this.propImage(crowd[i % crowd.length], [c, r], 1.5).setTint(0xe8d2b0).setAlpha(0.85);
-          layer.add(im);
+          front(im);
           this.tweens.add({ targets: im, y: im.y - 1.5, yoyo: true, repeat: -1, duration: 900 + i * 130 });
         });
         continue;
@@ -1257,7 +1288,7 @@ export class ExploreScene extends Phaser.Scene {
           if (!lit) this.tweens.add({ targets: im, alpha: 0.6, yoyo: true, repeat: -1, duration: 800 });
         }
         if (later) im.setAlpha(0.9);
-        layer.add(im);
+        front(im);
         continue;
       }
       const color = later ? 0x5a5f70 : photo ? (lit ? 0x8a8070 : 0xfff4d8) : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
@@ -1275,6 +1306,7 @@ export class ExploreScene extends Phaser.Scene {
   private propImage(key: string, cell: GridCell, w: number): Phaser.GameObjects.Image {
     const im = this.add.image(cell[0] * T + T / 2, cell[1] * T + T * 0.95, key).setOrigin(0.5, 1);
     im.setDisplaySize(T * w, (T * w * im.height) / im.width);
+    im.setData('foot', (cell[1] + 1) * T);
     return im;
   }
 
@@ -1624,7 +1656,7 @@ export class ExploreScene extends Phaser.Scene {
       else if (step.do === 'spawn') {
         const def = this.area.enemies.find((e) => e.id === step.enemy);
         if (def && this.world && enemyActive(this.state, def.id)) {
-          const e = this.addEnemy(def, this.world);
+          const e = this.addEnemy(def, this.sortLayer ?? this.world);
           this.tweens.getTweensOf(e.sprite).forEach((t) => t.pause());
           paused.push(...this.tweens.getTweensOf(e.sprite));
           // 砂が渦を巻いて、砂嵐が現れる
@@ -1841,6 +1873,12 @@ export class ExploreScene extends Phaser.Scene {
 const ROOF_TEXTURE = 'exploreRoof';
 /** 陰に入った仲間・敵の色（段階121） */
 const SHADE_TINT = 0x8088a0;
+
+/** 足もとの高さ（段階273）：絵には foot を書いてある。仲間と敵の入れ物は、真ん中から半マス下 */
+function footOf(o: Phaser.GameObjects.GameObject): number {
+  const f = (o as Phaser.GameObjects.Image).getData?.('foot') as number | undefined;
+  return typeof f === 'number' ? f : (o as Phaser.GameObjects.Container).y + T / 2;
+}
 
 /** 上の帯（区画の名前・コマ・連携技と、その下の案内）の高さ */
 const TOP_BAND = 132;
