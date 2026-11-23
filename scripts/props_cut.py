@@ -14,6 +14,7 @@ from scipy import ndimage
 
 WHITE = 236
 MIN_AREA = 300
+HOLE_MAX = 1800  # 物の内側のすき間として抜く白の、いちばん大きい広さ（画素）
 
 
 def alpha_cut(rgb, soft_shadow=False, rows=1):
@@ -21,6 +22,14 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
     lab, _ = ndimage.label(near_white)
     sizes = ndimage.sum(near_white, lab, range(lab.max() + 1))
     bg = near_white & (sizes[lab] >= MIN_AREA)
+    outer = bg.copy()
+    # 物の内側のすき間（縄の輪・コードの輪・ケースの取っ手の穴）：小さくても、紙の白（ほぼ真っ白で色のない所）なら背景（2026-11-23 開発者）。
+    # 物の白い所（お面・提灯の紙・クーラーのふた）は少し色があるか、紙の白より暗いので残る
+    paper = (rgb.min(axis=2) >= 244) & ((rgb.max(axis=2) - rgb.min(axis=2)) <= 10)
+    labw, _ = ndimage.label(paper)
+    sizes_w = ndimage.sum(paper, labw, range(labw.max() + 1))
+    # 大きな白（お面の顔・提灯の紙）は物の色なので残す。すき間は小さい（元の 1254×1254 の絵で 1800 画素まで）
+    bg = bg | (paper & (sizes_w[labw] >= 6) & (sizes_w[labw] <= HOLE_MAX))
     c = np.clip(rgb * 255.0 / 248.0, 0, 255)
     soft = 1.0 - c.min(axis=2) / 255.0
     a = np.where(bg, soft, 1.0)
@@ -39,8 +48,8 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
         ycell = (np.arange(h) % (h / rows)) / (h / rows)
         low = (ycell >= 0.6)[:, None]
         cand = (((r >= g) & (g >= b - 6) & (sat <= 0.42)) | (sat <= 0.22)) & (mx >= 140) & ~bg & low
-        lab2, _ = ndimage.label(cand | bg)
-        keep = np.unique(lab2[bg])
+        lab2, _ = ndimage.label(cand | outer)
+        keep = np.unique(lab2[outer])
         shadow = cand & np.isin(lab2, keep[keep > 0])
         sa = np.clip((1.0 - mx / 255.0) * 1.5, 0.06, 0.55)
         a = np.where(shadow, sa, a)
@@ -49,8 +58,9 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
     # 物の白い所（クーラーのふた・お面）は暗い輪郭で囲まれていて、背景とつながらないので残る
     mx0, mn0 = rgb.max(axis=2), rgb.min(axis=2)
     pale = (mn0 >= 165) & ((mx0 - mn0) <= 100)
-    labp, _ = ndimage.label(pale | bg)
-    keepp = np.unique(labp[bg])
+    # つながりは外の白い背景からだけ見る（物の内側のすき間から広げると、お面の白い顔まで透けた）
+    labp, _ = ndimage.label(pale | outer)
+    keepp = np.unique(labp[outer])
     halo = pale & np.isin(labp, keepp[keepp > 0]) & ~bg & ~shadow
     a_h = np.clip((255.0 - mn0) / (255.0 - 120.0), 0.0, 1.0) * 0.9
     a = np.where(halo, np.minimum(a, a_h), a)
