@@ -56,6 +56,8 @@ export const GATE_PARTS: RoomPart[] = [
   { part: 'stone_lantern', cell: [2, 20], w: 1, sw: 1 },
   { part: 'stone_lantern', cell: [21, 20], w: 1, sw: 1 },
   { part: 'hydrangea', cell: [19, 2], w: 1, sw: 1.4 },
+  { part: 'nobori', cell: [9, 2], w: 1, sw: 0.9 },
+  { part: 'nobori', cell: [14, 7], w: 1, sw: 0.9 },
 ];
 
 /**
@@ -210,13 +212,15 @@ export const PLAZA_PARTS: RoomPart[] = [
   { part: 'stall_blue', cell: [19, 6], w: 3, d: 2, sw: 3.2 },
   { part: 'yagura', cell: [10, 16], w: 4, d: 3, sw: 4.4 },
   { part: 'stall_green', cell: [19, 15], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_red', cell: [2, 16], w: 3, d: 2, sw: 3.2 },
+  { part: 'stall_corner', cell: [2, 16], w: 3, d: 2, sw: 3 },
   { part: 'crates_yellow', cell: [1, 14], w: 1, sw: 0.9 },
   { part: 'stall_blue', cell: [5, 21], w: 3, d: 2, sw: 3.2 },
   { part: 'crates_red', cell: [8, 21], w: 1, sw: 0.9 },
   { part: 'signboard', cell: [15, 21], w: 1, sw: 1.4 },
   { part: 'stall_red', cell: [16, 21], w: 3, d: 2, sw: 3.2 },
   { part: 'cooler', cell: [19, 20], w: 1, sw: 1 },
+  { part: 'food_cart', cell: [14, 12], w: 2, sw: 2 },
+  { part: 'nobori', cell: [4, 13], w: 1, sw: 0.9 },
 ];
 
 const EAST_LAYOUT = [
@@ -264,6 +268,8 @@ export const EAST_PARTS: RoomPart[] = [
   { part: 'grass', cell: [4, 13], w: 1, sw: 1 },
   { part: 'bench', cell: [2, 4], w: 2, sw: 2 },
   { part: 'crates_red', cell: [21, 18], w: 1, sw: 0.9 },
+  { part: 'nobori', cell: [9, 6], w: 1, sw: 0.9 },
+  { part: 'food_cart', cell: [12, 18], w: 2, sw: 2 },
 ];
 
 const WOODS_LAYOUT = [
@@ -572,7 +578,24 @@ export const A11_CHEST_ART = { closed: 'prop.chest_closed', open: 'prop.chest_op
  * 下をくぐる物（段階272）：部屋の絵に描かず、仲間と敵の上に重ねる絵。x・y は絵の左上（マス）、w は幅（マス）。
  * 鳥居の柱の根もと（10,17）・（13,17）は、文字の地図で通れないマスにしてある
  */
-export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number }[] = [{ room: 'fest2_gate', image: 'prop.torii', x: 8.9, y: 12.3, w: 6.2 }];
+export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number }[] = [
+  { room: 'fest2_gate', image: 'prop.torii', x: 8.9, y: 12.3, w: 6.2 },
+  // 段階275：頭の上の提灯のひも・旗（屋台から屋台へ張り渡す。仲間の上に重ねる）。長く張ると提灯が大きくなるので、10マスほどに分ける
+  { room: 'fest2_gate', image: 'part.string_lanterns', x: 5.5, y: 1.9, w: 6.6 },
+  { room: 'fest2_gate', image: 'part.string_lanterns', x: 12, y: 1.9, w: 6.6 },
+  { room: 'fest2_gate', image: 'part.string_flags', x: 5.5, y: 7.6, w: 6.6 },
+  { room: 'fest2_gate', image: 'part.string_flags', x: 12, y: 7.6, w: 6.6 },
+  { room: 'fest2_plaza', image: 'part.string_mixed', x: 2, y: 13, w: 9.8 },
+  { room: 'fest2_plaza', image: 'part.string_mixed', x: 12.2, y: 13, w: 9.8 },
+  { room: 'fest2_plaza', image: 'part.string_lanterns', x: 4, y: 19, w: 8 },
+  { room: 'fest2_plaza', image: 'part.string_lanterns', x: 12, y: 19, w: 8 },
+  { room: 'fest2_east', image: 'part.string_lanterns', x: 3.5, y: 4.4, w: 8.6 },
+  { room: 'fest2_east', image: 'part.string_lanterns', x: 12, y: 4.4, w: 8.6 },
+  { room: 'fest2_east', image: 'part.string_flags', x: 3, y: 16, w: 8.6 },
+  { room: 'fest2_east', image: 'part.string_flags', x: 11.5, y: 16, w: 8.6 },
+  { room: 'fest2_lane', image: 'part.string_flags', x: 3, y: 2.6, w: 9 },
+  { room: 'fest2_lane', image: 'part.string_flags', x: 12, y: 2.6, w: 9 },
+];
 
 /** 新しい1-1 で読む絵（部屋の絵・小物・下をくぐる物） */
 export const A11_REWORK_IMAGES: string[] = [
