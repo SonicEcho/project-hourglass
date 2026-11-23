@@ -38,6 +38,42 @@ export interface RoomDef {
    * ビット i は、左から i % 4、上から i / 4 の小さな四角）。書いたマスは、文字の地図の ^ よりこちらが優先
    */
   roofFine?: Record<string, string>;
+  /**
+   * 部品（段階273。docs/milestones/M3_explore_feel.md の 8.）：物のない地面の絵（image）の上に置く、1つずつの絵。
+   * 足もと（cell から左へ w マス・上へ d マス）は通れない（composeLayout で文字の地図に入れる）。探索の画面は、足もとの高さの順に仲間と重ねる
+   */
+  parts?: RoomPart[];
+}
+
+/** 部屋の部品（段階273） */
+export interface RoomPart {
+  /** 絵の名前（台帳の id は part.<名前>） */
+  part: string;
+  /** 足もとの左下のマス */
+  cell: GridCell;
+  /** 足もとの幅・奥行き（マス）。奥行きは書かなければ 1 */
+  w: number;
+  d?: number;
+  /** 絵の幅（マス）。書かなければ w。絵は足もとの下の端・真ん中にそろえる */
+  sw?: number;
+  /** 歩ける飾り（縄・小石など。足もとを通れないマスにしない） */
+  walk?: boolean;
+}
+
+/** 部品の足もとのマス（段階273） */
+export function partCells(part: RoomPart): GridCell[] {
+  if (part.walk) return [];
+  const [c0, r0] = part.cell;
+  const out: GridCell[] = [];
+  for (let r = r0 - (part.d ?? 1) + 1; r <= r0; r++) for (let c = c0; c < c0 + part.w; c++) out.push([c, r]);
+  return out;
+}
+
+/** 地面の文字の地図に、部品の足もとを通れないマスとして入れる（段階273） */
+export function composeLayout(base: string[], parts: RoomPart[]): string[] {
+  const rows = base.map((l) => [...l]);
+  for (const p of parts) for (const [c, r] of partCells(p)) if (rows[r]?.[c] !== undefined) rows[r][c] = '#';
+  return rows.map((r) => r.join(''));
 }
 
 /**
