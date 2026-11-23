@@ -43,7 +43,7 @@ describe('新しい1-1（段階262）', () => {
     for (let n = 1; n <= 2; n++) {
       const start = area.nights![n - 1].start;
       const reach = reachableCells(nightArea(area, n), start ? { room: start.room ?? startRoom(area), cell: start.cell } : undefined);
-      expect(reach.fest2_woods?.has('11,3') ?? false).toBe(false);
+      expect(reach.fest2_woods?.has('12,3') ?? false).toBe(false);
       // 裏通りの中（左の縦の道）
       expect(reach.fest2_lane?.has('7,8') ?? false).toBe(n >= 2);
     }
@@ -125,8 +125,8 @@ describe('仕掛けと仲間の力（段階264）', () => {
   it('押す：荷車は上のマスから押すと動く。下からは動かない', async () => {
     const { startExplore, useGadget } = await import('../../src/core');
     const s = startExplore(area);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [3, 6]).solved).toEqual([]);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [3, 4]).solved).toEqual(['p_cart']);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 7]).solved).toEqual([]);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 5]).solved).toEqual(['p_cart']);
   });
 
   it('仲間の力：あかりが編成にいれば人混みが道をあける。後で来る所は、その仲間がいないと開かない', async () => {

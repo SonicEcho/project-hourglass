@@ -140,7 +140,15 @@ def cut(src, rows, cols, names, out='public/assets/sprites/props', longest=256):
         if name == '-':
             continue
         r, c = divmod(i, cols)
-        cell = rgba[r * h // rows:(r + 1) * h // rows, c * w // cols:(c + 1) * w // cols]
+        cell = rgba[r * h // rows:(r + 1) * h // rows, c * w // cols:(c + 1) * w // cols].copy()
+        # 離れた小さなかけら（となりのマスからはみ出した葉など）は消す（2026-11-23）
+        solid = cell[..., 3] > 24
+        labc, nc = ndimage.label(ndimage.binary_dilation(solid, iterations=4))
+        if nc > 1:
+            sz = ndimage.sum(solid, labc, range(nc + 1))
+            keep_c = sz >= sz.max() * 0.03
+            keep_c[0] = False
+            cell[~keep_c[labc]] = 0
         ys, xs = np.nonzero(cell[..., 3] > 24)
         y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
         im = Image.fromarray(cell[y0:y1, x0:x1], 'RGBA')
