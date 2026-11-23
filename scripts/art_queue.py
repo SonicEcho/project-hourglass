@@ -1166,6 +1166,30 @@ add('部品5：小さな物と草木', AG_REF, 'parts_fest_c.png', af_parts(3, 4
     'two folding chairs and a small folding table.',
 ], ' Match the attached parts sheet exactly in scale, view and style.'))
 
+# ---- AH. 横向きの屋台と、頭の上の提灯のひも（段階275） ----
+section('AH. 横向きの屋台と、頭の上の提灯のひも（段階275）', '組み立てた部屋が本物っぽくない（2026-11-23 開発者）。屋台がみんな下を向いている・物をつなぐ物がない、を直す。添付は、届いた部品の絵（`parts_fest_a.png`。正面の屋台が描いてある）と、地面の絵（`ground_fest2_gate.png`）。白い背景のまま送ってくれればよい')
+AH_REF = ['parts_fest_a.png（届いた屋台の部品の絵）', 'ground_fest2_gate.png（届いた入口の地面の絵）']
+add('部品6：横向き・角の屋台', AH_REF, 'parts_fest_d.png', af_parts(3, 3, [
+    'the SAME kind of festival food stall as the attached sheet, with a RED-and-white striped awning, but turned to face LEFT: we see its left side with the counter and awning opening toward the left, its back wall on the right, about 2 steps wide and 3 steps deep (deeper than wide).',
+    'the same stall with a BLUE-and-white striped awning, turned to face LEFT, the same size.',
+    'the same stall with a GREEN-and-white striped awning, turned to face LEFT, the same size.',
+    'the same stall with a RED-and-white striped awning, turned to face RIGHT (mirror of the left-facing one), the same size.',
+    'the same stall with a BLUE-and-white striped awning, turned to face RIGHT, the same size.',
+    'the same stall with a GREEN-and-white striped awning, turned to face RIGHT, the same size.',
+    'a festival food stall at a CORNER, with an L-shaped counter open toward the front and the left, a yellow-and-white striped awning, about 3 steps wide.',
+    'a tall cloth festival banner (nobori) on a pole, plain red with a white border, no letters, about 1 step wide and 3 steps tall.',
+    'a small cart-style food stall with a big steaming pot (like an oden or yakisoba cart), a short red noren curtain without letters, about 2 steps wide.',
+], ' Match the attached parts sheet exactly in scale, view, lighting and style: the left- and right-facing stalls must look like the same front-facing stalls of the attached sheet, only turned 90 degrees.'))
+add('部品7：頭の上の提灯のひも', AH_REF, 'parts_fest_e.png', f"""{STYLE}
+
+A sheet of overhead decorations for a top-down 2D RPG map on mobile. The game draws them ABOVE the characters, as if hanging in the air between festival stalls.
+{AF_CAM}
+Layout: 3 rows on a plain pure white background, one decoration per row, each one stretched across the whole width of the image, with clear white space between the rows. No ground, no shadows on the ground, no poles, no people, no letters anywhere.
+- Row 1: a long string of small round red and white paper festival lanterns hanging from a single rope that sags gently in the middle, the lanterns softly glowing.
+- Row 2: a long string of small triangular colorful festival pennant flags on a rope, sagging gently.
+- Row 3: a long rope with paper lanterns of mixed colors (red, white, yellow), sagging a little more, the lanterns glowing warmly.
+Each string must be thin and airy, so the ground under it stays clearly visible.""", '横に長い3本。ゲームが屋台から屋台へ張り渡して、仲間の上に重ねる')
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1178,7 +1202,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: 0 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
