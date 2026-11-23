@@ -42,3 +42,24 @@ describe('斜めにも歩く道（段階269）', () => {
     expect(dragStep(map, [0, 0], [0, -1])).toBeNull();
   });
 });
+
+describe('入れない所で引っかからない（2026-11-23）', () => {
+  it('まっすぐ先が壁なら、壁に沿って横の空いた所へずれる（3マス先まで）', () => {
+    // 上へ引っ張る。真上と左右の斜め上は壁、右へ2マス行けば上が空いている
+    const m = parseGrid(['#####.', '......']);
+    expect(dragStep(m, [2, 1], [0, -1])).toEqual([3, 1]);
+    // 4マス以上離れていたら止まる
+    const far = parseGrid(['#######.', '........']);
+    expect(dragStep(far, [1, 1], [0, -1])).toBeNull();
+  });
+
+  it('歩けない物をタップしても、近くの行ける所まで歩く', async () => {
+    const { reachableNear } = await import('../../src/core');
+    const m = parseGrid(['......', '.###..', '.###..', '......']);
+    // 物の真ん中 (2,1) をタップ → 近くの行ける所
+    const c = reachableNear(m, [0, 3], [2, 1], 3)!;
+    expect(Math.abs(c[0] - 2) + Math.abs(c[1] - 1)).toBe(1);
+    // 遠すぎる所は null
+    expect(reachableNear(parseGrid(['.####', '#####', '#####', '#####', '#####']), [0, 0], [4, 4], 3)).toBeNull();
+  });
+});

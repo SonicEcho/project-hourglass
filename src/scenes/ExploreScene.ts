@@ -58,6 +58,7 @@ import {
   loseBattle,
   markTrigger,
   nearestWalkable,
+  reachableNear,
   openChest,
   patrolRoute,
   pendingTrigger,
@@ -874,8 +875,8 @@ export class ExploreScene extends Phaser.Scene {
       path = options[0]?.p ?? null;
     } else {
       const goal = talker ? talker.cell : boss ? this.area.boss.cell : cell;
-      // 段階269：少しずれたタップ（1マス以内）は近くの歩ける所へ。それより遠い、歩けない所は「×」
-      target = nearestWalkable(this.map, goal, talker || boss ? 2 : 1);
+      // 段階269：少しずれたタップは近くの歩ける所へ。2026-11-23：歩けない物の上をタップしても、3マス以内の行ける所まで歩く（それより遠い所は「×」）
+      target = talker || boss ? nearestWalkable(this.map, goal, 2) : reachableNear(this.map, from, goal, 3);
       path = target ? findPathDiag(this.map, from, target) : null;
     }
     if (!target || !path) {
