@@ -1,5 +1,6 @@
 """小物の一覧の絵（白い背景に、マス目に並べた絵）から、1つずつ背景を抜いて切り出す（段階271。docs/milestones/M3_explore_feel.md の 7.）。
 
+必要なもの: pip install pillow numpy scipy "rembg[cpu]"（物の内側のすき間を見分けるのに、背景を抜く AI を使う）
 使い方: python3 scripts/props_cut.py 一覧の絵.png 行 列 名前1,名前2,... [出力先（既定 public/assets/sprites/props）]
   名前は左上から右へ、行ごとに。名前を - にしたマスは飛ばす。出力は <名前>.webp（長い辺 256）
 白い背景の抜き方は scripts/cutout_white.py と同じ（広い白を背景にし、縁は白からの割り戻しで半透明に）。
@@ -14,22 +15,16 @@ from scipy import ndimage
 
 WHITE = 236
 MIN_AREA = 300
-HOLE_MAX = 1800  # 物の内側のすき間として抜く白の、いちばん大きい広さ（画素）
 
 
-def alpha_cut(rgb, soft_shadow=False, rows=1):
+def alpha_cut(rgb, soft_shadow=False, rows=1, cols=1):
     near_white = rgb.min(axis=2) >= WHITE
     lab, _ = ndimage.label(near_white)
     sizes = ndimage.sum(near_white, lab, range(lab.max() + 1))
-    bg = near_white & (sizes[lab] >= MIN_AREA)
+    # 外の背景：絵の縁につながる白だけ（広さだけで決めると、提灯の真ん中の白い光まで背景になった）。内側の白は inner_holes で見分ける
+    edge_labels = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+    bg = near_white & np.isin(lab, edge_labels[edge_labels > 0]) & (sizes[lab] >= MIN_AREA)
     outer = bg.copy()
-    # 物の内側のすき間（縄の輪・コードの輪・ケースの取っ手の穴）：小さくても、紙の白（ほぼ真っ白で色のない所）なら背景（2026-11-23 開発者）。
-    # 物の白い所（お面・提灯の紙・クーラーのふた）は少し色があるか、紙の白より暗いので残る
-    paper = (rgb.min(axis=2) >= 244) & ((rgb.max(axis=2) - rgb.min(axis=2)) <= 10)
-    labw, _ = ndimage.label(paper)
-    sizes_w = ndimage.sum(paper, labw, range(labw.max() + 1))
-    # 大きな白（お面の顔・提灯の紙）は物の色なので残す。すき間は小さい（元の 1254×1254 の絵で 1800 画素まで）
-    bg = bg | (paper & (sizes_w[labw] >= 6) & (sizes_w[labw] <= HOLE_MAX))
     c = np.clip(rgb * 255.0 / 248.0, 0, 255)
     soft = 1.0 - c.min(axis=2) / 255.0
     a = np.where(bg, soft, 1.0)
@@ -61,12 +56,24 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
     # つながりは外の白い背景からだけ見る（物の内側のすき間から広げると、お面の白い顔まで透けた）
     labp, _ = ndimage.label(pale | outer)
     keepp = np.unique(labp[outer])
-    halo = pale & np.isin(labp, keepp[keepp > 0]) & ~bg & ~shadow
+    ai = ai_mask(rgb, rows, cols)
+    # 光のにじみ（提灯の光など）は、AI が物と見た所を残す（提灯の真ん中の白い光まで透けた）
+    halo = pale & np.isin(labp, keepp[keepp > 0]) & ~bg & ~shadow & (ai < 0.5)
     a_h = np.clip((255.0 - mn0) / (255.0 - 120.0), 0.0, 1.0) * 0.9
     a = np.where(halo, np.minimum(a, a_h), a)
     safe_h = np.maximum(a, 1e-3)[..., None]
     f = np.where(halo[..., None], np.clip(255.0 - (255.0 - rgb) / safe_h, 0, 255), f)
     bg = bg | halo
+    # 物の内側のすき間（縄の輪・コードの輪・ケースの取っ手の穴）：外の背景とつながらない明るい所のうち、
+    # 背景を抜く AI（rembg の isnet-general-use）が「物ではない」と見た所だけ透明にする（2026-11-23 開発者）。
+    # 色だけで見分けると、提灯の光・お面の白・宝箱の紅白の紐まで透けた
+    holes = inner_holes(rgb, outer, ai)
+    if holes.any():
+        a_k = np.clip((255.0 - mn0) / (255.0 - 120.0), 0.0, 1.0) * 0.9
+        a = np.where(holes, np.minimum(a, a_k), a)
+        safe_k = np.maximum(a, 1e-3)[..., None]
+        f = np.where(holes[..., None], np.clip(255.0 - (255.0 - rgb) / safe_k, 0, 255), f)
+        bg = bg | holes
     # 輪郭のふち（白い背景から3ドットまで）：白と混ざった薄い色が不透明のまま残り、白いふちに見えた（2026-11-23 開発者）。
     # ここも白からの割り戻しで、混ざった白の分だけ透明にする（暗い線はそのまま残る）
     dist = ndimage.distance_transform_edt(~bg)
@@ -83,9 +90,51 @@ def alpha_cut(rgb, soft_shadow=False, rows=1):
     return np.dstack([f, a * 255.0]).astype(np.uint8)
 
 
+_SESSION = None
+
+
+def ai_mask(rgb, rows, cols):
+    """背景を抜く AI の「物らしさ」（0〜1）。マスごとにかける"""
+    global _SESSION
+    from rembg import new_session, remove
+    if _SESSION is None:
+        _SESSION = new_session('isnet-general-use')
+    h, w = rgb.shape[:2]
+    ai = np.ones((h, w), np.float32)
+    for r in range(rows):
+        for c in range(cols):
+            y0, y1, x0, x1 = r * h // rows, (r + 1) * h // rows, c * w // cols, (c + 1) * w // cols
+            m = remove(Image.fromarray(rgb[y0:y1, x0:x1].astype(np.uint8)), session=_SESSION, only_mask=True)
+            ai[y0:y1, x0:x1] = np.asarray(m, np.float32) / 255.0
+    return ai
+
+
+def inner_holes(rgb, outer, ai):
+    """外の背景とつながらない明るい所のうち、AI が背景と見た所。ほとんど紙の白の所は、AI が少し迷っていても背景にする"""
+    mx, mn = rgb.max(axis=2), rgb.min(axis=2)
+    light = (mn >= 165) & ((mx - mn) <= 100)
+    labp, _ = ndimage.label(light | outer)
+    keep = np.unique(labp[outer])
+    enclosed = light & ~np.isin(labp, keep[keep > 0])
+    lab, n = ndimage.label(enclosed)
+    if n == 0:
+        return enclosed
+    idx = range(n + 1)
+    mean_ai = ndimage.mean(ai, lab, idx)
+    paper = ((mn >= 244) & ((mx - mn) <= 10)).astype(np.float32)
+    frac = ndimage.mean(paper, lab, idx)
+    # まわりの明るさ：光（提灯の真ん中）は明るい色に囲まれ、すき間（ケースの取っ手）は暗い縁に囲まれる
+    ring = ndimage.binary_dilation(enclosed, iterations=3) & ~enclosed
+    near, ind = ndimage.distance_transform_edt(~ring, return_indices=True)
+    ring_v = mx[ind[0], ind[1]]
+    mean_rv = ndimage.mean(ring_v, lab, idx)
+    size = ndimage.sum(np.ones_like(mn), lab, idx)
+    hole = (((mean_ai < 0.35) & (mean_rv < 235)) | ((frac >= 0.5) & (mean_rv < 225))) & (size >= 40)
+    return enclosed & hole[lab]
+
 def cut(src, rows, cols, names, out='public/assets/sprites/props', longest=256):
     rgb = np.asarray(Image.open(src).convert('RGB')).astype(np.float32)
-    rgba = alpha_cut(rgb, soft_shadow=True, rows=rows)
+    rgba = alpha_cut(rgb, soft_shadow=True, rows=rows, cols=cols)
     h, w = rgba.shape[:2]
     for i, name in enumerate(names):
         if name == '-':
