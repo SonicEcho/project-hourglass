@@ -1016,7 +1016,10 @@ Absolutely no letters or text anywhere: signs, banners and posters are blank or 
 def a11_room_free(scene, exits):
     return f"""{STYLE}
 
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective (a square grid of 24 by 24 steps will be laid over it later). No people and no characters. Match the art style, colors and lighting of the attached map illustration exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
+Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). No people and no characters. Match the art style, colors and lighting of the attached map illustration exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
+Camera: ONE consistent three-quarter top-down view for everything in the image, like a classic console JRPG map: the camera looks down at about 50 degrees from the bottom of the image, so every object shows its top and its front side (the side facing the bottom of the image). Every tent, building, wall, stair, fence and crate is drawn from exactly this same angle and direction; nothing is seen from the side, from a different angle or in a different perspective. Vertical edges stay vertical, no wide-angle distortion.
+Scale: a square grid of 24 by 24 steps will be laid over the image later. One step is about one person's shoulder width, about the size of one beer crate; a stall tent is about 3 steps wide, a door about 1 step wide. Keep every object at this one consistent scale.
+Density: a real place is cramped and cluttered. Open ground is mostly 2 to 4 steps wide, with at most one small open space; things stand along the paths and in clusters, not only pushed against the edges of the image, and no large empty areas. Every thing has a reason to be where it is (stacked where the stall keepers would put it, cables running from a stall to where power is needed).
 {scene}
 Exits: {exits} Every other edge of the image is closed (trees, fences, stalls or buildings), with no other way out.
 {AE_FREE_TAIL}"""
