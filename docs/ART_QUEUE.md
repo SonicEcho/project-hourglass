@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：44 枚**（済んだ絵 387 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：36 枚**（済んだ絵 396 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -10,7 +10,7 @@
 
 ## まだの絵
 
-- [AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）](#ae-新しい1-1-の仕掛け宝箱の小物と部屋の絵段階270)：9 枚
+- [AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）](#ae-新しい1-1-の仕掛け宝箱の小物と部屋の絵段階270)：1 枚
 - [AC. 脇役のまばたき・口パク（基本の1枚）](#ac-脇役のまばたき口パク基本の1枚)：13 枚
 - [AD. 口を開けた顔の、口を閉じた絵（口パク用）](#ad-口を開けた顔の口を閉じた絵口パク用)：22 枚
 
@@ -18,161 +18,29 @@
 
 新しい1-1（デバッグメニューの「試しの切り替え」の「新しい1-1」）は、部屋の絵がなく、仕掛けと宝箱も仮の印（ひし形・四角）で、良さが伝わりにくかった（2026-11-23 開発者）。`docs/milestones/M3_explore_feel.md` の 7.。**先に小物の3枚**（届けばマス目の部屋のままでも絵に替わる）、**次に部屋の6枚**。小物は白い背景のまま送ってくれればよい（Claude が1つずつ切り出す）。部屋の絵は、毎回その部屋の下絵（`docs/sketches/a11_art/room_<部屋>.png`）と、絵柄の見本の今の入口の地図（`public/assets/maps/fest_gate.webp`）を添付する
 
-#### 1. 小物1：宝箱と屋台の裏の物
+#### 1. 部屋4：縁日の広場（作り直し）
 
-- 添付：`public/assets/maps/fest_gate.webp`
-- 保存名：`a11_props1.png`
-- メモ：1枚目。うまくいけば、同じ形で2枚目・3枚目
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A sheet of small map objects (props) for a top-down 2D RPG exploration map on mobile, seen from the same nearly overhead view with a slight tilt as the attached map illustration, and matching its art style, colors and lighting exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
-Layout: a grid of 3 rows by 4 columns on a plain pure white background, every cell exactly the same size (square), one object centered in each cell, with clear white space around each object so they can be cut out one by one. Objects must not touch each other or the cell edges.
-- Row 1, column 1: a festival treasure box, CLOSED: a small sturdy wooden chest with a dark lacquered red lid, gold metal corners and a gold clasp, tied with a thick red-and-white festival cord. It must look precious and inviting.
-- Row 1, column 2: the SAME treasure box, OPENED and empty: the lid tilted back, a soft warm golden glow fading inside.
-- Row 1, column 3: a wooden fruit crate with a BLUE cloth thrown over half of it.
-- Row 1, column 4: the same kind of wooden crate with a bright RED cloth thrown over half of it.
-- Row 2, column 1: the same kind of wooden crate with a bright YELLOW cloth thrown over half of it.
-- Row 2, column 2: a small portable gasoline generator, STOPPED: dull grey-green metal, a black cable coiled beside it, one knob clearly missing (an empty socket), no light.
-- Row 2, column 3: the SAME generator, RUNNING: a small warm lamp on top glowing, faint exhaust puffs, the cable lit with tiny warm bulbs.
-- Row 2, column 4: a small two-wheeled wooden hand cart loaded with a few sake barrels and rope, seen from above.
-- Row 3, column 1: a short wall of old wooden boards nailed together, standing upright, wide and low (as wide as about three of the other objects together, so let it fill the cell width).
-- Row 3, column 2: the SAME board wall, smashed open in the middle, broken planks and splinters scattered.
-- Row 3, column 3: a single white fox festival mask (kitsune mask) with red markings, lying flat, seen from the front.
-- Row 3, column 4: an old faded photograph lying on the ground, softly glowing with a sepia light and a few floating sparkles, the picture on it too blurry to see.
-Each object must read clearly as a small icon on a phone screen (about one or two fingertips wide): bold simple shapes, a clear dark outline, strong color differences between similar objects. A small soft shadow directly under each object is fine. No ground, no grid lines, no people unless stated, no letters or numbers anywhere.
-```
-
-#### 2. 小物2：提灯とお面屋
-
-- 添付：`public/assets/maps/fest_gate.webp`、`a11_props1.png（上で作った絵）`
-- 保存名：`a11_props2.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A sheet of small map objects (props) for a top-down 2D RPG exploration map on mobile, seen from the same nearly overhead view with a slight tilt as the attached map illustration, and matching its art style, colors and lighting exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
-Layout: a grid of 3 rows by 4 columns on a plain pure white background, every cell exactly the same size (square), one object centered in each cell, with clear white space around each object so they can be cut out one by one. Objects must not touch each other or the cell edges.
-- Row 1, column 1: a round RED paper festival lantern on a short wooden post, UNLIT: dull dark red paper, no glow.
-- Row 1, column 2: the SAME red lantern, LIT: glowing bright warm red with a soft halo of light around it.
-- Row 1, column 3: a round WHITE paper festival lantern on a short wooden post, UNLIT: dull grey-white paper, no glow.
-- Row 1, column 4: the SAME white lantern, LIT: glowing bright warm white with a soft halo.
-- Row 2, column 1: a round BLUE paper festival lantern on a short wooden post, UNLIT: dull dark blue paper, no glow.
-- Row 2, column 2: the SAME blue lantern, LIT: glowing bright cool blue with a soft halo.
-- Row 2, column 3: the front counter of a small festival mask stall with a display board of WHITE fox masks (one empty hook in the middle where a mask is missing), a small white awning.
-- Row 2, column 4: the same kind of mask stall counter with a display board of BLACK fox masks, a black awning.
-- Row 3, column 1: the same kind of mask stall counter with a display board of shiny GOLD fox masks, a gold-yellow awning.
-- Row 3, column 2: an old drink vending machine, switched OFF: dark screen, dark buttons, slightly rusty, blank front panel with only simple color stripes (no letters, no logos).
-- Row 3, column 3: a small old wooden garden gate door, broken: one hinge off, hanging crooked.
-- Row 3, column 4: a dense thicket of green bamboo stalks blocking a path, a few stalks leaning.
-Each object must read clearly as a small icon on a phone screen (about one or two fingertips wide): bold simple shapes, a clear dark outline, strong color differences between similar objects. A small soft shadow directly under each object is fine. No ground, no grid lines, no people unless stated, no letters or numbers anywhere. Match the attached prop sheet exactly in size, view and style.
-```
-
-#### 3. 小物3：人混み
-
-- 添付：`public/assets/maps/fest_gate.webp`、`a11_props1.png（上で作った絵）`
-- 保存名：`a11_props3.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-A sheet of small map objects (props) for a top-down 2D RPG exploration map on mobile, seen from the same nearly overhead view with a slight tilt as the attached map illustration, and matching its art style, colors and lighting exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
-Layout: a grid of 2 rows by 2 columns on a plain pure white background, every cell exactly the same size (square), one object centered in each cell, with clear white space around each object so they can be cut out one by one. Objects must not touch each other or the cell edges.
-- Row 1, column 1: a tight cluster of three festival-goers seen from above at a slight tilt, standing shoulder to shoulder with their backs to the viewer, in yukata and summer clothes, drawn as soft semi-transparent sepia figures like faded memories (faces not visible).
-- Row 1, column 2: another tight cluster of three different festival-goers, the same style, one holding a cotton candy, one a paper fan.
-- Row 2, column 1: another tight cluster of two festival-goers and a child, the same style.
-- Row 2, column 2: another tight cluster of three festival-goers, the same style, one wearing a fox mask pushed up on the head.
-Each object must read clearly as a small icon on a phone screen (about one or two fingertips wide): bold simple shapes, a clear dark outline, strong color differences between similar objects. A small soft shadow directly under each object is fine. No ground, no grid lines, no people unless stated, no letters or numbers anywhere. The four clusters will be placed side by side to form one crowd blocking a path, so keep them the same size and density.
-```
-
-#### 4. 部屋1：縁日の入口
-
-- 添付：`docs/sketches/a11_art/room_fest2_gate.png`、`public/assets/maps/fest_gate.webp`
-- 保存名：`map_fest2_gate.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
-Scene: the entrance of a shrine festival. At the bottom, a wide stone-paved forecourt where you arrive (closed at the bottom by a low stone wall and shrubs). A straight stone-paved approach runs up the middle to the opening at the top edge. Across the approach, just above the forecourt (about 9 squares from the bottom), a big red torii gate: its two pillars stand on the dark squares on both sides of the approach and its crossbeam spans over the path. Festival stalls with striped awnings line both sides of the approach; the hatched strips are the shade under their awnings. A side path branches off to the left edge, toward the back of the stalls. At the upper right, a small dead-end nook behind the stalls.
-Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
-Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
-Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
-```
-
-#### 5. 部屋2：屋台の裏
-
-- 添付：`docs/sketches/a11_art/room_fest2_backyard.png`、`public/assets/maps/fest_gate.webp`
-- 保存名：`map_fest2_backyard.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
-Scene: the cramped backyard behind the festival stalls. At the top left, a small storage area with the backs of three tents along the top wall: a BLUE tent, a RED tent and a YELLOW tent, side by side from left to right. In the middle, an open square of packed earth surrounded by stacked boxes and tarps (where a generator will sit in the middle). At the bottom, a narrow loop of passage around a long block of piled stall equipment covered with tarps, where the lights are out. Thick power cables run along the ground from the middle square to the bottom loop. The hatched area at the left is under a hanging blue tarp. An opening at the right edge leads back to the entrance, an opening at the top leads to the back alley.
-Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
-Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
-Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
-```
-
-#### 6. 部屋3：屋台の裏通り
-
-- 添付：`docs/sketches/a11_art/room_fest2_lane.png`、`public/assets/maps/fest_gate.webp`
-- 保存名：`map_fest2_lane.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
-Scene: narrow winding back alleys behind festival stalls, tarps, folding tables, coolers and stacked paper lanterns on the dark squares. The long walkway down the left side is a gentle downhill slope paved with old stones, going down toward the bottom (show the slope with a few low steps or a ramp). A covered rest area with a tarp roof in the middle (the hatched area). The way out at the bottom edge leads back toward the stalls, the opening at the right edge leads to the festival plaza.
-Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
-Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
-Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
-```
-
-#### 7. 部屋4：縁日の広場
-
-- 添付：`docs/sketches/a11_art/room_fest2_plaza.png`、`public/assets/maps/fest_gate.webp`
+- 添付：`map_fest2_gate.png（届いた縁日の入口の絵）`
 - 保存名：`map_fest2_plaza.png`
+- メモ：下絵は付けない。添付は、届いた縁日の入口の絵（絵柄をそろえるため）
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
-Scene: the central plaza of the shrine festival, the most festive place. In the middle of the lower half, a tall wooden yagura (festival drum tower) wrapped in red-and-white cloth stands on the dark block, with strings of paper lanterns stretching from its top to the stalls around the plaza. Stone steps lead up through the opening at the top edge toward the shrine woods. Stalls with awnings around the edges (the hatched areas are under their awnings). Openings at the left edge, the right edge and the bottom edge. Two small round stone circles in the paving mark resting spots (about 6 squares from the top and 5 squares from the bottom, in the center column).
-Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
-Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
-Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
-```
-
-#### 8. 部屋5：東の屋台
-
-- 添付：`docs/sketches/a11_art/room_fest2_east.png`、`public/assets/maps/fest_gate.webp`
-- 保存名：`map_fest2_east.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
-Scene: a busy side street of the shrine festival. Along the top wall, the roofs and back walls of a row of four small stalls facing down onto the street (the game places their front counters in front of them). In the middle, a shooting gallery stall (the dark block above the center) and a goldfish-scooping stall with a wide blue water tank (the dark block below the center). Between the two stalls, hidden behind them, a small enclosed backyard (the light square in the very middle) that you enter through a narrow gap on its left side. The long street loops around the stalls; the bottom right corner is a quiet dead end. The hatched areas are under stall awnings. The opening at the left edge leads back to the plaza.
-Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
-Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
-Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
-```
-
-#### 9. 部屋6：社の森
-
-- 添付：`docs/sketches/a11_art/room_fest2_woods.png`、`public/assets/maps/fest_gate.webp`
-- 保存名：`map_fest2_woods.png`
-
-```
-Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
-
-Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
-Scene: the quiet woods behind a small Japanese shrine on a summer night. At the very top edge, the front of a small wooden shrine building (partly cut off by the top edge) with a little offering box and a rope, in front of it a small open yard of gravel. In the center, a cross-shaped pond (the light-blue squares in the sketch) with STEPPING STONES running through it in a cross shape, surrounded by moss and stone. A gravel path loops around the pond between tall cedar trees and stone lanterns. Small side nooks at the left edge and the right edge (keep them open ground). The hatched strip at the left is under the tree canopy. The festival lights glow faintly through the trees from the bottom, where the path leads down to the plaza.
-Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
-Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
+Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). No people and no characters. Match the art style, colors and lighting of the attached map illustration exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
+Camera: ONE consistent three-quarter top-down view for everything in the image, like a classic console JRPG map: the camera looks down at about 50 degrees from the bottom of the image, so every object shows its top and its front side (the side facing the bottom of the image). Every tent, building, wall, stair, fence and crate is drawn from exactly this same angle and direction; nothing is seen from the side, from a different angle or in a different perspective. Vertical edges stay vertical, no wide-angle distortion.
+Scale: a square grid of 24 by 24 steps will be laid over the image later. One step is about one person's shoulder width, about the size of one beer crate; a stall tent is about 3 steps wide, a door about 1 step wide. Keep every object at this one consistent scale.
+Density: a real place is cramped and cluttered. Open ground is mostly 2 to 4 steps wide, with at most one small open space; things stand along the paths and in clusters, not only pushed against the edges of the image, and no large empty areas. Every thing has a reason to be where it is (stacked where the stall keepers would put it, cables running from a stall to where power is needed).
+Scene: the lively central plaza of the shrine festival, the most festive place in the area. A wide, roughly round open plaza of old stone paving and packed earth, its edges shaped by festival stalls, trees and a low stone wall, not by straight borders.
+Lower center: a tall wooden yagura (festival drum tower) wrapped in red-and-white cloth, with a big drum and paper lanterns hanging on the tower itself. Leave open ground on its left, on its right and just below it (the game puts three lanterns on posts there).
+Top center: old stone steps climbing up through the trees toward the shrine woods, with a small open space at their foot (a resting spot).
+Lower right: a narrow side passage between a stall and the trees, leading to a small hidden nook behind the yagura (the game blocks the passage with a crowd of people at first).
+Upper left: a quiet corner in the deep shadow of a stall, where you could hide. Stalls stand around the edge of the plaza, never in the middle of the open ground.
+Exits: one opening at the bottom edge in the center (to the entrance), the stone steps at the top edge in the center (to the woods), one opening at the left edge a little below the middle (to the back alley) and one opening at the right edge a little below the middle (to the east stalls). Every other edge of the image is closed (trees, fences, stalls or buildings), with no other way out.
+Compose it as a believable, lived-in real place first, like a carefully hand-crafted map of a classic console JRPG, painted in this anime style. The walkable ground is simply the open ground between things: its edges are irregular and its width changes naturally (wider in front of stalls, narrow between crates or trees). Paths are shaped by stalls, tents, trees, fences, buildings, slopes and low stone retaining walls, NOT by neat hedges or curbs. Do not outline the paths with trimmed hedge walls, stone curbs or straight borders, and avoid a symmetrical, grid-like or maze-like layout. Add a little height variety (a few stone steps, a slope, a low wall) and small natural details on the non-walkable parts (grass tufts, roots, stones, cables, buckets, cardboard boxes).
+Still keep it readable as a game map: walkable ground must be clearly distinguishable from non-walkable things at a glance, and every non-walkable thing has a solid, readable shape.
+Nothing may hang over the walkable ground: no awnings, roofs, tree branches, cables or lantern strings above it, so characters walking there are never hidden.
+Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, wooden crates with cloths, lanterns on posts, a generator, a hand cart, fox masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds. Leave plain open ground where the text says one of them will stand.
 Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only.
 ```
 
@@ -180,7 +48,7 @@ Absolutely no letters or text anywhere: signs, banners and posters are blank or 
 
 基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・初江）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す
 
-#### 10. 写しのしおり：口を開けた絵（作り直し）
+#### 2. 写しのしおり：口を開けた絵（作り直し）
 
 - 添付：`public/assets/portraits/past_shiori_normal.webp`
 - 保存名：`past_shiori_talk_src.png`
@@ -191,7 +59,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 11. 写しの勇夫：目を閉じた絵
+#### 3. 写しの勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_blink_src.png`
@@ -201,7 +69,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 12. 写しの勇夫：口を開けた絵
+#### 4. 写しの勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_talk_src.png`
@@ -211,7 +79,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 13. 写しの昇平：目を閉じた絵
+#### 5. 写しの昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_blink_src.png`
@@ -221,7 +89,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 14. 写しの昇平：口を開けた絵
+#### 6. 写しの昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_talk_src.png`
@@ -231,7 +99,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 15. 善次：目を閉じた絵
+#### 7. 善次：目を閉じた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_blink_src.png`
@@ -241,7 +109,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 16. 善次：口を開けた絵
+#### 8. 善次：口を開けた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_talk_src.png`
@@ -251,7 +119,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 17. 写しの寿美：目を閉じた絵
+#### 9. 写しの寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_blink_src.png`
@@ -261,7 +129,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 18. 写しの寿美：口を開けた絵
+#### 10. 写しの寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_talk_src.png`
@@ -271,7 +139,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 19. 写しのおじいちゃん：目を閉じた絵
+#### 11. 写しのおじいちゃん：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_blink_src.png`
@@ -281,7 +149,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 20. 写しのおじいちゃん：口を開けた絵
+#### 12. 写しのおじいちゃん：口を開けた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_talk_src.png`
@@ -291,7 +159,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 21. だいち：目を閉じた絵
+#### 13. だいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_blink_src.png`
@@ -301,7 +169,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 22. だいち：口を開けた絵
+#### 14. だいち：口を開けた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_talk_src.png`
@@ -315,7 +183,7 @@ Change only the mouth: open it slightly, as in the middle of speaking a word (a 
 
 元の絵が口を開けている表情は、話していても口が止まって見える（開発者と決めた：口を閉じた絵を足す）。ゲームは、話していない時にこの絵を重ね、話す間は重ねたり外したりして開け閉めする。台詞の多い順。大笑い・泣き顔のように、開いているのが自然な顔は頼まない。毎回その表情の絵を添付する。構図が少しでも動いたら作り直す
 
-#### 23. みお：smileの口を閉じた絵（台本で204行）
+#### 15. みお：smileの口を閉じた絵（台本で204行）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_smile_closed_src.png`
@@ -325,7 +193,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 24. あかり：smileの口を閉じた絵（台本で85行）
+#### 16. あかり：smileの口を閉じた絵（台本で85行）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_smile_closed_src.png`
@@ -335,7 +203,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 25. 富美：smileの口を閉じた絵（台本で35行）
+#### 17. 富美：smileの口を閉じた絵（台本で35行）
 
 - 添付：`public/assets/portraits/fumi_smile.webp`
 - 保存名：`fumi_smile_closed_src.png`
@@ -345,7 +213,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 26. ゆうま：smileの口を閉じた絵（台本で32行）
+#### 18. ゆうま：smileの口を閉じた絵（台本で32行）
 
 - 添付：`public/assets/portraits/yuma_smile.webp`
 - 保存名：`yuma_smile_closed_src.png`
@@ -355,7 +223,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 27. 写しの正雄：smileの口を閉じた絵（台本で26行）
+#### 19. 写しの正雄：smileの口を閉じた絵（台本で26行）
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_smile_closed_src.png`
@@ -365,7 +233,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 28. 写しのゆうま：smileの口を閉じた絵（台本で18行）
+#### 20. 写しのゆうま：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_yuma_smile.webp`
 - 保存名：`past_yuma_smile_closed_src.png`
@@ -375,7 +243,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 29. 写しの静江：smileの口を閉じた絵（台本で18行）
+#### 21. 写しの静江：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_shizue_smile.webp`
 - 保存名：`past_shizue_smile_closed_src.png`
@@ -385,7 +253,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 30. 子りく：proudの口を閉じた絵（台本で16行）
+#### 22. 子りく：proudの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/young_riku_proud.webp`
 - 保存名：`young_riku_proud_closed_src.png`
@@ -395,7 +263,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 31. 写しのひなの：smileの口を閉じた絵（台本で16行）
+#### 23. 写しのひなの：smileの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/past_hinano_smile.webp`
 - 保存名：`past_hinano_smile_closed_src.png`
@@ -405,7 +273,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 32. 正雄：smileの口を閉じた絵（台本で15行）
+#### 24. 正雄：smileの口を閉じた絵（台本で15行）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_smile_closed_src.png`
@@ -415,7 +283,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 33. 子あかり：smileの口を閉じた絵（台本で14行）
+#### 25. 子あかり：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`
 - 保存名：`young_akari_smile_closed_src.png`
@@ -425,7 +293,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 34. 写しの富美：smileの口を閉じた絵（台本で14行）
+#### 26. 写しの富美：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/past_fumi_smile.webp`
 - 保存名：`past_fumi_smile_closed_src.png`
@@ -435,7 +303,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 35. 勇夫：smileの口を閉じた絵（台本で12行）
+#### 27. 勇夫：smileの口を閉じた絵（台本で12行）
 
 - 添付：`public/assets/portraits/isamu_smile.webp`
 - 保存名：`isamu_smile_closed_src.png`
@@ -445,7 +313,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 36. 昇平：smileの口を閉じた絵（台本で11行）
+#### 28. 昇平：smileの口を閉じた絵（台本で11行）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_smile_closed_src.png`
@@ -455,7 +323,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 37. さき：smileの口を閉じた絵（台本で9行）
+#### 29. さき：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_smile_closed_src.png`
@@ -465,7 +333,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 38. しおり：smileの口を閉じた絵（台本で9行）
+#### 30. しおり：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/shiori_smile.webp`
 - 保存名：`shiori_smile_closed_src.png`
@@ -475,7 +343,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 39. 茂雄：smileの口を閉じた絵（台本で8行）
+#### 31. 茂雄：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_smile_closed_src.png`
@@ -485,7 +353,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 40. 写しの千代：smileの口を閉じた絵（台本で8行）
+#### 32. 写しの千代：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_smile_closed_src.png`
@@ -495,7 +363,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 41. 写しの昇平：smileの口を閉じた絵（台本で8行）
+#### 33. 写しの昇平：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_smile_closed_src.png`
@@ -505,7 +373,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 42. 写しのたいち：smileの口を閉じた絵（台本で8行）
+#### 34. 写しのたいち：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_taichi_smile.webp`
 - 保存名：`past_taichi_smile_closed_src.png`
@@ -515,7 +383,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 43. ペトラ：smileの口を閉じた絵（台本で5行）
+#### 35. ペトラ：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/petra_smile.webp`
 - 保存名：`petra_smile_closed_src.png`
@@ -525,7 +393,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 44. 写しのしおり：smileの口を閉じた絵（台本で5行）
+#### 36. 写しのしおり：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_smile_closed_src.png`
@@ -567,5 +435,6 @@ Change only the mouth: close it gently into a soft closed-lip smile that keeps t
 - **AA. 早瀬（仲間）のまばたき・口パク**（9 枚）：早瀬：通常（目を閉じた絵）、早瀬：考える（目を閉じた絵）、早瀬：苦笑い（目を閉じた絵）、早瀬：驚き（目を閉じた絵）、早瀬：怒り（目を閉じた絵）、早瀬：泣き笑い（目を閉じた絵）、早瀬：通常（口を開けた絵）、早瀬：考える（口を開けた絵）、早瀬：苦笑い（口を開けた絵）
 - **AB. 脇役の表情違い（台本で使う表情だけ）**（94 枚）：勇夫：笑顔（台本で12回）、勇夫：さみしげ（台本で12回）、勇夫：考える（台本で11回）、勇夫：驚き（台本で3回）、勇夫：泣き笑い（台本で3回）、ペトラ：真剣（台本で13回）、ペトラ：困り（台本で10回）、ペトラ：驚き（台本で7回）、ペトラ：笑顔（台本で5回）、しおり：通常（台本で14回）、しおり：困り笑い（台本で12回）、しおり：驚き（台本で9回）、しおり：考える（台本で8回）、しおり：苦笑い（台本で7回）、しおり：微笑み（台本で4回）、しおり：さみしげ（台本で3回）、しおり：大笑い（台本で3回）、しおり：困り（台本で1回）、しおり：あせり（台本で1回）、浩二：苦笑い（台本で15回）、浩二：考える（台本で12回）、浩二：さみしげ（台本で11回）、浩二：通常（台本で9回）、浩二：驚き（台本で5回）、千代：微笑み（台本で15回）、千代：通常（台本で12回）、千代：さみしげ（台本で9回）、千代：考える（台本で8回）、千代：驚き（台本で7回）、千代：苦笑い（台本で2回）、千代：悲しい（台本で2回）、千代：泣き笑い（台本で2回）、千代：真剣（台本で1回）、けんた：苦笑い（台本で14回）、けんた：さみしげ（台本で8回）、けんた：考える（台本で7回）、けんた：照れ（台本で6回）、けんた：驚き（台本で4回）、けんた：泣き笑い（台本で2回）、けんた：大笑い（台本で1回）、カイ：通常（台本で20回）、カイ：見下す（台本で11回）、写しのとうや：通常（台本で12回）、写しの千代：通常（台本で11回）、写しの千代：泣き（台本で6回）、写しの千代：むっ（台本で4回）、写しの千代：真剣（台本で2回）、写しの千代：驚き（台本で1回）、写しの菊：泣き笑い（台本で1回）、写しのしおり：通常（台本で14回）、写しのしおり：むっ（台本で9回）、写しのしおり：真剣（台本で3回）、写しのけんた：泣き笑い（台本で1回）、正雄：通常（台本で6回）、正雄：苦笑い（台本で5回）、正雄：驚き（台本で2回）、正雄：さみしげ（台本で2回）、昇平：通常（台本で4回）、昇平：考える（台本で4回）、昇平：さみしげ（台本で4回）、昇平：困り笑い（台本で3回）、昇平：苦笑い（台本で2回）、昇平：照れ（台本で1回）、昇平：驚き（台本で1回）、とうや：通常（台本で7回）、とうや：驚き（台本で4回）、とうや：困り笑い（台本で3回）、とうや：考える（台本で2回）、とうや：苦笑い（台本で2回）、とうや：微笑み（台本で1回）、とうや：真剣（台本で1回）、とうや：大笑い（台本で1回）、写しの浩二：驚き（台本で3回）、写しの浩二：泣き笑い（台本で1回）、ひなの：さみしげ（台本で5回）、ひなの：驚き（台本で3回）、ひなの：むっ（台本で3回）、ひなの：困り（台本で2回）、ひなの：微笑み（台本で1回）、寿美：さみしげ（台本で7回）、寿美：考える（台本で3回）、寿美：驚き（台本で2回）、寿美：通常（台本で1回）、茂雄：通常（台本で3回）、茂雄：さみしげ（台本で3回）、茂雄：驚き（台本で2回）、茂雄：苦笑い（台本で2回）、茂雄：考える（台本で2回）、さき：驚き（台本で3回）、さき：考える（台本で3回）、さき：さみしげ（台本で3回）、さき：苦笑い（台本で1回）、さき：微笑み（台本で1回）、写しの勇夫：泣き笑い（台本で1回）
 - **AC. 脇役のまばたき・口パク（基本の1枚）**（41 枚）：勇夫：目を閉じた絵、勇夫：口を開けた絵、ペトラ：目を閉じた絵、ペトラ：口を開けた絵、浩二：目を閉じた絵、浩二：口を開けた絵、千代：目を閉じた絵、千代：口を開けた絵、カイ：口を開けた絵、たいち：目を閉じた絵、たいち：口を開けた絵、写しのとうや：目を閉じた絵、写しのとうや：口を開けた絵、写しの千代：目を閉じた絵、写しの千代：口を開けた絵、写しの菊：目を閉じた絵、写しの菊：口を開けた絵、写しのしおり：目を閉じた絵、写しのけんた：目を閉じた絵、写しのけんた：口を開けた絵、正雄：目を閉じた絵、正雄：口を開けた絵、昇平：目を閉じた絵、昇平：口を開けた絵、写しのたいち：目を閉じた絵、写しのたいち：口を開けた絵、写しの正雄：目を閉じた絵、写しの浩二：目を閉じた絵、写しの浩二：口を開けた絵、ひなの：目を閉じた絵、ひなの：口を開けた絵、ノア：目を閉じた絵、ノア：口を開けた絵、寿美：目を閉じた絵、寿美：口を開けた絵、茂雄：目を閉じた絵、茂雄：口を開けた絵、写しの源三：目を閉じた絵、写しの源三：口を開けた絵、さき：目を閉じた絵、さき：口を開けた絵
+- **AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）**（9 枚）：小物1：宝箱と屋台の裏の物、小物2：提灯とお面屋、小物3：人混み、小物4：鳥居（下をくぐる物）、部屋1：縁日の入口（届いた。このまま使う）、部屋6：社の森（届いた。このまま使う）、部屋2：屋台の裏（作り直し）、部屋3：屋台の裏通り（作り直し）、部屋5：東の屋台（作り直し）
 - **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）
 - **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）
