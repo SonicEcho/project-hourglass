@@ -45,7 +45,7 @@ describe('新しい1-1（段階262）', () => {
       const reach = reachableCells(nightArea(area, n), start ? { room: start.room ?? startRoom(area), cell: start.cell } : undefined);
       expect(reach.fest2_woods?.has('11,3') ?? false).toBe(false);
       // 裏通りの中（左の縦の道）
-      expect(reach.fest2_lane?.has('4,12') ?? false).toBe(n >= 2);
+      expect(reach.fest2_lane?.has('7,8') ?? false).toBe(n >= 2);
     }
   });
 
@@ -117,16 +117,16 @@ describe('仕掛けと仲間の力（段階264）', () => {
     // 拾った品は地図から消え、そのマスは通れる。開く前の扉のマスは通れない
     const before = gadgetArea(area, startExplore(area), 1);
     const after = gadgetArea(area, r.state, 1);
-    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [8, 17])).toBe(false);
-    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 17])).toBe(true);
-    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [6, 3])).toBe(true);
+    expect(isWalkable(areaGrid(before, 'fest2_backyard'), [8, 22])).toBe(false);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 22])).toBe(true);
+    expect(isWalkable(areaGrid(after, 'fest2_backyard'), [7, 6])).toBe(true);
   });
 
   it('押す：荷車は上のマスから押すと動く。下からは動かない', async () => {
     const { startExplore, useGadget } = await import('../../src/core');
     const s = startExplore(area);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 7]).solved).toEqual([]);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 5]).solved).toEqual(['p_cart']);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [3, 6]).solved).toEqual([]);
+    expect(useGadget(area, s, g('p_cart'), ['hero'], [3, 4]).solved).toEqual(['p_cart']);
   });
 
   it('仲間の力：あかりが編成にいれば人混みが道をあける。後で来る所は、その仲間がいないと開かない', async () => {
@@ -272,5 +272,27 @@ describe('晩の始まりの安全（段階268）', () => {
         for (const p of e.patrol) expect(Math.abs(p[0] - start.cell[0]) + Math.abs(p[1] - start.cell[1]), `${n}晩目 ${e.id}`).toBeGreaterThan(4);
       }
     }
+  });
+});
+
+describe('新しい1-1 の絵（段階271・272）', () => {
+  it('部屋の絵・小物・下をくぐる物は、どれも台帳にあって、ファイルもある', async () => {
+    const { existsSync } = await import('node:fs');
+    const { ASSETS, A11_REWORK_IMAGES } = await import('../../src/data');
+    for (const id of A11_REWORK_IMAGES) {
+      const a = ASSETS.find((x) => x.id === id);
+      expect(a, id).toBeTruthy();
+      expect(existsSync(`public/${a!.file}`), a!.file).toBe(true);
+    }
+  });
+
+  it('小物の絵は、ある仕掛けにだけ割り当てる。鳥居の柱の根もとは通れない', async () => {
+    const { A11_PROP_ART } = await import('../../src/data');
+    const ids = (area.gadgets ?? []).map((x) => x.id);
+    for (const id of Object.keys(A11_PROP_ART)) expect(ids, id).toContain(id);
+    const grid = areaGrid(area, 'fest2_gate');
+    expect(isWalkable(grid, [10, 17])).toBe(false);
+    expect(isWalkable(grid, [13, 17])).toBe(false);
+    expect(isWalkable(grid, [11, 17])).toBe(true);
   });
 });

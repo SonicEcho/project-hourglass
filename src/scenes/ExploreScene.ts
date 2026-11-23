@@ -74,7 +74,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { A11_CHEST_ART, A11_DECOR, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -178,7 +178,7 @@ export class ExploreScene extends Phaser.Scene {
   private pausedTweens: Phaser.Tweens.Tween[] = [];
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
-  private chestSprites = new Map<string, Phaser.GameObjects.Rectangle>();
+  private chestSprites = new Map<string, Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image>();
   private marker!: Phaser.GameObjects.Arc;
   private message!: Phaser.GameObjects.Text;
   private messageTimer?: Phaser.Time.TimerEvent;
@@ -500,7 +500,9 @@ export class ExploreScene extends Phaser.Scene {
       if (!this.here(chest)) continue;
       const opened = this.state.openedChests.includes(chest.id);
       const [x, y] = [chest.cell[0] * T + T / 2, chest.cell[1] * T + T / 2];
-      const box = this.add.rectangle(x, y, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f).setStrokeStyle(2, opened ? 0x6b5a40 : 0xffd84a);
+      // 段階271：宝箱の絵が読めていれば、絵で（新しい1-1）
+      const art = this.propArt(opened ? A11_CHEST_ART.open : A11_CHEST_ART.closed);
+      const box = art ? this.propImage(art, chest.cell, 1.1) : this.add.rectangle(x, y, T * 0.7, T * 0.55, opened ? 0x4a3a28 : 0x9a6a2f).setStrokeStyle(2, opened ? 0x6b5a40 : 0xffd84a);
       this.chestSprites.set(chest.id, box);
       world.add(box);
     }
@@ -598,6 +600,13 @@ export class ExploreScene extends Phaser.Scene {
     this.shadeSprite(this.player, isShade(room, this.state.cell));
     this.roof = this.drawRoof(room);
     if (this.roof) world.add(this.roof);
+    // 下をくぐる物（段階272。鳥居）：仲間と敵の上に重ねる
+    for (const d of A11_DECOR) {
+      if (d.room !== room.id || !hasImage(this, d.image)) continue;
+      const im = this.add.image(d.x * T, d.y * T, d.image).setOrigin(0);
+      im.setDisplaySize(d.w * T, (d.w * T * im.height) / im.width);
+      world.add(im);
+    }
 
     // カメラ：地図用は仲間について動く。画面の文字とボタン用は別のカメラで、動かさない。
     // 動ける範囲は、地図の上と下に帯の高さの分だけ広げる（地図の上の端と下の端が、帯に隠れたままにならないように。段階58）
@@ -1174,8 +1183,48 @@ export class ExploreScene extends Phaser.Scene {
     };
     // 扉を描くのは、もとの部屋で歩けるマスだけ（扉の四角の中の壁は描かない）
     const plainRoom = this.rawArea.rooms.find((x) => x.id === this.state.room) ?? this.room;
-    for (const gate of closedGates(this.area, this.state, this.state.room)) {
+    const closed = closedGates(this.area, this.state, this.state.room);
+    // 段階271：板のかべは、解いた後は壊れた板の絵を残す
+    for (const gate of (this.area.gates ?? []).filter((g) => g.room === this.state.room && g.look === 'fence' && !closed.includes(g))) {
+      const broken = this.propArt(A11_GATE_ART.broken);
+      if (broken) layer.add(this.gateBoards(broken, gate.cells));
+    }
+    for (const gate of closed) {
       const st = look[gate.look];
+      // 段階271：小物の絵が読めていれば、絵で（板のかべ・人混み・池の霧）
+      const boards = gate.look === 'fence' ? this.propArt(A11_GATE_ART.boards) : undefined;
+      if (boards) {
+        layer.add(this.gateBoards(boards, gate.cells));
+        continue;
+      }
+      const crowd = gate.look === 'crowd' ? A11_GATE_ART.crowd.map((k) => this.propArt(k)).filter((k): k is string => !!k) : [];
+      if (crowd.length > 0) {
+        gate.cells.forEach(([c, r], i) => {
+          if (plainRoom.layout[r]?.[c] === '#') return;
+          const im = this.propImage(crowd[i % crowd.length], [c, r], 1.5).setTint(0xe8d2b0).setAlpha(0.85);
+          layer.add(im);
+          this.tweens.add({ targets: im, y: im.y - 1.5, yoyo: true, repeat: -1, duration: 900 + i * 130 });
+        });
+        continue;
+      }
+      if (gate.look === 'dark' && this.room.image) {
+        // 停電の暗がり：絵の上では、扉の四角を丸ごと暗くする（歩けない物の山も一緒に）
+        const cs = gate.cells.map((c) => c[0]);
+        const rs = gate.cells.map((c) => c[1]);
+        const [c0, c1, r0, r1] = [Math.min(...cs), Math.max(...cs), Math.min(...rs), Math.max(...rs)];
+        layer.add(this.add.rectangle(c0 * T, r0 * T, (c1 - c0 + 1) * T, (r1 - r0 + 1) * T, 0x05060a, 0.82).setOrigin(0));
+        layer.add(addText(this, (c0 + c1 + 1) * T / 2, (r0 + r1 + 1) * T / 2, st.text, { size: 12, bold: true, color: '#6a7390' }).setOrigin(0.5));
+        continue;
+      }
+      if (gate.look === 'water' && this.room.image) {
+        // 池の霧：絵の飛び石を、白い霧で隠す（ハルトのカメラで写すと晴れる）
+        for (const [c, r] of gate.cells) {
+          const fog = this.add.ellipse(c * T + T / 2, r * T + T / 2, T * 1.6, T * 1.2, 0xdfe8f0, 0.82);
+          layer.add(fog);
+          this.tweens.add({ targets: fog, alpha: 0.6, scaleX: 1.15, yoyo: true, repeat: -1, duration: 1400 + ((c * 7 + r * 3) % 5) * 200 });
+        }
+        continue;
+      }
       for (const [c, r] of gate.cells) {
         const ch = plainRoom.layout[r]?.[c];
         if (ch === undefined || ch === '#') continue;
@@ -1198,10 +1247,44 @@ export class ExploreScene extends Phaser.Scene {
         this.tweens.add({ targets: ring, scale: 1.25, alpha: 0.3, yoyo: true, repeat: -1, duration: 700 });
       }
       const photo = g.kind === 'photo';
+      // 段階271：小物の絵が読めていれば、絵で（解いた後の絵があれば替える。撮った思い出の一枚は薄く）
+      const art = A11_PROP_ART[g.id];
+      const key = art ? this.propArt(lit && art.on ? art.on : art.off) : undefined;
+      if (art && key) {
+        const im = this.propImage(key, g.cell, art.w);
+        if (photo) {
+          im.setAlpha(lit ? 0.35 : 1);
+          if (!lit) this.tweens.add({ targets: im, alpha: 0.6, yoyo: true, repeat: -1, duration: 800 });
+        }
+        if (later) im.setAlpha(0.9);
+        layer.add(im);
+        continue;
+      }
       const color = later ? 0x5a5f70 : photo ? (lit ? 0x8a8070 : 0xfff4d8) : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
       layer.add(this.add.rectangle(x, y, T * 0.72, T * 0.72, color, 1).setAngle(45).setStrokeStyle(2, 0x000000));
       layer.add(addText(this, x, y, g.mark, { size: 13, bold: true, color: '#101010' }).setOrigin(0.5));
     }
+  }
+
+  /** 小物の絵（段階271）：読めていれば台帳の id、なければ undefined（仮の印で描く） */
+  private propArt(key: string): string | undefined {
+    return hasImage(this, key) ? key : undefined;
+  }
+
+  /** 小物の絵を、マスの下の端にそろえて置く（幅 w マス） */
+  private propImage(key: string, cell: GridCell, w: number): Phaser.GameObjects.Image {
+    const im = this.add.image(cell[0] * T + T / 2, cell[1] * T + T * 0.95, key).setOrigin(0.5, 1);
+    im.setDisplaySize(T * w, (T * w * im.height) / im.width);
+    return im;
+  }
+
+  /** 板のかべの絵：扉のマスの横の広がりに合わせ、一番下のマスにそろえる */
+  private gateBoards(key: string, cells: GridCell[]): Phaser.GameObjects.Image {
+    const cs = cells.map((c) => c[0]);
+    const rs = cells.map((c) => c[1]);
+    const [c0, c1, r1] = [Math.min(...cs), Math.max(...cs), Math.max(...rs)];
+    const wide = c1 - c0 + 1;
+    return this.propImage(key, [(c0 + c1) / 2, r1], Math.max(1.2, wide + 0.3));
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */
@@ -1222,7 +1305,10 @@ export class ExploreScene extends Phaser.Scene {
       run.library = recordLibraryFinds(run.library, { snaps: chainSnaps });
     }
     const sprite = this.chestSprites.get(r.chest.id);
-    sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
+    if (sprite instanceof Phaser.GameObjects.Image) {
+      const open = this.propArt(A11_CHEST_ART.open);
+      if (open) sprite.setTexture(open);
+    } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
     this.say(
       `宝箱を開けた！　${[got.length > 0 ? summarize(got) : '（空っぽだった）', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''].filter(Boolean).join('　')}`,
@@ -1579,8 +1665,15 @@ export class ExploreScene extends Phaser.Scene {
         // 物を動かす（転がる荷車）
         const [fx, fy] = [step.from[0] * T + T / 2, step.from[1] * T + T / 2];
         const box = this.add.container(fx, fy);
-        box.add(this.add.rectangle(0, 0, T * 0.8, T * 0.8, 0x6b4a2a).setStrokeStyle(2, 0x000000));
-        box.add(addText(this, 0, 0, step.mark, { size: 13, bold: true, color: '#ffffff' }).setOrigin(0.5));
+        const cart = this.propArt('prop.cart');
+        if (cart) {
+          const im = this.add.image(0, 0, cart);
+          im.setDisplaySize(T * 1.4, (T * 1.4 * im.height) / im.width);
+          box.add(im);
+        } else {
+          box.add(this.add.rectangle(0, 0, T * 0.8, T * 0.8, 0x6b4a2a).setStrokeStyle(2, 0x000000));
+          box.add(addText(this, 0, 0, step.mark, { size: 13, bold: true, color: '#ffffff' }).setOrigin(0.5));
+        }
         this.world?.add(box);
         const dist = Math.abs(step.to[0] - step.from[0]) + Math.abs(step.to[1] - step.from[1]);
         await new Promise<void>((done) => this.tweens.add({ targets: box, x: step.to[0] * T + T / 2, y: step.to[1] * T + T / 2, angle: 360, duration: 90 * dist, ease: 'Quad.easeIn', onComplete: () => done() }));
