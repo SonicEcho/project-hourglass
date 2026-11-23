@@ -925,6 +925,81 @@ add('写しのたいち：smileの口を閉じた絵（台本で8行）', [P + '
 add('ペトラ：smileの口を閉じた絵（台本で5行）', [P + 'petra_smile.webp'], 'petra_smile_closed_src.png', close_mouth('smiling'))
 add('写しのしおり：smileの口を閉じた絵（台本で5行）', [P + 'past_shiori_smile.webp'], 'past_shiori_smile_closed_src.png', close_mouth('teasing smiling'))
 
+# ---- AE. 新しい1-1 の絵（段階270） ----
+section('AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）', '新しい1-1（デバッグメニューの「試しの切り替え」の「新しい1-1」）は、部屋の絵がなく、仕掛けと宝箱も仮の印（ひし形・四角）で、良さが伝わりにくかった（2026-11-23 開発者）。`docs/milestones/M3_explore_feel.md` の 7.。**先に小物の3枚**（届けばマス目の部屋のままでも絵に替わる）、**次に部屋の6枚**。小物は白い背景のまま送ってくれればよい（Claude が1つずつ切り出す）。部屋の絵は、毎回その部屋の下絵（`docs/sketches/a11_art/room_<部屋>.png`）と、絵柄の見本の今の入口の地図（`public/assets/maps/fest_gate.webp`）を添付する')
+AE_MAP = 'public/assets/maps/fest_gate.webp'
+AE_SK = 'docs/sketches/a11_art/'
+
+
+def prop_sheet(cols, rows, cells, extra=''):
+    lines = '\n'.join(f'- Row {i // cols + 1}, column {i % cols + 1}: {c}' for i, c in enumerate(cells))
+    return f"""{STYLE}
+
+A sheet of small map objects (props) for a top-down 2D RPG exploration map on mobile, seen from the same nearly overhead view with a slight tilt as the attached map illustration, and matching its art style, colors and lighting exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
+Layout: a grid of {rows} rows by {cols} columns on a plain pure white background, every cell exactly the same size (square), one object centered in each cell, with clear white space around each object so they can be cut out one by one. Objects must not touch each other or the cell edges.
+{lines}
+Each object must read clearly as a small icon on a phone screen (about one or two fingertips wide): bold simple shapes, a clear dark outline, strong color differences between similar objects. A small soft shadow directly under each object is fine. No ground, no grid lines, no people unless stated, no letters or numbers anywhere.{extra}"""
+
+
+add('小物1：宝箱と屋台の裏の物', [AE_MAP], 'a11_props1.png', prop_sheet(4, 3, [
+    'a festival treasure box, CLOSED: a small sturdy wooden chest with a dark lacquered red lid, gold metal corners and a gold clasp, tied with a thick red-and-white festival cord. It must look precious and inviting.',
+    'the SAME treasure box, OPENED and empty: the lid tilted back, a soft warm golden glow fading inside.',
+    'a wooden fruit crate with a BLUE cloth thrown over half of it.',
+    'the same kind of wooden crate with a bright RED cloth thrown over half of it.',
+    'the same kind of wooden crate with a bright YELLOW cloth thrown over half of it.',
+    'a small portable gasoline generator, STOPPED: dull grey-green metal, a black cable coiled beside it, one knob clearly missing (an empty socket), no light.',
+    'the SAME generator, RUNNING: a small warm lamp on top glowing, faint exhaust puffs, the cable lit with tiny warm bulbs.',
+    'a small two-wheeled wooden hand cart loaded with a few sake barrels and rope, seen from above.',
+    'a short wall of old wooden boards nailed together, standing upright, wide and low (as wide as about three of the other objects together, so let it fill the cell width).',
+    'the SAME board wall, smashed open in the middle, broken planks and splinters scattered.',
+    'a single white fox festival mask (kitsune mask) with red markings, lying flat, seen from the front.',
+    'an old faded photograph lying on the ground, softly glowing with a sepia light and a few floating sparkles, the picture on it too blurry to see.',
+]), '1枚目。うまくいけば、同じ形で2枚目・3枚目')
+add('小物2：提灯とお面屋', [AE_MAP, 'a11_props1.png（上で作った絵）'], 'a11_props2.png', prop_sheet(4, 3, [
+    'a round RED paper festival lantern on a short wooden post, UNLIT: dull dark red paper, no glow.',
+    'the SAME red lantern, LIT: glowing bright warm red with a soft halo of light around it.',
+    'a round WHITE paper festival lantern on a short wooden post, UNLIT: dull grey-white paper, no glow.',
+    'the SAME white lantern, LIT: glowing bright warm white with a soft halo.',
+    'a round BLUE paper festival lantern on a short wooden post, UNLIT: dull dark blue paper, no glow.',
+    'the SAME blue lantern, LIT: glowing bright cool blue with a soft halo.',
+    'the front counter of a small festival mask stall with a display board of WHITE fox masks (one empty hook in the middle where a mask is missing), a small white awning.',
+    'the same kind of mask stall counter with a display board of BLACK fox masks, a black awning.',
+    'the same kind of mask stall counter with a display board of shiny GOLD fox masks, a gold-yellow awning.',
+    'an old drink vending machine, switched OFF: dark screen, dark buttons, slightly rusty, blank front panel with only simple color stripes (no letters, no logos).',
+    'a small old wooden garden gate door, broken: one hinge off, hanging crooked.',
+    'a dense thicket of green bamboo stalks blocking a path, a few stalks leaning.',
+], ' Match the attached prop sheet exactly in size, view and style.'))
+add('小物3：人混み', [AE_MAP, 'a11_props1.png（上で作った絵）'], 'a11_props3.png', prop_sheet(2, 2, [
+    'a tight cluster of three festival-goers seen from above at a slight tilt, standing shoulder to shoulder with their backs to the viewer, in yukata and summer clothes, drawn as soft semi-transparent sepia figures like faded memories (faces not visible).',
+    'another tight cluster of three different festival-goers, the same style, one holding a cotton candy, one a paper fan.',
+    'another tight cluster of two festival-goers and a child, the same style.',
+    'another tight cluster of three festival-goers, the same style, one wearing a fox mask pushed up on the head.',
+], ' The four clusters will be placed side by side to form one crowd blocking a path, so keep them the same size and density.'))
+
+AE_TAIL = """Follow the attached layout sketch exactly (a 24 by 24 grid, one square = one step): light sand areas are walkable ground, dark brown areas are buildings, stalls, trees and other things you cannot walk through, blue marks the openings at the edges. Sand areas with diagonal hatching are walkable ground under stall awnings or tree canopies (in partial shadow, where you could hide). Walkable areas must be clearly distinguishable from non-walkable objects at a glance: keep walkable ground open and plain (stone paving, packed earth, gravel), and give every non-walkable object a solid, readable shape. Do not draw the hatching or grid lines themselves.
+Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, crates, lanterns on posts, a generator, a hand cart, masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds.
+Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only."""
+
+
+def a11_room(scene):
+    return f"""{STYLE}
+
+Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective, so a square grid can be laid over it. No people and no characters. Match the art style, colors and lighting of the attached map illustration (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light strung overhead).
+{scene}
+{AE_TAIL}"""
+
+
+AE_ROOMS = [
+    ('部屋1：縁日の入口', 'fest2_gate', 'Scene: the entrance of a shrine festival. At the bottom, a wide stone-paved forecourt where you arrive (closed at the bottom by a low stone wall and shrubs). A straight stone-paved approach runs up the middle to the opening at the top edge. Across the approach, just above the forecourt (about 9 squares from the bottom), a big red torii gate: its two pillars stand on the dark squares on both sides of the approach and its crossbeam spans over the path. Festival stalls with striped awnings line both sides of the approach; the hatched strips are the shade under their awnings. A side path branches off to the left edge, toward the back of the stalls. At the upper right, a small dead-end nook behind the stalls.'),
+    ('部屋2：屋台の裏', 'fest2_backyard', 'Scene: the cramped backyard behind the festival stalls. At the top left, a small storage area with the backs of three tents along the top wall: a BLUE tent, a RED tent and a YELLOW tent, side by side from left to right. In the middle, an open square of packed earth surrounded by stacked boxes and tarps (where a generator will sit in the middle). At the bottom, a narrow loop of passage around a long block of piled stall equipment covered with tarps, where the lights are out. Thick power cables run along the ground from the middle square to the bottom loop. The hatched area at the left is under a hanging blue tarp. An opening at the right edge leads back to the entrance, an opening at the top leads to the back alley.'),
+    ('部屋3：屋台の裏通り', 'fest2_lane', 'Scene: narrow winding back alleys behind festival stalls, tarps, folding tables, coolers and stacked paper lanterns on the dark squares. The long walkway down the left side is a gentle downhill slope paved with old stones, going down toward the bottom (show the slope with a few low steps or a ramp). A covered rest area with a tarp roof in the middle (the hatched area). The way out at the bottom edge leads back toward the stalls, the opening at the right edge leads to the festival plaza.'),
+    ('部屋4：縁日の広場', 'fest2_plaza', 'Scene: the central plaza of the shrine festival, the most festive place. In the middle of the lower half, a tall wooden yagura (festival drum tower) wrapped in red-and-white cloth stands on the dark block, with strings of paper lanterns stretching from its top to the stalls around the plaza. Stone steps lead up through the opening at the top edge toward the shrine woods. Stalls with awnings around the edges (the hatched areas are under their awnings). Openings at the left edge, the right edge and the bottom edge. Two small round stone circles in the paving mark resting spots (about 6 squares from the top and 5 squares from the bottom, in the center column).'),
+    ('部屋5：東の屋台', 'fest2_east', 'Scene: a busy side street of the shrine festival. Along the top wall, the roofs and back walls of a row of four small stalls facing down onto the street (the game places their front counters in front of them). In the middle, a shooting gallery stall (the dark block above the center) and a goldfish-scooping stall with a wide blue water tank (the dark block below the center). Between the two stalls, hidden behind them, a small enclosed backyard (the light square in the very middle) that you enter through a narrow gap on its left side. The long street loops around the stalls; the bottom right corner is a quiet dead end. The hatched areas are under stall awnings. The opening at the left edge leads back to the plaza.'),
+    ('部屋6：社の森', 'fest2_woods', 'Scene: the quiet woods behind a small Japanese shrine on a summer night. At the very top edge, the front of a small wooden shrine building (partly cut off by the top edge) with a little offering box and a rope, in front of it a small open yard of gravel. In the center, a cross-shaped pond (the light-blue squares in the sketch) with STEPPING STONES running through it in a cross shape, surrounded by moss and stone. A gravel path loops around the pond between tall cedar trees and stone lanterns. Small side nooks at the left edge and the right edge (keep them open ground). The hatched strip at the left is under the tree canopy. The festival lights glow faintly through the trees from the bottom, where the path leads down to the plaza.'),
+]
+for name, rid, scene in AE_ROOMS:
+    add(name, [AE_SK + f'room_{rid}.png', AE_MAP], f'map_{rid}.png', a11_room(scene))
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -936,6 +1011,8 @@ def main():
     """未対応の絵を上に、指示文つきで並べる。済んだ絵は下に名前だけ（指示文はこのファイルと台帳 src/data/assets.ts に残っている）"""
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
+    # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
+    pending.sort(key=lambda p: 0 if p[0].startswith('AE.') else 1)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
