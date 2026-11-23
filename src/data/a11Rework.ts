@@ -193,7 +193,7 @@ const PLAZA_LAYOUT = [
 
 /** plaza の部品（段階274） */
 export const PLAZA_PARTS: RoomPart[] = [
-  // 段階275：上（石段の前）と下（やぐらの広場）は、屋台の列でなく、植え込みのある低い石垣と石灯籠で分ける。屋台は広場のふちに
+  // 段階275：上（石段の前）と下（やぐらの広場）は、屋台の列でなく、あじさいを添えた低い石垣と石灯籠で分ける。屋台は広場のふちに
   { part: 'stone_wall', cell: [1, 9], w: 3, d: 2, sw: 3.1 },
   { part: 'stone_wall', cell: [4, 9], w: 3, d: 2, sw: 3.1 },
   { part: 'stone_wall', cell: [7, 9], w: 2, d: 2, sw: 2.1 },
