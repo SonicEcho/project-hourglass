@@ -39,6 +39,9 @@ export default defineConfig({
         // BGM は版の印（?v=）を付けて読むので、その印は無視して同じファイルとみなす。?debug=1 などで開いた時も、しまったページを出す
         ignoreURLParametersMatching: [/^v$/, /^debug$/, /^seed$/],
         cleanupOutdatedCaches: true,
+        // 中身の印（revision）を付けない「名前に印のあるファイル」は、Vite が作った js・css だけ（2026-11-23）。
+        // 付けないと public/assets/ の絵まで印なしになり、同じ名前のまま描き直した絵が端末で古いまま入れ替わらなかった
+        dontCacheBustURLsMatching: /^assets\/[^/]+-[A-Za-z0-9_-]{8}\.(js|css)$/,
         // 新しい版は読み終えたらすぐ切り替わり、開いているページも引き継ぐ（段階76。これがないと、古い版のページを全部閉じるまで待機したままになる）
         skipWaiting: true,
         clientsClaim: true,
