@@ -997,14 +997,64 @@ Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (
 
 AE_ROOMS = [
     ('部屋1：縁日の入口', 'fest2_gate', 'Scene: the entrance of a shrine festival. At the bottom, a wide stone-paved forecourt where you arrive (closed at the bottom by a low stone wall and shrubs). A straight stone-paved approach runs up the middle to the opening at the top edge. Do NOT draw a torii gate: the game places the torii as a separate picture over the approach just above the forecourt, so keep that part of the approach plain stone paving (a pair of stone komainu guardian lions may sit on the dark squares on both sides). Festival stalls with striped awnings line both sides of the approach; the hatched strips are the deep shadow beside them. A side path branches off to the left edge, toward the back of the stalls. At the upper right, a small dead-end nook behind the stalls.'),
-    ('部屋2：屋台の裏', 'fest2_backyard', 'Scene: the cramped backyard behind the festival stalls. At the top left, a small storage area with the backs of three tents along the top wall: a BLUE tent, a RED tent and a YELLOW tent, side by side from left to right. In the middle, an open square of packed earth surrounded by stacked boxes and tarps (where a generator will sit in the middle). At the bottom, a narrow loop of passage around a long block of piled stall equipment covered with tarps, where the lights are out. Thick power cables run along the ground from the middle square to the bottom loop. The hatched area at the left is in the shadow of a blue tarp wall beside it. An opening at the right edge leads back to the entrance, an opening at the top leads to the back alley.'),
-    ('部屋3：屋台の裏通り', 'fest2_lane', 'Scene: narrow winding back alleys behind festival stalls, tarps, folding tables, coolers and stacked paper lanterns on the dark squares. The long walkway down the left side is a gentle downhill slope paved with old stones, going down toward the bottom (show the slope with a few low steps or a ramp). A shadowy rest corner in the middle beside a tarp wall (the hatched area). The way out at the bottom edge leads back toward the stalls, the opening at the right edge leads to the festival plaza.'),
-    ('部屋4：縁日の広場', 'fest2_plaza', 'Scene: the central plaza of the shrine festival, the most festive place. In the middle of the lower half, a tall wooden yagura (festival drum tower) wrapped in red-and-white cloth stands on the dark block, with paper lanterns hanging on the tower itself (no lantern strings stretched over the walkable ground). Stone steps lead up through the opening at the top edge toward the shrine woods. Stalls with awnings around the edges, on the dark squares (the hatched areas are the deep shadow beside them). Openings at the left edge, the right edge and the bottom edge. Two small round stone circles in the paving mark resting spots (about 6 squares from the top and 5 squares from the bottom, in the center column).'),
-    ('部屋5：東の屋台', 'fest2_east', 'Scene: a busy side street of the shrine festival. Along the top wall, the roofs and back walls of a row of four small stalls facing down onto the street (the game places their front counters in front of them). In the middle, a shooting gallery stall (the dark block above the center) and a goldfish-scooping stall with a wide blue water tank (the dark block below the center). Between the two stalls, hidden behind them, a small enclosed backyard (the light square in the very middle) that you enter through a narrow gap on its left side. The long street loops around the stalls; the bottom right corner is a quiet dead end. The hatched areas are the deep shadow beside the stalls. The opening at the left edge leads back to the plaza.'),
     ('部屋6：社の森', 'fest2_woods', 'Scene: the quiet woods behind a small Japanese shrine on a summer night. At the very top edge, the front of a small wooden shrine building (partly cut off by the top edge) with a little offering box and a rope, in front of it a small open yard of gravel. In the center, a cross-shaped pond (the light-blue squares in the sketch) with STEPPING STONES running through it in a cross shape, surrounded by moss and stone. A gravel path loops around the pond between tall cedar trees and stone lanterns. Small side nooks at the left edge and the right edge (keep them open ground). The hatched strip at the left is in the deep shadow of the trees beside it. The festival lights glow faintly through the trees from the bottom, where the path leads down to the plaza.'),
 ]
 for name, rid, scene in AE_ROOMS:
-    add(name, [AE_SK + f'room_{rid}.png', AE_MAP], f'map_{rid}.png', a11_room(scene))
+    add(name + '（届いた。このまま使う）', [AE_SK + f'room_{rid}.png', AE_MAP], f'map_{rid}.png', a11_room(scene))
+
+# 2026-11-23：届いた屋台の裏・裏通り・広場・東の屋台は、マス目の下絵に合わせようとして、道を四角い生け垣で囲んだ迷路のような絵になり、
+# しかも下絵からずれた（屋台が歩ける所に乗った）。「絵が先、マス目は後」に変えた：下絵を付けず、自然な風景として頼み、
+# 届いた絵に Claude がマス目を合わせ、仕掛け・宝箱・敵を置き直す（docs/milestones/M3_explore_feel.md の 7.）
+AE_REF = 'map_fest2_gate.png（届いた縁日の入口の絵）'
+AE_FREE_TAIL = """Compose it as a believable, lived-in real place first, like a carefully hand-crafted map of a classic console JRPG, painted in this anime style. The walkable ground is simply the open ground between things: its edges are irregular and its width changes naturally (wider in front of stalls, narrow between crates or trees). Paths are shaped by stalls, tents, trees, fences, buildings, slopes and low stone retaining walls, NOT by neat hedges or curbs. Do not outline the paths with trimmed hedge walls, stone curbs or straight borders, and avoid a symmetrical, grid-like or maze-like layout. Add a little height variety (a few stone steps, a slope, a low wall) and small natural details on the non-walkable parts (grass tufts, roots, stones, cables, buckets, cardboard boxes).
+Still keep it readable as a game map: walkable ground must be clearly distinguishable from non-walkable things at a glance, and every non-walkable thing has a solid, readable shape.
+Nothing may hang over the walkable ground: no awnings, roofs, tree branches, cables or lantern strings above it, so characters walking there are never hidden.
+Do NOT draw any of these, because the game places them as separate small pictures: treasure boxes, wooden crates with cloths, lanterns on posts, a generator, a hand cart, fox masks or mask display boards, a vending machine, a bamboo thicket, a broken wooden gate, wooden board walls across the paths, people or crowds. Leave plain open ground where the text says one of them will stand.
+Absolutely no letters or text anywhere: signs, banners and posters are blank or have simple patterns only."""
+
+
+def a11_room_free(scene, exits):
+    return f"""{STYLE}
+
+Top-down map illustration for a mobile RPG exploration scene. Square 1:1 image (1024×1024). A nearly overhead view with only a slight tilt, flat projection without strong perspective (a square grid of 24 by 24 steps will be laid over it later). No people and no characters. Match the art style, colors and lighting of the attached map illustration exactly (a Japanese summer shrine festival at dusk in the late Heisei era, warm lantern light).
+{scene}
+Exits: {exits} Every other edge of the image is closed (trees, fences, stalls or buildings), with no other way out.
+{AE_FREE_TAIL}"""
+
+
+AE_FREE = [
+    ('部屋2：屋台の裏（作り直し）', 'fest2_backyard',
+     'Scene: the cramped, messy backyard behind the festival stalls, where the stall keepers store their things. Packed earth, puddles, cables on the ground, piles of folding tables, beer crates and tarps.\n'
+     'Upper left: a small storage corner with the backs of three small tents in a row against the trees: a BLUE tent, a RED tent and a YELLOW tent (left to right). In front of each tent, leave a small patch of open ground (the game puts a wooden crate beside each tent).\n'
+     'Center: an open clearing where the stall keepers work, with open ground in its middle (the game puts a small generator there). Thick power cables run from the clearing down toward the bottom part.\n'
+     'Bottom: a dark, quiet side area beyond the clearing, a path that loops around a big pile of stall equipment under tarps (the festival lights do not reach here). At the far left end of this loop, a short dead end against an old wooden fence (the game puts a broken garden gate there).\n'
+     'Left side: a strip in the deep shadow of a hanging tarp wall, where you could hide.',
+     'one opening at the middle of the right edge (back to the festival entrance) and one opening at the top edge a little right of the center (to the back alley).'),
+    ('部屋3：屋台の裏通り（作り直し）', 'fest2_lane',
+     'Scene: narrow, winding back alleys behind the festival stalls, between the rear walls of stalls, stacked paper lantern boxes, coolers, folding chairs and tarps, with trees in the gaps.\n'
+     'The alleys form ONE big loop around a block of stalls in the middle, so you can walk around it either way.\n'
+     'Left side of the loop: a long, gentle downhill slope paved with old stones, going down from the top left toward the bottom (show the slope with a ramp and a few low steps). The top of the slope is a small flat spot (the game puts a hand cart there). At the foot of the slope, the alley is closed by a wall of old boards (the game draws it), so at first you must walk around the long way.\n'
+     'Upper right: a short dead-end alley, ending in a quiet corner (the game puts a fox mask on the ground there).\n'
+     'Middle: a small shadowy rest corner tucked into the block of stalls, open to the left part of the loop, with a few folding chairs.',
+     'one opening at the bottom edge a little left of the center (down to the backyard) and one opening at the right edge a little below the center (to the festival plaza). No opening at the top edge.'),
+    ('部屋4：縁日の広場（作り直し）', 'fest2_plaza',
+     'Scene: the lively central plaza of the shrine festival, the most festive place in the area. A wide, roughly round open plaza of old stone paving and packed earth, its edges shaped by festival stalls, trees and a low stone wall, not by straight borders.\n'
+     'Lower center: a tall wooden yagura (festival drum tower) wrapped in red-and-white cloth, with a big drum and paper lanterns hanging on the tower itself. Leave open ground on its left, on its right and just below it (the game puts three lanterns on posts there).\n'
+     'Top center: old stone steps climbing up through the trees toward the shrine woods, with a small open space at their foot (a resting spot).\n'
+     'Lower right: a narrow side passage between a stall and the trees, leading to a small hidden nook behind the yagura (the game blocks the passage with a crowd of people at first).\n'
+     'Upper left: a quiet corner in the deep shadow of a stall, where you could hide. Stalls stand around the edge of the plaza, never in the middle of the open ground.',
+     'one opening at the bottom edge in the center (to the entrance), the stone steps at the top edge in the center (to the woods), one opening at the left edge a little below the middle (to the back alley) and one opening at the right edge a little below the middle (to the east stalls).'),
+    ('部屋5：東の屋台（作り直し）', 'fest2_east',
+     'Scene: a busy, crooked side street of the shrine festival, lined with stalls, with trees and the backs of old houses behind them.\n'
+     'Top: a row of four small stalls along the top, facing down onto the street (draw only their roofs and back walls; the game puts their front counters at the street side). In front of them, the street is wide open ground.\n'
+     'Center: a shooting gallery stall with targets, and below it a goldfish-scooping stall with a wide blue water tank. Between and behind these two stalls, a small hidden backyard of packed earth, reached only through a narrow gap from the left (the game closes the gap with boards at first).\n'
+     'The street loops all the way around the two middle stalls. At the bottom right, the street ends in a quiet dead end with a little open space (a strong guardian waits there).\n'
+     'A strip in the deep shadow of a stall on the left of the street and another on the right, where you could hide.',
+     'only one opening, at the left edge a little below the middle (back to the plaza). No opening at the top, the right or the bottom edge.'),
+]
+for name, rid, scene, exits in AE_FREE:
+    add(name, [AE_REF], f'map_{rid}.png', a11_room_free(scene, exits), '下絵は付けない。添付は、届いた縁日の入口の絵（絵柄をそろえるため）')
+
 
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
