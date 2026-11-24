@@ -75,7 +75,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { A11_CHEST_ART, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { A11_BON, A11_CHEST_ART, A11_CROWD, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -179,6 +179,21 @@ export class ExploreScene extends Phaser.Scene {
   private pausedTweens: Phaser.Tweens.Tween[] = [];
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
+  /** 盆踊りの輪の踊り手（段階283） */
+  private dancers: { im: Phaser.GameObjects.Image; a: number; left: boolean }[] = [];
+
+  /** 盆踊りの輪を少し回す（角度が増える向き。下を歩く人は左へ、上を歩く人は右へ） */
+  private moveDancers(dt: number): void {
+    for (const d of this.dancers) {
+      d.a += dt * 0.00018;
+      const x = (A11_BON.cx + A11_BON.rx * Math.cos(d.a)) * T;
+      const y = (A11_BON.cy + A11_BON.ry * Math.sin(d.a)) * T;
+      const goLeft = -Math.sin(d.a) < 0;
+      d.im.setPosition(x, y + Math.sin(d.a * 9) * 1.5);
+      d.im.setFlipX(goLeft !== d.left);
+    }
+  }
+
   /** 地図の出来事の「光らせる」で灯す電球の列（段階281）と、それを待っているか */
   private litDecor: Phaser.GameObjects.Image[] = [];
   private pendingLight = false;
@@ -248,6 +263,7 @@ export class ExploreScene extends Phaser.Scene {
     this.enemies = [];
     this.leaving = false;
     this.chestSprites = new Map();
+    this.dancers = [];
     this.talkerBubbles = new Map();
     // 育成の画面から戻ってきた（または別の道で来た）ので、育成の画面の戻り先は忘れる
     setHubReturn(null);
@@ -585,6 +601,35 @@ export class ExploreScene extends Phaser.Scene {
       else world.add(bubble);
       this.tweens.add({ targets: bubble, y: bubble.y - 4, yoyo: true, repeat: -1, duration: 700 });
     }
+    // 段階283：通り抜けられる写しの人々と、盆踊りの輪（セピア色で少し透かす）
+    this.dancers = [];
+    for (const c of A11_CROWD) {
+      if (c.room !== room.id || !hasImage(this, c.image)) continue;
+      const im = this.add.image((c.cell[0] + 0.5) * T, (c.cell[1] + 1) * T - 2, c.image).setOrigin(0.5, 1).setTint(0xf0d8b8).setAlpha(0.82);
+      im.setScale((T * 1.5) / im.height);
+      sortLayer.add(im);
+      if (c.walk) {
+        const [a, b] = c.walk;
+        // 行ったり来たり。歩く向きに合わせて左右を返す（left は、絵がもともと左を向いているか）
+        const go = (to: number, toRight: boolean, next: () => void) => {
+          im.setFlipX(toRight === !!c.left);
+          this.tweens.add({ targets: im, x: (to + 0.5) * T, duration: Math.max(400, Math.abs((to + 0.5) * T - im.x) * 28), ease: 'Linear', onComplete: next });
+        };
+        const loop = (): void => go(b, true, () => go(a, false, loop));
+        loop();
+      }
+      this.tweens.add({ targets: im, y: im.y - 1.5, yoyo: true, repeat: -1, duration: 420 + (c.cell[0] % 4) * 60 });
+    }
+    if (A11_BON.room === room.id) {
+      A11_BON.dancers.forEach((d, k) => {
+        if (!hasImage(this, d.image)) return;
+        const im = this.add.image(0, 0, d.image).setOrigin(0.5, 1).setTint(0xf0d8b8).setAlpha(0.85);
+        im.setScale((T * 1.5) / im.height);
+        sortLayer.add(im);
+        this.dancers.push({ im, a: (k / A11_BON.dancers.length) * Math.PI * 2, left: d.left });
+      });
+      this.moveDancers(0);
+    }
     // ボスの印
     if (this.bossHere()) {
       const [bc, br] = area.boss.cell;
@@ -669,7 +714,12 @@ export class ExploreScene extends Phaser.Scene {
       if (d.room !== room.id || !hasImage(this, d.image)) continue;
       if (d.when && !(this.state.flags ?? []).includes(d.when)) continue;
       const im = this.add.image(d.x * T, d.y * T, d.image).setOrigin(0);
-      im.setDisplaySize(d.w * T, (d.w * T * im.height) / im.width);
+      if (d.to) {
+        // 段階283：2点の間に張る（提灯が逆さにならないよう、左の点から右の点へ）
+        const [ax, ay, bx, by] = d.to[0] < d.x ? [d.to[0], d.to[1], d.x, d.y] : [d.x, d.y, d.to[0], d.to[1]];
+        const len = Math.hypot(bx - ax, by - ay) * T;
+        im.setOrigin(0, 0.1).setPosition(ax * T, ay * T).setDisplaySize(len, (len * im.height) / im.width).setRotation(Math.atan2(by - ay, bx - ax));
+      } else im.setDisplaySize(d.w * T, (d.w * T * im.height) / im.width);
       // 地図の出来事でこれから灯す電球は、灯るまで隠しておく
       if (d.when && this.pendingLight) {
         im.setAlpha(0);
@@ -797,6 +847,7 @@ export class ExploreScene extends Phaser.Scene {
 
   update(): void {
     // 段階273：手前の物ほど上に（足もとの高さの順）
+    if (this.dancers.length > 0) this.moveDancers(this.game.loop.delta);
     if (this.sortLayer) {
       this.sortLayer.list.sort((a, b) => footOf(a) - footOf(b));
       this.fadeCovers();

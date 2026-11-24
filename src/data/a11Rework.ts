@@ -574,7 +574,7 @@ export const A11_CHEST_ART = { closed: 'prop.chest_closed', open: 'prop.chest_op
  * 下をくぐる物（段階272）：部屋の絵に描かず、仲間と敵の上に重ねる絵。x・y は絵の左上（マス）、w は幅（マス）。
  * 鳥居の柱の根もと（10,17）・（13,17）は、文字の地図で通れないマスにしてある
  */
-export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number; when?: string }[] = [
+export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number; when?: string; to?: [number, number] }[] = [
   // 段階281：発電機が動くと灯る、屋台の裏の路地の電球の列（when の flag が付くまで出さない。地図の出来事の「光らせる」で順に灯る）
   { room: 'fest2_backyard', image: 'part.string_lanterns', x: 7.5, y: 19.4, w: 6.6, when: 'p_generator' },
   { room: 'fest2_backyard', image: 'part.string_lanterns', x: 13.6, y: 19.4, w: 6.6, when: 'p_generator' },
@@ -584,10 +584,11 @@ export const A11_DECOR: { room: string; image: string; x: number; y: number; w: 
   { room: 'fest2_gate', image: 'part.string_lanterns', x: 10.6, y: 6.6, w: 9 },
   { room: 'fest2_gate', image: 'part.string_flags', x: 1.8, y: 17.2, w: 7.6 },
   { room: 'fest2_gate', image: 'part.string_flags', x: 14.6, y: 17.2, w: 7.6 },
-  { room: 'fest2_plaza', image: 'part.string_lanterns', x: 2.2, y: 6.7, w: 7.6 },
-  { room: 'fest2_plaza', image: 'part.string_lanterns', x: 14.2, y: 6.7, w: 7.6 },
-  { room: 'fest2_plaza', image: 'part.string_mixed', x: 3, y: 15.4, w: 7 },
-  { room: 'fest2_plaza', image: 'part.string_mixed', x: 14, y: 15.4, w: 7 },
+  // 段階283：やぐらのてっぺんから、広場のふちの屋台へ放射状に張る（to まで。w は使わない）
+  { room: 'fest2_plaza', image: 'part.string_lanterns', x: 12, y: 9.8, w: 0, to: [3.5, 5.2] },
+  { room: 'fest2_plaza', image: 'part.string_lanterns', x: 12, y: 9.8, w: 0, to: [20.5, 5.2] },
+  { room: 'fest2_plaza', image: 'part.string_mixed', x: 12, y: 9.8, w: 0, to: [2.5, 13.2] },
+  { room: 'fest2_plaza', image: 'part.string_mixed', x: 12, y: 9.8, w: 0, to: [21.5, 13.2] },
   { room: 'fest2_east', image: 'part.string_lanterns', x: 1.2, y: 7.3, w: 9.4 },
   { room: 'fest2_east', image: 'part.string_lanterns', x: 11, y: 7.3, w: 9.4 },
   { room: 'fest2_east', image: 'part.string_flags', x: 7.5, y: 15.6, w: 6.6 },
@@ -607,6 +608,8 @@ export const A11_REWORK_IMAGES: string[] = [
     A11_CHEST_ART.closed,
     A11_CHEST_ART.open,
     ...A11_DECOR.map((d) => d.image),
+    'person.c_girls', 'person.c_father', 'person.c_couple', 'person.c_oldman', 'person.c_goldfishgirl', 'person.c_foxboy', 'person.c_mother', 'person.c_boys', 'person.c_icewoman', 'person.c_pinwheel', 'person.c_porter', 'person.c_elders',
+    'person.d_l1', 'person.d_l2', 'person.d_l3', 'person.d_l4', 'person.d_r1', 'person.d_r2', 'person.d_r3', 'person.d_r4',
     'person.yukata',
     'person.cotton',
     'person.goldfish',
@@ -619,4 +622,46 @@ export const TALKER_ART: Record<string, string> = {
   浴衣の女の人: 'person.yukata',
   わたあめ屋: 'person.cotton',
   金魚すくいのおじさん: 'person.goldfish',
+};
+
+/**
+ * 段階283（開発者：本物の祭りっぽくない）：通り抜けられる写しの人々（通行人）。cell は足もと、walk は横に歩く範囲（列）。
+ * left は、絵が左を向いているか（横を向いた絵だけ。歩く向きに合わせて左右を返す）
+ */
+export const A11_CROWD: { room: string; image: string; cell: [number, number]; walk?: [number, number]; left?: boolean }[] = [
+  { room: 'fest2_gate', image: 'person.c_girls', cell: [5, 8] },
+  { room: 'fest2_gate', image: 'person.c_oldman', cell: [15, 8] },
+  { room: 'fest2_gate', image: 'person.c_father', cell: [12, 9], walk: [6, 17] },
+  { room: 'fest2_gate', image: 'person.c_couple', cell: [8, 10] },
+  { room: 'fest2_gate', image: 'person.c_elders', cell: [6, 20], walk: [3, 8] },
+  { room: 'fest2_gate', image: 'person.c_pinwheel', cell: [17, 19] },
+  { room: 'fest2_plaza', image: 'person.c_foxboy', cell: [6, 7] },
+  { room: 'fest2_plaza', image: 'person.c_icewoman', cell: [15, 7] },
+  { room: 'fest2_plaza', image: 'person.c_goldfishgirl', cell: [6, 11], walk: [2, 9], left: true },
+  { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], walk: [15, 19] },
+  { room: 'fest2_plaza', image: 'person.c_boys', cell: [5, 15] },
+  { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], walk: [14, 18], left: true },
+  { room: 'fest2_east', image: 'person.c_girls', cell: [8, 7] },
+  { room: 'fest2_east', image: 'person.c_foxboy', cell: [14, 8] },
+  { room: 'fest2_east', image: 'person.c_couple', cell: [17, 9], walk: [11, 19] },
+  { room: 'fest2_east', image: 'person.c_icewoman', cell: [14, 17] },
+];
+
+/** 段階283：広場のやぐらのまわりを回る盆踊りの輪（中心と半径はマス。left は左を向いた絵） */
+export const A11_BON = {
+  room: 'fest2_plaza',
+  cx: 12,
+  cy: 13.4,
+  rx: 4.6,
+  ry: 3.2,
+  dancers: [
+    { image: 'person.d_l1', left: true },
+    { image: 'person.d_r1', left: false },
+    { image: 'person.d_l2', left: true },
+    { image: 'person.d_r2', left: false },
+    { image: 'person.d_l3', left: true },
+    { image: 'person.d_r3', left: false },
+    { image: 'person.d_l4', left: true },
+    { image: 'person.d_r4', left: false },
+  ],
 };
