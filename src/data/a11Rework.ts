@@ -500,11 +500,15 @@ export const A11_REWORK: AreaDef = {
       room: 'fest2_gate',
       when: { on: 'enter', cells: [[10, 15], [11, 15], [12, 15], [13, 15]] },
       steps: [
+        // 2026-11-24（開発者：流れが意味不明）：先に屋台の陰を見せてから湧かせ、こちらへ走ってくる所まで見せてから戦闘
         { do: 'shake' },
-        { do: 'say', name: 'ハルト', text: '……今、屋台の陰で何か動いた' },
+        { do: 'say', name: 'ハルト', text: '……今、通りの奥の屋台の陰で、何か動いた' },
+        { do: 'camera', to: [18, 9], ms: 450 },
         { do: 'spawn', enemy: 'a11_e_gate_chase' },
-        { do: 'camera', to: [18, 9], ms: 350 },
-        { do: 'say', name: 'あかり', text: '砂嵐！ 待ち伏せしてたんだ' },
+        { do: 'say', name: 'あかり', text: '砂嵐……！ あそこに隠れて、待ち伏せしてたんだ' },
+        { do: 'walk', who: 'a11_e_gate_chase', to: [12, 13] },
+        { do: 'camera', to: 'hero', ms: 300 },
+        { do: 'say', name: 'ハルト', text: 'こっちに来る！ ……やるしかない' },
         { do: 'battle', enemy: 'a11_e_gate_chase' },
       ],
     },
