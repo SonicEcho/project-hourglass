@@ -10,6 +10,7 @@ import {
   nightDone,
   nightExit,
   nightGoal,
+  memoryRestored,
   startNight,
   gainSnaps,
   recordLibraryFinds,
@@ -75,7 +76,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { A11_BON, A11_CHEST_ART, A11_CROWD, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -181,6 +182,9 @@ export class ExploreScene extends Phaser.Scene {
   private leaving = false;
   /** 盆踊りの輪の踊り手（段階283） */
   private dancers: { im: Phaser.GameObjects.Image; a: number; left: boolean }[] = [];
+  /** 段階284：通行人と踊り手（思い出の戻り具合で色を変える）と、この部屋に戻る前の戻り具合（コマを手に入れて戻った時だけ） */
+  private crowdIms: Phaser.GameObjects.Image[] = [];
+  private restoreFrom: number | null = null;
 
   /** 盆踊りの輪を少し回す（角度が増える向き。下を歩く人は左へ、上を歩く人は右へ） */
   private moveDancers(dt: number): void {
@@ -292,7 +296,9 @@ export class ExploreScene extends Phaser.Scene {
       // 倒した印の戦闘のコマを手に入れる（段階28。同じ印で2回もらわないよう、まだ倒していなかった時だけ）
       const battleId = data.won === area.boss.id ? area.boss.battle : area.enemies.find((e) => e.id === data.won)?.battle;
       if (!state.defeated.includes(data.won)) komaGot = AREA_BATTLES[battleId ?? '']?.koma ?? 0;
+      const before = memoryRestored(area, state);
       state = addKoma(defeatEnemy(state, data.won), komaGot);
+      this.restoreFrom = komaGot > 0 ? before : null;
       if (data.won === area.boss.id) state = { ...state, cleared: true };
     }
     if (data.lost) {
@@ -580,8 +586,13 @@ export class ExploreScene extends Phaser.Scene {
       const art = TALKER_ART[t.label ?? ''];
       const figure = art && hasImage(this, art) ? this.add.image(x, (t.cell[1] + 1) * T - 2, art).setOrigin(0.5, 1) : null;
       if (figure) {
-        figure.setScale((T * 1.55) / figure.height).setTint(0xf0d8b8).setAlpha(0.9);
+        // 段階284：話せる写しの人は、セピアにせずはっきり描き、足元にうすい光の輪（色の戻りかけの通行人と見分ける）
+        figure.setScale((T * 1.55) / figure.height);
         figure.setData('foot', (t.cell[1] + 1) * T);
+        const glow = this.add.ellipse(x, (t.cell[1] + 1) * T - 4, T * 1.1, T * 0.42, CROWD_LOOK.talkerGlow.color, CROWD_LOOK.talkerGlow.alpha);
+        glow.setStrokeStyle(2, CROWD_LOOK.talkerGlow.ring, 0.9).setData('foot', (t.cell[1] + 1) * T - 1);
+        sortLayer.add(glow);
+        this.tweens.add({ targets: glow, alpha: 0.55, scaleX: 1.08, scaleY: 1.08, yoyo: true, repeat: -1, duration: 1300 });
         sortLayer.add(figure);
         this.tweens.add({ targets: figure, scaleY: figure.scaleY * 1.02, yoyo: true, repeat: -1, duration: 1100 + (t.cell[0] % 5) * 90 });
       } else world.add(this.add.ellipse(x, y, T * 0.6, T * 0.8, 0xc8d0e0, 0.55));
@@ -603,9 +614,11 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 段階283：通り抜けられる写しの人々と、盆踊りの輪（セピア色で少し透かす）
     this.dancers = [];
+    this.crowdIms = [];
     for (const c of A11_CROWD) {
       if (c.room !== room.id || !hasImage(this, c.image)) continue;
-      const im = this.add.image((c.cell[0] + 0.5) * T, (c.cell[1] + 1) * T - 2, c.image).setOrigin(0.5, 1).setTint(0xf0d8b8).setAlpha(0.82);
+      const im = this.add.image((c.cell[0] + 0.5) * T, (c.cell[1] + 1) * T - 2, c.image).setOrigin(0.5, 1);
+      this.crowdIms.push(im);
       im.setScale((T * 1.5) / im.height);
       sortLayer.add(im);
       if (c.walk) {
@@ -623,13 +636,15 @@ export class ExploreScene extends Phaser.Scene {
     if (A11_BON.room === room.id) {
       A11_BON.dancers.forEach((d, k) => {
         if (!hasImage(this, d.image)) return;
-        const im = this.add.image(0, 0, d.image).setOrigin(0.5, 1).setTint(0xf0d8b8).setAlpha(0.85);
+        const im = this.add.image(0, 0, d.image).setOrigin(0.5, 1);
+        this.crowdIms.push(im);
         im.setScale((T * 1.5) / im.height);
         sortLayer.add(im);
         this.dancers.push({ im, a: (k / A11_BON.dancers.length) * Math.PI * 2, left: d.left });
       });
       this.moveDancers(0);
     }
+    this.paintCrowd();
     // ボスの印
     if (this.bossHere()) {
       const [bc, br] = area.boss.cell;
@@ -746,7 +761,26 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(addText(this, GAME_WIDTH / 2, 8, area.name, { size: 15, bold: true }).setOrigin(0.5, 0));
     // コマ：あと何コマで返せるか（段階28）
     const left = komaLeft(area, this.state);
-    if (this.night > 0) {
+    const nightGoalText = this.night > 0 ? area.nights?.[this.night - 1]?.goal : undefined;
+    if (this.night > 0 && nightGoalText) {
+      // 段階284：2行目は今夜の目的（物語の言葉）、3行目は何晩目と、今夜のコマを砂時計の印で（取った数だけ金色）
+      const goal = nightGoal(area, this.state, this.night);
+      const done = this.nightOver();
+      ui.add(addText(this, GAME_WIDTH / 2, 30, nightGoalText, { size: 14, bold: true, color: COLORS.accentText }).setOrigin(0.5, 0));
+      const rest = goal.last ? (left > this.bossKoma() ? '' : 'あとは、ぬし') : done ? 'そろった！' : '';
+      const label = addText(this, 0, 60, `${this.night}晩目`, { size: 12, bold: true }).setOrigin(0, 0.5);
+      const marks = Math.min(goal.need, 8);
+      const restText = rest ? addText(this, 0, 60, rest, { size: 12, bold: true, color: COLORS.accentText }).setOrigin(0, 0.5) : null;
+      const width = label.width + 8 + marks * 15 + (restText ? 6 + restText.width : 0);
+      let x = GAME_WIDTH / 2 - width / 2;
+      label.setX(x);
+      ui.add(label);
+      x += label.width + 8 + 7;
+      for (let i = 0; i < marks; i++) {
+        ui.add(this.komaMark(x + i * 15, 60, 0.8).setAlpha(i < goal.have ? 1 : 0.28));
+      }
+      if (restText) ui.add(restText.setX(x + marks * 15 - 1));
+    } else if (this.night > 0) {
       // 晩に分けた区画（段階67）：今夜の目標（何晩目と、今夜のコマ）
       const goal = nightGoal(area, this.state, this.night);
       const done = this.nightOver();
@@ -1690,6 +1724,12 @@ export class ExploreScene extends Phaser.Scene {
     }
     const goal = nightGoal(this.area, this.state, this.night);
     const mark = '金色の砂時計の印の砂嵐が、コマを持っている';
+    const story = this.area.nights?.[this.night - 1]?.goal;
+    if (story) {
+      // 段階284：目的の言葉から。コマは、砂嵐が食べた思い出のかけら
+      const want = goal.last ? 'コマを集めて、ぬしを起こそう' : `コマをあと${goal.need - goal.have}つ`;
+      return `${this.night}晩目：${story}\n砂嵐が持つ思い出のかけら（コマ）。${want}`;
+    }
     if (goal.last) return `${this.night}晩目（最後の晩）：コマを集めて、ぬしを起こそう\n${mark}`;
     return `${this.night}晩目：今夜はコマを${goal.need - goal.have}つ集める\n${mark}`;
   }
@@ -1702,6 +1742,32 @@ export class ExploreScene extends Phaser.Scene {
     if (this.nightOver()) return '今夜の分がそろった。光る砂時計から帰れる';
     if (goal.last) return left > this.bossKoma() ? `あと${left}つで返せる` : 'あとは、ぬし';
     return `今夜 ${goal.have}/${goal.need}`;
+  }
+
+  /**
+   * 段階284：通行人と踊り手の色。思い出が戻った割合だけ、セピアの透けた姿から色のある姿へ。
+   * コマを手に入れて戻った時は、前の色から少しずつ戻していく
+   */
+  private paintCrowd(): void {
+    const from = this.restoreFrom;
+    this.restoreFrom = null;
+    if (this.crowdIms.length === 0) return;
+    const to = memoryRestored(this.area, this.state);
+    const apply = (level: number) => {
+      const a = Phaser.Display.Color.ValueToColor(CROWD_LOOK.faded.tint);
+      const b = Phaser.Display.Color.ValueToColor(CROWD_LOOK.restored.tint);
+      const c = Phaser.Display.Color.Interpolate.ColorWithColor(a, b, 1000, Math.round(level * 1000));
+      const tint = Phaser.Display.Color.GetColor(c.r, c.g, c.b);
+      const alpha = CROWD_LOOK.faded.alpha + (CROWD_LOOK.restored.alpha - CROWD_LOOK.faded.alpha) * level;
+      for (const im of this.crowdIms) im.setTint(tint).setAlpha(alpha);
+    };
+    if (from === null || from >= to) {
+      apply(to);
+      return;
+    }
+    apply(from);
+    const v = { level: from };
+    this.tweens.add({ targets: v, level: to, delay: 500, duration: CROWD_LOOK.restoreMs, ease: 'Sine.easeInOut', onUpdate: () => apply(v.level) });
   }
 
   /** 金色の小さな砂時計（コマを持つ敵の印と、帰り口。段階67） */

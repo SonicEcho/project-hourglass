@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaGrid, checkArea, checkNights, isWalkable, nightArea, reachableCells, roomPositions, startRoom } from '../../src/core';
+import { areaGrid, checkArea, checkNights, memoryRestored, NIGHT_GOAL_MAX, isWalkable, nightArea, reachableCells, roomPositions, startRoom } from '../../src/core';
 import { A11_CROWD, A11_REWORK, A11_REWORK_ROOM_NAMES, AREA_BATTLES, AREAS, ROOM_NAMES } from '../../src/data';
 
 // 段階262（docs/milestones/M3_explore_feel.md の 5.・5-7）：新しい1-1の配置の試し
@@ -338,5 +338,20 @@ describe('祭りの通行人（段階283b）', () => {
       expect(faces.get(c.image) ?? c.face, c.image).toBe(c.face);
       faces.set(c.image, c.face);
     }
+  });
+});
+
+describe('歩く理由と色の戻り（段階284）', () => {
+  it('どの晩にも物語の言葉の目的があり、上の帯に収まる長さ', () => {
+    for (const n of area.nights ?? []) {
+      expect(n.goal).toBeTruthy();
+      expect([...(n.goal ?? '')].length).toBeLessThanOrEqual(NIGHT_GOAL_MAX);
+    }
+  });
+  it('思い出の戻り具合は、手に入れたコマの割合（0〜1）', () => {
+    const base = { room: 'fest2_gate', cell: [1, 1] as [number, number], koma: 0, defeated: [], opened: [], visited: [] };
+    expect(memoryRestored(area, { ...base } as never)).toBe(0);
+    expect(memoryRestored(area, { ...base, koma: area.komaNeed / 2 } as never)).toBeCloseTo(0.5);
+    expect(memoryRestored(area, { ...base, koma: area.komaNeed + 3 } as never)).toBe(1);
   });
 });
