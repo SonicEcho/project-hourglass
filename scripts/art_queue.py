@@ -1257,6 +1257,24 @@ How a side-facing stall must look in this camera view (very important): the came
 3. Along the counter side, under the awning, the counter and the goods seen from above at a steep angle (griddles, apples, noodles). The other long side is a plain tarp back wall, seen only as a thin strip.
 It is NOT a box seen from a corner, NOT a two-point perspective view, and NOT a front view squeezed narrow. Vertical poles stay perfectly vertical. Same scale, colors, lighting and line style as the attached front-facing stalls."""), '見え方を細かく指示した。うまくいかない時は「屋根は上から見て縦に長い四角。角から見た箱にしない」と一言足す')
 
+# ---- AK. 案3：東の屋台（段階279） ----
+section('AK. 案3：東の屋台の地面の絵（段階279）', '入口と同じ作り方（屋台の通りを横に、上は表・下は裏）。上の屋台の列の裏に、隠し通路（誘導なし）。添付は、作りの下書き（`docs/sketches/a11_v3/east_plan.png`）と、届いた入口の地面の絵（`ground3_fest2_gate.png`。絵柄をそろえるため）。屋台・植え込み・自販機などはゲームが置く')
+add('地面の絵：東の屋台（案3）', ['docs/sketches/a11_v3/east_plan.png（作りの下書き）', 'ground3_fest2_gate.png（届いた入口の地面の絵）'], 'ground3_fest2_east.png', f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place all the stalls, shrubs, vending machine and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale, colors and dusk lighting.
+{AF_CAM}
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Scene: a busy side street of a summer shrine festival at dusk, between old Japanese houses.
+- Top edge (about 3 steps tall): the dark tiled roofs and back walls of old wooden houses.
+- Right below the houses: a very narrow strip of packed earth (about 1 step) running along the house walls from left to right, ending in a tiny open nook at the upper right. (Stalls will stand in front of it and hide it.)
+- Below that: a long strip of packed earth (about 2 steps tall) where a row of stalls will stand, with a narrow 1-step gap at its far left next to the house wall.
+- Across the middle: a wide main street of packed earth (about 4 to 5 steps tall) that leaves the image through the LEFT edge (a little above the middle) and ends at the right side against a wooden fence.
+- Below the main street: a strip of packed earth for the backs of stalls, and in its center a small enclosed backyard of packed earth (about 4 by 3 steps), surrounded on its sides and bottom by low plank walls.
+- Lower part: a second street of packed earth (about 3 steps tall) running left to right, connected to the main street by narrow side lanes along the left and right edges, so the streets make a loop.
+- At the bottom, a little right of the center, a small quiet dead-end nook of packed earth.
+- The rest of the edges: house roofs, wooden fences and dense bushes.
+Keep everything inside the frame open ground: absolutely NO stalls, tents, crates, tables, benches, lanterns, vending machines, shrubs inside the area, people or text. Absolutely no letters or text anywhere.""", '入口の地面の絵と同じく、下書きは位置の目安')
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1269,7 +1287,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
