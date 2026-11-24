@@ -320,3 +320,20 @@ describe('部品で組む部屋（段階273）', () => {
     }
   });
 });
+
+describe('見つかる範囲の扇（段階278）', () => {
+  it('ひらけた所では、向きの先へ半径いっぱいにのびる。壁に当たると、そこで止まる', async () => {
+    const { parseGrid } = await import('../../src/core');
+    const { sightFan, SIGHT_FAN_RADIUS } = await import('../../src/core');
+    const open = parseGrid(['.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........']);
+    const pts = sightFan(open, [4, 1], [0, 1], 5);
+    const mid = pts[2];
+    expect(mid.x).toBeCloseTo(4.5, 5);
+    expect(mid.y - 1.5).toBeGreaterThan(SIGHT_FAN_RADIUS - 0.11);
+    // 2マス下が壁なら、真ん中の線はその手前で止まる
+    const wall = parseGrid(['.........', '.........', '.........', '....#....', '.........', '.........', '.........', '.........', '.........']);
+    const mid2 = sightFan(wall, [4, 1], [0, 1], 5)[2];
+    expect(mid2.y).toBeLessThan(3.01);
+  });
+});
+

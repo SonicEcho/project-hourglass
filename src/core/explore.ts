@@ -729,6 +729,36 @@ export function sightCells(map: GridMap, cell: GridCell, facing: GridCell): Grid
   return out;
 }
 
+/** 見つかる範囲の扇の大きさ（段階278。絵だけ。見つかるかどうかは sightCells のマスで決める）：半径（マス）と、半分の開き（ラジアン） */
+export const SIGHT_FAN_RADIUS = SIGHT_DEPTH + 0.5;
+export const SIGHT_FAN_HALF = 0.6;
+
+/**
+ * 見つかる範囲を放射状の扇で描くための、外側の点（段階278。マスの座標。マスの真ん中は +0.5）。
+ * 敵のマスの真ん中から、向きを中心に rays 本の線をのばし、通れないマスに当たった所で止める（壁の先は見えない）
+ */
+export function sightFan(map: GridMap, cell: GridCell, facing: GridCell, rays = 17): { x: number; y: number }[] {
+  const cx = cell[0] + 0.5;
+  const cy = cell[1] + 0.5;
+  const base = Math.atan2(facing[1], facing[0]);
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i < rays; i++) {
+    const a = base - SIGHT_FAN_HALF + (2 * SIGHT_FAN_HALF * i) / (rays - 1);
+    let len = 0;
+    const step = 0.1;
+    while (len < SIGHT_FAN_RADIUS) {
+      const next = len + step;
+      const x = cx + Math.cos(a) * next;
+      const y = cy + Math.sin(a) * next;
+      const at: GridCell = [Math.floor(x), Math.floor(y)];
+      if (!(at[0] === cell[0] && at[1] === cell[1]) && !isWalkable(map, at)) break;
+      len = next;
+    }
+    pts.push({ x: cx + Math.cos(a) * len, y: cy + Math.sin(a) * len });
+  }
+  return pts;
+}
+
 /** 仲間が見つかるか：見つかる範囲にいて、陰のマスにいない */
 export function spotted(map: GridMap, room: RoomDef, cell: GridCell, facing: GridCell, player: GridCell): boolean {
   if (isShade(room, player)) return false;

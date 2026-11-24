@@ -27,7 +27,7 @@ import {
   useGadget,
   ambushKind,
   facingOf,
-  sightCells,
+  sightFan,
   SHADE,
   spotted,
   startFacing,
@@ -74,7 +74,7 @@ import {
 } from '../core';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
-import { playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
+import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
 import { A11_CHEST_ART, A11_DECOR, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
@@ -183,6 +183,11 @@ export class ExploreScene extends Phaser.Scene {
   private sortLayer?: Phaser.GameObjects.Container;
   /** 小物の絵のうち、足もとの順に重ねている物（仕掛けを描き直す時に消す） */
   private sortedProps: Phaser.GameObjects.GameObject[] = [];
+  /** 調べるボタン（段階278）と、調べる物の上の「！」 */
+  private actionButton?: Phaser.GameObjects.Container;
+  private actionMark?: Phaser.GameObjects.Text;
+  /** 先頭が最後に歩いた向き（調べる物を選ぶ時、向いている方を先に見る） */
+  private lastDir: GridCell = [0, 1];
   private chestSprites = new Map<string, Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image>();
   private marker!: Phaser.GameObjects.Arc;
   private message!: Phaser.GameObjects.Text;
@@ -687,6 +692,9 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(this.message);
     this.hubButton = this.add.container(0, 0);
     ui.add(this.hubButton);
+    // 段階278：調べられる物の前に立つと出る「調べる」ボタン（オプションで右か左か）
+    this.actionButton = this.add.container(0, 0);
+    ui.add(this.actionButton);
     this.updateHubButton();
     // 仲間の今の HP・MP（区画の中では戦闘をまたいで持ち越す。段階32b 調整3）
     // 仲間ごとの列に名前と HP・MP の2行で出す（段階38で3人の時、段階47で2人の時も。1行だと左右がはみ出していた）
@@ -981,6 +989,8 @@ export class ExploreScene extends Phaser.Scene {
     }
     this.walking = true;
     this.nextCell = next;
+    if (this.actionMark || this.actionButton?.length) this.updateActionButton();
+    this.lastDir = [Math.sign(next[0] - this.state.cell[0]), Math.sign(next[1] - this.state.cell[1])];
     this.shadeSprite(this.player, isShade(this.room, next));
     // 斜めの1歩は、少し長く（同じ速さに見えるように）
     const diag = next[0] !== this.state.cell[0] && next[1] !== this.state.cell[1];
@@ -1343,6 +1353,7 @@ export class ExploreScene extends Phaser.Scene {
       if (open) sprite.setTexture(open);
     } else sprite?.setFillStyle(0x4a3a28).setStrokeStyle(2, 0x6b5a40);
     playSe(this, SE.chest);
+    this.updateActionButton();
     this.say(
       `宝箱を開けた！　${[got.length > 0 ? summarize(got) : '（空っぽだった）', gears.length > 0 ? `ギア：${gearNames(gears)}` : '', chainSnaps.length > 0 ? `スナップ：${chainSnaps.map((id) => CHAIN_SNAPS[id]?.name ?? id).join('、')}` : ''].filter(Boolean).join('　')}`,
     );
@@ -1351,6 +1362,7 @@ export class ExploreScene extends Phaser.Scene {
 
   /** チェックポイントに立ち止まっている時だけ、育成の画面への入口を出す（段階26） */
   private updateHubButton(): void {
+    this.updateActionButton();
     if (!this.hubButton) return;
     this.hubButton.removeAll(true);
     if (this.tune) return;
@@ -1372,6 +1384,44 @@ export class ExploreScene extends Phaser.Scene {
     if (!target || !isCheckpoint(this.area, this.state.cell, this.state.room)) return;
     // 段階147：育成の画面へは、休憩所のメニュー（拠点と同じ形）から入る
     addButton(this, this.hubButton, GAME_WIDTH / 2, y, 240, 60, '休憩する', { onTap: () => this.openCamp() }, { ...GOLD_BUTTON, size: 18 });
+  }
+
+  /**
+   * 調べるボタン（段階278）：止まっている時、となり（斜めも）に話せる人・宝箱・仕掛け・ぬしがあれば、その上に「！」、
+   * 画面の下の右か左（オプション）にボタンを出す。向いている方を先に見る。押すと、その物をタップしたのと同じ。
+   * 隠し場所は誘導しない決まり（docs/design/explore.md）なので、見えている物だけ
+   */
+  private actionTarget(): { cell: GridCell; label: string } | null {
+    if (this.tune || this.leaving || this.walking || this.route.length > 0 || this.eventRunning) return null;
+    const [x, y] = this.state.cell;
+    const [fx, fy] = this.lastDir;
+    const around: GridCell[] = [[x + fx, y + fy], [x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y], [x - 1, y - 1], [x + 1, y - 1], [x + 1, y + 1], [x - 1, y + 1]];
+    for (const c of around) {
+      if (this.area.talkers.some((t) => this.here(t) && near(t.cell, c, 0))) return { cell: c, label: '話す' };
+      if (chestAt(this.area, this.state, c)) return { cell: c, label: '開ける' };
+      const g = gadgetAt(this.area, this.state, this.night, this.state.room, c);
+      if (g) return { cell: c, label: g.kind === 'item' ? '拾う' : g.kind === 'push' ? '押す' : g.kind === 'photo' ? '撮る' : '調べる' };
+    }
+    if (this.bossHere() && near(this.area.boss.cell, this.state.cell, 1)) return { cell: this.area.boss.cell, label: '調べる' };
+    return null;
+  }
+
+  private updateActionButton(): void {
+    const box = this.actionButton;
+    if (!box) return;
+    box.removeAll(true);
+    if (this.actionMark) this.tweens.killTweensOf(this.actionMark);
+    this.actionMark?.destroy();
+    this.actionMark = undefined;
+    const t = this.actionTarget();
+    if (!t) return;
+    const left = getSettings().actionSide === 'left';
+    const y = GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyBattleLineup()).length);
+    addButton(this, box, left ? 70 : GAME_WIDTH - 70, y, 112, 60, t.label, { onTap: () => this.tapCell(t.cell) }, { ...GOLD_BUTTON, size: 18 });
+    const mark = addText(this, t.cell[0] * T + T / 2, t.cell[1] * T - T * 0.35, '！', { size: 18, bold: true, color: '#ffd84a' }).setOrigin(0.5).setStroke('#5a1a00', 4);
+    this.world?.add(mark);
+    this.tweens.add({ targets: mark, y: mark.y - 5, yoyo: true, repeat: -1, duration: 450 });
+    this.actionMark = mark;
   }
 
   /** 休憩所（段階147）を開く。休憩所の「探索へ戻る」で、この画面のチェックポイントに戻る */
@@ -1785,8 +1835,19 @@ export class ExploreScene extends Phaser.Scene {
         e.alert?.setVisible(true);
         playSe(this, SE.encounter);
       }
-      g.fillStyle(e.spotted ? 0xff3040 : 0xffd890, e.spotted ? 0.28 : 0.2);
-      for (const [c, r] of sightCells(this.map, e.mind.cell, e.facing)) g.fillRect(c * T + 1, r * T + 1, T - 2, T - 2);
+      // 段階278：マスの四角でなく、放射状の扇で描く（壁でさえぎる）。外へいくほど薄く
+      const fan = sightFan(this.map, e.mind.cell, e.facing);
+      const ox = e.mind.cell[0] * T + T / 2;
+      const oy = e.mind.cell[1] * T + T / 2;
+      const color = e.spotted ? 0xff3040 : 0xffd890;
+      for (const [k, alpha] of [[1, e.spotted ? 0.14 : 0.1], [0.72, e.spotted ? 0.12 : 0.08], [0.45, e.spotted ? 0.12 : 0.08]] as const) {
+        g.fillStyle(color, alpha);
+        g.beginPath();
+        g.moveTo(ox, oy);
+        for (const p of fan) g.lineTo(ox + (p.x * T - ox) * k, oy + (p.y * T - oy) * k);
+        g.closePath();
+        g.fillPath();
+      }
     }
   }
 
