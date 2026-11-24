@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { areaGrid, checkArea, checkNights, isWalkable, nightArea, reachableCells, roomPositions, startRoom } from '../../src/core';
-import { A11_REWORK, A11_REWORK_ROOM_NAMES, AREA_BATTLES, AREAS, ROOM_NAMES } from '../../src/data';
+import { A11_CROWD, A11_REWORK, A11_REWORK_ROOM_NAMES, AREA_BATTLES, AREAS, ROOM_NAMES } from '../../src/data';
 
 // 段階262（docs/milestones/M3_explore_feel.md の 5.・5-7）：新しい1-1の配置の試し
 const area = A11_REWORK;
@@ -327,3 +327,16 @@ describe('細い出入口（2026-11-24）', () => {
   });
 });
 
+
+describe('祭りの通行人（段階283b）', () => {
+  it('左右に歩くのは横向きの絵の人だけ（正面・後ろ姿のまま横へ進まない）', () => {
+    for (const c of A11_CROWD) if (c.walk) expect(['left', 'right'], `${c.room} ${c.image}`).toContain(c.face);
+  });
+  it('同じ絵の人は、どこでも同じ向き', () => {
+    const faces = new Map<string, string>();
+    for (const c of A11_CROWD) {
+      expect(faces.get(c.image) ?? c.face, c.image).toBe(c.face);
+      faces.set(c.image, c.face);
+    }
+  });
+});

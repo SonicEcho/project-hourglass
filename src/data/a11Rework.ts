@@ -628,23 +628,26 @@ export const TALKER_ART: Record<string, string> = {
  * 段階283（開発者：本物の祭りっぽくない）：通り抜けられる写しの人々（通行人）。cell は足もと、walk は横に歩く範囲（列）。
  * left は、絵が左を向いているか（横を向いた絵だけ。歩く向きに合わせて左右を返す）
  */
-export const A11_CROWD: { room: string; image: string; cell: [number, number]; walk?: [number, number]; left?: boolean }[] = [
-  { room: 'fest2_gate', image: 'person.c_girls', cell: [5, 8] },
-  { room: 'fest2_gate', image: 'person.c_oldman', cell: [15, 8] },
-  { room: 'fest2_gate', image: 'person.c_father', cell: [12, 9], walk: [6, 17] },
-  { room: 'fest2_gate', image: 'person.c_couple', cell: [8, 10] },
-  { room: 'fest2_gate', image: 'person.c_elders', cell: [6, 20], walk: [3, 8] },
-  { room: 'fest2_gate', image: 'person.c_pinwheel', cell: [17, 19] },
-  { room: 'fest2_plaza', image: 'person.c_foxboy', cell: [6, 7] },
-  { room: 'fest2_plaza', image: 'person.c_icewoman', cell: [15, 7] },
-  { room: 'fest2_plaza', image: 'person.c_goldfishgirl', cell: [6, 11], walk: [2, 9], left: true },
-  { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], walk: [15, 19] },
-  { room: 'fest2_plaza', image: 'person.c_boys', cell: [5, 15] },
-  { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], walk: [14, 18], left: true },
-  { room: 'fest2_east', image: 'person.c_girls', cell: [8, 7] },
-  { room: 'fest2_east', image: 'person.c_foxboy', cell: [14, 8] },
-  { room: 'fest2_east', image: 'person.c_couple', cell: [17, 9], walk: [11, 19] },
-  { room: 'fest2_east', image: 'person.c_icewoman', cell: [14, 17] },
+/** 通行人の絵の向き。左右に歩けるのは横向き（left/right）の絵だけ（段階283b） */
+export type CrowdFace = 'left' | 'right' | 'front' | 'back';
+
+export const A11_CROWD: { room: string; image: string; cell: [number, number]; face: CrowdFace; walk?: [number, number] }[] = [
+  { room: 'fest2_gate', image: 'person.c_girls', cell: [5, 8], face: 'front' },
+  { room: 'fest2_gate', image: 'person.c_oldman', cell: [15, 8], face: 'front' },
+  { room: 'fest2_gate', image: 'person.c_father', cell: [12, 9], face: 'front' },
+  { room: 'fest2_gate', image: 'person.c_couple', cell: [8, 10], face: 'back' },
+  { room: 'fest2_gate', image: 'person.c_elders', cell: [6, 20], face: 'left', walk: [3, 8] },
+  { room: 'fest2_gate', image: 'person.c_pinwheel', cell: [17, 19], face: 'back' },
+  { room: 'fest2_plaza', image: 'person.c_foxboy', cell: [6, 7], face: 'front' },
+  { room: 'fest2_plaza', image: 'person.c_icewoman', cell: [15, 7], face: 'front' },
+  { room: 'fest2_plaza', image: 'person.c_goldfishgirl', cell: [6, 11], face: 'left', walk: [2, 9] },
+  { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], face: 'left', walk: [15, 19] },
+  { room: 'fest2_plaza', image: 'person.c_boys', cell: [5, 15], face: 'front' },
+  { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], face: 'right', walk: [14, 18] },
+  { room: 'fest2_east', image: 'person.c_girls', cell: [8, 7], face: 'front' },
+  { room: 'fest2_east', image: 'person.c_foxboy', cell: [14, 8], face: 'front' },
+  { room: 'fest2_east', image: 'person.c_couple', cell: [17, 9], face: 'back' },
+  { room: 'fest2_east', image: 'person.c_icewoman', cell: [14, 17], face: 'front' },
 ];
 
 /** 段階283：広場のやぐらのまわりを回る盆踊りの輪（中心と半径はマス。left は左を向いた絵） */
