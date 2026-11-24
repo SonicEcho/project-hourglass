@@ -33,6 +33,8 @@ export interface RoomDef {
    * 届いた地図の絵の道が、辺の真ん中から外れている時に使う（2026-10-26）
    */
   exitAt?: Partial<Record<RoomSide, number>>;
+  /** 出入口の幅（マス）を、その辺だけ狭くする（2026-11-24。絵の道が細い所）。書かなければ EXIT_WIDTH */
+  exitWidth?: Partial<Record<RoomSide, number>>;
   /**
    * 細かい屋根（段階121）：マス（"列,行"）ごとに、1マスを縦横4つに割った16の小さな四角のどれを屋根にするか（16ビットを4桁の16進で。
    * ビット i は、左から i % 4、上から i / 4 の小さな四角）。書いたマスは、文字の地図の ^ よりこちらが優先
@@ -427,8 +429,9 @@ function roomSize(room: RoomDef): GridCell {
 /** 出入口のマス（辺の真ん中の4マス。exitAt があればそこから4マス。上下の辺は左から、左右の辺は上から） */
 export function exitCells(room: RoomDef, side: RoomSide): GridCell[] {
   const [cols, rows] = roomSize(room);
-  const from = (n: number) => room.exitAt?.[side] ?? Math.floor(n / 2) - EXIT_WIDTH / 2;
-  return Array.from({ length: EXIT_WIDTH }, (_, i): GridCell => {
+  const width = room.exitWidth?.[side] ?? EXIT_WIDTH;
+  const from = (n: number) => room.exitAt?.[side] ?? Math.floor(n / 2) - width / 2;
+  return Array.from({ length: width }, (_, i): GridCell => {
     if (side === 'top') return [from(cols) + i, 0];
     if (side === 'bottom') return [from(cols) + i, rows - 1];
     if (side === 'left') return [0, from(rows) + i];
@@ -479,11 +482,14 @@ export type DoorResult = { type: 'moved'; state: ExploreState } | { type: 'locke
 export function passDoor(area: AreaDef, state: ExploreState, cell: GridCell): DoorResult | null {
   const room = roomOf(area, state.room);
   for (const d of doorsOf(area, room.id)) {
-    const index = exitCells(room, d.from.side).findIndex((c) => same(c, cell));
+    const cells = exitCells(room, d.from.side);
+    const index = cells.findIndex((c) => same(c, cell));
     if (index < 0) continue;
     if (!linkOpen(d.link, state)) return { type: 'locked', link: d.link };
     const to = roomOf(area, d.to.room);
-    const entry = entryCells(to, d.to.side)[index];
+    // 出入口の幅が違う時は、並びの割合で合わせる（4マス → 2マスなら、上の2つ → 1つ目）
+    const entries = entryCells(to, d.to.side);
+    const entry = entries[Math.min(entries.length - 1, Math.floor((index * entries.length) / cells.length))];
     const visited = state.visited.includes(to.id) ? state.visited : [...state.visited, to.id];
     return { type: 'moved', state: { ...state, room: to.id, cell: entry, visited } };
   }
@@ -897,8 +903,12 @@ export function reachableCells(area: AreaDef, from?: { room: string; cell: GridC
       if (isWalkable(map, next)) visit(room, next);
     }
     for (const d of doorsOf(area, room)) {
-      const index = exitCells(roomOf(area, room), d.from.side).findIndex((c) => same(c, cell));
-      if (index >= 0) visit(d.to.room, entryCells(roomOf(area, d.to.room), d.to.side)[index]);
+      const cells = exitCells(roomOf(area, room), d.from.side);
+      const index = cells.findIndex((c) => same(c, cell));
+      if (index < 0) continue;
+      // 出入口の幅が違う時は、並びの割合で合わせる（passDoor と同じ）
+      const entries = entryCells(roomOf(area, d.to.room), d.to.side);
+      visit(d.to.room, entries[Math.min(entries.length - 1, Math.floor((index * entries.length) / cells.length))]);
     }
   }
   return out;

@@ -337,3 +337,18 @@ describe('見つかる範囲の扇（段階278）', () => {
   });
 });
 
+describe('細い出入口（2026-11-24）', () => {
+  it('東の屋台の左の出入口は2マス。広場の右の出入口（4マス）から入ると、その2マスのどれかに着く', async () => {
+    const { exitCells, passDoor, startExplore } = await import('../../src/core');
+    const east = area.rooms.find((r) => r.id === 'fest2_east')!;
+    expect(exitCells(east, 'left')).toHaveLength(2);
+    const plaza = area.rooms.find((r) => r.id === 'fest2_plaza')!;
+    const s = { ...startExplore(area), room: 'fest2_plaza' };
+    const arrived = exitCells(plaza, 'right').map((c) => passDoor(area, s, c));
+    for (const r of arrived) {
+      expect(r?.type).toBe('moved');
+      if (r?.type === 'moved') expect([[1, 8], [1, 9]]).toContainEqual(r.state.cell);
+    }
+  });
+});
+
