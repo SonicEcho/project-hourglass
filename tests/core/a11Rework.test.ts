@@ -27,7 +27,7 @@ describe('新しい1-1（段階262）', () => {
     expect(area.boss.battle).toBe(now.boss.battle);
     expect(area.komaNeed).toBe(now.komaNeed);
     expect(area.enemies.reduce((a, e) => a + (AREA_BATTLES[e.battle]?.koma ?? 0), 0) + (AREA_BATTLES[area.boss.battle]?.koma ?? 0)).toBe(area.komaNeed);
-    expect(area.chests.length).toBe(7);
+    expect(area.chests.length).toBe(8);
   });
 
   it('1つの部屋の1つの晩に、写しの人は1人まで（広場の1晩目と社の森だけ2人）', () => {
