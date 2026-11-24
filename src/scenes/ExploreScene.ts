@@ -517,6 +517,7 @@ export class ExploreScene extends Phaser.Scene {
       im.setDisplaySize(w, (w * im.height) / im.width);
       // 歩ける飾り（縄など）は、いつも仲間の下
       im.setData('foot', p.walk ? -1 : (p.cell[1] + 1) * T);
+      im.setData('fade', true);
       sortLayer.add(im);
     }
     // 宝箱
@@ -750,7 +751,10 @@ export class ExploreScene extends Phaser.Scene {
 
   update(): void {
     // 段階273：手前の物ほど上に（足もとの高さの順）
-    if (this.sortLayer) this.sortLayer.list.sort((a, b) => footOf(a) - footOf(b));
+    if (this.sortLayer) {
+      this.sortLayer.list.sort((a, b) => footOf(a) - footOf(b));
+      this.fadeCovers();
+    }
     if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune || this.eventRunning) return;
     if (this.time.now < this.graceUntil) return;
     if (this.stealth) this.updateSight();
@@ -1294,6 +1298,8 @@ export class ExploreScene extends Phaser.Scene {
       const key = art ? this.propArt(lit && art.on ? art.on : art.off) : undefined;
       if (art && key) {
         const im = this.propImage(key, g.cell, art.w);
+        // 屋台のような大きい小物（お面屋）も、裏を歩く間は透かす
+        if (!photo && !later && art.w >= 2) im.setData('fade', true);
         if (photo) {
           im.setAlpha(lit ? 0.35 : 1);
           if (!lit) this.tweens.add({ targets: im, alpha: 0.6, yoyo: true, repeat: -1, duration: 800 });
@@ -1305,6 +1311,25 @@ export class ExploreScene extends Phaser.Scene {
       const color = later ? 0x5a5f70 : photo ? (lit ? 0x8a8070 : 0xfff4d8) : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
       layer.add(this.add.rectangle(x, y, T * 0.72, T * 0.72, color, 1).setAngle(45).setStrokeStyle(2, 0x000000));
       layer.add(addText(this, x, y, g.mark, { size: 13, bold: true, color: '#101010' }).setOrigin(0.5));
+    }
+  }
+
+  /**
+   * 段階279：屋台の裏など、手前の部品の絵に隠れて歩いている間は、その絵を少し透かす（仲間の位置が分かるように）。
+   * 誘導ではないので、隠れた所に入った後だけ（入口を知らせる印は出さない）
+   */
+  private fadeCovers(): void {
+    if (!this.sortLayer || !this.player) return;
+    const px = this.player.x;
+    const py = this.player.y;
+    for (const o of this.sortLayer.list) {
+      const im = o as Phaser.GameObjects.Image;
+      if (!im.getData?.('fade')) continue;
+      const foot = im.getData('foot') as number;
+      const b = im.getBounds();
+      const behind = foot > py + T / 2 && px > b.left + 4 && px < b.right - 4 && py > b.top && py < b.bottom;
+      const target = behind ? 0.45 : 1;
+      if (im.alpha !== target) im.setAlpha(Math.abs(target - im.alpha) < 0.03 ? target : Phaser.Math.Linear(im.alpha, target, 0.25));
     }
   }
 
