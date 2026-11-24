@@ -446,13 +446,13 @@ export const A11_REWORK: AreaDef = {
   boss: { ...base.boss, room: 'fest2_woods', cell: [12, 3] },
   // 写しの人（段階265 のくれる物つき）：1つの部屋の1つの晩に1人まで（広場の1晩目と社の森は2人）
   talkers: [
-    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [6, 18], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_fuel', text: '浴衣の女の人「さっき小さな女の子が、屋台の裏の暗がりへ走っていったの。発電機が止まって、裏は真っ暗よ。燃料なら物置の木箱にあるって、屋台の人が言ってたわ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [6, 18], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_fuel', text: '浴衣の女の人「さっき小さな女の子が、屋台の裏の暗がりへ走っていったの。発電機が止まって、裏は真っ暗よ。燃料なら物置の木箱にあるって、屋台の人が言ってたわ」\n（右上の地図に印が付いた）' } },
     { id: 'a11_voice_cotton', room: 'fest2_plaza', cell: [16, 12], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「甘いの食べて、ひと休みしな」\n（HP・MP が少し回復した）' } },
     { id: 'a11_voice_goldfish', room: 'fest2_plaza', cell: [7, 18], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'goldfishNoise', element: 'ice', text: '金魚すくいのおじさん「さっきの金魚みたいな砂嵐、冷たいのが苦手みたいだったよ」\n（金魚ノイズの弱点：氷 が分かった）' } },
     { id: 'a11_voice2_cotton', room: 'fest2_plaza', cell: [18, 4], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「疲れた顔してるね。ほら、ひと口」\n（HP・MP が少し回復した）' } },
-    { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [9, 11], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_mask', text: '浴衣の女の人「東の屋台のお面屋さん、白い狐のお面をなくして困ってたわ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [9, 11], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_mask', text: '浴衣の女の人「東の屋台のお面屋さん、白い狐のお面をなくして困ってたわ」\n（右上の地図に印が付いた）' } },
     { id: 'a11_voice2_goldfish', room: 'fest2_east', cell: [8, 18], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'maskNoise', element: 'fire', text: '金魚すくいのおじさん「お面の砂嵐は、火に弱いらしいぜ」\n（お面ノイズの弱点：火 が分かった）' } },
-    { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [8, 7], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'm_pond', text: '浴衣の女の人「社の森の池？ 霧の近くに、いやな砂嵐がうろついてたわ。あの霧、あれのせいじゃないかしら」\n（地図に印が付いた）' } },
+    { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [8, 7], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'm_pond', text: '浴衣の女の人「社の森の池？ 霧の近くに、いやな砂嵐がうろついてたわ。あの霧、あれのせいじゃないかしら」\n（右上の地図に印が付いた）' } },
     { id: 'a11_voice3_goldfish', room: 'fest2_woods', cell: [7, 18], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'cottonNoise', element: 'thunder', text: '金魚すくいのおじさん「わたあめの砂嵐は、ビリッとくるのが苦手でな」\n（わたあめノイズの弱点：雷 が分かった）' } },
     { id: 'a11_voice3_cotton', room: 'fest2_woods', cell: [17, 17], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「ここまで来たんだ、もうひと踏ん張り」\n（HP・MP が少し回復した）' } },
   ],
@@ -577,7 +577,10 @@ export const A11_CHEST_ART = { closed: 'prop.chest_closed', open: 'prop.chest_op
  * 下をくぐる物（段階272）：部屋の絵に描かず、仲間と敵の上に重ねる絵。x・y は絵の左上（マス）、w は幅（マス）。
  * 鳥居の柱の根もと（10,17）・（13,17）は、文字の地図で通れないマスにしてある
  */
-export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number }[] = [
+export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number; when?: string }[] = [
+  // 段階281：発電機が動くと灯る、屋台の裏の路地の電球の列（when の flag が付くまで出さない。地図の出来事の「光らせる」で順に灯る）
+  { room: 'fest2_backyard', image: 'part.string_lanterns', x: 7.5, y: 19.4, w: 6.6, when: 'p_generator' },
+  { room: 'fest2_backyard', image: 'part.string_lanterns', x: 13.6, y: 19.4, w: 6.6, when: 'p_generator' },
   { room: 'fest2_gate', image: 'prop.torii', x: 8.9, y: 12.3, w: 6.2 },
   // 段階275：頭の上の提灯のひも・旗（屋台から屋台へ張り渡す。仲間の上に重ねる）。長く張ると提灯が大きくなるので、10マスほどに分ける
   { room: 'fest2_gate', image: 'part.string_lanterns', x: 0.8, y: 6.6, w: 9 },
