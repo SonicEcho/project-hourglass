@@ -182,6 +182,8 @@ export class ExploreScene extends Phaser.Scene {
   /** 地図の出来事の「光らせる」で灯す電球の列（段階281）と、それを待っているか */
   private litDecor: Phaser.GameObjects.Image[] = [];
   private pendingLight = false;
+  /** 停電の暗がり（物の上にかぶせる） */
+  private darkLayer?: Phaser.GameObjects.Container;
   /** 全体の地図（印を付け直す時に描き直す） */
   private roomMapBox?: Phaser.GameObjects.Container;
   /** 仕掛けの上の吹き出し（2026-11-24。仲間や屋台の絵より上） */
@@ -547,8 +549,11 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 仕掛けの扉と仕掛け（段階264。絵が届くまでの仮の印）
     this.bubbleLayer = this.add.container(0, 0);
+    this.darkLayer = this.add.container(0, 0);
     this.drawGadgets(world);
     world.add(sortLayer);
+    // 停電の暗がりは、宝箱や小物の上にかぶせる（2026-11-24 開発者：暗がりに宝箱が浮いて見えた）
+    world.add(this.darkLayer);
     world.add(this.bubbleLayer);
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
@@ -1260,6 +1265,7 @@ export class ExploreScene extends Phaser.Scene {
     layer.removeAll(true);
     for (const o of this.sortedProps) o.destroy();
     this.bubbleLayer?.removeAll(true);
+    this.darkLayer?.removeAll(true);
     this.sortedProps = [];
     // 小物の絵は、足もとの順に仲間と重ねる（段階273。重ねる入れ物がまだなければ仕掛けの入れ物へ）
     const front = (o: Phaser.GameObjects.Image): void => {
@@ -1305,7 +1311,7 @@ export class ExploreScene extends Phaser.Scene {
         // 停電の暗がり：絵の上では、扉の四角を丸ごと暗くする（歩けない物の山も一緒に）
         // 段階281（開発者：「真っ暗」の字だけで作り途中に見えた）：字は出さず、縁をぼかした夜の暗がりにする
         const dark = this.darkOverlay(gate.cells);
-        if (dark) layer.add(dark);
+        if (dark) (this.darkLayer ?? layer).add(dark);
         continue;
       }
       if (gate.look === 'water' && this.room.image) {
@@ -1829,7 +1835,7 @@ export class ExploreScene extends Phaser.Scene {
       } else if (step.do === 'light') {
         // 段階281（開発者：明かりが不自然）：宙に光の玉を出さず、暗がりを残したまま電球の列を順に灯し、暗がりをゆっくり晴らす
         const dark = this.darkOverlay(this.area.gates?.find((g) => g.room === this.state.room && g.look === 'dark')?.cells ?? []);
-        if (dark) this.world?.add(dark);
+        if (dark) (this.darkLayer ?? this.world)?.add(dark);
         await wait(300);
         for (const im of this.litDecor) {
           this.tweens.add({ targets: im, alpha: 1, duration: 260 });
