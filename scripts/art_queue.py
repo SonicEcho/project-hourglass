@@ -1275,6 +1275,21 @@ Scene: a busy side street of a summer shrine festival at dusk, between old Japan
 - The rest of the edges: house roofs, wooden fences and dense bushes.
 Keep everything inside the frame open ground: absolutely NO stalls, tents, crates, tables, benches, lanterns, vending machines, shrubs inside the area, people or text. Absolutely no letters or text anywhere.""", '入口の地面の絵と同じく、下書きは位置の目安')
 
+# ---- AL. 探索の地図に立つ写しの人（二頭身。段階280） ----
+section('AL. 探索の地図に立つ写しの人（二頭身。段階280）', '話しかけられる写しの人が、灰色の丸で目立たず分かりにくい（2026-11-24 開発者）。歩く二頭身（`public/assets/sprites/walk_akari.webp`）と同じ絵柄・大きさの、立っている二頭身を頼む。ゲームの側で少しセピアに染めて「写し」に見せるので、ふつうの色で作る。白い背景のままでよい')
+add('写しの人の二頭身（6人）', ['public/assets/sprites/walk_akari.webp（歩く二頭身のあかり。絵柄と大きさの見本）'], 'talkers_chibi.png', f"""{STYLE}
+
+A sheet of chibi characters for a top-down 2D RPG on mobile. Match the attached chibi sprite sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell.
+Layout: a grid of 2 rows by 3 columns on a plain pure white background, every cell exactly the same size (square), one character standing in the middle of each cell, feet on the same baseline about three quarters down the cell, at exactly the same scale. Each character stands facing the viewer (front view), relaxed, with a small friendly gesture. No ground, no shadow, no text, no grid lines.
+These are townspeople at a Japanese summer shrine festival in the late Heisei era (around 2005), seen in the dusk light.
+- Row 1, column 1: a young woman in her twenties in a navy yukata with a white morning-glory pattern and a yellow obi, hair tied up with a small hair ornament, holding a round paper fan.
+- Row 1, column 2: a cheerful cotton candy vendor in his forties: a white twisted headband (hachimaki), a white apron over a dark T-shirt, holding a stick of pink cotton candy.
+- Row 1, column 3: a kind goldfish-scooping stall keeper in his sixties: short gray hair, a navy happi coat, rolled-up sleeves, holding a small paper scoop (poi).
+- Row 2, column 1: a small boy of about 7 in a jinbei (summer festival wear), holding a balloon on a string.
+- Row 2, column 2: a gentle old woman in a plain gray kimono with a small purse, hands folded.
+- Row 2, column 3: a high school boy in a plain T-shirt and shorts with a towel around his neck, holding a bottle of ramune.
+Soft cel shading, clear dark outline so each character reads at a very small size.""", '上の段の3人が、新しい1-1 で話しかけられる人（浴衣の女の人・わたあめ屋・金魚すくいのおじさん）。下の段は、ほかの区画や人混みに使う')
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1287,7 +1302,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',

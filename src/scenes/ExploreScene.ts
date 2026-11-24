@@ -179,6 +179,8 @@ export class ExploreScene extends Phaser.Scene {
   private pausedTweens: Phaser.Tweens.Tween[] = [];
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
+  /** 仕掛けの上の吹き出し（2026-11-24。仲間や屋台の絵より上） */
+  private bubbleLayer?: Phaser.GameObjects.Container;
   /** 足もとの高さの順に重ねる物（段階273） */
   private sortLayer?: Phaser.GameObjects.Container;
   /** 小物の絵のうち、足もとの順に重ねている物（仕掛けを描き直す時に消す） */
@@ -533,8 +535,10 @@ export class ExploreScene extends Phaser.Scene {
       else world.add(box);
     }
     // 仕掛けの扉と仕掛け（段階264。絵が届くまでの仮の印）
+    this.bubbleLayer = this.add.container(0, 0);
     this.drawGadgets(world);
     world.add(sortLayer);
+    world.add(this.bubbleLayer);
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
       if (!this.here(t)) continue;
@@ -1212,6 +1216,7 @@ export class ExploreScene extends Phaser.Scene {
     if (!layer) return;
     layer.removeAll(true);
     for (const o of this.sortedProps) o.destroy();
+    this.bubbleLayer?.removeAll(true);
     this.sortedProps = [];
     // 小物の絵は、足もとの順に仲間と重ねる（段階273。重ねる入れ物がまだなければ仕掛けの入れ物へ）
     const front = (o: Phaser.GameObjects.Image): void => {
@@ -1306,6 +1311,8 @@ export class ExploreScene extends Phaser.Scene {
         }
         if (later) im.setAlpha(0.9);
         front(im);
+        // 2026-11-24（開発者：お面屋など、調べられる所に印がなくて分かりにくい）：まだ解いていない、見えている仕掛けの上に小さな吹き出し
+        if (!lit && !photo) this.addGadgetBubble(this.bubbleLayer ?? layer, g.cell[0] * T + T / 2, im.y - im.displayHeight - 4, g.kind === 'item' ? '！' : '…');
         continue;
       }
       const color = later ? 0x5a5f70 : photo ? (lit ? 0x8a8070 : 0xfff4d8) : lit ? 0xffd84a : g.kind === 'item' ? 0xff9a3c : 0x6bc8ff;
@@ -1331,6 +1338,16 @@ export class ExploreScene extends Phaser.Scene {
       const target = behind ? 0.45 : 1;
       if (im.alpha !== target) im.setAlpha(Math.abs(target - im.alpha) < 0.03 ? target : Phaser.Math.Linear(im.alpha, target, 0.25));
     }
+  }
+
+  /** 仕掛けの上の小さな吹き出し（2026-11-24）。ゆっくり上下する */
+  private addGadgetBubble(layer: Phaser.GameObjects.Container, x: number, y: number, text: string): void {
+    const box = this.add.container(x, y);
+    box.add(this.add.ellipse(0, 0, 22, 17, 0xffffff, 0.92).setStrokeStyle(1.5, 0x3a2a20));
+    box.add(this.add.triangle(0, 9, -4, 0, 4, 0, 0, 5, 0xffffff, 0.92));
+    box.add(addText(this, 0, -1, text, { size: 11, bold: true, color: '#3a2a20' }).setOrigin(0.5));
+    layer.add(box);
+    this.tweens.add({ targets: box, y: y - 3, yoyo: true, repeat: -1, duration: 900 });
   }
 
   /** 小物の絵（段階271）：読めていれば台帳の id、なければ undefined（仮の印で描く） */
@@ -1985,7 +2002,7 @@ function tuneStart(room: RoomDef): GridCell {
   let found: GridCell | null = null;
   room.layout.forEach((line, r) => [...line].forEach((ch, c) => !found && (ch === 'S' || ch === 'P') && (found = [c, r])));
   if (found) return found;
-  if (room.exits[0]) return entryCells(room, room.exits[0])[1];
+  if (room.exits[0]) return entryCells(room, room.exits[0])[0];
   room.layout.forEach((line, r) => [...line].forEach((ch, c) => !found && ch !== '#' && (found = [c, r])));
   return found ?? [0, 0];
 }
