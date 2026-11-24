@@ -46,11 +46,11 @@ export const GATE_PARTS: RoomPart[] = [
   { part: 's_wataame', cell: [8, 6], w: 2, d: 2, sw: 2.2 },
   { part: 's_yakisoba', cell: [14, 6], w: 3, d: 2, sw: 3.2 },
   { part: 's_toys', cell: [19, 6], w: 3, d: 2, sw: 3.2 },
-  // 突き当たり：横向きの屋台の絵が届くまでは、木と竹やぶでふさぐ（L字の角の屋台は不自然なので使わない。2026-11-24 開発者）
-  { part: 'cedar', cell: [20, 9], w: 2, d: 3, sw: 3 },
-  { part: 'bamboo_clump', cell: [19, 9], w: 1, d: 3, sw: 1.8 },
-  { part: 'tree', cell: [19, 10], w: 3, d: 1, sw: 3 },
-  { part: 'hydrangea', cell: [21, 10], w: 1, sw: 1.3 },
+  // 突き当たり：通りの方（左）を向いた横向きのりんご飴の屋台でふさぐ（L字の角の屋台は不自然なので使わない。2026-11-24 開発者）
+  { part: 'side_ringo_l', cell: [20, 10], w: 2, d: 3, sw: 2.9 },
+  { part: 'crates_tarp', cell: [20, 7], w: 2, sw: 1.8 },
+  { part: 'cedar', cell: [22, 8], w: 1, d: 2, sw: 2.6 },
+  { part: 'bush', cell: [22, 10], w: 1, sw: 1.6 },
   { part: 'ramune_tub', cell: [9, 7], w: 1, sw: 1.1 },
   { part: 'b_small_red', cell: [1, 12], w: 2, d: 2, sw: 2.1 },
   { part: 'b_wide_stripe', cell: [3, 12], w: 4, d: 2, sw: 4.1 },
