@@ -106,15 +106,14 @@ describe('仕掛けと仲間の力（段階264）', () => {
   const at0: [number, number] = [0, 0];
   const g = (id: string) => area.gadgets!.find((x) => x.id === id)!;
 
-  it('拾う品 → 使う：つまみを拾うと、発電機が直り、下の路地（停電の扉）が開く', async () => {
+  it('拾う品 → 使う：物置の木箱で燃料の缶を拾うと、発電機が動き、下の路地（停電の扉）が開く（段階281）', async () => {
     const { gadgetArea, startExplore, useGadget, closedGates } = await import('../../src/core');
     let s = startExplore(area);
     expect(useGadget(area, s, g('p_generator'), ['hero', 'akari'], at0).solved).toEqual([]);
-    s = useGadget(area, s, g('p_knob'), ['hero', 'akari'], at0).state;
+    s = useGadget(area, s, g('p_fuel'), ['hero', 'akari'], at0).state;
     const r = useGadget(area, s, g('p_generator'), ['hero', 'akari'], at0);
     expect(r.solved).toEqual(['p_generator']);
     expect(closedGates(area, r.state, 'fest2_backyard')).toEqual([]);
-    // 拾った品は地図から消え、そのマスは通れる。開く前の扉のマスは通れない
     const before = gadgetArea(area, startExplore(area), 1);
     const after = gadgetArea(area, r.state, 1);
     expect(isWalkable(areaGrid(before, 'fest2_backyard'), [12, 22])).toBe(false);
@@ -122,34 +121,26 @@ describe('仕掛けと仲間の力（段階264）', () => {
     expect(isWalkable(areaGrid(after, 'fest2_backyard'), [8, 6])).toBe(true);
   });
 
-  it('押す：荷車は上のマスから押すと動く。下からは動かない', async () => {
+  it('仲間の力：止まった自販機は、みおが編成にいれば動いて奥への道があく（いなければ、そのまま）', async () => {
     const { startExplore, useGadget } = await import('../../src/core');
     const s = startExplore(area);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 7]).solved).toEqual([]);
-    expect(useGadget(area, s, g('p_cart'), ['hero'], [4, 5]).solved).toEqual(['p_cart']);
+    expect(useGadget(area, s, g('l_vending'), ['hero', 'akari'], at0).solved).toEqual([]);
+    expect(useGadget(area, s, g('l_vending'), ['hero', 'mio'], at0).solved).toEqual(['l_vending']);
   });
 
-  it('仲間の力：あかりが編成にいれば人混みが道をあける。後で来る所は、その仲間がいないと開かない', async () => {
-    const { startExplore, useGadget } = await import('../../src/core');
+  it('池の霧は、池の砂嵐を倒すと晴れる（扉の by に、倒した敵の id）。晴れた時に地図の出来事', async () => {
+    const { closedGates, defeatEnemy, pendingEvent, startExplore } = await import('../../src/core');
     const s = startExplore(area);
-    expect(useGadget(area, s, g('p_song'), ['hero'], at0).solved).toEqual([]);
-    expect(useGadget(area, s, g('p_song'), ['hero', 'akari'], at0).solved).toEqual(['p_song']);
-    expect(useGadget(area, s, g('l_bamboo'), ['hero', 'akari'], at0).solved).toEqual([]);
-    expect(useGadget(area, s, g('l_bamboo'), ['hero', 'sayoko'], at0).solved).toEqual(['l_bamboo']);
+    expect(closedGates(area, s, 'fest2_woods').map((x) => x.id)).toEqual(['g_stones']);
+    const won = defeatEnemy(s, 'a11_e_woods1');
+    expect(closedGates(area, won, 'fest2_woods')).toEqual([]);
+    expect(pendingEvent(area, won, 3, 'fest2_woods', { on: 'solved', flag: 'a11_e_woods1' })?.id).toBe('ev_pond');
   });
 
-  it('順番：提灯は右 → 左 → 下。まちがえると灯った物が消える。そろうと、やぐらの前に宝箱が出る', async () => {
-    const { gadgetArea, startExplore, useGadget } = await import('../../src/core');
-    let s = startExplore(area);
-    s = useGadget(area, s, g('p_lantern1'), [], at0).state;
-    expect(s.flags).toEqual(['p_lanterns:0']);
-    s = useGadget(area, s, g('p_lantern3'), [], at0).state;
-    expect(s.flags).toEqual([]);
-    for (const id of ['p_lantern1', 'p_lantern2']) s = useGadget(area, s, g(id), [], at0).state;
-    const last = useGadget(area, s, g('p_lantern3'), [], at0);
-    expect(last.solved).toEqual(['p_lanterns']);
-    expect(gadgetArea(area, s, 3).chests.some((c) => c.id === 'a11_chest_new1')).toBe(false);
-    expect(gadgetArea(area, last.state, 3).chests.some((c) => c.id === 'a11_chest_new1')).toBe(true);
+  it('仕掛けは1晩に1つ（区画で3つ）。ほかは後で来る所と思い出の一枚だけ（段階281）', () => {
+    const main = area.gadgets!.filter((x) => x.kind === 'use' || x.kind === 'push' || x.kind === 'order' || (x.kind === 'ability' && x.ally !== 'mio'));
+    expect(main.map((x) => x.id).sort()).toEqual(['p_generator', 'p_mask']);
+    expect(area.gates!.map((x) => x.by).sort()).toEqual(['a11_e_woods1', 'p_generator', 'p_mask']);
   });
 
   it('仕掛けを解かなくても、コマを持つ砂嵐・ぬし・次の晩の始まりへ歩いて行ける（仕掛けはごほうびだけ）', async () => {
@@ -189,7 +180,7 @@ describe('写しの人がくれる物と思い出の一枚（段階265）', () =
     const { startExplore, takeGift } = await import('../../src/core');
     const t = area.talkers.find((x) => x.id === 'a11_voice_yukata')!;
     const first = takeGift(startExplore(area), t)!;
-    expect(first.state.flags).toEqual(['gift:a11_voice_yukata', 'hint:p_knob']);
+    expect(first.state.flags).toEqual(['gift:a11_voice_yukata', 'hint:p_fuel']);
     expect(takeGift(first.state, t)).toBeNull();
   });
 
@@ -223,44 +214,28 @@ describe('地図の上の寸劇（段階266）', () => {
   it('マスに着いた時・仕掛けが解けた時に起きる。1回だけ。湧かせた砂嵐は、その後も地図に出る', async () => {
     const { enemyShown, markEvent, pendingEvent, startExplore } = await import('../../src/core');
     const s = startExplore(area);
-    const gate = area.enemies.find((e) => e.id === 'a11_e_gate_chase')!;
-    expect(enemyShown(s, gate)).toBe(false);
-    const ev = pendingEvent(area, s, 1, 'fest2_gate', { on: 'enter', cell: [11, 15] })!;
-    expect(ev.id).toBe('ev_gate_ambush');
-    expect(pendingEvent(area, s, 1, 'fest2_gate', { on: 'enter', cell: [11, 16] })).toBeNull();
+    const runner = area.enemies.find((e) => e.id === 'a11_e_runner')!;
+    expect(enemyShown(s, runner)).toBe(false);
+    const ev = pendingEvent(area, s, 1, 'fest2_backyard', { on: 'solved', flag: 'p_generator' })!;
+    expect(ev.id).toBe('ev_generator');
     const after = markEvent(s, ev);
-    expect(pendingEvent(area, after, 1, 'fest2_gate', { on: 'enter', cell: [11, 15] })).toBeNull();
-    expect(enemyShown(after, gate)).toBe(true);
-    expect(pendingEvent(area, s, 1, 'fest2_backyard', { on: 'solved', flag: 'p_generator' })?.id).toBe('ev_generator');
+    expect(pendingEvent(area, after, 1, 'fest2_backyard', { on: 'solved', flag: 'p_generator' })).toBeNull();
+    expect(enemyShown(after, runner)).toBe(true);
+    const tank = pendingEvent(area, s, 2, 'fest2_east', { on: 'enter', cell: [8, 17] });
+    expect(tank?.id).toBe('ev_tank');
   });
 });
 
 describe('小さく濃い1-1（段階268）', () => {
-  it('6部屋とも 24×24。どの部屋にも、地図の出来事つきの見せ場がある', () => {
+  it('6部屋とも 24×24。地図の出来事は、遊ぶ人がした事のあとに起きる（屋台の裏・東の屋台・社の森）', () => {
     for (const r of area.rooms) expect([r.layout[0].length, r.layout.length], r.id).toEqual([24, 24]);
-    for (const r of area.rooms) expect(area.events!.some((ev) => ev.room === r.id), r.id).toBe(true);
+    expect([...new Set(area.events!.map((ev) => ev.room))].sort()).toEqual(['fest2_backyard', 'fest2_east', 'fest2_woods']);
   });
 
-  it('提灯の答え（赤 → 白 → 青）は、思い出の一枚3枚に出てくる提灯の色の順', () => {
-    const lanterns = area.gadgets!.filter((g) => g.group === 'p_lanterns').sort((a, b) => a.index! - b.index!);
-    const colors = lanterns.map((g) => g.label.replace('い提灯', ''));
-    expect(colors).toEqual(['赤', '白', '青']);
-    const photos = ['m_gate', 'm_yagura', 'm_shooting'].map((id) => area.gadgets!.find((g) => g.id === id)!.done);
-    photos.forEach((text, k) => expect(text).toContain(`${colors[k]}い提灯`));
-  });
-
-  it('見るだけの仕掛け（はずれの木箱・ちがうお面屋）は、言葉だけで何も変えない', async () => {
-    const { startExplore, useGadget } = await import('../../src/core');
-    const s = startExplore(area);
-    const r = useGadget(area, s, area.gadgets!.find((g) => g.id === 'p_crate_blue')!, [], [0, 0]);
-    expect(r.state).toBe(s);
-    expect(r.text).toContain('からっぽ');
-  });
-
-  it('スナップの数は変えない：思い出を返した時のリカバリーを、提灯の仕掛けの先の宝箱へ移した', () => {
+  it('スナップの数は変えない：思い出を返した時のリカバリーを、池の真ん中の宝箱へ移した（段階281）', () => {
     const snapsOf = (a: typeof area) => [...(a.chainReturnSnaps ?? []), ...a.chests.flatMap((c) => c.chainSnaps ?? [])].sort();
     expect(snapsOf(area)).toEqual(snapsOf(AREAS.a11));
-    expect(area.chests.find((c) => c.id === 'a11_chest_new1')).toMatchObject({ needs: 'p_lanterns', chainSnaps: ['a11_recovery'] });
+    expect(area.chests.find((c) => c.id === 'a11_chest_new1')).toMatchObject({ room: 'fest2_woods', chainSnaps: ['a11_recovery'] });
   });
 });
 
