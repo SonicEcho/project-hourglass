@@ -179,6 +179,11 @@ export class ExploreScene extends Phaser.Scene {
   private pausedTweens: Phaser.Tweens.Tween[] = [];
   /** 別の画面へ移る途中（重ねて移らないように） */
   private leaving = false;
+  /** 地図の出来事の「光らせる」で灯す電球の列（段階281）と、それを待っているか */
+  private litDecor: Phaser.GameObjects.Image[] = [];
+  private pendingLight = false;
+  /** 全体の地図（印を付け直す時に描き直す） */
+  private roomMapBox?: Phaser.GameObjects.Container;
   /** 仕掛けの上の吹き出し（2026-11-24。仲間や屋台の絵より上） */
   private bubbleLayer?: Phaser.GameObjects.Container;
   /** 足もとの高さの順に重ねる物（段階273） */
@@ -351,6 +356,9 @@ export class ExploreScene extends Phaser.Scene {
     }
     // その晩のコマがそろい、途中の会話も見終えても、自動では終わらない。帰り口（光る砂時計）から自分で帰る（段階67）
 
+    // 段階281：これから起きる地図の出来事に「光らせる」があれば、灯す物は隠しておく
+    const queuedEv = data.event ? (this.area.events ?? []).find((x) => x.id === data.event && !(this.state.flags ?? []).includes(`event:${x.id}`)) : undefined;
+    this.pendingLight = !!queuedEv?.steps.some((st) => st.do === 'light');
     this.draw();
     // 戦闘に入った時にすぐ曲が変わるよう、戦闘の曲を先に読んでおく
     prefetchBgm([BGM.battle, BGM.boss]);
@@ -651,10 +659,17 @@ export class ExploreScene extends Phaser.Scene {
     this.roof = this.drawRoof(room);
     if (this.roof) world.add(this.roof);
     // 下をくぐる物（段階272。鳥居）：仲間と敵の上に重ねる
+    this.litDecor = [];
     for (const d of A11_DECOR) {
       if (d.room !== room.id || !hasImage(this, d.image)) continue;
+      if (d.when && !(this.state.flags ?? []).includes(d.when)) continue;
       const im = this.add.image(d.x * T, d.y * T, d.image).setOrigin(0);
       im.setDisplaySize(d.w * T, (d.w * T * im.height) / im.width);
+      // 地図の出来事でこれから灯す電球は、灯るまで隠しておく
+      if (d.when && this.pendingLight) {
+        im.setAlpha(0);
+        this.litDecor.push(im);
+      }
       world.add(im);
     }
 
@@ -733,7 +748,10 @@ export class ExploreScene extends Phaser.Scene {
     ui.add(this.vitalsTexts);
     this.refreshVitals();
     // 全体の地図（段階47a）：部屋が2つ以上の区画だけ。入った部屋とつながりを、右上に小さく出す
-    if (area.rooms.length > 1) ui.add(this.drawRoomMap());
+    if (area.rooms.length > 1) {
+      this.roomMapBox = this.drawRoomMap();
+      ui.add(this.roomMapBox);
+    }
 
     // 段階269：押したまま引っ張ると、その向きへ歩き続ける（見えないスティック。指の下に小さな輪）
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
@@ -1285,11 +1303,9 @@ export class ExploreScene extends Phaser.Scene {
       }
       if (gate.look === 'dark' && this.room.image) {
         // 停電の暗がり：絵の上では、扉の四角を丸ごと暗くする（歩けない物の山も一緒に）
-        const cs = gate.cells.map((c) => c[0]);
-        const rs = gate.cells.map((c) => c[1]);
-        const [c0, c1, r0, r1] = [Math.min(...cs), Math.max(...cs), Math.min(...rs), Math.max(...rs)];
-        layer.add(this.add.rectangle(c0 * T, r0 * T, (c1 - c0 + 1) * T, (r1 - r0 + 1) * T, 0x05060a, 0.82).setOrigin(0));
-        layer.add(addText(this, (c0 + c1 + 1) * T / 2, (r0 + r1 + 1) * T / 2, st.text, { size: 12, bold: true, color: '#6a7390' }).setOrigin(0.5));
+        // 段階281（開発者：「真っ暗」の字だけで作り途中に見えた）：字は出さず、縁をぼかした夜の暗がりにする
+        const dark = this.darkOverlay(gate.cells);
+        if (dark) layer.add(dark);
         continue;
       }
       if (gate.look === 'water' && this.room.image) {
@@ -1367,6 +1383,20 @@ export class ExploreScene extends Phaser.Scene {
 
   /** 写しの人の上の吹き出し（話したら薄く） */
   private talkerBubbles = new Map<string, Phaser.GameObjects.Container>();
+
+  /** 停電の暗がり（段階281）：扉のマスの四角を、縁を少しずつぼかした濃い紺で覆う */
+  private darkOverlay(cells: GridCell[]): Phaser.GameObjects.Container | null {
+    if (cells.length === 0) return null;
+    const cs = cells.map((c) => c[0]);
+    const rs = cells.map((c) => c[1]);
+    const [x0, x1, y0, y1] = [Math.min(...cs) * T, (Math.max(...cs) + 1) * T, Math.min(...rs) * T, (Math.max(...rs) + 1) * T];
+    const box = this.add.container(0, 0);
+    // 外へ広げた薄い層を重ねて、縁をぼかす（真ん中ほど暗い）
+    for (const [pad, alpha] of [[T * 0.9, 0.12], [T * 0.6, 0.14], [T * 0.3, 0.16], [0, 0.5]] as const) {
+      box.add(this.add.rectangle(x0 - pad, y0 - pad, x1 - x0 + pad * 2, y1 - y0 + pad * 2, 0x04060e, alpha).setOrigin(0));
+    }
+    return box;
+  }
 
   /** 仕掛けの上の小さな吹き出し（2026-11-24）。ゆっくり上下する */
   private addGadgetBubble(layer: Phaser.GameObjects.Container, x: number, y: number, text: string): Phaser.GameObjects.Container {
@@ -1797,18 +1827,18 @@ export class ExploreScene extends Phaser.Scene {
           await wait(460);
         }
       } else if (step.do === 'light') {
-        // 提灯を順に灯す
-        for (const [c, r] of step.cells) {
-          const glow = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.9, 0xffc860, 0.0);
-          const core = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.22, 0xfff0b0, 0);
-          this.world?.add([glow, core]);
-          this.tweens.add({ targets: glow, fillAlpha: 0.35, duration: 260 });
-          this.tweens.add({ targets: core, fillAlpha: 1, duration: 160 });
-          this.tweens.add({ targets: glow, scale: 1.15, yoyo: true, repeat: -1, duration: 900, delay: 260 });
+        // 段階281（開発者：明かりが不自然）：宙に光の玉を出さず、暗がりを残したまま電球の列を順に灯し、暗がりをゆっくり晴らす
+        const dark = this.darkOverlay(this.area.gates?.find((g) => g.room === this.state.room && g.look === 'dark')?.cells ?? []);
+        if (dark) this.world?.add(dark);
+        await wait(300);
+        for (const im of this.litDecor) {
+          this.tweens.add({ targets: im, alpha: 1, duration: 260 });
           playSe(this, SE.heal);
-          await wait(170);
+          await wait(260);
         }
-        await wait(200);
+        this.litDecor = [];
+        if (dark) await new Promise<void>((done) => this.tweens.add({ targets: dark, alpha: 0, duration: 900, onComplete: () => (dark.destroy(), done()) }));
+        await wait(150);
       } else if (step.do === 'flash') {
         // 花火：色を変えて光らせる
         const colors: [number, number, number][] = [[255, 200, 120], [160, 210, 255], [255, 150, 200]];
@@ -1858,20 +1888,24 @@ export class ExploreScene extends Phaser.Scene {
     return new Promise((done) => {
       if (!this.ui) return done();
       const box = this.add.container(0, 0);
-      const y = GAME_HEIGHT - 230;
       const hit = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.001).setOrigin(0).setInteractive();
       box.add(hit);
-      box.add(this.add.rectangle(12, y, GAME_WIDTH - 24, 96, 0x0b1020, 0.92).setOrigin(0).setStrokeStyle(2, 0xffd84a));
       // 段階280：話している写しの人の二頭身を、帯の左に小さく
       const left = art && hasImage(this, art) ? 84 : 26;
+      // 2026-11-24（開発者：文が帯からはみ出した）：文の高さに合わせて帯をのばす
+      const body = addText(this, left, 0, text, { size: 15, color: '#ffffff', wrap: GAME_WIDTH - left - 34, ja: true }).setLineSpacing(4);
+      const h = Math.max(96, body.height + 52);
+      const y = GAME_HEIGHT - 134 - h;
+      box.add(this.add.rectangle(12, y, GAME_WIDTH - 24, h, 0x0b1020, 0.92).setOrigin(0).setStrokeStyle(2, 0xffd84a));
       if (left > 26) {
-        const face = this.add.image(50, y + 92, art!).setOrigin(0.5, 1).setTint(0xf0d8b8);
+        const face = this.add.image(50, y + h - 4, art!).setOrigin(0.5, 1).setTint(0xf0d8b8);
         face.setScale(Math.min(64 / face.width, 88 / face.height));
         box.add(face);
       }
-      box.add(addText(this, left, y + 10, name, { size: 13, bold: true, color: '#ffd84a' }));
-      box.add(addText(this, left, y + 34, text, { size: 15, color: '#ffffff', wrap: GAME_WIDTH - left - 34, ja: true }).setLineSpacing(4));
-      box.add(addText(this, GAME_WIDTH - 24, y + 84, '▼', { size: 11, color: '#ffd84a' }).setOrigin(1, 1));
+      if (name) box.add(addText(this, left, y + 10, name, { size: 13, bold: true, color: '#ffd84a' }));
+      body.setY(y + (name ? 34 : 16));
+      box.add(body);
+      box.add(addText(this, GAME_WIDTH - 24, y + h - 12, '▼', { size: 11, color: '#ffd84a' }).setOrigin(1, 1));
       box.setAlpha(0);
       this.ui.add(box);
       this.tweens.add({ targets: box, alpha: 1, duration: 140 });
@@ -1908,7 +1942,14 @@ export class ExploreScene extends Phaser.Scene {
       this.state = state;
       this.keep(state);
       this.refreshVitals();
-      if (got.gift.kind === 'hint') this.redrawGadgets();
+      if (got.gift.kind === 'hint') {
+        this.redrawGadgets();
+        if (this.roomMapBox && this.ui) {
+          this.roomMapBox.destroy();
+          this.roomMapBox = this.drawRoomMap();
+          this.ui.add(this.roomMapBox);
+        }
+      }
       this.talkerBubbles.get(talker.id)?.setAlpha(0.35);
       playSe(this, SE.heal);
       for (const line of got.gift.text.split('\n')) {
@@ -1995,7 +2036,10 @@ export class ExploreScene extends Phaser.Scene {
   /** 全体の地図（段階47a）：入った部屋とつながり。今いる部屋は明るく */
   private drawRoomMap(): Phaser.GameObjects.Container {
     const pos = roomPositions(this.area);
-    const seen = this.state.visited.filter((id) => pos[id]);
+    // 段階281：場所の手がかりをもらった、まだ解いていない仕掛けのある部屋（まだ入っていない部屋でも出す）
+    const flags = this.state.flags ?? [];
+    const hinted = new Set((this.area.gadgets ?? []).filter((g) => flags.includes(`hint:${g.id}`) && !flags.includes(g.id) && g.room && pos[g.room]).map((g) => g.room!));
+    const seen = [...new Set([...this.state.visited, ...hinted])].filter((id) => pos[id]);
     const xs = seen.map((id) => pos[id][0]);
     const ys = seen.map((id) => pos[id][1]);
     const w = 18;
@@ -2021,6 +2065,11 @@ export class ExploreScene extends Phaser.Scene {
       const now = id === this.state.room;
       const exit = id === exitRoom;
       box.add(this.add.rectangle(x, y, w, h, now ? 0xffd84a : 0x3a4a5a).setStrokeStyle(exit ? 3 : 1, exit ? 0xffb020 : now ? 0xffffff : 0x8a9aaa));
+      if (hinted.has(id)) {
+        const mark = addText(this, x, y, '！', { size: 12, bold: true, color: '#ffd84a' }).setOrigin(0.5).setStroke('#3a2a00', 3);
+        box.add(mark);
+        this.tweens.add({ targets: mark, scale: 1.3, yoyo: true, repeat: -1, duration: 500 });
+      }
     }
     return box;
   }
