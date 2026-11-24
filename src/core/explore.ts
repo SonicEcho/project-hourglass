@@ -331,6 +331,8 @@ export interface AreaGadget extends InRoom, InNight {
 /** 晩の区切り（段階63）：コマが koma 個になると、その晩は終わる（最後の晩は書かなくてよい）。start は、その晩を始める所（1晩目は出発点） */
 export interface AreaNight {
   koma?: number;
+  /** 今夜の目的を物語の言葉で（段階284。上の帯に出すので15字まで） */
+  goal?: string;
   start?: { room?: string; cell: GridCell };
   /** 今夜の帰り口（段階67）。書かなければ、次の晩を始める所 */
   exit?: { room?: string; cell: GridCell };
@@ -1195,6 +1197,18 @@ export function nightGoal(area: AreaDef, state: ExploreState, night: number): { 
   const before = night > 1 ? (nights[night - 2]?.koma ?? 0) : 0;
   const until = last ? area.komaNeed : (nights[night - 1]?.koma ?? area.komaNeed);
   return { have: Math.max(0, Math.min(state.koma, until) - before), need: until - before, last };
+}
+
+/** 晩の目的の言葉の長さの上限（段階284。上の帯の幅） */
+export const NIGHT_GOAL_MAX = 15;
+
+/**
+ * 思い出の戻り具合（段階284）：返すのに要るコマのうち、手に入れた割合（0〜1）。
+ * 縁日の写しの人々に、色が戻っていく度合いに使う
+ */
+export function memoryRestored(area: AreaDef, state: ExploreState): number {
+  if (area.komaNeed <= 0) return 1;
+  return Math.max(0, Math.min(1, state.koma / area.komaNeed));
 }
 
 /**

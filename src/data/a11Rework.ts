@@ -384,7 +384,11 @@ export const A11_REWORK: AreaDef = {
   // 段階268：思い出を返した時の札（リカバリー）は、広場の提灯の仕掛けのごほうびへ移した（スナップの数は変えない）
   chainReturnSnaps: [],
   // 2晩目は広場の下のチェックポイントから、3晩目は石段の下のチェックポイントから
-  nights: [{ koma: 3 }, { koma: 6, start: { room: 'fest2_plaza', cell: [11, 19] } }, { start: { room: 'fest2_plaza', cell: [11, 5] } }],
+  nights: [
+    { koma: 3, goal: '兄妹の写しを追う' },
+    { koma: 6, goal: '迷子のひなのをさがす', start: { room: 'fest2_plaza', cell: [11, 19] } },
+    { goal: '社で金魚の名前を取り戻す', start: { room: 'fest2_plaza', cell: [11, 5] } },
+  ],
   walls: [
     // 広場の下から石段の下へ（2晩目から）・広場の右の出入口（東の屋台。2晩目から）・石段（3晩目から）
     { id: 'a11_wall_east', room: 'fest2_plaza', cells: box(22, 22, 10, 11), opens: 2 },
@@ -628,6 +632,21 @@ export const TALKER_ART: Record<string, string> = {
  * 段階283（開発者：本物の祭りっぽくない）：通り抜けられる写しの人々（通行人）。cell は足もと、walk は横に歩く範囲（列）。
  * left は、絵が左を向いているか（横を向いた絵だけ。歩く向きに合わせて左右を返す）
  */
+/**
+ * 写しの人々の見え方（段階284）。通行人と踊り手は、思い出が戻るほど（memoryRestored）セピアの透けた姿から色のある姿へ。
+ * 色が戻りきっても少し透けたまま（はっきり描く、話せる写しの人と混ざらない）
+ */
+export const CROWD_LOOK = {
+  /** 何も戻っていない時：セピアの色味と透け */
+  faded: { tint: 0xc8a880, alpha: 0.6 },
+  /** 戻りきった時 */
+  restored: { tint: 0xfff4ea, alpha: 0.82 },
+  /** コマを手に入れて戻った時、色が戻っていく長さ（ミリ秒） */
+  restoreMs: 1600,
+  /** 話せる写しの人の足元の光の輪の色と濃さ */
+  talkerGlow: { color: 0xfff0c0, alpha: 0.4, ring: 0xffd84a },
+};
+
 /** 通行人の絵の向き。左右に歩けるのは横向き（left/right）の絵だけ（段階283b） */
 export type CrowdFace = 'left' | 'right' | 'front' | 'back';
 
