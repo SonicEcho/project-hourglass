@@ -40,13 +40,17 @@ const GATE_LAYOUT = [
 /** gate の部品（段階276 で案3に作り直した）。鳥居（A11_DECOR）の柱の根もと (10,17)・(13,17) は GATE_LAYOUT で通れないマスにしてある */
 export const GATE_PARTS: RoomPart[] = [
   // 段階276（案3）：屋台は横に走る通りに並べる。通りの上は表（下を向く）、下は裏（上を向く屋台の裏側）。
-  // 焼きそばとおもちゃの間は、奥の物置へ抜ける2マスのすき間。通りの右の突き当たりは、角の屋台（売り場が通りと手前に開く）でふさぐ（開発者：右にも道が続いて見えた）
+  // 焼きそばとおもちゃの間は、奥の物置へ抜ける2マスのすき間。通りの右の突き当たりはふさぐ（開発者：右にも道が続いて見えた）
   { part: 's_takoyaki', cell: [3, 6], w: 3, d: 2, sw: 3.2 },
   { part: 's_ringo', cell: [6, 6], w: 2, d: 2, sw: 2.2 },
   { part: 's_wataame', cell: [8, 6], w: 2, d: 2, sw: 2.2 },
   { part: 's_yakisoba', cell: [14, 6], w: 3, d: 2, sw: 3.2 },
   { part: 's_toys', cell: [19, 6], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_corner', cell: [19, 10], w: 3, d: 4, sw: 3.4 },
+  // 突き当たり：横向きの屋台の絵が届くまでは、木と竹やぶでふさぐ（L字の角の屋台は不自然なので使わない。2026-11-24 開発者）
+  { part: 'cedar', cell: [20, 9], w: 2, d: 3, sw: 3 },
+  { part: 'bamboo_clump', cell: [19, 9], w: 1, d: 3, sw: 1.8 },
+  { part: 'tree', cell: [19, 10], w: 3, d: 1, sw: 3 },
+  { part: 'hydrangea', cell: [21, 10], w: 1, sw: 1.3 },
   { part: 'ramune_tub', cell: [9, 7], w: 1, sw: 1.1 },
   { part: 'b_small_red', cell: [1, 12], w: 2, d: 2, sw: 2.1 },
   { part: 'b_wide_stripe', cell: [3, 12], w: 4, d: 2, sw: 4.1 },
@@ -234,7 +238,7 @@ export const PLAZA_PARTS: RoomPart[] = [
   { part: 'stall_blue', cell: [19, 6], w: 3, d: 2, sw: 3.2 },
   { part: 'yagura', cell: [10, 16], w: 4, d: 3, sw: 4.4 },
   { part: 'stall_green', cell: [19, 15], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_corner', cell: [2, 16], w: 3, d: 2, sw: 3 },
+  { part: 's_yakisoba', cell: [2, 16], w: 3, d: 2, sw: 3.2 },
   { part: 'crates_yellow', cell: [1, 14], w: 1, sw: 0.9 },
   { part: 'stall_blue', cell: [5, 21], w: 3, d: 2, sw: 3.2 },
   { part: 'crates_red', cell: [8, 21], w: 1, sw: 0.9 },

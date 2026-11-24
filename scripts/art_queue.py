@@ -1241,6 +1241,22 @@ add('部品10：通りの暮らしの物', AI_REF, 'parts_street.png', af_parts(
     'a big potted plant (a pine bonsai in a ceramic pot).',
 ], ' Match the attached parts sheet exactly in scale, view, lighting and style.'))
 
+# ---- AJ. 横向きの屋台（作り直し。段階277） ----
+section('AJ. 横向きの屋台（作り直し。段階277）', '段階275 の横向きの屋台は、角から見た細長い箱のようで不自然だった。L字の角の屋台も不自然なので使わない（2026-11-24 開発者）。見え方を細かく決めて頼み直す。添付は、届いた正面の屋台の絵（`parts_stalls_front.png`）と入口の地面の絵（`ground3_fest2_gate.png`）。白い背景のままでよい。右向きがそろわない時は、左向きを Claude が左右反転して使う')
+add('部品11：横向きの屋台', ['parts_stalls_front.png（届いた正面の屋台の絵）', 'ground3_fest2_gate.png（届いた入口の地面の絵）'], 'parts_stalls_side.png', af_parts(2, 3, [
+    'the takoyaki stall of the attached sheet (red-and-white striped awning), turned 90 degrees so its counter faces LEFT.',
+    'the candy apple stall of the attached sheet (red awning), turned 90 degrees so its counter faces LEFT.',
+    'the yakisoba stall of the attached sheet (orange awning), turned 90 degrees so its counter faces LEFT.',
+    'the same takoyaki stall turned 90 degrees so its counter faces RIGHT (an exact mirror image of the first one).',
+    'the same candy apple stall facing RIGHT (an exact mirror image of the second one).',
+    'the same yakisoba stall facing RIGHT (an exact mirror image of the third one).',
+], """
+How a side-facing stall must look in this camera view (very important): the camera looks down from the bottom of the image at about 50 degrees, exactly like the attached front-facing stalls, and the stall is simply rotated in place. So we see:
+1. The ROOF mostly from above: a long rectangle that runs from top to bottom of the cell (taller than wide on the screen, about 2 steps wide and 3 steps tall), with the striped awning edge hanging down along its long side on the counter side.
+2. At the bottom of the object, the SHORT END of the stall facing the viewer: one narrow side panel or curtain about 2 steps wide, with the counter's end visible.
+3. Along the counter side, under the awning, the counter and the goods seen from above at a steep angle (griddles, apples, noodles). The other long side is a plain tarp back wall, seen only as a thin strip.
+It is NOT a box seen from a corner, NOT a two-point perspective view, and NOT a front view squeezed narrow. Vertical poles stay perfectly vertical. Same scale, colors, lighting and line style as the attached front-facing stalls."""), '見え方を細かく指示した。うまくいかない時は「屋根は上から見て縦に長い四角。角から見た箱にしない」と一言足す')
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1253,7 +1269,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
