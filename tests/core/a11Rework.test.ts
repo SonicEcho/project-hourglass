@@ -134,8 +134,8 @@ describe('仕掛けと仲間の力（段階264）', () => {
     const s = startExplore(area);
     expect(useGadget(area, s, g('p_song'), ['hero'], at0).solved).toEqual([]);
     expect(useGadget(area, s, g('p_song'), ['hero', 'akari'], at0).solved).toEqual(['p_song']);
-    expect(useGadget(area, s, g('l_vending'), ['hero', 'akari'], at0).solved).toEqual([]);
-    expect(useGadget(area, s, g('l_vending'), ['hero', 'mio'], at0).solved).toEqual(['l_vending']);
+    expect(useGadget(area, s, g('l_bamboo'), ['hero', 'akari'], at0).solved).toEqual([]);
+    expect(useGadget(area, s, g('l_bamboo'), ['hero', 'sayoko'], at0).solved).toEqual(['l_bamboo']);
   });
 
   it('順番：提灯は右 → 左 → 下。まちがえると灯った物が消える。そろうと、やぐらの前に宝箱が出る', async () => {

@@ -254,10 +254,10 @@ const EAST_LAYOUT = [
   '########################',
   '########################',
   '##################...###',
-  '#....................###',
-  '#.##################.###',
-  '#.##################.###',
-  '#....................###',
+  '##...................###',
+  '##.#################.###',
+  '##.#################.###',
+  '##...................###',
   '......................##',
   '......................##',
   '......................##',
@@ -279,19 +279,20 @@ const EAST_LAYOUT = [
 /** east の部品（段階274） */
 export const EAST_PARTS: RoomPart[] = [
   // 段階279（案3）：上の屋台の列（お面屋3軒は仕掛けの絵・射的・おもちゃ・のぼり）は表の通りを向く。その裏の1マスの道が隠し通路
-  // （入口は左の端の、屋台と家の壁のすき間。誘導しない）。真ん中は屋台の裏の列と、板でふさいだ囲い。下の通りの左に金魚すくい
-  { part: 'shateki', cell: [11, 6], w: 5, d: 2, sw: 5.2 },
-  { part: 's_toys', cell: [16, 6], w: 3, d: 2, sw: 3.2 },
-  { part: 'nobori', cell: [19, 6], w: 1, sw: 0.9 },
+  // （入口は左の端の、屋台と家の壁のすき間。誘導しない。家の壁の上を歩かないよう、すき間は3列目）。真ん中は屋台の裏の列と、板でふさいだ囲い。下の通りの左に金魚すくい
+  { part: 'shateki', cell: [12, 6], w: 5, d: 2, sw: 5.2 },
+  { part: 's_toys', cell: [17, 6], w: 3, d: 2, sw: 3.2 },
+  // 右の端は自販機でふさぐ（飾り。2026-11-24 開発者：仕掛けの自販機は意味がなかったので外した）
+  { part: 'vending', cell: [20, 6], w: 1, d: 2, sw: 1.1 },
   { part: 'b_small_red', cell: [2, 12], w: 2, d: 2, sw: 2.1 },
   { part: 'b_wide_stripe', cell: [4, 12], w: 4, d: 2, sw: 4.1 },
   { part: 'lantern_boxes', cell: [8, 12], w: 1, d: 2, sw: 1.3 },
-  { part: 'kegs', cell: [3, 14], w: 2, sw: 1.6 },
-  { part: 'crates_tarp', cell: [6, 14], w: 2, sw: 1.7 },
+  { part: 'kegs', cell: [3, 13], w: 2, sw: 1.4 },
+  { part: 'crates_tarp', cell: [6, 13], w: 2, sw: 1.4 },
   { part: 'b_wood', cell: [15, 12], w: 3, d: 2, sw: 3.1 },
   { part: 'b_blue', cell: [18, 12], w: 3, d: 2, sw: 3.1 },
-  { part: 'generator2', cell: [16, 14], w: 1, sw: 1.2 },
-  { part: 'firewood', cell: [19, 14], w: 1, sw: 1.2 },
+  { part: 'generator2', cell: [16, 13], w: 1, sw: 1 },
+  { part: 'firewood', cell: [19, 13], w: 1, sw: 1 },
   { part: 'kingyo', cell: [2, 17], w: 5, d: 2, sw: 5.2 },
   { part: 'tea_bench', cell: [12, 16], w: 2, sw: 1.9 },
   { part: 'ramune_tub', cell: [14, 16], w: 1, sw: 1.1 },
@@ -466,10 +467,9 @@ export const A11_REWORK: AreaDef = {
     { id: 'p_cart', room: 'fest2_lane', night: 2, cell: [4, 6], kind: 'push', from: [4, 5], mark: '車', label: '荷車', need: '坂の途中の荷車。坂の上から押せば、転がりそう', done: '荷車を押した！' },
     { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [20, 2], kind: 'item', mark: '面', label: '白い狐のお面', done: '白い狐のお面を拾った。どこかのお面屋の物みたい' },
     // 東の屋台：お面屋が3軒。白い狐の店に届ける（2晩目）
-    { id: 'p_mask', room: 'fest2_east', night: 2, cell: [3, 6], kind: 'use', needs: 'p_mask_item', mark: '白', label: '白い狐のお面屋', need: '白い狐のお面屋「白い狐のお面がひとつ、見当たらなくてねえ」', done: '白い狐のお面屋「おお、それそれ！ ありがとよ。お礼に、裏の囲いを通っていいよ」' },
-    { id: 'p_shop_black', room: 'fest2_east', night: 2, cell: [6, 6], kind: 'look', mark: '黒', label: '黒い狐のお面屋', done: '黒い狐のお面屋「うちは黒い狐だけだよ。白いのは、うちのじゃないね」' },
-    { id: 'p_shop_gold', room: 'fest2_east', night: 2, cell: [9, 6], kind: 'look', mark: '金', label: '金の狐のお面屋', done: '金の狐のお面屋「うちのは金ぴかの狐さ。ほかを当たっておくれ」' },
-    { id: 'l_vending', room: 'fest2_east', cell: [20, 6], kind: 'later', ally: 'mio', mark: '雷', label: '止まった自販機', need: '止まった自販機。……電気を流せる人がいれば', done: 'みおが自販機を動かした（この先は、また今度）' },
+    { id: 'p_mask', room: 'fest2_east', night: 2, cell: [4, 6], kind: 'use', needs: 'p_mask_item', mark: '白', label: '白い狐のお面屋', need: '白い狐のお面屋「白い狐のお面がひとつ、見当たらなくてねえ」', done: '白い狐のお面屋「おお、それそれ！ ありがとよ。お礼に、裏の囲いを通っていいよ」' },
+    { id: 'p_shop_black', room: 'fest2_east', night: 2, cell: [7, 6], kind: 'look', mark: '黒', label: '黒い狐のお面屋', done: '黒い狐のお面屋「うちは黒い狐だけだよ。白いのは、うちのじゃないね」' },
+    { id: 'p_shop_gold', room: 'fest2_east', night: 2, cell: [10, 6], kind: 'look', mark: '金', label: '金の狐のお面屋', done: '金の狐のお面屋「うちのは金ぴかの狐さ。ほかを当たっておくれ」' },
     // 縁日の広場：あかりが歌う（人混みが道をあける）
     { id: 'p_song', room: 'fest2_plaza', cell: [18, 17], kind: 'ability', ally: 'akari', mark: '歌', label: '人混み', need: '人混みで通れない', done: 'あかりが小さく歌うと、写しの人たちが振り向いて、道をあけた' },
     // 縁日の広場：提灯を思い出の一枚の順（赤 → 白 → 青）に灯す（3晩目）
@@ -586,7 +586,6 @@ export const A11_PROP_ART: Record<string, { off: string; on?: string; w: number 
   p_mask: { off: 'prop.stall_white', w: 3.1 },
   p_shop_black: { off: 'prop.stall_black', w: 3.1 },
   p_shop_gold: { off: 'prop.stall_gold', w: 3.1 },
-  l_vending: { off: 'prop.vending', w: 1.1 },
   p_lantern1: { off: 'prop.lantern_red_off', on: 'prop.lantern_red_on', w: 1.1 },
   p_lantern2: { off: 'prop.lantern_white_off', on: 'prop.lantern_white_on', w: 1.1 },
   p_lantern3: { off: 'prop.lantern_blue_off', on: 'prop.lantern_blue_on', w: 1.1 },
