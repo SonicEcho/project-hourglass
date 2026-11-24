@@ -1290,6 +1290,21 @@ These are townspeople at a Japanese summer shrine festival in the late Heisei er
 - Row 2, column 3: a high school boy in a plain T-shirt and shorts with a towel around his neck, holding a bottle of ramune.
 Soft cel shading, clear dark outline so each character reads at a very small size.""", '上の段の3人が、新しい1-1 で話しかけられる人（浴衣の女の人・わたあめ屋・金魚すくいのおじさん）。下の段は、ほかの区画や人混みに使う')
 
+# ---- AM. 案3：縁日の広場（段階282） ----
+section('AM. 案3：縁日の広場の地面の絵（段階282）', '入口・東の屋台と同じ作り方。真ん中にやぐら、屋台は広場のふちに広場を向いて並べる（上は表、左右は横向き、下は裏）。添付は、作りの下書き（`docs/sketches/a11_v3/plaza_plan.png`）と、届いた入口の地面の絵（`ground3_fest2_gate.png`）')
+add('地面の絵：縁日の広場（案3）', ['docs/sketches/a11_v3/plaza_plan.png（作りの下書き）', 'ground3_fest2_gate.png（届いた入口の地面の絵）'], 'ground3_fest2_plaza.png', f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the yagura tower, the stalls, benches and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale, colors and dusk lighting.
+{AF_CAM}
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Scene: the central plaza of a summer shrine festival at dusk, the liveliest place of the festival.
+- A wide, roughly square open plaza of packed earth, with a large area of old stone paving in the center (where the yagura drum tower will stand) and stone-paved paths leading from it to the four exits.
+- Top center: old stone steps (about 4 steps wide) climb up between trees and leave through the top edge toward the shrine woods.
+- Exits: the stone steps at the top, a stone path through the bottom edge in the center, and dirt paths through the left edge and the right edge in the middle (each about 4 steps wide).
+- Around the edge of the plaza, strips of packed earth where stalls will stand: along the top on both sides of the steps, along the left and right sides, and along the bottom on both sides of the bottom path.
+- The corners and the rest of the edges: dense trees, bushes and a low old stone wall.
+Keep everything inside the frame open ground: absolutely NO yagura, stalls, tents, crates, benches, lanterns, people or text. Absolutely no letters or text anywhere.""", '下書きは位置の目安')
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1302,7 +1317,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
