@@ -1038,7 +1038,8 @@ const flagged = (state: ExploreState, id: string): boolean => (state.flags ?? []
 
 /** まだ解いていない仕掛けの扉 */
 export function closedGates(area: AreaDef, state: ExploreState, room?: string): AreaGate[] {
-  return (area.gates ?? []).filter((g) => !flagged(state, g.by) && (room === undefined || inRoom(area, g, room)));
+  // 段階281：by は仕掛けの flag か、倒した敵の id（池の霧の砂嵐を倒すと晴れる）
+  return (area.gates ?? []).filter((g) => !flagged(state, g.by) && !state.defeated.includes(g.by) && (room === undefined || inRoom(area, g, room)));
 }
 
 /** その晩の、地図に出ている仕掛け。拾った品と、解けた後の道をふさいでいた物（押した荷車・道をあけた人混み・晴れた霧）は出さない */
@@ -1153,7 +1154,7 @@ export function checkEvents(area: AreaDef): string[] {
     const bi = ev.steps.findIndex((st) => st.do === 'battle');
     if (bi >= 0 && bi !== ev.steps.length - 1) errors.push(`${area.id}：地図の出来事 ${ev.id} の戦闘が最後でない`);
     const when = ev.when;
-    if (when.on === 'solved' && !(area.gadgets ?? []).some((g) => g.id === when.flag || g.group === when.flag)) errors.push(`${area.id}：地図の出来事 ${ev.id} の仕掛け ${when.flag} がない`);
+    if (when.on === 'solved' && !(area.gadgets ?? []).some((g) => g.id === when.flag || g.group === when.flag) && !area.enemies.some((e) => e.id === when.flag)) errors.push(`${area.id}：地図の出来事 ${ev.id} の仕掛け ${when.flag} がない`);
   }
   return errors;
 }

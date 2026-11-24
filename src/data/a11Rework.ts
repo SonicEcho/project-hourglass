@@ -280,6 +280,9 @@ const EAST_LAYOUT = [
 
 /** east の部品（段階274） */
 export const EAST_PARTS: RoomPart[] = [
+  // 段階281：黒い狐・金の狐のお面屋は、仕掛けでなく飾り（白い狐の店だけが落とし物に困っている）
+  { part: 'mask_black', cell: [6, 6], w: 3, d: 2, sw: 3.1 },
+  { part: 'mask_gold', cell: [9, 6], w: 3, d: 2, sw: 3.1 },
   // 段階279（案3）：上の屋台の列（お面屋3軒は仕掛けの絵・射的・おもちゃ・のぼり）は表の通りを向く。その裏の1マスの道が隠し通路
   // （入口は左の端の、屋台と家の壁のすき間。誘導しない。家の壁の上を歩かないよう、すき間は3列目）。真ん中は屋台の裏の列と、板でふさいだ囲い。下の通りの左に金魚すくい
   { part: 'shateki', cell: [12, 6], w: 5, d: 2, sw: 5.2 },
@@ -411,15 +414,15 @@ export const A11_REWORK: AreaDef = {
     { id: 'a11_chest_vending', room: 'fest2_east', cell: [19, 3], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.balloonShard.id] },
     { id: 'a11_chest_hidden', room: 'fest2_east', cell: [17, 4], night: 2, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
     { id: 'a11_chest_new2', room: 'fest2_plaza', cell: [3, 5], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
-    // 提灯を思い出の順に灯すと、やぐらの前に出る。中身は、思い出を返した時からここへ移したリカバリー
-    { id: 'a11_chest_new1', room: 'fest2_plaza', cell: [13, 18], night: 3, needs: 'p_lanterns', items: [ITEMS.balloonShard.id], chainSnaps: ['a11_recovery'] },
+    // 段階281：池の真ん中の石の上（霧が晴れると渡れる）。中身は、思い出を返した時からここへ移したリカバリー
+    { id: 'a11_chest_new1', room: 'fest2_woods', cell: [12, 10], night: 3, items: [ITEMS.balloonShard.id], chainSnaps: ['a11_recovery'] },
     { id: 'a11_chest_woods', room: 'fest2_woods', cell: [22, 11], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
   ],
   enemies: [
     // ---- 1晩目 ----
     { id: 'a11_e_gate', room: 'fest2_gate', patrol: [[11, 4], [11, 16]], battle: 'a11_n1_gate' },
-    // 入口の待ち伏せ（参道を上ると、屋台の陰から飛び出してくる。地図の出来事 ev_gate_ambush）
-    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', hidden: true, patrol: [[18, 9], [18, 10]], battle: 'a11_n1_chaser' },
+    // 段階281：入口の待ち伏せの出来事はやめた。屋台通りを見回る（地図の出来事 ev_gate_ambush）
+    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', patrol: [[14, 9], [19, 9]], battle: 'a11_n1_chaser' },
     { id: 'a11_e_back', room: 'fest2_backyard', patrol: [[7, 9], [13, 9], [13, 13], [7, 13]], battle: 'a11_n1_back' },
     // 発電機を直して明かりがつくと、暗がりから現れて逃げる（地図の出来事 ev_generator）
     { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[12, 21]], battle: 'a11_runner' },
@@ -437,81 +440,52 @@ export const A11_REWORK: AreaDef = {
     // ---- 3晩目 ----
     { id: 'a11_e_steps', room: 'fest2_plaza', night: 3, patrol: [[15, 7], [18, 7]], battle: 'a11_n3_steps' },
     { id: 'a11_e_right', room: 'fest2_plaza', night: 3, move: 'chase', patrol: [[18, 13], [18, 17]], battle: 'a11_n3_right' },
-    { id: 'a11_e_woods1', room: 'fest2_woods', night: 3, move: 'chase', patrol: [[20, 13], [20, 16]], battle: 'a11_n3_woods1' },
+    { id: 'a11_e_woods1', room: 'fest2_woods', night: 3, move: 'chase', patrol: [[16, 15], [20, 15]], battle: 'a11_n3_woods1' },
     { id: 'a11_e_woods2', room: 'fest2_woods', night: 3, patrol: [[14, 4], [20, 4]], battle: 'a11_n3_woods2' },
   ],
   boss: { ...base.boss, room: 'fest2_woods', cell: [12, 3] },
   // 写しの人（段階265 のくれる物つき）：1つの部屋の1つの晩に1人まで（広場の1晩目と社の森は2人）
   talkers: [
-    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [6, 18], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_knob', text: '浴衣の女の人「発電機のつまみ？ 赤いテントの横の箱に入れたって、誰かが言ってたわ」\n（地図に印が付いた）' } },
+    { id: 'a11_voice_yukata', room: 'fest2_gate', cell: [6, 18], until: 1, scene: 'a11_voice_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_fuel', text: '浴衣の女の人「さっき小さな女の子が、屋台の裏の暗がりへ走っていったの。発電機が止まって、裏は真っ暗よ。燃料なら物置の木箱にあるって、屋台の人が言ってたわ」\n（地図に印が付いた）' } },
     { id: 'a11_voice_cotton', room: 'fest2_plaza', cell: [16, 12], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「甘いの食べて、ひと休みしな」\n（HP・MP が少し回復した）' } },
     { id: 'a11_voice_goldfish', room: 'fest2_plaza', cell: [7, 18], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'goldfishNoise', element: 'ice', text: '金魚すくいのおじさん「さっきの金魚みたいな砂嵐、冷たいのが苦手みたいだったよ」\n（金魚ノイズの弱点：氷 が分かった）' } },
     { id: 'a11_voice2_cotton', room: 'fest2_plaza', cell: [18, 4], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「疲れた顔してるね。ほら、ひと口」\n（HP・MP が少し回復した）' } },
     { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [9, 11], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_mask', text: '浴衣の女の人「東の屋台のお面屋さん、白い狐のお面をなくして困ってたわ」\n（地図に印が付いた）' } },
     { id: 'a11_voice2_goldfish', room: 'fest2_east', cell: [8, 18], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'maskNoise', element: 'fire', text: '金魚すくいのおじさん「お面の砂嵐は、火に弱いらしいぜ」\n（お面ノイズの弱点：火 が分かった）' } },
-    { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [8, 7], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_lantern1', text: '浴衣の女の人「やぐらの提灯？ ……思い出した順に灯すといいわ。あの夜の順番に」\n（地図に印が付いた）' } },
+    { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [8, 7], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'm_pond', text: '浴衣の女の人「社の森の池？ 霧の近くに、いやな砂嵐がうろついてたわ。あの霧、あれのせいじゃないかしら」\n（地図に印が付いた）' } },
     { id: 'a11_voice3_goldfish', room: 'fest2_woods', cell: [7, 18], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'cottonNoise', element: 'thunder', text: '金魚すくいのおじさん「わたあめの砂嵐は、ビリッとくるのが苦手でな」\n（わたあめノイズの弱点：雷 が分かった）' } },
     { id: 'a11_voice3_cotton', room: 'fest2_woods', cell: [17, 17], night: 3, scene: 'a11_voice3_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「ここまで来たんだ、もうひと踏ん張り」\n（HP・MP が少し回復した）' } },
   ],
   // 仕掛けの扉（段階264）：仕掛けを解くまで通れない
   gates: [
     { id: 'g_dark', room: 'fest2_backyard', cells: box(7, 20, 20, 22), by: 'p_generator', look: 'dark', label: '停電で真っ暗' },
-    { id: 'g_fence', room: 'fest2_lane', cells: box(3, 4, 17, 17), by: 'p_cart', look: 'fence', label: '板のかべ' },
-    { id: 'g_crowd', room: 'fest2_plaza', cells: box(18, 18, 16, 19), by: 'p_song', look: 'crowd', label: '人混み' },
     { id: 'g_gap', room: 'fest2_east', cells: box(10, 13, 11, 11), by: 'p_mask', look: 'fence', label: '屋台の裏の囲いの板' },
-    { id: 'g_stones', room: 'fest2_woods', cells: [...box(11, 11, 6, 17), ...box(4, 10, 11, 11), ...box(12, 19, 11, 11)], by: 'p_camera', look: 'water', label: '池の霧' },
+    // 段階281：池の霧は、池の思い出を食べている砂嵐（a11_e_woods1）。倒すと晴れる（扉の by は、仕掛けの flag か、倒した敵の id）
+    { id: 'g_stones', room: 'fest2_woods', cells: [...box(11, 11, 6, 17), ...box(4, 10, 11, 11), ...box(12, 19, 11, 11)], by: 'a11_e_woods1', look: 'water', label: '池の霧' },
   ],
   // 仕掛けと仲間の力（段階264・268）。1部屋に1つまで。考える所：木箱はテントの色、お面は店の狐の色、提灯は思い出の一枚の順
   gadgets: [
     // 屋台の裏：木箱が3つ。赤いテントの横の箱に、発電機のつまみ（浴衣の女の人の手がかり）
-    { id: 'p_crate_blue', room: 'fest2_backyard', cell: [5, 6], kind: 'look', mark: '青', label: '青いテントの横の木箱', done: '青いテントの横の木箱。……からっぽだ' },
-    { id: 'p_knob', room: 'fest2_backyard', cell: [8, 6], kind: 'item', mark: '赤', label: '赤いテントの横の木箱', done: '赤いテントの横の木箱に、発電機のつまみが入っていた！' },
-    { id: 'p_crate_yellow', room: 'fest2_backyard', cell: [11, 6], kind: 'look', mark: '黄', label: '黄色いテントの横の木箱', done: '黄色いテントの横の木箱。……ラムネの空き瓶しか入っていない' },
-    { id: 'p_generator', room: 'fest2_backyard', cell: [10, 11], kind: 'use', needs: 'p_knob', mark: '発', label: '発電機', need: '止まった発電機。つまみが外れている', done: 'つまみを付けると、発電機がうなりを上げた！' },
-    { id: 'l_door', room: 'fest2_backyard', cell: [20, 20], kind: 'later', ally: 'hayase', mark: '直', label: '壊れた木戸', need: '壊れた木戸。……直せる人がいれば', done: '早瀬が木戸を直した（この先は、また今度）' },
+    // 段階281：物置の木箱に、発電機の燃料の缶（浴衣の女の人が教えてくれる）
+    { id: 'p_fuel', room: 'fest2_backyard', cell: [8, 6], kind: 'item', mark: '缶', label: '物置の木箱', done: '物置の木箱の中に、発電機の燃料の缶があった！' },
+    { id: 'p_generator', room: 'fest2_backyard', cell: [10, 11], kind: 'use', needs: 'p_fuel', mark: '発', label: '発電機', need: '止まった発電機。……燃料が切れている', done: '燃料を入れて紐を引くと、発電機がうなりを上げた！' },
     // 屋台の裏通り：坂の上の荷車を、上から押す（2晩目）。転がり落ちて板のかべを突き破る
-    { id: 'p_cart', room: 'fest2_lane', night: 2, cell: [4, 6], kind: 'push', from: [4, 5], mark: '車', label: '荷車', need: '坂の途中の荷車。坂の上から押せば、転がりそう', done: '荷車を押した！' },
-    { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [20, 2], kind: 'item', mark: '面', label: '白い狐のお面', done: '白い狐のお面を拾った。どこかのお面屋の物みたい' },
+    { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [20, 2], kind: 'item', mark: '面', label: '白い狐のお面', done: '白い狐のお面を拾った。どこかのお面屋の売り物みたい' },
     // 東の屋台：お面屋が3軒。白い狐の店に届ける（2晩目）
-    { id: 'p_mask', room: 'fest2_east', night: 2, cell: [4, 6], kind: 'use', needs: 'p_mask_item', mark: '白', label: '白い狐のお面屋', need: '白い狐のお面屋「白い狐のお面がひとつ、見当たらなくてねえ」', done: '白い狐のお面屋「おお、それそれ！ ありがとよ。お礼に、裏の囲いを通っていいよ」' },
-    { id: 'p_shop_black', room: 'fest2_east', night: 2, cell: [7, 6], kind: 'look', mark: '黒', label: '黒い狐のお面屋', done: '黒い狐のお面屋「うちは黒い狐だけだよ。白いのは、うちのじゃないね」' },
-    { id: 'p_shop_gold', room: 'fest2_east', night: 2, cell: [10, 6], kind: 'look', mark: '金', label: '金の狐のお面屋', done: '金の狐のお面屋「うちのは金ぴかの狐さ。ほかを当たっておくれ」' },
+    { id: 'p_mask', room: 'fest2_east', night: 2, cell: [4, 6], kind: 'use', needs: 'p_mask_item', mark: '白', label: '白い狐のお面屋', need: '白い狐のお面屋「売り物のお面を、どこかで一つ落としちまってね。白い狐のやつだ」', done: '白い狐のお面屋「おお、それそれ！ ありがとよ。お礼に、裏の囲いを通っていいよ」' },
     // 2026-11-24：止まった自販機が、右上の奥への細い道をふさぐ。みおが編成にいれば電気を流して動かし、通れる（1-1 の時はまだいないので、後で来る所）
     { id: 'l_vending', room: 'fest2_east', night: 2, cell: [20, 6], kind: 'ability', ally: 'mio', mark: '雷', label: '止まった自販機', need: '止まった自販機が、奥への細い道をふさいでいる。……電気を流せる人がいれば', done: 'みおが自販機に電気を流すと、ガタンと動いて、奥への道があいた！' },
     // 縁日の広場：あかりが歌う（人混みが道をあける）
-    { id: 'p_song', room: 'fest2_plaza', cell: [18, 17], kind: 'ability', ally: 'akari', mark: '歌', label: '人混み', need: '人混みで通れない', done: 'あかりが小さく歌うと、写しの人たちが振り向いて、道をあけた' },
     // 縁日の広場：提灯を思い出の一枚の順（赤 → 白 → 青）に灯す（3晩目）
-    { id: 'p_lantern1', room: 'fest2_plaza', night: 3, cell: [8, 15], kind: 'order', group: 'p_lanterns', index: 0, mark: '赤', label: '赤い提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろった！' },
-    { id: 'p_lantern2', room: 'fest2_plaza', night: 3, cell: [15, 15], kind: 'order', group: 'p_lanterns', index: 1, mark: '白', label: '白い提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろった！' },
-    { id: 'p_lantern3', room: 'fest2_plaza', night: 3, cell: [11, 18], kind: 'order', group: 'p_lanterns', index: 2, mark: '青', label: '青い提灯', need: '提灯がふっと消えた……順番がちがうみたい', done: '3つの提灯がそろった！' },
     // 社の森：ハルトのカメラで写す（3晩目）
-    { id: 'p_camera', room: 'fest2_woods', night: 3, cell: [11, 18], kind: 'ability', ally: 'hero', mark: 'カ', label: '池の霧', need: '池に霧が立ちこめている', done: 'ハルトがカメラを向けると、霧の中に飛び石が写った！' },
-    { id: 'l_bamboo', room: 'fest2_woods', night: 3, cell: [1, 11], kind: 'later', ally: 'sayoko', mark: '刀', label: '竹やぶ', need: '竹やぶで通れない。……切れる人がいれば', done: '小夜子が竹やぶを切った（この先は、また今度）' },
     // 思い出の一枚（段階265）：4枚。3枚に、あの夜の提灯の色が出てくる（赤 → 白 → 青。広場の提灯の答え）
     { id: 'm_gate', room: 'fest2_gate', cell: [13, 11], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（鳥居の前）\n赤い提灯の下で、浴衣の女の子が、兄の袖を引っぱっている。「お兄ちゃん、はやく！」' },
     { id: 'm_yagura', room: 'fest2_plaza', cell: [20, 17], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（やぐらの陰）\n白い提灯の明かりで、男の子が小さな財布の中身を数えている。……金魚すくい、一回分' },
     { id: 'm_shooting', room: 'fest2_east', cell: [10, 13], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（屋台の裏の囲い）\n青い提灯の下、金魚の袋を抱えた女の子が、泣きべそで兄を呼んでいる' },
-    { id: 'm_pond', room: 'fest2_woods', night: 3, cell: [12, 10], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（池のほとり）\n二人で金魚の袋をのぞきこむ。「この子の名前、なんにする？」' },
+    { id: 'm_pond', room: 'fest2_woods', night: 3, cell: [10, 10], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（池のほとり）\n二人で金魚の袋をのぞきこむ。「この子の名前、なんにする？」' },
   ],
   // 地図の出来事（段階266・268）：1部屋に1つの見せ場
   events: [
-    {
-      id: 'ev_gate_ambush',
-      room: 'fest2_gate',
-      when: { on: 'enter', cells: [[10, 15], [11, 15], [12, 15], [13, 15]] },
-      steps: [
-        // 2026-11-24（開発者：流れが意味不明）：先に屋台の陰を見せてから湧かせ、こちらへ走ってくる所まで見せてから戦闘
-        { do: 'shake' },
-        { do: 'say', name: 'ハルト', text: '……今、通りの奥の屋台の陰で、何か動いた' },
-        { do: 'camera', to: [18, 9], ms: 450 },
-        { do: 'spawn', enemy: 'a11_e_gate_chase' },
-        { do: 'say', name: 'あかり', text: '砂嵐……！ あそこに隠れて、待ち伏せしてたんだ' },
-        { do: 'walk', who: 'a11_e_gate_chase', to: [12, 13] },
-        { do: 'camera', to: 'hero', ms: 300 },
-        { do: 'say', name: 'ハルト', text: 'こっちに来る！ ……やるしかない' },
-        { do: 'battle', enemy: 'a11_e_gate_chase' },
-      ],
-    },
     {
       id: 'ev_generator',
       room: 'fest2_backyard',
@@ -521,20 +495,12 @@ export const A11_REWORK: AreaDef = {
         { do: 'camera', to: [12, 21], ms: 450 },
         { do: 'light', cells: [[16, 19], [18, 20], [19, 21], [16, 22], [13, 22], [10, 21], [8, 20]] },
         { do: 'say', name: 'ハルト', text: '明かりがついた……路地の奥まで見える' },
+        { do: 'say', name: '？？？', text: '……おにいちゃん……どこ……' },
+        { do: 'say', name: 'あかり', text: '今の、女の子の声……！ 浴衣の人が言ってた子だ' },
         { do: 'spawn', enemy: 'a11_e_runner' },
         { do: 'camera', to: [12, 21], ms: 400 },
-        { do: 'say', name: 'あかり', text: 'あっ、何か逃げてく！ 追いかけよう' },
+        { do: 'say', name: 'ハルト', text: '砂嵐が、あの子の声を抱えて逃げていく。追いかけるぞ' },
         { do: 'camera', to: 'hero', ms: 400 },
-      ],
-    },
-    {
-      id: 'ev_cart',
-      room: 'fest2_lane',
-      when: { on: 'solved', flag: 'p_cart' },
-      steps: [
-        { do: 'slide', mark: '車', from: [4, 6], to: [4, 17] },
-        { do: 'shake' },
-        { do: 'say', name: 'ハルト', text: '板のかべが……破れた。屋台の裏まで、まっすぐ抜けられる' },
       ],
     },
     {
@@ -543,6 +509,7 @@ export const A11_REWORK: AreaDef = {
       night: 2,
       when: { on: 'enter', cells: [[8, 16], [8, 17], [8, 18], [1, 15], [1, 16]] },
       steps: [
+        { do: 'say', name: '金魚すくいのおじさん', text: '水槽のポンプの音が、さっきから変なんだ……近づかないほうがいい' },
         { do: 'say', name: 'ハルト', text: '……水の音？' },
         { do: 'shake' },
         { do: 'camera', to: [4, 17], ms: 350 },
@@ -553,16 +520,17 @@ export const A11_REWORK: AreaDef = {
       ],
     },
     {
-      id: 'ev_lanterns',
-      room: 'fest2_plaza',
-      when: { on: 'solved', flag: 'p_lanterns' },
+      // 段階281：池の霧の砂嵐を倒すと、霧が晴れて飛び石が見える。池の真ん中は、兄妹が金魚に名前を付けた場所
+      id: 'ev_pond',
+      room: 'fest2_woods',
+      night: 3,
+      when: { on: 'solved', flag: 'a11_e_woods1' },
       steps: [
-        { do: 'camera', to: [11, 15], ms: 450 },
-        { do: 'shake' },
-        { do: 'say', name: 'ハルト', text: 'ドン、ドン……やぐらの太鼓が鳴ってる' },
-        { do: 'light', cells: [[8, 15], [15, 15], [11, 18], [13, 18]] },
-        { do: 'say', name: 'あかり', text: 'やぐらの前で、何か光ってる！' },
-        { do: 'camera', to: 'hero', ms: 400 },
+        { do: 'camera', to: [11, 11], ms: 500 },
+        { do: 'flash', times: 1 },
+        { do: 'say', name: 'ハルト', text: '霧が……晴れていく' },
+        { do: 'say', name: 'あかり', text: 'あの砂嵐が、池の思い出を食べてたんだね。……飛び石の先、池の真ん中に何かある' },
+        { do: 'camera', to: 'hero', ms: 500 },
       ],
     },
     {
@@ -588,21 +556,11 @@ export const A11_REWORK: AreaDef = {
  * w は絵の幅（マス）。絵はマスの下の端にそろえて置く。絵がまだ読めない時は、今までの仮の印（ひし形）で描く
  */
 export const A11_PROP_ART: Record<string, { off: string; on?: string; w: number }> = {
-  p_crate_blue: { off: 'prop.crate_blue', w: 1.15 },
-  p_knob: { off: 'prop.crate_red', w: 1.15 },
-  p_crate_yellow: { off: 'prop.crate_yellow', w: 1.15 },
+  p_fuel: { off: 'prop.crate_red', w: 1.15 },
   p_generator: { off: 'prop.generator_off', on: 'prop.generator_on', w: 1.4 },
-  l_door: { off: 'prop.door_broken', w: 1.4 },
-  p_cart: { off: 'prop.cart', w: 1.4 },
   p_mask_item: { off: 'prop.mask_white', w: 0.8 },
   p_mask: { off: 'prop.stall_white', w: 3.1 },
-  p_shop_black: { off: 'prop.stall_black', w: 3.1 },
-  p_shop_gold: { off: 'prop.stall_gold', w: 3.1 },
-  p_lantern1: { off: 'prop.lantern_red_off', on: 'prop.lantern_red_on', w: 1.1 },
-  p_lantern2: { off: 'prop.lantern_white_off', on: 'prop.lantern_white_on', w: 1.1 },
-  p_lantern3: { off: 'prop.lantern_blue_off', on: 'prop.lantern_blue_on', w: 1.1 },
   l_vending: { off: 'prop.vending', w: 1.1 },
-  l_bamboo: { off: 'prop.bamboo', w: 1.6 },
   m_gate: { off: 'prop.photo', w: 0.8 },
   m_yagura: { off: 'prop.photo', w: 0.8 },
   m_shooting: { off: 'prop.photo', w: 0.8 },

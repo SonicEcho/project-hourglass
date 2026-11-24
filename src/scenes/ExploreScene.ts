@@ -370,7 +370,9 @@ export class ExploreScene extends Phaser.Scene {
     this.cameras.main.fadeIn(300, 0, 0, 0);
     // 地図の出来事（段階266）：仕掛けが解けた時の地図の出来事と、部屋に入った時の地図の出来事
     const queued = data.event ? (this.area.events ?? []).find((x) => x.id === data.event && !(this.state.flags ?? []).includes(`event:${x.id}`)) : undefined;
-    const onRoom = queued ?? pendingEvent(this.area, this.state, this.night, this.state.room, { on: 'room' });
+    // 段階281：倒した敵がきっかけの地図の出来事（池の霧の砂嵐を倒すと、霧が晴れる）
+    const onWon = data.won ? pendingEvent(this.area, this.state, this.night, this.state.room, { on: 'solved', flag: data.won }) : null;
+    const onRoom = queued ?? onWon ?? pendingEvent(this.area, this.state, this.night, this.state.room, { on: 'room' });
     if (onRoom) this.time.delayedCall(420, () => void this.runEvent(onRoom));
     // コマを手に入れた音。画面が明るくなってから（段階31c の残り。そろった時は3音）
     if (komaGot > 0) this.time.delayedCall(300, () => playKoma(this, left <= 0));
