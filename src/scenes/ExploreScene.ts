@@ -75,7 +75,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { A11_CHEST_ART, A11_DECOR, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { A11_CHEST_ART, A11_DECOR, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -544,13 +544,22 @@ export class ExploreScene extends Phaser.Scene {
       if (!this.here(t)) continue;
       const x = t.cell[0] * T + T / 2;
       const y = t.cell[1] * T + T / 2;
-      world.add(this.add.ellipse(x, y, T * 0.6, T * 0.8, 0xc8d0e0, 0.55));
+      // 段階280：写しの人の二頭身の絵（label から）。少しセピア色にして、すこし透かす（写し）。絵がなければ今までの灰色の人影
+      const art = TALKER_ART[t.label ?? ''];
+      const figure = art && hasImage(this, art) ? this.add.image(x, (t.cell[1] + 1) * T - 2, art).setOrigin(0.5, 1) : null;
+      if (figure) {
+        figure.setScale((T * 1.55) / figure.height).setTint(0xf0d8b8).setAlpha(0.9);
+        figure.setData('foot', (t.cell[1] + 1) * T);
+        sortLayer.add(figure);
+        this.tweens.add({ targets: figure, scaleY: figure.scaleY * 1.02, yoyo: true, repeat: -1, duration: 1100 + (t.cell[0] % 5) * 90 });
+      } else world.add(this.add.ellipse(x, y, T * 0.6, T * 0.8, 0xc8d0e0, 0.55));
       // 段階265：くれる物がある人は、吹き出しを、くれる物の印に（弱点＝弱・一息＝休・場所の手がかり＝地）。もらった後は薄く
       const giftMark = t.gift ? { weak: '弱', rest: '休', hint: '地' }[t.gift.kind] : '…';
       const given = !!t.gift && (this.state.flags ?? []).includes(`gift:${t.id}`);
-      const bubble = addText(this, x, y - T * 0.75, giftMark, { size: 14, bold: true, color: t.gift ? '#ffd84a' : '#ffffff' }).setOrigin(0.5).setAlpha(given ? 0.35 : 1);
+      const bubble = addText(this, x, y - (figure ? T * 1.45 : T * 0.75), giftMark, { size: 14, bold: true, color: t.gift ? '#ffd84a' : '#ffffff' }).setOrigin(0.5).setAlpha(given ? 0.35 : 1);
       if (t.gift && !given) bubble.setStroke('#3a2a00', 4);
-      world.add(bubble);
+      if (figure && this.bubbleLayer) this.bubbleLayer.add(bubble);
+      else world.add(bubble);
       this.tweens.add({ targets: bubble, y: bubble.y - 4, yoyo: true, repeat: -1, duration: 700 });
     }
     // ボスの印

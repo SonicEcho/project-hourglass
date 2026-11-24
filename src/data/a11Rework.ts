@@ -284,8 +284,8 @@ export const EAST_PARTS: RoomPart[] = [
   // （入口は左の端の、屋台と家の壁のすき間。誘導しない。家の壁の上を歩かないよう、すき間は3列目）。真ん中は屋台の裏の列と、板でふさいだ囲い。下の通りの左に金魚すくい
   { part: 'shateki', cell: [12, 6], w: 5, d: 2, sw: 5.2 },
   { part: 's_toys', cell: [17, 6], w: 3, d: 2, sw: 3.2 },
-  // 右の端は自販機でふさぐ（飾り。2026-11-24 開発者：仕掛けの自販機は意味がなかったので外した）
-  { part: 'vending', cell: [20, 6], w: 1, d: 2, sw: 1.1 },
+  // 隠し通路の右の端は、荷物でふさぐ。その先の奥（右上）は、止まった自販機の向こう（みおが動かすと通れる。2026-11-24 開発者）
+  { part: 'crates_red', cell: [18, 4], w: 1, sw: 0.9 },
   { part: 'b_small_red', cell: [2, 12], w: 2, d: 2, sw: 2.1 },
   { part: 'b_wide_stripe', cell: [4, 12], w: 4, d: 2, sw: 4.1 },
   { part: 'lantern_boxes', cell: [8, 12], w: 1, d: 2, sw: 1.3 },
@@ -407,7 +407,9 @@ export const A11_REWORK: AreaDef = {
     { id: 'a11_chest_back', room: 'fest2_backyard', cell: [19, 21], items: [ITEMS.cottonThread.id, ITEMS.goldfishFin.id] },
     { id: 'a11_chest_goldfish', room: 'fest2_east', cell: [12, 14], night: 2, items: [ITEMS.goldfishScale.id] },
     // 段階279：屋台の裏の隠し通路の奥（誘導しない。たまたま気づいた人へ）
-    { id: 'a11_chest_hidden', room: 'fest2_east', cell: [19, 3], night: 2, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
+    // 止まった自販機の向こうの奥（みおが仲間になってから、また来た時に）
+    { id: 'a11_chest_vending', room: 'fest2_east', cell: [19, 3], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.balloonShard.id] },
+    { id: 'a11_chest_hidden', room: 'fest2_east', cell: [17, 4], night: 2, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
     { id: 'a11_chest_new2', room: 'fest2_plaza', cell: [3, 5], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
     // 提灯を思い出の順に灯すと、やぐらの前に出る。中身は、思い出を返した時からここへ移したリカバリー
     { id: 'a11_chest_new1', room: 'fest2_plaza', cell: [13, 18], night: 3, needs: 'p_lanterns', items: [ITEMS.balloonShard.id], chainSnaps: ['a11_recovery'] },
@@ -474,6 +476,8 @@ export const A11_REWORK: AreaDef = {
     { id: 'p_mask', room: 'fest2_east', night: 2, cell: [4, 6], kind: 'use', needs: 'p_mask_item', mark: '白', label: '白い狐のお面屋', need: '白い狐のお面屋「白い狐のお面がひとつ、見当たらなくてねえ」', done: '白い狐のお面屋「おお、それそれ！ ありがとよ。お礼に、裏の囲いを通っていいよ」' },
     { id: 'p_shop_black', room: 'fest2_east', night: 2, cell: [7, 6], kind: 'look', mark: '黒', label: '黒い狐のお面屋', done: '黒い狐のお面屋「うちは黒い狐だけだよ。白いのは、うちのじゃないね」' },
     { id: 'p_shop_gold', room: 'fest2_east', night: 2, cell: [10, 6], kind: 'look', mark: '金', label: '金の狐のお面屋', done: '金の狐のお面屋「うちのは金ぴかの狐さ。ほかを当たっておくれ」' },
+    // 2026-11-24：止まった自販機が、右上の奥への細い道をふさぐ。みおが編成にいれば電気を流して動かし、通れる（1-1 の時はまだいないので、後で来る所）
+    { id: 'l_vending', room: 'fest2_east', night: 2, cell: [20, 6], kind: 'ability', ally: 'mio', mark: '雷', label: '止まった自販機', need: '止まった自販機が、奥への細い道をふさいでいる。……電気を流せる人がいれば', done: 'みおが自販機に電気を流すと、ガタンと動いて、奥への道があいた！' },
     // 縁日の広場：あかりが歌う（人混みが道をあける）
     { id: 'p_song', room: 'fest2_plaza', cell: [18, 17], kind: 'ability', ally: 'akari', mark: '歌', label: '人混み', need: '人混みで通れない', done: 'あかりが小さく歌うと、写しの人たちが振り向いて、道をあけた' },
     // 縁日の広場：提灯を思い出の一枚の順（赤 → 白 → 青）に灯す（3晩目）
@@ -593,6 +597,7 @@ export const A11_PROP_ART: Record<string, { off: string; on?: string; w: number 
   p_lantern1: { off: 'prop.lantern_red_off', on: 'prop.lantern_red_on', w: 1.1 },
   p_lantern2: { off: 'prop.lantern_white_off', on: 'prop.lantern_white_on', w: 1.1 },
   p_lantern3: { off: 'prop.lantern_blue_off', on: 'prop.lantern_blue_on', w: 1.1 },
+  l_vending: { off: 'prop.vending', w: 1.1 },
   l_bamboo: { off: 'prop.bamboo', w: 1.6 },
   m_gate: { off: 'prop.photo', w: 0.8 },
   m_yagura: { off: 'prop.photo', w: 0.8 },
@@ -640,6 +645,16 @@ export const A11_REWORK_IMAGES: string[] = [
     A11_CHEST_ART.closed,
     A11_CHEST_ART.open,
     ...A11_DECOR.map((d) => d.image),
+    'person.yukata',
+    'person.cotton',
+    'person.goldfish',
     ...A11_REWORK.rooms.flatMap((r) => (r.parts ?? []).map((p) => `part.${p.part}`)),
   ]),
 ];
+
+/** 写しの人の二頭身（段階280。話せる人の label から台帳の id）。下の3人（boy・grandma・student）は通行人に使う */
+export const TALKER_ART: Record<string, string> = {
+  浴衣の女の人: 'person.yukata',
+  わたあめ屋: 'person.cotton',
+  金魚すくいのおじさん: 'person.goldfish',
+};
