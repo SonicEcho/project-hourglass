@@ -17,7 +17,11 @@ export interface Settings {
   autoTactic: string;
   /** 物語の探索の雑魚戦で、オートを出す時（段階105）：won は一度勝った敵の組み合わせから、always は初めての敵から */
   storyAuto: StoryAuto;
+  /** 探索の「調べる」ボタンを出す側（段階278。左利きの人は左に） */
+  actionSide: ActionSide;
 }
+
+export type ActionSide = 'right' | 'left';
 
 export type StoryAuto = 'won' | 'always';
 
@@ -43,7 +47,7 @@ export type AudioOut = 'speaker' | 'wireless';
 /** 選べる音量の段階 */
 export const VOLUME_STEPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 2, autoTactic: 'auto', storyAuto: 'won' };
+export const DEFAULT_SETTINGS: Settings = { bgmVolume: 0.5, seVolume: 0.75, typeSound: true, audioOut: 'speaker', battleSpeed: 2, autoTactic: 'auto', storyAuto: 'won', actionSide: 'right' };
 
 /** 0〜1 の段階のうち、一番近いものにそろえる。数でなければ fallback */
 function toStep(v: unknown, fallback: number): number {
@@ -70,6 +74,7 @@ export function parseSettings(text: string | null): Settings {
     battleSpeed: o.battleSpeed === 3 ? 3 : 2,
     autoTactic: typeof o.autoTactic === 'string' && o.autoTactic !== '' ? o.autoTactic : DEFAULT_SETTINGS.autoTactic,
     storyAuto: o.storyAuto === 'always' ? 'always' : 'won',
+    actionSide: o.actionSide === 'left' ? 'left' : 'right',
   };
 }
 

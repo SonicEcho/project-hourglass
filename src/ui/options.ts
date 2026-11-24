@@ -68,6 +68,13 @@ const AUTO_ROW: SoundRow = {
   next: () => setSettings({ ...getSettings(), storyAuto: getSettings().storyAuto === 'always' ? 'won' : 'always' }),
 };
 
+/** 探索の「調べる」ボタンを出す側（段階278。左利きの人は左に） */
+const ACTION_ROW: SoundRow = {
+  label: '調べるボタン',
+  value: () => (getSettings().actionSide === 'left' ? '左' : '右'),
+  next: () => setSettings({ ...getSettings(), actionSide: getSettings().actionSide === 'left' ? 'right' : 'left' }),
+};
+
 /** 全画面の行（段階48）。全画面になるのは少し後なので、窓は fullscreenchange で描き直す */
 const FULLSCREEN_ROW: SoundRow = {
   label: '全画面',
@@ -81,7 +88,7 @@ const LINK_GAP = 56;
 /** オプションの窓を開く。閉じる時に onClose を呼ぶ */
 export function openOptions(scene: Phaser.Scene, opts: { links?: OptionsLink[]; depth?: number; onClose?: () => void } = {}): Phaser.GameObjects.Container {
   const links = opts.links ?? [];
-  const settingRows = [...(canToggleFullscreen() ? [FULLSCREEN_ROW] : []), AUTO_ROW, ...SOUND_ROWS];
+  const settingRows = [...(canToggleFullscreen() ? [FULLSCREEN_ROW] : []), AUTO_ROW, ACTION_ROW, ...SOUND_ROWS];
   const cx = GAME_WIDTH / 2;
   const w = 320;
   const h = 96 + settingRows.length * ROW_GAP + 34 + (links.length > 0 ? 16 + links.length * LINK_GAP : 0) + 70;
