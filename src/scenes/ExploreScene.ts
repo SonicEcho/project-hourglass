@@ -610,9 +610,9 @@ export class ExploreScene extends Phaser.Scene {
       sortLayer.add(im);
       if (c.walk) {
         const [a, b] = c.walk;
-        // 行ったり来たり。歩く向きに合わせて左右を返す（left は、絵がもともと左を向いているか）
+        // 行ったり来たり。歩く向きに合わせて左右を返す（face は、絵がもともと向いている側。段階283b）
         const go = (to: number, toRight: boolean, next: () => void) => {
-          im.setFlipX(toRight === !!c.left);
+          im.setFlipX(toRight === (c.face === 'left'));
           this.tweens.add({ targets: im, x: (to + 0.5) * T, duration: Math.max(400, Math.abs((to + 0.5) * T - im.x) * 28), ease: 'Linear', onComplete: next });
         };
         const loop = (): void => go(b, true, () => go(a, false, loop));
