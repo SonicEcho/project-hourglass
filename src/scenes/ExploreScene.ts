@@ -1352,7 +1352,10 @@ export class ExploreScene extends Phaser.Scene {
     const rs = cells.map((c) => c[1]);
     const [c0, c1, r1] = [Math.min(...cs), Math.max(...cs), Math.max(...rs)];
     const wide = c1 - c0 + 1;
-    return this.propImage(key, [(c0 + c1) / 2, r1], Math.max(1.2, wide + 0.3));
+    // 2026-11-24（開発者：板が周りに比べて大きすぎる）：幅は扉のマスに合わせ、高さは人の背くらい（1.4マス）までにおさえる
+    const im = this.propImage(key, [(c0 + c1) / 2, r1], Math.max(1.2, wide + 0.2));
+    im.setDisplaySize(im.displayWidth, Math.min(im.displayHeight, T * 1.4));
+    return im;
   }
 
   /** 宝箱を開けて、中身を持ち物に入れる */
