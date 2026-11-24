@@ -75,7 +75,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { A11_CHEST_ART, A11_DECOR, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { A11_CHEST_ART, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -241,6 +241,7 @@ export class ExploreScene extends Phaser.Scene {
     this.enemies = [];
     this.leaving = false;
     this.chestSprites = new Map();
+    this.talkerBubbles = new Map();
     // 育成の画面から戻ってきた（または別の道で来た）ので、育成の画面の戻り先は忘れる
     setHubReturn(null);
     this.graceUntil = this.time.now + AREA_GRACE_MS;
@@ -556,6 +557,13 @@ export class ExploreScene extends Phaser.Scene {
       // 段階265：くれる物がある人は、吹き出しを、くれる物の印に（弱点＝弱・一息＝休・場所の手がかり＝地）。もらった後は薄く
       const giftMark = t.gift ? { weak: '弱', rest: '休', hint: '地' }[t.gift.kind] : '…';
       const given = !!t.gift && (this.state.flags ?? []).includes(`gift:${t.id}`);
+      // 段階280（開発者：くれる物の中身は話してからのお楽しみ）：二頭身の絵の人には、場所が分かる吹き出しだけ
+      if (figure && this.bubbleLayer) {
+        const b = this.addGadgetBubble(this.bubbleLayer, x, (t.cell[1] + 1) * T - T * 1.75, '…');
+        if (given) b.setAlpha(0.35);
+        this.talkerBubbles.set(t.id, b);
+        continue;
+      }
       const bubble = addText(this, x, y - (figure ? T * 1.45 : T * 0.75), giftMark, { size: 14, bold: true, color: t.gift ? '#ffd84a' : '#ffffff' }).setOrigin(0.5).setAlpha(given ? 0.35 : 1);
       if (t.gift && !given) bubble.setStroke('#3a2a00', 4);
       if (figure && this.bubbleLayer) this.bubbleLayer.add(bubble);
@@ -881,7 +889,10 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 地図直しの試し歩き（段階121）では、歩くだけ
     const plain = !!this.tune;
-    const talker = plain ? undefined : this.area.talkers.find((t) => this.here(t) && near(t.cell, cell, 0));
+    // 段階280：二頭身の絵の人は、頭（1つ上のマス）をタップしても話せる（仲間と重なっていても）
+    const talker = plain
+      ? undefined
+      : this.area.talkers.find((t) => this.here(t) && (near(t.cell, cell, 0) || (!!TALKER_ART[t.label ?? ''] && near([t.cell[0], t.cell[1] - 1], cell, 0))));
     // まだ開けていない宝箱は、タップした時だけ開ける（通っただけでは開かない）
     const chest = talker || plain ? null : chestAt(this.area, this.state, cell);
     // 仕掛け（段階264）：隣まで歩いてから。押す物は、押すマス（from）まで
@@ -1087,7 +1098,10 @@ export class ExploreScene extends Phaser.Scene {
     if (!goal || this.leaving) return;
     if (goal.kind === 'talk') {
       const talker = this.area.talkers.find((t) => t.id === goal.id);
-      if (talker) this.openScene(talker.scene, { area: this.area.id, talked: talker.id });
+      if (!talker) return;
+      // 段階280（開発者：立ち絵がないのに画面が切り替わる）：二頭身の絵がある写しの人は、画面を切り替えず地図の上の帯で話す
+      if (TALKER_ART[talker.label ?? '']) void this.talkOnMap(talker);
+      else this.openScene(talker.scene, { area: this.area.id, talked: talker.id });
       return;
     }
     if (goal.kind === 'chest') {
@@ -1349,14 +1363,18 @@ export class ExploreScene extends Phaser.Scene {
     }
   }
 
+  /** 写しの人の上の吹き出し（話したら薄く） */
+  private talkerBubbles = new Map<string, Phaser.GameObjects.Container>();
+
   /** 仕掛けの上の小さな吹き出し（2026-11-24）。ゆっくり上下する */
-  private addGadgetBubble(layer: Phaser.GameObjects.Container, x: number, y: number, text: string): void {
+  private addGadgetBubble(layer: Phaser.GameObjects.Container, x: number, y: number, text: string): Phaser.GameObjects.Container {
     const box = this.add.container(x, y);
     box.add(this.add.ellipse(0, 0, 22, 17, 0xffffff, 0.92).setStrokeStyle(1.5, 0x3a2a20));
     box.add(this.add.triangle(0, 9, -4, 0, 4, 0, 0, 5, 0xffffff, 0.92));
     box.add(addText(this, 0, -1, text, { size: 11, bold: true, color: '#3a2a20' }).setOrigin(0.5));
     layer.add(box);
     this.tweens.add({ targets: box, y: y - 3, yoyo: true, repeat: -1, duration: 900 });
+    return box;
   }
 
   /** 小物の絵（段階271）：読めていれば台帳の id、なければ undefined（仮の印で描く） */
@@ -1834,7 +1852,7 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   /** 地図の出来事の台詞：地図の下に、名前と台詞の帯。タップで次へ */
-  private eventLine(name: string, text: string): Promise<void> {
+  private eventLine(name: string, text: string, art?: string): Promise<void> {
     return new Promise((done) => {
       if (!this.ui) return done();
       const box = this.add.container(0, 0);
@@ -1842,8 +1860,15 @@ export class ExploreScene extends Phaser.Scene {
       const hit = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.001).setOrigin(0).setInteractive();
       box.add(hit);
       box.add(this.add.rectangle(12, y, GAME_WIDTH - 24, 96, 0x0b1020, 0.92).setOrigin(0).setStrokeStyle(2, 0xffd84a));
-      box.add(addText(this, 26, y + 10, name, { size: 13, bold: true, color: '#ffd84a' }));
-      box.add(addText(this, 26, y + 34, text, { size: 15, color: '#ffffff', wrap: GAME_WIDTH - 60, ja: true }).setLineSpacing(4));
+      // 段階280：話している写しの人の二頭身を、帯の左に小さく
+      const left = art && hasImage(this, art) ? 84 : 26;
+      if (left > 26) {
+        const face = this.add.image(50, y + 92, art!).setOrigin(0.5, 1).setTint(0xf0d8b8);
+        face.setScale(Math.min(64 / face.width, 88 / face.height));
+        box.add(face);
+      }
+      box.add(addText(this, left, y + 10, name, { size: 13, bold: true, color: '#ffd84a' }));
+      box.add(addText(this, left, y + 34, text, { size: 15, color: '#ffffff', wrap: GAME_WIDTH - left - 34, ja: true }).setLineSpacing(4));
       box.add(addText(this, GAME_WIDTH - 24, y + 84, '▼', { size: 11, color: '#ffd84a' }).setOrigin(1, 1));
       box.setAlpha(0);
       this.ui.add(box);
@@ -1853,6 +1878,45 @@ export class ExploreScene extends Phaser.Scene {
         done();
       });
     });
+  }
+
+  /** 写しの人と地図の上で話す（段階280）：台本の台詞を帯で出し、くれる物があれば受け取る */
+  private async talkOnMap(talker: AreaDef['talkers'][number]): Promise<void> {
+    if (this.eventRunning) return;
+    this.eventRunning = true;
+    this.updateActionButton();
+    const scene = SCENES.find((x) => x.id === talker.scene);
+    const art = TALKER_ART[talker.label ?? ''];
+    for (const step of scene?.steps ?? []) {
+      if (step.kind !== 'line') continue;
+      await this.eventLine(talker.label ?? step.speaker ?? '', step.text, art);
+    }
+    const got = takeGift(this.state, talker);
+    if (got) {
+      let state = got.state;
+      if (got.gift.kind === 'weak') {
+        const known = knownChainWeak(true);
+        const list = known[got.gift.enemy] ?? [];
+        if (!list.includes(got.gift.element)) keepChainWeak(true, { ...known, [got.gift.enemy]: [...list, got.gift.element] });
+      }
+      if (got.gift.kind === 'rest') {
+        const max = Object.fromEntries(currentParty(storyBattleLineup()).map((c) => [c.id, { hp: c.stats.hp, mp: c.stats.mp }]));
+        state = restVitals(state, got.gift.rate, max);
+      }
+      this.state = state;
+      this.keep(state);
+      this.refreshVitals();
+      if (got.gift.kind === 'hint') this.redrawGadgets();
+      this.talkerBubbles.get(talker.id)?.setAlpha(0.35);
+      playSe(this, SE.heal);
+      for (const line of got.gift.text.split('\n')) {
+        const said = /^(.+?)「(.*)」$/.exec(line);
+        if (said) await this.eventLine(said[1], said[2], art);
+        else await this.eventLine('', line.replace(/^（|）$/g, ''));
+      }
+    } else this.talkerBubbles.get(talker.id)?.setAlpha(0.35);
+    this.eventRunning = false;
+    this.updateHubButton();
   }
 
   /** 地図の出来事で歩かせる：'hero' は先頭の仲間、ほかは敵の印 */
