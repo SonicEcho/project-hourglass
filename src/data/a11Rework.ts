@@ -607,8 +607,8 @@ export const A11_CHEST_ART = { closed: 'prop.chest_closed', open: 'prop.chest_op
 export const A11_DECOR: { room: string; image: string; x: number; y: number; w: number }[] = [
   { room: 'fest2_gate', image: 'prop.torii', x: 8.9, y: 12.3, w: 6.2 },
   // 段階275：頭の上の提灯のひも・旗（屋台から屋台へ張り渡す。仲間の上に重ねる）。長く張ると提灯が大きくなるので、10マスほどに分ける
-  { room: 'fest2_gate', image: 'part.string_lanterns', x: 0.5, y: 6.6, w: 11.2 },
-  { room: 'fest2_gate', image: 'part.string_lanterns', x: 12.3, y: 6.6, w: 7 },
+  { room: 'fest2_gate', image: 'part.string_lanterns', x: 0.8, y: 6.6, w: 9 },
+  { room: 'fest2_gate', image: 'part.string_lanterns', x: 10.6, y: 6.6, w: 9 },
   { room: 'fest2_gate', image: 'part.string_flags', x: 1.8, y: 17.2, w: 7.6 },
   { room: 'fest2_gate', image: 'part.string_flags', x: 14.6, y: 17.2, w: 7.6 },
   { room: 'fest2_plaza', image: 'part.string_mixed', x: 2, y: 13, w: 9.8 },
