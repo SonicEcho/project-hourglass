@@ -1305,6 +1305,26 @@ Scene: the central plaza of a summer shrine festival at dusk, the liveliest plac
 - The corners and the rest of the edges: dense trees, bushes and a low old stone wall.
 Keep everything inside the frame open ground: absolutely NO yagura, stalls, tents, crates, benches, lanterns, people or text. Absolutely no letters or text anywhere.""", '下書きは位置の目安')
 
+# ---- AN. 祭りのにぎわい（段階283） ----
+section('AN. 祭りのにぎわい：通行人と盆踊り（段階283）', '屋台がそろっても「本物の祭りっぽくない」（2026-11-24 開発者）。いちばんの理由は人がいないこと。写しの人の二頭身（`talkers_chibi.png`）と同じ絵柄で、通行人と盆踊りの踊り手を頼む。ゲームの側で少しセピア色にして透かし（写し）、通り抜けられる飾りとして置く。白い背景のままでよい')
+add('通行人の二頭身（12人）', ['talkers_chibi.png（届いた写しの人の二頭身。絵柄と大きさの見本）'], 'crowd_chibi.png', f"""{STYLE}
+
+A sheet of chibi townspeople for a top-down 2D RPG on mobile. Match the attached chibi sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and the size of the character in each cell.
+Layout: a grid of 3 rows by 4 columns on a plain pure white background, every cell exactly the same size (square), one character in the middle of each cell, feet on the same baseline about three quarters down the cell, at exactly the same scale. No ground, no shadow, no text, no grid lines.
+Festival-goers at a Japanese summer shrine festival in the late Heisei era (around 2005). Mix of front views, side views and back views, as if seen walking around the festival:
+- Row 1: two teenage girls in bright yukata walking side by side chatting (one character pair in one cell); a father carrying a small child on his shoulders; a young couple in yukata holding hands (back view); an old man in a jinbei fanning himself with a paper fan.
+- Row 2: a girl in a red yukata holding a goldfish bag (side view, walking left); a boy with a fox mask pushed up on his head eating a candy apple; a mother in summer clothes holding a toddler's hand (side view, walking right); two middle school boys in T-shirts laughing, one holding a water yo-yo balloon.
+- Row 3: a woman in a purple yukata eating shaved ice (front view); a small girl in a jinbei holding a pinwheel (back view); a man in a happi coat carrying a stack of boxes (side view, walking left); an elderly couple in plain summer kimono walking slowly (side view, walking right).
+Soft cel shading, clear dark outline so each character reads at a very small size.""", '通り抜けられる飾りとして、屋台の前・道ばたに置く')
+add('盆踊りの踊り手（二頭身・8人）', ['talkers_chibi.png（届いた写しの人の二頭身）'], 'bon_dancers.png', f"""{STYLE}
+
+A sheet of chibi bon-odori dancers for a top-down 2D RPG on mobile. Match the attached chibi sheet EXACTLY in art style, two-heads-tall proportions, outline thickness and size.
+Layout: a grid of 2 rows by 4 columns on a plain pure white background, every cell exactly the same size (square), one dancer in the middle of each cell, feet on the same baseline about three quarters down the cell, at exactly the same scale. No ground, no shadow, no text, no grid lines.
+Bon-odori dancers circling a festival drum tower, all dancing the same simple bon dance in matching summer yukata of different colors (indigo, white, pink, light blue), some with a towel tied on the head, some with a paper fan. Each cell is the same dance pose sequence so they can be animated in a circle:
+- Row 1: dancers seen from the side walking to the LEFT: pose A (both hands raised to the upper right, clapping), pose B (hands pushed forward and down), pose C (one foot stepping forward, hands to the left), pose D (turning, hands at the chest).
+- Row 2: the same four poses seen from the side walking to the RIGHT (mirror images of row 1).
+Soft cel shading, clear dark outline so each dancer reads at a very small size.""", '左向き・右向きの踊りを4コマずつ。やぐらのまわりを輪になって回らせる')
+
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
@@ -1317,7 +1337,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
