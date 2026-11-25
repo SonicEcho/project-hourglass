@@ -143,56 +143,54 @@ export const BACKYARD_PARTS: RoomPart[] = [
   { part: 'house_corner', cell: [20, 16], w: 4, d: 3, sw: 4 },
 ];
 
+/** 段階289：案3の屋台の裏通り（地面の絵 fest3_lane_ground に合わせた。柵の右端の1マスのすき間から、奥の隅へ） */
 const LANE_LAYOUT = [
   '########################',
   '########################',
-  '##################...###',
-  '###...................##',
-  '###...................##',
-  '###..#..###########...##',
-  '###..#..###########...##',
-  '###..#..###########...##',
-  '###..#..###########...##',
-  '###..#..###########...##',
-  '###..#..:::########...##',
-  '###..#..:::########.....',
-  '###..#..:::########.....',
-  '###..#..###########.....',
-  '###..#..###########.....',
-  '###..#..###########...##',
-  '###..#..###########...##',
-  '###..#..###########...##',
-  '#.....................##',
-  '#.....................##',
-  '#####...............####',
-  '######....##############',
-  '######....##############',
-  '######....##############',
+  '########################',
+  '########################',
+  '##....................##',
+  '##....................##',
+  '##....................##',
+  '##....................##',
+  '##....................##',
+  '##....................##',
+  '##......................',
+  '##......................',
+  '##......................',
+  '##..................####',
+  '##..................####',
+  '##..................####',
+  '#........##########.####',
+  '#........##########.####',
+  '#........#...........###',
+  '####.....####........###',
+  '####....################',
+  '####....################',
+  '####....################',
+  '####....################',
 ];
 
 /** lane の部品（段階274） */
 export const LANE_PARTS: RoomPart[] = [
-  // 段階275：真ん中のかたまりは、屋台の裏（外向き）でふちを囲み、中に荷物を詰める
-  { part: 'stall_back', cell: [8, 7], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [11, 7], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [14, 7], w: 3, d: 2, sw: 3.2 },
-  { part: 'kegs', cell: [17, 7], w: 2, sw: 1.7 },
-  { part: 'water_barrel', cell: [10, 10], w: 1, sw: 0.9 },
-  { part: 'tarp_pile', cell: [11, 11], w: 6, d: 2, sw: 6.3 },
-  { part: 'crates_red', cell: [17, 10], w: 1, sw: 1 },
-  { part: 'cooler', cell: [18, 11], w: 1, sw: 1 },
-  { part: 'chairs', cell: [8, 12], w: 2, sw: 1.8 },
-  { part: 'lantern_boxes', cell: [11, 14], w: 2, sw: 1.9 },
-  { part: 'box_stack', cell: [13, 14], w: 2, sw: 1.9 },
-  { part: 'drum', cell: [15, 14], w: 1, sw: 0.9 },
-  { part: 'buckets', cell: [16, 14], w: 1, sw: 1 },
-  { part: 'folding_stack', cell: [8, 15], w: 2, sw: 1.8 },
-  { part: 'stall_back', cell: [8, 17], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [11, 17], w: 3, d: 2, sw: 3.2 },
-  { part: 'stall_back', cell: [14, 17], w: 3, d: 2, sw: 3.2 },
-  { part: 'tarp_table', cell: [17, 17], w: 2, sw: 2 },
-  { part: 'drum', cell: [21, 9], w: 1, sw: 0.9 },
-  { part: 'grass', cell: [1, 19], w: 1, sw: 1.2 },
+  // 段階289：小さな屋台の表（下の裏通りを向く。幅3マスにそろえる）。左に3軒・右に2軒、すき間から家の裏の路地へ
+  { part: 's_kakigori', cell: [3, 8], w: 3, d: 2, sw: 3.1 },
+  { part: 's_yoyo', cell: [6, 8], w: 3, d: 2, sw: 3.1 },
+  { part: 's_chocoban', cell: [9, 8], w: 3, d: 2, sw: 3.1 },
+  { part: 's_wanage', cell: [14, 8], w: 3, d: 2, sw: 3.1 },
+  { part: 's_takoyaki', cell: [17, 8], w: 3, d: 2, sw: 3.1 },
+  // 荷さばき場：お面屋の荷車・発電機・木箱（荷を下ろす所）
+  { part: 'food_cart', cell: [2, 17], w: 2, sw: 2 },
+  { part: 'generator2', cell: [8, 16], w: 1, sw: 1.1 },
+  { part: 'crates_tarp', cell: [6, 16], w: 2, sw: 1.6 },
+  { part: 'box_stack', cell: [7, 18], w: 2, sw: 1.9 },
+  // 柵ぞいの荷置き（右端の1マスはあけて、柵のすき間へ通す）
+  { part: 'folding_stack', cell: [10, 15], w: 2, sw: 1.8 },
+  { part: 'lantern_boxes', cell: [12, 15], w: 2, sw: 1.6 },
+  { part: 'cooler', cell: [14, 15], w: 1, sw: 1.1 },
+  { part: 'kegs', cell: [16, 15], w: 2, sw: 1.7 },
+  { part: 'crates_red', cell: [18, 15], w: 1, sw: 1 },
+  { part: 'trash', cell: [21, 4], w: 1, sw: 1.2 },
 ];
 
 const PLAZA_LAYOUT = [
@@ -347,7 +345,7 @@ const room = (id: string, layout: string[], exits: RoomDef['exits'], exitAt?: Ro
 export const A11_REWORK_ROOMS = {
   gate: { ...room('fest2_gate', composeLayout(GATE_LAYOUT, GATE_PARTS), ['top', 'left'], { left: 7 }, 'map.fest3_gate_ground'), parts: GATE_PARTS },
   backyard: { ...room('fest2_backyard', composeLayout(BACKYARD_GROUND, BACKYARD_PARTS), ['right', 'top'], { right: 7, top: 14 }, 'map.fest2_backyard_ground'), parts: BACKYARD_PARTS },
-  lane: { ...room('fest2_lane', composeLayout(LANE_LAYOUT, LANE_PARTS), ['bottom', 'right'], { bottom: 6, right: 11 }, 'map.fest2_lane_ground'), parts: LANE_PARTS },
+  lane: { ...room('fest2_lane', composeLayout(LANE_LAYOUT, LANE_PARTS), ['bottom', 'right'], { bottom: 4, right: 10 }, 'map.fest3_lane_ground'), exitWidth: { right: 3 }, parts: LANE_PARTS },
   plaza: { ...room('fest2_plaza', composeLayout(PLAZA_LAYOUT, PLAZA_PARTS), ['bottom', 'left', 'right', 'top'], { left: 10, right: 10 }, 'map.fest3_plaza_ground'), exitWidth: { left: 2, right: 2 }, parts: PLAZA_PARTS },
   east: { ...room('fest2_east', composeLayout(EAST_LAYOUT, EAST_PARTS), ['left'], { left: 8 }, 'map.fest3_east_ground'), exitWidth: { left: 2 }, parts: EAST_PARTS },
   woods: { ...room('fest2_woods', composeLayout(WOODS_LAYOUT, WOODS_PARTS), ['bottom'], undefined, 'map.fest2_woods_ground'), parts: WOODS_PARTS },
@@ -394,8 +392,8 @@ export const A11_REWORK: AreaDef = {
     { id: 'a11_wall_east', room: 'fest2_plaza', cells: box(22, 22, 10, 11), opens: 2 },
     { id: 'a11_wall_shrine', room: 'fest2_plaza', cells: box(10, 13, 2, 2), opens: 3 },
     // 屋台の裏通りの両側の出入口の手前（2晩目から）
-    { id: 'a11_wall_lane_bottom', room: 'fest2_lane', cells: box(6, 9, 21, 21), opens: 2 },
-    { id: 'a11_wall_lane_right', room: 'fest2_lane', cells: box(22, 22, 11, 14), opens: 2 },
+    { id: 'a11_wall_lane_bottom', room: 'fest2_lane', cells: box(4, 7, 20, 20), opens: 2 },
+    { id: 'a11_wall_lane_right', room: 'fest2_lane', cells: box(21, 21, 10, 12), opens: 2 },
   ],
   hunt: {
     gathers: [
@@ -414,7 +412,7 @@ export const A11_REWORK: AreaDef = {
     // 止まった自販機の向こうの奥（みおが仲間になってから、また来た時に）
     { id: 'a11_chest_vending', room: 'fest2_east', cell: [19, 3], night: 2, items: [ITEMS.goldfishScale.id, ITEMS.balloonShard.id] },
     { id: 'a11_chest_hidden', room: 'fest2_east', cell: [17, 4], night: 2, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
-    { id: 'a11_chest_new2', room: 'fest2_plaza', cell: [21, 8], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
+    { id: 'a11_chest_new2', room: 'fest2_lane', cell: [16, 18], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.cottonThread.id] },
     // 段階281：池の真ん中の石の上（霧が晴れると渡れる）。中身は、思い出を返した時からここへ移したリカバリー
     { id: 'a11_chest_new1', room: 'fest2_woods', cell: [12, 10], night: 3, items: [ITEMS.balloonShard.id], chainSnaps: ['a11_recovery'] },
     { id: 'a11_chest_woods', room: 'fest2_woods', cell: [22, 11], night: 3, items: [ITEMS.goldfishFin.id, ITEMS.maskShard.id] },
@@ -434,8 +432,8 @@ export const A11_REWORK: AreaDef = {
     { id: 'a11_e_plaza', room: 'fest2_plaza', move: 'chase', patrol: [[5, 13], [5, 17]], battle: 'a11_n1_plaza' },
     // ---- 2晩目 ----
     { id: 'a11_e_corridor', room: 'fest2_plaza', night: 2, patrol: [[3, 8], [6, 8]], battle: 'a11_n2_corridor' },
-    { id: 'a11_e_west1', room: 'fest2_lane', night: 2, until: 2, move: 'chase', patrol: [[20, 5], [20, 17]], battle: 'a11_n2_west1' },
-    { id: 'a11_e_west2', room: 'fest2_lane', night: 2, patrol: [[8, 3], [16, 3]], battle: 'a11_n2_west2' },
+    { id: 'a11_e_west1', room: 'fest2_lane', night: 2, until: 2, move: 'chase', patrol: [[7, 4], [20, 4]], battle: 'a11_n2_west1' },
+    { id: 'a11_e_west2', room: 'fest2_lane', night: 2, patrol: [[4, 11], [17, 11]], battle: 'a11_n2_west2' },
     // 金魚すくいの水槽が割れて、あふれ出す（地図の出来事 ev_tank）
     { id: 'a11_e_east1', room: 'fest2_east', night: 2, until: 2, hidden: true, patrol: [[13, 17], [8, 17]], battle: 'a11_n2_east1' },
     { id: 'a11_e_east2', room: 'fest2_east', night: 2, until: 2, move: 'chase', hidden: true, patrol: [[21, 11], [21, 17]], battle: 'a11_n2_east2' },
@@ -454,7 +452,7 @@ export const A11_REWORK: AreaDef = {
     { id: 'a11_voice_cotton', room: 'fest2_plaza', cell: [19, 7], until: 1, scene: 'a11_voice_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「甘いの食べて、ひと休みしな」\n（HP・MP が少し回復した）' } },
     { id: 'a11_voice_goldfish', room: 'fest2_plaza', cell: [6, 17], until: 1, scene: 'a11_voice_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'goldfishNoise', element: 'ice', text: '金魚すくいのおじさん「さっきの金魚みたいな砂嵐、冷たいのが苦手みたいだったよ」\n（金魚ノイズの弱点：氷 が分かった）' } },
     { id: 'a11_voice2_cotton', room: 'fest2_plaza', cell: [18, 7], night: 2, until: 2, scene: 'a11_voice2_cotton', label: 'わたあめ屋', gift: { kind: 'rest', rate: 0.3, text: 'わたあめ屋「疲れた顔してるね。ほら、ひと口」\n（HP・MP が少し回復した）' } },
-    { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [9, 11], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_mask', text: '浴衣の女の人「東の屋台のお面屋さん、白い狐のお面をなくして困ってたわ」\n（右上の地図に印が付いた）' } },
+    { id: 'a11_voice2_yukata', room: 'fest2_lane', cell: [19, 12], night: 2, until: 2, scene: 'a11_voice2_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'p_mask', text: '浴衣の女の人「東の屋台のお面屋さん、白い狐のお面をなくして困ってたわ」\n（右上の地図に印が付いた）' } },
     { id: 'a11_voice2_goldfish', room: 'fest2_east', cell: [8, 18], night: 2, until: 2, scene: 'a11_voice2_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'maskNoise', element: 'fire', text: '金魚すくいのおじさん「お面の砂嵐は、火に弱いらしいぜ」\n（お面ノイズの弱点：火 が分かった）' } },
     { id: 'a11_voice3_yukata', room: 'fest2_plaza', cell: [8, 7], night: 3, scene: 'a11_voice3_yukata', label: '浴衣の女の人', gift: { kind: 'hint', target: 'm_pond', text: '浴衣の女の人「社の森の池？ 霧の近くに、いやな砂嵐がうろついてたわ。あの霧、あれのせいじゃないかしら」\n（右上の地図に印が付いた）' } },
     { id: 'a11_voice3_goldfish', room: 'fest2_woods', cell: [7, 18], night: 3, scene: 'a11_voice3_goldfish', label: '金魚すくいのおじさん', gift: { kind: 'weak', enemy: 'cottonNoise', element: 'thunder', text: '金魚すくいのおじさん「わたあめの砂嵐は、ビリッとくるのが苦手でな」\n（わたあめノイズの弱点：雷 が分かった）' } },
@@ -474,7 +472,7 @@ export const A11_REWORK: AreaDef = {
     { id: 'p_fuel', room: 'fest2_backyard', cell: [8, 6], kind: 'item', mark: '缶', label: '物置の木箱', done: '物置の木箱の中に、発電機の燃料の缶があった！' },
     { id: 'p_generator', room: 'fest2_backyard', cell: [10, 11], kind: 'use', needs: 'p_fuel', mark: '発', label: '発電機', need: '止まった発電機。……燃料が切れている', done: '燃料を入れて紐を引くと、発電機がうなりを上げた！' },
     // 屋台の裏通り：坂の上の荷車を、上から押す（2晩目）。転がり落ちて板のかべを突き破る
-    { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [20, 2], kind: 'item', mark: '面', label: '白い狐のお面', done: '白い狐のお面を拾った。どこかのお面屋の売り物みたい' },
+    { id: 'p_mask_item', room: 'fest2_lane', night: 2, cell: [4, 17], kind: 'item', mark: '面', label: '白い狐のお面', done: '白い狐のお面を拾った。どこかのお面屋の売り物みたい' },
     // 東の屋台：お面屋が3軒。白い狐の店に届ける（2晩目）
     { id: 'p_mask', room: 'fest2_east', night: 2, cell: [4, 6], kind: 'use', needs: 'p_mask_item', mark: '白', label: '白い狐のお面屋', need: '白い狐のお面屋「売り物のお面を、どこかで一つ落としちまってね。白い狐のやつだ」', done: '白い狐のお面屋「おお、それそれ！ ありがとよ。お礼に、裏の囲いを通っていいよ」' },
     // 2026-11-24：止まった自販機が、右上の奥への細い道をふさぐ。みおが編成にいれば電気を流して動かし、通れる（1-1 の時はまだいないので、後で来る所）
@@ -600,8 +598,6 @@ export const A11_DECOR: { room: string; image: string; x: number; y: number; w: 
   { room: 'fest2_east', image: 'part.string_lanterns', x: 11, y: 7.3, w: 9.4 },
   { room: 'fest2_east', image: 'part.string_flags', x: 7.5, y: 15.6, w: 6.6 },
   { room: 'fest2_east', image: 'part.string_flags', x: 14.4, y: 15.6, w: 6.6 },
-  { room: 'fest2_lane', image: 'part.string_flags', x: 3, y: 2.6, w: 9 },
-  { room: 'fest2_lane', image: 'part.string_flags', x: 12, y: 2.6, w: 9 },
 ];
 
 /** 新しい1-1 で読む絵（部屋の絵・小物・下をくぐる物） */
@@ -666,6 +662,9 @@ export const A11_CROWD: { room: string; image: string; cell: [number, number]; f
   { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], face: 'left', walk: [15, 19] },
   { room: 'fest2_plaza', image: 'person.c_boys', cell: [5, 15], face: 'front' },
   { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], face: 'right', walk: [14, 18] },
+  // 段階289：裏通りは静か。荷さばき場で荷を運ぶ人と、家の勝手口の前のおじいさんだけ
+  { room: 'fest2_lane', image: 'person.c_porter', cell: [2, 14], face: 'right', walk: [2, 8] },
+  { room: 'fest2_lane', image: 'person.c_oldman', cell: [5, 4], face: 'front' },
   { room: 'fest2_east', image: 'person.c_girls', cell: [8, 7], face: 'front' },
   { room: 'fest2_east', image: 'person.c_foxboy', cell: [14, 8], face: 'front' },
   { room: 'fest2_east', image: 'person.c_couple', cell: [17, 9], face: 'back' },
