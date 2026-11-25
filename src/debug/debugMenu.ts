@@ -372,6 +372,17 @@ export function installDebugMenu(nav: DebugNavigator): void {
         render(`新しい1-1：${rework ? '切（今の1-1）' : '入'}にしました。1-1 の探索に入り直すと変わります（探索の途中の場所は、最初の部屋からになります）`);
       }),
     );
+    // 段階292（docs/milestones/M3_explore_feel.md の 14.）：裏通りを部品だけで組んだ版。押すたびに 一枚絵 → A → B → C → 一枚絵
+    const kits = ['a', 'b', 'c'] as const;
+    const kitNow = kits.find((v) => trialOn(`lanekit_${v}`)) ?? null;
+    const kitName = (v: (typeof kits)[number] | null) => (v === 'a' ? 'A 部品・同じ形' : v === 'b' ? 'B 部品・形を変えた版' : v === 'c' ? 'C 部品・3晩目の版' : '今の版（一枚絵）');
+    trials.append(
+      button(`新しい1-1 の裏通り：${kitName(kitNow)}`, () => {
+        const next = kitNow === null ? 'a' : kitNow === 'a' ? 'b' : kitNow === 'b' ? 'c' : null;
+        for (const v of kits) setTrialOn(`lanekit_${v}`, v === next);
+        render(`裏通り：${kitName(next)}にしました。裏通りに入り直すと変わります（新しい1-1 が入の時だけ）`);
+      }),
+    );
 
     // ---- 設定 ----
     const opt = section('設定', true);

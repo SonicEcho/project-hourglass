@@ -1,4 +1,4 @@
-import { A11_REWORK_IMAGES, ALLY_FACE, AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BARK_CAST, BARKS, BOND_EVENTS, CAST, CGS, DAILY_HUBS, ENEMY_ART, ENEMY_CUT_INS, PARTY_PHOTO, PORTRAIT_PARTS, RETURN_VISITS, SCENES, SIDE_EVENTS, SLICE_FLOW } from '../data';
+import { A11_REWORK_IMAGES, LANE_KIT_IMAGES, ALLY_FACE, AREA_BATTLES, AREAS, ASSETS, BACKDROPS, BARK_CAST, BARKS, BOND_EVENTS, CAST, CGS, DAILY_HUBS, ENEMY_ART, ENEMY_CUT_INS, PARTY_PHOTO, PORTRAIT_PARTS, RETURN_VISITS, SCENES, SIDE_EVENTS, SLICE_FLOW } from '../data';
 import { sceneImageIds } from './sceneImages';
 import type { FlowEvent } from '../core';
 
@@ -63,7 +63,7 @@ export function exploreImages(areaId: string): string[] {
   // 一緒に歩く仲間（段階267）：歩く二頭身の絵
   const walkers = ['hero', 'akari', 'mio', 'sayoko', 'hayase'].map((id) => `sprite.walk_${id}`);
   // 新しい1-1 の試し（段階271・272）：部屋の絵と小物。試しの切り替えはその場で変えられるので、1-1 では両方読む
-  const rework = areaId === 'a11' ? A11_REWORK_IMAGES : [];
+  const rework = areaId === 'a11' ? [...A11_REWORK_IMAGES, ...LANE_KIT_IMAGES] : [];
   return [...new Set([...maps, ...rework, ...battleImages([...battles]), ...walkers, ...commonImages()])];
 }
 
