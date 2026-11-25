@@ -22,7 +22,10 @@ describe('新しい1-1（段階262）', () => {
   it('敵の戦闘・コマ・写しの人の台詞・途中の会話・ぬしは、今の1-1 と同じ（置く所だけ変えた）', () => {
     const now = AREAS.a11;
     expect(area.id).toBe('a11');
-    expect(area.enemies.map((e) => [e.id, e.battle, e.move, e.night, e.scene]).sort()).toEqual(now.enemies.map((e) => [e.id, e.battle, e.move, e.night, e.scene]).sort());
+    expect(area.enemies.map((e) => [e.id, e.move, e.night, e.scene]).sort()).toEqual(now.enemies.map((e) => [e.id, e.move, e.night, e.scene]).sort());
+    // 段階287：コマを、入口の左の道の砂嵐から、明かりがつくと逃げる砂嵐へ移した（1晩目の目的とつなぐ）。ほかの戦闘は同じ
+    const moved: Record<string, string> = { a11_e_runner: 'a11_n1_runner', a11_e_road: 'a11_n1_road_free' };
+    for (const e of now.enemies) expect(area.enemies.find((x) => x.id === e.id)?.battle, e.id).toBe(moved[e.id] ?? e.battle);
     expect(area.talkers.map((t) => [t.id, t.scene, t.night, t.until]).sort()).toEqual(now.talkers.map((t) => [t.id, t.scene, t.night, t.until]).sort());
     expect(area.boss.battle).toBe(now.boss.battle);
     expect(area.komaNeed).toBe(now.komaNeed);
@@ -83,9 +86,9 @@ describe('出し抜く（段階263）', () => {
     expect(ambushKind('patrol', 1)).toBe('first');
     expect(ambushKind('guard', 1)).toBe('first');
     expect(ambushKind('flee', 0)).toBe('none');
-    // 新しい1-1 の砂嵐16のうち、コマを持たないのは9。逃げる砂嵐を除く8が、倒した扱いにできる
+    // 新しい1-1 の砂嵐16のうち、コマを持たないのは9（段階287 で逃げる砂嵐がコマを持ち、入口の左の道の砂嵐が持たなくなった）。9体とも倒した扱いにできる
     const scatter = area.enemies.filter((e) => ambushKind(e.move ?? 'patrol', AREA_BATTLES[e.battle]?.koma ?? 0) === 'scatter');
-    expect(scatter.length).toBe(8);
+    expect(scatter.length).toBe(9);
   });
 
   it('先手の戦闘：1ラウンド目は敵がみんなダウンで動かない。2ラウンド目に警戒は付かない', async () => {
@@ -143,14 +146,26 @@ describe('仕掛けと仲間の力（段階264）', () => {
     expect(area.gates!.map((x) => x.by).sort()).toEqual(['a11_e_woods1', 'p_generator', 'p_mask']);
   });
 
-  it('仕掛けを解かなくても、コマを持つ砂嵐・ぬし・次の晩の始まりへ歩いて行ける（仕掛けはごほうびだけ）', async () => {
+  it('コマを持つ砂嵐・ぬし・次の晩の始まりへ歩いて行ける。1晩目の逃げる砂嵐だけは、発電機の仕掛けを解いた奥（段階287：目的への道）', async () => {
     const { gadgetArea, startExplore } = await import('../../src/core');
     const s = startExplore(area);
     for (let n = 1; n <= 3; n++) {
       const night = gadgetArea(nightArea(area, n), s, n);
       const start = area.nights![n - 1].start;
-      const reach = reachableCells(night, start ? { room: start.room ?? startRoom(area), cell: start.cell } : undefined);
-      for (const e of night.enemies.filter((x) => (AREA_BATTLES[x.battle]?.koma ?? 0) > 0)) expect(reach[e.room!]?.has(e.patrol[0].join(',')), `${n}晩目 ${e.id}`).toBe(true);
+      const from = start ? { room: start.room ?? startRoom(area), cell: start.cell } : undefined;
+      const reach = reachableCells(night, from);
+      for (const e of night.enemies.filter((x) => (AREA_BATTLES[x.battle]?.koma ?? 0) > 0)) {
+        const at = e.patrol[0].join(',');
+        if (e.id !== 'a11_e_runner') {
+          expect(reach[e.room!]?.has(at), `${n}晩目 ${e.id}`).toBe(true);
+          continue;
+        }
+        // 2晩目からは、1晩目のコマを集め終えているので、もう倒している
+        if (n > 1) continue;
+        expect(reach[e.room!]?.has(at), '明かりがつくまでは届かない').toBe(false);
+        const lit = reachableCells(gadgetArea(nightArea(area, n), { ...s, flags: ['p_fuel', 'p_generator'] }, n), from);
+        expect(lit[e.room!]?.has(at), '明かりがつくと届く').toBe(true);
+      }
       if (n === 3) expect([...(reach.fest2_woods ?? [])].some((k) => ['10,3', '12,3', '11,4'].includes(k))).toBe(true);
       // 仕掛けは、どれも隣のマスまで歩いて行ける（後で来る所は、仕掛けを解いた奥にもある）
       for (const gd of night.gadgets!.filter((x) => x.kind !== 'later' && x.kind !== 'photo' && (x.night ?? 1) <= n && n <= (x.until ?? 9))) {
@@ -353,5 +368,22 @@ describe('歩く理由と色の戻り（段階284）', () => {
     expect(memoryRestored(area, { ...base } as never)).toBe(0);
     expect(memoryRestored(area, { ...base, koma: area.komaNeed / 2 } as never)).toBeCloseTo(0.5);
     expect(memoryRestored(area, { ...base, koma: area.komaNeed + 3 } as never)).toBe(1);
+  });
+});
+
+describe('目的とコマを結ぶ・前の晩の砂嵐が散る（段階287）', () => {
+  it('1晩目のコマ3つのうち1つは、明かりがつくと女の子の声を抱えて逃げる砂嵐が持つ', () => {
+    const runner = area.enemies.find((e) => e.id === 'a11_e_runner')!;
+    expect(AREA_BATTLES[runner.battle]?.koma).toBe(1);
+    expect(runner.move).toBe('flee');
+    expect(area.events?.find((e) => e.id === 'ev_generator')?.steps.some((x) => x.do === 'spawn' && x.enemy === 'a11_e_runner')).toBe(true);
+  });
+  it('コマを持たない砂嵐は、その晩だけ出る（次の晩には残らない）', () => {
+    for (const e of area.enemies.filter((x) => !(AREA_BATTLES[x.battle]?.koma ?? 0))) {
+      expect(e.until ?? 3, e.id).toBe(e.night ?? 1);
+    }
+    // 3晩目に出るのは、その晩の4体だけ（前の晩のコマを持つ砂嵐は、コマを集め終えた時に倒している）
+    const earlierKoma = (e: (typeof area.enemies)[number]) => (e.night ?? 1) < 3 && (AREA_BATTLES[e.battle]?.koma ?? 0) > 0;
+    expect(nightArea(area, 3).enemies.filter((e) => !earlierKoma(e)).map((e) => e.id).sort()).toEqual(['a11_e_right', 'a11_e_steps', 'a11_e_woods1', 'a11_e_woods2']);
   });
 });

@@ -421,21 +421,24 @@ export const A11_REWORK: AreaDef = {
   ],
   enemies: [
     // ---- 1晩目 ----
+    // 段階287：コマを持たない砂嵐は、その晩だけ（until）。前の晩の思い出が戻ると散る
     { id: 'a11_e_gate', room: 'fest2_gate', patrol: [[11, 4], [11, 16]], battle: 'a11_n1_gate' },
     // 段階281：入口の待ち伏せの出来事はやめた。屋台通りを見回る（地図の出来事 ev_gate_ambush）
-    { id: 'a11_e_gate_chase', room: 'fest2_gate', move: 'chase', patrol: [[14, 9], [19, 9]], battle: 'a11_n1_chaser' },
-    { id: 'a11_e_back', room: 'fest2_backyard', patrol: [[7, 9], [13, 9], [13, 13], [7, 13]], battle: 'a11_n1_back' },
-    // 発電機を直して明かりがつくと、暗がりから現れて逃げる（地図の出来事 ev_generator）
-    { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[12, 21]], battle: 'a11_runner' },
-    { id: 'a11_e_road', room: 'fest2_gate', patrol: [[1, 8], [8, 8]], battle: 'a11_n1_road' },
+    { id: 'a11_e_gate_chase', room: 'fest2_gate', until: 1, move: 'chase', patrol: [[14, 9], [19, 9]], battle: 'a11_n1_chaser' },
+    { id: 'a11_e_back', room: 'fest2_backyard', until: 1, patrol: [[7, 9], [13, 9], [13, 13], [7, 13]], battle: 'a11_n1_back' },
+    // 発電機を直して明かりがつくと、暗がりから現れて逃げる（地図の出来事 ev_generator）。段階287：1晩目の目的とつなぐため、コマを持つ。
+    // 下の路地は両端が行き止まりなので、追いこめば捕まえられる
+    { id: 'a11_e_runner', room: 'fest2_backyard', move: 'flee', hidden: true, patrol: [[12, 21]], battle: 'a11_n1_runner' },
+    // 段階287：コマは逃げる砂嵐へ移した（コマを持たず、1晩目だけ）
+    { id: 'a11_e_road', room: 'fest2_gate', until: 1, patrol: [[1, 8], [8, 8]], battle: 'a11_n1_road_free' },
     { id: 'a11_e_plaza', room: 'fest2_plaza', move: 'chase', patrol: [[5, 13], [5, 17]], battle: 'a11_n1_plaza' },
     // ---- 2晩目 ----
     { id: 'a11_e_corridor', room: 'fest2_plaza', night: 2, patrol: [[3, 8], [6, 8]], battle: 'a11_n2_corridor' },
-    { id: 'a11_e_west1', room: 'fest2_lane', night: 2, move: 'chase', patrol: [[20, 5], [20, 17]], battle: 'a11_n2_west1' },
+    { id: 'a11_e_west1', room: 'fest2_lane', night: 2, until: 2, move: 'chase', patrol: [[20, 5], [20, 17]], battle: 'a11_n2_west1' },
     { id: 'a11_e_west2', room: 'fest2_lane', night: 2, patrol: [[8, 3], [16, 3]], battle: 'a11_n2_west2' },
     // 金魚すくいの水槽が割れて、あふれ出す（地図の出来事 ev_tank）
-    { id: 'a11_e_east1', room: 'fest2_east', night: 2, hidden: true, patrol: [[13, 17], [8, 17]], battle: 'a11_n2_east1' },
-    { id: 'a11_e_east2', room: 'fest2_east', night: 2, move: 'chase', hidden: true, patrol: [[21, 11], [21, 17]], battle: 'a11_n2_east2' },
+    { id: 'a11_e_east1', room: 'fest2_east', night: 2, until: 2, hidden: true, patrol: [[13, 17], [8, 17]], battle: 'a11_n2_east1' },
+    { id: 'a11_e_east2', room: 'fest2_east', night: 2, until: 2, move: 'chase', hidden: true, patrol: [[21, 11], [21, 17]], battle: 'a11_n2_east2' },
     // 金魚すくいの屋台の前の番人（2晩目の山場。戦う前の会話）
     { id: 'a11_e_guard', room: 'fest2_east', night: 2, move: 'guard', patrol: [[17, 20]], battle: 'a11_n2_guard', scene: 'a11_guard' },
     // ---- 3晩目 ----
