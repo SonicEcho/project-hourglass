@@ -1343,6 +1343,42 @@ Scene: a quiet back street behind a summer shrine festival at dusk, in an old re
 - The rest of the edges: house roofs, old wooden fences, a concrete block wall and dense bushes.
 Keep everything inside the frame open ground: absolutely NO stalls, tents, crates, carts, trucks, tables, benches, lanterns, people or text. Absolutely no letters or text anywhere.""", '下書きは位置の目安')
 
+# ---- AP. 地面も部品で組む試し（段階291） ----
+section('AP. 地面も部品で組む試し：裏通りの部品の箱（段階291）', '地面の一枚絵を使わず、部品だけで裏通りを組む試し。今ある縁の部品（家・家の角・石垣・柵・茂み・木）に足りない物を3枚で頼む。添付は、届いた裏通りの地面の絵（`ground3_fest2_lane.png`。絵柄と光をそろえる見本）と、前の部品の絵（`parts_backyard1.png`。大きさの見本）。白い背景のままでよい')
+AP_REF = ['ground3_fest2_lane.png（届いた裏通りの地面の絵）', 'parts_backyard1.png（届いた部品の絵。大きさの見本）']
+add('部品の箱1：地面の下敷き（つなぎ目の出ない模様）', AP_REF, 'kit_lane_ground.png', f"""{STYLE}
+
+A sheet of seamless tileable ground textures for a 2D RPG map on mobile. Match the ground of the attached map illustration exactly in painting style, colors and texture detail.
+Layout: a grid of 2 rows by 2 columns, four square tiles of exactly the same size, separated by thin white gaps. Each tile is a flat ground surface seen from above, filling its whole square edge to edge, and must tile seamlessly: its left edge continues into its right edge and its top edge into its bottom edge, with no visible seam when repeated.
+Lighting: soft, even dusk light with NO light spots, NO shadows of objects, NO vignette and NO gradient from one side to the other, so the tile can be repeated many times without showing a pattern. Small details (pebbles, cracks) are spread evenly; nothing large or eye-catching that would repeat noticeably.
+- Row 1, column 1: packed dry earth of a back street, warm brown, with a few small pebbles.
+- Row 1, column 2: coarse grey-brown gravel mixed with earth, as in a loading yard.
+- Row 2, column 1: old worn stone paving of small irregular stones, with thin lines of moss between them.
+- Row 2, column 2: dark damp earth with patches of moss and tiny weeds, as in a shady corner.
+No objects, no people, no letters anywhere.""", '1マスより大きな四角を敷き詰めて使う')
+add('部品の箱2：地面に貼る物', AP_REF + ['kit_lane_ground.png（上で作った絵）'], 'kit_lane_decals.png', af_parts(3, 3, [
+    'a long strip of grass tufts and small weeds that grows along the base of a wall, lying flat on the ground, horizontal, about 6 steps long and less than 1 step deep.',
+    'a long low concrete curb with a shallow concrete gutter beside it and one small metal drain grate, lying on the ground, horizontal, about 6 steps long.',
+    'a shallow puddle on packed earth reflecting the dusk sky, about 2 steps wide, irregular round shape.',
+    'a patch of scattered pebbles, a few fallen leaves and bottle caps on the ground, about 2 steps wide.',
+    'two worn wheel ruts in the earth where carts and light trucks pass, horizontal, about 5 steps long.',
+    'an irregular patch of old stone paving with ragged broken edges, as if half buried in the earth, about 3 steps wide.',
+    'a round iron manhole cover set in the ground, about 1 step wide.',
+    'a patch of moss and tiny weeds on the ground, irregular shape, about 2 steps wide.',
+    'a long soft shadow of house eaves lying on the ground (a dark, slightly blue, semi-transparent band with a blurred lower edge), horizontal, about 6 steps long.',
+], ' Every piece here lies FLAT on the ground (no height), seen from the same view as the attached map. Give each piece a clear, slightly ragged natural outline so it can be cut out from the white background; do not fade its edges into white.'), '地面の下敷きの上に重ねる')
+add('部品の箱3：裏通りの縁の部品', AP_REF, 'kit_lane_edges.png', af_parts(3, 3, [
+    'the back side of a row of two old Japanese wooden houses joined together, seen from the street behind them: dark tiled roofs, wooden walls, a back door with a small warm lamp, a frosted window, an air conditioner outdoor unit, a gas meter and a few potted plants at the base. About 8 steps wide and 3 steps tall (let it fill the cell width).',
+    'the same kind of house back, a different single house with a laundry pole (two metal stands and a bar) in front of it and a lit window. About 5 steps wide.',
+    'only the dark tiled roofs of a row of old houses seen from above and behind (the houses face away from the viewer, so only the back slope of the roofs is visible, no walls). About 7 steps wide and 2 steps deep.',
+    'an old grey concrete block wall about chest high, straight, running left to right, with a little moss at its base. About 4 steps wide.',
+    'the same concrete block wall running from top to bottom (seen from its side), about 4 steps long.',
+    'the same concrete block wall making an L-shaped corner (one part running left to right, the other going down from its left end). About 2 by 2 steps.',
+    'an old wooden board fence running left to right, about 4 steps wide, with ONE board missing near its right end, leaving a narrow gap a child could squeeze through, with the broken board lying on the ground beside it.',
+    'a dense, neatly trimmed hedge, running left to right, about 4 steps wide and waist high.',
+    'a large cluster of trees and bushes for the corner of a map, dense dark green with some yellow leaves, about 3 steps wide.',
+], ' Match the attached parts sheet exactly in scale, view and style.'), 'ブロック塀・生け垣・柵はつなげて長くする')
+
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
     '- **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）',
@@ -1354,7 +1390,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -8 if p[0].startswith('AP.') else -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
