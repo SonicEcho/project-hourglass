@@ -48,7 +48,7 @@ describe('新しい1-1（段階262）', () => {
       const reach = reachableCells(nightArea(area, n), start ? { room: start.room ?? startRoom(area), cell: start.cell } : undefined);
       expect(reach.fest2_woods?.has('12,3') ?? false).toBe(false);
       // 裏通りの中（左の縦の道）
-      expect(reach.fest2_lane?.has('7,8') ?? false).toBe(n >= 2);
+      expect(reach.fest2_lane?.has('7,11') ?? false).toBe(n >= 2);
     }
   });
 
