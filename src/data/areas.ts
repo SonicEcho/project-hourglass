@@ -85,6 +85,9 @@ export const AREA_BATTLES: Record<string, CampaignBattle> = {
   a11_n1_chaser: { id: 'a11_n1_chaser', name: '砂嵐', enemies: tough([BALLOON_NOISE, GOLDFISH_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 2 },
   a11_n1_back: { id: 'a11_n1_back', name: '砂嵐', enemies: tough([BALLOON_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 2 },
   a11_n1_road: { id: 'a11_n1_road', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, BALLOON_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1 },
+  // 段階287：新しい1-1 だけ。明かりがつくと逃げる砂嵐がコマを持ち（晩の目的とつなぐ）、入口の左の道の砂嵐はコマを持たない
+  a11_n1_runner: { id: 'a11_n1_runner', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, BALLOON_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 3, koma: 1, item: ITEMS.natsuTail.id },
+  a11_n1_road_free: { id: 'a11_n1_road_free', name: '砂嵐', enemies: tough([GOLDFISH_NOISE, BALLOON_NOISE], A11_STORM_HP.night1), reward: 2 },
   a11_n1_plaza: { id: 'a11_n1_plaza', name: '砂嵐', enemies: tough([BALLOON_NOISE, MASK_NOISE, GOLDFISH_NOISE], A11_STORM_HP.night1), reward: 4, koma: 1 },
   a11_n2_corridor: { id: 'a11_n2_corridor', name: '砂嵐', enemies: tough([MASK_NOISE, COTTON_NOISE, GOLDFISH_NOISE]), reward: 3, koma: 1 },
   a11_n2_west1: { id: 'a11_n2_west1', name: '砂嵐', enemies: tough([COTTON_NOISE, BALLOON_NOISE, GOLDFISH_NOISE]), reward: 2 },
