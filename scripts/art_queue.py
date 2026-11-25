@@ -1326,6 +1326,23 @@ Bon-odori dancers circling a festival drum tower, all dancing the same simple bo
 Soft cel shading, clear dark outline so each dancer reads at a very small size.""", '左向き・右向きの踊りを4コマずつ。やぐらのまわりを輪になって回らせる')
 
 # 一覧に手で書いて頼んだ絵（指示文は台帳 src/data/assets.ts と、git の履歴の docs/ART_QUEUE.md に残っている）
+# ---- AO. 案3：屋台の裏通り（段階288） ----
+section('AO. 案3：屋台の裏通りの地面の絵（段階288）', '部屋の作り方の型（`docs/design/explore.md` の 2-7）で作る最初の部屋。地面の絵だけを頼み、屋台・木箱・発電機などは、今ある祭りの部品の絵を使い回す。添付は、作りの下書き（`docs/sketches/a11_v3/lane_plan.png`）と、届いた入口の地面の絵（`ground3_fest2_gate.png`）')
+add('地面の絵：屋台の裏通り（案3）', ['docs/sketches/a11_v3/lane_plan.png（作りの下書き）', 'ground3_fest2_gate.png（届いた入口の地面の絵）'], 'ground3_fest2_lane.png', f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the stalls, crates, carts and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale, colors and dusk lighting.
+{AF_CAM}
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Scene: a quiet back street behind a summer shrine festival at dusk, in an old residential neighborhood. Quieter and a little darker than the festival streets, lit by a few warm lights from the houses.
+- Top edge (about 3 steps tall): the dark tiled roofs and back walls of old wooden houses, with small back doors and a laundry pole.
+- Right below the houses: a narrow back alley of packed earth (about 2 steps tall) running along the house walls from left to right.
+- Below that: two strips of packed earth where small stalls will stand (one long on the left, one shorter on the right), with narrow gaps between them and at both ends that connect the back alley to the street below.
+- Across the middle: a wide back street of packed earth (about 6 to 7 steps tall), with an old concrete gutter along one side. It leaves the image through the RIGHT edge a little below the middle (about 4 steps wide).
+- Lower left: an open loading yard of packed earth and worn gravel where the stall keepers park and unload (about 8 by 5 steps). From its bottom, a path (about 4 steps wide) leaves through the BOTTOM edge, a little left of the center.
+- Lower right, below the street: a strip of packed earth for the backs of stalls, and behind it, a small hidden corner of packed earth with weeds (about 7 by 2 steps), reached only through a narrow 1-step gap at its right end.
+- The rest of the edges: house roofs, old wooden fences, a concrete block wall and dense bushes.
+Keep everything inside the frame open ground: absolutely NO stalls, tents, crates, carts, trucks, tables, benches, lanterns, people or text. Absolutely no letters or text anywhere.""", '下書きは位置の目安')
+
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
     '- **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）',
@@ -1337,7 +1354,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
