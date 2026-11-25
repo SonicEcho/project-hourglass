@@ -144,7 +144,7 @@ export const BACKYARD_PARTS: RoomPart[] = [
 ];
 
 /** 段階289：案3の屋台の裏通り（地面の絵 fest3_lane_ground に合わせた。柵の右端の1マスのすき間から、奥の隅へ） */
-const LANE_LAYOUT = [
+export const LANE_LAYOUT = [
   '########################',
   '########################',
   '########################',

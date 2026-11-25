@@ -13,14 +13,16 @@ for r in rooms:
     items = []
     for p in r['parts']:
         if p['file']:
-            items.append(((p['cell'][1] + 1) * T, p['file'], (p['cell'][0] + p['w'] / 2) * T, (p['cell'][1] + 1) * T, (p.get('sw') or p['w']) * T))
+            items.append(((p['cell'][1] + 1) * T, p['file'], (p['cell'][0] + p['w'] / 2) * T, (p['cell'][1] + 1) * T, (p.get('sw') or p['w']) * T, bool(p.get('flip'))))
     for g in r['gadgets']:
         if g['file']:
-            items.append(((g['cell'][1] + 1) * T, g['file'], (g['cell'][0] + 0.5) * T, (g['cell'][1] + 0.95) * T, g['w'] * T))
+            items.append(((g['cell'][1] + 1) * T, g['file'], (g['cell'][0] + 0.5) * T, (g['cell'][1] + 0.95) * T, g['w'] * T, False))
     for c in r['chests']:
-        items.append(((c[1] + 1) * T, 'assets/sprites/props/chest_closed.webp', (c[0] + 0.5) * T, (c[1] + 0.95) * T, 1.1 * T))
-    for _, f, cx, by, w in sorted(items):
+        items.append(((c[1] + 1) * T, 'assets/sprites/props/chest_closed.webp', (c[0] + 0.5) * T, (c[1] + 0.95) * T, 1.1 * T, False))
+    for _, f, cx, by, w, flip in sorted(items, key=lambda x: x[0]):
         pi = Image.open('public/' + f).convert('RGBA')
+        if flip:
+            pi = pi.transpose(Image.FLIP_LEFT_RIGHT)
         h = int(w * pi.height / pi.width)
         pi = pi.resize((int(w), h))
         im.alpha_composite(pi, (int(cx - w / 2), int(by - h)))

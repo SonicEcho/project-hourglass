@@ -76,7 +76,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { withLaneKit, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -245,7 +245,10 @@ export class ExploreScene extends Phaser.Scene {
 
   create(data: ExploreData): void {
     // 段階262：デバッグの切り替えで、新しい1-1（マス目の試し）
-    const raw = data.area === 'a11' && trialOn('a11rework') ? A11_REWORK : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
+    const rework = data.area === 'a11' && trialOn('a11rework');
+    // 段階292：裏通りを部品だけで組んだ版（デバッグメニューで切り替え）
+    const laneKit = rework ? ((['a', 'b', 'c'] as const).find((v) => trialOn(`lanekit_${v}`)) ?? null) : null;
+    const raw = rework ? (laneKit ? withLaneKit(A11_REWORK, laneKit) : A11_REWORK) : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
     if (!raw) throw new Error(`unknown area ${data.area}`);
     // 地図の調整（段階117）：?debug=1 の時だけ、端末に覚えた直しを重ねる
     this.rawArea = raw;
@@ -256,8 +259,8 @@ export class ExploreScene extends Phaser.Scene {
     const area = this.night > 0 ? nightArea(base, this.night) : base;
     this.area = area;
     this.trial = !AREAS[data.area];
-    this.stealth = raw === A11_REWORK;
-    this.walkers = raw === A11_REWORK;
+    this.stealth = rework;
+    this.walkers = rework;
     this.tune = data.tune ?? null;
     stopAmbience();
     this.route = [];
@@ -552,6 +555,7 @@ export class ExploreScene extends Phaser.Scene {
       const w = (p.sw ?? p.w) * T;
       const im = this.add.image((p.cell[0] + p.w / 2) * T, (p.cell[1] + 1) * T, key).setOrigin(0.5, 1);
       im.setDisplaySize(w, (w * im.height) / im.width);
+      if (p.flip) im.setFlipX(true);
       // 歩ける飾り（縄など）は、いつも仲間の下
       im.setData('foot', p.walk ? -1 : (p.cell[1] + 1) * T);
       im.setData('fade', true);
