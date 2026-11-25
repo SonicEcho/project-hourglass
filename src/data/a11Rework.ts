@@ -690,3 +690,33 @@ export const A11_BON = {
     { image: 'person.d_r4', left: false },
   ],
 };
+
+/**
+ * 段階294（docs/milestones/M3_explore_feel.md の 15.）：3Dらしい見た目の試し（デバッグメニューの切り替え。広場だけ）。
+ * 夜の暗い色を全体にかけ、灯りのまわりだけ暖かく明るくする。x・y・r はマス。
+ */
+export const A11_LOOK = {
+  rooms: ['fest2_plaza'],
+  /** 灯りの届かない所の色（明るさを決める） */
+  ambient: 0xa29ec2,
+  /** 灯り（やぐらの提灯と、広場のふちの屋台。数を増やすと、光の計算の区切りが四角く見えた） */
+  lights: [
+    { x: 12, y: 10.5, r: 8, color: 0xffb46a, power: 1.9 },
+    { x: 3.5, y: 4, r: 5, color: 0xffc080, power: 1 },
+    { x: 20.5, y: 4, r: 5, color: 0xffc080, power: 1 },
+    { x: 4, y: 19.5, r: 5, color: 0xffc080, power: 1 },
+    { x: 20, y: 19.5, r: 5, color: 0xffc080, power: 1 },
+  ],
+  /** 物の影（足もとから下へ、つぶして伸ばす）：濃さ・長さ（物の高さに対する割合）・右へのずれ（マス） */
+  shadow: { alpha: 0.34, length: 0.3, shift: 0.35, small: 2 },
+  /** 灯りの揺らめき（強さの幅と速さ） */
+  flicker: { amount: 0.12, ms: 900 },
+  /** 画面の効果：周りを暗く・灯りのにじみ・上下のぼかし */
+  fx: { vignette: 0.3, bloom: 0, tilt: 0, haze: 0.45 },
+  /** 手前を横切る提灯のひも（地面より速く動く。マス） */
+  foreground: [{ x: -1, y: 21, w: 11, speed: 1.3 }, { x: 13, y: 30, w: 11, speed: 1.3 }],
+  /** 光の粒の数（灯りごと） */
+  motes: 4,
+  /** 自分で光っている物（灯りの効果をかけない。かけると、背景を抜いた薄い縁まで明るく浮く） */
+  selfLit: ['part.string_lanterns', 'part.string_mixed', 'part.string_flags', 'part.lantern_stand'],
+};

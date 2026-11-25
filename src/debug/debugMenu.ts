@@ -372,6 +372,14 @@ export function installDebugMenu(nav: DebugNavigator): void {
         render(`新しい1-1：${rework ? '切（今の1-1）' : '入'}にしました。1-1 の探索に入り直すと変わります（探索の途中の場所は、最初の部屋からになります）`);
       }),
     );
+    // 段階294（docs/milestones/M3_explore_feel.md の 15.）：3Dらしい見た目の試し（新しい1-1 の広場だけ）
+    const look3d = trialOn('look3d');
+    trials.append(
+      button(`3Dらしい見た目の試し（広場）：${look3d ? '入' : '切'}`, () => {
+        setTrialOn('look3d', !look3d);
+        render(`3Dらしい見た目の試し：${look3d ? '切' : '入'}にしました。広場に入り直すと変わります（新しい1-1 が入の時だけ）`);
+      }),
+    );
     // 段階292（docs/milestones/M3_explore_feel.md の 14.）：裏通りを部品だけで組んだ版。押すたびに 一枚絵 → A → B → C → 一枚絵
     const kits = ['a', 'b', 'c'] as const;
     const kitNow = kits.find((v) => trialOn(`lanekit_${v}`)) ?? null;
