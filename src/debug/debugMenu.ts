@@ -372,12 +372,12 @@ export function installDebugMenu(nav: DebugNavigator): void {
         render(`新しい1-1：${rework ? '切（今の1-1）' : '入'}にしました。1-1 の探索に入り直すと変わります（探索の途中の場所は、最初の部屋からになります）`);
       }),
     );
-    // 段階294（docs/milestones/M3_explore_feel.md の 15.）：3Dらしい見た目の試し（新しい1-1 の広場だけ）
-    const look3d = trialOn('look3d');
+    // 段階295（docs/milestones/M3_explore_feel.md の 15.）：探索の地図の上下のぼかし。切って見比べられる
+    const blurOff = trialOff('mapblur');
     trials.append(
-      button(`3Dらしい見た目の試し（広場）：${look3d ? '入' : '切'}`, () => {
-        setTrialOn('look3d', !look3d);
-        render(`3Dらしい見た目の試し：${look3d ? '切' : '入'}にしました。広場に入り直すと変わります（新しい1-1 が入の時だけ）`);
+      button(`探索の地図の上下のぼかし：${blurOff ? '切' : '入'}`, () => {
+        setTrialOff('mapblur', !blurOff);
+        render(`探索の地図の上下のぼかし：${blurOff ? '入' : '切'}にしました。部屋に入り直すと変わります`);
       }),
     );
     // 段階292（docs/milestones/M3_explore_feel.md の 14.）：裏通りを部品だけで組んだ版。押すたびに 一枚絵 → A → B → C → 一枚絵
