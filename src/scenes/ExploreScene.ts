@@ -29,6 +29,7 @@ import {
   useGadget,
   ambushKind,
   facingOf,
+  guardFacing,
   sightFan,
   SHADE,
   spotted,
@@ -211,6 +212,11 @@ export class ExploreScene extends Phaser.Scene {
   /** 地図の上の文字・吹き出し・印（段階296）：上下のぼかしをかけない別のカメラで描く */
   private sharpLayer?: Phaser.GameObjects.Container;
   private textCam?: Phaser.Cameras.Scene2D.Camera;
+  /** 段階298：地図の出来事で開けるまで、閉じたまま描く扉と、その板の絵 */
+  private holdGates = new Set<string>();
+  private gateImages = new Map<string, Phaser.GameObjects.Image>();
+  /** 文字とボタンのカメラ（動かさない） */
+  private uiCam?: Phaser.Cameras.Scene2D.Camera;
   /** 足もとの高さの順に重ねる物（段階273） */
   private sortLayer?: Phaser.GameObjects.Container;
   /** 小物の絵のうち、足もとの順に重ねている物（仕掛けを描き直す時に消す） */
@@ -390,6 +396,8 @@ export class ExploreScene extends Phaser.Scene {
     // 段階281：これから起きる地図の出来事に「光らせる」があれば、灯す物は隠しておく
     const queuedEv = data.event ? (this.area.events ?? []).find((x) => x.id === data.event && !(this.state.flags ?? []).includes(`event:${x.id}`)) : undefined;
     this.pendingLight = !!queuedEv?.steps.some((st) => st.do === 'light');
+    // 段階298：これから起きる地図の出来事で開ける扉は、カメラが着くまで閉じたまま描く
+    this.holdGates = new Set(queuedEv?.steps.flatMap((st) => (st.do === 'open' ? [st.gate] : [])) ?? []);
     this.draw();
     // 戦闘に入った時にすぐ曲が変わるよう、戦闘の曲を先に読んでおく
     prefetchBgm([BGM.battle, BGM.boss]);
@@ -540,13 +548,53 @@ export class ExploreScene extends Phaser.Scene {
         this.tweens.add({ targets: tri, x: dx * T * 0.3, y: dy * T * 0.3, alpha: 0.5, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
       }
     }
-    // チェックポイント（大きな提灯の手前）
+    // チェックポイント＝休憩所（大きな提灯の手前）。2026-11-26（開発者：もっと目立たせたい）：
+    // 地面の光のたまり・立ちのぼる光の柱と粒・「休憩所」の札（札はぼかさない側）。帰り口の金色とまぎれないよう青
+    const restLabels: Phaser.GameObjects.GameObject[] = [];
+    if (!this.textures.exists('rest.beam')) {
+      const tex = this.textures.createCanvas('rest.beam', 32, 128);
+      const ctx = tex?.getContext();
+      if (tex && ctx) {
+        const g = ctx.createLinearGradient(0, 0, 0, 128);
+        g.addColorStop(0, 'rgba(120,210,255,0)');
+        g.addColorStop(1, 'rgba(150,225,255,0.85)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 32, 128);
+        tex.refresh();
+      }
+      const d = this.make.graphics({ x: 0, y: 0 }, false);
+      d.fillStyle(0xbfeaff, 1).fillCircle(3, 3, 3);
+      d.generateTexture('rest.mote', 6, 6);
+      d.destroy();
+    }
     room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
         if (ch !== 'P') return;
-        const ring = this.add.circle(c * T + T / 2, r * T + T / 2, T * 0.45).setStrokeStyle(3, 0x6bc8ff);
+        const x = c * T + T / 2;
+        const y = r * T + T / 2;
+        const pool = this.add.ellipse(x, y + T * 0.2, T * 1.9, T * 0.95, 0x6bc8ff, 0.32);
+        world.add(pool);
+        this.tweens.add({ targets: pool, scaleX: 1.15, scaleY: 1.15, alpha: 0.18, yoyo: true, repeat: -1, duration: 1100, ease: 'Sine.easeInOut' });
+        const ring = this.add.ellipse(x, y + T * 0.2, T * 1.3, T * 0.6).setStrokeStyle(3, 0x9fe0ff);
         world.add(ring);
         this.tweens.add({ targets: ring, alpha: 0.4, yoyo: true, repeat: -1, duration: 900 });
+        const beam = this.add.image(x, y + T * 0.25, 'rest.beam').setOrigin(0.5, 1).setDisplaySize(T * 1.1, T * 2.6).setAlpha(0.55).setBlendMode(Phaser.BlendModes.ADD);
+        world.add(beam);
+        this.tweens.add({ targets: beam, alpha: 0.3, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.easeInOut' });
+        const motes = this.add.particles(x, y + T * 0.2, 'rest.mote', {
+          lifespan: 1800,
+          frequency: 260,
+          speedY: { min: -26, max: -14 },
+          speedX: { min: -5, max: 5 },
+          x: { min: -T * 0.45, max: T * 0.45 },
+          scale: { start: 0.9, end: 0.2 },
+          alpha: { start: 0.9, end: 0 },
+          blendMode: 'ADD',
+        });
+        world.add(motes);
+        const label = addText(this, x, y - T * 2.6, '休憩所', { size: 12, bold: true, color: '#bfeaff' }).setOrigin(0.5).setStroke('#0b2030', 4);
+        this.tweens.add({ targets: label, y: label.y - 3, yoyo: true, repeat: -1, duration: 1200, ease: 'Sine.easeInOut' });
+        restLabels.push(label);
       }),
     );
     // 足もとの高さの順に重ねる物（段階273）：部品・小物・宝箱・仲間・敵。毎フレーム並べ直す（手前の物ほど上）
@@ -587,6 +635,7 @@ export class ExploreScene extends Phaser.Scene {
     world.add(this.darkLayer);
     // 段階296：吹き出しは、ぼかさないカメラで（文字がぼけないように）
     this.sharpLayer.add(this.bubbleLayer);
+    this.sharpLayer.add(restLabels);
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
       if (!this.here(t)) continue;
@@ -765,6 +814,7 @@ export class ExploreScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, cam.width, cam.height).setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     cam.ignore(ui);
     uiCam.ignore(world);
+    this.uiCam = uiCam;
     // 段階295：地図の上下のぼかし（デバッグメニューで切れる）
     applyMapBlur(this, cam, !trialOff('mapblur'));
     // 段階297：ピントを主人公に合わせる（最初はすぐ）
@@ -884,7 +934,8 @@ export class ExploreScene extends Phaser.Scene {
       const dx = p.x - this.drag.x;
       const dy = p.y - this.drag.y;
       if (Math.hypot(dx, dy) < 18) return;
-      const ui = this.cameras.cameras[1];
+      // 2026-11-26（開発者：スティックの位置がずれた）：ぼかさないカメラを足したので、文字とボタンのカメラは名前で持つ
+      const ui = this.uiCam;
       const at = ui ? (p.positionToCamera(ui) as Phaser.Math.Vector2) : { x: p.x, y: p.y };
       const start = ui ? ui.getWorldPoint(this.drag.x, this.drag.y) : { x: this.drag.x, y: this.drag.y };
       this.drawStick(start.x, start.y, at.x - start.x, at.y - start.y);
@@ -933,7 +984,11 @@ export class ExploreScene extends Phaser.Scene {
     }
     if (this.leaving || !this.player || this.tipOpen || this.editor || this.tune || this.eventRunning) return;
     if (this.time.now < this.graceUntil) return;
-    if (this.stealth) this.updateSight();
+    if (this.stealth) {
+      // 段階298：番人は、決まった向きを順に見回す
+      for (const e of this.enemies) if (e.move === 'guard') e.facing = guardFacing(this.area.enemies.find((x) => x.id === e.id)?.look, this.time.now);
+      this.updateSight();
+    }
     for (const e of this.enemies) {
       if (Phaser.Math.Distance.Between(e.sprite.x, e.sprite.y, this.player.x, this.player.y) < T * 0.6) {
         // 段階263：見つかる前に触れたら不意打ち
@@ -1420,7 +1475,8 @@ export class ExploreScene extends Phaser.Scene {
     };
     // 扉を描くのは、もとの部屋で歩けるマスだけ（扉の四角の中の壁は描かない）
     const plainRoom = this.rawArea.rooms.find((x) => x.id === this.state.room) ?? this.room;
-    const closed = closedGates(this.area, this.state, this.state.room);
+    const held = (this.area.gates ?? []).filter((g) => g.room === this.state.room && this.holdGates.has(g.id));
+    const closed = [...closedGates(this.area, this.state, this.state.room), ...held.filter((g) => !closedGates(this.area, this.state, this.state.room).includes(g))];
     // 段階271：板のかべは、解いた後は壊れた板の絵を残す
     for (const gate of (this.area.gates ?? []).filter((g) => g.room === this.state.room && g.look === 'fence' && !closed.includes(g))) {
       const broken = this.propArt(A11_GATE_ART.broken);
@@ -1431,7 +1487,9 @@ export class ExploreScene extends Phaser.Scene {
       // 段階271：小物の絵が読めていれば、絵で（板のかべ・人混み・池の霧）
       const boards = gate.look === 'fence' ? this.propArt(A11_GATE_ART.boards) : undefined;
       if (boards) {
-        front(this.gateBoards(boards, gate.cells));
+        const im = this.gateBoards(boards, gate.cells);
+        this.gateImages.set(gate.id, im);
+        front(im);
         continue;
       }
       const crowd = gate.look === 'crowd' ? A11_GATE_ART.crowd.map((k) => this.propArt(k)).filter((k): k is string => !!k) : [];
@@ -1700,7 +1758,27 @@ export class ExploreScene extends Phaser.Scene {
       next: { key: 'Explore', data: this.back(back) },
       onVars: (vars) => setStoryVars(Object.fromEntries(Object.entries(vars).filter(([k]) => !k.startsWith('koma')))),
     };
-    this.scene.start('Dialogue', data);
+    // 2026-11-26（開発者：区画の中の会話の背景が前の地図のまま）：新しい1-1 では、文字とボタンを隠した今の地図を写し取って、
+    // 縁日の背景（festival）の代わりに使う。場面を描いた背景（射的の屋台・石段など）はそのまま
+    if (!this.walkers || !(this.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)) {
+      this.scene.start('Dialogue', data);
+      return;
+    }
+    this.ui?.setVisible(false);
+    this.actionMark?.setVisible(false);
+    this.sharpLayer?.setVisible(false);
+    this.renderer.snapshot((img) => {
+      const key = 'explore.snapshot';
+      if (this.textures.exists(key)) this.textures.remove(key);
+      if (img instanceof HTMLImageElement) {
+        const add = () => {
+          this.textures.addImage(key, img);
+          this.scene.start('Dialogue', { ...data, backdropImage: { festival: key } });
+        };
+        if (img.complete) add();
+        else img.onload = add;
+      } else this.scene.start('Dialogue', data);
+    });
   }
 
   private startBattle(battle: string, enemyId: string, ambush = false): void {
@@ -2003,6 +2081,24 @@ export class ExploreScene extends Phaser.Scene {
           playSe(this, SE.encounter);
           await wait(460);
         }
+      } else if (step.do === 'open') {
+        // 段階298：カメラの前で、囲いの板を外す（揺らして消し、壊れた板を残す）
+        this.holdGates.delete(step.gate);
+        const im = this.gateImages.get(step.gate);
+        const gate = this.area.gates?.find((g) => g.id === step.gate);
+        playSe(this, SE.heal);
+        if (im) {
+          await new Promise<void>((done) => this.tweens.add({ targets: im, x: im.x + 3, yoyo: true, repeat: 3, duration: 60, onComplete: () => done() }));
+          await new Promise<void>((done) => this.tweens.add({ targets: im, alpha: 0, y: im.y + 6, duration: 380, onComplete: () => (im.destroy(), done()) }));
+        }
+        const broken = this.propArt(A11_GATE_ART.broken);
+        if (broken && gate && this.sortLayer) {
+          const b = this.gateBoards(broken, gate.cells).setAlpha(0);
+          this.sortLayer.add(b);
+          this.sortedProps.push(b);
+          this.tweens.add({ targets: b, alpha: 1, duration: 300 });
+        }
+        await wait(300);
       } else if (step.do === 'light') {
         // 段階281（開発者：明かりが不自然）：宙に光の玉を出さず、暗がりを残したまま電球の列を順に灯し、暗がりをゆっくり晴らす
         const dark = this.darkOverlay(this.area.gates?.find((g) => g.room === this.state.room && g.look === 'dark')?.cells ?? []);

@@ -159,6 +159,8 @@ export type EnemyMove = 'patrol' | 'chase' | 'guard' | 'flee';
 /** 敵の印：決まった道を行き来する。触れると戦闘（battle は区画の戦闘の id） */
 export interface AreaEnemy extends InRoom, InNight {
   id: string;
+  /** 番人の見回す向き（段階298。順に向く。書かなければ 上・右・下・左） */
+  look?: GridCell[];
   /** 戦う前に見る会話（段階63。番人の前の会話など。1回だけ） */
   scene?: string;
   /** 行き来する道の折り返しの点（最初の点から始まる。3点以上なら輪になる。番人は1点） */
@@ -287,6 +289,8 @@ export type AreaEventStep =
   | { do: 'wait'; ms: number }
   | { do: 'flash'; times?: number }
   | { do: 'slide'; mark: string; from: GridCell; to: GridCell }
+  /** 仕掛けの扉を、カメラの前で開ける（段階298。それまでは閉じたまま描く） */
+  | { do: 'open'; gate: string }
   | { do: 'battle'; enemy: string };
 
 /** 地図の出来事のきっかけ（段階266）：enter そのマスのどれかに着いた・solved その仕掛けが解けた・room その部屋に入った */
@@ -705,6 +709,18 @@ export function facingOf(from: GridCell, to: GridCell): GridCell | null {
   if (dx === 0 && dy === 0) return null;
   // 斜めは無い（4方向に歩く）が、念のため横を優先
   return dx !== 0 ? [dx, 0] : [0, dy];
+}
+
+/** 番人が1つの向きを見ている長さ（ミリ秒。段階298） */
+export const GUARD_LOOK_MS = 1500;
+
+/**
+ * 番人の向き（段階298。開発者：番人がいつも同じ向きで、いつも不意打ちできた）：look の向きを順に見回す。
+ * 同じ向きを続けて書くと、その向きを長く見る。t は経った時間（ミリ秒）
+ */
+export function guardFacing(look: GridCell[] | undefined, t: number, ms = GUARD_LOOK_MS): GridCell {
+  const dirs: GridCell[] = look && look.length > 0 ? look : [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  return dirs[Math.floor(Math.max(0, t) / ms) % dirs.length];
 }
 
 /** 見回りの最初の向き（道の次の点の方。点が1つなら下） */
@@ -1153,6 +1169,7 @@ export function checkEvents(area: AreaDef): string[] {
     for (const st of ev.steps) {
       const who = st.do === 'walk' && st.who !== 'hero' ? st.who : st.do === 'spawn' || st.do === 'battle' ? st.enemy : null;
       if (who && !area.enemies.some((e) => e.id === who)) errors.push(`${area.id}：地図の出来事 ${ev.id} の砂嵐 ${who} がいない`);
+      if (st.do === 'open' && !(area.gates ?? []).some((g) => g.id === st.gate)) errors.push(`${area.id}：地図の出来事 ${ev.id} で開ける扉 ${st.gate} がない`);
       if (st.do === 'spawn' && !area.enemies.find((e) => e.id === st.enemy)?.hidden) errors.push(`${area.id}：地図の出来事 ${ev.id} で湧かせる ${st.enemy} が隠れていない`);
     }
     const bi = ev.steps.findIndex((st) => st.do === 'battle');

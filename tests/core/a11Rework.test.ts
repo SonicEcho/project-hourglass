@@ -388,3 +388,17 @@ describe('目的とコマを結ぶ・前の晩の砂嵐が散る（段階287）'
   });
 });
 
+
+describe('番人は見回す（段階298）', () => {
+  it('look の向きを順に見る。書かなければ 上・右・下・左', async () => {
+    const { guardFacing, GUARD_LOOK_MS } = await import('../../src/core');
+    expect([0, 1, 2, 3, 4].map((k) => guardFacing(undefined, k * GUARD_LOOK_MS))).toEqual([[0, -1], [1, 0], [0, 1], [-1, 0], [0, -1]]);
+    expect(guardFacing([[1, 0], [0, 1]], GUARD_LOOK_MS * 1.5)).toEqual([0, 1]);
+  });
+  it('東の屋台の番人は、人の来る上の通りを一番長く見て、下（背中側）は向かない', () => {
+    const guard = area.enemies.find((e) => e.id === 'a11_e_guard')!;
+    const up = guard.look!.filter(([x, y]) => x === 0 && y === -1).length;
+    expect(up).toBeGreaterThan(guard.look!.length / 2);
+    expect(guard.look!.some(([x, y]) => x === 0 && y === 1)).toBe(false);
+  });
+});
