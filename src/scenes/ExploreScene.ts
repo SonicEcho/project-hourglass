@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { battleSceneFor, keepChainWeak, knownChainWeak } from './chainEncounter';
 import { ensureDigHero, type DigHeroSprite } from './digArt';
-import { applyLook, resetLook } from './exploreLook';
+import { applyMapBlur } from './exploreLook';
 import type { AreaDef, AreaEnemy, AreaEvent, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -77,7 +77,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { withLaneKit, A11_LOOK, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { withLaneKit, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -760,9 +760,8 @@ export class ExploreScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, cam.width, cam.height).setZoom(RENDER_SCALE).centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     cam.ignore(ui);
     uiCam.ignore(world);
-    // 段階294：3Dらしい見た目の試し（デバッグメニューの切り替え。決めた部屋だけ）
-    resetLook(this);
-    if (this.walkers && trialOn('look3d') && A11_LOOK.rooms.includes(room.id) && this.sortLayer) applyLook(this, { world, sortLayer: this.sortLayer, cam, uiCam, T });
+    // 段階295：地図の上下のぼかし（デバッグメニューで切れる）
+    applyMapBlur(this, cam, !trialOff('mapblur'));
 
     // 上の帯は、地図の絵が透けて文字が読みにくくならないよう、濃くする（段階98。レビューの F3）
     ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.8).setOrigin(0));

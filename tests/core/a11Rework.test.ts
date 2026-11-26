@@ -388,20 +388,3 @@ describe('目的とコマを結ぶ・前の晩の砂嵐が散る（段階287）'
   });
 });
 
-describe('3Dらしい見た目の試し（段階294）', () => {
-  it('試す部屋はある部屋で、灯りはその部屋の中。影や効果の数値は 0〜1', async () => {
-    const { A11_LOOK } = await import('../../src/data');
-    for (const id of A11_LOOK.rooms) expect(area.rooms.some((r) => r.id === id), id).toBe(true);
-    for (const l of A11_LOOK.lights) {
-      expect(l.x).toBeGreaterThanOrEqual(0);
-      expect(l.x).toBeLessThanOrEqual(24);
-      expect(l.y).toBeGreaterThanOrEqual(0);
-      expect(l.y).toBeLessThanOrEqual(36);
-      expect(l.r).toBeGreaterThan(0);
-    }
-    for (const v of [A11_LOOK.shadow.alpha, A11_LOOK.fx.vignette, A11_LOOK.fx.haze, A11_LOOK.flicker.amount]) {
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThanOrEqual(1);
-    }
-  });
-});
