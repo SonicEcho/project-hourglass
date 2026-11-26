@@ -208,6 +208,9 @@ export class ExploreScene extends Phaser.Scene {
   private roomMapBox?: Phaser.GameObjects.Container;
   /** 仕掛けの上の吹き出し（2026-11-24。仲間や屋台の絵より上） */
   private bubbleLayer?: Phaser.GameObjects.Container;
+  /** 地図の上の文字・吹き出し・印（段階296）：上下のぼかしをかけない別のカメラで描く */
+  private sharpLayer?: Phaser.GameObjects.Container;
+  private textCam?: Phaser.Cameras.Scene2D.Camera;
   /** 足もとの高さの順に重ねる物（段階273） */
   private sortLayer?: Phaser.GameObjects.Container;
   /** 小物の絵のうち、足もとの順に重ねている物（仕掛けを描き直す時に消す） */
@@ -576,12 +579,14 @@ export class ExploreScene extends Phaser.Scene {
     }
     // 仕掛けの扉と仕掛け（段階264。絵が届くまでの仮の印）
     this.bubbleLayer = this.add.container(0, 0);
+    this.sharpLayer = this.add.container(0, 0);
     this.darkLayer = this.add.container(0, 0);
     this.drawGadgets(world);
     world.add(sortLayer);
     // 停電の暗がりは、宝箱や小物の上にかぶせる（2026-11-24 開発者：暗がりに宝箱が浮いて見えた）
     world.add(this.darkLayer);
-    world.add(this.bubbleLayer);
+    // 段階296：吹き出しは、ぼかさないカメラで（文字がぼけないように）
+    this.sharpLayer.add(this.bubbleLayer);
     // 話せる人（写しの人々）。半分すけた人影と、吹き出し
     for (const t of area.talkers) {
       if (!this.here(t)) continue;
@@ -614,7 +619,7 @@ export class ExploreScene extends Phaser.Scene {
       const bubble = addText(this, x, y - (figure ? T * 1.45 : T * 0.75), giftMark, { size: 14, bold: true, color: t.gift ? '#ffd84a' : '#ffffff' }).setOrigin(0.5).setAlpha(given ? 0.35 : 1);
       if (t.gift && !given) bubble.setStroke('#3a2a00', 4);
       if (figure && this.bubbleLayer) this.bubbleLayer.add(bubble);
-      else world.add(bubble);
+      else this.sharpLayer.add(bubble);
       this.tweens.add({ targets: bubble, y: bubble.y - 4, yoyo: true, repeat: -1, duration: 700 });
     }
     // 段階283：通り抜けられる写しの人々と、盆踊りの輪（セピア色で少し透かす）
@@ -663,7 +668,7 @@ export class ExploreScene extends Phaser.Scene {
         boss.add(z);
         this.tweens.add({ targets: z, y: z.y - 6, alpha: 0.3, yoyo: true, repeat: -1, duration: 1200 });
       }
-      world.add(boss);
+      this.sharpLayer.add(boss);
       this.tweens.add({ targets: boss, scale: awake ? 1.1 : 1.04, yoyo: true, repeat: -1, duration: awake ? 800 : 1600 });
     }
     // 帰り口（段階67）：今夜のコマがそろったら、次の晩を始めるチェックポイントに光る砂時計
@@ -762,6 +767,24 @@ export class ExploreScene extends Phaser.Scene {
     uiCam.ignore(world);
     // 段階295：地図の上下のぼかし（デバッグメニューで切れる）
     applyMapBlur(this, cam, !trialOff('mapblur'));
+    // 段階296（開発者：文字までぼけている）：地図の上の文字・吹き出し・印は、ぼかさない別のカメラで描く。
+    // 地図のカメラの次・文字とボタンのカメラの前に描き、位置は毎フレーム地図のカメラに合わせる
+    const sharp = this.sharpLayer;
+    if (sharp) {
+      const textCam = this.cameras.add(0, 0, cam.width, cam.height).setZoom(RENDER_SCALE);
+      const cams = this.cameras.cameras;
+      cams.splice(cams.indexOf(textCam), 1);
+      cams.splice(cams.indexOf(uiCam), 0, textCam);
+      const pre = textCam.preRender.bind(textCam);
+      textCam.preRender = () => {
+        textCam.setScroll(cam.scrollX, cam.scrollY);
+        pre();
+      };
+      cam.ignore(sharp);
+      uiCam.ignore(sharp);
+      this.textCam = textCam;
+      this.hideFromTextCam();
+    }
 
     // 上の帯は、地図の絵が透けて文字が読みにくくならないよう、濃くする（段階98。レビューの F3）
     ui.add(this.add.rectangle(0, 0, GAME_WIDTH, 80, 0x000000, 0.8).setOrigin(0));
@@ -886,7 +909,15 @@ export class ExploreScene extends Phaser.Scene {
     });
   }
 
+  /** ぼかさないカメラ（段階296）には、地図の上の文字の入れ物だけを映す（後から足された物も） */
+  private hideFromTextCam(): void {
+    const cam = this.textCam;
+    if (!cam) return;
+    for (const o of this.children.list) if (o !== this.sharpLayer) cam.ignore(o);
+  }
+
   update(): void {
+    this.hideFromTextCam();
     // 段階273：手前の物ほど上に（足もとの高さの順）
     if (this.dancers.length > 0) this.moveDancers(this.game.loop.delta);
     if (this.sortLayer) {
@@ -1016,6 +1047,13 @@ export class ExploreScene extends Phaser.Scene {
     const gadget = talker || chest || plain ? null : gadgetAt(this.area, this.state, this.night, this.state.room, cell);
     const boss = !plain && !talker && !chest && !gadget && this.bossHere() && near(this.area.boss.cell, cell, 1);
     const from = this.nextCell ?? this.state.cell;
+    // 2026-11-26（開発者：重なっても話せるように）：話せる人と同じマスか、となりにいる時は、歩かずにその場で話す
+    if (talker && !this.walking && near(talker.cell, from, 1)) {
+      this.route = [];
+      this.goal = { kind: 'talk', id: talker.id };
+      this.reachGoal();
+      return;
+    }
     let target: GridCell | null;
     let path: GridCell[] | null;
     if (chest || gadget) {
@@ -1597,6 +1635,8 @@ export class ExploreScene extends Phaser.Scene {
     if (this.tune || this.leaving || this.walking || this.route.length > 0 || this.eventRunning) return null;
     const [x, y] = this.state.cell;
     const [fx, fy] = this.lastDir;
+    // 2026-11-26：話せる人と同じマスに重なって立っている時も「話す」
+    if (this.area.talkers.some((t) => this.here(t) && near(t.cell, [x, y], 0))) return { cell: [x, y], label: '話す' };
     const around: GridCell[] = [[x + fx, y + fy], [x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y], [x - 1, y - 1], [x + 1, y - 1], [x + 1, y + 1], [x - 1, y + 1]];
     for (const c of around) {
       if (this.area.talkers.some((t) => this.here(t) && near(t.cell, c, 0))) return { cell: c, label: '話す' };
@@ -1621,7 +1661,7 @@ export class ExploreScene extends Phaser.Scene {
     const y = GAME_HEIGHT - 30 - vitalsBandHeight(currentParty(storyBattleLineup()).length);
     addButton(this, box, left ? 70 : GAME_WIDTH - 70, y, 112, 60, t.label, { onTap: () => this.tapCell(t.cell) }, { ...GOLD_BUTTON, size: 18 });
     const mark = addText(this, t.cell[0] * T + T / 2, t.cell[1] * T - T * 0.35, '！', { size: 18, bold: true, color: '#ffd84a' }).setOrigin(0.5).setStroke('#5a1a00', 4);
-    this.world?.add(mark);
+    (this.sharpLayer ?? this.world)?.add(mark);
     this.tweens.add({ targets: mark, y: mark.y - 5, yoyo: true, repeat: -1, duration: 450 });
     this.actionMark = mark;
   }
