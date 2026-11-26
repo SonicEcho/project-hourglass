@@ -28,6 +28,15 @@ void main() {
   gl_FragColor = acc;
 }`;
 
+/** ピントの中心（画面の上から測った高さの割合）。探索の画面が毎フレーム主人公に合わせる（段階297） */
+let focus = 0.5 + MAP_BLUR.offset;
+
+/** ピントの中心を、主人公の画面の高さ（上から測った割合）に、なめらかに近づける。first の時はすぐ合わせる */
+export function followMapBlur(playerY: number, first = false): void {
+  const want = Phaser.Math.Clamp(playerY + MAP_BLUR.offset, MAP_BLUR.min, MAP_BLUR.max);
+  focus = first ? want : focus + (want - focus) * MAP_BLUR.follow;
+}
+
 class MapBlur extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
   constructor(game: Phaser.Game) {
     super({ game, name: 'MapBlur', fragShader: FRAG });
@@ -37,7 +46,7 @@ class MapBlur extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
     this.set2f('uRes', this.renderer.width, this.renderer.height);
     this.set1f('uBand', MAP_BLUR.band);
     // 絵の中の高さは下から測るので、上から測った割合を返す
-    this.set1f('uFocus', 1 - MAP_BLUR.focus);
+    this.set1f('uFocus', 1 - focus);
     // 画面の点の数に合わせる（高解像度の画面でも、見た目のぼけ方が同じになるように）
     this.set1f('uStrength', MAP_BLUR.strength * (this.renderer.height / 844));
   }
