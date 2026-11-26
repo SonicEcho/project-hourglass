@@ -75,6 +75,8 @@ export interface DialogueData {
   seed?: number;
   /** 画面を暗い所から明るくして始める（ミリ秒。タイトルから続く時。段階32b 調整5） */
   fadeInMs?: number;
+  /** 背景の絵の差し替え（背景の id → 絵の id。2026-11-26：新しい1-1 の区画の中の会話は、前の縁日の絵ではなく今いる部屋の様子に） */
+  backdropImage?: Record<string, string>;
 }
 
 /**
@@ -197,6 +199,7 @@ export class DialogueScene extends Phaser.Scene {
   private logoReadyAt = 0;
   /** 今の背景の絵（台帳の id。絵のない背景は null） */
   private bgImage: string | null = null;
+  private backdropImage?: Record<string, string>;
   /** 背景だけを見せている間、タップで早めに終える */
   private viewDone?: () => void;
   /** 背景だけを見せるために下げた部品と、下げる前に見えていたか（下げていない時は undefined） */
@@ -211,6 +214,7 @@ export class DialogueScene extends Phaser.Scene {
     if (data.fadeInMs) this.cameras.main.fadeIn(data.fadeInMs, 0, 0, 0);
     this.debug = isDebugEnabled(window.location.search);
     this.pos = { scene: data.scene, index: 0 };
+    this.backdropImage = data.backdropImage;
     this.shownLine = null;
     this.vars = { ...(data.vars ?? {}) };
     this.queue = [...(data.queue ?? [])];
@@ -492,11 +496,13 @@ export class DialogueScene extends Phaser.Scene {
 
   /** 背景。絵があれば画面を覆うように置き、なければ色の帯と名前（仮） */
   private setBackdrop(id: string): void {
-    const def = id === 'none' ? BACKDROPS.black : BACKDROPS[id];
-    if (!def) {
+    const base = id === 'none' ? BACKDROPS.black : BACKDROPS[id];
+    if (!base) {
       console.warn('[dialogue] 背景がない', id);
       return;
     }
+    const swap = this.backdropImage?.[id];
+    const def = swap && this.textures.exists(swap) ? { ...base, image: swap } : base;
     this.bgImage = def.image ?? null;
     // 屋台の並ぶ参道などは、人混みの音を小さく鳴らし続ける（段階32b 調整3。前は場面の途中で1回だけ鳴らしていた）
     if (def.ambienceSe) startAmbience(this, def.ambienceSe);

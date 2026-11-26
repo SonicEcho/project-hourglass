@@ -10,12 +10,13 @@ import { ITEMS } from './weapons';
 // 敵の戦闘・コマ・写しの人の台詞・途中の会話・ぬしは今の 1-1 のまま使い、置く所だけ変える。
 // 見つかる範囲（段階263）は、この区画の時だけ探索の画面が入れる。仕掛けと仲間の力（段階264）は A11_REWORK の gates・gadgets
 
+/** 2026-11-26：開発者の地図直し（3行目の建物の裏を通れなくし、4行目の左右の路地の入口をあける。8行目のラムネのたらいは外した） */
 const GATE_LAYOUT = [
   '##########....##########',
   '#........#....#.......##',
   '#........#....#.......##',
-  '#........#....#.......##',
-  '#........#....#.......##',
+  '##....####....####...###',
+  '#.....................##',
   '#.....................##',
   '#.....................##',
   '......................##',
@@ -52,7 +53,6 @@ export const GATE_PARTS: RoomPart[] = [
   { part: 'crates_tarp', cell: [21, 7], w: 2, sw: 1.6 },
   { part: 'cedar', cell: [23, 8], w: 1, d: 2, sw: 2.4 },
   { part: 'bush', cell: [23, 10], w: 1, sw: 1.4 },
-  { part: 'ramune_tub', cell: [9, 8], w: 1, sw: 1.1 },
   { part: 'b_small_red', cell: [1, 12], w: 2, d: 2, sw: 2.1 },
   { part: 'b_wide_stripe', cell: [3, 12], w: 4, d: 2, sw: 4.1 },
   { part: 'b_tent', cell: [7, 12], w: 3, d: 2, sw: 3 },
@@ -438,8 +438,8 @@ export const A11_REWORK: AreaDef = {
     // 金魚すくいの水槽が割れて、あふれ出す（地図の出来事 ev_tank）
     { id: 'a11_e_east1', room: 'fest2_east', night: 2, until: 2, hidden: true, patrol: [[13, 17], [8, 17]], battle: 'a11_n2_east1' },
     { id: 'a11_e_east2', room: 'fest2_east', night: 2, until: 2, move: 'chase', hidden: true, patrol: [[21, 11], [21, 17]], battle: 'a11_n2_east2' },
-    // 金魚すくいの屋台の前の番人（2晩目の山場。戦う前の会話）
-    { id: 'a11_e_guard', room: 'fest2_east', night: 2, move: 'guard', patrol: [[17, 20]], battle: 'a11_n2_guard', scene: 'a11_guard' },
+    // 金魚すくいの屋台の前の番人（2晩目の山場。戦う前の会話）。段階298：人の来る上の通りを長めに見て、ときどき左右を向く
+    { id: 'a11_e_guard', room: 'fest2_east', night: 2, move: 'guard', patrol: [[17, 20]], look: [[0, -1], [0, -1], [-1, 0], [0, -1], [0, -1], [1, 0]], battle: 'a11_n2_guard', scene: 'a11_guard' },
     // ---- 3晩目 ----
     { id: 'a11_e_steps', room: 'fest2_plaza', night: 3, patrol: [[15, 7], [18, 7]], battle: 'a11_n3_steps' },
     { id: 'a11_e_right', room: 'fest2_plaza', night: 3, move: 'chase', patrol: [[18, 13], [18, 17]], battle: 'a11_n3_right' },
@@ -533,6 +533,20 @@ export const A11_REWORK: AreaDef = {
         { do: 'flash', times: 1 },
         { do: 'say', name: 'ハルト', text: '霧が……晴れていく' },
         { do: 'say', name: 'あかり', text: 'あの砂嵐が、池の思い出を食べてたんだね。……飛び石の先、池の真ん中に何かある' },
+        { do: 'camera', to: 'hero', ms: 500 },
+      ],
+    },
+    {
+      // 段階298（開発者：お面を返した後、どこが開いたか分かりにくい）：カメラを裏の囲いへ動かしてから、板を外す
+      id: 'ev_mask',
+      room: 'fest2_east',
+      night: 2,
+      when: { on: 'solved', flag: 'p_mask' },
+      steps: [
+        { do: 'camera', to: [11, 11], ms: 600 },
+        { do: 'wait', ms: 250 },
+        { do: 'open', gate: 'g_gap' },
+        { do: 'say', name: 'ハルト', text: '屋台の裏の囲いの板が、外された。……奥へ通れる' },
         { do: 'camera', to: 'hero', ms: 500 },
       ],
     },
@@ -660,7 +674,7 @@ export const A11_CROWD: { room: string; image: string; cell: [number, number]; f
   { room: 'fest2_plaza', image: 'person.c_foxboy', cell: [6, 7], face: 'front' },
   { room: 'fest2_plaza', image: 'person.c_icewoman', cell: [15, 7], face: 'front' },
   { room: 'fest2_plaza', image: 'person.c_goldfishgirl', cell: [6, 11], face: 'left', walk: [2, 9] },
-  { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], face: 'left', walk: [15, 19] },
+  { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], face: 'right', walk: [15, 19] },
   { room: 'fest2_plaza', image: 'person.c_boys', cell: [5, 15], face: 'front' },
   { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], face: 'right', walk: [14, 18] },
   // 段階289：裏通りは静か。荷さばき場で荷を運ぶ人と、家の勝手口の前のおじいさんだけ
