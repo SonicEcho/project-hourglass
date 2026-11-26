@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { battleSceneFor, keepChainWeak, knownChainWeak } from './chainEncounter';
 import { ensureDigHero, type DigHeroSprite } from './digArt';
-import { applyMapBlur } from './exploreLook';
+import { applyMapBlur, followMapBlur } from './exploreLook';
 import type { AreaDef, AreaEnemy, AreaEvent, AreaTrigger, EnemyMind, EnemyMove, ExploreState, GridCell, GridMap, RoomDef } from '../core';
 import {
   closedWalls,
@@ -767,6 +767,8 @@ export class ExploreScene extends Phaser.Scene {
     uiCam.ignore(world);
     // 段階295：地図の上下のぼかし（デバッグメニューで切れる）
     applyMapBlur(this, cam, !trialOff('mapblur'));
+    // 段階297：ピントを主人公に合わせる（最初はすぐ）
+    if (cam.worldView.height > 0) followMapBlur((this.player.y - cam.worldView.y) / cam.worldView.height, true);
     // 段階296（開発者：文字までぼけている）：地図の上の文字・吹き出し・印は、ぼかさない別のカメラで描く。
     // 地図のカメラの次・文字とボタンのカメラの前に描き、位置は毎フレーム地図のカメラに合わせる
     const sharp = this.sharpLayer;
@@ -918,6 +920,11 @@ export class ExploreScene extends Phaser.Scene {
 
   update(): void {
     this.hideFromTextCam();
+    // 段階297：ぼかしのピントを、主人公の画面の高さへ、なめらかに
+    if (this.player) {
+      const v = this.cameras.main.worldView;
+      if (v.height > 0) followMapBlur((this.player.y - v.y) / v.height);
+    }
     // 段階273：手前の物ほど上に（足もとの高さの順）
     if (this.dancers.length > 0) this.moveDancers(this.game.loop.delta);
     if (this.sortLayer) {
