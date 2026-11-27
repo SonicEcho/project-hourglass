@@ -669,6 +669,7 @@ export const ASSETS: AssetEntry[] = [
     termsCopy: 'docs/licenses/pocket-sound.md',
     notes: '元のファイル名：fumikiri2.mp3（【効果音】踏切の音（生録））。頭から4秒を切り出し、0.2秒で入って終わりの0.8秒で消した。前は目覚まし時計で代わりにしていた（メモ 28）（段階153。テストプレイのメモ 2）',
   },
+  soundEffectLab('se.board', '木の板を下ろす（外した柵の板）', 'board.mp3', 'various/various3.html', 'firewood-put1.mp3（マキをドサッと置く1）', { acquiredAt: '2026-11-27' }),
   soundEffectLab('se.bicycle_bell', '自転車のベル', 'bicycle_bell.mp3', 'machine/machine2.html', 'bicycle-bell1.mp3（自転車チリン）', { acquiredAt: '2026-10-19' }),
   soundEffectLab('se.phone', 'スマホの着信', 'phone.mp3', 'machine', 'mobile-phone-ringtone1.mp3（携帯電話の着信音1）', { acquiredAt: '2026-10-09' }),
   soundEffectLab('se.noise', 'ノイズ', 'noise.mp3', 'machine', 'snow-noise1.mp3（トランシーバーのノイズ）', { acquiredAt: '2026-10-09', edit: '0.5秒目から0.8秒を切り出し、終わりを0.2秒で消した' }),
