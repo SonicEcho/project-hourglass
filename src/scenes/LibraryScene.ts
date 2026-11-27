@@ -180,7 +180,15 @@ export class LibraryScene extends Phaser.Scene {
     else box.add(addText(this, GAME_WIDTH / 2, top + h / 2 + 4, p.caption, { size: 14, color: '#5a4630', align: 'center', wrap: w - 30, ja: true }).setOrigin(0.5).setAngle(-1.5));
     const area = AREAS[p.area]?.name ?? p.area;
     box.add(addText(this, SIDE_PADDING, top + h + 30, `${p.title}　（${area}）`, { size: 15, bold: true, color: '#ffd84a' }));
-    box.add(addText(this, SIDE_PADDING, top + h + 60, p.story, { size: 14, color: '#e6e9f5', wrap: w, ja: true }).setLineSpacing(8));
+    const story = addText(this, SIDE_PADDING, top + h + 60, p.story, { size: 14, color: '#e6e9f5', wrap: w, ja: true }).setLineSpacing(8);
+    box.add(story);
+    // 段階303：撮ったあかりの、ひと言（ところどころの写真だけ）
+    if (p.comment) {
+      const cy = story.y + story.height + 22;
+      box.add(this.add.rectangle(SIDE_PADDING, cy, w, 1, 0xffb8c8, 0.4).setOrigin(0));
+      box.add(addText(this, SIDE_PADDING, cy + 12, 'あかりのひと言', { size: 12, bold: true, color: '#ffb8c8' }));
+      box.add(addText(this, SIDE_PADDING + 8, cy + 36, `「${p.comment}」`, { size: 13, color: '#ffe2ea', wrap: w - 8, ja: true }).setLineSpacing(6));
+    }
     box.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 40, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5));
     box.setAlpha(0);
     this.tweens.add({ targets: box, alpha: 1, duration: 200 });
