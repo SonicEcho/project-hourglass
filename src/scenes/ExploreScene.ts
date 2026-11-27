@@ -78,7 +78,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { MEMORY_PHOTOS, withLaneKit, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { MEMORY_PHOTOS, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -256,9 +256,7 @@ export class ExploreScene extends Phaser.Scene {
   create(data: ExploreData): void {
     // 段階262：デバッグの切り替えで、新しい1-1（マス目の試し）
     const rework = data.area === 'a11' && trialOn('a11rework');
-    // 段階292：裏通りを部品だけで組んだ版（デバッグメニューで切り替え）
-    const laneKit = rework ? ((['a', 'b', 'c'] as const).find((v) => trialOn(`lanekit_${v}`)) ?? null) : null;
-    const raw = rework ? (laneKit ? withLaneKit(A11_REWORK, laneKit) : A11_REWORK) : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
+    const raw = rework ? A11_REWORK : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
     if (!raw) throw new Error(`unknown area ${data.area}`);
     // 地図の調整（段階117）：?debug=1 の時だけ、端末に覚えた直しを重ねる
     this.rawArea = raw;
