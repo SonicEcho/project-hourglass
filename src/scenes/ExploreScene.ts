@@ -2123,9 +2123,11 @@ export class ExploreScene extends Phaser.Scene {
         this.holdGates.delete(step.gate);
         const im = this.gateImages.get(step.gate);
         const gate = this.area.gates?.find((g) => g.id === step.gate);
-        playSe(this, SE.heal);
+        // 2026-11-27（開発者：柵が壊れる時の音が不自然）：回復の音をやめ、板が揺れる時と落ちる時に、木を打つ音
+        playSe(this, SE.boardKnock);
         if (im) {
           await new Promise<void>((done) => this.tweens.add({ targets: im, x: im.x + 3, yoyo: true, repeat: 3, duration: 60, onComplete: () => done() }));
+          playSe(this, SE.boardKnock);
           await new Promise<void>((done) => this.tweens.add({ targets: im, alpha: 0, y: im.y + 6, duration: 380, onComplete: () => (im.destroy(), done()) }));
         }
         const broken = this.propArt(A11_GATE_ART.broken);
@@ -2155,7 +2157,8 @@ export class ExploreScene extends Phaser.Scene {
         for (let k = 0; k < (step.times ?? 1); k++) {
           const [r, g, b] = colors[k % colors.length];
           cam.flash(320, r, g, b);
-          playSe(this, SE.encounter);
+          // 2026-11-27（開発者：花火の音が不自然）：決定ボタンの音から、打ち上げ花火の音に
+          playSe(this, SE.firework);
           await wait(650);
         }
       } else if (step.do === 'slide') {
