@@ -8,6 +8,8 @@ export const SE = {
   slash: 'se.slash',
   /** 敵の攻撃（打撃） */
   hit: 'se.hit',
+  /** 板が外れる・落ちる（2026-11-27。木の板の音が届くまでは打撃の音） */
+  boardKnock: 'se.hit',
   heal: 'se.heal',
   /** 探索で宝箱を開ける */
   chest: 'se.chest',
