@@ -32,12 +32,12 @@ Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024�
 Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
 The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
 Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
-Scene:
-- Top part: a long strip of sidewalk (about 3 steps tall) along the top where a row of small shops will stand facing down toward the street; behind it, only the dark tiled roofs of the shops along the very top edge. At the top right, a street (about 4 steps wide) leaves through the TOP edge.
-- Across the middle: the main shopping street of old asphalt (about 7 steps tall), running left to right. It leaves the image through the LEFT edge (a little above the middle, about 4 steps wide). The right end is closed by roofs.
-- Below the street: strips for the backs of shops on both sides, with an opening (about 6 steps wide) in the center.
-- Lower part: through the opening, a short approach where an arcade gate will stand, widening into a small open space in front of the shopping street, with a few planters at its sides, then narrowing to a road (about 4 steps wide) that leaves through the BOTTOM edge in the center.
-- The rest of the edges: dark tiled roofs of old houses and shops seen from above, a few trees.
+Scene: the entrance of the shopping street.
+- One straight shopping street of old asphalt (about 7 steps wide) runs from the bottom part straight UP and leaves through the TOP edge (about 6 steps wide). The camera looks along it, so the street goes from the lower part of the image to the top.
+- On BOTH sides of the street, long strips of narrow sidewalk (about 4 steps wide each, from near the top down to about three quarters of the image) where rows of small shops will stand facing the street; outside those strips, only the dark tiled roofs of the shops and houses.
+- On the left side, a little above the middle, a narrow alley (about 2 steps wide) runs from the street to the LEFT edge between the shops.
+- Near the bottom of the street, a short paved approach where an arcade gate will stand across the street, then a small open space in front of the shopping street with a few planters, narrowing to a road (about 6 steps wide) that leaves through the BOTTOM edge.
+- The rest of the edges: dark tiled roofs seen from above, a few trees.
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
@@ -54,12 +54,11 @@ Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024�
 Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
 The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
 Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
-Scene:
-- Top center: old stone steps (about 4 steps wide) going up and leaving through the TOP edge toward a hill; on both sides of the steps, strips of sidewalk where shops will stand facing down, with dark tiled roofs behind them along the top edge.
-- Across the middle: the main shopping street of old asphalt (about 6 steps tall), running from the LEFT edge to the RIGHT edge (both a little above the middle, about 4 steps wide).
-- Below the street: a strip for the backs of shops, with an opening (about 4 steps wide) near the right; through it, a narrow road winds down and leaves through the BOTTOM edge on the right (about 4 steps wide).
-- Lower left: a small dirt lot for parking bicycles, reached by a narrow path.
-- The rest of the edges: dark tiled roofs of old houses and shops, a few trees.
+Scene: the middle of the shopping street.
+- The same straight shopping street of old asphalt (about 7 steps wide) comes in through the BOTTOM edge (about 6 steps wide) and runs straight UP. Near the top it ends at old stone steps (about 4 steps wide) that climb up and leave through the TOP edge toward a hill.
+- On BOTH sides of the street, long strips of narrow sidewalk (about 4 steps wide each) where rows of small shops will stand facing the street; outside those strips, only dark tiled roofs.
+- A little above the middle, narrow alleys (about 2 steps wide) cross between the shops: one to the LEFT edge and one to the RIGHT edge.
+- The rest of the edges: dark tiled roofs seen from above, a few trees.
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
@@ -149,31 +148,34 @@ Scene: the top of a hill above the town, the place where the town can be seen at
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
-#### 7. 部品の箱1：昭和の商店街の店の表
+#### 7. 部品の箱1：昭和の商店街の店（右を向いた横向き）
 
 - 添付：`ground_a12_gate.png（届いた1-2 の入口の地面の絵）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`
 - 保存名：`parts_a12_shops.png`
-- メモ：店はどれも幅3マスにそろえる（1-1 の屋台と同じ）
+- メモ：全部の店を「右を向いた横向き」で頼み、通りの右側には左右を返して並べる。大きさは奥行き4マス・長さ3マスにそろえる
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 A sheet of separate map objects (parts) for a top-down 2D RPG map on mobile. The game places each part one by one on top of a ground illustration, so every part is drawn alone, complete and uncropped.
 Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
-Layout: a grid of 3 rows by 3 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
+Layout: a grid of 3 rows by 4 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
 Scale: all objects on this sheet share one consistent scale: one step (one grid square of the map) is about one person's shoulder width, about the size of one beer crate.
-- Row 1, column 1: a small vegetable shop (yaoya), front view: wooden display shelves with tomatoes, cucumbers and watermelons in baskets, a faded striped awning, about 3 steps wide.
-- Row 1, column 2: a small old-fashioned candy shop (dagashiya), front view: glass jars of candy, a red bench in front, a small cooler with ramune bottles, about 3 steps wide.
-- Row 1, column 3: a small old watch and clock shop, front view: a glass window full of wall clocks and wristwatches, warm light inside, about 3 steps wide.
-- Row 2, column 1: a small electronics shop, front view: several boxy CRT televisions stacked in the window, a radio on a shelf, about 3 steps wide.
-- Row 2, column 2: a tiny tobacco shop, front view: a small glass sales window with a red public telephone beside it, about 3 steps wide.
-- Row 2, column 3: a small bicycle shop, front view: a few old bicycles lined up in front, tools and tires hanging on the wall inside, about 3 steps wide.
-- Row 3, column 1: a small fish shop, front view: a counter with ice and fish, a blue awning, about 3 steps wide.
-- Row 3, column 2: a small bookshop, front view: magazines on racks outside, about 3 steps wide.
-- Row 3, column 3: a small rice and sake shop, front view: sacks of rice and big sake bottles, a wooden sign without letters, about 3 steps wide. Every shop is the same size (about 3 steps wide and 3 steps deep, including its tiled or tin roof), seen from the front, closed shutters partly rolled up, Showa era (1988) style, no letters or numbers on any sign or shutter.
+- Row 1, column 1: a small vegetable shop (yaoya): wooden display shelves with tomatoes, cucumbers and watermelons in baskets, a faded striped awning.
+- Row 1, column 2: a small fish shop: a counter with ice and fish, a blue awning.
+- Row 1, column 3: a small old-fashioned candy shop (dagashiya): glass jars of candy, a small cooler with ramune bottles, a long red bench in front.
+- Row 1, column 4: a small rice and sake shop: sacks of rice and big sake bottles.
+- Row 2, column 1: a small bookshop: magazine racks in front.
+- Row 2, column 2: a small hardware store: buckets, brooms and watering cans hanging and stacked in front.
+- Row 2, column 3: a small old watch and clock shop: a glass window full of wall clocks and wristwatches, warm light inside.
+- Row 2, column 4: a small electronics shop: several boxy CRT televisions stacked in the window, a radio on a shelf.
+- Row 3, column 1: a tiny tobacco shop: a small glass sales window with a red public telephone beside it.
+- Row 3, column 2: the front of an old public bathhouse (sento): a tiled roof with a curved gable, a short split curtain (noren) without letters over the entrance.
+- Row 3, column 3: a small futon shop: rolled futons and cushions piled in the window.
+- Row 3, column 4: a small pharmacy: a frog-shaped mascot statue beside the door, shelves of boxes (no letters). IMPORTANT: every shop is seen from the SIDE, standing along a street that runs from the bottom to the top of the image, and ALL of them face RIGHT (their open shop fronts, awnings and goods face the right side of the image; their back is on the left). The camera still looks down at about 50 degrees from the bottom of the image, so we see each shop's roof, its front facade turned to the right at an angle, and its near side wall facing the bottom of the image. Every shop is exactly the same size: about 4 steps deep (left to right) and 3 steps long (top to bottom), so the shops can be lined up in a row along the street with no gaps. Showa era (1988), shutters partly rolled up, no letters or numbers on any sign, curtain or shutter.
 ```
 
-#### 8. 部品の箱2：店の裏・横向き・端と角
+#### 8. 部品の箱2：店の裏・横丁の店・端と角
 
 - 添付：`ground_a12_gate.png（届いた1-2 の入口の地面の絵）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`、`parts_a12_shops.png（上で作った絵）`
 - 保存名：`parts_a12_backs.png`
@@ -189,9 +191,9 @@ Scale: all objects on this sheet share one consistent scale: one step (one grid 
 - Row 1, column 1: the back of a small shop seen from behind: a tiled roof, a back door, an air conditioner outdoor unit, a few crates, about 3 steps wide.
 - Row 1, column 2: the back of another small shop: a tin roof, a back window, a gas meter, potted plants, about 3 steps wide.
 - Row 1, column 3: the back of a small shop with a laundry pole and a bicycle leaning on the wall, about 3 steps wide.
-- Row 2, column 1: a small shop seen from its LEFT side (the side wall and the edge of the awning, facing left), about 2 steps wide.
-- Row 2, column 2: the same kind of shop seen from its RIGHT side (facing right), about 2 steps wide.
-- Row 2, column 3: the END of a row of shops: a plain side wall with a drainpipe and a narrow gap, about 1 step wide, so a row of shops does not end abruptly.
+- Row 2, column 1: a small bicycle shop seen from the FRONT (facing the bottom of the image): a few old bicycles lined up in front, tools and tires hanging inside, about 3 steps wide, for a side street.
+- Row 2, column 2: a small old house seen from the FRONT with a sliding door and potted plants, about 3 steps wide, for a side street.
+- Row 2, column 3: the END of a row of shops along a street that runs from the bottom to the top of the image: a plain end wall with a drainpipe facing the bottom of the image, about 4 steps deep and 1 step long, so a row of shops does not end abruptly.
 - Row 3, column 1: only the dark tiled roofs of a row of shops seen from above (no walls), about 6 steps wide, for the edges of the map.
 - Row 3, column 2: an old concrete block wall corner with moss (L shape), about 2 by 2 steps.
 - Row 3, column 3: an old wooden board fence, left to right, about 4 steps wide, with ONE board missing leaving a narrow gap. Match the attached shop parts exactly in scale, view and style. Showa era (1988). No letters or numbers anywhere.
