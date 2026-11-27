@@ -30,7 +30,7 @@ const TABS: TabDef<LibraryTab>[] = [
   { id: 'combo', label: 'コンボ', color: LIST_COLORS.combo },
   { id: 'enemy', label: '敵', color: LIST_COLORS.enemy },
   { id: 'item', label: '素材', color: LIST_COLORS.item },
-  // 段階302：探索で撮った思い出の一枚
+  // 段階302：探索で拾った思い出の一枚
   { id: 'photo', label: '思い出', color: 0xd8a868 },
 ];
 
@@ -182,12 +182,12 @@ export class LibraryScene extends Phaser.Scene {
     box.add(addText(this, SIDE_PADDING, top + h + 30, `${p.title}　（${area}）`, { size: 15, bold: true, color: '#ffd84a' }));
     const story = addText(this, SIDE_PADDING, top + h + 60, p.story, { size: 14, color: '#e6e9f5', wrap: w, ja: true }).setLineSpacing(8);
     box.add(story);
-    // 段階303：撮ったあかりの、ひと言（ところどころの写真だけ）
+    // 段階303（裏設定：拾った写真をライブラリにまとめているのは、あかり。画面ではそのことに触れず、だれのとも書かない）：
+    // ところどころの写真に、書き添えたようなひと言
     if (p.comment) {
       const cy = story.y + story.height + 22;
-      box.add(this.add.rectangle(SIDE_PADDING, cy, w, 1, 0xffb8c8, 0.4).setOrigin(0));
-      box.add(addText(this, SIDE_PADDING, cy + 12, 'あかりのひと言', { size: 12, bold: true, color: '#ffb8c8' }));
-      box.add(addText(this, SIDE_PADDING + 8, cy + 36, `「${p.comment}」`, { size: 13, color: '#ffe2ea', wrap: w - 8, ja: true }).setLineSpacing(6));
+      box.add(this.add.rectangle(SIDE_PADDING, cy, w, 1, 0xffb8c8, 0.3).setOrigin(0));
+      box.add(addText(this, SIDE_PADDING + 8, cy + 14, p.comment, { size: 13, color: '#ffd6e0', wrap: w - 8, ja: true }).setLineSpacing(6));
     }
     box.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 40, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5));
     box.setAlpha(0);

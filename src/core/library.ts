@@ -16,7 +16,7 @@ export interface LibraryState {
   combos: string[];
   /** 手に入れたことのある素材・アイテム（手に入れた順） */
   items: string[];
-  /** 撮った思い出の一枚（段階302。撮った順） */
+  /** 拾った思い出の一枚（段階302。拾った順） */
   photos: string[];
 }
 

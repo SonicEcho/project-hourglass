@@ -1100,7 +1100,7 @@ export function useGadget(area: AreaDef, state: ExploreState, gadget: AreaGadget
   const add = (...ids: string[]) => ({ ...state, flags: [...flags, ...ids.filter((id) => !flags.includes(id))] });
   const none = (text: string) => ({ state, text, solved: [] as string[] });
   if (gadget.kind !== 'item' && gadget.kind !== 'order' && flags.includes(gadget.id)) return none(gadget.done);
-  // 撮った思い出の一枚は、もう一度見られる（上の行で、そのまま done を返す）
+  // 拾った思い出の一枚は、もう一度見られる（上の行で、そのまま done を返す）
   switch (gadget.kind) {
     case 'item':
       return { state: add(gadget.id), text: gadget.done, solved: [] };
