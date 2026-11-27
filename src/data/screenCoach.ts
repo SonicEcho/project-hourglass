@@ -128,7 +128,7 @@ export const SCREEN_COACH: Record<string, ScreenCoachStep[]> = {
   ],
   // ライブラリ
   library_intro: [
-    { target: 'intro', text: 'ここはライブラリです！\n見つけたスナップ・コンボ、会った敵、手に入れた素材の記録を読めます。' },
+    { target: 'intro', text: 'ここはライブラリです！\n見つけたスナップ・コンボ、会った敵、手に入れた素材、撮った思い出の一枚の記録を読めます。' },
     { target: 'tabs', text: 'ここで、記録の種類を切り替えます。' },
     { target: 'list', text: 'まだの物も「？？？」で並びます（指で上下にずらせます）。\n名前をタップすると、下に説明が出ます。' },
     { target: 'detail', text: 'スナップと素材は「手に入る所」も読めます。\n集めたい時の手がかりにしましょう。' },

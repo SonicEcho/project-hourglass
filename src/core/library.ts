@@ -16,10 +16,12 @@ export interface LibraryState {
   combos: string[];
   /** 手に入れたことのある素材・アイテム（手に入れた順） */
   items: string[];
+  /** 撮った思い出の一枚（段階302。撮った順） */
+  photos: string[];
 }
 
 export function createLibrary(): LibraryState {
-  return { met: {}, defeated: {}, weak: {}, snaps: [], combos: [], items: [] };
+  return { met: {}, defeated: {}, weak: {}, snaps: [], combos: [], items: [], photos: [] };
 }
 
 function addUnique(list: readonly string[], add: readonly string[]): string[] {
@@ -45,12 +47,13 @@ export function recordLibraryBattle(lib: LibraryState, r: { met: readonly string
 }
 
 /** 手に入れた物の記録：スナップ・コンボ・素材（重なりは足さない） */
-export function recordLibraryFinds(lib: LibraryState, f: { snaps?: readonly string[]; combos?: readonly string[]; items?: readonly string[] }): LibraryState {
+export function recordLibraryFinds(lib: LibraryState, f: { snaps?: readonly string[]; combos?: readonly string[]; items?: readonly string[]; photos?: readonly string[] }): LibraryState {
   return {
     ...lib,
     snaps: addUnique(lib.snaps, f.snaps ?? []),
     combos: addUnique(lib.combos, f.combos ?? []),
     items: addUnique(lib.items, f.items ?? []),
+    photos: addUnique(lib.photos ?? [], f.photos ?? []),
   };
 }
 
@@ -60,6 +63,8 @@ export interface LibraryContext {
   snaps: readonly string[];
   combos: readonly string[];
   items: readonly string[];
+  /** 思い出の一枚（段階302。前のセーブには無いので、書かなければ空） */
+  photos?: readonly string[];
 }
 
 const ELEMENTS: readonly Element[] = ['physical', 'fire', 'ice', 'thunder'];
@@ -97,5 +102,6 @@ export function sanitizeLibrary(raw: unknown, ctx: LibraryContext): LibraryState
     snaps: idsOf(raw.snaps, ctx.snaps),
     combos: idsOf(raw.combos, ctx.combos),
     items: idsOf(raw.items, ctx.items),
+    photos: idsOf(raw.photos, ctx.photos ?? []),
   };
 }

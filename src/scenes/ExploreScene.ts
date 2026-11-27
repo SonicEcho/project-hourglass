@@ -78,7 +78,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { withLaneKit, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { MEMORY_PHOTOS, withLaneKit, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -1420,11 +1420,14 @@ export class ExploreScene extends Phaser.Scene {
     if (gadget.kind === 'photo') {
       // 思い出の一枚（段階265）：撮った時は白く光る。何枚目か
       this.cameras.main.flash(200, 255, 250, 235);
-      const photos = (this.area.gadgets ?? []).filter((g) => g.kind === 'photo');
+      // 段階302：ライブラリの「思い出」に記録する。4枚そろえた人だけの最後の一枚（after）は数に入れない
+      run.library = recordLibraryFinds(run.library, { photos: [gadget.id] });
+      const photos = (this.area.gadgets ?? []).filter((g) => g.kind === 'photo' && !g.after);
       const taken = photos.filter((g) => (this.state.flags ?? []).includes(g.id)).length;
-      this.say(`思い出の一枚を撮った（${taken}/${photos.length}）`);
+      const last = !!gadget.after;
+      this.say(last ? '最後の一枚を見つけた' : `思い出の一枚を撮った（${taken}/${photos.length}）${taken === photos.length ? '\n……どこかに、まだ一枚、残っている気がする' : ''}`);
       this.redrawGadgets();
-      this.showPhoto(r.text, `${taken}/${photos.length}`);
+      this.showPhoto(gadget.id, r.text, last ? '最後の一枚' : `思い出の一枚 ${taken}/${photos.length}`);
       return;
     }
     if (!rebuild) {
@@ -1441,9 +1444,11 @@ export class ExploreScene extends Phaser.Scene {
   }
 
   /** 思い出の一枚（段階265）：セピアの写真の札を画面の真ん中に。タップで閉じる（絵が届くまでは、場面を言葉で） */
-  private showPhoto(text: string, count: string): void {
+  private showPhoto(id: string, text: string, count: string): void {
     if (!this.ui) return;
     const [head, ...body] = text.split('\n');
+    // 段階302：絵が届いた写真は、絵で
+    const art = MEMORY_PHOTOS.find((p) => p.id === id)?.image;
     const box = this.add.container(0, 0);
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6).setOrigin(0).setInteractive();
     const cx = GAME_WIDTH / 2;
@@ -1451,11 +1456,17 @@ export class ExploreScene extends Phaser.Scene {
     box.add(shade);
     box.add(this.add.rectangle(cx + 4, cy + 4, 300, 330, 0x000000, 0.5));
     box.add(this.add.rectangle(cx, cy, 300, 330, 0xf4ecd8).setStrokeStyle(1, 0xc8b898).setAngle(-2));
-    box.add(this.add.rectangle(cx, cy - 30, 264, 230, 0x8a6a48).setAngle(-2));
-    box.add(this.add.rectangle(cx, cy - 30, 264, 230, 0x3a2a18, 0.35).setAngle(-2));
-    box.add(addText(this, cx, cy - 30, body.join('\n'), { size: 15, bold: true, color: '#fff4dc', align: 'center', wrap: 236, ja: true }).setOrigin(0.5).setAngle(-2).setLineSpacing(6));
-    box.add(addText(this, cx, cy + 118, head.replace('思い出の一枚', '').replace(/[（）]/g, ''), { size: 14, bold: true, color: '#5a4630' }).setOrigin(0.5).setAngle(-2));
-    box.add(addText(this, cx, cy + 186, `思い出の一枚 ${count}　タップで閉じる`, { size: 12, color: '#e6e9f5' }).setOrigin(0.5));
+    if (art && hasImage(this, art)) {
+      box.add(this.add.image(cx, cy - 30, art).setDisplaySize(272, 204).setAngle(-2));
+      box.add(addText(this, cx, cy + 98, head.replace('思い出の一枚', '').replace(/[（）]/g, ''), { size: 14, bold: true, color: '#5a4630' }).setOrigin(0.5).setAngle(-2));
+      box.add(addText(this, cx, cy + 132, body.join('\n'), { size: 11, color: '#6a5640', align: 'center', wrap: 270, ja: true }).setOrigin(0.5, 0.5).setAngle(-2).setLineSpacing(2));
+    } else {
+      box.add(this.add.rectangle(cx, cy - 30, 264, 230, 0x8a6a48).setAngle(-2));
+      box.add(this.add.rectangle(cx, cy - 30, 264, 230, 0x3a2a18, 0.35).setAngle(-2));
+      box.add(addText(this, cx, cy - 30, body.join('\n'), { size: 15, bold: true, color: '#fff4dc', align: 'center', wrap: 236, ja: true }).setOrigin(0.5).setAngle(-2).setLineSpacing(6));
+      box.add(addText(this, cx, cy + 118, head.replace('思い出の一枚', '').replace(/[（）]/g, ''), { size: 14, bold: true, color: '#5a4630' }).setOrigin(0.5).setAngle(-2));
+    }
+    box.add(addText(this, cx, cy + 186, `${count}　ライブラリの「思い出」で読める　タップで閉じる`, { size: 11, color: '#e6e9f5' }).setOrigin(0.5));
     box.setAlpha(0);
     this.ui.add(box);
     this.tweens.add({ targets: box, alpha: 1, duration: 220 });

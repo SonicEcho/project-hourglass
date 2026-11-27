@@ -486,6 +486,8 @@ export const A11_REWORK: AreaDef = {
     { id: 'm_yagura', room: 'fest2_plaza', cell: [14, 16], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（やぐらの陰）\n白い提灯の明かりで、男の子が小さな財布の中身を数えている。……金魚すくい、一回分' },
     { id: 'm_shooting', room: 'fest2_east', cell: [10, 13], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（屋台の裏の囲い）\n青い提灯の下、金魚の袋を抱えた女の子が、泣きべそで兄を呼んでいる' },
     { id: 'm_pond', room: 'fest2_woods', night: 3, cell: [10, 10], kind: 'photo', mark: '写', label: '思い出の一枚', done: '思い出の一枚（池のほとり）\n二人で金魚の袋をのぞきこむ。「この子の名前、なんにする？」' },
+    // 段階302（開発者が選んだ A）：4枚そろえた人だけ、社の前で最後の一枚が見つかる
+    { id: 'm_last', room: 'fest2_woods', night: 3, cell: [16, 5], kind: 'photo', after: ['m_gate', 'm_yagura', 'm_shooting', 'm_pond'], mark: '写', label: '最後の一枚', done: '思い出の一枚（最後の一枚）\n花火の下、金魚の袋を持った兄と、その手をにぎる妹' },
   ],
   // 地図の出来事（段階266・268）：1部屋に1つの見せ場
   events: [
@@ -582,6 +584,7 @@ export const A11_PROP_ART: Record<string, { off: string; on?: string; w: number 
   m_yagura: { off: 'prop.photo', w: 0.8 },
   m_shooting: { off: 'prop.photo', w: 0.8 },
   m_pond: { off: 'prop.photo', w: 0.8 },
+  m_last: { off: 'prop.photo', w: 0.8 },
 };
 
 /** 仕掛けの扉の絵（段階271）：板のかべは、解く前は板・解いた後は壊れた板。人混みは、セピアの人の固まりをマスごとに */
@@ -632,6 +635,8 @@ export const A11_REWORK_IMAGES: string[] = [
     'person.cotton',
     'person.goldfish',
     ...A11_REWORK.rooms.flatMap((r) => (r.parts ?? []).map((p) => `part.${p.part}`)),
+    // 段階302：思い出の一枚の絵
+    'photo.m_gate', 'photo.m_yagura', 'photo.m_shooting', 'photo.m_pond',
   ]),
 ];
 

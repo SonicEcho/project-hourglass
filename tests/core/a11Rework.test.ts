@@ -209,7 +209,8 @@ describe('写しの人がくれる物と思い出の一枚（段階265）', () =
 
   it('思い出の一枚は4枚。撮ると flag が付き、もう一度タップしても同じ場面が見られる', async () => {
     const { startExplore, useGadget } = await import('../../src/core');
-    const photos = area.gadgets!.filter((g) => g.kind === 'photo');
+    // 段階302：4枚そろえた人だけが見つける最後の一枚（社の森）は、数に入れない
+    const photos = area.gadgets!.filter((g) => g.kind === 'photo' && !g.after);
     expect(photos.map((g) => g.room)).toEqual(['fest2_gate', 'fest2_plaza', 'fest2_east', 'fest2_woods']);
     const r = useGadget(area, startExplore(area), photos[0], [], [0, 0]);
     expect(r.state.flags).toEqual(['m_gate']);
@@ -400,5 +401,21 @@ describe('番人は見回す（段階298）', () => {
     const up = guard.look!.filter(([x, y]) => x === 0 && y === -1).length;
     expect(up).toBeGreaterThan(guard.look!.length / 2);
     expect(guard.look!.some(([x, y]) => x === 0 && y === 1)).toBe(false);
+  });
+});
+
+describe('思い出の一枚をそろえる（段階302）', () => {
+  it('最後の一枚は、4枚を撮るまで地図に出ない。撮ると出る', async () => {
+    const { gadgetsShown, startExplore } = await import('../../src/core');
+    const s = startExplore(area);
+    const four = ['m_gate', 'm_yagura', 'm_shooting', 'm_pond'];
+    expect(gadgetsShown(area, { ...s, flags: four.slice(0, 3) }, 3, 'fest2_woods').some((g) => g.id === 'm_last')).toBe(false);
+    expect(gadgetsShown(area, { ...s, flags: four }, 3, 'fest2_woods').some((g) => g.id === 'm_last')).toBe(true);
+  });
+  it('地図の写真はみな、思い出の写真の一覧にある。絵のある写真は台帳にもある', async () => {
+    const { MEMORY_PHOTOS, ASSETS } = await import('../../src/data');
+    for (const g of area.gadgets!.filter((x) => x.kind === 'photo')) expect(MEMORY_PHOTOS.some((p) => p.id === g.id), g.id).toBe(true);
+    for (const p of MEMORY_PHOTOS.filter((x) => x.image)) expect(ASSETS.some((a) => a.id === p.image), p.id).toBe(true);
+    expect(MEMORY_PHOTOS.filter((p) => p.secret).map((p) => p.id)).toEqual(['m_last']);
   });
 });

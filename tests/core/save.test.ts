@@ -376,7 +376,7 @@ describe('セーブ：ライブラリの記録（段階167）', () => {
   it('保存して読む。今のデータにない物は捨てる。ない時は空の記録', () => {
     const lib = recordLibraryBattle(recordLibraryFinds(createLibrary(), { combos: ['iceFlower', 'nothing'], snaps: ['a11_amaikiri', 'a11_hireuchi'] }), { met: ['goldfishNoise', 'ghost'], defeated: ['goldfishNoise'], weak: { goldfishNoise: ['thunder'] } });
     const res = parseSave(serializeSave({ ...playedRun(), library: lib }, AT), ctx);
-    expect(res.ok && res.save.run.library).toEqual({ met: { goldfishNoise: 1 }, defeated: { goldfishNoise: 1 }, weak: { goldfishNoise: ['thunder'] }, snaps: ['a11_amaikiri'], combos: ['iceFlower'], items: [] });
+    expect(res.ok && res.save.run.library).toEqual({ met: { goldfishNoise: 1 }, defeated: { goldfishNoise: 1 }, weak: { goldfishNoise: ['thunder'] }, snaps: ['a11_amaikiri'], combos: ['iceFlower'], items: [], photos: [] });
     const none = parseEdited((raw) => delete raw.run.library);
     expect(none.ok && none.save.run.library).toEqual(createLibrary());
   });

@@ -319,6 +319,8 @@ export interface AreaGate extends InRoom {
  */
 export interface AreaGadget extends InRoom, InNight {
   id: string;
+  /** この仕掛けがみんな解けてから出る（段階302。4枚そろえた人だけが見つける最後の一枚） */
+  after?: string[];
   cell: GridCell;
   kind: 'item' | 'use' | 'push' | 'ability' | 'order' | 'later' | 'photo' | 'look';
   /** 地図の印の1字と、名前 */
@@ -1065,7 +1067,7 @@ export function closedGates(area: AreaDef, state: ExploreState, room?: string): 
 /** その晩の、地図に出ている仕掛け。拾った品と、解けた後の道をふさいでいた物（押した荷車・道をあけた人混み・晴れた霧）は出さない */
 export function gadgetsShown(area: AreaDef, state: ExploreState, night: number, room?: string): AreaGadget[] {
   const gone = (g: AreaGadget) => (g.kind === 'item' || g.kind === 'push' || g.kind === 'ability') && flagged(state, g.id);
-  return (area.gadgets ?? []).filter((g) => inNight(g, night || 1) && !gone(g) && (room === undefined || inRoom(area, g, room)));
+  return (area.gadgets ?? []).filter((g) => inNight(g, night || 1) && !gone(g) && (g.after ?? []).every((id) => flagged(state, id)) && (room === undefined || inRoom(area, g, room)));
 }
 
 /**
