@@ -555,17 +555,36 @@ export class ExploreScene extends Phaser.Scene {
       const tex = this.textures.createCanvas('rest.beam', 32, 128);
       const ctx = tex?.getContext();
       if (tex && ctx) {
+        // 上ほど薄く、左右の縁もぼかす（四角く見えないように）：縦の濃さを塗ってから、横の濃さで切り抜く
         const g = ctx.createLinearGradient(0, 0, 0, 128);
-        g.addColorStop(0, 'rgba(120,210,255,0)');
-        g.addColorStop(1, 'rgba(150,225,255,0.85)');
+        g.addColorStop(0, 'rgba(200,240,255,0)');
+        g.addColorStop(1, 'rgba(200,240,255,0.75)');
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, 32, 128);
+        ctx.globalCompositeOperation = 'destination-in';
+        const h = ctx.createLinearGradient(0, 0, 32, 0);
+        h.addColorStop(0, 'rgba(0,0,0,0)');
+        h.addColorStop(0.5, 'rgba(0,0,0,1)');
+        h.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = h;
+        ctx.fillRect(0, 0, 32, 128);
+        ctx.globalCompositeOperation = 'source-over';
         tex.refresh();
       }
-      const d = this.make.graphics({ x: 0, y: 0 }, false);
-      d.fillStyle(0xbfeaff, 1).fillCircle(3, 3, 3);
-      d.generateTexture('rest.mote', 6, 6);
-      d.destroy();
+    }
+    if (!this.textures.exists('rest.mote')) {
+      // 光の粒：真ん中ほど明るい、ぼかした丸
+      const m = this.textures.createCanvas('rest.mote', 16, 16);
+      const mc = m?.getContext();
+      if (m && mc) {
+        const g = mc.createRadialGradient(8, 8, 0, 8, 8, 8);
+        g.addColorStop(0, 'rgba(230,248,255,1)');
+        g.addColorStop(0.4, 'rgba(170,228,255,0.7)');
+        g.addColorStop(1, 'rgba(120,210,255,0)');
+        mc.fillStyle = g;
+        mc.fillRect(0, 0, 16, 16);
+        m.refresh();
+      }
     }
     room.layout.forEach((line, r) =>
       [...line].forEach((ch, c) => {
@@ -578,21 +597,21 @@ export class ExploreScene extends Phaser.Scene {
         const ring = this.add.ellipse(x, y + T * 0.2, T * 1.3, T * 0.6).setStrokeStyle(3, 0x9fe0ff);
         world.add(ring);
         this.tweens.add({ targets: ring, alpha: 0.4, yoyo: true, repeat: -1, duration: 900 });
-        const beam = this.add.image(x, y + T * 0.25, 'rest.beam').setOrigin(0.5, 1).setDisplaySize(T * 1.1, T * 2.6).setAlpha(0.55).setBlendMode(Phaser.BlendModes.ADD);
+        const beam = this.add.image(x, y + T * 0.25, 'rest.beam').setOrigin(0.5, 1).setDisplaySize(T * 1.3, T * 2.2);
         world.add(beam);
-        this.tweens.add({ targets: beam, alpha: 0.3, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.easeInOut' });
+        this.tweens.add({ targets: beam, alpha: 0.65, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.easeInOut' });
         const motes = this.add.particles(x, y + T * 0.2, 'rest.mote', {
           lifespan: 1800,
           frequency: 260,
           speedY: { min: -26, max: -14 },
           speedX: { min: -5, max: 5 },
           x: { min: -T * 0.45, max: T * 0.45 },
-          scale: { start: 0.9, end: 0.2 },
-          alpha: { start: 0.9, end: 0 },
+          scale: { start: 0.55, end: 0.15 },
+          alpha: { start: 1, end: 0 },
           blendMode: 'ADD',
         });
         world.add(motes);
-        const label = addText(this, x, y - T * 2.6, '休憩所', { size: 12, bold: true, color: '#bfeaff' }).setOrigin(0.5).setStroke('#0b2030', 4);
+        const label = addText(this, x, y - T * 2.1, '休憩所', { size: 12, bold: true, color: '#bfeaff' }).setOrigin(0.5).setStroke('#0b2030', 4);
         this.tweens.add({ targets: label, y: label.y - 3, yoyo: true, repeat: -1, duration: 1200, ease: 'Sine.easeInOut' });
         restLabels.push(label);
       }),

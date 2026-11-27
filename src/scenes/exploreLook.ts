@@ -1,5 +1,5 @@
 // 段階295（docs/milestones/M3_explore_feel.md の 15.）：探索の地図の上下のぼかし。
-// Phaser の TiltShift（点ごとに周りを100回読む）はスマホで重いので、周りを16回だけ読む軽いぼかしを書いた。
+// Phaser の TiltShift（点ごとに周りを100回読む）はスマホで重いので、周りを12回だけ読む軽いぼかしを書いた。
 // 画面の真ん中の帯はくっきり、上下の端ほどぼける（ジオラマのように、主人公のまわりにピントが合って見える）
 import Phaser from 'phaser';
 import { MAP_BLUR } from '../data';
@@ -12,20 +12,26 @@ uniform float uBand;
 uniform float uFocus;
 uniform float uStrength;
 varying vec2 outTexCoord;
+// 点ごとに少し回す（読む点の並びが同じだと、ぼけの境目に筋が出るため）
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
   vec2 uv = outTexCoord;
   float d = clamp((abs(uv.y - uFocus) - uBand) / (0.5 - uBand), 0.0, 1.0);
-  float r = d * d * uStrength;
   vec4 c = texture2D(uMainSampler, uv);
-  if (r < 0.3) { gl_FragColor = c; return; }
-  vec2 p = r / uRes;
-  vec4 acc = c * 0.12;
-  acc += (texture2D(uMainSampler, uv + vec2(p.x, 0.0)) + texture2D(uMainSampler, uv - vec2(p.x, 0.0)) + texture2D(uMainSampler, uv + vec2(0.0, p.y)) + texture2D(uMainSampler, uv - vec2(0.0, p.y))) * 0.07;
-  acc += (texture2D(uMainSampler, uv + p * 0.7) + texture2D(uMainSampler, uv - p * 0.7) + texture2D(uMainSampler, uv + vec2(p.x, -p.y) * 0.7) + texture2D(uMainSampler, uv + vec2(-p.x, p.y) * 0.7)) * 0.06;
-  vec2 q = p * 0.5;
-  acc += (texture2D(uMainSampler, uv + vec2(q.x, 0.0)) + texture2D(uMainSampler, uv - vec2(q.x, 0.0)) + texture2D(uMainSampler, uv + vec2(0.0, q.y)) + texture2D(uMainSampler, uv - vec2(0.0, q.y))) * 0.06;
-  acc += (texture2D(uMainSampler, uv + vec2(q.x, q.y)) + texture2D(uMainSampler, uv - vec2(q.x, q.y)) + texture2D(uMainSampler, uv + vec2(q.x, -q.y)) + texture2D(uMainSampler, uv + vec2(-q.x, q.y))) * 0.05;
-  gl_FragColor = acc;
+  if (d <= 0.0) { gl_FragColor = c; return; }
+  float r = uStrength * (0.35 + 0.65 * d);
+  float a0 = hash(gl_FragCoord.xy) * 6.2832;
+  vec4 acc = c;
+  float n = 1.0;
+  for (int k = 0; k < 12; k++) {
+    float fk = float(k);
+    float a = a0 + fk * 2.39996;
+    float rr = r * sqrt((fk + 0.5) / 12.0);
+    acc += texture2D(uMainSampler, uv + vec2(cos(a), sin(a)) * rr / uRes);
+    n += 1.0;
+  }
+  // くっきりした絵とぼかした絵を、なめらかに混ぜる（急に切り替わる線が出ないように）
+  gl_FragColor = mix(c, acc / n, smoothstep(0.0, 1.0, d));
 }`;
 
 /** ピントの中心（画面の上から測った高さの割合）。探索の画面が毎フレーム主人公に合わせる（段階297） */
