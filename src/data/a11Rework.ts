@@ -636,7 +636,7 @@ export const A11_REWORK_IMAGES: string[] = [
     'person.goldfish',
     ...A11_REWORK.rooms.flatMap((r) => (r.parts ?? []).map((p) => `part.${p.part}`)),
     // 段階302：思い出の一枚の絵
-    'photo.m_gate', 'photo.m_yagura', 'photo.m_shooting', 'photo.m_pond',
+    'photo.m_gate', 'photo.m_yagura', 'photo.m_shooting', 'photo.m_pond', 'photo.m_last',
   ]),
 ];
 

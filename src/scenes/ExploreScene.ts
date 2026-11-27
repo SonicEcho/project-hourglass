@@ -1425,7 +1425,8 @@ export class ExploreScene extends Phaser.Scene {
       const photos = (this.area.gadgets ?? []).filter((g) => g.kind === 'photo' && !g.after);
       const taken = photos.filter((g) => (this.state.flags ?? []).includes(g.id)).length;
       const last = !!gadget.after;
-      this.say(last ? '最後の一枚を見つけた' : `思い出の一枚を撮った（${taken}/${photos.length}）${taken === photos.length ? '\n……どこかに、まだ一枚、残っている気がする' : ''}`);
+      // 段階303：撮るのはあかり、シャッターの瞬間を言うのはハルト（docs/STORY.md の伏線）
+      this.say(last ? 'ハルト「……今」\nあかりが、最後の一枚を撮った' : `ハルト「……今」\nあかりが、思い出の一枚を撮った（${taken}/${photos.length}）${taken === photos.length ? '\n……どこかに、まだ一枚、残っている気がする' : ''}`);
       this.redrawGadgets();
       this.showPhoto(gadget.id, r.text, last ? '最後の一枚' : `思い出の一枚 ${taken}/${photos.length}`);
       return;
