@@ -1356,6 +1356,14 @@ Lighting: soft, even dusk light with NO light spots, NO shadows of objects, NO v
 - Row 2, column 1: old worn stone paving of small irregular stones, with thin lines of moss between them.
 - Row 2, column 2: dark damp earth with patches of moss and tiny weeds, as in a shady corner.
 No objects, no people, no letters anywhere.""", '1マスより大きな四角を敷き詰めて使う')
+add('部品の箱：商店街の上にかかる物（門・提灯のひも・のぼり）', ['ground_a12_gate.png（届いた門のある入口の絵。門・提灯・のぼりの見本）', 'ground_a12_gate_clean.png（消した版。大きさの見本）'], 'parts_a12_over.png', af_parts(2, 3, [
+    'the arch-shaped arcade gate exactly like the one in the attached shopping street picture: two square wooden posts with round glowing lamps on top and a glowing arch across them (no letters). About 8 steps wide; the arch is high enough for people to walk under. Let it fill the cell width.',
+    'a string of red-and-white paper lanterns hanging from a rope, sagging in a gentle curve, about 8 steps long, seen from the same angle as the attached picture, exactly like the lantern strings in it. Let it fill the cell width.',
+    'the same kind of lantern string with warm white paper lanterns.',
+    'a tall thin wooden banner pole with a long vertical red banner (nobori) hanging from it (no letters), about 3 steps tall.',
+    'the same banner pole with a yellow banner.',
+    'the same banner pole with a dark blue banner.',
+], ' These are things that hang over or stand in a shopping street, so people will walk under or in front of them. Draw every object complete with clean, crisp outlines, including the thin ropes and poles. Match the attached picture exactly in style, lighting and scale. No letters anywhere.'), '2枚の違いから切り抜いた上の層は、細い所が欠けたので、部品として頼み直す（開発者：クオリティー優先）')
 add('部品の箱2：地面に貼る物', AP_REF + ['kit_lane_ground.png（上で作った絵）'], 'kit_lane_decals.png', af_parts(3, 3, [
     'a long strip of grass tufts and small weeds that grows along the base of a wall, lying flat on the ground, horizontal, about 6 steps long and less than 1 step deep.',
     'a long low concrete curb with a shallow concrete gutter beside it and one small metal drain grate, lying on the ground, horizontal, about 6 steps long.',
@@ -1430,8 +1438,10 @@ add('地面の絵：商店街の入口から、張り出した物を消す', ['g
 add('地面の絵：商店街の中ほど（店も描き込む）', ['docs/sketches/a12_v1/middle_plan.png（作りの下書き）', 'ground_a12_gate_clean.png（届いた入口の絵。絵柄と店のそろえ方の見本）'], 'ground_a12_middle.png', AR_SHOP_HEAD + """Match the attached shopping street entrance exactly in shop style, scale, tiles and lighting; this is the same street, further in.
 Scene: the middle of the same small old shopping street in the summer of 1988, at sunset.
 - The same narrow tiled pedestrian street (about 7 steps wide) comes in through the BOTTOM edge and runs straight up. Near the top it ends at old stone steps (about 4 steps wide) that climb up between trees and leave through the TOP edge toward a hill.
-- Both sides are packed with small two-story shops wall to wall, open fronts facing the street: a watch and clock shop with clocks in the window, an electronics shop with boxy CRT televisions, a tiny tobacco shop with a red public telephone on the left; the front of an old public bathhouse with a short curtain, a futon shop and a pharmacy on the right. Awnings and noren stick out over the street.
-- A little above the middle, narrow dark alleys (about 2 steps wide) between the shops lead to the LEFT edge and to the RIGHT edge.
+- IMPORTANT: build the shops exactly like in the attached entrance picture. Every shop stands along the street and its open shop front faces the STREET (the shops on the left face right, the shops on the right face left), seen at an angle from above. Do NOT turn the shop fronts toward the bottom of the image.
+- Both sides are one continuous row of small two-story shops built wall to wall, with no gaps between them except the two alleys below: a watch and clock shop with clocks in the window, an electronics shop with boxy CRT televisions, a tiny tobacco shop with a red public telephone on the left; the front of an old public bathhouse with a short curtain, a futon shop and a pharmacy on the right. Awnings and noren stick out over the street.
+- Exactly ONE narrow dark alley (about 2 steps wide) on each side, a little above the middle, between two shops: one leads to the LEFT edge, one to the RIGHT edge.
+- At the BOTTOM edge, the street has the same width as the top of the attached entrance picture (about 7 steps), with the shop rows continuing to the bottom edge on both sides, so the two pictures join seamlessly.
 - Do NOT draw lantern strings, banner poles or anything hanging across the street (they are added later as separate pictures).""" + AR_SHOP_TAIL, '入口と同じく店を描き込む。通りの上にかかる物は描かない')
 ar_ground('bath', '銭湯の裏', """Scene: the quiet back of an old public bathhouse (sento), a little darker than the shopping street.
 - Top: a narrow path (about 4 steps wide) leaves through the TOP edge in the center; on both sides, strips for the backs of buildings.
