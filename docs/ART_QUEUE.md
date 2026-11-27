@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：44 枚**（済んだ絵 429 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：43 枚**（済んだ絵 430 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -10,7 +10,7 @@
 
 ## まだの絵
 
-- [AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）](#ar-新しい1-2地面の絵6枚と昭和の商店街の部品の箱3枚段階306)：8 枚
+- [AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）](#ar-新しい1-2地面の絵6枚と昭和の商店街の部品の箱3枚段階306)：7 枚
 - [AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）](#ae-新しい1-1-の仕掛け宝箱の小物と部屋の絵段階270)：1 枚
 - [AC. 脇役のまばたき・口パク（基本の1枚）](#ac-脇役のまばたき口パク基本の1枚)：13 枚
 - [AD. 口を開けた顔の、口を閉じた絵（口パク用）](#ad-口を開けた顔の口を閉じた絵口パク用)：22 枚
@@ -19,19 +19,7 @@
 
 部屋の作り方の型（`docs/design/explore.md` の 2-7）で作る最初の新しい区画。地面の絵には地面と遠くの屋根・木だけを描き、店や看板など立つ物は部品の箱で頼む。時代は昭和63年（1988年）の夏の夕暮れ。添付は、その部屋の作りの下書き（`docs/sketches/a12_v1/<部屋>_plan.png`）と、届いた1-1 の入口の地面の絵（`ground3_fest2_gate.png`。絵柄・角度・光の見本）。上から順に作る（2枚目からは、1枚目に届いた1-2 の地面の絵も添付すると、そろいやすい）
 
-#### 1. 地面の絵：商店街の入口から、張り出した物を消す
-
-- 添付：`ground_a12_gate.png（届いた入口の絵）`
-- 保存名：`ground_a12_gate_clean.png`
-- メモ：門・提灯のひも・のぼりは、人より上に描く部品にする（提灯のひもとのぼりは1-1 の部品を使い回す。門は部品の箱3）
-
-```
-Edit the attached image. Keep everything else exactly the same: the shops, roofs, goods, awnings, the tiled street, the planters, the colors, the sunset lighting and the camera angle.
-Remove ONLY these things that hang over or stand in the street: the arch-shaped arcade gate with its two lamp posts, the strings of paper lanterns across the street, and all the tall banner poles with their hanging banners.
-Where they were, paint the tiled street and the shop fronts naturally, continuing what is around them, as if those things had never been there. Do not add anything new. Absolutely no letters or text anywhere.
-```
-
-#### 2. 地面の絵：商店街の中ほど（店も描き込む）
+#### 1. 地面の絵：商店街の中ほど（店も描き込む）
 
 - 添付：`docs/sketches/a12_v1/middle_plan.png（作りの下書き）`、`ground_a12_gate_clean.png（届いた入口の絵。絵柄と店のそろえ方の見本）`
 - 保存名：`ground_a12_middle.png`
@@ -53,7 +41,7 @@ Scene: the middle of the same small old shopping street in the summer of 1988, a
 Absolutely no letters, numbers or logos anywhere (shop signs and banners are plain colors or simple shapes).
 ```
 
-#### 3. 地面の絵：銭湯の裏
+#### 2. 地面の絵：銭湯の裏
 
 - 添付：`docs/sketches/a12_v1/bath_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
 - 保存名：`ground_a12_bath.png`
@@ -76,7 +64,7 @@ Scene: the quiet back of an old public bathhouse (sento), a little darker than t
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
-#### 4. 地面の絵：倉庫の路地
+#### 3. 地面の絵：倉庫の路地
 
 - 添付：`docs/sketches/a12_v1/store_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
 - 保存名：`ground_a12_store.png`
@@ -97,7 +85,7 @@ Scene: a narrow back alley behind the shops where a candy shop keeps its storeho
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
-#### 5. 地面の絵：横丁
+#### 4. 地面の絵：横丁
 
 - 添付：`docs/sketches/a12_v1/lane_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
 - 保存名：`ground_a12_lane.png`
@@ -119,7 +107,7 @@ Scene: a narrow side street off the shopping street, where a bicycle shop is.
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
-#### 6. 地面の絵：坂の上
+#### 5. 地面の絵：坂の上
 
 - 添付：`docs/sketches/a12_v1/hill_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
 - 保存名：`ground_a12_hill.png`
@@ -139,7 +127,7 @@ Scene: the top of a hill above the town, the place where the town can be seen at
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
 ```
 
-#### 7. 部品の箱2：店の裏・横丁の店・端と角
+#### 6. 部品の箱2：店の裏・横丁の店・端と角
 
 - 添付：`ground_a12_gate.png（届いた1-2 の入口の絵。門の見本・絵柄）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`
 - 保存名：`parts_a12_backs.png`
@@ -163,7 +151,7 @@ Scale: all objects on this sheet share one consistent scale: one step (one grid 
 - Row 3, column 3: an old wooden board fence, left to right, about 4 steps wide, with ONE board missing leaving a narrow gap. Match the attached shopping street picture exactly in scale, view and style. Showa era (1988). No letters or numbers anywhere.
 ```
 
-#### 8. 部品の箱3：商店街の小物
+#### 7. 部品の箱3：商店街の小物
 
 - 添付：`ground_a12_gate.png（届いた1-2 の入口の絵。門の見本・絵柄）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`
 - 保存名：`parts_a12_props.png`
@@ -193,7 +181,7 @@ Scale: all objects on this sheet share one consistent scale: one step (one grid 
 
 新しい1-1（デバッグメニューの「試しの切り替え」の「新しい1-1」）は、部屋の絵がなく、仕掛けと宝箱も仮の印（ひし形・四角）で、良さが伝わりにくかった（2026-11-23 開発者）。`docs/milestones/M3_explore_feel.md` の 7.。**先に小物の3枚**（届けばマス目の部屋のままでも絵に替わる）、**次に部屋の6枚**。小物は白い背景のまま送ってくれればよい（Claude が1つずつ切り出す）。部屋の絵は、毎回その部屋の下絵（`docs/sketches/a11_art/room_<部屋>.png`）と、絵柄の見本の今の入口の地図（`public/assets/maps/fest_gate.webp`）を添付する
 
-#### 9. 部屋4：縁日の広場（作り直し）
+#### 8. 部屋4：縁日の広場（作り直し）
 
 - 添付：`map_fest2_gate.png（届いた縁日の入口の絵）`
 - 保存名：`map_fest2_plaza.png`
@@ -223,7 +211,7 @@ Absolutely no letters or text anywhere: signs, banners and posters are blank or 
 
 基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・初江）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す
 
-#### 10. 写しのしおり：口を開けた絵（作り直し）
+#### 9. 写しのしおり：口を開けた絵（作り直し）
 
 - 添付：`public/assets/portraits/past_shiori_normal.webp`
 - 保存名：`past_shiori_talk_src.png`
@@ -234,7 +222,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 11. 写しの勇夫：目を閉じた絵
+#### 10. 写しの勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_blink_src.png`
@@ -244,7 +232,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 12. 写しの勇夫：口を開けた絵
+#### 11. 写しの勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_talk_src.png`
@@ -254,7 +242,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 13. 写しの昇平：目を閉じた絵
+#### 12. 写しの昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_blink_src.png`
@@ -264,7 +252,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 14. 写しの昇平：口を開けた絵
+#### 13. 写しの昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_talk_src.png`
@@ -274,7 +262,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 15. 善次：目を閉じた絵
+#### 14. 善次：目を閉じた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_blink_src.png`
@@ -284,7 +272,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 16. 善次：口を開けた絵
+#### 15. 善次：口を開けた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_talk_src.png`
@@ -294,7 +282,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 17. 写しの寿美：目を閉じた絵
+#### 16. 写しの寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_blink_src.png`
@@ -304,7 +292,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 18. 写しの寿美：口を開けた絵
+#### 17. 写しの寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_talk_src.png`
@@ -314,7 +302,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 19. 写しのおじいちゃん：目を閉じた絵
+#### 18. 写しのおじいちゃん：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_blink_src.png`
@@ -324,7 +312,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 20. 写しのおじいちゃん：口を開けた絵
+#### 19. 写しのおじいちゃん：口を開けた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_talk_src.png`
@@ -334,7 +322,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 21. だいち：目を閉じた絵
+#### 20. だいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_blink_src.png`
@@ -344,7 +332,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 22. だいち：口を開けた絵
+#### 21. だいち：口を開けた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_talk_src.png`
@@ -358,7 +346,7 @@ Change only the mouth: open it slightly, as in the middle of speaking a word (a 
 
 元の絵が口を開けている表情は、話していても口が止まって見える（開発者と決めた：口を閉じた絵を足す）。ゲームは、話していない時にこの絵を重ね、話す間は重ねたり外したりして開け閉めする。台詞の多い順。大笑い・泣き顔のように、開いているのが自然な顔は頼まない。毎回その表情の絵を添付する。構図が少しでも動いたら作り直す
 
-#### 23. みお：smileの口を閉じた絵（台本で204行）
+#### 22. みお：smileの口を閉じた絵（台本で204行）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_smile_closed_src.png`
@@ -368,7 +356,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 24. あかり：smileの口を閉じた絵（台本で85行）
+#### 23. あかり：smileの口を閉じた絵（台本で85行）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_smile_closed_src.png`
@@ -378,7 +366,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 25. 富美：smileの口を閉じた絵（台本で35行）
+#### 24. 富美：smileの口を閉じた絵（台本で35行）
 
 - 添付：`public/assets/portraits/fumi_smile.webp`
 - 保存名：`fumi_smile_closed_src.png`
@@ -388,7 +376,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 26. ゆうま：smileの口を閉じた絵（台本で32行）
+#### 25. ゆうま：smileの口を閉じた絵（台本で32行）
 
 - 添付：`public/assets/portraits/yuma_smile.webp`
 - 保存名：`yuma_smile_closed_src.png`
@@ -398,7 +386,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 27. 写しの正雄：smileの口を閉じた絵（台本で26行）
+#### 26. 写しの正雄：smileの口を閉じた絵（台本で26行）
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_smile_closed_src.png`
@@ -408,7 +396,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 28. 写しのゆうま：smileの口を閉じた絵（台本で18行）
+#### 27. 写しのゆうま：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_yuma_smile.webp`
 - 保存名：`past_yuma_smile_closed_src.png`
@@ -418,7 +406,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 29. 写しの静江：smileの口を閉じた絵（台本で18行）
+#### 28. 写しの静江：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_shizue_smile.webp`
 - 保存名：`past_shizue_smile_closed_src.png`
@@ -428,7 +416,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 30. 子りく：proudの口を閉じた絵（台本で16行）
+#### 29. 子りく：proudの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/young_riku_proud.webp`
 - 保存名：`young_riku_proud_closed_src.png`
@@ -438,7 +426,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 31. 写しのひなの：smileの口を閉じた絵（台本で16行）
+#### 30. 写しのひなの：smileの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/past_hinano_smile.webp`
 - 保存名：`past_hinano_smile_closed_src.png`
@@ -448,7 +436,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 32. 正雄：smileの口を閉じた絵（台本で15行）
+#### 31. 正雄：smileの口を閉じた絵（台本で15行）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_smile_closed_src.png`
@@ -458,7 +446,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 33. 子あかり：smileの口を閉じた絵（台本で14行）
+#### 32. 子あかり：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`
 - 保存名：`young_akari_smile_closed_src.png`
@@ -468,7 +456,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 34. 写しの富美：smileの口を閉じた絵（台本で14行）
+#### 33. 写しの富美：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/past_fumi_smile.webp`
 - 保存名：`past_fumi_smile_closed_src.png`
@@ -478,7 +466,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 35. 勇夫：smileの口を閉じた絵（台本で12行）
+#### 34. 勇夫：smileの口を閉じた絵（台本で12行）
 
 - 添付：`public/assets/portraits/isamu_smile.webp`
 - 保存名：`isamu_smile_closed_src.png`
@@ -488,7 +476,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 36. 昇平：smileの口を閉じた絵（台本で11行）
+#### 35. 昇平：smileの口を閉じた絵（台本で11行）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_smile_closed_src.png`
@@ -498,7 +486,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 37. さき：smileの口を閉じた絵（台本で9行）
+#### 36. さき：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_smile_closed_src.png`
@@ -508,7 +496,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 38. しおり：smileの口を閉じた絵（台本で9行）
+#### 37. しおり：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/shiori_smile.webp`
 - 保存名：`shiori_smile_closed_src.png`
@@ -518,7 +506,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 39. 茂雄：smileの口を閉じた絵（台本で8行）
+#### 38. 茂雄：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_smile_closed_src.png`
@@ -528,7 +516,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 40. 写しの千代：smileの口を閉じた絵（台本で8行）
+#### 39. 写しの千代：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_smile_closed_src.png`
@@ -538,7 +526,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 41. 写しの昇平：smileの口を閉じた絵（台本で8行）
+#### 40. 写しの昇平：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_smile_closed_src.png`
@@ -548,7 +536,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 42. 写しのたいち：smileの口を閉じた絵（台本で8行）
+#### 41. 写しのたいち：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_taichi_smile.webp`
 - 保存名：`past_taichi_smile_closed_src.png`
@@ -558,7 +546,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 43. ペトラ：smileの口を閉じた絵（台本で5行）
+#### 42. ペトラ：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/petra_smile.webp`
 - 保存名：`petra_smile_closed_src.png`
@@ -568,7 +556,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 44. 写しのしおり：smileの口を閉じた絵（台本で5行）
+#### 43. 写しのしおり：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_smile_closed_src.png`
@@ -623,6 +611,6 @@ Change only the mouth: close it gently into a soft closed-lip smile that keeps t
 - **AO. 案3：屋台の裏通りの地面の絵（段階288）**（1 枚）：地面の絵：屋台の裏通り（案3）
 - **AP. 地面も部品で組む試し：裏通りの部品の箱（段階291）**（3 枚）：部品の箱1：地面の下敷き（つなぎ目の出ない模様）、部品の箱2：地面に貼る物、部品の箱3：裏通りの縁の部品
 - **AQ. 思い出の一枚：新しい1-1 の4枚（段階301）**（5 枚）：思い出の一枚：鳥居の前、思い出の一枚：やぐらの陰、思い出の一枚：屋台の裏の囲い、思い出の一枚：池のほとり、思い出の一枚：最後の一枚（4枚そろえた人だけ）
-- **AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）**（1 枚）：地面の絵：商店街の入口（店も描き込む）
+- **AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）**（2 枚）：地面の絵：商店街の入口（店も描き込む）、地面の絵：商店街の入口から、張り出した物を消す
 - **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）
 - **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）
