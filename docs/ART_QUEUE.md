@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：36 枚**（済んだ絵 428 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：45 枚**（済んだ絵 428 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -10,15 +10,224 @@
 
 ## まだの絵
 
+- [AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）](#ar-新しい1-2地面の絵6枚と昭和の商店街の部品の箱3枚段階306)：9 枚
 - [AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）](#ae-新しい1-1-の仕掛け宝箱の小物と部屋の絵段階270)：1 枚
 - [AC. 脇役のまばたき・口パク（基本の1枚）](#ac-脇役のまばたき口パク基本の1枚)：13 枚
 - [AD. 口を開けた顔の、口を閉じた絵（口パク用）](#ad-口を開けた顔の口を閉じた絵口パク用)：22 枚
+
+### AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）
+
+部屋の作り方の型（`docs/design/explore.md` の 2-7）で作る最初の新しい区画。地面の絵には地面と遠くの屋根・木だけを描き、店や看板など立つ物は部品の箱で頼む。時代は昭和63年（1988年）の夏の夕暮れ。添付は、その部屋の作りの下書き（`docs/sketches/a12_v1/<部屋>_plan.png`）と、届いた1-1 の入口の地面の絵（`ground3_fest2_gate.png`。絵柄・角度・光の見本）。上から順に作る（2枚目からは、1枚目に届いた1-2 の地面の絵も添付すると、そろいやすい）
+
+#### 1. 地面の絵：商店街の入口
+
+- 添付：`docs/sketches/a12_v1/gate_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
+- 保存名：`ground_a12_gate.png`
+- メモ：下書きは位置の目安
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+Scene:
+- Top part: a long strip of sidewalk (about 3 steps tall) along the top where a row of small shops will stand facing down toward the street; behind it, only the dark tiled roofs of the shops along the very top edge. At the top right, a street (about 4 steps wide) leaves through the TOP edge.
+- Across the middle: the main shopping street of old asphalt (about 7 steps tall), running left to right. It leaves the image through the LEFT edge (a little above the middle, about 4 steps wide). The right end is closed by roofs.
+- Below the street: strips for the backs of shops on both sides, with an opening (about 6 steps wide) in the center.
+- Lower part: through the opening, a short approach where an arcade gate will stand, widening into a small open space in front of the shopping street, with a few planters at its sides, then narrowing to a road (about 4 steps wide) that leaves through the BOTTOM edge in the center.
+- The rest of the edges: dark tiled roofs of old houses and shops seen from above, a few trees.
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
+```
+
+#### 2. 地面の絵：商店街の中ほど
+
+- 添付：`docs/sketches/a12_v1/middle_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
+- 保存名：`ground_a12_middle.png`
+- メモ：下書きは位置の目安
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+Scene:
+- Top center: old stone steps (about 4 steps wide) going up and leaving through the TOP edge toward a hill; on both sides of the steps, strips of sidewalk where shops will stand facing down, with dark tiled roofs behind them along the top edge.
+- Across the middle: the main shopping street of old asphalt (about 6 steps tall), running from the LEFT edge to the RIGHT edge (both a little above the middle, about 4 steps wide).
+- Below the street: a strip for the backs of shops, with an opening (about 4 steps wide) near the right; through it, a narrow road winds down and leaves through the BOTTOM edge on the right (about 4 steps wide).
+- Lower left: a small dirt lot for parking bicycles, reached by a narrow path.
+- The rest of the edges: dark tiled roofs of old houses and shops, a few trees.
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
+```
+
+#### 3. 地面の絵：銭湯の裏
+
+- 添付：`docs/sketches/a12_v1/bath_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
+- 保存名：`ground_a12_bath.png`
+- メモ：下書きは位置の目安
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+Scene: the quiet back of an old public bathhouse (sento), a little darker than the shopping street.
+- Top: a narrow path (about 4 steps wide) leaves through the TOP edge in the center; on both sides, strips for the backs of buildings.
+- Upper left: the back yard of the bathhouse, packed earth with scattered wood chips and ash, where firewood and a boiler will stand.
+- Middle: a back alley of packed earth and old concrete that leaves through the RIGHT edge (a little above the middle, about 4 steps wide).
+- Lower left: a tiny hidden corner of weeds and damp earth behind the yard, enclosed by walls (no visible way in from the alley).
+- Lower middle: the alley narrows and ends in a quiet dead end with weeds.
+- The rest of the edges: tiled roofs, an old concrete block wall and bushes.
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
+```
+
+#### 4. 地面の絵：倉庫の路地
+
+- 添付：`docs/sketches/a12_v1/store_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
+- 保存名：`ground_a12_store.png`
+- メモ：下書きは位置の目安
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+Scene: a narrow back alley behind the shops where a candy shop keeps its storehouse.
+- Top: strips for the backs of houses and shops along the top, with dark roofs above them at the very top edge.
+- Middle: an open space of packed earth and old concrete (about 8 steps tall) where crates are unloaded, with a darker patch of earth on the left where a small storehouse will stand. It leaves through the RIGHT edge (a little above the middle, about 4 steps wide).
+- Below it: strips for the backs of buildings, and in the center a long narrow alley (about 4 steps wide) going straight down and leaving through the BOTTOM edge.
+- The rest of the edges: tiled roofs and old fences.
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
+```
+
+#### 5. 地面の絵：横丁
+
+- 添付：`docs/sketches/a12_v1/lane_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
+- 保存名：`ground_a12_lane.png`
+- メモ：下書きは位置の目安
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+Scene: a narrow side street off the shopping street, where a bicycle shop is.
+- Top left: a strip of sidewalk where a row of small shops will stand facing down, dark roofs behind them at the top edge.
+- Middle: a narrow street of old asphalt (about 6 steps tall) that leaves through the LEFT edge (a little above the middle, about 4 steps wide) and ends at the right.
+- Lower middle: a short dead-end of packed earth going down.
+- Far right: behind an old wooden fence with ONE missing board, a tiny hidden corner of weeds at the right edge (reached only through the gap in the fence).
+- The rest of the edges: tiled roofs, fences and potted plants.
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
+```
+
+#### 6. 地面の絵：坂の上
+
+- 添付：`docs/sketches/a12_v1/hill_plan.png（作りの下書き）`、`ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）`
+- 保存名：`ground_a12_hill.png`
+- メモ：下書きは位置の目安
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+Scene: the top of a hill above the town, the place where the town can be seen at sunset.
+- From the BOTTOM edge in the center, old stone steps (about 4 steps wide) climb straight up through bushes.
+- At the top: a small open lookout of packed earth and a patch of old stone paving in the center, surrounded by a low hedge and bushes; beyond the hedge along the top edge, the distant rooftops of the town glow in the orange sunset.
+- The rest of the edges: dense bushes and trees.
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere.
+```
+
+#### 7. 部品の箱1：昭和の商店街の店の表
+
+- 添付：`ground_a12_gate.png（届いた1-2 の入口の地面の絵）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`
+- 保存名：`parts_a12_shops.png`
+- メモ：店はどれも幅3マスにそろえる（1-1 の屋台と同じ）
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A sheet of separate map objects (parts) for a top-down 2D RPG map on mobile. The game places each part one by one on top of a ground illustration, so every part is drawn alone, complete and uncropped.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+Layout: a grid of 3 rows by 3 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
+Scale: all objects on this sheet share one consistent scale: one step (one grid square of the map) is about one person's shoulder width, about the size of one beer crate.
+- Row 1, column 1: a small vegetable shop (yaoya), front view: wooden display shelves with tomatoes, cucumbers and watermelons in baskets, a faded striped awning, about 3 steps wide.
+- Row 1, column 2: a small old-fashioned candy shop (dagashiya), front view: glass jars of candy, a red bench in front, a small cooler with ramune bottles, about 3 steps wide.
+- Row 1, column 3: a small old watch and clock shop, front view: a glass window full of wall clocks and wristwatches, warm light inside, about 3 steps wide.
+- Row 2, column 1: a small electronics shop, front view: several boxy CRT televisions stacked in the window, a radio on a shelf, about 3 steps wide.
+- Row 2, column 2: a tiny tobacco shop, front view: a small glass sales window with a red public telephone beside it, about 3 steps wide.
+- Row 2, column 3: a small bicycle shop, front view: a few old bicycles lined up in front, tools and tires hanging on the wall inside, about 3 steps wide.
+- Row 3, column 1: a small fish shop, front view: a counter with ice and fish, a blue awning, about 3 steps wide.
+- Row 3, column 2: a small bookshop, front view: magazines on racks outside, about 3 steps wide.
+- Row 3, column 3: a small rice and sake shop, front view: sacks of rice and big sake bottles, a wooden sign without letters, about 3 steps wide. Every shop is the same size (about 3 steps wide and 3 steps deep, including its tiled or tin roof), seen from the front, closed shutters partly rolled up, Showa era (1988) style, no letters or numbers on any sign or shutter.
+```
+
+#### 8. 部品の箱2：店の裏・横向き・端と角
+
+- 添付：`ground_a12_gate.png（届いた1-2 の入口の地面の絵）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`、`parts_a12_shops.png（上で作った絵）`
+- 保存名：`parts_a12_backs.png`
+- メモ：店の並びの端と角も、ここでそろえる
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A sheet of separate map objects (parts) for a top-down 2D RPG map on mobile. The game places each part one by one on top of a ground illustration, so every part is drawn alone, complete and uncropped.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+Layout: a grid of 3 rows by 3 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
+Scale: all objects on this sheet share one consistent scale: one step (one grid square of the map) is about one person's shoulder width, about the size of one beer crate.
+- Row 1, column 1: the back of a small shop seen from behind: a tiled roof, a back door, an air conditioner outdoor unit, a few crates, about 3 steps wide.
+- Row 1, column 2: the back of another small shop: a tin roof, a back window, a gas meter, potted plants, about 3 steps wide.
+- Row 1, column 3: the back of a small shop with a laundry pole and a bicycle leaning on the wall, about 3 steps wide.
+- Row 2, column 1: a small shop seen from its LEFT side (the side wall and the edge of the awning, facing left), about 2 steps wide.
+- Row 2, column 2: the same kind of shop seen from its RIGHT side (facing right), about 2 steps wide.
+- Row 2, column 3: the END of a row of shops: a plain side wall with a drainpipe and a narrow gap, about 1 step wide, so a row of shops does not end abruptly.
+- Row 3, column 1: only the dark tiled roofs of a row of shops seen from above (no walls), about 6 steps wide, for the edges of the map.
+- Row 3, column 2: an old concrete block wall corner with moss (L shape), about 2 by 2 steps.
+- Row 3, column 3: an old wooden board fence, left to right, about 4 steps wide, with ONE board missing leaving a narrow gap. Match the attached shop parts exactly in scale, view and style. Showa era (1988). No letters or numbers anywhere.
+```
+
+#### 9. 部品の箱3：商店街の小物
+
+- 添付：`ground_a12_gate.png（届いた1-2 の入口の地面の絵）`、`parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）`、`parts_a12_shops.png（上で作った絵）`
+- 保存名：`parts_a12_props.png`
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A sheet of separate map objects (parts) for a top-down 2D RPG map on mobile. The game places each part one by one on top of a ground illustration, so every part is drawn alone, complete and uncropped.
+Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
+Layout: a grid of 3 rows by 4 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
+Scale: all objects on this sheet share one consistent scale: one step (one grid square of the map) is about one person's shoulder width, about the size of one beer crate.
+- Row 1, column 1: an old concrete utility pole with wires and a small street lamp, about 1 step wide and very tall.
+- Row 1, column 2: a shopping street arcade gate: two poles and a decorated arch across the top (no letters), about 6 steps wide, the arch high enough to walk under.
+- Row 1, column 3: an old drink vending machine (1988 style, no letters or logos), about 1 step wide.
+- Row 1, column 4: a red street-side mailbox (cylindrical, old style), about 1 step wide.
+- Row 2, column 1: a long red wooden bench (engawa-style) for in front of a candy shop, about 2 steps wide.
+- Row 2, column 2: an old bicycle with a rear carrier (a sturdy black bicycle), about 2 steps wide.
+- Row 2, column 3: a stack of wooden crates of ramune bottles, about 1 step wide.
+- Row 2, column 4: a small wooden storehouse with a tin roof and a sliding door, about 3 steps wide.
+- Row 3, column 1: the back of a public bathhouse: a tall brick chimney and a small boiler shed, about 3 steps wide.
+- Row 3, column 2: a pile of firewood stacked against a wall, about 2 steps wide.
+- Row 3, column 3: a low trimmed hedge with a short wooden railing for a hilltop lookout, about 4 steps wide.
+- Row 3, column 4: a few potted plants and morning glories on a bamboo trellis, about 2 steps wide. Match the attached shop parts exactly in scale, view and style. Showa era (1988). No letters, numbers or logos anywhere.
+```
 
 ### AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）
 
 新しい1-1（デバッグメニューの「試しの切り替え」の「新しい1-1」）は、部屋の絵がなく、仕掛けと宝箱も仮の印（ひし形・四角）で、良さが伝わりにくかった（2026-11-23 開発者）。`docs/milestones/M3_explore_feel.md` の 7.。**先に小物の3枚**（届けばマス目の部屋のままでも絵に替わる）、**次に部屋の6枚**。小物は白い背景のまま送ってくれればよい（Claude が1つずつ切り出す）。部屋の絵は、毎回その部屋の下絵（`docs/sketches/a11_art/room_<部屋>.png`）と、絵柄の見本の今の入口の地図（`public/assets/maps/fest_gate.webp`）を添付する
 
-#### 1. 部屋4：縁日の広場（作り直し）
+#### 10. 部屋4：縁日の広場（作り直し）
 
 - 添付：`map_fest2_gate.png（届いた縁日の入口の絵）`
 - 保存名：`map_fest2_plaza.png`
@@ -48,7 +257,7 @@ Absolutely no letters or text anywhere: signs, banners and posters are blank or 
 
 基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・初江）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す
 
-#### 2. 写しのしおり：口を開けた絵（作り直し）
+#### 11. 写しのしおり：口を開けた絵（作り直し）
 
 - 添付：`public/assets/portraits/past_shiori_normal.webp`
 - 保存名：`past_shiori_talk_src.png`
@@ -59,7 +268,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 3. 写しの勇夫：目を閉じた絵
+#### 12. 写しの勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_blink_src.png`
@@ -69,7 +278,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 4. 写しの勇夫：口を開けた絵
+#### 13. 写しの勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_talk_src.png`
@@ -79,7 +288,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 5. 写しの昇平：目を閉じた絵
+#### 14. 写しの昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_blink_src.png`
@@ -89,7 +298,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 6. 写しの昇平：口を開けた絵
+#### 15. 写しの昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_talk_src.png`
@@ -99,7 +308,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 7. 善次：目を閉じた絵
+#### 16. 善次：目を閉じた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_blink_src.png`
@@ -109,7 +318,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 8. 善次：口を開けた絵
+#### 17. 善次：口を開けた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_talk_src.png`
@@ -119,7 +328,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 9. 写しの寿美：目を閉じた絵
+#### 18. 写しの寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_blink_src.png`
@@ -129,7 +338,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 10. 写しの寿美：口を開けた絵
+#### 19. 写しの寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_talk_src.png`
@@ -139,7 +348,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 11. 写しのおじいちゃん：目を閉じた絵
+#### 20. 写しのおじいちゃん：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_blink_src.png`
@@ -149,7 +358,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 12. 写しのおじいちゃん：口を開けた絵
+#### 21. 写しのおじいちゃん：口を開けた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_talk_src.png`
@@ -159,7 +368,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 13. だいち：目を閉じた絵
+#### 22. だいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_blink_src.png`
@@ -169,7 +378,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 14. だいち：口を開けた絵
+#### 23. だいち：口を開けた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_talk_src.png`
@@ -183,7 +392,7 @@ Change only the mouth: open it slightly, as in the middle of speaking a word (a 
 
 元の絵が口を開けている表情は、話していても口が止まって見える（開発者と決めた：口を閉じた絵を足す）。ゲームは、話していない時にこの絵を重ね、話す間は重ねたり外したりして開け閉めする。台詞の多い順。大笑い・泣き顔のように、開いているのが自然な顔は頼まない。毎回その表情の絵を添付する。構図が少しでも動いたら作り直す
 
-#### 15. みお：smileの口を閉じた絵（台本で204行）
+#### 24. みお：smileの口を閉じた絵（台本で204行）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_smile_closed_src.png`
@@ -193,7 +402,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 16. あかり：smileの口を閉じた絵（台本で85行）
+#### 25. あかり：smileの口を閉じた絵（台本で85行）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_smile_closed_src.png`
@@ -203,7 +412,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 17. 富美：smileの口を閉じた絵（台本で35行）
+#### 26. 富美：smileの口を閉じた絵（台本で35行）
 
 - 添付：`public/assets/portraits/fumi_smile.webp`
 - 保存名：`fumi_smile_closed_src.png`
@@ -213,7 +422,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 18. ゆうま：smileの口を閉じた絵（台本で32行）
+#### 27. ゆうま：smileの口を閉じた絵（台本で32行）
 
 - 添付：`public/assets/portraits/yuma_smile.webp`
 - 保存名：`yuma_smile_closed_src.png`
@@ -223,7 +432,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 19. 写しの正雄：smileの口を閉じた絵（台本で26行）
+#### 28. 写しの正雄：smileの口を閉じた絵（台本で26行）
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_smile_closed_src.png`
@@ -233,7 +442,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 20. 写しのゆうま：smileの口を閉じた絵（台本で18行）
+#### 29. 写しのゆうま：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_yuma_smile.webp`
 - 保存名：`past_yuma_smile_closed_src.png`
@@ -243,7 +452,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 21. 写しの静江：smileの口を閉じた絵（台本で18行）
+#### 30. 写しの静江：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_shizue_smile.webp`
 - 保存名：`past_shizue_smile_closed_src.png`
@@ -253,7 +462,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 22. 子りく：proudの口を閉じた絵（台本で16行）
+#### 31. 子りく：proudの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/young_riku_proud.webp`
 - 保存名：`young_riku_proud_closed_src.png`
@@ -263,7 +472,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 23. 写しのひなの：smileの口を閉じた絵（台本で16行）
+#### 32. 写しのひなの：smileの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/past_hinano_smile.webp`
 - 保存名：`past_hinano_smile_closed_src.png`
@@ -273,7 +482,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 24. 正雄：smileの口を閉じた絵（台本で15行）
+#### 33. 正雄：smileの口を閉じた絵（台本で15行）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_smile_closed_src.png`
@@ -283,7 +492,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 25. 子あかり：smileの口を閉じた絵（台本で14行）
+#### 34. 子あかり：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`
 - 保存名：`young_akari_smile_closed_src.png`
@@ -293,7 +502,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 26. 写しの富美：smileの口を閉じた絵（台本で14行）
+#### 35. 写しの富美：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/past_fumi_smile.webp`
 - 保存名：`past_fumi_smile_closed_src.png`
@@ -303,7 +512,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 27. 勇夫：smileの口を閉じた絵（台本で12行）
+#### 36. 勇夫：smileの口を閉じた絵（台本で12行）
 
 - 添付：`public/assets/portraits/isamu_smile.webp`
 - 保存名：`isamu_smile_closed_src.png`
@@ -313,7 +522,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 28. 昇平：smileの口を閉じた絵（台本で11行）
+#### 37. 昇平：smileの口を閉じた絵（台本で11行）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_smile_closed_src.png`
@@ -323,7 +532,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 29. さき：smileの口を閉じた絵（台本で9行）
+#### 38. さき：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_smile_closed_src.png`
@@ -333,7 +542,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 30. しおり：smileの口を閉じた絵（台本で9行）
+#### 39. しおり：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/shiori_smile.webp`
 - 保存名：`shiori_smile_closed_src.png`
@@ -343,7 +552,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 31. 茂雄：smileの口を閉じた絵（台本で8行）
+#### 40. 茂雄：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_smile_closed_src.png`
@@ -353,7 +562,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 32. 写しの千代：smileの口を閉じた絵（台本で8行）
+#### 41. 写しの千代：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_smile_closed_src.png`
@@ -363,7 +572,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 33. 写しの昇平：smileの口を閉じた絵（台本で8行）
+#### 42. 写しの昇平：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_smile_closed_src.png`
@@ -373,7 +582,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 34. 写しのたいち：smileの口を閉じた絵（台本で8行）
+#### 43. 写しのたいち：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_taichi_smile.webp`
 - 保存名：`past_taichi_smile_closed_src.png`
@@ -383,7 +592,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 35. ペトラ：smileの口を閉じた絵（台本で5行）
+#### 44. ペトラ：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/petra_smile.webp`
 - 保存名：`petra_smile_closed_src.png`
@@ -393,7 +602,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 36. 写しのしおり：smileの口を閉じた絵（台本で5行）
+#### 45. 写しのしおり：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_smile_closed_src.png`

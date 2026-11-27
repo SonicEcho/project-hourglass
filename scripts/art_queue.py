@@ -1395,6 +1395,92 @@ add('思い出の一枚：池のほとり', AQ_REF, 'photo_m_pond.png', AQ_HEAD 
 add('思い出の一枚：最後の一枚（4枚そろえた人だけ）', AQ_REF + ['photo_m_pond.png（届いた池のほとりの写真。絵柄と色あせ方の見本）'], 'photo_m_last.png', AQ_HEAD + """Match the attached pond photo exactly in art style, sepia fading and the children's look.
 Scene: at night, at the top of the old stone steps in front of a small shrine, fireworks bursting across the whole sky. Yuma holds the plastic bag with the two goldfish (one red, one black) in one hand; with his other hand he holds Hinano's hand. Seen slightly from behind and to the side, both look up at the fireworks; Yuma's face is turned a little toward his sister with a shy, gentle smile, as if making a promise. The warmest and brightest of the photos, but still a faded memory.""" + AQ_TAIL, '「……来年も、連れてきてやるよ」。ゆうまが忘れていた約束の一枚')
 
+# ---- AR. 新しい1-2：地面の絵と、昭和の商店街の部品の箱（段階306） ----
+section('AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）', '部屋の作り方の型（`docs/design/explore.md` の 2-7）で作る最初の新しい区画。地面の絵には地面と遠くの屋根・木だけを描き、店や看板など立つ物は部品の箱で頼む。時代は昭和63年（1988年）の夏の夕暮れ。添付は、その部屋の作りの下書き（`docs/sketches/a12_v1/<部屋>_plan.png`）と、届いた1-1 の入口の地面の絵（`ground3_fest2_gate.png`。絵柄・角度・光の見本）。上から順に作る（2枚目からは、1枚目に届いた1-2 の地面の絵も添付すると、そろいやすい）')
+AR_REF = 'ground3_fest2_gate.png（届いた1-1 の入口の地面の絵。絵柄・角度・光の見本）'
+AR_HEAD = f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground layer: the game will place the shops, signs, utility poles, bicycles and people on top of it later as separate pictures. Match the attached ground illustration exactly in art style, camera angle, scale and dusk lighting.
+{AF_CAM}
+The attached colored plan is only a rough guide for WHERE the areas are (a 24 by 24 grid). Paint a natural, believable place following it loosely; do not copy its blocks, grid or colors.
+Era and place: a small old shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset. Warm orange sunset light with long soft shadows; old worn asphalt with patched cracks, manhole covers, painted white road lines faded, concrete gutters along the edges.
+"""
+AR_TAIL = """
+Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere."""
+def ar_ground(key, title, scene):
+    add(f'地面の絵：{title}', [f'docs/sketches/a12_v1/{key}_plan.png（作りの下書き）', AR_REF], f'ground_a12_{key}.png', AR_HEAD + scene + AR_TAIL, '下書きは位置の目安')
+ar_ground('gate', '商店街の入口', """Scene:
+- Top part: a long strip of sidewalk (about 3 steps tall) along the top where a row of small shops will stand facing down toward the street; behind it, only the dark tiled roofs of the shops along the very top edge. At the top right, a street (about 4 steps wide) leaves through the TOP edge.
+- Across the middle: the main shopping street of old asphalt (about 7 steps tall), running left to right. It leaves the image through the LEFT edge (a little above the middle, about 4 steps wide). The right end is closed by roofs.
+- Below the street: strips for the backs of shops on both sides, with an opening (about 6 steps wide) in the center.
+- Lower part: through the opening, a short approach where an arcade gate will stand, widening into a small open space in front of the shopping street, with a few planters at its sides, then narrowing to a road (about 4 steps wide) that leaves through the BOTTOM edge in the center.
+- The rest of the edges: dark tiled roofs of old houses and shops seen from above, a few trees.""")
+ar_ground('middle', '商店街の中ほど', """Scene:
+- Top center: old stone steps (about 4 steps wide) going up and leaving through the TOP edge toward a hill; on both sides of the steps, strips of sidewalk where shops will stand facing down, with dark tiled roofs behind them along the top edge.
+- Across the middle: the main shopping street of old asphalt (about 6 steps tall), running from the LEFT edge to the RIGHT edge (both a little above the middle, about 4 steps wide).
+- Below the street: a strip for the backs of shops, with an opening (about 4 steps wide) near the right; through it, a narrow road winds down and leaves through the BOTTOM edge on the right (about 4 steps wide).
+- Lower left: a small dirt lot for parking bicycles, reached by a narrow path.
+- The rest of the edges: dark tiled roofs of old houses and shops, a few trees.""")
+ar_ground('bath', '銭湯の裏', """Scene: the quiet back of an old public bathhouse (sento), a little darker than the shopping street.
+- Top: a narrow path (about 4 steps wide) leaves through the TOP edge in the center; on both sides, strips for the backs of buildings.
+- Upper left: the back yard of the bathhouse, packed earth with scattered wood chips and ash, where firewood and a boiler will stand.
+- Middle: a back alley of packed earth and old concrete that leaves through the RIGHT edge (a little above the middle, about 4 steps wide).
+- Lower left: a tiny hidden corner of weeds and damp earth behind the yard, enclosed by walls (no visible way in from the alley).
+- Lower middle: the alley narrows and ends in a quiet dead end with weeds.
+- The rest of the edges: tiled roofs, an old concrete block wall and bushes.""")
+ar_ground('store', '倉庫の路地', """Scene: a narrow back alley behind the shops where a candy shop keeps its storehouse.
+- Top: strips for the backs of houses and shops along the top, with dark roofs above them at the very top edge.
+- Middle: an open space of packed earth and old concrete (about 8 steps tall) where crates are unloaded, with a darker patch of earth on the left where a small storehouse will stand. It leaves through the RIGHT edge (a little above the middle, about 4 steps wide).
+- Below it: strips for the backs of buildings, and in the center a long narrow alley (about 4 steps wide) going straight down and leaving through the BOTTOM edge.
+- The rest of the edges: tiled roofs and old fences.""")
+ar_ground('lane', '横丁', """Scene: a narrow side street off the shopping street, where a bicycle shop is.
+- Top left: a strip of sidewalk where a row of small shops will stand facing down, dark roofs behind them at the top edge.
+- Middle: a narrow street of old asphalt (about 6 steps tall) that leaves through the LEFT edge (a little above the middle, about 4 steps wide) and ends at the right.
+- Lower middle: a short dead-end of packed earth going down.
+- Far right: behind an old wooden fence with ONE missing board, a tiny hidden corner of weeds at the right edge (reached only through the gap in the fence).
+- The rest of the edges: tiled roofs, fences and potted plants.""")
+ar_ground('hill', '坂の上', """Scene: the top of a hill above the town, the place where the town can be seen at sunset.
+- From the BOTTOM edge in the center, old stone steps (about 4 steps wide) climb straight up through bushes.
+- At the top: a small open lookout of packed earth and a patch of old stone paving in the center, surrounded by a low hedge and bushes; beyond the hedge along the top edge, the distant rooftops of the town glow in the orange sunset.
+- The rest of the edges: dense bushes and trees.""")
+AR_PARTS_REF = ['ground_a12_gate.png（届いた1-2 の入口の地面の絵）', 'parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）']
+add('部品の箱1：昭和の商店街の店の表', AR_PARTS_REF, 'parts_a12_shops.png', af_parts(3, 3, [
+    'a small vegetable shop (yaoya), front view: wooden display shelves with tomatoes, cucumbers and watermelons in baskets, a faded striped awning, about 3 steps wide.',
+    'a small old-fashioned candy shop (dagashiya), front view: glass jars of candy, a red bench in front, a small cooler with ramune bottles, about 3 steps wide.',
+    'a small old watch and clock shop, front view: a glass window full of wall clocks and wristwatches, warm light inside, about 3 steps wide.',
+    'a small electronics shop, front view: several boxy CRT televisions stacked in the window, a radio on a shelf, about 3 steps wide.',
+    'a tiny tobacco shop, front view: a small glass sales window with a red public telephone beside it, about 3 steps wide.',
+    'a small bicycle shop, front view: a few old bicycles lined up in front, tools and tires hanging on the wall inside, about 3 steps wide.',
+    'a small fish shop, front view: a counter with ice and fish, a blue awning, about 3 steps wide.',
+    'a small bookshop, front view: magazines on racks outside, about 3 steps wide.',
+    'a small rice and sake shop, front view: sacks of rice and big sake bottles, a wooden sign without letters, about 3 steps wide.',
+], ' Every shop is the same size (about 3 steps wide and 3 steps deep, including its tiled or tin roof), seen from the front, closed shutters partly rolled up, Showa era (1988) style, no letters or numbers on any sign or shutter.'), '店はどれも幅3マスにそろえる（1-1 の屋台と同じ）')
+add('部品の箱2：店の裏・横向き・端と角', AR_PARTS_REF + ['parts_a12_shops.png（上で作った絵）'], 'parts_a12_backs.png', af_parts(3, 3, [
+    'the back of a small shop seen from behind: a tiled roof, a back door, an air conditioner outdoor unit, a few crates, about 3 steps wide.',
+    'the back of another small shop: a tin roof, a back window, a gas meter, potted plants, about 3 steps wide.',
+    'the back of a small shop with a laundry pole and a bicycle leaning on the wall, about 3 steps wide.',
+    'a small shop seen from its LEFT side (the side wall and the edge of the awning, facing left), about 2 steps wide.',
+    'the same kind of shop seen from its RIGHT side (facing right), about 2 steps wide.',
+    'the END of a row of shops: a plain side wall with a drainpipe and a narrow gap, about 1 step wide, so a row of shops does not end abruptly.',
+    'only the dark tiled roofs of a row of shops seen from above (no walls), about 6 steps wide, for the edges of the map.',
+    'an old concrete block wall corner with moss (L shape), about 2 by 2 steps.',
+    'an old wooden board fence, left to right, about 4 steps wide, with ONE board missing leaving a narrow gap.',
+], ' Match the attached shop parts exactly in scale, view and style. Showa era (1988). No letters or numbers anywhere.'), '店の並びの端と角も、ここでそろえる')
+add('部品の箱3：商店街の小物', AR_PARTS_REF + ['parts_a12_shops.png（上で作った絵）'], 'parts_a12_props.png', af_parts(3, 4, [
+    'an old concrete utility pole with wires and a small street lamp, about 1 step wide and very tall.',
+    'a shopping street arcade gate: two poles and a decorated arch across the top (no letters), about 6 steps wide, the arch high enough to walk under.',
+    'an old drink vending machine (1988 style, no letters or logos), about 1 step wide.',
+    'a red street-side mailbox (cylindrical, old style), about 1 step wide.',
+    'a long red wooden bench (engawa-style) for in front of a candy shop, about 2 steps wide.',
+    'an old bicycle with a rear carrier (a sturdy black bicycle), about 2 steps wide.',
+    'a stack of wooden crates of ramune bottles, about 1 step wide.',
+    'a small wooden storehouse with a tin roof and a sliding door, about 3 steps wide.',
+    'the back of a public bathhouse: a tall brick chimney and a small boiler shed, about 3 steps wide.',
+    'a pile of firewood stacked against a wall, about 2 steps wide.',
+    'a low trimmed hedge with a short wooden railing for a hilltop lookout, about 4 steps wide.',
+    'a few potted plants and morning glories on a bamboo trellis, about 2 steps wide.',
+], ' Match the attached shop parts exactly in scale, view and style. Showa era (1988). No letters, numbers or logos anywhere.'))
+
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
     '- **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）',
@@ -1406,7 +1492,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -9 if p[0].startswith('AQ.') else -8 if p[0].startswith('AP.') else -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -10 if p[0].startswith('AR.') else -9 if p[0].startswith('AQ.') else -8 if p[0].startswith('AP.') else -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
