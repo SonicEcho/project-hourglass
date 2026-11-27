@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { hasImage } from '../assets/loader';
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
-import { AREAS, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, LIBRARY_ITEM_SOURCES, LIBRARY_SNAP_SOURCES, SCREEN_COACH, sourceTexts, type LibrarySource, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
+import { MEMORY_PHOTOS, AREAS, CHAIN_SNAPS, CHAIN_TRAIT_TEXT, ENEMY_ART, LIBRARY_ART_NOTES, LIBRARY_ITEM_SOURCES, LIBRARY_SNAP_SOURCES, SCREEN_COACH, sourceTexts, type LibrarySource, GEAR_COUNTERS, NAVI_DATA, LIBRARY_COMBOS, LIBRARY_ENEMIES, LIBRARY_ENEMY_SNAP, LIBRARY_ITEMS, LIBRARY_SNAPS, WEAPON_DATA, type LibraryEnemy, type LibraryItem } from '../data';
 import type { ChainLinkDef, ChainMove } from '../core';
 import { chainSnapLook, comboDetailLines, comboMaterialNames, ENEMY_OF_SNAP, snapArt, snapDetailLines, snapShortLine } from '../ui/chainSnapText';
 import { frameCoachRect, frameHeader } from '../ui/frame';
@@ -23,13 +23,15 @@ import { hubBack, setHubReturn } from './run';
 // アルバム（20枚を組む道具）とは別の、読むだけの画面。まだ見つけていない物も「？？？」で並べ、手がかりを見せる。
 // 育成のメニュー（拠点・休憩所）と、タイトルのオプションから開く
 
-type LibraryTab = 'snap' | 'combo' | 'enemy' | 'item';
+type LibraryTab = 'snap' | 'combo' | 'enemy' | 'item' | 'photo';
 
 const TABS: TabDef<LibraryTab>[] = [
   { id: 'snap', label: 'スナップ', color: SNAP_CATEGORY.attack.color },
   { id: 'combo', label: 'コンボ', color: LIST_COLORS.combo },
   { id: 'enemy', label: '敵', color: LIST_COLORS.enemy },
   { id: 'item', label: '素材', color: LIST_COLORS.item },
+  // 段階302：探索で撮った思い出の一枚
+  { id: 'photo', label: '思い出', color: 0xd8a868 },
 ];
 
 /** 段階231：共通の見出しの下にタブ。一覧は指で上下にずらす（ページ送りはやめた）。説明の窓は下に */
@@ -50,6 +52,10 @@ const ART_ROW_GAP = 4;
 const THUMB = 38;
 /** 説明の窓の大きな絵の大きさ（段階232） */
 const ART = 124;
+/** 思い出の一枚のカード（段階302） */
+const PHOTO_GAP = 10;
+const PHOTO_W = (ROW_W - PHOTO_GAP) / 2;
+const PHOTO_H = Math.round(((PHOTO_W - 12) * 3) / 4) + 40;
 
 export interface LibrarySceneData {
   /** タイトルから開いた時（戻る先） */
@@ -77,7 +83,7 @@ export class LibraryScene extends Phaser.Scene {
     this.list = new ScrollArea(this);
     this.selected = null;
     this.view = libraryView();
-    const art = [...new Set([...LIBRARY_ENEMIES.map((e) => ENEMY_ART[e.id]), ...LIBRARY_SNAPS.map((m) => snapArt(m.id))].filter((x): x is string => !!x))];
+    const art = [...new Set([...LIBRARY_ENEMIES.map((e) => ENEMY_ART[e.id]), ...LIBRARY_SNAPS.map((m) => snapArt(m.id)), ...MEMORY_PHOTOS.map((p) => p.image)].filter((x): x is string => !!x))];
     this.render();
     // 敵とスナップの絵は、届いてから描き直す。段階236：その後、初めての時は照らす案内（戦闘と同じ形）
     waitImages(this, art, () => {
@@ -99,15 +105,23 @@ export class LibraryScene extends Phaser.Scene {
     this.root.add(screenBg(this));
     const progress = libraryProgress(this.view);
 
-    // 一覧（上に描くタブが優先して押せるよう、先に足す）
-    const ids = this.ids();
-    const art = this.tab === 'snap' || this.tab === 'enemy';
-    const pitch = art ? ART_ROW_H + ART_ROW_GAP : ROW_H + ROW_GAP;
-    const layer = this.list.build(this.root, LIST_Y, this.detailY() - 8, Math.max(0, ids.length * pitch - (art ? ART_ROW_GAP : ROW_GAP)));
-    ids.forEach((id, i) => (art ? this.drawArtRow(layer, id, LIST_Y + i * pitch) : this.drawRow(layer, id, LIST_Y + i * pitch)));
-    // 選んだ行が、大きくなった説明の窓に隠れないようにずらす
-    const at = this.selected ? ids.indexOf(this.selected) : -1;
-    if (at >= 0) this.list.reveal(LIST_Y + at * pitch, pitch);
+    // 段階302：思い出のタブは、写真を2列のカードで
+    if (this.tab === 'photo') {
+      const rows = Math.ceil(MEMORY_PHOTOS.length / 2);
+      const layer = this.list.build(this.root, LIST_Y, DETAIL_BOTTOM, Math.max(0, rows * (PHOTO_H + PHOTO_GAP) - PHOTO_GAP));
+      MEMORY_PHOTOS.forEach((p, i) => this.drawPhotoCard(layer, p.id, SIDE_PADDING + (i % 2) * (PHOTO_W + PHOTO_GAP), LIST_Y + Math.floor(i / 2) * (PHOTO_H + PHOTO_GAP)));
+    }
+    // 一覧（上に描くタブが優先して押せるよう、先に足す）。思い出のタブは上でカードを描いた（作り直すと消える）
+    if (this.tab !== 'photo') {
+      const ids = this.ids();
+      const art = this.tab === 'snap' || this.tab === 'enemy';
+      const pitch = art ? ART_ROW_H + ART_ROW_GAP : ROW_H + ROW_GAP;
+      const layer = this.list.build(this.root, LIST_Y, this.detailY() - 8, Math.max(0, ids.length * pitch - (art ? ART_ROW_GAP : ROW_GAP)));
+      ids.forEach((id, i) => (art ? this.drawArtRow(layer, id, LIST_Y + i * pitch) : this.drawRow(layer, id, LIST_Y + i * pitch)));
+      // 選んだ行が、大きくなった説明の窓に隠れないようにずらす
+      const at = this.selected ? ids.indexOf(this.selected) : -1;
+      if (at >= 0) this.list.reveal(LIST_Y + at * pitch, pitch);
+    }
 
     // 見出しと、記録の数（段階231：共通の見出し）
     const all = Object.values(progress);
@@ -119,9 +133,9 @@ export class LibraryScene extends Phaser.Scene {
       this.render();
     });
     const [found, total] = progress[this.tab];
-    const what = { snap: '見つけたスナップ', combo: '見つけたコンボ', enemy: '会った敵', item: '手に入れた素材' }[this.tab];
+    const what = { snap: '見つけたスナップ', combo: '見つけたコンボ', enemy: '会った敵', item: '手に入れた素材', photo: '見つけた思い出' }[this.tab];
     this.root.add(addText(this, SIDE_PADDING, COUNT_Y, `${what} ${found}/${total}`, { size: 11, color: COLORS.subText }).setOrigin(0, 0.5));
-    this.drawDetail();
+    if (this.tab !== 'photo') this.drawDetail();
 
     addButton(this, this.root, GAME_WIDTH / 2, 800, ROW_W, 52, this.back === 'Title' ? 'タイトルへ戻る' : (hubBack()?.label ?? '戻る'), { onTap: () => this.leave() }, { size: 15, bold: true });
   }
@@ -129,6 +143,48 @@ export class LibraryScene extends Phaser.Scene {
   private detailY(): number {
     if (!this.selected) return DETAIL_BOTTOM - DETAIL_H_HINT;
     return DETAIL_BOTTOM - (this.tab === 'enemy' ? DETAIL_H_ENEMY : this.tab === 'snap' ? DETAIL_H_ART : DETAIL_H_OPEN);
+  }
+
+  /** 思い出の一枚のカード（段階302）。まだの写真は「？？？」と、どこで見つかるかの手がかり */
+  private drawPhotoCard(layer: Phaser.GameObjects.Container, id: string, x: number, top: number): void {
+    const p = MEMORY_PHOTOS.find((m) => m.id === id)!;
+    const known = isFound.photo(this.view, id);
+    const card = this.add.rectangle(x, top, PHOTO_W, PHOTO_H, known ? 0xf4ecd8 : 0x17151b, known ? 1 : 0.95).setOrigin(0).setStrokeStyle(1, known ? 0xc8b898 : 0x2e2c34);
+    layer.add(card);
+    const iw = PHOTO_W - 12;
+    const ih = Math.round((iw * 3) / 4);
+    const cx = x + PHOTO_W / 2;
+    const iy = top + 6 + ih / 2;
+    if (known && p.image && hasImage(this, p.image)) layer.add(this.add.image(cx, iy, p.image).setDisplaySize(iw, ih));
+    else {
+      layer.add(this.add.rectangle(cx, iy, iw, ih, known ? 0x8a6a48 : 0x0e0d10, 1));
+      layer.add(addText(this, cx, iy, known ? p.caption : '？？？', { size: known ? 10 : 18, bold: !known, color: known ? '#fff4dc' : '#5a5866', align: 'center', wrap: iw - 12, ja: true }).setOrigin(0.5));
+    }
+    const area = AREAS[p.area]?.name ?? p.area;
+    const label = known ? p.title : p.secret ? '4枚そろえると……' : `${area}のどこか`;
+    layer.add(addText(this, cx, top + PHOTO_H - 16, label, { size: 11, bold: known, color: known ? '#5a4630' : COLORS.subText, align: 'center', wrap: PHOTO_W - 8, ja: true }).setOrigin(0.5));
+    if (known) makePressable(card, { onTap: this.list.guard(() => this.openPhoto(id)) });
+  }
+
+  /** 思い出の一枚を大きく見せ、その夜のことを読む（段階302）。タップで閉じる */
+  private openPhoto(id: string): void {
+    const p = MEMORY_PHOTOS.find((m) => m.id === id)!;
+    const box = this.add.container(0, 0);
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x05060a, 0.92).setOrigin(0).setInteractive();
+    box.add(shade);
+    const w = GAME_WIDTH - 2 * SIDE_PADDING;
+    const h = Math.round((w * 3) / 4);
+    const top = 90;
+    box.add(this.add.rectangle(GAME_WIDTH / 2, top + h / 2 + 4, w + 16, h + 16, 0xf4ecd8).setAngle(-1.5));
+    if (p.image && hasImage(this, p.image)) box.add(this.add.image(GAME_WIDTH / 2, top + h / 2 + 4, p.image).setDisplaySize(w, h).setAngle(-1.5));
+    else box.add(addText(this, GAME_WIDTH / 2, top + h / 2 + 4, p.caption, { size: 14, color: '#5a4630', align: 'center', wrap: w - 30, ja: true }).setOrigin(0.5).setAngle(-1.5));
+    const area = AREAS[p.area]?.name ?? p.area;
+    box.add(addText(this, SIDE_PADDING, top + h + 30, `${p.title}　（${area}）`, { size: 15, bold: true, color: '#ffd84a' }));
+    box.add(addText(this, SIDE_PADDING, top + h + 60, p.story, { size: 14, color: '#e6e9f5', wrap: w, ja: true }).setLineSpacing(8));
+    box.add(addText(this, GAME_WIDTH / 2, GAME_HEIGHT - 40, 'タップで閉じる', { size: 12, color: COLORS.subText }).setOrigin(0.5));
+    box.setAlpha(0);
+    this.tweens.add({ targets: box, alpha: 1, duration: 200 });
+    shade.once('pointerup', () => box.destroy());
   }
 
   /** 今のタブに並ぶ物の id（データの順） */
@@ -256,6 +312,7 @@ export class LibraryScene extends Phaser.Scene {
         combo: ['名前をタップすると、コンボの説明が出ます。', 'まだのコンボも、手がかりが読めます。材料が手札にそろうと、戦闘で見つかります。'],
         enemy: ['名前をタップすると、敵の説明が出ます。', '弱点は、その属性で当てると分かります。落とす素材は、倒すと分かります。'],
         item: ['名前をタップすると、素材の説明が出ます。', 'どこで手に入るかは「手に入る所」に出ます。武器の進化の鍵になる素材もあります。'],
+        photo: ['写真をタップすると、大きく見られます。'],
       }[this.tab];
       addDetailBox(this, this.root, this.detailY(), DETAIL_BOTTOM - this.detailY(), hint);
       return;

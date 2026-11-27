@@ -1,3 +1,4 @@
+import { MEMORY_PHOTOS } from './memoryPhotos';
 import type { ChainEnemyDef, ChainLinkDef, ChainMove, EnemyDef, LibraryContext } from '../core';
 import { AREAS, AREA_BATTLES } from './areas';
 import { CHAIN_AREA_SETUPS, CHAIN_ENEMY_SNAPS, CHAIN_SNAPS } from './chainAreas';
@@ -99,4 +100,5 @@ export const LIBRARY_CONTEXT: LibraryContext = {
   snaps: LIBRARY_SNAPS.map((m) => m.id),
   combos: LIBRARY_COMBOS.map((l) => l.id),
   items: Object.keys(WEAPON_DATA.items),
+  photos: MEMORY_PHOTOS.map((p) => p.id),
 };

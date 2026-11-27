@@ -20,7 +20,15 @@ describe('ライブラリの記録（段階167）', () => {
     const ctx = { enemies: ['a'], snaps: ['s'], combos: ['c'], items: ['m'] };
     expect(sanitizeLibrary('x', ctx)).toEqual(createLibrary());
     const lib = sanitizeLibrary({ met: { a: 2.7, b: 1, }, defeated: { a: -1 }, weak: { a: ['fire', 'fire', 'wind'], b: ['ice'] }, snaps: ['s', 's', 't', 3], combos: 'c', items: ['m'] }, ctx);
-    expect(lib).toEqual({ met: { a: 2 }, defeated: {}, weak: { a: ['fire'] }, snaps: ['s'], combos: [], items: ['m'] });
+    expect(lib).toEqual({ met: { a: 2 }, defeated: {}, weak: { a: ['fire'] }, snaps: ['s'], combos: [], items: ['m'], photos: [] });
+  });
+
+  it('思い出の一枚（段階302）：撮った写真を記録し、知らない写真は捨てる。前のセーブ（photos なし）は空', () => {
+    const ctx = { enemies: [], snaps: [], combos: [], items: [], photos: ['m_gate', 'm_pond'] };
+    const lib = recordLibraryFinds(createLibrary(), { photos: ['m_gate', 'm_gate', 'm_pond'] });
+    expect(lib.photos).toEqual(['m_gate', 'm_pond']);
+    expect(sanitizeLibrary({ ...lib, photos: ['m_pond', 'nope'] }, ctx).photos).toEqual(['m_pond']);
+    expect(sanitizeLibrary({ met: {} }, ctx).photos).toEqual([]);
   });
 });
 
