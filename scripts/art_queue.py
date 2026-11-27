@@ -1409,18 +1409,17 @@ AR_TAIL = """
 Keep everything inside the walkable area open ground: absolutely NO shops, buildings standing inside the area, signs, utility poles, vending machines, bicycles, crates, people or text. Absolutely no letters or text anywhere."""
 def ar_ground(key, title, scene):
     add(f'地面の絵：{title}', [f'docs/sketches/a12_v1/{key}_plan.png（作りの下書き）', AR_REF], f'ground_a12_{key}.png', AR_HEAD + scene + AR_TAIL, '下書きは位置の目安')
-ar_ground('gate', '商店街の入口', """Scene:
-- Top part: a long strip of sidewalk (about 3 steps tall) along the top where a row of small shops will stand facing down toward the street; behind it, only the dark tiled roofs of the shops along the very top edge. At the top right, a street (about 4 steps wide) leaves through the TOP edge.
-- Across the middle: the main shopping street of old asphalt (about 7 steps tall), running left to right. It leaves the image through the LEFT edge (a little above the middle, about 4 steps wide). The right end is closed by roofs.
-- Below the street: strips for the backs of shops on both sides, with an opening (about 6 steps wide) in the center.
-- Lower part: through the opening, a short approach where an arcade gate will stand, widening into a small open space in front of the shopping street, with a few planters at its sides, then narrowing to a road (about 4 steps wide) that leaves through the BOTTOM edge in the center.
-- The rest of the edges: dark tiled roofs of old houses and shops seen from above, a few trees.""")
-ar_ground('middle', '商店街の中ほど', """Scene:
-- Top center: old stone steps (about 4 steps wide) going up and leaving through the TOP edge toward a hill; on both sides of the steps, strips of sidewalk where shops will stand facing down, with dark tiled roofs behind them along the top edge.
-- Across the middle: the main shopping street of old asphalt (about 6 steps tall), running from the LEFT edge to the RIGHT edge (both a little above the middle, about 4 steps wide).
-- Below the street: a strip for the backs of shops, with an opening (about 4 steps wide) near the right; through it, a narrow road winds down and leaves through the BOTTOM edge on the right (about 4 steps wide).
-- Lower left: a small dirt lot for parking bicycles, reached by a narrow path.
-- The rest of the edges: dark tiled roofs of old houses and shops, a few trees.""")
+ar_ground('gate', '商店街の入口', """Scene: the entrance of the shopping street.
+- One straight shopping street of old asphalt (about 7 steps wide) runs from the bottom part straight UP and leaves through the TOP edge (about 6 steps wide). The camera looks along it, so the street goes from the lower part of the image to the top.
+- On BOTH sides of the street, long strips of narrow sidewalk (about 4 steps wide each, from near the top down to about three quarters of the image) where rows of small shops will stand facing the street; outside those strips, only the dark tiled roofs of the shops and houses.
+- On the left side, a little above the middle, a narrow alley (about 2 steps wide) runs from the street to the LEFT edge between the shops.
+- Near the bottom of the street, a short paved approach where an arcade gate will stand across the street, then a small open space in front of the shopping street with a few planters, narrowing to a road (about 6 steps wide) that leaves through the BOTTOM edge.
+- The rest of the edges: dark tiled roofs seen from above, a few trees.""")
+ar_ground('middle', '商店街の中ほど', """Scene: the middle of the shopping street.
+- The same straight shopping street of old asphalt (about 7 steps wide) comes in through the BOTTOM edge (about 6 steps wide) and runs straight UP. Near the top it ends at old stone steps (about 4 steps wide) that climb up and leave through the TOP edge toward a hill.
+- On BOTH sides of the street, long strips of narrow sidewalk (about 4 steps wide each) where rows of small shops will stand facing the street; outside those strips, only dark tiled roofs.
+- A little above the middle, narrow alleys (about 2 steps wide) cross between the shops: one to the LEFT edge and one to the RIGHT edge.
+- The rest of the edges: dark tiled roofs seen from above, a few trees.""")
 ar_ground('bath', '銭湯の裏', """Scene: the quiet back of an old public bathhouse (sento), a little darker than the shopping street.
 - Top: a narrow path (about 4 steps wide) leaves through the TOP edge in the center; on both sides, strips for the backs of buildings.
 - Upper left: the back yard of the bathhouse, packed earth with scattered wood chips and ash, where firewood and a boiler will stand.
@@ -1444,24 +1443,27 @@ ar_ground('hill', '坂の上', """Scene: the top of a hill above the town, the p
 - At the top: a small open lookout of packed earth and a patch of old stone paving in the center, surrounded by a low hedge and bushes; beyond the hedge along the top edge, the distant rooftops of the town glow in the orange sunset.
 - The rest of the edges: dense bushes and trees.""")
 AR_PARTS_REF = ['ground_a12_gate.png（届いた1-2 の入口の地面の絵）', 'parts_stalls_front.png（届いた1-1 の屋台の表。大きさの見本）']
-add('部品の箱1：昭和の商店街の店の表', AR_PARTS_REF, 'parts_a12_shops.png', af_parts(3, 3, [
-    'a small vegetable shop (yaoya), front view: wooden display shelves with tomatoes, cucumbers and watermelons in baskets, a faded striped awning, about 3 steps wide.',
-    'a small old-fashioned candy shop (dagashiya), front view: glass jars of candy, a red bench in front, a small cooler with ramune bottles, about 3 steps wide.',
-    'a small old watch and clock shop, front view: a glass window full of wall clocks and wristwatches, warm light inside, about 3 steps wide.',
-    'a small electronics shop, front view: several boxy CRT televisions stacked in the window, a radio on a shelf, about 3 steps wide.',
-    'a tiny tobacco shop, front view: a small glass sales window with a red public telephone beside it, about 3 steps wide.',
-    'a small bicycle shop, front view: a few old bicycles lined up in front, tools and tires hanging on the wall inside, about 3 steps wide.',
-    'a small fish shop, front view: a counter with ice and fish, a blue awning, about 3 steps wide.',
-    'a small bookshop, front view: magazines on racks outside, about 3 steps wide.',
-    'a small rice and sake shop, front view: sacks of rice and big sake bottles, a wooden sign without letters, about 3 steps wide.',
-], ' Every shop is the same size (about 3 steps wide and 3 steps deep, including its tiled or tin roof), seen from the front, closed shutters partly rolled up, Showa era (1988) style, no letters or numbers on any sign or shutter.'), '店はどれも幅3マスにそろえる（1-1 の屋台と同じ）')
-add('部品の箱2：店の裏・横向き・端と角', AR_PARTS_REF + ['parts_a12_shops.png（上で作った絵）'], 'parts_a12_backs.png', af_parts(3, 3, [
+add('部品の箱1：昭和の商店街の店（右を向いた横向き）', AR_PARTS_REF, 'parts_a12_shops.png', af_parts(3, 4, [
+    'a small vegetable shop (yaoya): wooden display shelves with tomatoes, cucumbers and watermelons in baskets, a faded striped awning.',
+    'a small fish shop: a counter with ice and fish, a blue awning.',
+    'a small old-fashioned candy shop (dagashiya): glass jars of candy, a small cooler with ramune bottles, a long red bench in front.',
+    'a small rice and sake shop: sacks of rice and big sake bottles.',
+    'a small bookshop: magazine racks in front.',
+    'a small hardware store: buckets, brooms and watering cans hanging and stacked in front.',
+    'a small old watch and clock shop: a glass window full of wall clocks and wristwatches, warm light inside.',
+    'a small electronics shop: several boxy CRT televisions stacked in the window, a radio on a shelf.',
+    'a tiny tobacco shop: a small glass sales window with a red public telephone beside it.',
+    'the front of an old public bathhouse (sento): a tiled roof with a curved gable, a short split curtain (noren) without letters over the entrance.',
+    'a small futon shop: rolled futons and cushions piled in the window.',
+    'a small pharmacy: a frog-shaped mascot statue beside the door, shelves of boxes (no letters).',
+], """ IMPORTANT: every shop is seen from the SIDE, standing along a street that runs from the bottom to the top of the image, and ALL of them face RIGHT (their open shop fronts, awnings and goods face the right side of the image; their back is on the left). The camera still looks down at about 50 degrees from the bottom of the image, so we see each shop's roof, its front facade turned to the right at an angle, and its near side wall facing the bottom of the image. Every shop is exactly the same size: about 4 steps deep (left to right) and 3 steps long (top to bottom), so the shops can be lined up in a row along the street with no gaps. Showa era (1988), shutters partly rolled up, no letters or numbers on any sign, curtain or shutter."""), '全部の店を「右を向いた横向き」で頼み、通りの右側には左右を返して並べる。大きさは奥行き4マス・長さ3マスにそろえる')
+add('部品の箱2：店の裏・横丁の店・端と角', AR_PARTS_REF + ['parts_a12_shops.png（上で作った絵）'], 'parts_a12_backs.png', af_parts(3, 3, [
     'the back of a small shop seen from behind: a tiled roof, a back door, an air conditioner outdoor unit, a few crates, about 3 steps wide.',
     'the back of another small shop: a tin roof, a back window, a gas meter, potted plants, about 3 steps wide.',
     'the back of a small shop with a laundry pole and a bicycle leaning on the wall, about 3 steps wide.',
-    'a small shop seen from its LEFT side (the side wall and the edge of the awning, facing left), about 2 steps wide.',
-    'the same kind of shop seen from its RIGHT side (facing right), about 2 steps wide.',
-    'the END of a row of shops: a plain side wall with a drainpipe and a narrow gap, about 1 step wide, so a row of shops does not end abruptly.',
+    'a small bicycle shop seen from the FRONT (facing the bottom of the image): a few old bicycles lined up in front, tools and tires hanging inside, about 3 steps wide, for a side street.',
+    'a small old house seen from the FRONT with a sliding door and potted plants, about 3 steps wide, for a side street.',
+    'the END of a row of shops along a street that runs from the bottom to the top of the image: a plain end wall with a drainpipe facing the bottom of the image, about 4 steps deep and 1 step long, so a row of shops does not end abruptly.',
     'only the dark tiled roofs of a row of shops seen from above (no walls), about 6 steps wide, for the edges of the map.',
     'an old concrete block wall corner with moss (L shape), about 2 by 2 steps.',
     'an old wooden board fence, left to right, about 4 steps wide, with ONE board missing leaving a narrow gap.',
