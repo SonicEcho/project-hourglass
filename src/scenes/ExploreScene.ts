@@ -1418,15 +1418,15 @@ export class ExploreScene extends Phaser.Scene {
     const rebuild = r.solved.length > 0 || gadget.kind === 'item';
     if (r.solved.length > 0) playSe(this, SE.heal);
     if (gadget.kind === 'photo') {
-      // 思い出の一枚（段階265）：撮った時は白く光る。何枚目か
+      // 思い出の一枚（段階265）：拾った時は白く光る。何枚目か
       this.cameras.main.flash(200, 255, 250, 235);
       // 段階302：ライブラリの「思い出」に記録する。4枚そろえた人だけの最後の一枚（after）は数に入れない
       run.library = recordLibraryFinds(run.library, { photos: [gadget.id] });
       const photos = (this.area.gadgets ?? []).filter((g) => g.kind === 'photo' && !g.after);
       const taken = photos.filter((g) => (this.state.flags ?? []).includes(g.id)).length;
       const last = !!gadget.after;
-      // 段階303：撮るのはあかり、シャッターの瞬間を言うのはハルト（docs/STORY.md の伏線）
-      this.say(last ? 'ハルト「……今」\nあかりが、最後の一枚を撮った' : `ハルト「……今」\nあかりが、思い出の一枚を撮った（${taken}/${photos.length}）${taken === photos.length ? '\n……どこかに、まだ一枚、残っている気がする' : ''}`);
+      // 2026-11-27（開発者：写真は落ちているのを拾う。撮る言い方はやめる）
+      this.say(last ? '最後の一枚を拾った' : `思い出の一枚を拾った（${taken}/${photos.length}）${taken === photos.length ? '\n……どこかに、まだ一枚、残っている気がする' : ''}`);
       this.redrawGadgets();
       this.showPhoto(gadget.id, r.text, last ? '最後の一枚' : `思い出の一枚 ${taken}/${photos.length}`);
       return;
@@ -1577,7 +1577,7 @@ export class ExploreScene extends Phaser.Scene {
         this.tweens.add({ targets: ring, scale: 1.25, alpha: 0.3, yoyo: true, repeat: -1, duration: 700 });
       }
       const photo = g.kind === 'photo';
-      // 段階271：小物の絵が読めていれば、絵で（解いた後の絵があれば替える。撮った思い出の一枚は薄く）
+      // 段階271：小物の絵が読めていれば、絵で（解いた後の絵があれば替える。拾った思い出の一枚は薄く）
       const art = A11_PROP_ART[g.id];
       const key = art ? this.propArt(lit && art.on ? art.on : art.off) : undefined;
       if (art && key) {
@@ -1744,7 +1744,7 @@ export class ExploreScene extends Phaser.Scene {
       if (this.area.talkers.some((t) => this.here(t) && near(t.cell, c, 0))) return { cell: c, label: '話す' };
       if (chestAt(this.area, this.state, c)) return { cell: c, label: '開ける' };
       const g = gadgetAt(this.area, this.state, this.night, this.state.room, c);
-      if (g) return { cell: c, label: g.kind === 'item' ? '拾う' : g.kind === 'push' ? '押す' : g.kind === 'photo' ? '撮る' : '調べる' };
+      if (g) return { cell: c, label: g.kind === 'item' ? '拾う' : g.kind === 'push' ? '押す' : g.kind === 'photo' ? '拾う' : '調べる' };
     }
     if (this.bossHere() && near(this.area.boss.cell, this.state.cell, 1)) return { cell: this.area.boss.cell, label: '調べる' };
     return null;
