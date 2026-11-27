@@ -2123,10 +2123,10 @@ export class ExploreScene extends Phaser.Scene {
         this.holdGates.delete(step.gate);
         const im = this.gateImages.get(step.gate);
         const gate = this.area.gates?.find((g) => g.id === step.gate);
-        // 2026-11-27（開発者：柵が壊れる時の音が不自然）：回復の音をやめ、板が揺れる時と落ちる時に、木を打つ音
-        playSe(this, SE.boardKnock);
+        // 2026-11-27（開発者：柵が壊れる時の音が不自然）：回復の音をやめ、揺らした板を下ろす時に、木の板をドサッと置く音
         if (im) {
           await new Promise<void>((done) => this.tweens.add({ targets: im, x: im.x + 3, yoyo: true, repeat: 3, duration: 60, onComplete: () => done() }));
+          // 板を地面に下ろす音（1回）
           playSe(this, SE.boardKnock);
           await new Promise<void>((done) => this.tweens.add({ targets: im, alpha: 0, y: im.y + 6, duration: 380, onComplete: () => (im.destroy(), done()) }));
         }
