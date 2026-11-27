@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：36 枚**（済んだ絵 423 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：40 枚**（済んだ絵 423 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -10,15 +10,80 @@
 
 ## まだの絵
 
+- [AQ. 思い出の一枚：新しい1-1 の4枚（段階301）](#aq-思い出の一枚新しい1-1-の4枚段階301)：4 枚
 - [AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）](#ae-新しい1-1-の仕掛け宝箱の小物と部屋の絵段階270)：1 枚
 - [AC. 脇役のまばたき・口パク（基本の1枚）](#ac-脇役のまばたき口パク基本の1枚)：13 枚
 - [AD. 口を開けた顔の、口を閉じた絵（口パク用）](#ad-口を開けた顔の口を閉じた絵口パク用)：22 枚
+
+### AQ. 思い出の一枚：新しい1-1 の4枚（段階301）
+
+新しい1-1 で拾う「思い出の一枚」の中身。今は写真の札に場面を言葉で書いているだけ。幼いゆうま（10歳）とひなの（7歳）の、あの夜の縁日の一場面。添付は、写しのゆうまと写しのひなのの立ち絵（顔と服をそろえるため）
+
+#### 1. 思い出の一枚：鳥居の前
+
+- 添付：`public/assets/portraits/past_yuma_smile.webp（写しのゆうま）`、`public/assets/portraits/past_hinano_smile.webp（写しのひなの）`
+- 保存名：`photo_m_gate.png`
+- メモ：提灯は赤
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A single nostalgic memory photograph for a story RPG. Landscape 4:3 image. It should look like an old printed photo taken at a Japanese summer shrine festival in the late Heisei era: warm faded sepia tones with only soft hints of the original colors, slight film grain, gentle light leaks and soft focus at the edges, as if remembered. Do not draw a photo frame or border; the picture fills the whole image.
+The two children are the brother and sister in the attached portraits: Yuma, a 10-year-old boy, and Hinano, his 7-year-old sister in a yukata. Keep their faces, hairstyles and outfits as in the portraits, drawn as small figures in a scene (not close-up portraits).
+Scene: at dusk, in front of a red shrine gate (torii) at the festival entrance, under a row of red paper lanterns. Hinano, excited, pulls her reluctant brother Yuma by the sleeve toward the festival, smiling back at him; Yuma frowns a little with his hands in his pockets. Festival crowds blurred in the background.
+Absolutely no letters or text anywhere, no watermark.
+```
+
+#### 2. 思い出の一枚：やぐらの陰
+
+- 添付：`public/assets/portraits/past_yuma_smile.webp（写しのゆうま）`、`public/assets/portraits/past_hinano_smile.webp（写しのひなの）`
+- 保存名：`photo_m_yagura.png`
+- メモ：提灯は白
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A single nostalgic memory photograph for a story RPG. Landscape 4:3 image. It should look like an old printed photo taken at a Japanese summer shrine festival in the late Heisei era: warm faded sepia tones with only soft hints of the original colors, slight film grain, gentle light leaks and soft focus at the edges, as if remembered. Do not draw a photo frame or border; the picture fills the whole image.
+The two children are the brother and sister in the attached portraits: Yuma, a 10-year-old boy, and Hinano, his 7-year-old sister in a yukata. Keep their faces, hairstyles and outfits as in the portraits, drawn as small figures in a scene (not close-up portraits).
+Scene: in the shadow of the festival drum tower (yagura), lit by white paper lanterns. Yuma alone, crouching, counts a few coins in a small cheap wallet on his palm with a serious face (enough for just one try of goldfish scooping). Dancers of the bon dance circle blurred behind him.
+Absolutely no letters or text anywhere, no watermark.
+```
+
+#### 3. 思い出の一枚：屋台の裏の囲い
+
+- 添付：`public/assets/portraits/past_yuma_smile.webp（写しのゆうま）`、`public/assets/portraits/past_hinano_smile.webp（写しのひなの）`
+- 保存名：`photo_m_shooting.png`
+- メモ：提灯は青
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A single nostalgic memory photograph for a story RPG. Landscape 4:3 image. It should look like an old printed photo taken at a Japanese summer shrine festival in the late Heisei era: warm faded sepia tones with only soft hints of the original colors, slight film grain, gentle light leaks and soft focus at the edges, as if remembered. Do not draw a photo frame or border; the picture fills the whole image.
+The two children are the brother and sister in the attached portraits: Yuma, a 10-year-old boy, and Hinano, his 7-year-old sister in a yukata. Keep their faces, hairstyles and outfits as in the portraits, drawn as small figures in a scene (not close-up portraits).
+Scene: a narrow quiet spot behind the festival stalls, surrounded by old wooden board fences, under a single blue paper lantern. Hinano, alone and lost, hugs a small plastic bag with one red goldfish to her chest and calls out for her brother with teary eyes. The festival lights glow faintly beyond the fence.
+Absolutely no letters or text anywhere, no watermark.
+```
+
+#### 4. 思い出の一枚：池のほとり
+
+- 添付：`public/assets/portraits/past_yuma_smile.webp（写しのゆうま）`、`public/assets/portraits/past_hinano_smile.webp（写しのひなの）`
+- 保存名：`photo_m_pond.png`
+- メモ：兄妹が金魚に名前を付ける夜。区画の題「金魚の名前」につながる1枚
+
+```
+Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
+
+A single nostalgic memory photograph for a story RPG. Landscape 4:3 image. It should look like an old printed photo taken at a Japanese summer shrine festival in the late Heisei era: warm faded sepia tones with only soft hints of the original colors, slight film grain, gentle light leaks and soft focus at the edges, as if remembered. Do not draw a photo frame or border; the picture fills the whole image.
+The two children are the brother and sister in the attached portraits: Yuma, a 10-year-old boy, and Hinano, his 7-year-old sister in a yukata. Keep their faces, hairstyles and outfits as in the portraits, drawn as small figures in a scene (not close-up portraits).
+Scene: at night, on stepping stones at the edge of a small pond in the shrine woods. Yuma and Hinano crouch side by side, their heads close together, peering happily into a small plastic bag with two goldfish (one red, one black), as if deciding their names. A faint firework blooms in the sky and reflects on the water.
+Absolutely no letters or text anywhere, no watermark.
+```
 
 ### AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）
 
 新しい1-1（デバッグメニューの「試しの切り替え」の「新しい1-1」）は、部屋の絵がなく、仕掛けと宝箱も仮の印（ひし形・四角）で、良さが伝わりにくかった（2026-11-23 開発者）。`docs/milestones/M3_explore_feel.md` の 7.。**先に小物の3枚**（届けばマス目の部屋のままでも絵に替わる）、**次に部屋の6枚**。小物は白い背景のまま送ってくれればよい（Claude が1つずつ切り出す）。部屋の絵は、毎回その部屋の下絵（`docs/sketches/a11_art/room_<部屋>.png`）と、絵柄の見本の今の入口の地図（`public/assets/maps/fest_gate.webp`）を添付する
 
-#### 1. 部屋4：縁日の広場（作り直し）
+#### 5. 部屋4：縁日の広場（作り直し）
 
 - 添付：`map_fest2_gate.png（届いた縁日の入口の絵）`
 - 保存名：`map_fest2_plaza.png`
@@ -48,7 +113,7 @@ Absolutely no letters or text anywhere: signs, banners and posters are blank or 
 
 基本の1枚の絵をそのまま直して、目だけ閉じた絵と、口だけ開けた絵を作る（けんたと同じ作り方。`scripts/portrait_parts.py`）。台詞の多い人から順。目を閉じて笑っている絵（五郎・初江）は、まばたきが要らない。口を開けて笑っている絵は、口パクが要らない。表情違いが届いたら、その表情の分は後で足す。毎回その人の基本の1枚を添付する。構図が少しでも動いたら作り直す
 
-#### 2. 写しのしおり：口を開けた絵（作り直し）
+#### 6. 写しのしおり：口を開けた絵（作り直し）
 
 - 添付：`public/assets/portraits/past_shiori_normal.webp`
 - 保存名：`past_shiori_talk_src.png`
@@ -59,7 +124,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 3. 写しの勇夫：目を閉じた絵
+#### 7. 写しの勇夫：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_blink_src.png`
@@ -69,7 +134,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 4. 写しの勇夫：口を開けた絵
+#### 8. 写しの勇夫：口を開けた絵
 
 - 添付：`public/assets/portraits/past_isamu_serious.webp`
 - 保存名：`past_isamu_talk_src.png`
@@ -79,7 +144,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 5. 写しの昇平：目を閉じた絵
+#### 9. 写しの昇平：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_blink_src.png`
@@ -89,7 +154,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 6. 写しの昇平：口を開けた絵
+#### 10. 写しの昇平：口を開けた絵
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_talk_src.png`
@@ -99,7 +164,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 7. 善次：目を閉じた絵
+#### 11. 善次：目を閉じた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_blink_src.png`
@@ -109,7 +174,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 8. 善次：口を開けた絵
+#### 12. 善次：口を開けた絵
 
 - 添付：`public/assets/portraits/zenji_smile.webp`
 - 保存名：`zenji_talk_src.png`
@@ -119,7 +184,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 9. 写しの寿美：目を閉じた絵
+#### 13. 写しの寿美：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_blink_src.png`
@@ -129,7 +194,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 10. 写しの寿美：口を開けた絵
+#### 14. 写しの寿美：口を開けた絵
 
 - 添付：`public/assets/portraits/past_sumi_smile.webp`
 - 保存名：`past_sumi_talk_src.png`
@@ -139,7 +204,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 11. 写しのおじいちゃん：目を閉じた絵
+#### 15. 写しのおじいちゃん：目を閉じた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_blink_src.png`
@@ -149,7 +214,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 12. 写しのおじいちゃん：口を開けた絵
+#### 16. 写しのおじいちゃん：口を開けた絵
 
 - 添付：`public/assets/portraits/past_grandpa_normal.webp`
 - 保存名：`past_grandpa_talk_src.png`
@@ -159,7 +224,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: open it slightly, as in the middle of speaking a word (a small natural opening, teeth barely visible). Do not move or resize the face, do not change the eyes.
 ```
 
-#### 13. だいち：目を閉じた絵
+#### 17. だいち：目を閉じた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_blink_src.png`
@@ -169,7 +234,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the eyes: gently close both eyes, as in the middle of a natural blink (soft curved eyelid lines with eyelashes, the same eyebrows as now). Do not move or resize the face, do not change the mouth.
 ```
 
-#### 14. だいち：口を開けた絵
+#### 18. だいち：口を開けた絵
 
 - 添付：`public/assets/portraits/daichi_smile.webp`
 - 保存名：`daichi_talk_src.png`
@@ -183,7 +248,7 @@ Change only the mouth: open it slightly, as in the middle of speaking a word (a 
 
 元の絵が口を開けている表情は、話していても口が止まって見える（開発者と決めた：口を閉じた絵を足す）。ゲームは、話していない時にこの絵を重ね、話す間は重ねたり外したりして開け閉めする。台詞の多い順。大笑い・泣き顔のように、開いているのが自然な顔は頼まない。毎回その表情の絵を添付する。構図が少しでも動いたら作り直す
 
-#### 15. みお：smileの口を閉じた絵（台本で204行）
+#### 19. みお：smileの口を閉じた絵（台本で204行）
 
 - 添付：`public/assets/portraits/mio_smile.webp`
 - 保存名：`mio_smile_closed_src.png`
@@ -193,7 +258,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 16. あかり：smileの口を閉じた絵（台本で85行）
+#### 20. あかり：smileの口を閉じた絵（台本で85行）
 
 - 添付：`public/assets/portraits/akari_smile.webp`
 - 保存名：`akari_smile_closed_src.png`
@@ -203,7 +268,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 17. 富美：smileの口を閉じた絵（台本で35行）
+#### 21. 富美：smileの口を閉じた絵（台本で35行）
 
 - 添付：`public/assets/portraits/fumi_smile.webp`
 - 保存名：`fumi_smile_closed_src.png`
@@ -213,7 +278,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 18. ゆうま：smileの口を閉じた絵（台本で32行）
+#### 22. ゆうま：smileの口を閉じた絵（台本で32行）
 
 - 添付：`public/assets/portraits/yuma_smile.webp`
 - 保存名：`yuma_smile_closed_src.png`
@@ -223,7 +288,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 19. 写しの正雄：smileの口を閉じた絵（台本で26行）
+#### 23. 写しの正雄：smileの口を閉じた絵（台本で26行）
 
 - 添付：`public/assets/portraits/past_masaru_smile.webp`
 - 保存名：`past_masaru_smile_closed_src.png`
@@ -233,7 +298,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 20. 写しのゆうま：smileの口を閉じた絵（台本で18行）
+#### 24. 写しのゆうま：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_yuma_smile.webp`
 - 保存名：`past_yuma_smile_closed_src.png`
@@ -243,7 +308,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 21. 写しの静江：smileの口を閉じた絵（台本で18行）
+#### 25. 写しの静江：smileの口を閉じた絵（台本で18行）
 
 - 添付：`public/assets/portraits/past_shizue_smile.webp`
 - 保存名：`past_shizue_smile_closed_src.png`
@@ -253,7 +318,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 22. 子りく：proudの口を閉じた絵（台本で16行）
+#### 26. 子りく：proudの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/young_riku_proud.webp`
 - 保存名：`young_riku_proud_closed_src.png`
@@ -263,7 +328,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 23. 写しのひなの：smileの口を閉じた絵（台本で16行）
+#### 27. 写しのひなの：smileの口を閉じた絵（台本で16行）
 
 - 添付：`public/assets/portraits/past_hinano_smile.webp`
 - 保存名：`past_hinano_smile_closed_src.png`
@@ -273,7 +338,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 24. 正雄：smileの口を閉じた絵（台本で15行）
+#### 28. 正雄：smileの口を閉じた絵（台本で15行）
 
 - 添付：`public/assets/portraits/masaru_smile.webp`
 - 保存名：`masaru_smile_closed_src.png`
@@ -283,7 +348,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 25. 子あかり：smileの口を閉じた絵（台本で14行）
+#### 29. 子あかり：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/young_akari_smile.webp`
 - 保存名：`young_akari_smile_closed_src.png`
@@ -293,7 +358,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 26. 写しの富美：smileの口を閉じた絵（台本で14行）
+#### 30. 写しの富美：smileの口を閉じた絵（台本で14行）
 
 - 添付：`public/assets/portraits/past_fumi_smile.webp`
 - 保存名：`past_fumi_smile_closed_src.png`
@@ -303,7 +368,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 27. 勇夫：smileの口を閉じた絵（台本で12行）
+#### 31. 勇夫：smileの口を閉じた絵（台本で12行）
 
 - 添付：`public/assets/portraits/isamu_smile.webp`
 - 保存名：`isamu_smile_closed_src.png`
@@ -313,7 +378,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 28. 昇平：smileの口を閉じた絵（台本で11行）
+#### 32. 昇平：smileの口を閉じた絵（台本で11行）
 
 - 添付：`public/assets/portraits/noboru_smile.webp`
 - 保存名：`noboru_smile_closed_src.png`
@@ -323,7 +388,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 29. さき：smileの口を閉じた絵（台本で9行）
+#### 33. さき：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/saki_smile.webp`
 - 保存名：`saki_smile_closed_src.png`
@@ -333,7 +398,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 30. しおり：smileの口を閉じた絵（台本で9行）
+#### 34. しおり：smileの口を閉じた絵（台本で9行）
 
 - 添付：`public/assets/portraits/shiori_smile.webp`
 - 保存名：`shiori_smile_closed_src.png`
@@ -343,7 +408,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 31. 茂雄：smileの口を閉じた絵（台本で8行）
+#### 35. 茂雄：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/shigeru_smile.webp`
 - 保存名：`shigeru_smile_closed_src.png`
@@ -353,7 +418,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 32. 写しの千代：smileの口を閉じた絵（台本で8行）
+#### 36. 写しの千代：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_chiyo_smile.webp`
 - 保存名：`past_chiyo_smile_closed_src.png`
@@ -363,7 +428,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 33. 写しの昇平：smileの口を閉じた絵（台本で8行）
+#### 37. 写しの昇平：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_noboru_smile.webp`
 - 保存名：`past_noboru_smile_closed_src.png`
@@ -373,7 +438,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 34. 写しのたいち：smileの口を閉じた絵（台本で8行）
+#### 38. 写しのたいち：smileの口を閉じた絵（台本で8行）
 
 - 添付：`public/assets/portraits/past_taichi_smile.webp`
 - 保存名：`past_taichi_smile_closed_src.png`
@@ -383,7 +448,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 35. ペトラ：smileの口を閉じた絵（台本で5行）
+#### 39. ペトラ：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/petra_smile.webp`
 - 保存名：`petra_smile_closed_src.png`
@@ -393,7 +458,7 @@ Edit the attached image. Keep everything exactly the same: the same character, t
 Change only the mouth: close it gently into a soft closed-lip smile that keeps the same mood. Do not move or resize the face, do not change the eyes.
 ```
 
-#### 36. 写しのしおり：smileの口を閉じた絵（台本で5行）
+#### 40. 写しのしおり：smileの口を閉じた絵（台本で5行）
 
 - 添付：`public/assets/portraits/past_shiori_smile.webp`
 - 保存名：`past_shiori_smile_closed_src.png`

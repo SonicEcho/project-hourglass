@@ -1379,6 +1379,20 @@ add('部品の箱3：裏通りの縁の部品', AP_REF, 'kit_lane_edges.png', af
     'a large cluster of trees and bushes for the corner of a map, dense dark green with some yellow leaves, about 3 steps wide.',
 ], ' Match the attached parts sheet exactly in scale, view and style.'), 'ブロック塀・生け垣・柵はつなげて長くする')
 
+# ---- AQ. 思い出の一枚（段階301） ----
+section('AQ. 思い出の一枚：新しい1-1 の4枚（段階301）', '新しい1-1 で拾う「思い出の一枚」の中身。今は写真の札に場面を言葉で書いているだけ。幼いゆうま（10歳）とひなの（7歳）の、あの夜の縁日の一場面。添付は、写しのゆうまと写しのひなのの立ち絵（顔と服をそろえるため）')
+AQ_REF = ['public/assets/portraits/past_yuma_smile.webp（写しのゆうま）', 'public/assets/portraits/past_hinano_smile.webp（写しのひなの）']
+AQ_HEAD = f"""{STYLE}
+
+A single nostalgic memory photograph for a story RPG. Landscape 4:3 image. It should look like an old printed photo taken at a Japanese summer shrine festival in the late Heisei era: warm faded sepia tones with only soft hints of the original colors, slight film grain, gentle light leaks and soft focus at the edges, as if remembered. Do not draw a photo frame or border; the picture fills the whole image.
+The two children are the brother and sister in the attached portraits: Yuma, a 10-year-old boy, and Hinano, his 7-year-old sister in a yukata. Keep their faces, hairstyles and outfits as in the portraits, drawn as small figures in a scene (not close-up portraits).
+"""
+AQ_TAIL = "\nAbsolutely no letters or text anywhere, no watermark."
+add('思い出の一枚：鳥居の前', AQ_REF, 'photo_m_gate.png', AQ_HEAD + """Scene: at dusk, in front of a red shrine gate (torii) at the festival entrance, under a row of red paper lanterns. Hinano, excited, pulls her reluctant brother Yuma by the sleeve toward the festival, smiling back at him; Yuma frowns a little with his hands in his pockets. Festival crowds blurred in the background.""" + AQ_TAIL, '提灯は赤')
+add('思い出の一枚：やぐらの陰', AQ_REF, 'photo_m_yagura.png', AQ_HEAD + """Scene: in the shadow of the festival drum tower (yagura), lit by white paper lanterns. Yuma alone, crouching, counts a few coins in a small cheap wallet on his palm with a serious face (enough for just one try of goldfish scooping). Dancers of the bon dance circle blurred behind him.""" + AQ_TAIL, '提灯は白')
+add('思い出の一枚：屋台の裏の囲い', AQ_REF, 'photo_m_shooting.png', AQ_HEAD + """Scene: a narrow quiet spot behind the festival stalls, surrounded by old wooden board fences, under a single blue paper lantern. Hinano, alone and lost, hugs a small plastic bag with one red goldfish to her chest and calls out for her brother with teary eyes. The festival lights glow faintly beyond the fence.""" + AQ_TAIL, '提灯は青')
+add('思い出の一枚：池のほとり', AQ_REF, 'photo_m_pond.png', AQ_HEAD + """Scene: at night, on stepping stones at the edge of a small pond in the shrine woods. Yuma and Hinano crouch side by side, their heads close together, peering happily into a small plastic bag with two goldfish (one red, one black), as if deciding their names. A faint firework blooms in the sky and reflects on the water.""" + AQ_TAIL, '兄妹が金魚に名前を付ける夜。区画の題「金魚の名前」につながる1枚')
+
 MANUAL_DONE = [
     '- **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）',
     '- **X. 寄り道の町の人と寄り道のタイル**（4 枚。2026-11-17）：五郎（八百屋の主人）、善次（時計屋の常連）、初江（駄菓子屋のおばあさん）、拠点のタイル「寄り道」（縦長）',
@@ -1390,7 +1404,7 @@ def main():
     pending = [(title, note, [it for it in items if it[2] not in DONE]) for title, note, items in ITEMS]
     pending = [p for p in pending if p[2]]
     # 今いちばん急ぐ章を上に（段階270：新しい1-1 の絵）
-    pending.sort(key=lambda p: -8 if p[0].startswith('AP.') else -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
+    pending.sort(key=lambda p: -9 if p[0].startswith('AQ.') else -8 if p[0].startswith('AP.') else -7 if p[0].startswith('AO.') else -6 if p[0].startswith('AN.') else -5 if p[0].startswith('AM.') else -4 if p[0].startswith('AL.') else -3 if p[0].startswith('AK.') else -2 if p[0].startswith('AJ.') else -1 if p[0].startswith('AI.') else 0 if p[0].startswith('AH.') else 0.5 if p[0].startswith('AG.') else 1 if p[0].startswith('AF.') else 2 if p[0].startswith('AE.') else 3)
     n_left = sum(len(items) for _, _, items in pending)
     n_done = sum(1 for _, _, items in ITEMS for it in items if it[2] in DONE)
     out = ['# 絵の「そのまま貼る一覧」', '',
