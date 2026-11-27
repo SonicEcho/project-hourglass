@@ -676,9 +676,9 @@ export const A11_CROWD: { room: string; image: string; cell: [number, number]; f
   { room: 'fest2_plaza', image: 'person.c_goldfishgirl', cell: [6, 11], face: 'left', walk: [2, 9] },
   { room: 'fest2_plaza', image: 'person.c_mother', cell: [16, 17], face: 'right', walk: [15, 19] },
   { room: 'fest2_plaza', image: 'person.c_boys', cell: [5, 15], face: 'front' },
-  { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], face: 'right', walk: [14, 18] },
+  { room: 'fest2_plaza', image: 'person.c_porter', cell: [18, 19], face: 'left', walk: [14, 18] },
   // 段階289：裏通りは静か。荷さばき場で荷を運ぶ人と、家の勝手口の前のおじいさんだけ
-  { room: 'fest2_lane', image: 'person.c_porter', cell: [2, 14], face: 'right', walk: [2, 8] },
+  { room: 'fest2_lane', image: 'person.c_porter', cell: [2, 14], face: 'left', walk: [2, 8] },
   { room: 'fest2_lane', image: 'person.c_oldman', cell: [5, 4], face: 'front' },
   { room: 'fest2_east', image: 'person.c_girls', cell: [8, 7], face: 'front' },
   { room: 'fest2_east', image: 'person.c_foxboy', cell: [14, 8], face: 'front' },
