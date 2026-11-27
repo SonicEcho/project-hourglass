@@ -1005,7 +1005,13 @@ export class ExploreScene extends Phaser.Scene {
     if (this.time.now < this.graceUntil) return;
     if (this.stealth) {
       // 段階298：番人は、決まった向きを順に見回す
-      for (const e of this.enemies) if (e.move === 'guard') e.facing = guardFacing(this.area.enemies.find((x) => x.id === e.id)?.look, this.time.now);
+      for (const e of this.enemies) {
+        if (e.move !== 'guard') continue;
+        e.facing = guardFacing(this.area.enemies.find((x) => x.id === e.id)?.look, this.time.now);
+        // 左右を見ている時は、絵もその向きに
+        const img = e.sprite.getData('art') as Phaser.GameObjects.Image | undefined;
+        if (img && e.facing[0] !== 0) img.setFlipX(e.facing[0] < 0);
+      }
       this.updateSight();
     }
     for (const e of this.enemies) {
@@ -2282,7 +2288,8 @@ export class ExploreScene extends Phaser.Scene {
     g.clear();
     const player = this.state.cell;
     for (const e of this.enemies) {
-      if (e.move !== 'patrol' && e.move !== 'chase') continue;
+      // 段階299（開発者：番人の直しが効いていない）：番人も見える範囲を持つ（前は見回る・追ってくる砂嵐だけで、番人はいつでも不意打ちできた）
+      if (e.move !== 'patrol' && e.move !== 'chase' && e.move !== 'guard') continue;
       if (!e.spotted && spotted(this.map, this.room, e.mind.cell, e.facing, player)) {
         e.spotted = true;
         e.alert?.setVisible(true);
