@@ -8,10 +8,10 @@ T = 32
 P = 'public/assets/sprites/parts/'
 OVER = {
     'gate': [
-        ('a12_lanterns_red', 12, 3.0, 8.4, 1),
+        ('a12_lanterns_red', 12, 3.0, 9.0, 1),
         ('a12_nobori_red', 7.0, 10.4, 0.9, 1),
         ('a12_nobori_blue', 16.6, 9.6, 0.9, 1),
-        ('a12_lanterns_white', 12, 11.2, 8.4, 1),
+        ('a12_lanterns_white', 12, 11.2, 9.0, 1),
         ('a12_nobori_yellow', 7.0, 15.6, 0.9, 1),
         ('a12_gate', 12, 18.4, 8.6, 0.72),
     ],
