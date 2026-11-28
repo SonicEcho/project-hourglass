@@ -2878,6 +2878,8 @@ export const ROOM_NAMES: Record<string, string> = {
   fest2_plaza: '縁日の広場',
   fest2_east: '東の屋台',
   fest2_woods: '社の森',
+  // 段階312：新しい1-2の試しの部屋（src/data/a12Rework.ts）
+  a12h_gate: '商店街の入口',
   fest_backyard: '屋台の裏',
   festival_night: '縁日の広場',
   fest_east: '東の屋台',

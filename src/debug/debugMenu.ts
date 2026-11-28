@@ -372,6 +372,14 @@ export function installDebugMenu(nav: DebugNavigator): void {
         render(`新しい1-1：${rework ? '切（今の1-1）' : '入'}にしました。1-1 の探索に入り直すと変わります（探索の途中の場所は、最初の部屋からになります）`);
       }),
     );
+    // 段階312（docs/milestones/M3_explore_feel.md の 16-9）：新しい1-2（入口の部屋だけの試し）。次に 1-2 の探索に入った時から
+    const rework12 = trialOn('a12rework');
+    trials.append(
+      button(`新しい1-2（入口だけの試し）：${rework12 ? '入' : '切（今の1-2）'}`, () => {
+        setTrialOn('a12rework', !rework12);
+        render(`新しい1-2：${rework12 ? '切（今の1-2）' : '入'}にしました。1-2 の探索に入り直すと変わります（探索の途中の場所は、最初の部屋からになります）`);
+      }),
+    );
     // 段階295（docs/milestones/M3_explore_feel.md の 15.）：探索の地図の上下のぼかし。切って見比べられる
     const blurOff = trialOff('mapblur');
     trials.append(

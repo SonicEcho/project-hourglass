@@ -48,6 +48,7 @@ export * from './story';
 export * from './daily';
 export * from './areas';
 export * from './a11Rework';
+export * from './a12Rework';
 export * from './memoryPhotos';
 export * from './rooms';
 export * from './minigames';

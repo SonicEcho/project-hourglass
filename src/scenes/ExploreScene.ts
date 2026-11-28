@@ -78,7 +78,7 @@ import {
 import { GAME_HEIGHT, GAME_WIDTH } from '../config';
 import { hasImage } from '../assets/loader';
 import { getSettings, playBgm, playKoma, playSe, prefetchBgm, stopAmbience } from '../audio/sound';
-import { MEMORY_PHOTOS, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
+import { MEMORY_PHOTOS, A11_BON, A11_CHEST_ART, A11_CROWD, CROWD_LOOK, A11_DECOR, A12_DECOR, A12_REWORK, SCENES, TALKER_ART, A11_GATE_ART, A11_PROP_ART, A11_REWORK, AREA_BATTLES, EXPLORE_TENSION, SCREEN_COACH, TIPS, areaTraitHints, BGM, CHAIN_SNAPS, ROOM_NAMES, AREA_GRACE_MS, AREA_STEP_MS, AREA_TILE, AREAS, ENEMY_ART, ENEMY_MOVES, ITEMS, NAVI_DATA, SE, traitHintLine, TRIAL_AREAS, WEAPON_DATA } from '../data';
 import { isDebugEnabled, trialOff, trialOn } from '../debug/debugFlag';
 
 /** 回復と負けの重み（段階255）。デバッグメニューで切った時は前の形 */
@@ -255,8 +255,10 @@ export class ExploreScene extends Phaser.Scene {
 
   create(data: ExploreData): void {
     // 段階262：デバッグの切り替えで、新しい1-1（マス目の試し）
-    const rework = data.area === 'a11' && trialOn('a11rework');
-    const raw = rework ? A11_REWORK : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
+    // 段階312：新しい1-2（入口の部屋だけの試し）も同じ作り（地面の絵と部品・出し抜く・一緒に歩く仲間）
+    const rework12 = data.area === 'a12' && trialOn('a12rework');
+    const rework = (data.area === 'a11' && trialOn('a11rework')) || rework12;
+    const raw = rework12 ? A12_REWORK : rework ? A11_REWORK : (AREAS[data.area] ?? TRIAL_AREAS[data.area]);
     if (!raw) throw new Error(`unknown area ${data.area}`);
     // 地図の調整（段階117）：?debug=1 の時だけ、端末に覚えた直しを重ねる
     this.rawArea = raw;
@@ -801,7 +803,7 @@ export class ExploreScene extends Phaser.Scene {
     if (this.roof) world.add(this.roof);
     // 下をくぐる物（段階272。鳥居）：仲間と敵の上に重ねる
     this.litDecor = [];
-    for (const d of A11_DECOR) {
+    for (const d of [...A11_DECOR, ...A12_DECOR] as typeof A11_DECOR) {
       if (d.room !== room.id || !hasImage(this, d.image)) continue;
       if (d.when && !(this.state.flags ?? []).includes(d.when)) continue;
       const im = this.add.image(d.x * T, d.y * T, d.image).setOrigin(0);
