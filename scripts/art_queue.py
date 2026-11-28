@@ -1356,6 +1356,27 @@ Lighting: soft, even dusk light with NO light spots, NO shadows of objects, NO v
 - Row 2, column 1: old worn stone paving of small irregular stones, with thin lines of moss between them.
 - Row 2, column 2: dark damp earth with patches of moss and tiny weeds, as in a shady corner.
 No objects, no people, no letters anywhere.""", '1マスより大きな四角を敷き詰めて使う')
+# 2026-11-28 開発者と決めた：商店街は横に走る通りにする（下から斜めに見るカメラでは、縦の通りの店先は描けない）
+AR_H_HEAD = f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground: the game will place the shop buildings, lamps, banners and people on top of it later as separate pictures. Match the attached map illustration exactly in art style, camera angle, scale and sunset lighting.
+{AF_CAM}
+The attached colored plan shows WHERE the areas are (a 24 by 24 grid). Follow it closely for the street, the alley and the exits; do not copy its blocks, grid or colors.
+"""
+add('地面の絵：商店街の入口（横の通り）', ['docs/sketches/a12_v1/gate_plan.png（作りの下書き。横の通り）', 'ground3_fest2_gate.png（1-1 の入口の地面の絵。絵柄・角度・光の見本）'], 'ground_a12h_gate.png', AR_H_HEAD + """Scene: the ground of a narrow shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset.
+- A narrow pedestrian street of colorful interlocking tiles (about 6 steps tall) runs HORIZONTALLY across the middle of the image, from the LEFT edge to the RIGHT edge.
+- Above the street (about 6 steps tall, from near the top): a plain strip of old concrete and pavement where a row of shops will stand, their fronts facing down toward the street. Behind it, only dark rooftops along the very top edge.
+- Below the street (about 3 steps tall): a strip of old concrete where the backs of shops will stand. In it, a little left of the center, a narrow back alley (about 2 steps wide) goes straight down and leaves through the BOTTOM edge.
+- The rest of the bottom part: dark rooftops of houses seen from above, a few trees.
+- Keep everything flat and open: NO buildings, walls, awnings, lamps, poles, wires, vending machines, bicycles, people or text.
+Absolutely no letters anywhere.""", '店は正面を向いた部品（parts_a12_shops_front.png の8軒）を通りの上側に並べる')
+add('地面の絵：商店街の中ほど（横の通り）', ['docs/sketches/a12_v1/middle_plan.png（作りの下書き。横の通り）', 'ground_a12h_gate.png（上で作った入口の地面。そろえる見本）'], 'ground_a12h_middle.png', AR_H_HEAD + """Scene: the ground of the same shopping street, further along. Match the attached entrance ground exactly; the street continues from it.
+- The same narrow tiled street (about 6 steps tall) runs HORIZONTALLY across the middle, from the LEFT edge to the RIGHT edge.
+- Above the street: the same plain strip for a row of shops, with ONE gap in the center (about 4 steps wide) where old stone steps climb straight up between trees and leave through the TOP edge toward a hill.
+- Below the street: the strip for the backs of shops, with a narrow back alley (about 2 steps wide) a little left of the center going straight down through the BOTTOM edge.
+- The rest of the edges: dark rooftops and a few trees.
+- Keep everything flat and open: NO buildings, walls, awnings, lamps, poles, wires, people or text.
+Absolutely no letters anywhere.""", '入口の地面を見本に')
 # 2026-11-28 開発者：商店街の絵は、もっと上からの視点で作り直す（左右の路地が見えるように）
 AR_TOP_HEAD = f"""{STYLE}
 
