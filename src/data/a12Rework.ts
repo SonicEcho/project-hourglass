@@ -32,15 +32,28 @@ export const A12_GATE_PARTS: RoomPart[] = [
   { part: 'a12b_stairs', cell: [14, 22], w: 3, d: 3, sw: 3.68 },
   { part: 'a12b_balcony', cell: [17, 22], w: 4, d: 3, sw: 3.75 },
   { part: 'a12b_persimmon', cell: [20, 22], w: 4, d: 3, sw: 4.82 },
-  // 左の端（外への出口）の仮の目印：アーチの部品が届くまで、のぼりを2本
-  { part: 'a12_nobori_red', cell: [0, 5], w: 1, sw: 0.9 },
-  { part: 'a12_nobori_blue', cell: [0, 17], w: 1, sw: 0.9 },
+  // 2026-11-28（開発者：商店街らしい電灯や小物がない）：店先（5行）に、すずらん灯と昭和の商店街の小物。
+  // 手前の建物の側は、屋根が通りの下の方にかかるので、電灯や小物を置いても屋根に隠れる。置くのは上の店の側だけ
+  { part: 'a12p_lamp_flower', cell: [4, 5], w: 1, sw: 2.45 },
+  { part: 'a12p_lamp_flower', cell: [12, 5], w: 1, sw: 2.45 },
+  { part: 'a12p_lamp_flower', cell: [20, 5], w: 1, sw: 2.45 },
+  { part: 'a12p_pots', cell: [1, 5], w: 2, sw: 2.2 },
+  { part: 'a12p_sign_bench', cell: [5, 5], w: 3, sw: 3 },
+  { part: 'a12p_phone', cell: [9, 5], w: 1, sw: 0.95 },
+  { part: 'a12p_kakigori', cell: [10, 5], w: 2, sw: 1.9 },
+  { part: 'a12p_vending', cell: [13, 5], w: 2, sw: 1.4 },
+  { part: 'a12p_post', cell: [15, 5], w: 1, sw: 1 },
+  { part: 'a12p_bikes', cell: [16, 5], w: 3, sw: 3.2 },
+  { part: 'a12p_crates', cell: [21, 5], w: 2, sw: 2.2 },
 ];
 
 /** 頭の上の飾り（仲間の上に重ねる。x・y は絵の左上のマス、w は絵の幅。1-1 の A11_DECOR と同じ形） */
 export const A12_DECOR: { room: string; image: string; x: number; y: number; w: number }[] = [
-  { room: 'a12h_gate', image: 'part.a12_lanterns_red', x: 5.5, y: 7.2, w: 13 },
-  { room: 'a12h_gate', image: 'part.a12_lanterns_white', x: 5.5, y: 12.8, w: 13 },
+  // 2026-11-28（開発者：提灯は違う）：すずらん灯のてっぺんから隣の灯へ、三角の旗と夏の紙飾りを張る
+  { room: 'a12h_gate', image: 'part.a12p_pennants', x: -3.5, y: 2.5, w: 8 },
+  { room: 'a12h_gate', image: 'part.a12p_streamers', x: 4.5, y: 2.5, w: 8 },
+  { room: 'a12h_gate', image: 'part.a12p_pennants', x: 12.5, y: 2.5, w: 8 },
+  { room: 'a12h_gate', image: 'part.a12p_streamers', x: 20.5, y: 2.5, w: 8 },
 ];
 
 const gate: RoomDef = { id: 'a12h_gate', layout: composeLayout(GATE_GROUND, A12_GATE_PARTS), exits: [], era: 'showa_late', image: 'map.a12h_gate_ground', parts: A12_GATE_PARTS };
