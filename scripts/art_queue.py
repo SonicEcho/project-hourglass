@@ -1378,6 +1378,16 @@ add('地面の絵：商店街の中ほど（上からの視点で作り直し）
 - Do NOT draw lantern strings, banner poles or anything hanging across the street.
 - Keep the street open and empty: NO people, bicycles, carts, benches or crates in the street.
 Absolutely no letters, numbers or logos anywhere.""", '入口の上からの版を見本に')
+add('部品：商店街の店の並び（3軒続き・左側）', ['docs/sketches/a12_v1/rough_by_dev.png（開発者のラフ絵。目指す雰囲気）', 'docs/sketches/a12_v1/street_narrow.png（並べ方の試し。細い通りの左右に店が連なる形）', 'ground3_fest2_gate.png（1-1 の入口の地面の絵。絵柄と光の見本）'], 'parts_a12_rows.png', f"""{STYLE}
+
+A sheet of 2 separate map parts for a top-down 2D RPG on mobile, on a plain pure white background, side by side, each part complete and uncropped with white space around it. No ground, no street, no people.
+Each part is a ROW OF THREE small shops built wall to wall, standing along the LEFT side of a narrow shopping street that runs from the bottom to the top of the image. The row is tall and narrow: about 5 steps wide (left to right) and about 12 steps long (top to bottom), the three shops stacked from top to bottom sharing walls, with one continuous roofline, no gaps between them.
+Camera: a steep top-down view, about 70 degrees, with NO perspective (every shop at the same angle and scale). Match the attached 1-1 map picture in anime art style, cel shading and warm sunset lighting.
+Orientation (very important): the shop FRONTS are on the RIGHT edge of the row, facing the street: along the right edge, colorful awnings stick out to the right, goods stands (fruit, vegetables, flowers, candy, books) stand in front, projecting vertical banners and signboards (blank, no letters), a lamp. The LEFT part of the row is only rooftops seen from above (old metal or tile roofs, a few air conditioners, TV antennas, a water tank). Do NOT show a front wall facing the bottom of the image; only the bottom shop of the row may show a short side wall at the very bottom.
+Late Showa era (1988), the look of the attached rough picture: two-story mortar and wooden shops, cozy and crowded.
+- Part 1 (left): a vegetable shop, a fish shop and a candy shop with a capsule toy machine.
+- Part 2 (right): a watch and clock shop, an electronics shop with boxy CRT televisions, and a barber shop with a barber pole.
+Absolutely no letters, numbers or logos anywhere.""", '店を1軒ずつではなく、3軒続きの並びで頼む（屋根の線と光がそろい、すき間のない並びになる）。通りの右側は左右を返す')
 add('部品の箱：商店街の上にかかる物（門・提灯のひも・のぼり）', ['ground_a12_gate.png（届いた門のある入口の絵。門・提灯・のぼりの見本）', 'ground_a12_gate_clean.png（消した版。大きさの見本）'], 'parts_a12_over.png', af_parts(2, 3, [
     'the arch-shaped arcade gate exactly like the one in the attached shopping street picture: two square wooden posts with round glowing lamps on top and a glowing arch across them (no letters). About 8 steps wide; the arch is high enough for people to walk under. Let it fill the cell width.',
     'a string of red-and-white paper lanterns hanging from a rope, sagging in a gentle curve, about 8 steps long, seen from the same angle as the attached picture, exactly like the lantern strings in it. Let it fill the cell width.',
