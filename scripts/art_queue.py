@@ -1356,6 +1356,27 @@ Lighting: soft, even dusk light with NO light spots, NO shadows of objects, NO v
 - Row 2, column 1: old worn stone paving of small irregular stones, with thin lines of moss between them.
 - Row 2, column 2: dark damp earth with patches of moss and tiny weeds, as in a shady corner.
 No objects, no people, no letters anywhere.""", '1マスより大きな四角を敷き詰めて使う')
+# 2026-11-28 開発者と決めた：商店街は横に走る通りにする（下から斜めに見るカメラでは、縦の通りの店先は描けない）
+AR_H_HEAD = f"""{STYLE}
+
+Ground illustration for a top-down 2D RPG map on mobile. Square 1:1 image (1024×1024). This is ONLY the ground: the game will place the shop buildings, lamps, banners and people on top of it later as separate pictures. Match the attached map illustration exactly in art style, camera angle, scale and sunset lighting.
+{AF_CAM}
+The attached colored plan shows WHERE the areas are (a 24 by 24 grid). Follow it closely for the street, the alley and the exits; do not copy its blocks, grid or colors.
+"""
+add('地面の絵：商店街の入口（横の通り）', ['docs/sketches/a12_v1/gate_plan.png（作りの下書き。横の通り）', 'ground3_fest2_gate.png（1-1 の入口の地面の絵。絵柄・角度・光の見本）'], 'ground_a12h_gate.png', AR_H_HEAD + """Scene: the ground of a narrow shopping street (shotengai) in a Japanese town in the summer of 1988, at sunset.
+- A narrow pedestrian street of colorful interlocking tiles (about 6 steps tall) runs HORIZONTALLY across the middle of the image, from the LEFT edge to the RIGHT edge.
+- Above the street (about 6 steps tall, from near the top): a plain strip of old concrete and pavement where a row of shops will stand, their fronts facing down toward the street. Behind it, only dark rooftops along the very top edge.
+- Below the street (about 3 steps tall): a strip of old concrete where the backs of shops will stand. In it, a little left of the center, a narrow back alley (about 2 steps wide) goes straight down and leaves through the BOTTOM edge.
+- The rest of the bottom part: dark rooftops of houses seen from above, a few trees.
+- Keep everything flat and open: NO buildings, walls, awnings, lamps, poles, wires, vending machines, bicycles, people or text.
+Absolutely no letters anywhere.""", '店は正面を向いた部品（parts_a12_shops_front.png の8軒）を通りの上側に並べる')
+add('地面の絵：商店街の中ほど（横の通り）', ['docs/sketches/a12_v1/middle_plan.png（作りの下書き。横の通り）', 'ground_a12h_gate.png（上で作った入口の地面。そろえる見本）'], 'ground_a12h_middle.png', AR_H_HEAD + """Scene: the ground of the same shopping street, further along. Match the attached entrance ground exactly; the street continues from it.
+- The same narrow tiled street (about 6 steps tall) runs HORIZONTALLY across the middle, from the LEFT edge to the RIGHT edge.
+- Above the street: the same plain strip for a row of shops, with ONE gap in the center (about 4 steps wide) where old stone steps climb straight up between trees and leave through the TOP edge toward a hill.
+- Below the street: the strip for the backs of shops, with a narrow back alley (about 2 steps wide) a little left of the center going straight down through the BOTTOM edge.
+- The rest of the edges: dark rooftops and a few trees.
+- Keep everything flat and open: NO buildings, walls, awnings, lamps, poles, wires, people or text.
+Absolutely no letters anywhere.""", '入口の地面を見本に')
 # 2026-11-28 開発者：商店街の絵は、もっと上からの視点で作り直す（左右の路地が見えるように）
 AR_TOP_HEAD = f"""{STYLE}
 
@@ -1378,6 +1399,16 @@ add('地面の絵：商店街の中ほど（上からの視点で作り直し）
 - Do NOT draw lantern strings, banner poles or anything hanging across the street.
 - Keep the street open and empty: NO people, bicycles, carts, benches or crates in the street.
 Absolutely no letters, numbers or logos anywhere.""", '入口の上からの版を見本に')
+add('部品：商店街の店の並び（3軒続き・左側）', ['docs/sketches/a12_v1/rough_by_dev.png（開発者のラフ絵。目指す雰囲気）', 'docs/sketches/a12_v1/street_narrow.png（並べ方の試し。細い通りの左右に店が連なる形）', 'ground3_fest2_gate.png（1-1 の入口の地面の絵。絵柄と光の見本）'], 'parts_a12_rows.png', f"""{STYLE}
+
+A sheet of 2 separate map parts for a top-down 2D RPG on mobile, on a plain pure white background, side by side, each part complete and uncropped with white space around it. No ground, no street, no people.
+Each part is a ROW OF THREE small shops built wall to wall, standing along the LEFT side of a narrow shopping street that runs from the bottom to the top of the image. The row is tall and narrow: about 5 steps wide (left to right) and about 12 steps long (top to bottom), the three shops stacked from top to bottom sharing walls, with one continuous roofline, no gaps between them.
+Camera: a steep top-down view, about 70 degrees, with NO perspective (every shop at the same angle and scale). Match the attached 1-1 map picture in anime art style, cel shading and warm sunset lighting.
+Orientation (very important): the shop FRONTS are on the RIGHT edge of the row, facing the street: along the right edge, colorful awnings stick out to the right, goods stands (fruit, vegetables, flowers, candy, books) stand in front, projecting vertical banners and signboards (blank, no letters), a lamp. The LEFT part of the row is only rooftops seen from above (old metal or tile roofs, a few air conditioners, TV antennas, a water tank). Do NOT show a front wall facing the bottom of the image; only the bottom shop of the row may show a short side wall at the very bottom.
+Late Showa era (1988), the look of the attached rough picture: two-story mortar and wooden shops, cozy and crowded.
+- Part 1 (left): a vegetable shop, a fish shop and a candy shop with a capsule toy machine.
+- Part 2 (right): a watch and clock shop, an electronics shop with boxy CRT televisions, and a barber shop with a barber pole.
+Absolutely no letters, numbers or logos anywhere.""", '店を1軒ずつではなく、3軒続きの並びで頼む（屋根の線と光がそろい、すき間のない並びになる）。通りの右側は左右を返す')
 add('部品の箱：商店街の上にかかる物（門・提灯のひも・のぼり）', ['ground_a12_gate.png（届いた門のある入口の絵。門・提灯・のぼりの見本）', 'ground_a12_gate_clean.png（消した版。大きさの見本）'], 'parts_a12_over.png', af_parts(2, 3, [
     'the arch-shaped arcade gate exactly like the one in the attached shopping street picture: two square wooden posts with round glowing lamps on top and a glowing arch across them (no letters). About 8 steps wide; the arch is high enough for people to walk under. Let it fill the cell width.',
     'a string of red-and-white paper lanterns hanging from a rope, sagging in a gentle curve, about 8 steps long, seen from the same angle as the attached picture, exactly like the lantern strings in it. Let it fill the cell width.',
