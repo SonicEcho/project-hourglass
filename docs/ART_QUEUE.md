@@ -1,6 +1,6 @@
 # 絵の「そのまま貼る一覧」
 
-**まだの絵：44 枚**（済んだ絵 430 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
+**まだの絵：44 枚**（済んだ絵 431 枚は、いちばん下に名前だけ）。上から順に作る。**1つの枠が1枚**。
 
 - 枠の中の文を全部コピーして、ChatGPT に貼る。「添付」に書いたファイルを一緒に送る（リポジトリの中の場所。スマホなら GitHub の画面から保存して添付）
 - できた絵は「保存名」の名前で保存して、まとめて Claude に送る（Claude は、立ち絵の背景を抜いた後に `scripts/shrink_portraits.py` で縮め、差分は `scripts/portrait_parts.py` で作る）。切り抜き・縮小・台帳への記入・ゲームへのつなぎは Claude がする
@@ -184,25 +184,21 @@ Scale: all objects on this sheet share one consistent scale: one step (one grid 
 
 地面の一枚絵を使わず、部品だけで裏通りを組む試し。今ある縁の部品（家・家の角・石垣・柵・茂み・木）に足りない物を3枚で頼む。添付は、届いた裏通りの地面の絵（`ground3_fest2_lane.png`。絵柄と光をそろえる見本）と、前の部品の絵（`parts_backyard1.png`。大きさの見本）。白い背景のままでよい
 
-#### 8. 部品の箱：商店街の上にかかる物（門・提灯のひも・のぼり）
+#### 8. 部品：提灯のひも（長く、提灯を小さく）
 
-- 添付：`ground_a12_gate.png（届いた門のある入口の絵。門・提灯・のぼりの見本）`、`ground_a12_gate_clean.png（消した版。大きさの見本）`
-- 保存名：`parts_a12_over.png`
-- メモ：2枚の違いから切り抜いた上の層は、細い所が欠けたので、部品として頼み直す（開発者：クオリティー優先）
+- 添付：`ground_a12_gate.png（届いた門のある入口の絵。提灯の大きさの見本）`、`parts_a12_over.png（届いた部品の絵。絵柄の見本）`
+- 保存名：`parts_a12_lanterns.png`
+- メモ：届いた提灯のひもは、通りの幅に広げると提灯が人の頭ほどに大きくなったので、ひもを長く・提灯を小さくして頼み直す
 
 ```
 Anime-style illustration for a Japanese story-driven RPG. Clean line art, soft cel shading with gentle watercolor-like lighting, warm dusk-toned palette (amber orange and indigo), nostalgic and emotional mood. No text, no watermark, no signature.
 
 A sheet of separate map objects (parts) for a top-down 2D RPG map on mobile. The game places each part one by one on top of a ground illustration, so every part is drawn alone, complete and uncropped.
 Camera: ONE consistent three-quarter top-down view, exactly the same as the attached map illustration: the camera looks down at about 50 degrees from the bottom of the image, every object shows its top and its front side (the side facing the bottom of the image), vertical edges stay vertical, no wide-angle distortion. Match the attached illustration's art style, colors and dusk lighting exactly (warm lantern light, soft shadows falling toward the bottom right).
-Layout: a grid of 2 rows by 3 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
+Layout: a grid of 2 rows by 1 columns on a plain pure white background, every cell the same size, one object centered in each cell with clear white space around it. Objects never touch each other or the cell edges. No ground under the objects except a small soft contact shadow directly beneath each one. No people, no letters or numbers anywhere.
 Scale: all objects on this sheet share one consistent scale: one step (one grid square of the map) is about one person's shoulder width, about the size of one beer crate.
-- Row 1, column 1: the arch-shaped arcade gate exactly like the one in the attached shopping street picture: two square wooden posts with round glowing lamps on top and a glowing arch across them (no letters). About 8 steps wide; the arch is high enough for people to walk under. Let it fill the cell width.
-- Row 1, column 2: a string of red-and-white paper lanterns hanging from a rope, sagging in a gentle curve, about 8 steps long, seen from the same angle as the attached picture, exactly like the lantern strings in it. Let it fill the cell width.
-- Row 1, column 3: the same kind of lantern string with warm white paper lanterns.
-- Row 2, column 1: a tall thin wooden banner pole with a long vertical red banner (nobori) hanging from it (no letters), about 3 steps tall.
-- Row 2, column 2: the same banner pole with a yellow banner.
-- Row 2, column 3: the same banner pole with a dark blue banner. These are things that hang over or stand in a shopping street, so people will walk under or in front of them. Draw every object complete with clean, crisp outlines, including the thin ropes and poles. Match the attached picture exactly in style, lighting and scale. No letters anywhere.
+- Row 1, column 1: a LONG rope strung across a shopping street, about 9 steps long, sagging in a gentle curve, with NINE SMALL red-and-white paper lanterns hanging from it at even spacing. Each lantern is small (about half a step tall), like the lantern strings in the attached shopping street picture. Let it fill the whole cell width.
+- Row 2, column 1: the same long rope with nine small warm white paper lanterns. Match the attached parts sheet exactly in drawing style and the attached shopping street picture in lantern size. Clean, crisp outlines including the thin rope. No letters anywhere.
 ```
 
 ### AE. 新しい1-1 の仕掛け・宝箱の小物と部屋の絵（段階270）
@@ -637,7 +633,7 @@ Change only the mouth: close it gently into a soft closed-lip smile that keeps t
 - **AM. 案3：縁日の広場の地面の絵（段階282）**（1 枚）：地面の絵：縁日の広場（案3）
 - **AN. 祭りのにぎわい：通行人と盆踊り（段階283）**（2 枚）：通行人の二頭身（12人）、盆踊りの踊り手（二頭身・8人）
 - **AO. 案3：屋台の裏通りの地面の絵（段階288）**（1 枚）：地面の絵：屋台の裏通り（案3）
-- **AP. 地面も部品で組む試し：裏通りの部品の箱（段階291）**（3 枚）：部品の箱1：地面の下敷き（つなぎ目の出ない模様）、部品の箱2：地面に貼る物、部品の箱3：裏通りの縁の部品
+- **AP. 地面も部品で組む試し：裏通りの部品の箱（段階291）**（4 枚）：部品の箱1：地面の下敷き（つなぎ目の出ない模様）、部品の箱：商店街の上にかかる物（門・提灯のひも・のぼり）、部品の箱2：地面に貼る物、部品の箱3：裏通りの縁の部品
 - **AQ. 思い出の一枚：新しい1-1 の4枚（段階301）**（5 枚）：思い出の一枚：鳥居の前、思い出の一枚：やぐらの陰、思い出の一枚：屋台の裏の囲い、思い出の一枚：池のほとり、思い出の一枚：最後の一枚（4枚そろえた人だけ）
 - **AR. 新しい1-2：地面の絵6枚と、昭和の商店街の部品の箱3枚（段階306）**（2 枚）：地面の絵：商店街の入口（店も描き込む）、地面の絵：商店街の入口から、張り出した物を消す
 - **W. 拠点のメニューの絵（段階226・227）**（6 枚）：砂の底（横長の帯）、星図・武器・ライブラリ・交換所・落とし物（縦長）。ムーブメント・アルバム・編成・町の小話の縦長は、今の横長の絵を使い回すと決めたので作らない（2026-11-17 開発者と）
